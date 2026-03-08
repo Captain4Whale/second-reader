@@ -19,6 +19,7 @@ function BookCard({ book }: { book: BookShelfCard }) {
   return (
     <Link
       to={toFrontendPath(book.open_target)}
+      data-testid={`book-card-${book.book_id}`}
       className="group bg-white rounded-2xl border border-[var(--warm-300)]/30 overflow-hidden shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all no-underline"
     >
       <div className="aspect-[3/4] bg-[var(--warm-200)] overflow-hidden">

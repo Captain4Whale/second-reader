@@ -76,7 +76,7 @@ export function GlobalMarksPage() {
 
               <div className="space-y-3">
                 {items.map((mark) => (
-                  <div key={mark.mark_id} className="bg-white rounded-2xl border border-[var(--warm-300)]/30 p-5 shadow-sm">
+                  <div key={mark.mark_id} data-testid={`global-mark-${mark.mark_id}`} className="bg-white rounded-2xl border border-[var(--warm-300)]/30 p-5 shadow-sm">
                     <div className="flex items-center gap-2 mb-2 flex-wrap">
                       <span className="text-[var(--warm-500)]" style={{ fontSize: "0.75rem" }}>
                         {mark.chapter_ref} · {mark.section_ref}

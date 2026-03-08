@@ -32,6 +32,8 @@ dist/
 build/
 .vite/
 .cache/
+playwright-report/
+test-results/
 
 # Logs / temp output
 *.log

@@ -1,0 +1,123 @@
+{
+  "book_id": "fixture-e2e-book",
+  "book": "Fixture E2E Book",
+  "author": "Fixture Author",
+  "book_language": "en",
+  "output_language": "en",
+  "chapter": {
+    "id": 1,
+    "title": "Chapter 1",
+    "chapter_number": 1,
+    "reference": "Chapter 1",
+    "segment_count": 1,
+    "markdown_file": "ch01_deep_read.md",
+    "result_file": "ch01_deep_read.json"
+  },
+  "chapter_result": {
+    "chapter": {
+      "id": 1,
+      "title": "Chapter 1",
+      "chapter_number": 1,
+      "reference": "Chapter 1",
+      "status": "done"
+    },
+    "output_language": "en",
+    "sections": [
+      {
+        "segment_id": "1.1",
+        "segment_ref": "1.1",
+        "summary": "System logic and exchange structure anchor the chapter.",
+        "original_text": "You do not enter relationships with value, you enter relationships as value.",
+        "verdict": "pass",
+        "quality_status": "strong",
+        "reflection_summary": "Keep the consequence framing explicit.",
+        "reflection_reason_codes": [],
+        "locator": {
+          "href": "chapter-1.xhtml",
+          "start_cfi": "epubcfi(/6/2!/4/2)",
+          "end_cfi": "epubcfi(/6/2!/4/2)",
+          "paragraph_start": 1,
+          "paragraph_end": 1
+        },
+        "reactions": [
+          {
+            "reaction_id": "fixture-r1",
+            "type": "retrospect",
+            "anchor_quote": "You do not enter relationships with value, you enter relationships as value.",
+            "content": "The chapter keeps returning to exchange structure as the thing that survives moods and stated ideals.",
+            "search_query": "",
+            "search_results": [],
+            "target_locator": {
+              "href": "chapter-1.xhtml",
+              "start_cfi": "epubcfi(/6/2!/4/2)",
+              "end_cfi": "epubcfi(/6/2!/4/2)",
+              "match_text": "You do not enter relationships with value, you enter relationships as value.",
+              "match_mode": "exact"
+            }
+          }
+        ]
+      }
+    ],
+    "chapter_reflection": {
+      "chapter_insights": [
+        "Incentives explain continuity better than declarations."
+      ]
+    },
+    "featured_reactions": [
+      {
+        "reaction_id": "fixture-r1",
+        "type": "retrospect",
+        "segment_ref": "1.1",
+        "anchor_quote": "You do not enter relationships with value, you enter relationships as value.",
+        "content": "The chapter keeps returning to exchange structure as the thing that survives moods and stated ideals.",
+        "target_locator": {
+          "href": "chapter-1.xhtml",
+          "start_cfi": "epubcfi(/6/2!/4/2)",
+          "end_cfi": "epubcfi(/6/2!/4/2)",
+          "match_text": "You do not enter relationships with value, you enter relationships as value.",
+          "match_mode": "exact"
+        }
+      }
+    ],
+    "visible_reaction_count": 1,
+    "reaction_type_diversity": 1,
+    "high_signal_reaction_count": 1,
+    "ui_summary": {
+      "kept_section_count": 1,
+      "skipped_section_count": 0,
+      "reaction_counts": {
+        "connect_back": 1
+      }
+    }
+  },
+  "activity_event": {
+    "event_id": "fixture-e2e-evt-1",
+    "timestamp": "2026-03-08T00:00:00Z",
+    "type": "chapter_completed",
+    "message": "Chapter 1 完成，已生成结果文件。",
+    "chapter_id": 1,
+    "chapter_ref": "Chapter 1",
+    "reaction_types": [
+      "connect_back"
+    ],
+    "highlight_quote": "You do not enter relationships with value, you enter relationships as value.",
+    "visible_reaction_count": 1,
+    "high_signal_reaction_count": 1,
+    "featured_reactions": [
+      {
+        "reaction_id": "fixture-r1",
+        "type": "connect_back",
+        "segment_ref": "1.1",
+        "anchor_quote": "You do not enter relationships with value, you enter relationships as value.",
+        "content": "The chapter keeps returning to exchange structure as the thing that survives moods and stated ideals.",
+        "target_locator": {
+          "href": "chapter-1.xhtml",
+          "start_cfi": "epubcfi(/6/2!/4/2)",
+          "end_cfi": "epubcfi(/6/2!/4/2)",
+          "match_text": "You do not enter relationships with value, you enter relationships as value.",
+          "match_mode": "exact"
+        }
+      }
+    ]
+  }
+}

@@ -16,5 +16,11 @@ fi
 echo "Running backend tests..."
 (cd "$BACKEND_DIR" && .venv/bin/python -m pytest)
 
+echo "Running frontend typecheck..."
+(cd "$FRONTEND_DIR" && npm run typecheck)
+
 echo "Running frontend smoke build..."
 (cd "$FRONTEND_DIR" && npm run build)
+
+echo "Running contract checks..."
+"$ROOT_DIR/scripts/contract-check.sh"

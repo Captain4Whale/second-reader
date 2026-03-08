@@ -1,72 +1,16 @@
 import { ArrowRight, Bookmark, Library, Link2, RotateCcw, Scale, Search, Sparkles } from "lucide-react";
 import { Link } from "react-router";
+import { LANDING_CONTRACT_NOTES, LANDING_REACTION_CARDS, LANDING_SAMPLE_TEASERS } from "../content/landing-content";
 import { reactionMeta } from "../lib/reactions";
 
-const reactionCards = [
-  {
-    type: "highlight",
-    icon: Sparkles,
-    title: "Highlight",
-    description: "Surface the sentence the agent thinks is most worth carrying forward.",
-  },
-  {
-    type: "association",
-    icon: Link2,
-    title: "Association",
-    description: "Connect a passage to nearby ideas, frameworks, or outside patterns.",
-  },
-  {
-    type: "discern",
-    icon: Scale,
-    title: "Discern",
-    description: "Sharpen the distinction, tension, or hidden tradeoff inside a claim.",
-  },
-  {
-    type: "retrospect",
-    icon: RotateCcw,
-    title: "Retrospect",
-    description: "Call back to earlier threads in the book when the current passage reactivates them.",
-  },
-  {
-    type: "curious",
-    icon: Search,
-    title: "Curious",
-    description: "Push into missing evidence, edge cases, and questions worth searching.",
-  },
-  {
-    type: "marks",
-    icon: Bookmark,
-    title: "Known / Blindspot",
-    description: "Use marks to separate what already felt familiar from what actually changed your map.",
-  },
-];
-
-const teaserReactions = [
-  {
-    reactionId: 4101,
-    type: "highlight",
-    chapterRef: "Chapter 1",
-    sectionRef: "1.1",
-    anchorQuote: "You do not enter relationships with value, you enter relationships as value.",
-    content: "The sentence reframes attraction as exchange structure, not mood or moral approval.",
-  },
-  {
-    reactionId: 4102,
-    type: "discern",
-    chapterRef: "Chapter 1",
-    sectionRef: "1.2",
-    anchorQuote: "Rules and laws govern behavior because they encode expected consequences.",
-    content: "The move is from romance language to system language: consequences are not exceptions, they are the operating logic.",
-  },
-  {
-    reactionId: 4103,
-    type: "retrospect",
-    chapterRef: "Chapter 1",
-    sectionRef: "1.3",
-    anchorQuote: "Relationships are games in the sense that incentives shape what survives.",
-    content: "This loops back to the opening claim and turns it into a design principle: incentives explain continuity better than stated intentions do.",
-  },
-];
+const landingIcons = {
+  highlight: Sparkles,
+  association: Link2,
+  discern: Scale,
+  retrospect: RotateCcw,
+  curious: Search,
+  marks: Bookmark,
+} as const;
 
 export function LandingPage() {
   return (
@@ -109,9 +53,9 @@ export function LandingPage() {
               Contract Notes
             </p>
             <div className="space-y-4 text-[var(--warm-700)]" style={{ fontSize: "0.875rem", lineHeight: 1.75 }}>
-              <p>The canonical web routes are `/`, `/books`, `/books/:id`, `/books/:id/analysis`, `/books/:id/chapters/:chapterId`, and `/marks`.</p>
-              <p>All public IDs are integers at the API boundary, even though the backend still stores legacy slug/hash identifiers internally.</p>
-              <p>The upload flow remains available at `/upload` as a utility route, but it is not part of the canonical navigation contract.</p>
+              {LANDING_CONTRACT_NOTES.map((note) => (
+                <p key={note}>{note}</p>
+              ))}
             </div>
           </div>
         </div>
@@ -139,9 +83,9 @@ export function LandingPage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-            {reactionCards.map((item) => {
-              const Icon = item.icon;
-              const meta = reactionMeta[item.type] ?? reactionMeta.highlight;
+            {LANDING_REACTION_CARDS.map((item) => {
+              const Icon = landingIcons[item.key];
+              const meta = reactionMeta[item.accentType];
               return (
                 <div key={item.title} className={`rounded-2xl border border-[var(--warm-300)]/30 p-5 ${meta.surfaceClass} shadow-sm`}>
                   <div className="flex items-center gap-2 mb-3">
@@ -172,7 +116,7 @@ export function LandingPage() {
           </div>
 
           <div className="space-y-4">
-            {teaserReactions.map((reaction) => (
+            {LANDING_SAMPLE_TEASERS.map((reaction) => (
               <div key={reaction.reactionId} className="bg-white rounded-2xl border border-[var(--warm-300)]/30 p-6 shadow-sm">
                 <div className="flex items-center gap-2 mb-3">
                   <span className={`inline-flex px-2.5 py-1 rounded-full text-[var(--warm-900)] ${reactionMeta[reaction.type].surfaceClass}`} style={{ fontSize: "0.75rem", fontWeight: 600 }}>

@@ -1,7 +1,8 @@
 import { ArrowLeft, ExternalLink, Lightbulb, Search } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router";
-import { ChapterDetailResponse, ReactionId, deleteReactionMark, fetchChapterDetail, putReactionMark, toApiAssetUrl } from "../lib/api";
+import { ChapterDetailResponse, deleteReactionMark, fetchChapterDetail, putReactionMark, toApiAssetUrl } from "../lib/api";
+import { canonicalBookPath, type ReactionId } from "../lib/contract";
 import { reactionLabel } from "../lib/reactions";
 import { ErrorState, LoadingState } from "./page-state";
 
@@ -24,8 +25,9 @@ function replaceReaction(
 }
 
 export function ChapterReadPage() {
-  const { bookId: bookIdParam = "", chapterId: chapterIdParam = "" } = useParams();
-  const bookId = Number(bookIdParam);
+  const { id = "", bookId = "", chapterId: chapterIdParam = "" } = useParams();
+  const resolvedBookId = id || bookId;
+  const bookIdNumber = Number(resolvedBookId);
   const chapterNumber = Number(chapterIdParam);
   const [payload, setPayload] = useState<ChapterDetailResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -39,7 +41,7 @@ export function ChapterReadPage() {
     setLoading(true);
     setError(null);
 
-    void fetchChapterDetail(bookId, chapterNumber)
+    void fetchChapterDetail(bookIdNumber, chapterNumber)
       .then((nextPayload) => {
         if (!active) {
           return;
@@ -63,7 +65,7 @@ export function ChapterReadPage() {
     return () => {
       active = false;
     };
-  }, [bookId, chapterNumber, reloadTick]);
+  }, [bookIdNumber, chapterNumber, reloadTick]);
 
   if (loading && !payload) {
     return <LoadingState title="Loading chapter result..." />;
@@ -117,8 +119,8 @@ export function ChapterReadPage() {
     <div className="h-[calc(100vh-65px)] flex flex-col">
       <div className="flex items-center justify-between px-6 py-3 border-b border-[var(--warm-200)] bg-white/90 backdrop-blur-sm flex-shrink-0">
         <div className="flex items-center gap-3 min-w-0">
-          <Link
-            to={`/books/${payload.book_id}`}
+            <Link
+            to={canonicalBookPath(payload.book_id)}
             className="inline-flex items-center gap-1 text-[var(--warm-600)] no-underline hover:text-[var(--warm-800)]"
             style={{ fontSize: "0.8125rem" }}
           >
@@ -218,6 +220,7 @@ export function ChapterReadPage() {
                     {section.reactions.map((reaction) => (
                       <div
                         key={reaction.reaction_id}
+                        data-testid={`reaction-card-${reaction.reaction_id}`}
                         className={`rounded-2xl border p-4 cursor-pointer transition-colors ${
                           activeReaction?.reaction_id === reaction.reaction_id
                             ? "border-[var(--amber-accent)]/40 bg-[var(--amber-bg)]"
@@ -235,6 +238,7 @@ export function ChapterReadPage() {
                                 event.stopPropagation();
                                 void toggleMark(reaction.reaction_id, reaction.mark_type ?? null, "known");
                               }}
+                              data-testid={`mark-known-${reaction.reaction_id}`}
                               className={`px-2.5 py-1 rounded-full border cursor-pointer transition-colors ${
                                 reaction.mark_type === "known"
                                   ? "border-[var(--amber-accent)] bg-[var(--amber-bg)] text-[var(--amber-accent)]"
@@ -249,6 +253,7 @@ export function ChapterReadPage() {
                                 event.stopPropagation();
                                 void toggleMark(reaction.reaction_id, reaction.mark_type ?? null, "blindspot");
                               }}
+                              data-testid={`mark-blindspot-${reaction.reaction_id}`}
                               className={`px-2.5 py-1 rounded-full border cursor-pointer transition-colors ${
                                 reaction.mark_type === "blindspot"
                                   ? "border-orange-300 bg-orange-50 text-orange-700"

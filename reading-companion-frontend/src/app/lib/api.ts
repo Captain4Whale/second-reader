@@ -1,3 +1,16 @@
+import {
+  type BookId,
+  type ChapterId,
+  type MarkId,
+  type MarkType,
+  type ReactionFilter,
+  type ReactionId,
+  type ReactionType,
+  CANONICAL_ROUTE_PATTERNS,
+  COMPAT_ROUTE_PATTERNS,
+  UTILITY_ROUTE_PATTERNS,
+} from "./contract";
+
 export interface ApiErrorResponse {
   error_id?: string;
   code: string;
@@ -19,14 +32,6 @@ export interface SearchHit {
   snippet: string;
   score?: number | null;
 }
-
-export type BookId = number;
-export type ChapterId = number;
-export type ReactionId = number;
-export type MarkId = number;
-export type ReactionType = "highlight" | "association" | "discern" | "retrospect" | "curious";
-export type ReactionFilter = "all" | ReactionType;
-export type MarkType = "known" | "blindspot";
 
 export interface ReactionTargetLocator {
   href: string;
@@ -324,8 +329,13 @@ function defaultWsBaseUrl(): string {
   return `${scheme}//${window.location.hostname}:8000`;
 }
 
-export const API_BASE_URL = normalizeBaseUrl(import.meta.env.VITE_API_BASE_URL?.trim() || defaultApiBaseUrl());
-export const WS_BASE_URL = normalizeBaseUrl(import.meta.env.VITE_WS_BASE_URL?.trim() || defaultWsBaseUrl());
+const ENV = (((import.meta as ImportMeta & { env?: Record<string, string | undefined> }).env ?? {}) as Record<
+  string,
+  string | undefined
+>);
+
+export const API_BASE_URL = normalizeBaseUrl(ENV["VITE_API_BASE_URL"]?.trim() || defaultApiBaseUrl());
+export const WS_BASE_URL = normalizeBaseUrl(ENV["VITE_WS_BASE_URL"]?.trim() || defaultWsBaseUrl());
 
 export function getErrorMessage(error: unknown): string {
   if (error instanceof ApiRequestError) {
@@ -356,14 +366,14 @@ export function toWebSocketUrl(path: string): string {
 
 export function toFrontendPath(path?: string | null): string {
   if (!path) {
-    return "/";
+    return CANONICAL_ROUTE_PATTERNS.landing;
   }
   const normalized = path.startsWith("/") ? path : `/${path}`;
-  if (normalized === "/bookshelf") {
-    return "/books";
+  if (normalized === COMPAT_ROUTE_PATTERNS.bookshelf) {
+    return CANONICAL_ROUTE_PATTERNS.books;
   }
-  if (normalized === "/bookshelf/marks") {
-    return "/marks";
+  if (normalized === COMPAT_ROUTE_PATTERNS.marks) {
+    return CANONICAL_ROUTE_PATTERNS.marks;
   }
   if (normalized.startsWith("/book/")) {
     return normalized.replace(/^\/book\//, "/books/").replace("/chapter/", "/chapters/");
@@ -371,8 +381,8 @@ export function toFrontendPath(path?: string | null): string {
   if (normalized.startsWith("/analysis/")) {
     return normalized.replace(/^\/analysis\//, "/books/") + "/analysis";
   }
-  if (normalized === "/sample") {
-    return "/books";
+  if (normalized === UTILITY_ROUTE_PATTERNS.sample) {
+    return CANONICAL_ROUTE_PATTERNS.books;
   }
   return normalized;
 }

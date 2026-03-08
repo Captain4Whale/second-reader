@@ -580,7 +580,7 @@ def get_analysis_state(book_id: str, root: Path | None = None) -> dict:
     recent_activity = get_activity(book_id, root)
     recent_activity = _sort_by_updated_and_id(recent_activity, updated_key="timestamp", id_key="event_id")
 
-    reaction_counts: dict[str, int] = {}
+    reaction_counts: dict[str, int] = {reaction_type: 0 for reaction_type in REACTION_FILTERS if reaction_type != "all"}
     for chapter in manifest.get("chapters", []):
         result_path = _book_dir(book_id, root) / str(chapter.get("result_file", ""))
         if not result_path.exists():

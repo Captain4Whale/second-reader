@@ -2,6 +2,7 @@ import { Activity, ArrowRight, BookOpen, Clock3, LoaderCircle, Search, TreePine 
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router";
 import { ActivityEvent, AnalysisStateResponse, fetchActivity, fetchAnalysisState, toFrontendPath, toWebSocketUrl } from "../lib/api";
+import { canonicalBookAnalysisPath, canonicalBookPath, canonicalChapterPath } from "../lib/contract";
 import { reactionLabel } from "../lib/reactions";
 import { ErrorState, LoadingState } from "./page-state";
 
@@ -14,8 +15,9 @@ function formatTimestamp(value: string) {
 }
 
 export function AnalysisPage() {
-  const { bookId: bookIdParam = "" } = useParams();
-  const bookId = Number(bookIdParam);
+  const { id = "", bookId = "" } = useParams();
+  const resolvedBookId = id || bookId;
+  const bookIdNumber = Number(resolvedBookId);
   const [analysis, setAnalysis] = useState<AnalysisStateResponse | null>(null);
   const [activity, setActivity] = useState<ActivityEvent[]>([]);
   const [loading, setLoading] = useState(true);
@@ -27,7 +29,7 @@ export function AnalysisPage() {
     setActivity([]);
     setLoading(true);
     setError(null);
-  }, [bookId]);
+  }, [bookIdNumber]);
 
   useEffect(() => {
     const timer = window.setInterval(() => {
@@ -37,14 +39,14 @@ export function AnalysisPage() {
     return () => {
       window.clearInterval(timer);
     };
-  }, [bookId]);
+  }, [bookIdNumber]);
 
   useEffect(() => {
-    if (!bookId) {
+    if (!bookIdNumber) {
       return;
     }
 
-    const socket = new WebSocket(toWebSocketUrl(`/api/ws/books/${bookId}/analysis`));
+    const socket = new WebSocket(toWebSocketUrl(`/api/ws/books/${bookIdNumber}/analysis`));
     socket.onmessage = () => {
       setRefreshTick((value) => value + 1);
     };
@@ -53,7 +55,7 @@ export function AnalysisPage() {
     return () => {
       socket.close();
     };
-  }, [bookId]);
+  }, [bookIdNumber]);
 
   useEffect(() => {
     let active = true;
@@ -61,8 +63,8 @@ export function AnalysisPage() {
     async function load() {
       try {
         const [nextAnalysis, nextActivity] = await Promise.all([
-          fetchAnalysisState(bookId),
-          fetchActivity(bookId),
+          fetchAnalysisState(bookIdNumber),
+          fetchActivity(bookIdNumber),
         ]);
 
         if (!active) {
@@ -89,7 +91,7 @@ export function AnalysisPage() {
     return () => {
       active = false;
     };
-  }, [bookId, refreshTick]);
+  }, [bookIdNumber, refreshTick]);
 
   if (loading && !analysis) {
     return <LoadingState title="Loading live analysis state..." />;
@@ -145,7 +147,8 @@ export function AnalysisPage() {
         <div className="flex items-center gap-3 mt-5 flex-wrap">
           {analysis.book_id ? (
             <Link
-              to={analysis.status === "completed" ? `/books/${analysis.book_id}` : `/books/${analysis.book_id}/analysis`}
+              to={analysis.status === "completed" ? canonicalBookPath(analysis.book_id) : canonicalBookAnalysisPath(analysis.book_id)}
+              data-testid="analysis-open-current"
               className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[var(--amber-accent)] text-white no-underline hover:bg-[var(--warm-700)] transition-colors"
               style={{ fontSize: "0.875rem", fontWeight: 500 }}
             >
@@ -197,7 +200,8 @@ export function AnalysisPage() {
                 </div>
                 {chapter.result_ready ? (
                   <Link
-                    to={`/books/${analysis.book_id}/chapters/${chapter.chapter_id}`}
+                    to={canonicalChapterPath(analysis.book_id, chapter.chapter_id)}
+                    data-testid={`analysis-structure-chapter-${chapter.chapter_id}`}
                     className="inline-flex mt-3 text-[var(--amber-accent)] no-underline hover:text-[var(--warm-700)]"
                     style={{ fontSize: "0.8125rem", fontWeight: 500 }}
                   >
@@ -271,6 +275,7 @@ export function AnalysisPage() {
                   <Link
                     key={chapter.chapter_id}
                     to={toFrontendPath(chapter.result_url)}
+                    data-testid={`analysis-completed-${chapter.chapter_id}`}
                     className="block rounded-2xl bg-[var(--warm-100)] p-4 no-underline hover:bg-[var(--warm-200)] transition-colors"
                   >
                     <p className="text-[var(--warm-500)] mb-1" style={{ fontSize: "0.75rem", fontWeight: 600 }}>

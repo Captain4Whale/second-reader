@@ -81,3 +81,14 @@ def get_backend_port() -> int:
     if raw.isdigit():
         return int(raw)
     return 8000
+
+
+def get_backend_test_mode() -> bool:
+    """Return whether backend fixture mode is enabled."""
+    raw = os.getenv("BACKEND_TEST_MODE", "").strip().lower()
+    return raw in {"1", "true", "yes", "on"}
+
+
+def get_backend_test_fixture_profile() -> str:
+    """Return the active backend test fixture profile."""
+    return os.getenv("BACKEND_TEST_FIXTURE_PROFILE", "").strip().lower()

@@ -7,32 +7,41 @@ import { BookOverviewPage } from "./components/book-overview-page";
 import { ChapterReadPage } from "./components/chapter-read-page";
 import { GlobalMarksPage } from "./components/global-marks-page";
 import { UploadPage } from "./components/upload-page";
+import { APP_ROUTE_TABLE } from "./route-config";
+import {
+  CANONICAL_ROUTE_PATTERNS,
+  COMPAT_ROUTE_PATTERNS,
+  UTILITY_ROUTE_PATTERNS,
+  canonicalBookAnalysisPath,
+  canonicalBookPath,
+  canonicalChapterPath,
+} from "./lib/contract";
 
 function LegacyBookRedirect() {
   const { bookId = "" } = useParams();
-  return <Navigate to={`/books/${bookId}`} replace />;
+  return <Navigate to={canonicalBookPath(bookId)} replace />;
 }
 
 function LegacyChapterRedirect() {
   const { bookId = "", chapterId = "" } = useParams();
-  return <Navigate to={`/books/${bookId}/chapters/${chapterId}`} replace />;
+  return <Navigate to={canonicalChapterPath(bookId, chapterId)} replace />;
 }
 
 function LegacyAnalysisRedirect() {
   const { bookId = "" } = useParams();
-  return <Navigate to={`/books/${bookId}/analysis`} replace />;
+  return <Navigate to={canonicalBookAnalysisPath(bookId)} replace />;
 }
 
 function LegacyBooksRedirect() {
-  return <Navigate to="/books" replace />;
+  return <Navigate to={CANONICAL_ROUTE_PATTERNS.books} replace />;
 }
 
 function LegacyMarksRedirect() {
-  return <Navigate to="/marks" replace />;
+  return <Navigate to={CANONICAL_ROUTE_PATTERNS.marks} replace />;
 }
 
 function LegacySampleRedirect() {
-  return <Navigate to="/books" replace />;
+  return <Navigate to={CANONICAL_ROUTE_PATTERNS.books} replace />;
 }
 
 export const router = createBrowserRouter([
@@ -41,18 +50,18 @@ export const router = createBrowserRouter([
     Component: RootLayout,
     children: [
       { index: true, Component: LandingPage },
-      { path: "upload", Component: UploadPage },
-      { path: "sample", Component: LegacySampleRedirect },
-      { path: "books", Component: BookshelfPage },
-      { path: "marks", Component: GlobalMarksPage },
-      { path: "bookshelf", Component: LegacyBooksRedirect },
-      { path: "bookshelf/marks", Component: LegacyMarksRedirect },
-      { path: "analysis/:bookId", Component: LegacyAnalysisRedirect },
-      { path: "book/:bookId", Component: LegacyBookRedirect },
-      { path: "book/:bookId/chapter/:chapterId", Component: LegacyChapterRedirect },
-      { path: "books/:bookId", Component: BookOverviewPage },
-      { path: "books/:bookId/analysis", Component: AnalysisPage },
-      { path: "books/:bookId/chapters/:chapterId", Component: ChapterReadPage },
+      { path: UTILITY_ROUTE_PATTERNS.upload.slice(1), Component: UploadPage },
+      { path: UTILITY_ROUTE_PATTERNS.sample.slice(1), Component: LegacySampleRedirect },
+      { path: CANONICAL_ROUTE_PATTERNS.books.slice(1), Component: BookshelfPage },
+      { path: CANONICAL_ROUTE_PATTERNS.marks.slice(1), Component: GlobalMarksPage },
+      { path: COMPAT_ROUTE_PATTERNS.bookshelf.slice(1), Component: LegacyBooksRedirect },
+      { path: COMPAT_ROUTE_PATTERNS.marks.slice(1), Component: LegacyMarksRedirect },
+      { path: COMPAT_ROUTE_PATTERNS.analysis.slice(1), Component: LegacyAnalysisRedirect },
+      { path: COMPAT_ROUTE_PATTERNS.book.slice(1), Component: LegacyBookRedirect },
+      { path: COMPAT_ROUTE_PATTERNS.chapter.slice(1), Component: LegacyChapterRedirect },
+      { path: CANONICAL_ROUTE_PATTERNS.book.slice(1), Component: BookOverviewPage },
+      { path: CANONICAL_ROUTE_PATTERNS.analysis.slice(1), Component: AnalysisPage },
+      { path: CANONICAL_ROUTE_PATTERNS.chapter.slice(1), Component: ChapterReadPage },
     ],
   },
 ]);

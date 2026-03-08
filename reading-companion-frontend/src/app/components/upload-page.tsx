@@ -2,17 +2,19 @@ import { ArrowRight, LoaderCircle, Upload } from "lucide-react";
 import { FormEvent, useEffect, useState } from "react";
 import { Link } from "react-router";
 import { fetchJobStatus, JobStatusResponse, toFrontendPath, toWebSocketUrl, uploadEpub } from "../lib/api";
+import { canonicalBookAnalysisPath, canonicalBookPath } from "../lib/contract";
 
 function AnalysisTarget({ job }: { job: JobStatusResponse }) {
   if (!job.book_id) {
     return null;
   }
 
-  const target = job.status === "completed" ? `/books/${job.book_id}` : `/books/${job.book_id}/analysis`;
+  const target = job.status === "completed" ? canonicalBookPath(job.book_id) : canonicalBookAnalysisPath(job.book_id);
 
   return (
     <Link
       to={target}
+      data-testid="upload-open-current-result"
       className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[var(--amber-accent)] text-white no-underline hover:bg-[var(--warm-700)] transition-colors"
       style={{ fontSize: "0.875rem", fontWeight: 500 }}
     >
@@ -100,6 +102,7 @@ export function UploadPage() {
               type="file"
               accept=".epub,application/epub+zip"
               onChange={(event) => setFile(event.target.files?.[0] ?? null)}
+              data-testid="upload-input"
               className="block w-full rounded-xl border border-[var(--warm-300)]/50 bg-[var(--warm-50)] px-4 py-3 text-[var(--warm-700)]"
             />
           </label>
@@ -120,6 +123,7 @@ export function UploadPage() {
             <button
               type="submit"
               disabled={submitting}
+              data-testid="upload-submit"
               className="inline-flex items-center gap-2 px-5 py-3 rounded-lg bg-[var(--amber-accent)] text-white hover:bg-[var(--warm-700)] transition-colors disabled:opacity-60 cursor-pointer"
               style={{ fontSize: "0.9375rem", fontWeight: 500 }}
             >

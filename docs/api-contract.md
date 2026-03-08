@@ -227,3 +227,42 @@ When changing this contract:
 5. Record any temporary exceptions or unfinished migration work in `docs/agent-handoff.md`.
 
 Do not merge a contract change that only updates documentation or only updates one side of the integration.
+
+## Machine-Readable Appendix
+The JSON block below is the machine-readable appendix used by the root contract drift checks.
+
+```json
+{
+  "reaction_types": [
+    "highlight",
+    "association",
+    "discern",
+    "retrospect",
+    "curious"
+  ],
+  "mark_types": [
+    "known",
+    "blindspot"
+  ],
+  "canonical_routes": {
+    "landing": "/",
+    "books": "/books",
+    "book": "/books/:id",
+    "chapter": "/books/:id/chapters/:chapterId",
+    "analysis": "/books/:id/analysis",
+    "marks": "/marks"
+  },
+  "compat_routes": [
+    "/bookshelf",
+    "/book/:bookId",
+    "/book/:bookId/chapter/:chapterId",
+    "/analysis/:bookId",
+    "/bookshelf/marks"
+  ],
+  "landing_strategy": {
+    "owner": "frontend_static",
+    "display_card_count": 6,
+    "sample_teaser_source": "frontend_static"
+  }
+}
+```

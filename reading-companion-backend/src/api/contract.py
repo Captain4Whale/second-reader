@@ -11,6 +11,37 @@ REACTION_TYPES = ("highlight", "association", "discern", "retrospect", "curious"
 REACTION_FILTERS = ["all", "highlight", "association", "discern", "retrospect", "curious"]
 MARK_TYPES = ("known", "blindspot")
 
+CANONICAL_ROUTES = {
+    "landing": "/",
+    "books": "/books",
+    "book": "/books/:id",
+    "chapter": "/books/:id/chapters/:chapterId",
+    "analysis": "/books/:id/analysis",
+    "marks": "/marks",
+}
+
+COMPAT_ROUTES = [
+    "/bookshelf",
+    "/book/:bookId",
+    "/book/:bookId/chapter/:chapterId",
+    "/analysis/:bookId",
+    "/bookshelf/marks",
+]
+
+LANDING_STRATEGY = {
+    "owner": "frontend_static",
+    "display_card_count": 6,
+    "sample_teaser_source": "frontend_static",
+}
+
+PUBLIC_CONTRACT_SPEC = {
+    "reaction_types": list(REACTION_TYPES),
+    "mark_types": list(MARK_TYPES),
+    "canonical_routes": dict(CANONICAL_ROUTES),
+    "compat_routes": list(COMPAT_ROUTES),
+    "landing_strategy": dict(LANDING_STRATEGY),
+}
+
 _REACTION_TO_API = {
     "highlight": "highlight",
     "association": "association",
@@ -108,19 +139,8 @@ def _candidate_book_ids(root: Path, *, internal_book_id: str | None = None) -> l
     return _manifest_book_ids(root)
 
 
-def resolve_reaction_id(
-    reaction_ref: int | str,
-    *,
-    root: Path,
-    internal_book_id: str | None = None,
-) -> str:
-    raw = str(reaction_ref).strip()
-    if not raw:
-        raise FileNotFoundError(reaction_ref)
-    if not raw.isdigit():
-        return raw
-
-    target = int(raw)
+def _iter_internal_reactions(root: Path, *, internal_book_id: str | None = None) -> list[tuple[str, str]]:
+    reactions: list[tuple[str, str]] = []
     for book_id in _candidate_book_ids(root, internal_book_id=internal_book_id):
         book_dir = output_root(root) / book_id
         for path in sorted(book_dir.glob("*_deep_read.json")):
@@ -137,6 +157,45 @@ def resolve_reaction_id(
                     internal_reaction_id = str(reaction.get("reaction_id", "")).strip()
                     if not internal_reaction_id:
                         continue
-                    if to_api_reaction_id(book_id=book_id, reaction_id=internal_reaction_id) == target:
-                        return internal_reaction_id
+                    reactions.append((book_id, internal_reaction_id))
+    return reactions
+
+
+def resolve_reaction_id(
+    reaction_ref: int | str,
+    *,
+    root: Path,
+    internal_book_id: str | None = None,
+) -> str:
+    raw = str(reaction_ref).strip()
+    if not raw:
+        raise FileNotFoundError(reaction_ref)
+    if not raw.isdigit():
+        return raw
+
+    target = int(raw)
+    for book_id, internal_reaction_id in _iter_internal_reactions(root, internal_book_id=internal_book_id):
+        if to_api_reaction_id(book_id=book_id, reaction_id=internal_reaction_id) == target:
+            return internal_reaction_id
+    raise FileNotFoundError(mark_ref)
+
+
+def resolve_mark_id(
+    mark_ref: int | str,
+    *,
+    root: Path,
+    internal_book_id: str | None = None,
+) -> tuple[str, str]:
+    raw = str(mark_ref).strip()
+    if not raw:
+        raise FileNotFoundError(mark_ref)
+
+    target = int(raw) if raw.isdigit() else None
+    for book_id, internal_reaction_id in _iter_internal_reactions(root, internal_book_id=internal_book_id):
+        if raw.isdigit():
+            if to_api_mark_id(book_id=book_id, reaction_id=internal_reaction_id) == target:
+                return book_id, internal_reaction_id
+            continue
+        if f"{book_id}:{internal_reaction_id}" == raw:
+            return book_id, internal_reaction_id
     raise FileNotFoundError(reaction_ref)

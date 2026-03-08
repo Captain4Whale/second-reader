@@ -19,8 +19,10 @@
 
 ## API Contract Authority
 - `docs/api-contract.md` is the current authority for frontend/backend integration.
+- The machine-readable appendix in `docs/api-contract.md` is now part of the root contract drift gate. Keep it aligned with backend `src/api/contract.py` and frontend `src/app/lib/contract.ts`.
 - If implementation and `docs/api-contract.md` disagree, do not patch one side in isolation. Verify both sides and correct the mismatch.
 - `docs/api-integration.md` is the runtime companion doc, not the canonical contract.
+- `make contract-check` is the first guard for contract drift, and `make e2e` is the canonical upload -> analysis -> chapter -> marks regression.
 
 ## Local Runtime Facts
 - backend runtime root defaults to `reading-companion-backend/`
@@ -39,3 +41,4 @@
 - `/api/landing` and `/api/sample` still exist as compatibility endpoints, but the current landing page is frontend-owned and should not depend on them.
 - Backend internals still use some legacy reaction naming such as `connect_back`; the public API contract now normalizes that to `retrospect`.
 - Public IDs are now integer contract IDs. Internal runtime artifacts still use string identifiers under `reading-companion-backend/output/`, and the API layer is responsible for the translation.
+- Frontend shared types are still hand-maintained in `src/app/lib/api.ts` + `src/app/lib/contract.ts`; there is no OpenAPI-generated TS layer yet.

@@ -39,7 +39,15 @@ from src.api.schemas import (
     SetMarkRequest,
     UploadAcceptedResponse,
 )
-from src.config import get_backend_cors_origins, get_backend_runtime_root, get_sample_book_id, get_upload_max_bytes
+from src.api.test_mode import fixture_upload_path, launch_e2e_fixture_job
+from src.config import (
+    get_backend_cors_origins,
+    get_backend_runtime_root,
+    get_backend_test_fixture_profile,
+    get_backend_test_mode,
+    get_sample_book_id,
+    get_upload_max_bytes,
+)
 from src.library.catalog import (
     cover_asset_path,
     get_activity_page,
@@ -188,10 +196,17 @@ async def upload_epub(
             message=f"Uploaded file exceeds the configured size limit of {max_bytes} bytes.",
         )
 
-    job_id, upload_path = create_upload_job(_root())
+    if get_backend_test_mode() and get_backend_test_fixture_profile() == "e2e":
+        upload_path = fixture_upload_path(_root())
+        job_id = upload_path.stem
+    else:
+        job_id, upload_path = create_upload_job(_root())
     upload_path.parent.mkdir(parents=True, exist_ok=True)
     upload_path.write_bytes(content)
-    record = launch_sequential_job(upload_path, root=_root())
+    if get_backend_test_mode() and get_backend_test_fixture_profile() == "e2e":
+        record = launch_e2e_fixture_job(upload_path, upload_filename=filename, root=_root())
+    else:
+        record = launch_sequential_job(upload_path, root=_root())
     return UploadAcceptedResponse(
         job_id=str(record["job_id"]),
         upload_filename=filename,

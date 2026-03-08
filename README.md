@@ -6,8 +6,6 @@ The project is maintained as one product with two sub-applications:
 - `reading-companion-backend`: FastAPI API, upload/job orchestration, sequential deep-reading engine
 - `reading-companion-frontend`: Vite/React web UI
 
-The two child directories still keep their own Git history. This root exists to standardize local development, docs, agent handoff, and front/back integration.
-
 ## Structure
 - `reading-companion-backend/`: backend code, runtime artifacts, tests, `.env`
 - `reading-companion-frontend/`: frontend code, Vite app, `.env.example`
@@ -56,7 +54,9 @@ Important frontend variables:
 - `make dev-backend`: run FastAPI from the workspace root safely, including legacy output backfill
 - `make dev-frontend`: run Vite with the shared API defaults
 - `make dev`: run both apps together
-- `make test`: run backend tests and frontend smoke validation
+- `make test`: run backend tests, frontend typecheck/build, and contract drift checks
+- `make contract-check`: verify docs appendix, backend OpenAPI snapshot, and frontend contract guards
+- `make e2e`: run the fixture-backed upload -> analysis -> book -> chapter -> marks Playwright flow
 - `make build`: build the frontend bundle
 
 ## Key Docs
@@ -64,6 +64,12 @@ Important frontend variables:
 - [API contract](docs/api-contract.md)
 - [API integration](docs/api-integration.md)
 - [Agent handoff](docs/agent-handoff.md)
+
+## Contract Validation
+- `docs/api-contract.md` remains the human authority for the web/API boundary.
+- The machine-readable appendix at the bottom of that file is checked against backend `src/api/contract.py` and frontend `src/app/lib/contract.ts`.
+- Run `make contract-check` before merging contract changes.
+- Run `make e2e` for the fixture-backed canonical-route regression when changing upload, analysis, marks, or route wiring.
 
 ## Notes
 - Runtime data remains under `reading-companion-backend/`.

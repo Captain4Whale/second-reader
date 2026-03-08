@@ -1,4 +1,13 @@
-export const reactionMeta: Record<string, { label: string; description: string; accentClass: string; surfaceClass: string }> = {
+import type { ReactionType } from "./contract";
+
+type ReactionMeta = {
+  label: string;
+  description: string;
+  accentClass: string;
+  surfaceClass: string;
+};
+
+export const reactionMeta: Record<ReactionType, ReactionMeta> = {
   highlight: {
     label: "Highlight",
     description: "Passages the agent thinks are worth carrying forward.",
@@ -31,6 +40,6 @@ export const reactionMeta: Record<string, { label: string; description: string; 
   },
 };
 
-export function reactionLabel(type: string): string {
+export function reactionLabel(type: ReactionType | string): string {
   return reactionMeta[type]?.label ?? type;
 }

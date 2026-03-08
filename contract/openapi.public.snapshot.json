@@ -1,0 +1,3975 @@
+{
+  "components": {
+    "schemas": {
+      "ActivityEvent": {
+        "additionalProperties": false,
+        "description": "User-facing activity stream event.",
+        "properties": {
+          "chapter_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Related chapter identifier when applicable.",
+            "title": "Chapter Id"
+          },
+          "chapter_ref": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Related chapter reference when applicable.",
+            "title": "Chapter Ref"
+          },
+          "event_id": {
+            "description": "Stable identifier of the activity event.",
+            "title": "Event Id",
+            "type": "string"
+          },
+          "featured_reactions": {
+            "description": "Featured reactions attached to the event when applicable.",
+            "items": {
+              "$ref": "#/components/schemas/FeaturedReactionPreview"
+            },
+            "title": "Featured Reactions",
+            "type": "array"
+          },
+          "high_signal_reaction_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "High-signal reaction count attached to the event when applicable.",
+            "title": "High Signal Reaction Count"
+          },
+          "highlight_quote": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "High-signal anchor quote attached to the event when available.",
+            "title": "Highlight Quote"
+          },
+          "message": {
+            "description": "User-facing message shown in the activity stream.",
+            "title": "Message",
+            "type": "string"
+          },
+          "reaction_types": {
+            "description": "Reaction types represented in this event.",
+            "items": {
+              "enum": [
+                "highlight",
+                "association",
+                "discern",
+                "retrospect",
+                "curious"
+              ],
+              "type": "string"
+            },
+            "title": "Reaction Types",
+            "type": "array"
+          },
+          "result_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Frontend result route associated with the event when available.",
+            "title": "Result Url"
+          },
+          "search_query": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Search query attached to the event when applicable.",
+            "title": "Search Query"
+          },
+          "section_ref": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Related section reference when applicable.",
+            "title": "Section Ref"
+          },
+          "timestamp": {
+            "description": "Event timestamp.",
+            "title": "Timestamp",
+            "type": "string"
+          },
+          "type": {
+            "description": "Stable event type key.",
+            "title": "Type",
+            "type": "string"
+          },
+          "visible_reaction_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Visible reaction count attached to the event when applicable.",
+            "title": "Visible Reaction Count"
+          }
+        },
+        "required": [
+          "event_id",
+          "timestamp",
+          "type",
+          "message",
+          "reaction_types",
+          "featured_reactions"
+        ],
+        "title": "ActivityEvent",
+        "type": "object"
+      },
+      "ActivityEventsPageResponse": {
+        "additionalProperties": false,
+        "description": "Paginated activity stream response.",
+        "properties": {
+          "items": {
+            "description": "Activity events for the current page.",
+            "items": {
+              "$ref": "#/components/schemas/ActivityEvent"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "page_info": {
+            "$ref": "#/components/schemas/PageInfo",
+            "description": "Pagination metadata for the activity query."
+          }
+        },
+        "required": [
+          "items",
+          "page_info"
+        ],
+        "title": "ActivityEventsPageResponse",
+        "type": "object"
+      },
+      "AnalysisStateResponse": {
+        "additionalProperties": false,
+        "description": "Snapshot payload for the analysis-in-progress page.",
+        "properties": {
+          "author": {
+            "description": "Book author.",
+            "title": "Author",
+            "type": "string"
+          },
+          "book_id": {
+            "description": "Stable public integer identifier of the book.",
+            "title": "Book Id",
+            "type": "integer"
+          },
+          "chapters": {
+            "description": "Structure tree displayed on the progress page.",
+            "items": {
+              "$ref": "#/components/schemas/ChapterTreeItem"
+            },
+            "title": "Chapters",
+            "type": "array"
+          },
+          "completed_chapters": {
+            "description": "Number of completed chapters.",
+            "title": "Completed Chapters",
+            "type": "integer"
+          },
+          "current_chapter_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Identifier of the chapter currently being processed.",
+            "title": "Current Chapter Id"
+          },
+          "current_chapter_ref": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Human-readable reference of the current chapter.",
+            "title": "Current Chapter Ref"
+          },
+          "current_state_panel": {
+            "$ref": "#/components/schemas/CurrentStatePanel",
+            "description": "Focused realtime state shown beside the structure tree."
+          },
+          "eta_seconds": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Estimated remaining time in seconds.",
+            "title": "Eta Seconds"
+          },
+          "last_error": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ErrorResponse"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Structured error payload when the analysis has failed."
+          },
+          "progress_percent": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Overall progress percentage from 0 to 100 when known.",
+            "title": "Progress Percent"
+          },
+          "recent_completed_chapters": {
+            "description": "Recently completed chapters shown as micro-ritual cards.",
+            "items": {
+              "$ref": "#/components/schemas/ChapterCompletionCard"
+            },
+            "title": "Recent Completed Chapters",
+            "type": "array"
+          },
+          "stage_label": {
+            "description": "User-facing stage label shown at the top of the progress page.",
+            "title": "Stage Label",
+            "type": "string"
+          },
+          "status": {
+            "description": "Current lifecycle state of the active analysis.",
+            "enum": [
+              "queued",
+              "parsing_structure",
+              "deep_reading",
+              "chapter_note_generation",
+              "completed",
+              "error"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "structure_ready": {
+            "description": "Whether the structure tree is ready to render.",
+            "title": "Structure Ready",
+            "type": "boolean"
+          },
+          "title": {
+            "description": "Book title.",
+            "title": "Title",
+            "type": "string"
+          },
+          "total_chapters": {
+            "description": "Total number of chapters.",
+            "title": "Total Chapters",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "book_id",
+          "title",
+          "author",
+          "status",
+          "stage_label",
+          "completed_chapters",
+          "total_chapters",
+          "structure_ready",
+          "chapters",
+          "current_state_panel",
+          "recent_completed_chapters"
+        ],
+        "title": "AnalysisStateResponse",
+        "type": "object"
+      },
+      "Body_upload_epub_api_uploads_epub_post": {
+        "properties": {
+          "display_title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Display Title"
+          },
+          "file": {
+            "contentMediaType": "application/octet-stream",
+            "title": "File",
+            "type": "string"
+          }
+        },
+        "required": [
+          "file"
+        ],
+        "title": "Body_upload_epub_api_uploads_epub_post",
+        "type": "object"
+      },
+      "BookDetailResponse": {
+        "additionalProperties": false,
+        "description": "Book-level overview payload for the result page.",
+        "properties": {
+          "author": {
+            "description": "Book author.",
+            "title": "Author",
+            "type": "string"
+          },
+          "book_id": {
+            "description": "Stable public integer identifier of the book.",
+            "title": "Book Id",
+            "type": "integer"
+          },
+          "book_language": {
+            "description": "Detected primary language of the source book.",
+            "title": "Book Language",
+            "type": "string"
+          },
+          "chapter_count": {
+            "description": "Total number of chapters in the book.",
+            "title": "Chapter Count",
+            "type": "integer"
+          },
+          "chapters": {
+            "description": "Overview list of chapters in reading order.",
+            "items": {
+              "$ref": "#/components/schemas/ChapterListItem"
+            },
+            "title": "Chapters",
+            "type": "array"
+          },
+          "completed_chapter_count": {
+            "description": "Number of completed chapters in the book.",
+            "title": "Completed Chapter Count",
+            "type": "integer"
+          },
+          "cover_image_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Optional API URL for the cover image.",
+            "title": "Cover Image Url"
+          },
+          "my_mark_count": {
+            "description": "Number of user marks attached to this book.",
+            "title": "My Mark Count",
+            "type": "integer"
+          },
+          "output_language": {
+            "description": "Language used for AI-generated output.",
+            "title": "Output Language",
+            "type": "string"
+          },
+          "reaction_counts": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "description": "Counts grouped by the five canonical reaction types.",
+            "propertyNames": {
+              "enum": [
+                "highlight",
+                "association",
+                "discern",
+                "retrospect",
+                "curious"
+              ]
+            },
+            "title": "Reaction Counts",
+            "type": "object"
+          },
+          "sample": {
+            "description": "Whether this book is the configured sample book.",
+            "title": "Sample",
+            "type": "boolean"
+          },
+          "segment_count": {
+            "description": "Total number of semantic segments across the book.",
+            "title": "Segment Count",
+            "type": "integer"
+          },
+          "source_asset": {
+            "$ref": "#/components/schemas/SourceAsset",
+            "description": "Source EPUB asset configuration for epub.js."
+          },
+          "status": {
+            "description": "High-level book state for the result page.",
+            "enum": [
+              "analyzing",
+              "completed",
+              "error",
+              "not_started"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "title": {
+            "description": "Book title.",
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "book_id",
+          "title",
+          "author",
+          "book_language",
+          "output_language",
+          "status",
+          "source_asset",
+          "chapters",
+          "my_mark_count",
+          "reaction_counts",
+          "chapter_count",
+          "completed_chapter_count",
+          "segment_count",
+          "sample"
+        ],
+        "title": "BookDetailResponse",
+        "type": "object"
+      },
+      "BookMarksGroup": {
+        "additionalProperties": false,
+        "description": "Marks grouped under a single chapter.",
+        "properties": {
+          "chapter_id": {
+            "description": "Chapter identifier for this mark group.",
+            "title": "Chapter Id",
+            "type": "integer"
+          },
+          "chapter_ref": {
+            "description": "Human-readable chapter reference for this mark group.",
+            "title": "Chapter Ref",
+            "type": "string"
+          },
+          "items": {
+            "description": "Marks that belong to the chapter.",
+            "items": {
+              "$ref": "#/components/schemas/MarkRecord"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "chapter_id",
+          "chapter_ref",
+          "items"
+        ],
+        "title": "BookMarksGroup",
+        "type": "object"
+      },
+      "BookMarksResponse": {
+        "additionalProperties": false,
+        "description": "Book-scoped grouped marks response.",
+        "properties": {
+          "book_id": {
+            "description": "Public integer book identifier.",
+            "title": "Book Id",
+            "type": "integer"
+          },
+          "groups": {
+            "description": "Marks grouped by chapter.",
+            "items": {
+              "$ref": "#/components/schemas/BookMarksGroup"
+            },
+            "title": "Groups",
+            "type": "array"
+          }
+        },
+        "required": [
+          "book_id",
+          "groups"
+        ],
+        "title": "BookMarksResponse",
+        "type": "object"
+      },
+      "BookShelfCard": {
+        "additionalProperties": false,
+        "description": "One bookshelf card.",
+        "properties": {
+          "author": {
+            "description": "Author of the book.",
+            "title": "Author",
+            "type": "string"
+          },
+          "book_id": {
+            "description": "Stable public integer identifier of the book.",
+            "title": "Book Id",
+            "type": "integer"
+          },
+          "book_language": {
+            "description": "Detected primary language of the source book.",
+            "title": "Book Language",
+            "type": "string"
+          },
+          "completed_chapters": {
+            "description": "Number of finished chapters.",
+            "title": "Completed Chapters",
+            "type": "integer"
+          },
+          "cover_image_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Optional API URL for the book cover image.",
+            "title": "Cover Image Url"
+          },
+          "mark_count": {
+            "description": "Number of user marks attached to this book.",
+            "title": "Mark Count",
+            "type": "integer"
+          },
+          "open_target": {
+            "description": "Frontend route opened when the card is clicked.",
+            "title": "Open Target",
+            "type": "string"
+          },
+          "output_language": {
+            "description": "Language used for the AI-generated reading output.",
+            "title": "Output Language",
+            "type": "string"
+          },
+          "reading_status": {
+            "description": "Current high-level reading state used by the bookshelf.",
+            "enum": [
+              "not_started",
+              "analyzing",
+              "completed",
+              "error"
+            ],
+            "title": "Reading Status",
+            "type": "string"
+          },
+          "title": {
+            "description": "Title of the book.",
+            "title": "Title",
+            "type": "string"
+          },
+          "total_chapters": {
+            "description": "Total number of chapters in the parsed book.",
+            "title": "Total Chapters",
+            "type": "integer"
+          },
+          "updated_at": {
+            "description": "Last artifact update time for this book.",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "book_id",
+          "title",
+          "author",
+          "book_language",
+          "output_language",
+          "reading_status",
+          "completed_chapters",
+          "total_chapters",
+          "updated_at",
+          "mark_count",
+          "open_target"
+        ],
+        "title": "BookShelfCard",
+        "type": "object"
+      },
+      "BooksPageResponse": {
+        "additionalProperties": false,
+        "description": "Paginated bookshelf response.",
+        "properties": {
+          "global_mark_count": {
+            "description": "Total number of marks across all books.",
+            "title": "Global Mark Count",
+            "type": "integer"
+          },
+          "items": {
+            "description": "Bookshelf cards for the current page.",
+            "items": {
+              "$ref": "#/components/schemas/BookShelfCard"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "page_info": {
+            "$ref": "#/components/schemas/PageInfo",
+            "description": "Pagination metadata for the bookshelf query."
+          }
+        },
+        "required": [
+          "items",
+          "page_info",
+          "global_mark_count"
+        ],
+        "title": "BooksPageResponse",
+        "type": "object"
+      },
+      "ChapterCompletionCard": {
+        "additionalProperties": false,
+        "description": "Completion micro-ritual card for one finished chapter.",
+        "properties": {
+          "chapter_id": {
+            "description": "Completed chapter identifier.",
+            "title": "Chapter Id",
+            "type": "integer"
+          },
+          "chapter_ref": {
+            "description": "Human-readable reference for the completed chapter.",
+            "title": "Chapter Ref",
+            "type": "string"
+          },
+          "featured_reactions": {
+            "description": "Small set of featured reactions used for the completion card.",
+            "items": {
+              "$ref": "#/components/schemas/FeaturedReactionPreview"
+            },
+            "title": "Featured Reactions",
+            "type": "array"
+          },
+          "high_signal_reaction_count": {
+            "description": "Number of high-signal reactions in the chapter.",
+            "title": "High Signal Reaction Count",
+            "type": "integer"
+          },
+          "result_url": {
+            "description": "Frontend route that opens the finished chapter result.",
+            "title": "Result Url",
+            "type": "string"
+          },
+          "title": {
+            "description": "Title of the completed chapter.",
+            "title": "Title",
+            "type": "string"
+          },
+          "visible_reaction_count": {
+            "description": "Number of visible reactions in the chapter.",
+            "title": "Visible Reaction Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "chapter_id",
+          "chapter_ref",
+          "title",
+          "visible_reaction_count",
+          "high_signal_reaction_count",
+          "featured_reactions",
+          "result_url"
+        ],
+        "title": "ChapterCompletionCard",
+        "type": "object"
+      },
+      "ChapterDetailResponse": {
+        "additionalProperties": false,
+        "description": "Chapter result page payload.",
+        "properties": {
+          "available_filters": {
+            "description": "Reaction filters available to the frontend.",
+            "items": {
+              "enum": [
+                "all",
+                "highlight",
+                "association",
+                "discern",
+                "retrospect",
+                "curious"
+              ],
+              "type": "string"
+            },
+            "title": "Available Filters",
+            "type": "array"
+          },
+          "book_id": {
+            "description": "Stable public integer identifier of the book.",
+            "title": "Book Id",
+            "type": "integer"
+          },
+          "chapter_id": {
+            "description": "Chapter identifier.",
+            "title": "Chapter Id",
+            "type": "integer"
+          },
+          "chapter_ref": {
+            "description": "Human-readable chapter reference.",
+            "title": "Chapter Ref",
+            "type": "string"
+          },
+          "chapter_reflection": {
+            "description": "Chapter-level reflection bullets.",
+            "items": {
+              "type": "string"
+            },
+            "title": "Chapter Reflection",
+            "type": "array"
+          },
+          "featured_reactions": {
+            "description": "Featured reactions used for summary and teaser areas.",
+            "items": {
+              "$ref": "#/components/schemas/FeaturedReactionPreview"
+            },
+            "title": "Featured Reactions",
+            "type": "array"
+          },
+          "high_signal_reaction_count": {
+            "description": "Number of high-signal reactions in the chapter.",
+            "title": "High Signal Reaction Count",
+            "type": "integer"
+          },
+          "output_language": {
+            "description": "Language used for the AI-generated chapter result.",
+            "title": "Output Language",
+            "type": "string"
+          },
+          "reaction_type_diversity": {
+            "description": "Number of distinct reaction types in the chapter.",
+            "title": "Reaction Type Diversity",
+            "type": "integer"
+          },
+          "sections": {
+            "description": "Current page of section cards.",
+            "items": {
+              "$ref": "#/components/schemas/SectionCard"
+            },
+            "title": "Sections",
+            "type": "array"
+          },
+          "sections_page_info": {
+            "$ref": "#/components/schemas/PageInfo",
+            "description": "Pagination metadata for the section list."
+          },
+          "source_asset": {
+            "$ref": "#/components/schemas/SourceAsset",
+            "description": "Source EPUB asset configuration for the right-side reader."
+          },
+          "status": {
+            "description": "User-facing chapter result status.",
+            "enum": [
+              "completed",
+              "error"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "title": {
+            "description": "Chapter title.",
+            "title": "Title",
+            "type": "string"
+          },
+          "visible_reaction_count": {
+            "description": "Number of visible reactions in the chapter.",
+            "title": "Visible Reaction Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "book_id",
+          "chapter_id",
+          "chapter_ref",
+          "title",
+          "status",
+          "output_language",
+          "visible_reaction_count",
+          "reaction_type_diversity",
+          "high_signal_reaction_count",
+          "featured_reactions",
+          "chapter_reflection",
+          "sections",
+          "sections_page_info",
+          "available_filters",
+          "source_asset"
+        ],
+        "title": "ChapterDetailResponse",
+        "type": "object"
+      },
+      "ChapterListItem": {
+        "additionalProperties": false,
+        "description": "Chapter overview item used on the book result page.",
+        "properties": {
+          "chapter_id": {
+            "description": "Chapter identifier.",
+            "title": "Chapter Id",
+            "type": "integer"
+          },
+          "chapter_ref": {
+            "description": "Human-readable chapter reference.",
+            "title": "Chapter Ref",
+            "type": "string"
+          },
+          "high_signal_reaction_count": {
+            "description": "Count of high-signal reactions in the chapter.",
+            "title": "High Signal Reaction Count",
+            "type": "integer"
+          },
+          "reaction_type_diversity": {
+            "description": "Count of distinct reaction types in the chapter.",
+            "title": "Reaction Type Diversity",
+            "type": "integer"
+          },
+          "result_ready": {
+            "description": "Whether the chapter result is ready to open.",
+            "title": "Result Ready",
+            "type": "boolean"
+          },
+          "segment_count": {
+            "description": "Number of semantic sections in the chapter.",
+            "title": "Segment Count",
+            "type": "integer"
+          },
+          "status": {
+            "description": "User-facing chapter status in the result overview.",
+            "enum": [
+              "pending",
+              "completed",
+              "error"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "title": {
+            "description": "Chapter title.",
+            "title": "Title",
+            "type": "string"
+          },
+          "visible_reaction_count": {
+            "description": "Number of visible reactions in the chapter.",
+            "title": "Visible Reaction Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "chapter_id",
+          "chapter_ref",
+          "title",
+          "segment_count",
+          "status",
+          "visible_reaction_count",
+          "reaction_type_diversity",
+          "high_signal_reaction_count",
+          "result_ready"
+        ],
+        "title": "ChapterListItem",
+        "type": "object"
+      },
+      "ChapterTreeItem": {
+        "additionalProperties": false,
+        "description": "Structure tree node used on the analysis progress page.",
+        "properties": {
+          "chapter_id": {
+            "description": "Chapter identifier.",
+            "title": "Chapter Id",
+            "type": "integer"
+          },
+          "chapter_ref": {
+            "description": "Human-readable chapter reference.",
+            "title": "Chapter Ref",
+            "type": "string"
+          },
+          "is_current": {
+            "description": "Whether this chapter is currently being processed.",
+            "title": "Is Current",
+            "type": "boolean"
+          },
+          "result_ready": {
+            "description": "Whether the chapter result page can already be opened.",
+            "title": "Result Ready",
+            "type": "boolean"
+          },
+          "segment_count": {
+            "description": "Number of semantic sections in this chapter.",
+            "title": "Segment Count",
+            "type": "integer"
+          },
+          "status": {
+            "description": "Current processing state of the chapter.",
+            "enum": [
+              "pending",
+              "in_progress",
+              "completed",
+              "error"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "title": {
+            "description": "Chapter title.",
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "chapter_id",
+          "chapter_ref",
+          "title",
+          "segment_count",
+          "status",
+          "is_current",
+          "result_ready"
+        ],
+        "title": "ChapterTreeItem",
+        "type": "object"
+      },
+      "CurrentStatePanel": {
+        "additionalProperties": false,
+        "description": "Focused realtime status block for the analysis page.",
+        "properties": {
+          "current_chapter_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Identifier of the chapter currently being processed.",
+            "title": "Current Chapter Id"
+          },
+          "current_chapter_ref": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Human-readable reference of the chapter currently being processed.",
+            "title": "Current Chapter Ref"
+          },
+          "current_section_ref": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Human-readable reference of the current section.",
+            "title": "Current Section Ref"
+          },
+          "last_activity_message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Most recent user-facing activity line.",
+            "title": "Last Activity Message"
+          },
+          "reaction_counts": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "description": "Visible reaction counts grouped by reaction type.",
+            "propertyNames": {
+              "enum": [
+                "highlight",
+                "association",
+                "discern",
+                "retrospect",
+                "curious"
+              ]
+            },
+            "title": "Reaction Counts",
+            "type": "object"
+          },
+          "recent_reactions": {
+            "description": "Small set of recently surfaced reactions for quick feedback.",
+            "items": {
+              "$ref": "#/components/schemas/FeaturedReactionPreview"
+            },
+            "title": "Recent Reactions",
+            "type": "array"
+          },
+          "search_active": {
+            "description": "Whether the agent has recent active search behavior.",
+            "title": "Search Active",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "recent_reactions",
+          "reaction_counts",
+          "search_active"
+        ],
+        "title": "CurrentStatePanel",
+        "type": "object"
+      },
+      "DeleteMarkResponse": {
+        "additionalProperties": false,
+        "description": "Response returned after deleting a mark.",
+        "properties": {
+          "deleted": {
+            "description": "Whether a persisted mark was deleted.",
+            "title": "Deleted",
+            "type": "boolean"
+          },
+          "reaction_id": {
+            "description": "Public integer reaction identifier targeted by the delete request.",
+            "title": "Reaction Id",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "reaction_id",
+          "deleted"
+        ],
+        "title": "DeleteMarkResponse",
+        "type": "object"
+      },
+      "ErrorResponse": {
+        "additionalProperties": false,
+        "description": "Stable error envelope returned by every REST failure.",
+        "properties": {
+          "code": {
+            "description": "Stable machine-readable error code.",
+            "title": "Code",
+            "type": "string"
+          },
+          "details": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Optional structured context for debugging or client-side branching.",
+            "title": "Details"
+          },
+          "error_id": {
+            "description": "Server-generated identifier for this specific error instance.",
+            "title": "Error Id",
+            "type": "string"
+          },
+          "message": {
+            "description": "Human-readable explanation of the failure.",
+            "title": "Message",
+            "type": "string"
+          },
+          "retryable": {
+            "description": "Whether retrying the same request may succeed.",
+            "title": "Retryable",
+            "type": "boolean"
+          },
+          "status": {
+            "description": "HTTP status code returned with this error.",
+            "title": "Status",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "error_id",
+          "code",
+          "message",
+          "status",
+          "retryable"
+        ],
+        "title": "ErrorResponse",
+        "type": "object"
+      },
+      "FeaturedReactionPreview": {
+        "additionalProperties": false,
+        "description": "Compact reaction payload used in teasers, cards, and realtime summaries.",
+        "properties": {
+          "anchor_quote": {
+            "description": "Quoted anchor text from the source book.",
+            "title": "Anchor Quote",
+            "type": "string"
+          },
+          "book_id": {
+            "description": "Stable public integer identifier of the book that owns this reaction.",
+            "title": "Book Id",
+            "type": "integer"
+          },
+          "chapter_id": {
+            "description": "Chapter identifier that owns this reaction.",
+            "title": "Chapter Id",
+            "type": "integer"
+          },
+          "chapter_ref": {
+            "description": "Human-readable chapter reference, such as Chapter 3.",
+            "title": "Chapter Ref",
+            "type": "string"
+          },
+          "content": {
+            "description": "AI-authored reaction text shown to the user.",
+            "title": "Content",
+            "type": "string"
+          },
+          "reaction_id": {
+            "description": "Stable public integer identifier for the reaction.",
+            "title": "Reaction Id",
+            "type": "integer"
+          },
+          "section_ref": {
+            "description": "Human-readable section reference, such as 3.2.",
+            "title": "Section Ref",
+            "type": "string"
+          },
+          "target_locator": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReactionTargetLocator"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Reader locator used to jump to the source passage for this reaction."
+          },
+          "type": {
+            "description": "Reaction type key.",
+            "enum": [
+              "highlight",
+              "association",
+              "discern",
+              "retrospect",
+              "curious"
+            ],
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "reaction_id",
+          "type",
+          "anchor_quote",
+          "content",
+          "book_id",
+          "chapter_id",
+          "chapter_ref",
+          "section_ref"
+        ],
+        "title": "FeaturedReactionPreview",
+        "type": "object"
+      },
+      "JobStatusResponse": {
+        "additionalProperties": false,
+        "description": "Snapshot of one background sequential-read job.",
+        "properties": {
+          "book_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Resolved public integer book identifier once structure parsing finishes.",
+            "title": "Book Id"
+          },
+          "book_title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Resolved book title when known.",
+            "title": "Book Title"
+          },
+          "completed_chapters": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Number of completed chapters when known.",
+            "title": "Completed Chapters"
+          },
+          "created_at": {
+            "description": "Job creation time.",
+            "title": "Created At",
+            "type": "string"
+          },
+          "current_chapter_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Identifier of the chapter currently being processed.",
+            "title": "Current Chapter Id"
+          },
+          "current_chapter_ref": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Human-readable reference of the current chapter.",
+            "title": "Current Chapter Ref"
+          },
+          "current_section_ref": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Human-readable reference of the current section.",
+            "title": "Current Section Ref"
+          },
+          "eta_seconds": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Estimated remaining time in seconds.",
+            "title": "Eta Seconds"
+          },
+          "job_id": {
+            "description": "Job identifier.",
+            "title": "Job Id",
+            "type": "string"
+          },
+          "last_error": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ErrorResponse"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Structured error information when the job is in an error state."
+          },
+          "progress_percent": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Overall progress percentage from 0 to 100 when known.",
+            "title": "Progress Percent"
+          },
+          "status": {
+            "description": "Current execution stage of the upload/analysis job.",
+            "enum": [
+              "queued",
+              "parsing_structure",
+              "deep_reading",
+              "chapter_note_generation",
+              "completed",
+              "error"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "total_chapters": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Total number of chapters when known.",
+            "title": "Total Chapters"
+          },
+          "updated_at": {
+            "description": "Last update time for the job record.",
+            "title": "Updated At",
+            "type": "string"
+          },
+          "ws_url": {
+            "description": "WebSocket URL for live progress updates for this job.",
+            "title": "Ws Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "job_id",
+          "status",
+          "created_at",
+          "updated_at",
+          "ws_url"
+        ],
+        "title": "JobStatusResponse",
+        "type": "object"
+      },
+      "LandingAction": {
+        "additionalProperties": false,
+        "description": "Primary landing-page CTA.",
+        "properties": {
+          "key": {
+            "description": "Stable action key used by the frontend.",
+            "title": "Key",
+            "type": "string"
+          },
+          "label": {
+            "description": "User-facing label shown on the action button.",
+            "title": "Label",
+            "type": "string"
+          },
+          "target_url": {
+            "description": "Frontend route or URL opened when the action is clicked.",
+            "title": "Target Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "label",
+          "target_url"
+        ],
+        "title": "LandingAction",
+        "type": "object"
+      },
+      "LandingResponse": {
+        "additionalProperties": false,
+        "description": "Compatibility payload for the legacy backend-driven landing page.",
+        "properties": {
+          "primary_actions": {
+            "description": "Primary call-to-action buttons rendered on landing.",
+            "items": {
+              "$ref": "#/components/schemas/LandingAction"
+            },
+            "title": "Primary Actions",
+            "type": "array"
+          },
+          "product_title": {
+            "description": "Product title shown on the landing page.",
+            "title": "Product Title",
+            "type": "string"
+          },
+          "reaction_types": {
+            "description": "Cards explaining the product's reaction types.",
+            "items": {
+              "$ref": "#/components/schemas/ReactionTypeInfo"
+            },
+            "title": "Reaction Types",
+            "type": "array"
+          },
+          "sample_book": {
+            "$ref": "#/components/schemas/SampleBookSummary",
+            "description": "Metadata for the featured sample book."
+          },
+          "sample_teasers": {
+            "description": "Small set of teaser reactions shown directly on landing.",
+            "items": {
+              "$ref": "#/components/schemas/FeaturedReactionPreview"
+            },
+            "title": "Sample Teasers",
+            "type": "array"
+          },
+          "tagline": {
+            "description": "One-sentence product positioning.",
+            "title": "Tagline",
+            "type": "string"
+          }
+        },
+        "required": [
+          "product_title",
+          "tagline",
+          "primary_actions",
+          "reaction_types",
+          "sample_book",
+          "sample_teasers"
+        ],
+        "title": "LandingResponse",
+        "type": "object"
+      },
+      "MarkRecord": {
+        "additionalProperties": false,
+        "description": "Persisted user mark record.",
+        "properties": {
+          "anchor_quote": {
+            "description": "Anchor quote used to recall the marked passage.",
+            "title": "Anchor Quote",
+            "type": "string"
+          },
+          "book_id": {
+            "description": "Public integer book identifier for the marked reaction.",
+            "title": "Book Id",
+            "type": "integer"
+          },
+          "book_title": {
+            "description": "Book title for the marked reaction.",
+            "title": "Book Title",
+            "type": "string"
+          },
+          "chapter_id": {
+            "description": "Chapter identifier for the marked reaction.",
+            "title": "Chapter Id",
+            "type": "integer"
+          },
+          "chapter_ref": {
+            "description": "Human-readable chapter reference for the marked reaction.",
+            "title": "Chapter Ref",
+            "type": "string"
+          },
+          "created_at": {
+            "description": "Mark creation time.",
+            "title": "Created At",
+            "type": "string"
+          },
+          "mark_id": {
+            "description": "Stable public integer identifier of the mark.",
+            "title": "Mark Id",
+            "type": "integer"
+          },
+          "mark_type": {
+            "description": "User-selected mark value.",
+            "enum": [
+              "known",
+              "blindspot"
+            ],
+            "title": "Mark Type",
+            "type": "string"
+          },
+          "reaction_excerpt": {
+            "description": "Short excerpt of the reaction content used in marks views.",
+            "title": "Reaction Excerpt",
+            "type": "string"
+          },
+          "reaction_id": {
+            "description": "Public integer reaction identifier that owns this mark.",
+            "title": "Reaction Id",
+            "type": "integer"
+          },
+          "reaction_type": {
+            "description": "Reaction type key for the marked reaction.",
+            "enum": [
+              "highlight",
+              "association",
+              "discern",
+              "retrospect",
+              "curious"
+            ],
+            "title": "Reaction Type",
+            "type": "string"
+          },
+          "section_ref": {
+            "description": "Human-readable section reference for the marked reaction.",
+            "title": "Section Ref",
+            "type": "string"
+          },
+          "updated_at": {
+            "description": "Mark last update time.",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "mark_id",
+          "reaction_id",
+          "book_id",
+          "book_title",
+          "chapter_id",
+          "chapter_ref",
+          "section_ref",
+          "reaction_type",
+          "mark_type",
+          "reaction_excerpt",
+          "anchor_quote",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "MarkRecord",
+        "type": "object"
+      },
+      "MarksPageResponse": {
+        "additionalProperties": false,
+        "description": "Paginated global marks response.",
+        "properties": {
+          "items": {
+            "description": "Mark records for the current page.",
+            "items": {
+              "$ref": "#/components/schemas/MarkRecord"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "page_info": {
+            "$ref": "#/components/schemas/PageInfo",
+            "description": "Pagination metadata for the marks query."
+          }
+        },
+        "required": [
+          "items",
+          "page_info"
+        ],
+        "title": "MarksPageResponse",
+        "type": "object"
+      },
+      "PageInfo": {
+        "additionalProperties": false,
+        "description": "Cursor pagination metadata.",
+        "properties": {
+          "has_more": {
+            "description": "Whether another page of results is available.",
+            "title": "Has More",
+            "type": "boolean"
+          },
+          "limit": {
+            "description": "The page size used for this response.",
+            "title": "Limit",
+            "type": "integer"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Opaque cursor for the next page, or null when there are no more results.",
+            "title": "Next Cursor"
+          }
+        },
+        "required": [
+          "limit",
+          "has_more"
+        ],
+        "title": "PageInfo",
+        "type": "object"
+      },
+      "ReactionCard": {
+        "additionalProperties": false,
+        "description": "Visible reaction card rendered in result views.",
+        "properties": {
+          "anchor_quote": {
+            "description": "Anchor quote taken from the source book.",
+            "title": "Anchor Quote",
+            "type": "string"
+          },
+          "content": {
+            "description": "Full AI reaction content.",
+            "title": "Content",
+            "type": "string"
+          },
+          "mark_type": {
+            "anyOf": [
+              {
+                "enum": [
+                  "known",
+                  "blindspot"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Current user mark attached to the reaction, if any.",
+            "title": "Mark Type"
+          },
+          "reaction_id": {
+            "description": "Stable public integer reaction identifier.",
+            "title": "Reaction Id",
+            "type": "integer"
+          },
+          "search_query": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Search query used to gather additional evidence when applicable.",
+            "title": "Search Query"
+          },
+          "search_results": {
+            "description": "External search results attached to the reaction.",
+            "items": {
+              "$ref": "#/components/schemas/SearchHit"
+            },
+            "title": "Search Results",
+            "type": "array"
+          },
+          "section_ref": {
+            "description": "Human-readable parent section reference.",
+            "title": "Section Ref",
+            "type": "string"
+          },
+          "section_summary": {
+            "description": "One-line summary of the parent section.",
+            "title": "Section Summary",
+            "type": "string"
+          },
+          "target_locator": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReactionTargetLocator"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Reader locator for jumping to the source passage."
+          },
+          "type": {
+            "description": "Reaction type key.",
+            "enum": [
+              "highlight",
+              "association",
+              "discern",
+              "retrospect",
+              "curious"
+            ],
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "reaction_id",
+          "type",
+          "anchor_quote",
+          "content",
+          "search_results",
+          "section_ref",
+          "section_summary"
+        ],
+        "title": "ReactionCard",
+        "type": "object"
+      },
+      "ReactionTargetLocator": {
+        "additionalProperties": false,
+        "description": "Reaction-level locator used for precise jump/highlight behavior.",
+        "properties": {
+          "end_cfi": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Preferred end EPUB CFI for the target.",
+            "title": "End Cfi"
+          },
+          "href": {
+            "description": "EPUB spine document href for the reaction target.",
+            "title": "Href",
+            "type": "string"
+          },
+          "match_mode": {
+            "description": "How the target locator was resolved from the anchor quote.",
+            "enum": [
+              "exact",
+              "normalized",
+              "segment_fallback"
+            ],
+            "title": "Match Mode",
+            "type": "string"
+          },
+          "match_text": {
+            "description": "Anchor text used to verify the target match in the reader.",
+            "title": "Match Text",
+            "type": "string"
+          },
+          "start_cfi": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Preferred start EPUB CFI for the target.",
+            "title": "Start Cfi"
+          }
+        },
+        "required": [
+          "href",
+          "match_text",
+          "match_mode"
+        ],
+        "title": "ReactionTargetLocator",
+        "type": "object"
+      },
+      "ReactionTypeInfo": {
+        "additionalProperties": false,
+        "description": "Metadata describing one visible reaction type.",
+        "properties": {
+          "description": {
+            "description": "Short explanation of what this reaction type means.",
+            "title": "Description",
+            "type": "string"
+          },
+          "label": {
+            "description": "User-facing label for the reaction type.",
+            "title": "Label",
+            "type": "string"
+          },
+          "priority": {
+            "description": "Display priority for teaser and highlight ordering.",
+            "title": "Priority",
+            "type": "integer"
+          },
+          "type": {
+            "description": "Stable reaction type key.",
+            "enum": [
+              "highlight",
+              "association",
+              "discern",
+              "retrospect",
+              "curious"
+            ],
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "label",
+          "description",
+          "priority"
+        ],
+        "title": "ReactionTypeInfo",
+        "type": "object"
+      },
+      "ReactionsPageResponse": {
+        "additionalProperties": false,
+        "description": "Paginated flattened reaction response.",
+        "properties": {
+          "applied_filters": {
+            "additionalProperties": true,
+            "description": "Echoed filter values applied to the query.",
+            "title": "Applied Filters",
+            "type": "object"
+          },
+          "items": {
+            "description": "Flattened reactions for the current page.",
+            "items": {
+              "$ref": "#/components/schemas/ReactionCard"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "page_info": {
+            "$ref": "#/components/schemas/PageInfo",
+            "description": "Pagination metadata for the reaction query."
+          }
+        },
+        "required": [
+          "items",
+          "page_info",
+          "applied_filters"
+        ],
+        "title": "ReactionsPageResponse",
+        "type": "object"
+      },
+      "SampleBookSummary": {
+        "additionalProperties": false,
+        "description": "Compatibility payload for the legacy backend-driven landing sample.",
+        "properties": {
+          "author": {
+            "description": "Author of the sample book.",
+            "title": "Author",
+            "type": "string"
+          },
+          "book_id": {
+            "description": "Stable public integer identifier of the sample book.",
+            "title": "Book Id",
+            "type": "integer"
+          },
+          "cover_image_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Optional API URL for the sample book cover image.",
+            "title": "Cover Image Url"
+          },
+          "result_url": {
+            "description": "Frontend route that opens the sample result experience.",
+            "title": "Result Url",
+            "type": "string"
+          },
+          "status": {
+            "description": "Reading status for the sample book. Expected to be completed.",
+            "title": "Status",
+            "type": "string"
+          },
+          "title": {
+            "description": "Title of the sample book.",
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "book_id",
+          "title",
+          "author",
+          "status",
+          "result_url"
+        ],
+        "title": "SampleBookSummary",
+        "type": "object"
+      },
+      "SamplePageResponse": {
+        "additionalProperties": false,
+        "description": "Compatibility payload for the legacy backend-driven sample page.",
+        "properties": {
+          "author": {
+            "description": "Author of the sample book.",
+            "title": "Author",
+            "type": "string"
+          },
+          "book_id": {
+            "description": "Stable public integer identifier of the sample book.",
+            "title": "Book Id",
+            "type": "integer"
+          },
+          "cover_image_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Optional API URL for the sample book cover image.",
+            "title": "Cover Image Url"
+          },
+          "default_chapter_id": {
+            "description": "Chapter identifier opened by default on the sample page.",
+            "title": "Default Chapter Id",
+            "type": "integer"
+          },
+          "result_entry_url": {
+            "description": "Frontend route that opens the full sample result page.",
+            "title": "Result Entry Url",
+            "type": "string"
+          },
+          "teaser_reactions": {
+            "description": "Highlighted reactions introducing the sample experience.",
+            "items": {
+              "$ref": "#/components/schemas/FeaturedReactionPreview"
+            },
+            "title": "Teaser Reactions",
+            "type": "array"
+          },
+          "title": {
+            "description": "Title of the sample book.",
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "book_id",
+          "default_chapter_id",
+          "title",
+          "author",
+          "teaser_reactions",
+          "result_entry_url"
+        ],
+        "title": "SamplePageResponse",
+        "type": "object"
+      },
+      "SearchHit": {
+        "additionalProperties": false,
+        "description": "One external search result attached to a reaction.",
+        "properties": {
+          "score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Optional retrieval relevance score.",
+            "title": "Score"
+          },
+          "snippet": {
+            "description": "Short source snippet shown to the user.",
+            "title": "Snippet",
+            "type": "string"
+          },
+          "title": {
+            "description": "Title of the external source.",
+            "title": "Title",
+            "type": "string"
+          },
+          "url": {
+            "description": "Canonical URL of the external source.",
+            "title": "Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title",
+          "url",
+          "snippet"
+        ],
+        "title": "SearchHit",
+        "type": "object"
+      },
+      "SectionCard": {
+        "additionalProperties": false,
+        "description": "Section card rendered in the chapter result view.",
+        "properties": {
+          "locator": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SegmentLocator"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Section-level locator for the EPUB reader."
+          },
+          "quality_status": {
+            "description": "Quality label assigned to the section.",
+            "title": "Quality Status",
+            "type": "string"
+          },
+          "reactions": {
+            "description": "Visible reactions attached to the section.",
+            "items": {
+              "$ref": "#/components/schemas/ReactionCard"
+            },
+            "title": "Reactions",
+            "type": "array"
+          },
+          "section_ref": {
+            "description": "Human-readable section reference.",
+            "title": "Section Ref",
+            "type": "string"
+          },
+          "skip_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Machine-readable skip reason when the section was skipped.",
+            "title": "Skip Reason"
+          },
+          "summary": {
+            "description": "One-line summary of the section.",
+            "title": "Summary",
+            "type": "string"
+          },
+          "verdict": {
+            "description": "Section verdict returned by the reader pipeline.",
+            "title": "Verdict",
+            "type": "string"
+          }
+        },
+        "required": [
+          "section_ref",
+          "summary",
+          "verdict",
+          "quality_status",
+          "reactions"
+        ],
+        "title": "SectionCard",
+        "type": "object"
+      },
+      "SegmentLocator": {
+        "additionalProperties": false,
+        "description": "Section-level EPUB locator used by the reader.",
+        "properties": {
+          "end_cfi": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "End EPUB CFI for the section.",
+            "title": "End Cfi"
+          },
+          "href": {
+            "description": "EPUB spine document href for this section.",
+            "title": "Href",
+            "type": "string"
+          },
+          "paragraph_end": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Last paragraph index covered by the section inside the source document.",
+            "title": "Paragraph End"
+          },
+          "paragraph_start": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "First paragraph index covered by the section inside the source document.",
+            "title": "Paragraph Start"
+          },
+          "start_cfi": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Start EPUB CFI for the section.",
+            "title": "Start Cfi"
+          }
+        },
+        "required": [
+          "href"
+        ],
+        "title": "SegmentLocator",
+        "type": "object"
+      },
+      "SetMarkRequest": {
+        "additionalProperties": false,
+        "description": "Request body for creating or updating a user mark.",
+        "properties": {
+          "book_id": {
+            "description": "Public integer book identifier used to resolve the target reaction.",
+            "title": "Book Id",
+            "type": "integer"
+          },
+          "mark_type": {
+            "description": "User-selected mark value.",
+            "enum": [
+              "known",
+              "blindspot"
+            ],
+            "title": "Mark Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "book_id",
+          "mark_type"
+        ],
+        "title": "SetMarkRequest",
+        "type": "object"
+      },
+      "SourceAsset": {
+        "additionalProperties": false,
+        "description": "Frontend-accessible source book asset.",
+        "properties": {
+          "format": {
+            "description": "Source asset format. This version uses epub.",
+            "title": "Format",
+            "type": "string"
+          },
+          "media_type": {
+            "description": "MIME type returned by the asset endpoint.",
+            "title": "Media Type",
+            "type": "string"
+          },
+          "url": {
+            "description": "API URL serving the source asset.",
+            "title": "Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "format",
+          "url",
+          "media_type"
+        ],
+        "title": "SourceAsset",
+        "type": "object"
+      },
+      "UploadAcceptedResponse": {
+        "additionalProperties": false,
+        "description": "Response returned after an EPUB upload is accepted.",
+        "properties": {
+          "book_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Resolved public integer book identifier if already known; otherwise null.",
+            "title": "Book Id"
+          },
+          "job_id": {
+            "description": "Identifier of the newly created analysis job.",
+            "title": "Job Id",
+            "type": "string"
+          },
+          "job_url": {
+            "description": "REST URL used to poll the job status.",
+            "title": "Job Url",
+            "type": "string"
+          },
+          "status": {
+            "description": "Initial job status immediately after upload.",
+            "title": "Status",
+            "type": "string"
+          },
+          "upload_filename": {
+            "description": "Original filename supplied by the client.",
+            "title": "Upload Filename",
+            "type": "string"
+          },
+          "ws_url": {
+            "description": "WebSocket URL used to subscribe to live job updates.",
+            "title": "Ws Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "job_id",
+          "upload_filename",
+          "status",
+          "job_url",
+          "ws_url"
+        ],
+        "title": "UploadAcceptedResponse",
+        "type": "object"
+      }
+    }
+  },
+  "info": {
+    "title": "Deep Read Agent API",
+    "version": "0.1.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/api/books": {
+      "get": {
+        "description": "Return the paginated bookshelf view.",
+        "operationId": "books_index_api_books_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "in": "query",
+            "name": "search",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Search"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BooksPageResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Request Entity Too Large"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "Books Index"
+      }
+    },
+    "/api/books/{book_id}": {
+      "get": {
+        "description": "Return the result-view overview for one book.",
+        "operationId": "book_detail_api_books__book_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "book_id",
+            "required": true,
+            "schema": {
+              "title": "Book Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookDetailResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Request Entity Too Large"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "Book Detail"
+      }
+    },
+    "/api/books/{book_id}/activity": {
+      "get": {
+        "description": "Return one book's paginated activity stream.",
+        "operationId": "book_activity_api_books__book_id__activity_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "book_id",
+            "required": true,
+            "schema": {
+              "title": "Book Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          },
+          {
+            "in": "query",
+            "name": "type",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Type"
+            }
+          },
+          {
+            "in": "query",
+            "name": "chapter_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Chapter Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActivityEventsPageResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Request Entity Too Large"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "Book Activity"
+      }
+    },
+    "/api/books/{book_id}/analysis-state": {
+      "get": {
+        "description": "Return the current progress-page snapshot for one book.",
+        "operationId": "book_analysis_state_api_books__book_id__analysis_state_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "book_id",
+            "required": true,
+            "schema": {
+              "title": "Book Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalysisStateResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Request Entity Too Large"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "Book Analysis State"
+      }
+    },
+    "/api/books/{book_id}/chapters/{chapter_id}": {
+      "get": {
+        "description": "Return one chapter result-view payload.",
+        "operationId": "book_chapter_api_books__book_id__chapters__chapter_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "book_id",
+            "required": true,
+            "schema": {
+              "title": "Book Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "chapter_id",
+            "required": true,
+            "schema": {
+              "title": "Chapter Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          },
+          {
+            "in": "query",
+            "name": "reaction_filter",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Reaction Filter"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChapterDetailResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Request Entity Too Large"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "Book Chapter"
+      }
+    },
+    "/api/books/{book_id}/chapters/{chapter_id}/reactions": {
+      "get": {
+        "description": "Return a flattened paginated reaction list for one chapter.",
+        "operationId": "book_chapter_reactions_api_books__book_id__chapters__chapter_id__reactions_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "book_id",
+            "required": true,
+            "schema": {
+              "title": "Book Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "chapter_id",
+            "required": true,
+            "schema": {
+              "title": "Chapter Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          },
+          {
+            "in": "query",
+            "name": "type",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Type"
+            }
+          },
+          {
+            "in": "query",
+            "name": "section_ref",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Section Ref"
+            }
+          },
+          {
+            "in": "query",
+            "name": "mark_type",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Mark Type"
+            }
+          },
+          {
+            "in": "query",
+            "name": "high_signal_only",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "High Signal Only",
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReactionsPageResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Request Entity Too Large"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "Book Chapter Reactions"
+      }
+    },
+    "/api/books/{book_id}/cover": {
+      "get": {
+        "description": "Return the cover image asset for one book when available.",
+        "operationId": "book_cover_api_books__book_id__cover_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "book_id",
+            "required": true,
+            "schema": {
+              "title": "Book Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Request Entity Too Large"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "Book Cover"
+      }
+    },
+    "/api/books/{book_id}/marks": {
+      "get": {
+        "description": "Return one book's marks grouped by chapter.",
+        "operationId": "book_marks_api_books__book_id__marks_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "book_id",
+            "required": true,
+            "schema": {
+              "title": "Book Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookMarksResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Request Entity Too Large"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "Book Marks"
+      }
+    },
+    "/api/books/{book_id}/source": {
+      "get": {
+        "description": "Return the frontend-accessible source EPUB asset.",
+        "operationId": "book_source_api_books__book_id__source_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "book_id",
+            "required": true,
+            "schema": {
+              "title": "Book Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Request Entity Too Large"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "Book Source"
+      }
+    },
+    "/api/jobs/{job_id}": {
+      "get": {
+        "description": "Return the refreshed state of one background job.",
+        "operationId": "get_job_api_jobs__job_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "job_id",
+            "required": true,
+            "schema": {
+              "title": "Job Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobStatusResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Request Entity Too Large"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "Get Job"
+      }
+    },
+    "/api/landing": {
+      "get": {
+        "deprecated": true,
+        "description": "Return the legacy backend-driven landing payload.",
+        "operationId": "get_landing_api_landing_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LandingResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Request Entity Too Large"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "Get Landing"
+      }
+    },
+    "/api/marks": {
+      "get": {
+        "description": "Return paginated global marks.",
+        "operationId": "marks_index_api_marks_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          },
+          {
+            "in": "query",
+            "name": "book_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Book Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "mark_type",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Mark Type"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MarksPageResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Request Entity Too Large"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "Marks Index"
+      }
+    },
+    "/api/marks/{reaction_id}": {
+      "delete": {
+        "description": "Delete one persisted mark.",
+        "operationId": "delete_reaction_mark_api_marks__reaction_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "reaction_id",
+            "required": true,
+            "schema": {
+              "title": "Reaction Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeleteMarkResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Request Entity Too Large"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "Delete Reaction Mark"
+      },
+      "put": {
+        "description": "Create or update one resonance mark on a reaction.",
+        "operationId": "put_reaction_mark_api_marks__reaction_id__put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "reaction_id",
+            "required": true,
+            "schema": {
+              "title": "Reaction Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetMarkRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MarkRecord"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Request Entity Too Large"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "Put Reaction Mark"
+      }
+    },
+    "/api/sample": {
+      "get": {
+        "deprecated": true,
+        "description": "Return the legacy backend-driven sample payload.",
+        "operationId": "get_sample_api_sample_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SamplePageResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Request Entity Too Large"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "Get Sample"
+      }
+    },
+    "/api/uploads/epub": {
+      "post": {
+        "description": "Upload an EPUB and start a background sequential read job.",
+        "operationId": "upload_epub_api_uploads_epub_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_upload_epub_api_uploads_epub_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UploadAcceptedResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Request Entity Too Large"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "Upload Epub"
+      }
+    }
+  }
+}

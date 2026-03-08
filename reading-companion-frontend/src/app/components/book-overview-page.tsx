@@ -2,21 +2,23 @@ import { BookOpen, Bookmark, Download, Globe2, Sparkles } from "lucide-react";
 import { useState } from "react";
 import { Link, useParams } from "react-router";
 import { fetchBookDetail, fetchBookMarks, toApiAssetUrl } from "../lib/api";
+import { canonicalBookAnalysisPath, canonicalChapterPath } from "../lib/contract";
 import { reactionLabel } from "../lib/reactions";
 import { useApiResource } from "../lib/use-api-resource";
 import { EmptyState, ErrorState, LoadingState } from "./page-state";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
 
 export function BookOverviewPage() {
-  const { bookId: bookIdParam = "" } = useParams();
-  const bookId = Number(bookIdParam);
+  const { id = "", bookId = "" } = useParams();
+  const resolvedBookId = id || bookId;
+  const bookIdNumber = Number(resolvedBookId);
   const [activeTab, setActiveTab] = useState<"chapters" | "marks">("chapters");
   const { data, loading, error, reload } = useApiResource(
     async () => ({
-      detail: await fetchBookDetail(bookId),
-      marks: await fetchBookMarks(bookId),
+      detail: await fetchBookDetail(bookIdNumber),
+      marks: await fetchBookMarks(bookIdNumber),
     }),
-    [bookId],
+    [bookIdNumber],
   );
 
   if (loading) {
@@ -81,7 +83,7 @@ export function BookOverviewPage() {
           <div className="flex flex-wrap items-center gap-3">
             {detail.status === "analyzing" ? (
               <Link
-                to={`/books/${detail.book_id}/analysis`}
+                to={canonicalBookAnalysisPath(detail.book_id)}
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[var(--amber-accent)] text-white no-underline hover:bg-[var(--warm-700)] transition-colors"
                 style={{ fontSize: "0.875rem", fontWeight: 500 }}
               >
@@ -160,7 +162,8 @@ export function BookOverviewPage() {
               {detail.chapters.map((chapter) => (
                 <Link
                   key={chapter.chapter_id}
-                  to={chapter.result_ready ? `/books/${detail.book_id}/chapters/${chapter.chapter_id}` : `/books/${detail.book_id}/analysis`}
+                  to={chapter.result_ready ? canonicalChapterPath(detail.book_id, chapter.chapter_id) : canonicalBookAnalysisPath(detail.book_id)}
+                  data-testid={`book-overview-chapter-${chapter.chapter_id}`}
                   className="block bg-white rounded-2xl border border-[var(--warm-300)]/30 p-5 no-underline hover:border-[var(--amber-accent)]/30 hover:shadow-sm transition-all"
                 >
                   <div className="flex items-center justify-between gap-4 flex-wrap">
@@ -198,7 +201,7 @@ export function BookOverviewPage() {
                   {group.chapter_ref}
                 </h2>
                 <Link
-                  to={`/books/${detail.book_id}/chapters/${group.chapter_id}`}
+                  to={canonicalChapterPath(detail.book_id, group.chapter_id)}
                   className="text-[var(--amber-accent)] no-underline hover:text-[var(--warm-700)]"
                   style={{ fontSize: "0.8125rem", fontWeight: 500 }}
                 >

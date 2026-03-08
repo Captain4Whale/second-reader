@@ -5,7 +5,10 @@
   "type": "module",
   "scripts": {
     "build": "vite build",
-    "dev": "vite"
+    "contract-check": "tsx scripts/check-contract.ts",
+    "dev": "vite",
+    "e2e": "playwright test",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "react": "18.3.1",
@@ -66,11 +69,15 @@
     "vaul": "1.1.2"
   },
   "devDependencies": {
+    "@playwright/test": "1.54.2",
+    "@types/node": "24.3.0",
     "@types/react": "18.3.12",
     "@types/react-dom": "18.3.1",
     "@tailwindcss/vite": "4.1.12",
     "@vitejs/plugin-react": "4.7.0",
     "tailwindcss": "4.1.12",
+    "tsx": "4.20.5",
+    "typescript": "5.9.2",
     "vite": "6.3.5"
   },
   "pnpm": {
