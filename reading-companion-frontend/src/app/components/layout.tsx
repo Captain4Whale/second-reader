@@ -22,7 +22,11 @@ export function RootLayout() {
   return (
     <div className="min-h-screen bg-[var(--warm-100)]">
       <nav className={`sticky top-0 z-50 backdrop-blur-md ${isLanding ? "bg-transparent" : "bg-[var(--warm-100)]/90 border-b border-[var(--warm-300)]/40"}`}>
-        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+        <div
+          className={`py-4 flex items-center justify-between ${
+            isLanding ? "w-full px-6 md:px-8 xl:px-10" : "max-w-6xl mx-auto px-6"
+          }`}
+        >
           <Link to="/" className="flex items-center gap-2.5 no-underline">
             <div className="w-8 h-8 rounded-lg bg-[var(--amber-accent)] flex items-center justify-center">
               <BookOpen className="w-4 h-4 text-white" />

@@ -9,7 +9,7 @@ import {
   LANDING_PREVIEW_SECTION,
   LANDING_REACTION_CARDS,
   LANDING_REACTION_SECTION,
-  LANDING_SAMPLE_TEASERS,
+  LANDING_TRIBUTE_CARD,
 } from "../content/landing-content";
 import { type BookDetailResponse, type ChapterDetailResponse, fetchBookDetail, fetchChapterDetail } from "../lib/api";
 import { canonicalBookPath, type ReactionType } from "../lib/contract";
@@ -40,6 +40,71 @@ type ResolvedLandingPreview = {
   ctaTo: string;
   items: ReadonlyArray<PreviewReaction>;
 };
+
+function splitKickerText(text: string): { lead: string; emphasis: string } {
+  const normalized = text.trim();
+  const match = normalized.match(/^(.*\S)\s+(\S+\s+\S+[.!?]?)$/);
+  if (!match) {
+    return { lead: "", emphasis: normalized };
+  }
+  return {
+    lead: match[1],
+    emphasis: match[2],
+  };
+}
+
+function LandingTributeCard({ className = "" }: { className?: string }) {
+  const reaction = reactionMeta[LANDING_TRIBUTE_CARD.reactionType];
+
+  return (
+    <div
+      className={`rounded-[30px] border border-[var(--warm-300)]/40 bg-white/88 p-6 shadow-[0_24px_80px_rgba(68,42,28,0.10)] backdrop-blur-sm ${className}`.trim()}
+    >
+      <div className="mb-5 flex items-start justify-between gap-4">
+        <span
+          className={`inline-flex items-center rounded-full px-3 py-1 text-[0.75rem] font-medium text-[var(--warm-900)] ${reaction.surfaceClass}`}
+        >
+          {reaction.label}
+        </span>
+        <div className="text-right text-[var(--warm-500)]">
+          <p className="tracking-[0.18em] uppercase" style={{ fontSize: "0.625rem", fontWeight: 600 }}>
+            {LANDING_TRIBUTE_CARD.sourceLabel}
+          </p>
+          <p className="mt-1 max-w-[12rem] leading-5" style={{ fontSize: "0.8125rem" }}>
+            {LANDING_TRIBUTE_CARD.source}
+          </p>
+        </div>
+      </div>
+
+      <div className="mb-5">
+        <p
+          className="mb-3 text-[var(--warm-500)] tracking-[0.18em] uppercase"
+          style={{ fontSize: "0.625rem", fontWeight: 600 }}
+        >
+          {LANDING_TRIBUTE_CARD.quoteLabel}
+        </p>
+        <blockquote
+          className="font-['Lora',Georgia,serif] text-[var(--warm-800)] italic"
+          style={{ fontSize: "1.55rem", lineHeight: 1.45 }}
+        >
+          “{LANDING_TRIBUTE_CARD.quote}”
+        </blockquote>
+      </div>
+
+      <div>
+        <p
+          className="mb-2 text-[var(--warm-500)] tracking-[0.18em] uppercase"
+          style={{ fontSize: "0.625rem", fontWeight: 600 }}
+        >
+          {LANDING_TRIBUTE_CARD.reactionLabel}
+        </p>
+        <p className="text-[var(--warm-700)]" style={{ fontSize: "0.9375rem", lineHeight: 1.8 }}>
+          {LANDING_TRIBUTE_CARD.reaction}
+        </p>
+      </div>
+    </div>
+  );
+}
 
 function buildStaticPreview(): ResolvedLandingPreview {
   return {
@@ -107,6 +172,7 @@ async function loadApiPreview(): Promise<ResolvedLandingPreview | null> {
 
 export function LandingPage() {
   const [preview, setPreview] = useState<ResolvedLandingPreview>(buildStaticPreview);
+  const kickerParts = splitKickerText(LANDING_HERO.kicker);
 
   useEffect(() => {
     let active = true;
@@ -142,65 +208,57 @@ export function LandingPage() {
           <div className="absolute left-16 bottom-10 hidden xl:block h-56 w-56 rounded-full bg-[var(--highlight-color)] blur-3xl opacity-60" />
         </div>
 
-        <div className="pointer-events-none absolute right-16 top-28 hidden xl:flex w-[26rem] flex-col gap-4">
-          {preview.items.slice(0, 2).map((reaction, index) => (
-            <div
-              key={reaction.reactionId}
-              className={`rounded-[28px] border border-[var(--warm-300)]/35 bg-white/88 p-5 shadow-[0_24px_80px_rgba(68,42,28,0.10)] backdrop-blur-sm ${
-                index === 0 ? "translate-x-0 rotate-[-3deg]" : "translate-x-12 rotate-[4deg]"
-              }`}
-            >
-              <div className="mb-3 flex items-center justify-between gap-3">
-                <span
-                  className={`inline-flex items-center rounded-full px-2.5 py-1 text-[0.75rem] font-medium text-[var(--warm-900)] ${reactionMeta[reaction.type].surfaceClass}`}
-                >
-                  {reactionMeta[reaction.type].label}
-                </span>
-                <span className="text-[var(--warm-500)] text-[0.75rem]">
-                  {reaction.chapterRef}
-                </span>
-              </div>
-              <blockquote className="text-[var(--warm-700)] italic leading-7" style={{ fontSize: "0.95rem" }}>
-                “{reaction.anchorQuote}”
-              </blockquote>
-            </div>
-          ))}
-        </div>
-
-        <div className="relative z-10 max-w-5xl mx-auto text-center">
+        <div className="relative z-10 max-w-5xl xl:max-w-[82rem] 2xl:max-w-[92rem] mx-auto xl:px-6">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, ease: "easeOut" }}
+            className="text-center xl:grid xl:grid-cols-[minmax(0,58rem)_19rem] 2xl:grid-cols-[minmax(0,66rem)_20rem] xl:items-start xl:gap-3 2xl:gap-4"
           >
-            <p className="text-[var(--amber-accent)] mb-4 tracking-widest uppercase" style={{ fontSize: "0.75rem", fontWeight: 500, letterSpacing: "0.15em" }}>
-              {LANDING_HERO.eyebrow}
-            </p>
-            <h1 className="font-['Lora',Georgia,serif] text-[var(--warm-900)] mb-6" style={{ fontSize: "clamp(3.2rem, 7vw, 5.4rem)", fontWeight: 500, lineHeight: 1.08 }}>
-              {LANDING_HERO.title}
-              <br />
-              <span className="italic text-[var(--amber-accent)]">{LANDING_HERO.emphasis}</span>
-            </h1>
-            <p className="text-[var(--warm-600)] max-w-3xl mx-auto mb-10" style={{ fontSize: "1.125rem", lineHeight: 1.8 }}>
-              {LANDING_HERO.description}
-            </p>
-            <div className="flex items-center justify-center gap-4 flex-wrap">
-              <Link
-                to={LANDING_HERO.primaryCta.to}
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-lg no-underline transition-colors bg-[var(--amber-accent)] text-white hover:bg-[var(--warm-700)]"
-                style={{ fontSize: "0.9375rem", fontWeight: 500 }}
-              >
-                {LANDING_HERO.primaryCta.label}
-                <ArrowRight className="w-4 h-4" />
-              </Link>
-              <Link
-                to={LANDING_HERO.secondaryCta.to}
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-lg no-underline transition-colors border border-[var(--warm-300)] text-[var(--warm-700)] hover:bg-[var(--warm-200)]"
-                style={{ fontSize: "0.9375rem", fontWeight: 500 }}
-              >
-                <Upload className="w-4 h-4" />
-                {LANDING_HERO.secondaryCta.label}
-              </Link>
+            <div>
+              <div className="xl:w-full">
+                <h1 className="font-['Lora',Georgia,serif] text-[var(--warm-900)] mb-6" style={{ fontSize: "clamp(3rem, 4.4vw, 4.35rem)", fontWeight: 500, lineHeight: 1.08 }}>
+                  <span className="inline-block xl:whitespace-nowrap">{LANDING_HERO.title}</span>
+                  <br />
+                  <span className="inline-block xl:whitespace-nowrap italic text-[var(--amber-accent)]">{LANDING_HERO.emphasis}</span>
+                </h1>
+                <p className="text-[var(--warm-600)] max-w-3xl md:max-w-4xl xl:max-w-[43rem] 2xl:max-w-[45rem] mx-auto mb-8" style={{ fontSize: "1.125rem", lineHeight: 1.8 }}>
+                  {LANDING_HERO.description}
+                  <br />
+                  {kickerParts.lead}
+                  {kickerParts.lead ? " " : null}
+                  <span
+                    className="inline-block whitespace-nowrap font-['Lora',Georgia,serif] italic text-[var(--amber-accent)]"
+                    style={{ fontSize: "1em", fontWeight: 500, marginLeft: "0.18em" }}
+                  >
+                    {kickerParts.emphasis}
+                  </span>
+                </p>
+                <div className="flex items-center justify-center gap-4 flex-wrap">
+                  <Link
+                    to={LANDING_HERO.primaryCta.to}
+                    className="inline-flex items-center gap-2 px-6 py-3 rounded-lg no-underline transition-colors bg-[var(--amber-accent)] text-white hover:bg-[var(--warm-700)]"
+                    style={{ fontSize: "0.9375rem", fontWeight: 500 }}
+                  >
+                    {LANDING_HERO.primaryCta.label}
+                    <ArrowRight className="w-4 h-4" />
+                  </Link>
+                  <Link
+                    to={LANDING_HERO.secondaryCta.to}
+                    className="inline-flex items-center gap-2 px-6 py-3 rounded-lg no-underline transition-colors border border-[var(--warm-300)] text-[var(--warm-700)] hover:bg-[var(--warm-200)]"
+                    style={{ fontSize: "0.9375rem", fontWeight: 500 }}
+                  >
+                    <Upload className="w-4 h-4" />
+                    {LANDING_HERO.secondaryCta.label}
+                  </Link>
+                </div>
+              </div>
+            </div>
+            <div className="hidden xl:block xl:pt-12 2xl:pt-14">
+              <LandingTributeCard className="rotate-[-1.5deg]" />
+            </div>
+            <div className="mt-10 xl:hidden max-w-xl mx-auto text-left">
+              <LandingTributeCard />
             </div>
           </motion.div>
         </div>

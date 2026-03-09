@@ -4,11 +4,11 @@ import { canonicalBookPath, type BookId, type ReactionId, type ReactionType } fr
 const DEFAULT_PREVIEW_BOOK_ID: BookId = 2488754074399462;
 
 export const LANDING_HERO = {
-  eyebrow: "AI-Powered Deep Reading",
-  title: "Read deeper than you",
-  emphasis: "ever thought possible",
+  title: "What AI Thinks About",
+  emphasis: "When AI Reads",
   description:
     "An AI reading companion that doesn't just summarize — it reads alongside you, noticing what you might miss, questioning what you might accept, and connecting what you might not link.",
+  kicker: "Helping you find your UNKNOWN UNKNOWNS.",
   primaryCta: {
     label: "View Sample",
     to: canonicalBookPath(DEFAULT_PREVIEW_BOOK_ID),
@@ -17,6 +17,17 @@ export const LANDING_HERO = {
     label: "Upload EPUB",
     to: "/upload",
   },
+} as const;
+
+export const LANDING_TRIBUTE_CARD = {
+  reactionType: "association" as const,
+  quoteLabel: "Original quote",
+  quote: "Pain is inevitable, suffering is optional.",
+  sourceLabel: "Source",
+  source: "What I Talk About When I Talk About Running",
+  reactionLabel: "AI reaction",
+  reaction:
+    "Murakami's line separates pain from the story we build around it. It connects naturally to difficult reading: friction may be inevitable, but suffering often begins when every moment of resistance is mistaken for failure.",
 } as const;
 
 export const LANDING_REACTION_SECTION = {
