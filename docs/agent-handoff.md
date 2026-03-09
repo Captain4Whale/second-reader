@@ -29,7 +29,7 @@
 - backend requires Python 3.11+
 - backend startup automatically backfills legacy `output/*/structure.json` directories into current manifest/run-state artifacts
 - frontend local defaults target backend `localhost:8000`
-- two child directories still keep separate Git histories
+- the workspace root is the single Git root for both sub-applications
 
 ## High-Risk Areas
 - backend path handling for `output/` and `state/`
@@ -38,7 +38,7 @@
 - upload flow and live progress integration
 
 ## Remaining Migration Notes
-- `/api/landing` and `/api/sample` still exist as compatibility endpoints, but the current landing page is frontend-owned and should not depend on them.
-- Backend internals still use some legacy reaction naming such as `connect_back`; the public API contract now normalizes that to `retrospect`.
+- Landing is frontend-only now. Do not reintroduce backend-owned landing/sample endpoints unless the contract doc is updated first.
+- Backend still accepts old `connect_back` artifacts on read, but new runtime outputs should write `retrospect`, and the public API must keep normalizing old payloads.
 - Public IDs are now integer contract IDs. Internal runtime artifacts still use string identifiers under `reading-companion-backend/output/`, and the API layer is responsible for the translation.
-- Frontend shared types are still hand-maintained in `src/app/lib/api.ts` + `src/app/lib/contract.ts`; there is no OpenAPI-generated TS layer yet.
+- Frontend request/response types should come from the committed OpenAPI snapshot via `src/app/lib/generated/api-schema.d.ts` and `src/app/lib/api-types.ts`. Keep runtime helpers in `src/app/lib/api.ts` thin.

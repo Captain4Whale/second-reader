@@ -14,7 +14,7 @@ This document describes the public product contract. It does not require the bac
 - Canonical public contract: this file
 - Backend schema implementation: `reading-companion-backend/src/api/schemas.py`
 - Backend route handlers and payload shaping: `reading-companion-backend/src/api/app.py` and `reading-companion-backend/src/library/catalog.py`
-- Frontend type layer and route normalization: `reading-companion-frontend/src/app/lib/api.ts` and `reading-companion-frontend/src/app/routes.tsx`
+- Frontend type layer and route normalization: `reading-companion-frontend/src/app/lib/api-types.ts`, `reading-companion-frontend/src/app/lib/api.ts`, and `reading-companion-frontend/src/app/routes.tsx`
 
 If this file and the code diverge, treat that as a defect. Do not silently "pick one side". Verify both sides and fix the mismatch.
 
@@ -111,12 +111,6 @@ Current implementation strategy:
 
 This is a product implementation choice, not a general backend capability promise.
 
-Compatibility note:
-- `GET /api/landing`
-- `GET /api/sample`
-
-may still exist temporarily for backward compatibility or inspection, but the frontend should not depend on them as the primary source for landing content.
-
 ## Book Overview Ownership
 
 ### Backend-Owned Fields
@@ -212,8 +206,8 @@ Activity and realtime payloads must continue to normalize into the public contra
 - WebSocket event payloads should not expose legacy route names or legacy reaction taxonomy values
 
 ## Compatibility Notes
-- Backend OpenAPI may still expose compatibility endpoints such as `/api/landing` and `/api/sample`, but they are not the primary contract for the current frontend implementation.
-- Backend internal artifacts may still store `connect_back`; public API payloads must normalize that to `retrospect`.
+- Backend no longer exposes landing/sample compatibility endpoints. Landing remains frontend-only by contract.
+- Backend internal artifacts may still store `connect_back`; public API payloads must normalize that to `retrospect`, and new runtime outputs should emit `retrospect`.
 - Old mock data is not authoritative. If a mock file disagrees with this document, update or remove the mock rather than preserving conflicting terminology.
 - Legacy redirect routes are allowed, but new UI code, docs, and backend-returned frontend URLs should use canonical routes only.
 
@@ -222,9 +216,10 @@ When changing this contract:
 
 1. Update this document first.
 2. Update backend schemas and payload mapping.
-3. Update frontend types, route handling, and affected components.
-4. Run the shared validation flow from the workspace root.
-5. Record any temporary exceptions or unfinished migration work in `docs/agent-handoff.md`.
+3. Refresh the committed OpenAPI snapshot and generated frontend types.
+4. Update frontend route handling and affected components.
+5. Run the shared validation flow from the workspace root.
+6. Record any temporary exceptions or unfinished migration work in `docs/agent-handoff.md`.
 
 Do not merge a contract change that only updates documentation or only updates one side of the integration.
 

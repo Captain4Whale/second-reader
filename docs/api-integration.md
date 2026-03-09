@@ -28,12 +28,6 @@ Frontend defaults can be overridden with:
 - `WS /api/ws/jobs/{job_id}`
 - `WS /api/ws/books/{book_id}/analysis`
 
-## Compatibility Endpoints
-- `GET /api/landing`
-- `GET /api/sample`
-
-These endpoints still exist for compatibility and inspection, but the current frontend landing experience is hardcoded and should not rely on them as its primary data source.
-
 ## Integration Notes
 - Backend images and source assets are returned as relative API paths and must be prefixed with the configured API base in the frontend.
 - Backend `target_url`, `result_url`, and `open_target` values are frontend routes, not backend URLs.

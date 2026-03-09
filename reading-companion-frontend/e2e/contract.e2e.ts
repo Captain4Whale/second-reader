@@ -10,6 +10,7 @@ function assertNoLegacyPath(pathname: string): void {
   expect(pathname.startsWith("/bookshelf")).toBeFalsy();
   expect(pathname.startsWith("/book/")).toBeFalsy();
   expect(pathname.startsWith("/analysis/")).toBeFalsy();
+  expect(pathname.startsWith("/sample")).toBeFalsy();
 }
 
 test("fixture upload flow stays on canonical routes and persists marks", async ({ page }) => {

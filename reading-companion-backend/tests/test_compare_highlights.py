@@ -95,7 +95,7 @@ Why call this antisocial?
     assert items[1].note == "Why call this antisocial?"
 
 
-def test_parse_agent_reactions_supports_discern_and_connect_back(tmp_path: Path):
+def test_parse_agent_reactions_supports_discern_and_retrospect(tmp_path: Path):
     """Agent markdown parser should support the expanded reaction set."""
     file_path = tmp_path / "chapter.md"
     file_path.write_text(
@@ -122,7 +122,7 @@ def test_parse_agent_reactions_supports_discern_and_connect_back(tmp_path: Path)
 
     assert len(items) == 2
     assert items[0].reaction_type == "discern"
-    assert items[1].reaction_type == "connect_back"
+    assert items[1].reaction_type == "retrospect"
 
 
 def test_direct_match_accepts_containment_and_fuzzy_overlap():

@@ -429,11 +429,6 @@
             "title": "Reaction Counts",
             "type": "object"
           },
-          "sample": {
-            "description": "Whether this book is the configured sample book.",
-            "title": "Sample",
-            "type": "boolean"
-          },
           "segment_count": {
             "description": "Total number of semantic segments across the book.",
             "title": "Segment Count",
@@ -473,8 +468,7 @@
           "reaction_counts",
           "chapter_count",
           "completed_chapter_count",
-          "segment_count",
-          "sample"
+          "segment_count"
         ],
         "title": "BookDetailResponse",
         "type": "object"
@@ -1372,88 +1366,6 @@
         "title": "JobStatusResponse",
         "type": "object"
       },
-      "LandingAction": {
-        "additionalProperties": false,
-        "description": "Primary landing-page CTA.",
-        "properties": {
-          "key": {
-            "description": "Stable action key used by the frontend.",
-            "title": "Key",
-            "type": "string"
-          },
-          "label": {
-            "description": "User-facing label shown on the action button.",
-            "title": "Label",
-            "type": "string"
-          },
-          "target_url": {
-            "description": "Frontend route or URL opened when the action is clicked.",
-            "title": "Target Url",
-            "type": "string"
-          }
-        },
-        "required": [
-          "key",
-          "label",
-          "target_url"
-        ],
-        "title": "LandingAction",
-        "type": "object"
-      },
-      "LandingResponse": {
-        "additionalProperties": false,
-        "description": "Compatibility payload for the legacy backend-driven landing page.",
-        "properties": {
-          "primary_actions": {
-            "description": "Primary call-to-action buttons rendered on landing.",
-            "items": {
-              "$ref": "#/components/schemas/LandingAction"
-            },
-            "title": "Primary Actions",
-            "type": "array"
-          },
-          "product_title": {
-            "description": "Product title shown on the landing page.",
-            "title": "Product Title",
-            "type": "string"
-          },
-          "reaction_types": {
-            "description": "Cards explaining the product's reaction types.",
-            "items": {
-              "$ref": "#/components/schemas/ReactionTypeInfo"
-            },
-            "title": "Reaction Types",
-            "type": "array"
-          },
-          "sample_book": {
-            "$ref": "#/components/schemas/SampleBookSummary",
-            "description": "Metadata for the featured sample book."
-          },
-          "sample_teasers": {
-            "description": "Small set of teaser reactions shown directly on landing.",
-            "items": {
-              "$ref": "#/components/schemas/FeaturedReactionPreview"
-            },
-            "title": "Sample Teasers",
-            "type": "array"
-          },
-          "tagline": {
-            "description": "One-sentence product positioning.",
-            "title": "Tagline",
-            "type": "string"
-          }
-        },
-        "required": [
-          "product_title",
-          "tagline",
-          "primary_actions",
-          "reaction_types",
-          "sample_book",
-          "sample_teasers"
-        ],
-        "title": "LandingResponse",
-        "type": "object"
-      },
       "MarkRecord": {
         "additionalProperties": false,
         "description": "Persisted user mark record.",
@@ -1769,47 +1681,6 @@
         "title": "ReactionTargetLocator",
         "type": "object"
       },
-      "ReactionTypeInfo": {
-        "additionalProperties": false,
-        "description": "Metadata describing one visible reaction type.",
-        "properties": {
-          "description": {
-            "description": "Short explanation of what this reaction type means.",
-            "title": "Description",
-            "type": "string"
-          },
-          "label": {
-            "description": "User-facing label for the reaction type.",
-            "title": "Label",
-            "type": "string"
-          },
-          "priority": {
-            "description": "Display priority for teaser and highlight ordering.",
-            "title": "Priority",
-            "type": "integer"
-          },
-          "type": {
-            "description": "Stable reaction type key.",
-            "enum": [
-              "highlight",
-              "association",
-              "discern",
-              "retrospect",
-              "curious"
-            ],
-            "title": "Type",
-            "type": "string"
-          }
-        },
-        "required": [
-          "type",
-          "label",
-          "description",
-          "priority"
-        ],
-        "title": "ReactionTypeInfo",
-        "type": "object"
-      },
       "ReactionsPageResponse": {
         "additionalProperties": false,
         "description": "Paginated flattened reaction response.",
@@ -1839,119 +1710,6 @@
           "applied_filters"
         ],
         "title": "ReactionsPageResponse",
-        "type": "object"
-      },
-      "SampleBookSummary": {
-        "additionalProperties": false,
-        "description": "Compatibility payload for the legacy backend-driven landing sample.",
-        "properties": {
-          "author": {
-            "description": "Author of the sample book.",
-            "title": "Author",
-            "type": "string"
-          },
-          "book_id": {
-            "description": "Stable public integer identifier of the sample book.",
-            "title": "Book Id",
-            "type": "integer"
-          },
-          "cover_image_url": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "Optional API URL for the sample book cover image.",
-            "title": "Cover Image Url"
-          },
-          "result_url": {
-            "description": "Frontend route that opens the sample result experience.",
-            "title": "Result Url",
-            "type": "string"
-          },
-          "status": {
-            "description": "Reading status for the sample book. Expected to be completed.",
-            "title": "Status",
-            "type": "string"
-          },
-          "title": {
-            "description": "Title of the sample book.",
-            "title": "Title",
-            "type": "string"
-          }
-        },
-        "required": [
-          "book_id",
-          "title",
-          "author",
-          "status",
-          "result_url"
-        ],
-        "title": "SampleBookSummary",
-        "type": "object"
-      },
-      "SamplePageResponse": {
-        "additionalProperties": false,
-        "description": "Compatibility payload for the legacy backend-driven sample page.",
-        "properties": {
-          "author": {
-            "description": "Author of the sample book.",
-            "title": "Author",
-            "type": "string"
-          },
-          "book_id": {
-            "description": "Stable public integer identifier of the sample book.",
-            "title": "Book Id",
-            "type": "integer"
-          },
-          "cover_image_url": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "Optional API URL for the sample book cover image.",
-            "title": "Cover Image Url"
-          },
-          "default_chapter_id": {
-            "description": "Chapter identifier opened by default on the sample page.",
-            "title": "Default Chapter Id",
-            "type": "integer"
-          },
-          "result_entry_url": {
-            "description": "Frontend route that opens the full sample result page.",
-            "title": "Result Entry Url",
-            "type": "string"
-          },
-          "teaser_reactions": {
-            "description": "Highlighted reactions introducing the sample experience.",
-            "items": {
-              "$ref": "#/components/schemas/FeaturedReactionPreview"
-            },
-            "title": "Teaser Reactions",
-            "type": "array"
-          },
-          "title": {
-            "description": "Title of the sample book.",
-            "title": "Title",
-            "type": "string"
-          }
-        },
-        "required": [
-          "book_id",
-          "default_chapter_id",
-          "title",
-          "author",
-          "teaser_reactions",
-          "result_entry_url"
-        ],
-        "title": "SamplePageResponse",
         "type": "object"
       },
       "SearchHit": {
@@ -3393,86 +3151,6 @@
         "summary": "Get Job"
       }
     },
-    "/api/landing": {
-      "get": {
-        "deprecated": true,
-        "description": "Return the legacy backend-driven landing payload.",
-        "operationId": "get_landing_api_landing_get",
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/LandingResponse"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Not Found"
-          },
-          "409": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Conflict"
-          },
-          "413": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Request Entity Too Large"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Unprocessable Entity"
-          },
-          "500": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Internal Server Error"
-          }
-        },
-        "summary": "Get Landing"
-      }
-    },
     "/api/marks": {
       "get": {
         "description": "Return paginated global marks.",
@@ -3800,86 +3478,6 @@
           }
         },
         "summary": "Put Reaction Mark"
-      }
-    },
-    "/api/sample": {
-      "get": {
-        "deprecated": true,
-        "description": "Return the legacy backend-driven sample payload.",
-        "operationId": "get_sample_api_sample_get",
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SamplePageResponse"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Not Found"
-          },
-          "409": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Conflict"
-          },
-          "413": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Request Entity Too Large"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Unprocessable Entity"
-          },
-          "500": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Internal Server Error"
-          }
-        },
-        "summary": "Get Sample"
       }
     },
     "/api/uploads/epub": {

@@ -45,7 +45,6 @@ export const COMPAT_ROUTE_LIST = [
 
 export const UTILITY_ROUTE_PATTERNS = {
   upload: "/upload",
-  sample: "/sample",
 } as const;
 
 export const LANDING_STRATEGY = {

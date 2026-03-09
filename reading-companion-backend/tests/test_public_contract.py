@@ -38,7 +38,13 @@ def _append_jsonl(path: Path, payload: dict) -> None:
         handle.write("\n")
 
 
-def _bootstrap_contract_book(root: Path, *, stage: str = "completed", include_activity: bool = True) -> str:
+def _bootstrap_contract_book(
+    root: Path,
+    *,
+    stage: str = "completed",
+    include_activity: bool = True,
+    reaction_type: str = "retrospect",
+) -> str:
     book_id = "contract-book"
     output_dir = root / "output" / book_id
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -98,22 +104,22 @@ def _bootstrap_contract_book(root: Path, *, stage: str = "completed", include_ac
                 "message": "Chapter 1 完成，已生成结果文件。",
                 "chapter_id": 1,
                 "chapter_ref": "Chapter 1",
-                "reaction_types": ["connect_back"],
-                "highlight_quote": "Legacy connect-back quote",
+                "reaction_types": [reaction_type],
+                "highlight_quote": "Legacy retrospect quote" if reaction_type == "retrospect" else "Legacy connect-back quote",
                 "visible_reaction_count": 1,
                 "high_signal_reaction_count": 1,
                 "featured_reactions": [
                     {
                         "reaction_id": "r1",
-                        "type": "connect_back",
+                        "type": reaction_type,
                         "segment_ref": "1.1",
-                        "anchor_quote": "Legacy connect-back quote",
-                        "content": "This still uses the internal legacy name.",
+                        "anchor_quote": "Legacy retrospect quote" if reaction_type == "retrospect" else "Legacy connect-back quote",
+                        "content": "This uses the current public name." if reaction_type == "retrospect" else "This still uses the internal legacy name.",
                         "target_locator": {
                             "href": "chapter-1.xhtml",
                             "start_cfi": "epubcfi(/6/2!/4/2)",
                             "end_cfi": "epubcfi(/6/2!/4/2)",
-                            "match_text": "Legacy connect-back quote",
+                            "match_text": "Legacy retrospect quote" if reaction_type == "retrospect" else "Legacy connect-back quote",
                             "match_mode": "exact",
                         },
                     }
@@ -138,8 +144,8 @@ def _bootstrap_contract_book(root: Path, *, stage: str = "completed", include_ac
                     {
                         "segment_id": "1.1",
                         "segment_ref": "1.1",
-                        "summary": "A section with one legacy-named reaction.",
-                        "original_text": "Legacy connect-back quote",
+                        "summary": "A section with one callback-style reaction.",
+                        "original_text": "Legacy retrospect quote" if reaction_type == "retrospect" else "Legacy connect-back quote",
                         "verdict": "pass",
                         "quality_status": "strong",
                         "reflection_summary": "Keep",
@@ -154,16 +160,16 @@ def _bootstrap_contract_book(root: Path, *, stage: str = "completed", include_ac
                         "reactions": [
                             {
                                 "reaction_id": "r1",
-                                "type": "connect_back",
-                                "anchor_quote": "Legacy connect-back quote",
-                                "content": "This still uses the internal legacy name.",
+                                "type": reaction_type,
+                                "anchor_quote": "Legacy retrospect quote" if reaction_type == "retrospect" else "Legacy connect-back quote",
+                                "content": "This uses the current public name." if reaction_type == "retrospect" else "This still uses the internal legacy name.",
                                 "search_query": "",
                                 "search_results": [],
                                 "target_locator": {
                                     "href": "chapter-1.xhtml",
                                     "start_cfi": "epubcfi(/6/2!/4/2)",
                                     "end_cfi": "epubcfi(/6/2!/4/2)",
-                                    "match_text": "Legacy connect-back quote",
+                                    "match_text": "Legacy retrospect quote" if reaction_type == "retrospect" else "Legacy connect-back quote",
                                     "match_mode": "exact",
                                 },
                             }
@@ -174,15 +180,15 @@ def _bootstrap_contract_book(root: Path, *, stage: str = "completed", include_ac
                 "featured_reactions": [
                     {
                         "reaction_id": "r1",
-                        "type": "connect_back",
+                        "type": reaction_type,
                         "segment_ref": "1.1",
-                        "anchor_quote": "Legacy connect-back quote",
-                        "content": "This still uses the internal legacy name.",
+                        "anchor_quote": "Legacy retrospect quote" if reaction_type == "retrospect" else "Legacy connect-back quote",
+                        "content": "This uses the current public name." if reaction_type == "retrospect" else "This still uses the internal legacy name.",
                         "target_locator": {
                             "href": "chapter-1.xhtml",
                             "start_cfi": "epubcfi(/6/2!/4/2)",
                             "end_cfi": "epubcfi(/6/2!/4/2)",
-                            "match_text": "Legacy connect-back quote",
+                            "match_text": "Legacy retrospect quote" if reaction_type == "retrospect" else "Legacy connect-back quote",
                             "match_mode": "exact",
                         },
                     }
@@ -193,7 +199,7 @@ def _bootstrap_contract_book(root: Path, *, stage: str = "completed", include_ac
                 "ui_summary": {
                     "kept_section_count": 1,
                     "skipped_section_count": 0,
-                    "reaction_counts": {"connect_back": 1},
+                    "reaction_counts": {reaction_type: 1},
                 },
             },
         )
@@ -213,8 +219,8 @@ def test_openapi_public_snapshot_and_key_contracts(tmp_path):
     assert current == json.loads(snapshot_path.read_text(encoding="utf-8"))
 
     paths = current["paths"]
-    assert paths["/api/landing"]["get"]["deprecated"] is True
-    assert paths["/api/sample"]["get"]["deprecated"] is True
+    assert "/api/landing" not in paths
+    assert "/api/sample" not in paths
 
     schemas = current["components"]["schemas"]
     mark_record = schemas["MarkRecord"]
@@ -238,7 +244,6 @@ def test_rest_payloads_scrub_legacy_names_and_routes(tmp_path):
     public_book_id = to_api_book_id(book_id)
     public_reaction_id = to_api_reaction_id(book_id=book_id, reaction_id="r1")
     api_module.app.state.root = tmp_path
-    api_module.app.state.sample_book_id = book_id
     client = TestClient(api_module.app)
 
     put_response = client.put(
@@ -248,8 +253,6 @@ def test_rest_payloads_scrub_legacy_names_and_routes(tmp_path):
     assert put_response.status_code == 200
 
     payloads = {
-        "landing": client.get("/api/landing").json(),
-        "sample": client.get("/api/sample").json(),
         "books": client.get("/api/books").json(),
         "book": client.get(f"/api/books/{public_book_id}").json(),
         "analysis": client.get(f"/api/books/{public_book_id}/analysis-state").json(),
@@ -288,6 +291,22 @@ def test_rest_payloads_scrub_legacy_names_and_routes(tmp_path):
         assert banned not in serialized
 
 
+def test_legacy_connect_back_still_normalizes_to_retrospect(tmp_path):
+    """Old connect_back artifacts should remain readable through the public API."""
+    book_id = _bootstrap_contract_book(tmp_path, reaction_type="connect_back")
+    public_book_id = to_api_book_id(book_id)
+    api_module.app.state.root = tmp_path
+    client = TestClient(api_module.app)
+
+    chapter_payload = client.get(f"/api/books/{public_book_id}/chapters/1").json()
+    activity_payload = client.get(f"/api/books/{public_book_id}/activity").json()
+
+    assert chapter_payload["featured_reactions"][0]["type"] == "retrospect"
+    assert chapter_payload["sections"][0]["reactions"][0]["type"] == "retrospect"
+    assert activity_payload["items"][0]["reaction_types"] == ["retrospect"]
+    assert activity_payload["items"][0]["featured_reactions"][0]["type"] == "retrospect"
+
+
 def test_websocket_payloads_scrub_legacy_names_and_routes(tmp_path):
     """WebSocket envelopes should also stay normalized at the public boundary."""
     book_id = _bootstrap_contract_book(tmp_path, stage="deep_reading", include_activity=False)
@@ -317,8 +336,8 @@ def test_websocket_payloads_scrub_legacy_names_and_routes(tmp_path):
                     {
                         "segment_id": "1.1",
                         "segment_ref": "1.1",
-                        "summary": "A section with one legacy-named reaction.",
-                        "original_text": "Legacy connect-back quote",
+                        "summary": "A section with one callback-style reaction.",
+                        "original_text": "Legacy retrospect quote",
                         "verdict": "pass",
                         "quality_status": "strong",
                         "reflection_summary": "Keep",
@@ -333,16 +352,16 @@ def test_websocket_payloads_scrub_legacy_names_and_routes(tmp_path):
                         "reactions": [
                             {
                                 "reaction_id": "r1",
-                                "type": "connect_back",
-                                "anchor_quote": "Legacy connect-back quote",
-                                "content": "This still uses the internal legacy name.",
+                                "type": "retrospect",
+                                "anchor_quote": "Legacy retrospect quote",
+                                "content": "This uses the current public name.",
                                 "search_query": "",
                                 "search_results": [],
                                 "target_locator": {
                                     "href": "chapter-1.xhtml",
                                     "start_cfi": "epubcfi(/6/2!/4/2)",
                                     "end_cfi": "epubcfi(/6/2!/4/2)",
-                                    "match_text": "Legacy connect-back quote",
+                                    "match_text": "Legacy retrospect quote",
                                     "match_mode": "exact",
                                 },
                             }
@@ -353,15 +372,15 @@ def test_websocket_payloads_scrub_legacy_names_and_routes(tmp_path):
                 "featured_reactions": [
                     {
                         "reaction_id": "r1",
-                        "type": "connect_back",
+                        "type": "retrospect",
                         "segment_ref": "1.1",
-                        "anchor_quote": "Legacy connect-back quote",
-                        "content": "This still uses the internal legacy name.",
+                        "anchor_quote": "Legacy retrospect quote",
+                        "content": "This uses the current public name.",
                         "target_locator": {
                             "href": "chapter-1.xhtml",
                             "start_cfi": "epubcfi(/6/2!/4/2)",
                             "end_cfi": "epubcfi(/6/2!/4/2)",
-                            "match_text": "Legacy connect-back quote",
+                            "match_text": "Legacy retrospect quote",
                             "match_mode": "exact",
                         },
                     }
@@ -372,7 +391,7 @@ def test_websocket_payloads_scrub_legacy_names_and_routes(tmp_path):
                 "ui_summary": {
                     "kept_section_count": 1,
                     "skipped_section_count": 0,
-                    "reaction_counts": {"connect_back": 1},
+                    "reaction_counts": {"retrospect": 1},
                 },
             },
         )
@@ -407,22 +426,22 @@ def test_websocket_payloads_scrub_legacy_names_and_routes(tmp_path):
                 "message": "Chapter 1 完成，已生成结果文件。",
                 "chapter_id": 1,
                 "chapter_ref": "Chapter 1",
-                "reaction_types": ["connect_back"],
-                "highlight_quote": "Legacy connect-back quote",
+                "reaction_types": ["retrospect"],
+                "highlight_quote": "Legacy retrospect quote",
                 "visible_reaction_count": 1,
                 "high_signal_reaction_count": 1,
                 "featured_reactions": [
                     {
                         "reaction_id": "r1",
-                        "type": "connect_back",
+                        "type": "retrospect",
                         "segment_ref": "1.1",
-                        "anchor_quote": "Legacy connect-back quote",
-                        "content": "This still uses the internal legacy name.",
+                        "anchor_quote": "Legacy retrospect quote",
+                        "content": "This uses the current public name.",
                         "target_locator": {
                             "href": "chapter-1.xhtml",
                             "start_cfi": "epubcfi(/6/2!/4/2)",
                             "end_cfi": "epubcfi(/6/2!/4/2)",
-                            "match_text": "Legacy connect-back quote",
+                            "match_text": "Legacy retrospect quote",
                             "match_mode": "exact",
                         },
                     }

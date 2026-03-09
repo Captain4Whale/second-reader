@@ -8,7 +8,7 @@ from typing import Literal, TypedDict
 ChapterStatus = Literal["pending", "in_progress", "done"]
 ReadMode = Literal["sequential", "book_analysis"]
 ReaderDecision = Literal["pass", "revise", "skip"]
-ReactionType = Literal["highlight", "association", "curious", "discern", "connect_back", "silent"]
+ReactionType = Literal["highlight", "association", "curious", "discern", "retrospect", "silent"]
 SkillProfileName = Literal["balanced", "analytical", "curious", "quiet"]
 ClaimType = Literal["main", "support", "assumption", "counter"]
 EvidenceStatus = Literal["covered", "gap", "disputed"]

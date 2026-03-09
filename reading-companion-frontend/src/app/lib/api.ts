@@ -1,300 +1,45 @@
 import {
   type BookId,
   type ChapterId,
-  type MarkId,
   type MarkType,
-  type ReactionFilter,
   type ReactionId,
-  type ReactionType,
   CANONICAL_ROUTE_PATTERNS,
   COMPAT_ROUTE_PATTERNS,
-  UTILITY_ROUTE_PATTERNS,
 } from "./contract";
+import type {
+  ActivityEvent,
+  ActivityEventsPageResponse,
+  AnalysisStateResponse,
+  ApiErrorResponse,
+  BookDetailResponse,
+  BookMarksResponse,
+  BookShelfCard,
+  BooksPageResponse,
+  ChapterDetailResponse,
+  DeleteMarkResponse,
+  ErrorPayload,
+  JobStatusResponse,
+  MarkRecord,
+  MarksPageResponse,
+  SetMarkRequest,
+  UploadAcceptedResponse,
+} from "./api-types";
 
-export interface ApiErrorResponse {
-  error_id?: string;
-  code: string;
-  message: string;
-  status: number;
-  retryable?: boolean;
-  details?: Record<string, unknown> | null;
-}
-
-export interface PageInfo {
-  limit: number;
-  next_cursor: string | null;
-  has_more: boolean;
-}
-
-export interface SearchHit {
-  title: string;
-  url: string;
-  snippet: string;
-  score?: number | null;
-}
-
-export interface ReactionTargetLocator {
-  href: string;
-  start_cfi?: string | null;
-  end_cfi?: string | null;
-  match_text: string;
-  match_mode: "exact" | "normalized" | "segment_fallback";
-}
-
-export interface FeaturedReactionPreview {
-  reaction_id: ReactionId;
-  type: ReactionType;
-  anchor_quote: string;
-  content: string;
-  book_id: BookId;
-  chapter_id: number;
-  chapter_ref: string;
-  section_ref: string;
-  target_locator?: ReactionTargetLocator | null;
-}
-
-export interface BookShelfCard {
-  book_id: BookId;
-  title: string;
-  author: string;
-  cover_image_url?: string | null;
-  book_language: string;
-  output_language: string;
-  reading_status: "not_started" | "analyzing" | "completed" | "error";
-  completed_chapters: number;
-  total_chapters: number;
-  updated_at: string;
-  mark_count: number;
-  open_target: string;
-}
-
-export interface BooksPageResponse {
-  items: BookShelfCard[];
-  page_info: PageInfo;
-  global_mark_count: number;
-}
-
-export interface UploadAcceptedResponse {
-  job_id: string;
-  upload_filename: string;
-  status: string;
-  book_id?: BookId | null;
-  job_url: string;
-  ws_url: string;
-}
-
-export interface ErrorPayload {
-  error_id: string;
-  code: string;
-  message: string;
-  status: number;
-  retryable: boolean;
-  details?: Record<string, unknown> | null;
-}
-
-export interface JobStatusResponse {
-  job_id: string;
-  status: "queued" | "parsing_structure" | "deep_reading" | "chapter_note_generation" | "completed" | "error";
-  book_id?: BookId | null;
-  book_title?: string | null;
-  progress_percent?: number | null;
-  completed_chapters?: number | null;
-  total_chapters?: number | null;
-  current_chapter_id?: number | null;
-  current_chapter_ref?: string | null;
-  current_section_ref?: string | null;
-  eta_seconds?: number | null;
-  last_error?: ErrorPayload | null;
-  created_at: string;
-  updated_at: string;
-  ws_url: string;
-}
-
-export interface ChapterTreeItem {
-  chapter_id: number;
-  chapter_ref: string;
-  title: string;
-  segment_count: number;
-  status: "pending" | "in_progress" | "completed" | "error";
-  is_current: boolean;
-  result_ready: boolean;
-}
-
-export interface CurrentStatePanel {
-  current_chapter_id?: number | null;
-  current_chapter_ref?: string | null;
-  current_section_ref?: string | null;
-  recent_reactions: FeaturedReactionPreview[];
-  reaction_counts: Record<ReactionType, number>;
-  search_active: boolean;
-  last_activity_message?: string | null;
-}
-
-export interface ChapterCompletionCard {
-  chapter_id: number;
-  chapter_ref: string;
-  title: string;
-  visible_reaction_count: number;
-  high_signal_reaction_count: number;
-  featured_reactions: FeaturedReactionPreview[];
-  result_url: string;
-}
-
-export interface AnalysisStateResponse {
-  book_id: BookId;
-  title: string;
-  author: string;
-  status: "queued" | "parsing_structure" | "deep_reading" | "chapter_note_generation" | "completed" | "error";
-  stage_label: string;
-  progress_percent?: number | null;
-  completed_chapters: number;
-  total_chapters: number;
-  current_chapter_id?: number | null;
-  current_chapter_ref?: string | null;
-  eta_seconds?: number | null;
-  structure_ready: boolean;
-  chapters: ChapterTreeItem[];
-  current_state_panel: CurrentStatePanel;
-  recent_completed_chapters: ChapterCompletionCard[];
-  last_error?: ErrorPayload | null;
-}
-
-export interface ActivityEvent {
-  event_id: string;
-  timestamp: string;
-  type: string;
-  message: string;
-  chapter_id?: number | null;
-  chapter_ref?: string | null;
-  section_ref?: string | null;
-  highlight_quote?: string | null;
-  reaction_types: ReactionType[];
-  search_query?: string | null;
-  featured_reactions: FeaturedReactionPreview[];
-  visible_reaction_count?: number | null;
-  high_signal_reaction_count?: number | null;
-  result_url?: string | null;
-}
-
-export interface ActivityEventsPageResponse {
-  items: ActivityEvent[];
-  page_info: PageInfo;
-}
-
-export interface SourceAsset {
-  format: string;
-  url: string;
-  media_type: string;
-}
-
-export interface ChapterListItem {
-  chapter_id: number;
-  chapter_ref: string;
-  title: string;
-  segment_count: number;
-  status: "pending" | "completed" | "error";
-  visible_reaction_count: number;
-  reaction_type_diversity: number;
-  high_signal_reaction_count: number;
-  result_ready: boolean;
-}
-
-export interface BookDetailResponse {
-  book_id: BookId;
-  title: string;
-  author: string;
-  cover_image_url?: string | null;
-  book_language: string;
-  output_language: string;
-  status: "analyzing" | "completed" | "error" | "not_started";
-  source_asset: SourceAsset;
-  chapters: ChapterListItem[];
-  my_mark_count: number;
-  reaction_counts: Record<ReactionType, number>;
-  chapter_count: number;
-  completed_chapter_count: number;
-  segment_count: number;
-  sample: boolean;
-}
-
-export interface ReactionCard {
-  reaction_id: ReactionId;
-  type: ReactionType;
-  anchor_quote: string;
-  content: string;
-  search_query?: string | null;
-  search_results: SearchHit[];
-  target_locator?: ReactionTargetLocator | null;
-  section_ref: string;
-  section_summary: string;
-  mark_type?: MarkType | null;
-}
-
-export interface SectionCard {
-  section_ref: string;
-  summary: string;
-  verdict: string;
-  quality_status: string;
-  skip_reason?: string | null;
-  locator?: {
-    href: string;
-    start_cfi?: string | null;
-    end_cfi?: string | null;
-    paragraph_start?: number | null;
-    paragraph_end?: number | null;
-  } | null;
-  reactions: ReactionCard[];
-}
-
-export interface ChapterDetailResponse {
-  book_id: BookId;
-  chapter_id: number;
-  chapter_ref: string;
-  title: string;
-  status: "completed" | "error";
-  output_language: string;
-  visible_reaction_count: number;
-  reaction_type_diversity: number;
-  high_signal_reaction_count: number;
-  featured_reactions: FeaturedReactionPreview[];
-  chapter_reflection: string[];
-  sections: SectionCard[];
-  sections_page_info: PageInfo;
-  available_filters: ReactionFilter[];
-  source_asset: SourceAsset;
-}
-
-export interface MarkRecord {
-  mark_id: MarkId;
-  reaction_id: ReactionId;
-  book_id: BookId;
-  book_title: string;
-  chapter_id: number;
-  chapter_ref: string;
-  section_ref: string;
-  reaction_type: ReactionType;
-  mark_type: MarkType;
-  reaction_excerpt: string;
-  anchor_quote: string;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface MarksPageResponse {
-  items: MarkRecord[];
-  page_info: PageInfo;
-}
-
-export interface BookMarksGroup {
-  chapter_id: number;
-  chapter_ref: string;
-  items: MarkRecord[];
-}
-
-export interface BookMarksResponse {
-  book_id: BookId;
-  groups: BookMarksGroup[];
-}
+export type {
+  ActivityEvent,
+  ActivityEventsPageResponse,
+  AnalysisStateResponse,
+  BookDetailResponse,
+  BookMarksResponse,
+  BookShelfCard,
+  BooksPageResponse,
+  ChapterDetailResponse,
+  ErrorPayload,
+  JobStatusResponse,
+  MarkRecord,
+  MarksPageResponse,
+  UploadAcceptedResponse,
+} from "./api-types";
 
 export class ApiRequestError extends Error {
   status: number;
@@ -380,9 +125,6 @@ export function toFrontendPath(path?: string | null): string {
   }
   if (normalized.startsWith("/analysis/")) {
     return normalized.replace(/^\/analysis\//, "/books/") + "/analysis";
-  }
-  if (normalized === UTILITY_ROUTE_PATTERNS.sample) {
-    return CANONICAL_ROUTE_PATTERNS.books;
   }
   return normalized;
 }
@@ -470,17 +212,18 @@ export function uploadEpub(file: File) {
 }
 
 export function putReactionMark(reactionId: ReactionId, bookId: BookId, markType: MarkType) {
+  const payload: SetMarkRequest = {
+    book_id: bookId,
+    mark_type: markType,
+  };
   return request<MarkRecord>(`/api/marks/${reactionId}`, {
     method: "PUT",
-    body: JSON.stringify({
-      book_id: bookId,
-      mark_type: markType,
-    }),
+    body: JSON.stringify(payload),
   });
 }
 
 export function deleteReactionMark(reactionId: ReactionId) {
-  return request<{ reaction_id: ReactionId; deleted: boolean }>(`/api/marks/${reactionId}`, {
+  return request<DeleteMarkResponse>(`/api/marks/${reactionId}`, {
     method: "DELETE",
   });
 }

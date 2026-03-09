@@ -8,19 +8,19 @@ from .models import BookAnalysisPolicy, BudgetPolicy, ReaderBudget, SkillPolicy,
 _SKILL_PRESETS: dict[SkillProfileName, SkillPolicy] = {
     "balanced": {
         "profile": "balanced",
-        "enabled_reactions": ["highlight", "association", "curious", "discern", "connect_back", "silent"],
+        "enabled_reactions": ["highlight", "association", "curious", "discern", "retrospect", "silent"],
         "max_reactions_per_segment": 8,
         "max_curious_reactions": 2,
     },
     "analytical": {
         "profile": "analytical",
-        "enabled_reactions": ["highlight", "association", "discern", "connect_back", "curious", "silent"],
+        "enabled_reactions": ["highlight", "association", "discern", "retrospect", "curious", "silent"],
         "max_reactions_per_segment": 7,
         "max_curious_reactions": 1,
     },
     "curious": {
         "profile": "curious",
-        "enabled_reactions": ["highlight", "association", "curious", "discern", "connect_back", "silent"],
+        "enabled_reactions": ["highlight", "association", "curious", "discern", "retrospect", "silent"],
         "max_reactions_per_segment": 9,
         "max_curious_reactions": 3,
     },

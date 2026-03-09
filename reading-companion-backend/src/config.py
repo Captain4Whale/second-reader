@@ -36,13 +36,6 @@ def get_tavily_api_key() -> str:
         Tavily API key
     """
     return os.getenv("TAVILY_API_KEY", "")
-
-
-def get_sample_book_id() -> str:
-    """Return the configured sample book id for landing/sample endpoints."""
-    return os.getenv("SAMPLE_BOOK_ID", "").strip()
-
-
 def get_upload_max_bytes() -> int:
     """Return the maximum accepted EPUB upload size in bytes."""
     raw = os.getenv("UPLOAD_MAX_BYTES", "").strip()

@@ -17,5 +17,5 @@ export const APP_ROUTE_TABLE = {
     { from: COMPAT_ROUTE_PATTERNS.marks, to: CANONICAL_ROUTE_PATTERNS.marks },
   ],
   compatRoutes: [...COMPAT_ROUTE_LIST],
-  utility: [UTILITY_ROUTE_PATTERNS.upload, UTILITY_ROUTE_PATTERNS.sample],
+  utility: [UTILITY_ROUTE_PATTERNS.upload],
 } as const;

@@ -7,7 +7,6 @@ import { BookOverviewPage } from "./components/book-overview-page";
 import { ChapterReadPage } from "./components/chapter-read-page";
 import { GlobalMarksPage } from "./components/global-marks-page";
 import { UploadPage } from "./components/upload-page";
-import { APP_ROUTE_TABLE } from "./route-config";
 import {
   CANONICAL_ROUTE_PATTERNS,
   COMPAT_ROUTE_PATTERNS,
@@ -40,10 +39,6 @@ function LegacyMarksRedirect() {
   return <Navigate to={CANONICAL_ROUTE_PATTERNS.marks} replace />;
 }
 
-function LegacySampleRedirect() {
-  return <Navigate to={CANONICAL_ROUTE_PATTERNS.books} replace />;
-}
-
 export const router = createBrowserRouter([
   {
     path: "/",
@@ -51,7 +46,6 @@ export const router = createBrowserRouter([
     children: [
       { index: true, Component: LandingPage },
       { path: UTILITY_ROUTE_PATTERNS.upload.slice(1), Component: UploadPage },
-      { path: UTILITY_ROUTE_PATTERNS.sample.slice(1), Component: LegacySampleRedirect },
       { path: CANONICAL_ROUTE_PATTERNS.books.slice(1), Component: BookshelfPage },
       { path: CANONICAL_ROUTE_PATTERNS.marks.slice(1), Component: GlobalMarksPage },
       { path: COMPAT_ROUTE_PATTERNS.bookshelf.slice(1), Component: LegacyBooksRedirect },

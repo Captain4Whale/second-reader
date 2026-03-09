@@ -246,7 +246,6 @@ def test_api_reads_books_chapters_marks_and_docs(tmp_path):
     public_book_id = to_api_book_id(book_id)
     public_reaction_id = to_api_reaction_id(book_id=book_id, reaction_id="r1")
     api_module.app.state.root = tmp_path
-    api_module.app.state.sample_book_id = book_id
     client = TestClient(api_module.app)
 
     docs_response = client.get("/docs")
@@ -255,15 +254,8 @@ def test_api_reads_books_chapters_marks_and_docs(tmp_path):
     openapi_response = client.get("/openapi.json")
     assert openapi_response.status_code == 200
     assert "/api/books" in openapi_response.json()["paths"]
-
-    landing_response = client.get("/api/landing")
-    assert landing_response.status_code == 200
-    assert landing_response.json()["sample_book"]["book_id"] == public_book_id
-
-    sample_response = client.get("/api/sample")
-    assert sample_response.status_code == 200
-    assert sample_response.json()["book_id"] == public_book_id
-    assert sample_response.json()["default_chapter_id"] == 1
+    assert "/api/landing" not in openapi_response.json()["paths"]
+    assert "/api/sample" not in openapi_response.json()["paths"]
 
     books_response = client.get("/api/books")
     assert books_response.status_code == 200
@@ -274,7 +266,6 @@ def test_api_reads_books_chapters_marks_and_docs(tmp_path):
     detail_response = client.get(f"/api/books/{public_book_id}")
     assert detail_response.status_code == 200
     assert detail_response.json()["title"] == "Demo Book"
-    assert detail_response.json()["sample"] is True
 
     analysis_response = client.get(f"/api/books/{public_book_id}/analysis-state")
     assert analysis_response.status_code == 200

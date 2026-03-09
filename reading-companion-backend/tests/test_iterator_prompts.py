@@ -46,13 +46,13 @@ def test_reader_express_system_mentions_structural_nodes_and_rhetoric():
     assert "这些位置同样可能触发 💡、✍️、🔍、⚡、🔗 或 🤫" in READER_EXPRESS_SYSTEM
 
 
-def test_reader_express_system_mentions_discern_and_connect_back():
+def test_reader_express_system_mentions_discern_and_retrospect():
     """Reader system prompt should expose the expanded six-tool toolbox."""
     assert "⚡ 审辩" in READER_EXPRESS_SYSTEM
     assert "🔗 回溯" in READER_EXPRESS_SYSTEM
-    assert "只能是 `highlight` / `association` / `curious` / `discern` / `connect_back` / `silent`" in READER_EXPRESS_SYSTEM
+    assert "只能是 `highlight` / `association` / `curious` / `discern` / `retrospect` / `silent`" in READER_EXPRESS_SYSTEM
     assert "审辩不是找茬" in READER_EXPRESS_SYSTEM
-    assert "`connect_back` 必须点出前文的具体位置或内容" in READER_EXPRESS_SYSTEM
+    assert "`retrospect` 必须点出前文的具体位置或内容" in READER_EXPRESS_SYSTEM
 
 
 def test_reader_curiosity_fuse_system_requires_digested_search_output():

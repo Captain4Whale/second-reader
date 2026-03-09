@@ -114,7 +114,7 @@ def test_render_chapter_markdown_uses_english_search_labels():
     assert "> Sources: [A useful source](https://example.com/source)" in output
 
 
-def test_render_chapter_markdown_supports_discern_and_connect_back():
+def test_render_chapter_markdown_supports_discern_and_retrospect():
     """New reaction types should render with their own emojis."""
     chapter = {
         "id": 3,
@@ -137,7 +137,7 @@ def test_render_chapter_markdown_supports_discern_and_connect_back():
                     "search_results": [],
                 },
                 {
-                    "type": "connect_back",
+                    "type": "retrospect",
                     "content": "这和前文 1.4 对关系规则的讨论形成了呼应。",
                     "search_results": [],
                 },

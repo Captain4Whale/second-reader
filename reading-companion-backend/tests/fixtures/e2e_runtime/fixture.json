@@ -86,7 +86,7 @@
       "kept_section_count": 1,
       "skipped_section_count": 0,
       "reaction_counts": {
-        "connect_back": 1
+        "retrospect": 1
       }
     }
   },
@@ -98,7 +98,7 @@
     "chapter_id": 1,
     "chapter_ref": "Chapter 1",
     "reaction_types": [
-      "connect_back"
+      "retrospect"
     ],
     "highlight_quote": "You do not enter relationships with value, you enter relationships as value.",
     "visible_reaction_count": 1,
@@ -106,7 +106,7 @@
     "featured_reactions": [
       {
         "reaction_id": "fixture-r1",
-        "type": "connect_back",
+        "type": "retrospect",
         "segment_ref": "1.1",
         "anchor_quote": "You do not enter relationships with value, you enter relationships as value.",
         "content": "The chapter keeps returning to exchange structure as the thing that survives moods and stated ideals.",

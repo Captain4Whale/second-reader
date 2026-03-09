@@ -57,9 +57,9 @@ _REACTION_TO_INTERNAL = {
     "highlight": "highlight",
     "association": "association",
     "discern": "discern",
-    "retrospect": "connect_back",
+    "retrospect": "retrospect",
     "curious": "curious",
-    "connect_back": "connect_back",
+    "connect_back": "retrospect",
     "critique": "discern",
     "curiosity": "curious",
 }

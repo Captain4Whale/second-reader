@@ -170,7 +170,7 @@ def _default_skill_policy() -> SkillPolicy:
     """Fallback skill policy when state is partially missing."""
     return {
         "profile": "balanced",
-        "enabled_reactions": ["highlight", "association", "curious", "discern", "connect_back", "silent"],
+        "enabled_reactions": ["highlight", "association", "curious", "discern", "retrospect", "silent"],
         "max_reactions_per_segment": 8,
         "max_curious_reactions": 2,
     }
@@ -465,7 +465,7 @@ def _infer_reason_codes(issues: list[str], reflection: dict) -> list[ReasonCode]
         ("推敲", "NO_CONCRETE_DISCERN"),
         ("discern", "NO_CONCRETE_DISCERN"),
         ("回溯", "NO_EXPLICIT_CALLBACK"),
-        ("connect_back", "NO_EXPLICIT_CALLBACK"),
+        ("retrospect", "NO_EXPLICIT_CALLBACK"),
         ("证据", "INSUFFICIENT_EVIDENCE"),
         ("来源", "INSUFFICIENT_EVIDENCE"),
         ("拖沓", "OVER_EXTENDED"),
@@ -561,10 +561,11 @@ def _normalize_reaction_type(value: object) -> str:
         "discern": "discern",
         "critique": "discern",
         "challenge": "discern",
-        "connect_back": "connect_back",
-        "callback": "connect_back",
-        "recall": "connect_back",
-        "backlink": "connect_back",
+        "retrospect": "retrospect",
+        "connect_back": "retrospect",
+        "callback": "retrospect",
+        "recall": "retrospect",
+        "backlink": "retrospect",
         "silent": "silent",
         "skip": "silent",
     }
@@ -1817,12 +1818,12 @@ def express_progress_message(state: ReaderState) -> str:
     if not active_reactions:
         return "🤫 这段是过渡，安静读过"
 
-    connect_back = next(
-        (reaction for reaction in active_reactions if reaction.get("type") == "connect_back"),
+    retrospect = next(
+        (reaction for reaction in active_reactions if reaction.get("type") == "retrospect"),
         None,
     )
-    if connect_back:
-        snippet = _short_progress_text(connect_back.get("content", ""))
+    if retrospect:
+        snippet = _short_progress_text(retrospect.get("content", ""))
         return f"🔗 {snippet}..." if snippet else "🔗 这和前文某处呼应了..."
 
     discern = next(
@@ -1918,7 +1919,7 @@ def update_memory(memory: ReaderMemory, segment: RenderedSegment) -> ReaderMemor
         findings = [
             _reaction_memory_text(reaction)
             for reaction in reactions
-            if reaction.get("type") in {"highlight", "association", "discern", "connect_back"}
+            if reaction.get("type") in {"highlight", "association", "discern", "retrospect"}
             and _reaction_memory_text(reaction)
         ]
         if findings:

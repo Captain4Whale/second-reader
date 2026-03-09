@@ -438,7 +438,7 @@ def parse_agent_reactions(path: Path) -> list[AgentReaction]:
         "✍️": "association",
         "🔍": "curious",
         "⚡": "discern",
-        "🔗": "connect_back",
+        "🔗": "retrospect",
         "🤫": "silent",
     }
 

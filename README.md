@@ -35,7 +35,6 @@ Important backend variables:
 - `LLM_API_KEY`
 - `LLM_MODEL`
 - `TAVILY_API_KEY`
-- `SAMPLE_BOOK_ID`
 - `UPLOAD_MAX_BYTES`
 - `BACKEND_RUNTIME_ROOT`
 - `BACKEND_CORS_ORIGINS`
@@ -58,6 +57,7 @@ Important frontend variables:
 - `make contract-check`: verify docs appendix, backend OpenAPI snapshot, and frontend contract guards
 - `make e2e`: run the fixture-backed upload -> analysis -> book -> chapter -> marks Playwright flow
 - `make build`: build the frontend bundle
+- `cd reading-companion-frontend && npm run generate-api-types`: refresh generated frontend API types after the backend OpenAPI snapshot changes
 
 ## Key Docs
 - [Workspace overview](docs/workspace-overview.md)
@@ -68,6 +68,7 @@ Important frontend variables:
 ## Contract Validation
 - `docs/api-contract.md` remains the human authority for the web/API boundary.
 - The machine-readable appendix at the bottom of that file is checked against backend `src/api/contract.py` and frontend `src/app/lib/contract.ts`.
+- Frontend API response/request types are generated from `contract/openapi.public.snapshot.json` into `reading-companion-frontend/src/app/lib/generated/api-schema.d.ts`.
 - Run `make contract-check` before merging contract changes.
 - Run `make e2e` for the fixture-backed canonical-route regression when changing upload, analysis, marks, or route wiring.
 

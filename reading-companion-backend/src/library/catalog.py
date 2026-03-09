@@ -249,7 +249,6 @@ def get_book_detail(book_id: str, root: Path | None = None) -> dict:
         "chapter_count": len(manifest.get("chapters", [])),
         "completed_chapter_count": _completed_chapter_count(manifest),
         "segment_count": sum(int(chapter.get("segment_count", 0)) for chapter in manifest.get("chapters", [])),
-        "sample": False,
     }
 
 

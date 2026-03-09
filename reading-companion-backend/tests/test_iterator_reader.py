@@ -181,7 +181,7 @@ def test_reflect_node_keeps_structured_reason_codes_and_targets(monkeypatch):
             "depth": 2,
             "reason_codes": ["WEAK_TEXT_CONNECTION", "low_depth", "UNKNOWN_CODE"],
             "target_reaction_indexes": [1, 5, -1],
-            "issues": ["connect_back is vague"],
+            "issues": ["retrospect is vague"],
             "revision_instruction": "Tighten the callback with one concrete earlier quote.",
         },
     )
@@ -193,7 +193,7 @@ def test_reflect_node_keeps_structured_reason_codes_and_targets(monkeypatch):
         "output_language": "en",
         "reactions": [
             {"type": "highlight", "content": "Keep this.", "search_results": []},
-            {"type": "connect_back", "content": "This echoes earlier.", "search_results": []},
+            {"type": "retrospect", "content": "This echoes earlier.", "search_results": []},
         ],
         "revision_count": 0,
         "max_revisions": 2,
@@ -457,7 +457,7 @@ def test_progress_messages_follow_actual_reactions(monkeypatch):
     state = {
         "reactions": [
             {
-                "type": "connect_back",
+                "type": "retrospect",
                 "content": "这和前面第 3 章的观点呼应了，作者其实在补前面的洞。",
                 "search_results": [],
             },

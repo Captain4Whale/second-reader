@@ -10,8 +10,7 @@ export function RootLayout() {
     location.pathname.startsWith("/books") ||
     location.pathname.startsWith("/bookshelf") ||
     location.pathname.startsWith("/books/") ||
-    location.pathname.startsWith("/upload") ||
-    location.pathname.startsWith("/sample")
+    location.pathname.startsWith("/upload")
     );
 
   return (

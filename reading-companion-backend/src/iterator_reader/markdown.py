@@ -12,7 +12,7 @@ REACTION_EMOJI = {
     "association": "✍️",
     "curious": "🔍",
     "discern": "⚡",
-    "connect_back": "🔗",
+    "retrospect": "🔗",
     "silent": "🤫",
 }
 

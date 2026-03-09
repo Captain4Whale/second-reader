@@ -31,11 +31,9 @@ from src.api.schemas import (
     DeleteMarkResponse,
     ErrorResponse,
     JobStatusResponse,
-    LandingResponse,
     MarksPageResponse,
     MarkRecord,
     ReactionsPageResponse,
-    SamplePageResponse,
     SetMarkRequest,
     UploadAcceptedResponse,
 )
@@ -45,7 +43,6 @@ from src.config import (
     get_backend_runtime_root,
     get_backend_test_fixture_profile,
     get_backend_test_mode,
-    get_sample_book_id,
     get_upload_max_bytes,
 )
 from src.library.catalog import (
@@ -54,7 +51,6 @@ from src.library.catalog import (
     get_analysis_state,
     get_book,
     get_book_detail,
-    get_book_featured_reactions,
     get_chapter_detail,
     get_chapter_reactions_page,
     get_chapter_result,
@@ -86,93 +82,6 @@ if cors_origins:
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
-    )
-
-
-REACTION_TYPE_INFOS = [
-    {
-        "type": "highlight",
-        "label": "Highlight",
-        "description": "Marks a sentence the agent thinks is worth carrying forward.",
-        "priority": 0,
-    },
-    {
-        "type": "association",
-        "label": "Association",
-        "description": "Connects the passage to adjacent ideas or patterns.",
-        "priority": 4,
-    },
-    {
-        "type": "curious",
-        "label": "Curious",
-        "description": "Pushes on unanswered questions or missing evidence.",
-        "priority": 3,
-    },
-    {
-        "type": "discern",
-        "label": "Discern",
-        "description": "Surfaces the sharper distinction or hidden tension in a claim.",
-        "priority": 1,
-    },
-    {
-        "type": "retrospect",
-        "label": "Retrospect",
-        "description": "Connects the current passage back to an earlier thread in the book.",
-        "priority": 2,
-    },
-]
-
-
-LANDING_ACTIONS = [
-    {"key": "open_books", "label": "Open Books", "target_url": "/books"},
-    {"key": "open_marks", "label": "My Marks", "target_url": "/marks"},
-]
-
-
-@app.get("/api/landing", response_model=LandingResponse, responses=ERROR_MODELS, deprecated=True)
-def get_landing() -> LandingResponse:
-    """Return the legacy backend-driven landing payload."""
-    sample_book_id = _sample_book_id()
-    detail = _book_detail_payload(sample_book_id)
-    teasers = get_book_featured_reactions(sample_book_id, root=_root(), limit=3)
-    return LandingResponse(
-        product_title="Deep Read Agent",
-        tagline="A co-reader that surfaces tensions, blind spots, and sharp reactions while you read nonfiction.",
-        primary_actions=LANDING_ACTIONS,
-        reaction_types=REACTION_TYPE_INFOS,
-        sample_book={
-            "book_id": detail["book_id"],
-            "title": detail["title"],
-            "author": detail["author"],
-            "cover_image_url": detail["cover_image_url"],
-            "status": detail["status"],
-            "result_url": canonical_book_path(detail["book_id"]),
-        },
-        sample_teasers=teasers,
-    )
-
-
-@app.get("/api/sample", response_model=SamplePageResponse, responses=ERROR_MODELS, deprecated=True)
-def get_sample() -> SamplePageResponse:
-    """Return the legacy backend-driven sample payload."""
-    sample_book_id = _sample_book_id()
-    detail = _book_detail_payload(sample_book_id)
-    chapters = detail.get("chapters", [])
-    if not chapters:
-        raise ApiError(status=404, code="BOOK_NOT_FOUND", message="Configured sample book has no chapters.")
-    default_chapter_id = int(chapters[0]["chapter_id"])
-    for chapter in chapters:
-        if chapter.get("result_ready"):
-            default_chapter_id = int(chapter["chapter_id"])
-            break
-    return SamplePageResponse(
-        book_id=detail["book_id"],
-        default_chapter_id=default_chapter_id,
-        title=detail["title"],
-        author=detail["author"],
-        cover_image_url=detail["cover_image_url"],
-        teaser_reactions=get_book_featured_reactions(sample_book_id, root=_root(), limit=3),
-        result_entry_url=canonical_book_path(detail["book_id"]),
     )
 
 
@@ -442,14 +351,6 @@ def _root() -> Path:
     return Path(getattr(app.state, "root", get_backend_runtime_root()))
 
 
-def _sample_book_id() -> str:
-    """Resolve the configured sample book id."""
-    sample_book_id = str(getattr(app.state, "sample_book_id", "") or get_sample_book_id()).strip()
-    if not sample_book_id:
-        raise ApiError(status=404, code="BOOK_NOT_FOUND", message="Sample book is not configured.")
-    return sample_book_id
-
-
 def _poll_interval() -> float:
     """Return the websocket poll interval in seconds."""
     return float(getattr(app.state, "ws_poll_interval", 1.0))
@@ -512,7 +413,6 @@ def _book_detail_payload(book_id: str) -> dict:
         payload = get_book_detail(book_id, root=_root())
     except FileNotFoundError as exc:
         raise ApiError(status=404, code="BOOK_NOT_FOUND", message=f"Book '{book_id}' was not found.") from exc
-    payload["sample"] = book_id == str(getattr(app.state, "sample_book_id", "") or get_sample_book_id()).strip()
     return payload
 
 

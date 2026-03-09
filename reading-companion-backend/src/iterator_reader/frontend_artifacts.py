@@ -46,11 +46,11 @@ from .storage import (
 )
 
 
-HIGH_SIGNAL_TYPES = {"highlight", "curious", "discern", "connect_back"}
+HIGH_SIGNAL_TYPES = {"highlight", "curious", "discern", "retrospect"}
 FEATURED_PRIORITY = {
     "highlight": 0,
     "discern": 1,
-    "connect_back": 2,
+    "retrospect": 2,
     "curious": 3,
     "association": 4,
 }

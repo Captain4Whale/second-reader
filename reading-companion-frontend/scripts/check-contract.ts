@@ -8,7 +8,6 @@ import {
   COMPAT_ROUTE_LIST,
   LANDING_STRATEGY,
   PUBLIC_CONTRACT_SPEC,
-  UTILITY_ROUTE_PATTERNS,
 } from "../src/app/lib/contract";
 import { APP_ROUTE_TABLE } from "../src/app/route-config";
 
@@ -54,8 +53,7 @@ async function main(): Promise<void> {
     [...COMPAT_ROUTE_LIST],
     "Compat routes must remain redirect-only entries.",
   );
-  assert.ok(APP_ROUTE_TABLE.utility.includes(UTILITY_ROUTE_PATTERNS.upload));
-  assert.ok(APP_ROUTE_TABLE.utility.includes(UTILITY_ROUTE_PATTERNS.sample));
+  assert.deepEqual(APP_ROUTE_TABLE.utility, ["/upload"]);
   assert.deepEqual(PUBLIC_CONTRACT_SPEC.landing_strategy, LANDING_STRATEGY);
 
   const landingPageSource = await readText("src/app/components/landing-page.tsx");
@@ -64,7 +62,7 @@ async function main(): Promise<void> {
   assert.doesNotMatch(landingPageSource, /const teaserReactions\s*=/);
 
   const sourceFiles = await collectSourceFiles(srcRoot);
-  const bannedPatterns = ["/api/landing", "/api/sample", "fetchLanding", "fetchSample"];
+  const bannedPatterns = ["/api/landing", "/api/sample", "fetchLanding", "fetchSample", '"/sample"', "'/sample'"];
   for (const filePath of sourceFiles) {
     const contents = await fs.readFile(filePath, "utf-8");
     for (const pattern of bannedPatterns) {

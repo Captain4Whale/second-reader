@@ -58,23 +58,6 @@ class ErrorResponse(ApiModel):
     )
 
 
-class LandingAction(ApiModel):
-    """Primary landing-page CTA."""
-
-    key: str = Field(description="Stable action key used by the frontend.")
-    label: str = Field(description="User-facing label shown on the action button.")
-    target_url: str = Field(description="Frontend route or URL opened when the action is clicked.")
-
-
-class ReactionTypeInfo(ApiModel):
-    """Metadata describing one visible reaction type."""
-
-    type: ReactionType = Field(description="Stable reaction type key.")
-    label: str = Field(description="User-facing label for the reaction type.")
-    description: str = Field(description="Short explanation of what this reaction type means.")
-    priority: int = Field(description="Display priority for teaser and highlight ordering.")
-
-
 class SearchHit(ApiModel):
     """One external search result attached to a reaction."""
 
@@ -135,40 +118,6 @@ class FeaturedReactionPreview(ApiModel):
         default=None,
         description="Reader locator used to jump to the source passage for this reaction.",
     )
-
-
-class SampleBookSummary(ApiModel):
-    """Compatibility payload for the legacy backend-driven landing sample."""
-
-    book_id: int = Field(description="Stable public integer identifier of the sample book.")
-    title: str = Field(description="Title of the sample book.")
-    author: str = Field(description="Author of the sample book.")
-    cover_image_url: Optional[str] = Field(default=None, description="Optional API URL for the sample book cover image.")
-    status: str = Field(description="Reading status for the sample book. Expected to be completed.")
-    result_url: str = Field(description="Frontend route that opens the sample result experience.")
-
-
-class LandingResponse(ApiModel):
-    """Compatibility payload for the legacy backend-driven landing page."""
-
-    product_title: str = Field(description="Product title shown on the landing page.")
-    tagline: str = Field(description="One-sentence product positioning.")
-    primary_actions: list[LandingAction] = Field(description="Primary call-to-action buttons rendered on landing.")
-    reaction_types: list[ReactionTypeInfo] = Field(description="Cards explaining the product's reaction types.")
-    sample_book: SampleBookSummary = Field(description="Metadata for the featured sample book.")
-    sample_teasers: list[FeaturedReactionPreview] = Field(description="Small set of teaser reactions shown directly on landing.")
-
-
-class SamplePageResponse(ApiModel):
-    """Compatibility payload for the legacy backend-driven sample page."""
-
-    book_id: int = Field(description="Stable public integer identifier of the sample book.")
-    default_chapter_id: int = Field(description="Chapter identifier opened by default on the sample page.")
-    title: str = Field(description="Title of the sample book.")
-    author: str = Field(description="Author of the sample book.")
-    cover_image_url: Optional[str] = Field(default=None, description="Optional API URL for the sample book cover image.")
-    teaser_reactions: list[FeaturedReactionPreview] = Field(description="Highlighted reactions introducing the sample experience.")
-    result_entry_url: str = Field(description="Frontend route that opens the full sample result page.")
 
 
 class BookShelfCard(ApiModel):
@@ -350,7 +299,6 @@ class BookDetailResponse(ApiModel):
     chapter_count: int = Field(description="Total number of chapters in the book.")
     completed_chapter_count: int = Field(description="Number of completed chapters in the book.")
     segment_count: int = Field(description="Total number of semantic segments across the book.")
-    sample: bool = Field(description="Whether this book is the configured sample book.")
 
 
 class ReactionCard(ApiModel):
