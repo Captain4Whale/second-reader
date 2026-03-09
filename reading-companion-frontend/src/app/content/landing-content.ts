@@ -6,8 +6,7 @@ const DEFAULT_PREVIEW_BOOK_ID: BookId = 2488754074399462;
 export const LANDING_HERO = {
   title: "What AI Thinks About",
   emphasis: "When AI Reads",
-  description:
-    "An AI reading companion that doesn't just summarize — it reads alongside you, noticing what you might miss, questioning what you might accept, and connecting what you might not link.",
+  description: "An AI reading companion that reads alongside you, spotting what you might miss and surfacing links you have not made yet.",
   kicker: "Helping you find your UNKNOWN UNKNOWNS.",
   primaryCta: {
     label: "View Sample",
@@ -19,15 +18,11 @@ export const LANDING_HERO = {
   },
 } as const;
 
-export const LANDING_TRIBUTE_CARD = {
-  reactionType: "association" as const,
-  quoteLabel: "Original quote",
-  quote: "Pain is inevitable, suffering is optional.",
-  sourceLabel: "Source",
-  source: "What I Talk About When I Talk About Running",
-  reactionLabel: "AI reaction",
-  reaction:
-    "Murakami's line separates pain from the story we build around it. It connects naturally to difficult reading: friction may be inevitable, but suffering often begins when every moment of resistance is mistaken for failure.",
+export const LANDING_HERO_ART = {
+  src: "/landing-hero-illustration.png",
+  alt: "A brass reading automaton leaning over an open book at a cluttered desk.",
+  desktopObjectPosition: "50% 50%",
+  mobileObjectPosition: "52% 44%",
 } as const;
 
 export const LANDING_REACTION_SECTION = {

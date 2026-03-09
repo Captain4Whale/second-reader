@@ -4,12 +4,12 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router";
 import {
   LANDING_FOOTER_COPY,
+  LANDING_HERO_ART,
   LANDING_HERO,
   LANDING_PREVIEW_CONFIG,
   LANDING_PREVIEW_SECTION,
   LANDING_REACTION_CARDS,
   LANDING_REACTION_SECTION,
-  LANDING_TRIBUTE_CARD,
 } from "../content/landing-content";
 import { type BookDetailResponse, type ChapterDetailResponse, fetchBookDetail, fetchChapterDetail } from "../lib/api";
 import { canonicalBookPath, type ReactionType } from "../lib/contract";
@@ -53,55 +53,25 @@ function splitKickerText(text: string): { lead: string; emphasis: string } {
   };
 }
 
-function LandingTributeCard({ className = "" }: { className?: string }) {
-  const reaction = reactionMeta[LANDING_TRIBUTE_CARD.reactionType];
-
+function LandingHeroIllustration({ className = "", mobile = false }: { className?: string; mobile?: boolean }) {
   return (
-    <div
-      className={`rounded-[30px] border border-[var(--warm-300)]/40 bg-white/88 p-6 shadow-[0_24px_80px_rgba(68,42,28,0.10)] backdrop-blur-sm ${className}`.trim()}
-    >
-      <div className="mb-5 flex items-start justify-between gap-4">
-        <span
-          className={`inline-flex items-center rounded-full px-3 py-1 text-[0.75rem] font-medium text-[var(--warm-900)] ${reaction.surfaceClass}`}
-        >
-          {reaction.label}
-        </span>
-        <div className="text-right text-[var(--warm-500)]">
-          <p className="tracking-[0.18em] uppercase" style={{ fontSize: "0.625rem", fontWeight: 600 }}>
-            {LANDING_TRIBUTE_CARD.sourceLabel}
-          </p>
-          <p className="mt-1 max-w-[12rem] leading-5" style={{ fontSize: "0.8125rem" }}>
-            {LANDING_TRIBUTE_CARD.source}
-          </p>
-        </div>
-      </div>
-
-      <div className="mb-5">
-        <p
-          className="mb-3 text-[var(--warm-500)] tracking-[0.18em] uppercase"
-          style={{ fontSize: "0.625rem", fontWeight: 600 }}
-        >
-          {LANDING_TRIBUTE_CARD.quoteLabel}
-        </p>
-        <blockquote
-          className="font-['Lora',Georgia,serif] text-[var(--warm-800)] italic"
-          style={{ fontSize: "1.55rem", lineHeight: 1.45 }}
-        >
-          “{LANDING_TRIBUTE_CARD.quote}”
-        </blockquote>
-      </div>
-
-      <div>
-        <p
-          className="mb-2 text-[var(--warm-500)] tracking-[0.18em] uppercase"
-          style={{ fontSize: "0.625rem", fontWeight: 600 }}
-        >
-          {LANDING_TRIBUTE_CARD.reactionLabel}
-        </p>
-        <p className="text-[var(--warm-700)]" style={{ fontSize: "0.9375rem", lineHeight: 1.8 }}>
-          {LANDING_TRIBUTE_CARD.reaction}
-        </p>
-      </div>
+    <div className={`relative ${className}`.trim()}>
+      <img
+        src={LANDING_HERO_ART.src}
+        alt={LANDING_HERO_ART.alt}
+        className="block h-auto w-full drop-shadow-[0_26px_70px_rgba(89,62,38,0.16)]"
+        style={{ objectPosition: mobile ? LANDING_HERO_ART.mobileObjectPosition : LANDING_HERO_ART.desktopObjectPosition }}
+      />
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0"
+        style={{
+          background: [
+            "linear-gradient(to right, var(--warm-100) 0%, rgba(248,244,238,0) 12%, rgba(248,244,238,0) 88%, var(--warm-100) 100%)",
+            "linear-gradient(to bottom, var(--warm-100) 0%, rgba(248,244,238,0) 10%, rgba(248,244,238,0) 90%, var(--warm-100) 100%)",
+          ].join(", "),
+        }}
+      />
     </div>
   );
 }
@@ -208,14 +178,14 @@ export function LandingPage() {
           <div className="absolute left-16 bottom-10 hidden xl:block h-56 w-56 rounded-full bg-[var(--highlight-color)] blur-3xl opacity-60" />
         </div>
 
-        <div className="relative z-10 max-w-5xl xl:max-w-[82rem] 2xl:max-w-[92rem] mx-auto xl:px-6">
+        <div className="relative z-10 max-w-5xl xl:max-w-[80rem] 2xl:max-w-[86rem] mx-auto xl:px-4 2xl:px-6">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, ease: "easeOut" }}
-            className="text-center xl:grid xl:grid-cols-[minmax(0,58rem)_19rem] 2xl:grid-cols-[minmax(0,66rem)_20rem] xl:items-start xl:gap-3 2xl:gap-4"
+            className="text-center xl:grid xl:grid-cols-[minmax(0,50rem)_22rem] 2xl:grid-cols-[minmax(0,54rem)_24rem] xl:items-center xl:gap-5 2xl:gap-6"
           >
-            <div>
+            <div className="xl:pr-2 2xl:pr-4">
               <div className="xl:w-full">
                 <h1 className="font-['Lora',Georgia,serif] text-[var(--warm-900)] mb-6" style={{ fontSize: "clamp(3rem, 4.4vw, 4.35rem)", fontWeight: 500, lineHeight: 1.08 }}>
                   <span className="inline-block xl:whitespace-nowrap">{LANDING_HERO.title}</span>
@@ -254,11 +224,11 @@ export function LandingPage() {
                 </div>
               </div>
             </div>
-            <div className="hidden xl:block xl:pt-12 2xl:pt-14">
-              <LandingTributeCard className="rotate-[-1.5deg]" />
+            <div className="hidden xl:flex xl:justify-end xl:self-center">
+              <LandingHeroIllustration className="w-full max-w-[22rem] 2xl:max-w-[24rem]" />
             </div>
-            <div className="mt-10 xl:hidden max-w-xl mx-auto text-left">
-              <LandingTributeCard />
+            <div className="mt-10 xl:hidden max-w-2xl mx-auto">
+              <LandingHeroIllustration mobile className="w-full max-w-[20rem] mx-auto" />
             </div>
           </motion.div>
         </div>
