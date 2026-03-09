@@ -1,5 +1,7 @@
-import { Outlet, Link, useLocation } from "react-router";
-import { BookOpen, Library, Bookmark } from "lucide-react";
+import { BookOpen, Bookmark, Library } from "lucide-react";
+import { useEffect } from "react";
+import { Link, Outlet, useLocation } from "react-router";
+import { BRAND_CONFIG, getDocumentTitle } from "../config/brand";
 
 export function RootLayout() {
   const location = useLocation();
@@ -13,9 +15,12 @@ export function RootLayout() {
     location.pathname.startsWith("/upload")
     );
 
+  useEffect(() => {
+    document.title = getDocumentTitle(location.pathname);
+  }, [location.pathname]);
+
   return (
     <div className="min-h-screen bg-[var(--warm-100)]">
-      {/* Navigation */}
       <nav className={`sticky top-0 z-50 backdrop-blur-md ${isLanding ? "bg-transparent" : "bg-[var(--warm-100)]/90 border-b border-[var(--warm-300)]/40"}`}>
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2.5 no-underline">
@@ -23,7 +28,7 @@ export function RootLayout() {
               <BookOpen className="w-4 h-4 text-white" />
             </div>
             <span className="font-['Lora',Georgia,serif] text-[var(--warm-900)] tracking-tight" style={{ fontSize: '1.125rem', fontWeight: 600 }}>
-              DeepRead
+              {BRAND_CONFIG.productName}
             </span>
           </Link>
 
@@ -38,7 +43,7 @@ export function RootLayout() {
               style={{ fontSize: '0.875rem' }}
             >
               <Library className="w-4 h-4" />
-              Bookshelf
+              {BRAND_CONFIG.navigation.booksLabel}
             </Link>
             <Link
               to="/marks"
@@ -50,13 +55,12 @@ export function RootLayout() {
               style={{ fontSize: '0.875rem' }}
             >
               <Bookmark className="w-4 h-4" />
-              My Marks
+              {BRAND_CONFIG.navigation.marksLabel}
             </Link>
           </div>
         </div>
       </nav>
 
-      {/* Main Content */}
       <main>
         <Outlet />
       </main>

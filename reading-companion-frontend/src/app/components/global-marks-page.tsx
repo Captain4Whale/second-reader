@@ -9,14 +9,14 @@ export function GlobalMarksPage() {
   const { data, loading, error, reload } = useApiResource(fetchGlobalMarks, []);
 
   if (loading) {
-    return <LoadingState title="Loading saved marks..." />;
+    return <LoadingState title="Loading your marks..." />;
   }
 
   if (error || !data) {
     return (
       <ErrorState
         title="Marks page is unavailable"
-        message={error ?? "The API did not return mark data."}
+        message={error ?? "We could not load your saved marks right now."}
         onRetry={reload}
         linkLabel="Back to books"
         linkTo="/books"

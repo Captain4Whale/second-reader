@@ -1,41 +1,72 @@
-import type { ReactionId, ReactionType } from "../lib/contract";
+import { BRAND_CONFIG } from "../config/brand";
+import { canonicalBookPath, type BookId, type ReactionId, type ReactionType } from "../lib/contract";
+
+const DEFAULT_PREVIEW_BOOK_ID: BookId = 2488754074399462;
+
+export const LANDING_HERO = {
+  eyebrow: "AI-Powered Deep Reading",
+  title: "Read deeper than you",
+  emphasis: "ever thought possible",
+  description:
+    "An AI reading companion that doesn't just summarize — it reads alongside you, noticing what you might miss, questioning what you might accept, and connecting what you might not link.",
+  primaryCta: {
+    label: "View Sample",
+    to: canonicalBookPath(DEFAULT_PREVIEW_BOOK_ID),
+  },
+  secondaryCta: {
+    label: "Upload EPUB",
+    to: "/upload",
+  },
+} as const;
+
+export const LANDING_REACTION_SECTION = {
+  eyebrow: "Six Types of Reading Reactions",
+  title: "How the AI reads with you",
+} as const;
+
+export const LANDING_PREVIEW_SECTION = {
+  eyebrow: "Live Preview",
+  title: "A taste of deep reading",
+  description: "See how one book turns into a trail of highlighted passages, distinctions, questions, and callbacks.",
+  ctaLabel: "Explore the full sample",
+} as const;
 
 export const LANDING_REACTION_CARDS = [
   {
     key: "highlight",
     accentType: "highlight",
     title: "Highlight",
-    description: "Surface the sentence the agent thinks is most worth carrying forward.",
+    description: "Key passages that carry the most weight in the argument.",
   },
   {
     key: "association",
     accentType: "association",
     title: "Association",
-    description: "Connect a passage to nearby ideas, frameworks, or outside patterns.",
+    description: "Cross-domain connections the author does not explicitly make.",
   },
   {
     key: "discern",
     accentType: "discern",
     title: "Discern",
-    description: "Sharpen the distinction, tension, or hidden tradeoff inside a claim.",
+    description: "Tensions, assumptions, or tradeoffs that deserve sharper attention.",
   },
   {
     key: "retrospect",
     accentType: "retrospect",
     title: "Retrospect",
-    description: "Call back to earlier threads in the book when the current passage reactivates them.",
+    description: "Earlier passages that gain new meaning in light of what comes later.",
   },
   {
     key: "curious",
     accentType: "curious",
     title: "Curious",
-    description: "Push into missing evidence, edge cases, and questions worth searching.",
+    description: "Questions that send the AI searching for missing context or evidence.",
   },
   {
     key: "marks",
     accentType: "highlight",
     title: "Known / Blindspot",
-    description: "Use marks to separate what already felt familiar from what actually changed your map.",
+    description: "A simple way to separate what already felt familiar from what changed your map.",
   },
 ] as const satisfies ReadonlyArray<{
   key: string;
@@ -43,12 +74,6 @@ export const LANDING_REACTION_CARDS = [
   title: string;
   description: string;
 }>;
-
-export const LANDING_CONTRACT_NOTES = [
-  "The canonical web routes are `/`, `/books`, `/books/:id`, `/books/:id/analysis`, `/books/:id/chapters/:chapterId`, and `/marks`.",
-  "All public IDs are integers at the API boundary, even though the backend still stores legacy slug/hash identifiers internally.",
-  "The upload flow remains available at `/upload` as a utility route, but it is not part of the canonical navigation contract.",
-] as const;
 
 export const LANDING_SAMPLE_TEASERS = [
   {
@@ -83,3 +108,22 @@ export const LANDING_SAMPLE_TEASERS = [
   anchorQuote: string;
   content: string;
 }>;
+
+export const LANDING_PREVIEW_CONFIG = {
+  mode: "api",
+  api: {
+    bookId: DEFAULT_PREVIEW_BOOK_ID,
+    chapterId: undefined as number | undefined,
+    maxItems: 3,
+    ctaTo: canonicalBookPath(DEFAULT_PREVIEW_BOOK_ID),
+  },
+  static: {
+    sourceTitle: "The Value of Others",
+    sourceAuthor: "Orion Taraban",
+    sourceLabel: "From",
+    ctaTo: canonicalBookPath(DEFAULT_PREVIEW_BOOK_ID),
+    items: LANDING_SAMPLE_TEASERS,
+  },
+} as const;
+
+export const LANDING_FOOTER_COPY = BRAND_CONFIG.footer.signature;

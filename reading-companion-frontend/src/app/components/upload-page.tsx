@@ -1,8 +1,17 @@
 import { ArrowRight, LoaderCircle, Upload } from "lucide-react";
 import { FormEvent, useEffect, useState } from "react";
 import { Link } from "react-router";
-import { fetchJobStatus, JobStatusResponse, toFrontendPath, toWebSocketUrl, uploadEpub } from "../lib/api";
+import { fetchJobStatus, JobStatusResponse, toWebSocketUrl, uploadEpub } from "../lib/api";
 import { canonicalBookAnalysisPath, canonicalBookPath } from "../lib/contract";
+
+const jobStageLabels: Record<JobStatusResponse["status"], string> = {
+  queued: "Preparing your book",
+  parsing_structure: "Reading the structure",
+  deep_reading: "Reading and annotating",
+  chapter_note_generation: "Finishing chapter notes",
+  completed: "Ready to open",
+  error: "Needs attention",
+};
 
 function AnalysisTarget({ job }: { job: JobStatusResponse }) {
   if (!job.book_id) {
@@ -91,7 +100,7 @@ export function UploadPage() {
             Start a new deep-reading run
           </h1>
           <p className="text-[var(--warm-600)] mb-8" style={{ fontSize: "0.9375rem", lineHeight: 1.7 }}>
-            The backend accepts EPUB uploads, allocates a background job, and exposes progress through both polling and WebSocket updates.
+            Upload an EPUB to begin a guided reading run. This page will keep up with the book as it moves from structure to chapter results.
           </p>
 
           <label className="block mb-4">
@@ -146,25 +155,16 @@ export function UploadPage() {
           </p>
           {!job ? (
             <p className="text-[var(--warm-600)]" style={{ fontSize: "0.9375rem", lineHeight: 1.7 }}>
-              No active upload in this tab yet. After you submit an EPUB, the accepted job id and current stage will appear here.
+              No upload is in progress in this tab yet. Once you submit an EPUB, this panel will follow the run until it is ready to open.
             </p>
           ) : (
             <div className="space-y-4">
               <div>
                 <p className="text-[var(--warm-500)] mb-1" style={{ fontSize: "0.75rem" }}>
-                  Job id
-                </p>
-                <p className="text-[var(--warm-900)]" style={{ fontSize: "0.9375rem", fontWeight: 600 }}>
-                  {job.job_id}
-                </p>
-              </div>
-
-              <div>
-                <p className="text-[var(--warm-500)] mb-1" style={{ fontSize: "0.75rem" }}>
                   Stage
                 </p>
                 <p className="text-[var(--warm-900)]" style={{ fontSize: "0.9375rem", fontWeight: 600 }}>
-                  {job.status}
+                  {jobStageLabels[job.status]}
                 </p>
               </div>
 
@@ -197,17 +197,11 @@ export function UploadPage() {
 
               {job.last_error ? (
                 <p className="text-[var(--destructive)]" style={{ fontSize: "0.8125rem", lineHeight: 1.6 }}>
-                  {job.last_error.code}: {job.last_error.message}
+                  {job.last_error.message}
                 </p>
               ) : null}
 
               <AnalysisTarget job={job} />
-
-              {job.ws_url ? (
-                <p className="text-[var(--warm-500)]" style={{ fontSize: "0.75rem", lineHeight: 1.6 }}>
-                  WebSocket endpoint: {toFrontendPath(job.ws_url)}
-                </p>
-              ) : null}
             </div>
           )}
         </div>

@@ -240,6 +240,37 @@ def test_refresh_job_picks_up_book_id_from_generated_artifacts(tmp_path):
     assert refreshed["status"] == "completed"
 
 
+def test_refresh_job_matches_uploaded_copy_via_source_asset_digest(tmp_path):
+    """Job refresh should still resolve the book when the upload is a copied file with the same EPUB bytes."""
+    upload_path = upload_file("job999", tmp_path)
+    upload_path.parent.mkdir(parents=True, exist_ok=True)
+    upload_path.write_bytes(b"epub")
+    book_id = _bootstrap_book(tmp_path)
+    manifest_path = tmp_path / "output" / book_id / "book_manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest["source_file"] = str((tmp_path / "data" / "original.epub").resolve())
+    manifest_path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
+
+    save_job(
+        {
+            "job_id": "job999",
+            "status": "queued",
+            "upload_path": str(upload_path),
+            "book_id": None,
+            "pid": None,
+            "created_at": "2026-03-07T00:00:00Z",
+            "updated_at": "2026-03-07T00:00:00Z",
+            "error": None,
+        },
+        tmp_path,
+    )
+
+    refreshed = refresh_job("job999", root=tmp_path)
+
+    assert refreshed["book_id"] == "demo-book"
+    assert refreshed["status"] == "completed"
+
+
 def test_api_reads_books_chapters_marks_and_docs(tmp_path):
     """The API should expose typed bookshelf, result, marks, and docs endpoints."""
     book_id = _bootstrap_book(tmp_path)
@@ -312,6 +343,24 @@ def test_api_reads_books_chapters_marks_and_docs(tmp_path):
     assert delete_response.status_code == 200
     assert delete_response.json()["reaction_id"] == public_reaction_id
     assert delete_response.json()["deleted"] is True
+
+
+def test_chapter_api_tolerates_empty_legacy_target_locator(tmp_path):
+    """Legacy featured reactions with empty locator dicts should normalize to null, not 500."""
+    book_id = _bootstrap_book(tmp_path)
+    public_book_id = to_api_book_id(book_id)
+    output_dir = tmp_path / "output" / book_id
+    payload = json.loads((output_dir / "ch01_deep_read.json").read_text(encoding="utf-8"))
+    payload["featured_reactions"][0]["target_locator"] = {}
+    (output_dir / "ch01_deep_read.json").write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+
+    api_module.app.state.root = tmp_path
+    client = TestClient(api_module.app)
+
+    response = client.get(f"/api/books/{public_book_id}/chapters/1")
+
+    assert response.status_code == 200
+    assert response.json()["featured_reactions"][0]["target_locator"] is None
 
 
 def test_api_upload_and_job_polling(tmp_path, monkeypatch):

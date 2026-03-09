@@ -94,14 +94,14 @@ export function AnalysisPage() {
   }, [bookIdNumber, refreshTick]);
 
   if (loading && !analysis) {
-    return <LoadingState title="Loading live analysis state..." />;
+    return <LoadingState title="Loading reading progress..." />;
   }
 
   if (error || !analysis) {
     return (
       <ErrorState
-        title="Analysis page is unavailable"
-        message={error ?? "The API did not return analysis data."}
+        title="Analysis view is unavailable"
+        message={error ?? "The reading progress is not available right now."}
         onRetry={() => {
           setLoading(true);
           setRefreshTick((value) => value + 1);
@@ -158,7 +158,7 @@ export function AnalysisPage() {
           ) : null}
           {analysis.last_error ? (
             <p className="text-[var(--destructive)]" style={{ fontSize: "0.8125rem" }}>
-              {analysis.last_error.code}: {analysis.last_error.message}
+              {analysis.last_error.message}
             </p>
           ) : null}
         </div>
@@ -194,7 +194,13 @@ export function AnalysisPage() {
                       {chapter.segment_count} sections
                     </p>
                     <p className="text-[var(--warm-500)]" style={{ fontSize: "0.75rem" }}>
-                      {chapter.status}
+                      {chapter.status === "completed"
+                        ? "Ready"
+                        : chapter.status === "in_progress"
+                          ? "Reading now"
+                          : chapter.status === "error"
+                            ? "Needs attention"
+                            : "Queued"}
                     </p>
                   </div>
                 </div>
@@ -256,9 +262,6 @@ export function AnalysisPage() {
 
             <p className="text-[var(--warm-600)] mt-4" style={{ fontSize: "0.875rem", lineHeight: 1.7 }}>
               {analysis.current_state_panel.last_activity_message ?? "No recent activity message yet."}
-            </p>
-            <p className="text-[var(--warm-500)] mt-2" style={{ fontSize: "0.75rem" }}>
-              Search status: {analysis.current_state_panel.search_active ? "active" : "idle"}
             </p>
           </section>
 

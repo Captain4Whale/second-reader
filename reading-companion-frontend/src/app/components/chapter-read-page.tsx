@@ -1,4 +1,4 @@
-import { ArrowLeft, ExternalLink, Lightbulb, Search } from "lucide-react";
+import { ArrowLeft, ExternalLink, Search } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router";
 import { ChapterDetailResponse, deleteReactionMark, fetchChapterDetail, putReactionMark, toApiAssetUrl } from "../lib/api";
@@ -68,14 +68,14 @@ export function ChapterReadPage() {
   }, [bookIdNumber, chapterNumber, reloadTick]);
 
   if (loading && !payload) {
-    return <LoadingState title="Loading chapter result..." />;
+    return <LoadingState title="Loading chapter reading..." />;
   }
 
   if (error || !payload) {
     return (
       <ErrorState
         title="Chapter result is unavailable"
-        message={error ?? "The API did not return chapter data."}
+        message={error ?? "We could not load this chapter right now."}
         onRetry={() => {
           setPayload(null);
           setLoading(true);
@@ -206,12 +206,11 @@ export function ChapterReadPage() {
                         </p>
                       </div>
                       <div className="text-right">
-                        <p className="text-[var(--warm-500)]" style={{ fontSize: "0.75rem" }}>
-                          {section.verdict}
-                        </p>
-                        <p className="text-[var(--warm-500)]" style={{ fontSize: "0.75rem" }}>
-                          {section.quality_status}
-                        </p>
+                        {section.verdict ? (
+                          <p className="text-[var(--warm-500)]" style={{ fontSize: "0.75rem" }}>
+                            {section.verdict}
+                          </p>
+                        ) : null}
                       </div>
                     </div>
                   </div>
@@ -272,12 +271,6 @@ export function ChapterReadPage() {
                         <p className="text-[var(--warm-800)]" style={{ fontSize: "0.875rem", lineHeight: 1.8 }}>
                           {reaction.content}
                         </p>
-                        {reaction.search_query ? (
-                          <div className="flex items-center gap-2 mt-3 text-[var(--warm-500)]" style={{ fontSize: "0.75rem" }}>
-                            <Search className="w-3.5 h-3.5" />
-                            {reaction.search_query}
-                          </div>
-                        ) : null}
                       </div>
                     ))}
                   </div>
@@ -314,7 +307,7 @@ export function ChapterReadPage() {
                     <div className="flex items-center gap-2 mb-3">
                       <Search className="w-4 h-4 text-[var(--amber-accent)]" />
                       <h3 className="text-[var(--warm-900)]" style={{ fontSize: "0.9375rem", fontWeight: 600 }}>
-                        Search evidence
+                        Extra context
                       </h3>
                     </div>
                     <div className="space-y-3">
@@ -338,26 +331,6 @@ export function ChapterReadPage() {
                   </section>
                 ) : null}
 
-                <section className="rounded-2xl bg-[var(--warm-100)] p-5">
-                  <div className="flex items-center gap-2 mb-3">
-                    <Lightbulb className="w-4 h-4 text-[var(--amber-accent)]" />
-                    <h3 className="text-[var(--warm-900)]" style={{ fontSize: "0.9375rem", fontWeight: 600 }}>
-                      Source locator
-                    </h3>
-                  </div>
-                  {activeReaction.target_locator ? (
-                    <div className="space-y-2 text-[var(--warm-600)]" style={{ fontSize: "0.8125rem", lineHeight: 1.7 }}>
-                      <p>href: {activeReaction.target_locator.href}</p>
-                      <p>match: {activeReaction.target_locator.match_text}</p>
-                      <p>mode: {activeReaction.target_locator.match_mode}</p>
-                    </div>
-                  ) : (
-                    <p className="text-[var(--warm-600)]" style={{ fontSize: "0.8125rem" }}>
-                      No precise locator is available for this reaction.
-                    </p>
-                  )}
-                </section>
-
                 {payload.chapter_reflection.length > 0 ? (
                   <section className="mt-6">
                     <h3 className="text-[var(--warm-900)] mb-3" style={{ fontSize: "0.9375rem", fontWeight: 600 }}>
@@ -380,7 +353,7 @@ export function ChapterReadPage() {
                     No reaction selected
                   </h2>
                   <p className="text-[var(--warm-600)]" style={{ fontSize: "0.875rem", lineHeight: 1.7 }}>
-                    Choose a reaction on the left to inspect its full content, source locator, and search evidence.
+                    Choose a reaction on the left to inspect its full content and any extra context that came with it.
                   </p>
                 </div>
               </div>

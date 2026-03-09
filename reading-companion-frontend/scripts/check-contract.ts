@@ -63,6 +63,17 @@ async function main(): Promise<void> {
 
   const sourceFiles = await collectSourceFiles(srcRoot);
   const bannedPatterns = ["/api/landing", "/api/sample", "fetchLanding", "fetchSample", '"/sample"', "'/sample'"];
+  const bannedVisibleCopy = [
+    "DeepRead",
+    "初版原型",
+    "Current Product Strategy",
+    "Contract Notes",
+    "The canonical web routes",
+    "frontend-owned",
+    "Hardcoded on purpose",
+    "The backend accepts EPUB uploads",
+    "WebSocket endpoint",
+  ];
   for (const filePath of sourceFiles) {
     const contents = await fs.readFile(filePath, "utf-8");
     for (const pattern of bannedPatterns) {
@@ -71,6 +82,17 @@ async function main(): Promise<void> {
         `Frontend source still references banned landing/sample API token '${pattern}' in ${path.relative(frontendRoot, filePath)}.`,
       );
     }
+    for (const text of bannedVisibleCopy) {
+      assert.ok(
+        !contents.includes(text),
+        `Frontend source still exposes banned copy '${text}' in ${path.relative(frontendRoot, filePath)}.`,
+      );
+    }
+  }
+
+  const indexHtml = await readText("index.html");
+  for (const text of bannedVisibleCopy) {
+    assert.ok(!indexHtml.includes(text), `Frontend static file index.html still exposes banned copy '${text}'.`);
   }
 
   process.stdout.write("Frontend contract check passed.\n");

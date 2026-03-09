@@ -22,14 +22,14 @@ export function BookOverviewPage() {
   );
 
   if (loading) {
-    return <LoadingState title="Loading book overview..." />;
+    return <LoadingState title="Loading book details..." />;
   }
 
   if (error || !data) {
     return (
       <ErrorState
         title="Book overview is unavailable"
-        message={error ?? "The API did not return book overview data."}
+        message={error ?? "We could not load this book right now."}
         onRetry={reload}
         linkLabel="Back to books"
         linkTo="/books"
@@ -153,7 +153,7 @@ export function BookOverviewPage() {
           {detail.chapters.length === 0 ? (
             <EmptyState
               title="No chapters are available yet"
-              message="This book has not produced chapter-level results yet."
+              message="Chapter-level results are not ready yet for this book."
               actionLabel={detail.status === "analyzing" ? "Open analysis" : undefined}
               actionTo={detail.status === "analyzing" ? `/books/${detail.book_id}/analysis` : undefined}
             />

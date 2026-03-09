@@ -67,14 +67,14 @@ export function BookshelfPage() {
   const { data, loading, error, reload } = useApiResource(fetchBooks, []);
 
   if (loading) {
-    return <LoadingState title="Loading bookshelf..." />;
+    return <LoadingState title="Loading your bookshelf..." />;
   }
 
   if (error || !data) {
     return (
       <ErrorState
         title="Bookshelf is unavailable"
-        message={error ?? "The API did not return bookshelf data."}
+        message={error ?? "We could not load your books right now."}
         onRetry={reload}
         linkLabel="Upload a book"
         linkTo="/upload"
@@ -116,7 +116,7 @@ export function BookshelfPage() {
       {data.items.length === 0 ? (
         <EmptyState
           title="No books yet"
-          message="Upload an EPUB to create the first analysis run in this workspace."
+          message="Upload an EPUB to start the first reading run in this workspace."
           actionLabel="Go to upload"
           actionTo="/upload"
         />

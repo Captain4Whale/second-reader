@@ -53,6 +53,18 @@ def _load_jsonl(path: Path) -> list[dict]:
     return items
 
 
+def _file_sha1(path: Path) -> str | None:
+    """Return a stable digest for one file, or None if the file is missing."""
+    try:
+        digest = hashlib.sha1()
+        with path.open("rb") as handle:
+            for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+                digest.update(chunk)
+    except FileNotFoundError:
+        return None
+    return digest.hexdigest()
+
+
 def _book_dir(book_id: str, root: Path | None = None) -> Path:
     """Resolve one output directory by book id."""
     return output_root(root) / book_id
@@ -107,6 +119,24 @@ def _api_cover_url(book_id: str, manifest: dict, root: Path | None = None) -> st
 def _completed_chapter_count(manifest: dict) -> int:
     """Count completed chapters in a manifest."""
     return sum(1 for chapter in manifest.get("chapters", []) if str(chapter.get("status", "")) == "done")
+
+
+def _normalize_target_locator(payload: object) -> dict | None:
+    """Drop partial legacy locator payloads that no longer satisfy the public schema."""
+    if not isinstance(payload, dict):
+        return None
+    href = str(payload.get("href", "") or "").strip()
+    match_text = str(payload.get("match_text", "") or "").strip()
+    match_mode = str(payload.get("match_mode", "") or "").strip()
+    if not href or not match_text or not match_mode:
+        return None
+    return {
+        "href": href,
+        "start_cfi": payload.get("start_cfi"),
+        "end_cfi": payload.get("end_cfi"),
+        "match_text": match_text,
+        "match_mode": match_mode,
+    }
 
 
 def _book_card(book_id: str, manifest: dict, run_state: dict | None, root: Path | None = None) -> dict:
@@ -270,7 +300,7 @@ def _featured_reaction_preview(book_id: str, chapter_id: int, chapter_ref: str, 
         "chapter_id": chapter_id,
         "chapter_ref": chapter_ref,
         "section_ref": str(item.get("segment_ref", item.get("section_ref", ""))),
-        "target_locator": item.get("target_locator"),
+        "target_locator": _normalize_target_locator(item.get("target_locator")),
     }
 
 
@@ -377,7 +407,7 @@ def _reaction_card(section: dict, reaction: dict, mark_index: dict[str, str]) ->
         "content": str(reaction.get("content", "")),
         "search_query": str(reaction.get("search_query", "") or "") or None,
         "search_results": list(reaction.get("search_results", [])),
-        "target_locator": reaction.get("target_locator"),
+        "target_locator": _normalize_target_locator(reaction.get("target_locator")),
         "section_ref": str(section.get("segment_ref", "")),
         "section_summary": str(section.get("summary", "")),
         "mark_type": mark_index.get(reaction_id),
@@ -693,14 +723,24 @@ def get_book_featured_reactions(book_id: str, root: Path | None = None, *, limit
 def find_book_id_by_source(upload_path: Path, root: Path | None = None) -> str | None:
     """Find the output book id associated with one uploaded source file."""
     target = str(upload_path.resolve())
+    target_digest: str | None = None
     for manifest_path in output_root(root).glob("*/book_manifest.json"):
         manifest = _load_json(manifest_path)
         source_file = str(manifest.get("source_file", "")).strip()
         if not source_file:
-            continue
-        try:
-            if str(Path(source_file).resolve()) == target:
-                return str(manifest.get("book_id", manifest_path.parent.name))
-        except FileNotFoundError:
-            continue
+            source_file = ""
+        if source_file:
+            try:
+                if str(Path(source_file).resolve()) == target:
+                    return str(manifest.get("book_id", manifest_path.parent.name))
+            except FileNotFoundError:
+                pass
+        if target_digest is None:
+            target_digest = _file_sha1(upload_path)
+        if target_digest is None:
+            return None
+        book_id = str(manifest.get("book_id", manifest_path.parent.name))
+        asset_path = source_asset_path(book_id, root)
+        if _file_sha1(asset_path) == target_digest:
+            return book_id
     return None
