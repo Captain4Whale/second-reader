@@ -27,9 +27,9 @@ export const LANDING_HERO_ART = {
 
 export const LANDING_REACTION_SECTION = {
   eyebrow: "Reactions That Emerge",
-  title: "How the agent thinks as it reads",
+  title: "A living mind that reads. Not a machine that processes.",
   description:
-    "It reads paragraph by paragraph, letting different reactions emerge from the text itself rather than forcing every passage through a fixed sequence.",
+    "No tasks. No pipeline. Highlights, doubts, connections — real reactions that emerge as the mind flows through the text.",
 } as const;
 
 export const LANDING_REACTION_ART = {
@@ -40,7 +40,7 @@ export const LANDING_REACTION_ART = {
 export const LANDING_PREVIEW_SECTION = {
   eyebrow: "Live Preview",
   title: "A taste of deep reading",
-  description: "See how one book turns into a trail of highlighted passages, distinctions, questions, and callbacks.",
+  description: "See what the agent wrote while reading, every thought that surfaced along the way.",
   ctaLabel: "Explore the full sample",
 } as const;
 

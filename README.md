@@ -57,6 +57,7 @@ Important frontend variables:
 - `make contract-check`: verify docs appendix, backend OpenAPI snapshot, and frontend contract guards
 - `make e2e`: run the fixture-backed upload -> analysis -> book -> chapter -> marks Playwright flow
 - `make build`: build the frontend bundle
+- `make backfill-covers`: scan existing backend outputs, extract missing EPUB covers, and refresh manifests
 - `cd reading-companion-frontend && npm run generate-api-types`: refresh generated frontend API types after the backend OpenAPI snapshot changes
 
 ## Key Docs

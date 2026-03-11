@@ -3,6 +3,9 @@
 from __future__ import annotations
 
 import re
+import posixpath
+import zipfile
+from datetime import datetime, timezone
 from pathlib import Path
 from xml.etree import ElementTree as ET
 import ebooklib
@@ -31,7 +34,11 @@ from .storage import (
     ensure_source_asset,
     infer_chapter_number,
     resolve_output_dir,
+    book_manifest_file,
+    existing_cover_asset_file,
+    load_json,
     save_structure,
+    save_json,
     segment_reference,
     structure_file,
     structure_markdown_file,
@@ -282,6 +289,208 @@ def _cover_extension(item: object) -> str:
     return ".jpg"
 
 
+def _cover_asset_extension_from_href(href: str, media_type: str = "") -> str:
+    """Infer a safe file extension from one EPUB href or media type."""
+    suffix = Path(href).suffix.lower()
+    if suffix in {".jpg", ".jpeg", ".png", ".webp", ".gif"}:
+        return suffix
+    if media_type == "image/png":
+        return ".png"
+    if media_type == "image/webp":
+        return ".webp"
+    if media_type == "image/gif":
+        return ".gif"
+    return ".jpg"
+
+
+def _normalize_href(href: str) -> str:
+    """Normalize one manifest or guide href for stable lookup."""
+    normalized = str(href or "").strip().replace("\\", "/")
+    normalized = normalized.split("#", 1)[0]
+    while normalized.startswith("./"):
+        normalized = normalized[2:]
+    return posixpath.normpath(normalized) if normalized else ""
+
+
+def _resolve_relative_href(base_href: str, href: str) -> str:
+    """Resolve one href against another EPUB-relative href."""
+    normalized = _normalize_href(href)
+    if not normalized:
+        return ""
+    base_dir = posixpath.dirname(_normalize_href(base_href))
+    if normalized.startswith("/"):
+        return normalized.lstrip("/")
+    return posixpath.normpath(posixpath.join(base_dir, normalized))
+
+
+def _xml_attr(element: ET.Element, name: str) -> str:
+    """Return one XML attribute regardless of namespace prefixing."""
+    for key, value in element.attrib.items():
+        if key == name or key.endswith(f"}}{name}"):
+            return str(value or "").strip()
+    return ""
+
+
+def _local_name(tag: str) -> str:
+    """Return an XML tag without its namespace prefix."""
+    if "}" in tag:
+        return tag.rsplit("}", 1)[1]
+    return tag
+
+
+def _load_epub_package_document(book_path: Path) -> tuple[ET.Element, str] | None:
+    """Load the OPF package XML and return its root plus archive path."""
+    try:
+        with zipfile.ZipFile(book_path) as archive:
+            opf_path = ""
+            try:
+                container_xml = archive.read("META-INF/container.xml")
+                container_root = ET.fromstring(container_xml)
+                for element in container_root.iter():
+                    if _local_name(str(element.tag)) != "rootfile":
+                        continue
+                    candidate = _xml_attr(element, "full-path")
+                    if candidate:
+                        opf_path = candidate
+                        break
+            except Exception:
+                opf_path = ""
+
+            if not opf_path:
+                for name in archive.namelist():
+                    if name.lower().endswith(".opf"):
+                        opf_path = name
+                        break
+
+            if not opf_path:
+                return None
+
+            return ET.fromstring(archive.read(opf_path)), opf_path
+    except Exception:
+        return None
+
+
+def _epub_item_indexes(book: epub.EpubBook) -> tuple[dict[str, object], dict[str, object]]:
+    """Index EPUB items by id and normalized href."""
+    by_id: dict[str, object] = {}
+    by_href: dict[str, object] = {}
+    for item in book.get_items():
+        item_id = str(getattr(item, "get_id", lambda: "")() or "").strip()
+        item_href = _normalize_href(str(getattr(item, "get_name", lambda: "")() or ""))
+        if item_id:
+            by_id[item_id] = item
+        if item_href:
+            by_href[item_href] = item
+    return by_id, by_href
+
+
+def _resolve_epub_item(*, by_id: dict[str, object], by_href: dict[str, object], reference: str) -> object | None:
+    """Resolve one EPUB manifest reference as either id or href."""
+    normalized = _normalize_href(reference)
+    if not normalized:
+        return None
+    return by_id.get(reference) or by_id.get(normalized) or by_href.get(normalized)
+
+
+def _item_has_cover_image_property(item: object) -> bool:
+    """Return whether one EPUB manifest item declares itself as the cover image."""
+    properties = getattr(item, "properties", None)
+    if isinstance(properties, str):
+        values = [properties]
+    elif isinstance(properties, (list, tuple, set)):
+        values = [str(value or "") for value in properties]
+    else:
+        values = []
+    return any("cover-image" == value.strip().lower() for value in values)
+
+
+def _opf_meta_cover_reference(opf_root: ET.Element) -> str:
+    """Return the EPUB 3 cover reference from package metadata when present."""
+    for element in opf_root.iter():
+        if _local_name(str(element.tag)) != "meta":
+            continue
+        if _xml_attr(element, "name").lower() != "cover":
+            continue
+        content = _xml_attr(element, "content")
+        if content:
+            return content
+    return ""
+
+
+def _opf_cover_image_reference(opf_root: ET.Element) -> str:
+    """Return the manifest href for a cover-image item when present."""
+    for element in opf_root.iter():
+        if _local_name(str(element.tag)) != "item":
+            continue
+        properties = _xml_attr(element, "properties").lower().split()
+        if "cover-image" in properties:
+            return _xml_attr(element, "href") or _xml_attr(element, "id")
+    return ""
+
+
+def _opf_guide_cover_page_href(opf_root: ET.Element) -> str:
+    """Return the guide cover-page href when one is declared."""
+    for element in opf_root.iter():
+        if _local_name(str(element.tag)) != "reference":
+            continue
+        if _xml_attr(element, "type").lower() != "cover":
+            continue
+        href = _xml_attr(element, "href")
+        if href:
+            return href
+    return ""
+
+
+def _first_image_href_from_page(content: bytes) -> str:
+    """Return the first image href from one XHTML cover page."""
+    try:
+        root = ET.fromstring(content)
+    except ET.ParseError:
+        return ""
+
+    for element in root.iter():
+        if not isinstance(element.tag, str):
+            continue
+        tag = _local_name(str(element.tag))
+        if tag == "img":
+            src = _xml_attr(element, "src")
+            if src:
+                return src
+        if tag == "image":
+            href = _xml_attr(element, "href")
+            if href:
+                return href
+    return ""
+
+
+def _cover_reference_from_guide_page(book_path: Path, opf_path: str, page_href: str) -> str:
+    """Resolve the first image href from the guide-declared cover page."""
+    archive_page_href = _resolve_relative_href(opf_path, page_href)
+    if not archive_page_href:
+        return ""
+    try:
+        with zipfile.ZipFile(book_path) as archive:
+            content = archive.read(archive_page_href)
+    except Exception:
+        return ""
+
+    image_href = _first_image_href_from_page(content)
+    if not image_href:
+        return ""
+    return _resolve_relative_href(page_href, image_href)
+
+
+def _write_cover_asset(output_dir: Path, content: bytes, extension: str) -> Path:
+    """Persist one cover asset and remove stale alternate extensions."""
+    destination = cover_asset_file(output_dir, extension)
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    for existing in destination.parent.glob("cover.*"):
+        if existing != destination and existing.is_file():
+            existing.unlink()
+    destination.write_bytes(content)
+    return destination
+
+
 def _extract_epub_cover(book_path: Path, output_dir: Path) -> Path | None:
     """Extract the EPUB cover image into the frontend asset directory when available."""
     try:
@@ -289,15 +498,43 @@ def _extract_epub_cover(book_path: Path, output_dir: Path) -> Path | None:
     except Exception:
         return None
 
+    by_id, by_href = _epub_item_indexes(book)
     cover_item = None
-    metadata = book.get_metadata("OPF", "cover")
-    if metadata:
-        cover_id = str(metadata[0][0] or "").strip()
-        if cover_id:
-            try:
-                cover_item = book.get_item_with_id(cover_id)
-            except Exception:
-                cover_item = None
+    package = _load_epub_package_document(book_path)
+
+    if package:
+        opf_root, opf_path = package
+        meta_reference = _opf_meta_cover_reference(opf_root)
+        if meta_reference:
+            cover_item = _resolve_epub_item(by_id=by_id, by_href=by_href, reference=meta_reference)
+
+        if cover_item is None:
+            metadata = book.get_metadata("OPF", "cover")
+            if metadata:
+                cover_id = str(metadata[0][0] or "").strip()
+                if cover_id:
+                    cover_item = _resolve_epub_item(by_id=by_id, by_href=by_href, reference=cover_id)
+
+        if cover_item is None:
+            cover_reference = _opf_cover_image_reference(opf_root)
+            if cover_reference:
+                cover_item = _resolve_epub_item(by_id=by_id, by_href=by_href, reference=cover_reference)
+
+        if cover_item is None:
+            cover_page_href = _opf_guide_cover_page_href(opf_root)
+            if cover_page_href:
+                image_reference = _cover_reference_from_guide_page(book_path, opf_path, cover_page_href)
+                if image_reference:
+                    cover_item = _resolve_epub_item(by_id=by_id, by_href=by_href, reference=image_reference)
+
+    if cover_item is None:
+        for item in book.get_items():
+            item_type = getattr(item, "get_type", lambda: None)()
+            if item_type != ebooklib.ITEM_IMAGE:
+                continue
+            if _item_has_cover_image_property(item):
+                cover_item = item
+                break
 
     if cover_item is None:
         for item in book.get_items():
@@ -320,10 +557,10 @@ def _extract_epub_cover(book_path: Path, output_dir: Path) -> Path | None:
     if not content:
         return None
 
-    destination = cover_asset_file(output_dir, _cover_extension(cover_item))
-    destination.parent.mkdir(parents=True, exist_ok=True)
-    destination.write_bytes(content)
-    return destination
+    name = str(getattr(cover_item, "get_name", lambda: "")() or "")
+    media_type = str(getattr(cover_item, "media_type", "") or "")
+    extension = _cover_extension(cover_item) if name or media_type else _cover_asset_extension_from_href(name, media_type)
+    return _write_cover_asset(output_dir, content, extension)
 
 
 def fallback_segments(chapter_id: int, paragraphs: list[str], chapter_title: str) -> list[SemanticSegment]:
@@ -729,3 +966,88 @@ def _upgrade_structure_metadata(structure: BookStructure, output_dir: Path) -> b
             changed = True
 
     return changed
+
+
+def _manifest_cover_url(output_dir: Path) -> str | None:
+    """Return the persisted cover asset path stored in one manifest."""
+    cover_asset = existing_cover_asset_file(output_dir)
+    if cover_asset is None:
+        return None
+    return str(cover_asset.relative_to(output_dir))
+
+
+def _timestamp() -> str:
+    """Return a stable UTC timestamp."""
+    return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+
+
+def _resolve_source_epub_path(output_dir: Path, manifest: dict, root: Path) -> Path | None:
+    """Find the best EPUB source path for one existing output directory."""
+    source_asset = str(manifest.get("source_asset", {}).get("file", "") or "").strip()
+    if source_asset:
+        candidate = output_dir / source_asset
+        if candidate.exists() and candidate.suffix.lower() == ".epub":
+            return candidate
+
+    source_file = str(manifest.get("source_file", "") or "").strip()
+    if source_file:
+        candidate = Path(source_file)
+        if not candidate.is_absolute():
+            candidate = root / candidate
+        if candidate.exists() and candidate.suffix.lower() == ".epub":
+            return candidate
+
+    return None
+
+
+def _refresh_manifest_cover(output_dir: Path) -> bool:
+    """Sync one book manifest's cover_image_url with the extracted asset."""
+    manifest_path = book_manifest_file(output_dir)
+    if not manifest_path.exists():
+        return False
+
+    manifest = load_json(manifest_path)
+    cover_url = _manifest_cover_url(output_dir)
+    if manifest.get("cover_image_url") == cover_url:
+        return False
+
+    manifest["cover_image_url"] = cover_url
+    manifest["updated_at"] = _timestamp()
+    save_json(manifest_path, manifest)
+    return True
+
+
+def backfill_missing_epub_covers(root: Path | None = None) -> list[dict[str, object]]:
+    """Extract missing covers for existing EPUB outputs and refresh manifests."""
+    runtime_root = root or Path.cwd()
+    results: list[dict[str, object]] = []
+
+    for manifest_path in sorted((runtime_root / "output").glob("*/book_manifest.json")):
+        output_dir = manifest_path.parent
+        manifest = load_json(manifest_path)
+        book_id = str(manifest.get("book_id", output_dir.name))
+        current_cover = _manifest_cover_url(output_dir)
+
+        if current_cover and manifest.get("cover_image_url") == current_cover:
+            results.append({"book_id": book_id, "status": "already_present", "cover_image_url": current_cover})
+            continue
+
+        source_path = _resolve_source_epub_path(output_dir, manifest, runtime_root)
+        if source_path is None:
+            results.append({"book_id": book_id, "status": "missing_source", "cover_image_url": current_cover})
+            continue
+
+        extracted = _extract_epub_cover(source_path, output_dir)
+        manifest_updated = _refresh_manifest_cover(output_dir)
+        cover_url = _manifest_cover_url(output_dir)
+
+        if extracted is not None:
+            status = "updated" if manifest_updated or not current_cover else "refreshed"
+        elif cover_url:
+            status = "manifest_synced" if manifest_updated else "already_present"
+        else:
+            status = "no_cover_found"
+
+        results.append({"book_id": book_id, "status": status, "cover_image_url": cover_url})
+
+    return results
