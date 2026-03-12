@@ -156,16 +156,15 @@ Every returned mark must include at least:
 - `created_at`
 
 ### Mark Value Rules
-- `mark_type` only allows `known` or `blindspot`
+- `mark_type` only allows `resonance`, `blindspot`, or `bookmark`
 - `reaction_type` must always come from the canonical reaction taxonomy
-- UI copy and contract language should consistently use `known` and `blindspot`
+- UI copy and contract language should consistently use `resonance`, `blindspot`, and `bookmark`
 
 Avoid reintroducing older presentation-only phrases such as:
 - `Known`
-- `Blindspot`
 - `I knew this`
 
-except as plain display text where the underlying value remains `known` or `blindspot`.
+except as migration compatibility text where the underlying value remains in the canonical mark taxonomy.
 
 ## Other Stable Envelopes
 
@@ -236,8 +235,9 @@ The JSON block below is the machine-readable appendix used by the root contract 
     "curious"
   ],
   "mark_types": [
-    "known",
-    "blindspot"
+    "resonance",
+    "blindspot",
+    "bookmark"
   ],
   "canonical_routes": {
     "landing": "/",

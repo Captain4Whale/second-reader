@@ -209,6 +209,25 @@ def _bootstrap_contract_book(
     return book_id
 
 
+def _migrate_contract_book_to_public_layout(root: Path, book_id: str) -> None:
+    """Re-home a legacy test book into the current public/runtime layout."""
+    output_dir = root / "output" / book_id
+    public_dir = output_dir / "public"
+    chapters_dir = public_dir / "chapters"
+    runtime_dir = output_dir / "_runtime"
+    public_dir.mkdir(parents=True, exist_ok=True)
+    chapters_dir.mkdir(parents=True, exist_ok=True)
+    runtime_dir.mkdir(parents=True, exist_ok=True)
+
+    (output_dir / "book_manifest.json").replace(public_dir / "book_manifest.json")
+    (output_dir / "run_state.json").replace(runtime_dir / "run_state.json")
+    (output_dir / "activity.jsonl").replace(runtime_dir / "activity.jsonl")
+
+    chapter_result = output_dir / "ch01_deep_read.json"
+    if chapter_result.exists():
+        chapter_result.replace(chapters_dir / "ch01_deep_read.json")
+
+
 def test_openapi_public_snapshot_and_key_contracts(tmp_path):
     """OpenAPI should stay aligned with the committed public contract snapshot."""
     api_module.app.state.root = tmp_path
@@ -248,7 +267,7 @@ def test_rest_payloads_scrub_legacy_names_and_routes(tmp_path):
 
     put_response = client.put(
         f"/api/marks/{public_reaction_id}",
-        json={"book_id": public_book_id, "mark_type": "known"},
+        json={"book_id": public_book_id, "mark_type": "resonance"},
     )
     assert put_response.status_code == 200
 
@@ -483,3 +502,39 @@ def test_public_integer_ids_are_stable_and_resolvable(tmp_path):
     assert resolve_book_id(public_book_id, root=tmp_path) == book_id
     assert resolve_reaction_id(public_reaction_id, root=tmp_path, internal_book_id=book_id) == "r1"
     assert resolve_mark_id(public_mark_id, root=tmp_path) == (book_id, "r1")
+
+
+def test_public_integer_ids_resolve_from_current_public_layout(tmp_path):
+    """Public ids should also resolve when artifacts only exist in the current public/runtime directories."""
+    book_id = _bootstrap_contract_book(tmp_path)
+    _migrate_contract_book_to_public_layout(tmp_path, book_id)
+
+    public_book_id = to_api_book_id(book_id)
+    public_reaction_id = to_api_reaction_id(book_id=book_id, reaction_id="r1")
+    public_mark_id = to_api_mark_id(book_id=book_id, reaction_id="r1")
+
+    assert resolve_book_id(public_book_id, root=tmp_path) == book_id
+    assert resolve_reaction_id(public_reaction_id, root=tmp_path, internal_book_id=book_id) == "r1"
+    assert resolve_mark_id(public_mark_id, root=tmp_path) == (book_id, "r1")
+
+
+def test_rest_payloads_work_from_current_public_layout(tmp_path):
+    """Book detail, chapter detail, and mark routes should work against the current artifact layout."""
+    book_id = _bootstrap_contract_book(tmp_path)
+    _migrate_contract_book_to_public_layout(tmp_path, book_id)
+    public_book_id = to_api_book_id(book_id)
+    public_reaction_id = to_api_reaction_id(book_id=book_id, reaction_id="r1")
+    api_module.app.state.root = tmp_path
+    client = TestClient(api_module.app)
+
+    assert client.get(f"/api/books/{public_book_id}").status_code == 200
+    assert client.get(f"/api/books/{public_book_id}/analysis-state").status_code == 200
+    assert client.get(f"/api/books/{public_book_id}/activity").status_code == 200
+    assert client.get(f"/api/books/{public_book_id}/chapters/1").status_code == 200
+
+    put_response = client.put(
+        f"/api/marks/{public_reaction_id}",
+        json={"book_id": public_book_id, "mark_type": "bookmark"},
+    )
+    assert put_response.status_code == 200
+    assert put_response.json()["mark_type"] == "bookmark"

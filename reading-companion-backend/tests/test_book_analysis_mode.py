@@ -7,6 +7,16 @@ from pathlib import Path
 
 from src.iterator_reader import book_analysis as book_analysis_module
 from src.iterator_reader import iterator as iterator_module
+from src.iterator_reader.storage import (
+    analysis_dir,
+    analysis_plan_file,
+    analysis_trace_file,
+    book_analysis_file,
+    deep_dossiers_file,
+    deep_targets_file,
+    evidence_checks_file,
+    segment_skim_cards_file,
+)
 
 
 def _demo_structure(output_dir: Path) -> dict:
@@ -150,29 +160,29 @@ def test_read_book_book_analysis_mode_writes_report_and_artifacts(tmp_path, monk
         read_mode="book_analysis",
     )
 
-    assert (output_dir / "book_analysis.md").exists()
-    assert (output_dir / "_analysis" / "analysis_plan.json").exists()
-    assert (output_dir / "_analysis" / "segment_skim_cards.jsonl").exists()
-    assert (output_dir / "_analysis" / "deep_targets.json").exists()
-    assert (output_dir / "_analysis" / "deep_dossiers.json").exists()
-    assert (output_dir / "_analysis" / "evidence_checks.jsonl").exists()
-    assert (output_dir / "_analysis" / "analysis_trace.jsonl").exists()
+    assert book_analysis_file(output_dir).exists()
+    assert analysis_plan_file(output_dir).exists()
+    assert segment_skim_cards_file(output_dir).exists()
+    assert deep_targets_file(output_dir).exists()
+    assert deep_dossiers_file(output_dir).exists()
+    assert evidence_checks_file(output_dir).exists()
+    assert analysis_trace_file(output_dir).exists()
 
-    report = (output_dir / "book_analysis.md").read_text(encoding="utf-8")
+    report = book_analysis_file(output_dir).read_text(encoding="utf-8")
     assert "# Book Analysis" in report
     assert "## Argument Backbone" in report
     assert "anchors" in report
 
     skim_lines = [
         line.strip()
-        for line in (output_dir / "_analysis" / "segment_skim_cards.jsonl").read_text(encoding="utf-8").splitlines()
+        for line in segment_skim_cards_file(output_dir).read_text(encoding="utf-8").splitlines()
         if line.strip()
     ]
     assert len(skim_lines) == 4
 
     evidence_lines = [
         line.strip()
-        for line in (output_dir / "_analysis" / "evidence_checks.jsonl").read_text(encoding="utf-8").splitlines()
+        for line in evidence_checks_file(output_dir).read_text(encoding="utf-8").splitlines()
         if line.strip()
     ]
     assert evidence_lines
@@ -312,7 +322,7 @@ This is an existing deep-read note with enough context to be reused.
         read_mode="book_analysis",
     )
 
-    dossiers = json.loads((output_dir / "_analysis" / "deep_dossiers.json").read_text(encoding="utf-8"))
+    dossiers = json.loads(deep_dossiers_file(output_dir).read_text(encoding="utf-8"))
     assert dossiers["dossiers"][0]["reused"] is True
     assert "evidence_excerpt" not in dossiers["dossiers"][0]
     assert dossiers["dossiers"][0]["evidence_anchor"] == "1.1"
@@ -479,6 +489,6 @@ def test_deep_targets_prioritize_segments_marked_for_deep_read(tmp_path, monkeyp
         },
     )
 
-    deep_targets = json.loads((output_dir / "_analysis" / "deep_targets.json").read_text(encoding="utf-8"))
+    deep_targets = json.loads(deep_targets_file(output_dir).read_text(encoding="utf-8"))
     selected_ids = {item["segment_id"] for item in deep_targets["targets"]}
     assert selected_ids == {"1.2", "1.3"}

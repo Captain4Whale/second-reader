@@ -198,12 +198,12 @@ def test_user_marks_put_is_idempotent_and_overwrites(tmp_path):
     """Marks should be idempotent for the same value and overwrite on new values."""
     book_id = _bootstrap_book(tmp_path)
 
-    first = put_mark(book_id=book_id, reaction_id="r1", mark_type="known", root=tmp_path)
-    second = put_mark(book_id=book_id, reaction_id="r1", mark_type="known", root=tmp_path)
+    first = put_mark(book_id=book_id, reaction_id="r1", mark_type="resonance", root=tmp_path)
+    second = put_mark(book_id=book_id, reaction_id="r1", mark_type="resonance", root=tmp_path)
     third = put_mark(book_id=book_id, reaction_id="r1", mark_type="blindspot", root=tmp_path)
 
     assert first["reaction_id"] == "r1"
-    assert second["mark_type"] == "known"
+    assert second["mark_type"] == "resonance"
     assert third["mark_type"] == "blindspot"
     assert third["created_at"] == first["created_at"]
     assert len(list_book_marks(book_id, root=tmp_path)) == 1
@@ -211,6 +211,36 @@ def test_user_marks_put_is_idempotent_and_overwrites(tmp_path):
     deleted = delete_mark("r1", root=tmp_path)
     assert deleted is True
     assert load_marks_state(tmp_path)["marks"] == {}
+
+
+def test_legacy_known_mark_normalizes_to_resonance(tmp_path):
+    """Legacy persisted mark_type=known should read back as resonance."""
+    book_id = _bootstrap_book(tmp_path)
+    _write_json(
+        tmp_path / "state" / "user_marks.json",
+        {
+            "updated_at": "2026-03-07T00:00:00Z",
+            "marks": {
+                "r1": {
+                    "reaction_id": "r1",
+                    "book_id": book_id,
+                    "book_title": "Demo Book",
+                    "chapter_id": 1,
+                    "chapter_ref": "Chapter 1",
+                    "segment_ref": "1.1",
+                    "reaction_type": "highlight",
+                    "mark_type": "known",
+                    "reaction_excerpt": "Important line.",
+                    "anchor_quote": "Alpha beta",
+                    "created_at": "2026-03-07T00:00:00Z",
+                    "updated_at": "2026-03-07T00:00:00Z",
+                }
+            },
+        },
+    )
+
+    marks_state = load_marks_state(tmp_path)
+    assert marks_state["marks"]["r1"]["mark_type"] == "resonance"
 
 
 def test_refresh_job_picks_up_book_id_from_generated_artifacts(tmp_path):
@@ -322,10 +352,10 @@ def test_api_reads_books_chapters_marks_and_docs(tmp_path):
 
     put_response = client.put(
         f"/api/marks/{public_reaction_id}",
-        json={"book_id": public_book_id, "mark_type": "known"},
+        json={"book_id": public_book_id, "mark_type": "resonance"},
     )
     assert put_response.status_code == 200
-    assert put_response.json()["mark_type"] == "known"
+    assert put_response.json()["mark_type"] == "resonance"
     assert put_response.json()["reaction_id"] == public_reaction_id
 
     marks_response = client.get(f"/api/books/{public_book_id}/marks")

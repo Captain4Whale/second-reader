@@ -446,7 +446,10 @@ export interface components {
         Body_upload_epub_api_uploads_epub_post: {
             /** Display Title */
             display_title?: string | null;
-            /** File */
+            /**
+             * File
+             * Format: binary
+             */
             file: string;
         };
         /**
@@ -715,7 +718,7 @@ export interface components {
             chapter_ref: string;
             /**
              * Chapter Reflection
-             * @description Chapter-level reflection bullets.
+             * @description Deprecated compatibility field. Internal chapter reflection is no longer exposed, so this list is always empty.
              */
             chapter_reflection: string[];
             /**
@@ -1128,7 +1131,7 @@ export interface components {
              * @description User-selected mark value.
              * @enum {string}
              */
-            mark_type: "known" | "blindspot";
+            mark_type: "resonance" | "blindspot" | "bookmark";
             /**
              * Reaction Excerpt
              * @description Short excerpt of the reaction content used in marks views.
@@ -1209,7 +1212,7 @@ export interface components {
              * Mark Type
              * @description Current user mark attached to the reaction, if any.
              */
-            mark_type?: ("known" | "blindspot") | null;
+            mark_type?: ("resonance" | "blindspot" | "bookmark") | null;
             /**
              * Reaction Id
              * @description Stable public integer reaction identifier.
@@ -1406,7 +1409,7 @@ export interface components {
              * @description User-selected mark value.
              * @enum {string}
              */
-            mark_type: "known" | "blindspot";
+            mark_type: "resonance" | "blindspot" | "bookmark";
         };
         /**
          * SourceAsset

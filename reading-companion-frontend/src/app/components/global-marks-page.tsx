@@ -1,6 +1,7 @@
 import { Bookmark } from "lucide-react";
 import { Link } from "react-router";
 import { fetchGlobalMarks } from "../lib/api";
+import { markLabel } from "../lib/marks";
 import { reactionLabel } from "../lib/reactions";
 import { useApiResource } from "../lib/use-api-resource";
 import { EmptyState, ErrorState, LoadingState } from "./page-state";
@@ -40,7 +41,7 @@ export function GlobalMarksPage() {
             My Marks
           </h1>
           <p className="text-[var(--warm-600)]" style={{ fontSize: "0.875rem" }}>
-            Known and blindspot reactions saved across the whole workspace
+            Resonance, blindspot, and bookmark reactions saved across the whole workspace
           </p>
         </div>
       </div>
@@ -75,38 +76,43 @@ export function GlobalMarksPage() {
               </div>
 
               <div className="space-y-3">
-                {items.map((mark) => (
-                  <div key={mark.mark_id} data-testid={`global-mark-${mark.mark_id}`} className="bg-white rounded-2xl border border-[var(--warm-300)]/30 p-5 shadow-sm">
-                    <div className="flex items-center gap-2 mb-2 flex-wrap">
-                      <span className="text-[var(--warm-500)]" style={{ fontSize: "0.75rem" }}>
-                        {mark.chapter_ref} · {mark.section_ref}
-                      </span>
-                      <span className="text-[var(--warm-300)]">·</span>
-                      <span className="text-[var(--warm-700)]" style={{ fontSize: "0.75rem", fontWeight: 600 }}>
-                        {reactionLabel(mark.reaction_type)}
-                      </span>
-                      <span className="text-[var(--warm-300)]">·</span>
-                      <span className="text-[var(--amber-accent)]" style={{ fontSize: "0.75rem", fontWeight: 600 }}>
-                        {mark.mark_type}
-                      </span>
+                {items.map((mark) => {
+                  const anchorQuote = mark.anchor_quote.trim();
+                  return (
+                    <div key={mark.mark_id} data-testid={`global-mark-${mark.mark_id}`} className="bg-white rounded-2xl border border-[var(--warm-300)]/30 p-5 shadow-sm">
+                      <div className="flex items-center gap-2 mb-2 flex-wrap">
+                        <span className="text-[var(--warm-500)]" style={{ fontSize: "0.75rem" }}>
+                          {mark.chapter_ref} · {mark.section_ref}
+                        </span>
+                        <span className="text-[var(--warm-300)]">·</span>
+                        <span className="text-[var(--warm-700)]" style={{ fontSize: "0.75rem", fontWeight: 600 }}>
+                          {reactionLabel(mark.reaction_type)}
+                        </span>
+                        <span className="text-[var(--warm-300)]">·</span>
+                        <span className="text-[var(--amber-accent)]" style={{ fontSize: "0.75rem", fontWeight: 600 }}>
+                          {markLabel(mark.mark_type)}
+                        </span>
+                      </div>
+
+                      {anchorQuote ? (
+                        <blockquote className="border-l-2 border-[var(--amber-accent)]/40 pl-4 mb-3 text-[var(--warm-600)] italic" style={{ fontSize: "0.8125rem", lineHeight: 1.7 }}>
+                          “{anchorQuote}”
+                        </blockquote>
+                      ) : null}
+                      <p className="text-[var(--warm-800)]" style={{ fontSize: "0.875rem", lineHeight: 1.7 }}>
+                        {mark.reaction_excerpt}
+                      </p>
+
+                      <Link
+                        to={`/books/${mark.book_id}/chapters/${mark.chapter_id}`}
+                        className="inline-flex mt-4 text-[var(--amber-accent)] no-underline hover:text-[var(--warm-700)]"
+                        style={{ fontSize: "0.8125rem", fontWeight: 500 }}
+                      >
+                        Open chapter
+                      </Link>
                     </div>
-
-                    <blockquote className="border-l-2 border-[var(--amber-accent)]/40 pl-4 mb-3 text-[var(--warm-600)] italic" style={{ fontSize: "0.8125rem", lineHeight: 1.7 }}>
-                      “{mark.anchor_quote}”
-                    </blockquote>
-                    <p className="text-[var(--warm-800)]" style={{ fontSize: "0.875rem", lineHeight: 1.7 }}>
-                      {mark.reaction_excerpt}
-                    </p>
-
-                    <Link
-                      to={`/books/${mark.book_id}/chapters/${mark.chapter_id}`}
-                      className="inline-flex mt-4 text-[var(--amber-accent)] no-underline hover:text-[var(--warm-700)]"
-                      style={{ fontSize: "0.8125rem", fontWeight: 500 }}
-                    >
-                      Open chapter
-                    </Link>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </section>
           ))}

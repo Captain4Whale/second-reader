@@ -5,6 +5,7 @@ type ReactionMeta = {
   description: string;
   accentClass: string;
   surfaceClass: string;
+  surfaceHex: string;
 };
 
 export const reactionMeta: Record<ReactionType, ReactionMeta> = {
@@ -13,30 +14,35 @@ export const reactionMeta: Record<ReactionType, ReactionMeta> = {
     description: "Passages the agent thinks are worth carrying forward.",
     accentClass: "text-[var(--amber-accent)]",
     surfaceClass: "bg-[var(--highlight-color)]",
+    surfaceHex: "#FFF3CD",
   },
   association: {
     label: "Association",
     description: "Connections to adjacent ideas or outside patterns.",
     accentClass: "text-[var(--warm-700)]",
     surfaceClass: "bg-[var(--association-color)]",
+    surfaceHex: "#F0E8FF",
   },
   curious: {
     label: "Curious",
     description: "Questions that push into missing evidence or context.",
     accentClass: "text-emerald-700",
     surfaceClass: "bg-[var(--curious-color)]",
+    surfaceHex: "#E8FFE8",
   },
   discern: {
     label: "Discern",
     description: "Sharper distinctions or tensions inside the claim.",
     accentClass: "text-orange-700",
     surfaceClass: "bg-[var(--discern-color)]",
+    surfaceHex: "#FFE8E0",
   },
   retrospect: {
     label: "Retrospect",
     description: "Callbacks to earlier threads in the same book.",
     accentClass: "text-blue-700",
     surfaceClass: "bg-[var(--retrospect-color)]",
+    surfaceHex: "#E8F0FF",
   },
 };
 

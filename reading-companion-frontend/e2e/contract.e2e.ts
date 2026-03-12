@@ -29,6 +29,8 @@ test("fixture upload flow stays on canonical routes and persists marks", async (
 
   await page.goto("/upload");
   await expect(page).toHaveURL(/\/upload$/);
+  await expect(page.getByTestId("global-nav-books")).not.toHaveAttribute("aria-current", "page");
+  await expect(page.getByTestId("global-nav-marks")).not.toHaveAttribute("aria-current", "page");
   await page.getByTestId("upload-input").setInputFiles(uploadFixture);
   await page.getByTestId("upload-submit").click();
 
@@ -46,8 +48,20 @@ test("fixture upload flow stays on canonical routes and persists marks", async (
   await completedCard.click();
   await expect(page).toHaveURL(/\/books\/\d+\/chapters\/1$/);
   assertNoLegacyPath(new URL(page.url()).pathname);
+  await expect(page.getByTestId("global-nav-books")).not.toHaveAttribute("aria-current", "page");
+  await expect(page.getByTestId("global-nav-marks")).not.toHaveAttribute("aria-current", "page");
+  await expect(page.getByRole("link", { name: /Source EPUB/i })).toHaveCount(0);
+  await expect(page.getByTestId("source-reader-pane")).toBeVisible();
+  await expect(page.getByTestId("reader-jump-status")).toBeVisible();
   const chapterUrl = page.url();
 
+  await page.goto("/books");
+  await expect(page).toHaveURL(/\/books$/);
+  await expect(page.getByTestId("global-nav-books")).toHaveAttribute("aria-current", "page");
+  await expect(page.getByTestId("global-nav-marks")).not.toHaveAttribute("aria-current", "page");
+  await expect(page.getByTestId("brand-overview-link")).toHaveCount(0);
+  await page.getByTestId("brand-link").click();
+  await expect(page).toHaveURL(/\/$/);
   await page.goto("/books");
   await expect(page).toHaveURL(/\/books$/);
   const bookCard = page.locator('[data-testid^="book-card-"]').first();
@@ -56,6 +70,9 @@ test("fixture upload flow stays on canonical routes and persists marks", async (
   await bookCard.click();
   await expect(page).toHaveURL(/\/books\/\d+$/);
   assertNoLegacyPath(new URL(page.url()).pathname);
+  await expect(page.getByTestId("global-nav-books")).not.toHaveAttribute("aria-current", "page");
+  await expect(page.getByTestId("global-nav-marks")).not.toHaveAttribute("aria-current", "page");
+  await expect(page.getByTestId("book-overview-source-download")).toBeVisible();
 
   const overviewChapter = page.getByTestId("book-overview-chapter-1");
   await expect(overviewChapter).toBeVisible();
@@ -69,18 +86,34 @@ test("fixture upload flow stays on canonical routes and persists marks", async (
   const reactionTestId = await reactionCard.getAttribute("data-testid");
   const reactionId = reactionTestId?.replace("reaction-card-", "");
   expect(reactionId).toBeTruthy();
+  await reactionCard.click();
+  await expect(page).toHaveURL(new RegExp(`/books/\\d+/chapters/1\\?reaction=${reactionId}`));
+  await expect(page.getByTestId("reader-current-target")).toHaveText(/\S+/);
 
-  await page.getByTestId(`mark-known-${reactionId}`).click();
+  await page.goto(`${chapterUrl}?reaction=${reactionId}`);
+  await expect(page).toHaveURL(new RegExp(`/books/\\d+/chapters/1\\?reaction=${reactionId}`));
+  await expect(page.getByTestId("source-reader-pane")).toBeVisible();
+
+  await page.getByTestId(`mark-resonance-${reactionId}`).click();
   await page.goto("/marks");
   await expect(page).toHaveURL(/\/marks$/);
   assertNoLegacyPath(new URL(page.url()).pathname);
   const markCard = page.locator('[data-testid^="global-mark-"]').first();
-  await expect(markCard).toContainText("known");
+  await expect(markCard).toContainText("resonance");
 
   await page.goto(chapterUrl);
   await page.getByTestId(`mark-blindspot-${reactionId}`).click();
   await page.goto("/marks");
   await expect(page.locator('[data-testid^="global-mark-"]').first()).toContainText("blindspot");
+
+  await page.goto(chapterUrl);
+  await page.getByTestId(`mark-bookmark-${reactionId}`).click();
+  await page.goto("/marks");
+  await expect(page.locator('[data-testid^="global-mark-"]').first()).toContainText("bookmark");
+
+  await page.goto(chapterUrl);
+  await page.getByTestId("brand-link").click();
+  await expect(page).toHaveURL(/\/$/);
 
   expect(requestedPaths).not.toContain("/api/landing");
   expect(requestedPaths).not.toContain("/api/sample");

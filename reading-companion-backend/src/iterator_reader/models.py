@@ -28,7 +28,7 @@ SegmentStatus = Literal["pending", "done", "skipped"]
 QualityStatus = Literal["strong", "acceptable", "weak", "skipped"]
 RunStage = Literal["ready", "deep_reading", "completed", "error"]
 MatchMode = Literal["exact", "normalized", "segment_fallback"]
-MarkType = Literal["known", "blindspot"]
+MarkType = Literal["resonance", "blindspot", "bookmark"]
 JobStatus = Literal["queued", "parsing_structure", "deep_reading", "chapter_note_generation", "completed", "error"]
 
 

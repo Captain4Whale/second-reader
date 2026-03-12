@@ -927,8 +927,8 @@ def test_run_chapter_reflection_normalizes_and_backfills_quality_flags(monkeypat
     assert quality_by_id["3.3"] in {"acceptable", "weak"}
 
 
-def test_apply_chapter_reflection_repairs_scopes_to_segment_and_reaction():
-    """Chapter repair should patch segment-level and reaction-level targets without changing shape."""
+def test_apply_chapter_reflection_repairs_preserves_public_reactions_and_quality_flags():
+    """Chapter reflection should stay internal while still updating quality metadata."""
     segments = [
         {
             "segment_id": "4.1",
@@ -976,9 +976,8 @@ def test_apply_chapter_reflection_repairs_scopes_to_segment_and_reaction():
         output_language="en",
     )
 
-    assert patched[0]["verdict"] == "pass"
+    assert patched[0]["verdict"] == "skip"
     assert patched[0]["quality_status"] == "acceptable"
-    assert len(patched[0]["reactions"]) == 1
-    assert patched[0]["reactions"][0]["content"].startswith("Chapter-end addendum")
+    assert patched[0]["reactions"] == []
     assert patched[1]["quality_status"] == "strong"
-    assert "Addendum: Name the hidden assumption explicitly." in patched[1]["reactions"][0]["content"]
+    assert patched[1]["reactions"][0]["content"] == "Base thought"

@@ -34,11 +34,15 @@ from .storage import (
     append_jsonl,
     book_id_from_output_dir,
     book_manifest_file,
+    chapter_markdown_file,
+    chapter_qa_file,
     chapter_output_name,
     chapter_reference,
     chapter_result_file,
     chapter_result_name,
     existing_cover_asset_file,
+    existing_chapter_result_file,
+    relative_output_path,
     relative_asset_path,
     run_state_file,
     save_json,
@@ -188,15 +192,17 @@ def build_book_manifest(output_dir: Path, structure: BookStructure) -> BookManif
     cover_asset = existing_cover_asset_file(output_dir)
     chapters = []
     for chapter in structure.get("chapters", []):
-        metrics = _chapter_metrics_from_result(chapter_result_file(output_dir, chapter))
+        metrics = _chapter_metrics_from_result(existing_chapter_result_file(output_dir, chapter))
         entry = {
             "id": int(chapter.get("id", 0)),
             "title": str(chapter.get("title", "")),
             "reference": chapter_reference(chapter),
             "status": chapter.get("status", "pending"),
             "segment_count": len(chapter.get("segments", [])),
-            "markdown_file": chapter.get("output_file", "") or chapter_output_name(chapter),
-            "result_file": chapter_result_name(chapter),
+            "markdown_file": relative_output_path(output_dir, output_dir / str(chapter.get("output_file", "")).strip())
+            if str(chapter.get("output_file", "")).strip()
+            else relative_output_path(output_dir, chapter_markdown_file(output_dir, chapter)),
+            "result_file": relative_output_path(output_dir, chapter_result_file(output_dir, chapter)),
             **metrics,
         }
         chapter_number = chapter.get("chapter_number")
@@ -315,6 +321,17 @@ def _visible_reactions(reactions: list[ReactionPayload]) -> list[ReactionPayload
     ]
 
 
+def _public_visible_reactions(reactions: list[ReactionPayload]) -> list[ReactionPayload]:
+    """Filter reactions down to the public, source-grounded subset."""
+    public_reactions: list[ReactionPayload] = []
+    for reaction in _visible_reactions(reactions):
+        anchor_quote = str(reaction.get("anchor_quote", "") or "").strip()
+        if not anchor_quote:
+            continue
+        public_reactions.append(reaction)
+    return public_reactions
+
+
 def _featured_reactions(
     candidates: list[FeaturedReaction],
 ) -> list[FeaturedReaction]:
@@ -359,7 +376,7 @@ def build_chapter_result(
             paragraph_locators = list(segment_meta.get("paragraph_locators", []))
 
         frontend_reactions: list[ChapterResultReaction] = []
-        for index, reaction in enumerate(_visible_reactions(rendered.get("reactions", [])), start=1):
+        for index, reaction in enumerate(_public_visible_reactions(rendered.get("reactions", [])), start=1):
             reaction_type = str(reaction.get("type", "association"))
             reaction_counts[reaction_type] += 1
             visible_reaction_count += 1
@@ -446,7 +463,7 @@ def build_chapter_result(
         "output_language": output_language,
         "generated_at": _timestamp(),
         "sections": sections,
-        "chapter_reflection": dict(chapter_reflection or {}),
+        "chapter_reflection": {},
         "featured_reactions": featured,
         "visible_reaction_count": visible_reaction_count,
         "reaction_type_diversity": len(reaction_counts),
@@ -471,4 +488,47 @@ def write_chapter_result(
         output_language=output_language,
     )
     save_json(chapter_result_file(output_dir, chapter), payload)
+    return payload
+
+
+def build_chapter_qa_artifact(
+    *,
+    chapter: StructureChapter,
+    chapter_reflection: dict[str, object] | None,
+    output_language: str,
+) -> dict[str, object]:
+    """Build the internal-only chapter QA sidecar."""
+    reflection = dict(chapter_reflection or {})
+    def _list(name: str) -> list[object]:
+        value = reflection.get(name, [])
+        return list(value) if isinstance(value, list) else []
+
+    return {
+        "chapter_id": int(chapter.get("id", 0)),
+        "chapter_ref": chapter_reference(chapter),
+        "title": str(chapter.get("title", "")),
+        "output_language": output_language,
+        "generated_at": _timestamp(),
+        "chapter_insights": _list("chapter_insights"),
+        "segment_quality_flags": _list("segment_quality_flags"),
+        "segment_repairs": _list("segment_repairs"),
+        "reaction_repairs": _list("reaction_repairs"),
+        "applied_actions": _list("applied_actions"),
+        "discarded_actions": _list("discarded_actions"),
+    }
+
+
+def write_chapter_qa_artifact(
+    output_dir: Path,
+    chapter: StructureChapter,
+    chapter_reflection: dict[str, object] | None,
+    output_language: str,
+) -> dict[str, object]:
+    """Persist one internal QA sidecar for a chapter."""
+    payload = build_chapter_qa_artifact(
+        chapter=chapter,
+        chapter_reflection=chapter_reflection,
+        output_language=output_language,
+    )
+    save_json(chapter_qa_file(output_dir, chapter), payload)
     return payload

@@ -113,20 +113,4 @@ def render_chapter_markdown(
         lines.append("---")
         lines.append("")
 
-    insights = []
-    if isinstance(chapter_reflection, dict):
-        raw_insights = chapter_reflection.get("chapter_insights", [])
-        if isinstance(raw_insights, list):
-            for item in raw_insights:
-                text = str(item or "").strip()
-                if text:
-                    insights.append(text)
-    if insights:
-        heading = "章节回看" if output_language == "zh" else "Chapter Reflection"
-        lines.append(f"## {heading}")
-        lines.append("")
-        for item in insights:
-            lines.append(f"- {item}")
-        lines.append("")
-
     return "\n".join(lines).rstrip() + "\n"

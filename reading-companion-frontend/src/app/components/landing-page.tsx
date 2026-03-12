@@ -414,33 +414,38 @@ export function LandingPage() {
           </div>
 
           <div className="space-y-4">
-            {preview.items.map((reaction, index) => (
-              <motion.div
-                key={reaction.reactionId}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.6, delay: 0.2 + index * 0.15 }}
-                className="bg-white rounded-xl p-6 border border-[var(--warm-300)]/30 shadow-sm"
-              >
-                <div className="flex items-center gap-2 mb-3">
-                  <span
-                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[var(--warm-900)] ${reactionMeta[reaction.type].surfaceClass}`}
-                    style={{ fontSize: "0.75rem", fontWeight: 500 }}
-                  >
-                    {reactionMeta[reaction.type].label}
-                  </span>
-                  <span className="text-[var(--warm-500)]" style={{ fontSize: "0.75rem" }}>
-                    {reaction.chapterRef} · {reaction.sectionRef}
-                  </span>
-                </div>
-                <blockquote className="border-l-2 border-[var(--amber-accent)]/40 pl-4 mb-3 text-[var(--warm-600)] italic" style={{ fontSize: "0.875rem", lineHeight: 1.7 }}>
-                  “{reaction.anchorQuote}”
-                </blockquote>
-                <p className="text-[var(--warm-800)]" style={{ fontSize: "0.9375rem", lineHeight: 1.8 }}>
-                  {reaction.content}
-                </p>
-              </motion.div>
-            ))}
+            {preview.items.map((reaction, index) => {
+              const anchorQuote = reaction.anchorQuote.trim();
+              return (
+                <motion.div
+                  key={reaction.reactionId}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.6, delay: 0.2 + index * 0.15 }}
+                  className="bg-white rounded-xl p-6 border border-[var(--warm-300)]/30 shadow-sm"
+                >
+                  <div className="flex items-center gap-2 mb-3">
+                    <span
+                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[var(--warm-900)] ${reactionMeta[reaction.type].surfaceClass}`}
+                      style={{ fontSize: "0.75rem", fontWeight: 500 }}
+                    >
+                      {reactionMeta[reaction.type].label}
+                    </span>
+                    <span className="text-[var(--warm-500)]" style={{ fontSize: "0.75rem" }}>
+                      {reaction.chapterRef} · {reaction.sectionRef}
+                    </span>
+                  </div>
+                  {anchorQuote ? (
+                    <blockquote className="border-l-2 border-[var(--amber-accent)]/40 pl-4 mb-3 text-[var(--warm-600)] italic" style={{ fontSize: "0.875rem", lineHeight: 1.7 }}>
+                      “{anchorQuote}”
+                    </blockquote>
+                  ) : null}
+                  <p className="text-[var(--warm-800)]" style={{ fontSize: "0.9375rem", lineHeight: 1.8 }}>
+                    {reaction.content}
+                  </p>
+                </motion.div>
+              );
+            })}
           </div>
 
           <div className="text-center mt-10">

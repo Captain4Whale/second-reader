@@ -342,7 +342,7 @@
             "title": "Display Title"
           },
           "file": {
-            "contentMediaType": "application/octet-stream",
+            "format": "binary",
             "title": "File",
             "type": "string"
           }
@@ -744,7 +744,7 @@
             "type": "string"
           },
           "chapter_reflection": {
-            "description": "Chapter-level reflection bullets.",
+            "description": "Deprecated compatibility field. Internal chapter reflection is no longer exposed, so this list is always empty.",
             "items": {
               "type": "string"
             },
@@ -1408,8 +1408,9 @@
           "mark_type": {
             "description": "User-selected mark value.",
             "enum": [
-              "known",
-              "blindspot"
+              "resonance",
+              "blindspot",
+              "bookmark"
             ],
             "title": "Mark Type",
             "type": "string"
@@ -1541,8 +1542,9 @@
             "anyOf": [
               {
                 "enum": [
-                  "known",
-                  "blindspot"
+                  "resonance",
+                  "blindspot",
+                  "bookmark"
                 ],
                 "type": "string"
               },
@@ -1894,8 +1896,9 @@
           "mark_type": {
             "description": "User-selected mark value.",
             "enum": [
-              "known",
-              "blindspot"
+              "resonance",
+              "blindspot",
+              "bookmark"
             ],
             "title": "Mark Type",
             "type": "string"

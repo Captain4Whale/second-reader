@@ -13,8 +13,10 @@ from src.iterator_reader.frontend_artifacts import estimate_eta_seconds
 from src.iterator_reader.storage import (
     activity_file,
     book_manifest_file,
+    chapter_qa_file,
     chapter_markdown_file,
     chapter_result_file,
+    structure_file,
     run_state_file,
 )
 
@@ -127,8 +129,8 @@ def test_parse_book_writes_frontend_bootstrap_artifacts(tmp_path, monkeypatch):
     assert manifest["book_id"] == "demo-book"
     assert manifest["source_asset"] == {"format": "epub", "file": "_assets/source.epub"}
     assert manifest["cover_image_url"] is None
-    assert manifest["chapters"][0]["markdown_file"] == "ch01_deep_read.md"
-    assert manifest["chapters"][0]["result_file"] == "ch01_deep_read.json"
+    assert manifest["chapters"][0]["markdown_file"] == "public/chapters/ch01_deep_read.md"
+    assert manifest["chapters"][0]["result_file"] == "public/chapters/ch01_deep_read.json"
     assert manifest["chapters"][0]["visible_reaction_count"] == 0
     assert run_state["stage"] == "ready"
     assert run_state["mode"] == "sequential"
@@ -228,7 +230,7 @@ def test_read_book_sequential_writes_frontend_artifacts(tmp_path, monkeypatch):
     assert chapter_result["sections"][0]["segment_ref"] == "1.1"
     assert chapter_result["sections"][0]["original_text"] == "Alpha beta"
     assert chapter_result["sections"][0]["locator"]["href"] == "chapter-1.xhtml"
-    assert chapter_result["chapter_reflection"]["chapter_insights"] == ["Arc"]
+    assert chapter_result["chapter_reflection"] == {}
     assert all(reaction["type"] != "silent" for reaction in chapter_result["sections"][0]["reactions"])
     assert chapter_result["sections"][0]["reactions"][0]["reaction_id"]
     assert chapter_result["sections"][0]["reactions"][0]["target_locator"]["match_mode"] == "exact"
@@ -246,6 +248,7 @@ def test_read_book_sequential_writes_frontend_artifacts(tmp_path, monkeypatch):
     assert manifest["chapters"][0]["reaction_type_diversity"] == 2
     assert manifest["chapters"][0]["high_signal_reaction_count"] == 2
     assert markdown_path.exists()
+    assert _load_json(chapter_qa_file(output_dir, structure["chapters"][0]))["chapter_insights"] == ["Arc"]
     assert run_state["stage"] == "completed"
     assert run_state["eta_seconds"] == 0
     assert {"structure_ready", "chapter_started", "segment_started", "segment_completed", "chapter_completed", "run_completed"} <= {

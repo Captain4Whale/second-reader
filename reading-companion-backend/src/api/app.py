@@ -16,6 +16,7 @@ from src.api.contract import (
     resolve_reaction_id,
     to_api_book_id,
     to_api_mark_id,
+    to_api_mark_type,
     to_api_reaction_id,
     to_api_reaction_type,
 )
@@ -370,6 +371,7 @@ def _mark_record(payload: dict) -> dict:
     normalized["book_id"] = to_api_book_id(internal_book_id)
     normalized["reaction_id"] = to_api_reaction_id(book_id=internal_book_id, reaction_id=internal_reaction_id)
     normalized["reaction_type"] = to_api_reaction_type(str(payload.get("reaction_type", "")))
+    normalized["mark_type"] = to_api_mark_type(str(payload.get("mark_type", "")))
     normalized["section_ref"] = str(payload.get("section_ref", payload.get("segment_ref", "")))
     normalized.pop("segment_ref", None)
     return normalized

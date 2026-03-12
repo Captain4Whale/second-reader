@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import shutil
 import subprocess
 import sys
 import uuid
@@ -10,7 +11,14 @@ from pathlib import Path
 
 from .catalog import find_book_id_by_source, get_book
 from .storage import job_file, job_log_file, load_json, save_json, timestamp, upload_file
-from src.iterator_reader.storage import run_state_file
+from src.iterator_reader.storage import (
+    existing_activity_file,
+    existing_run_state_file,
+    run_history_job_file,
+    run_history_job_log_file,
+    run_history_summary_file,
+    run_history_trace_file,
+)
 
 
 def _job_record(
@@ -151,7 +159,7 @@ def refresh_job(job_id: str, root: Path | None = None) -> dict:
 
     if not running and status not in {"completed", "error"}:
         if book_id:
-            state_path = run_state_file((root or Path.cwd()) / "output" / book_id)
+            state_path = existing_run_state_file((root or Path.cwd()) / "output" / book_id)
             if state_path.exists():
                 run_state = load_json(state_path)
                 status, state_error = _status_from_run_state(run_state, running=False)
@@ -170,4 +178,38 @@ def refresh_job(job_id: str, root: Path | None = None) -> dict:
         error=error,
         created_at=str(record.get("created_at", timestamp())),
     )
-    return save_job(refreshed, root)
+    saved = save_job(refreshed, root)
+    if book_id and status in {"completed", "error"}:
+        _archive_run_artifacts(book_id=book_id, job=saved, root=root)
+    return saved
+
+
+def _archive_run_artifacts(*, book_id: str, job: dict, root: Path | None = None) -> None:
+    """Mirror terminal job artifacts into the book-scoped history tree."""
+    output_dir = (root or Path.cwd()) / "output" / book_id
+    summary_payload = {
+        "job_id": str(job.get("job_id", "")),
+        "status": str(job.get("status", "")),
+        "book_id": book_id,
+        "created_at": str(job.get("created_at", "")),
+        "updated_at": str(job.get("updated_at", "")),
+        "error": job.get("error"),
+    }
+    save_json(run_history_summary_file(output_dir, str(job.get("job_id", ""))), summary_payload)
+    save_json(run_history_job_file(output_dir, str(job.get("job_id", ""))), job)
+
+    activity_path = existing_activity_file(output_dir)
+    history_trace_path = run_history_trace_file(output_dir, str(job.get("job_id", "")))
+    history_trace_path.parent.mkdir(parents=True, exist_ok=True)
+    if activity_path.exists():
+        shutil.copy2(activity_path, history_trace_path)
+    else:
+        history_trace_path.write_text("", encoding="utf-8")
+
+    source_log = job_log_file(str(job.get("job_id", "")), root)
+    history_log = run_history_job_log_file(output_dir, str(job.get("job_id", "")))
+    history_log.parent.mkdir(parents=True, exist_ok=True)
+    if source_log.exists():
+        shutil.copy2(source_log, history_log)
+    else:
+        history_log.write_text("", encoding="utf-8")

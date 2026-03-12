@@ -9,7 +9,15 @@ import threading
 import time
 from pathlib import Path
 
-from src.iterator_reader.storage import activity_file, run_state_file, save_json, source_asset_file
+from src.iterator_reader.storage import (
+    activity_file,
+    book_manifest_file,
+    chapter_result_file,
+    relative_output_path,
+    run_state_file,
+    save_json,
+    source_asset_file,
+)
 from src.library.jobs import save_job
 from src.library.storage import timestamp, upload_file
 
@@ -52,7 +60,12 @@ def launch_e2e_fixture_job(upload_path: Path, *, upload_filename: str, root: Pat
     chapter_id = int(chapter.get("id", 1))
     chapter_ref = str(chapter.get("reference", f"Chapter {chapter_id}"))
     chapter_title = str(chapter.get("title", chapter_ref))
-    result_file = str(chapter.get("result_file", "ch01_deep_read.json"))
+    chapter_stub = {
+        "id": chapter_id,
+        "title": chapter_title,
+        "chapter_number": int(chapter.get("chapter_number", chapter_id)),
+    }
+    result_file = relative_output_path(book_dir, chapter_result_file(book_dir, chapter_stub))
 
     source_asset_path = source_asset_file(book_dir)
     source_asset_path.parent.mkdir(parents=True, exist_ok=True)
@@ -76,7 +89,7 @@ def launch_e2e_fixture_job(upload_path: Path, *, upload_filename: str, root: Pat
                 "reference": chapter_ref,
                 "status": "pending",
                 "segment_count": int(chapter.get("segment_count", 1)),
-                "markdown_file": str(chapter.get("markdown_file", "ch01_deep_read.md")),
+                "markdown_file": str(chapter.get("markdown_file", "public/chapters/ch01_deep_read.md")),
                 "result_file": result_file,
                 "visible_reaction_count": 0,
                 "reaction_type_diversity": 0,
@@ -84,7 +97,7 @@ def launch_e2e_fixture_job(upload_path: Path, *, upload_filename: str, root: Pat
             }
         ],
     }
-    save_json(book_dir / "book_manifest.json", manifest)
+    save_json(book_manifest_file(book_dir), manifest)
     save_json(
         run_state_file(book_dir),
         {
@@ -145,7 +158,7 @@ def launch_e2e_fixture_job(upload_path: Path, *, upload_filename: str, root: Pat
                 "high_signal_reaction_count": int(chapter_result.get("high_signal_reaction_count", 1)),
             }
         )
-        save_json(book_dir / "book_manifest.json", manifest)
+        save_json(book_manifest_file(book_dir), manifest)
         save_json(
             run_state_file(book_dir),
             {

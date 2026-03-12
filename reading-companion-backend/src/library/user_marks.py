@@ -6,7 +6,14 @@ from pathlib import Path
 
 from .pagination import paginate_items
 from .storage import load_json, save_json, timestamp, user_marks_file
+from src.api.contract import MARK_TYPES, to_internal_mark_type
 from src.iterator_reader.models import UserMark, UserMarksState
+from src.iterator_reader.storage import existing_book_manifest_file, existing_chapter_result_file, resolve_output_relative_file
+
+
+def normalize_mark_type(mark_type: str) -> str:
+    """Normalize mark values to the current public taxonomy."""
+    return to_internal_mark_type(mark_type)
 
 
 def load_marks_state(root: Path | None = None) -> UserMarksState:
@@ -15,9 +22,17 @@ def load_marks_state(root: Path | None = None) -> UserMarksState:
     if not path.exists():
         return {"updated_at": timestamp(), "marks": {}}
     payload = load_json(path)
+    raw_marks = dict(payload.get("marks", {}))
+    normalized_marks: dict[str, UserMark] = {}
+    for reaction_id, raw_mark in raw_marks.items():
+        if not isinstance(raw_mark, dict):
+            continue
+        normalized = dict(raw_mark)
+        normalized["mark_type"] = normalize_mark_type(str(raw_mark.get("mark_type", "")))
+        normalized_marks[str(reaction_id)] = normalized  # type: ignore[assignment]
     return {
         "updated_at": str(payload.get("updated_at", timestamp())),
-        "marks": dict(payload.get("marks", {})),
+        "marks": normalized_marks,
     }
 
 
@@ -55,7 +70,8 @@ def list_marks_page(
     if book_id:
         items = [item for item in items if str(item.get("book_id", "")) == book_id]
     if mark_type:
-        items = [item for item in items if str(item.get("mark_type", "")) == mark_type]
+        normalized_mark_type = normalize_mark_type(mark_type)
+        items = [item for item in items if str(item.get("mark_type", "")) == normalized_mark_type]
     page_items, page_info = paginate_items(items, limit=limit, cursor=cursor)
     return {"items": page_items, "page_info": page_info}
 
@@ -88,7 +104,18 @@ def find_reaction(book_id: str, reaction_id: str, root: Path | None = None) -> d
     book_dir = (root or Path.cwd()) / "output" / book_id
     if not book_dir.exists():
         return None
-    for path in sorted(book_dir.glob("*_deep_read.json")):
+    manifest_path = existing_book_manifest_file(book_dir)
+    if not manifest_path.exists():
+        return None
+    manifest = load_json(manifest_path)
+    for chapter in manifest.get("chapters", []):
+        path = resolve_output_relative_file(
+            book_dir,
+            str(chapter.get("result_file", "") or "").strip() or None,
+            fallback=existing_chapter_result_file(book_dir, chapter),
+        )
+        if not path.exists():
+            continue
         payload = load_json(path)
         chapter = payload.get("chapter", {})
         for section in payload.get("sections", []):
@@ -112,6 +139,10 @@ def find_reaction(book_id: str, reaction_id: str, root: Path | None = None) -> d
 
 def put_mark(*, book_id: str, reaction_id: str, mark_type: str, root: Path | None = None) -> UserMark:
     """Create or update one persisted mark with idempotent semantics."""
+    normalized_mark_type = normalize_mark_type(mark_type)
+    if normalized_mark_type not in MARK_TYPES:
+        raise ValueError(f"Unsupported mark_type: {mark_type}")
+
     reaction_record = find_reaction(book_id, reaction_id, root)
     if reaction_record is None:
         raise FileNotFoundError(reaction_id)
@@ -136,7 +167,7 @@ def put_mark(*, book_id: str, reaction_id: str, mark_type: str, root: Path | Non
         "chapter_ref": str(reaction_record["chapter_ref"]),
         "segment_ref": str(reaction_record["segment_ref"]),
         "reaction_type": reaction.get("type", "association"),
-        "mark_type": mark_type,  # type: ignore[assignment]
+        "mark_type": normalized_mark_type,  # type: ignore[assignment]
         "reaction_excerpt": str(reaction.get("content", ""))[:180],
         "anchor_quote": str(reaction.get("anchor_quote", "")),
         "created_at": created_at,

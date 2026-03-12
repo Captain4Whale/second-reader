@@ -6,14 +6,10 @@ import { BRAND_CONFIG, getDocumentTitle } from "../config/brand";
 export function RootLayout() {
   const location = useLocation();
   const isLanding = location.pathname === "/";
+  const isChapterWorkspace = /^\/books\/[^/]+\/chapters\/[^/]+$/.test(location.pathname);
+  const booksActive = location.pathname === "/books" || location.pathname === "/bookshelf";
   const marksActive = location.pathname === "/marks" || location.pathname === "/bookshelf/marks";
-  const booksActive =
-    !marksActive && (
-    location.pathname.startsWith("/books") ||
-    location.pathname.startsWith("/bookshelf") ||
-    location.pathname.startsWith("/books/") ||
-    location.pathname.startsWith("/upload")
-    );
+  const brandHref = "/";
 
   useEffect(() => {
     document.title = getDocumentTitle(location.pathname);
@@ -21,46 +17,69 @@ export function RootLayout() {
 
   return (
     <div className="min-h-screen bg-[var(--warm-100)]">
-      <nav className={`sticky top-0 z-50 backdrop-blur-md ${isLanding ? "bg-transparent" : "bg-[var(--warm-100)]/90 border-b border-[var(--warm-300)]/40"}`}>
+      <nav className={`sticky top-0 z-50 backdrop-blur-md ${isLanding ? "bg-[var(--warm-50)]/72" : "bg-[var(--warm-50)]/94 border-b border-[var(--warm-300)]/40"}`}>
         <div
-          className={`py-4 flex items-center justify-between ${
-            isLanding ? "w-full px-6 md:px-8 xl:px-10" : "max-w-6xl mx-auto px-6"
+          className={`py-3.5 ${
+            isLanding
+              ? "w-full px-6 md:px-8 xl:px-10"
+              : isChapterWorkspace
+                ? "w-full px-6"
+                : "max-w-7xl mx-auto px-6"
           }`}
         >
-          <Link to="/" className="flex items-center gap-2.5 no-underline">
-            <div className="w-8 h-8 rounded-lg bg-[var(--amber-accent)] flex items-center justify-center">
-              <BookOpen className="w-4 h-4 text-white" />
+          <div className="flex items-center justify-between gap-4 flex-wrap sm:flex-nowrap">
+            <div className="flex items-center gap-3 shrink-0">
+              <Link to={brandHref} data-testid="brand-link" className="flex items-center gap-3 no-underline">
+                <div className="w-10 h-10 rounded-xl bg-[var(--amber-accent)] flex items-center justify-center shadow-sm">
+                  <BookOpen className="w-4.5 h-4.5 text-white" />
+                </div>
+                <div className="min-w-0">
+                  <span className="block font-['Lora',Georgia,serif] text-[var(--warm-900)] tracking-tight" style={{ fontSize: "1.2rem", fontWeight: 600 }}>
+                    {BRAND_CONFIG.productName}
+                  </span>
+                  {isLanding ? (
+                    <span className="block text-[var(--warm-500)]" style={{ fontSize: "0.72rem", lineHeight: 1.1 }}>
+                      Deep reading workspace
+                    </span>
+                  ) : null}
+                </div>
+              </Link>
             </div>
-            <span className="font-['Lora',Georgia,serif] text-[var(--warm-900)] tracking-tight" style={{ fontSize: '1.125rem', fontWeight: 600 }}>
-              {BRAND_CONFIG.productName}
-            </span>
-          </Link>
 
-          <div className="flex items-center gap-6">
-            <Link
-              to="/books"
-              className={`flex items-center gap-1.5 no-underline transition-colors ${
-                booksActive
-                  ? "text-[var(--amber-accent)]"
-                  : "text-[var(--warm-600)] hover:text-[var(--warm-800)]"
-              }`}
-              style={{ fontSize: '0.875rem' }}
-            >
-              <Library className="w-4 h-4" />
-              {BRAND_CONFIG.navigation.booksLabel}
-            </Link>
-            <Link
-              to="/marks"
-              className={`flex items-center gap-1.5 no-underline transition-colors ${
-                marksActive
-                  ? "text-[var(--amber-accent)]"
-                  : "text-[var(--warm-600)] hover:text-[var(--warm-800)]"
-              }`}
-              style={{ fontSize: '0.875rem' }}
-            >
-              <Bookmark className="w-4 h-4" />
-              {BRAND_CONFIG.navigation.marksLabel}
-            </Link>
+            {!isLanding ? (
+              <div className="rounded-full border border-[var(--warm-300)]/50 bg-white/78 p-1 shadow-sm">
+                <div className="flex items-center gap-1">
+                  <Link
+                    to="/books"
+                    data-testid="global-nav-books"
+                    aria-current={booksActive ? "page" : undefined}
+                    className={`inline-flex h-9 items-center gap-2 rounded-full px-4 no-underline transition-colors ${
+                      booksActive
+                        ? "bg-[var(--amber-bg)] text-[var(--amber-accent)]"
+                        : "text-[var(--warm-600)] hover:bg-[var(--warm-100)] hover:text-[var(--warm-800)]"
+                    }`}
+                    style={{ fontSize: "0.875rem", fontWeight: 600 }}
+                  >
+                    <Library className="w-4 h-4" />
+                    {BRAND_CONFIG.navigation.booksLabel}
+                  </Link>
+                  <Link
+                    to="/marks"
+                    data-testid="global-nav-marks"
+                    aria-current={marksActive ? "page" : undefined}
+                    className={`inline-flex h-9 items-center gap-2 rounded-full px-4 no-underline transition-colors ${
+                      marksActive
+                        ? "bg-[var(--amber-bg)] text-[var(--amber-accent)]"
+                        : "text-[var(--warm-600)] hover:bg-[var(--warm-100)] hover:text-[var(--warm-800)]"
+                    }`}
+                    style={{ fontSize: "0.875rem", fontWeight: 600 }}
+                  >
+                    <Bookmark className="w-4 h-4" />
+                    {BRAND_CONFIG.navigation.marksLabel}
+                  </Link>
+                </div>
+              </div>
+            ) : null}
           </div>
         </div>
       </nav>

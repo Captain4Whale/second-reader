@@ -154,8 +154,8 @@ def test_render_chapter_markdown_supports_discern_and_retrospect():
     assert "🔗 回溯\n\n这和前文 1.4 对关系规则的讨论形成了呼应。" in output
 
 
-def test_render_chapter_markdown_appends_chapter_reflection_block():
-    """Chapter-level insights should be appended after section notes."""
+def test_render_chapter_markdown_omits_internal_chapter_reflection_block():
+    """Chapter markdown should not expose internal chapter reflection bullets."""
     chapter = {
         "id": 4,
         "title": "Chapter Four",
@@ -192,6 +192,6 @@ def test_render_chapter_markdown_appends_chapter_reflection_block():
         },
     )
 
-    assert "## Chapter Reflection" in output
-    assert "- The chapter moves from definition to critique." in output
-    assert "- Its key tension is utility versus reciprocity." in output
+    assert "## Chapter Reflection" not in output
+    assert "The chapter moves from definition to critique." not in output
+    assert "Its key tension is utility versus reciprocity." not in output

@@ -13,6 +13,7 @@ from .frontend_artifacts import (
     estimate_eta_seconds,
     reset_activity,
     write_book_manifest,
+    write_chapter_qa_artifact,
     write_chapter_result,
     write_run_state,
 )
@@ -49,6 +50,7 @@ from .storage import (
     chapter_reference,
     chapter_result_name,
     load_json,
+    relative_output_path,
     save_structure,
     save_json,
     segment_reference,
@@ -431,7 +433,13 @@ def _run_single_chapter(
 
     output_path = chapter_markdown_file(output_dir, chapter)
     chapter["status"] = "done"
-    chapter["output_file"] = output_path.name
+    chapter["output_file"] = relative_output_path(output_dir, output_path)
+    write_chapter_qa_artifact(
+        output_dir,
+        chapter,
+        chapter_reflection=chapter_reflection,
+        output_language=output_language,
+    )
     chapter_result = write_chapter_result(
         output_dir=output_dir,
         chapter=chapter,
@@ -439,6 +447,7 @@ def _run_single_chapter(
         chapter_reflection=chapter_reflection,
         output_language=output_language,
     )
+    output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(
         render_chapter_markdown(
             chapter,

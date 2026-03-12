@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Link, useParams } from "react-router";
 import { fetchBookDetail, fetchBookMarks, toApiAssetUrl } from "../lib/api";
 import { canonicalBookAnalysisPath, canonicalChapterPath } from "../lib/contract";
+import { markLabel } from "../lib/marks";
 import { reactionLabel } from "../lib/reactions";
 import { useApiResource } from "../lib/use-api-resource";
 import { EmptyState, ErrorState, LoadingState } from "./page-state";
@@ -92,6 +93,7 @@ export function BookOverviewPage() {
             ) : null}
             <a
               href={toApiAssetUrl(detail.source_asset.url) ?? "#"}
+              data-testid="book-overview-source-download"
               className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-[var(--warm-300)]/60 text-[var(--warm-700)] no-underline hover:bg-[var(--warm-100)] transition-colors"
               style={{ fontSize: "0.875rem", fontWeight: 500 }}
             >
@@ -190,7 +192,7 @@ export function BookOverviewPage() {
       ) : marks.groups.length === 0 ? (
         <EmptyState
           title="No marks for this book yet"
-          message="Known and blindspot marks will appear here after you review chapter reactions."
+          message="Resonance, blindspot, and bookmark marks will appear here after you review chapter reactions."
         />
       ) : (
         <div className="space-y-6">
@@ -210,29 +212,34 @@ export function BookOverviewPage() {
               </div>
 
               <div className="space-y-3">
-                {group.items.map((mark) => (
-                  <div key={mark.mark_id} className="bg-white rounded-2xl border border-[var(--warm-300)]/30 p-5 shadow-sm">
-                    <div className="flex items-center gap-2 mb-2 flex-wrap">
-                      <span className="text-[var(--warm-500)]" style={{ fontSize: "0.75rem" }}>
-                        {mark.section_ref}
-                      </span>
-                      <span className="text-[var(--warm-300)]">·</span>
-                      <span className="text-[var(--warm-700)]" style={{ fontSize: "0.75rem", fontWeight: 600 }}>
-                        {reactionLabel(mark.reaction_type)}
-                      </span>
-                      <span className="text-[var(--warm-300)]">·</span>
-                      <span className="text-[var(--amber-accent)]" style={{ fontSize: "0.75rem", fontWeight: 600 }}>
-                        {mark.mark_type}
-                      </span>
+                {group.items.map((mark) => {
+                  const anchorQuote = mark.anchor_quote.trim();
+                  return (
+                    <div key={mark.mark_id} className="bg-white rounded-2xl border border-[var(--warm-300)]/30 p-5 shadow-sm">
+                      <div className="flex items-center gap-2 mb-2 flex-wrap">
+                        <span className="text-[var(--warm-500)]" style={{ fontSize: "0.75rem" }}>
+                          {mark.section_ref}
+                        </span>
+                        <span className="text-[var(--warm-300)]">·</span>
+                        <span className="text-[var(--warm-700)]" style={{ fontSize: "0.75rem", fontWeight: 600 }}>
+                          {reactionLabel(mark.reaction_type)}
+                        </span>
+                        <span className="text-[var(--warm-300)]">·</span>
+                        <span className="text-[var(--amber-accent)]" style={{ fontSize: "0.75rem", fontWeight: 600 }}>
+                          {markLabel(mark.mark_type)}
+                        </span>
+                      </div>
+                      {anchorQuote ? (
+                        <blockquote className="border-l-2 border-[var(--amber-accent)]/40 pl-4 mb-3 text-[var(--warm-600)] italic" style={{ fontSize: "0.8125rem", lineHeight: 1.7 }}>
+                          “{anchorQuote}”
+                        </blockquote>
+                      ) : null}
+                      <p className="text-[var(--warm-800)]" style={{ fontSize: "0.875rem", lineHeight: 1.7 }}>
+                        {mark.reaction_excerpt}
+                      </p>
                     </div>
-                    <blockquote className="border-l-2 border-[var(--amber-accent)]/40 pl-4 mb-3 text-[var(--warm-600)] italic" style={{ fontSize: "0.8125rem", lineHeight: 1.7 }}>
-                      “{mark.anchor_quote}”
-                    </blockquote>
-                    <p className="text-[var(--warm-800)]" style={{ fontSize: "0.875rem", lineHeight: 1.7 }}>
-                      {mark.reaction_excerpt}
-                    </p>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </section>
           ))}

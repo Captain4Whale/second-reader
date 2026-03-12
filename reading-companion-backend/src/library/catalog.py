@@ -21,7 +21,13 @@ from src.api.contract import (
 from src.iterator_reader.storage import (
     activity_file,
     book_manifest_file,
+    chapter_result_file,
+    existing_chapter_result_file,
     existing_cover_asset_file,
+    existing_activity_file,
+    existing_book_manifest_file,
+    existing_run_state_file,
+    resolve_output_relative_file,
     run_state_file,
 )
 
@@ -70,9 +76,24 @@ def _book_dir(book_id: str, root: Path | None = None) -> Path:
     return output_root(root) / book_id
 
 
+def _manifest_paths(root: Path | None = None) -> list[Path]:
+    """Return canonical and legacy manifest paths without duplicates."""
+    manifest_paths = sorted(output_root(root).glob("*/public/book_manifest.json"))
+    manifest_paths.extend(sorted(output_root(root).glob("*/book_manifest.json")))
+    seen: set[Path] = set()
+    unique_paths: list[Path] = []
+    for path in manifest_paths:
+        output_dir = path.parent.parent if path.parent.name == "public" else path.parent
+        if output_dir in seen:
+            continue
+        seen.add(output_dir)
+        unique_paths.append(path)
+    return unique_paths
+
+
 def _manifest(book_id: str, root: Path | None = None) -> dict:
     """Load one persisted manifest."""
-    path = book_manifest_file(_book_dir(book_id, root))
+    path = existing_book_manifest_file(_book_dir(book_id, root))
     if not path.exists():
         raise FileNotFoundError(book_id)
     return _load_json(path)
@@ -80,8 +101,19 @@ def _manifest(book_id: str, root: Path | None = None) -> dict:
 
 def _run_state(book_id: str, root: Path | None = None) -> dict | None:
     """Load one persisted run state if present."""
-    path = run_state_file(_book_dir(book_id, root))
+    path = existing_run_state_file(_book_dir(book_id, root))
     return _load_json(path) if path.exists() else None
+
+
+def _chapter_result_path(book_id: str, chapter: dict, root: Path | None = None) -> Path:
+    """Resolve one chapter result path with manifest-relative and canonical fallbacks."""
+    output_dir = _book_dir(book_id, root)
+    relative_path = str(chapter.get("result_file", "") or "").strip() or None
+    return resolve_output_relative_file(
+        output_dir,
+        relative_path,
+        fallback=existing_chapter_result_file(output_dir, chapter),
+    )
 
 
 def _sort_by_updated_and_id(items: list[dict], *, updated_key: str, id_key: str) -> list[dict]:
@@ -194,9 +226,10 @@ def list_books_page(
 ) -> dict:
     """Return paginated bookshelf cards."""
     books: list[dict] = []
-    for manifest_path in output_root(root).glob("*/book_manifest.json"):
+    for manifest_path in _manifest_paths(root):
         manifest = _load_json(manifest_path)
-        book_id = str(manifest.get("book_id", manifest_path.parent.name))
+        manifest_parent = manifest_path.parent.parent if manifest_path.parent.name == "public" else manifest_path.parent
+        book_id = str(manifest.get("book_id", manifest_parent.name))
         run_state = _run_state(book_id, root)
         books.append(_book_card(book_id, manifest, run_state, root=root))
 
@@ -256,7 +289,7 @@ def get_book_detail(book_id: str, root: Path | None = None) -> dict:
 
     reaction_counts = {reaction_type: 0 for reaction_type in REACTION_FILTERS if reaction_type != "all"}
     for chapter in manifest.get("chapters", []):
-        result_path = _book_dir(book_id, root) / str(chapter.get("result_file", ""))
+        result_path = _chapter_result_path(book_id, chapter, root=root)
         if not result_path.exists():
             continue
         payload = _load_json(result_path)
@@ -348,7 +381,7 @@ def _decorate_activity_event(book_id: str, event: dict) -> dict:
 
 def get_activity(book_id: str, root: Path | None = None) -> list[dict]:
     """Load the user-facing activity stream for one book."""
-    return [_decorate_activity_event(book_id, item) for item in _load_jsonl(activity_file(_book_dir(book_id, root)))]
+    return [_decorate_activity_event(book_id, item) for item in _load_jsonl(existing_activity_file(_book_dir(book_id, root)))]
 
 
 def get_activity_page(
@@ -378,7 +411,7 @@ def get_chapter_result(book_id: str, chapter_id: int, root: Path | None = None) 
     for chapter in manifest.get("chapters", []):
         if int(chapter.get("id", 0)) != chapter_id:
             continue
-        result_path = _book_dir(book_id, root) / str(chapter.get("result_file", ""))
+        result_path = _chapter_result_path(book_id, chapter, root=root)
         if not result_path.exists():
             raise FileNotFoundError(f"{book_id}:{chapter_id}")
         return _load_json(result_path)
@@ -472,13 +505,6 @@ def get_chapter_detail(
     sections = sorted(sections, key=lambda item: str(item.get("section_ref", "")))
     page_sections, page_info = paginate_items(sections, limit=limit, cursor=cursor)
     chapter_info = chapter_payload.get("chapter", {})
-    chapter_reflection = []
-    raw_reflection = chapter_payload.get("chapter_reflection", {}).get("chapter_insights", [])
-    for item in raw_reflection if isinstance(raw_reflection, list) else []:
-        text = str(item or "").strip()
-        if text:
-            chapter_reflection.append(text)
-
     chapter_ref = str(chapter_info.get("reference", ""))
     chapter_id_value = int(chapter_info.get("id", chapter_id))
     return {
@@ -496,7 +522,7 @@ def get_chapter_detail(
             for item in chapter_payload.get("featured_reactions", [])
             if isinstance(item, dict)
         ],
-        "chapter_reflection": chapter_reflection,
+        "chapter_reflection": [],
         "sections": page_sections,
         "sections_page_info": page_info,
         "available_filters": REACTION_FILTERS,
@@ -611,7 +637,7 @@ def get_analysis_state(book_id: str, root: Path | None = None) -> dict:
 
     reaction_counts: dict[str, int] = {reaction_type: 0 for reaction_type in REACTION_FILTERS if reaction_type != "all"}
     for chapter in manifest.get("chapters", []):
-        result_path = _book_dir(book_id, root) / str(chapter.get("result_file", ""))
+        result_path = _chapter_result_path(book_id, chapter, root=root)
         if not result_path.exists():
             continue
         payload = _load_json(result_path)
@@ -724,7 +750,7 @@ def find_book_id_by_source(upload_path: Path, root: Path | None = None) -> str |
     """Find the output book id associated with one uploaded source file."""
     target = str(upload_path.resolve())
     target_digest: str | None = None
-    for manifest_path in output_root(root).glob("*/book_manifest.json"):
+    for manifest_path in _manifest_paths(root):
         manifest = _load_json(manifest_path)
         source_file = str(manifest.get("source_file", "")).strip()
         if not source_file:
@@ -732,14 +758,16 @@ def find_book_id_by_source(upload_path: Path, root: Path | None = None) -> str |
         if source_file:
             try:
                 if str(Path(source_file).resolve()) == target:
-                    return str(manifest.get("book_id", manifest_path.parent.name))
+                    manifest_parent = manifest_path.parent.parent if manifest_path.parent.name == "public" else manifest_path.parent
+                    return str(manifest.get("book_id", manifest_parent.name))
             except FileNotFoundError:
                 pass
         if target_digest is None:
             target_digest = _file_sha1(upload_path)
         if target_digest is None:
             return None
-        book_id = str(manifest.get("book_id", manifest_path.parent.name))
+        manifest_parent = manifest_path.parent.parent if manifest_path.parent.name == "public" else manifest_path.parent
+        book_id = str(manifest.get("book_id", manifest_parent.name))
         asset_path = source_asset_path(book_id, root)
         if _file_sha1(asset_path) == target_digest:
             return book_id

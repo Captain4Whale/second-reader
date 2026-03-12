@@ -20,6 +20,7 @@ from src.prompts.templates import (
 from .language import detect_book_language, language_name, resolve_output_language
 from .llm_utils import invoke_json
 from .frontend_artifacts import (
+    _reaction_target_locator,
     append_activity_event,
     build_run_state,
     reset_activity,
@@ -28,14 +29,20 @@ from .frontend_artifacts import (
 )
 from .models import BookStructure, SemanticSegment, StructureChapter
 from .storage import (
+    chapter_markdown_file,
     chapter_output_name,
+    chapter_result_file,
     cover_asset_file,
     ensure_output_dir,
     ensure_source_asset,
+    existing_book_manifest_file,
+    existing_chapter_result_file,
     infer_chapter_number,
+    relative_output_path,
     resolve_output_dir,
     book_manifest_file,
     existing_cover_asset_file,
+    existing_structure_file,
     load_json,
     save_structure,
     save_json,
@@ -801,6 +808,7 @@ def build_structure(book_path: Path, language_mode: str = "auto") -> tuple[BookS
 
         print(f"[parse] Chapter {chapter_index}: {chapter_title}")
 
+        chapter_number = infer_chapter_number(chapter_title)
         segments = segment_chapter_semantically(
             chapter_id=chapter_index,
             chapter_title=chapter_title,
@@ -808,12 +816,21 @@ def build_structure(book_path: Path, language_mode: str = "auto") -> tuple[BookS
             output_language=output_language,
             paragraphs=[str(record.get("text", "")) for record in paragraph_records],
         )
+        chapter_stub: StructureChapter = {
+            "id": chapter_index,
+            "title": chapter_title,
+            "chapter_number": chapter_number,
+            "status": "pending",
+            "level": chapter.get("level", 1),
+            "segments": [],
+        }
         chapter_record: StructureChapter = {
             "id": chapter_index,
             "title": chapter_title,
-            "chapter_number": infer_chapter_number(chapter_title),
+            "chapter_number": chapter_number,
             "status": "pending",
             "level": chapter.get("level", 1),
+            "output_file": relative_output_path(output_dir, chapter_markdown_file(output_dir, chapter_stub)),
             "segments": segments,
         }
         if chapter.get("item_id"):
@@ -852,6 +869,7 @@ def build_structure(book_path: Path, language_mode: str = "auto") -> tuple[BookS
         "chapters": chapters,
     }
     save_structure(structure_file(output_dir), structure)
+    structure_markdown_file(output_dir).parent.mkdir(parents=True, exist_ok=True)
     structure_markdown_file(output_dir).write_text(
         render_structure_markdown(structure),
         encoding="utf-8",
@@ -891,7 +909,7 @@ def ensure_structure_for_book(book_path: Path, language_mode: str = "auto") -> t
     book_language = detect_book_language(book_path, sample_text=sample_text)
     output_language = resolve_output_language(language_mode, book_language)
     output_dir = resolve_output_dir(book_path, title, book_language, output_language)
-    path = structure_file(output_dir)
+    path = existing_structure_file(output_dir)
     if path.exists():
         from .storage import load_structure
 
@@ -903,8 +921,10 @@ def ensure_structure_for_book(book_path: Path, language_mode: str = "auto") -> t
             structure.get("book_language") == book_language
             and structure.get("output_language") == output_language
         ):
-            if _upgrade_structure_metadata(structure, output_dir):
-                save_structure(path, structure)
+            changed = _upgrade_structure_metadata(structure, output_dir)
+            canonical_path = structure_file(output_dir)
+            if changed or path != canonical_path:
+                save_structure(canonical_path, structure)
             return structure, output_dir, False
     structure, output_dir = build_structure(book_path, language_mode=language_mode)
     return structure, output_dir, True
@@ -933,8 +953,8 @@ def _upgrade_structure_metadata(structure: BookStructure, output_dir: Path) -> b
                 segment["status"] = "pending"
                 changed = True
 
-        expected_name = chapter_output_name(chapter)
-        expected_path = output_dir / expected_name
+        expected_path = chapter_markdown_file(output_dir, chapter)
+        expected_name = relative_output_path(output_dir, expected_path)
         current_name = chapter.get("output_file")
 
         if not current_name:
@@ -953,9 +973,10 @@ def _upgrade_structure_metadata(structure: BookStructure, output_dir: Path) -> b
         if current_name == expected_name:
             continue
 
-        current_path = output_dir / current_name
+        current_path = output_dir / str(current_name)
 
         if current_path.exists() and not expected_path.exists():
+            expected_path.parent.mkdir(parents=True, exist_ok=True)
             current_path.rename(expected_path)
             chapter["output_file"] = expected_name
             changed = True
@@ -981,6 +1002,216 @@ def _timestamp() -> str:
     return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
 
+def _normalized_title_key(title: str) -> str:
+    """Normalize chapter titles for fuzzy matching during legacy backfill."""
+    return re.sub(r"\s+", " ", str(title or "").strip()).lower()
+
+
+def _legacy_locator_paragraphs(records: list[dict[str, object]]) -> list[dict[str, object]]:
+    """Render stable paragraph-locator payloads from parsed EPUB records."""
+    return [
+        {
+            "href": str(record.get("href", "")),
+            "start_cfi": record.get("start_cfi"),
+            "end_cfi": record.get("end_cfi"),
+            "paragraph_index": int(record.get("paragraph_index", 0) or 0),
+            "text": str(record.get("text", "")),
+        }
+        for record in records
+    ]
+
+
+def _legacy_locator_payload(locator: object) -> dict[str, object] | None:
+    """Render one stable section locator payload."""
+    if not isinstance(locator, dict):
+        return None
+    href = str(locator.get("href", "") or "").strip()
+    if not href:
+        return None
+    return {
+        "href": href,
+        "start_cfi": locator.get("start_cfi"),
+        "end_cfi": locator.get("end_cfi"),
+        "paragraph_start": int(locator.get("paragraph_start", 0) or 0),
+        "paragraph_end": int(locator.get("paragraph_end", 0) or 0),
+    }
+
+
+def _iter_kept_source_chapters(book_path: Path) -> list[tuple[int, dict[str, object]]]:
+    """Parse one source EPUB and return the chapters that would enter deep reading."""
+    chapters: list[tuple[int, dict[str, object]]] = []
+    for index, chapter in enumerate(parse_ebook(str(book_path)), start=1):
+        chapter_text = extract_plain_text(str(chapter.get("content", "") or ""))
+        if not chapter_text.strip():
+            continue
+        title = str(chapter.get("title", f"Chapter {index}") or f"Chapter {index}")
+        if _should_skip_chapter(title, chapter_text):
+            continue
+        chapters.append((index, chapter))
+    return chapters
+
+
+def _match_legacy_source_chapter(
+    chapter: StructureChapter,
+    source_chapters: list[tuple[int, dict[str, object]]],
+    used_indexes: set[int],
+) -> dict[str, object] | None:
+    """Match one legacy structure chapter to its parsed EPUB chapter."""
+    chapter_id = int(chapter.get("id", 0) or 0)
+    preferred = next((candidate for index, candidate in source_chapters if index == chapter_id), None)
+    if preferred is not None:
+        used_indexes.add(chapter_id)
+        return preferred
+
+    title_key = _normalized_title_key(chapter.get("title", ""))
+    for index, candidate in source_chapters:
+        if index in used_indexes:
+            continue
+        if _normalized_title_key(candidate.get("title", "")) != title_key:
+            continue
+        used_indexes.add(index)
+        return candidate
+    return None
+
+
+def hydrate_legacy_epub_locators(output_dir: Path, structure: BookStructure, book_path: Path) -> list[str]:
+    """Backfill missing EPUB locators into structure and chapter-result artifacts."""
+    if book_path.suffix.lower() != ".epub":
+        return []
+
+    source_chapters = _iter_kept_source_chapters(book_path)
+    if not source_chapters:
+        return []
+
+    structure_changed = False
+    used_indexes: set[int] = set()
+    for chapter in structure.get("chapters", []):
+        source = _match_legacy_source_chapter(chapter, source_chapters, used_indexes)
+        if source is None:
+            continue
+
+        item_id = str(source.get("item_id", "") or "")
+        href = str(source.get("href", "") or "")
+        spine_index = int(source.get("spine_index", -1) or -1)
+
+        if chapter.get("item_id") != item_id:
+            chapter["item_id"] = item_id
+            structure_changed = True
+        if chapter.get("href") != href:
+            chapter["href"] = href
+            structure_changed = True
+        if chapter.get("spine_index") != spine_index:
+            chapter["spine_index"] = spine_index
+            structure_changed = True
+
+        paragraph_records = _paragraph_records(source)
+        for segment in chapter.get("segments", []):
+            start = int(segment.get("paragraph_start", 0) or 0)
+            end = int(segment.get("paragraph_end", 0) or 0)
+            segment_records = paragraph_records[start - 1 : end] if start >= 1 and end >= start else []
+            locator = _segment_locator_from_records(segment_records)
+            locator_payload = _legacy_locator_payload(locator)
+            paragraph_payload = _legacy_locator_paragraphs(segment_records)
+
+            if locator_payload:
+                if segment.get("locator") != locator_payload:
+                    segment["locator"] = locator_payload
+                    structure_changed = True
+            elif "locator" in segment:
+                segment.pop("locator", None)
+                structure_changed = True
+
+            if segment.get("paragraph_locators") != paragraph_payload:
+                segment["paragraph_locators"] = paragraph_payload
+                structure_changed = True
+
+    if structure_changed:
+        save_structure(structure_file(output_dir), structure)
+
+    result_changed = False
+    for chapter in structure.get("chapters", []):
+        result_path = existing_chapter_result_file(output_dir, chapter)
+        if not result_path.exists():
+            continue
+
+        payload = load_json(result_path)
+        segment_meta_by_id = {
+            str(segment.get("id", "")): segment
+            for segment in chapter.get("segments", [])
+            if isinstance(segment, dict)
+        }
+        reaction_locators: dict[str, dict[str, object]] = {}
+        chapter_result_changed = False
+
+        for section in payload.get("sections", []):
+            if not isinstance(section, dict):
+                continue
+            segment_meta = segment_meta_by_id.get(str(section.get("segment_id", "")))
+            if not isinstance(segment_meta, dict):
+                continue
+
+            section_locator = _legacy_locator_payload(segment_meta.get("locator"))
+            paragraph_locators = [
+                item
+                for item in list(segment_meta.get("paragraph_locators", []))
+                if isinstance(item, dict)
+            ]
+
+            if section_locator:
+                if section.get("locator") != section_locator:
+                    section["locator"] = section_locator
+                    chapter_result_changed = True
+            elif section.get("locator"):
+                section.pop("locator", None)
+                chapter_result_changed = True
+
+            if section.get("original_text") != str(segment_meta.get("text", "")):
+                section["original_text"] = str(segment_meta.get("text", ""))
+                chapter_result_changed = True
+
+            for reaction in section.get("reactions", []):
+                if not isinstance(reaction, dict):
+                    continue
+                target_locator = _reaction_target_locator(
+                    str(reaction.get("anchor_quote", "")),
+                    section_locator,
+                    paragraph_locators,
+                )
+                reaction_id = str(reaction.get("reaction_id", ""))
+                if target_locator:
+                    if reaction.get("target_locator") != target_locator:
+                        reaction["target_locator"] = target_locator
+                        chapter_result_changed = True
+                    if reaction_id:
+                        reaction_locators[reaction_id] = target_locator
+                elif reaction.get("target_locator"):
+                    reaction.pop("target_locator", None)
+                    chapter_result_changed = True
+
+        for featured in payload.get("featured_reactions", []):
+            if not isinstance(featured, dict):
+                continue
+            target_locator = reaction_locators.get(str(featured.get("reaction_id", "")))
+            if target_locator:
+                if featured.get("target_locator") != target_locator:
+                    featured["target_locator"] = target_locator
+                    chapter_result_changed = True
+            elif featured.get("target_locator"):
+                featured.pop("target_locator", None)
+                chapter_result_changed = True
+
+        if chapter_result_changed:
+            save_json(result_path, payload)
+            result_changed = True
+
+    changes: list[str] = []
+    if structure_changed:
+        changes.append("structure_locators")
+    if result_changed:
+        changes.append("result_locators")
+    return changes
+
+
 def _resolve_source_epub_path(output_dir: Path, manifest: dict, root: Path) -> Path | None:
     """Find the best EPUB source path for one existing output directory."""
     source_asset = str(manifest.get("source_asset", {}).get("file", "") or "").strip()
@@ -1002,7 +1233,7 @@ def _resolve_source_epub_path(output_dir: Path, manifest: dict, root: Path) -> P
 
 def _refresh_manifest_cover(output_dir: Path) -> bool:
     """Sync one book manifest's cover_image_url with the extracted asset."""
-    manifest_path = book_manifest_file(output_dir)
+    manifest_path = existing_book_manifest_file(output_dir)
     if not manifest_path.exists():
         return False
 
@@ -1022,8 +1253,14 @@ def backfill_missing_epub_covers(root: Path | None = None) -> list[dict[str, obj
     runtime_root = root or Path.cwd()
     results: list[dict[str, object]] = []
 
-    for manifest_path in sorted((runtime_root / "output").glob("*/book_manifest.json")):
-        output_dir = manifest_path.parent
+    manifest_paths = sorted((runtime_root / "output").glob("*/public/book_manifest.json"))
+    manifest_paths.extend(sorted((runtime_root / "output").glob("*/book_manifest.json")))
+    seen_output_dirs: set[Path] = set()
+    for manifest_path in manifest_paths:
+        output_dir = manifest_path.parent.parent if manifest_path.parent.name == "public" else manifest_path.parent
+        if output_dir in seen_output_dirs:
+            continue
+        seen_output_dirs.add(output_dir)
         manifest = load_json(manifest_path)
         book_id = str(manifest.get("book_id", output_dir.name))
         current_cover = _manifest_cover_url(output_dir)

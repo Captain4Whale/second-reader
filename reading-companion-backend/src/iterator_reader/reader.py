@@ -728,9 +728,26 @@ def _normalize_reactions(payload: object, state: ReaderState) -> list[ReactionPa
                 reaction["anchor_quote"] = thought.get("selected_excerpt", "")
                 break
 
+    filtered_reactions: list[ReactionPayload] = []
+    for reaction in reactions:
+        if reaction.get("type") == "silent":
+            filtered_reactions.append(reaction)
+            continue
+        if str(reaction.get("anchor_quote", "") or "").strip():
+            filtered_reactions.append(reaction)
+
+    if not filtered_reactions:
+        filtered_reactions.append(
+            {
+                "type": "silent",
+                "content": thought.get("reason", ""),
+                "search_results": [],
+            }
+        )
+
     skill_policy = state.get("skill_policy") or _default_skill_policy()
     budget = state.get("budget") or _default_budget()
-    return _apply_skill_policy(reactions, skill_policy, budget)
+    return _apply_skill_policy(filtered_reactions, skill_policy, budget)
 
 
 def _active_reactions(reactions: list[ReactionPayload]) -> list[ReactionPayload]:
@@ -1234,68 +1251,6 @@ def apply_chapter_reflection_repairs(
         _clean_text(segment.get("segment_id", "")): segment
         for segment in repaired_segments
     }
-    segment_addendum_prefix = "章末回看补记：" if output_language == "zh" else "Chapter-end addendum: "
-    reaction_addendum_prefix = "补充：" if output_language == "zh" else "Addendum: "
-
-    for item in reflection.get("segment_repairs", []):
-        if not isinstance(item, dict):
-            continue
-        segment_id = _clean_text(item.get("segment_id", ""))
-        note = _clean_text(item.get("note", ""))
-        segment = by_segment_id.get(segment_id)
-        if not segment or not note:
-            continue
-        reactions = list(segment.get("reactions", []))
-        reactions.append(
-            {
-                "type": "association",
-                "content": f"{segment_addendum_prefix}{note}",
-                "search_results": [],
-            }
-        )
-        segment["reactions"] = reactions
-        if segment.get("verdict") == "skip":
-            segment["verdict"] = "pass"
-
-    for item in reflection.get("reaction_repairs", []):
-        if not isinstance(item, dict):
-            continue
-        segment_id = _clean_text(item.get("segment_id", ""))
-        note = _clean_text(item.get("note", ""))
-        segment = by_segment_id.get(segment_id)
-        if not segment or not note:
-            continue
-        try:
-            reaction_index = int(item.get("reaction_index", -1))
-        except (TypeError, ValueError):
-            reaction_index = -1
-        reactions = list(segment.get("reactions", []))
-        if not reactions:
-            reactions.append(
-                {
-                    "type": "association",
-                    "content": f"{segment_addendum_prefix}{note}",
-                    "search_results": [],
-                }
-            )
-            segment["reactions"] = reactions
-            segment["verdict"] = "pass"
-            continue
-        if reaction_index < 0 or reaction_index >= len(reactions):
-            reaction_index = len(reactions) - 1
-        reaction = dict(reactions[reaction_index])
-        current_content = _clean_text(reaction.get("content", ""))
-        if note not in current_content:
-            reaction["content"] = (
-                f"{current_content}\n{reaction_addendum_prefix}{note}"
-                if current_content
-                else f"{reaction_addendum_prefix}{note}"
-            )
-        reactions[reaction_index] = reaction
-        segment["reactions"] = reactions
-        if segment.get("verdict") == "skip":
-            segment["verdict"] = "pass"
-
     quality_flags = {
         _clean_text(item.get("segment_id", "")): item
         for item in reflection.get("segment_quality_flags", [])

@@ -24,7 +24,7 @@ ReactionFilter = Literal[
     REACTION_FILTERS[4],
     REACTION_FILTERS[5],
 ]
-MarkType = Literal[MARK_TYPES[0], MARK_TYPES[1]]
+MarkType = Literal[MARK_TYPES[0], MARK_TYPES[1], MARK_TYPES[2]]
 
 
 class ApiModel(BaseModel):
@@ -341,7 +341,9 @@ class ChapterDetailResponse(ApiModel):
     reaction_type_diversity: int = Field(description="Number of distinct reaction types in the chapter.")
     high_signal_reaction_count: int = Field(description="Number of high-signal reactions in the chapter.")
     featured_reactions: list[FeaturedReactionPreview] = Field(description="Featured reactions used for summary and teaser areas.")
-    chapter_reflection: list[str] = Field(description="Chapter-level reflection bullets.")
+    chapter_reflection: list[str] = Field(
+        description="Deprecated compatibility field. Internal chapter reflection is no longer exposed, so this list is always empty."
+    )
     sections: list[SectionCard] = Field(description="Current page of section cards.")
     sections_page_info: PageInfo = Field(description="Pagination metadata for the section list.")
     available_filters: list[ReactionFilter] = Field(description="Reaction filters available to the frontend.")

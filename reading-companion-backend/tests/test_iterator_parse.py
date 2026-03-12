@@ -3,11 +3,20 @@
 from __future__ import annotations
 
 import json
+import importlib.util
 import zipfile
 from pathlib import Path
 
 from src.iterator_reader import parse as parse_module
-from src.iterator_reader.storage import book_manifest_file, cover_asset_file, save_json
+from src.iterator_reader.storage import (
+    book_manifest_file,
+    chapter_result_file,
+    cover_asset_file,
+    load_structure,
+    save_json,
+    save_structure,
+    structure_file,
+)
 
 
 def test_build_structure_persists_semantic_segments(tmp_path, monkeypatch):
@@ -59,7 +68,7 @@ def test_build_structure_persists_semantic_segments(tmp_path, monkeypatch):
     assert structure["output_language"] == "en"
     assert structure["chapters"][0]["segments"][0]["summary"] == "作者提出第一个判断"
 
-    saved = json.loads((output_dir / "structure.json").read_text(encoding="utf-8"))
+    saved = json.loads((output_dir / "public" / "structure.json").read_text(encoding="utf-8"))
     assert saved["chapters"][0]["status"] == "pending"
     assert saved["chapters"][0]["segments"][0]["id"] == "1.1"
     assert saved["chapters"][0]["segments"][0]["segment_ref"] == "Chapter_One.1"
@@ -68,7 +77,7 @@ def test_build_structure_persists_semantic_segments(tmp_path, monkeypatch):
     assert "Alpha" in saved["chapters"][0]["segments"][0]["paragraph_locators"][0]["text"]
     assert (output_dir / "_assets" / "source.epub").exists()
 
-    structure_md = (output_dir / "structure.md").read_text(encoding="utf-8")
+    structure_md = (output_dir / "public" / "structure.md").read_text(encoding="utf-8")
     assert "# Structure Overview: Demo Book" in structure_md
     assert "## Chapter One" in structure_md
     assert "### Section 1: 作者提出第一个判断" in structure_md
@@ -202,10 +211,11 @@ def _write_test_epub(
 </package>
 """,
         )
-        archive.writestr(
-            "OEBPS/cover.xhtml",
-            """<html xmlns="http://www.w3.org/1999/xhtml"><body><p>fallback</p></body></html>""",
-        )
+        if "OEBPS/cover.xhtml" not in extra_docs:
+            archive.writestr(
+                "OEBPS/cover.xhtml",
+                """<html xmlns="http://www.w3.org/1999/xhtml"><body><p>fallback</p></body></html>""",
+            )
         for doc_path, content in extra_docs.items():
             archive.writestr(doc_path, content)
         for image_path, payload in image_payloads.items():
@@ -346,3 +356,262 @@ def test_backfill_missing_epub_covers_updates_manifest_and_is_idempotent(tmp_pat
     assert second == [{"book_id": "demo-book", "status": "already_present", "cover_image_url": "_assets/cover.jpg"}]
     assert manifest["cover_image_url"] == "_assets/cover.jpg"
     assert cover_asset_file(output_dir).read_bytes() == b"backfill-cover"
+
+
+def test_hydrate_legacy_epub_locators_backfills_structure_and_result(tmp_path):
+    """Legacy EPUB outputs should gain chapter, segment, and reaction locators without regenerating AI content."""
+    output_dir = tmp_path / "output" / "demo-book"
+    output_dir.mkdir(parents=True, exist_ok=True)
+    source_epub = output_dir / "_assets" / "source.epub"
+    source_epub.parent.mkdir(parents=True, exist_ok=True)
+
+    _write_test_epub(
+        source_epub,
+        manifest_items=[
+            '<item id="cover-page" href="cover.xhtml" media-type="application/xhtml+xml"/>',
+            '<item id="chapter-1" href="chapter-1.xhtml" media-type="application/xhtml+xml"/>',
+        ],
+        extra_docs={
+            "OEBPS/cover.xhtml": """
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head><title>Title Page</title></head>
+  <body><p>Title page</p></body>
+</html>
+""",
+            "OEBPS/chapter-1.xhtml": """
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head><title>Chapter 1</title></head>
+  <body>
+    <p>Alpha paragraph.</p>
+    <p>Beta anchor quote text.</p>
+  </body>
+</html>
+""",
+        },
+    )
+
+    structure = {
+        "book": "Demo",
+        "author": "Tester",
+        "book_language": "en",
+        "output_language": "en",
+        "source_file": str(source_epub),
+        "output_dir": str(output_dir),
+        "chapters": [
+            {
+                "id": 2,
+                "title": "Chapter 1",
+                "chapter_number": 1,
+                "status": "done",
+                "level": 1,
+                "segments": [
+                    {
+                        "id": "2.1",
+                        "segment_ref": "1.1",
+                        "summary": "Alpha / Beta",
+                        "tokens": 12,
+                        "text": "Alpha paragraph.\n\nBeta anchor quote text.",
+                        "paragraph_start": 1,
+                        "paragraph_end": 2,
+                        "status": "done",
+                        "paragraph_locators": [],
+                    }
+                ],
+            }
+        ],
+    }
+    save_structure(structure_file(output_dir), structure)
+    save_json(
+        chapter_result_file(output_dir, structure["chapters"][0]),
+        {
+            "chapter": {
+                "id": 2,
+                "title": "Chapter 1",
+                "chapter_number": 1,
+                "reference": "Chapter 1",
+                "status": "done",
+            },
+            "output_language": "en",
+            "generated_at": "2026-03-11T00:00:00Z",
+            "sections": [
+                {
+                    "segment_id": "2.1",
+                    "segment_ref": "1.1",
+                    "summary": "Alpha / Beta",
+                    "original_text": "",
+                    "verdict": "pass",
+                    "quality_status": "strong",
+                    "reflection_summary": "",
+                    "reflection_reason_codes": [],
+                    "reactions": [
+                        {
+                            "reaction_id": "legacy-r1",
+                            "type": "highlight",
+                            "anchor_quote": "Beta anchor quote text.",
+                            "content": "Anchor this quote.",
+                            "search_query": "",
+                            "search_results": [],
+                            "target_locator": {},
+                        }
+                    ],
+                }
+            ],
+            "chapter_reflection": {},
+            "featured_reactions": [
+                {
+                    "reaction_id": "legacy-r1",
+                    "type": "highlight",
+                    "segment_ref": "1.1",
+                    "anchor_quote": "Beta anchor quote text.",
+                    "content": "Anchor this quote.",
+                    "target_locator": {},
+                }
+            ],
+            "visible_reaction_count": 1,
+            "reaction_type_diversity": 1,
+            "high_signal_reaction_count": 1,
+            "ui_summary": {
+                "kept_section_count": 1,
+                "skipped_section_count": 0,
+                "reaction_counts": {"highlight": 1},
+            },
+        },
+    )
+
+    changes = parse_module.hydrate_legacy_epub_locators(output_dir, structure, source_epub)
+    hydrated_structure = load_structure(structure_file(output_dir))
+    hydrated_result = json.loads(chapter_result_file(output_dir, structure["chapters"][0]).read_text(encoding="utf-8"))
+    segment = hydrated_structure["chapters"][0]["segments"][0]
+    reaction = hydrated_result["sections"][0]["reactions"][0]
+
+    assert changes == ["structure_locators", "result_locators"]
+    assert hydrated_structure["chapters"][0]["item_id"] == "chapter-1"
+    assert hydrated_structure["chapters"][0]["href"] == "chapter-1.xhtml"
+    assert hydrated_structure["chapters"][0]["spine_index"] == 1
+    assert segment["locator"]["href"] == "chapter-1.xhtml"
+    assert len(segment["paragraph_locators"]) == 2
+    assert segment["paragraph_locators"][1]["start_cfi"] is not None
+    assert hydrated_result["sections"][0]["original_text"] == "Alpha paragraph.\n\nBeta anchor quote text."
+    assert reaction["target_locator"]["href"] == "chapter-1.xhtml"
+    assert reaction["target_locator"]["match_mode"] == "exact"
+    assert hydrated_result["featured_reactions"][0]["target_locator"]["match_mode"] == "exact"
+
+
+def test_backfill_output_dir_reports_locator_changes(tmp_path):
+    """The default legacy backfill script should include EPUB locator hydration."""
+    output_dir = tmp_path / "output" / "demo-book"
+    output_dir.mkdir(parents=True, exist_ok=True)
+    source_epub = tmp_path / "demo.epub"
+
+    _write_test_epub(
+        source_epub,
+        manifest_items=[
+            '<item id="cover-page" href="cover.xhtml" media-type="application/xhtml+xml"/>',
+            '<item id="chapter-1" href="chapter-1.xhtml" media-type="application/xhtml+xml"/>',
+        ],
+        extra_docs={
+            "OEBPS/cover.xhtml": """
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head><title>Title Page</title></head>
+  <body><p>Title page</p></body>
+</html>
+""",
+            "OEBPS/chapter-1.xhtml": """
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head><title>Chapter 1</title></head>
+  <body><p>Legacy paragraph.</p></body>
+</html>
+""",
+        },
+    )
+
+    structure = {
+        "book": "Demo",
+        "author": "Tester",
+        "book_language": "en",
+        "output_language": "en",
+        "source_file": str(source_epub),
+        "output_dir": str(output_dir),
+        "chapters": [
+            {
+                "id": 2,
+                "title": "Chapter 1",
+                "chapter_number": 1,
+                "status": "done",
+                "level": 1,
+                "segments": [
+                    {
+                        "id": "2.1",
+                        "segment_ref": "1.1",
+                        "summary": "Legacy paragraph",
+                        "tokens": 8,
+                        "text": "Legacy paragraph.",
+                        "paragraph_start": 1,
+                        "paragraph_end": 1,
+                        "status": "done",
+                        "paragraph_locators": [],
+                    }
+                ],
+            }
+        ],
+    }
+    save_structure(structure_file(output_dir), structure)
+    save_json(
+        chapter_result_file(output_dir, structure["chapters"][0]),
+        {
+            "chapter": {
+                "id": 2,
+                "title": "Chapter 1",
+                "chapter_number": 1,
+                "reference": "Chapter 1",
+                "status": "done",
+            },
+            "output_language": "en",
+            "generated_at": "2026-03-11T00:00:00Z",
+            "sections": [
+                {
+                    "segment_id": "2.1",
+                    "segment_ref": "1.1",
+                    "summary": "Legacy paragraph",
+                    "original_text": "",
+                    "verdict": "pass",
+                    "quality_status": "strong",
+                    "reflection_summary": "",
+                    "reflection_reason_codes": [],
+                    "reactions": [
+                        {
+                            "reaction_id": "legacy-r1",
+                            "type": "highlight",
+                            "anchor_quote": "Legacy paragraph.",
+                            "content": "Anchor it.",
+                            "search_query": "",
+                            "search_results": [],
+                            "target_locator": {},
+                        }
+                    ],
+                }
+            ],
+            "chapter_reflection": {},
+            "featured_reactions": [],
+            "visible_reaction_count": 1,
+            "reaction_type_diversity": 1,
+            "high_signal_reaction_count": 1,
+            "ui_summary": {
+                "kept_section_count": 1,
+                "skipped_section_count": 0,
+                "reaction_counts": {"highlight": 1},
+            },
+        },
+    )
+
+    script_path = Path(__file__).resolve().parents[1] / "scripts" / "backfill_legacy_outputs.py"
+    spec = importlib.util.spec_from_file_location("backfill_legacy_outputs", script_path)
+    assert spec and spec.loader
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+
+    changes = module.backfill_output_dir(output_dir)
+
+    assert "source_asset" in changes
+    assert "structure_locators" in changes
+    assert "result_locators" in changes

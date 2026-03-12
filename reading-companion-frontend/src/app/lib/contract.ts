@@ -11,7 +11,7 @@ export const REACTION_TYPES = [
   "curious",
 ] as const;
 
-export const MARK_TYPES = ["known", "blindspot"] as const;
+export const MARK_TYPES = ["resonance", "blindspot", "bookmark"] as const;
 export const REACTION_FILTERS = ["all", ...REACTION_TYPES] as const;
 
 export type ReactionType = (typeof REACTION_TYPES)[number];

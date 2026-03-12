@@ -50,6 +50,7 @@ from .storage import (
     deep_targets_file,
     display_segment_id,
     evidence_checks_file,
+    existing_chapter_markdown_file,
     save_json,
     segment_reference,
     segment_skim_cards_file,
@@ -298,9 +299,7 @@ def _extract_links(text: str) -> list[SearchHit]:
 
 
 def _load_existing_section_notes(output_dir: Path, chapter: StructureChapter) -> dict[str, str]:
-    markdown_path = chapter_markdown_file(output_dir, chapter)
-    if chapter.get("output_file"):
-        markdown_path = output_dir / str(chapter.get("output_file", ""))
+    markdown_path = existing_chapter_markdown_file(output_dir, chapter)
     if not markdown_path.exists():
         return {}
     text = markdown_path.read_text(encoding="utf-8")
@@ -1040,6 +1039,7 @@ def run_book_analysis(
             report_markdown = ""
     if not report_markdown:
         report_markdown = _render_book_analysis(claim_cards, chapter_arc, deep_dossiers)
+    report_path.parent.mkdir(parents=True, exist_ok=True)
     report_path.write_text(report_markdown, encoding="utf-8")
     append_jsonl(
         trace_path,
