@@ -350,6 +350,29 @@ class ChapterDetailResponse(ApiModel):
     source_asset: SourceAsset = Field(description="Source EPUB asset configuration for the right-side reader.")
 
 
+class ChapterOutlineSectionItem(ApiModel):
+    """Compact section entry used in the chapter drawer outline preview."""
+
+    section_ref: str = Field(description="Human-readable section reference.")
+    summary: str = Field(description="One-line semantic title for the section.")
+    preview_text: str = Field(description="Short preview text shown under the section title.")
+    visible_reaction_count: int = Field(description="Number of visible reactions attached to this section.")
+    locator: Optional[SegmentLocator] = Field(default=None, description="Section-level locator used for section jumps.")
+
+
+class ChapterOutlineResponse(ApiModel):
+    """Lightweight chapter outline payload used by the chapter drawer preview."""
+
+    book_id: int = Field(description="Stable public integer identifier of the book.")
+    chapter_id: int = Field(description="Chapter identifier.")
+    chapter_ref: str = Field(description="Human-readable chapter reference.")
+    title: str = Field(description="Chapter title.")
+    result_ready: bool = Field(description="Whether the chapter result is ready to open.")
+    status: Literal["pending", "completed", "error"] = Field(description="User-facing chapter status.")
+    section_count: int = Field(description="Number of semantic sections in the chapter.")
+    sections: list[ChapterOutlineSectionItem] = Field(description="Semantic section outline for the chapter.")
+
+
 class ReactionsPageResponse(ApiModel):
     """Paginated flattened reaction response."""
 

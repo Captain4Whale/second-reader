@@ -1,16 +1,18 @@
-import { ArrowLeft, ChevronRight, List, Search } from "lucide-react";
+import { AlertTriangle, ArrowLeft, CheckCircle2, ChevronRight, CircleDashed, List, Loader2, Search } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router";
 import {
   BookDetailResponse,
   ChapterDetailResponse,
+  ChapterOutlineResponse,
   deleteReactionMark,
   fetchBookDetail,
   fetchChapterDetail,
+  fetchChapterOutline,
   putReactionMark,
   toApiAssetUrl,
 } from "../lib/api";
-import type { SectionCard } from "../lib/api-types";
+import type { ChapterListItem, ChapterOutlineSectionItem, SectionCard } from "../lib/api-types";
 import {
   type MarkType,
   type ReactionFilter,
@@ -21,6 +23,7 @@ import {
 } from "../lib/contract";
 import { markLabel } from "../lib/marks";
 import {
+  buildSectionJumpRequest,
   buildReaderJumpRequest,
   findSelectionByReactionId,
   reactionPreview,
@@ -28,9 +31,10 @@ import {
   type ReaderLocationUpdate,
   type ReaderPanelMode,
 } from "../lib/reader-types";
-import { reactionLabel } from "../lib/reactions";
+import { reactionLabel, reactionMeta } from "../lib/reactions";
 import { ErrorState, LoadingState } from "./page-state";
 import { SourceReaderPane } from "./source-reader-pane";
+import { OverflowTooltipText } from "./ui/overflow-tooltip-text";
 import {
   Sheet,
   SheetContent,
@@ -46,6 +50,8 @@ import { useIsMobile } from "./ui/use-mobile";
 
 const FOLLOW_NOTES_STORAGE_KEY = "chapter-reader-follow-notes";
 const CHAPTER_FILTER_STORAGE_KEY_PREFIX = "chapter-reader-filter";
+const CHAPTER_PANEL_MODE_STORAGE_KEY_PREFIX = "chapter-reader-panel-mode";
+const CHAPTER_SECTION_HINT_STORAGE_KEY_PREFIX = "chapter-reader-section-hint";
 const NOTE_CLICK_JUMP_THROTTLE_MS = 140;
 
 function replaceReaction(
@@ -79,6 +85,13 @@ function parseReactionSearch(search: string): ReactionId | null {
   return parsed;
 }
 
+function parseSectionSearch(search: string): string | null {
+  const params = new URLSearchParams(search);
+  const value = params.get("section");
+  const normalized = value?.trim();
+  return normalized ? normalized : null;
+}
+
 function readFollowNotesPreference(): boolean {
   if (typeof window === "undefined") {
     return true;
@@ -90,6 +103,14 @@ function chapterFilterStorageKey(bookId: string): string {
   return `${CHAPTER_FILTER_STORAGE_KEY_PREFIX}:${bookId}`;
 }
 
+function chapterPanelModeStorageKey(bookId: string): string {
+  return `${CHAPTER_PANEL_MODE_STORAGE_KEY_PREFIX}:${bookId}`;
+}
+
+function chapterSectionHintStorageKey(bookId: string, chapterId: number): string {
+  return `${CHAPTER_SECTION_HINT_STORAGE_KEY_PREFIX}:${bookId}:${chapterId}`;
+}
+
 function readChapterFilterPreference(bookId: string): ReactionFilter {
   if (typeof window === "undefined" || !bookId) {
     return "all";
@@ -98,6 +119,14 @@ function readChapterFilterPreference(bookId: string): ReactionFilter {
   return persisted && REACTION_FILTERS.includes(persisted as ReactionFilter)
     ? (persisted as ReactionFilter)
     : "all";
+}
+
+function readChapterPanelModePreference(bookId: string): ReaderPanelMode {
+  if (typeof window === "undefined" || !bookId) {
+    return "notes";
+  }
+  const persisted = window.sessionStorage.getItem(chapterPanelModeStorageKey(bookId));
+  return persisted === "book" ? "book" : "notes";
 }
 
 function filterSections(sections: SectionCard[], activeFilter: ReactionFilter): SectionCard[] {
@@ -122,6 +151,57 @@ function initialReactionIdForFilter(
   return firstReactionId(filterSections(sections, activeFilter)) ?? firstReactionId(sections);
 }
 
+function findSectionByRef(sections: SectionCard[], sectionRef: string | null): SectionCard | null {
+  if (!sectionRef) {
+    return null;
+  }
+  return sections.find((section) => section.section_ref === sectionRef) ?? null;
+}
+
+function sectionHasVisibleReactions(section: SectionCard | null, activeFilter: ReactionFilter): boolean {
+  if (!section) {
+    return false;
+  }
+  if (activeFilter === "all") {
+    return section.reactions.length > 0;
+  }
+  return section.reactions.some((reaction) => reaction.type === activeFilter);
+}
+
+function outlinePreviewTextFromSection(section: SectionCard): string {
+  const quoted = section.reactions.find((reaction) => reaction.anchor_quote.trim())?.anchor_quote.trim();
+  if (quoted) {
+    return reactionPreview(quoted, 110);
+  }
+  const content = section.reactions.find((reaction) => reaction.content.trim())?.content.trim();
+  if (content) {
+    return reactionPreview(content, 110);
+  }
+  return "";
+}
+
+function buildOutlineFromChapterPayload(
+  payload: ChapterDetailResponse,
+  chapterEntry: ChapterListItem | null,
+): ChapterOutlineResponse {
+  return {
+    book_id: payload.book_id,
+    chapter_id: payload.chapter_id,
+    chapter_ref: chapterEntry?.chapter_ref || payload.chapter_ref,
+    title: chapterEntry?.title || payload.title,
+    result_ready: true,
+    status: "completed",
+    section_count: payload.sections.length,
+    sections: payload.sections.map((section) => ({
+      section_ref: section.section_ref,
+      summary: section.summary,
+      preview_text: outlinePreviewTextFromSection(section),
+      visible_reaction_count: section.reactions.length,
+      locator: section.locator ?? null,
+    })),
+  };
+}
+
 export function ChapterReadPage() {
   const { id = "", bookId = "", chapterId: chapterIdParam = "" } = useParams();
   const location = useLocation();
@@ -138,15 +218,28 @@ export function ChapterReadPage() {
   const [activeReactionId, setActiveReactionId] = useState<ReactionId | null>(null);
   const [activeFilter, setActiveFilter] = useState<ReactionFilter>(() => readChapterFilterPreference(resolvedBookId));
   const [reloadTick, setReloadTick] = useState(0);
-  const [mobileMode, setMobileMode] = useState<ReaderPanelMode>("notes");
+  const [mobileMode, setMobileMode] = useState<ReaderPanelMode>(() => readChapterPanelModePreference(resolvedBookId));
   const [followNotes, setFollowNotes] = useState(readFollowNotesPreference);
   const [passiveSectionRef, setPassiveSectionRef] = useState<string | null>(null);
   const [jumpRequest, setJumpRequest] = useState<ReaderJumpRequest | null>(null);
   const [isChapterSheetOpen, setIsChapterSheetOpen] = useState(false);
+  const [sectionHint, setSectionHint] = useState<string | null>(null);
+  const [outlineCache, setOutlineCache] = useState<Record<number, ChapterOutlineResponse>>({});
+  const [outlineLoadingIds, setOutlineLoadingIds] = useState<number[]>([]);
+  const [previewChapterId, setPreviewChapterId] = useState<number | null>(null);
+  const [mobileChapterSheetView, setMobileChapterSheetView] = useState<"chapters" | "sections">("chapters");
+  const [pendingSectionScrollRef, setPendingSectionScrollRef] = useState<string | null>(null);
 
   const jumpSequenceRef = useRef(0);
   const lastNoteJumpAtRef = useRef(0);
+  const sectionRefs = useRef(new Map<string, HTMLElement | null>());
+  const hoverPreviewTimerRef = useRef<number | null>(null);
+  const outlineCacheRef = useRef<Record<number, ChapterOutlineResponse>>({});
+  const outlineRequestRef = useRef<Record<number, Promise<ChapterOutlineResponse> | undefined>>({});
+  const handledSectionQueryKeyRef = useRef<string | null>(null);
+  const activeFilterRef = useRef<ReactionFilter>(activeFilter);
   const queryReactionId = useMemo(() => parseReactionSearch(location.search), [location.search]);
+  const querySectionRef = useMemo(() => parseSectionSearch(location.search), [location.search]);
 
   const queueReaderJump = useCallback(
     (reactionId: ReactionId, source: ReaderJumpRequest["source"], sourcePayload: ChapterDetailResponse | null) => {
@@ -163,13 +256,33 @@ export function ChapterReadPage() {
     [],
   );
 
-  const syncReactionQuery = useCallback(
-    (reactionId: ReactionId | null, replace = false) => {
+  const queueSectionJump = useCallback(
+    (section: SectionCard, source: ReaderJumpRequest["source"]) => {
+      jumpSequenceRef.current += 1;
+      setJumpRequest(buildSectionJumpRequest(section, source, jumpSequenceRef.current));
+    },
+    [],
+  );
+
+  const syncWorkspaceQuery = useCallback(
+    (
+      options: {
+        reactionId?: ReactionId | null;
+        sectionRef?: string | null;
+        replace?: boolean;
+      },
+    ) => {
       const params = new URLSearchParams(location.search);
-      if (reactionId == null) {
+      if (options.reactionId == null) {
         params.delete("reaction");
       } else {
-        params.set("reaction", String(reactionId));
+        params.set("reaction", String(options.reactionId));
+        params.delete("section");
+      }
+      if (options.sectionRef == null) {
+        params.delete("section");
+      } else if (options.reactionId == null) {
+        params.set("section", options.sectionRef);
       }
       const search = params.toString();
       const target = `${location.pathname}${search ? `?${search}` : ""}`;
@@ -177,9 +290,92 @@ export function ChapterReadPage() {
       if (target === current) {
         return;
       }
-      navigate(target, { replace });
+      navigate(target, { replace: options.replace ?? false });
     },
     [location.pathname, location.search, navigate],
+  );
+
+  const syncReactionQuery = useCallback(
+    (reactionId: ReactionId | null, replace = false) => {
+      syncWorkspaceQuery({ reactionId, replace });
+    },
+    [syncWorkspaceQuery],
+  );
+
+  const ensureChapterOutline = useCallback(
+    async (chapterId: number) => {
+      const cached = outlineCacheRef.current[chapterId];
+      if (cached) {
+        return cached;
+      }
+      const inFlight = outlineRequestRef.current[chapterId];
+      if (inFlight) {
+        return inFlight;
+      }
+
+      setOutlineLoadingIds((current) => (current.includes(chapterId) ? current : [...current, chapterId]));
+      const request = fetchChapterOutline(bookIdNumber, chapterId)
+        .then((outline) => {
+          outlineCacheRef.current = { ...outlineCacheRef.current, [chapterId]: outline };
+          setOutlineCache((current) => ({ ...current, [chapterId]: outline }));
+          return outline;
+        })
+        .finally(() => {
+          delete outlineRequestRef.current[chapterId];
+          setOutlineLoadingIds((current) => current.filter((value) => value !== chapterId));
+        });
+      outlineRequestRef.current[chapterId] = request;
+      return request;
+    },
+    [bookIdNumber],
+  );
+
+  const activateSection = useCallback(
+    (
+      sectionRef: string,
+      sourcePayload: ChapterDetailResponse,
+      source: "section-click" | "section-query",
+      options: { syncQuery?: boolean; replaceQuery?: boolean } = {},
+    ) => {
+      const targetSection = findSectionByRef(sourcePayload.sections, sectionRef);
+      if (!targetSection) {
+        return false;
+      }
+
+      const shouldFallbackToAll =
+        activeFilter !== "all" && !sectionHasVisibleReactions(targetSection, activeFilter);
+
+      if (shouldFallbackToAll) {
+        const nextHint = `This section has no ${reactionLabel(activeFilter)} notes, showing all notes instead.`;
+        if (typeof window !== "undefined") {
+          window.sessionStorage.setItem(
+            chapterSectionHintStorageKey(String(sourcePayload.book_id), sourcePayload.chapter_id),
+            nextHint,
+          );
+        }
+        setActiveFilter("all");
+        window.setTimeout(() => {
+          setSectionHint(nextHint);
+        }, 0);
+      } else {
+        setSectionHint(null);
+      }
+
+      setActiveReactionId(null);
+      setPassiveSectionRef(sectionRef);
+      setPendingSectionScrollRef(sectionRef);
+      queueSectionJump(targetSection, source);
+
+      if (options.syncQuery !== false) {
+        syncWorkspaceQuery({
+          sectionRef,
+          replace: options.replaceQuery ?? false,
+        });
+      }
+
+      return true;
+    },
+    [activeFilter, queueSectionJump, syncWorkspaceQuery],
   );
 
   const selectReaction = useCallback(
@@ -191,6 +387,8 @@ export function ChapterReadPage() {
     ) => {
       const isSameReaction = activeReactionId === reactionId;
       setActiveReactionId(reactionId);
+      setSectionHint(null);
+      setPassiveSectionRef(null);
 
       if (source === "note-click") {
         syncReactionQuery(reactionId);
@@ -226,7 +424,16 @@ export function ChapterReadPage() {
   }, [followNotes]);
 
   useEffect(() => {
+    outlineCacheRef.current = outlineCache;
+  }, [outlineCache]);
+
+  useEffect(() => {
+    activeFilterRef.current = activeFilter;
+  }, [activeFilter]);
+
+  useEffect(() => {
     setActiveFilter(readChapterFilterPreference(resolvedBookId));
+    setMobileMode(readChapterPanelModePreference(resolvedBookId));
   }, [resolvedBookId]);
 
   useEffect(() => {
@@ -237,7 +444,35 @@ export function ChapterReadPage() {
   }, [activeFilter, resolvedBookId]);
 
   useEffect(() => {
+    if (typeof window === "undefined" || !resolvedBookId) {
+      return;
+    }
+    window.sessionStorage.setItem(chapterPanelModeStorageKey(resolvedBookId), mobileMode);
+  }, [mobileMode, resolvedBookId]);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !payload) {
+      return;
+    }
+    const key = chapterSectionHintStorageKey(String(payload.book_id), payload.chapter_id);
+    const persisted = window.sessionStorage.getItem(key);
+    if (!persisted) {
+      return;
+    }
+    setSectionHint(persisted);
+    window.sessionStorage.removeItem(key);
+  }, [payload]);
+
+  useEffect(() => {
     setIsChapterSheetOpen(false);
+    setMobileChapterSheetView("chapters");
+    setPreviewChapterId(null);
+    setSectionHint(null);
+    handledSectionQueryKeyRef.current = null;
+    if (hoverPreviewTimerRef.current != null) {
+      window.clearTimeout(hoverPreviewTimerRef.current);
+      hoverPreviewTimerRef.current = null;
+    }
   }, [chapterNumber]);
 
   useEffect(() => {
@@ -246,7 +481,7 @@ export function ChapterReadPage() {
     setError(null);
 
     void Promise.all([
-      fetchChapterDetail(bookIdNumber, chapterNumber),
+      fetchChapterDetail(bookIdNumber, chapterNumber, { limit: 100 }),
       fetchBookDetail(bookIdNumber).catch(() => null),
     ])
       .then(([nextPayload, nextBookDetail]) => {
@@ -256,18 +491,27 @@ export function ChapterReadPage() {
 
         setPayload(nextPayload);
         setBookDetail(nextBookDetail);
+        const nextChapterEntry =
+          nextBookDetail?.chapters.find((chapter) => chapter.chapter_id === nextPayload.chapter_id) ?? null;
+        const seededOutline = buildOutlineFromChapterPayload(nextPayload, nextChapterEntry);
+        outlineCacheRef.current = { ...outlineCacheRef.current, [nextPayload.chapter_id]: seededOutline };
+        setOutlineCache((current) => ({ ...current, [nextPayload.chapter_id]: current[nextPayload.chapter_id] ?? seededOutline }));
+
+        const hasReactionQuery =
+          queryReactionId != null && findSelectionByReactionId(nextPayload.sections, queryReactionId) != null;
+        const hasSectionQuery = querySectionRef != null && findSectionByRef(nextPayload.sections, querySectionRef) != null;
         const initialReactionId =
-          (queryReactionId != null && findSelectionByReactionId(nextPayload.sections, queryReactionId)
+          hasReactionQuery
             ? queryReactionId
-            : null) ??
-          initialReactionIdForFilter(nextPayload.sections, activeFilter) ??
-          null;
+            : hasSectionQuery
+              ? null
+              : initialReactionIdForFilter(nextPayload.sections, activeFilterRef.current) ?? null;
 
         setActiveReactionId(initialReactionId);
         if (initialReactionId != null) {
           queueReaderJump(
             initialReactionId,
-            queryReactionId != null ? "deep-link" : "initial",
+            hasReactionQuery ? "deep-link" : "initial",
             nextPayload,
           );
         }
@@ -288,7 +532,7 @@ export function ChapterReadPage() {
     return () => {
       active = false;
     };
-  }, [bookIdNumber, chapterNumber, queryReactionId, queueReaderJump, reloadTick]);
+  }, [bookIdNumber, chapterNumber, queueReaderJump, reloadTick]);
 
   useEffect(() => {
     if (!payload || queryReactionId == null) {
@@ -304,6 +548,54 @@ export function ChapterReadPage() {
     }
     selectReaction(queryReactionId, "deep-link", payload);
   }, [activeReactionId, payload, queryReactionId, selectReaction]);
+
+  useEffect(() => {
+    if (!payload || queryReactionId != null || !querySectionRef) {
+      return;
+    }
+
+    const queryKey = `${payload.chapter_id}:${querySectionRef}`;
+    if (handledSectionQueryKeyRef.current === queryKey) {
+      return;
+    }
+
+    const handled = activateSection(querySectionRef, payload, "section-query", {
+      syncQuery: false,
+    });
+    if (handled) {
+      handledSectionQueryKeyRef.current = queryKey;
+    }
+  }, [activateSection, payload, queryReactionId, querySectionRef]);
+
+  useEffect(() => {
+    if (!isChapterSheetOpen || !payload) {
+      return;
+    }
+    setPreviewChapterId(payload.chapter_id);
+    if (isMobile) {
+      setMobileChapterSheetView("chapters");
+      return;
+    }
+    void ensureChapterOutline(payload.chapter_id);
+  }, [ensureChapterOutline, isChapterSheetOpen, isMobile, payload]);
+
+  useEffect(() => {
+    if (!pendingSectionScrollRef) {
+      return;
+    }
+    const node = sectionRefs.current.get(pendingSectionScrollRef);
+    if (!node) {
+      return;
+    }
+    node.scrollIntoView({ behavior: "smooth", block: "start", inline: "nearest" });
+    setPendingSectionScrollRef(null);
+  }, [activeFilter, payload, pendingSectionScrollRef]);
+
+  useEffect(() => () => {
+    if (hoverPreviewTimerRef.current != null) {
+      window.clearTimeout(hoverPreviewTimerRef.current);
+    }
+  }, []);
 
   if (loading && !payload) {
     return <LoadingState title="Loading chapter workspace..." />;
@@ -336,13 +628,30 @@ export function ChapterReadPage() {
     ]),
   );
   const visibleSections = filterSections(payload.sections, activeFilter);
-  const pillBaseClass = "inline-flex h-8 items-center rounded-full border px-3 transition-colors";
-  const filterInactiveClass = `${pillBaseClass} border-[var(--warm-300)]/60 text-[var(--warm-600)] hover:bg-[var(--warm-100)]`;
-  const filterActiveClass = `${pillBaseClass} border-[var(--amber-accent)] bg-[var(--amber-bg)] text-[var(--amber-accent)]`;
-  const markButtonBaseClass = `${pillBaseClass} text-[var(--warm-600)]`;
+  const pillBaseClass = "inline-flex items-center rounded-full border px-3.5 backdrop-blur-sm shadow-[0_1px_0_rgba(255,255,255,0.9),0_10px_24px_rgba(61,46,31,0.045)] transition-all duration-200";
+  const workspaceActionClass = "inline-flex h-8 items-center gap-2 rounded-full border border-[var(--warm-300)]/60 bg-white/82 px-3.5 text-[var(--warm-700)] shadow-[0_1px_0_rgba(255,255,255,0.88),0_8px_20px_rgba(61,46,31,0.04)] transition-all duration-200 hover:-translate-y-[1px] hover:bg-white";
+  const workspacePrimaryActionClass = `${workspaceActionClass} hover:border-[var(--amber-accent)]/35 hover:text-[var(--warm-900)]`;
+  const workspaceSecondaryActionClass = `${workspaceActionClass} hover:border-[var(--warm-400)] hover:text-[var(--warm-800)]`;
+  const filterInactiveClass = `${pillBaseClass} h-10 border-[var(--warm-300)]/65 bg-white/82 text-[var(--warm-600)] hover:-translate-y-[1px] hover:border-[var(--warm-400)] hover:bg-white hover:text-[var(--warm-800)]`;
+  const filterActiveClass = `${pillBaseClass} h-10 border-[var(--amber-accent)]/35 bg-[var(--amber-bg)] text-[var(--amber-accent)] shadow-[0_1px_0_rgba(255,255,255,0.82),0_12px_28px_rgba(139,105,20,0.12)]`;
+  const markButtonBaseClass = `${pillBaseClass} h-9 border-[var(--warm-300)]/65 bg-white/86 text-[var(--warm-600)] hover:-translate-y-[1px] hover:border-[var(--warm-400)] hover:bg-white`;
   const chapterItems = bookDetail?.chapters ?? [];
   const readableChapterCount = chapterItems.filter((chapter) => chapter.result_ready).length;
   const showChapterSwitcher = Boolean(bookDetail) && readableChapterCount > 1;
+  const currentChapterEntry = chapterItems.find((chapter) => chapter.chapter_id === payload.chapter_id) ?? null;
+  const currentChapterRef = currentChapterEntry?.chapter_ref || payload.chapter_ref;
+  const currentChapterTitle = (currentChapterEntry?.title || payload.title || "").trim();
+  const showSeparateChapterTitle = Boolean(currentChapterTitle) && currentChapterTitle !== currentChapterRef;
+  const workspaceHeading = showSeparateChapterTitle ? currentChapterTitle : currentChapterRef;
+  const previewChapter = chapterItems.find((chapter) => chapter.chapter_id === previewChapterId) ?? currentChapterEntry;
+  const previewOutline = previewChapterId != null ? outlineCache[previewChapterId] ?? null : null;
+  const previewOutlineLoading = previewChapterId != null && outlineLoadingIds.includes(previewChapterId);
+  const currentReadingSectionRef =
+    passiveSectionRef ??
+    findSelectionByReactionId(payload.sections, activeReactionId)?.section.section_ref ??
+    querySectionRef ??
+    null;
+  const previewSectionItems = previewOutline?.sections ?? [];
 
   async function toggleMark(
     reactionId: ReactionId,
@@ -363,19 +672,72 @@ export function ChapterReadPage() {
     }
   }
 
-  function openChapter(chapterId: number) {
+  function handleFilterChange(filter: ReactionFilter) {
+    if (typeof window !== "undefined") {
+      window.sessionStorage.removeItem(chapterSectionHintStorageKey(String(payload.book_id), payload.chapter_id));
+    }
+    setSectionHint(null);
+    setActiveFilter(filter);
+  }
+
+  function openChapter(chapterId: number, options: { sectionRef?: string | null } = {}) {
+    const search = options.sectionRef ? `?section=${encodeURIComponent(options.sectionRef)}` : "";
     if (chapterId === payload.chapter_id) {
+      if (options.sectionRef) {
+        handledSectionQueryKeyRef.current = `${payload.chapter_id}:${options.sectionRef}`;
+        activateSection(options.sectionRef, payload, "section-click", {
+          syncQuery: true,
+          replaceQuery: false,
+        });
+      }
       setIsChapterSheetOpen(false);
+      setMobileChapterSheetView("chapters");
       return;
     }
     setIsChapterSheetOpen(false);
-    navigate(canonicalChapterPath(payload.book_id, chapterId));
+    setMobileChapterSheetView("chapters");
+    navigate(`${canonicalChapterPath(payload.book_id, chapterId)}${search}`);
+  }
+
+  function handleChapterPreview(chapter: ChapterListItem) {
+    if (isMobile) {
+      return;
+    }
+    if (hoverPreviewTimerRef.current != null) {
+      window.clearTimeout(hoverPreviewTimerRef.current);
+    }
+    hoverPreviewTimerRef.current = window.setTimeout(() => {
+      setPreviewChapterId(chapter.chapter_id);
+      if (chapter.result_ready) {
+        void ensureChapterOutline(chapter.chapter_id);
+      }
+    }, 110);
+  }
+
+  function openMobileChapterSections(chapter: ChapterListItem) {
+    if (!chapter.result_ready) {
+      return;
+    }
+    setPreviewChapterId(chapter.chapter_id);
+    setMobileChapterSheetView("sections");
+    void ensureChapterOutline(chapter.chapter_id);
+  }
+
+  function handleOutlineSectionClick(section: ChapterOutlineSectionItem) {
+    if (!previewChapterId) {
+      return;
+    }
+    if (previewChapterId === payload.chapter_id) {
+      openChapter(previewChapterId, { sectionRef: section.section_ref });
+      return;
+    }
+    openChapter(previewChapterId, { sectionRef: section.section_ref });
   }
 
   function renderNotesPane() {
     return (
-      <div className="h-full overflow-y-auto bg-[var(--warm-100)]">
-        <div className="sticky top-0 z-20 border-b border-[var(--warm-200)] bg-[var(--warm-50)]/95 backdrop-blur px-6 pt-6 pb-4">
+      <div className="rc-scrollbar h-full overflow-y-auto bg-[var(--warm-100)]">
+        <div className="sticky top-0 z-20 border-b border-[var(--warm-200)] bg-[var(--warm-50)]/95 backdrop-blur px-5 pt-5 pb-4 sm:px-6 lg:px-7">
           <div className="flex items-center justify-between gap-3 flex-wrap">
             <div>
               <p className="text-[var(--warm-500)] uppercase tracking-[0.18em] mb-1" style={{ fontSize: "0.6875rem", fontWeight: 600 }}>
@@ -397,7 +759,7 @@ export function ChapterReadPage() {
               <button
                 key={filter}
                 type="button"
-                onClick={() => setActiveFilter(filter)}
+                onClick={() => handleFilterChange(filter)}
                 data-testid={`reaction-filter-${filter}`}
                 className={activeFilter === filter ? filterActiveClass : filterInactiveClass}
                 style={{ fontSize: "0.75rem", fontWeight: 600 }}
@@ -406,9 +768,15 @@ export function ChapterReadPage() {
               </button>
             ))}
           </div>
+
+          {sectionHint ? (
+            <p className="mt-3 text-[var(--amber-accent)]" style={{ fontSize: "0.75rem", lineHeight: 1.55, fontWeight: 500 }}>
+              {sectionHint}
+            </p>
+          ) : null}
         </div>
 
-        <div className="p-6 pt-5">
+        <div className="px-5 pb-6 pt-5 sm:px-6 lg:px-7">
           <div className="space-y-8">
             {visibleSections.length === 0 ? (
               <div className="rounded-2xl border border-[var(--warm-300)]/40 bg-white px-4 py-6">
@@ -424,11 +792,15 @@ export function ChapterReadPage() {
             {visibleSections.map((section) => (
               <section
                 key={section.section_ref}
+                ref={(node) => {
+                  sectionRefs.current.set(section.section_ref, node);
+                }}
                 className={`rounded-2xl transition-colors ${
                   passiveSectionRef === section.section_ref
                     ? "bg-[var(--amber-bg)]/45 border border-[var(--amber-accent)]/20 p-3 -m-3"
                     : ""
                 }`}
+                style={{ scrollMarginTop: "1.25rem" }}
               >
                 <div className="mb-3 pb-2 border-b border-[var(--warm-200)]">
                   <div className="flex items-center justify-between gap-3 flex-wrap">
@@ -459,21 +831,23 @@ export function ChapterReadPage() {
                   {section.reactions.map((reaction) => {
                     const isActive = activeReactionId === reaction.reaction_id;
                     const anchorQuote = reaction.anchor_quote.trim();
+                    const reactionTone = reactionMeta[reaction.type];
                     return (
                       <article
                         key={reaction.reaction_id}
                         data-testid={`reaction-card-${reaction.reaction_id}`}
                         className={`rounded-2xl border p-4 cursor-pointer transition-colors ${
                           isActive
-                            ? "border-[var(--amber-accent)]/45 bg-[var(--amber-bg)]"
-                            : "border-[var(--warm-300)]/30 bg-white hover:border-[var(--warm-300)]"
+                            ? "border-[var(--amber-accent)]/45 bg-[var(--amber-bg)] shadow-[0_1px_0_rgba(255,255,255,0.9),0_20px_38px_rgba(139,105,20,0.11)]"
+                            : "border-[var(--warm-300)]/30 bg-white shadow-[0_1px_0_rgba(255,255,255,0.92),0_12px_28px_rgba(61,46,31,0.04)] hover:-translate-y-[1px] hover:border-[var(--warm-300)]/65 hover:shadow-[0_1px_0_rgba(255,255,255,0.94),0_18px_34px_rgba(61,46,31,0.07)]"
                         }`}
+                        style={{ transitionDuration: "180ms" }}
                         onClick={() => selectReaction(reaction.reaction_id, "note-click", payload)}
                       >
                         <div className="flex items-start justify-between gap-3 flex-wrap mb-3">
                           <div className="flex items-center gap-2">
                             <span
-                              className={`${pillBaseClass} border-[var(--warm-300)]/60 bg-[var(--warm-100)] text-[var(--warm-800)]`}
+                              className={`${pillBaseClass} h-9 border-[var(--warm-300)]/45 ${reactionTone.surfaceClass} ${reactionTone.accentClass}`}
                               style={{ fontSize: "0.74rem", fontWeight: 600 }}
                             >
                               {reactionLabel(reaction.type)}
@@ -489,8 +863,8 @@ export function ChapterReadPage() {
                               data-testid={`mark-resonance-${reaction.reaction_id}`}
                               className={`${markButtonBaseClass} ${
                                 reaction.mark_type === "resonance"
-                                  ? "border-[var(--amber-accent)] bg-[var(--amber-bg)] text-[var(--amber-accent)]"
-                                  : "border-[var(--warm-300)]/60 bg-white"
+                                  ? "border-[var(--amber-accent)]/35 bg-[var(--amber-bg)] text-[var(--amber-accent)] shadow-[0_1px_0_rgba(255,255,255,0.82),0_12px_28px_rgba(139,105,20,0.1)]"
+                                  : ""
                               }`}
                               style={{ fontSize: "0.72rem", fontWeight: 600 }}
                             >
@@ -505,8 +879,8 @@ export function ChapterReadPage() {
                               data-testid={`mark-blindspot-${reaction.reaction_id}`}
                               className={`${markButtonBaseClass} ${
                                 reaction.mark_type === "blindspot"
-                                  ? "border-orange-300 bg-orange-50 text-orange-700"
-                                  : "border-[var(--warm-300)]/60 bg-white"
+                                  ? "border-orange-300/65 bg-orange-50 text-orange-700 shadow-[0_1px_0_rgba(255,255,255,0.82),0_12px_28px_rgba(234,88,12,0.08)]"
+                                  : ""
                               }`}
                               style={{ fontSize: "0.72rem", fontWeight: 600 }}
                             >
@@ -521,8 +895,8 @@ export function ChapterReadPage() {
                               data-testid={`mark-bookmark-${reaction.reaction_id}`}
                               className={`${markButtonBaseClass} ${
                                 reaction.mark_type === "bookmark"
-                                  ? "border-emerald-300 bg-emerald-50 text-emerald-700"
-                                  : "border-[var(--warm-300)]/60 bg-white"
+                                  ? "border-emerald-300/65 bg-emerald-50 text-emerald-700 shadow-[0_1px_0_rgba(255,255,255,0.82),0_12px_28px_rgba(16,185,129,0.08)]"
+                                  : ""
                               }`}
                               style={{ fontSize: "0.72rem", fontWeight: 600 }}
                             >
@@ -594,10 +968,6 @@ export function ChapterReadPage() {
 
   const sourceUrl = toApiAssetUrl(payload.source_asset.url);
   const readerBookTitle = (bookDetail?.title || "").trim() || payload.title || "Original book";
-  const chapterMetaLabel =
-    payload.chapter_ref && payload.title && payload.chapter_ref !== payload.title
-      ? `${payload.chapter_ref} · ${payload.title}`
-      : payload.title || payload.chapter_ref;
 
   return (
     <div className="h-[calc(100vh-72px)] flex flex-col bg-[var(--warm-100)]">
@@ -605,7 +975,11 @@ export function ChapterReadPage() {
         <SheetContent
           side="left"
           data-testid="chapter-sheet-content"
-          className="w-[24rem] max-w-[88vw] gap-0 border-[var(--warm-300)]/50 bg-[var(--warm-50)] p-0 text-[var(--warm-900)]"
+          className={`gap-0 border-[var(--warm-300)]/50 bg-[var(--warm-50)] p-0 text-[var(--warm-900)] ${
+            isMobile
+              ? "w-[100vw] max-w-[100vw]"
+              : "w-[min(880px,calc(100vw-40px))] max-w-[min(880px,calc(100vw-40px))] sm:max-w-none"
+          }`}
         >
           <SheetHeader className="border-b border-[var(--warm-200)] bg-[var(--warm-50)] px-5 py-5 pr-12">
             <SheetTitle
@@ -622,96 +996,305 @@ export function ChapterReadPage() {
             </SheetDescription>
           </SheetHeader>
 
-          <div className="min-h-0 flex-1 overflow-y-auto px-3 py-3">
-            <div className="space-y-2">
-              {chapterItems.map((chapter) => {
-                const isCurrent = chapter.chapter_id === payload.chapter_id;
-                const isDisabled = !chapter.result_ready || isCurrent;
-                const chapterTitle =
-                  chapter.title && chapter.title !== chapter.chapter_ref ? chapter.title : chapter.chapter_ref;
-                const chapterMeta =
-                  chapter.title && chapter.title !== chapter.chapter_ref ? chapter.chapter_ref : null;
-                const chapterStateLabel = isCurrent
-                  ? "Current"
-                  : !chapter.result_ready
-                    ? chapter.status === "error"
-                      ? "Error"
-                      : "Pending"
-                    : chapter.status === "error"
-                      ? "Error"
-                      : "Completed";
-
-                return (
+          <div className={`min-h-0 flex-1 overflow-hidden ${isMobile ? "flex flex-col" : "grid grid-cols-[304px_minmax(0,1fr)]"}`}>
+            <div className={`rc-scrollbar min-h-0 overflow-y-auto ${isMobile ? "flex-1 px-3 py-3" : "border-r border-[var(--warm-200)] bg-[var(--warm-100)]/78 px-3 py-3"}`}>
+              {isMobile && mobileChapterSheetView === "sections" ? (
+                <div className="mb-3 flex items-center gap-2 px-1">
                   <button
-                    key={chapter.chapter_id}
                     type="button"
-                    data-testid={`chapter-sheet-item-${chapter.chapter_id}`}
-                    disabled={isDisabled}
-                    onClick={() => openChapter(chapter.chapter_id)}
-                    className={`w-full rounded-2xl border px-4 py-3 text-left transition-colors ${
-                      isCurrent
-                        ? "cursor-default border-[var(--amber-accent)]/30 bg-[var(--amber-bg)]"
-                        : chapter.result_ready
-                          ? "border-[var(--warm-300)]/35 bg-white hover:border-[var(--amber-accent)]/35 hover:bg-[var(--warm-100)]/70"
-                          : "cursor-not-allowed border-[var(--warm-300)]/25 bg-[var(--warm-100)]/75 opacity-80"
-                    }`}
+                    onClick={() => setMobileChapterSheetView("chapters")}
+                    className="inline-flex h-8 items-center gap-2 rounded-full border border-[var(--warm-300)]/65 bg-white/86 px-3 text-[var(--warm-700)] shadow-[0_1px_0_rgba(255,255,255,0.88)] transition-all duration-200 hover:bg-white"
+                    style={{ fontSize: "0.76rem", fontWeight: 600 }}
                   >
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        {chapterMeta ? (
-                          <p
-                            className="mb-1 text-[var(--warm-500)]"
-                            style={{ fontSize: "0.72rem", fontWeight: 600, lineHeight: 1.3 }}
-                          >
-                            {chapterMeta}
-                          </p>
-                        ) : null}
-                        <p
-                          className="text-[var(--warm-950)]"
-                          style={{ fontSize: "0.94rem", fontWeight: 600, lineHeight: 1.45 }}
-                        >
-                          {chapterTitle}
-                        </p>
-                        {chapter.result_ready ? (
-                          <p
-                            className="mt-1 text-[var(--warm-600)]"
-                            style={{ fontSize: "0.76rem", lineHeight: 1.55 }}
-                          >
-                            {chapter.visible_reaction_count} reactions · {chapter.high_signal_reaction_count} high-signal
-                          </p>
-                        ) : null}
-                      </div>
-                      <div className="flex flex-col items-end gap-2 shrink-0">
-                        <span
-                          className={`inline-flex rounded-full border px-2.5 py-1 ${
-                            isCurrent
-                              ? "border-[var(--amber-accent)]/30 bg-white/70 text-[var(--amber-accent)]"
-                              : chapter.result_ready
-                                ? "border-[var(--warm-300)]/40 bg-[var(--warm-50)] text-[var(--warm-600)]"
-                                : chapter.status === "error"
-                                  ? "border-red-200 bg-red-50 text-red-700"
-                                  : "border-[var(--warm-300)]/40 bg-[var(--warm-50)] text-[var(--warm-500)]"
-                          }`}
-                          style={{ fontSize: "0.7rem", fontWeight: 600 }}
-                        >
-                          {chapterStateLabel}
-                        </span>
-                        {!isDisabled ? (
-                          <ChevronRight className="h-4 w-4 text-[var(--warm-400)]" />
-                        ) : null}
-                      </div>
-                    </div>
+                    <ArrowLeft className="h-3.5 w-3.5" />
+                    Chapters
                   </button>
-                );
-              })}
+                </div>
+              ) : null}
+
+              {(!isMobile || mobileChapterSheetView === "chapters") ? (
+                <div className="space-y-1.5">
+                  {chapterItems.map((chapter) => {
+                    const isCurrent = chapter.chapter_id === payload.chapter_id;
+                    const chapterTitle =
+                      chapter.title && chapter.title !== chapter.chapter_ref ? chapter.title : chapter.chapter_ref;
+                    const chapterMeta =
+                      chapter.title && chapter.title !== chapter.chapter_ref ? chapter.chapter_ref : null;
+                    const StatusIcon = isCurrent
+                      ? CheckCircle2
+                      : !chapter.result_ready
+                        ? chapter.status === "error"
+                          ? AlertTriangle
+                          : CircleDashed
+                        : CheckCircle2;
+                    const chapterStateLabel = isCurrent
+                      ? "Current"
+                      : !chapter.result_ready
+                        ? chapter.status === "error"
+                          ? "Error"
+                          : "Pending"
+                        : chapter.status === "error"
+                          ? "Error"
+                          : "Completed";
+                    const isPreviewing = previewChapterId === chapter.chapter_id;
+
+                    return (
+                      <button
+                        key={chapter.chapter_id}
+                        type="button"
+                        data-testid={`chapter-sheet-item-${chapter.chapter_id}`}
+                        disabled={!chapter.result_ready && !isCurrent}
+                        onMouseEnter={() => handleChapterPreview(chapter)}
+                        onFocus={() => handleChapterPreview(chapter)}
+                        onClick={() => {
+                          if (isMobile) {
+                            openMobileChapterSections(chapter);
+                            return;
+                          }
+                          if (!chapter.result_ready || isCurrent) {
+                            return;
+                          }
+                          openChapter(chapter.chapter_id);
+                        }}
+                        className={`w-full rounded-2xl border px-4 py-3 text-left transition-all duration-200 ${
+                          isCurrent
+                            ? "border-[var(--amber-accent)]/28 bg-[var(--amber-bg)]/85 shadow-[0_1px_0_rgba(255,255,255,0.88),0_18px_34px_rgba(139,105,20,0.09)]"
+                            : isPreviewing
+                              ? "border-[var(--warm-300)]/60 bg-white/92 shadow-[0_1px_0_rgba(255,255,255,0.9),0_14px_32px_rgba(61,46,31,0.06)]"
+                              : chapter.result_ready
+                                ? "border-[var(--warm-300)]/28 bg-white/72 hover:-translate-y-[1px] hover:border-[var(--warm-400)]/55 hover:bg-white"
+                                : "cursor-not-allowed border-[var(--warm-300)]/20 bg-[var(--warm-100)]/70 opacity-80"
+                        }`}
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            {chapterMeta ? (
+                              <p
+                                className="mb-1 text-[var(--warm-500)]"
+                                style={{ fontSize: "0.69rem", fontWeight: 600, lineHeight: 1.3 }}
+                              >
+                                {chapterMeta}
+                              </p>
+                            ) : null}
+                            <OverflowTooltipText
+                              as="p"
+                              text={chapterTitle}
+                              lines={2}
+                              side="right"
+                              className="text-[var(--warm-950)]"
+                              style={{ fontSize: "0.9rem", fontWeight: 600, lineHeight: 1.45, maxWidth: "14.25rem" }}
+                            />
+                            <p
+                              className="mt-1 text-[var(--warm-600)]"
+                              style={{ fontSize: "0.74rem", lineHeight: 1.55 }}
+                            >
+                              {chapter.visible_reaction_count} reactions · {chapter.high_signal_reaction_count} high-signal
+                            </p>
+                          </div>
+
+                          <div className="flex shrink-0 items-center gap-2">
+                            <span
+                              className={`inline-flex rounded-full border px-2.5 py-1 ${
+                                isCurrent
+                                  ? "border-[var(--amber-accent)]/30 bg-white/78 text-[var(--amber-accent)]"
+                                  : chapter.result_ready
+                                    ? "border-[var(--warm-300)]/45 bg-[var(--warm-50)] text-[var(--warm-600)]"
+                                    : chapter.status === "error"
+                                      ? "border-red-200 bg-red-50 text-red-700"
+                                      : "border-[var(--warm-300)]/40 bg-[var(--warm-50)] text-[var(--warm-500)]"
+                              }`}
+                              style={{ fontSize: "0.69rem", fontWeight: 600 }}
+                            >
+                              <StatusIcon className="mr-1 h-3 w-3" />
+                              {chapterStateLabel}
+                            </span>
+                            {(chapter.result_ready && !isCurrent) || (isMobile && chapter.result_ready) ? (
+                              <ChevronRight className="h-4 w-4 text-[var(--warm-400)]" />
+                            ) : null}
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : null}
+
+              {isMobile && mobileChapterSheetView === "sections" ? (
+                previewOutlineLoading ? (
+                  <div className="flex min-h-[14rem] items-center justify-center">
+                    <p className="inline-flex items-center gap-2 text-[var(--warm-600)]" style={{ fontSize: "0.82rem" }}>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Loading chapter outline...
+                    </p>
+                  </div>
+                ) : !previewChapter?.result_ready ? (
+                  <div className="rounded-2xl border border-[var(--warm-300)]/35 bg-[var(--warm-50)]/78 px-4 py-5">
+                    <p className="text-[var(--warm-900)]" style={{ fontSize: "0.88rem", fontWeight: 600 }}>
+                      This chapter is not ready yet.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {(previewOutline?.sections ?? []).map((section) => {
+                      const isCurrentSection =
+                        previewChapterId === payload.chapter_id && currentReadingSectionRef === section.section_ref;
+                      return (
+                        <button
+                          key={section.section_ref}
+                          type="button"
+                          onClick={() => handleOutlineSectionClick(section)}
+                          className={`w-full rounded-2xl border px-4 py-3 text-left transition-all duration-200 ${
+                            isCurrentSection
+                              ? "border-[var(--amber-accent)]/28 bg-[var(--amber-bg)]/82"
+                              : "border-[var(--warm-300)]/28 bg-white/86 hover:-translate-y-[1px] hover:border-[var(--warm-400)]/55 hover:bg-white"
+                          }`}
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0">
+                              <p className="text-[var(--amber-accent)]" style={{ fontSize: "0.7rem", fontWeight: 600 }}>
+                                {section.section_ref}
+                              </p>
+                              <OverflowTooltipText
+                                as="p"
+                                text={section.summary}
+                                lines={2}
+                                side="right"
+                                className="mt-1 text-[var(--warm-950)]"
+                                style={{ fontSize: "0.9rem", fontWeight: 600, lineHeight: 1.45 }}
+                              />
+                              {section.preview_text ? (
+                                <p className="mt-1 text-[var(--warm-600)]" style={{ fontSize: "0.76rem", lineHeight: 1.55 }}>
+                                  {section.preview_text}
+                                </p>
+                              ) : null}
+                            </div>
+                            <div className="shrink-0 text-right">
+                              <p className="text-[var(--warm-500)]" style={{ fontSize: "0.7rem", fontWeight: 600 }}>
+                                {section.visible_reaction_count}
+                              </p>
+                            </div>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )
+              ) : null}
             </div>
+
+            {!isMobile ? (
+              <div className="min-h-0 overflow-hidden bg-white/68">
+                <div className="border-b border-[var(--warm-200)] bg-[var(--warm-50)]/94 px-5 py-4">
+                  <p className="text-[var(--warm-500)] uppercase tracking-[0.16em]" style={{ fontSize: "0.64rem", fontWeight: 600 }}>
+                    In this chapter
+                  </p>
+                  <div className="mt-1 flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <OverflowTooltipText
+                        as="p"
+                        text={previewOutline?.title || previewChapter?.title || previewChapter?.chapter_ref || "Chapter preview"}
+                        lines={1}
+                        side="bottom"
+                        className="text-[var(--warm-950)] font-['Lora',Georgia,serif]"
+                        style={{ fontSize: "1.02rem", fontWeight: 700, lineHeight: 1.25, maxWidth: "26rem" }}
+                      />
+                      <p className="mt-1 text-[var(--warm-600)]" style={{ fontSize: "0.76rem", lineHeight: 1.5 }}>
+                        {(previewOutline?.section_count ?? previewChapter?.segment_count ?? 0)} sections
+                      </p>
+                    </div>
+                    {previewChapter?.chapter_ref ? (
+                      <span className="inline-flex h-8 items-center rounded-full border border-[var(--warm-300)]/68 bg-white/84 px-3 text-[var(--warm-700)] shadow-[0_1px_0_rgba(255,255,255,0.88)]" style={{ fontSize: "0.72rem", fontWeight: 600 }}>
+                        {previewChapter.chapter_ref}
+                      </span>
+                    ) : null}
+                  </div>
+                </div>
+
+                <div className="rc-scrollbar h-full overflow-y-auto px-4 py-4">
+                  {previewOutlineLoading ? (
+                    <div className="flex h-full min-h-[16rem] items-center justify-center">
+                      <p className="inline-flex items-center gap-2 text-[var(--warm-600)]" style={{ fontSize: "0.82rem" }}>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Loading chapter outline...
+                      </p>
+                    </div>
+                  ) : !previewChapter?.result_ready ? (
+                    <div className="rounded-2xl border border-[var(--warm-300)]/35 bg-[var(--warm-50)]/78 px-4 py-5">
+                      <p className="text-[var(--warm-900)]" style={{ fontSize: "0.88rem", fontWeight: 600 }}>
+                        This chapter is not ready yet.
+                      </p>
+                      <p className="mt-1 text-[var(--warm-600)]" style={{ fontSize: "0.78rem", lineHeight: 1.65 }}>
+                        Finish analysis in the book overview before using section-level navigation here.
+                      </p>
+                    </div>
+                  ) : previewSectionItems.length === 0 ? (
+                    <div className="rounded-2xl border border-[var(--warm-300)]/35 bg-[var(--warm-50)]/78 px-4 py-5">
+                      <p className="text-[var(--warm-900)]" style={{ fontSize: "0.88rem", fontWeight: 600 }}>
+                        No semantic sections available.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {previewSectionItems.map((section) => {
+                        const isCurrentSection =
+                          previewChapterId === payload.chapter_id && currentReadingSectionRef === section.section_ref;
+                        return (
+                          <button
+                            key={section.section_ref}
+                            type="button"
+                            data-testid={`chapter-outline-section-${previewChapterId}-${section.section_ref}`}
+                            onClick={() => handleOutlineSectionClick(section)}
+                            className={`w-full rounded-2xl border px-4 py-3 text-left transition-all duration-200 ${
+                              isCurrentSection
+                                ? "border-[var(--amber-accent)]/28 bg-[var(--amber-bg)]/78 shadow-[0_1px_0_rgba(255,255,255,0.88),0_14px_30px_rgba(139,105,20,0.08)]"
+                                : "border-[var(--warm-300)]/26 bg-white/88 hover:-translate-y-[1px] hover:border-[var(--warm-400)]/55 hover:bg-white"
+                            }`}
+                          >
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="min-w-0">
+                                <p className="text-[var(--amber-accent)]" style={{ fontSize: "0.7rem", fontWeight: 600 }}>
+                                  {section.section_ref}
+                                </p>
+                                <OverflowTooltipText
+                                  as="p"
+                                  text={section.summary}
+                                  lines={2}
+                                  side="right"
+                                  className="mt-1 text-[var(--warm-950)]"
+                                  style={{ fontSize: "0.88rem", fontWeight: 600, lineHeight: 1.42 }}
+                                />
+                                {section.preview_text ? (
+                                  <p className="mt-1.5 text-[var(--warm-600)]" style={{ fontSize: "0.77rem", lineHeight: 1.6 }}>
+                                    {section.preview_text}
+                                  </p>
+                                ) : null}
+                              </div>
+                              <div className="shrink-0 text-right">
+                                {isCurrentSection ? (
+                                  <p className="text-[var(--amber-accent)]" style={{ fontSize: "0.68rem", fontWeight: 600 }}>
+                                    Reading
+                                  </p>
+                                ) : null}
+                                <p className="mt-1 text-[var(--warm-500)]" style={{ fontSize: "0.7rem", fontWeight: 600 }}>
+                                  {section.visible_reaction_count} notes
+                                </p>
+                              </div>
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              </div>
+            ) : null}
           </div>
 
           <SheetFooter className="border-t border-[var(--warm-200)] bg-[var(--warm-50)] px-5 py-4">
             <Link
               to={canonicalBookPath(payload.book_id)}
               data-testid="chapter-sheet-book-overview-link"
-              className="inline-flex items-center gap-2 text-[var(--warm-600)] no-underline hover:text-[var(--warm-900)]"
+              className="inline-flex h-10 items-center justify-center gap-2 rounded-full border border-[var(--warm-300)]/60 bg-white/84 px-4 text-[var(--warm-600)] no-underline shadow-[0_1px_0_rgba(255,255,255,0.88),0_10px_24px_rgba(61,46,31,0.04)] transition-all duration-200 hover:-translate-y-[1px] hover:border-[var(--warm-400)] hover:bg-white hover:text-[var(--warm-900)]"
               style={{ fontSize: "0.82rem", fontWeight: 600 }}
             >
               Open book overview
@@ -720,52 +1303,72 @@ export function ChapterReadPage() {
         </SheetContent>
 
       <div className="border-b border-[var(--warm-200)] bg-[var(--warm-50)]/95 backdrop-blur-sm flex-shrink-0">
-        <div className="px-6 py-4">
-          <Link
-            to={canonicalBookPath(payload.book_id)}
-            className="inline-flex items-center gap-1.5 text-[var(--warm-600)] no-underline hover:text-[var(--warm-800)]"
-            style={{ fontSize: "0.84rem", fontWeight: 600 }}
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Back to book
-          </Link>
-
-          <div className="mt-3 min-w-0">
-            <h1
-              className="text-[var(--warm-950)] font-['Lora',Georgia,serif] tracking-tight overflow-hidden"
-              style={{
-                fontSize: "clamp(1.65rem, 2.7vw, 2.5rem)",
-                fontWeight: 700,
-                lineHeight: 1.08,
-                maxWidth: "min(68rem, 100%)",
-                display: "-webkit-box",
-                WebkitBoxOrient: "vertical",
-                WebkitLineClamp: 2,
-              }}
-            >
-              {readerBookTitle}
-            </h1>
-            <div className="mt-1.5 flex items-center justify-between gap-3 flex-wrap">
-              <p
+        <div className="px-5 py-2.5 sm:px-6 lg:px-7">
+          <div className="flex flex-wrap items-start justify-between gap-3 lg:flex-nowrap lg:gap-6">
+            <div className="min-w-0 flex-1">
+              <OverflowTooltipText
+                as="p"
+                text={readerBookTitle}
+                lines={1}
+                side="bottom"
                 className="text-[var(--warm-600)]"
-                style={{ fontSize: "1.02rem", lineHeight: 1.45, fontWeight: 500 }}
-                data-testid="chapter-workspace-current-chapter"
-              >
-                {chapterMetaLabel}
-              </p>
+                style={{
+                  fontSize: "0.82rem",
+                  fontWeight: 600,
+                  lineHeight: 1.35,
+                  maxWidth: "min(56rem, 100%)",
+                }}
+              />
+
+              <div className="mt-1.5 flex min-w-0 items-center gap-2.5 flex-wrap">
+                {showSeparateChapterTitle ? (
+                  <span
+                    className="inline-flex h-7 items-center rounded-full border border-[var(--warm-300)]/65 bg-white/78 px-3 text-[var(--warm-700)] shadow-[0_1px_0_rgba(255,255,255,0.88)]"
+                    style={{ fontSize: "0.74rem", fontWeight: 600 }}
+                    data-testid="chapter-workspace-current-chapter"
+                  >
+                    {currentChapterRef}
+                  </span>
+                ) : null}
+                <OverflowTooltipText
+                  as="h1"
+                  text={workspaceHeading}
+                  lines={1}
+                  side="bottom"
+                  data-testid={!showSeparateChapterTitle ? "chapter-workspace-current-chapter" : undefined}
+                  className="min-w-0 text-[var(--warm-950)] font-['Lora',Georgia,serif] tracking-tight"
+                  style={{
+                    fontSize: "clamp(1.04rem, 1.25vw, 1.26rem)",
+                    fontWeight: 700,
+                    lineHeight: 1.14,
+                    maxWidth: "min(40rem, 100%)",
+                  }}
+                />
+              </div>
+            </div>
+
+            <div className="flex shrink-0 items-center gap-2 flex-wrap lg:justify-end">
               {showChapterSwitcher ? (
                 <SheetTrigger asChild>
                   <button
                     type="button"
                     data-testid="chapter-sheet-trigger"
-                    className="inline-flex h-9 items-center gap-2 rounded-full border border-[var(--warm-300)]/60 bg-white/80 px-4 text-[var(--warm-700)] transition-colors hover:bg-[var(--warm-100)] hover:text-[var(--warm-900)]"
-                    style={{ fontSize: "0.82rem", fontWeight: 600 }}
+                    className={workspacePrimaryActionClass}
+                    style={{ fontSize: "0.76rem", fontWeight: 600 }}
                   >
                     <List className="h-4 w-4" />
                     Chapters
                   </button>
                 </SheetTrigger>
               ) : null}
+              <Link
+                to={canonicalBookPath(payload.book_id)}
+                className={`${workspaceSecondaryActionClass} no-underline text-[var(--warm-600)]`}
+                style={{ fontSize: "0.76rem", fontWeight: 600 }}
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Overview
+              </Link>
             </div>
           </div>
         </div>

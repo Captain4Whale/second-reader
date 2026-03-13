@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 from pathlib import Path
 from typing import Iterable
 
@@ -43,6 +44,25 @@ def output_root(root: Path | None = None) -> Path:
 def _load_json(path: Path) -> dict:
     """Load one JSON object if it exists."""
     return json.loads(path.read_text(encoding="utf-8"))
+
+
+def _excerpt_text(value: str, *, max_length: int = 132) -> str:
+    """Collapse whitespace and trim long preview strings."""
+    normalized = re.sub(r"\s+", " ", str(value or "")).strip()
+    if len(normalized) <= max_length:
+        return normalized
+    return f"{normalized[: max_length - 3].rstrip()}..."
+
+
+def _natural_sort_key(value: str) -> tuple[object, ...]:
+    """Return a stable natural-sort key for chapter and section references."""
+    parts = re.split(r"(\d+)", str(value or "").strip().lower())
+    key: list[object] = []
+    for part in parts:
+        if not part:
+            continue
+        key.append(int(part) if part.isdigit() else part)
+    return tuple(key)
 
 
 def _load_jsonl(path: Path) -> list[dict]:
@@ -447,6 +467,32 @@ def _reaction_card(section: dict, reaction: dict, mark_index: dict[str, str]) ->
     }
 
 
+def _outline_preview_text(section: dict) -> str:
+    """Choose one short section preview line for the outline pane."""
+    reactions = [reaction for reaction in section.get("reactions", []) if isinstance(reaction, dict)]
+    for reaction in reactions:
+        anchor_quote = _excerpt_text(str(reaction.get("anchor_quote", "")))
+        if anchor_quote:
+            return anchor_quote
+    for reaction in reactions:
+        content_preview = _excerpt_text(str(reaction.get("content", "")))
+        if content_preview:
+            return content_preview
+    return _excerpt_text(str(section.get("original_text", "")))
+
+
+def _chapter_outline_section(section: dict) -> dict:
+    """Build one compact section-outline payload."""
+    reactions = [reaction for reaction in section.get("reactions", []) if isinstance(reaction, dict)]
+    return {
+        "section_ref": str(section.get("segment_ref", "")),
+        "summary": str(section.get("summary", "")),
+        "preview_text": _outline_preview_text(section),
+        "visible_reaction_count": len(reactions),
+        "locator": section.get("locator"),
+    }
+
+
 def _filter_reactions(
     reactions: Iterable[dict],
     *,
@@ -502,7 +548,7 @@ def get_chapter_detail(
             }
         )
 
-    sections = sorted(sections, key=lambda item: str(item.get("section_ref", "")))
+    sections = sorted(sections, key=lambda item: _natural_sort_key(str(item.get("section_ref", ""))))
     page_sections, page_info = paginate_items(sections, limit=limit, cursor=cursor)
     chapter_info = chapter_payload.get("chapter", {})
     chapter_ref = str(chapter_info.get("reference", ""))
@@ -527,6 +573,58 @@ def get_chapter_detail(
         "sections_page_info": page_info,
         "available_filters": REACTION_FILTERS,
         "source_asset": _source_asset(book_id, manifest),
+    }
+
+
+def get_chapter_outline(book_id: str, chapter_id: int, root: Path | None = None) -> dict:
+    """Build the lightweight outline payload for one chapter."""
+    manifest = _manifest(book_id, root)
+    run_state = _run_state(book_id, root)
+    current_chapter_id = int(run_state.get("current_chapter_id", 0) or 0) or None if run_state else None
+
+    chapter_entry = None
+    for chapter in manifest.get("chapters", []):
+        if int(chapter.get("id", 0)) == chapter_id:
+            chapter_entry = chapter
+            break
+
+    if chapter_entry is None:
+        raise FileNotFoundError(f"{book_id}:{chapter_id}")
+
+    status = _chapter_status_for_analysis(chapter_entry, current_chapter_id, run_state)
+    public_status = "error" if status == "error" else ("completed" if str(chapter_entry.get("status", "")) == "done" else "pending")
+    result_ready = str(chapter_entry.get("status", "")) == "done"
+
+    sections: list[dict] = []
+    chapter_ref = str(chapter_entry.get("reference", ""))
+    chapter_title = str(chapter_entry.get("title", ""))
+    if result_ready:
+        try:
+            chapter_payload = get_chapter_result(book_id, chapter_id, root=root)
+        except FileNotFoundError:
+            result_ready = False
+        else:
+            chapter_info = chapter_payload.get("chapter", {})
+            chapter_ref = str(chapter_info.get("reference", chapter_ref))
+            chapter_title = str(chapter_info.get("title", chapter_title))
+            sections = sorted(
+                [
+                    _chapter_outline_section(section)
+                    for section in chapter_payload.get("sections", [])
+                    if isinstance(section, dict)
+                ],
+                key=lambda item: _natural_sort_key(str(item.get("section_ref", ""))),
+            )
+
+    return {
+        "book_id": to_api_book_id(book_id),
+        "chapter_id": int(chapter_entry.get("id", chapter_id)),
+        "chapter_ref": chapter_ref,
+        "title": chapter_title,
+        "result_ready": result_ready,
+        "status": public_status,
+        "section_count": len(sections) if sections else int(chapter_entry.get("segment_count", 0) or 0),
+        "sections": sections,
     }
 
 

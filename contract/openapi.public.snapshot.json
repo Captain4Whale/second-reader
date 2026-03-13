@@ -342,7 +342,7 @@
             "title": "Display Title"
           },
           "file": {
-            "format": "binary",
+            "contentMediaType": "application/octet-stream",
             "title": "File",
             "type": "string"
           }
@@ -897,6 +897,117 @@
           "result_ready"
         ],
         "title": "ChapterListItem",
+        "type": "object"
+      },
+      "ChapterOutlineResponse": {
+        "additionalProperties": false,
+        "description": "Lightweight chapter outline payload used by the chapter drawer preview.",
+        "properties": {
+          "book_id": {
+            "description": "Stable public integer identifier of the book.",
+            "title": "Book Id",
+            "type": "integer"
+          },
+          "chapter_id": {
+            "description": "Chapter identifier.",
+            "title": "Chapter Id",
+            "type": "integer"
+          },
+          "chapter_ref": {
+            "description": "Human-readable chapter reference.",
+            "title": "Chapter Ref",
+            "type": "string"
+          },
+          "result_ready": {
+            "description": "Whether the chapter result is ready to open.",
+            "title": "Result Ready",
+            "type": "boolean"
+          },
+          "section_count": {
+            "description": "Number of semantic sections in the chapter.",
+            "title": "Section Count",
+            "type": "integer"
+          },
+          "sections": {
+            "description": "Semantic section outline for the chapter.",
+            "items": {
+              "$ref": "#/components/schemas/ChapterOutlineSectionItem"
+            },
+            "title": "Sections",
+            "type": "array"
+          },
+          "status": {
+            "description": "User-facing chapter status.",
+            "enum": [
+              "pending",
+              "completed",
+              "error"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "title": {
+            "description": "Chapter title.",
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "book_id",
+          "chapter_id",
+          "chapter_ref",
+          "title",
+          "result_ready",
+          "status",
+          "section_count",
+          "sections"
+        ],
+        "title": "ChapterOutlineResponse",
+        "type": "object"
+      },
+      "ChapterOutlineSectionItem": {
+        "additionalProperties": false,
+        "description": "Compact section entry used in the chapter drawer outline preview.",
+        "properties": {
+          "locator": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SegmentLocator"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Section-level locator used for section jumps."
+          },
+          "preview_text": {
+            "description": "Short preview text shown under the section title.",
+            "title": "Preview Text",
+            "type": "string"
+          },
+          "section_ref": {
+            "description": "Human-readable section reference.",
+            "title": "Section Ref",
+            "type": "string"
+          },
+          "summary": {
+            "description": "One-line semantic title for the section.",
+            "title": "Summary",
+            "type": "string"
+          },
+          "visible_reaction_count": {
+            "description": "Number of visible reactions attached to this section.",
+            "title": "Visible Reaction Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "section_ref",
+          "summary",
+          "preview_text",
+          "visible_reaction_count"
+        ],
+        "title": "ChapterOutlineSectionItem",
         "type": "object"
       },
       "ChapterTreeItem": {
@@ -2611,6 +2722,105 @@
           }
         },
         "summary": "Book Chapter"
+      }
+    },
+    "/api/books/{book_id}/chapters/{chapter_id}/outline": {
+      "get": {
+        "description": "Return the lightweight semantic outline used by the chapter drawer.",
+        "operationId": "book_chapter_outline_api_books__book_id__chapters__chapter_id__outline_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "book_id",
+            "required": true,
+            "schema": {
+              "title": "Book Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "chapter_id",
+            "required": true,
+            "schema": {
+              "title": "Chapter Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChapterOutlineResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Request Entity Too Large"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "Book Chapter Outline"
       }
     },
     "/api/books/{book_id}/chapters/{chapter_id}/reactions": {

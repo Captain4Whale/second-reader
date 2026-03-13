@@ -104,6 +104,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/books/{book_id}/chapters/{chapter_id}/outline": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Book Chapter Outline
+         * @description Return the lightweight semantic outline used by the chapter drawer.
+         */
+        get: operations["book_chapter_outline_api_books__book_id__chapters__chapter_id__outline_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/books/{book_id}/chapters/{chapter_id}/reactions": {
         parameters: {
             query?: never;
@@ -446,10 +466,7 @@ export interface components {
         Body_upload_epub_api_uploads_epub_post: {
             /** Display Title */
             display_title?: string | null;
-            /**
-             * File
-             * Format: binary
-             */
+            /** File */
             file: string;
         };
         /**
@@ -816,6 +833,81 @@ export interface components {
             /**
              * Visible Reaction Count
              * @description Number of visible reactions in the chapter.
+             */
+            visible_reaction_count: number;
+        };
+        /**
+         * ChapterOutlineResponse
+         * @description Lightweight chapter outline payload used by the chapter drawer preview.
+         */
+        ChapterOutlineResponse: {
+            /**
+             * Book Id
+             * @description Stable public integer identifier of the book.
+             */
+            book_id: number;
+            /**
+             * Chapter Id
+             * @description Chapter identifier.
+             */
+            chapter_id: number;
+            /**
+             * Chapter Ref
+             * @description Human-readable chapter reference.
+             */
+            chapter_ref: string;
+            /**
+             * Result Ready
+             * @description Whether the chapter result is ready to open.
+             */
+            result_ready: boolean;
+            /**
+             * Section Count
+             * @description Number of semantic sections in the chapter.
+             */
+            section_count: number;
+            /**
+             * Sections
+             * @description Semantic section outline for the chapter.
+             */
+            sections: components["schemas"]["ChapterOutlineSectionItem"][];
+            /**
+             * Status
+             * @description User-facing chapter status.
+             * @enum {string}
+             */
+            status: "pending" | "completed" | "error";
+            /**
+             * Title
+             * @description Chapter title.
+             */
+            title: string;
+        };
+        /**
+         * ChapterOutlineSectionItem
+         * @description Compact section entry used in the chapter drawer outline preview.
+         */
+        ChapterOutlineSectionItem: {
+            /** @description Section-level locator used for section jumps. */
+            locator?: components["schemas"]["SegmentLocator"] | null;
+            /**
+             * Preview Text
+             * @description Short preview text shown under the section title.
+             */
+            preview_text: string;
+            /**
+             * Section Ref
+             * @description Human-readable section reference.
+             */
+            section_ref: string;
+            /**
+             * Summary
+             * @description One-line semantic title for the section.
+             */
+            summary: string;
+            /**
+             * Visible Reaction Count
+             * @description Number of visible reactions attached to this section.
              */
             visible_reaction_count: number;
         };
@@ -1812,6 +1904,83 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ChapterDetailResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Request Entity Too Large */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    book_chapter_outline_api_books__book_id__chapters__chapter_id__outline_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                book_id: number;
+                chapter_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChapterOutlineResponse"];
                 };
             };
             /** @description Bad Request */

@@ -16,6 +16,7 @@ import type {
   BookShelfCard,
   BooksPageResponse,
   ChapterDetailResponse,
+  ChapterOutlineResponse,
   DeleteMarkResponse,
   ErrorPayload,
   JobStatusResponse,
@@ -34,6 +35,7 @@ export type {
   BookShelfCard,
   BooksPageResponse,
   ChapterDetailResponse,
+  ChapterOutlineResponse,
   ErrorPayload,
   JobStatusResponse,
   MarkRecord,
@@ -190,8 +192,26 @@ export function fetchBookMarks(bookId: BookId) {
   return request<BookMarksResponse>(`/api/books/${bookId}/marks`);
 }
 
-export function fetchChapterDetail(bookId: BookId, chapterId: ChapterId) {
-  return request<ChapterDetailResponse>(`/api/books/${bookId}/chapters/${chapterId}`);
+export function fetchChapterDetail(
+  bookId: BookId,
+  chapterId: ChapterId,
+  options: { limit?: number; reactionFilter?: string } = {},
+) {
+  const params = new URLSearchParams();
+  if (options.limit != null) {
+    params.set("limit", String(options.limit));
+  }
+  if (options.reactionFilter) {
+    params.set("reaction_filter", options.reactionFilter);
+  }
+  const search = params.toString();
+  return request<ChapterDetailResponse>(
+    `/api/books/${bookId}/chapters/${chapterId}${search ? `?${search}` : ""}`,
+  );
+}
+
+export function fetchChapterOutline(bookId: BookId, chapterId: ChapterId) {
+  return request<ChapterOutlineResponse>(`/api/books/${bookId}/chapters/${chapterId}/outline`);
 }
 
 export function fetchGlobalMarks() {

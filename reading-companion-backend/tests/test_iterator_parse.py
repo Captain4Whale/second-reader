@@ -497,6 +497,149 @@ def test_hydrate_legacy_epub_locators_backfills_structure_and_result(tmp_path):
     assert hydrated_result["featured_reactions"][0]["target_locator"]["match_mode"] == "exact"
 
 
+def test_hydrate_legacy_epub_locators_rematches_drifted_segment_ranges(tmp_path):
+    """Legacy segments with stale paragraph indices should be rematched by text."""
+    output_dir = tmp_path / "output" / "demo-book"
+    output_dir.mkdir(parents=True, exist_ok=True)
+    source_epub = output_dir / "_assets" / "source.epub"
+    source_epub.parent.mkdir(parents=True, exist_ok=True)
+
+    _write_test_epub(
+        source_epub,
+        manifest_items=[
+            '<item id="cover-page" href="cover.xhtml" media-type="application/xhtml+xml"/>',
+            '<item id="chapter-1" href="chapter-1.xhtml" media-type="application/xhtml+xml"/>',
+        ],
+        extra_docs={
+            "OEBPS/cover.xhtml": """
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head><title>Title Page</title></head>
+  <body><p>Title page</p></body>
+</html>
+""",
+            "OEBPS/chapter-1.xhtml": """
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head><title>Chapter 1</title></head>
+  <body>
+    <p>Opening thought.</p>
+    <p>Bridge paragraph.</p>
+    <p>In the context of sexual relationships, this emotion is desire.</p>
+    <p>Closing synthesis for the segment.</p>
+  </body>
+</html>
+""",
+        },
+    )
+
+    structure = {
+        "book": "Demo",
+        "author": "Tester",
+        "book_language": "en",
+        "output_language": "en",
+        "source_file": str(source_epub),
+        "output_dir": str(output_dir),
+        "chapters": [
+            {
+                "id": 2,
+                "title": "Chapter 1",
+                "chapter_number": 1,
+                "status": "done",
+                "level": 1,
+                "segments": [
+                    {
+                        "id": "2.1",
+                        "segment_ref": "1.1",
+                        "summary": "Desire landing",
+                        "tokens": 20,
+                        "text": (
+                            "In the context of sexual relationships, this emotion is desire.\n\n"
+                            "Closing synthesis for the segment."
+                        ),
+                        "paragraph_start": 10,
+                        "paragraph_end": 11,
+                        "status": "done",
+                        "paragraph_locators": [],
+                    }
+                ],
+            }
+        ],
+    }
+    save_structure(structure_file(output_dir), structure)
+    save_json(
+        chapter_result_file(output_dir, structure["chapters"][0]),
+        {
+            "chapter": {
+                "id": 2,
+                "title": "Chapter 1",
+                "chapter_number": 1,
+                "reference": "Chapter 1",
+                "status": "done",
+            },
+            "output_language": "en",
+            "generated_at": "2026-03-11T00:00:00Z",
+            "sections": [
+                {
+                    "segment_id": "2.1",
+                    "segment_ref": "1.1",
+                    "summary": "Desire landing",
+                    "original_text": "",
+                    "verdict": "pass",
+                    "quality_status": "strong",
+                    "reflection_summary": "",
+                    "reflection_reason_codes": [],
+                    "reactions": [
+                        {
+                            "reaction_id": "legacy-r1",
+                            "type": "highlight",
+                            "anchor_quote": "In the context of sexual relationships, this emotion is desire.",
+                            "content": "Anchor this quote.",
+                            "search_query": "",
+                            "search_results": [],
+                            "target_locator": {},
+                        }
+                    ],
+                }
+            ],
+            "chapter_reflection": {},
+            "featured_reactions": [
+                {
+                    "reaction_id": "legacy-r1",
+                    "type": "highlight",
+                    "segment_ref": "1.1",
+                    "anchor_quote": "In the context of sexual relationships, this emotion is desire.",
+                    "content": "Anchor this quote.",
+                    "target_locator": {},
+                }
+            ],
+            "visible_reaction_count": 1,
+            "reaction_type_diversity": 1,
+            "high_signal_reaction_count": 1,
+            "ui_summary": {
+                "kept_section_count": 1,
+                "skipped_section_count": 0,
+                "reaction_counts": {"highlight": 1},
+            },
+        },
+    )
+
+    changes = parse_module.hydrate_legacy_epub_locators(output_dir, structure, source_epub)
+    hydrated_structure = load_structure(structure_file(output_dir))
+    hydrated_result = json.loads(chapter_result_file(output_dir, structure["chapters"][0]).read_text(encoding="utf-8"))
+    segment = hydrated_structure["chapters"][0]["segments"][0]
+    reaction = hydrated_result["sections"][0]["reactions"][0]
+
+    assert changes == ["structure_locators", "result_locators"]
+    assert segment["paragraph_start"] == 3
+    assert segment["paragraph_end"] == 4
+    assert segment["locator"]["href"] == "chapter-1.xhtml"
+    assert len(segment["paragraph_locators"]) == 2
+    assert hydrated_result["sections"][0]["locator"]["paragraph_start"] == 3
+    assert reaction["target_locator"]["href"] == "chapter-1.xhtml"
+    assert reaction["target_locator"]["start_cfi"] == segment["paragraph_locators"][0]["start_cfi"]
+    assert reaction["target_locator"]["match_mode"] == "exact"
+    assert hydrated_result["featured_reactions"][0]["target_locator"]["match_mode"] == "exact"
+
+
 def test_backfill_output_dir_reports_locator_changes(tmp_path):
     """The default legacy backfill script should include EPUB locator hydration."""
     output_dir = tmp_path / "output" / "demo-book"

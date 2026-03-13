@@ -18,6 +18,7 @@ import type {
   ReaderTheme,
 } from "../lib/reader-types";
 import { normalizeReaderCharacter, normalizeReaderText } from "../lib/reader-types";
+import { OverflowTooltipText } from "./ui/overflow-tooltip-text";
 import { Switch } from "./ui/switch";
 
 type EpubContents = {
@@ -338,6 +339,45 @@ function getContentsList(rendition: EpubRendition): EpubContents[] {
     return [];
   }
   return Array.isArray(contents) ? contents : [contents];
+}
+
+function normalizedDocumentHref(contents: EpubContents): string | null {
+  const document = contents.document;
+  if (!document) {
+    return null;
+  }
+
+  const candidates = [
+    document.querySelector("base")?.getAttribute("href") ?? null,
+    document.URL,
+    document.baseURI,
+  ];
+  for (const candidate of candidates) {
+    const normalized = normalizeHref(candidate);
+    if (normalized) {
+      return normalized;
+    }
+  }
+
+  return null;
+}
+
+function prioritizeContentsByHref(contentsList: EpubContents[], href: string | null | undefined): EpubContents[] {
+  const normalizedTarget = normalizeHref(href);
+  if (!normalizedTarget) {
+    return contentsList;
+  }
+
+  const matching = contentsList.filter((contents) => {
+    const documentHref = normalizedDocumentHref(contents);
+    return documentHref ? hrefEquivalent(documentHref, normalizedTarget) : false;
+  });
+
+  if (matching.length === 0) {
+    return contentsList;
+  }
+
+  return [...matching, ...contentsList.filter((contents) => !matching.includes(contents))];
 }
 
 function buildNormalizedIndexMap(value: string): { indices: number[]; normalized: string } {
@@ -791,6 +831,30 @@ export function SourceReaderPane({
               html, body, * {
                 scroll-behavior: auto !important;
               }
+              html, body {
+                scrollbar-width: thin !important;
+                scrollbar-color: rgba(184, 168, 138, 0.64) transparent !important;
+              }
+              html::-webkit-scrollbar, body::-webkit-scrollbar {
+                width: 8px !important;
+                height: 8px !important;
+              }
+              html::-webkit-scrollbar-track, body::-webkit-scrollbar-track {
+                background: transparent !important;
+                margin-block: 10px !important;
+              }
+              html::-webkit-scrollbar-thumb, body::-webkit-scrollbar-thumb {
+                border: 2px solid transparent !important;
+                border-radius: 999px !important;
+                background: linear-gradient(180deg, rgba(224, 212, 190, 0.94), rgba(184, 168, 138, 0.78)) !important;
+                background-clip: padding-box !important;
+                box-shadow: inset 0 0 0 1px rgba(255, 252, 245, 0.45) !important;
+              }
+              html[data-rc-theme="night"]::-webkit-scrollbar-thumb,
+              html[data-rc-theme="night"] body::-webkit-scrollbar-thumb {
+                background: linear-gradient(180deg, rgba(128, 106, 77, 0.78), rgba(78, 62, 44, 0.9)) !important;
+                background-clip: padding-box !important;
+              }
               img, svg, video {
                 max-width: 100% !important;
                 height: auto !important;
@@ -978,18 +1042,19 @@ export function SourceReaderPane({
     }
   }
 
-  async function locateMatchText(
-    targetText: string,
-    reactionType: ReactionType | null | undefined,
-  ): Promise<"exact" | "normalized" | null> {
-    const rendition = renditionRef.current;
-    if (!rendition) {
-      return null;
-    }
-    const contentsList = getContentsList(rendition);
-    if (contentsList.length === 0) {
-      return null;
-    }
+async function locateMatchText(
+  targetText: string,
+  reactionType: ReactionType | null | undefined,
+  preferredHref?: string | null,
+): Promise<"exact" | "normalized" | null> {
+  const rendition = renditionRef.current;
+  if (!rendition) {
+    return null;
+  }
+  const contentsList = prioritizeContentsByHref(getContentsList(rendition), preferredHref);
+  if (contentsList.length === 0) {
+    return null;
+  }
 
     for (const mode of ["exact", "normalized"] as const) {
       for (const contents of contentsList) {
@@ -1029,7 +1094,7 @@ export function SourceReaderPane({
       }
     }
 
-    const contentsList = getContentsList(rendition);
+    const contentsList = prioritizeContentsByHref(getContentsList(rendition), locator.href);
     if (contentsList.length === 0) {
       return false;
     }
@@ -1098,23 +1163,31 @@ export function SourceReaderPane({
       });
     }, JUMP_SPINNER_GUARD_MS);
 
-    const displayTargets = [
-      request.targetLocator?.start_cfi,
-      request.targetLocator?.href,
-      request.sectionLocator?.start_cfi,
-      request.sectionLocator?.href,
-      sectionLocators.find((entry) => entry.startCfi)?.startCfi,
-      sectionLocators.find((entry) => entry.href)?.href,
-    ].map(normalizeJumpTarget).filter((value): value is string => value != null);
-    const uniqueTargets = [...new Set(displayTargets)];
+    const displayTargets = request.targetLocator
+      ? [
+          request.targetLocator.start_cfi,
+          request.targetLocator.href,
+          request.sectionLocator?.start_cfi,
+          request.sectionLocator?.href,
+          sectionLocators.find((entry) => entry.startCfi)?.startCfi,
+          sectionLocators.find((entry) => entry.href)?.href,
+        ]
+      : [
+          request.sectionLocator?.href,
+          request.sectionLocator?.start_cfi,
+          sectionLocators.find((entry) => entry.href)?.href,
+          sectionLocators.find((entry) => entry.startCfi)?.startCfi,
+        ];
+    const uniqueTargets = displayTargets.map(normalizeJumpTarget).filter((value): value is string => value != null);
+    const dedupedTargets = [...new Set(uniqueTargets)];
 
-    if (uniqueTargets.length === 0) {
-      setLastJumpFeedback({
-        approximate: true,
-        message: "Reader opened, but this note has no locator.",
-        resolution: "book-start",
-        sectionRef: request.sectionRef,
-      });
+    if (dedupedTargets.length === 0) {
+        setLastJumpFeedback({
+          approximate: true,
+          message: "This note is missing a precise anchor, so we opened the chapter instead.",
+          resolution: "book-start",
+          sectionRef: request.sectionRef,
+        });
       if (!isStale()) {
         setIsJumping(false);
       }
@@ -1129,7 +1202,7 @@ export function SourceReaderPane({
 
     try {
       let displayed = false;
-      for (const target of uniqueTargets) {
+      for (const target of dedupedTargets) {
         if (isStale()) {
           return;
         }
@@ -1166,7 +1239,7 @@ export function SourceReaderPane({
       if (!displayed) {
         setLastJumpFeedback({
           approximate: true,
-          message: "Locator timed out, stayed near current location.",
+          message: "We couldn’t lock onto the exact passage, so we stayed near the current reading position.",
           resolution: "chapter-start",
           sectionRef: request.sectionRef,
         });
@@ -1177,14 +1250,18 @@ export function SourceReaderPane({
       }
 
       if (request.targetLocator?.match_text) {
-        const mode = await locateMatchText(request.targetLocator.match_text, request.reactionType);
+        const mode = await locateMatchText(
+          request.targetLocator.match_text,
+          request.reactionType,
+          request.targetLocator.href ?? request.sectionLocator?.href,
+        );
         if (isStale()) {
           return;
         }
         if (mode === "exact") {
           setLastJumpFeedback({
             approximate: false,
-            message: "Matched and highlighted exact quote.",
+            message: "Matched and highlighted the quoted line.",
             resolution: "exact",
             sectionRef: request.sectionRef,
           });
@@ -1193,7 +1270,7 @@ export function SourceReaderPane({
         if (mode === "normalized") {
           setLastJumpFeedback({
             approximate: true,
-            message: "Matched normalized quote near the anchor.",
+            message: "Matched a nearby version of the quoted line.",
             resolution: "normalized",
             sectionRef: request.sectionRef,
           });
@@ -1209,7 +1286,7 @@ export function SourceReaderPane({
         if (highlightCfi(request.targetLocator.start_cfi, request.reactionType)) {
           setLastJumpFeedback({
             approximate: true,
-            message: "Jumped to locator anchor.",
+            message: "Opened the anchored source passage.",
             resolution: "nearby",
             sectionRef: request.sectionRef,
           });
@@ -1225,7 +1302,7 @@ export function SourceReaderPane({
         if (locatedByParagraph) {
           setLastJumpFeedback({
             approximate: true,
-            message: "Located nearby section context.",
+            message: "Opened the closest section context and highlighted nearby text.",
             resolution: "nearby",
             sectionRef: request.sectionRef,
           });
@@ -1243,7 +1320,7 @@ export function SourceReaderPane({
       if (request.sectionLocator?.start_cfi && highlightCfi(request.sectionLocator.start_cfi, request.reactionType)) {
         setLastJumpFeedback({
           approximate: true,
-          message: "Located nearby section context.",
+          message: "Opened the closest section context and highlighted nearby text.",
           resolution: "nearby",
           sectionRef: request.sectionRef,
         });
@@ -1252,14 +1329,14 @@ export function SourceReaderPane({
 
       setLastJumpFeedback({
         approximate: true,
-        message: "Jumped to chapter start fallback.",
+        message: "Precise passage unavailable, so we opened the start of this chapter.",
         resolution: "chapter-start",
         sectionRef: request.sectionRef,
       });
     } catch {
       setLastJumpFeedback({
         approximate: true,
-        message: "Jump failed, reader stayed on current location.",
+        message: "We couldn’t reposition the reader, so it stayed near the current location.",
         resolution: "book-start",
         sectionRef: request.sectionRef,
       });
@@ -1305,8 +1382,9 @@ export function SourceReaderPane({
   const currentSectionLabel = currentSection?.summary?.trim() || chapterTitle || chapterRef;
   const currentSectionMeta = effectiveSectionRef || chapterRef;
   const selectionStateLabel = followNotes ? "Following selected note" : "Free reading";
-  const iconButtonClass = "inline-flex h-8 w-8 items-center justify-center rounded-full border border-[var(--warm-300)]/65 text-[var(--warm-700)] transition-colors";
+  const iconButtonClass = "inline-flex h-8 w-8 items-center justify-center rounded-full border border-transparent bg-transparent text-[var(--warm-700)] transition-all duration-200 hover:-translate-y-[1px] hover:bg-[var(--warm-100)] hover:text-[var(--warm-900)]";
   const followStateToneClass = followNotes ? "text-emerald-700" : "text-amber-700";
+  const controlClusterClass = "inline-flex h-10 items-center gap-1 rounded-full border border-[var(--warm-300)]/68 bg-white/88 px-1.5 shadow-[0_1px_0_rgba(255,255,255,0.92),0_10px_24px_rgba(61,46,31,0.05)]";
   const readerShellClass = "bg-[var(--warm-100)]";
   const loadingOverlayClass = "bg-[var(--warm-50)]/86";
   const loadingTextClass = "text-[var(--warm-700)]";
@@ -1314,29 +1392,36 @@ export function SourceReaderPane({
 
   return (
     <div className={`h-full flex flex-col ${readerShellClass}`} data-testid="source-reader-pane">
-      <div className="px-4 py-3 border-b border-[var(--warm-200)] bg-[var(--warm-50)]">
+      <div className="border-b border-[var(--warm-200)] bg-[var(--warm-50)] px-5 py-4 sm:px-6">
         <div className="flex items-end justify-between gap-3">
           <div className="min-w-0">
             <p className="text-[var(--warm-500)] uppercase tracking-[0.16em]" style={{ fontSize: "0.63rem", fontWeight: 600 }}>
               Reading in
             </p>
-            <p
-              className="text-[var(--warm-900)] truncate mt-0.5"
-              style={{ fontSize: "1.2rem", fontWeight: 700, lineHeight: 1.25 }}
+            <OverflowTooltipText
+              as="p"
+              text={currentSectionLabel}
+              lines={1}
+              side="bottom"
+              className="mt-0.5 text-[var(--warm-900)]"
+              style={{ fontSize: "1.2rem", fontWeight: 700, lineHeight: 1.25, maxWidth: "34rem" }}
               data-testid="reader-current-target"
-            >
-              {currentSectionLabel}
-            </p>
+            />
             <div className="mt-2 flex items-center gap-2 min-w-0">
               <span
-                className="inline-flex h-7 items-center rounded-full border border-[var(--warm-300)]/65 bg-white px-3 text-[var(--warm-700)]"
+                className="inline-flex h-8 items-center rounded-full border border-[var(--warm-300)]/68 bg-white/84 px-3.5 text-[var(--warm-700)] shadow-[0_1px_0_rgba(255,255,255,0.9)]"
                 style={{ fontSize: "0.74rem", fontWeight: 600 }}
               >
                 {currentSectionMeta}
               </span>
-              <p className="truncate text-[var(--warm-500)]" style={{ fontSize: "0.78rem", lineHeight: 1.5 }}>
-                {selectionStateLabel}
-              </p>
+              <OverflowTooltipText
+                as="p"
+                text={selectionStateLabel}
+                lines={1}
+                side="bottom"
+                className="min-w-0 text-[var(--warm-500)]"
+                style={{ fontSize: "0.78rem", lineHeight: 1.5, maxWidth: "16rem" }}
+              />
             </div>
           </div>
           <div className="text-right">
@@ -1349,30 +1434,29 @@ export function SourceReaderPane({
           </div>
         </div>
 
-        <div className="mt-3 flex flex-wrap items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setFontSize((current) => Math.max(FONT_SIZE_MIN, current - FONT_SIZE_STEP))}
-            className={iconButtonClass}
-            aria-label="Decrease font size"
-          >
-            <Minus className="w-3.5 h-3.5" />
-          </button>
-          <span className="text-[var(--warm-600)]" style={{ fontSize: "0.72rem", minWidth: "2.2rem", textAlign: "center" }}>
-            {fontSize}%
-          </span>
-          <button
-            type="button"
-            onClick={() => setFontSize((current) => Math.min(FONT_SIZE_MAX, current + FONT_SIZE_STEP))}
-            className={iconButtonClass}
-            aria-label="Increase font size"
-          >
-            <Plus className="w-3.5 h-3.5" />
-          </button>
-
-          <span className="mx-1 h-4 w-px bg-[var(--warm-300)]/60" />
-
-          <div className="inline-flex h-8 items-center gap-2 rounded-full border border-[var(--warm-300)]/65 bg-white px-3">
+        <div className="mt-3 flex flex-wrap items-center gap-2.5">
+          <div className={controlClusterClass}>
+            <button
+              type="button"
+              onClick={() => setFontSize((current) => Math.max(FONT_SIZE_MIN, current - FONT_SIZE_STEP))}
+              className={iconButtonClass}
+              aria-label="Decrease font size"
+            >
+              <Minus className="h-3.5 w-3.5" />
+            </button>
+            <span className="text-[var(--warm-600)]" style={{ fontSize: "0.72rem", minWidth: "2.4rem", textAlign: "center", fontWeight: 600 }}>
+              {fontSize}%
+            </span>
+            <button
+              type="button"
+              onClick={() => setFontSize((current) => Math.min(FONT_SIZE_MAX, current + FONT_SIZE_STEP))}
+              className={iconButtonClass}
+              aria-label="Increase font size"
+            >
+              <Plus className="h-3.5 w-3.5" />
+            </button>
+          </div>
+          <div className="inline-flex h-10 items-center gap-2.5 rounded-full border border-[var(--warm-300)]/68 bg-white/88 px-3.5 shadow-[0_1px_0_rgba(255,255,255,0.92),0_10px_24px_rgba(61,46,31,0.05)]">
             <Switch
               checked={followNotes}
               onCheckedChange={onFollowNotesChange}
@@ -1380,7 +1464,7 @@ export function SourceReaderPane({
               aria-label="Follow notes"
             />
             <span className={followStateToneClass} style={{ fontSize: "0.72rem", fontWeight: 600 }}>
-              Follow notes {followNotes ? "on" : "off"}
+              {followNotes ? "Following notes" : "Free reading"}
             </span>
           </div>
         </div>
@@ -1391,16 +1475,16 @@ export function SourceReaderPane({
           </p>
         ) : null}
 
-        <div className="mt-2 flex items-center gap-3">
+        <div className="mt-2">
           <p
-            className={`flex items-center gap-1 ${
+            className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 ${
               isJumping
-                ? "text-[var(--warm-700)]"
+                ? "border-[var(--warm-300)]/50 bg-white/78 text-[var(--warm-700)]"
                 : lastJumpFeedback?.approximate
-                  ? "text-[var(--warm-700)]"
-                  : "text-[var(--amber-accent)]"
+                  ? "border-[var(--warm-300)]/50 bg-white/78 text-[var(--warm-700)]"
+                  : "border-[var(--amber-accent)]/20 bg-[var(--amber-bg)]/75 text-[var(--amber-accent)]"
             }`}
-            style={{ fontSize: "0.72rem" }}
+            style={{ fontSize: "0.72rem", fontWeight: 500 }}
             data-testid="reader-jump-status"
           >
             {isJumping ? (
@@ -1415,7 +1499,7 @@ export function SourceReaderPane({
         </div>
       </div>
 
-      <div className={`flex-1 relative overflow-hidden ${readerShellClass}`}>
+      <div className={`rc-reader-scroll-area flex-1 relative overflow-hidden ${readerShellClass}`}>
         <div ref={hostRef} className={`absolute inset-0 ${readerShellClass}`} data-testid="source-reader-canvas" />
 
         {isLoading ? (

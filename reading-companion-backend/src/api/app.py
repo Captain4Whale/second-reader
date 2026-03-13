@@ -29,6 +29,7 @@ from src.api.schemas import (
     BookMarksResponse,
     BooksPageResponse,
     ChapterDetailResponse,
+    ChapterOutlineResponse,
     DeleteMarkResponse,
     ErrorResponse,
     JobStatusResponse,
@@ -53,6 +54,7 @@ from src.library.catalog import (
     get_book,
     get_book_detail,
     get_chapter_detail,
+    get_chapter_outline,
     get_chapter_reactions_page,
     get_chapter_result,
     list_books_page,
@@ -248,6 +250,22 @@ def book_chapter(
     return ChapterDetailResponse.model_validate(
         get_chapter_detail(internal_book_id, chapter_id, root=_root(), limit=limit, cursor=cursor, reaction_filter=reaction_filter)
     )
+
+
+@app.get("/api/books/{book_id}/chapters/{chapter_id}/outline", response_model=ChapterOutlineResponse, responses=ERROR_MODELS)
+def book_chapter_outline(book_id: int, chapter_id: int) -> ChapterOutlineResponse:
+    """Return the lightweight semantic outline used by the chapter drawer."""
+    internal_book_id = _resolve_book_id(book_id)
+    _ensure_book_exists(internal_book_id)
+    try:
+        payload = get_chapter_outline(internal_book_id, chapter_id, root=_root())
+    except FileNotFoundError as exc:
+        raise ApiError(
+            status=404,
+            code="CHAPTER_NOT_FOUND",
+            message=f"Chapter '{chapter_id}' was not found in book '{book_id}'.",
+        ) from exc
+    return ChapterOutlineResponse.model_validate(payload)
 
 
 @app.get("/api/books/{book_id}/chapters/{chapter_id}/reactions", response_model=ReactionsPageResponse, responses=ERROR_MODELS)

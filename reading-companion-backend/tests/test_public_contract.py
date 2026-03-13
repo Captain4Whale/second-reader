@@ -240,6 +240,7 @@ def test_openapi_public_snapshot_and_key_contracts(tmp_path):
     paths = current["paths"]
     assert "/api/landing" not in paths
     assert "/api/sample" not in paths
+    assert "/api/books/{book_id}/chapters/{chapter_id}/outline" in paths
 
     schemas = current["components"]["schemas"]
     mark_record = schemas["MarkRecord"]
@@ -252,6 +253,11 @@ def test_openapi_public_snapshot_and_key_contracts(tmp_path):
 
     chapter_detail = schemas["ChapterDetailResponse"]
     assert chapter_detail["properties"]["available_filters"]["items"]["enum"] == REACTION_FILTERS
+
+    chapter_outline = schemas["ChapterOutlineResponse"]
+    assert chapter_outline["properties"]["status"]["enum"] == ["pending", "completed", "error"]
+    outline_section = schemas["ChapterOutlineSectionItem"]
+    assert outline_section["properties"]["visible_reaction_count"]["type"] == "integer"
 
     set_mark_request = schemas["SetMarkRequest"]
     assert set_mark_request["properties"]["mark_type"]["enum"] == list(MARK_TYPES)

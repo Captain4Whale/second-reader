@@ -243,6 +243,63 @@ def test_legacy_known_mark_normalizes_to_resonance(tmp_path):
     assert marks_state["marks"]["r1"]["mark_type"] == "resonance"
 
 
+def test_chapter_outline_endpoint_returns_sections_and_preview_text(tmp_path):
+    """Chapter outline should expose compact semantic sections for the drawer."""
+    api_module.app.state.root = tmp_path
+    client = TestClient(api_module.app)
+    book_id = _bootstrap_book(tmp_path)
+
+    response = client.get(f"/api/books/{to_api_book_id(book_id)}/chapters/1/outline")
+    assert response.status_code == 200
+    payload = response.json()
+
+    assert payload["book_id"] == to_api_book_id(book_id)
+    assert payload["chapter_id"] == 1
+    assert payload["chapter_ref"] == "Chapter 1"
+    assert payload["title"] == "Chapter 1"
+    assert payload["result_ready"] is True
+    assert payload["status"] == "completed"
+    assert payload["section_count"] == 1
+    assert payload["sections"] == [
+        {
+            "section_ref": "1.1",
+            "summary": "Segment 1",
+            "preview_text": "Alpha beta",
+            "visible_reaction_count": 1,
+            "locator": {
+                "href": "chapter-1.xhtml",
+                "start_cfi": "epubcfi(/6/2!/4/2)",
+                "end_cfi": "epubcfi(/6/2!/4/2)",
+                "paragraph_start": 1,
+                "paragraph_end": 1,
+            },
+        }
+    ]
+
+
+def test_chapter_outline_endpoint_returns_pending_stub_for_unready_chapter(tmp_path):
+    """Not-ready chapters should still appear in the drawer without sections."""
+    api_module.app.state.root = tmp_path
+    client = TestClient(api_module.app)
+    book_id = _bootstrap_book(tmp_path, stage="deep_reading")
+    manifest_path = tmp_path / "output" / book_id / "book_manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest["chapters"][0]["status"] = "pending"
+    manifest["chapters"][0]["visible_reaction_count"] = 0
+    manifest["chapters"][0]["high_signal_reaction_count"] = 0
+    manifest_path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
+    (tmp_path / "output" / book_id / "ch01_deep_read.json").unlink()
+
+    response = client.get(f"/api/books/{to_api_book_id(book_id)}/chapters/1/outline")
+    assert response.status_code == 200
+    payload = response.json()
+
+    assert payload["result_ready"] is False
+    assert payload["status"] == "pending"
+    assert payload["section_count"] == 1
+    assert payload["sections"] == []
+
+
 def test_refresh_job_picks_up_book_id_from_generated_artifacts(tmp_path):
     """Job refresh should populate book_id once manifests become available."""
     upload_path = upload_file("job123", tmp_path)

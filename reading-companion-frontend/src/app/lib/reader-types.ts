@@ -3,7 +3,7 @@ import type { ReactionId, ReactionType } from "./contract";
 
 export type ReaderTheme = "paper" | "night";
 export type ReaderPanelMode = "notes" | "book";
-export type ReaderJumpSource = "initial" | "deep-link" | "note-click" | "toolbar";
+export type ReaderJumpSource = "initial" | "deep-link" | "note-click" | "toolbar" | "section-click" | "section-query";
 export type ReaderJumpResolution = "exact" | "normalized" | "nearby" | "chapter-start" | "book-start";
 
 export interface ReaderJumpRequest {
@@ -86,6 +86,22 @@ export function buildReaderJumpRequest(
     sectionRef: selection.section.section_ref,
     targetLocator: selection.reaction.target_locator ?? null,
     sectionLocator: selection.section.locator ?? null,
+  };
+}
+
+export function buildSectionJumpRequest(
+  section: SectionCard,
+  source: ReaderJumpSource,
+  requestId: number,
+): ReaderJumpRequest {
+  return {
+    id: requestId,
+    source,
+    reactionId: null,
+    reactionType: null,
+    sectionRef: section.section_ref,
+    targetLocator: null,
+    sectionLocator: section.locator ?? null,
   };
 }
 

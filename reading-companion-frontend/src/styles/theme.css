@@ -185,3 +185,65 @@
     line-height: 1.5;
   }
 }
+
+@layer utilities {
+  .rc-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(184, 168, 138, 0.64) transparent;
+  }
+
+  .rc-scrollbar::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  .rc-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+    margin-block: 10px;
+  }
+
+  .rc-scrollbar::-webkit-scrollbar-thumb {
+    border: 2px solid transparent;
+    border-radius: 999px;
+    background: linear-gradient(180deg, rgba(224, 212, 190, 0.94), rgba(184, 168, 138, 0.78));
+    background-clip: padding-box;
+    box-shadow: inset 0 0 0 1px rgba(255, 252, 245, 0.45);
+  }
+
+  .rc-scrollbar:hover::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, rgba(212, 200, 176, 0.98), rgba(122, 107, 90, 0.8));
+    background-clip: padding-box;
+  }
+
+  .rc-scrollbar::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+
+  .rc-reader-scroll-area .epub-container {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(184, 168, 138, 0.64) transparent;
+  }
+
+  .rc-reader-scroll-area .epub-container::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  .rc-reader-scroll-area .epub-container::-webkit-scrollbar-track {
+    background: transparent;
+    margin-block: 10px;
+  }
+
+  .rc-reader-scroll-area .epub-container::-webkit-scrollbar-thumb {
+    border: 2px solid transparent;
+    border-radius: 999px;
+    background: linear-gradient(180deg, rgba(224, 212, 190, 0.94), rgba(184, 168, 138, 0.78));
+    background-clip: padding-box;
+    box-shadow: inset 0 0 0 1px rgba(255, 252, 245, 0.45);
+  }
+
+  .rc-reader-scroll-area .epub-container:hover::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, rgba(212, 200, 176, 0.98), rgba(122, 107, 90, 0.8));
+    background-clip: padding-box;
+  }
+}

@@ -6,6 +6,7 @@ import re
 import posixpath
 import zipfile
 from datetime import datetime, timezone
+from difflib import SequenceMatcher
 from pathlib import Path
 from xml.etree import ElementTree as ET
 import ebooklib
@@ -1037,6 +1038,80 @@ def _legacy_locator_payload(locator: object) -> dict[str, object] | None:
     }
 
 
+def _normalized_locator_text(text: str) -> str:
+    """Normalize text for legacy locator backfill matching."""
+    normalized = (text or "").replace("’", "'").replace("“", '"').replace("”", '"')
+    normalized = re.sub(r"\s+", " ", normalized)
+    return normalized.strip().lower()
+
+
+def _records_text(records: list[dict[str, object]]) -> str:
+    """Render one contiguous paragraph-record window back into plain text."""
+    return "\n\n".join(str(record.get("text", "") or "") for record in records if str(record.get("text", "") or "").strip())
+
+
+def _records_match_score(target_text: str, records: list[dict[str, object]]) -> float:
+    """Score how well one record window matches legacy segment text."""
+    target = _normalized_locator_text(target_text)
+    candidate = _normalized_locator_text(_records_text(records))
+    if not target or not candidate:
+        return 0.0
+    if target == candidate:
+        return 2.0
+
+    score = SequenceMatcher(None, target, candidate).ratio()
+    if target in candidate or candidate in target:
+        score += 0.3
+    return score
+
+
+def _resolve_segment_records(
+    segment: dict[str, object],
+    paragraph_records: list[dict[str, object]],
+    *,
+    search_start: int = 0,
+) -> tuple[list[dict[str, object]], float]:
+    """Resolve the best paragraph-record window for one legacy segment."""
+    start = int(segment.get("paragraph_start", 0) or 0)
+    end = int(segment.get("paragraph_end", 0) or 0)
+    target_text = str(segment.get("text", "") or "")
+    target_length = len(_normalized_locator_text(target_text))
+
+    if start >= 1 and end >= start:
+        legacy_records = paragraph_records[start - 1 : end]
+        legacy_score = _records_match_score(target_text, legacy_records)
+        if legacy_records and (legacy_score >= 0.9 or (target_length >= 240 and legacy_score >= 0.8)):
+            return legacy_records, legacy_score
+
+    if not target_text.strip() or not paragraph_records:
+        return [], 0.0
+
+    safe_start = max(0, min(search_start, len(paragraph_records) - 1))
+    best_records: list[dict[str, object]] = []
+    best_score = 0.0
+    max_window = min(32, len(paragraph_records))
+
+    for start_index in range(safe_start, len(paragraph_records)):
+        running: list[dict[str, object]] = []
+        degraded = 0
+        for end_index in range(start_index, min(len(paragraph_records), start_index + max_window)):
+            running.append(paragraph_records[end_index])
+            score = _records_match_score(target_text, running)
+            if score > best_score:
+                best_score = score
+                best_records = list(running)
+                if score >= 1.99:
+                    return best_records, best_score
+
+            candidate_length = len(_normalized_locator_text(_records_text(running)))
+            if candidate_length > target_length * 1.4 and score < best_score - 0.12:
+                degraded += 1
+                if degraded >= 2:
+                    break
+
+    return best_records, best_score
+
+
 def _iter_kept_source_chapters(book_path: Path) -> list[tuple[int, dict[str, object]]]:
     """Parse one source EPUB and return the chapters that would enter deep reading."""
     chapters: list[tuple[int, dict[str, object]]] = []
@@ -1105,13 +1180,28 @@ def hydrate_legacy_epub_locators(output_dir: Path, structure: BookStructure, boo
             structure_changed = True
 
         paragraph_records = _paragraph_records(source)
+        chapter_wide_paragraph_payload = _legacy_locator_paragraphs(paragraph_records)
+        search_start = 0
         for segment in chapter.get("segments", []):
-            start = int(segment.get("paragraph_start", 0) or 0)
-            end = int(segment.get("paragraph_end", 0) or 0)
-            segment_records = paragraph_records[start - 1 : end] if start >= 1 and end >= start else []
+            segment_records, _match_score = _resolve_segment_records(
+                segment,
+                paragraph_records,
+                search_start=search_start,
+            )
             locator = _segment_locator_from_records(segment_records)
             locator_payload = _legacy_locator_payload(locator)
             paragraph_payload = _legacy_locator_paragraphs(segment_records)
+
+            if segment_records:
+                new_start = int(segment_records[0].get("paragraph_index", 0) or 0)
+                new_end = int(segment_records[-1].get("paragraph_index", 0) or 0)
+                if segment.get("paragraph_start") != new_start:
+                    segment["paragraph_start"] = new_start
+                    structure_changed = True
+                if segment.get("paragraph_end") != new_end:
+                    segment["paragraph_end"] = new_end
+                    structure_changed = True
+                search_start = max(0, new_end - 2)
 
             if locator_payload:
                 if segment.get("locator") != locator_payload:
@@ -1172,10 +1262,11 @@ def hydrate_legacy_epub_locators(output_dir: Path, structure: BookStructure, boo
             for reaction in section.get("reactions", []):
                 if not isinstance(reaction, dict):
                     continue
+                reaction_paragraph_locators = paragraph_locators or chapter_wide_paragraph_payload
                 target_locator = _reaction_target_locator(
                     str(reaction.get("anchor_quote", "")),
                     section_locator,
-                    paragraph_locators,
+                    reaction_paragraph_locators,
                 )
                 reaction_id = str(reaction.get("reaction_id", ""))
                 if target_locator:
