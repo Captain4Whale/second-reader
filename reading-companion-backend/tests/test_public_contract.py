@@ -172,15 +172,27 @@ def _bootstrap_contract_book(
                                     "match_text": "Legacy retrospect quote" if reaction_type == "retrospect" else "Legacy connect-back quote",
                                     "match_mode": "exact",
                                 },
-                            }
-                        ],
-                    }
-                ],
-                "chapter_reflection": {"chapter_insights": ["Arc"]},
-                "featured_reactions": [
-                    {
-                        "reaction_id": "r1",
-                        "type": reaction_type,
+                        }
+                    ],
+                }
+            ],
+            "chapter_heading": {
+                "label": "Chapter 1",
+                "title": "Contract framing",
+                "text": "Chapter 1\nContract framing",
+                "locator": {
+                    "href": "chapter-1.xhtml",
+                    "start_cfi": "epubcfi(/6/2!/4/2)",
+                    "end_cfi": "epubcfi(/6/2!/4/2)",
+                    "paragraph_start": 1,
+                    "paragraph_end": 1,
+                },
+            },
+            "chapter_reflection": {"chapter_insights": ["Arc"]},
+            "featured_reactions": [
+                {
+                    "reaction_id": "r1",
+                    "type": reaction_type,
                         "segment_ref": "1.1",
                         "anchor_quote": "Legacy retrospect quote" if reaction_type == "retrospect" else "Legacy connect-back quote",
                         "content": "This uses the current public name." if reaction_type == "retrospect" else "This still uses the internal legacy name.",
@@ -253,9 +265,11 @@ def test_openapi_public_snapshot_and_key_contracts(tmp_path):
 
     chapter_detail = schemas["ChapterDetailResponse"]
     assert chapter_detail["properties"]["available_filters"]["items"]["enum"] == REACTION_FILTERS
+    assert chapter_detail["properties"]["chapter_heading"]["anyOf"][0]["$ref"] == "#/components/schemas/ChapterHeadingBlock"
 
     chapter_outline = schemas["ChapterOutlineResponse"]
     assert chapter_outline["properties"]["status"]["enum"] == ["pending", "completed", "error"]
+    assert chapter_outline["properties"]["chapter_heading"]["anyOf"][0]["$ref"] == "#/components/schemas/ChapterHeadingBlock"
     outline_section = schemas["ChapterOutlineSectionItem"]
     assert outline_section["properties"]["visible_reaction_count"]["type"] == "integer"
 

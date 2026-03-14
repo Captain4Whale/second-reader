@@ -30,6 +30,7 @@ RunStage = Literal["ready", "deep_reading", "completed", "error"]
 MatchMode = Literal["exact", "normalized", "segment_fallback"]
 MarkType = Literal["resonance", "blindspot", "bookmark"]
 JobStatus = Literal["queued", "parsing_structure", "deep_reading", "chapter_note_generation", "completed", "error"]
+TextRole = Literal["chapter_heading", "section_heading", "body", "auxiliary"]
 
 
 class SourceAsset(TypedDict):
@@ -47,6 +48,9 @@ class ParagraphLocator(TypedDict, total=False):
     end_cfi: str | None
     paragraph_index: int
     text: str
+    block_tag: str
+    heading_level: int | None
+    text_role: TextRole
 
 
 class SegmentLocator(TypedDict, total=False):
@@ -57,6 +61,16 @@ class SegmentLocator(TypedDict, total=False):
     end_cfi: str | None
     paragraph_start: int
     paragraph_end: int
+
+
+class ChapterHeadingBlock(TypedDict, total=False):
+    """Structured chapter-heading metadata retained outside body sections."""
+
+    label: str
+    title: str
+    subtitle: str
+    text: str
+    locator: SegmentLocator
 
 
 class ReactionTargetLocator(TypedDict, total=False):
@@ -103,6 +117,7 @@ class StructureChapter(StructureChapterBase, total=False):
     """Persisted chapter definition in structure.json."""
 
     chapter_number: int
+    chapter_heading: ChapterHeadingBlock
     output_file: str
     item_id: str
     href: str
@@ -333,6 +348,7 @@ class ChapterResult(TypedDict):
     """Stable per-chapter companion JSON payload."""
 
     chapter: ChapterResultChapter
+    chapter_heading: ChapterHeadingBlock
     output_language: str
     generated_at: str
     sections: list[ChapterResultSection]

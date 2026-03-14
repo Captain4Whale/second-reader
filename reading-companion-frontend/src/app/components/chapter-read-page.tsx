@@ -12,7 +12,7 @@ import {
   putReactionMark,
   toApiAssetUrl,
 } from "../lib/api";
-import type { ChapterListItem, ChapterOutlineSectionItem, SectionCard } from "../lib/api-types";
+import type { ChapterHeadingBlock, ChapterListItem, ChapterOutlineSectionItem, SectionCard } from "../lib/api-types";
 import {
   type MarkType,
   type ReactionFilter,
@@ -181,6 +181,19 @@ function outlinePreviewTextFromSection(section: SectionCard): string {
   return "";
 }
 
+function chapterHeadingSupportingText(heading: ChapterHeadingBlock | null | undefined): string | null {
+  if (!heading) {
+    return null;
+  }
+  const subtitle = heading.subtitle?.trim();
+  if (subtitle) {
+    return subtitle;
+  }
+  const title = heading.title.trim();
+  const text = heading.text.trim();
+  return text && text !== title ? text : null;
+}
+
 function searchResultDomainLabel(url: string): string {
   try {
     return new URL(url).hostname.replace(/^www\./, "");
@@ -198,6 +211,7 @@ function buildOutlineFromChapterPayload(
     chapter_id: payload.chapter_id,
     chapter_ref: chapterEntry?.chapter_ref || payload.chapter_ref,
     title: chapterEntry?.title || payload.title,
+    chapter_heading: payload.chapter_heading ?? null,
     result_ready: true,
     status: "completed",
     section_count: payload.sections.length,
@@ -1043,6 +1057,63 @@ export function ChapterReadPage() {
 
   const sourceUrl = toApiAssetUrl(payload.source_asset.url);
   const readerBookTitle = (bookDetail?.title || "").trim() || payload.title || "Original book";
+  const previewChapterHeading = previewOutline?.chapter_heading ?? null;
+  const previewHasOutlineContent = Boolean(previewChapterHeading) || previewSectionItems.length > 0;
+
+  function renderOutlineHeadingBlock(heading: ChapterHeadingBlock | null, mode: "desktop" | "mobile") {
+    if (!heading) {
+      return null;
+    }
+
+    const showLabel = heading.label?.trim() && heading.label.trim() !== heading.title.trim();
+    const supportingText = chapterHeadingSupportingText(heading);
+    return (
+      <div
+        className={`rounded-2xl border border-[var(--warm-300)]/36 bg-[linear-gradient(180deg,rgba(255,252,245,0.96),rgba(249,244,235,0.92))] shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_14px_28px_rgba(61,46,31,0.035)] ${
+          mode === "desktop" ? "px-4 py-3.5" : "px-4 py-3"
+        }`}
+        data-testid="chapter-outline-heading-block"
+      >
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p
+              className="text-[var(--warm-500)] uppercase tracking-[0.14em]"
+              style={{ fontSize: "0.64rem", fontWeight: 700 }}
+            >
+              Chapter heading
+            </p>
+            {showLabel ? (
+              <p
+                className="mt-1 text-[var(--amber-accent)]"
+                style={{ fontSize: "0.69rem", fontWeight: 700, lineHeight: 1.35 }}
+              >
+                {heading.label}
+              </p>
+            ) : null}
+            <OverflowTooltipText
+              as="p"
+              text={heading.title}
+              lines={mode === "desktop" ? 2 : 3}
+              side="right"
+              className="mt-1 text-[var(--warm-950)] font-['Lora',Georgia,serif]"
+              style={{ fontSize: mode === "desktop" ? "0.96rem" : "0.9rem", fontWeight: 700, lineHeight: 1.35 }}
+            />
+            {supportingText ? (
+              <p className="mt-1.5 text-[var(--warm-600)]" style={{ fontSize: "0.76rem", lineHeight: 1.62 }}>
+                {supportingText}
+              </p>
+            ) : null}
+          </div>
+          <span
+            className="shrink-0 rounded-full border border-[var(--warm-300)]/58 bg-white/84 px-2.5 py-1 text-[var(--warm-500)] shadow-[inset_0_1px_0_rgba(255,255,255,0.88)]"
+            style={{ fontSize: "0.64rem", fontWeight: 700 }}
+          >
+            Structure
+          </span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div ref={workspaceRef} className="h-[calc(100vh-72px)] flex flex-col bg-[var(--warm-100)]">
@@ -1208,8 +1279,9 @@ export function ChapterReadPage() {
                       This chapter is not ready yet.
                     </p>
                   </div>
-                ) : (
+                ) : previewHasOutlineContent ? (
                   <div className="space-y-2">
+                    {renderOutlineHeadingBlock(previewChapterHeading, "mobile")}
                     {(previewOutline?.sections ?? []).map((section) => {
                       const isCurrentSection =
                         previewChapterId === payload.chapter_id && currentReadingSectionRef === section.section_ref;
@@ -1252,6 +1324,12 @@ export function ChapterReadPage() {
                         </button>
                       );
                     })}
+                  </div>
+                ) : (
+                  <div className="rounded-2xl border border-[var(--warm-300)]/35 bg-[var(--warm-50)]/78 px-4 py-5">
+                    <p className="text-[var(--warm-900)]" style={{ fontSize: "0.88rem", fontWeight: 600 }}>
+                      No semantic sections available.
+                    </p>
                   </div>
                 )
               ) : null}
@@ -1302,7 +1380,7 @@ export function ChapterReadPage() {
                         Finish analysis in the book overview before using section-level navigation here.
                       </p>
                     </div>
-                  ) : previewSectionItems.length === 0 ? (
+                  ) : !previewHasOutlineContent ? (
                     <div className="rounded-2xl border border-[var(--warm-300)]/35 bg-[var(--warm-50)]/78 px-4 py-5">
                       <p className="text-[var(--warm-900)]" style={{ fontSize: "0.88rem", fontWeight: 600 }}>
                         No semantic sections available.
@@ -1310,6 +1388,7 @@ export function ChapterReadPage() {
                     </div>
                   ) : (
                     <div className="space-y-2">
+                      {renderOutlineHeadingBlock(previewChapterHeading, "desktop")}
                       {previewSectionItems.map((section) => {
                         const isCurrentSection =
                           previewChapterId === payload.chapter_id && currentReadingSectionRef === section.section_ref;

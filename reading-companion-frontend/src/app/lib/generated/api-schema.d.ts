@@ -466,7 +466,10 @@ export interface components {
         Body_upload_epub_api_uploads_epub_post: {
             /** Display Title */
             display_title?: string | null;
-            /** File */
+            /**
+             * File
+             * Format: binary
+             */
             file: string;
         };
         /**
@@ -723,6 +726,8 @@ export interface components {
              * @description Stable public integer identifier of the book.
              */
             book_id: number;
+            /** @description Optional structured chapter-heading block kept separate from body semantic sections. */
+            chapter_heading?: components["schemas"]["ChapterHeadingBlock"] | null;
             /**
              * Chapter Id
              * @description Chapter identifier.
@@ -783,6 +788,34 @@ export interface components {
              * @description Number of visible reactions in the chapter.
              */
             visible_reaction_count: number;
+        };
+        /**
+         * ChapterHeadingBlock
+         * @description Structured chapter-heading metadata kept outside body sections.
+         */
+        ChapterHeadingBlock: {
+            /**
+             * Label
+             * @description Optional chapter label, such as Chapter 1.
+             */
+            label?: string | null;
+            /** @description EPUB locator for the chapter heading block when the source exposes one. */
+            locator?: components["schemas"]["SegmentLocator"] | null;
+            /**
+             * Subtitle
+             * @description Optional subtitle or secondary heading line.
+             */
+            subtitle?: string | null;
+            /**
+             * Text
+             * @description Combined heading text shown to the user when needed.
+             */
+            text: string;
+            /**
+             * Title
+             * @description Primary visible heading text for the chapter.
+             */
+            title: string;
         };
         /**
          * ChapterListItem
@@ -846,6 +879,8 @@ export interface components {
              * @description Stable public integer identifier of the book.
              */
             book_id: number;
+            /** @description Optional structured chapter-heading block shown as a non-numbered outline item. */
+            chapter_heading?: components["schemas"]["ChapterHeadingBlock"] | null;
             /**
              * Chapter Id
              * @description Chapter identifier.

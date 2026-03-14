@@ -161,6 +161,18 @@ def _bootstrap_book(root: Path, *, stage: str = "completed") -> str:
                     ],
                 }
             ],
+            "chapter_heading": {
+                "label": "Chapter 1",
+                "title": "Opening frame",
+                "text": "Chapter 1\nOpening frame",
+                "locator": {
+                    "href": "chapter-1.xhtml",
+                    "start_cfi": "epubcfi(/6/2!/4/2)",
+                    "end_cfi": "epubcfi(/6/2!/4/2)",
+                    "paragraph_start": 1,
+                    "paragraph_end": 1,
+                },
+            },
             "chapter_reflection": {"chapter_insights": ["Arc"]},
             "featured_reactions": [
                 {
@@ -259,6 +271,19 @@ def test_chapter_outline_endpoint_returns_sections_and_preview_text(tmp_path):
     assert payload["title"] == "Chapter 1"
     assert payload["result_ready"] is True
     assert payload["status"] == "completed"
+    assert payload["chapter_heading"] == {
+        "label": "Chapter 1",
+        "title": "Opening frame",
+        "subtitle": None,
+        "text": "Chapter 1\nOpening frame",
+        "locator": {
+            "href": "chapter-1.xhtml",
+            "start_cfi": "epubcfi(/6/2!/4/2)",
+            "end_cfi": "epubcfi(/6/2!/4/2)",
+            "paragraph_start": 1,
+            "paragraph_end": 1,
+        },
+    }
     assert payload["section_count"] == 1
     assert payload["sections"] == [
         {
@@ -296,6 +321,7 @@ def test_chapter_outline_endpoint_returns_pending_stub_for_unready_chapter(tmp_p
 
     assert payload["result_ready"] is False
     assert payload["status"] == "pending"
+    assert payload["chapter_heading"] is None
     assert payload["section_count"] == 1
     assert payload["sections"] == []
 
@@ -398,6 +424,7 @@ def test_api_reads_books_chapters_marks_and_docs(tmp_path):
     assert chapter_response.status_code == 200
     assert chapter_response.json()["book_id"] == public_book_id
     assert chapter_response.json()["featured_reactions"][0]["reaction_id"] == public_reaction_id
+    assert chapter_response.json()["chapter_heading"]["title"] == "Opening frame"
 
     reactions_response = client.get(f"/api/books/{public_book_id}/chapters/1/reactions")
     assert reactions_response.status_code == 200

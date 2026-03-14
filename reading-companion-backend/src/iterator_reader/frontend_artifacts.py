@@ -460,6 +460,7 @@ def build_chapter_result(
 
     return {
         "chapter": chapter_payload,
+        "chapter_heading": dict(chapter.get("chapter_heading", {})) if isinstance(chapter.get("chapter_heading"), dict) else None,
         "output_language": output_language,
         "generated_at": _timestamp(),
         "sections": sections,

@@ -91,6 +91,19 @@ class SegmentLocator(ApiModel):
     )
 
 
+class ChapterHeadingBlock(ApiModel):
+    """Structured chapter-heading metadata kept outside body sections."""
+
+    label: Optional[str] = Field(default=None, description="Optional chapter label, such as Chapter 1.")
+    title: str = Field(description="Primary visible heading text for the chapter.")
+    subtitle: Optional[str] = Field(default=None, description="Optional subtitle or secondary heading line.")
+    text: str = Field(description="Combined heading text shown to the user when needed.")
+    locator: Optional[SegmentLocator] = Field(
+        default=None,
+        description="EPUB locator for the chapter heading block when the source exposes one.",
+    )
+
+
 class ReactionTargetLocator(ApiModel):
     """Reaction-level locator used for precise jump/highlight behavior."""
 
@@ -341,6 +354,10 @@ class ChapterDetailResponse(ApiModel):
     reaction_type_diversity: int = Field(description="Number of distinct reaction types in the chapter.")
     high_signal_reaction_count: int = Field(description="Number of high-signal reactions in the chapter.")
     featured_reactions: list[FeaturedReactionPreview] = Field(description="Featured reactions used for summary and teaser areas.")
+    chapter_heading: Optional[ChapterHeadingBlock] = Field(
+        default=None,
+        description="Optional structured chapter-heading block kept separate from body semantic sections.",
+    )
     chapter_reflection: list[str] = Field(
         description="Deprecated compatibility field. Internal chapter reflection is no longer exposed, so this list is always empty."
     )
@@ -369,6 +386,10 @@ class ChapterOutlineResponse(ApiModel):
     title: str = Field(description="Chapter title.")
     result_ready: bool = Field(description="Whether the chapter result is ready to open.")
     status: Literal["pending", "completed", "error"] = Field(description="User-facing chapter status.")
+    chapter_heading: Optional[ChapterHeadingBlock] = Field(
+        default=None,
+        description="Optional structured chapter-heading block shown as a non-numbered outline item.",
+    )
     section_count: int = Field(description="Number of semantic sections in the chapter.")
     sections: list[ChapterOutlineSectionItem] = Field(description="Semantic section outline for the chapter.")
 

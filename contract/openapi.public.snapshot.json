@@ -342,7 +342,7 @@
             "title": "Display Title"
           },
           "file": {
-            "contentMediaType": "application/octet-stream",
+            "format": "binary",
             "title": "File",
             "type": "string"
           }
@@ -733,6 +733,17 @@
             "title": "Book Id",
             "type": "integer"
           },
+          "chapter_heading": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ChapterHeadingBlock"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Optional structured chapter-heading block kept separate from body semantic sections."
+          },
           "chapter_id": {
             "description": "Chapter identifier.",
             "title": "Chapter Id",
@@ -830,6 +841,63 @@
         "title": "ChapterDetailResponse",
         "type": "object"
       },
+      "ChapterHeadingBlock": {
+        "additionalProperties": false,
+        "description": "Structured chapter-heading metadata kept outside body sections.",
+        "properties": {
+          "label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Optional chapter label, such as Chapter 1.",
+            "title": "Label"
+          },
+          "locator": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SegmentLocator"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "EPUB locator for the chapter heading block when the source exposes one."
+          },
+          "subtitle": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Optional subtitle or secondary heading line.",
+            "title": "Subtitle"
+          },
+          "text": {
+            "description": "Combined heading text shown to the user when needed.",
+            "title": "Text",
+            "type": "string"
+          },
+          "title": {
+            "description": "Primary visible heading text for the chapter.",
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title",
+          "text"
+        ],
+        "title": "ChapterHeadingBlock",
+        "type": "object"
+      },
       "ChapterListItem": {
         "additionalProperties": false,
         "description": "Chapter overview item used on the book result page.",
@@ -907,6 +975,17 @@
             "description": "Stable public integer identifier of the book.",
             "title": "Book Id",
             "type": "integer"
+          },
+          "chapter_heading": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ChapterHeadingBlock"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Optional structured chapter-heading block shown as a non-numbered outline item."
           },
           "chapter_id": {
             "description": "Chapter identifier.",

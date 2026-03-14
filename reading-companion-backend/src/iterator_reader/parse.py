@@ -28,7 +28,7 @@ from .frontend_artifacts import (
     write_book_manifest,
     write_run_state,
 )
-from .models import BookStructure, SemanticSegment, StructureChapter
+from .models import BookStructure, ChapterHeadingBlock, SemanticSegment, StructureChapter
 from .storage import (
     chapter_markdown_file,
     chapter_output_name,
@@ -103,6 +103,24 @@ BLOCK_TAGS = {
     "h6",
 }
 
+HEADING_TAGS = {"h1", "h2", "h3", "h4", "h5", "h6"}
+CHAPTER_LABEL_PATTERNS = (
+    r"^chapter\s+[0-9ivxlcdm]+\b",
+    r"^part\s+[0-9ivxlcdm]+\b",
+    r"^book\s+[0-9ivxlcdm]+\b",
+    r"^第\s*[0-9一二三四五六七八九十百千万]+\s*[章节卷部篇]\b",
+    r"^[ivxlcdm]+\b$",
+)
+AUXILIARY_KEYWORDS = (
+    "oceanofpdf",
+    "national gallery",
+    "oil on canvas",
+    "illustration",
+    "frontispiece",
+    "cover art",
+    "source:",
+)
+
 
 def extract_plain_text(content: str) -> str:
     """Normalize HTML-ish chapter content to plain text."""
@@ -151,6 +169,110 @@ def _local_tag(tag: str) -> str:
     return tag
 
 
+def _heading_level_for_tag(tag: str) -> int | None:
+    """Return the numeric heading level for one block tag."""
+    if tag in HEADING_TAGS:
+        return int(tag[1])
+    return None
+
+
+def _direct_text_content(element: ET.Element) -> str:
+    """Return text owned directly by one element, excluding descendant blocks."""
+    parts: list[str] = []
+    if element.text:
+        parts.append(element.text)
+    for child in list(element):
+        tail = getattr(child, "tail", None)
+        if tail:
+            parts.append(tail)
+    return _normalize_block_text(" ".join(parts))
+
+
+def _has_textual_block_children(element: ET.Element) -> bool:
+    """Return whether one element wraps child block elements with text."""
+    for child in list(element):
+        if not isinstance(child.tag, str):
+            continue
+        if _local_tag(str(child.tag)) not in BLOCK_TAGS:
+            continue
+        if _normalize_block_text("".join(child.itertext())):
+            return True
+    return False
+
+
+def _looks_like_sentence(text: str) -> bool:
+    """Heuristic: return whether one text block behaves like running prose."""
+    normalized = _normalize_block_text(text)
+    if not normalized:
+        return False
+    if re.search(r"[.!?。！？][\"'”’]?\s*$", normalized):
+        return True
+    if len(normalized.split()) >= 18 and "," in normalized:
+        return True
+    return False
+
+
+def _upper_ratio(text: str) -> float:
+    """Return the uppercase ratio for alphabetic characters in one string."""
+    letters = [char for char in text if char.isalpha()]
+    if not letters:
+        return 0.0
+    return sum(1 for char in letters if char.isupper()) / len(letters)
+
+
+def _looks_like_chapter_label(text: str) -> bool:
+    """Return whether one text block looks like a chapter/part label."""
+    normalized = _normalize_block_text(text)
+    lowered = normalized.lower()
+    return any(re.match(pattern, lowered, flags=re.IGNORECASE) for pattern in CHAPTER_LABEL_PATTERNS)
+
+
+def _looks_like_auxiliary_text(text: str, *, at_chapter_start: bool) -> bool:
+    """Return whether one block is likely metadata/citation noise, not body text."""
+    normalized = _normalize_block_text(text)
+    lowered = normalized.lower()
+    if not normalized:
+        return False
+    if re.search(r"https?://|www\.|[a-z0-9.-]+\.(com|org|net|edu|gov|pdf)\b", lowered):
+        return True
+    if at_chapter_start and any(keyword in lowered for keyword in AUXILIARY_KEYWORDS):
+        return True
+    if at_chapter_start and "[" in normalized and "]" in normalized and re.search(r"\b\d{3,4}(?:/\d{2,4})?\b", normalized):
+        return True
+    return False
+
+
+def _looks_like_heading_text(text: str, *, block_tag: str, at_chapter_start: bool) -> bool:
+    """Return whether one block behaves like heading text."""
+    normalized = _normalize_block_text(text)
+    if not normalized:
+        return False
+    if block_tag in HEADING_TAGS:
+        return True
+    if _looks_like_chapter_label(normalized):
+        return True
+    if len(normalized) > 140:
+        return False
+    if _looks_like_sentence(normalized):
+        return False
+    words = normalized.split()
+    if len(words) > (18 if at_chapter_start else 14):
+        return False
+    if _upper_ratio(normalized) >= 0.45:
+        return True
+    alpha_words = [word for word in words if re.search(r"[A-Za-z]", word)]
+    if alpha_words and all(word[:1].isupper() or word.isupper() for word in alpha_words):
+        return True
+    if (
+        not at_chapter_start
+        and normalized[:1].isupper()
+        and len(words) <= 6
+        and not re.search(r"[,;:，；：]", normalized)
+    ):
+        return True
+    return at_chapter_start and len(words) <= 6
+
+
 def _cfi_for_element(spine_index: int, item_id: str, path_steps: list[int]) -> str | None:
     """Build a lightweight EPUB CFI for one XHTML element path."""
     if spine_index < 0:
@@ -179,7 +301,14 @@ def _extract_epub_paragraph_records(
     def walk(element: ET.Element, path_steps: list[int]) -> None:
         tag = _local_tag(str(element.tag))
         text = _normalize_block_text("".join(element.itertext()))
-        if tag in BLOCK_TAGS and text:
+        own_text = _direct_text_content(element)
+        duplicate_container = (
+            tag == "div"
+            and text
+            and _has_textual_block_children(element)
+            and not own_text
+        )
+        if tag in BLOCK_TAGS and text and not duplicate_container:
             cfi = _cfi_for_element(spine_index, item_id, path_steps)
             records.append(
                 {
@@ -188,6 +317,8 @@ def _extract_epub_paragraph_records(
                     "start_cfi": cfi,
                     "end_cfi": cfi,
                     "paragraph_index": len(records) + 1,
+                    "block_tag": tag,
+                    "heading_level": _heading_level_for_tag(tag),
                 }
             )
 
@@ -223,9 +354,121 @@ def _paragraph_records(chapter: dict[str, object]) -> list[dict[str, object]]:
             "start_cfi": None,
             "end_cfi": None,
             "paragraph_index": index,
+            "block_tag": "p",
+            "heading_level": None,
         }
         for index, paragraph in enumerate(split_into_paragraphs(extract_plain_text(content)), start=1)
     ]
+
+
+def _classify_paragraph_records(records: list[dict[str, object]]) -> list[dict[str, object]]:
+    """Classify chapter text blocks into structure-aware roles."""
+    classified: list[dict[str, object]] = []
+    body_seen = False
+    for record in records:
+        text = str(record.get("text", "") or "")
+        block_tag = str(record.get("block_tag", "p") or "p")
+        at_chapter_start = not body_seen
+        text_role = "body"
+        if _looks_like_auxiliary_text(text, at_chapter_start=at_chapter_start):
+            text_role = "auxiliary"
+        elif at_chapter_start and _looks_like_heading_text(text, block_tag=block_tag, at_chapter_start=True):
+            text_role = "chapter_heading"
+        elif not at_chapter_start and _looks_like_heading_text(text, block_tag=block_tag, at_chapter_start=False):
+            text_role = "section_heading"
+        else:
+            body_seen = True
+
+        classified.append(
+            {
+                **record,
+                "block_tag": block_tag,
+                "heading_level": record.get("heading_level"),
+                "text_role": text_role,
+            }
+        )
+    return classified
+
+
+def _chapter_heading_block(records: list[dict[str, object]]) -> ChapterHeadingBlock | None:
+    """Collapse leading chapter heading records into one structured block."""
+    heading_records = [
+        record
+        for record in records
+        if str(record.get("text_role", "")) == "chapter_heading" and str(record.get("text", "")).strip()
+    ]
+    if not heading_records:
+        return None
+
+    texts = [str(record.get("text", "")).strip() for record in heading_records if str(record.get("text", "")).strip()]
+    if not texts:
+        return None
+
+    remaining = list(texts)
+    payload: ChapterHeadingBlock = {
+        "text": "\n".join(texts),
+        "title": remaining[0],
+    }
+    if remaining and _looks_like_chapter_label(remaining[0]):
+        payload["label"] = remaining.pop(0)
+    if remaining:
+        payload["title"] = remaining.pop(0)
+    elif payload.get("label"):
+        payload["title"] = str(payload["label"])
+        payload.pop("label", None)
+
+    subtitle = " / ".join(item for item in remaining if item)
+    if subtitle:
+        payload["subtitle"] = subtitle
+
+    locator = _segment_locator_from_records(heading_records)
+    if locator:
+        payload["locator"] = locator
+    return payload
+
+
+def _body_record_groups(records: list[dict[str, object]]) -> list[dict[str, object]]:
+    """Split classified records into body groups separated by section headings."""
+    groups: list[dict[str, object]] = []
+    current_heading: list[dict[str, object]] = []
+    current_body: list[dict[str, object]] = []
+
+    for record in records:
+        role = str(record.get("text_role", "body"))
+        if role == "body":
+            current_body.append(record)
+            continue
+        if role == "section_heading":
+            if current_body:
+                groups.append(
+                    {
+                        "heading_records": current_heading,
+                        "body_records": current_body,
+                    }
+                )
+                current_body = []
+                current_heading = [record]
+            else:
+                current_heading.append(record)
+            continue
+        if role == "auxiliary" and current_body:
+            groups.append(
+                {
+                    "heading_records": current_heading,
+                    "body_records": current_body,
+                }
+            )
+            current_body = []
+            current_heading = []
+
+    if current_body:
+        groups.append(
+            {
+                "heading_records": current_heading,
+                "body_records": current_body,
+            }
+        )
+    return groups
 
 
 def _segment_locator_from_records(records: list[dict[str, object]]) -> dict[str, object] | None:
@@ -732,6 +975,9 @@ def segment_chapter_semantically(
     chapter_text: str,
     output_language: str,
     paragraphs: list[str] | None = None,
+    *,
+    chapter_heading_text: str = "",
+    section_heading_text: str = "",
 ) -> list[SemanticSegment]:
     """Use the LLM to group chapter paragraphs into semantic units."""
     paragraphs = paragraphs or split_into_paragraphs(chapter_text)
@@ -745,6 +991,8 @@ def segment_chapter_semantically(
             paragraph_count=len(paragraphs),
             numbered_paragraphs=_format_numbered_paragraphs(paragraphs),
             output_language_name=language_name(output_language),
+            chapter_heading_text=chapter_heading_text or "(none)",
+            section_heading_text=section_heading_text or "(none)",
         ),
         default={"segments": []},
     )
@@ -798,8 +1046,12 @@ def build_structure(book_path: Path, language_mode: str = "auto") -> tuple[BookS
     chapters: list[StructureChapter] = []
 
     for chapter_index, chapter in enumerate(raw_chapters, start=1):
-        paragraph_records = _paragraph_records(chapter)
-        chapter_text = "\n\n".join(str(record.get("text", "")) for record in paragraph_records)
+        paragraph_records = _classify_paragraph_records(_paragraph_records(chapter))
+        chapter_text = "\n\n".join(
+            str(record.get("text", ""))
+            for record in paragraph_records
+            if str(record.get("text_role", "body")) != "auxiliary"
+        )
         if not chapter_text.strip():
             continue
         chapter_title = chapter.get("title", f"Chapter {chapter_index}")
@@ -810,13 +1062,71 @@ def build_structure(book_path: Path, language_mode: str = "auto") -> tuple[BookS
         print(f"[parse] Chapter {chapter_index}: {chapter_title}")
 
         chapter_number = infer_chapter_number(chapter_title)
-        segments = segment_chapter_semantically(
-            chapter_id=chapter_index,
-            chapter_title=chapter_title,
-            chapter_text=chapter_text,
-            output_language=output_language,
-            paragraphs=[str(record.get("text", "")) for record in paragraph_records],
-        )
+        chapter_heading = _chapter_heading_block(paragraph_records)
+        body_groups = _body_record_groups(paragraph_records)
+        segments: list[SemanticSegment] = []
+        next_segment_index = 1
+        for group in body_groups:
+            body_records = [
+                record
+                for record in list(group.get("body_records", []))
+                if str(record.get("text", "")).strip()
+            ]
+            if not body_records:
+                continue
+            local_segments = segment_chapter_semantically(
+                chapter_id=chapter_index,
+                chapter_title=chapter_title,
+                chapter_text="\n\n".join(str(record.get("text", "")) for record in body_records),
+                output_language=output_language,
+                paragraphs=[str(record.get("text", "")) for record in body_records],
+                chapter_heading_text=str(chapter_heading.get("text", "")) if chapter_heading else "",
+                section_heading_text="\n".join(
+                    str(record.get("text", "")).strip()
+                    for record in list(group.get("heading_records", []))
+                    if str(record.get("text", "")).strip()
+                ),
+            )
+            for segment in local_segments:
+                start = int(segment.get("paragraph_start", 0) or 0)
+                end = int(segment.get("paragraph_end", 0) or 0)
+                if start < 1 or end < start or end > len(body_records):
+                    continue
+                segment_records = body_records[start - 1 : end]
+                segment_text = _records_text(segment_records)
+                segments.append(
+                    {
+                        "id": f"{chapter_index}.{next_segment_index}",
+                        "summary": str(segment.get("summary", "")),
+                        "tokens": estimate_tokens(segment_text),
+                        "text": segment_text,
+                        "paragraph_start": int(segment_records[0].get("paragraph_index", 0) or 0),
+                        "paragraph_end": int(segment_records[-1].get("paragraph_index", 0) or 0),
+                        "status": segment.get("status", "pending"),
+                    }
+                )
+                next_segment_index += 1
+
+        if not segments:
+            body_records = [
+                record
+                for record in paragraph_records
+                if str(record.get("text_role", "")) == "body" and str(record.get("text", "")).strip()
+            ]
+            if not body_records:
+                continue
+            segment_text = _records_text(body_records)
+            segments = [
+                {
+                    "id": f"{chapter_index}.1",
+                    "summary": str(chapter_title)[:80],
+                    "tokens": estimate_tokens(segment_text),
+                    "text": segment_text,
+                    "paragraph_start": int(body_records[0].get("paragraph_index", 0) or 0),
+                    "paragraph_end": int(body_records[-1].get("paragraph_index", 0) or 0),
+                    "status": "pending",
+                }
+            ]
         chapter_stub: StructureChapter = {
             "id": chapter_index,
             "title": chapter_title,
@@ -825,6 +1135,8 @@ def build_structure(book_path: Path, language_mode: str = "auto") -> tuple[BookS
             "level": chapter.get("level", 1),
             "segments": [],
         }
+        if chapter_heading:
+            chapter_stub["chapter_heading"] = chapter_heading
         chapter_record: StructureChapter = {
             "id": chapter_index,
             "title": chapter_title,
@@ -834,6 +1146,8 @@ def build_structure(book_path: Path, language_mode: str = "auto") -> tuple[BookS
             "output_file": relative_output_path(output_dir, chapter_markdown_file(output_dir, chapter_stub)),
             "segments": segments,
         }
+        if chapter_heading:
+            chapter_record["chapter_heading"] = chapter_heading
         if chapter.get("item_id"):
             chapter_record["item_id"] = str(chapter.get("item_id", ""))
         if chapter.get("href"):
@@ -844,7 +1158,12 @@ def build_structure(book_path: Path, language_mode: str = "auto") -> tuple[BookS
             segment["segment_ref"] = segment_reference(chapter_record, segment.get("id", ""))
             start = int(segment.get("paragraph_start", 0) or 0)
             end = int(segment.get("paragraph_end", 0) or 0)
-            segment_records = paragraph_records[start - 1 : end]
+            segment_records = [
+                record
+                for record in paragraph_records
+                if start <= int(record.get("paragraph_index", 0) or 0) <= end
+                and str(record.get("text_role", "body")) == "body"
+            ]
             locator = _segment_locator_from_records(segment_records)
             if locator:
                 segment["locator"] = locator
@@ -855,6 +1174,9 @@ def build_structure(book_path: Path, language_mode: str = "auto") -> tuple[BookS
                     "end_cfi": record.get("end_cfi"),
                     "paragraph_index": int(record.get("paragraph_index", 0) or 0),
                     "text": str(record.get("text", "")),
+                    "block_tag": str(record.get("block_tag", "p")),
+                    "heading_level": record.get("heading_level"),
+                    "text_role": str(record.get("text_role", "body")),
                 }
                 for record in segment_records
             ]
@@ -1017,6 +1339,9 @@ def _legacy_locator_paragraphs(records: list[dict[str, object]]) -> list[dict[st
             "end_cfi": record.get("end_cfi"),
             "paragraph_index": int(record.get("paragraph_index", 0) or 0),
             "text": str(record.get("text", "")),
+            "block_tag": str(record.get("block_tag", "p") or "p"),
+            "heading_level": record.get("heading_level"),
+            "text_role": str(record.get("text_role", "body") or "body"),
         }
         for record in records
     ]
@@ -1048,6 +1373,59 @@ def _normalized_locator_text(text: str) -> str:
 def _records_text(records: list[dict[str, object]]) -> str:
     """Render one contiguous paragraph-record window back into plain text."""
     return "\n\n".join(str(record.get("text", "") or "") for record in records if str(record.get("text", "") or "").strip())
+
+
+def _trim_structural_prefix_from_text(text: str) -> tuple[str, list[str]]:
+    """Trim leading heading-like paragraphs from one legacy segment text."""
+    paragraphs = split_into_paragraphs(text)
+    if not paragraphs:
+        return text, []
+
+    removed: list[str] = []
+    kept: list[str] = []
+    for paragraph in paragraphs:
+        if not kept and (
+            _looks_like_auxiliary_text(paragraph, at_chapter_start=True)
+            or _looks_like_heading_text(paragraph, block_tag="p", at_chapter_start=True)
+        ):
+            removed.append(paragraph)
+            continue
+        kept.append(paragraph)
+
+    trimmed = "\n\n".join(kept).strip()
+    return (trimmed or text), removed
+
+
+def _summary_from_body_text(text: str, *, max_length: int = 120) -> str:
+    """Generate one deterministic fallback summary from cleaned body text."""
+    paragraphs = split_into_paragraphs(text)
+    if not paragraphs:
+        return ""
+    first_paragraph = paragraphs[0].strip()
+    first_sentence = re.split(r"(?<=[.!?。！？])\s+", first_paragraph, maxsplit=1)[0].strip()
+    summary = first_sentence or first_paragraph
+    if len(summary) <= max_length:
+        return summary
+    return f"{summary[: max_length - 3].rstrip()}..."
+
+
+def _summary_looks_structural(summary: str, removed_prefixes: list[str]) -> bool:
+    """Return whether one summary still smells like a heading/body hybrid."""
+    normalized_summary = _normalized_locator_text(summary)
+    if not normalized_summary:
+        return False
+    if any(keyword in normalized_summary for keyword in ("chapter title", "epilogue title", "prologue title", "chapter heading")):
+        return True
+    for prefix in removed_prefixes:
+        normalized_prefix = _normalized_locator_text(prefix)
+        if not normalized_prefix:
+            continue
+        if SequenceMatcher(None, normalized_summary, normalized_prefix).ratio() >= 0.38:
+            return True
+        prefix_tokens = [token for token in normalized_prefix.split() if len(token) >= 4]
+        if prefix_tokens and sum(1 for token in prefix_tokens if token in normalized_summary) >= min(3, len(prefix_tokens)):
+            return True
+    return False
 
 
 def _records_match_score(target_text: str, records: list[dict[str, object]]) -> float:
@@ -1179,18 +1557,52 @@ def hydrate_legacy_epub_locators(output_dir: Path, structure: BookStructure, boo
             chapter["spine_index"] = spine_index
             structure_changed = True
 
-        paragraph_records = _paragraph_records(source)
-        chapter_wide_paragraph_payload = _legacy_locator_paragraphs(paragraph_records)
+        paragraph_records = _classify_paragraph_records(_paragraph_records(source))
+        chapter_heading = _chapter_heading_block(paragraph_records)
+        if chapter_heading:
+            if chapter.get("chapter_heading") != chapter_heading:
+                chapter["chapter_heading"] = chapter_heading
+                structure_changed = True
+        elif chapter.get("chapter_heading"):
+            chapter.pop("chapter_heading", None)
+            structure_changed = True
+
+        body_records = [
+            record
+            for record in paragraph_records
+            if str(record.get("text_role", "body")) == "body"
+            and str(record.get("text", "")).strip()
+        ]
+        search_records = body_records or paragraph_records
+        paragraph_position = {
+            int(record.get("paragraph_index", 0) or 0): position
+            for position, record in enumerate(search_records, start=1)
+        }
+        chapter_wide_paragraph_payload = _legacy_locator_paragraphs(search_records)
         search_start = 0
         for segment in chapter.get("segments", []):
+            target_text, removed_prefixes = _trim_structural_prefix_from_text(str(segment.get("text", "") or ""))
+            candidate_segment = dict(segment)
+            candidate_segment["text"] = target_text
+
+            legacy_start = int(segment.get("paragraph_start", 0) or 0)
+            legacy_end = int(segment.get("paragraph_end", 0) or 0)
+            if legacy_start in paragraph_position and legacy_end in paragraph_position:
+                candidate_segment["paragraph_start"] = paragraph_position[legacy_start]
+                candidate_segment["paragraph_end"] = paragraph_position[legacy_end]
+            else:
+                candidate_segment["paragraph_start"] = 0
+                candidate_segment["paragraph_end"] = 0
+
             segment_records, _match_score = _resolve_segment_records(
-                segment,
-                paragraph_records,
+                candidate_segment,
+                search_records,
                 search_start=search_start,
             )
             locator = _segment_locator_from_records(segment_records)
             locator_payload = _legacy_locator_payload(locator)
             paragraph_payload = _legacy_locator_paragraphs(segment_records)
+            cleaned_segment_text = _records_text(segment_records) if segment_records else target_text
 
             if segment_records:
                 new_start = int(segment_records[0].get("paragraph_index", 0) or 0)
@@ -1201,7 +1613,7 @@ def hydrate_legacy_epub_locators(output_dir: Path, structure: BookStructure, boo
                 if segment.get("paragraph_end") != new_end:
                     segment["paragraph_end"] = new_end
                     structure_changed = True
-                search_start = max(0, new_end - 2)
+                search_start = max(0, paragraph_position.get(new_end, 1) - 1)
 
             if locator_payload:
                 if segment.get("locator") != locator_payload:
@@ -1214,6 +1626,14 @@ def hydrate_legacy_epub_locators(output_dir: Path, structure: BookStructure, boo
             if segment.get("paragraph_locators") != paragraph_payload:
                 segment["paragraph_locators"] = paragraph_payload
                 structure_changed = True
+            if cleaned_segment_text and str(segment.get("text", "") or "") != cleaned_segment_text:
+                segment["text"] = cleaned_segment_text
+                structure_changed = True
+            if removed_prefixes and _summary_looks_structural(str(segment.get("summary", "") or ""), removed_prefixes):
+                fallback_summary = _summary_from_body_text(cleaned_segment_text)
+                if fallback_summary and str(segment.get("summary", "") or "") != fallback_summary:
+                    segment["summary"] = fallback_summary
+                    structure_changed = True
 
     if structure_changed:
         save_structure(structure_file(output_dir), structure)
@@ -1232,6 +1652,14 @@ def hydrate_legacy_epub_locators(output_dir: Path, structure: BookStructure, boo
         }
         reaction_locators: dict[str, dict[str, object]] = {}
         chapter_result_changed = False
+        chapter_heading = chapter.get("chapter_heading")
+        if chapter_heading:
+            if payload.get("chapter_heading") != chapter_heading:
+                payload["chapter_heading"] = chapter_heading
+                chapter_result_changed = True
+        elif payload.get("chapter_heading"):
+            payload.pop("chapter_heading", None)
+            chapter_result_changed = True
 
         for section in payload.get("sections", []):
             if not isinstance(section, dict):
@@ -1257,6 +1685,9 @@ def hydrate_legacy_epub_locators(output_dir: Path, structure: BookStructure, boo
 
             if section.get("original_text") != str(segment_meta.get("text", "")):
                 section["original_text"] = str(segment_meta.get("text", ""))
+                chapter_result_changed = True
+            if section.get("summary") != str(segment_meta.get("summary", "")):
+                section["summary"] = str(segment_meta.get("summary", ""))
                 chapter_result_changed = True
 
             for reaction in section.get("reactions", []):

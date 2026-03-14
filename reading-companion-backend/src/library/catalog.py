@@ -54,6 +54,24 @@ def _excerpt_text(value: str, *, max_length: int = 132) -> str:
     return f"{normalized[: max_length - 3].rstrip()}..."
 
 
+def _chapter_heading_payload(payload: object) -> dict | None:
+    """Return one public-safe chapter heading block when available."""
+    if not isinstance(payload, dict):
+        return None
+    text = str(payload.get("text", "") or "").strip()
+    title = str(payload.get("title", "") or "").strip()
+    if not text and not title:
+        return None
+    normalized = {
+        "label": str(payload.get("label", "") or "").strip() or None,
+        "title": title or text,
+        "subtitle": str(payload.get("subtitle", "") or "").strip() or None,
+        "text": text or title,
+        "locator": payload.get("locator"),
+    }
+    return normalized
+
+
 def _natural_sort_key(value: str) -> tuple[object, ...]:
     """Return a stable natural-sort key for chapter and section references."""
     parts = re.split(r"(\d+)", str(value or "").strip().lower())
@@ -568,6 +586,7 @@ def get_chapter_detail(
             for item in chapter_payload.get("featured_reactions", [])
             if isinstance(item, dict)
         ],
+        "chapter_heading": _chapter_heading_payload(chapter_payload.get("chapter_heading")),
         "chapter_reflection": [],
         "sections": page_sections,
         "sections_page_info": page_info,
@@ -598,6 +617,7 @@ def get_chapter_outline(book_id: str, chapter_id: int, root: Path | None = None)
     sections: list[dict] = []
     chapter_ref = str(chapter_entry.get("reference", ""))
     chapter_title = str(chapter_entry.get("title", ""))
+    chapter_heading = _chapter_heading_payload(chapter_entry.get("chapter_heading"))
     if result_ready:
         try:
             chapter_payload = get_chapter_result(book_id, chapter_id, root=root)
@@ -607,6 +627,7 @@ def get_chapter_outline(book_id: str, chapter_id: int, root: Path | None = None)
             chapter_info = chapter_payload.get("chapter", {})
             chapter_ref = str(chapter_info.get("reference", chapter_ref))
             chapter_title = str(chapter_info.get("title", chapter_title))
+            chapter_heading = _chapter_heading_payload(chapter_payload.get("chapter_heading")) or chapter_heading
             sections = sorted(
                 [
                     _chapter_outline_section(section)
@@ -623,6 +644,7 @@ def get_chapter_outline(book_id: str, chapter_id: int, root: Path | None = None)
         "title": chapter_title,
         "result_ready": result_ready,
         "status": public_status,
+        "chapter_heading": chapter_heading,
         "section_count": len(sections) if sections else int(chapter_entry.get("segment_count", 0) or 0),
         "sections": sections,
     }

@@ -23,6 +23,7 @@ export type BookDetailResponse = ApiSchemas["BookDetailResponse"];
 export type ReactionCard = ApiSchemas["ReactionCard"];
 export type SectionCard = ApiSchemas["SectionCard"];
 export type ChapterDetailResponse = ApiSchemas["ChapterDetailResponse"];
+export type ChapterHeadingBlock = ApiSchemas["ChapterHeadingBlock"];
 export type ChapterOutlineSectionItem = ApiSchemas["ChapterOutlineSectionItem"];
 export type ChapterOutlineResponse = ApiSchemas["ChapterOutlineResponse"];
 export type MarkRecord = ApiSchemas["MarkRecord"];

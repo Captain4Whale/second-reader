@@ -32,7 +32,7 @@ def test_build_structure_persists_semantic_segments(tmp_path, monkeypatch):
         lambda _: [
             {
                 "title": "Chapter One",
-                "content": "<p>Alpha</p><p>Beta</p>",
+                "content": "<p>Alpha opens the chapter.</p><p>Beta extends the chapter argument.</p>",
                 "level": 1,
                 "start_page": None,
                 "end_page": None,
@@ -74,7 +74,7 @@ def test_build_structure_persists_semantic_segments(tmp_path, monkeypatch):
     assert saved["chapters"][0]["segments"][0]["segment_ref"] == "Chapter_One.1"
     assert "locator" not in saved["chapters"][0]["segments"][0]
     assert saved["chapters"][0]["segments"][0]["paragraph_locators"][0]["start_cfi"] is None
-    assert "Alpha" in saved["chapters"][0]["segments"][0]["paragraph_locators"][0]["text"]
+    assert "Alpha opens the chapter." == saved["chapters"][0]["segments"][0]["paragraph_locators"][0]["text"]
     assert (output_dir / "_assets" / "source.epub").exists()
 
     structure_md = (output_dir / "public" / "structure.md").read_text(encoding="utf-8")
@@ -96,7 +96,7 @@ def test_build_structure_infers_human_chapter_number(tmp_path, monkeypatch):
         lambda _: [
             {
                 "title": "Chapter 10",
-                "content": "<p>Alpha</p><p>Beta</p>",
+                "content": "<p>Alpha opens the chapter.</p><p>Beta extends the chapter argument.</p>",
                 "level": 1,
                 "start_page": None,
                 "end_page": None,
@@ -128,6 +128,172 @@ def test_build_structure_infers_human_chapter_number(tmp_path, monkeypatch):
 
     assert structure["chapters"][0]["chapter_number"] == 10
     assert structure["chapters"][0]["segments"][0]["segment_ref"] == "10.1"
+
+
+def test_extract_epub_paragraph_records_skips_duplicate_heading_wrappers():
+    """Wrapper divs around heading stacks should not become duplicate paragraphs."""
+    content = """
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <body>
+    <div>
+      <h1>CHAPTER 1</h1>
+      <h2>RELATIONSHIPS ARE THE MEDIA IN WHICH VALUE IS TRANSACTED</h2>
+    </div>
+    <p>People want things from other people.</p>
+  </body>
+</html>
+"""
+
+    records = parse_module._extract_epub_paragraph_records(
+        content,
+        href="chapter-1.xhtml",
+        item_id="chapter-1",
+        spine_index=1,
+    )
+
+    assert [record["text"] for record in records] == [
+        "CHAPTER 1",
+        "RELATIONSHIPS ARE THE MEDIA IN WHICH VALUE IS TRANSACTED",
+        "People want things from other people.",
+    ]
+    assert [record["block_tag"] for record in records] == ["h1", "h2", "p"]
+
+
+def test_classify_paragraph_records_detects_heading_roles_generically():
+    """Chapter-opening headings and in-body headings should classify separately from body prose."""
+    records = [
+        {"text": "CHAPTER 1", "block_tag": "h1", "heading_level": 1, "paragraph_index": 1},
+        {"text": "The Market for Value", "block_tag": "h2", "heading_level": 2, "paragraph_index": 2},
+        {"text": "People want things from other people.", "block_tag": "p", "heading_level": None, "paragraph_index": 3},
+        {"text": "The covert calculator", "block_tag": "p", "heading_level": None, "paragraph_index": 4},
+        {
+            "text": "Valuation often occurs beneath the threshold of awareness.",
+            "block_tag": "p",
+            "heading_level": None,
+            "paragraph_index": 5,
+        },
+    ]
+
+    classified = parse_module._classify_paragraph_records(records)
+
+    assert [record["text_role"] for record in classified] == [
+        "chapter_heading",
+        "chapter_heading",
+        "body",
+        "section_heading",
+        "body",
+    ]
+
+    chapter_heading = parse_module._chapter_heading_block(classified)
+    assert chapter_heading == {
+        "label": "CHAPTER 1",
+        "title": "The Market for Value",
+        "text": "CHAPTER 1\nThe Market for Value",
+    }
+
+    body_groups = parse_module._body_record_groups(classified)
+    assert len(body_groups) == 2
+    assert [record["text"] for record in body_groups[0]["body_records"]] == [
+        "People want things from other people."
+    ]
+    assert [record["text"] for record in body_groups[1]["heading_records"]] == ["The covert calculator"]
+    assert [record["text"] for record in body_groups[1]["body_records"]] == [
+        "Valuation often occurs beneath the threshold of awareness."
+    ]
+
+
+def test_build_structure_keeps_chapter_heading_outside_first_body_segment(tmp_path, monkeypatch):
+    """Chapter heading stacks should be preserved as chapter metadata, not merged into section text."""
+    book_path = tmp_path / "demo.epub"
+    book_path.write_text("placeholder", encoding="utf-8")
+
+    captured_calls: list[dict[str, object]] = []
+
+    monkeypatch.setattr(parse_module, "extract_book_metadata", lambda _: ("Demo Book", "Tester"))
+    monkeypatch.setattr(parse_module, "detect_book_language", lambda *_args, **_kwargs: "en")
+    monkeypatch.setattr(
+        parse_module,
+        "parse_ebook",
+        lambda _: [
+            {
+                "title": "Chapter 1",
+                "content": """
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <body>
+    <div>
+      <h1>CHAPTER 1</h1>
+      <h2>RELATIONSHIPS ARE THE MEDIA IN WHICH VALUE IS TRANSACTED</h2>
+    </div>
+    <p>People want things from other people.</p>
+    <p>This is why other people represent both a solution and a potential problem.</p>
+  </body>
+</html>
+""",
+                "level": 1,
+                "href": "chapter-1.xhtml",
+                "item_id": "chapter-1",
+                "spine_index": 1,
+                "start_page": None,
+                "end_page": None,
+            }
+        ],
+    )
+
+    def _fake_segment(*args, **kwargs):
+        captured_calls.append(
+            {
+                "paragraphs": list(kwargs["paragraphs"]),
+                "chapter_heading_text": kwargs["chapter_heading_text"],
+                "section_heading_text": kwargs["section_heading_text"],
+            }
+        )
+        return [
+            {
+                "id": "1.1",
+                "summary": "Body thesis only",
+                "tokens": 12,
+                "text": "\n\n".join(kwargs["paragraphs"]),
+                "paragraph_start": 1,
+                "paragraph_end": len(kwargs["paragraphs"]),
+                "status": "pending",
+            }
+        ]
+
+    monkeypatch.setattr(parse_module, "segment_chapter_semantically", _fake_segment)
+    monkeypatch.setattr(
+        parse_module,
+        "resolve_output_dir",
+        lambda *_args, **_kwargs: tmp_path / "output" / "demo-book",
+    )
+
+    structure, _output_dir = parse_module.build_structure(book_path, language_mode="auto")
+
+    assert len(captured_calls) == 1
+    assert captured_calls[0]["paragraphs"] == [
+        "People want things from other people.",
+        "This is why other people represent both a solution and a potential problem.",
+    ]
+    assert captured_calls[0]["chapter_heading_text"] == (
+        "CHAPTER 1\nRELATIONSHIPS ARE THE MEDIA IN WHICH VALUE IS TRANSACTED"
+    )
+    assert captured_calls[0]["section_heading_text"] == ""
+
+    chapter = structure["chapters"][0]
+    assert chapter["chapter_heading"]["label"] == "CHAPTER 1"
+    assert chapter["chapter_heading"]["title"] == "RELATIONSHIPS ARE THE MEDIA IN WHICH VALUE IS TRANSACTED"
+    assert chapter["chapter_heading"]["text"] == (
+        "CHAPTER 1\nRELATIONSHIPS ARE THE MEDIA IN WHICH VALUE IS TRANSACTED"
+    )
+    assert chapter["chapter_heading"]["locator"]["href"] == "chapter-1.xhtml"
+    assert chapter["chapter_heading"]["locator"]["paragraph_start"] == 1
+    assert chapter["chapter_heading"]["locator"]["paragraph_end"] == 2
+    assert chapter["chapter_heading"]["locator"]["start_cfi"] is not None
+    assert chapter["chapter_heading"]["locator"]["end_cfi"] is not None
+    assert chapter["segments"][0]["text"] == (
+        "People want things from other people.\n\n"
+        "This is why other people represent both a solution and a potential problem."
+    )
+    assert chapter["segments"][0]["summary"] == "Body thesis only"
 
 
 def test_upgrade_structure_metadata_backfills_segment_ref(tmp_path):
@@ -638,6 +804,157 @@ def test_hydrate_legacy_epub_locators_rematches_drifted_segment_ranges(tmp_path)
     assert reaction["target_locator"]["start_cfi"] == segment["paragraph_locators"][0]["start_cfi"]
     assert reaction["target_locator"]["match_mode"] == "exact"
     assert hydrated_result["featured_reactions"][0]["target_locator"]["match_mode"] == "exact"
+
+
+def test_hydrate_legacy_epub_locators_detaches_chapter_heading_from_body_text(tmp_path):
+    """Legacy segments polluted by chapter headings should be cleaned and re-scoped to body prose."""
+    output_dir = tmp_path / "output" / "demo-book"
+    output_dir.mkdir(parents=True, exist_ok=True)
+    source_epub = output_dir / "_assets" / "source.epub"
+    source_epub.parent.mkdir(parents=True, exist_ok=True)
+
+    _write_test_epub(
+        source_epub,
+        manifest_items=[
+            '<item id="cover-page" href="cover.xhtml" media-type="application/xhtml+xml"/>',
+            '<item id="chapter-1" href="chapter-1.xhtml" media-type="application/xhtml+xml"/>',
+        ],
+        extra_docs={
+            "OEBPS/cover.xhtml": """
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head><title>Title Page</title></head>
+  <body><p>Title page</p></body>
+</html>
+""",
+            "OEBPS/chapter-1.xhtml": """
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head><title>Chapter 1</title></head>
+  <body>
+    <div>
+      <h1>CHAPTER 1</h1>
+      <h2>RELATIONSHIPS ARE THE MEDIA IN WHICH VALUE IS TRANSACTED</h2>
+    </div>
+    <p>People want things from other people.</p>
+    <p>This is why other people represent both a solution and a potential problem.</p>
+  </body>
+</html>
+""",
+        },
+    )
+
+    structure = {
+        "book": "Demo",
+        "author": "Tester",
+        "book_language": "en",
+        "output_language": "en",
+        "source_file": str(source_epub),
+        "output_dir": str(output_dir),
+        "chapters": [
+            {
+                "id": 2,
+                "title": "Chapter 1",
+                "chapter_number": 1,
+                "status": "done",
+                "level": 1,
+                "segments": [
+                    {
+                        "id": "2.1",
+                        "segment_ref": "1.1",
+                        "summary": "Chapter title and thesis introduction",
+                        "tokens": 20,
+                        "text": (
+                            "CHAPTER 1\n\n"
+                            "RELATIONSHIPS ARE THE MEDIA IN WHICH VALUE IS TRANSACTED\n\n"
+                            "People want things from other people.\n\n"
+                            "This is why other people represent both a solution and a potential problem."
+                        ),
+                        "paragraph_start": 1,
+                        "paragraph_end": 4,
+                        "status": "done",
+                        "paragraph_locators": [],
+                    }
+                ],
+            }
+        ],
+    }
+    save_structure(structure_file(output_dir), structure)
+    save_json(
+        chapter_result_file(output_dir, structure["chapters"][0]),
+        {
+            "chapter": {
+                "id": 2,
+                "title": "Chapter 1",
+                "chapter_number": 1,
+                "reference": "Chapter 1",
+                "status": "done",
+            },
+            "output_language": "en",
+            "generated_at": "2026-03-11T00:00:00Z",
+            "sections": [
+                {
+                    "segment_id": "2.1",
+                    "segment_ref": "1.1",
+                    "summary": "Chapter title and thesis introduction",
+                    "original_text": "",
+                    "verdict": "pass",
+                    "quality_status": "strong",
+                    "reflection_summary": "",
+                    "reflection_reason_codes": [],
+                    "reactions": [
+                        {
+                            "reaction_id": "legacy-r1",
+                            "type": "highlight",
+                            "anchor_quote": "People want things from other people.",
+                            "content": "Anchor the first body paragraph.",
+                            "search_query": "",
+                            "search_results": [],
+                            "target_locator": {},
+                        }
+                    ],
+                }
+            ],
+            "chapter_reflection": {},
+            "featured_reactions": [
+                {
+                    "reaction_id": "legacy-r1",
+                    "type": "highlight",
+                    "segment_ref": "1.1",
+                    "anchor_quote": "People want things from other people.",
+                    "content": "Anchor the first body paragraph.",
+                    "target_locator": {},
+                }
+            ],
+            "visible_reaction_count": 1,
+            "reaction_type_diversity": 1,
+            "high_signal_reaction_count": 1,
+            "ui_summary": {
+                "kept_section_count": 1,
+                "skipped_section_count": 0,
+                "reaction_counts": {"highlight": 1},
+            },
+        },
+    )
+
+    changes = parse_module.hydrate_legacy_epub_locators(output_dir, structure, source_epub)
+    hydrated_structure = load_structure(structure_file(output_dir))
+    hydrated_result = json.loads(chapter_result_file(output_dir, structure["chapters"][0]).read_text(encoding="utf-8"))
+    segment = hydrated_structure["chapters"][0]["segments"][0]
+
+    assert changes == ["structure_locators", "result_locators"]
+    assert hydrated_structure["chapters"][0]["chapter_heading"]["label"] == "CHAPTER 1"
+    assert hydrated_structure["chapters"][0]["chapter_heading"]["title"] == (
+        "RELATIONSHIPS ARE THE MEDIA IN WHICH VALUE IS TRANSACTED"
+    )
+    assert segment["text"] == (
+        "People want things from other people.\n\n"
+        "This is why other people represent both a solution and a potential problem."
+    )
+    assert segment["paragraph_start"] == 3
+    assert segment["paragraph_end"] == 4
+    assert hydrated_result["chapter_heading"]["title"] == "RELATIONSHIPS ARE THE MEDIA IN WHICH VALUE IS TRANSACTED"
+    assert hydrated_result["sections"][0]["summary"] == "People want things from other people."
+    assert hydrated_result["sections"][0]["original_text"] == segment["text"]
+    assert hydrated_result["sections"][0]["locator"]["paragraph_start"] == 3
 
 
 def test_backfill_output_dir_reports_locator_changes(tmp_path):
