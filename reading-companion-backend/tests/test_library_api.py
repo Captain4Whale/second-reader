@@ -8,6 +8,7 @@ from pathlib import Path
 
 from fastapi.testclient import TestClient
 from src.api.contract import to_api_book_id, to_api_reaction_id
+from src.iterator_reader.storage import parse_state_file
 from src.library.jobs import refresh_job, save_job
 from src.library.storage import upload_file
 from src.library.user_marks import delete_mark, list_book_marks, load_marks_state, put_mark
@@ -500,6 +501,49 @@ def test_api_reads_books_chapters_marks_and_docs(tmp_path):
     assert delete_response.status_code == 200
     assert delete_response.json()["reaction_id"] == public_reaction_id
     assert delete_response.json()["deleted"] is True
+
+
+def test_analysis_state_prefers_parse_checkpoint_during_structure_stage(tmp_path):
+    """analysis-state should surface parse checkpoint details while the book is still preparing readable chapters."""
+    book_id = _bootstrap_book(tmp_path, stage="parsing_structure")
+    public_book_id = to_api_book_id(book_id)
+    output_dir = tmp_path / "output" / book_id
+    _write_json(
+        parse_state_file(output_dir),
+        {
+            "status": "parsing_structure",
+            "total_chapters": 3,
+            "completed_chapters": 1,
+            "parsed_chapter_ids": [1],
+            "segmented_chapter_ids": [1],
+            "inflight_chapter_ids": [2],
+            "pending_chapter_ids": [2, 3],
+            "current_chapter_id": 2,
+            "current_chapter_ref": "Chapter 2",
+            "current_step": "后台准备后续章节",
+            "worker_limit": 3,
+            "resume_available": True,
+            "last_checkpoint_at": "2026-03-14T01:00:00Z",
+            "updated_at": "2026-03-14T01:00:00Z",
+            "error": None,
+        },
+    )
+
+    api_module.app.state.root = tmp_path
+    client = TestClient(api_module.app)
+
+    response = client.get(f"/api/books/{public_book_id}/analysis-state")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["status"] == "parsing_structure"
+    assert payload["completed_chapters"] == 1
+    assert payload["total_chapters"] == 3
+    assert payload["current_chapter_id"] == 2
+    assert payload["current_chapter_ref"] == "Chapter 2"
+    assert payload["current_phase_step"] == "后台准备后续章节"
+    assert payload["resume_available"] is True
+    assert payload["stage_label"] == "正在解析 Chapter 2"
 
 
 def test_chapter_api_tolerates_empty_legacy_target_locator(tmp_path):

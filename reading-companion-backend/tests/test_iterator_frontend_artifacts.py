@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+import threading
 
 import pytest
 
@@ -325,6 +326,156 @@ def test_read_book_sequential_records_error_state(tmp_path, monkeypatch):
     assert run_state["stage"] == "error"
     assert run_state["error"] == "boom"
     assert activity[-1]["type"] == "error"
+
+
+def test_read_book_sequential_starts_after_first_segmented_chapter(tmp_path, monkeypatch):
+    """Sequential reading should begin once the next chapter is ready instead of waiting for the whole book."""
+    output_dir = tmp_path / "output" / "demo-book"
+    output_dir.mkdir(parents=True, exist_ok=True)
+    structure = {
+        "book": "Demo Book",
+        "author": "Tester",
+        "book_language": "en",
+        "output_language": "en",
+        "source_file": "demo.epub",
+        "output_dir": str(output_dir),
+        "chapters": [
+            {
+                "id": 1,
+                "title": "Chapter 1",
+                "chapter_number": 1,
+                "status": "pending",
+                "level": 1,
+                "segments": [],
+            },
+            {
+                "id": 2,
+                "title": "Chapter 2",
+                "chapter_number": 2,
+                "status": "pending",
+                "level": 1,
+                "segments": [],
+            },
+        ],
+    }
+
+    monkeypatch.setattr(
+        iterator_module,
+        "ensure_structure_for_book",
+        lambda *args, **kwargs: (structure, output_dir, False),
+    )
+    monkeypatch.setattr(
+        iterator_module,
+        "chapter_contexts_for_book",
+        lambda *args, **kwargs: [
+            {"id": 1, "title": "Chapter 1"},
+            {"id": 2, "title": "Chapter 2"},
+        ],
+    )
+    monkeypatch.setattr(
+        iterator_module,
+        "_default_pipeline_tuning",
+        lambda: iterator_module.SequentialPipelineTuning(
+            segment_workers=1,
+            segment_workers_when_reader_blocked=1,
+            prefetch_window=2,
+        ),
+    )
+    monkeypatch.setattr(
+        iterator_module,
+        "render_chapter_markdown",
+        lambda chapter, segments, output_language, chapter_reflection=None: f"# {chapter['title']}\n\nok\n",
+    )
+    monkeypatch.setattr(
+        iterator_module,
+        "run_chapter_reflection",
+        lambda **kwargs: {
+            "segment_repairs": [],
+            "reaction_repairs": [],
+            "chapter_insights": [],
+            "segment_quality_flags": [],
+        },
+    )
+    monkeypatch.setattr(
+        iterator_module,
+        "apply_chapter_reflection_repairs",
+        lambda segments, chapter_reflection, output_language: segments,
+    )
+
+    events: list[str] = []
+    first_chapter_read_started = threading.Event()
+
+    def _segment_context(_output_dir, context, *, progress=None):
+        chapter_id = int(context["id"])
+        events.append(f"segment-start-{chapter_id}")
+        if chapter_id == 2:
+            assert first_chapter_read_started.wait(timeout=2.0), "reader never started after chapter 1 became ready"
+        events.append(f"segment-complete-{chapter_id}")
+        return {
+            "id": chapter_id,
+            "title": str(context["title"]),
+            "chapter_number": chapter_id,
+            "status": "pending",
+            "level": 1,
+            "segments": [
+                {
+                    "id": f"{chapter_id}.1",
+                    "segment_ref": f"{chapter_id}.1",
+                    "summary": f"Segment {chapter_id}",
+                    "tokens": 12,
+                    "text": f"Body {chapter_id}",
+                    "paragraph_start": 1,
+                    "paragraph_end": 1,
+                    "status": "pending",
+                    "locator": {
+                        "href": f"chapter-{chapter_id}.xhtml",
+                        "start_cfi": None,
+                        "end_cfi": None,
+                        "paragraph_start": 1,
+                        "paragraph_end": 1,
+                    },
+                    "paragraph_locators": [
+                        {
+                            "href": f"chapter-{chapter_id}.xhtml",
+                            "start_cfi": None,
+                            "end_cfi": None,
+                            "paragraph_index": 1,
+                            "text": f"Body {chapter_id}",
+                        }
+                    ],
+                }
+            ],
+        }
+
+    monkeypatch.setattr(iterator_module, "segment_context_into_chapter", _segment_context)
+
+    def _run_reader_segment(state, progress=None):
+        events.append(f"read-{state['segment_id']}")
+        if state.get("segment_id") == "1.1":
+            first_chapter_read_started.set()
+        return {
+            "segment_id": state["segment_id"],
+            "segment_ref": state["segment_ref"],
+            "summary": state["segment_summary"],
+            "verdict": "pass",
+            "reactions": [],
+            "reflection_summary": "ok",
+            "reflection_reason_codes": [],
+            "quality_status": "strong",
+        }, {"budget": {"search_queries_remaining_in_chapter": 11}}
+
+    monkeypatch.setattr(iterator_module, "run_reader_segment", _run_reader_segment)
+
+    iterator_module.read_book(book_path=Path("demo.epub"), read_mode="sequential")
+
+    activity = _load_jsonl(activity_file(output_dir))
+
+    assert events.index("segment-complete-1") < events.index("read-1.1")
+    assert events.index("read-1.1") < events.index("segment-complete-2")
+    assert events.index("segment-complete-2") < events.index("read-2.1")
+    assert {"reader_waiting_for_segments", "parse_chapter_started", "parse_chapter_completed", "run_completed"} <= {
+        item["type"] for item in activity
+    }
 
 
 def test_estimate_eta_seconds_stays_null_until_one_chapter_finishes():

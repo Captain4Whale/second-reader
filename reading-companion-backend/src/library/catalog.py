@@ -855,6 +855,7 @@ def get_analysis_state(book_id: str, root: Path | None = None) -> dict:
             current_chapter_id = int(parse_state.get("current_chapter_id", 0) or 0) or None
         if not run_state.get("current_chapter_ref") and parse_state.get("current_chapter_ref"):
             run_state["current_chapter_ref"] = parse_state.get("current_chapter_ref")
+    status, stage_label = _analysis_status(run_state, current_chapter_id=current_chapter_id)
     progress_percent = round((completed_chapters / total_chapters) * 100, 2) if total_chapters > 0 else None
 
     return {

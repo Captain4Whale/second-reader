@@ -4,12 +4,17 @@ from __future__ import annotations
 
 import json
 import re
+import threading
+import time
 from typing import Any
 
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_anthropic import ChatAnthropic
 
-from src.config import get_llm_config
+from src.config import get_llm_config, get_llm_max_concurrency, get_llm_retry_attempts
+
+
+_LLM_SEMAPHORE = threading.BoundedSemaphore(get_llm_max_concurrency())
 
 
 def get_reader_llm() -> ChatAnthropic:
@@ -77,24 +82,35 @@ def parse_json_payload(text: str, default: Any) -> Any:
 
 def invoke_json(system_prompt: str, user_prompt: str, default: Any) -> Any:
     """Invoke the configured LLM and parse a JSON payload."""
-    llm = get_reader_llm()
-    response = llm.invoke(
-        [
-            SystemMessage(content=system_prompt),
-            HumanMessage(content=user_prompt),
-        ]
-    )
+    response = _invoke_with_limits(system_prompt, user_prompt)
     return parse_json_payload(response_text(response), default)
 
 
 def invoke_text(system_prompt: str, user_prompt: str, default: str = "") -> str:
     """Invoke the configured LLM and return plain text output."""
-    llm = get_reader_llm()
-    response = llm.invoke(
-        [
-            SystemMessage(content=system_prompt),
-            HumanMessage(content=user_prompt),
-        ]
-    )
+    response = _invoke_with_limits(system_prompt, user_prompt)
     text = response_text(response).strip()
     return text or default
+
+
+def _invoke_with_limits(system_prompt: str, user_prompt: str) -> Any:
+    """Invoke the configured LLM behind a shared concurrency gate with basic retries."""
+    messages = [
+        SystemMessage(content=system_prompt),
+        HumanMessage(content=user_prompt),
+    ]
+    max_attempts = max(1, get_llm_retry_attempts())
+    last_error: Exception | None = None
+    for attempt in range(1, max_attempts + 1):
+        try:
+            with _LLM_SEMAPHORE:
+                llm = get_reader_llm()
+                return llm.invoke(messages)
+        except Exception as exc:  # pragma: no cover - exercised in integration/runtime behavior
+            last_error = exc
+            if attempt >= max_attempts:
+                raise
+            time.sleep(min(4.0, 0.5 * (2 ** (attempt - 1))))
+    if last_error is not None:  # pragma: no cover - defensive fallback
+        raise last_error
+    raise RuntimeError("LLM invocation failed without raising an exception.")

@@ -29,6 +29,39 @@ def get_llm_config() -> dict:
     }
 
 
+def _env_int(name: str, default: int, *, minimum: int = 1) -> int:
+    """Parse one integer env var with a lower bound fallback."""
+    raw = os.getenv(name, "").strip()
+    if raw.lstrip("-").isdigit():
+        return max(minimum, int(raw))
+    return max(minimum, int(default))
+
+
+def get_llm_max_concurrency() -> int:
+    """Return the global in-flight LLM call limit."""
+    return _env_int("LLM_MAX_CONCURRENCY", 4)
+
+
+def get_llm_retry_attempts() -> int:
+    """Return the retry count for transient LLM failures."""
+    return _env_int("LLM_RETRY_ATTEMPTS", 3)
+
+
+def get_pipeline_segment_workers() -> int:
+    """Return the default background chapter-segmentation worker count."""
+    return _env_int("PIPELINE_SEGMENT_WORKERS", 3)
+
+
+def get_pipeline_segment_workers_when_reader_blocked() -> int:
+    """Return the boosted segmentation worker count while the reader waits."""
+    return _env_int("PIPELINE_SEGMENT_WORKERS_WHEN_READER_BLOCKED", 4)
+
+
+def get_pipeline_prefetch_window() -> int:
+    """Return how many future unread chapters should be prefetched."""
+    return _env_int("PIPELINE_PREFETCH_WINDOW", 3)
+
+
 def get_tavily_api_key() -> str:
     """Get Tavily API key from environment variables.
 

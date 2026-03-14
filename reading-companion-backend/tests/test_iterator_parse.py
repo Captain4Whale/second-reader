@@ -14,6 +14,8 @@ from src.iterator_reader.storage import (
     chapter_result_file,
     cover_asset_file,
     load_structure,
+    parse_state_file,
+    run_state_file,
     save_json,
     save_structure,
     structure_file,
@@ -380,7 +382,7 @@ def test_upgrade_structure_metadata_backfills_segment_ref(tmp_path):
 
 
 def test_ensure_structure_for_book_rehydrates_segments_after_outline_only_parse(tmp_path, monkeypatch):
-    """Read-stage structure loading should continue into semantic segmentation when only chapter outline exists."""
+    """Read-stage structure loading should resume semantic segmentation only when explicitly required."""
     book_path = tmp_path / "demo.epub"
     book_path.write_text("placeholder", encoding="utf-8")
     output_dir = tmp_path / "output" / "demo-book"
@@ -440,12 +442,95 @@ def test_ensure_structure_for_book_rehydrates_segments_after_outline_only_parse(
 
     monkeypatch.setattr(parse_module, "build_structure", _fake_build_structure)
 
-    structure, resolved_output_dir, created = parse_module.ensure_structure_for_book(book_path, continue_mode=True)
+    structure, resolved_output_dir, created = parse_module.ensure_structure_for_book(
+        book_path,
+        continue_mode=True,
+        require_segments=True,
+    )
 
     assert created is False
     assert resolved_output_dir == output_dir
-    assert captured_calls == [{"language_mode": "auto", "continue_mode": True}]
+    assert captured_calls == [{"language_mode": "auto", "continue_mode": True, "include_segments": True}]
     assert structure["chapters"][0]["segments"][0]["id"] == "1.1"
+
+
+def test_write_parse_progress_can_skip_run_state_updates(tmp_path):
+    """Background segmentation checkpoints should not overwrite the main deep-reading run state."""
+    output_dir = tmp_path / "output" / "demo-book"
+    output_dir.mkdir(parents=True, exist_ok=True)
+    structure = {
+        "book": "Demo Book",
+        "author": "Tester",
+        "book_language": "en",
+        "output_language": "en",
+        "source_file": "demo.epub",
+        "output_dir": str(output_dir),
+        "chapters": [
+            {
+                "id": 1,
+                "title": "Chapter 1",
+                "chapter_number": 1,
+                "status": "in_progress",
+                "level": 1,
+                "segments": [],
+            },
+            {
+                "id": 2,
+                "title": "Chapter 2",
+                "chapter_number": 2,
+                "status": "pending",
+                "level": 1,
+                "segments": [],
+            },
+        ],
+    }
+    save_json(
+        run_state_file(output_dir),
+        {
+            "mode": "sequential",
+            "stage": "deep_reading",
+            "book": "Demo Book",
+            "current_chapter_id": 1,
+            "current_chapter_ref": "Chapter 1",
+            "current_segment_ref": "1.1",
+            "completed_chapters": 0,
+            "total_chapters": 2,
+            "eta_seconds": 120,
+            "current_phase_step": "正在阅读",
+            "resume_available": True,
+            "last_checkpoint_at": None,
+            "updated_at": "2026-03-14T00:00:00Z",
+            "error": None,
+        },
+    )
+
+    payload = parse_module.write_parse_progress(
+        structure,
+        output_dir,
+        status="parsing_structure",
+        total_chapters=2,
+        completed_chapters=1,
+        parsed_chapter_ids=[1],
+        inflight_chapter_ids=[2],
+        pending_chapter_ids=[2],
+        current_chapter_id=2,
+        current_chapter_ref="Chapter 2",
+        current_step="后台准备后续章节",
+        worker_limit=3,
+        last_checkpoint_at="2026-03-14T01:00:00Z",
+        sync_run_state=False,
+    )
+
+    saved_run_state = json.loads(run_state_file(output_dir).read_text(encoding="utf-8"))
+    saved_parse_state = json.loads(parse_state_file(output_dir).read_text(encoding="utf-8"))
+
+    assert saved_run_state["stage"] == "deep_reading"
+    assert saved_run_state["current_chapter_ref"] == "Chapter 1"
+    assert payload["worker_limit"] == 3
+    assert saved_parse_state["segmented_chapter_ids"] == [1]
+    assert saved_parse_state["inflight_chapter_ids"] == [2]
+    assert saved_parse_state["pending_chapter_ids"] == [2]
+    assert saved_parse_state["current_step"] == "后台准备后续章节"
 
 
 def _write_test_epub(

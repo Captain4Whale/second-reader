@@ -8,7 +8,7 @@ import zipfile
 from datetime import datetime, timezone
 from difflib import SequenceMatcher
 from pathlib import Path
-from typing import Literal
+from typing import Callable, Literal
 from xml.etree import ElementTree as ET
 import ebooklib
 from ebooklib import epub
@@ -571,6 +571,121 @@ def _chapter_stub_from_context(output_dir: Path, context: dict[str, object], *, 
     return chapter_stub
 
 
+def chapter_contexts_for_book(book_path: Path, *, output_language: str) -> list[dict[str, object]]:
+    """Rebuild semantic-segmentation contexts for one source book."""
+    raw_chapters = parse_ebook(str(book_path))
+    return _chapter_contexts(raw_chapters, output_language=output_language)
+
+
+def segment_context_into_chapter(
+    output_dir: Path,
+    context: dict[str, object],
+    *,
+    progress: Callable[[str], None] | None = None,
+) -> StructureChapter:
+    """Segment one prepared chapter context into a persisted structure record."""
+    chapter_id = int(context.get("id", 0))
+    paragraph_records = list(context.get("paragraph_records", []))
+    chapter_heading = context.get("chapter_heading")
+    body_groups = list(context.get("body_groups", []))
+    output_language = str(context.get("output_language", "en") or "en")
+
+    segments: list[SemanticSegment] = []
+    next_segment_index = 1
+    total_groups = max(1, len(body_groups))
+    for group_index, group in enumerate(body_groups, start=1):
+        body_records = [
+            record
+            for record in list(group.get("body_records", []))
+            if str(record.get("text", "")).strip()
+        ]
+        if not body_records:
+            continue
+        if progress is not None:
+            progress(f"语义切分块 {group_index}/{total_groups}")
+        local_segments = segment_chapter_semantically(
+            chapter_id=chapter_id,
+            chapter_title=str(context.get("title", "")),
+            chapter_text="\n\n".join(str(record.get("text", "")) for record in body_records),
+            output_language=output_language,
+            paragraphs=[str(record.get("text", "")) for record in body_records],
+            chapter_heading_text=str(chapter_heading.get("text", "")) if isinstance(chapter_heading, dict) else "",
+            section_heading_text="\n".join(
+                str(record.get("text", "")).strip()
+                for record in list(group.get("heading_records", []))
+                if str(record.get("text", "")).strip()
+            ),
+        )
+        for segment in local_segments:
+            start = int(segment.get("paragraph_start", 0) or 0)
+            end = int(segment.get("paragraph_end", 0) or 0)
+            if start < 1 or end < start or end > len(body_records):
+                continue
+            segment_records = body_records[start - 1 : end]
+            segment_text = _records_text(segment_records)
+            segments.append(
+                {
+                    "id": f"{chapter_id}.{next_segment_index}",
+                    "summary": str(segment.get("summary", "")),
+                    "tokens": estimate_tokens(segment_text),
+                    "text": segment_text,
+                    "paragraph_start": int(segment_records[0].get("paragraph_index", 0) or 0),
+                    "paragraph_end": int(segment_records[-1].get("paragraph_index", 0) or 0),
+                    "status": segment.get("status", "pending"),
+                }
+            )
+            next_segment_index += 1
+
+    if not segments:
+        body_records = [
+            record
+            for record in paragraph_records
+            if str(record.get("text_role", "")) == "body" and str(record.get("text", "")).strip()
+        ]
+        if body_records:
+            segment_text = _records_text(body_records)
+            segments = [
+                {
+                    "id": f"{chapter_id}.1",
+                    "summary": str(context.get("title", ""))[:80],
+                    "tokens": estimate_tokens(segment_text),
+                    "text": segment_text,
+                    "paragraph_start": int(body_records[0].get("paragraph_index", 0) or 0),
+                    "paragraph_end": int(body_records[-1].get("paragraph_index", 0) or 0),
+                    "status": "pending",
+                }
+            ]
+
+    chapter_record = _chapter_stub_from_context(output_dir, context, segments=segments)
+    for segment in chapter_record.get("segments", []):
+        segment["segment_ref"] = segment_reference(chapter_record, segment.get("id", ""))
+        start = int(segment.get("paragraph_start", 0) or 0)
+        end = int(segment.get("paragraph_end", 0) or 0)
+        segment_records = [
+            record
+            for record in paragraph_records
+            if start <= int(record.get("paragraph_index", 0) or 0) <= end
+            and str(record.get("text_role", "body")) == "body"
+        ]
+        locator = _segment_locator_from_records(segment_records)
+        if locator:
+            segment["locator"] = locator
+        segment["paragraph_locators"] = [
+            {
+                "href": str(record.get("href", "")),
+                "start_cfi": record.get("start_cfi"),
+                "end_cfi": record.get("end_cfi"),
+                "paragraph_index": int(record.get("paragraph_index", 0) or 0),
+                "text": str(record.get("text", "")),
+                "block_tag": str(record.get("block_tag", "p")),
+                "heading_level": record.get("heading_level"),
+                "text_role": str(record.get("text_role", "body")),
+            }
+            for record in segment_records
+        ]
+    return chapter_record
+
+
 def _persist_structure_artifacts(output_dir: Path, structure: BookStructure) -> None:
     """Persist the canonical structure, markdown overview, and manifest."""
     save_structure(structure_file(output_dir), structure)
@@ -582,7 +697,7 @@ def _persist_structure_artifacts(output_dir: Path, structure: BookStructure) -> 
     write_book_manifest(output_dir, structure)
 
 
-def _write_parse_progress(
+def write_parse_progress(
     structure: BookStructure,
     output_dir: Path,
     *,
@@ -590,38 +705,50 @@ def _write_parse_progress(
     total_chapters: int,
     completed_chapters: int,
     parsed_chapter_ids: list[int],
+    inflight_chapter_ids: list[int] | None = None,
+    pending_chapter_ids: list[int] | None = None,
     current_chapter_id: int | None = None,
     current_chapter_ref: str | None = None,
     current_step: str | None = None,
+    worker_limit: int | None = None,
     last_checkpoint_at: str | None = None,
     error: str | None = None,
+    sync_run_state: bool = True,
 ) -> ParseState:
     """Persist parse-stage progress into both run_state and parse_state."""
     resume_available = bool(parsed_chapter_ids) or status in {"paused", "error"}
-    write_run_state(
-        output_dir,
-        build_run_state(
-            structure,
-            stage="ready" if status == "ready" else status,
-            total_chapters=total_chapters,
-            completed_chapters=completed_chapters,
-            current_chapter_id=current_chapter_id,
-            current_chapter_ref=current_chapter_ref,
-            current_segment_ref=None,
-            current_phase_step=current_step,
-            resume_available=resume_available,
-            last_checkpoint_at=last_checkpoint_at,
-            error=error,
-        ),
-    )
+    normalized_parsed_ids = sorted(int(chapter_id) for chapter_id in parsed_chapter_ids)
+    normalized_inflight_ids = sorted(int(chapter_id) for chapter_id in (inflight_chapter_ids or []))
+    normalized_pending_ids = sorted(int(chapter_id) for chapter_id in (pending_chapter_ids or []))
+    if sync_run_state:
+        write_run_state(
+            output_dir,
+            build_run_state(
+                structure,
+                stage="ready" if status == "ready" else status,
+                total_chapters=total_chapters,
+                completed_chapters=completed_chapters,
+                current_chapter_id=current_chapter_id,
+                current_chapter_ref=current_chapter_ref,
+                current_segment_ref=None,
+                current_phase_step=current_step,
+                resume_available=resume_available,
+                last_checkpoint_at=last_checkpoint_at,
+                error=error,
+            ),
+        )
     payload: ParseState = {
         "status": status,
         "total_chapters": int(total_chapters),
         "completed_chapters": int(completed_chapters),
-        "parsed_chapter_ids": sorted(int(chapter_id) for chapter_id in parsed_chapter_ids),
+        "parsed_chapter_ids": normalized_parsed_ids,
+        "segmented_chapter_ids": normalized_parsed_ids,
+        "inflight_chapter_ids": normalized_inflight_ids,
+        "pending_chapter_ids": normalized_pending_ids,
         "current_chapter_id": current_chapter_id,
         "current_chapter_ref": current_chapter_ref,
         "current_step": current_step,
+        "worker_limit": worker_limit,
         "resume_available": resume_available,
         "last_checkpoint_at": last_checkpoint_at,
         "updated_at": _timestamp(),
@@ -1252,7 +1379,7 @@ def build_structure(
         )
 
     if not include_segments:
-        _write_parse_progress(
+        write_parse_progress(
             structure,
             output_dir,
             status="ready",
@@ -1264,7 +1391,7 @@ def build_structure(
         return structure, output_dir
 
     next_context = next((context for context in contexts if int(context.get("id", 0)) not in parsed_chapter_ids), None)
-    _write_parse_progress(
+    write_parse_progress(
         structure,
         output_dir,
         status="parsing_structure" if next_context is not None else "ready",
@@ -1283,7 +1410,7 @@ def build_structure(
             continue
 
         chapter_ref = chapter_reference(_chapter_stub_from_context(output_dir, context))
-        _write_parse_progress(
+        write_parse_progress(
             structure,
             output_dir,
             status="parsing_structure",
@@ -1306,100 +1433,11 @@ def build_structure(
         )
         print(f"[parse] {chapter_ref}: {context.get('title', '')}", flush=True)
 
-        paragraph_records = list(context.get("paragraph_records", []))
-        chapter_heading = context.get("chapter_heading")
-        body_groups = list(context.get("body_groups", []))
-        segments: list[SemanticSegment] = []
-        next_segment_index = 1
-        for group_index, group in enumerate(body_groups, start=1):
-            body_records = [
-                record
-                for record in list(group.get("body_records", []))
-                if str(record.get("text", "")).strip()
-            ]
-            if not body_records:
-                continue
-            print(f"  ├─ 语义切分块 {group_index}/{max(1, len(body_groups))}", flush=True)
-            local_segments = segment_chapter_semantically(
-                chapter_id=chapter_id,
-                chapter_title=str(context.get("title", "")),
-                chapter_text="\n\n".join(str(record.get("text", "")) for record in body_records),
-                output_language=output_language,
-                paragraphs=[str(record.get("text", "")) for record in body_records],
-                chapter_heading_text=str(chapter_heading.get("text", "")) if isinstance(chapter_heading, dict) else "",
-                section_heading_text="\n".join(
-                    str(record.get("text", "")).strip()
-                    for record in list(group.get("heading_records", []))
-                    if str(record.get("text", "")).strip()
-                ),
-            )
-            for segment in local_segments:
-                start = int(segment.get("paragraph_start", 0) or 0)
-                end = int(segment.get("paragraph_end", 0) or 0)
-                if start < 1 or end < start or end > len(body_records):
-                    continue
-                segment_records = body_records[start - 1 : end]
-                segment_text = _records_text(segment_records)
-                segments.append(
-                    {
-                        "id": f"{chapter_id}.{next_segment_index}",
-                        "summary": str(segment.get("summary", "")),
-                        "tokens": estimate_tokens(segment_text),
-                        "text": segment_text,
-                        "paragraph_start": int(segment_records[0].get("paragraph_index", 0) or 0),
-                        "paragraph_end": int(segment_records[-1].get("paragraph_index", 0) or 0),
-                        "status": segment.get("status", "pending"),
-                    }
-                )
-                next_segment_index += 1
-
-        if not segments:
-            body_records = [
-                record
-                for record in paragraph_records
-                if str(record.get("text_role", "")) == "body" and str(record.get("text", "")).strip()
-            ]
-            if body_records:
-                segment_text = _records_text(body_records)
-                segments = [
-                    {
-                        "id": f"{chapter_id}.1",
-                        "summary": str(context.get("title", ""))[:80],
-                        "tokens": estimate_tokens(segment_text),
-                        "text": segment_text,
-                        "paragraph_start": int(body_records[0].get("paragraph_index", 0) or 0),
-                        "paragraph_end": int(body_records[-1].get("paragraph_index", 0) or 0),
-                        "status": "pending",
-                    }
-                ]
-
-        chapter_record = _chapter_stub_from_context(output_dir, context, segments=segments)
-        for segment in chapter_record.get("segments", []):
-            segment["segment_ref"] = segment_reference(chapter_record, segment.get("id", ""))
-            start = int(segment.get("paragraph_start", 0) or 0)
-            end = int(segment.get("paragraph_end", 0) or 0)
-            segment_records = [
-                record
-                for record in paragraph_records
-                if start <= int(record.get("paragraph_index", 0) or 0) <= end
-                and str(record.get("text_role", "body")) == "body"
-            ]
-            locator = _segment_locator_from_records(segment_records)
-            if locator:
-                segment["locator"] = locator
-            segment["paragraph_locators"] = [
-                {
-                    "href": str(record.get("href", "")),
-                    "start_cfi": record.get("start_cfi"),
-                    "end_cfi": record.get("end_cfi"),
-                    "paragraph_index": int(record.get("paragraph_index", 0) or 0),
-                    "text": str(record.get("text", "")),
-                    "block_tag": str(record.get("block_tag", "p")),
-                    "heading_level": record.get("heading_level"),
-                    "text_role": str(record.get("text_role", "body")),
-                }
-                for record in segment_records
-            ]
+        chapter_record = segment_context_into_chapter(
+            output_dir,
+            context,
+            progress=lambda message: print(f"  ├─ {message}", flush=True),
+        )
 
         structure["chapters"] = [
             chapter_record if int(existing.get("id", 0)) == chapter_id else existing
@@ -1408,7 +1446,7 @@ def build_structure(
         parsed_chapter_ids.append(chapter_id)
         checkpoint_at = _timestamp()
         _persist_structure_artifacts(output_dir, structure)
-        _write_parse_progress(
+        write_parse_progress(
             structure,
             output_dir,
             status="parsing_structure",
@@ -1442,7 +1480,7 @@ def build_structure(
 
     final_checkpoint_at = _timestamp() if parsed_chapter_ids else None
     _persist_structure_artifacts(output_dir, structure)
-    _write_parse_progress(
+    write_parse_progress(
         structure,
         output_dir,
         status="ready",
@@ -1490,7 +1528,7 @@ def parse_book(book_path: Path, language_mode: str = "auto", continue_mode: bool
             parsed_ids = [int(item) for item in payload.get("parsed_chapter_ids", [])]
             if existing_structure_file(output_dir).exists():
                 structure = load_structure(existing_structure_file(output_dir))
-        _write_parse_progress(
+        write_parse_progress(
             structure,
             output_dir,
             status="error",
@@ -1512,7 +1550,7 @@ def parse_book(book_path: Path, language_mode: str = "auto", continue_mode: bool
 
     parsed_chapter_ids = [int(chapter.get("id", 0)) for chapter in structure.get("chapters", []) if _chapter_is_parsed(chapter)]
     _persist_structure_artifacts(output_dir, structure)
-    _write_parse_progress(
+    write_parse_progress(
         structure,
         output_dir,
         status="ready",
@@ -1536,6 +1574,7 @@ def ensure_structure_for_book(
     language_mode: str = "auto",
     *,
     continue_mode: bool = False,
+    require_segments: bool = False,
 ) -> tuple[BookStructure, Path, bool]:
     """Load existing structure.json or create it when absent."""
     title, _author = extract_book_metadata(book_path)
@@ -1560,11 +1599,16 @@ def ensure_structure_for_book(
             parse_complete = all(_chapter_is_parsed(chapter) for chapter in structure.get("chapters", []))
             if changed or path != canonical_path:
                 _persist_structure_artifacts(output_dir, structure)
-            if parse_complete:
+            if parse_complete or not require_segments:
                 return structure, output_dir, False
             if not continue_mode:
                 return structure, output_dir, False
-    structure, output_dir = build_structure(book_path, language_mode=language_mode, continue_mode=continue_mode)
+    structure, output_dir = build_structure(
+        book_path,
+        language_mode=language_mode,
+        continue_mode=continue_mode,
+        include_segments=require_segments,
+    )
     return structure, output_dir, not had_existing_structure
 
 

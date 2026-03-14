@@ -142,6 +142,40 @@ function structureStatusLabel(
   return "排队中";
 }
 
+function currentChapterRuntimeLabel(
+  chapter: OverviewChapter,
+  analysis: AnalysisStateResponse | null,
+  options: { isParsing: boolean },
+) {
+  if (!analysis || !chapter.is_current) {
+    return null;
+  }
+
+  const panel = analysis.current_state_panel;
+  const currentChapterRef = (panel.current_chapter_ref ?? analysis.current_chapter_ref ?? "").trim();
+  const chapterMatches =
+    !currentChapterRef ||
+    currentChapterRef === chapter.chapter_ref ||
+    currentChapterRef === chapter.title;
+
+  if (!chapterMatches) {
+    return null;
+  }
+
+  if (options.isParsing) {
+    const step = (panel.current_phase_step ?? analysis.current_phase_step ?? "").trim();
+    return step ? `当前步骤: ${step}` : "当前步骤: 正在准备可读结构";
+  }
+
+  const sectionRef = (panel.current_section_ref ?? "").trim();
+  if (sectionRef) {
+    return `正在阅读: ${sectionRef}`;
+  }
+
+  const phase = (panel.current_phase_step ?? analysis.current_phase_step ?? "").trim();
+  return phase ? `当前状态: ${phase}` : "当前状态: 正在深读";
+}
+
 function BookOverviewHeader({
   title,
   author,
@@ -498,6 +532,7 @@ function StructureChapterList({
 function ProcessingStructureNavigator({
   bookId,
   chapters,
+  analysis,
   viewMode,
   isParsing = false,
   isPaused = false,
@@ -507,6 +542,7 @@ function ProcessingStructureNavigator({
 }: {
   bookId: number;
   chapters: OverviewChapter[];
+  analysis: AnalysisStateResponse | null;
   viewMode: StructureViewMode;
   isParsing?: boolean;
   isPaused?: boolean;
@@ -525,7 +561,15 @@ function ProcessingStructureNavigator({
     if (!currentRow) {
       return;
     }
-    currentRow.scrollIntoView({ block: "center" });
+    const currentTop = currentRow.offsetTop;
+    const currentBottom = currentTop + currentRow.offsetHeight;
+    const viewportTop = listNode.scrollTop;
+    const viewportBottom = viewportTop + listNode.clientHeight;
+    const targetTop = Math.max(0, currentTop - (listNode.clientHeight - currentRow.offsetHeight) / 2);
+
+    if (currentTop < viewportTop || currentBottom > viewportBottom) {
+      listNode.scrollTo({ top: targetTop, behavior: "smooth" });
+    }
   }, [chapters]);
 
   const content = chapters.length === 0 ? (
@@ -536,6 +580,7 @@ function ProcessingStructureNavigator({
     <div ref={listRef} className="space-y-2 overflow-y-auto pr-2 md:max-h-[32rem] lg:max-h-[calc(100vh-10rem)]">
       {chapters.map((chapter) => {
         const statusLabel = structureStatusLabel(chapter, viewMode, { isParsing, isPaused });
+        const runtimeLabel = currentChapterRuntimeLabel(chapter, analysis, { isParsing });
         const isInteractive = chapter.result_ready;
         const wrapperClass = `block rounded-2xl border px-4 py-3 no-underline transition-all ${
           chapter.is_current
@@ -579,6 +624,15 @@ function ProcessingStructureNavigator({
               <div className="mt-2 flex items-center gap-3 text-[var(--warm-500)]" style={{ fontSize: "0.75rem" }}>
                 <span>{chapter.visible_reaction_count} reactions</span>
                 <span>{chapter.high_signal_reaction_count} high-signal</span>
+              </div>
+            ) : null}
+
+            {runtimeLabel ? (
+              <div
+                className="mt-2 rounded-xl bg-white/75 px-3 py-2 text-[var(--amber-accent)]"
+                style={{ fontSize: "0.75rem", fontWeight: 600, lineHeight: 1.5 }}
+              >
+                {runtimeLabel}
               </div>
             ) : null}
 
@@ -1099,6 +1153,7 @@ export function BookOverviewPage() {
             <ProcessingStructureNavigator
               bookId={detail.book_id}
               chapters={structureChapters}
+              analysis={analysisResource.analysis}
               viewMode={viewMode}
               isParsing={isAnalysisParsing(analysisResource.analysis)}
               isPaused={detail.status === "paused"}

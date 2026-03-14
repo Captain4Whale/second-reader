@@ -194,9 +194,13 @@ class ParseState(TypedDict):
     total_chapters: int
     completed_chapters: int
     parsed_chapter_ids: list[int]
+    segmented_chapter_ids: list[int]
+    inflight_chapter_ids: list[int]
+    pending_chapter_ids: list[int]
     current_chapter_id: int | None
     current_chapter_ref: str | None
     current_step: str | None
+    worker_limit: int | None
     resume_available: bool
     last_checkpoint_at: str | None
     updated_at: str
