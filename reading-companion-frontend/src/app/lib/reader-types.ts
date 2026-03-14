@@ -23,12 +23,6 @@ export interface ReaderLocation {
   sectionRef: string | null;
 }
 
-export interface ReaderSyncState {
-  followNotes: boolean;
-  currentSectionRef: string | null;
-  lastJumpId: number | null;
-}
-
 export interface ReaderCapability {
   cfiJump: boolean;
   hrefJump: boolean;

@@ -1,8 +1,6 @@
 import {
   AlertCircle,
   Loader2,
-  Minus,
-  Plus,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { SectionCard } from "../lib/api-types";
@@ -17,9 +15,7 @@ import type {
   ReaderTheme,
 } from "../lib/reader-types";
 import { normalizeReaderCharacter, normalizeReaderText } from "../lib/reader-types";
-import { OverflowTooltipText } from "./ui/overflow-tooltip-text";
 import { useElementResponsiveTier } from "./ui/use-responsive-tier";
-import { Switch } from "./ui/switch";
 
 type EpubContents = {
   document?: Document;
@@ -88,20 +84,12 @@ interface SectionLocatorEntry {
 }
 
 export interface SourceReaderPaneProps {
-  chapterRef: string;
-  chapterTitle: string;
-  followNotes: boolean;
+  fontSizePercent: number;
   jumpRequest: ReaderJumpRequest | null;
-  onFollowNotesChange: (value: boolean) => void;
   onLocationChange?: (update: ReaderLocationUpdate) => void;
   sections: SectionCard[];
   sourceUrl: string | null;
 }
-
-const FONT_SIZE_STEP = 8;
-const FONT_SIZE_MIN = 84;
-const FONT_SIZE_MAX = 148;
-const FONT_SIZE_STORAGE_KEY = "chapter-reader-font-size";
 const JUMP_DISPLAY_TIMEOUT_CFI_MS = 300;
 const JUMP_DISPLAY_TIMEOUT_HREF_MS = 1100;
 const JUMP_SPINNER_GUARD_MS = 2200;
@@ -192,21 +180,6 @@ function highlightToneForReactionType(
     fill: hexToRgba(hex ?? READER_HIGHLIGHT_FALLBACK_HEX, alpha),
     opacity: String(alpha),
   };
-}
-
-function readStoredFontSize(): number {
-  if (typeof window === "undefined") {
-    return 100;
-  }
-  const raw = window.localStorage.getItem(FONT_SIZE_STORAGE_KEY);
-  if (!raw) {
-    return 100;
-  }
-  const parsed = Number(raw);
-  if (Number.isNaN(parsed)) {
-    return 100;
-  }
-  return Math.min(FONT_SIZE_MAX, Math.max(FONT_SIZE_MIN, parsed));
 }
 
 function normalizeHref(value: string | null | undefined): string | null {
@@ -828,13 +801,6 @@ async function scrollRangeIntoView(range: Range): Promise<void> {
   }
 }
 
-function formatProgress(value: number | null): string {
-  if (value == null || Number.isNaN(value)) {
-    return "--";
-  }
-  return `${Math.round(value * 100)}%`;
-}
-
 function disableSmoothScrollInHost(host: HTMLElement): void {
   host.style.scrollBehavior = "auto";
   const descendants = host.querySelectorAll<HTMLElement>("*");
@@ -954,12 +920,9 @@ async function waitForMatchTextAvailability(
 
 export function SourceReaderPane({
   sourceUrl,
-  chapterRef,
-  chapterTitle,
+  fontSizePercent,
   sections,
   jumpRequest,
-  followNotes,
-  onFollowNotesChange,
   onLocationChange = noop,
 }: SourceReaderPaneProps) {
   const sectionLocators = useMemo<SectionLocatorEntry[]>(
@@ -973,7 +936,6 @@ export function SourceReaderPane({
     [sections],
   );
 
-  const [fontSize, setFontSize] = useState(readStoredFontSize);
   const [isLoading, setIsLoading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [readerReady, setReaderReady] = useState(false);
@@ -1017,12 +979,6 @@ export function SourceReaderPane({
   }, [onLocationChange]);
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      window.localStorage.setItem(FONT_SIZE_STORAGE_KEY, String(fontSize));
-    }
-  }, [fontSize]);
-
-  useEffect(() => {
     const host = hostRef.current;
     const rendition = renditionRef.current;
     if (!host || !rendition?.resize || typeof ResizeObserver === "undefined") {
@@ -1063,8 +1019,8 @@ export function SourceReaderPane({
     if (!rendition?.themes) {
       return;
     }
-    rendition.themes.fontSize(`${fontSize}%`);
-  }, [fontSize]);
+    rendition.themes.fontSize(`${fontSizePercent}%`);
+  }, [fontSizePercent]);
 
   useEffect(() => {
     const rendition = renditionRef.current;
@@ -1193,7 +1149,7 @@ export function SourceReaderPane({
         rendition.themes?.register("paper", PAPER_THEME);
         rendition.themes?.register("night", NIGHT_THEME);
         rendition.themes?.select(theme);
-        rendition.themes?.fontSize(`${fontSize}%`);
+        rendition.themes?.fontSize(`${fontSizePercent}%`);
 
         const onRelocated = (raw: unknown) => {
           const location = normalizeDisplayedLocation(raw);
@@ -1257,6 +1213,24 @@ export function SourceReaderPane({
           return;
         }
 
+        const initialSectionEntry =
+          sectionLocatorsRef.current.find((entry) => entry.startCfi || entry.href) ?? null;
+        const initialProgress =
+          initialSectionEntry?.startCfi && book.locations?.percentageFromCfi
+            ? book.locations.percentageFromCfi(initialSectionEntry.startCfi)
+            : null;
+        const initialLocation: ReaderLocation = {
+          cfi: initialSectionEntry?.startCfi ?? null,
+          href: initialSectionEntry?.href ?? null,
+          progress: initialProgress,
+          sectionRef: initialSectionEntry?.sectionRef ?? null,
+        };
+        setReaderLocation(initialLocation);
+        onLocationChangeRef.current({
+          location: initialLocation,
+          programmatic: false,
+        });
+
         setReaderReady(true);
         setLastJumpFeedback({
           approximate: false,
@@ -1312,7 +1286,7 @@ export function SourceReaderPane({
         }
       }
     };
-  }, [sourceUrl]);
+  }, [fontSizePercent, sourceUrl]);
 
   function clearHighlight() {
     const rendition = renditionRef.current;
@@ -1749,119 +1723,16 @@ async function locateMatchText(
     void jumpToRequest(jumpRequest);
   }, [jumpRequest, readerReady]);
 
-  const effectiveSectionRef =
-    readerLocation.sectionRef ??
-    lastJumpFeedback?.sectionRef ??
-    jumpRequest?.sectionRef ??
-    null;
-  const currentSection = useMemo(
-    () => sections.find((section) => section.section_ref === effectiveSectionRef) ?? null,
-    [effectiveSectionRef, sections],
-  );
   const { ref: paneRef, tier: readerTier } = useElementResponsiveTier<HTMLDivElement>();
-  const currentSectionLabel = currentSection?.summary?.trim() || chapterTitle || chapterRef;
-  const currentSectionMeta = effectiveSectionRef || chapterRef;
-  const followControlLabel = followNotes ? "Follow notes on" : "Follow notes off";
   const readerCompact = readerTier === "compact" || readerTier === "narrow" || readerTier === "mobile";
-  const iconButtonClass = `inline-flex items-center justify-center rounded-full border border-transparent bg-transparent text-[var(--warm-700)] transition-all duration-200 hover:-translate-y-[1px] hover:bg-[var(--warm-100)] hover:text-[var(--warm-900)] ${
-    readerCompact ? "h-7 w-7" : "h-8 w-8"
-  }`;
-  const followStateToneClass = followNotes ? "text-emerald-700" : "text-amber-700";
-  const controlClusterClass = `inline-flex items-center gap-1 rounded-full border border-[var(--warm-300)]/64 bg-white/82 shadow-[inset_0_1px_0_rgba(255,255,255,0.92),0_8px_20px_rgba(61,46,31,0.04)] ${
-    readerCompact ? "h-9 px-1.25" : "h-10 px-1.5"
-  }`;
-  const followClusterClass = `inline-flex items-center rounded-full border border-[var(--amber-accent)]/18 bg-[var(--amber-bg)]/72 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_10px_22px_rgba(139,105,20,0.06)] ${
-    readerCompact ? "h-9 gap-2 px-3" : "h-10 gap-2.5 px-3.5"
-  }`;
   const readerShellClass = "bg-[var(--warm-100)]";
   const loadingOverlayClass = "bg-[var(--warm-50)]/86";
   const loadingTextClass = "text-[var(--warm-700)]";
   const errorOverlayClass = "bg-[var(--warm-100)]";
-  const readerHeaderHeightClass = readerCompact ? "min-h-[78px]" : "min-h-[82px]";
   const showReaderStatus = isJumping || Boolean(lastJumpFeedback?.approximate);
 
   return (
     <div ref={paneRef} className={`h-full flex flex-col ${readerShellClass}`} data-testid="source-reader-pane">
-      <div className={`rc-pane-header-surface shrink-0 ${readerHeaderHeightClass} ${readerCompact ? "px-4 py-2 sm:px-5" : "px-5 py-2.5 sm:px-6"}`}>
-        <div className="flex h-full flex-col justify-center gap-1.5">
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <p className="text-[var(--warm-500)] uppercase tracking-[0.16em]" style={{ fontSize: "0.63rem", fontWeight: 600 }}>
-                Reading in
-              </p>
-              <OverflowTooltipText
-                as="p"
-                text={currentSectionLabel}
-                lines={1}
-                side="bottom"
-                className="mt-0.5 text-[var(--warm-900)]"
-                style={{
-                  fontSize: readerCompact ? "1rem" : "1.1rem",
-                  fontWeight: 700,
-                  lineHeight: 1.2,
-                  maxWidth: "34rem",
-                }}
-                data-testid="reader-current-target"
-              />
-            </div>
-            <div className="shrink-0 text-right">
-              <p className="text-[var(--warm-500)]" style={{ fontSize: "0.68rem", lineHeight: 1.3 }}>
-                Progress
-              </p>
-              <p className="mt-0.5 text-[var(--warm-800)]" style={{ fontSize: readerCompact ? "1.18rem" : "1.28rem", lineHeight: 1, fontWeight: 700 }} data-testid="reader-progress">
-                {formatProgress(readerLocation.progress)}
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between gap-3">
-            <span
-              className={`inline-flex items-center rounded-full border border-[var(--warm-300)]/48 bg-white/74 text-[var(--warm-600)] ${
-                readerCompact ? "h-6.5 px-2.5" : "h-7 px-3"
-              }`}
-              style={{ fontSize: readerCompact ? "0.69rem" : "0.72rem", fontWeight: 600 }}
-            >
-              {currentSectionMeta}
-            </span>
-
-            <div className="flex flex-wrap items-center justify-end gap-2">
-              <div className={controlClusterClass}>
-                <button
-                  type="button"
-                  onClick={() => setFontSize((current) => Math.max(FONT_SIZE_MIN, current - FONT_SIZE_STEP))}
-                  className={iconButtonClass}
-                  aria-label="Decrease font size"
-                >
-                  <Minus className="h-3.5 w-3.5" />
-                </button>
-                <span className="text-[var(--warm-600)]" style={{ fontSize: "0.72rem", minWidth: "2.4rem", textAlign: "center", fontWeight: 600 }}>
-                  {fontSize}%
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setFontSize((current) => Math.min(FONT_SIZE_MAX, current + FONT_SIZE_STEP))}
-                  className={iconButtonClass}
-                  aria-label="Increase font size"
-                >
-                  <Plus className="h-3.5 w-3.5" />
-                </button>
-              </div>
-              <div className={followClusterClass}>
-                <Switch
-                  checked={followNotes}
-                  onCheckedChange={onFollowNotesChange}
-                  data-testid="reader-follow-notes"
-                  aria-label="Follow notes"
-                />
-                <span className={followStateToneClass} style={{ fontSize: readerCompact ? "0.7rem" : "0.72rem", fontWeight: 600 }}>
-                  {followControlLabel}
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
       <div className={`rc-reader-scroll-area ${readerCompact ? "rc-reader-scroll-area-compact" : ""} flex-1 relative overflow-hidden ${readerShellClass}`}>
         <div ref={hostRef} className={`absolute inset-0 ${readerShellClass}`} data-testid="source-reader-canvas" />
 

@@ -70,7 +70,6 @@ These are the primary routes the frontend should render and the backend should r
 - `/books` -> Books
 - `/books/:id` -> Book overview
 - `/books/:id/chapters/:chapterId` -> Chapter deep read
-- `/books/:id/analysis` -> Analysis in progress
 - `/marks` -> Global My Marks
 
 ### Compatibility Routes
@@ -79,11 +78,12 @@ These may remain as redirects for older links, but they are not canonical:
 - `/bookshelf`
 - `/book/:bookId`
 - `/book/:bookId/chapter/:chapterId`
+- `/books/:id/analysis`
 - `/analysis/:bookId`
 - `/bookshelf/marks`
 
 ### Current Implementation Note
-`/upload` still exists as a utility route in the frontend because the upload flow remains part of the current product. It is intentionally not part of the canonical reading-surface route set above.
+`/upload` remains as a compatibility utility route in the frontend, but it now redirects into the bookshelf-hosted upload modal flow (`/books?upload=1`).
 
 ## ID Conventions
 All public identifiers exposed to the frontend are integers:
@@ -177,11 +177,11 @@ except as migration compatibility text where the underlying value remains in the
 - `recent_completed_chapters[].result_url` pointing to canonical frontend routes
 
 ### Upload And Job Polling
-`POST /api/uploads/epub` and `GET /api/jobs/:job_id` are part of the active integration surface.
+`POST /api/uploads/epub`, `POST /api/books/:id/analysis/start`, and `GET /api/jobs/:job_id` are part of the active integration surface.
 
 Stable expectations:
 - `job_id` is a string
-- `status` is a stable machine-readable job stage
+- `status` is a stable machine-readable job stage and may be `ready` after a deferred upload completes structure parsing
 - `book_id`, when known, is a public integer book id
 - `job_url` and `ws_url` remain backend API URLs
 - chapter progress fields such as `current_chapter_id` remain integers
@@ -244,13 +244,13 @@ The JSON block below is the machine-readable appendix used by the root contract 
     "books": "/books",
     "book": "/books/:id",
     "chapter": "/books/:id/chapters/:chapterId",
-    "analysis": "/books/:id/analysis",
     "marks": "/marks"
   },
   "compat_routes": [
     "/bookshelf",
     "/book/:bookId",
     "/book/:bookId/chapter/:chapterId",
+    "/books/:id/analysis",
     "/analysis/:bookId",
     "/bookshelf/marks"
   ],

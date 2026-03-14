@@ -180,6 +180,61 @@
         "title": "ActivityEventsPageResponse",
         "type": "object"
       },
+      "AnalysisStartAcceptedResponse": {
+        "additionalProperties": false,
+        "description": "Response returned after starting analysis for an existing uploaded book.",
+        "properties": {
+          "book_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Resolved public integer book identifier if already known; otherwise null.",
+            "title": "Book Id"
+          },
+          "job_id": {
+            "description": "Identifier of the newly created analysis job.",
+            "title": "Job Id",
+            "type": "string"
+          },
+          "job_url": {
+            "description": "REST URL used to poll the job status.",
+            "title": "Job Url",
+            "type": "string"
+          },
+          "status": {
+            "description": "Initial job status immediately after the request is accepted.",
+            "enum": [
+              "queued",
+              "parsing_structure",
+              "ready",
+              "deep_reading",
+              "chapter_note_generation",
+              "completed",
+              "error"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "ws_url": {
+            "description": "WebSocket URL used to subscribe to live job updates.",
+            "title": "Ws Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "job_id",
+          "status",
+          "job_url",
+          "ws_url"
+        ],
+        "title": "AnalysisStartAcceptedResponse",
+        "type": "object"
+      },
       "AnalysisStateResponse": {
         "additionalProperties": false,
         "description": "Snapshot payload for the analysis-in-progress page.",
@@ -344,6 +399,15 @@
           "file": {
             "format": "binary",
             "title": "File",
+            "type": "string"
+          },
+          "start_mode": {
+            "default": "immediate",
+            "enum": [
+              "immediate",
+              "deferred"
+            ],
+            "title": "Start Mode",
             "type": "string"
           }
         },
@@ -1515,6 +1579,7 @@
             "enum": [
               "queued",
               "parsing_structure",
+              "ready",
               "deep_reading",
               "chapter_note_generation",
               "completed",
@@ -2156,7 +2221,16 @@
             "type": "string"
           },
           "status": {
-            "description": "Initial job status immediately after upload.",
+            "description": "Initial job status immediately after the request is accepted.",
+            "enum": [
+              "queued",
+              "parsing_structure",
+              "ready",
+              "deep_reading",
+              "chapter_note_generation",
+              "completed",
+              "error"
+            ],
             "title": "Status",
             "type": "string"
           },
@@ -2173,10 +2247,10 @@
         },
         "required": [
           "job_id",
-          "upload_filename",
           "status",
           "job_url",
-          "ws_url"
+          "ws_url",
+          "upload_filename"
         ],
         "title": "UploadAcceptedResponse",
         "type": "object"
@@ -2658,6 +2732,96 @@
           }
         },
         "summary": "Book Analysis State"
+      }
+    },
+    "/api/books/{book_id}/analysis/start": {
+      "post": {
+        "description": "Start sequential analysis for an uploaded book that has not begun deep reading yet.",
+        "operationId": "start_book_analysis_api_books__book_id__analysis_start_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "book_id",
+            "required": true,
+            "schema": {
+              "title": "Book Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalysisStartAcceptedResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Request Entity Too Large"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "Start Book Analysis"
       }
     },
     "/api/books/{book_id}/chapters/{chapter_id}": {

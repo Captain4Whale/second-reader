@@ -26,7 +26,7 @@ from src.api.schemas import (
     StructureReadyPayload,
     WsEventEnvelope,
 )
-from src.library.catalog import get_activity, get_analysis_state
+from src.library.catalog import get_activity, get_analysis_state, get_book
 from src.library.jobs import load_job, refresh_job
 
 
@@ -56,6 +56,8 @@ def _stage_label(status: str, current_chapter_ref: str | None = None) -> str:
         return "等待开始"
     if status == "parsing_structure":
         return "正在解析书籍结构"
+    if status == "ready":
+        return "结构已就绪"
     if status == "deep_reading":
         if current_chapter_ref:
             return f"正在分析 {current_chapter_ref}"
@@ -86,10 +88,12 @@ def build_job_status_response(job_id: str, root: Path) -> JobStatusResponse:
     stage_label = _stage_label(status)
 
     if internal_book_id:
-        try:
-            analysis = get_analysis_state(internal_book_id, root)
-        except FileNotFoundError:
-            analysis = None
+        analysis = None
+        if status != "ready":
+            try:
+                analysis = get_analysis_state(internal_book_id, root)
+            except FileNotFoundError:
+                analysis = None
         if analysis:
             status = str(analysis.get("status", status))
             book_title = str(analysis.get("title", "") or "") or None
@@ -102,6 +106,13 @@ def build_job_status_response(job_id: str, root: Path) -> JobStatusResponse:
             eta_seconds = analysis.get("eta_seconds")
             last_error = analysis.get("last_error")
             stage_label = str(analysis.get("stage_label", stage_label))
+        else:
+            book = get_book(internal_book_id, root=root)
+            manifest = book.get("manifest") or {}
+            completed_chapters = sum(1 for chapter in manifest.get("chapters", []) if str(chapter.get("status", "")) == "done")
+            total_chapters = len(manifest.get("chapters", []))
+            book_title = str(manifest.get("book", "") or "") or None
+            progress_percent = round((completed_chapters / total_chapters) * 100, 2) if total_chapters > 0 else None
 
     if status == "error" and last_error is None:
         last_error = {

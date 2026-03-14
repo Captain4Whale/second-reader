@@ -84,6 +84,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/books/{book_id}/analysis/start": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Start Book Analysis
+         * @description Start sequential analysis for an uploaded book that has not begun deep reading yet.
+         */
+        post: operations["start_book_analysis_api_books__book_id__analysis_start_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/books/{book_id}/chapters/{chapter_id}": {
         parameters: {
             query?: never;
@@ -382,6 +402,38 @@ export interface components {
             page_info: components["schemas"]["PageInfo"];
         };
         /**
+         * AnalysisStartAcceptedResponse
+         * @description Response returned after starting analysis for an existing uploaded book.
+         */
+        AnalysisStartAcceptedResponse: {
+            /**
+             * Book Id
+             * @description Resolved public integer book identifier if already known; otherwise null.
+             */
+            book_id?: number | null;
+            /**
+             * Job Id
+             * @description Identifier of the newly created analysis job.
+             */
+            job_id: string;
+            /**
+             * Job Url
+             * @description REST URL used to poll the job status.
+             */
+            job_url: string;
+            /**
+             * Status
+             * @description Initial job status immediately after the request is accepted.
+             * @enum {string}
+             */
+            status: "queued" | "parsing_structure" | "ready" | "deep_reading" | "chapter_note_generation" | "completed" | "error";
+            /**
+             * Ws Url
+             * @description WebSocket URL used to subscribe to live job updates.
+             */
+            ws_url: string;
+        };
+        /**
          * AnalysisStateResponse
          * @description Snapshot payload for the analysis-in-progress page.
          */
@@ -471,6 +523,12 @@ export interface components {
              * Format: binary
              */
             file: string;
+            /**
+             * Start Mode
+             * @default immediate
+             * @enum {string}
+             */
+            start_mode: "immediate" | "deferred";
         };
         /**
          * BookDetailResponse
@@ -1196,7 +1254,7 @@ export interface components {
              * @description Current execution stage of the upload/analysis job.
              * @enum {string}
              */
-            status: "queued" | "parsing_structure" | "deep_reading" | "chapter_note_generation" | "completed" | "error";
+            status: "queued" | "parsing_structure" | "ready" | "deep_reading" | "chapter_note_generation" | "completed" | "error";
             /**
              * Total Chapters
              * @description Total number of chapters when known.
@@ -1581,9 +1639,10 @@ export interface components {
             job_url: string;
             /**
              * Status
-             * @description Initial job status immediately after upload.
+             * @description Initial job status immediately after the request is accepted.
+             * @enum {string}
              */
-            status: string;
+            status: "queued" | "parsing_structure" | "ready" | "deep_reading" | "chapter_note_generation" | "completed" | "error";
             /**
              * Upload Filename
              * @description Original filename supplied by the client.
@@ -1858,6 +1917,82 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AnalysisStateResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Request Entity Too Large */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    start_book_analysis_api_books__book_id__analysis_start_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                book_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AnalysisStartAcceptedResponse"];
                 };
             };
             /** @description Bad Request */

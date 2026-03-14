@@ -9,10 +9,10 @@ from pathlib import Path
 from typing import Iterable
 
 from .pagination import paginate_items
+from .storage import jobs_dir, load_json as load_state_json
 from .user_marks import list_book_marks, list_marks
 from src.api.contract import (
     REACTION_FILTERS,
-    canonical_analysis_path,
     canonical_book_path,
     canonical_chapter_path,
     to_api_book_id,
@@ -169,11 +169,26 @@ def _display_status(manifest: dict, run_state: dict | None) -> str:
             return "error"
         if stage == "completed":
             return "completed"
-        if stage in {"ready", "deep_reading"}:
+        if stage == "deep_reading":
             return "analyzing"
     if any(str(chapter.get("status", "")).strip() == "done" for chapter in manifest.get("chapters", [])):
         return "completed"
     return "not_started"
+
+
+def _has_active_analysis_job(book_id: str, root: Path | None = None) -> bool:
+    """Return whether there is an in-flight deep-reading job for this book."""
+    for path in sorted(jobs_dir(root).glob("*.json")):
+        try:
+            record = load_state_json(path)
+        except (FileNotFoundError, json.JSONDecodeError):
+            continue
+        if str(record.get("book_id", "")).strip() != book_id:
+            continue
+        status = str(record.get("status", "")).strip()
+        if status in {"queued", "parsing_structure", "deep_reading", "chapter_note_generation"}:
+            return True
+    return False
 
 
 def _api_cover_url(book_id: str, manifest: dict, root: Path | None = None) -> str | None:
@@ -212,9 +227,10 @@ def _normalize_target_locator(payload: object) -> dict | None:
 def _book_card(book_id: str, manifest: dict, run_state: dict | None, root: Path | None = None) -> dict:
     """Build one bookshelf card payload."""
     status = _display_status(manifest, run_state)
+    if status == "not_started" and _has_active_analysis_job(book_id, root=root):
+        status = "analyzing"
     mark_count = len(list_book_marks(book_id, root=root))
     api_book_id = to_api_book_id(book_id)
-    open_target = canonical_book_path(api_book_id) if status in {"completed", "error"} else canonical_analysis_path(api_book_id)
     return {
         "book_id": api_book_id,
         "title": str(manifest.get("book", "")),
@@ -227,7 +243,7 @@ def _book_card(book_id: str, manifest: dict, run_state: dict | None, root: Path 
         "total_chapters": len(manifest.get("chapters", [])),
         "updated_at": str(manifest.get("updated_at", "")),
         "mark_count": mark_count,
-        "open_target": open_target,
+        "open_target": canonical_book_path(api_book_id),
     }
 
 
@@ -335,6 +351,10 @@ def get_book_detail(book_id: str, root: Path | None = None) -> dict:
             api_reaction_type = to_api_reaction_type(str(reaction_type))
             reaction_counts[api_reaction_type] = reaction_counts.get(api_reaction_type, 0) + int(count)
 
+    display_status = _display_status(manifest, run_state)
+    if display_status == "not_started" and _has_active_analysis_job(book_id, root=root):
+        display_status = "analyzing"
+
     return {
         "book_id": api_book_id,
         "title": str(manifest.get("book", "")),
@@ -342,7 +362,7 @@ def get_book_detail(book_id: str, root: Path | None = None) -> dict:
         "cover_image_url": _api_cover_url(book_id, manifest, root=root),
         "book_language": str(manifest.get("book_language", "")),
         "output_language": str(manifest.get("output_language", "")),
-        "status": _display_status(manifest, run_state),
+        "status": display_status,
         "source_asset": _source_asset(book_id, manifest),
         "chapters": chapters,
         "my_mark_count": len(list_book_marks(book_id, root=root)),

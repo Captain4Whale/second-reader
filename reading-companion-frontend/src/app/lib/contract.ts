@@ -23,7 +23,6 @@ export const CANONICAL_ROUTE_PATTERNS = {
   books: "/books",
   book: "/books/:id",
   chapter: "/books/:id/chapters/:chapterId",
-  analysis: "/books/:id/analysis",
   marks: "/marks",
 } as const;
 
@@ -31,6 +30,7 @@ export const COMPAT_ROUTE_PATTERNS = {
   bookshelf: "/bookshelf",
   book: "/book/:bookId",
   chapter: "/book/:bookId/chapter/:chapterId",
+  bookAnalysis: "/books/:id/analysis",
   analysis: "/analysis/:bookId",
   marks: "/bookshelf/marks",
 } as const;
@@ -39,6 +39,7 @@ export const COMPAT_ROUTE_LIST = [
   COMPAT_ROUTE_PATTERNS.bookshelf,
   COMPAT_ROUTE_PATTERNS.book,
   COMPAT_ROUTE_PATTERNS.chapter,
+  COMPAT_ROUTE_PATTERNS.bookAnalysis,
   COMPAT_ROUTE_PATTERNS.analysis,
   COMPAT_ROUTE_PATTERNS.marks,
 ] as const;

@@ -1,5 +1,5 @@
-import { AlertTriangle, ArrowLeft, CheckCircle2, ChevronRight, CircleDashed, List, Loader2, Search } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { AlertTriangle, ArrowLeft, CheckCircle2, ChevronLeft, ChevronRight, CircleDashed, List, Loader2, Search, Settings2 } from "lucide-react";
+import { type CSSProperties, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router";
 import {
   BookDetailResponse,
@@ -32,9 +32,19 @@ import {
   type ReaderPanelMode,
 } from "../lib/reader-types";
 import { reactionLabel, reactionMeta } from "../lib/reactions";
+import {
+  clampReaderFontSize,
+  formatReaderProgress,
+  READER_FONT_SIZE_MAX,
+  READER_FONT_SIZE_MIN,
+  READER_FONT_SIZE_STEP,
+  READER_FONT_SIZE_STORAGE_KEY,
+  readStoredReaderFontSize,
+} from "../lib/reader-ui";
 import { ErrorState, LoadingState } from "./page-state";
 import { SourceReaderPane } from "./source-reader-pane";
 import { OverflowTooltipText } from "./ui/overflow-tooltip-text";
+import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import {
   Sheet,
   SheetContent,
@@ -45,11 +55,12 @@ import {
   SheetTrigger,
 } from "./ui/sheet";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "./ui/resizable";
+import { Slider } from "./ui/slider";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
+import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 import { useIsMobile } from "./ui/use-mobile";
 import { useElementResponsiveTier } from "./ui/use-responsive-tier";
 
-const FOLLOW_NOTES_STORAGE_KEY = "chapter-reader-follow-notes";
 const CHAPTER_FILTER_STORAGE_KEY_PREFIX = "chapter-reader-filter";
 const CHAPTER_PANEL_MODE_STORAGE_KEY_PREFIX = "chapter-reader-panel-mode";
 const CHAPTER_SECTION_HINT_STORAGE_KEY_PREFIX = "chapter-reader-section-hint";
@@ -91,13 +102,6 @@ function parseSectionSearch(search: string): string | null {
   const value = params.get("section");
   const normalized = value?.trim();
   return normalized ? normalized : null;
-}
-
-function readFollowNotesPreference(): boolean {
-  if (typeof window === "undefined") {
-    return true;
-  }
-  return window.localStorage.getItem(FOLLOW_NOTES_STORAGE_KEY) !== "off";
 }
 
 function chapterFilterStorageKey(bookId: string): string {
@@ -202,6 +206,10 @@ function searchResultDomainLabel(url: string): string {
   }
 }
 
+function scaledRem(baseRem: number): string {
+  return `calc(${baseRem}rem * var(--rc-reading-font-scale, 1))`;
+}
+
 function buildOutlineFromChapterPayload(
   payload: ChapterDetailResponse,
   chapterEntry: ChapterListItem | null,
@@ -243,8 +251,10 @@ export function ChapterReadPage() {
   const [activeFilter, setActiveFilter] = useState<ReactionFilter>(() => readChapterFilterPreference(resolvedBookId));
   const [reloadTick, setReloadTick] = useState(0);
   const [mobileMode, setMobileMode] = useState<ReaderPanelMode>(() => readChapterPanelModePreference(resolvedBookId));
-  const [followNotes, setFollowNotes] = useState(readFollowNotesPreference);
+  const [fontSizePercent, setFontSizePercent] = useState(readStoredReaderFontSize);
   const [passiveSectionRef, setPassiveSectionRef] = useState<string | null>(null);
+  const [visibleSectionRef, setVisibleSectionRef] = useState<string | null>(null);
+  const [readerProgress, setReaderProgress] = useState<number | null>(null);
   const [jumpRequest, setJumpRequest] = useState<ReaderJumpRequest | null>(null);
   const [isChapterSheetOpen, setIsChapterSheetOpen] = useState(false);
   const [sectionHint, setSectionHint] = useState<string | null>(null);
@@ -256,6 +266,7 @@ export function ChapterReadPage() {
 
   const jumpSequenceRef = useRef(0);
   const lastNoteJumpAtRef = useRef(0);
+  const notesScrollContainerRef = useRef<HTMLDivElement | null>(null);
   const sectionRefs = useRef(new Map<string, HTMLElement | null>());
   const hoverPreviewTimerRef = useRef<number | null>(null);
   const outlineCacheRef = useRef<Record<number, ChapterOutlineResponse>>({});
@@ -370,7 +381,7 @@ export function ChapterReadPage() {
         activeFilter !== "all" && !sectionHasVisibleReactions(targetSection, activeFilter);
 
       if (shouldFallbackToAll) {
-        const nextHint = `This section has no ${reactionLabel(activeFilter)} notes, showing all notes instead.`;
+        const nextHint = `This section has no ${reactionLabel(activeFilter)} reactions, showing all reactions instead.`;
         if (typeof window !== "undefined") {
           window.sessionStorage.setItem(
             chapterSectionHintStorageKey(String(sourcePayload.book_id), sourcePayload.chapter_id),
@@ -443,9 +454,9 @@ export function ChapterReadPage() {
 
   useEffect(() => {
     if (typeof window !== "undefined") {
-      window.localStorage.setItem(FOLLOW_NOTES_STORAGE_KEY, followNotes ? "on" : "off");
+      window.localStorage.setItem(READER_FONT_SIZE_STORAGE_KEY, String(fontSizePercent));
     }
-  }, [followNotes]);
+  }, [fontSizePercent]);
 
   useEffect(() => {
     outlineCacheRef.current = outlineCache;
@@ -621,6 +632,61 @@ export function ChapterReadPage() {
     }
   }, []);
 
+  const visibleSections = payload ? filterSections(payload.sections, activeFilter) : [];
+
+  useEffect(() => {
+    if (!payload) {
+      return;
+    }
+    if (isMobile && mobileMode === "book") {
+      setVisibleSectionRef(null);
+      return;
+    }
+
+    const container = notesScrollContainerRef.current;
+    if (!container || visibleSections.length === 0) {
+      setVisibleSectionRef(null);
+      return;
+    }
+
+    let rafId: number | null = null;
+
+    const updateVisibleSection = () => {
+      rafId = null;
+      const containerRect = container.getBoundingClientRect();
+      const nextVisibleSection =
+        visibleSections.find((section) => {
+          const node = sectionRefs.current.get(section.section_ref);
+          if (!node) {
+            return false;
+          }
+          const nodeRect = node.getBoundingClientRect();
+          return nodeRect.bottom > containerRect.top + 12 && nodeRect.top < containerRect.bottom - 12;
+        })?.section_ref ?? null;
+
+      setVisibleSectionRef((current) => (current === nextVisibleSection ? current : nextVisibleSection));
+    };
+
+    const scheduleVisibleSectionUpdate = () => {
+      if (rafId != null) {
+        return;
+      }
+      rafId = window.requestAnimationFrame(updateVisibleSection);
+    };
+
+    scheduleVisibleSectionUpdate();
+    container.addEventListener("scroll", scheduleVisibleSectionUpdate, { passive: true });
+    window.addEventListener("resize", scheduleVisibleSectionUpdate);
+
+    return () => {
+      container.removeEventListener("scroll", scheduleVisibleSectionUpdate);
+      window.removeEventListener("resize", scheduleVisibleSectionUpdate);
+      if (rafId != null) {
+        window.cancelAnimationFrame(rafId);
+      }
+    };
+  }, [activeFilter, isMobile, mobileMode, payload, visibleSections]);
+
   if (loading && !payload) {
     return <LoadingState title="Loading chapter workspace..." />;
   }
@@ -651,45 +717,71 @@ export function ChapterReadPage() {
       activeFilter,
     ]),
   );
-  const visibleSections = filterSections(payload.sections, activeFilter);
   const workspaceCompact = workspaceTier === "compact" || workspaceTier === "narrow" || workspaceTier === "mobile";
   const workspaceNarrow = workspaceTier === "narrow" || workspaceTier === "mobile";
-  const workspaceWide = workspaceTier === "wide" || workspaceTier === "desktop";
-  const workspaceDesktop = workspaceTier === "wide" || workspaceTier === "desktop" || workspaceTier === "compact";
+  const workspaceMobile = workspaceTier === "mobile";
   const pillBaseClass = `inline-flex items-center rounded-full border backdrop-blur-sm shadow-[0_1px_0_rgba(255,255,255,0.9),0_10px_24px_rgba(61,46,31,0.045)] transition-all duration-200 ${
     workspaceCompact ? "px-3" : "px-3.5"
   }`;
-  const workspaceActionClass = `inline-flex items-center rounded-full border transition-all duration-200 ${
-    workspaceCompact ? "h-8 gap-1.5 px-3" : "h-8 gap-2 px-3.5"
-  }`;
-  const workspacePrimaryActionClass = `${workspaceActionClass} border-[var(--amber-accent)]/28 bg-[linear-gradient(180deg,rgba(255,248,231,0.98),rgba(249,239,207,0.96))] text-[var(--amber-accent)] shadow-[0_1px_0_rgba(255,255,255,0.9),0_12px_24px_rgba(139,105,20,0.11)] hover:-translate-y-[1px] hover:border-[var(--amber-accent)]/42 hover:bg-[var(--amber-bg)]`;
-  const workspaceSecondaryActionClass = `${workspaceActionClass} border-[var(--warm-300)]/58 bg-white/72 text-[var(--warm-600)] shadow-[inset_0_1px_0_rgba(255,255,255,0.92),0_8px_18px_rgba(61,46,31,0.035)] hover:-translate-y-[1px] hover:border-[var(--warm-400)]/78 hover:bg-white hover:text-[var(--warm-800)]`;
+  const workspaceToolbarButtonClass = "inline-flex items-center justify-center rounded-full text-[var(--warm-600)] transition-colors duration-200 hover:bg-white/72 hover:text-[var(--warm-900)] disabled:cursor-not-allowed disabled:text-[var(--warm-400)] disabled:hover:bg-transparent disabled:hover:text-[var(--warm-400)]";
+  const chapterNavButtonClass = `${workspaceToolbarButtonClass} h-8 w-8`;
+  const sectionNavButtonClass = `${workspaceToolbarButtonClass} h-7 w-7`;
+  const workspaceGhostLinkClass = "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-[var(--warm-600)] transition-colors duration-200 hover:bg-white/72 hover:text-[var(--warm-900)]";
+  const workspaceOverviewLinkClass = "inline-flex items-center gap-2 rounded-full px-2 py-1.5 text-[var(--warm-700)] no-underline transition-colors duration-200 hover:bg-white/72 hover:text-[var(--warm-900)]";
+  const toolbarValueClass = "text-[var(--warm-700)]";
   const filterBaseClass = `${pillBaseClass} ${workspaceCompact ? "h-8" : "h-8.5"} border border-transparent bg-transparent text-[var(--warm-600)] shadow-none hover:-translate-y-[1px] hover:border-[var(--warm-300)]/52 hover:bg-white/82 hover:text-[var(--warm-800)]`;
   const markButtonBaseClass = `${pillBaseClass} ${workspaceCompact ? "h-7.5" : "h-8"} border border-[var(--warm-300)]/32 bg-transparent text-[var(--warm-500)] shadow-none hover:-translate-y-[1px] hover:border-[var(--warm-300)]/58 hover:bg-[var(--warm-50)]/82 hover:text-[var(--warm-700)]`;
   const chapterItems = bookDetail?.chapters ?? [];
-  const readableChapterCount = chapterItems.filter((chapter) => chapter.result_ready).length;
+  const readableChapters = chapterItems.filter((chapter) => chapter.result_ready);
+  const readableChapterCount = readableChapters.length;
   const showChapterSwitcher = Boolean(bookDetail) && readableChapterCount > 1;
   const currentChapterEntry = chapterItems.find((chapter) => chapter.chapter_id === payload.chapter_id) ?? null;
   const currentChapterRef = currentChapterEntry?.chapter_ref || payload.chapter_ref;
   const currentChapterTitle = (currentChapterEntry?.title || payload.title || "").trim();
   const showSeparateChapterTitle = Boolean(currentChapterTitle) && currentChapterTitle !== currentChapterRef;
-  const workspaceHeading = showSeparateChapterTitle ? currentChapterTitle : currentChapterRef;
+  const bookTitle = (bookDetail?.title || payload.title || "Original book").trim();
   const previewChapter = chapterItems.find((chapter) => chapter.chapter_id === previewChapterId) ?? currentChapterEntry;
   const previewOutline = previewChapterId != null ? outlineCache[previewChapterId] ?? null : null;
   const previewOutlineLoading = previewChapterId != null && outlineLoadingIds.includes(previewChapterId);
+  const activeReactionSelection = findSelectionByReactionId(payload.sections, activeReactionId);
   const currentReadingSectionRef =
     passiveSectionRef ??
-    findSelectionByReactionId(payload.sections, activeReactionId)?.section.section_ref ??
+    activeReactionSelection?.section.section_ref ??
     querySectionRef ??
     null;
+  const currentWorkspaceSectionRef =
+    isMobile && mobileMode === "book"
+      ? currentReadingSectionRef
+      : visibleSectionRef ?? currentReadingSectionRef;
+  const currentWorkspaceSection =
+    findSectionByRef(payload.sections, currentWorkspaceSectionRef) ??
+    findSectionByRef(payload.sections, currentReadingSectionRef) ??
+    payload.sections[0] ??
+    null;
+  const currentSectionIndex = currentWorkspaceSection
+    ? payload.sections.findIndex((section) => section.section_ref === currentWorkspaceSection.section_ref)
+    : -1;
+  const previousSection = currentSectionIndex > 0 ? payload.sections[currentSectionIndex - 1] : null;
+  const nextSection =
+    currentSectionIndex >= 0 && currentSectionIndex < payload.sections.length - 1
+      ? payload.sections[currentSectionIndex + 1]
+      : null;
+  const currentReadableChapterIndex = readableChapters.findIndex((chapter) => chapter.chapter_id === payload.chapter_id);
+  const previousReadableChapter = currentReadableChapterIndex > 0 ? readableChapters[currentReadableChapterIndex - 1] : null;
+  const nextReadableChapter =
+    currentReadableChapterIndex >= 0 && currentReadableChapterIndex < readableChapters.length - 1
+      ? readableChapters[currentReadableChapterIndex + 1]
+      : null;
   const previewSectionItems = previewOutline?.sections ?? [];
   const primaryBookActionLabel = workspaceNarrow ? "Overview" : "Book overview";
   const notesScrollbarClass = workspaceCompact ? "rc-scrollbar rc-scrollbar-compact" : "rc-scrollbar";
-  const paneHeaderPaddingClass = workspaceCompact ? "px-4 py-2 sm:px-5" : "px-5 py-2.5 sm:px-6 lg:px-7";
   const bodyPaddingClass = workspaceCompact ? "px-4 pb-5 pt-4 sm:px-5" : "px-5 pb-6 pt-4 sm:px-6 lg:px-7";
-  const headerOuterPaddingClass = workspaceCompact ? "px-4 py-2.5 sm:px-5" : "px-5 py-3 sm:px-6 lg:px-7";
-  const paneHeaderHeightClass = workspaceCompact ? "min-h-[78px]" : "min-h-[82px]";
-  const filterRailClass = "rounded-[1.2rem] border border-[var(--warm-200)]/78 bg-white/54 p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.85)]";
+  const headerOuterPaddingClass = workspaceCompact ? "px-4 py-2 sm:px-5" : "px-5 py-2.5 sm:px-6 lg:px-7";
+  const filterRailClass = "flex w-max items-center gap-1";
+  const fontScaleStyle = {
+    "--rc-reading-font-scale": String(fontSizePercent / 100),
+  } as CSSProperties;
+
 
   function filterToneClass(filter: ReactionFilter, isActive: boolean): string {
     if (!isActive) {
@@ -796,62 +888,84 @@ export function ChapterReadPage() {
     openChapter(previewChapterId, { sectionRef: section.section_ref });
   }
 
+  function stepSection(targetSection: SectionCard | null) {
+    if (!targetSection) {
+      return;
+    }
+    handledSectionQueryKeyRef.current = `${payload.chapter_id}:${targetSection.section_ref}`;
+    activateSection(targetSection.section_ref, payload, "section-click", {
+      syncQuery: true,
+      replaceQuery: false,
+    });
+  }
+
+  function stepChapter(targetChapter: ChapterListItem | null) {
+    if (!targetChapter) {
+      return;
+    }
+    openChapter(targetChapter.chapter_id);
+  }
+
+  function renderToolbarIconButton({
+    ariaLabel,
+    className,
+    disabled,
+    icon,
+    onClick,
+    testId,
+    tooltip,
+  }: {
+    ariaLabel: string;
+    className: string;
+    disabled: boolean;
+    icon: ReactNode;
+    onClick: () => void;
+    testId: string;
+    tooltip: string;
+  }) {
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button
+            type="button"
+            onClick={onClick}
+            disabled={disabled}
+            data-testid={testId}
+            aria-label={ariaLabel}
+            className={className}
+          >
+            {icon}
+          </button>
+        </TooltipTrigger>
+        <TooltipContent>
+          {tooltip}
+        </TooltipContent>
+      </Tooltip>
+    );
+  }
+
   function renderNotesPane() {
     return (
       <div className="flex h-full min-h-0 flex-col bg-[var(--warm-100)]">
-        <div className={`rc-pane-header-surface shrink-0 ${paneHeaderHeightClass} ${paneHeaderPaddingClass}`}>
-          <div className="flex h-full flex-col justify-center gap-1.5">
-            <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
-              <p className="text-[var(--warm-500)] uppercase tracking-[0.18em]" style={{ fontSize: "0.6875rem", fontWeight: 600 }}>
-                Reading notes
-              </p>
-              <div className="flex flex-wrap items-center justify-end gap-2">
-                <p className="text-[var(--warm-700)]" style={{ fontSize: "0.8rem", lineHeight: 1.4 }}>
-                  {payload.visible_reaction_count} notes in this chapter
-                </p>
-                <span
-                  className="inline-flex h-6 items-center rounded-full border border-[var(--warm-300)]/58 bg-white/76 px-2.5 text-[var(--warm-600)] shadow-[inset_0_1px_0_rgba(255,255,255,0.88)]"
-                  style={{ fontSize: "0.68rem", fontWeight: 600 }}
-                >
-                  {payload.high_signal_reaction_count} high-signal
-                </span>
-              </div>
-            </div>
-
-            <div className={`-mx-1 overflow-x-auto pb-0.5 rc-scrollbar-none`}>
-              <div className={`${filterRailClass} flex w-max items-center gap-1.5 px-1`}>
-                {renderedFilters.map((filter) => (
-                  <button
-                    key={filter}
-                    type="button"
-                    onClick={() => handleFilterChange(filter)}
-                    data-testid={`reaction-filter-${filter}`}
-                    className={filterToneClass(filter, activeFilter === filter)}
-                    style={{ fontSize: workspaceCompact ? "0.72rem" : "0.75rem", fontWeight: 600 }}
-                    >
-                      {filter === "all" ? "All" : reactionLabel(filter)}
-                    </button>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className={`${notesScrollbarClass} min-h-0 flex-1 overflow-y-auto`}>
+        <div
+          ref={notesScrollContainerRef}
+          className={`${notesScrollbarClass} min-h-0 flex-1 overflow-y-auto`}
+          data-testid="chapter-reactions-scroll"
+        >
           <div className={bodyPaddingClass}>
             <div className="space-y-8">
               {sectionHint ? (
                 <div className="rounded-2xl border border-[var(--amber-accent)]/18 bg-[var(--amber-bg)]/72 px-4 py-3 text-[var(--amber-accent)] shadow-[0_1px_0_rgba(255,255,255,0.82)]">
-                  <p style={{ fontSize: "0.76rem", lineHeight: 1.6, fontWeight: 500 }}>{sectionHint}</p>
+                  <p style={{ fontSize: scaledRem(0.76), lineHeight: 1.6, fontWeight: 500 }}>{sectionHint}</p>
                 </div>
               ) : null}
 
               {visibleSections.length === 0 ? (
                 <div className="rounded-2xl border border-[var(--warm-300)]/40 bg-white px-4 py-6">
-                  <p className="text-[var(--warm-800)]" style={{ fontSize: "0.9rem", fontWeight: 600 }}>
+                  <p className="text-[var(--warm-800)]" style={{ fontSize: scaledRem(0.9), fontWeight: 600 }}>
                     No reactions under this filter.
                   </p>
-                  <p className="text-[var(--warm-600)] mt-1" style={{ fontSize: "0.82rem", lineHeight: 1.7 }}>
+                  <p className="text-[var(--warm-600)] mt-1" style={{ fontSize: scaledRem(0.82), lineHeight: 1.7 }}>
                     Switch back to All to continue linked reading and jump navigation.
                   </p>
                 </div>
@@ -870,35 +984,6 @@ export function ChapterReadPage() {
                   }`}
                   style={{ scrollMarginTop: "1.25rem" }}
                 >
-                  <div className="mb-3 pb-3 border-b border-[var(--warm-200)]/78">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <p className="text-[var(--amber-accent)]" style={{ fontSize: "0.75rem", fontWeight: 600 }}>
-                        {section.section_ref}
-                      </p>
-                      {section.verdict ? (
-                        <span
-                          className="inline-flex h-5.5 items-center rounded-full border border-[var(--warm-300)]/52 bg-[var(--warm-50)]/86 px-2 text-[var(--warm-500)]"
-                          style={{ fontSize: "0.68rem", fontWeight: 600 }}
-                        >
-                          {section.verdict}
-                        </span>
-                      ) : null}
-                      {passiveSectionRef === section.section_ref ? (
-                        <span
-                          className="inline-flex h-5.5 items-center rounded-full border border-[var(--amber-accent)]/24 bg-[var(--amber-bg)]/78 px-2 text-[var(--amber-accent)]"
-                          style={{ fontSize: "0.68rem", fontWeight: 600 }}
-                        >
-                          Reading here
-                        </span>
-                      ) : null}
-                    </div>
-                    <div className="mt-2">
-                      <p className="text-[var(--warm-900)]" style={{ fontSize: "1rem", fontWeight: 600, lineHeight: 1.45 }}>
-                        {section.summary}
-                      </p>
-                    </div>
-                  </div>
-
                   <div className="space-y-3">
                     {section.reactions.map((reaction) => {
                       const isActive = activeReactionId === reaction.reaction_id;
@@ -920,7 +1005,7 @@ export function ChapterReadPage() {
                             <div className="flex items-center gap-2">
                               <span
                                 className={`${pillBaseClass} h-9 border-[var(--warm-300)]/45 ${reactionTone.surfaceClass} ${reactionTone.accentClass}`}
-                                style={{ fontSize: "0.74rem", fontWeight: 600 }}
+                                style={{ fontSize: scaledRem(0.74), fontWeight: 600 }}
                               >
                                 {reactionLabel(reaction.type)}
                               </span>
@@ -934,7 +1019,7 @@ export function ChapterReadPage() {
                                 }}
                                 data-testid={`mark-resonance-${reaction.reaction_id}`}
                                 className={markToneClass("resonance", reaction.mark_type === "resonance")}
-                                style={{ fontSize: "0.72rem", fontWeight: 600 }}
+                                style={{ fontSize: scaledRem(0.72), fontWeight: 600 }}
                               >
                                 {markLabel("resonance")}
                               </button>
@@ -946,7 +1031,7 @@ export function ChapterReadPage() {
                                 }}
                                 data-testid={`mark-blindspot-${reaction.reaction_id}`}
                                 className={markToneClass("blindspot", reaction.mark_type === "blindspot")}
-                                style={{ fontSize: "0.72rem", fontWeight: 600 }}
+                                style={{ fontSize: scaledRem(0.72), fontWeight: 600 }}
                               >
                                 {markLabel("blindspot")}
                               </button>
@@ -958,7 +1043,7 @@ export function ChapterReadPage() {
                                 }}
                                 data-testid={`mark-bookmark-${reaction.reaction_id}`}
                                 className={markToneClass("bookmark", reaction.mark_type === "bookmark")}
-                                style={{ fontSize: "0.72rem", fontWeight: 600 }}
+                                style={{ fontSize: scaledRem(0.72), fontWeight: 600 }}
                               >
                                 {markLabel("bookmark")}
                               </button>
@@ -968,7 +1053,7 @@ export function ChapterReadPage() {
                           {anchorQuote ? (
                             <blockquote
                               className="border-l-2 border-[var(--amber-accent)]/40 pl-4 mb-3 text-[var(--warm-600)] italic"
-                              style={{ fontSize: "0.8125rem", lineHeight: 1.7 }}
+                              style={{ fontSize: scaledRem(0.8125), lineHeight: 1.7 }}
                             >
                               “{anchorQuote}”
                             </blockquote>
@@ -976,14 +1061,14 @@ export function ChapterReadPage() {
 
                           {isActive ? (
                             <>
-                              <p className="text-[var(--warm-800)]" style={{ fontSize: "0.875rem", lineHeight: 1.82 }}>
+                              <p className="text-[var(--warm-800)]" style={{ fontSize: scaledRem(0.875), lineHeight: 1.82 }}>
                                 {reaction.content}
                               </p>
                               {reaction.search_results.length > 0 ? (
                                 <section className="mt-4">
                                   <div className="flex items-center gap-2 mb-2">
                                     <Search className="w-4 h-4 text-[var(--amber-accent)]" />
-                                    <p className="text-[var(--warm-900)]" style={{ fontSize: "0.78rem", fontWeight: 600 }}>
+                                    <p className="text-[var(--warm-900)]" style={{ fontSize: scaledRem(0.78), fontWeight: 600 }}>
                                       Extra context
                                     </p>
                                   </div>
@@ -1000,7 +1085,7 @@ export function ChapterReadPage() {
                                           <p
                                             className="min-w-0 text-[var(--warm-900)]"
                                             style={{
-                                              fontSize: "0.77rem",
+                                              fontSize: scaledRem(0.77),
                                               fontWeight: 600,
                                               lineHeight: 1.5,
                                               overflowWrap: "anywhere",
@@ -1011,7 +1096,7 @@ export function ChapterReadPage() {
                                           </p>
                                           <span
                                             className="shrink-0 rounded-full border border-[var(--warm-300)]/58 bg-[var(--warm-50)] px-2 py-0.5 text-[var(--warm-500)]"
-                                            style={{ fontSize: "0.64rem", fontWeight: 600 }}
+                                            style={{ fontSize: scaledRem(0.64), fontWeight: 600 }}
                                           >
                                             {searchResultDomainLabel(result.url)}
                                           </span>
@@ -1019,7 +1104,7 @@ export function ChapterReadPage() {
                                         <p
                                           className="text-[var(--warm-600)]"
                                           style={{
-                                            fontSize: "0.75rem",
+                                            fontSize: scaledRem(0.75),
                                             lineHeight: 1.65,
                                             overflowWrap: "anywhere",
                                             wordBreak: "break-word",
@@ -1038,7 +1123,7 @@ export function ChapterReadPage() {
                               ) : null}
                             </>
                           ) : (
-                            <p className="text-[var(--warm-700)]" style={{ fontSize: "0.84rem", lineHeight: 1.75 }}>
+                            <p className="text-[var(--warm-700)]" style={{ fontSize: scaledRem(0.84), lineHeight: 1.75 }}>
                               {reactionPreview(reaction.content)}
                             </p>
                           )}
@@ -1116,7 +1201,7 @@ export function ChapterReadPage() {
   }
 
   return (
-    <div ref={workspaceRef} className="h-[calc(100vh-72px)] flex flex-col bg-[var(--warm-100)]">
+    <div ref={workspaceRef} className="h-[calc(100vh-72px)] flex flex-col bg-[var(--warm-100)]" style={fontScaleStyle}>
       <Sheet open={isChapterSheetOpen} onOpenChange={setIsChapterSheetOpen}>
         <SheetContent
           side="left"
@@ -1430,7 +1515,7 @@ export function ChapterReadPage() {
                                   </p>
                                 ) : null}
                                 <p className="mt-1 text-[var(--warm-500)]" style={{ fontSize: "0.7rem", fontWeight: 600 }}>
-                                  {section.visible_reaction_count} notes
+                                  {section.visible_reaction_count} reactions
                                 </p>
                               </div>
                             </div>
@@ -1456,147 +1541,206 @@ export function ChapterReadPage() {
           </SheetFooter>
         </SheetContent>
 
-      <div className="rc-workspace-topbar flex-shrink-0">
+      <div className="rc-workspace-topbar flex-shrink-0 border-b border-[var(--warm-200)]/70 bg-[var(--warm-100)] shadow-[0_1px_0_rgba(255,252,245,0.65)]" data-testid="chapter-topbar">
         <div className={headerOuterPaddingClass}>
-          {workspaceWide ? (
-            <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3">
+          <div className="flex items-center justify-between gap-4 overflow-hidden">
+            <div className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden text-[var(--warm-900)]">
+              <OverflowTooltipText
+                as="p"
+                text={bookTitle}
+                lines={1}
+                side="bottom"
+                className="min-w-0 max-w-[20rem] shrink truncate text-[var(--warm-500)] xl:max-w-[24rem]"
+                style={{ fontSize: "0.82rem", fontWeight: 500, lineHeight: 1.35 }}
+              />
+              <span className="shrink-0 text-[var(--warm-400)]" style={{ fontSize: "0.8rem" }}>
+                ›
+              </span>
+              <OverflowTooltipText
+                as="p"
+                text={showSeparateChapterTitle ? currentChapterTitle : currentChapterRef}
+                lines={1}
+                side="bottom"
+                className="min-w-0 shrink-0 text-[var(--warm-800)]"
+                style={{ fontSize: "0.88rem", fontWeight: 600, lineHeight: 1.35 }}
+              />
+              <span className="shrink-0 text-[var(--warm-400)]" style={{ fontSize: "0.8rem" }}>
+                ›
+              </span>
+              <div className="min-w-0 flex-1" data-testid="chapter-topbar-current-section">
+                <OverflowTooltipText
+                  as="p"
+                  text={currentWorkspaceSection ? `${currentWorkspaceSection.section_ref} ${currentWorkspaceSection.summary}` : "--"}
+                  lines={1}
+                  side="bottom"
+                  className="min-w-0 truncate text-[var(--warm-800)]"
+                  style={{ fontSize: "0.88rem", fontWeight: 600, lineHeight: 1.35 }}
+                />
+              </div>
+            </div>
+
+            <div className="ml-auto flex shrink-0 items-center gap-1.5">
               {showChapterSwitcher ? (
                 <SheetTrigger asChild>
                   <button
                     type="button"
                     data-testid="chapter-sheet-trigger"
-                    className={workspacePrimaryActionClass}
-                    style={{ fontSize: "0.76rem", fontWeight: 600 }}
+                    className={workspaceGhostLinkClass}
+                    style={{ fontSize: "0.8rem", fontWeight: 600 }}
                   >
                     <List className="h-4 w-4" />
-                    Chapters
+                    {!workspaceMobile ? "Chapters" : null}
                   </button>
                 </SheetTrigger>
-              ) : (
-                <div />
-              )}
+              ) : null}
 
-              <div className="min-w-0">
-                <div className="flex min-w-0 items-center gap-2">
-                  {showSeparateChapterTitle ? (
-                    <span
-                      className="inline-flex h-7 shrink-0 items-center rounded-full border border-[var(--warm-300)]/65 bg-white/78 px-3 text-[var(--warm-700)] shadow-[0_1px_0_rgba(255,255,255,0.88)]"
-                      style={{ fontSize: "0.74rem", fontWeight: 600 }}
-                      data-testid="chapter-workspace-current-chapter"
-                    >
-                      {currentChapterRef}
-                    </span>
-                  ) : null}
-                  <OverflowTooltipText
-                    as="h1"
-                    text={workspaceHeading}
-                    lines={1}
-                    side="bottom"
-                    data-testid={!showSeparateChapterTitle ? "chapter-workspace-current-chapter" : undefined}
-                    className="min-w-0 text-[var(--warm-950)] font-['Lora',Georgia,serif] tracking-tight"
-                    style={{
-                      fontSize: "clamp(1rem, 1.15vw, 1.18rem)",
-                      fontWeight: 700,
-                      lineHeight: 1.16,
-                      maxWidth: "100%",
-                    }}
-                  />
-                </div>
-                <OverflowTooltipText
-                  as="p"
-                  text={readerBookTitle}
-                  lines={1}
-                  side="bottom"
-                  className="mt-1 text-[var(--warm-600)]"
-                  style={{
-                    fontSize: "0.77rem",
-                    fontWeight: 600,
-                    lineHeight: 1.35,
-                    maxWidth: "100%",
-                  }}
-                />
+              <div className="flex items-center gap-1">
+                <span className="shrink-0 text-[var(--warm-400)]" style={{ fontSize: "0.74rem", fontWeight: 500 }}>
+                  Ch
+                </span>
+                {renderToolbarIconButton({
+                  ariaLabel: "Previous chapter",
+                  className: chapterNavButtonClass,
+                  disabled: !previousReadableChapter,
+                  icon: <ChevronLeft className="h-4 w-4" />,
+                  onClick: () => stepChapter(previousReadableChapter),
+                  testId: "chapter-topbar-prev-chapter",
+                  tooltip: "上一章",
+                })}
+                {renderToolbarIconButton({
+                  ariaLabel: "Next chapter",
+                  className: chapterNavButtonClass,
+                  disabled: !nextReadableChapter,
+                  icon: <ChevronRight className="h-4 w-4" />,
+                  onClick: () => stepChapter(nextReadableChapter),
+                  testId: "chapter-topbar-next-chapter",
+                  tooltip: "下一章",
+                })}
+              </div>
+
+              <span className="shrink-0 text-[var(--warm-300)]" style={{ fontSize: "0.76rem", fontWeight: 500 }}>
+                |
+              </span>
+
+              <div className="flex items-center gap-1">
+                <span className="shrink-0 text-[var(--warm-400)]" style={{ fontSize: "0.74rem", fontWeight: 500 }}>
+                  Sec
+                </span>
+                {renderToolbarIconButton({
+                  ariaLabel: "Previous section",
+                  className: sectionNavButtonClass,
+                  disabled: !previousSection,
+                  icon: <ChevronLeft className="h-3.5 w-3.5" />,
+                  onClick: () => stepSection(previousSection),
+                  testId: "chapter-topbar-prev-section",
+                  tooltip: "上一 section",
+                })}
+                {renderToolbarIconButton({
+                  ariaLabel: "Next section",
+                  className: sectionNavButtonClass,
+                  disabled: !nextSection,
+                  icon: <ChevronRight className="h-3.5 w-3.5" />,
+                  onClick: () => stepSection(nextSection),
+                  testId: "chapter-topbar-next-section",
+                  tooltip: "下一 section",
+                })}
               </div>
 
               <Link
                 to={canonicalBookPath(payload.book_id)}
-                className={`${workspaceSecondaryActionClass} no-underline text-[var(--warm-600)]`}
-                style={{ fontSize: "0.76rem", fontWeight: 600 }}
+                aria-label="Book overview"
+                className={workspaceOverviewLinkClass}
+                style={{ fontSize: "0.8rem", fontWeight: 600 }}
               >
                 <ArrowLeft className="h-4 w-4" />
                 {primaryBookActionLabel}
               </Link>
             </div>
-          ) : (
-            <div className="space-y-2.5">
-              <div className="flex items-center justify-between gap-2">
-                {showChapterSwitcher ? (
-                  <SheetTrigger asChild>
+          </div>
+
+          <div className="mt-2 flex items-center justify-between gap-4 border-t border-[var(--warm-200)]/55 pt-2">
+            <div className="flex min-w-0 flex-1 items-center gap-3 overflow-hidden">
+              <div className="overflow-x-auto pb-0.5 rc-scrollbar-none">
+                <div className={filterRailClass}>
+                  {renderedFilters.map((filter) => (
                     <button
+                      key={filter}
                       type="button"
-                      data-testid="chapter-sheet-trigger"
-                      className={workspacePrimaryActionClass}
-                      style={{ fontSize: workspaceCompact ? "0.72rem" : "0.76rem", fontWeight: 600 }}
+                      onClick={() => handleFilterChange(filter)}
+                      data-testid={`reaction-filter-${filter}`}
+                      className={filterToneClass(filter, activeFilter === filter)}
+                      style={{ fontSize: scaledRem(workspaceCompact ? 0.72 : 0.75), fontWeight: 600 }}
                     >
-                      <List className="h-4 w-4" />
-                      Chapters
+                      {filter === "all" ? "All" : reactionLabel(filter)}
                     </button>
-                  </SheetTrigger>
-                ) : (
-                  <div />
-                )}
-
-                <Link
-                  to={canonicalBookPath(payload.book_id)}
-                  className={`${workspaceSecondaryActionClass} no-underline text-[var(--warm-600)]`}
-                  style={{ fontSize: workspaceCompact ? "0.72rem" : "0.76rem", fontWeight: 600 }}
-                >
-                  <ArrowLeft className="h-4 w-4" />
-                  {primaryBookActionLabel}
-                </Link>
-              </div>
-
-              <div className="min-w-0">
-                <div className="flex min-w-0 items-center gap-2">
-                  {showSeparateChapterTitle ? (
-                    <span
-                      className="inline-flex h-7 shrink-0 items-center rounded-full border border-[var(--warm-300)]/65 bg-white/78 px-3 text-[var(--warm-700)] shadow-[0_1px_0_rgba(255,255,255,0.88)]"
-                      style={{ fontSize: "0.72rem", fontWeight: 600 }}
-                      data-testid="chapter-workspace-current-chapter"
-                    >
-                      {currentChapterRef}
-                    </span>
-                  ) : null}
-                  <OverflowTooltipText
-                    as="h1"
-                    text={workspaceHeading}
-                    lines={1}
-                    side="bottom"
-                    data-testid={!showSeparateChapterTitle ? "chapter-workspace-current-chapter" : undefined}
-                    className="min-w-0 text-[var(--warm-950)] font-['Lora',Georgia,serif] tracking-tight"
-                    style={{
-                      fontSize: workspaceNarrow ? "1rem" : "1.08rem",
-                      fontWeight: 700,
-                      lineHeight: 1.16,
-                      maxWidth: "100%",
-                    }}
-                  />
+                  ))}
                 </div>
-                <OverflowTooltipText
-                  as="p"
-                  text={readerBookTitle}
-                  lines={1}
-                  side="bottom"
-                  className="mt-1 text-[var(--warm-600)]"
-                  style={{
-                    fontSize: workspaceNarrow ? "0.74rem" : "0.77rem",
-                    fontWeight: 600,
-                    lineHeight: 1.35,
-                    maxWidth: "100%",
-                  }}
-                />
               </div>
+
+              <p className="shrink-0 text-[var(--warm-500)]" style={{ fontSize: scaledRem(0.8), lineHeight: 1.4, fontWeight: 500 }}>
+                {payload.visible_reaction_count} reactions
+              </p>
             </div>
-          )}
+
+            <div className="ml-auto flex shrink-0 items-center gap-3">
+              <div className={toolbarValueClass} data-testid="chapter-topbar-book-progress">
+                <p style={{ fontSize: "0.82rem", fontWeight: 500, lineHeight: 1.35 }}>
+                  Book {formatReaderProgress(readerProgress)}
+                </p>
+              </div>
+
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button
+                    type="button"
+                    data-testid="chapter-topbar-settings-trigger"
+                    aria-label="Reading settings"
+                    className={workspaceGhostLinkClass}
+                    style={{ fontSize: "0.8rem", fontWeight: 500 }}
+                  >
+                    <Settings2 className="h-4 w-4" />
+                    {!workspaceMobile ? "Text size" : null}
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent
+                  align="end"
+                  className="w-[18rem] rounded-2xl border-[var(--warm-300)]/60 bg-[var(--warm-50)]/96 p-4 text-[var(--warm-900)] shadow-[0_18px_40px_rgba(61,46,31,0.12)]"
+                >
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <p className="text-[var(--warm-900)]" style={{ fontSize: "0.88rem", fontWeight: 700 }}>
+                          Reading text size
+                        </p>
+                        <p className="mt-1 text-[var(--warm-600)]" style={{ fontSize: "0.76rem", lineHeight: 1.55 }}>
+                          Applies to both reactions and the original book.
+                        </p>
+                      </div>
+                      <span
+                        className="inline-flex h-8 items-center rounded-full border border-[var(--warm-300)]/60 bg-white/84 px-3 text-[var(--warm-700)]"
+                        style={{ fontSize: "0.74rem", fontWeight: 700 }}
+                      >
+                        {fontSizePercent}%
+                      </span>
+                    </div>
+                    <Slider
+                      min={READER_FONT_SIZE_MIN}
+                      max={READER_FONT_SIZE_MAX}
+                      step={READER_FONT_SIZE_STEP}
+                      value={[fontSizePercent]}
+                      onValueChange={(value) => {
+                        setFontSizePercent(clampReaderFontSize(value[0] ?? fontSizePercent));
+                      }}
+                    />
+                    <div className="flex items-center justify-between text-[var(--warm-500)]" style={{ fontSize: "0.7rem", fontWeight: 600 }}>
+                      <span>{READER_FONT_SIZE_MIN}%</span>
+                      <span>{READER_FONT_SIZE_MAX}%</span>
+                    </div>
+                  </div>
+                </PopoverContent>
+              </Popover>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -1617,27 +1761,24 @@ export function ChapterReadPage() {
           >
             <div className="px-4 py-2 border-b border-[var(--warm-200)]">
               <TabsList className="w-full max-w-xs">
-                <TabsTrigger value="notes">Notes</TabsTrigger>
+                <TabsTrigger value="notes">Reactions</TabsTrigger>
                 <TabsTrigger value="book">Original book</TabsTrigger>
               </TabsList>
             </div>
-            <TabsContent value="notes" className="h-[calc(100%-58px)]">
+            <TabsContent forceMount value="notes" className="h-[calc(100%-58px)] data-[state=inactive]:hidden">
               {renderNotesPane()}
             </TabsContent>
-            <TabsContent value="book" className="h-[calc(100%-58px)]">
+            <TabsContent forceMount value="book" className="h-[calc(100%-58px)] data-[state=inactive]:hidden">
               <SourceReaderPane
                 sourceUrl={sourceUrl}
-                chapterRef={payload.chapter_ref}
-                chapterTitle={payload.title}
+                fontSizePercent={fontSizePercent}
                 sections={payload.sections}
                 jumpRequest={jumpRequest}
-                followNotes={followNotes}
-                onFollowNotesChange={setFollowNotes}
                 onLocationChange={(update: ReaderLocationUpdate) => {
-                  if (!followNotes || update.programmatic) {
-                    return;
+                  setReaderProgress(update.location.progress);
+                  if (!update.programmatic) {
+                    setPassiveSectionRef(update.location.sectionRef);
                   }
-                  setPassiveSectionRef(update.location.sectionRef);
                 }}
               />
             </TabsContent>
@@ -1655,17 +1796,14 @@ export function ChapterReadPage() {
             <ResizablePanel defaultSize={55} minSize={35} className="bg-[var(--warm-100)]">
               <SourceReaderPane
                 sourceUrl={sourceUrl}
-                chapterRef={payload.chapter_ref}
-                chapterTitle={payload.title}
+                fontSizePercent={fontSizePercent}
                 sections={payload.sections}
                 jumpRequest={jumpRequest}
-                followNotes={followNotes}
-                onFollowNotesChange={setFollowNotes}
                 onLocationChange={(update: ReaderLocationUpdate) => {
-                  if (!followNotes || update.programmatic) {
-                    return;
+                  setReaderProgress(update.location.progress);
+                  if (!update.programmatic) {
+                    setPassiveSectionRef(update.location.sectionRef);
                   }
-                  setPassiveSectionRef(update.location.sectionRef);
                 }}
               />
             </ResizablePanel>

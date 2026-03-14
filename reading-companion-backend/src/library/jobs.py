@@ -9,7 +9,7 @@ import sys
 import uuid
 from pathlib import Path
 
-from .catalog import find_book_id_by_source, get_book
+from .catalog import find_book_id_by_source, get_book, source_asset_path
 from .storage import job_file, job_log_file, load_json, save_json, timestamp, upload_file
 from src.iterator_reader.storage import (
     existing_activity_file,
@@ -70,7 +70,7 @@ def _status_from_run_state(run_state: dict | None, *, running: bool) -> tuple[st
     if stage == "error":
         return "error", error
     if stage == "ready":
-        return ("parsing_structure" if running else "queued"), error
+        return ("parsing_structure" if running else "ready"), error
     return ("parsing_structure" if running else "queued"), error
 
 
@@ -92,6 +92,41 @@ def load_job(job_id: str, root: Path | None = None) -> dict:
     return load_json(job_file(job_id, root))
 
 
+def _launch_subprocess_job(
+    *,
+    upload_path: Path,
+    command: list[str],
+    root: Path | None = None,
+    job_id: str | None = None,
+    initial_status: str = "queued",
+) -> dict:
+    """Start a detached subprocess and persist the tracking record."""
+    resolved_job_id = job_id or upload_path.stem
+    record = _job_record(job_id=resolved_job_id, status=initial_status, upload_path=upload_path)
+    save_job(record, root)
+
+    log_path = job_log_file(resolved_job_id, root)
+    log_path.parent.mkdir(parents=True, exist_ok=True)
+    with log_path.open("ab") as log:
+        process = subprocess.Popen(
+            command,
+            cwd=str(root or Path.cwd()),
+            stdout=log,
+            stderr=subprocess.STDOUT,
+        )
+
+    return save_job(
+        _job_record(
+            job_id=resolved_job_id,
+            status=initial_status,
+            upload_path=upload_path,
+            pid=process.pid,
+            created_at=str(record["created_at"]),
+        ),
+        root,
+    )
+
+
 def launch_sequential_job(
     upload_path: Path,
     *,
@@ -100,10 +135,6 @@ def launch_sequential_job(
     root: Path | None = None,
 ) -> dict:
     """Start a sequential read as a detached subprocess and persist the job."""
-    job_id = upload_path.stem
-    record = _job_record(job_id=job_id, status="queued", upload_path=upload_path)
-    save_job(record, root)
-
     command = [
         sys.executable,
         "main.py",
@@ -117,25 +148,68 @@ def launch_sequential_job(
     if intent:
         command.extend(["--intent", intent])
 
-    log_path = job_log_file(job_id, root)
-    log_path.parent.mkdir(parents=True, exist_ok=True)
-    with log_path.open("ab") as log:
-        process = subprocess.Popen(
-            command,
-            cwd=str(root or Path.cwd()),
-            stdout=log,
-            stderr=subprocess.STDOUT,
-        )
+    return _launch_subprocess_job(
+        upload_path=upload_path,
+        command=command,
+        root=root,
+        initial_status="queued",
+    )
 
-    return save_job(
-        _job_record(
-            job_id=job_id,
-            status="queued",
-            upload_path=upload_path,
-            pid=process.pid,
-            created_at=str(record["created_at"]),
-        ),
-        root,
+
+def launch_parse_job(
+    upload_path: Path,
+    *,
+    language: str = "auto",
+    root: Path | None = None,
+) -> dict:
+    """Start a structure-only parse job and persist the job record."""
+    command = [
+        sys.executable,
+        "main.py",
+        "parse",
+        str(upload_path),
+        "--language",
+        language,
+    ]
+    return _launch_subprocess_job(
+        upload_path=upload_path,
+        command=command,
+        root=root,
+        initial_status="queued",
+    )
+
+
+def launch_book_analysis_job(
+    book_id: str,
+    *,
+    language: str = "auto",
+    intent: str | None = None,
+    root: Path | None = None,
+) -> dict:
+    """Start sequential analysis for an existing uploaded book."""
+    source_path = source_asset_path(book_id, root=root)
+    if not source_path.exists():
+        raise FileNotFoundError(source_path)
+
+    command = [
+        sys.executable,
+        "main.py",
+        "read",
+        str(source_path),
+        "--mode",
+        "sequential",
+        "--language",
+        language,
+    ]
+    if intent:
+        command.extend(["--intent", intent])
+
+    return _launch_subprocess_job(
+        upload_path=source_path,
+        command=command,
+        root=root,
+        job_id=uuid.uuid4().hex[:12],
+        initial_status="queued",
     )
 
 
@@ -157,7 +231,7 @@ def refresh_job(job_id: str, root: Path | None = None) -> dict:
     elif running:
         status = "parsing_structure"
 
-    if not running and status not in {"completed", "error"}:
+    if not running and status not in {"completed", "error", "ready"}:
         if book_id:
             state_path = existing_run_state_file((root or Path.cwd()) / "output" / book_id)
             if state_path.exists():

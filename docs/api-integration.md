@@ -15,6 +15,7 @@ Frontend defaults can be overridden with:
 
 ## Active Frontend-Used Endpoints
 - `POST /api/uploads/epub`
+- `POST /api/books/{book_id}/analysis/start`
 - `GET /api/jobs/{job_id}`
 - `GET /api/books`
 - `GET /api/books/{book_id}`
@@ -31,5 +32,5 @@ Frontend defaults can be overridden with:
 ## Integration Notes
 - Backend images and source assets are returned as relative API paths and must be prefixed with the configured API base in the frontend.
 - Backend `target_url`, `result_url`, and `open_target` values are frontend routes, not backend URLs.
-- Backend analysis state and activity feed are both used on the analysis page; WebSocket messages trigger refreshes, while polling remains the fallback.
+- Backend analysis state and activity feed are used by the adaptive `/books/:id` overview when a book is in progress; WebSocket messages trigger refreshes, while polling remains the fallback.
 - Public `book_id`, `reaction_id`, and `mark_id` values are integer IDs even when backend runtime artifacts still use internal string identifiers.

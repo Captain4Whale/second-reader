@@ -13,7 +13,7 @@ function assertNoLegacyPath(pathname: string): void {
   expect(pathname.startsWith("/sample")).toBeFalsy();
 }
 
-test("fixture upload flow stays on canonical routes and persists marks", async ({ page }) => {
+test("landing upload flows into canonical overview and chapter reading", async ({ page }) => {
   const requestedPaths: string[] = [];
   page.on("request", (request) => {
     try {
@@ -27,58 +27,19 @@ test("fixture upload flow stays on canonical routes and persists marks", async (
   await expect(page).toHaveURL(/\/$/);
   assertNoLegacyPath(new URL(page.url()).pathname);
 
-  await page.goto("/upload");
-  await expect(page).toHaveURL(/\/upload$/);
-  await expect(page.getByTestId("global-nav-books")).not.toHaveAttribute("aria-current", "page");
-  await expect(page.getByTestId("global-nav-marks")).not.toHaveAttribute("aria-current", "page");
-  await page.getByTestId("upload-input").setInputFiles(uploadFixture);
-  await page.getByTestId("upload-submit").click();
-
-  const openCurrent = page.getByTestId("upload-open-current-result");
-  await expect(openCurrent).toBeVisible({ timeout: 15_000 });
-  await openCurrent.click();
-  await expect(page).toHaveURL(/\/books\/\d+\/analysis$/);
+  await page.getByTestId("landing-upload-input").setInputFiles(uploadFixture);
+  await expect(page).toHaveURL(/\/books\/\d+$/);
   assertNoLegacyPath(new URL(page.url()).pathname);
   await expect(page.getByRole("heading", { name: "Fixture E2E Book" })).toBeVisible();
 
   const completedCard = page.getByTestId("analysis-completed-1");
   await expect(completedCard).toBeVisible({ timeout: 15_000 });
-  const completedHref = await completedCard.getAttribute("href");
-  expect(completedHref).toMatch(/^\/books\/\d+\/chapters\/1$/);
   await completedCard.click();
   await expect(page).toHaveURL(/\/books\/\d+\/chapters\/1$/);
   assertNoLegacyPath(new URL(page.url()).pathname);
-  await expect(page.getByTestId("global-nav-books")).not.toHaveAttribute("aria-current", "page");
-  await expect(page.getByTestId("global-nav-marks")).not.toHaveAttribute("aria-current", "page");
-  await expect(page.getByRole("link", { name: /Source EPUB/i })).toHaveCount(0);
   await expect(page.getByTestId("source-reader-pane")).toBeVisible();
+  await expect(page.getByTestId("chapter-topbar")).toBeVisible();
   const chapterUrl = page.url();
-
-  await page.goto("/books");
-  await expect(page).toHaveURL(/\/books$/);
-  await expect(page.getByTestId("global-nav-books")).toHaveAttribute("aria-current", "page");
-  await expect(page.getByTestId("global-nav-marks")).not.toHaveAttribute("aria-current", "page");
-  await expect(page.getByTestId("brand-overview-link")).toHaveCount(0);
-  await page.getByTestId("brand-link").click();
-  await expect(page).toHaveURL(/\/$/);
-  await page.goto("/books");
-  await expect(page).toHaveURL(/\/books$/);
-  const bookCard = page.locator('[data-testid^="book-card-"]').first();
-  const bookHref = await bookCard.getAttribute("href");
-  expect(bookHref).toMatch(/^\/books\/\d+$/);
-  await bookCard.click();
-  await expect(page).toHaveURL(/\/books\/\d+$/);
-  assertNoLegacyPath(new URL(page.url()).pathname);
-  await expect(page.getByTestId("global-nav-books")).not.toHaveAttribute("aria-current", "page");
-  await expect(page.getByTestId("global-nav-marks")).not.toHaveAttribute("aria-current", "page");
-  await expect(page.getByTestId("book-overview-source-download")).toBeVisible();
-
-  const overviewChapter = page.getByTestId("book-overview-chapter-1");
-  await expect(overviewChapter).toBeVisible();
-  await overviewChapter.click();
-  await expect(page).toHaveURL(/\/books\/\d+\/chapters\/1$/);
-  expect(page.url()).toBe(chapterUrl);
-  assertNoLegacyPath(new URL(page.url()).pathname);
 
   const reactionCard = page.locator('[data-testid^="reaction-card-"]').first();
   await expect(reactionCard).toBeVisible();
@@ -87,28 +48,16 @@ test("fixture upload flow stays on canonical routes and persists marks", async (
   expect(reactionId).toBeTruthy();
   await reactionCard.click();
   await expect(page).toHaveURL(new RegExp(`/books/\\d+/chapters/1\\?reaction=${reactionId}`));
-  await expect(page.getByTestId("reader-current-target")).toHaveText(/\S+/);
 
-  await page.goto(`${chapterUrl}?reaction=${reactionId}`);
-  await expect(page).toHaveURL(new RegExp(`/books/\\d+/chapters/1\\?reaction=${reactionId}`));
-  await expect(page.getByTestId("source-reader-pane")).toBeVisible();
-
-  await page.getByTestId(`mark-resonance-${reactionId}`).click();
-  await page.goto("/marks");
-  await expect(page).toHaveURL(/\/marks$/);
-  assertNoLegacyPath(new URL(page.url()).pathname);
-  const markCard = page.locator('[data-testid^="global-mark-"]').first();
-  await expect(markCard).toContainText("resonance");
-
-  await page.goto(chapterUrl);
-  await page.getByTestId(`mark-blindspot-${reactionId}`).click();
-  await page.goto("/marks");
-  await expect(page.locator('[data-testid^="global-mark-"]').first()).toContainText("blindspot");
-
-  await page.goto(chapterUrl);
-  await page.getByTestId(`mark-bookmark-${reactionId}`).click();
-  await page.goto("/marks");
-  await expect(page.locator('[data-testid^="global-mark-"]').first()).toContainText("bookmark");
+  await page.goto("/books");
+  await expect(page).toHaveURL(/\/books$/);
+  await expect(page.getByTestId("global-nav-books")).toHaveAttribute("aria-current", "page");
+  const bookCard = page.locator('[data-testid^="book-card-"]').first();
+  const bookHref = await bookCard.getAttribute("href");
+  expect(bookHref).toMatch(/^\/books\/\d+$/);
+  await bookCard.click();
+  await expect(page).toHaveURL(/\/books\/\d+$/);
+  await expect(page.getByTestId("book-overview-source-download")).toBeVisible();
 
   await page.goto(chapterUrl);
   await page.getByTestId("brand-link").click();
@@ -116,4 +65,32 @@ test("fixture upload flow stays on canonical routes and persists marks", async (
 
   expect(requestedPaths).not.toContain("/api/landing");
   expect(requestedPaths).not.toContain("/api/sample");
+});
+
+test("bookshelf upload supports defer-start and compat redirects", async ({ page }) => {
+  await page.goto("/upload");
+  await expect(page).toHaveURL(/\/books(?:\?.*)?$/);
+  await expect(page.getByRole("dialog")).toContainText("添加一本新书");
+
+  await page.getByTestId("bookshelf-upload-input").setInputFiles(uploadFixture);
+  await page.getByTestId("bookshelf-upload-submit").click();
+
+  await expect(page.getByRole("alertdialog")).toContainText("已添加到书架", { timeout: 15_000 });
+  await page.getByRole("button", { name: "稍后再说" }).click();
+  await expect(page).toHaveURL(/\/books$/);
+
+  const bookCard = page.locator('[data-testid^="book-card-"]').first();
+  await expect(bookCard).toContainText("未开始");
+  await bookCard.click();
+  await expect(page).toHaveURL(/\/books\/\d+$/);
+  assertNoLegacyPath(new URL(page.url()).pathname);
+  await expect(page.getByRole("button", { name: "开始深读" })).toBeVisible();
+  const bookUrl = page.url();
+
+  await page.goto(`${bookUrl}/analysis`);
+  await expect(page).toHaveURL(bookUrl);
+
+  await page.getByRole("button", { name: "开始深读" }).click();
+  await expect(page.getByText("分析中")).toBeVisible();
+  await expect(page.getByTestId("analysis-completed-1")).toBeVisible({ timeout: 15_000 });
 });

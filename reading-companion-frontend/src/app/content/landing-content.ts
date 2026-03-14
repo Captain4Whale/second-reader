@@ -14,7 +14,7 @@ export const LANDING_HERO = {
   },
   secondaryCta: {
     label: "Upload EPUB",
-    to: "/upload",
+    to: "/books?upload=1",
   },
 } as const;
 

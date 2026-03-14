@@ -25,6 +25,15 @@ ReactionFilter = Literal[
     REACTION_FILTERS[5],
 ]
 MarkType = Literal[MARK_TYPES[0], MARK_TYPES[1], MARK_TYPES[2]]
+JobLifecycleStatus = Literal[
+    "queued",
+    "parsing_structure",
+    "ready",
+    "deep_reading",
+    "chapter_note_generation",
+    "completed",
+    "error",
+]
 
 
 class ApiModel(BaseModel):
@@ -160,12 +169,11 @@ class BooksPageResponse(ApiModel):
     global_mark_count: int = Field(description="Total number of marks across all books.")
 
 
-class UploadAcceptedResponse(ApiModel):
-    """Response returned after an EPUB upload is accepted."""
+class JobAcceptedResponse(ApiModel):
+    """Common response returned after a background job is accepted."""
 
     job_id: str = Field(description="Identifier of the newly created analysis job.")
-    upload_filename: str = Field(description="Original filename supplied by the client.")
-    status: str = Field(description="Initial job status immediately after upload.")
+    status: JobLifecycleStatus = Field(description="Initial job status immediately after the request is accepted.")
     book_id: Optional[int] = Field(
         default=None,
         description="Resolved public integer book identifier if already known; otherwise null.",
@@ -174,11 +182,21 @@ class UploadAcceptedResponse(ApiModel):
     ws_url: str = Field(description="WebSocket URL used to subscribe to live job updates.")
 
 
+class UploadAcceptedResponse(JobAcceptedResponse):
+    """Response returned after an EPUB upload is accepted."""
+
+    upload_filename: str = Field(description="Original filename supplied by the client.")
+
+
+class AnalysisStartAcceptedResponse(JobAcceptedResponse):
+    """Response returned after starting analysis for an existing uploaded book."""
+
+
 class JobStatusResponse(ApiModel):
     """Snapshot of one background sequential-read job."""
 
     job_id: str = Field(description="Job identifier.")
-    status: Literal["queued", "parsing_structure", "deep_reading", "chapter_note_generation", "completed", "error"] = Field(
+    status: JobLifecycleStatus = Field(
         description="Current execution stage of the upload/analysis job.",
     )
     book_id: Optional[int] = Field(default=None, description="Resolved public integer book identifier once structure parsing finishes.")

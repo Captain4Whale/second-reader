@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import mimetypes
 from pathlib import Path
-from typing import Optional
+from typing import Literal, Optional
 
 from fastapi import FastAPI, File, Form, Query, UploadFile, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
@@ -24,6 +24,7 @@ from src.api.errors import ApiError, install_error_handlers
 from src.api.realtime import build_job_status_response, stream_job_events
 from src.api.schemas import (
     ActivityEventsPageResponse,
+    AnalysisStartAcceptedResponse,
     AnalysisStateResponse,
     BookDetailResponse,
     BookMarksResponse,
@@ -39,7 +40,7 @@ from src.api.schemas import (
     SetMarkRequest,
     UploadAcceptedResponse,
 )
-from src.api.test_mode import fixture_upload_path, launch_e2e_fixture_job
+from src.api.test_mode import fixture_upload_path, launch_e2e_fixture_analysis, launch_e2e_fixture_job
 from src.config import (
     get_backend_cors_origins,
     get_backend_runtime_root,
@@ -61,6 +62,7 @@ from src.library.catalog import (
     source_asset_path,
 )
 from src.library.jobs import create_upload_job, launch_sequential_job, load_job
+from src.library.jobs import launch_book_analysis_job, launch_parse_job
 from src.library.user_marks import delete_mark, list_book_marks_grouped, list_marks_page, put_mark
 
 
@@ -92,6 +94,7 @@ if cors_origins:
 async def upload_epub(
     file: UploadFile = File(...),
     display_title: Optional[str] = Form(default=None),
+    start_mode: Literal["immediate", "deferred"] = Form(default="immediate"),
 ) -> UploadAcceptedResponse:
     """Upload an EPUB and start a background sequential read job."""
     del display_title
@@ -116,17 +119,10 @@ async def upload_epub(
     upload_path.parent.mkdir(parents=True, exist_ok=True)
     upload_path.write_bytes(content)
     if get_backend_test_mode() and get_backend_test_fixture_profile() == "e2e":
-        record = launch_e2e_fixture_job(upload_path, upload_filename=filename, root=_root())
+        record = launch_e2e_fixture_job(upload_path, upload_filename=filename, root=_root(), start_mode=start_mode)
     else:
-        record = launch_sequential_job(upload_path, root=_root())
-    return UploadAcceptedResponse(
-        job_id=str(record["job_id"]),
-        upload_filename=filename,
-        status=str(record.get("status", "queued")),
-        book_id=(to_api_book_id(str(record.get("book_id"))) if record.get("book_id") else None),
-        job_url=f"/api/jobs/{record['job_id']}",
-        ws_url=f"/api/ws/jobs/{record['job_id']}",
-    )
+        record = launch_sequential_job(upload_path, root=_root()) if start_mode == "immediate" else launch_parse_job(upload_path, root=_root())
+    return UploadAcceptedResponse(upload_filename=filename, **_job_accepted_payload(record))
 
 
 @app.get("/api/jobs/{job_id}", response_model=JobStatusResponse, responses=ERROR_MODELS)
@@ -164,6 +160,29 @@ def book_analysis_state(book_id: int) -> AnalysisStateResponse:
     if str(payload.get("status", "")) == "error":
         raise ApiError(status=409, code="ANALYSIS_FAILED", message=str(payload.get("last_error", {}).get("message", "Analysis failed.")))
     return AnalysisStateResponse.model_validate(payload)
+
+
+@app.post("/api/books/{book_id}/analysis/start", response_model=AnalysisStartAcceptedResponse, status_code=202, responses=ERROR_MODELS)
+def start_book_analysis(book_id: int) -> AnalysisStartAcceptedResponse:
+    """Start sequential analysis for an uploaded book that has not begun deep reading yet."""
+    internal_book_id = _resolve_book_id(book_id)
+    detail = _book_detail_payload(internal_book_id)
+    status = str(detail.get("status", "not_started"))
+    if status == "analyzing":
+        raise ApiError(status=409, code="ANALYSIS_ALREADY_RUNNING", message="This book is already being analyzed.")
+    if status == "completed":
+        raise ApiError(status=409, code="ANALYSIS_ALREADY_COMPLETED", message="This book has already completed deep reading.")
+    if status != "not_started":
+        raise ApiError(status=409, code="ANALYSIS_NOT_STARTABLE", message="This book cannot start deep reading right now.")
+
+    if get_backend_test_mode() and get_backend_test_fixture_profile() == "e2e":
+        record = launch_e2e_fixture_analysis(internal_book_id, root=_root())
+    else:
+        try:
+            record = launch_book_analysis_job(internal_book_id, root=_root())
+        except FileNotFoundError as exc:
+            raise ApiError(status=404, code="BOOK_NOT_FOUND", message=f"Book '{book_id}' was not found.") from exc
+    return AnalysisStartAcceptedResponse(**_job_accepted_payload(record))
 
 
 @app.get("/api/books/{book_id}/activity", response_model=ActivityEventsPageResponse, responses=ERROR_MODELS)
@@ -393,6 +412,17 @@ def _mark_record(payload: dict) -> dict:
     normalized["section_ref"] = str(payload.get("section_ref", payload.get("segment_ref", "")))
     normalized.pop("segment_ref", None)
     return normalized
+
+
+def _job_accepted_payload(record: dict) -> dict:
+    """Normalize a persisted job record into the shared accepted-job envelope."""
+    return {
+        "job_id": str(record["job_id"]),
+        "status": str(record.get("status", "queued")),
+        "book_id": (to_api_book_id(str(record.get("book_id"))) if record.get("book_id") else None),
+        "job_url": f"/api/jobs/{record['job_id']}",
+        "ws_url": f"/api/ws/jobs/{record['job_id']}",
+    }
 
 
 def _ensure_job_exists(job_id: str) -> None:

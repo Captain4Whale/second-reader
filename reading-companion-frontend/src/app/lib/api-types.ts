@@ -9,6 +9,7 @@ export type ReactionTargetLocator = ApiSchemas["ReactionTargetLocator"];
 export type FeaturedReactionPreview = ApiSchemas["FeaturedReactionPreview"];
 export type BookShelfCard = ApiSchemas["BookShelfCard"];
 export type BooksPageResponse = ApiSchemas["BooksPageResponse"];
+export type AnalysisStartAcceptedResponse = ApiSchemas["AnalysisStartAcceptedResponse"];
 export type UploadAcceptedResponse = ApiSchemas["UploadAcceptedResponse"];
 export type ErrorPayload = ApiSchemas["ErrorResponse"];
 export type JobStatusResponse = ApiSchemas["JobStatusResponse"];

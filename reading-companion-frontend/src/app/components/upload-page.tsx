@@ -7,8 +7,9 @@ import { canonicalBookAnalysisPath, canonicalBookPath } from "../lib/contract";
 const jobStageLabels: Record<JobStatusResponse["status"], string> = {
   queued: "Preparing your book",
   parsing_structure: "Reading the structure",
+  ready: "Structure is ready",
   deep_reading: "Reading and annotating",
-  chapter_note_generation: "Finishing chapter notes",
+  chapter_note_generation: "Finishing chapter reactions",
   completed: "Ready to open",
   error: "Needs attention",
 };

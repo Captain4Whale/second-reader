@@ -9,6 +9,7 @@ import {
 import type {
   ActivityEvent,
   ActivityEventsPageResponse,
+  AnalysisStartAcceptedResponse,
   AnalysisStateResponse,
   ApiErrorResponse,
   BookDetailResponse,
@@ -29,6 +30,7 @@ import type {
 export type {
   ActivityEvent,
   ActivityEventsPageResponse,
+  AnalysisStartAcceptedResponse,
   AnalysisStateResponse,
   BookDetailResponse,
   BookMarksResponse,
@@ -125,8 +127,11 @@ export function toFrontendPath(path?: string | null): string {
   if (normalized.startsWith("/book/")) {
     return normalized.replace(/^\/book\//, "/books/").replace("/chapter/", "/chapters/");
   }
+  if (/^\/books\/[^/]+\/analysis$/.test(normalized)) {
+    return normalized.replace(/\/analysis$/, "");
+  }
   if (normalized.startsWith("/analysis/")) {
-    return normalized.replace(/^\/analysis\//, "/books/") + "/analysis";
+    return normalized.replace(/^\/analysis\//, "/books/");
   }
   return normalized;
 }
@@ -222,12 +227,21 @@ export function fetchJobStatus(jobId: string) {
   return request<JobStatusResponse>(`/api/jobs/${jobId}`);
 }
 
-export function uploadEpub(file: File) {
+export function uploadEpub(file: File, options: { startMode?: "immediate" | "deferred" } = {}) {
   const formData = new FormData();
   formData.append("file", file);
+  if (options.startMode) {
+    formData.append("start_mode", options.startMode);
+  }
   return request<UploadAcceptedResponse>("/api/uploads/epub", {
     method: "POST",
     body: formData,
+  });
+}
+
+export function startBookAnalysis(bookId: BookId) {
+  return request<AnalysisStartAcceptedResponse>(`/api/books/${bookId}/analysis/start`, {
+    method: "POST",
   });
 }
 

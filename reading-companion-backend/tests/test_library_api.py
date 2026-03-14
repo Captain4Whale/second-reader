@@ -52,13 +52,13 @@ def _bootstrap_book(root: Path, *, stage: str = "completed") -> str:
                     "title": "Chapter 1",
                     "chapter_number": 1,
                     "reference": "Chapter 1",
-                    "status": "done",
+                    "status": "done" if stage == "completed" else "pending",
                     "segment_count": 1,
                     "markdown_file": "ch01_deep_read.md",
                     "result_file": "ch01_deep_read.json",
-                    "visible_reaction_count": 1,
-                    "reaction_type_diversity": 1,
-                    "high_signal_reaction_count": 1,
+                    "visible_reaction_count": 1 if stage == "completed" else 0,
+                    "reaction_type_diversity": 1 if stage == "completed" else 0,
+                    "high_signal_reaction_count": 1 if stage == "completed" else 0,
                 }
             ],
         },
@@ -69,12 +69,12 @@ def _bootstrap_book(root: Path, *, stage: str = "completed") -> str:
             "mode": "sequential",
             "stage": stage,
             "book": "Demo Book",
-            "current_chapter_id": None if stage == "completed" else 1,
-            "current_chapter_ref": None if stage == "completed" else "Chapter 1",
-            "current_segment_ref": None if stage == "completed" else "1.1",
+            "current_chapter_id": 1 if stage == "deep_reading" else None,
+            "current_chapter_ref": "Chapter 1" if stage == "deep_reading" else None,
+            "current_segment_ref": "1.1" if stage == "deep_reading" else None,
             "completed_chapters": 1 if stage == "completed" else 0,
             "total_chapters": 1,
-            "eta_seconds": 0 if stage == "completed" else 60,
+            "eta_seconds": 60 if stage == "deep_reading" else 0,
             "updated_at": "2026-03-07T00:00:00Z",
             "error": None,
         },
@@ -405,6 +405,7 @@ def test_api_reads_books_chapters_marks_and_docs(tmp_path):
     assert books_response.status_code == 200
     books_payload = books_response.json()
     assert books_payload["items"][0]["book_id"] == public_book_id
+    assert books_payload["items"][0]["open_target"] == f"/books/{public_book_id}"
     assert books_payload["page_info"]["has_more"] is False
 
     detail_response = client.get(f"/api/books/{public_book_id}")
@@ -536,6 +537,65 @@ def test_api_upload_and_job_polling(tmp_path, monkeypatch):
     assert job_response.status_code == 200
     assert job_response.json()["book_id"] == to_api_book_id("demo-book")
     assert job_response.json()["status"] == "deep_reading"
+
+
+def test_api_upload_deferred_returns_ready_job(tmp_path, monkeypatch):
+    """Deferred uploads should launch parse-only work and return the ready job envelope."""
+    api_module.app.state.root = tmp_path
+    client = TestClient(api_module.app)
+
+    monkeypatch.setattr(api_module, "create_upload_job", lambda root: ("jobparse", root / "state" / "uploads" / "jobparse.epub"))
+    monkeypatch.setattr(
+        api_module,
+        "launch_parse_job",
+        lambda upload_path, root=None: {
+            "job_id": "jobparse",
+            "status": "ready",
+            "upload_path": str(upload_path),
+            "book_id": "demo-book",
+            "pid": None,
+            "created_at": "2026-03-07T00:00:00Z",
+            "updated_at": "2026-03-07T00:00:00Z",
+            "error": None,
+        },
+    )
+
+    upload_response = client.post(
+        "/api/uploads/epub",
+        data={"start_mode": "deferred"},
+        files={"file": ("demo.epub", b"epub-bytes", "application/epub+zip")},
+    )
+    assert upload_response.status_code == 202
+    assert upload_response.json()["status"] == "ready"
+    assert upload_response.json()["book_id"] == to_api_book_id("demo-book")
+
+
+def test_api_start_analysis_for_uploaded_book(tmp_path, monkeypatch):
+    """Starting deep reading for a not-started book should return a new accepted job."""
+    book_id = _bootstrap_book(tmp_path, stage="ready")
+    public_book_id = to_api_book_id(book_id)
+    api_module.app.state.root = tmp_path
+    client = TestClient(api_module.app)
+
+    monkeypatch.setattr(
+        api_module,
+        "launch_book_analysis_job",
+        lambda internal_book_id, root=None: {
+            "job_id": "jobstart",
+            "status": "queued",
+            "upload_path": str((tmp_path / "output" / internal_book_id / "_assets" / "source.epub")),
+            "book_id": internal_book_id,
+            "pid": 456,
+            "created_at": "2026-03-07T00:00:00Z",
+            "updated_at": "2026-03-07T00:00:00Z",
+            "error": None,
+        },
+    )
+
+    response = client.post(f"/api/books/{public_book_id}/analysis/start")
+    assert response.status_code == 202
+    assert response.json()["job_id"] == "jobstart"
+    assert response.json()["book_id"] == public_book_id
 
 
 def test_api_errors_use_stable_error_envelope(tmp_path):

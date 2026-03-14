@@ -16,7 +16,6 @@ CANONICAL_ROUTES = {
     "books": "/books",
     "book": "/books/:id",
     "chapter": "/books/:id/chapters/:chapterId",
-    "analysis": "/books/:id/analysis",
     "marks": "/marks",
 }
 
@@ -24,6 +23,7 @@ COMPAT_ROUTES = [
     "/bookshelf",
     "/book/:bookId",
     "/book/:bookId/chapter/:chapterId",
+    "/books/:id/analysis",
     "/analysis/:bookId",
     "/bookshelf/marks",
 ]
