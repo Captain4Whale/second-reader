@@ -50,6 +50,8 @@ from .policy import (
 from .book_analysis import run_book_analysis
 from .reader import (
     apply_chapter_reflection_repairs,
+    coerce_reader_memory,
+    consolidate_memory_after_chapter,
     create_reader_state,
     initial_memory,
     run_chapter_reflection,
@@ -60,7 +62,9 @@ from .storage import (
     chapter_markdown_file,
     chapter_reference,
     chapter_result_name,
+    existing_chapter_result_file,
     load_json,
+    reader_memory_file,
     relative_output_path,
     save_structure,
     save_json,
@@ -168,40 +172,47 @@ def _visible_segment_ref(chapter: StructureChapter, segment: dict[str, object]) 
 
 def _normalize_memory_refs(structure: BookStructure, memory: ReaderMemory) -> ReaderMemory:
     """Rewrite summary prefixes from internal ids to visible refs when possible."""
+    normalized = coerce_reader_memory(memory)
     chapters_by_id = {
         int(chapter.get("id", 0)): chapter
         for chapter in structure.get("chapters", [])
     }
-    normalized: ReaderMemory = {
-        "prior_segment_summaries": [],
-        "notable_findings": list(memory.get("notable_findings", [])),
-        "open_threads": list(memory.get("open_threads", [])),
-        "highlighted_quotes": list(memory.get("highlighted_quotes", [])),
-    }
 
     pattern = re.compile(r"^\s*(\d+\.\d+)\s*:\s*(.*)$")
-    for item in memory.get("prior_segment_summaries", []):
-        text = str(item or "").strip()
-        if not text:
+    for item in normalized.get("recent_segment_flow", []):
+        segment_ref = str(item.get("segment_ref", "") or "").strip()
+        if not segment_ref:
             continue
-        match = pattern.match(text)
+        match = pattern.match(f"{segment_ref}: {item.get('summary', '')}")
         if not match:
-            normalized["prior_segment_summaries"].append(text)
             continue
         raw_segment_id = match.group(1)
-        suffix = match.group(2)
         chapter_prefix = raw_segment_id.split(".", 1)[0]
         if not chapter_prefix.isdigit():
-            normalized["prior_segment_summaries"].append(text)
             continue
         chapter = chapters_by_id.get(int(chapter_prefix))
-        if not chapter:
-            normalized["prior_segment_summaries"].append(text)
-            continue
-        visible = segment_reference(chapter, raw_segment_id)
-        normalized["prior_segment_summaries"].append(f"{visible}: {suffix}")
+        if chapter:
+            item["segment_ref"] = segment_reference(chapter, raw_segment_id)
+            item["chapter_ref"] = chapter_reference(chapter)
 
-    return normalized
+    for bucket in ("findings", "threads"):
+        for item in normalized.get(bucket, []):
+            if not isinstance(item, dict):
+                continue
+            raw_segment_ref = str(item.get("segment_ref", "") or "").strip()
+            if "." not in raw_segment_ref:
+                continue
+            chapter_prefix = raw_segment_ref.split(".", 1)[0]
+            if not chapter_prefix.isdigit():
+                continue
+            chapter = chapters_by_id.get(int(chapter_prefix))
+            if not chapter:
+                continue
+            item["segment_ref"] = segment_reference(chapter, raw_segment_ref)
+            if not str(item.get("chapter_ref", "") or "").strip():
+                item["chapter_ref"] = chapter_reference(chapter)
+
+    return coerce_reader_memory(normalized)
 
 
 def _read_progress_event(segment_id: str, segment_summary: str) -> ReaderProgressEvent:
@@ -304,6 +315,106 @@ def _write_sequential_run_state(
             error=error,
         ),
     )
+
+
+def _persist_reader_memory(output_dir: Path, memory: ReaderMemory) -> None:
+    """Persist the canonical book-level reader memory snapshot."""
+    save_json(
+        reader_memory_file(output_dir),
+        {
+            "updated_at": _timestamp(),
+            "memory": coerce_reader_memory(memory),
+        },
+    )
+
+
+def _chapter_position_context(
+    structure: BookStructure,
+    chapter: StructureChapter,
+) -> tuple[int, int, list[str]]:
+    """Return chapter index/total and a nearby outline slice for prompt context."""
+    chapters = list(structure.get("chapters", []))
+    total = len(chapters)
+    chapter_id = int(chapter.get("id", 0))
+    current_index = next(
+        (index for index, item in enumerate(chapters) if int(item.get("id", 0)) == chapter_id),
+        0,
+    )
+    nearby: list[str] = []
+    for index in range(max(0, current_index - 2), min(total, current_index + 4)):
+        if index == current_index:
+            continue
+        item = chapters[index]
+        nearby.append(f"{chapter_reference(item)} — {item.get('title', '')}")
+    return current_index + 1, total, nearby
+
+
+def _rendered_segments_from_chapter_result(payload: dict[str, object]) -> list[dict[str, object]]:
+    """Convert one chapter_result payload back into minimal rendered segments for memory backfill."""
+    rendered_segments: list[dict[str, object]] = []
+    for section in payload.get("sections", []):
+        if not isinstance(section, dict):
+            continue
+        rendered_segments.append(
+            {
+                "segment_id": str(section.get("segment_id", "") or ""),
+                "segment_ref": str(section.get("segment_ref", "") or ""),
+                "summary": str(section.get("summary", "") or ""),
+                "verdict": str(section.get("verdict", "skip") or "skip"),
+                "reactions": list(section.get("reactions", [])),
+                "reflection_summary": str(section.get("reflection_summary", "") or ""),
+                "reflection_reason_codes": list(section.get("reflection_reason_codes", [])),
+                "quality_status": str(section.get("quality_status", "") or ""),
+            }
+        )
+    return rendered_segments
+
+
+def _backfill_reader_memory_from_results(output_dir: Path, structure: BookStructure) -> ReaderMemory:
+    """Rebuild a coarse book-level memory snapshot from completed chapter results."""
+    memory = initial_memory()
+    for chapter in structure.get("chapters", []):
+        if str(chapter.get("status", "")) != "done":
+            continue
+        result_path = existing_chapter_result_file(output_dir, chapter)
+        if not result_path.exists():
+            continue
+        payload = load_json(result_path)
+        if not isinstance(payload, dict):
+            continue
+        memory = consolidate_memory_after_chapter(
+            memory,
+            chapter_ref=chapter_reference(chapter),
+            chapter_title=str(chapter.get("title", "") or ""),
+            primary_role=str(chapter.get("primary_role", "body") or "body"),
+            rendered_segments=_rendered_segments_from_chapter_result(payload),
+            chapter_reflection=payload.get("chapter_reflection") if isinstance(payload.get("chapter_reflection"), dict) else {},
+        )
+    return memory
+
+
+def _load_reader_memory_snapshot(
+    output_dir: Path,
+    structure: BookStructure,
+    *,
+    continue_mode: bool,
+) -> ReaderMemory:
+    """Load the canonical reader memory snapshot or backfill it from chapter results."""
+    if not continue_mode:
+        return initial_memory()
+
+    path = reader_memory_file(output_dir)
+    if path.exists():
+        payload = load_json(path)
+        if isinstance(payload, dict):
+            if isinstance(payload.get("memory"), dict):
+                return coerce_reader_memory(payload.get("memory"))
+            return coerce_reader_memory(payload)
+
+    backfilled = _backfill_reader_memory_from_results(output_dir, structure)
+    if any(backfilled.get(key) for key in ["chapter_memory_summaries", "findings", "threads", "book_arc_summary"]):
+        _persist_reader_memory(output_dir, backfilled)
+    return backfilled
 
 
 class BackgroundSegmentationCoordinator:
@@ -625,13 +736,7 @@ def _run_single_chapter(
                     resumed_segment_map[segment_id] = item
             stored_memory = checkpoint_payload.get("memory")
             if isinstance(stored_memory, dict):
-                memory = {
-                    "prior_segment_summaries": list(stored_memory.get("prior_segment_summaries", [])),
-                    "notable_findings": list(stored_memory.get("notable_findings", [])),
-                    "open_threads": list(stored_memory.get("open_threads", [])),
-                    "highlighted_quotes": list(stored_memory.get("highlighted_quotes", [])),
-                }
-                memory = _normalize_memory_refs(structure, memory)
+                memory = _normalize_memory_refs(structure, coerce_reader_memory(stored_memory))
             stored_budget = checkpoint_payload.get("chapter_budget")
             if isinstance(stored_budget, dict):
                 chapter_budget_state["search_queries_remaining_in_chapter"] = max(
@@ -707,8 +812,14 @@ def _run_single_chapter(
                 )
 
         progress(_read_progress_event(shown_segment_id, segment.get("summary", "")))
+        chapter_index, total_chapters, nearby_outline = _chapter_position_context(structure, chapter)
         state = create_reader_state(
+            book_title=str(structure.get("book", "") or ""),
+            author=str(structure.get("author", "") or ""),
             chapter_title=chapter.get("title", ""),
+            chapter_ref=chapter_reference(chapter),
+            chapter_index=chapter_index,
+            total_chapters=total_chapters,
             segment_id=segment.get("id", ""),
             segment_ref=shown_segment_id,
             segment_summary=segment.get("summary", ""),
@@ -719,10 +830,21 @@ def _run_single_chapter(
             skill_policy=skill_policy,
             budget=segment_budget(chapter_budget_state, budget_policy),
             max_revisions=int(budget_policy.get("max_revisions", 2)),
+            primary_role=str(chapter.get("primary_role", "body") or "body"),
+            role_tags=list(chapter.get("role_tags", [])),
+            role_confidence=str(chapter.get("role_confidence", "low") or "low"),
+            section_heading=str(segment.get("section_heading", "") or ""),
+            nearby_outline=nearby_outline,
         )
         rendered, final_state = run_reader_segment(state, progress=progress)
         rendered_segments.append(rendered)
-        memory = update_memory(memory, rendered)
+        memory = update_memory(
+            memory,
+            rendered,
+            chapter_ref=chapter_reference(chapter),
+            primary_role=str(chapter.get("primary_role", "body") or "body"),
+            role_tags=list(chapter.get("role_tags", [])),
+        )
         final_budget = final_state.get("budget") or {}
         chapter_budget_state["search_queries_remaining_in_chapter"] = max(
             0,
@@ -771,11 +893,21 @@ def _run_single_chapter(
         user_intent=user_intent,
         segments=rendered_segments,
         output_language=output_language,
+        chapter_primary_role=str(chapter.get("primary_role", "body") or "body"),
+        chapter_role_tags=list(chapter.get("role_tags", [])),
     )
     rendered_segments = apply_chapter_reflection_repairs(
         segments=rendered_segments,
         chapter_reflection=chapter_reflection,
         output_language=output_language,
+    )
+    memory = consolidate_memory_after_chapter(
+        memory,
+        chapter_ref=chapter_reference(chapter),
+        chapter_title=str(chapter.get("title", "") or ""),
+        primary_role=str(chapter.get("primary_role", "body") or "body"),
+        rendered_segments=rendered_segments,
+        chapter_reflection=chapter_reflection,
     )
     rendered_by_id = {
         segment.get("segment_id", ""): segment
@@ -814,6 +946,7 @@ def _run_single_chapter(
             ),
             encoding="utf-8",
         )
+        _persist_reader_memory(output_dir, memory)
     with write_context:
         save_structure(structure_file(output_dir), structure)
         write_book_manifest(output_dir, structure)
@@ -857,7 +990,11 @@ def _read_book_sequential(
     tuning: SequentialPipelineTuning,
 ) -> BookStructure:
     """Run the sequential reader with background chapter segmentation."""
-    memory = initial_memory()
+    memory = _load_reader_memory_snapshot(
+        output_dir,
+        structure,
+        continue_mode=continue_mode,
+    )
     total = len(selected_chapters)
     io_lock = threading.RLock()
     tracker: dict[str, object] = {

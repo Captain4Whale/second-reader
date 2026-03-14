@@ -32,6 +32,27 @@ MarkType = Literal["resonance", "blindspot", "bookmark"]
 JobStatus = Literal["queued", "parsing_structure", "ready", "deep_reading", "chapter_note_generation", "paused", "completed", "error"]
 JobKind = Literal["parse", "read"]
 TextRole = Literal["chapter_heading", "section_heading", "body", "auxiliary"]
+ChapterPrimaryRole = Literal["front_matter", "body", "back_matter"]
+ChapterRoleTag = Literal[
+    "overview",
+    "roadmap",
+    "preface",
+    "prologue",
+    "appendix",
+    "epilogue",
+    "afterword",
+    "notes",
+    "reference_like",
+    "definition_heavy",
+    "example_heavy",
+]
+RoleConfidence = Literal["low", "medium", "high"]
+FindingStatus = Literal["provisional", "durable", "superseded"]
+ThreadStatus = Literal["open", "resolved", "parked"]
+SalienceKind = Literal["concept", "character", "institution", "place", "motif"]
+SalienceStatus = Literal["emerging", "active", "stable", "contested", "resolved"]
+PromptBudgetTier = Literal["tight", "normal", "ample"]
+ReaderPromptNode = Literal["think", "express", "reflect"]
 
 
 class SourceAsset(TypedDict):
@@ -100,6 +121,7 @@ class SemanticSegment(SemanticSegmentBase, total=False):
     """A semantically coherent unit inside a chapter."""
 
     segment_ref: str
+    section_heading: str
     locator: SegmentLocator
     paragraph_locators: list[ParagraphLocator]
 
@@ -118,6 +140,9 @@ class StructureChapter(StructureChapterBase, total=False):
     """Persisted chapter definition in structure.json."""
 
     chapter_number: int
+    primary_role: ChapterPrimaryRole
+    role_tags: list[ChapterRoleTag]
+    role_confidence: RoleConfidence
     chapter_heading: ChapterHeadingBlock
     output_file: str
     item_id: str
@@ -256,9 +281,81 @@ class ReaderProgressEvent(TypedDict, total=False):
     search_query: str
 
 
-class ReaderMemory(TypedDict):
+class RecentSegmentFlowEntry(TypedDict, total=False):
+    """One recent semantic-unit trace retained for lightweight recall."""
+
+    segment_ref: str
+    chapter_ref: str
+    summary: str
+    touched_at: str
+
+
+class MemoryFinding(TypedDict, total=False):
+    """One evolving cross-segment finding tracked by the reader."""
+
+    text: str
+    status: FindingStatus
+    anchor_quote: str
+    chapter_ref: str
+    segment_ref: str
+    touched_at: str
+
+
+class MemoryThread(TypedDict, total=False):
+    """One open/resolved line of inquiry carried across the book."""
+
+    text: str
+    status: ThreadStatus
+    chapter_ref: str
+    segment_ref: str
+    resolution: str
+    touched_at: str
+
+
+class ChapterMemorySummary(TypedDict, total=False):
+    """One chapter-level memory summary retained for later recall."""
+
+    chapter_ref: str
+    chapter_title: str
+    primary_role: ChapterPrimaryRole
+    summary: str
+    touched_at: str
+
+
+class SalienceLedgerItem(TypedDict, total=False):
+    """A stable ledger entry for concepts, characters, places, or motifs."""
+
+    kind: SalienceKind
+    name: str
+    working_note: str
+    introduced_at: str
+    last_touched_at: str
+    status: SalienceStatus
+
+
+class PromptBudget(TypedDict, total=False):
+    """Internal prompt assembly budget derived from local token estimates."""
+
+    node: ReaderPromptNode
+    model_context_window_estimate: int
+    reserved_output_tokens: int
+    reserved_system_tokens: int
+    estimated_segment_tokens: int
+    node_memory_budget_tokens: int
+    available_context_tokens: int
+    budget_tier: PromptBudgetTier
+
+
+class ReaderMemory(TypedDict, total=False):
     """Running memory carried across semantic units in one read session."""
 
+    recent_segment_flow: list[RecentSegmentFlowEntry]
+    recent_highlighted_quotes: list[str]
+    findings: list[MemoryFinding]
+    threads: list[MemoryThread]
+    chapter_memory_summaries: list[ChapterMemorySummary]
+    book_arc_summary: str
+    salience_ledger: list[SalienceLedgerItem]
     prior_segment_summaries: list[str]
     notable_findings: list[str]
     open_threads: list[str]
@@ -507,7 +604,17 @@ class ReaderBudget(TypedDict):
 class ReaderState(TypedDict):
     """LangGraph state for the inner Reader agent."""
 
+    book_title: str
+    author: str
     chapter_title: str
+    chapter_ref: str
+    chapter_index: int
+    total_chapters: int
+    primary_role: ChapterPrimaryRole
+    role_tags: list[ChapterRoleTag]
+    role_confidence: RoleConfidence
+    section_heading: str
+    nearby_outline: list[str]
     segment_id: str
     segment_ref: str
     segment_summary: str

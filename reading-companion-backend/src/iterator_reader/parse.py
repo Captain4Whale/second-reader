@@ -28,7 +28,16 @@ from .frontend_artifacts import (
     write_book_manifest,
     write_run_state,
 )
-from .models import BookStructure, ChapterHeadingBlock, ParseState, SemanticSegment, StructureChapter
+from .models import (
+    BookStructure,
+    ChapterHeadingBlock,
+    ChapterPrimaryRole,
+    ChapterRoleTag,
+    ParseState,
+    RoleConfidence,
+    SemanticSegment,
+    StructureChapter,
+)
 from .storage import (
     chapter_markdown_file,
     chapter_output_name,
@@ -527,22 +536,103 @@ def _chapter_contexts(raw_chapters: list[dict[str, object]], *, output_language:
             print(f"[skip] {chapter_title}", flush=True)
             continue
 
-        contexts.append(
-            {
-                "id": chapter_index,
-                "title": chapter_title,
-                "chapter_number": infer_chapter_number(chapter_title),
-                "level": int(raw_chapter.get("level", 1) or 1),
-                "paragraph_records": paragraph_records,
-                "chapter_heading": _chapter_heading_block(paragraph_records),
-                "body_groups": _body_record_groups(paragraph_records),
-                "item_id": str(raw_chapter.get("item_id", "") or ""),
-                "href": str(raw_chapter.get("href", "") or ""),
-                "spine_index": int(raw_chapter.get("spine_index", 0) or 0) if raw_chapter.get("spine_index") is not None else None,
-                "output_language": output_language,
-            }
-        )
+        context = {
+            "id": chapter_index,
+            "title": chapter_title,
+            "chapter_number": infer_chapter_number(chapter_title),
+            "level": int(raw_chapter.get("level", 1) or 1),
+            "paragraph_records": paragraph_records,
+            "chapter_heading": _chapter_heading_block(paragraph_records),
+            "body_groups": _body_record_groups(paragraph_records),
+            "item_id": str(raw_chapter.get("item_id", "") or ""),
+            "href": str(raw_chapter.get("href", "") or ""),
+            "spine_index": int(raw_chapter.get("spine_index", 0) or 0) if raw_chapter.get("spine_index") is not None else None,
+            "output_language": output_language,
+        }
+        primary_role, role_tags, role_confidence = _infer_chapter_role(context)
+        context["primary_role"] = primary_role
+        context["role_tags"] = role_tags
+        context["role_confidence"] = role_confidence
+        contexts.append(context)
     return contexts
+
+
+def _infer_chapter_role(
+    context: dict[str, object],
+) -> tuple[ChapterPrimaryRole, list[ChapterRoleTag], RoleConfidence]:
+    """Infer a soft chapter role from parse-time structural cues."""
+    title = str(context.get("title", "") or "").strip()
+    heading = context.get("chapter_heading")
+    heading_text = str(heading.get("text", "")) if isinstance(heading, dict) else ""
+    lowered = " ".join(part for part in [title, heading_text] if part).lower()
+    tags: list[ChapterRoleTag] = []
+    primary_role: ChapterPrimaryRole = "body"
+    confidence: RoleConfidence = "low"
+
+    def add_tag(tag: ChapterRoleTag) -> None:
+        if tag not in tags:
+            tags.append(tag)
+
+    explicit_front = False
+    explicit_back = False
+
+    if any(keyword in lowered for keyword in ["chapter summaries", "summary and map", "summaries and map", "roadmap", "road map", "overview"]):
+        primary_role = "front_matter"
+        explicit_front = True
+        add_tag("overview")
+        add_tag("roadmap")
+    if re.search(r"\bcontents\b|\btable of contents\b|\boutline\b", lowered):
+        primary_role = "front_matter"
+        explicit_front = True
+        add_tag("overview")
+        add_tag("roadmap")
+    if re.search(r"\bpreface\b", lowered):
+        primary_role = "front_matter"
+        explicit_front = True
+        add_tag("preface")
+    if re.search(r"\bprologue\b", lowered):
+        primary_role = "front_matter"
+        explicit_front = True
+        add_tag("prologue")
+
+    if re.search(r"\bappendix\b", lowered):
+        primary_role = "back_matter"
+        explicit_back = True
+        add_tag("appendix")
+    if re.search(r"\bepilogue\b", lowered):
+        primary_role = "back_matter"
+        explicit_back = True
+        add_tag("epilogue")
+    if re.search(r"\bafterword\b", lowered):
+        primary_role = "back_matter"
+        explicit_back = True
+        add_tag("afterword")
+    if re.search(r"\bnotes?\b|\bendnotes\b|\bfootnotes\b|\breferences?\b|\bbibliography\b|\bindex\b", lowered):
+        primary_role = "back_matter"
+        explicit_back = True
+        add_tag("notes")
+        add_tag("reference_like")
+
+    early_body = " ".join(
+        str(record.get("text", "")).strip()
+        for group in list(context.get("body_groups", []))[:2]
+        for record in list(group.get("body_records", []))[:2]
+        if str(record.get("text", "")).strip()
+    ).lower()
+    if re.search(r"\bdefined as\b|\brefers to\b|\bmeans\b|\bis the\b|\bconsists of\b", early_body):
+        add_tag("definition_heavy")
+    if re.search(r"\bfor example\b|\bfor instance\b|\bcase study\b|\bstory\b|\bstories\b|\bexample\b", early_body):
+        add_tag("example_heavy")
+
+    if explicit_front or explicit_back:
+        confidence = "high"
+    elif context.get("chapter_number") is not None:
+        primary_role = "body"
+        confidence = "medium"
+    elif tags:
+        confidence = "medium"
+
+    return primary_role, tags, confidence
 
 
 def _chapter_stub_from_context(output_dir: Path, context: dict[str, object], *, segments: list[SemanticSegment] | None = None) -> StructureChapter:
@@ -551,6 +641,9 @@ def _chapter_stub_from_context(output_dir: Path, context: dict[str, object], *, 
         "id": int(context.get("id", 0)),
         "title": str(context.get("title", "")),
         "chapter_number": context.get("chapter_number"),
+        "primary_role": context.get("primary_role", "body"),
+        "role_tags": list(context.get("role_tags", [])),
+        "role_confidence": context.get("role_confidence", "low"),
         "status": "pending",
         "level": int(context.get("level", 1) or 1),
         "segments": list(segments or []),
@@ -601,6 +694,11 @@ def segment_context_into_chapter(
         ]
         if not body_records:
             continue
+        section_heading_text = "\n".join(
+            str(record.get("text", "")).strip()
+            for record in list(group.get("heading_records", []))
+            if str(record.get("text", "")).strip()
+        )
         if progress is not None:
             progress(f"语义切分块 {group_index}/{total_groups}")
         local_segments = segment_chapter_semantically(
@@ -610,11 +708,7 @@ def segment_context_into_chapter(
             output_language=output_language,
             paragraphs=[str(record.get("text", "")) for record in body_records],
             chapter_heading_text=str(chapter_heading.get("text", "")) if isinstance(chapter_heading, dict) else "",
-            section_heading_text="\n".join(
-                str(record.get("text", "")).strip()
-                for record in list(group.get("heading_records", []))
-                if str(record.get("text", "")).strip()
-            ),
+            section_heading_text=section_heading_text,
         )
         for segment in local_segments:
             start = int(segment.get("paragraph_start", 0) or 0)
@@ -632,6 +726,7 @@ def segment_context_into_chapter(
                     "paragraph_start": int(segment_records[0].get("paragraph_index", 0) or 0),
                     "paragraph_end": int(segment_records[-1].get("paragraph_index", 0) or 0),
                     "status": segment.get("status", "pending"),
+                    "section_heading": section_heading_text,
                 }
             )
             next_segment_index += 1
@@ -653,6 +748,7 @@ def segment_context_into_chapter(
                     "paragraph_start": int(body_records[0].get("paragraph_index", 0) or 0),
                     "paragraph_end": int(body_records[-1].get("paragraph_index", 0) or 0),
                     "status": "pending",
+                    "section_heading": "",
                 }
             ]
 
@@ -1622,10 +1718,31 @@ def _upgrade_structure_metadata(structure: BookStructure, output_dir: Path) -> b
                 chapter["chapter_number"] = inferred_number
             changed = True
 
+        primary_role, role_tags, role_confidence = _infer_chapter_role(
+            {
+                "title": chapter.get("title", ""),
+                "chapter_number": chapter.get("chapter_number"),
+                "chapter_heading": chapter.get("chapter_heading"),
+                "body_groups": [],
+            }
+        )
+        if chapter.get("primary_role") != primary_role:
+            chapter["primary_role"] = primary_role
+            changed = True
+        if list(chapter.get("role_tags", [])) != role_tags:
+            chapter["role_tags"] = role_tags
+            changed = True
+        if chapter.get("role_confidence") != role_confidence:
+            chapter["role_confidence"] = role_confidence
+            changed = True
+
         for segment in chapter.get("segments", []):
             segment_ref = segment_reference(chapter, segment.get("id", ""))
             if segment.get("segment_ref") != segment_ref:
                 segment["segment_ref"] = segment_ref
+                changed = True
+            if "section_heading" not in segment:
+                segment["section_heading"] = ""
                 changed = True
             if "paragraph_locators" not in segment:
                 segment["paragraph_locators"] = []

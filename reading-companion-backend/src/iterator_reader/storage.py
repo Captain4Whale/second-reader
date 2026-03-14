@@ -263,6 +263,11 @@ def parse_state_file(output_dir: Path) -> Path:
     return runtime_dir(output_dir) / "parse_state.json"
 
 
+def reader_memory_file(output_dir: Path) -> Path:
+    """Path to the canonical book-level reader memory snapshot."""
+    return runtime_dir(output_dir) / "reader_memory.json"
+
+
 def runtime_dir(output_dir: Path) -> Path:
     """Directory storing current live runtime state."""
     return output_dir / "_runtime"
@@ -418,6 +423,11 @@ def existing_activity_file(output_dir: Path) -> Path:
 def existing_parse_state_file(output_dir: Path) -> Path:
     """Return the existing parse-state path."""
     return parse_state_file(output_dir)
+
+
+def existing_reader_memory_file(output_dir: Path) -> Path:
+    """Return the existing reader-memory path."""
+    return reader_memory_file(output_dir)
 
 
 def existing_book_analysis_file(output_dir: Path) -> Path:

@@ -7,6 +7,7 @@ from src.iterator_reader.reader import (
     _normalize_source_clause,
     _apply_skill_policy,
     apply_chapter_reflection_repairs,
+    consolidate_memory_after_chapter,
     create_reader_state,
     express_node,
     express_progress_message,
@@ -86,6 +87,123 @@ def test_update_memory_prefers_segment_ref_prefix():
     updated = update_memory(memory, segment)
 
     assert updated["prior_segment_summaries"] == ["3.5: A mapped summary"]
+    assert updated["recent_segment_flow"][-1]["segment_ref"] == "3.5"
+
+
+def test_update_memory_marks_overview_findings_as_provisional():
+    """Front-matter overview sections should seed provisional rather than durable findings."""
+    memory = {
+        "recent_segment_flow": [],
+        "findings": [],
+        "threads": [],
+        "chapter_memory_summaries": [],
+        "book_arc_summary": "",
+        "salience_ledger": [],
+    }
+    segment = {
+        "segment_id": "1.2",
+        "segment_ref": "Chapter_Summaries_and.2",
+        "summary": "A roadmap clue",
+        "verdict": "pass",
+        "reactions": [
+            {
+                "type": "highlight",
+                "anchor_quote": "Innovation loves disorder.",
+                "content": "This sounds like a thesis preview.",
+                "search_results": [],
+            }
+        ],
+        "reflection_summary": "",
+    }
+
+    updated = update_memory(
+        memory,
+        segment,
+        chapter_ref="Chapter Summaries and Map",
+        primary_role="front_matter",
+        role_tags=["overview", "roadmap"],
+    )
+
+    assert updated["findings"][0]["status"] == "provisional"
+
+
+def test_consolidate_memory_after_chapter_applies_memory_actions():
+    """Chapter-end memory actions should promote findings, resolve threads, and persist chapter summaries."""
+    memory = {
+        "recent_segment_flow": [],
+        "recent_highlighted_quotes": [],
+        "findings": [
+            {
+                "text": "Innovation loves disorder.",
+                "status": "provisional",
+                "anchor_quote": "Innovation loves disorder.",
+                "chapter_ref": "Chapter Summaries and Map",
+                "segment_ref": "Chapter_Summaries_and.2",
+                "touched_at": "2026-03-14T00:00:00Z",
+            }
+        ],
+        "threads": [
+            {
+                "text": "How does Taleb distinguish antifragility from evolution?",
+                "status": "open",
+                "chapter_ref": "Chapter Summaries and Map",
+                "segment_ref": "Chapter_Summaries_and.2",
+                "resolution": "",
+                "touched_at": "2026-03-14T00:00:00Z",
+            }
+        ],
+        "chapter_memory_summaries": [],
+        "book_arc_summary": "",
+        "salience_ledger": [],
+    }
+    chapter_reflection = {
+        "memory_actions": {
+            "finding_updates": [
+                {
+                    "text": "Innovation loves disorder.",
+                    "status": "durable",
+                    "anchor_quote": "Innovation loves disorder.",
+                    "segment_ref": "1.2",
+                }
+            ],
+            "thread_updates": [
+                {
+                    "text": "How does Taleb distinguish antifragility from evolution?",
+                    "status": "resolved",
+                    "resolution": "He frames evolution as asymmetric error-benefit rather than teleology.",
+                    "segment_ref": "1.2",
+                }
+            ],
+            "salience_updates": [
+                {
+                    "kind": "concept",
+                    "name": "antifragility",
+                    "working_note": "A recurring frame for asymmetric upside from volatility.",
+                    "status": "active",
+                }
+            ],
+            "chapter_memory_summary": "The roadmap frames disorder as a productive condition rather than a failure state.",
+            "book_arc_summary": "The book keeps returning to asymmetry, optionality, and the hidden value of disorder.",
+        }
+    }
+
+    consolidated = consolidate_memory_after_chapter(
+        memory,
+        chapter_ref="Chapter Summaries and Map",
+        chapter_title="Chapter Summaries and Map",
+        primary_role="front_matter",
+        rendered_segments=[],
+        chapter_reflection=chapter_reflection,
+    )
+
+    assert consolidated["findings"][0]["status"] == "durable"
+    assert consolidated["threads"][0]["status"] == "resolved"
+    assert consolidated["threads"][0]["resolution"] == (
+        "He frames evolution as asymmetric error-benefit rather than teleology."
+    )
+    assert consolidated["chapter_memory_summaries"][0]["summary"].startswith("The roadmap frames disorder")
+    assert consolidated["book_arc_summary"].startswith("The book keeps returning")
+    assert consolidated["salience_ledger"][0]["name"] == "antifragility"
 
 
 def test_search_if_curious_only_uses_curious_reactions_and_caps_at_two(monkeypatch):
@@ -244,6 +362,8 @@ def test_think_node_passes_visible_segment_ref_to_prompt(monkeypatch):
 
     assert "语义单元：3.5 / Mapped summary" in captured["prompt"]
     assert "语义单元：9.5" not in captured["prompt"]
+    assert "Book context:" in captured["prompt"]
+    assert "Current part of the book:" in captured["prompt"]
 
 
 def test_think_node_normalizes_selected_excerpt_to_self_contained_clause(monkeypatch):
@@ -918,6 +1038,7 @@ def test_run_chapter_reflection_normalizes_and_backfills_quality_flags(monkeypat
         }
     ]
     assert reflection["chapter_insights"] == []
+    assert reflection["memory_actions"]["chapter_memory_summary"] == ""
     quality_by_id = {
         item["segment_id"]: item["quality_status"]
         for item in reflection["segment_quality_flags"]

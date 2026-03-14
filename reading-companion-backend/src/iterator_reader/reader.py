@@ -6,6 +6,7 @@ import json
 import random
 import re
 import time
+from datetime import datetime, timezone
 from difflib import SequenceMatcher
 from typing import Callable, Literal, Optional, Union
 
@@ -28,15 +29,24 @@ from src.tools.search import search_web
 from .language import language_name
 from .llm_utils import invoke_json
 from .models import (
+    ChapterMemorySummary,
+    FindingStatus,
+    MemoryFinding,
+    MemoryThread,
+    PromptBudget,
+    PromptBudgetTier,
     ReactionPayload,
     ReaderBudget,
     ReasonCode,
     ReaderMemory,
+    ReaderPromptNode,
     ReaderProgressEvent,
     ReaderState,
     QualityStatus,
     ReflectionPayload,
     RenderedSegment,
+    SalienceLedgerItem,
+    SalienceStatus,
     SearchHit,
     SearchResultPayload,
     SkillPolicy,
@@ -65,53 +75,507 @@ _REASON_CODES: set[str] = {
     "OTHER",
 }
 _QUALITY_STATUSES: set[str] = {"strong", "acceptable", "weak", "skipped"}
+_PROMPT_MEMORY_CAPS: dict[ReaderPromptNode, int] = {
+    "think": 900,
+    "express": 1400,
+    "reflect": 700,
+}
+_RECENT_SEGMENT_FLOW_LIMIT = 8
+_RECENT_HIGHLIGHT_LIMIT = 8
+_MODEL_CONTEXT_WINDOW_ESTIMATE = 16_000
+_PROMPT_RESERVED_OUTPUT_TOKENS = 4_096
+_PROMPT_RESERVED_SYSTEM_TOKENS = 1_400
+_TOKEN_RE = re.compile(r"[A-Za-z0-9][A-Za-z0-9'_-]*")
+
+def _timestamp() -> str:
+    """Return a stable UTC timestamp for memory updates."""
+    return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+
+
+def _estimate_tokens(text: str) -> int:
+    """Cheap local token estimate without provider round-trips."""
+    return max(1, len(str(text or "")) // 4)
+
+
+def _lexical_terms(text: str) -> set[str]:
+    """Return lightweight lexical terms for cheap relevance scoring."""
+    return {
+        token.lower()
+        for token in _TOKEN_RE.findall(str(text or ""))
+        if len(token) >= 3
+    }
+
+
+def _memory_flow_line(item: dict[str, object]) -> str:
+    """Render one recent segment-flow item."""
+    segment_ref = _clean_text(item.get("segment_ref", ""))
+    summary = _clean_text(item.get("summary", ""))
+    if segment_ref and summary:
+        return f"{segment_ref}: {summary}"
+    return summary or segment_ref
+
+
+def _legacy_memory_view(memory: ReaderMemory) -> ReaderMemory:
+    """Backfill the old list-based memory view from the richer schema."""
+    flow_lines = [_memory_flow_line(item) for item in memory.get("recent_segment_flow", [])]
+    findings = [
+        _clean_text(item.get("text", ""))
+        for item in memory.get("findings", [])
+        if _clean_text(item.get("status", "")) != "superseded" and _clean_text(item.get("text", ""))
+    ]
+    open_threads = [
+        _clean_text(item.get("text", ""))
+        for item in memory.get("threads", [])
+        if _clean_text(item.get("status", "")) == "open" and _clean_text(item.get("text", ""))
+    ]
+    memory["prior_segment_summaries"] = flow_lines[-_RECENT_SEGMENT_FLOW_LIMIT:]
+    memory["notable_findings"] = findings[-8:]
+    memory["open_threads"] = open_threads[-8:]
+    memory["highlighted_quotes"] = list(memory.get("recent_highlighted_quotes", []))[-_RECENT_HIGHLIGHT_LIMIT:]
+    return memory
+
+
+def coerce_reader_memory(memory: ReaderMemory | dict[str, object] | None) -> ReaderMemory:
+    """Normalize legacy and new reader memory payloads into one stable schema."""
+    payload = dict(memory or {})
+    normalized: ReaderMemory = {
+        "recent_segment_flow": [],
+        "recent_highlighted_quotes": [],
+        "findings": [],
+        "threads": [],
+        "chapter_memory_summaries": [],
+        "book_arc_summary": _clean_text(payload.get("book_arc_summary", "")),
+        "salience_ledger": [],
+    }
+
+    for item in payload.get("recent_segment_flow", []):
+        if not isinstance(item, dict):
+            continue
+        segment_ref = _clean_text(item.get("segment_ref", ""))
+        summary = _clean_text(item.get("summary", ""))
+        if not segment_ref and not summary:
+            continue
+        normalized["recent_segment_flow"].append(
+            {
+                "segment_ref": segment_ref,
+                "chapter_ref": _clean_text(item.get("chapter_ref", "")),
+                "summary": summary,
+                "touched_at": _clean_text(item.get("touched_at", "")) or _timestamp(),
+            }
+        )
+    if not normalized["recent_segment_flow"]:
+        for legacy in payload.get("prior_segment_summaries", []):
+            text = _clean_text(legacy)
+            if not text:
+                continue
+            if ":" in text:
+                segment_ref, summary = text.split(":", 1)
+                normalized["recent_segment_flow"].append(
+                    {
+                        "segment_ref": _clean_text(segment_ref),
+                        "summary": _clean_text(summary),
+                        "chapter_ref": "",
+                        "touched_at": _timestamp(),
+                    }
+                )
+            else:
+                normalized["recent_segment_flow"].append(
+                    {
+                        "segment_ref": "",
+                        "summary": text,
+                        "chapter_ref": "",
+                        "touched_at": _timestamp(),
+                    }
+                )
+    normalized["recent_segment_flow"] = normalized["recent_segment_flow"][-_RECENT_SEGMENT_FLOW_LIMIT:]
+
+    for item in payload.get("findings", []):
+        if not isinstance(item, dict):
+            continue
+        text = _clean_text(item.get("text", ""))
+        if not text:
+            continue
+        status = _clean_text(item.get("status", ""))
+        normalized["findings"].append(
+            {
+                "text": text,
+                "status": status if status in {"provisional", "durable", "superseded"} else "durable",
+                "anchor_quote": _clean_text(item.get("anchor_quote", "")),
+                "chapter_ref": _clean_text(item.get("chapter_ref", "")),
+                "segment_ref": _clean_text(item.get("segment_ref", "")),
+                "touched_at": _clean_text(item.get("touched_at", "")) or _timestamp(),
+            }
+        )
+    if not normalized["findings"]:
+        for legacy in payload.get("notable_findings", []):
+            text = _clean_text(legacy)
+            if not text:
+                continue
+            normalized["findings"].append(
+                {
+                    "text": text,
+                    "status": "durable",
+                    "anchor_quote": "",
+                    "chapter_ref": "",
+                    "segment_ref": "",
+                    "touched_at": _timestamp(),
+                }
+            )
+
+    for item in payload.get("threads", []):
+        if not isinstance(item, dict):
+            continue
+        text = _clean_text(item.get("text", ""))
+        if not text:
+            continue
+        status = _clean_text(item.get("status", ""))
+        normalized["threads"].append(
+            {
+                "text": text,
+                "status": status if status in {"open", "resolved", "parked"} else "open",
+                "chapter_ref": _clean_text(item.get("chapter_ref", "")),
+                "segment_ref": _clean_text(item.get("segment_ref", "")),
+                "resolution": _clean_text(item.get("resolution", "")),
+                "touched_at": _clean_text(item.get("touched_at", "")) or _timestamp(),
+            }
+        )
+    if not normalized["threads"]:
+        for legacy in payload.get("open_threads", []):
+            text = _clean_text(legacy)
+            if not text:
+                continue
+            normalized["threads"].append(
+                {
+                    "text": text,
+                    "status": "open",
+                    "chapter_ref": "",
+                    "segment_ref": "",
+                    "resolution": "",
+                    "touched_at": _timestamp(),
+                }
+            )
+
+    quotes = payload.get("recent_highlighted_quotes", payload.get("highlighted_quotes", []))
+    normalized["recent_highlighted_quotes"] = [
+        _clean_text(item)
+        for item in quotes
+        if _clean_text(item)
+    ][-_RECENT_HIGHLIGHT_LIMIT:]
+
+    for item in payload.get("chapter_memory_summaries", []):
+        if not isinstance(item, dict):
+            continue
+        summary = _clean_text(item.get("summary", ""))
+        if not summary:
+            continue
+        role = _clean_text(item.get("primary_role", "")) or "body"
+        normalized["chapter_memory_summaries"].append(
+            {
+                "chapter_ref": _clean_text(item.get("chapter_ref", "")),
+                "chapter_title": _clean_text(item.get("chapter_title", "")),
+                "primary_role": role if role in {"front_matter", "body", "back_matter"} else "body",
+                "summary": summary,
+                "touched_at": _clean_text(item.get("touched_at", "")) or _timestamp(),
+            }
+        )
+
+    for item in payload.get("salience_ledger", []):
+        if not isinstance(item, dict):
+            continue
+        name = _clean_text(item.get("name", ""))
+        if not name:
+            continue
+        kind = _clean_text(item.get("kind", "")) or "concept"
+        status = _clean_text(item.get("status", "")) or "active"
+        normalized["salience_ledger"].append(
+            {
+                "kind": kind if kind in {"concept", "character", "institution", "place", "motif"} else "concept",
+                "name": name,
+                "working_note": _clean_text(item.get("working_note", "")),
+                "introduced_at": _clean_text(item.get("introduced_at", "")) or _timestamp(),
+                "last_touched_at": _clean_text(item.get("last_touched_at", "")) or _timestamp(),
+                "status": status if status in {"emerging", "active", "stable", "contested", "resolved"} else "active",
+            }
+        )
+
+    return _legacy_memory_view(normalized)
 
 
 def _memory_text(memory: ReaderMemory) -> str:
     """Render running reading memory into compact text."""
-    summaries = memory.get("prior_segment_summaries", [])
-    findings = memory.get("notable_findings", [])
-    open_threads = memory.get("open_threads", [])
-    highlighted_quotes = memory.get("highlighted_quotes", [])
+    return _memory_text_for_language(memory, "zh")
 
-    lines = []
-    if summaries:
-        lines.append("此前段落要点：")
-        lines.extend(f"- {item}" for item in summaries[-5:])
-    if highlighted_quotes:
-        lines.append("此前划过的原句：")
-        lines.extend(f"- {item}" for item in highlighted_quotes[-5:])
+
+def _role_context_note(primary_role: str, role_tags: list[str], output_language: str) -> str:
+    """Render one factual note about the likely function of this chapter."""
+    tags = set(role_tags)
+    if "overview" in tags or "roadmap" in tags:
+        return (
+            "这部分更像在预告后文结构与主题，其中一些判断可能只是框架性线索。"
+            if output_language != "en"
+            else "This part appears to preview later structure and themes; some claims may still be provisional framing cues."
+        )
+    if "preface" in tags or "prologue" in tags or primary_role == "front_matter":
+        return (
+            "这部分更像在定调或搭建阅读入口，不一定承载完整论证。"
+            if output_language != "en"
+            else "This part seems to set the tone or entry frame, rather than carrying the full argument by itself."
+        )
+    if primary_role == "back_matter":
+        return (
+            "这部分更像补充、收束或旁证材料。"
+            if output_language != "en"
+            else "This part seems more supplementary, closing, or evidentiary than a core argument section."
+        )
+    return (
+        "这部分看起来属于书的主体展开。"
+        if output_language != "en"
+        else "This part appears to belong to the main body of the book."
+    )
+
+
+def _format_book_context(state: ReaderState) -> str:
+    """Render book-level position context for prompts."""
+    title = _clean_text(state.get("book_title", ""))
+    author = _clean_text(state.get("author", ""))
+    chapter_index = int(state.get("chapter_index", 0) or 0)
+    total = int(state.get("total_chapters", 0) or 0)
+    nearby = [item for item in state.get("nearby_outline", []) if _clean_text(item)]
+    lines = [
+        f"书名：{title or '（未知）'}",
+        f"作者：{author or '（未知）'}",
+        f"当前位置：第 {chapter_index}/{max(total, 1)} 章",
+    ]
+    if nearby:
+        lines.append("附近目录：")
+        lines.extend(f"- {item}" for item in nearby)
+    return "\n".join(lines)
+
+
+def _format_current_part_context(state: ReaderState) -> str:
+    """Render current chapter/section role context for prompts."""
+    output_language = state.get("output_language", "en")
+    tags = [tag for tag in state.get("role_tags", []) if _clean_text(tag)]
+    section_heading = _clean_text(state.get("section_heading", ""))
+    lines = [
+        f"当前章节：{_clean_text(state.get('chapter_ref', '')) or _clean_text(state.get('chapter_title', ''))}",
+        f"章节标题：{_clean_text(state.get('chapter_title', ''))}",
+        f"章节角色：{_clean_text(state.get('primary_role', 'body'))}",
+        f"角色标签：{', '.join(tags) if tags else '无'}",
+        f"角色置信度：{_clean_text(state.get('role_confidence', 'low'))}",
+    ]
+    if section_heading:
+        lines.append(f"当前小节标题：{section_heading}")
+    lines.append(_role_context_note(_clean_text(state.get("primary_role", "body")), tags, output_language))
+    return "\n".join(lines)
+
+
+def _relevance_score(text: str, query_terms: set[str], *, recency_rank: int, status_boost: int = 0) -> int:
+    """Compute a cheap lexical + recency relevance score."""
+    if not text:
+        return status_boost - recency_rank
+    overlap = len(_lexical_terms(text) & query_terms)
+    return overlap * 10 + status_boost + max(0, 6 - recency_rank)
+
+
+def _compute_prompt_budget(state: ReaderState, node: ReaderPromptNode) -> PromptBudget:
+    """Estimate a lightweight node-local prompt memory budget."""
+    estimated_segment_tokens = _estimate_tokens(state.get("segment_text", "")[:6000])
+    cap = _PROMPT_MEMORY_CAPS[node]
+    multiplier = 1.0
+    tier: PromptBudgetTier = "ample"
+    if estimated_segment_tokens > 900:
+        multiplier = 0.6
+        tier = "tight"
+    elif estimated_segment_tokens > 500:
+        multiplier = 0.8
+        tier = "normal"
+    available_context = max(
+        0,
+        _MODEL_CONTEXT_WINDOW_ESTIMATE
+        - _PROMPT_RESERVED_OUTPUT_TOKENS
+        - _PROMPT_RESERVED_SYSTEM_TOKENS
+        - estimated_segment_tokens,
+    )
+    return {
+        "node": node,
+        "model_context_window_estimate": _MODEL_CONTEXT_WINDOW_ESTIMATE,
+        "reserved_output_tokens": _PROMPT_RESERVED_OUTPUT_TOKENS,
+        "reserved_system_tokens": _PROMPT_RESERVED_SYSTEM_TOKENS,
+        "estimated_segment_tokens": estimated_segment_tokens,
+        "node_memory_budget_tokens": min(int(cap * multiplier), available_context),
+        "available_context_tokens": available_context,
+        "budget_tier": tier,
+    }
+
+
+def _assemble_memory_packet(state: ReaderState, node: ReaderPromptNode) -> tuple[str, PromptBudget]:
+    """Assemble a budget-aware memory packet for one prompt node."""
+    memory = coerce_reader_memory(state.get("memory", {}))
+    budget = _compute_prompt_budget(state, node)
+    token_limit = max(240, int(budget.get("node_memory_budget_tokens", 0) or 0))
+    output_language = state.get("output_language", "en")
+    query_terms = _lexical_terms(
+        " ".join(
+            [
+                state.get("segment_text", ""),
+                state.get("segment_summary", ""),
+                state.get("section_heading", ""),
+                state.get("chapter_title", ""),
+            ]
+        )
+    )
+
+    recent_flow = list(reversed(memory.get("recent_segment_flow", [])))
+    active_threads = [
+        item
+        for item in memory.get("threads", [])
+        if _clean_text(item.get("status", "")) == "open"
+    ]
+    findings = [
+        item
+        for item in memory.get("findings", [])
+        if _clean_text(item.get("status", "")) in {"provisional", "durable"}
+    ]
+    ledger = [
+        item
+        for item in memory.get("salience_ledger", [])
+        if _clean_text(item.get("status", "")) != "resolved"
+    ]
+    chapter_summaries = list(reversed(memory.get("chapter_memory_summaries", [])))
+
+    active_threads = sorted(
+        active_threads,
+        key=lambda item: _relevance_score(
+            _clean_text(item.get("text", "")),
+            query_terms,
+            recency_rank=0,
+            status_boost=12,
+        ),
+        reverse=True,
+    )
+    findings = sorted(
+        findings,
+        key=lambda item: _relevance_score(
+            _clean_text(item.get("text", "")),
+            query_terms,
+            recency_rank=0,
+            status_boost=18 if _clean_text(item.get("status", "")) == "durable" else 10,
+        ),
+        reverse=True,
+    )
+    ledger = sorted(
+        ledger,
+        key=lambda item: _relevance_score(
+            f"{_clean_text(item.get('name', ''))} {_clean_text(item.get('working_note', ''))}",
+            query_terms,
+            recency_rank=0,
+            status_boost=10 if _clean_text(item.get("status", "")) in {"active", "stable"} else 6,
+        ),
+        reverse=True,
+    )
+    chapter_limit = 2 if budget.get("budget_tier") == "tight" else 4
+    if budget.get("budget_tier") == "ample":
+        chapter_limit = 8
+
+    sections: list[tuple[str, list[str]]] = []
+    book_arc_summary = _clean_text(memory.get("book_arc_summary", ""))
+    if book_arc_summary:
+        sections.append(("全书脉络", [book_arc_summary]))
+    if active_threads:
+        sections.append(("活跃问题", [f"- {item.get('text', '')}" for item in active_threads[:5]]))
     if findings:
-        lines.append("此前已出现的发现：")
-        lines.extend(f"- {item}" for item in findings[-5:])
-    if open_threads:
-        lines.append("仍在悬而未决的问题：")
-        lines.extend(f"- {item}" for item in open_threads[-3:])
-    return "\n".join(lines) if lines else "暂无阅读记忆。"
+        sections.append(
+            (
+                "相关发现",
+                [
+                    f"- [{_clean_text(item.get('status', 'durable'))}] {_clean_text(item.get('text', ''))}"
+                    for item in findings[:6]
+                ],
+            )
+        )
+    if ledger:
+        sections.append(
+            (
+                "关键概念/角色账本",
+                [
+                    f"- {_clean_text(item.get('name', ''))} ({_clean_text(item.get('kind', 'concept'))}): {_clean_text(item.get('working_note', ''))}"
+                    for item in ledger[:6]
+                ],
+            )
+        )
+    if recent_flow:
+        sections.append(("最近阅读流", [f"- {_memory_flow_line(item)}" for item in recent_flow[:6]]))
+    if chapter_summaries:
+        sections.append(
+            (
+                "最近章节记忆",
+                [
+                    f"- {_clean_text(item.get('chapter_ref', '')) or _clean_text(item.get('chapter_title', ''))}: {_clean_text(item.get('summary', ''))}"
+                    for item in chapter_summaries[:chapter_limit]
+                ],
+            )
+        )
+
+    assembled: list[str] = []
+    used_tokens = 0
+    for title, lines in sections:
+        section_text = f"{title}：\n" + "\n".join(line for line in lines if _clean_text(line))
+        section_tokens = _estimate_tokens(section_text)
+        if used_tokens and used_tokens + section_tokens > token_limit:
+            trimmed_lines: list[str] = []
+            for line in lines:
+                line_tokens = _estimate_tokens(f"{title}：\n" + "\n".join(trimmed_lines + [line]))
+                if used_tokens + line_tokens > token_limit:
+                    break
+                trimmed_lines.append(line)
+            if not trimmed_lines:
+                continue
+            section_text = f"{title}：\n" + "\n".join(trimmed_lines)
+            section_tokens = _estimate_tokens(section_text)
+        if used_tokens + section_tokens > token_limit and assembled:
+            break
+        assembled.append(section_text)
+        used_tokens += section_tokens
+
+    if not assembled:
+        fallback = "No reading memory yet." if output_language == "en" else "暂无阅读记忆。"
+        return fallback, budget
+    return "\n\n".join(assembled), budget
 
 
 def _memory_text_for_language(memory: ReaderMemory, output_language: str) -> str:
-    """Render memory in the language used by the prompt."""
+    """Render memory in the language used by older prompt call sites."""
+    normalized = coerce_reader_memory(memory)
     if output_language == "en":
-        summaries = memory.get("prior_segment_summaries", [])
-        findings = memory.get("notable_findings", [])
-        open_threads = memory.get("open_threads", [])
-        highlighted_quotes = memory.get("highlighted_quotes", [])
-        lines = []
-        if summaries:
+        lines: list[str] = []
+        if normalized.get("prior_segment_summaries"):
             lines.append("Prior segment summaries:")
-            lines.extend(f"- {item}" for item in summaries[-5:])
-        if highlighted_quotes:
+            lines.extend(f"- {item}" for item in normalized.get("prior_segment_summaries", [])[-5:])
+        if normalized.get("highlighted_quotes"):
             lines.append("Earlier highlighted quotes:")
-            lines.extend(f"- {item}" for item in highlighted_quotes[-5:])
-        if findings:
+            lines.extend(f"- {item}" for item in normalized.get("highlighted_quotes", [])[-5:])
+        if normalized.get("notable_findings"):
             lines.append("Earlier findings:")
-            lines.extend(f"- {item}" for item in findings[-5:])
-        if open_threads:
+            lines.extend(f"- {item}" for item in normalized.get("notable_findings", [])[-5:])
+        if normalized.get("open_threads"):
             lines.append("Open threads:")
-            lines.extend(f"- {item}" for item in open_threads[-3:])
+            lines.extend(f"- {item}" for item in normalized.get("open_threads", [])[-3:])
         return "\n".join(lines) if lines else "No reading memory yet."
-    return _memory_text(memory)
+    lines = []
+    if normalized.get("prior_segment_summaries"):
+        lines.append("此前段落要点：")
+        lines.extend(f"- {item}" for item in normalized.get("prior_segment_summaries", [])[-5:])
+    if normalized.get("highlighted_quotes"):
+        lines.append("此前划过的原句：")
+        lines.extend(f"- {item}" for item in normalized.get("highlighted_quotes", [])[-5:])
+    if normalized.get("notable_findings"):
+        lines.append("此前已出现的发现：")
+        lines.extend(f"- {item}" for item in normalized.get("notable_findings", [])[-5:])
+    if normalized.get("open_threads"):
+        lines.append("仍在悬而未决的问题：")
+        lines.extend(f"- {item}" for item in normalized.get("open_threads", [])[-3:])
+    return "\n".join(lines) if lines else "暂无阅读记忆。"
 
 
 def _default_user_intent(output_language: str) -> str:
@@ -1190,6 +1654,7 @@ def _normalize_chapter_reflection_payload(
         "reaction_repairs": reaction_repairs,
         "chapter_insights": chapter_insights,
         "segment_quality_flags": segment_quality_flags,
+        "memory_actions": _normalize_memory_actions(payload if isinstance(payload, dict) else {}),
     }
 
 
@@ -1198,6 +1663,8 @@ def run_chapter_reflection(
     user_intent: str | None,
     segments: list[RenderedSegment],
     output_language: str,
+    chapter_primary_role: str = "body",
+    chapter_role_tags: list[str] | None = None,
 ) -> dict[str, object]:
     """Run one chapter-end reflection pass with scoped repair hints."""
     if not segments:
@@ -1206,6 +1673,13 @@ def run_chapter_reflection(
             "reaction_repairs": [],
             "chapter_insights": [],
             "segment_quality_flags": [],
+            "memory_actions": {
+                "finding_updates": [],
+                "thread_updates": [],
+                "salience_updates": [],
+                "chapter_memory_summary": "",
+                "book_arc_summary": "",
+            },
         }
 
     # Keep tiny chapters local and deterministic; run LLM reflection on richer chapters.
@@ -1219,6 +1693,8 @@ def run_chapter_reflection(
             READER_CHAPTER_REFLECT_SYSTEM,
             READER_CHAPTER_REFLECT_PROMPT.format(
                 chapter_title=chapter_title,
+                chapter_primary_role=chapter_primary_role,
+                chapter_role_tags=", ".join(chapter_role_tags or []) or "none",
                 user_intent=user_intent or _default_user_intent(output_language),
                 segments_json=json.dumps(compact_segments, ensure_ascii=False, indent=2),
                 output_language_name=language_name(output_language),
@@ -1403,17 +1879,37 @@ def create_reader_state(
     budget: ReaderBudget | None = None,
     max_revisions: int = 2,
     segment_ref: str | None = None,
+    book_title: str = "",
+    author: str = "",
+    chapter_ref: str = "",
+    chapter_index: int = 0,
+    total_chapters: int = 0,
+    primary_role: str = "body",
+    role_tags: list[str] | None = None,
+    role_confidence: str = "low",
+    section_heading: str = "",
+    nearby_outline: list[str] | None = None,
 ) -> ReaderState:
     """Create initial reader state for a semantic unit."""
     return {
+        "book_title": book_title,
+        "author": author,
         "chapter_title": chapter_title,
+        "chapter_ref": chapter_ref,
+        "chapter_index": chapter_index,
+        "total_chapters": total_chapters,
+        "primary_role": primary_role if primary_role in {"front_matter", "body", "back_matter"} else "body",
+        "role_tags": list(role_tags or []),
+        "role_confidence": role_confidence if role_confidence in {"low", "medium", "high"} else "low",
+        "section_heading": _clean_text(section_heading),
+        "nearby_outline": list(nearby_outline or []),
         "segment_id": segment_id,
         "segment_ref": _clean_text(segment_ref or segment_id),
         "segment_summary": segment_summary,
         "segment_text": segment_text,
         "user_intent": user_intent,
         "output_language": output_language,
-        "memory": memory,
+        "memory": coerce_reader_memory(memory),
         "read_packet": "",
         "thought": None,
         "reactions": [],
@@ -1431,15 +1927,14 @@ def create_reader_state(
 
 def read_node(state: ReaderState) -> ReaderState:
     """Prepare the segment and memory packet for the thinking stage."""
-    memory_text = _memory_text_for_language(
-        state.get("memory", {}),
-        state.get("output_language", "en"),
-    )
+    memory_text, _budget = _assemble_memory_packet(state, "think")
     packet = "\n\n".join(
         [
+            f"Book context:\n{_format_book_context(state)}",
+            f"Current part of the book:\n{_format_current_part_context(state)}",
             f'语义单元：{_segment_ref(state)} / {state.get("segment_summary", "")}',
             f'原文：\n{state.get("segment_text", "")}',
-            f"阅读记忆：\n{memory_text}",
+            f"Reading memory:\n{memory_text}",
         ]
     )
     return {"read_packet": packet}
@@ -1447,17 +1942,17 @@ def read_node(state: ReaderState) -> ReaderState:
 
 def think_node(state: ReaderState) -> ReaderState:
     """Decide whether this semantic unit deserves expression."""
+    memory_text, _budget = _assemble_memory_packet(state, "think")
     payload = invoke_json(
         READER_THINK_SYSTEM,
         READER_THINK_PROMPT.format(
+            book_context=_format_book_context(state),
+            current_part_context=_format_current_part_context(state),
             chapter_title=state.get("chapter_title", ""),
             segment_ref=_segment_ref(state),
             segment_summary=state.get("segment_summary", ""),
             segment_text=state.get("segment_text", "")[:6000],
-            memory_text=_memory_text_for_language(
-                state.get("memory", {}),
-                state.get("output_language", "en"),
-            ),
+            memory_text=memory_text,
             user_intent=state.get("user_intent") or _default_user_intent(state.get("output_language", "en")),
             output_language_name=language_name(state.get("output_language", "en")),
         ),
@@ -1474,18 +1969,18 @@ def think_node(state: ReaderState) -> ReaderState:
 
 def express_node(state: ReaderState) -> ReaderState:
     """Produce mixed reactions for this semantic unit."""
+    memory_text, _budget = _assemble_memory_packet(state, "express")
     payload = invoke_json(
         READER_EXPRESS_SYSTEM,
         READER_EXPRESS_PROMPT.format(
+            book_context=_format_book_context(state),
+            current_part_context=_format_current_part_context(state),
             chapter_title=state.get("chapter_title", ""),
             segment_ref=_segment_ref(state),
             segment_summary=state.get("segment_summary", ""),
             segment_text=state.get("segment_text", "")[:6000],
             thought_json=json.dumps(state.get("thought") or {}, ensure_ascii=False, indent=2),
-            memory_text=_memory_text_for_language(
-                state.get("memory", {}),
-                state.get("output_language", "en"),
-            ),
+            memory_text=memory_text,
             user_intent=state.get("user_intent") or _default_user_intent(state.get("output_language", "en")),
             revision_instruction=state.get("revision_instruction") or _default_revision_instruction(state.get("output_language", "en")),
             output_language_name=language_name(state.get("output_language", "en")),
@@ -1607,13 +2102,17 @@ def reflect_node(state: ReaderState) -> ReaderState:
     payload = None
     active_reactions = _active_reactions(state.get("reactions", []))
     if active_reactions:
+        memory_text, _budget = _assemble_memory_packet(state, "reflect")
         payload = invoke_json(
             READER_REFLECT_SYSTEM,
             READER_REFLECT_PROMPT.format(
+                book_context=_format_book_context(state),
+                current_part_context=_format_current_part_context(state),
                 chapter_title=state.get("chapter_title", ""),
                 segment_ref=_segment_ref(state),
                 segment_summary=state.get("segment_summary", ""),
                 segment_text=state.get("segment_text", "")[:6000],
+                memory_text=memory_text,
                 reactions_json=json.dumps(
                     state.get("reactions", []),
                     ensure_ascii=False,
@@ -1916,52 +2415,375 @@ def _reaction_memory_text(reaction: ReactionPayload) -> str:
     return " ".join(part for part in parts if part).strip()
 
 
-def update_memory(memory: ReaderMemory, segment: RenderedSegment) -> ReaderMemory:
+def _finding_status_for_role(primary_role: str, role_tags: list[str] | None) -> FindingStatus:
+    """Pick the default segment-time finding status from soft chapter role cues."""
+    tags = set(role_tags or [])
+    if primary_role == "body":
+        return "durable"
+    if "overview" in tags or "roadmap" in tags or "preface" in tags or "prologue" in tags:
+        return "provisional"
+    return "provisional"
+
+
+def _touch_existing_ledger_items(memory: ReaderMemory, text: str, touched_at: str) -> None:
+    """Refresh any ledger entries that clearly recur in the current segment."""
+    lowered = _clean_text(text).lower()
+    if not lowered:
+        return
+    for item in memory.get("salience_ledger", []):
+        name = _clean_text(item.get("name", "")).lower()
+        if name and name in lowered:
+            item["last_touched_at"] = touched_at
+            if _clean_text(item.get("status", "")) == "emerging":
+                item["status"] = "active"
+
+
+def _upsert_memory_finding(memory: ReaderMemory, finding: MemoryFinding) -> None:
+    """Merge one finding into memory with lightweight deduplication."""
+    normalized_text = _clean_text(finding.get("text", ""))
+    if not normalized_text:
+        return
+    for item in memory.get("findings", []):
+        if _clean_text(item.get("text", "")).lower() != normalized_text.lower():
+            continue
+        item["status"] = finding.get("status", item.get("status", "durable"))  # type: ignore[typeddict-item]
+        item["anchor_quote"] = _clean_text(finding.get("anchor_quote", "")) or _clean_text(item.get("anchor_quote", ""))
+        item["chapter_ref"] = _clean_text(finding.get("chapter_ref", "")) or _clean_text(item.get("chapter_ref", ""))
+        item["segment_ref"] = _clean_text(finding.get("segment_ref", "")) or _clean_text(item.get("segment_ref", ""))
+        item["touched_at"] = _clean_text(finding.get("touched_at", "")) or _timestamp()
+        return
+    memory.setdefault("findings", []).append(finding)
+
+
+def _upsert_memory_thread(memory: ReaderMemory, thread: MemoryThread) -> None:
+    """Merge one thread into memory with lightweight deduplication."""
+    normalized_text = _clean_text(thread.get("text", ""))
+    if not normalized_text:
+        return
+    for item in memory.get("threads", []):
+        if _clean_text(item.get("text", "")).lower() != normalized_text.lower():
+            continue
+        item["status"] = _clean_text(thread.get("status", "")) or _clean_text(item.get("status", "open"))
+        item["resolution"] = _clean_text(thread.get("resolution", "")) or _clean_text(item.get("resolution", ""))
+        item["chapter_ref"] = _clean_text(thread.get("chapter_ref", "")) or _clean_text(item.get("chapter_ref", ""))
+        item["segment_ref"] = _clean_text(thread.get("segment_ref", "")) or _clean_text(item.get("segment_ref", ""))
+        item["touched_at"] = _clean_text(thread.get("touched_at", "")) or _timestamp()
+        return
+    memory.setdefault("threads", []).append(thread)
+
+
+def _upsert_salience_item(memory: ReaderMemory, item: SalienceLedgerItem) -> None:
+    """Merge one salience-ledger item into memory."""
+    normalized_name = _clean_text(item.get("name", ""))
+    if not normalized_name:
+        return
+    for existing in memory.get("salience_ledger", []):
+        if _clean_text(existing.get("name", "")).lower() != normalized_name.lower():
+            continue
+        if _clean_text(item.get("working_note", "")):
+            existing["working_note"] = _clean_text(item.get("working_note", ""))
+        if _clean_text(item.get("status", "")):
+            existing["status"] = _clean_text(item.get("status", "active"))  # type: ignore[typeddict-item]
+        if _clean_text(item.get("kind", "")):
+            existing["kind"] = _clean_text(item.get("kind", "concept"))  # type: ignore[typeddict-item]
+        existing["last_touched_at"] = _clean_text(item.get("last_touched_at", "")) or _timestamp()
+        return
+    memory.setdefault("salience_ledger", []).append(item)
+
+
+def update_memory(
+    memory: ReaderMemory,
+    segment: RenderedSegment,
+    *,
+    chapter_ref: str = "",
+    primary_role: str = "body",
+    role_tags: list[str] | None = None,
+) -> ReaderMemory:
     """Update reading memory after one semantic unit is processed."""
-    next_memory: ReaderMemory = {
-        "prior_segment_summaries": list(memory.get("prior_segment_summaries", [])),
-        "notable_findings": list(memory.get("notable_findings", [])),
-        "open_threads": list(memory.get("open_threads", [])),
-        "highlighted_quotes": list(memory.get("highlighted_quotes", [])),
-    }
+    next_memory = coerce_reader_memory(memory)
+    touched_at = _timestamp()
     segment_ref = _clean_text(segment.get("segment_ref", "")) or _clean_text(segment.get("segment_id", ""))
-    next_memory["prior_segment_summaries"].append(f"{segment_ref}: {segment.get('summary', '')}")
+    next_memory.setdefault("recent_segment_flow", []).append(
+        {
+            "segment_ref": segment_ref,
+            "chapter_ref": _clean_text(chapter_ref),
+            "summary": _clean_text(segment.get("summary", "")),
+            "touched_at": touched_at,
+        }
+    )
+    next_memory["recent_segment_flow"] = next_memory.get("recent_segment_flow", [])[-_RECENT_SEGMENT_FLOW_LIMIT:]
 
     reactions = segment.get("reactions", [])
     if segment.get("verdict") == "pass":
-        findings = [
-            _reaction_memory_text(reaction)
-            for reaction in reactions
-            if reaction.get("type") in {"highlight", "association", "discern", "retrospect"}
-            and _reaction_memory_text(reaction)
-        ]
-        if findings:
-            next_memory["notable_findings"].append(" / ".join(findings))
+        finding_status = _finding_status_for_role(primary_role, role_tags)
+        for reaction in reactions:
+            if reaction.get("type") not in {"highlight", "association", "discern", "retrospect"}:
+                continue
+            text = _reaction_memory_text(reaction)
+            if not text:
+                continue
+            _upsert_memory_finding(
+                next_memory,
+                {
+                    "text": text,
+                    "status": finding_status,
+                    "anchor_quote": _clean_text(reaction.get("anchor_quote", "")),
+                    "chapter_ref": _clean_text(chapter_ref),
+                    "segment_ref": segment_ref,
+                    "touched_at": touched_at,
+                },
+            )
 
     highlighted_quotes = [
         reaction.get("anchor_quote", "").strip()
         for reaction in reactions
         if reaction.get("type") == "highlight" and reaction.get("anchor_quote", "").strip()
     ]
-    next_memory["highlighted_quotes"].extend(highlighted_quotes)
+    next_memory.setdefault("recent_highlighted_quotes", []).extend(highlighted_quotes)
+    next_memory["recent_highlighted_quotes"] = next_memory.get("recent_highlighted_quotes", [])[-_RECENT_HIGHLIGHT_LIMIT:]
 
     curiosities = [
         _reaction_memory_text(reaction) or reaction.get("search_query", "")
         for reaction in reactions
         if reaction.get("type") == "curious"
     ]
-    next_memory["open_threads"].extend(item for item in curiosities if item)
-    return next_memory
+    for item in curiosities:
+        text = _clean_text(item)
+        if not text:
+            continue
+        _upsert_memory_thread(
+            next_memory,
+            {
+                "text": text,
+                "status": "open",
+                "chapter_ref": _clean_text(chapter_ref),
+                "segment_ref": segment_ref,
+                "resolution": "",
+                "touched_at": touched_at,
+            },
+        )
+
+    _touch_existing_ledger_items(next_memory, segment.get("summary", ""), touched_at)
+    _touch_existing_ledger_items(next_memory, " ".join(_reaction_memory_text(reaction) for reaction in reactions), touched_at)
+    return _legacy_memory_view(next_memory)
 
 
 def initial_memory() -> ReaderMemory:
     """Create empty reading memory for a new read session."""
+    return coerce_reader_memory({})
+
+
+def _default_chapter_memory_summary(chapter_title: str, segments: list[RenderedSegment]) -> str:
+    """Create a deterministic fallback chapter summary when chapter reflection omits one."""
+    summaries = [
+        _clean_text(segment.get("summary", ""))
+        for segment in segments
+        if _clean_text(segment.get("summary", ""))
+    ][:2]
+    if summaries:
+        return f"{chapter_title}: " + " / ".join(summaries)
+    return chapter_title
+
+
+def _normalize_memory_actions(chapter_reflection: dict[str, object] | None) -> dict[str, object]:
+    """Extract normalized memory actions from chapter reflection payload."""
+    if not isinstance(chapter_reflection, dict):
+        return {
+            "finding_updates": [],
+            "thread_updates": [],
+            "salience_updates": [],
+            "chapter_memory_summary": "",
+            "book_arc_summary": "",
+        }
+    payload = chapter_reflection.get("memory_actions", {})
+    if not isinstance(payload, dict):
+        payload = {}
+
+    def normalize_status(value: object, allowed: set[str], fallback: str) -> str:
+        text = _clean_text(value).lower()
+        return text if text in allowed else fallback
+
+    finding_updates: list[dict[str, object]] = []
+    for item in payload.get("finding_updates", []):
+        if not isinstance(item, dict):
+            continue
+        text = _clean_text(item.get("text", ""))
+        if not text:
+            continue
+        finding_updates.append(
+            {
+                "text": text,
+                "status": normalize_status(item.get("status", ""), {"provisional", "durable", "superseded"}, "durable"),
+                "anchor_quote": _clean_text(item.get("anchor_quote", "")),
+                "segment_ref": _clean_text(item.get("segment_ref", "")),
+            }
+        )
+
+    thread_updates: list[dict[str, object]] = []
+    for item in payload.get("thread_updates", []):
+        if not isinstance(item, dict):
+            continue
+        text = _clean_text(item.get("text", ""))
+        if not text:
+            continue
+        thread_updates.append(
+            {
+                "text": text,
+                "status": normalize_status(item.get("status", ""), {"open", "resolved", "parked"}, "open"),
+                "resolution": _clean_text(item.get("resolution", "")),
+                "segment_ref": _clean_text(item.get("segment_ref", "")),
+            }
+        )
+
+    salience_updates: list[dict[str, object]] = []
+    for item in payload.get("salience_updates", []):
+        if not isinstance(item, dict):
+            continue
+        name = _clean_text(item.get("name", ""))
+        if not name:
+            continue
+        salience_updates.append(
+            {
+                "kind": normalize_status(item.get("kind", ""), {"concept", "character", "institution", "place", "motif"}, "concept"),
+                "name": name,
+                "working_note": _clean_text(item.get("working_note", "")),
+                "status": normalize_status(item.get("status", ""), {"emerging", "active", "stable", "contested", "resolved"}, "active"),
+            }
+        )
+
     return {
-        "prior_segment_summaries": [],
-        "notable_findings": [],
-        "open_threads": [],
-        "highlighted_quotes": [],
+        "finding_updates": finding_updates,
+        "thread_updates": thread_updates,
+        "salience_updates": salience_updates,
+        "chapter_memory_summary": _clean_text(payload.get("chapter_memory_summary", "")),
+        "book_arc_summary": _clean_text(payload.get("book_arc_summary", "")),
     }
+
+
+def consolidate_memory_after_chapter(
+    memory: ReaderMemory,
+    *,
+    chapter_ref: str,
+    chapter_title: str,
+    primary_role: str,
+    rendered_segments: list[RenderedSegment],
+    chapter_reflection: dict[str, object] | None,
+) -> ReaderMemory:
+    """Apply chapter-end memory actions and persist a book-level snapshot view."""
+    next_memory = coerce_reader_memory(memory)
+    touched_at = _timestamp()
+    actions = _normalize_memory_actions(chapter_reflection)
+
+    for update in actions.get("finding_updates", []):
+        if not isinstance(update, dict):
+            continue
+        anchor_quote = _clean_text(update.get("anchor_quote", ""))
+        _upsert_memory_finding(
+            next_memory,
+            {
+                "text": _clean_text(update.get("text", "")),
+                "status": _clean_text(update.get("status", "durable")) or "durable",
+                "anchor_quote": anchor_quote,
+                "chapter_ref": chapter_ref,
+                "segment_ref": _clean_text(update.get("segment_ref", "")),
+                "touched_at": touched_at,
+            },
+        )
+        if anchor_quote:
+            next_memory.setdefault("recent_highlighted_quotes", []).append(anchor_quote)
+    if not actions.get("finding_updates"):
+        fallback_finding_count = 0
+        for segment in rendered_segments:
+            for reaction in segment.get("reactions", []):
+                if not isinstance(reaction, dict):
+                    continue
+                if reaction.get("type") == "silent":
+                    continue
+                text = _reaction_memory_text(reaction)
+                if not text:
+                    continue
+                _upsert_memory_finding(
+                    next_memory,
+                    {
+                        "text": text,
+                        "status": "durable",
+                        "anchor_quote": _clean_text(reaction.get("anchor_quote", "")),
+                        "chapter_ref": chapter_ref,
+                        "segment_ref": _clean_text(segment.get("segment_ref", "")) or _clean_text(segment.get("segment_id", "")),
+                        "touched_at": touched_at,
+                    },
+                )
+                if _clean_text(reaction.get("anchor_quote", "")):
+                    next_memory.setdefault("recent_highlighted_quotes", []).append(_clean_text(reaction.get("anchor_quote", "")))
+                fallback_finding_count += 1
+                if fallback_finding_count >= 2:
+                    break
+            if fallback_finding_count >= 2:
+                break
+
+    for update in actions.get("thread_updates", []):
+        if not isinstance(update, dict):
+            continue
+        _upsert_memory_thread(
+            next_memory,
+            {
+                "text": _clean_text(update.get("text", "")),
+                "status": _clean_text(update.get("status", "open")) or "open",
+                "chapter_ref": chapter_ref,
+                "segment_ref": _clean_text(update.get("segment_ref", "")),
+                "resolution": _clean_text(update.get("resolution", "")),
+                "touched_at": touched_at,
+            },
+        )
+
+    for update in actions.get("salience_updates", []):
+        if not isinstance(update, dict):
+            continue
+        _upsert_salience_item(
+            next_memory,
+            {
+                "kind": _clean_text(update.get("kind", "concept")) or "concept",
+                "name": _clean_text(update.get("name", "")),
+                "working_note": _clean_text(update.get("working_note", "")),
+                "introduced_at": touched_at,
+                "last_touched_at": touched_at,
+                "status": _clean_text(update.get("status", "active")) or "active",
+            },
+        )
+
+    chapter_summary = _clean_text(actions.get("chapter_memory_summary", "")) or _default_chapter_memory_summary(
+        chapter_title,
+        rendered_segments,
+    )
+    summaries = [
+        item
+        for item in next_memory.get("chapter_memory_summaries", [])
+        if _clean_text(item.get("chapter_ref", "")) != chapter_ref
+    ]
+    summaries.append(
+        {
+            "chapter_ref": chapter_ref,
+            "chapter_title": chapter_title,
+            "primary_role": primary_role if primary_role in {"front_matter", "body", "back_matter"} else "body",
+            "summary": chapter_summary,
+            "touched_at": touched_at,
+        }
+    )
+    next_memory["chapter_memory_summaries"] = summaries
+
+    book_arc_summary = _clean_text(actions.get("book_arc_summary", ""))
+    if book_arc_summary:
+        next_memory["book_arc_summary"] = book_arc_summary
+    elif not _clean_text(next_memory.get("book_arc_summary", "")):
+        recent = [
+            _clean_text(item.get("summary", ""))
+            for item in next_memory.get("chapter_memory_summaries", [])[-3:]
+            if _clean_text(item.get("summary", ""))
+        ]
+        next_memory["book_arc_summary"] = " / ".join(recent)
+
+    next_memory["recent_highlighted_quotes"] = next_memory.get("recent_highlighted_quotes", [])[-_RECENT_HIGHLIGHT_LIMIT:]
+    return _legacy_memory_view(next_memory)
 
 
 def run_reader_segment(

@@ -8,6 +8,8 @@ from pathlib import Path
 from src.iterator_reader import iterator as iterator_module
 from src.iterator_reader.storage import (
     activity_file,
+    chapter_result_file,
+    reader_memory_file,
     run_state_file,
     segment_checkpoint_file,
     structure_file,
@@ -122,6 +124,7 @@ def test_segment_checkpoint_resumes_remaining_segments(tmp_path, monkeypatch, ca
     assert calls == ["1.2"]
     assert not checkpoint_path.exists()
     saved_after = json.loads(structure_file(output_dir).read_text(encoding="utf-8"))
+    reader_memory = json.loads(reader_memory_file(output_dir).read_text(encoding="utf-8"))
     run_state = json.loads(run_state_file(output_dir).read_text(encoding="utf-8"))
     activity = [
         json.loads(line)
@@ -130,6 +133,72 @@ def test_segment_checkpoint_resumes_remaining_segments(tmp_path, monkeypatch, ca
     ]
     assert saved_after["chapters"][0]["status"] == "done"
     assert saved_after["chapters"][0]["segments"][1]["status"] == "done"
+    assert reader_memory["memory"]["chapter_memory_summaries"][0]["chapter_ref"] == "Chapter 1"
     assert run_state["stage"] == "completed"
     assert "segment_started" in {item["type"] for item in activity}
     assert "chapter_completed" in {item["type"] for item in activity}
+
+
+def test_reader_memory_backfills_from_completed_chapter_results(tmp_path):
+    """When the canonical reader memory file is missing, completed chapter results should seed later chapters."""
+    output_dir = tmp_path / "output" / "demo-book"
+    output_dir.mkdir(parents=True, exist_ok=True)
+    structure = {
+        "book": "Demo Book",
+        "author": "Tester",
+        "book_language": "en",
+        "output_language": "en",
+        "source_file": "demo.epub",
+        "output_dir": str(output_dir),
+        "chapters": [
+            {
+                "id": 1,
+                "title": "Chapter Summaries and Map",
+                "status": "done",
+                "level": 1,
+                "primary_role": "front_matter",
+                "role_tags": ["overview", "roadmap"],
+                "segments": [],
+            }
+        ],
+    }
+    result_path = chapter_result_file(output_dir, structure["chapters"][0])
+    result_path.parent.mkdir(parents=True, exist_ok=True)
+    result_path.write_text(
+        json.dumps(
+            {
+                "sections": [
+                    {
+                        "segment_id": "1.2",
+                        "segment_ref": "Chapter_Summaries_and.2",
+                        "summary": "Roadmap segment",
+                        "verdict": "pass",
+                        "reactions": [
+                            {
+                                "type": "highlight",
+                                "anchor_quote": "Innovation loves disorder.",
+                                "content": "A thesis preview.",
+                                "search_results": [],
+                            }
+                        ],
+                        "reflection_summary": "ok",
+                        "reflection_reason_codes": [],
+                    }
+                ],
+                "chapter_reflection": {
+                    "chapter_insights": ["The roadmap seeds the later argument."],
+                },
+            },
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+
+    restored = iterator_module._load_reader_memory_snapshot(  # type: ignore[attr-defined]
+        output_dir,
+        structure,
+        continue_mode=True,
+    )
+
+    assert restored["chapter_memory_summaries"][0]["chapter_ref"] == "Chapter Summaries and Map"
+    assert restored["findings"][0]["text"].startswith("Innovation loves disorder")

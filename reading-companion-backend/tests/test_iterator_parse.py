@@ -325,6 +325,7 @@ def test_build_structure_keeps_chapter_heading_outside_first_body_segment(tmp_pa
     assert captured_calls[0]["section_heading_text"] == ""
 
     chapter = structure["chapters"][0]
+    assert chapter["primary_role"] == "body"
     assert chapter["chapter_heading"]["label"] == "CHAPTER 1"
     assert chapter["chapter_heading"]["title"] == "RELATIONSHIPS ARE THE MEDIA IN WHICH VALUE IS TRANSACTED"
     assert chapter["chapter_heading"]["text"] == (
@@ -340,6 +341,35 @@ def test_build_structure_keeps_chapter_heading_outside_first_body_segment(tmp_pa
         "This is why other people represent both a solution and a potential problem."
     )
     assert chapter["segments"][0]["summary"] == "Body thesis only"
+    assert chapter["segments"][0]["section_heading"] == ""
+
+
+def test_chapter_contexts_infer_soft_roles_for_overview_and_back_matter():
+    """Soft role inference should tag roadmap/front-matter and appendix-like sections without a hard LLM step."""
+    contexts = parse_module._chapter_contexts(
+        [
+            {
+                "title": "Chapter Summaries and Map",
+                "content": "<html><body><p>This section previews later themes.</p></body></html>",
+                "level": 1,
+            },
+            {
+                "title": "Appendix: Notes on Method",
+                "content": "<html><body><p>Supplementary notes.</p></body></html>",
+                "level": 1,
+            },
+        ],
+        output_language="en",
+    )
+
+    assert contexts[0]["primary_role"] == "front_matter"
+    assert "overview" in contexts[0]["role_tags"]
+    assert "roadmap" in contexts[0]["role_tags"]
+    assert contexts[0]["role_confidence"] == "high"
+
+    assert contexts[1]["primary_role"] == "back_matter"
+    assert "appendix" in contexts[1]["role_tags"]
+    assert contexts[1]["role_confidence"] == "high"
 
 
 def test_upgrade_structure_metadata_backfills_segment_ref(tmp_path):

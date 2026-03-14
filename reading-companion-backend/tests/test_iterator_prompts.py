@@ -67,6 +67,8 @@ def test_reader_reflect_prompt_requires_reason_codes_and_targets():
     assert "reason_codes" in READER_REFLECT_PROMPT
     assert "target_reaction_indexes" in READER_REFLECT_PROMPT
     assert "LOW_SELECTIVITY" in READER_REFLECT_SYSTEM
+    assert "Book context:" in READER_REFLECT_PROMPT
+    assert "Current part of the book:" in READER_REFLECT_PROMPT
 
 
 def test_reader_chapter_reflect_prompt_mentions_scoped_repairs():
@@ -74,6 +76,8 @@ def test_reader_chapter_reflect_prompt_mentions_scoped_repairs():
     assert "segment_repairs" in READER_CHAPTER_REFLECT_PROMPT
     assert "reaction_repairs" in READER_CHAPTER_REFLECT_PROMPT
     assert "segment_quality_flags" in READER_CHAPTER_REFLECT_PROMPT
+    assert "memory_actions" in READER_CHAPTER_REFLECT_PROMPT
+    assert "章节主角色" in READER_CHAPTER_REFLECT_PROMPT
     assert "strong" in READER_CHAPTER_REFLECT_SYSTEM
     assert "skipped" in READER_CHAPTER_REFLECT_SYSTEM
 
