@@ -51,7 +51,8 @@ export const UTILITY_ROUTE_PATTERNS = {
 export const LANDING_STRATEGY = {
   owner: "frontend_static",
   display_card_count: 5,
-  sample_teaser_source: "frontend_static",
+  preview_source: "api",
+  preview_fallback_source: "frontend_static",
 } as const;
 
 export const PUBLIC_CONTRACT_SPEC = {

@@ -10,7 +10,6 @@ import { copy } from "../config/controlled-copy";
 import type {
   ActivityEvent,
   ActivityEventsPageResponse,
-  AnalysisLogResponse,
   AnalysisResumeAcceptedResponse,
   AnalysisStartAcceptedResponse,
   AnalysisStateResponse,
@@ -33,7 +32,6 @@ import type {
 export type {
   ActivityEvent,
   ActivityEventsPageResponse,
-  AnalysisLogResponse,
   AnalysisResumeAcceptedResponse,
   AnalysisStartAcceptedResponse,
   AnalysisStateResponse,
@@ -250,10 +248,6 @@ export function fetchActivity(
   }
   const search = params.toString();
   return request<ActivityEventsPageResponse>(`/api/books/${bookId}/activity${search ? `?${search}` : ""}`);
-}
-
-export function fetchAnalysisLog(bookId: BookId) {
-  return request<AnalysisLogResponse>(`/api/books/${bookId}/analysis-log`);
 }
 
 export function fetchBookMarks(bookId: BookId) {

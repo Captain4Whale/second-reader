@@ -18,12 +18,14 @@ Update when: the primary product path, page responsibilities, or interaction mod
 
 ### 2. Upload Entry
 - Canonical entry point: `/books?upload=1`
-- Role: let the user bring a book into the system and choose whether analysis starts immediately or after outline parsing.
+- Role: let the user bring a book into the system through the bookshelf-hosted upload modal, which currently defaults to deferred outline parsing.
 - `/upload` remains a compatibility redirect, not the primary product path.
 
 ### 3. Analysis Start And Resume
-- Upload may be immediate or deferred.
+- Landing upload currently starts analysis immediately from the landing-hosted upload dialog.
+- Bookshelf upload currently defaults to deferred outline parsing first.
 - Deferred upload stops after chapter-level structure parsing.
+- The bookshelf flow presents the `start now / later` decision only after the book reaches `ready`.
 - `analysis/start` and `analysis/resume` perform semantic segmentation and continue the deep-reading workflow on the main long-task surface.
 
 ### 4. Book Overview
@@ -31,7 +33,7 @@ Update when: the primary product path, page responsibilities, or interaction mod
 - Role: main control center for an in-progress or completed book.
 - Responsibilities:
   - show current analysis state
-  - surface current reading activity and program log context
+  - surface current reading activity
   - expose resume/continue actions
   - provide chapter access and book-scoped marks context
 
@@ -51,7 +53,9 @@ Update when: the primary product path, page responsibilities, or interaction mod
   - route users into books/upload
 - Bookshelf and upload flow:
   - act as the operational entrypoint for library management and new uploads
-  - expose upload-triggered analysis entry
+  - default to deferred outline parsing, then offer `start now / later` once the book is ready
+- Landing upload:
+  - provide the immediate-start upload shortcut from the marketing/preview surface
 - Book overview:
   - act as the adaptive home for progress, controls, state panels, and chapter navigation
 - Chapter page:
@@ -63,7 +67,7 @@ Update when: the primary product path, page responsibilities, or interaction mod
 - The canonical user journey is `landing -> upload -> analysis -> book overview -> chapter -> marks`, even though users may re-enter later at `/books`, `/books/:id`, or `/marks`.
 - Backend `target_url`, `result_url`, and `open_target` values should send users into canonical frontend routes.
 - Compatibility routes may remain as redirects, but they should not become the primary user path without updating this document and `docs/api-contract.md`.
-- Live analysis behavior depends on both the live snapshot (`analysis-state.current_reading_activity`) and the historical activity/program-log stream.
+- Live analysis behavior depends on both the live snapshot (`analysis-state.current_reading_activity`) and the historical mindstream activity feed.
 
 ## Product Defaults
 - `sequential` deep reading is the primary product mode and default optimization target.

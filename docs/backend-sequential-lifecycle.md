@@ -77,7 +77,7 @@ Use `docs/api-contract.md` for route and field authority. Use this file to under
   - Recovery decides whether the run should keep going, pause, resume, or restart from scratch.
 - Development boot mismatch
   - Development mode treats unfinished jobs from an older backend `boot_id` as untrusted.
-  - Those runs are abandoned, written into `Program log` as `dev_run_abandoned`, and left for a fresh manual rerun instead of being auto-resumed.
+  - Those runs are abandoned, written into the internal system activity stream as `dev_run_abandoned`, and left for a fresh manual rerun instead of being auto-resumed.
 - `resume_compat_version`
   - Demo/prod resume safety is governed by `resume_compat_version` across the job record, `run_state`, and `parse_state`.
   - If those versions do not match the current runtime, the backend archives the old run, clears live artifacts, emits `resume_incompatible` plus `fresh_rerun_started`, and launches a fresh run without `--continue`.

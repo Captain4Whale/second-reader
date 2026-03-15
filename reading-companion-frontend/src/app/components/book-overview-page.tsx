@@ -6,7 +6,6 @@ import {
   Bookmark,
   Clock3,
   Download,
-  FileText,
   Globe2,
   LoaderCircle,
   Search,
@@ -17,7 +16,6 @@ import { type CSSProperties, type ReactNode, useEffect, useRef, useState } from 
 import { Link, useParams } from "react-router";
 import {
   type ActivityEvent,
-  type AnalysisLogResponse,
   type AnalysisStateResponse,
   type BookDetailResponse,
   type BookMarksResponse,
@@ -1677,25 +1675,9 @@ function MindstreamEventCard({
   );
 }
 
-function ProgramLogEvent({
-  event,
-}: {
-  event: ActivityEvent;
-}) {
-  return (
-    <div className="rounded-xl border border-[var(--warm-300)]/20 bg-[var(--warm-50)] px-3 py-3">
-      <p className="text-[var(--warm-800)]" style={{ fontSize: "0.8125rem", fontWeight: 500, lineHeight: 1.6 }}>
-        {event.message}
-      </p>
-      <ActivityMeta event={event} compact />
-    </div>
-  );
-}
-
 function RuntimeFeedPanel({
   analysis,
   activity,
-  log,
   isCompact,
   contentLanguage,
   loading,
@@ -1704,7 +1686,6 @@ function RuntimeFeedPanel({
 }: {
   analysis: AnalysisStateResponse | null;
   activity: ActivityEvent[];
-  log: AnalysisLogResponse | null;
   isCompact: boolean;
   contentLanguage: ContentLocale;
   loading: boolean;
@@ -1754,9 +1735,6 @@ function RuntimeFeedPanel({
   }
 
   const mainMindstreamMoments = buildMindstreamMoments(activity);
-  const programEvents = activity.filter(
-    (event) => activityStream(event) === "system" && activityVisibility(event) !== "hidden",
-  );
   const currentActivity = buildCurrentMindstreamActivity(analysis, contentLanguage, liveNowMs);
   const historyMoments = mainMindstreamMoments;
 
@@ -1805,61 +1783,6 @@ function RuntimeFeedPanel({
             <div className="space-y-5" />
           </div>
         )}
-      </div>
-
-      <div className="mt-6 border-t border-[var(--warm-300)]/30 pt-6">
-        <details className="group">
-          <summary
-            className="cursor-pointer text-[var(--warm-800)] hover:text-[var(--warm-900)]"
-            style={{ fontSize: "0.9375rem", fontWeight: 600 }}
-          >
-            {copy("overview.programLog.title", { count: programEvents.length })}
-          </summary>
-          <p className="mt-3 text-[var(--warm-500)]" style={{ fontSize: "0.8125rem", lineHeight: 1.7 }}>
-            {copy("overview.programLog.description")}
-          </p>
-          {programEvents.length === 0 ? (
-            <p className="mt-4 text-[var(--warm-500)]" style={{ fontSize: "0.8125rem" }}>
-              {copy("overview.programLog.empty")}
-            </p>
-          ) : (
-            <div className="mt-4 max-h-56 overflow-y-auto overscroll-contain pr-2">
-              <div className="space-y-3">
-                {programEvents.map((event) => (
-                  <ProgramLogEvent key={event.event_id} event={event} />
-                ))}
-              </div>
-            </div>
-          )}
-        </details>
-      </div>
-
-      <div className="mt-6 border-t border-[var(--warm-300)]/30 pt-6">
-        <div className="flex items-center gap-2 mb-4">
-          <FileText className="w-4 h-4 text-[var(--amber-accent)]" />
-          <h3 className="text-[var(--warm-900)]" style={{ fontSize: "0.9375rem", fontWeight: 600 }}>
-            {copy("overview.technicalLog.title")}
-          </h3>
-        </div>
-        <details className="group">
-          <summary
-            className="cursor-pointer text-[var(--amber-accent)] hover:text-[var(--warm-700)]"
-            style={{ fontSize: "0.875rem", fontWeight: 500 }}
-          >
-            {copy("overview.technicalLog.show")}
-          </summary>
-          <div className="mt-4 rounded-2xl bg-[var(--warm-100)] border border-[var(--warm-300)]/30 p-4 max-h-72 overflow-auto">
-            {log?.lines.length ? (
-              <pre className="m-0 whitespace-pre-wrap break-words text-[var(--warm-700)] font-mono" style={{ fontSize: "0.75rem", lineHeight: 1.7 }}>
-                {log.lines.join("\n")}
-              </pre>
-            ) : (
-              <p className="text-[var(--warm-500)]" style={{ fontSize: "0.8125rem" }}>
-                {copy("overview.technicalLog.empty")}
-              </p>
-            )}
-          </div>
-        </details>
       </div>
     </section>
   );
@@ -2069,7 +1992,6 @@ export function BookOverviewPage() {
             <RuntimeFeedPanel
               analysis={analysisResource.analysis}
               activity={analysisResource.activity}
-              log={analysisResource.log}
               isCompact={tier === "mobile" || tier === "narrow" || tier === "compact"}
               contentLanguage={contentLanguage}
               loading={analysisResource.loading}

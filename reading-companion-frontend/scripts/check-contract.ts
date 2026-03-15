@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { LANDING_REACTION_CARDS, LANDING_SAMPLE_TEASERS } from "../src/app/content/landing-content";
+import { LANDING_PREVIEW_CONFIG, LANDING_REACTION_CARDS, LANDING_SAMPLE_TEASERS } from "../src/app/content/landing-content";
 import {
   CANONICAL_ROUTE_PATTERNS,
   COMPAT_ROUTE_LIST,
@@ -46,6 +46,7 @@ async function main(): Promise<void> {
     "Landing display card count drifted from the contract.",
   );
   assert.ok(LANDING_SAMPLE_TEASERS.length > 0, "Landing sample teasers must come from static content.");
+  assert.equal(LANDING_PREVIEW_CONFIG.mode, "api", "Landing preview must default to API-backed content.");
   assert.deepEqual(APP_ROUTE_TABLE.canonical, Object.values(CANONICAL_ROUTE_PATTERNS));
   assert.deepEqual(APP_ROUTE_TABLE.compatRoutes, [...COMPAT_ROUTE_LIST]);
   assert.deepEqual(

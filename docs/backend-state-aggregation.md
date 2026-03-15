@@ -22,7 +22,7 @@ Use `docs/api-contract.md` for exact fields and routes. Use this file to underst
   - Parse-stage checkpoint metadata used before the main run state fully reflects deep-reading progress.
   - Important for deferred upload and for the `parsing_structure` view of resumability.
 - `_runtime/activity.jsonl`
-  - The historical activity stream used for both the visible mindstream and the operator-facing system/program-log feed.
+  - The historical activity stream used for both the visible mindstream and the internal system-diagnostics trail.
 - `public/chapters/*_deep_read.json`
   - Completed chapter artifacts.
   - Each file contributes rendered chapter content, featured reactions, and `ui_summary` reaction counts.
@@ -45,9 +45,11 @@ Use `docs/api-contract.md` for exact fields and routes. Use this file to underst
   - Builds progress metrics, chapter tree statuses, the live `current_reading_activity` snapshot, `resume_available`, `last_checkpoint_at`, recent completed chapters, recent reactions, and the `current_state_panel`.
 - `GET /api/books/{book_id}/activity`
   - Reads `activity.jsonl` and normalizes each event into the public event shape.
+  - The routed frontend overview now consumes the `stream=mindstream` view; `stream=system` remains available for diagnostics.
   - Adds canonical chapter result routes where the completed result is ready.
 - `GET /api/books/{book_id}/analysis-log`
   - Is the main exception to the catalog-driven view model.
+  - It remains an internal diagnostic endpoint and is no longer part of the user-facing overview.
   - It comes from the latest job record plus `state/jobs/<job_id>.log` via `jobs.py`, not from `catalog.py`.
 - `GET /api/books/{book_id}/chapters/{chapter_id}`
   - Uses the chapter result file for structured sections, featured reactions, and chapter-level summaries.

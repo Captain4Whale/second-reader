@@ -14,6 +14,9 @@ BACKEND_PYTHON="$BACKEND_DIR/.venv/bin/python"
 echo "Checking docs/backend/frontend contract constants..."
 "$BACKEND_PYTHON" "$ROOT_DIR/scripts/check-contract-doc.py"
 
+echo "Checking frontend integration doc appendix..."
+"$BACKEND_PYTHON" "$ROOT_DIR/scripts/check-integration-doc.py"
+
 echo "Checking backend OpenAPI snapshot..."
 (cd "$BACKEND_DIR" && .venv/bin/python scripts/export_openapi.py --check)
 

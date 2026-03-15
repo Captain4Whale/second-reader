@@ -103,8 +103,9 @@ Landing is a frontend-owned experience in the current implementation.
 
 Current implementation strategy:
 - landing copy is hardcoded in the frontend
-- the six landing display cards are hardcoded in the frontend
-- sample teaser content may be hardcoded in the frontend
+- the five landing display cards are hardcoded in the frontend
+- landing preview defaults to API-backed book/chapter content
+- static teaser content remains in the frontend as the fallback when the API preview cannot be resolved
 
 This is a product implementation choice, not a general backend capability promise.
 
@@ -277,7 +278,8 @@ The JSON block below is the machine-readable appendix used by the root contract 
   "landing_strategy": {
     "owner": "frontend_static",
     "display_card_count": 5,
-    "sample_teaser_source": "frontend_static"
+    "preview_source": "api",
+    "preview_fallback_source": "frontend_static"
   }
 }
 ```

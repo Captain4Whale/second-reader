@@ -1,10 +1,9 @@
 import { useEffect, useState } from "react";
-import { ActivityEvent, AnalysisLogResponse, AnalysisStateResponse, fetchActivity, fetchAnalysisLog, fetchAnalysisState, toWebSocketUrl } from "./api";
+import { ActivityEvent, AnalysisStateResponse, fetchActivity, fetchAnalysisState, toWebSocketUrl } from "./api";
 
 export function useBookAnalysisResource(bookId: number, enabled = true) {
   const [analysis, setAnalysis] = useState<AnalysisStateResponse | null>(null);
   const [activity, setActivity] = useState<ActivityEvent[]>([]);
-  const [log, setLog] = useState<AnalysisLogResponse | null>(null);
   const [loading, setLoading] = useState(enabled);
   const [error, setError] = useState<unknown | null>(null);
   const [refreshTick, setRefreshTick] = useState(0);
@@ -12,7 +11,6 @@ export function useBookAnalysisResource(bookId: number, enabled = true) {
   useEffect(() => {
     setAnalysis(null);
     setActivity([]);
-    setLog(null);
     setLoading(enabled);
     setError(null);
     setRefreshTick(0);
@@ -57,17 +55,15 @@ export function useBookAnalysisResource(bookId: number, enabled = true) {
 
     async function load() {
       try {
-        const [nextAnalysis, nextActivity, nextLog] = await Promise.all([
+        const [nextAnalysis, nextActivity] = await Promise.all([
           fetchAnalysisState(bookId),
-          fetchActivity(bookId),
-          fetchAnalysisLog(bookId),
+          fetchActivity(bookId, { stream: "mindstream" }),
         ]);
         if (!active) {
           return;
         }
         setAnalysis(nextAnalysis);
         setActivity(nextActivity.items);
-        setLog(nextLog);
         setError(null);
       } catch (reason) {
         if (!active) {
@@ -91,7 +87,6 @@ export function useBookAnalysisResource(bookId: number, enabled = true) {
   return {
     analysis,
     activity,
-    log,
     loading,
     error,
     refresh: () => setRefreshTick((value) => value + 1),
