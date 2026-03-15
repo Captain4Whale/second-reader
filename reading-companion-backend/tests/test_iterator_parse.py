@@ -863,7 +863,6 @@ def test_hydrate_legacy_epub_locators_backfills_structure_and_result(tmp_path):
             ],
             "visible_reaction_count": 1,
             "reaction_type_diversity": 1,
-            "high_signal_reaction_count": 1,
             "ui_summary": {
                 "kept_section_count": 1,
                 "skipped_section_count": 0,
@@ -1007,7 +1006,6 @@ def test_hydrate_legacy_epub_locators_rematches_drifted_segment_ranges(tmp_path)
             ],
             "visible_reaction_count": 1,
             "reaction_type_diversity": 1,
-            "high_signal_reaction_count": 1,
             "ui_summary": {
                 "kept_section_count": 1,
                 "skipped_section_count": 0,
@@ -1154,7 +1152,6 @@ def test_hydrate_legacy_epub_locators_detaches_chapter_heading_from_body_text(tm
             ],
             "visible_reaction_count": 1,
             "reaction_type_diversity": 1,
-            "high_signal_reaction_count": 1,
             "ui_summary": {
                 "kept_section_count": 1,
                 "skipped_section_count": 0,
@@ -1283,7 +1280,6 @@ def test_backfill_output_dir_reports_locator_changes(tmp_path):
             "featured_reactions": [],
             "visible_reaction_count": 1,
             "reaction_type_diversity": 1,
-            "high_signal_reaction_count": 1,
             "ui_summary": {
                 "kept_section_count": 1,
                 "skipped_section_count": 0,

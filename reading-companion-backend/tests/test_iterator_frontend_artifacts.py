@@ -282,14 +282,12 @@ def test_read_book_sequential_writes_frontend_artifacts(tmp_path, monkeypatch):
     assert len(chapter_result["featured_reactions"]) <= 3
     assert chapter_result["visible_reaction_count"] == 2
     assert chapter_result["reaction_type_diversity"] == 2
-    assert chapter_result["high_signal_reaction_count"] == 2
     assert chapter_result["ui_summary"]["kept_section_count"] == 1
     assert chapter_result["ui_summary"]["skipped_section_count"] == 1
     assert chapter_result["ui_summary"]["reaction_counts"] == {"curious": 1, "highlight": 1}
     assert manifest["chapters"][0]["status"] == "done"
     assert manifest["chapters"][0]["visible_reaction_count"] == 2
     assert manifest["chapters"][0]["reaction_type_diversity"] == 2
-    assert manifest["chapters"][0]["high_signal_reaction_count"] == 2
     assert markdown_path.exists()
     assert _load_json(chapter_qa_file(output_dir, structure["chapters"][0]))["chapter_insights"] == ["Arc"]
     assert run_state["stage"] == "completed"

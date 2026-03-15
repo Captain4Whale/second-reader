@@ -143,7 +143,6 @@ def _clean_public_reactions(payload: dict, structure: dict, output_dir: Path) ->
 
         reaction_counts: dict[str, int] = {}
         visible_count = 0
-        high_signal_count = 0
         kept_section_count = 0
         skipped_section_count = 0
         for section in payload.get("sections", []):
@@ -159,8 +158,6 @@ def _clean_public_reactions(payload: dict, structure: dict, output_dir: Path) ->
                 reaction_type = str(reaction.get("type", "") or "")
                 reaction_counts[reaction_type] = reaction_counts.get(reaction_type, 0) + 1
                 visible_count += 1
-                if reaction_type in {"highlight", "curious", "discern", "retrospect"}:
-                    high_signal_count += 1
 
         if payload.get("chapter_reflection") != {}:
             payload["chapter_reflection"] = {}
@@ -171,8 +168,8 @@ def _clean_public_reactions(payload: dict, structure: dict, output_dir: Path) ->
         if payload.get("reaction_type_diversity") != len(reaction_counts):
             payload["reaction_type_diversity"] = len(reaction_counts)
             chapter_changed = True
-        if payload.get("high_signal_reaction_count") != high_signal_count:
-            payload["high_signal_reaction_count"] = high_signal_count
+        if "high_signal_reaction_count" in payload:
+            payload.pop("high_signal_reaction_count", None)
             chapter_changed = True
         ui_summary = {
             "kept_section_count": kept_section_count,

@@ -378,11 +378,6 @@ export interface components {
              */
             featured_reactions: components["schemas"]["FeaturedReactionPreview"][];
             /**
-             * High Signal Reaction Count
-             * @description High-signal reaction count attached to the event when applicable.
-             */
-            high_signal_reaction_count?: number | null;
-            /**
              * Highlight Quote
              * @description High-signal anchor quote attached to the event when available.
              */
@@ -878,11 +873,6 @@ export interface components {
              */
             featured_reactions: components["schemas"]["FeaturedReactionPreview"][];
             /**
-             * High Signal Reaction Count
-             * @description Number of high-signal reactions in the chapter.
-             */
-            high_signal_reaction_count: number;
-            /**
              * Result Url
              * @description Frontend route that opens the finished chapter result.
              */
@@ -935,11 +925,6 @@ export interface components {
              * @description Featured reactions used for summary and teaser areas.
              */
             featured_reactions: components["schemas"]["FeaturedReactionPreview"][];
-            /**
-             * High Signal Reaction Count
-             * @description Number of high-signal reactions in the chapter.
-             */
-            high_signal_reaction_count: number;
             /**
              * Output Language
              * @description Language used for the AI-generated chapter result.
@@ -1019,11 +1004,6 @@ export interface components {
              * @description Human-readable chapter reference.
              */
             chapter_ref: string;
-            /**
-             * High Signal Reaction Count
-             * @description Count of high-signal reactions in the chapter.
-             */
-            high_signal_reaction_count: number;
             /**
              * Reaction Type Diversity
              * @description Count of distinct reaction types in the chapter.
@@ -2522,7 +2502,6 @@ export interface operations {
                 type?: string | null;
                 section_ref?: string | null;
                 mark_type?: string | null;
-                high_signal_only?: boolean;
             };
             header?: never;
             path: {

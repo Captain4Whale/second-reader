@@ -58,7 +58,6 @@ def _bootstrap_book(root: Path, *, stage: str = "completed") -> str:
                     "result_file": "ch01_deep_read.json",
                     "visible_reaction_count": 1 if stage == "completed" else 0,
                     "reaction_type_diversity": 1 if stage == "completed" else 0,
-                    "high_signal_reaction_count": 1 if stage == "completed" else 0,
                 }
             ],
         },
@@ -92,7 +91,6 @@ def _bootstrap_book(root: Path, *, stage: str = "completed") -> str:
                 "reaction_types": ["highlight"],
                 "highlight_quote": "Alpha beta",
                 "visible_reaction_count": 1,
-                "high_signal_reaction_count": 1,
                 "featured_reactions": [
                     {
                         "reaction_id": "r1",
@@ -192,7 +190,6 @@ def _bootstrap_book(root: Path, *, stage: str = "completed") -> str:
             ],
             "visible_reaction_count": 1,
             "reaction_type_diversity": 1,
-            "high_signal_reaction_count": 1,
             "ui_summary": {
                 "kept_section_count": 1,
                 "skipped_section_count": 0,
@@ -311,7 +308,6 @@ def test_chapter_outline_endpoint_returns_pending_stub_for_unready_chapter(tmp_p
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     manifest["chapters"][0]["status"] = "pending"
     manifest["chapters"][0]["visible_reaction_count"] = 0
-    manifest["chapters"][0]["high_signal_reaction_count"] = 0
     manifest_path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
     (tmp_path / "output" / book_id / "ch01_deep_read.json").unlink()
 

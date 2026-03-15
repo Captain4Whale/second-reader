@@ -53,7 +53,6 @@ from .storage import (
 )
 
 
-HIGH_SIGNAL_TYPES = {"highlight", "curious", "discern", "retrospect"}
 FEATURED_PRIORITY = {
     "highlight": 0,
     "discern": 1,
@@ -231,14 +230,12 @@ def _chapter_metrics_from_result(result_path: Path) -> dict[str, int]:
         return {
             "visible_reaction_count": 0,
             "reaction_type_diversity": 0,
-            "high_signal_reaction_count": 0,
         }
 
     payload = json.loads(result_path.read_text(encoding="utf-8"))
     return {
         "visible_reaction_count": int(payload.get("visible_reaction_count", 0)),
         "reaction_type_diversity": int(payload.get("reaction_type_diversity", 0)),
-        "high_signal_reaction_count": int(payload.get("high_signal_reaction_count", 0)),
     }
 
 
@@ -425,7 +422,6 @@ def build_chapter_result(
     reaction_counts: Counter[str] = Counter()
     featured_candidates: list[FeaturedReaction] = []
     visible_reaction_count = 0
-    high_signal_reaction_count = 0
 
     for rendered in rendered_segments:
         segment_id = str(rendered.get("segment_id", ""))
@@ -441,8 +437,6 @@ def build_chapter_result(
             reaction_type = str(reaction.get("type", "association"))
             reaction_counts[reaction_type] += 1
             visible_reaction_count += 1
-            if reaction_type in HIGH_SIGNAL_TYPES:
-                high_signal_reaction_count += 1
 
             reaction_id = _reaction_id(
                 book_id,
@@ -529,7 +523,6 @@ def build_chapter_result(
         "featured_reactions": featured,
         "visible_reaction_count": visible_reaction_count,
         "reaction_type_diversity": len(reaction_counts),
-        "high_signal_reaction_count": high_signal_reaction_count,
         "ui_summary": ui_summary,
     }
 

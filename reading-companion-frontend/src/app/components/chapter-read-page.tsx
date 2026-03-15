@@ -1319,7 +1319,7 @@ export function ChapterReadPage() {
                               className="mt-1 text-[var(--warm-600)]"
                               style={{ fontSize: "0.74rem", lineHeight: 1.55 }}
                             >
-                              {chapter.visible_reaction_count} reactions · {chapter.high_signal_reaction_count} high-signal
+                              {chapter.visible_reaction_count} reactions
                             </p>
                           </div>
 

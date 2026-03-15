@@ -175,7 +175,6 @@ class ManifestChapterEntry(TypedDict, total=False):
     result_file: str
     visible_reaction_count: int
     reaction_type_diversity: int
-    high_signal_reaction_count: int
 
 
 class BookManifest(TypedDict):
@@ -266,7 +265,6 @@ class ActivityEvent(TypedDict, total=False):
     highlight_quote: str
     search_query: str
     visible_reaction_count: int
-    high_signal_reaction_count: int
     featured_reactions: list[dict[str, object]]
     result_file: str
     result_url: str
@@ -475,7 +473,7 @@ class ChapterResultSection(TypedDict, total=False):
 
 
 class FeaturedReaction(TypedDict, total=False):
-    """Compact high-signal reaction summary for chapter cards and events."""
+    """Compact featured reaction summary for chapter cards and events."""
 
     reaction_id: str
     type: ReactionType
@@ -505,7 +503,6 @@ class ChapterResult(TypedDict):
     featured_reactions: list[FeaturedReaction]
     visible_reaction_count: int
     reaction_type_diversity: int
-    high_signal_reaction_count: int
     ui_summary: ChapterResultUISummary
 
 

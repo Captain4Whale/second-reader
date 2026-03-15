@@ -35,9 +35,6 @@ from src.iterator_reader.storage import (
 from src.iterator_reader.frontend_artifacts import normalize_activity_event
 
 
-HIGH_SIGNAL_TYPES = {"highlight", "curious", "discern", "retrospect"}
-
-
 def output_root(root: Path | None = None) -> Path:
     """Return the root output directory."""
     return (root or Path.cwd()) / "output"
@@ -353,7 +350,6 @@ def get_book_detail(book_id: str, root: Path | None = None) -> dict:
                 "status": "error" if status == "error" else ("completed" if status == "completed" else "pending"),
                 "visible_reaction_count": int(chapter.get("visible_reaction_count", 0)),
                 "reaction_type_diversity": int(chapter.get("reaction_type_diversity", 0)),
-                "high_signal_reaction_count": int(chapter.get("high_signal_reaction_count", 0)),
                 "result_ready": str(chapter.get("status", "")) == "done",
             }
         )
@@ -448,11 +444,6 @@ def _decorate_activity_event(book_id: str, event: dict) -> dict:
         "featured_reactions": featured,
         "visible_reaction_count": (
             int(event.get("visible_reaction_count", 0) or 0) if event.get("visible_reaction_count") is not None else None
-        ),
-        "high_signal_reaction_count": (
-            int(event.get("high_signal_reaction_count", 0) or 0)
-            if event.get("high_signal_reaction_count") is not None
-            else None
         ),
         "result_url": canonical_chapter_path(to_api_book_id(book_id), chapter_id) if chapter_id is not None else None,
     }
@@ -560,7 +551,6 @@ def _filter_reactions(
     *,
     reaction_type: str | None = None,
     mark_type: str | None = None,
-    high_signal_only: bool = False,
 ) -> list[dict]:
     """Apply filter options to a reaction card list."""
     filtered = list(reactions)
@@ -569,8 +559,6 @@ def _filter_reactions(
         filtered = [reaction for reaction in filtered if str(reaction.get("type", "")) == normalized_type]
     if mark_type:
         filtered = [reaction for reaction in filtered if str(reaction.get("mark_type", "") or "") == mark_type]
-    if high_signal_only:
-        filtered = [reaction for reaction in filtered if str(reaction.get("type", "")) in HIGH_SIGNAL_TYPES]
     return filtered
 
 
@@ -624,7 +612,6 @@ def get_chapter_detail(
         "output_language": str(chapter_payload.get("output_language", manifest.get("output_language", ""))),
         "visible_reaction_count": int(chapter_payload.get("visible_reaction_count", 0)),
         "reaction_type_diversity": int(chapter_payload.get("reaction_type_diversity", 0)),
-        "high_signal_reaction_count": int(chapter_payload.get("high_signal_reaction_count", 0)),
         "featured_reactions": [
             _featured_reaction_preview(book_id, chapter_id_value, chapter_ref, item)
             for item in chapter_payload.get("featured_reactions", [])
@@ -704,7 +691,6 @@ def get_chapter_reactions_page(
     reaction_type: str | None = None,
     section_ref: str | None = None,
     mark_type: str | None = None,
-    high_signal_only: bool = False,
 ) -> dict:
     """Build a flattened, paginated reaction list for one chapter."""
     chapter_payload = get_chapter_result(book_id, chapter_id, root=root)
@@ -728,7 +714,6 @@ def get_chapter_reactions_page(
         reactions,
         reaction_type=reaction_type,
         mark_type=mark_type,
-        high_signal_only=high_signal_only,
     )
     reactions.sort(key=lambda item: tuple(item.pop("sort_key", (item.get("section_ref"), item.get("reaction_id")))))
     page_items, page_info = paginate_items(reactions, limit=limit, cursor=cursor)
@@ -739,7 +724,6 @@ def get_chapter_reactions_page(
             "type": to_api_reaction_type(reaction_type) if reaction_type else None,
             "section_ref": section_ref,
             "mark_type": mark_type,
-            "high_signal_only": high_signal_only,
         },
     }
 
@@ -833,7 +817,6 @@ def get_analysis_state(book_id: str, root: Path | None = None) -> dict:
                 "chapter_ref": chapter_ref,
                 "title": title,
                 "visible_reaction_count": int(item.get("visible_reaction_count", 0) or 0),
-                "high_signal_reaction_count": int(item.get("high_signal_reaction_count", 0) or 0),
                 "featured_reactions": list(item.get("featured_reactions", [])),
                 "result_url": canonical_chapter_path(to_api_book_id(book_id), chapter_id),
             }

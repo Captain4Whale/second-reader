@@ -1390,7 +1390,7 @@ def _minimal_budget_reflection(state: ReaderState) -> ReflectionPayload:
         "attribution_reasonableness": 3,
         "text_connection": 3,
         "depth": 3,
-        "issues": ["no high-signal reaction"],
+        "issues": ["no retained reaction"],
         "reason_codes": ["LOW_SELECTIVITY"],
         "target_reaction_indexes": [],
         "revision_instruction": "",

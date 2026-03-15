@@ -365,7 +365,6 @@ async def stream_job_events(
                             chapter_ref=str(event.get("chapter_ref", "")),
                             title=str(event.get("chapter_ref", "")),
                             visible_reaction_count=int(event.get("visible_reaction_count", 0) or 0),
-                            high_signal_reaction_count=int(event.get("high_signal_reaction_count", 0) or 0),
                             featured_reactions=event.get("featured_reactions", []),
                             result_url=str(
                                 event.get("result_url", "")

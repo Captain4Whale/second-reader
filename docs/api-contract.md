@@ -124,12 +124,12 @@ The backend is responsible for providing these book-overview fields:
 `reaction_counts` must be keyed by the five canonical reaction types only.
 
 ### Frontend-Derived Metrics
-The frontend may derive display metrics such as:
+The frontend may derive factual display summaries from backend counts when needed, such as:
 
-- reaction density = total reactions / segment count
-- high-density chapters = chapters ranked by density
+- total reactions across a book
+- completed chapters out of total chapters
 
-Do not add backend-only convenience fields for these derived metrics unless the current implementation has a concrete dependency that cannot be simplified.
+Do not add backend-only convenience fields for opinionated or evaluative frontend metrics unless the current implementation has a concrete dependency that cannot be simplified.
 
 ## Marks Contract
 

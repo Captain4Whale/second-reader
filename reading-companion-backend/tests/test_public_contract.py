@@ -72,7 +72,6 @@ def _bootstrap_contract_book(
                     "result_file": "ch01_deep_read.json",
                     "visible_reaction_count": 1 if stage == "completed" else 0,
                     "reaction_type_diversity": 1 if stage == "completed" else 0,
-                    "high_signal_reaction_count": 1 if stage == "completed" else 0,
                 }
             ],
         },
@@ -107,7 +106,6 @@ def _bootstrap_contract_book(
                 "reaction_types": [reaction_type],
                 "highlight_quote": "Legacy retrospect quote" if reaction_type == "retrospect" else "Legacy connect-back quote",
                 "visible_reaction_count": 1,
-                "high_signal_reaction_count": 1,
                 "featured_reactions": [
                     {
                         "reaction_id": "r1",
@@ -207,7 +205,6 @@ def _bootstrap_contract_book(
                 ],
                 "visible_reaction_count": 1,
                 "reaction_type_diversity": 1,
-                "high_signal_reaction_count": 1,
                 "ui_summary": {
                     "kept_section_count": 1,
                     "skipped_section_count": 0,
@@ -426,7 +423,6 @@ def test_websocket_payloads_scrub_legacy_names_and_routes(tmp_path):
                 ],
                 "visible_reaction_count": 1,
                 "reaction_type_diversity": 1,
-                "high_signal_reaction_count": 1,
                 "ui_summary": {
                     "kept_section_count": 1,
                     "skipped_section_count": 0,
@@ -438,7 +434,6 @@ def test_websocket_payloads_scrub_legacy_names_and_routes(tmp_path):
         manifest["chapters"][0]["status"] = "done"
         manifest["chapters"][0]["visible_reaction_count"] = 1
         manifest["chapters"][0]["reaction_type_diversity"] = 1
-        manifest["chapters"][0]["high_signal_reaction_count"] = 1
         _write_json(output_dir / "book_manifest.json", manifest)
         _write_json(
             output_dir / "run_state.json",
@@ -468,7 +463,6 @@ def test_websocket_payloads_scrub_legacy_names_and_routes(tmp_path):
                 "reaction_types": ["retrospect"],
                 "highlight_quote": "Legacy retrospect quote",
                 "visible_reaction_count": 1,
-                "high_signal_reaction_count": 1,
                 "featured_reactions": [
                     {
                         "reaction_id": "r1",

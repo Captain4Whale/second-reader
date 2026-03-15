@@ -349,7 +349,6 @@ def book_chapter_reactions(
     type: Optional[str] = Query(default=None),
     section_ref: Optional[str] = Query(default=None),
     mark_type: Optional[str] = Query(default=None),
-    high_signal_only: bool = Query(default=False),
 ) -> ReactionsPageResponse:
     """Return a flattened paginated reaction list for one chapter."""
     internal_book_id = _resolve_book_id(book_id)
@@ -364,7 +363,6 @@ def book_chapter_reactions(
             reaction_type=type,
             section_ref=section_ref,
             mark_type=mark_type,
-            high_signal_only=high_signal_only,
         )
     )
 

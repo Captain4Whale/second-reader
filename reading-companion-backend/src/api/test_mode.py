@@ -94,7 +94,6 @@ def _bootstrap_fixture_book(upload_path: Path, *, root: Path) -> tuple[dict, dic
                 "result_file": result_file,
                 "visible_reaction_count": 0,
                 "reaction_type_diversity": 0,
-                "high_signal_reaction_count": 0,
             }
         ],
     }
@@ -140,7 +139,6 @@ def _complete_fixture_analysis(
             "status": "done",
             "visible_reaction_count": int(chapter_result.get("visible_reaction_count", 1)),
             "reaction_type_diversity": int(chapter_result.get("reaction_type_diversity", 1)),
-            "high_signal_reaction_count": int(chapter_result.get("high_signal_reaction_count", 1)),
         }
     )
     save_json(book_manifest_file(book_dir), manifest)

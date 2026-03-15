@@ -254,7 +254,6 @@ class ChapterCompletionCard(ApiModel):
     chapter_ref: str = Field(description="Human-readable reference for the completed chapter.")
     title: str = Field(description="Title of the completed chapter.")
     visible_reaction_count: int = Field(description="Number of visible reactions in the chapter.")
-    high_signal_reaction_count: int = Field(description="Number of high-signal reactions in the chapter.")
     featured_reactions: list[FeaturedReactionPreview] = Field(description="Small set of featured reactions used for the completion card.")
     result_url: str = Field(description="Frontend route that opens the finished chapter result.")
 
@@ -316,7 +315,6 @@ class ActivityEvent(ApiModel):
     search_query: Optional[str] = Field(default=None, description="Search query attached to the event when applicable.")
     featured_reactions: list[FeaturedReactionPreview] = Field(description="Featured reactions attached to the event when applicable.")
     visible_reaction_count: Optional[int] = Field(default=None, description="Visible reaction count attached to the event when applicable.")
-    high_signal_reaction_count: Optional[int] = Field(default=None, description="High-signal reaction count attached to the event when applicable.")
     result_url: Optional[str] = Field(default=None, description="Frontend result route associated with the event when available.")
 
 
@@ -346,7 +344,6 @@ class ChapterListItem(ApiModel):
     status: Literal["pending", "completed", "error"] = Field(description="User-facing chapter status in the result overview.")
     visible_reaction_count: int = Field(description="Number of visible reactions in the chapter.")
     reaction_type_diversity: int = Field(description="Count of distinct reaction types in the chapter.")
-    high_signal_reaction_count: int = Field(description="Count of high-signal reactions in the chapter.")
     result_ready: bool = Field(description="Whether the chapter result is ready to open.")
 
 
@@ -407,7 +404,6 @@ class ChapterDetailResponse(ApiModel):
     output_language: str = Field(description="Language used for the AI-generated chapter result.")
     visible_reaction_count: int = Field(description="Number of visible reactions in the chapter.")
     reaction_type_diversity: int = Field(description="Number of distinct reaction types in the chapter.")
-    high_signal_reaction_count: int = Field(description="Number of high-signal reactions in the chapter.")
     featured_reactions: list[FeaturedReactionPreview] = Field(description="Featured reactions used for summary and teaser areas.")
     chapter_heading: Optional[ChapterHeadingBlock] = Field(
         default=None,
@@ -587,7 +583,6 @@ class ChapterCompletedPayload(ApiModel):
     chapter_ref: str = Field(description="Human-readable reference of the completed chapter.")
     title: str = Field(description="Title of the completed chapter.")
     visible_reaction_count: int = Field(description="Number of visible reactions in the completed chapter.")
-    high_signal_reaction_count: int = Field(description="Number of high-signal reactions in the completed chapter.")
     featured_reactions: list[FeaturedReactionPreview] = Field(description="Featured reactions used to summarize the completed chapter.")
     result_url: str = Field(description="Frontend route that opens the completed chapter result.")
 

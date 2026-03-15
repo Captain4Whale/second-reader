@@ -288,7 +288,7 @@ export function AnalysisPage() {
                       {chapter.title}
                     </p>
                     <p className="text-[var(--warm-600)] mt-2" style={{ fontSize: "0.8125rem" }}>
-                      {chapter.visible_reaction_count} reactions · {chapter.high_signal_reaction_count} high-signal
+                      {chapter.visible_reaction_count} reactions
                     </p>
                   </Link>
                 ))}

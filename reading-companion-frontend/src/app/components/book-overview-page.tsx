@@ -41,7 +41,6 @@ type OverviewChapter = {
   title: string;
   segment_count: number;
   visible_reaction_count: number;
-  high_signal_reaction_count: number;
   result_ready: boolean;
   status: string;
   is_current: boolean;
@@ -81,15 +80,6 @@ function formatEta(seconds?: number | null) {
   return remainingMinutes > 0 ? `${hours}h ${remainingMinutes}m remaining` : `${hours}h remaining`;
 }
 
-function totalReactionCount(detail: BookDetailResponse) {
-  return Object.values(detail.reaction_counts).reduce((sum, count) => sum + count, 0);
-}
-
-function topReactionType(detail: BookDetailResponse) {
-  const entry = Object.entries(detail.reaction_counts).sort((left, right) => right[1] - left[1])[0];
-  return entry && entry[1] > 0 ? reactionLabel(entry[0]) : "暂无";
-}
-
 function hasWaitingStep(value?: string | null) {
   return /等待/.test((value ?? "").trim());
 }
@@ -113,7 +103,6 @@ function buildOverviewChapters(detail: BookDetailResponse, analysis: AnalysisSta
       title: chapter.title,
       segment_count: analysisChapter?.segment_count ?? chapter.segment_count,
       visible_reaction_count: chapter.visible_reaction_count,
-      high_signal_reaction_count: chapter.high_signal_reaction_count,
       result_ready: analysisChapter?.result_ready ?? chapter.result_ready,
       status: analysisChapter?.status ?? chapter.status,
       is_current: analysisChapter?.is_current ?? false,
@@ -377,13 +366,8 @@ function BookOverviewStatusBand({
         <p className="text-[var(--amber-accent)] uppercase tracking-[0.18em] mb-4" style={{ fontSize: "0.6875rem", fontWeight: 600 }}>
           Completed Overview
         </p>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 gap-4 md:max-w-xs">
           <StatusMetric label="Completed chapters" value={`${detail.completed_chapter_count}/${detail.chapter_count}`} />
-          <StatusMetric
-            label="Reaction density"
-            value={detail.segment_count > 0 ? (totalReactionCount(detail) / detail.segment_count).toFixed(2) : "0.00"}
-          />
-          <StatusMetric label="Top reaction type" value={topReactionType(detail)} />
         </div>
       </section>
     );
@@ -571,7 +555,6 @@ function StructureChapterList({
               <div className="flex items-center gap-4 text-[var(--warm-600)] flex-wrap justify-end" style={{ fontSize: "0.8125rem" }}>
                 {viewMode !== "outline" && chapter.segment_count > 0 ? <span>{chapter.segment_count} sections</span> : null}
                 {viewMode === "result" ? <span>{chapter.visible_reaction_count} reactions</span> : null}
-                {viewMode === "result" ? <span>{chapter.high_signal_reaction_count} high-signal</span> : null}
                 <span className="text-[var(--warm-500)]">{statusLabel}</span>
               </div>
             </div>
@@ -704,7 +687,6 @@ function ProcessingStructureNavigator({
             {viewMode === "result" ? (
               <div className="mt-2 flex items-center gap-3 text-[var(--warm-500)]" style={{ fontSize: "0.75rem" }}>
                 <span>{chapter.visible_reaction_count} reactions</span>
-                <span>{chapter.high_signal_reaction_count} high-signal</span>
               </div>
             ) : null}
 
@@ -932,7 +914,6 @@ function MindstreamEventCard({
         <ActivityMeta event={event} />
         <div className="mt-3 flex items-center gap-3 flex-wrap text-[var(--warm-600)]" style={{ fontSize: "0.75rem" }}>
           {event.visible_reaction_count != null ? <span>{event.visible_reaction_count} reactions</span> : null}
-          {event.high_signal_reaction_count != null ? <span>{event.high_signal_reaction_count} high-signal</span> : null}
         </div>
         {event.featured_reactions.length > 0 ? (
           <div className="mt-4 space-y-3">

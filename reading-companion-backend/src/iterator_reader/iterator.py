@@ -969,7 +969,6 @@ def _run_single_chapter(
                 "chapter_id": int(chapter.get("id", 0)),
                 "chapter_ref": chapter_reference(chapter),
                 "visible_reaction_count": int(chapter_result.get("visible_reaction_count", 0)),
-                "high_signal_reaction_count": int(chapter_result.get("high_signal_reaction_count", 0)),
                 "featured_reactions": list(chapter_result.get("featured_reactions", [])),
                 "result_file": chapter_result_name(chapter),
             },

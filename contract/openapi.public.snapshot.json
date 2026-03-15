@@ -42,18 +42,6 @@
             "title": "Featured Reactions",
             "type": "array"
           },
-          "high_signal_reaction_count": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "High-signal reaction count attached to the event when applicable.",
-            "title": "High Signal Reaction Count"
-          },
           "highlight_quote": {
             "anyOf": [
               {
@@ -917,11 +905,6 @@
             "title": "Featured Reactions",
             "type": "array"
           },
-          "high_signal_reaction_count": {
-            "description": "Number of high-signal reactions in the chapter.",
-            "title": "High Signal Reaction Count",
-            "type": "integer"
-          },
           "result_url": {
             "description": "Frontend route that opens the finished chapter result.",
             "title": "Result Url",
@@ -943,7 +926,6 @@
           "chapter_ref",
           "title",
           "visible_reaction_count",
-          "high_signal_reaction_count",
           "featured_reactions",
           "result_url"
         ],
@@ -1012,11 +994,6 @@
             "title": "Featured Reactions",
             "type": "array"
           },
-          "high_signal_reaction_count": {
-            "description": "Number of high-signal reactions in the chapter.",
-            "title": "High Signal Reaction Count",
-            "type": "integer"
-          },
           "output_language": {
             "description": "Language used for the AI-generated chapter result.",
             "title": "Output Language",
@@ -1072,7 +1049,6 @@
           "output_language",
           "visible_reaction_count",
           "reaction_type_diversity",
-          "high_signal_reaction_count",
           "featured_reactions",
           "chapter_reflection",
           "sections",
@@ -1154,11 +1130,6 @@
             "title": "Chapter Ref",
             "type": "string"
           },
-          "high_signal_reaction_count": {
-            "description": "Count of high-signal reactions in the chapter.",
-            "title": "High Signal Reaction Count",
-            "type": "integer"
-          },
           "reaction_type_diversity": {
             "description": "Count of distinct reaction types in the chapter.",
             "title": "Reaction Type Diversity",
@@ -1203,7 +1174,6 @@
           "status",
           "visible_reaction_count",
           "reaction_type_diversity",
-          "high_signal_reaction_count",
           "result_ready"
         ],
         "title": "ChapterListItem",
@@ -3597,16 +3567,6 @@
                 }
               ],
               "title": "Mark Type"
-            }
-          },
-          {
-            "in": "query",
-            "name": "high_signal_only",
-            "required": false,
-            "schema": {
-              "default": false,
-              "title": "High Signal Only",
-              "type": "boolean"
             }
           }
         ],

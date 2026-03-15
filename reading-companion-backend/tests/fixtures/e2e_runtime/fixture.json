@@ -81,7 +81,6 @@
     ],
     "visible_reaction_count": 1,
     "reaction_type_diversity": 1,
-    "high_signal_reaction_count": 1,
     "ui_summary": {
       "kept_section_count": 1,
       "skipped_section_count": 0,
@@ -102,7 +101,6 @@
     ],
     "highlight_quote": "You do not enter relationships with value, you enter relationships as value.",
     "visible_reaction_count": 1,
-    "high_signal_reaction_count": 1,
     "featured_reactions": [
       {
         "reaction_id": "fixture-r1",
