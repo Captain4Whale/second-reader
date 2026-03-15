@@ -8,19 +8,32 @@ Update when: the history doc set changes, its retention rules change, or a major
 This directory is for historical context, not current authority. Facts about the current system still belong in the stable docs under `docs/`.
 
 ## What Belongs Here
-- `decision-log.md`: durable decision history, including rejected alternatives, inflection points, and why the chosen path won
+- `decision-log.md`: a curated set of major inflection points across the workspace
+- each entry should preserve:
+  - the problem that forced a decision
+  - the alternatives that were still viable at the time
+  - why the chosen path won
+  - which commits, docs, or code paths prove the change happened
+
+## Sources
+- workspace Git history
+- stable engineering docs under `docs/`
+- current code entrypoints
+- archived research or evaluation material when it explains a historical turning point
 
 ## What Does Not Belong Here
 - restatements of current behavior that are already captured in stable docs
 - implementation details that can be recovered directly from code
 - interview scripts, one-page summaries, or recruiting-oriented packaging
 - raw evaluation reports and experiment outputs that already live in archive/reference directories
+- full chronological changelogs or one-entry-per-commit timelines
 
 ## Writing Rules
 - Record evolution and rationale, not just the final state.
 - Prefer entries that answer "why did we end up here?" over entries that merely describe what exists now.
+- Use theme-based entries, not a commit-by-commit timeline.
 - If a point can be reconstructed later from stable docs and code with low effort, do not store it here.
-- Link back to stable docs, code, or archived reports when they are the factual basis for the history entry.
+- Every entry should include a small `Primary evidence` list that starts with representative commit hashes.
 
 ## Maintenance Defaults
 - Default engineering tasks do not need to load this directory.

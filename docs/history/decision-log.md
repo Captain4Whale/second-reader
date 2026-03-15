@@ -6,40 +6,167 @@ Not for: routine change logs, source-of-truth engineering definitions, or interv
 Update when: a major product or engineering decision is made, reversed, or becomes historically important to future contributors.
 
 ## Entry 1
-**Decision**: Treat `sequential` deep reading as the primary product and engineering path.
+**Decision / Inflection**: Converge on `sequential` as the primary product and engineering path.
 
-**Context**: The repo contains broader and more prototype-like agent capabilities, but the project needed one dependable main loop that could be run, recovered, and explained end to end.
+**Period**: Early workspace baseline through the March 2026 cleanup period.
 
-**Alternatives considered**: Keep a more generalized graph-first or `book_analysis`-led path as the default product direction.
+**Problem**: The repository still contained broader, more experimental reading paths, but the product needed one dependable loop that could be run, recovered, validated, and explained without splitting attention across competing architectures.
 
-**Why chosen**: A single main path made the system easier to validate, recover, and evolve without splitting effort across competing product stories.
+**Alternatives considered**: Keep a more generalized graph-first direction as the main path, or let `book_analysis`-style capabilities define the default product story.
 
-**Trade-offs**: Experimental capabilities remained secondary, and some architectural flexibility was intentionally deprioritized in favor of a cleaner main path.
+**Why this path won**: A single sequential path created a cleaner basis for runtime recovery, frontend integration, and later documentation. It also made the product easier to demo as a coherent reading experience instead of a bundle of agent experiments.
 
-**Current-state references**: `docs/product-interaction-model.md`, `docs/runtime-modes.md`, `reading-companion-backend/AGENTS.md`
+**What changed in the system**: Product and backend rules now explicitly treat `sequential` as primary, while `book_analysis` remains secondary and non-authoritative for default decisions.
+
+**Why it matters later**: This is the clearest example of the project choosing focus over maximal flexibility. Without recording it, later readers would see the remaining experimental traces but miss why the main path narrowed.
+
+**Primary evidence**:
+- `5d5c7b2` `Remove high-signal logic`
+- `reading-companion-backend/AGENTS.md`
+- `docs/product-interaction-model.md`
 
 ## Entry 2
-**Decision**: Keep public naming, route, and ID normalization at the API layer.
+**Decision / Inflection**: Shape the current long-task model around upload, deferred parse, and explicit `analysis/start` / `analysis/resume`.
 
-**Context**: Internal runtime artifacts, legacy route shapes, and older taxonomy values do not line up perfectly with the current web contract.
+**Period**: March 2026, especially the book-overview consolidation work.
 
-**Alternatives considered**: Push normalization into the frontend, or force runtime artifacts to match the public contract exactly before returning anything.
+**Problem**: The system needed a user-facing flow that could handle both "start immediately" and "prepare structure first" without splitting the product into separate tools or one-off routes.
 
-**Why chosen**: The API layer was the narrowest place to preserve a stable external contract while allowing internal artifacts and migration paths to evolve more gradually.
+**Alternatives considered**: Make upload always start full analysis immediately, keep parsing and deep reading as more disconnected workflows, or hide continuation behind internal-only recovery behavior.
 
-**Trade-offs**: The backend now carries compatibility logic that would not exist in a greenfield system with no legacy artifacts.
+**Why this path won**: The upload -> deferred parse -> explicit start/resume model made the book overview a real control surface. It gave the product a stable way to present structure readiness, continue actions, and long-running progress in one place.
 
-**Current-state references**: `docs/api-contract.md`, `docs/api-integration.md`
+**What changed in the system**: Upload provisioning, book overview state, and long-task orchestration converged on the current `POST /api/uploads/epub`, `analysis/start`, and `analysis/resume` model, with a clearer `ready` state between parse and deep reading.
+
+**Why it matters later**: This is one of the core product-shaping decisions. It explains why the overview page is not just a result screen, but the operational center for a book.
+
+**Primary evidence**:
+- `3657e9e` `统一 Book overview 单页布局`
+- `docs/product-interaction-model.md`
+- `docs/backend-sequential-lifecycle.md`
 
 ## Entry 3
-**Decision**: Treat resume and runtime recovery as part of the product, not just an operational concern.
+**Decision / Inflection**: Treat runtime recovery, checkpointing, and resume as product behavior rather than hidden operations.
 
-**Context**: Long-running reading jobs can stall, restart, or span process boundaries, and a "just rerun it" posture would have made the core reading experience fragile.
+**Period**: March 2026, first with stable runtime work and then with minimal resume recovery.
 
-**Alternatives considered**: Accept frequent reruns and keep recovery semantics largely invisible to the product layer.
+**Problem**: Book-length reading jobs can stall, restart, or cross process boundaries. A "just rerun it" model would have made the experience fragile and hard to trust.
 
-**Why chosen**: For a book-length workflow, trust and continuity are part of the user-facing experience. Recovery had to be visible in system state, not hidden as an ops-only detail.
+**Alternatives considered**: Accept frequent reruns, keep recovery mostly invisible to the product layer, or handle failures manually as operator-only concerns.
 
-**Trade-offs**: Runtime semantics, checkpoint compatibility, and stalled-run handling became part of system complexity and documentation.
+**Why this path won**: For long-running reading, trust depends on visible continuity. Recovery had to show up in public state, user-facing controls, and documented runtime semantics.
 
-**Current-state references**: `docs/runtime-modes.md`, `docs/api-contract.md`, `docs/backend-sequential-lifecycle.md`
+**What changed in the system**: The backend gained explicit checkpoint-aware resume behavior, demo/prod runtime guardrails, paused states, recovery events, and surfaced fields like `resume_available` and `last_checkpoint_at`.
+
+**Why it matters later**: This inflection marks the moment the project stopped behaving like a fragile background script and started behaving like a recoverable product system.
+
+**Primary evidence**:
+- `554fe5a` `Implement Railway health and demo`
+- `d2650be` `Implement minimal resume recovery`
+- `docs/runtime-modes.md`
+- `docs/backend-sequential-lifecycle.md`
+
+## Entry 4
+**Decision / Inflection**: Make the API layer the normalization boundary for public routes, IDs, and taxonomy.
+
+**Period**: Early March 2026 contract hardening.
+
+**Problem**: Internal runtime artifacts, compatibility routes, and legacy taxonomy values did not line up cleanly with the frontend-facing contract.
+
+**Alternatives considered**: Push normalization into the frontend, or require internal artifacts to match the public contract exactly before any response could be emitted.
+
+**Why this path won**: The API layer was the narrowest place to preserve a stable external contract while allowing runtime artifacts and migration steps to evolve more gradually.
+
+**What changed in the system**: OpenAPI snapshots, contract tests, generated frontend types, and API mapping logic were tightened so the public contract became explicit and checkable instead of implicit.
+
+**Why it matters later**: This explains why current handlers and helpers still translate internal ids, routes, and taxonomy values instead of assuming the runtime storage format is already public-ready.
+
+**Primary evidence**:
+- `8ff9b14` `Align API contract documentation`
+- `c3f39c6` `加强 API 合约校验步骤化执行方案`
+- `docs/api-contract.md`
+- `reading-companion-backend/src/api/contract.py`
+
+## Entry 5
+**Decision / Inflection**: Productize Reading Mindstream so "the reader is thinking now" becomes part of the main experience.
+
+**Period**: March 2026.
+
+**Problem**: The project needed to preserve the feeling of an active co-reader instead of flattening the experience into static results and generic summaries.
+
+**Alternatives considered**: Keep progress updates mostly mechanical, leave the live reading trace in low-visibility backend artifacts, or center the UX on finished outputs only.
+
+**Why this path won**: Surfacing the live reading trace made the system feel like an ongoing reading process rather than a delayed report generator. It also reinforced the product promise that the AI is reading with the user, not only after the fact.
+
+**What changed in the system**: Realtime payloads, overview rendering, and runtime language were reshaped around live activity, pulse messages, and the current-reading snapshot.
+
+**Why it matters later**: This is one of the clearest product differentiators. It records why the app now has a visible "mindstream" instead of a purely task-centric progress widget.
+
+**Primary evidence**:
+- `fa5157e` `Implement Reading Mindstream plan`
+- `docs/product-interaction-model.md`
+- `docs/api-integration.md`
+- `reading-companion-backend/src/api/realtime.py`
+
+## Entry 6
+**Decision / Inflection**: Converge frontend routes and the book overview into the canonical control surface.
+
+**Period**: March 2026, especially around the overview unification and chapter drawer work.
+
+**Problem**: The product needed a more coherent route story and fewer split entrypoints between upload, analysis, overview, and chapter consumption.
+
+**Alternatives considered**: Keep multiple parallel overview-like pages, continue relying on compatibility routes, or let upload and analysis live as more isolated screens.
+
+**Why this path won**: Pulling state, controls, and chapter navigation into the book overview made the frontend easier to understand and better aligned with the long-task model.
+
+**What changed in the system**: Canonical routes and overview responsibilities tightened around `/books`, `/books/:id`, and `/books/:id/chapters/:chapterId`, while compatibility routes became secondary.
+
+**Why it matters later**: This explains why the current route model looks intentional rather than accidental, and why the overview page carries so much operational responsibility.
+
+**Primary evidence**:
+- `3657e9e` `统一 Book overview 单页布局`
+- `63ccadf` `Add chapter drawer navigation`
+- `docs/product-interaction-model.md`
+- `reading-companion-frontend/src/app/routes.tsx`
+
+## Entry 7
+**Decision / Inflection**: Stabilize local demo and deployment runtime instead of treating development mode as the only supported way to run.
+
+**Period**: March 2026.
+
+**Problem**: Hot-reload development mode was not a good fit for demos or deployment-like reliability, and the project needed an operator story beyond "run the dev server and hope it stays up."
+
+**Alternatives considered**: Continue using dev mode everywhere, rely on ad hoc manual restarts, or leave deployment/runtime expectations implicit in scripts.
+
+**Why this path won**: Introducing explicit demo/stable runtime modes created a cleaner separation between coding ergonomics and presentation or deployment reliability.
+
+**What changed in the system**: Healthcheck behavior, Railway entrypoints, stable backend launchers, and demo supervision became documented and script-backed parts of the workspace.
+
+**Why it matters later**: This records the point where the project started behaving like a presentable, operable app rather than a dev-only sandbox.
+
+**Primary evidence**:
+- `554fe5a` `Implement Railway health and demo`
+- `docs/runtime-modes.md`
+- `railway.json`
+- `scripts/run-backend-stable.sh`
+
+## Entry 8
+**Decision / Inflection**: Split documentation into stable facts, temporary handoff, archive material, and history instead of keeping mixed-purpose notes.
+
+**Period**: Mid-March 2026.
+
+**Problem**: Rules, current state, research notes, and archival material had started to bleed into one another, which made both agent context and human reading noisier.
+
+**Alternatives considered**: Keep a flatter docs layout, continue using one-off handoff notes as semi-authoritative references, or leave research/evaluation materials mixed into regular reading paths.
+
+**Why this path won**: A layered docs system reduced context pollution and made it clearer which documents define current behavior versus which ones preserve historical or reference-only material.
+
+**What changed in the system**: Workspace docs were reorganized into control, stable facts, temporary working notes, archive/reference material, and now explicit engineering history.
+
+**Why it matters later**: This entry explains why the repo now has separate stable docs and history docs, and why some old notes were intentionally demoted rather than deleted.
+
+**Primary evidence**:
+- `b7adf3d` `Redesign AGENTS documentation plan`
+- `0b01400` `Reorganize docs hierarchy`
+- `231c396` `Remove case study docs`
+- `AGENTS.md`
