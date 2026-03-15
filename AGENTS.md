@@ -44,10 +44,9 @@ Update when: document layering, reading order, task routing, or cross-project co
 - `docs/backend-sequential-lifecycle.md`: sequential deep-reading job lifecycle, entrypoints, and runtime-state semantics
 - `docs/backend-state-aggregation.md`: backend artifact aggregation, public state surfaces, and normalization boundary
 
-### Case Study Layer
-- `docs/case-study/README.md`: maintenance boundary, allowed sources, and retention rules
-- `docs/case-study/decisions.md`: key design decisions and trade-offs that would be hard to reconstruct later
-- `docs/case-study/evidence.md`: hard evidence index for evals, validation, and artifacts worth citing later
+### History Layer
+- `docs/history/README.md`: retention rules for non-authoritative design and evolution history
+- `docs/history/decision-log.md`: key decisions, rejected alternatives, and major design inflection points
 
 ### Temporary Working Layer
 - `docs/agent-handoff.md`: current focus, active risks, migration status, and temporary warnings
@@ -74,8 +73,8 @@ Update when: document layering, reading order, task routing, or cross-project co
 - backend sequential workflow, job lifecycle, resume behavior: `docs/backend-sequential-lifecycle.md`
 - backend artifact aggregation, state surfaces, normalization boundary: `docs/backend-state-aggregation.md`
 
-### Career / Case-Study Tasks
-- portfolio packaging, interview prep, demo storytelling, technical summaries: `docs/case-study/README.md`
+### History Tasks
+- design evolution, rejected alternatives, key decision history: `docs/history/README.md`
 
 ### Temporary Only
 - `docs/agent-handoff.md`: read only when the task needs current focus, open risks, or active migration notes
@@ -96,7 +95,7 @@ Update when: document layering, reading order, task routing, or cross-project co
 - backend sequential workflow, job lifecycle, start/resume semantics -> `docs/backend-sequential-lifecycle.md`
 - backend artifact aggregation, analysis-state sourcing, normalization boundary -> `docs/backend-state-aggregation.md`
 - current focus, temporary risks, active migration notes -> `docs/agent-handoff.md`
-- portfolio packaging, interview prep, demo storytelling, technical summaries -> `docs/case-study/README.md`
+- design evolution, rejected alternatives, key decision history -> `docs/history/README.md`
 
 ## Documentation Maintenance
 - Update required docs in the same task when a change alters product behavior, runtime behavior, integration behavior, or maintenance expectations.
@@ -104,7 +103,7 @@ Update when: document layering, reading order, task routing, or cross-project co
 - Keep `AGENTS.md` files rule-oriented and concise. Move detailed reference material into stable docs.
 - Avoid duplicating detailed guidance across files. Keep one primary source of truth and add short pointers elsewhere when needed.
 - If you intentionally leave docs unchanged, you should have a concrete reason, not just "code is self-explanatory."
-- `docs/case-study/` is not a source-of-truth layer. Its facts must trace back to stable docs, code, tests, evaluation reports, or repeatable command output.
+- `docs/history/` is not a source-of-truth layer. Its entries must trace back to stable docs, code, archived reports, or repeatable evidence.
 
 ### Trigger Matrix
 - `README.md`
@@ -162,15 +161,10 @@ Update when: document layering, reading order, task routing, or cross-project co
   - temporary warnings
   - active risks
   - project context that is useful now but not yet a stable rule
-- `docs/case-study/decisions.md`
-  - high-value architecture or product trade-offs
-  - superseded decisions that matter for interview discussion
-  - non-obvious choices likely to be questioned in interviews
-- `docs/case-study/evidence.md`
-  - evaluation report references
-  - before/after comparisons
-  - tests, validation commands, and quantitative checkpoints worth citing
-  - example outputs and demos worth showing
+- `docs/history/decision-log.md`
+  - major architecture or product decisions
+  - rejected alternatives worth remembering
+  - design reversals and inflection points
 - root `AGENTS.md`
   - document layering
   - load matrix
@@ -186,21 +180,18 @@ Update when: document layering, reading order, task routing, or cross-project co
 - If the same change also shifts workspace ownership boundaries or the recommended reading order for agents, update `docs/workspace-overview.md` and root `AGENTS.md`.
 - If a backend change materially alters the sequential deep-reading job lifecycle, upload/start/resume semantics, or runtime recovery behavior, update `docs/backend-sequential-lifecycle.md` in the same task.
 - If a backend change materially alters which artifacts feed public state surfaces, or where normalization between internal and public shapes happens, update `docs/backend-state-aggregation.md` in the same task.
-- If a major project change alters a high-value trade-off or creates evidence worth citing later, update the affected files under `docs/case-study/` in the same task.
-- If a task adds or replaces quantitative evaluation evidence, update `docs/case-study/evidence.md` instead of relying on memory or chat-only notes.
+- If a major project change creates a decision, reversal, or design inflection point that would be hard to reconstruct later, update `docs/history/decision-log.md` in the same task.
 - If a temporary handoff note repeats across tasks, promote it into the relevant `AGENTS.md` or stable doc.
 - If a new key document becomes part of the standard reading path, add it to the load matrix here before linking it elsewhere.
 
-### Case-Study Maintenance Rules
-- Default engineering tasks do not need to load `docs/case-study/`.
-- Tasks about portfolio packaging, interview prep, demo storytelling, technical summaries, or project highlight extraction must load `docs/case-study/README.md` and maintain the relevant files.
-- Even when a task is not explicitly about job-search materials, update the relevant `docs/case-study/` file if the task makes a major change to:
-  - a decision likely to be explained in interviews
-  - available hard evidence such as evals, validation runs, or output comparisons
-- If `docs/case-study/` is not updated after a major change, you should have a concrete reason, such as:
-  - it is a narrow bugfix
-  - it does not change meaningful trade-offs or later-worthy evidence
-  - it can be regenerated later from stable docs and code without losing context
+### History Maintenance Rules
+- Default engineering tasks do not need to load `docs/history/`.
+- Load `docs/history/README.md` when the task is about design evolution, decision history, or rejected alternatives.
+- Update `docs/history/decision-log.md` only when a major decision, reversal, or design inflection point would otherwise be forgotten.
+- If `docs/history/` is not updated after a major design change, you should have a concrete reason, such as:
+  - the change is fully recoverable later from stable docs and code
+  - it is a narrow bugfix or implementation detail
+  - it does not represent a real change in direction
 
 ## First Files To Read
 - `AGENTS.md`
