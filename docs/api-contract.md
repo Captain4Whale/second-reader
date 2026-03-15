@@ -10,6 +10,8 @@ Use it to align:
 
 This document describes the public product contract. It does not require the backend's internal artifact layout or reader pipeline to use the same names internally.
 
+For the primary user journey, page responsibilities, and core interaction model, use `docs/product-interaction-model.md`.
+
 ## Source Of Truth
 - Canonical public contract: this file
 - Backend schema implementation: `reading-companion-backend/src/api/schemas.py`

@@ -2,24 +2,21 @@
 
 ## Scope
 - This directory contains the Reading Companion web client.
-- The app started as a Figma Make export. Preserve the useful generated structure, but treat the backend API as the source of truth for data.
+- Use `/Users/baiweijiang/Documents/Projects/reading-companion/docs/product-interaction-model.md` for product flow and `/Users/baiweijiang/Documents/Projects/reading-companion/docs/api-contract.md` for the public contract. This file is for frontend-local constraints.
 
 ## Local Rules
 - Keep route definitions centralized in `src/app/routes.tsx`.
 - Keep raw API requests inside `src/app/lib/api.ts`.
 - Do not spread ad-hoc `fetch()` calls across page components.
+- Preserve the useful Figma Make-generated structure unless a clear maintenance problem justifies cleanup.
 - Prefer preserving the existing visual language unless a task explicitly asks for redesign.
 - Keep compatibility routes if backend-returned paths or older links still rely on them.
 
-## Current Priorities
-- reliable local integration with the backend
-- stable route mapping
-- upload, analysis, result, and mark flows backed by real API data
-
-## Avoid By Default
-- reintroducing mock data as the primary source of truth
-- large component framework rewrites
-- changing backend contract names on the frontend side without checking the backend
+## Integration Constraints
+- Do not reintroduce mock data as the primary source of truth.
+- Do not change backend contract names on the frontend side without checking the backend.
+- Keep route normalization aligned with the canonical frontend routes returned by the backend.
+- Avoid large component framework rewrites unless the task explicitly calls for one.
 
 ## Language Governance
 - Follow `/Users/baiweijiang/Documents/Projects/reading-companion/docs/language-governance.md`.

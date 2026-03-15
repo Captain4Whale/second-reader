@@ -9,7 +9,7 @@ The project is maintained as one product with two sub-applications:
 ## Structure
 - `reading-companion-backend/`: backend code, runtime artifacts, tests, `.env`
 - `reading-companion-frontend/`: frontend code, Vite app, `.env.example`
-- `docs/`: workspace-level docs for integration and handoff
+- `docs/`: workspace-level docs for product flow, integration, runtime, and handoff
 - `scripts/`: root task wrappers used by the `Makefile`
 - `.codex/`: local notes for future Codex threads
 
@@ -65,6 +65,7 @@ Important frontend variables:
 
 ## Key Docs
 - [Workspace overview](docs/workspace-overview.md)
+- [Product interaction model](docs/product-interaction-model.md)
 - [API contract](docs/api-contract.md)
 - [API integration](docs/api-integration.md)
 - [Agent handoff](docs/agent-handoff.md)

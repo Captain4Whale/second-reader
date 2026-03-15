@@ -2,8 +2,16 @@
 
 ## What This Root Is For
 - one place to understand the full product
+- one place to understand the primary product interaction model
 - one place to run local setup and dev commands
 - one place to document front/back integration rules
+
+## Key Workspace Docs
+- Product interaction model: `docs/product-interaction-model.md`
+- Public web/API contract: `docs/api-contract.md`
+- Runtime integration notes: `docs/api-integration.md`
+- Runtime launcher and deploy behavior: `docs/runtime-modes.md`
+- Current focus, migration notes, and active risks: `docs/agent-handoff.md`
 
 ## Subprojects
 
@@ -44,6 +52,8 @@
 - Runtime launcher intent is documented in `docs/runtime-modes.md`; do not infer it only from shell script names.
 
 ## Primary Integration Files
+- Product flow:
+  - `docs/product-interaction-model.md`
 - Contract:
   - `docs/api-contract.md`
 - Backend:

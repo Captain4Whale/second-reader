@@ -4,9 +4,29 @@
 1. Root `AGENTS.md`
 2. Root `README.md`
 3. `docs/workspace-overview.md`
-4. `docs/api-contract.md`
-5. `docs/api-integration.md`
-6. `docs/runtime-modes.md` when the task touches startup, demo reliability, healthchecks, or deploy behavior
+4. `docs/product-interaction-model.md`
+5. `docs/api-contract.md`
+6. `docs/api-integration.md`
+7. `docs/runtime-modes.md` when the task touches startup, demo reliability, healthchecks, or deploy behavior
+
+## Current Product Focus
+- `sequential` deep-reading mode is the primary product path and default optimization target.
+- Primary user value: help readers discover viewpoints, tensions, and blind spots they did not notice while reading nonfiction.
+- The output should feel like a thoughtful co-reader, not a summary generator.
+- `book_analysis` exists, but it should not drive default product or architecture decisions.
+
+## Current Delivery Focus
+- better segment-level reading reactions
+- better prompt quality and context packing
+- stronger chapter-level coherence
+- search supplementation that adds genuine curiosity instead of noise
+- reliability features such as checkpoint, resume, and budget control
+
+## Avoid By Default
+- expanding `book_analysis` as the default product path
+- designing new high-level modes without a clear request
+- broadening into a generic "book summary" product
+- large UI rewrites that are not required for the active backend-integrated flows
 
 ## If You Are Changing Backend API
 - update backend schemas and handlers first
@@ -43,7 +63,7 @@
 - reaction type mapping drift
 - upload flow and live progress integration
 
-## Remaining Migration Notes
+## Current Migration Notes
 - Landing is frontend-only now. Do not reintroduce backend-owned landing/sample endpoints unless the contract doc is updated first.
 - Landing live preview can now pin real reactions by public ID. Configure `reading-companion-frontend/src/app/content/landing-content.ts` with `LANDING_PREVIEW_CONFIG.api.bookId`, `chapterId`, and optional `selectedReactionIds`.
 - To discover candidate preview IDs for one chapter, run `make preview-reactions BOOK_ID=<bookId> CHAPTER_ID=<chapterId>` while the backend API is running.

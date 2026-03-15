@@ -25,25 +25,79 @@
 - Do not remove the frontend repo’s Figma Make history or generated structure unless the change has a clear maintenance benefit.
 
 ## Documentation Maintenance
-- When a change alters how the product behaves, runs, or is maintained, update the relevant docs in the same task.
-- Do not treat docs as optional follow-up work when the implementation changes any of the following:
-  - runtime/startup/deploy workflows
-  - frontend/backend API contract or integration behavior
-  - language governance or controlled product copy
-  - product interaction models or major UX conventions
-- Minimum doc destinations:
-  - `README.md` for operator-facing commands and quick-start behavior
-  - `docs/api-contract.md` for public contract changes
-  - `docs/api-integration.md` for runtime integration changes
-  - `docs/language-governance.md` for visible-text governance changes
-  - `docs/runtime-modes.md` for launcher, healthcheck, demo, and deploy mode changes
-  - `docs/workspace-overview.md` or `docs/agent-handoff.md` when the cross-project working model changes
+- Update required docs in the same task when a change alters product behavior, runtime behavior, integration behavior, or maintenance expectations.
+- Trigger conditions are additive. One change may require updates in more than one document.
+- Keep `AGENTS.md` files rule-oriented and concise. Move detailed reference material into `docs/`.
+- Avoid duplicating detailed guidance across files. Keep one primary source of truth and add short pointers elsewhere when needed.
 - If you intentionally leave docs unchanged, you should have a concrete reason, not just “code is self-explanatory.”
+
+### Trigger Matrix
+- `README.md`
+  - install/setup commands
+  - startup commands
+  - environment variables
+  - default local URLs
+  - quick-start or operator-facing run behavior
+- `docs/workspace-overview.md`
+  - workspace structure
+  - backend/frontend ownership boundaries
+  - shared entrypoints
+  - cross-project collaboration model
+- `docs/product-interaction-model.md`
+  - product interaction model
+  - primary user journey or page responsibilities
+  - canonical product flow such as landing -> upload -> analysis -> book -> chapter -> marks
+  - core UX conventions
+  - when a temporary or compatibility flow becomes the primary product path, or the reverse
+- `docs/api-contract.md`
+  - public API fields
+  - public enums
+  - canonical routes
+  - identifier conventions
+  - stable response/request schemas
+- `docs/api-integration.md`
+  - active frontend-used endpoint surface
+  - polling or WebSocket coordination
+  - runtime data flow between frontend and backend
+  - long-task integration assumptions
+- `docs/runtime-modes.md`
+  - launcher behavior
+  - reload/supervision behavior
+  - healthcheck behavior
+  - deployment entrypoints
+  - recovery or resume runtime rules
+- `docs/language-governance.md`
+  - visible-text governance
+  - terminology ownership
+  - locale rules
+  - controlled copy sourcing
+- `docs/agent-handoff.md`
+  - current focus
+  - migration status
+  - temporary warnings
+  - active risks
+  - project context that is useful now but not yet a stable rule
+- root `AGENTS.md`
+  - document map
+  - this trigger matrix
+  - cross-project collaboration rules
+  - reading order for new agent tasks
+- child `AGENTS.md`
+  - subproject-local and long-lived engineering constraints
+  - implementation boundaries
+  - recurring pitfalls that should become stable rules
+
+### Cross-Doc Rules
+- If the product interaction flow changes and that also changes routes or public payloads, update `docs/product-interaction-model.md`, `docs/api-contract.md`, and `docs/api-integration.md` in the same task.
+- If the same change also shifts workspace ownership boundaries or the recommended reading order for agents, update `docs/workspace-overview.md` and root `AGENTS.md`.
+- If a temporary handoff note repeats across tasks, promote it into the relevant `AGENTS.md` as a stable rule.
+- If a new key document becomes part of the standard reading path, add it to `README.md` and the "First Files To Read" section here.
 
 ## First Files To Read
 - Root:
   - `README.md`
   - `docs/workspace-overview.md`
+  - `docs/product-interaction-model.md`
   - `docs/api-contract.md`
   - `docs/api-integration.md`
   - `docs/agent-handoff.md`

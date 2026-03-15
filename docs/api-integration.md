@@ -3,6 +3,7 @@
 This file is the operational companion to [API Contract](api-contract.md).
 
 Use `docs/api-contract.md` for canonical fields, routes, enums, and identifier rules.
+Use `docs/product-interaction-model.md` for the primary user journey and page responsibilities.
 Use this file for local runtime notes and the currently connected endpoint surface.
 
 ## Local Base URLs
