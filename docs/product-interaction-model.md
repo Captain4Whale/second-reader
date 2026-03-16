@@ -38,6 +38,7 @@ Update when: the primary product path, page responsibilities, or interaction mod
   - provide chapter access and book-scoped marks context
   - preserve a consistent book-level identity across reading states, with a shared header and shared book navigation
   - shift the main stage between live reading activity while a book is in progress and structure/result entry once the book is completed
+  - keep chapter-level structure and chapter-internal semantic sections clearly distinguished in visible naming
 
 ### 5. Chapter Deep Read
 - Canonical route: `/books/:id/chapters/:chapterId`

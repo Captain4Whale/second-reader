@@ -361,7 +361,6 @@ function BookOverviewHeader({
   coverImageUrl,
   bookLanguage,
   outputLanguage,
-  chapterCount,
   markCount,
   children,
 }: {
@@ -370,7 +369,6 @@ function BookOverviewHeader({
   coverImageUrl?: string | null;
   bookLanguage: string;
   outputLanguage: string;
-  chapterCount: number;
   markCount: number;
   children?: ReactNode;
 }) {
@@ -405,10 +403,6 @@ function BookOverviewHeader({
           <span className="inline-flex items-center gap-1.5">
             <Globe2 className="w-4 h-4" />
             {bookLanguage} → {outputLanguage}
-          </span>
-          <span className="inline-flex items-center gap-1.5">
-            <Sparkles className="w-4 h-4" />
-            {chapterCount} chapters
           </span>
           <span className="inline-flex items-center gap-1.5">
             <Bookmark className="w-4 h-4" />
@@ -781,9 +775,6 @@ function ProcessingStructureNavigator({
             </p>
           </div>
         </div>
-        <span className="text-[var(--warm-500)] whitespace-nowrap" style={{ fontSize: "0.75rem", fontWeight: 600 }}>
-          {chapters.length} chapters
-        </span>
       </div>
       {content}
     </section>
@@ -1464,7 +1455,6 @@ function RuntimeStatusStrip({
     stageLabel && !isRedundantStatusLine(runtimeState.label, stageLabel)
       ? stageLabel
       : null;
-  const chapterProgress = `${analysis?.completed_chapters ?? detail.completed_chapter_count}/${analysis?.total_chapters ?? detail.chapter_count}`;
   const checkpointLabel = formatTimestamp(analysis?.last_checkpoint_at);
 
   return (
@@ -1495,10 +1485,6 @@ function RuntimeStatusStrip({
           <span className="inline-flex items-center gap-1.5">
             <Clock3 className="w-4 h-4" />
             {formatEta(analysis?.eta_seconds)}
-          </span>
-          <span className="inline-flex items-center gap-1.5">
-            <BookOpen className="w-4 h-4" />
-            {copy("overview.metric.chapterProgress", { value: chapterProgress })}
           </span>
           {loading ? (
             <span className="inline-flex items-center gap-1.5">
@@ -1933,7 +1919,6 @@ export function BookOverviewPage() {
         coverImageUrl={detail.cover_image_url}
         bookLanguage={detail.book_language}
         outputLanguage={detail.output_language}
-        chapterCount={detail.chapter_count}
         markCount={detail.my_mark_count}
       >
         <div className="flex flex-wrap items-center gap-3">

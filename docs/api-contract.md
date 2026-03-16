@@ -121,6 +121,11 @@ The backend is responsible for providing these book-overview fields:
 
 `reaction_counts` must be keyed by the five canonical reaction types only.
 
+Naming guidance:
+- `chapter_count` and `completed_chapter_count` are chapter-level counts.
+- `segment_count` is a compatibility field for semantic section totals; user-facing UI should render this concept as `sections`, not `segments`.
+- Existing public fields such as `segment_ref` remain valid compatibility names in the API even when the UI translates them to `section` language.
+
 ### Frontend-Derived Metrics
 The frontend may derive factual display summaries from backend counts when needed, such as:
 

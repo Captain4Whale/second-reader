@@ -471,13 +471,6 @@ export const CONTROLLED_COPY = {
     toneNote: "Short and factual.",
     usageScope: "Completed book overview state and summary rail.",
   },
-  "overview.metric.chapterProgress": {
-    en: "{value} chapters",
-    zh: "{value} 章",
-    intent: "Compact metric value for chapter progress in the reading status band.",
-    toneNote: "Short and factual.",
-    usageScope: "Book overview runtime state band.",
-  },
   "overview.metric.etaUnavailable": {
     en: "ETA unavailable",
     zh: "暂时无法估计剩余时间",

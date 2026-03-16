@@ -92,6 +92,14 @@ Update when: visible-text policy, terminology ownership, locale rules, or govern
 - Backend should not own UI localization except for content text itself.
 - For system-state UI, prefer structured `message_key`/`message_params` style fields and keep raw `message` as compatibility fallback.
 
+## Structure Naming
+- User-visible structure terms must preserve this hierarchy:
+  - `chapter` / `chapters` = the book's chapter-level structure
+  - `section` / `sections` = semantic reading units inside a chapter
+- Do not use `segment` / `segments` in primary UI copy.
+- If backend or runtime payloads still expose `segment_*` fields, translate them to `section` / `sections` at the display layer.
+- Do not relabel aggregate structure-node counts as `chapters` unless they truly match the source book's chapter count.
+
 ## Mindstream Language Split
 - `Reading mindstream` uses three distinct language layers that must not be mixed:
   - **Live process language**
