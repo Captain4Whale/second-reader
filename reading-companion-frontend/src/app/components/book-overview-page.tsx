@@ -84,7 +84,7 @@ function formatCompactTimestamp(value?: string | null) {
     : { year: "numeric", month: "numeric", day: "numeric", hour: "numeric", minute: "2-digit" });
 }
 
-function formatEta(seconds?: number | null) {
+function formatEtaCompact(seconds?: number | null) {
   if (seconds == null) {
     return copy("overview.metric.etaUnavailable");
   }
@@ -92,17 +92,12 @@ function formatEta(seconds?: number | null) {
     return copy("overview.metric.etaSecondsRemaining", { seconds });
   }
   const minutes = Math.floor(seconds / 60);
-  const remainingSeconds = seconds % 60;
   if (minutes < 60) {
-    return remainingSeconds > 0
-      ? copy("overview.metric.etaMinutesSecondsRemaining", { minutes, seconds: remainingSeconds })
-      : copy("overview.metric.etaMinutesRemaining", { minutes });
+    return `${minutes}m`;
   }
   const hours = Math.floor(minutes / 60);
   const remainingMinutes = minutes % 60;
-  return remainingMinutes > 0
-    ? copy("overview.metric.etaHoursMinutesRemaining", { hours, minutes: remainingMinutes })
-    : copy("overview.metric.etaHoursRemaining", { hours });
+  return remainingMinutes > 0 ? `${hours}h ${remainingMinutes}m` : `${hours}h`;
 }
 
 function totalBookReactionCount(detail: BookDetailResponse) {
@@ -1458,11 +1453,30 @@ function MindstreamHeroMetrics({
   const runtimeState = describeRuntimeState(detail, analysis, { isParsing: parsing });
   const checkpointLabel = formatCompactTimestamp(analysis?.last_checkpoint_at) ?? copy("overview.runtime.pending");
 
+  function MetricPill({
+    label,
+    value,
+  }: {
+    label: string;
+    value: ReactNode;
+  }) {
+    return (
+      <div className="min-w-[8.25rem] rounded-xl border border-[var(--warm-300)]/20 bg-[var(--warm-50)] px-3.5 py-2.5">
+        <p className="mb-1 text-[var(--warm-500)]" style={{ fontSize: "0.6875rem" }}>
+          {label}
+        </p>
+        <p className="text-[var(--warm-900)]" style={{ fontSize: "0.9375rem", fontWeight: 600, lineHeight: 1.45 }}>
+          {value}
+        </p>
+      </div>
+    );
+  }
+
   return (
-    <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 lg:w-[30rem]">
-      <StatusMetric label={copy("overview.metric.runtimeState")} value={runtimeState.label} />
-      <StatusMetric label={copy("overview.metric.eta")} value={formatEta(analysis?.eta_seconds)} />
-      <StatusMetric label={copy("overview.metric.resumePoint")} value={checkpointLabel} />
+    <div className="flex flex-wrap gap-2 lg:max-w-[26rem] lg:justify-end">
+      <MetricPill label={copy("overview.metric.runtimeState")} value={runtimeState.label} />
+      <MetricPill label={copy("overview.metric.eta")} value={formatEtaCompact(analysis?.eta_seconds)} />
+      <MetricPill label={copy("overview.metric.resumePoint")} value={checkpointLabel} />
     </div>
   );
 }
@@ -1734,8 +1748,8 @@ function MindstreamHistoryDisclosure({
         <button
           type="button"
           onClick={() => setExpanded((value) => !value)}
-          className="inline-flex items-center gap-2 rounded-xl border border-[var(--warm-300)]/45 px-3.5 py-2 text-[var(--warm-700)] transition-colors hover:bg-[var(--warm-100)] cursor-pointer"
-          style={{ fontSize: "0.8125rem", fontWeight: 500 }}
+          className="inline-flex items-center gap-2 text-[var(--amber-accent)] transition-colors hover:text-[var(--warm-700)] cursor-pointer"
+          style={{ fontSize: "0.8125rem", fontWeight: 600 }}
         >
           {expanded ? copy("overview.mindstream.hideRecentTrail") : copy("overview.mindstream.showRecentTrail")}
         </button>
@@ -1830,18 +1844,12 @@ function MindstreamHeroCard({
 
   return (
     <section className="mb-8 rounded-3xl border border-[var(--warm-300)]/30 bg-white p-6 shadow-sm">
-      <div className="mb-5 flex items-center gap-2">
-        <Activity className="w-4 h-4 text-[var(--amber-accent)]" />
-        <h2 className="text-[var(--warm-900)]" style={{ fontSize: "1rem", fontWeight: 600 }}>
-          {copy("overview.mindstream.title")}
-        </h2>
-      </div>
+      <p className="mb-3 text-[var(--amber-accent)] uppercase tracking-[0.18em]" style={{ fontSize: "0.6875rem", fontWeight: 600 }}>
+        {copy("overview.mindstream.title")}
+      </p>
 
       <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
         <div className="max-w-2xl">
-          <p className="mb-3 text-[var(--amber-accent)] uppercase tracking-[0.18em]" style={{ fontSize: "0.6875rem", fontWeight: 600 }}>
-            {copy("overview.mindstream.liveNow")}
-          </p>
           {currentActivity ? (
             <CurrentMindstreamActivityLine activity={currentActivity} prefersReducedMotion={prefersReducedMotion} emphasis="hero" />
           ) : (

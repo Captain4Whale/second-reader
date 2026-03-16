@@ -479,8 +479,8 @@ export const CONTROLLED_COPY = {
     usageScope: "Book overview hero metrics.",
   },
   "overview.metric.resumePoint": {
-    en: "Latest resume point",
-    zh: "最近续读位置",
+    en: "Resume point",
+    zh: "续读位置",
     intent: "Hero metric label for the latest resumable checkpoint.",
     toneNote: "Short and factual.",
     usageScope: "Book overview hero metrics.",
@@ -577,8 +577,8 @@ export const CONTROLLED_COPY = {
     usageScope: "Book overview runtime state band.",
   },
   "overview.metric.runtimeState": {
-    en: "Current runtime state",
-    zh: "当前运行状态",
+    en: "Status",
+    zh: "当前状态",
     intent: "Runtime metric label for the top-level reading state.",
     toneNote: "Short and factual.",
     usageScope: "Book overview runtime state band.",
