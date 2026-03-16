@@ -246,6 +246,25 @@ function describeRuntimeState(
   };
 }
 
+function isRedundantStatusLine(primary: string, secondary: string) {
+  const normalize = (value: string) =>
+    value
+      .trim()
+      .toLowerCase()
+      .replace(/[.,:;!?]/g, "")
+      .replace(/\s+/g, " ");
+
+  const normalizedPrimary = normalize(primary);
+  const normalizedSecondary = normalize(secondary);
+  if (!normalizedPrimary || !normalizedSecondary) {
+    return false;
+  }
+  return (
+    normalizedPrimary === normalizedSecondary ||
+    normalizedSecondary.startsWith(normalizedPrimary)
+  );
+}
+
 function structureStatusLabel(
   chapter: OverviewChapter,
   viewMode: StructureViewMode,
@@ -489,6 +508,10 @@ function BookOverviewStatusBand({
     );
   }
 
+  if (detail.status === "analyzing" || detail.status === "paused") {
+    return null;
+  }
+
   if (detail.status === "error") {
     return (
       <section className="bg-white rounded-3xl border border-[var(--destructive)]/20 p-6 shadow-sm mb-8">
@@ -504,99 +527,7 @@ function BookOverviewStatusBand({
       </section>
     );
   }
-
-  const progressPercent =
-    analysis?.progress_percent ??
-    (detail.chapter_count > 0 ? Math.round((detail.completed_chapter_count / detail.chapter_count) * 10000) / 100 : 0);
-  const parsing = isAnalysisParsing(analysis);
-  const stepLabel = resolveCurrentStep(analysis);
-  const currentFocus = parsing
-    ? stepLabel
-    : analysis?.current_state_panel.current_section_ref ?? stepLabel;
-  const currentChapter = analysis?.current_state_panel.current_chapter_ref ?? copy("overview.runtime.waitingForStructure");
-  const runtimeState = describeRuntimeState(detail, analysis, { isParsing: parsing });
-  const checkpointLabel = formatTimestamp(analysis?.last_checkpoint_at);
-  const chapterProgress = `${analysis?.completed_chapters ?? detail.completed_chapter_count}/${analysis?.total_chapters ?? detail.chapter_count}`;
-
-  return (
-    <section className="mb-6 rounded-3xl border border-[var(--warm-300)]/30 bg-white p-5 shadow-sm md:mb-8 md:p-5.5">
-      <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
-        <div className="min-w-0 flex-1">
-          <p className="mb-2 text-[var(--amber-accent)] uppercase tracking-[0.18em]" style={{ fontSize: "0.6875rem", fontWeight: 600 }}>
-            {copy("overview.section.runConsole")}
-          </p>
-          <h2 className={`${runtimeState.toneClassName} mb-2`} style={{ fontSize: "1.05rem", fontWeight: 600, lineHeight: 1.2 }}>
-            {runtimeState.label}
-          </h2>
-          <p className="max-w-xl text-[var(--warm-600)]" style={{ fontSize: "0.875rem", lineHeight: 1.6 }}>
-            {runtimeState.detail}
-          </p>
-
-          <div className="mt-3 flex items-center gap-x-4 gap-y-2 flex-wrap text-[var(--warm-600)]" style={{ fontSize: "0.8125rem" }}>
-            <span className="inline-flex items-center gap-1.5">
-              <LoaderCircle
-                className={`w-4 h-4 ${detail.status === "paused" ? "" : "animate-spin text-[var(--amber-accent)]"}`}
-              />
-              {resolveStageLabel(detail, analysis)}
-            </span>
-            <span className="inline-flex items-center gap-1.5">
-              <Clock3 className="w-4 h-4" />
-              {formatEta(analysis?.eta_seconds)}
-            </span>
-            <span className="inline-flex items-center gap-1.5">
-              <BookOpen className="w-4 h-4" />
-              {copy("overview.metric.chapterProgress", { value: chapterProgress })}
-            </span>
-          </div>
-        </div>
-
-        <div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-2 xl:w-[36rem] xl:max-w-[36rem]">
-          <StatusMetric
-            label={copy("overview.metric.currentChapter")}
-            compact
-            value={<span className="block line-clamp-2 text-[0.9375rem] leading-[1.45]">{currentChapter}</span>}
-          />
-          <StatusMetric
-            label={parsing ? copy("overview.metric.currentStep") : copy("overview.metric.currentFocus")}
-            compact
-            value={<span className="block line-clamp-2 text-[0.9375rem] leading-[1.45]">{currentFocus}</span>}
-          />
-        </div>
-      </div>
-
-      <div className="mt-4 h-1.5 bg-[var(--warm-200)] rounded-full overflow-hidden">
-        <div className="h-full bg-[var(--amber-accent)]" style={{ width: `${progressPercent}%` }} />
-      </div>
-
-      <div className="mt-3 flex items-center gap-3 flex-wrap">
-        {checkpointLabel ? (
-          <span className="text-[var(--warm-500)]" style={{ fontSize: "0.8125rem" }}>
-            {copy("overview.runtime.lastCheckpoint", { value: checkpointLabel })}
-          </span>
-        ) : null}
-        {analysisLoading && !analysis ? (
-          <span className="text-[var(--warm-500)]" style={{ fontSize: "0.8125rem" }}>
-            {copy("overview.runtime.syncing")}
-          </span>
-        ) : null}
-        {analysisError ? (
-          <>
-            <span className="text-[var(--destructive)]" style={{ fontSize: "0.8125rem" }}>
-              {getErrorMessage(analysisError)}
-            </span>
-            <button
-              type="button"
-              onClick={onRetryAnalysis}
-              className="text-[var(--amber-accent)] hover:text-[var(--warm-700)] cursor-pointer"
-              style={{ fontSize: "0.8125rem", fontWeight: 500 }}
-            >
-              {copy("overview.runtime.retry")}
-            </button>
-          </>
-        ) : null}
-      </div>
-    </section>
-  );
+  return null;
 }
 
 function StructureChapterList({
@@ -1515,6 +1446,87 @@ function CurrentMindstreamActivityLine({
   );
 }
 
+function RuntimeStatusStrip({
+  detail,
+  analysis,
+  loading,
+  error,
+}: {
+  detail: BookDetailResponse;
+  analysis: AnalysisStateResponse | null;
+  loading: boolean;
+  error: unknown | null;
+}) {
+  const parsing = isAnalysisParsing(analysis);
+  const runtimeState = describeRuntimeState(detail, analysis, { isParsing: parsing });
+  const stageLabel = resolveStageLabel(detail, analysis).trim();
+  const secondaryLine =
+    stageLabel && !isRedundantStatusLine(runtimeState.label, stageLabel)
+      ? stageLabel
+      : null;
+  const chapterProgress = `${analysis?.completed_chapters ?? detail.completed_chapter_count}/${analysis?.total_chapters ?? detail.chapter_count}`;
+  const checkpointLabel = formatTimestamp(analysis?.last_checkpoint_at);
+
+  return (
+    <div className="rounded-2xl border border-[var(--warm-300)]/25 bg-[var(--warm-50)] px-4 py-3">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
+          <p className="text-[var(--amber-accent)] uppercase tracking-[0.18em]" style={{ fontSize: "0.625rem", fontWeight: 600 }}>
+            {copy("overview.section.runConsole")}
+          </p>
+          <div className="mt-1.5 flex items-center gap-2 flex-wrap">
+            <span className={runtimeState.toneClassName} style={{ fontSize: "0.9375rem", fontWeight: 600, lineHeight: 1.35 }}>
+              {runtimeState.label}
+            </span>
+            {secondaryLine ? (
+              <>
+                <span className="text-[var(--warm-400)]" aria-hidden="true">
+                  •
+                </span>
+                <span className="text-[var(--warm-600)]" style={{ fontSize: "0.8125rem", fontWeight: 500, lineHeight: 1.5 }}>
+                  {secondaryLine}
+                </span>
+              </>
+            ) : null}
+          </div>
+        </div>
+
+        <div className="flex items-center gap-x-4 gap-y-2 flex-wrap text-[var(--warm-600)]" style={{ fontSize: "0.8125rem" }}>
+          <span className="inline-flex items-center gap-1.5">
+            <Clock3 className="w-4 h-4" />
+            {formatEta(analysis?.eta_seconds)}
+          </span>
+          <span className="inline-flex items-center gap-1.5">
+            <BookOpen className="w-4 h-4" />
+            {copy("overview.metric.chapterProgress", { value: chapterProgress })}
+          </span>
+          {loading ? (
+            <span className="inline-flex items-center gap-1.5">
+              <LoaderCircle className="w-4 h-4 animate-spin text-[var(--amber-accent)]" />
+              {copy("overview.runtime.syncing")}
+            </span>
+          ) : null}
+        </div>
+      </div>
+
+      {(checkpointLabel || error) ? (
+        <div className="mt-2 flex items-center gap-3 flex-wrap">
+          {checkpointLabel ? (
+            <span className="text-[var(--warm-500)]" style={{ fontSize: "0.75rem" }}>
+              {copy("overview.runtime.lastCheckpoint", { value: checkpointLabel })}
+            </span>
+          ) : null}
+          {error ? (
+            <span className="text-[var(--destructive)]" style={{ fontSize: "0.75rem" }}>
+              {getErrorMessage(error)}
+            </span>
+          ) : null}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 function MindstreamEventCard({
   moment,
   isCompact,
@@ -1717,6 +1729,7 @@ function MindstreamEventCard({
 }
 
 function RuntimeFeedPanel({
+  detail,
   analysis,
   activity,
   isCompact,
@@ -1725,6 +1738,7 @@ function RuntimeFeedPanel({
   error,
   onRetry,
 }: {
+  detail: BookDetailResponse;
   analysis: AnalysisStateResponse | null;
   activity: ActivityEvent[];
   isCompact: boolean;
@@ -1782,17 +1796,16 @@ function RuntimeFeedPanel({
   return (
     <section className="bg-white rounded-3xl border border-[var(--warm-300)]/30 p-5 shadow-sm md:p-6">
       <div>
-        <div>
-          <div className="flex items-center gap-2 mb-2">
-            <Activity className="w-4 h-4 text-[var(--amber-accent)]" />
-            <h2 className="text-[var(--warm-900)]" style={{ fontSize: "1rem", fontWeight: 600 }}>
-              {copy("overview.mindstream.title")}
-            </h2>
-          </div>
+        <div className="flex items-center gap-2 mb-2">
+          <Activity className="w-4 h-4 text-[var(--amber-accent)]" />
+          <h2 className="text-[var(--warm-900)]" style={{ fontSize: "1rem", fontWeight: 600 }}>
+            {copy("overview.mindstream.title")}
+          </h2>
         </div>
+        <RuntimeStatusStrip detail={detail} analysis={analysis} loading={loading} error={error} />
       </div>
 
-      <div className="mt-5">
+      <div className="mt-4">
         {currentActivity ? (
           <CurrentMindstreamActivityLine activity={currentActivity} prefersReducedMotion={prefersReducedMotion} />
         ) : null}
@@ -2031,6 +2044,7 @@ export function BookOverviewPage() {
             />
 
             <RuntimeFeedPanel
+              detail={detail}
               analysis={analysisResource.analysis}
               activity={analysisResource.activity}
               isCompact={tier === "mobile" || tier === "narrow" || tier === "compact"}
