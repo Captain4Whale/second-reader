@@ -58,6 +58,26 @@ type RuntimeStateSummary = {
 
 type MessageParams = Record<string, string | number | null | undefined>;
 
+const OVERVIEW_SECTION_EYEBROW_STYLE = {
+  fontSize: "0.6875rem",
+  fontWeight: 600,
+} satisfies CSSProperties;
+
+const OVERVIEW_CARD_TITLE_STYLE = {
+  fontFamily: "Lora, Georgia, serif",
+  fontSize: "1.25rem",
+  fontWeight: 600,
+  lineHeight: 1.5,
+} satisfies CSSProperties;
+
+const OVERVIEW_CARD_BODY_STYLE = {
+  fontSize: "0.9375rem",
+  lineHeight: 1.7,
+} satisfies CSSProperties;
+
+const OVERVIEW_CARD_META_FONT_SIZE = "0.9375rem";
+const OVERVIEW_CARD_META_LINE_HEIGHT = 1.35;
+
 function formatTimestamp(value?: string | null) {
   if (!value) {
     return null;
@@ -406,13 +426,13 @@ function BookOverviewStatusBand({
       <section className="bg-white rounded-3xl border border-[var(--warm-300)]/30 p-6 shadow-sm mb-8">
         <div className="flex items-start justify-between gap-6 flex-col md:flex-row">
           <div>
-            <p className="text-[var(--amber-accent)] uppercase tracking-[0.18em] mb-2" style={{ fontSize: "0.6875rem", fontWeight: 600 }}>
+            <p className="text-[var(--amber-accent)] uppercase tracking-[0.18em] mb-2" style={OVERVIEW_SECTION_EYEBROW_STYLE}>
               {copy("overview.section.readyToStart")}
             </p>
-            <h2 className="text-[var(--warm-900)] mb-2" style={{ fontSize: "1.25rem", fontWeight: 600 }}>
+            <h2 className="text-[var(--warm-900)] mb-2" style={OVERVIEW_CARD_TITLE_STYLE}>
               {detail.chapter_count > 0 ? copy("overview.ready.title.ready") : copy("overview.ready.title.preparing")}
             </h2>
-            <p className="text-[var(--warm-600)]" style={{ fontSize: "0.9375rem", lineHeight: 1.7 }}>
+            <p className="text-[var(--warm-600)]" style={OVERVIEW_CARD_BODY_STYLE}>
               {copy("overview.ready.description")}
             </p>
           </div>
@@ -428,15 +448,15 @@ function BookOverviewStatusBand({
     const surfacedReactions = totalBookReactionCount(detail);
     return (
       <section className="mb-8 rounded-3xl border border-[var(--warm-300)]/30 bg-white p-6 shadow-sm">
-        <p className="mb-3 text-[var(--amber-accent)] uppercase tracking-[0.18em]" style={{ fontSize: "0.6875rem", fontWeight: 600 }}>
+        <p className="mb-3 text-[var(--amber-accent)] uppercase tracking-[0.18em]" style={OVERVIEW_SECTION_EYEBROW_STYLE}>
           {copy("overview.section.completed")}
         </p>
         <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-2xl">
-            <h2 className="mb-2 text-[var(--warm-900)]" style={{ fontSize: "1.25rem", fontWeight: 600 }}>
+            <h2 className="mb-2 text-[var(--warm-900)]" style={OVERVIEW_CARD_TITLE_STYLE}>
               {copy("overview.completed.title")}
             </h2>
-            <p className="text-[var(--warm-600)]" style={{ fontSize: "0.9375rem", lineHeight: 1.7 }}>
+            <p className="text-[var(--warm-600)]" style={OVERVIEW_CARD_BODY_STYLE}>
               {copy("overview.completed.description")}
             </p>
           </div>
@@ -1432,31 +1452,43 @@ function MindstreamHeroBreadcrumb({
       <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1.5 md:justify-end">
         <MapPin className="h-[1rem] w-[1rem] shrink-0 text-[var(--warm-300)]" strokeWidth={2.1} />
         {locus.chapterRef ? (
-          <span className="text-[var(--warm-700)]" style={{ fontSize: "clamp(0.95rem, 1.05vw, 1rem)", fontWeight: 600 }}>
+          <span
+            className="text-[var(--warm-700)]"
+            style={{ fontSize: OVERVIEW_CARD_META_FONT_SIZE, fontWeight: 600, lineHeight: OVERVIEW_CARD_META_LINE_HEIGHT }}
+          >
             {locus.chapterRef}
           </span>
         ) : null}
         {sectionToken ? (
           <>
-            <span className="text-[var(--warm-300)]" style={{ fontSize: "clamp(0.875rem, 0.95vw, 0.9375rem)", fontWeight: 500 }}>
+            <span
+              className="text-[var(--warm-300)]"
+              style={{ fontSize: OVERVIEW_CARD_META_FONT_SIZE, fontWeight: 500, lineHeight: OVERVIEW_CARD_META_LINE_HEIGHT }}
+            >
               ›
             </span>
-            <span className="text-[var(--warm-400)]" style={{ fontSize: "clamp(0.875rem, 0.95vw, 0.9375rem)", fontWeight: 500 }}>
+            <span
+              className="text-[var(--warm-400)]"
+              style={{ fontSize: OVERVIEW_CARD_META_FONT_SIZE, fontWeight: 500, lineHeight: OVERVIEW_CARD_META_LINE_HEIGHT }}
+            >
               {sectionToken}
             </span>
           </>
         ) : null}
         {tail ? (
           <>
-            <span className="text-[var(--warm-300)]" style={{ fontSize: "clamp(0.875rem, 0.95vw, 0.9375rem)", fontWeight: 500 }}>
+            <span
+              className="text-[var(--warm-300)]"
+              style={{ fontSize: OVERVIEW_CARD_META_FONT_SIZE, fontWeight: 500, lineHeight: OVERVIEW_CARD_META_LINE_HEIGHT }}
+            >
               ·
             </span>
             <span
               className="min-w-0 max-w-full text-[var(--warm-400)] md:max-w-[20rem] lg:max-w-[24rem]"
               style={{
-                fontSize: "clamp(0.8125rem, 0.9vw, 0.9375rem)",
+                fontSize: OVERVIEW_CARD_META_FONT_SIZE,
                 fontWeight: 500,
-                lineHeight: 1.35,
+                lineHeight: OVERVIEW_CARD_META_LINE_HEIGHT,
                 ...clampStyle(1),
               }}
             >
@@ -1484,16 +1516,16 @@ function MindstreamHeroStatusRow({
         }}
       >
         <span className="h-3 w-3 shrink-0 rounded-full bg-[var(--amber-accent)]" />
-        <span style={{ fontSize: "clamp(0.9375rem, 1vw, 1rem)", fontWeight: 600, lineHeight: 1.2 }}>
+        <span style={{ fontSize: OVERVIEW_CARD_META_FONT_SIZE, fontWeight: 600, lineHeight: OVERVIEW_CARD_META_LINE_HEIGHT }}>
           {runtimeState.label}
         </span>
       </span>
       <p
         className="text-[var(--warm-400)]"
         style={{
-          fontSize: "clamp(0.9375rem, 1vw, 1rem)",
+          fontSize: OVERVIEW_CARD_META_FONT_SIZE,
           fontWeight: 500,
-          lineHeight: 1.35,
+          lineHeight: OVERVIEW_CARD_META_LINE_HEIGHT,
         }}
       >
         {runtimeState.detail}
@@ -1880,7 +1912,7 @@ function MindstreamHeroCard({
   return (
     <section className="mb-8 rounded-3xl border border-[var(--warm-300)]/30 bg-white px-6 py-6 shadow-sm md:px-10 md:py-9">
       <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between md:gap-8">
-        <p className="text-[var(--amber-accent)] uppercase tracking-[0.18em]" style={{ fontSize: "0.6875rem", fontWeight: 600 }}>
+        <p className="text-[var(--amber-accent)] uppercase tracking-[0.18em]" style={OVERVIEW_SECTION_EYEBROW_STYLE}>
           {copy("overview.mindstream.title")}
         </p>
         <MindstreamHeroBreadcrumb analysis={analysis} currentActivity={currentActivity} />
@@ -1898,13 +1930,7 @@ function MindstreamHeroCard({
           {currentActivity ? (
             <h2
               className="text-[var(--warm-900)]"
-              style={{
-                fontFamily: "Lora, Georgia, serif",
-                fontSize: "clamp(1.75rem, 2.2vw, 2.25rem)",
-                fontWeight: 600,
-                lineHeight: 1.08,
-                letterSpacing: "-0.02em",
-              }}
+              style={OVERVIEW_CARD_TITLE_STYLE}
             >
               {currentActivity.message}
             </h2>
@@ -1925,9 +1951,9 @@ function MindstreamHeroCard({
             <blockquote
               className="mt-8 border-l-[4px] border-[var(--warm-200)]/95 pl-5 text-[var(--warm-700)] md:pl-10"
               style={{
-                fontSize: "clamp(1.125rem, 1.4vw, 1.375rem)",
+                fontSize: OVERVIEW_CARD_BODY_STYLE.fontSize,
                 fontWeight: 400,
-                lineHeight: 1.55,
+                lineHeight: OVERVIEW_CARD_BODY_STYLE.lineHeight,
               }}
             >
               <p className="line-clamp-4 md:line-clamp-3">
