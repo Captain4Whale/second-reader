@@ -3,6 +3,7 @@
 import { FileText, LoaderCircle, Upload, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { copy } from "../config/controlled-copy";
+import { uiTypography } from "../lib/visual-system";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "./ui/dialog";
 
 type UploadBookDialogProps = {
@@ -70,15 +71,15 @@ export function UploadBookDialog({
           <div className="flex items-start justify-between gap-4 px-6 pt-5 pb-0">
             <DialogHeader className="gap-2 text-left">
               <DialogTitle
-                className="font-['Lora',Georgia,serif] text-[var(--warm-900)]"
-                style={{ fontSize: "1.125rem", fontWeight: 600, lineHeight: 1.2 }}
+                className="text-[var(--warm-900)]"
+                style={uiTypography.panelTitle}
               >
                 {title}
               </DialogTitle>
               {description ? (
                 <DialogDescription
                   className="max-w-[21rem] text-[var(--warm-600)]"
-                  style={{ fontSize: "0.75rem", lineHeight: 1.5 }}
+                  style={uiTypography.caption}
                 >
                   {description}
                 </DialogDescription>
@@ -166,11 +167,11 @@ export function UploadBookDialog({
               <div className="space-y-1">
                 <p
                   className="text-[var(--warm-800)]"
-                  style={{ fontSize: "0.9375rem", fontWeight: 500, lineHeight: 1.3 }}
+                  style={uiTypography.bodyMedium}
                 >
                   {isDragging ? copy("upload.dialog.dropActive") : copy("upload.dialog.drop")}
                 </p>
-                <p className="text-[var(--warm-500)]" style={{ fontSize: "0.8125rem", lineHeight: 1.45 }}>
+                <p className="text-[var(--warm-500)]" style={uiTypography.caption}>
                   {isDragging ? (
                     copy("upload.dialog.release")
                   ) : (
@@ -185,17 +186,17 @@ export function UploadBookDialog({
               </div>
 
               {fileName ? (
-                <p className="mt-3 max-w-full truncate text-[var(--warm-600)]" style={{ fontSize: "0.75rem" }}>
+                <p className="mt-3 max-w-full truncate text-[var(--warm-600)]" style={uiTypography.chip}>
                   {fileName}
                 </p>
               ) : null}
               {statusText ? (
-                <p className="mt-2 text-[var(--warm-600)]" style={{ fontSize: "0.75rem" }}>
+                <p className="mt-2 text-[var(--warm-600)]" style={uiTypography.chip}>
                   {statusText}
                 </p>
               ) : null}
               {error ? (
-                <p className="mt-2 max-w-[16rem] text-[var(--destructive)]" style={{ fontSize: "0.75rem" }}>
+                <p className="mt-2 max-w-[16rem] text-[var(--destructive)]" style={uiTypography.chip}>
                   {error}
                 </p>
               ) : null}
@@ -203,7 +204,7 @@ export function UploadBookDialog({
 
             <div className="mt-4 flex items-center justify-center gap-1.5">
               <FileText className="h-3.5 w-3.5 text-[var(--warm-400)]" />
-              <span className="text-[var(--warm-400)]" style={{ fontSize: "0.75rem" }}>
+              <span className="text-[var(--warm-400)]" style={uiTypography.chip}>
                 {copy("upload.dialog.supports")}
               </span>
             </div>

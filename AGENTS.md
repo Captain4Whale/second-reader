@@ -41,6 +41,7 @@ Update when: document layering, reading order, task routing, or cross-project co
 - `docs/api-integration.md`: active endpoint surface, polling/WebSocket coordination, and runtime data flow
 - `docs/runtime-modes.md`: startup, supervision, healthchecks, deployment entrypoints, and resume rules
 - `docs/language-governance.md`: visible-text governance, terminology ownership, and locale policy
+- `docs/frontend-visual-system.md`: frontend typography system, reader-scale boundaries, and core visual tokens
 - `docs/backend-sequential-lifecycle.md`: sequential deep-reading job lifecycle, entrypoints, and runtime-state semantics
 - `docs/backend-state-aggregation.md`: backend artifact aggregation, public state surfaces, and normalization boundary
 
@@ -70,6 +71,7 @@ Update when: document layering, reading order, task routing, or cross-project co
 - current frontend-used endpoints, polling, WebSocket wiring: `docs/api-integration.md`
 - startup commands, runtime supervision, deployment, resume rules: `docs/runtime-modes.md`
 - UI copy, locale policy, governed terminology: `docs/language-governance.md`
+- frontend typography, reader-scale boundaries, and visual token usage: `docs/frontend-visual-system.md`
 - backend sequential workflow, job lifecycle, resume behavior: `docs/backend-sequential-lifecycle.md`
 - backend artifact aggregation, state surfaces, normalization boundary: `docs/backend-state-aggregation.md`
 
@@ -92,6 +94,7 @@ Update when: document layering, reading order, task routing, or cross-project co
 - setup, env vars, local URLs, verification commands -> `README.md`
 - startup mode semantics, healthchecks, deploy entrypoints, resume behavior -> `docs/runtime-modes.md`
 - visible text, locale boundaries, governed terminology -> `docs/language-governance.md`
+- frontend typography, visual tokens, reader-scale boundaries, and landing exceptions -> `docs/frontend-visual-system.md`
 - backend sequential workflow, job lifecycle, start/resume semantics -> `docs/backend-sequential-lifecycle.md`
 - backend artifact aggregation, analysis-state sourcing, normalization boundary -> `docs/backend-state-aggregation.md`
 - current focus, temporary risks, active migration notes -> `docs/agent-handoff.md`
@@ -155,6 +158,11 @@ Update when: document layering, reading order, task routing, or cross-project co
   - terminology ownership
   - locale rules
   - controlled copy sourcing
+- `docs/frontend-visual-system.md`
+  - frontend typography ramp
+  - reader content vs UI typography boundaries
+  - core visual token usage
+  - landing-page visual exceptions
 - `docs/agent-handoff.md`
   - current focus
   - migration status

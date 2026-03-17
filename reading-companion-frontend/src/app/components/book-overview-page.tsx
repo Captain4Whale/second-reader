@@ -35,6 +35,7 @@ import { term } from "../config/product-lexicon";
 import { markLabel } from "../lib/marks";
 import { reactionLabel } from "../lib/reactions";
 import { EmptyState, ErrorState, LoadingState } from "./page-state";
+import { uiTypography } from "../lib/visual-system";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
 import { useViewportResponsiveTier } from "./ui/use-responsive-tier";
 
@@ -58,25 +59,10 @@ type RuntimeStateSummary = {
 
 type MessageParams = Record<string, string | number | null | undefined>;
 
-const OVERVIEW_SECTION_EYEBROW_STYLE = {
-  fontSize: "0.6875rem",
-  fontWeight: 600,
-} satisfies CSSProperties;
-
-const OVERVIEW_CARD_TITLE_STYLE = {
-  fontFamily: "Lora, Georgia, serif",
-  fontSize: "1.25rem",
-  fontWeight: 600,
-  lineHeight: 1.5,
-} satisfies CSSProperties;
-
-const OVERVIEW_CARD_BODY_STYLE = {
-  fontSize: "0.9375rem",
-  lineHeight: 1.7,
-} satisfies CSSProperties;
-
-const OVERVIEW_CARD_META_FONT_SIZE = "0.9375rem";
-const OVERVIEW_CARD_META_LINE_HEIGHT = 1.35;
+const OVERVIEW_SECTION_EYEBROW_STYLE = uiTypography.eyebrow satisfies CSSProperties;
+const OVERVIEW_CARD_TITLE_STYLE = uiTypography.cardTitle satisfies CSSProperties;
+const OVERVIEW_CARD_BODY_STYLE = uiTypography.body satisfies CSSProperties;
+const OVERVIEW_CARD_META_STYLE = uiTypography.bodyMedium satisfies CSSProperties;
 
 function formatTimestamp(value?: string | null) {
   if (!value) {
@@ -1454,7 +1440,7 @@ function MindstreamHeroBreadcrumb({
         {locus.chapterRef ? (
           <span
             className="text-[var(--warm-700)]"
-            style={{ fontSize: OVERVIEW_CARD_META_FONT_SIZE, fontWeight: 600, lineHeight: OVERVIEW_CARD_META_LINE_HEIGHT }}
+            style={{ ...OVERVIEW_CARD_META_STYLE, fontWeight: 600 }}
           >
             {locus.chapterRef}
           </span>
@@ -1463,13 +1449,13 @@ function MindstreamHeroBreadcrumb({
           <>
             <span
               className="text-[var(--warm-300)]"
-              style={{ fontSize: OVERVIEW_CARD_META_FONT_SIZE, fontWeight: 500, lineHeight: OVERVIEW_CARD_META_LINE_HEIGHT }}
+              style={OVERVIEW_CARD_META_STYLE}
             >
               ›
             </span>
             <span
               className="text-[var(--warm-400)]"
-              style={{ fontSize: OVERVIEW_CARD_META_FONT_SIZE, fontWeight: 500, lineHeight: OVERVIEW_CARD_META_LINE_HEIGHT }}
+              style={OVERVIEW_CARD_META_STYLE}
             >
               {sectionToken}
             </span>
@@ -1479,16 +1465,14 @@ function MindstreamHeroBreadcrumb({
           <>
             <span
               className="text-[var(--warm-300)]"
-              style={{ fontSize: OVERVIEW_CARD_META_FONT_SIZE, fontWeight: 500, lineHeight: OVERVIEW_CARD_META_LINE_HEIGHT }}
+              style={OVERVIEW_CARD_META_STYLE}
             >
               ·
             </span>
             <span
               className="min-w-0 max-w-full text-[var(--warm-400)] md:max-w-[20rem] lg:max-w-[24rem]"
               style={{
-                fontSize: OVERVIEW_CARD_META_FONT_SIZE,
-                fontWeight: 500,
-                lineHeight: OVERVIEW_CARD_META_LINE_HEIGHT,
+                ...OVERVIEW_CARD_META_STYLE,
                 ...clampStyle(1),
               }}
             >
@@ -1516,17 +1500,13 @@ function MindstreamHeroStatusRow({
         }}
       >
         <span className="h-3 w-3 shrink-0 rounded-full bg-[var(--amber-accent)]" />
-        <span style={{ fontSize: OVERVIEW_CARD_META_FONT_SIZE, fontWeight: 600, lineHeight: OVERVIEW_CARD_META_LINE_HEIGHT }}>
+        <span style={{ ...OVERVIEW_CARD_META_STYLE, fontWeight: 600 }}>
           {runtimeState.label}
         </span>
       </span>
       <p
         className="text-[var(--warm-400)]"
-        style={{
-          fontSize: OVERVIEW_CARD_META_FONT_SIZE,
-          fontWeight: 500,
-          lineHeight: OVERVIEW_CARD_META_LINE_HEIGHT,
-        }}
+        style={OVERVIEW_CARD_META_STYLE}
       >
         {runtimeState.detail}
       </p>

@@ -45,6 +45,7 @@ import {
   READER_FONT_SIZE_STORAGE_KEY,
   readStoredReaderFontSize,
 } from "../lib/reader-ui";
+import { readerTypography, uiTypography } from "../lib/visual-system";
 import { ErrorState, LoadingState } from "./page-state";
 import { SourceReaderPane } from "./source-reader-pane";
 import { OverflowTooltipText } from "./ui/overflow-tooltip-text";
@@ -208,10 +209,6 @@ function searchResultDomainLabel(url: string): string {
   } catch {
     return url;
   }
-}
-
-function scaledRem(baseRem: number): string {
-  return `calc(${baseRem}rem * var(--rc-reading-font-scale, 1))`;
 }
 
 function buildOutlineFromChapterPayload(
@@ -964,16 +961,16 @@ export function ChapterReadPage() {
             <div className="space-y-8">
               {sectionHint ? (
                 <div className="rounded-2xl border border-[var(--amber-accent)]/18 bg-[var(--amber-bg)]/72 px-4 py-3 text-[var(--amber-accent)] shadow-[0_1px_0_rgba(255,255,255,0.82)]">
-                  <p style={{ fontSize: scaledRem(0.76), lineHeight: 1.6, fontWeight: 500 }}>{sectionHint}</p>
+                  <p style={readerTypography.metaMedium}>{sectionHint}</p>
                 </div>
               ) : null}
 
               {visibleSections.length === 0 ? (
                 <div className="rounded-2xl border border-[var(--warm-300)]/40 bg-white px-4 py-6">
-                  <p className="text-[var(--warm-800)]" style={{ fontSize: scaledRem(0.9), fontWeight: 600 }}>
+                  <p className="text-[var(--warm-800)]" style={readerTypography.bodyStrong}>
                     No reactions under this filter.
                   </p>
-                  <p className="text-[var(--warm-600)] mt-1" style={{ fontSize: scaledRem(0.82), lineHeight: 1.7 }}>
+                  <p className="text-[var(--warm-600)] mt-1" style={readerTypography.meta}>
                     Switch back to All to continue linked reading and jump navigation.
                   </p>
                 </div>
@@ -1013,7 +1010,7 @@ export function ChapterReadPage() {
                             <div className="flex items-center gap-2">
                               <span
                                 className={`${pillBaseClass} h-9 border-[var(--warm-300)]/45 ${reactionTone.surfaceClass} ${reactionTone.accentClass}`}
-                                style={{ fontSize: scaledRem(0.74), fontWeight: 600 }}
+                                style={readerTypography.label}
                               >
                                 {reactionLabel(reaction.type)}
                               </span>
@@ -1027,7 +1024,7 @@ export function ChapterReadPage() {
                                 }}
                                 data-testid={`mark-resonance-${reaction.reaction_id}`}
                                 className={markToneClass("resonance", reaction.mark_type === "resonance")}
-                                style={{ fontSize: scaledRem(0.72), fontWeight: 600 }}
+                                style={readerTypography.chip}
                               >
                                 {markLabel("resonance")}
                               </button>
@@ -1039,7 +1036,7 @@ export function ChapterReadPage() {
                                 }}
                                 data-testid={`mark-blindspot-${reaction.reaction_id}`}
                                 className={markToneClass("blindspot", reaction.mark_type === "blindspot")}
-                                style={{ fontSize: scaledRem(0.72), fontWeight: 600 }}
+                                style={readerTypography.chip}
                               >
                                 {markLabel("blindspot")}
                               </button>
@@ -1051,7 +1048,7 @@ export function ChapterReadPage() {
                                 }}
                                 data-testid={`mark-bookmark-${reaction.reaction_id}`}
                                 className={markToneClass("bookmark", reaction.mark_type === "bookmark")}
-                                style={{ fontSize: scaledRem(0.72), fontWeight: 600 }}
+                                style={readerTypography.chip}
                               >
                                 {markLabel("bookmark")}
                               </button>
@@ -1061,7 +1058,7 @@ export function ChapterReadPage() {
                           {anchorQuote ? (
                             <blockquote
                               className="border-l-2 border-[var(--amber-accent)]/40 pl-4 mb-3 text-[var(--warm-600)] italic"
-                              style={{ fontSize: scaledRem(0.8125), lineHeight: 1.7 }}
+                              style={readerTypography.quote}
                             >
                               “{anchorQuote}”
                             </blockquote>
@@ -1069,14 +1066,14 @@ export function ChapterReadPage() {
 
                           {isActive ? (
                             <>
-                              <p className="text-[var(--warm-800)]" style={{ fontSize: scaledRem(0.875), lineHeight: 1.82 }}>
+                              <p className="text-[var(--warm-800)]" style={readerTypography.body}>
                                 {reaction.content}
                               </p>
                               {reaction.search_results.length > 0 ? (
                                 <section className="mt-4">
                                   <div className="flex items-center gap-2 mb-2">
                                     <Search className="w-4 h-4 text-[var(--amber-accent)]" />
-                                    <p className="text-[var(--warm-900)]" style={{ fontSize: scaledRem(0.78), fontWeight: 600 }}>
+                                    <p className="text-[var(--warm-900)]" style={readerTypography.label}>
                                       Extra context
                                     </p>
                                   </div>
@@ -1093,9 +1090,7 @@ export function ChapterReadPage() {
                                           <p
                                             className="min-w-0 text-[var(--warm-900)]"
                                             style={{
-                                              fontSize: scaledRem(0.77),
-                                              fontWeight: 600,
-                                              lineHeight: 1.5,
+                                              ...readerTypography.metaStrong,
                                               overflowWrap: "anywhere",
                                               wordBreak: "break-word",
                                             }}
@@ -1104,7 +1099,7 @@ export function ChapterReadPage() {
                                           </p>
                                           <span
                                             className="shrink-0 rounded-full border border-[var(--warm-300)]/58 bg-[var(--warm-50)] px-2 py-0.5 text-[var(--warm-500)]"
-                                            style={{ fontSize: scaledRem(0.64), fontWeight: 600 }}
+                                            style={readerTypography.captionStrong}
                                           >
                                             {searchResultDomainLabel(result.url)}
                                           </span>
@@ -1112,8 +1107,7 @@ export function ChapterReadPage() {
                                         <p
                                           className="text-[var(--warm-600)]"
                                           style={{
-                                            fontSize: scaledRem(0.75),
-                                            lineHeight: 1.65,
+                                            ...readerTypography.meta,
                                             overflowWrap: "anywhere",
                                             wordBreak: "break-word",
                                             display: "-webkit-box",
@@ -1131,7 +1125,7 @@ export function ChapterReadPage() {
                               ) : null}
                             </>
                           ) : (
-                            <p className="text-[var(--warm-700)]" style={{ fontSize: scaledRem(0.84), lineHeight: 1.75 }}>
+                            <p className="text-[var(--warm-700)]" style={readerTypography.body}>
                               {reactionPreview(reaction.content)}
                             </p>
                           )}
@@ -1172,14 +1166,14 @@ export function ChapterReadPage() {
           <div className="min-w-0">
             <p
               className="text-[var(--warm-500)] uppercase tracking-[0.14em]"
-              style={{ fontSize: "0.64rem", fontWeight: 700 }}
+              style={uiTypography.eyebrow}
             >
               Chapter heading
             </p>
             {showLabel ? (
               <p
                 className="mt-1 text-[var(--amber-accent)]"
-                style={{ fontSize: "0.69rem", fontWeight: 700, lineHeight: 1.35 }}
+                style={uiTypography.captionStrong}
               >
                 {heading.label}
               </p>
@@ -1190,17 +1184,17 @@ export function ChapterReadPage() {
               lines={mode === "desktop" ? 2 : 3}
               side="right"
               className="mt-1 text-[var(--warm-950)] font-['Lora',Georgia,serif]"
-              style={{ fontSize: mode === "desktop" ? "0.96rem" : "0.9rem", fontWeight: 700, lineHeight: 1.35 }}
+              style={mode === "desktop" ? uiTypography.panelTitle : uiTypography.bodyStrong}
             />
             {supportingText ? (
-              <p className="mt-1.5 text-[var(--warm-600)]" style={{ fontSize: "0.76rem", lineHeight: 1.62 }}>
+              <p className="mt-1.5 text-[var(--warm-600)]" style={uiTypography.caption}>
                 {supportingText}
               </p>
             ) : null}
           </div>
           <span
             className="shrink-0 rounded-full border border-[var(--warm-300)]/58 bg-white/84 px-2.5 py-1 text-[var(--warm-500)] shadow-[inset_0_1px_0_rgba(255,255,255,0.88)]"
-            style={{ fontSize: "0.64rem", fontWeight: 700 }}
+            style={uiTypography.eyebrow}
           >
             {copy("chapter.sheet.structureBadge")}
           </span>
@@ -1224,13 +1218,13 @@ export function ChapterReadPage() {
           <SheetHeader className="border-b border-[var(--warm-200)] bg-[var(--warm-50)] px-5 py-5 pr-12">
             <SheetTitle
               className="font-['Lora',Georgia,serif] text-[var(--warm-950)]"
-              style={{ fontSize: "1.25rem", lineHeight: 1.2 }}
+              style={{ ...uiTypography.cardTitle, lineHeight: 1.2 }}
             >
               {readerBookTitle}
             </SheetTitle>
             <SheetDescription
               className="text-[var(--warm-600)]"
-              style={{ fontSize: "0.84rem", lineHeight: 1.6 }}
+              style={uiTypography.meta}
             >
               {chapterItems.length} chapters
             </SheetDescription>
@@ -1244,7 +1238,7 @@ export function ChapterReadPage() {
                     type="button"
                     onClick={() => setMobileChapterSheetView("chapters")}
                     className="inline-flex h-8 items-center gap-2 rounded-full border border-[var(--warm-300)]/65 bg-white/86 px-3 text-[var(--warm-700)] shadow-[0_1px_0_rgba(255,255,255,0.88)] transition-all duration-200 hover:bg-white"
-                    style={{ fontSize: "0.76rem", fontWeight: 600 }}
+                    style={uiTypography.chip}
                   >
                     <ArrowLeft className="h-3.5 w-3.5" />
                     {copy("chapter.sheet.backToChapters")}
@@ -1311,7 +1305,7 @@ export function ChapterReadPage() {
                             {chapterMeta ? (
                               <p
                                 className="mb-1 text-[var(--warm-500)]"
-                                style={{ fontSize: "0.69rem", fontWeight: 600, lineHeight: 1.3 }}
+                                style={uiTypography.chip}
                               >
                                 {chapterMeta}
                               </p>
@@ -1322,11 +1316,11 @@ export function ChapterReadPage() {
                               lines={2}
                               side="right"
                               className="text-[var(--warm-950)]"
-                              style={{ fontSize: "0.9rem", fontWeight: 600, lineHeight: 1.45, maxWidth: "14.25rem" }}
+                              style={{ ...uiTypography.bodyStrong, maxWidth: "14.25rem" }}
                             />
                             <p
                               className="mt-1 text-[var(--warm-600)]"
-                              style={{ fontSize: "0.74rem", lineHeight: 1.55 }}
+                              style={uiTypography.caption}
                             >
                               {chapter.visible_reaction_count} reactions
                             </p>
@@ -1341,9 +1335,9 @@ export function ChapterReadPage() {
                                     ? "border-[var(--warm-300)]/45 bg-[var(--warm-50)] text-[var(--warm-600)]"
                                     : chapter.status === "error"
                                       ? "border-red-200 bg-red-50 text-red-700"
-                                      : "border-[var(--warm-300)]/40 bg-[var(--warm-50)] text-[var(--warm-500)]"
+                                    : "border-[var(--warm-300)]/40 bg-[var(--warm-50)] text-[var(--warm-500)]"
                               }`}
-                              style={{ fontSize: "0.69rem", fontWeight: 600 }}
+                              style={uiTypography.chip}
                             >
                               <StatusIcon className="mr-1 h-3 w-3" />
                               {chapterStateLabel}
@@ -1362,14 +1356,14 @@ export function ChapterReadPage() {
               {isMobile && mobileChapterSheetView === "sections" ? (
                 previewOutlineLoading ? (
                   <div className="flex min-h-[14rem] items-center justify-center">
-                    <p className="inline-flex items-center gap-2 text-[var(--warm-600)]" style={{ fontSize: "0.82rem" }}>
+                    <p className="inline-flex items-center gap-2 text-[var(--warm-600)]" style={uiTypography.actionSmall}>
                       <Loader2 className="h-4 w-4 animate-spin" />
                       Loading chapter outline...
                     </p>
                   </div>
                 ) : !previewChapter?.result_ready ? (
                   <div className="rounded-2xl border border-[var(--warm-300)]/35 bg-[var(--warm-50)]/78 px-4 py-5">
-                    <p className="text-[var(--warm-900)]" style={{ fontSize: "0.88rem", fontWeight: 600 }}>
+                    <p className="text-[var(--warm-900)]" style={uiTypography.bodyStrong}>
                       This chapter is not ready yet.
                     </p>
                   </div>
@@ -1389,10 +1383,10 @@ export function ChapterReadPage() {
                               ? "border-[var(--amber-accent)]/28 bg-[var(--amber-bg)]/82"
                               : "border-[var(--warm-300)]/28 bg-white/86 hover:-translate-y-[1px] hover:border-[var(--warm-400)]/55 hover:bg-white"
                           }`}
-                        >
+                          >
                           <div className="flex items-start justify-between gap-3">
                             <div className="min-w-0">
-                              <p className="text-[var(--amber-accent)]" style={{ fontSize: "0.7rem", fontWeight: 600 }}>
+                              <p className="text-[var(--amber-accent)]" style={uiTypography.chip}>
                                 {section.section_ref}
                               </p>
                               <OverflowTooltipText
@@ -1401,16 +1395,16 @@ export function ChapterReadPage() {
                                 lines={2}
                                 side="right"
                                 className="mt-1 text-[var(--warm-950)]"
-                                style={{ fontSize: "0.9rem", fontWeight: 600, lineHeight: 1.45 }}
+                                style={uiTypography.bodyStrong}
                               />
                               {section.preview_text ? (
-                                <p className="mt-1 text-[var(--warm-600)]" style={{ fontSize: "0.76rem", lineHeight: 1.55 }}>
+                                <p className="mt-1 text-[var(--warm-600)]" style={uiTypography.caption}>
                                   {section.preview_text}
                                 </p>
                               ) : null}
                             </div>
                             <div className="shrink-0 text-right">
-                              <p className="text-[var(--warm-500)]" style={{ fontSize: "0.7rem", fontWeight: 600 }}>
+                              <p className="text-[var(--warm-500)]" style={uiTypography.chip}>
                                 {section.visible_reaction_count}
                               </p>
                             </div>
@@ -1421,7 +1415,7 @@ export function ChapterReadPage() {
                   </div>
                 ) : (
                     <div className="rounded-2xl border border-[var(--warm-300)]/35 bg-[var(--warm-50)]/78 px-4 py-5">
-                      <p className="text-[var(--warm-900)]" style={{ fontSize: "0.88rem", fontWeight: 600 }}>
+                      <p className="text-[var(--warm-900)]" style={uiTypography.bodyStrong}>
                         {copy("chapter.sheet.emptySections")}
                       </p>
                     </div>
@@ -1432,7 +1426,7 @@ export function ChapterReadPage() {
             {!isMobile ? (
               <div className="min-h-0 overflow-hidden bg-white/68">
                 <div className="border-b border-[var(--warm-200)] bg-[var(--warm-50)]/94 px-5 py-4">
-                  <p className="text-[var(--warm-500)] uppercase tracking-[0.16em]" style={{ fontSize: "0.64rem", fontWeight: 600 }}>
+                  <p className="text-[var(--warm-500)] uppercase tracking-[0.16em]" style={uiTypography.eyebrow}>
                     {copy("chapter.sheet.inThisChapter")}
                   </p>
                   <div className="mt-1 flex items-start justify-between gap-3">
@@ -1443,14 +1437,14 @@ export function ChapterReadPage() {
                         lines={1}
                         side="bottom"
                         className="text-[var(--warm-950)] font-['Lora',Georgia,serif]"
-                        style={{ fontSize: "1.02rem", fontWeight: 700, lineHeight: 1.25, maxWidth: "26rem" }}
+                        style={{ ...uiTypography.panelTitle, maxWidth: "26rem" }}
                       />
-                      <p className="mt-1 text-[var(--warm-600)]" style={{ fontSize: "0.76rem", lineHeight: 1.5 }}>
+                      <p className="mt-1 text-[var(--warm-600)]" style={uiTypography.caption}>
                         {(previewOutline?.section_count ?? previewChapter?.segment_count ?? 0)} sections
                       </p>
                     </div>
                     {previewChapter?.chapter_ref ? (
-                      <span className="inline-flex h-8 items-center rounded-full border border-[var(--warm-300)]/68 bg-white/84 px-3 text-[var(--warm-700)] shadow-[0_1px_0_rgba(255,255,255,0.88)]" style={{ fontSize: "0.72rem", fontWeight: 600 }}>
+                      <span className="inline-flex h-8 items-center rounded-full border border-[var(--warm-300)]/68 bg-white/84 px-3 text-[var(--warm-700)] shadow-[0_1px_0_rgba(255,255,255,0.88)]" style={uiTypography.chip}>
                         {previewChapter.chapter_ref}
                       </span>
                     ) : null}
@@ -1460,23 +1454,23 @@ export function ChapterReadPage() {
                 <div className="rc-scrollbar h-full overflow-y-auto px-4 py-4">
                   {previewOutlineLoading ? (
                     <div className="flex h-full min-h-[16rem] items-center justify-center">
-                      <p className="inline-flex items-center gap-2 text-[var(--warm-600)]" style={{ fontSize: "0.82rem" }}>
+                      <p className="inline-flex items-center gap-2 text-[var(--warm-600)]" style={uiTypography.actionSmall}>
                         <Loader2 className="h-4 w-4 animate-spin" />
                         {copy("chapter.sheet.loadingOutline")}
                       </p>
                     </div>
                   ) : !previewChapter?.result_ready ? (
                     <div className="rounded-2xl border border-[var(--warm-300)]/35 bg-[var(--warm-50)]/78 px-4 py-5">
-                      <p className="text-[var(--warm-900)]" style={{ fontSize: "0.88rem", fontWeight: 600 }}>
+                      <p className="text-[var(--warm-900)]" style={uiTypography.bodyStrong}>
                         {copy("chapter.sheet.notReadyTitle")}
                       </p>
-                      <p className="mt-1 text-[var(--warm-600)]" style={{ fontSize: "0.78rem", lineHeight: 1.65 }}>
+                      <p className="mt-1 text-[var(--warm-600)]" style={uiTypography.caption}>
                         {copy("chapter.sheet.notReadyMessage")}
                       </p>
                     </div>
                   ) : !previewHasOutlineContent ? (
                     <div className="rounded-2xl border border-[var(--warm-300)]/35 bg-[var(--warm-50)]/78 px-4 py-5">
-                      <p className="text-[var(--warm-900)]" style={{ fontSize: "0.88rem", fontWeight: 600 }}>
+                      <p className="text-[var(--warm-900)]" style={uiTypography.bodyStrong}>
                         {copy("chapter.sheet.emptySections")}
                       </p>
                     </div>
@@ -1500,7 +1494,7 @@ export function ChapterReadPage() {
                           >
                             <div className="flex items-start justify-between gap-3">
                               <div className="min-w-0">
-                                <p className="text-[var(--amber-accent)]" style={{ fontSize: "0.7rem", fontWeight: 600 }}>
+                                <p className="text-[var(--amber-accent)]" style={uiTypography.chip}>
                                   {section.section_ref}
                                 </p>
                                 <OverflowTooltipText
@@ -1509,21 +1503,21 @@ export function ChapterReadPage() {
                                   lines={2}
                                   side="right"
                                   className="mt-1 text-[var(--warm-950)]"
-                                  style={{ fontSize: "0.88rem", fontWeight: 600, lineHeight: 1.42 }}
+                                  style={uiTypography.metaStrong}
                                 />
                                 {section.preview_text ? (
-                                  <p className="mt-1.5 text-[var(--warm-600)]" style={{ fontSize: "0.77rem", lineHeight: 1.6 }}>
+                                  <p className="mt-1.5 text-[var(--warm-600)]" style={uiTypography.caption}>
                                     {section.preview_text}
                                   </p>
                                 ) : null}
                               </div>
                               <div className="shrink-0 text-right">
                                 {isCurrentSection ? (
-                                  <p className="text-[var(--amber-accent)]" style={{ fontSize: "0.68rem", fontWeight: 600 }}>
+                                  <p className="text-[var(--amber-accent)]" style={uiTypography.chip}>
                                     Reading
                                   </p>
                                 ) : null}
-                                <p className="mt-1 text-[var(--warm-500)]" style={{ fontSize: "0.7rem", fontWeight: 600 }}>
+                                <p className="mt-1 text-[var(--warm-500)]" style={uiTypography.chip}>
                                   {section.visible_reaction_count} reactions
                                 </p>
                               </div>
@@ -1543,7 +1537,7 @@ export function ChapterReadPage() {
               to={canonicalBookPath(payload.book_id)}
               data-testid="chapter-sheet-book-overview-link"
               className="inline-flex h-10 items-center justify-center gap-2 rounded-full border border-[var(--warm-300)]/60 bg-white/84 px-4 text-[var(--warm-600)] no-underline shadow-[0_1px_0_rgba(255,255,255,0.88),0_10px_24px_rgba(61,46,31,0.04)] transition-all duration-200 hover:-translate-y-[1px] hover:border-[var(--warm-400)] hover:bg-white hover:text-[var(--warm-900)]"
-              style={{ fontSize: "0.82rem", fontWeight: 600 }}
+              style={uiTypography.actionSmall}
             >
               Open book overview
             </Link>
@@ -1560,9 +1554,9 @@ export function ChapterReadPage() {
                 lines={1}
                 side="bottom"
                 className="min-w-0 max-w-[20rem] shrink truncate text-[var(--warm-500)] xl:max-w-[24rem]"
-                style={{ fontSize: "0.82rem", fontWeight: 500, lineHeight: 1.35 }}
+                style={uiTypography.captionMedium}
               />
-              <span className="shrink-0 text-[var(--warm-400)]" style={{ fontSize: "0.8rem" }}>
+              <span className="shrink-0 text-[var(--warm-400)]" style={uiTypography.actionSmall}>
                 ›
               </span>
               <OverflowTooltipText
@@ -1571,9 +1565,9 @@ export function ChapterReadPage() {
                 lines={1}
                 side="bottom"
                 className="min-w-0 shrink-0 text-[var(--warm-800)]"
-                style={{ fontSize: "0.88rem", fontWeight: 600, lineHeight: 1.35 }}
+                style={uiTypography.metaStrong}
               />
-              <span className="shrink-0 text-[var(--warm-400)]" style={{ fontSize: "0.8rem" }}>
+              <span className="shrink-0 text-[var(--warm-400)]" style={uiTypography.actionSmall}>
                 ›
               </span>
               <div className="min-w-0 flex-1" data-testid="chapter-topbar-current-section">
@@ -1583,7 +1577,7 @@ export function ChapterReadPage() {
                   lines={1}
                   side="bottom"
                   className="min-w-0 truncate text-[var(--warm-800)]"
-                  style={{ fontSize: "0.88rem", fontWeight: 600, lineHeight: 1.35 }}
+                  style={uiTypography.metaStrong}
                 />
               </div>
             </div>
@@ -1595,7 +1589,7 @@ export function ChapterReadPage() {
                     type="button"
                     data-testid="chapter-sheet-trigger"
                     className={workspaceGhostLinkClass}
-                    style={{ fontSize: "0.8rem", fontWeight: 600 }}
+                    style={uiTypography.actionSmall}
                   >
                     <List className="h-4 w-4" />
                     {!workspaceMobile ? term("view.chapters") : null}
@@ -1604,7 +1598,7 @@ export function ChapterReadPage() {
               ) : null}
 
               <div className="flex items-center gap-1">
-                <span className="shrink-0 text-[var(--warm-400)]" style={{ fontSize: "0.74rem", fontWeight: 500 }}>
+                <span className="shrink-0 text-[var(--warm-400)]" style={uiTypography.chip}>
                   {term("view.chapterShort")}
                 </span>
                 {renderToolbarIconButton({
@@ -1627,12 +1621,12 @@ export function ChapterReadPage() {
                 })}
               </div>
 
-              <span className="shrink-0 text-[var(--warm-300)]" style={{ fontSize: "0.76rem", fontWeight: 500 }}>
+              <span className="shrink-0 text-[var(--warm-300)]" style={uiTypography.captionMedium}>
                 |
               </span>
 
               <div className="flex items-center gap-1">
-                <span className="shrink-0 text-[var(--warm-400)]" style={{ fontSize: "0.74rem", fontWeight: 500 }}>
+                <span className="shrink-0 text-[var(--warm-400)]" style={uiTypography.chip}>
                   {term("view.sectionShort")}
                 </span>
                 {renderToolbarIconButton({
@@ -1659,7 +1653,7 @@ export function ChapterReadPage() {
                 to={canonicalBookPath(payload.book_id)}
                 aria-label={term("view.bookOverview")}
                 className={workspaceOverviewLinkClass}
-                style={{ fontSize: "0.8rem", fontWeight: 600 }}
+                style={uiTypography.actionSmall}
               >
                 <ArrowLeft className="h-4 w-4" />
                 {primaryBookActionLabel}
@@ -1678,7 +1672,7 @@ export function ChapterReadPage() {
                       onClick={() => handleFilterChange(filter)}
                       data-testid={`reaction-filter-${filter}`}
                       className={filterToneClass(filter, activeFilter === filter)}
-                      style={{ fontSize: scaledRem(workspaceCompact ? 0.72 : 0.75), fontWeight: 600 }}
+                      style={uiTypography.chip}
                     >
                       {filter === "all" ? copy("chapter.filter.all") : reactionLabel(filter)}
                     </button>
@@ -1686,14 +1680,14 @@ export function ChapterReadPage() {
                 </div>
               </div>
 
-              <p className="shrink-0 text-[var(--warm-500)]" style={{ fontSize: scaledRem(0.8), lineHeight: 1.4, fontWeight: 500 }}>
+              <p className="shrink-0 text-[var(--warm-500)]" style={uiTypography.captionMedium}>
                 {payload.visible_reaction_count} reactions
               </p>
             </div>
 
             <div className="ml-auto flex shrink-0 items-center gap-3">
               <div className={toolbarValueClass} data-testid="chapter-topbar-book-progress">
-                <p style={{ fontSize: "0.82rem", fontWeight: 500, lineHeight: 1.35 }}>
+                <p style={uiTypography.captionMedium}>
                   {readerProgress == null || Number.isNaN(readerProgress)
                     ? copy("chapter.reader.bookProgressUnavailable")
                     : copy("chapter.reader.bookProgress", { value: formatReaderProgress(readerProgress) })}
@@ -1707,7 +1701,7 @@ export function ChapterReadPage() {
                     data-testid="chapter-topbar-settings-trigger"
                     aria-label={copy("chapter.reader.settingsAria")}
                     className={workspaceGhostLinkClass}
-                    style={{ fontSize: "0.8rem", fontWeight: 500 }}
+                    style={uiTypography.actionSmall}
                   >
                     <Settings2 className="h-4 w-4" />
                     {!workspaceMobile ? term("view.textSize") : null}
@@ -1720,16 +1714,16 @@ export function ChapterReadPage() {
                   <div className="space-y-3">
                     <div className="flex items-center justify-between gap-3">
                       <div>
-                        <p className="text-[var(--warm-900)]" style={{ fontSize: "0.88rem", fontWeight: 700 }}>
+                        <p className="text-[var(--warm-900)]" style={uiTypography.bodyStrong}>
                           {copy("chapter.reader.settingsTitle")}
                         </p>
-                        <p className="mt-1 text-[var(--warm-600)]" style={{ fontSize: "0.76rem", lineHeight: 1.55 }}>
+                        <p className="mt-1 text-[var(--warm-600)]" style={uiTypography.caption}>
                           {copy("chapter.reader.settingsDescription")}
                         </p>
                       </div>
                       <span
                         className="inline-flex h-8 items-center rounded-full border border-[var(--warm-300)]/60 bg-white/84 px-3 text-[var(--warm-700)]"
-                        style={{ fontSize: "0.74rem", fontWeight: 700 }}
+                        style={uiTypography.chip}
                       >
                         {fontSizePercent}%
                       </span>
@@ -1743,7 +1737,7 @@ export function ChapterReadPage() {
                         setFontSizePercent(clampReaderFontSize(value[0] ?? fontSizePercent));
                       }}
                     />
-                    <div className="flex items-center justify-between text-[var(--warm-500)]" style={{ fontSize: "0.7rem", fontWeight: 600 }}>
+                    <div className="flex items-center justify-between text-[var(--warm-500)]" style={uiTypography.chip}>
                       <span>{READER_FONT_SIZE_MIN}%</span>
                       <span>{READER_FONT_SIZE_MAX}%</span>
                     </div>
@@ -1757,7 +1751,7 @@ export function ChapterReadPage() {
 
       {error ? (
         <div className="px-6 pt-4">
-          <p className="text-[var(--destructive)]" style={{ fontSize: "0.8125rem" }}>
+          <p className="text-[var(--destructive)]" style={uiTypography.caption}>
             {getErrorMessage(error)}
           </p>
         </div>

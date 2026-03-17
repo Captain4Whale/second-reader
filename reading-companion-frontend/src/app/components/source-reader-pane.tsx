@@ -7,6 +7,7 @@ import { copy } from "../config/controlled-copy";
 import type { SectionCard } from "../lib/api-types";
 import type { ReactionType } from "../lib/contract";
 import { reactionMeta } from "../lib/reactions";
+import { uiTypography } from "../lib/visual-system";
 import type {
   ReaderCapability,
   ReaderJumpFeedback,
@@ -1854,7 +1855,7 @@ async function locateMatchText(
                   ? "border-[var(--warm-300)]/65 bg-white/94 text-[var(--warm-700)]"
                   : "border-[var(--amber-accent)]/22 bg-[var(--amber-bg)]/94 text-[var(--amber-accent)]"
               }`}
-              style={{ fontSize: "0.73rem", fontWeight: 500, lineHeight: 1.45 }}
+              style={uiTypography.captionMedium}
               data-testid="reader-jump-status"
             >
               {isJumping ? (
@@ -1869,7 +1870,7 @@ async function locateMatchText(
 
         {isLoading ? (
           <div className={`absolute inset-0 flex items-center justify-center ${loadingOverlayClass}`}>
-            <p className={`inline-flex items-center gap-2 ${loadingTextClass}`} style={{ fontSize: "0.84rem" }}>
+            <p className={`inline-flex items-center gap-2 ${loadingTextClass}`} style={uiTypography.control}>
               <Loader2 className="w-4 h-4 animate-spin" />
               {copy("chapter.reader.loadingSource")}
             </p>
@@ -1879,13 +1880,13 @@ async function locateMatchText(
         {loadError ? (
           <div className={`absolute inset-0 flex items-center justify-center p-6 ${errorOverlayClass}`}>
             <div className="max-w-md text-center">
-              <p className="text-[var(--destructive)] mb-2" style={{ fontSize: "0.9rem", fontWeight: 600 }}>
+              <p className="text-[var(--destructive)] mb-2" style={uiTypography.bodyStrong}>
                 Reader unavailable
               </p>
-              <p className="text-[var(--warm-700)]" style={{ fontSize: "0.84rem", lineHeight: 1.7 }}>
+              <p className="text-[var(--warm-700)]" style={uiTypography.body}>
                 {loadError}
               </p>
-              <p className="mt-2 text-[var(--warm-500)]" style={{ fontSize: "0.78rem", lineHeight: 1.6 }}>
+              <p className="mt-2 text-[var(--warm-500)]" style={uiTypography.caption}>
                 Capability: CFI jump {READER_CAPABILITY.cfiJump ? "on" : "off"} · Href jump {READER_CAPABILITY.hrefJump ? "on" : "off"} ·
                 Text highlight {READER_CAPABILITY.textHighlight ? "on" : "off"}
               </p>

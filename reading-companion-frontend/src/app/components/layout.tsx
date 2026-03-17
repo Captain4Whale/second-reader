@@ -4,6 +4,7 @@ import { Link, Outlet, useLocation } from "react-router";
 import { BRAND_CONFIG, getDocumentTitle } from "../config/brand";
 import { copy } from "../config/controlled-copy";
 import { term } from "../config/product-lexicon";
+import { uiTypography } from "../lib/visual-system";
 import { useViewportResponsiveTier } from "./ui/use-responsive-tier";
 
 export function RootLayout() {
@@ -40,11 +41,11 @@ export function RootLayout() {
                   <BookOpen className="w-4.5 h-4.5 text-white" />
                 </div>
                 <div className="min-w-0">
-                  <span className="block font-['Lora',Georgia,serif] text-[var(--warm-900)] tracking-tight" style={{ fontSize: "1.2rem", fontWeight: 600 }}>
+                  <span className="block text-[var(--warm-900)] tracking-tight" style={uiTypography.shellBrand}>
                     {BRAND_CONFIG.productName}
                   </span>
                   {isLanding ? (
-                    <span className="block text-[var(--warm-500)]" style={{ fontSize: "0.72rem", lineHeight: 1.1 }}>
+                    <span className="block text-[var(--warm-500)]" style={uiTypography.shellTagline}>
                       {copy("layout.tagline")}
                     </span>
                   ) : null}
@@ -64,7 +65,7 @@ export function RootLayout() {
                         ? "bg-[var(--amber-bg)] text-[var(--amber-accent)]"
                         : "text-[var(--warm-600)] hover:bg-[var(--warm-100)] hover:text-[var(--warm-800)]"
                     } ${navCompact ? "h-8 gap-1.5 px-3" : "h-9 gap-2 px-4"}`}
-                    style={{ fontSize: navCompact ? "0.79rem" : "0.875rem", fontWeight: 600 }}
+                    style={navCompact ? uiTypography.controlCompact : uiTypography.controlStrong}
                   >
                     <Library className="w-4 h-4" />
                     {navNarrow ? copy("page.books.title") : BRAND_CONFIG.navigation.booksLabel}
@@ -78,7 +79,7 @@ export function RootLayout() {
                         ? "bg-[var(--amber-bg)] text-[var(--amber-accent)]"
                         : "text-[var(--warm-600)] hover:bg-[var(--warm-100)] hover:text-[var(--warm-800)]"
                     } ${navCompact ? "h-8 gap-1.5 px-3" : "h-9 gap-2 px-4"}`}
-                    style={{ fontSize: navCompact ? "0.79rem" : "0.875rem", fontWeight: 600 }}
+                    style={navCompact ? uiTypography.controlCompact : uiTypography.controlStrong}
                   >
                     <Bookmark className="w-4 h-4" />
                     {navNarrow ? term("nav.marks") : BRAND_CONFIG.navigation.marksLabel}

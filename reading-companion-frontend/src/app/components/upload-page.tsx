@@ -3,6 +3,7 @@ import { FormEvent, useEffect, useState } from "react";
 import { Link } from "react-router";
 import { fetchJobStatus, JobStatusResponse, toWebSocketUrl, uploadEpub } from "../lib/api";
 import { canonicalBookAnalysisPath, canonicalBookPath } from "../lib/contract";
+import { uiTypography } from "../lib/visual-system";
 
 const jobStageLabels: Record<JobStatusResponse["status"], string> = {
   queued: "Preparing your book",
@@ -27,7 +28,7 @@ function AnalysisTarget({ job }: { job: JobStatusResponse }) {
       to={target}
       data-testid="upload-open-current-result"
       className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[var(--amber-accent)] text-white no-underline hover:bg-[var(--warm-700)] transition-colors"
-      style={{ fontSize: "0.875rem", fontWeight: 500 }}
+      style={uiTypography.control}
     >
       Open current result
       <ArrowRight className="w-4 h-4" />
@@ -95,18 +96,18 @@ export function UploadPage() {
     <div className="max-w-4xl mx-auto px-6 py-12">
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_0.8fr] gap-6">
         <form onSubmit={handleSubmit} className="bg-white rounded-3xl border border-[var(--warm-300)]/30 p-8 shadow-sm">
-          <p className="text-[var(--amber-accent)] uppercase tracking-[0.18em] mb-2" style={{ fontSize: "0.6875rem", fontWeight: 600 }}>
+          <p className="text-[var(--amber-accent)] uppercase tracking-[0.18em] mb-2" style={uiTypography.eyebrow}>
             Upload EPUB
           </p>
-          <h1 className="text-[var(--warm-900)] mb-3" style={{ fontSize: "1.75rem", fontWeight: 600 }}>
+          <h1 className="text-[var(--warm-900)] mb-3" style={uiTypography.pageTitle}>
             Start a new deep-reading run
           </h1>
-          <p className="text-[var(--warm-600)] mb-8" style={{ fontSize: "0.9375rem", lineHeight: 1.7 }}>
+          <p className="text-[var(--warm-600)] mb-8" style={uiTypography.body}>
             Upload an EPUB to begin a guided reading run. This page will keep up with the book as it moves from structure to chapter results.
           </p>
 
           <label className="block mb-4">
-            <span className="block text-[var(--warm-700)] mb-2" style={{ fontSize: "0.875rem", fontWeight: 500 }}>
+            <span className="block text-[var(--warm-700)] mb-2" style={uiTypography.metaMedium}>
               EPUB file
             </span>
             <input
@@ -119,13 +120,13 @@ export function UploadPage() {
           </label>
 
           {file ? (
-            <p className="text-[var(--warm-500)] mb-4" style={{ fontSize: "0.8125rem" }}>
+            <p className="text-[var(--warm-500)] mb-4" style={uiTypography.caption}>
               Selected file: {file.name}
             </p>
           ) : null}
 
           {error ? (
-            <p className="text-[var(--destructive)] mb-4" style={{ fontSize: "0.8125rem" }}>
+            <p className="text-[var(--destructive)] mb-4" style={uiTypography.caption}>
               {error}
             </p>
           ) : null}
@@ -136,7 +137,7 @@ export function UploadPage() {
               disabled={submitting}
               data-testid="upload-submit"
               className="inline-flex items-center gap-2 px-5 py-3 rounded-lg bg-[var(--amber-accent)] text-white hover:bg-[var(--warm-700)] transition-colors disabled:opacity-60 cursor-pointer"
-              style={{ fontSize: "0.9375rem", fontWeight: 500 }}
+              style={uiTypography.control}
             >
               {submitting ? <LoaderCircle className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
               {submitting ? "Uploading..." : "Upload and analyze"}
@@ -144,7 +145,7 @@ export function UploadPage() {
             <Link
               to="/books"
               className="text-[var(--warm-600)] no-underline hover:text-[var(--warm-800)]"
-              style={{ fontSize: "0.875rem", fontWeight: 500 }}
+              style={uiTypography.control}
             >
               Back to books
             </Link>
@@ -152,30 +153,30 @@ export function UploadPage() {
         </form>
 
         <div className="bg-white rounded-3xl border border-[var(--warm-300)]/30 p-8 shadow-sm">
-          <p className="text-[var(--amber-accent)] uppercase tracking-[0.18em] mb-2" style={{ fontSize: "0.6875rem", fontWeight: 600 }}>
+          <p className="text-[var(--amber-accent)] uppercase tracking-[0.18em] mb-2" style={uiTypography.eyebrow}>
             Job Status
           </p>
           {!job ? (
-            <p className="text-[var(--warm-600)]" style={{ fontSize: "0.9375rem", lineHeight: 1.7 }}>
+            <p className="text-[var(--warm-600)]" style={uiTypography.body}>
               No upload is in progress in this tab yet. Once you submit an EPUB, this panel will follow the run until it is ready to open.
             </p>
           ) : (
             <div className="space-y-4">
               <div>
-                <p className="text-[var(--warm-500)] mb-1" style={{ fontSize: "0.75rem" }}>
+                <p className="text-[var(--warm-500)] mb-1" style={uiTypography.chip}>
                   Stage
                 </p>
-                <p className="text-[var(--warm-900)]" style={{ fontSize: "0.9375rem", fontWeight: 600 }}>
+                <p className="text-[var(--warm-900)]" style={uiTypography.bodyStrong}>
                   {jobStageLabels[job.status]}
                 </p>
               </div>
 
               {job.book_title ? (
                 <div>
-                  <p className="text-[var(--warm-500)] mb-1" style={{ fontSize: "0.75rem" }}>
+                  <p className="text-[var(--warm-500)] mb-1" style={uiTypography.chip}>
                     Book
                   </p>
-                  <p className="text-[var(--warm-900)]" style={{ fontSize: "0.9375rem", fontWeight: 600 }}>
+                  <p className="text-[var(--warm-900)]" style={uiTypography.bodyStrong}>
                     {job.book_title}
                   </p>
                 </div>
@@ -184,10 +185,10 @@ export function UploadPage() {
               {job.progress_percent != null ? (
                 <div>
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-[var(--warm-500)]" style={{ fontSize: "0.75rem" }}>
+                    <span className="text-[var(--warm-500)]" style={uiTypography.chip}>
                       Progress
                     </span>
-                    <span className="text-[var(--warm-700)]" style={{ fontSize: "0.75rem", fontWeight: 600 }}>
+                    <span className="text-[var(--warm-700)]" style={uiTypography.chip}>
                       {Math.round(job.progress_percent)}%
                     </span>
                   </div>
@@ -198,7 +199,7 @@ export function UploadPage() {
               ) : null}
 
               {job.last_error ? (
-                <p className="text-[var(--destructive)]" style={{ fontSize: "0.8125rem", lineHeight: 1.6 }}>
+                <p className="text-[var(--destructive)]" style={uiTypography.caption}>
                   {job.last_error.message}
                 </p>
               ) : null}

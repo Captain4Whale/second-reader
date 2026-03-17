@@ -2,6 +2,8 @@
 
 :root {
   --font-size: 16px;
+  --rc-font-sans: "Inter", system-ui, sans-serif;
+  --rc-font-serif: "Lora", Georgia, serif;
   --background: #FAF7F2;
   --foreground: #2C1810;
   --card: #FFFFFF;
@@ -61,6 +63,44 @@
   --association-color: #F0E8FF;
   --curious-color: #E8FFE8;
   --discern-color: #FFE8E0;
+
+  /* Frontend visual system v1: core typography */
+  --rc-type-shell-brand: 1.2rem;
+  --rc-type-shell-tagline: 0.72rem;
+  --rc-type-page-title: 1.875rem;
+  --rc-type-card-title: 1.25rem;
+  --rc-type-panel-title: 1.125rem;
+  --rc-type-body: 0.9375rem;
+  --rc-type-meta: 0.875rem;
+  --rc-type-caption: 0.8125rem;
+  --rc-type-chip: 0.75rem;
+  --rc-type-control: 0.875rem;
+  --rc-type-control-compact: 0.79rem;
+  --rc-type-action-sm: 0.8125rem;
+  --rc-type-eyebrow: 0.6875rem;
+
+  /* Reader content typography: shared scale for notes + source text */
+  --rc-type-reader-body: 0.875rem;
+  --rc-type-reader-quote: 0.8125rem;
+  --rc-type-reader-meta: 0.75rem;
+  --rc-type-reader-label: 0.74rem;
+  --rc-type-reader-chip: 0.72rem;
+  --rc-type-reader-caption: 0.64rem;
+
+  /* Minimal semantic non-type tokens for the core application */
+  --rc-surface-bg: #FFFFFF;
+  --rc-surface-bg-muted: #FFFCF5;
+  --rc-border-subtle: rgba(224, 212, 190, 0.3);
+  --rc-border-strong: rgba(224, 212, 190, 0.55);
+  --rc-radius-card: 1rem;
+  --rc-radius-panel: 1.5rem;
+  --rc-shadow-surface: 0 1px 0 rgba(255, 255, 255, 0.92), 0 12px 28px rgba(61, 46, 31, 0.04);
+  --rc-shadow-surface-strong: 0 1px 0 rgba(255, 255, 255, 0.92), 0 18px 34px rgba(61, 46, 31, 0.07);
+  --rc-space-1: 0.5rem;
+  --rc-space-2: 0.75rem;
+  --rc-space-3: 1rem;
+  --rc-space-4: 1.5rem;
+  --rc-space-5: 2rem;
 }
 
 @theme inline {
@@ -132,11 +172,11 @@
 
   body {
     @apply bg-background text-foreground;
-    font-family: 'Inter', system-ui, sans-serif;
+    font-family: var(--rc-font-sans);
   }
 
   h1, h2, h3, h4 {
-    font-family: 'Lora', Georgia, serif;
+    font-family: var(--rc-font-serif);
   }
 
   html {
@@ -144,43 +184,43 @@
   }
 
   h1 {
-    font-size: var(--text-2xl);
+    font-size: var(--rc-type-page-title);
     font-weight: var(--font-weight-medium);
-    line-height: 1.5;
+    line-height: 1.15;
   }
 
   h2 {
-    font-size: var(--text-xl);
+    font-size: var(--rc-type-card-title);
     font-weight: var(--font-weight-medium);
     line-height: 1.5;
   }
 
   h3 {
-    font-size: var(--text-lg);
+    font-size: var(--rc-type-panel-title);
     font-weight: var(--font-weight-medium);
-    line-height: 1.5;
+    line-height: 1.35;
   }
 
   h4 {
-    font-size: var(--text-base);
+    font-size: var(--rc-type-body);
     font-weight: var(--font-weight-medium);
-    line-height: 1.5;
+    line-height: 1.35;
   }
 
   label {
-    font-size: var(--text-base);
+    font-size: var(--rc-type-control);
     font-weight: var(--font-weight-medium);
-    line-height: 1.5;
+    line-height: 1.35;
   }
 
   button {
-    font-size: var(--text-base);
+    font-size: var(--rc-type-control);
     font-weight: var(--font-weight-medium);
-    line-height: 1.5;
+    line-height: 1.35;
   }
 
   input {
-    font-size: var(--text-base);
+    font-size: var(--rc-type-control);
     font-weight: var(--font-weight-normal);
     line-height: 1.5;
   }

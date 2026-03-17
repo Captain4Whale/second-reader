@@ -170,3 +170,24 @@ Update when: a major product or engineering decision is made, reversed, or becom
 - `0b01400` `Reorganize docs hierarchy`
 - `231c396` `Remove case study docs`
 - `AGENTS.md`
+
+## Entry 9
+**Decision / Inflection**: Introduce a frontend visual-system document and separate core UI typography from reader-content scaling.
+
+**Period**: Mid-March 2026.
+
+**Problem**: The frontend already had a recognizable visual language, but typography rules were still scattered across page-local inline styles. At the same time, the chapter reading workspace needed a clear answer to which text should respect user-controlled reading scale and which text should remain fixed application chrome.
+
+**Alternatives considered**: Keep page-local typography decisions implicit, force every page including landing into one typography system immediately, or let reader scale continue affecting both content and chrome without a documented boundary.
+
+**Why this path won**: A documented visual system created a stable way to align the core application without erasing intentional special cases like the landing page. Separating UI typography from reader-content typography also preserved adjustable reading comfort without turning navigation and controls into moving targets.
+
+**What changed in the system**: The workspace gained a stable frontend visual-system document, new theme tokens for core typography roles, and explicit reader-scale boundaries that distinguish scalable reading content from fixed application chrome.
+
+**Why it matters later**: This is the point where typography stopped being a page-by-page implementation detail and became an explicit frontend system. Future contributors will need this context to understand why landing remains a controlled exception and why reader-scale logic is intentionally narrower than "all text in the chapter page."
+
+**Primary evidence**:
+- `docs/frontend-visual-system.md`
+- `AGENTS.md`
+- `reading-companion-frontend/AGENTS.md`
+- `reading-companion-frontend/src/styles/theme.css`

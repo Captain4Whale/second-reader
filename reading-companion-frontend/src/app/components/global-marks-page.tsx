@@ -5,6 +5,7 @@ import { fetchGlobalMarks, getErrorPresentation } from "../lib/api";
 import { markLabel } from "../lib/marks";
 import { reactionLabel } from "../lib/reactions";
 import { useApiResource } from "../lib/use-api-resource";
+import { uiTypography } from "../lib/visual-system";
 import { EmptyState, ErrorState, LoadingState } from "./page-state";
 
 export function GlobalMarksPage() {
@@ -42,10 +43,10 @@ export function GlobalMarksPage() {
       <div className="flex items-center gap-3 mb-8">
         <Bookmark className="w-6 h-6 text-[var(--amber-accent)]" />
         <div>
-          <h1 className="text-[var(--warm-900)]" style={{ fontSize: "1.875rem", fontWeight: 600 }}>
+          <h1 className="text-[var(--warm-900)]" style={uiTypography.pageTitle}>
             {copy("page.marks.title")}
           </h1>
-          <p className="text-[var(--warm-600)]" style={{ fontSize: "0.875rem" }}>
+          <p className="text-[var(--warm-600)]" style={uiTypography.meta}>
             {copy("marks.subtitle")}
           </p>
         </div>
@@ -64,17 +65,17 @@ export function GlobalMarksPage() {
             <section key={bookId}>
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <h2 className="text-[var(--warm-900)]" style={{ fontSize: "1.125rem", fontWeight: 600 }}>
+                  <h2 className="text-[var(--warm-900)]" style={uiTypography.panelTitle}>
                     {items[0]?.book_title}
                   </h2>
-                  <p className="text-[var(--warm-500)]" style={{ fontSize: "0.75rem" }}>
+                  <p className="text-[var(--warm-500)]" style={uiTypography.chip}>
                     {copy("marks.savedSummary", { count: items.length })}
                   </p>
                 </div>
                 <Link
                   to={`/books/${bookId}`}
                   className="text-[var(--amber-accent)] no-underline hover:text-[var(--warm-700)]"
-                  style={{ fontSize: "0.8125rem", fontWeight: 500 }}
+                  style={uiTypography.actionSmall}
                 >
                   {copy("marks.action.openBook")}
                 </Link>
@@ -86,32 +87,32 @@ export function GlobalMarksPage() {
                   return (
                     <div key={mark.mark_id} data-testid={`global-mark-${mark.mark_id}`} className="bg-white rounded-2xl border border-[var(--warm-300)]/30 p-5 shadow-sm">
                       <div className="flex items-center gap-2 mb-2 flex-wrap">
-                        <span className="text-[var(--warm-500)]" style={{ fontSize: "0.75rem" }}>
+                        <span className="text-[var(--warm-500)]" style={uiTypography.chip}>
                           {mark.chapter_ref} · {mark.section_ref}
                         </span>
                         <span className="text-[var(--warm-300)]">·</span>
-                        <span className="text-[var(--warm-700)]" style={{ fontSize: "0.75rem", fontWeight: 600 }}>
+                        <span className="text-[var(--warm-700)]" style={uiTypography.chip}>
                           {reactionLabel(mark.reaction_type)}
                         </span>
                         <span className="text-[var(--warm-300)]">·</span>
-                        <span className="text-[var(--amber-accent)]" style={{ fontSize: "0.75rem", fontWeight: 600 }}>
+                        <span className="text-[var(--amber-accent)]" style={uiTypography.chip}>
                           {markLabel(mark.mark_type)}
                         </span>
                       </div>
 
                       {anchorQuote ? (
-                        <blockquote className="border-l-2 border-[var(--amber-accent)]/40 pl-4 mb-3 text-[var(--warm-600)] italic" style={{ fontSize: "0.8125rem", lineHeight: 1.7 }}>
+                        <blockquote className="border-l-2 border-[var(--amber-accent)]/40 pl-4 mb-3 text-[var(--warm-600)] italic" style={uiTypography.caption}>
                           “{anchorQuote}”
                         </blockquote>
                       ) : null}
-                      <p className="text-[var(--warm-800)]" style={{ fontSize: "0.875rem", lineHeight: 1.7 }}>
+                      <p className="text-[var(--warm-800)]" style={uiTypography.meta}>
                         {mark.reaction_excerpt}
                       </p>
 
                       <Link
                         to={`/books/${mark.book_id}/chapters/${mark.chapter_id}`}
                         className="inline-flex mt-4 text-[var(--amber-accent)] no-underline hover:text-[var(--warm-700)]"
-                        style={{ fontSize: "0.8125rem", fontWeight: 500 }}
+                        style={uiTypography.actionSmall}
                       >
                         {copy("marks.action.openChapter")}
                       </Link>

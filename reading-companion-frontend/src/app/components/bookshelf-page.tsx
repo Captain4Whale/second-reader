@@ -6,6 +6,7 @@ import { term } from "../config/product-lexicon";
 import { BookShelfCard, fetchBooks, getErrorPresentation, toApiAssetUrl, toFrontendPath } from "../lib/api";
 import { useApiResource } from "../lib/use-api-resource";
 import { useUploadBookActions } from "../lib/use-upload-book-actions";
+import { uiTypography } from "../lib/visual-system";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "./ui/alert-dialog";
 import { EmptyState, ErrorState, LoadingState } from "./page-state";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
@@ -51,21 +52,21 @@ function BookCard({ book }: { book: BookShelfCard }) {
       </div>
 
       <div className="p-4">
-        <h2 className="text-[var(--warm-900)] mb-1 line-clamp-2" style={{ fontSize: "0.9375rem", fontWeight: 600, lineHeight: 1.4 }}>
+        <h2 className="text-[var(--warm-900)] mb-1 line-clamp-2" style={uiTypography.bodyStrong}>
           {book.title}
         </h2>
-        <p className="text-[var(--warm-600)] mb-3" style={{ fontSize: "0.8125rem" }}>
+        <p className="text-[var(--warm-600)] mb-3" style={uiTypography.caption}>
           {book.author}
         </p>
 
         <div className="flex items-center justify-between gap-3 mb-3">
-          <div className={`flex items-center gap-1.5 ${status.color}`} style={{ fontSize: "0.75rem", fontWeight: 500 }}>
+          <div className={`flex items-center gap-1.5 ${status.color}`} style={uiTypography.chip}>
             <Icon className={`w-3.5 h-3.5 ${book.reading_status === "analyzing" ? "animate-spin" : ""}`} />
             <span>{statusSummary(book)}</span>
           </div>
         </div>
 
-        <div className="flex items-center justify-between text-[var(--warm-500)]" style={{ fontSize: "0.75rem" }}>
+        <div className="flex items-center justify-between text-[var(--warm-500)]" style={uiTypography.chip}>
           <span>
             {book.book_language} → {book.output_language}
           </span>
@@ -122,10 +123,10 @@ export function BookshelfPage() {
       <div className="max-w-6xl mx-auto px-6 py-10">
         <div className="flex items-center justify-between gap-4 mb-10 flex-wrap">
           <div>
-            <h1 className="text-[var(--warm-900)] mb-1" style={{ fontSize: "1.875rem", fontWeight: 600 }}>
+            <h1 className="text-[var(--warm-900)] mb-1" style={uiTypography.pageTitle}>
               {copy("page.books.title")}
             </h1>
-            <p className="text-[var(--warm-600)]" style={{ fontSize: "0.875rem" }}>
+            <p className="text-[var(--warm-600)]" style={uiTypography.meta}>
               {copy("bookshelf.count.summary", { books: data.items.length, marks: data.global_mark_count })}
             </p>
           </div>
@@ -133,7 +134,7 @@ export function BookshelfPage() {
             <Link
               to="/marks"
               className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-[var(--warm-300)]/60 text-[var(--warm-700)] no-underline hover:bg-[var(--warm-100)] transition-colors"
-              style={{ fontSize: "0.875rem", fontWeight: 500 }}
+              style={uiTypography.control}
             >
               {copy("bookshelf.action.openMarks")}
               <ArrowRight className="w-4 h-4" />
@@ -143,7 +144,7 @@ export function BookshelfPage() {
               onClick={openUploadDialog}
               data-testid="bookshelf-open-upload"
               className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[var(--amber-accent)] text-white hover:bg-[var(--warm-700)] transition-colors cursor-pointer"
-              style={{ fontSize: "0.875rem", fontWeight: 500 }}
+              style={uiTypography.control}
             >
               <Upload className="w-4 h-4" />
               {copy("bookshelf.action.addBook")}
@@ -200,7 +201,7 @@ export function BookshelfPage() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           {uploadActions.error ? (
-            <p className="text-[var(--destructive)]" style={{ fontSize: "0.8125rem" }}>
+            <p className="text-[var(--destructive)]" style={uiTypography.caption}>
               {uploadActions.error}
             </p>
           ) : null}
