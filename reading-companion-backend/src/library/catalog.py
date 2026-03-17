@@ -29,6 +29,7 @@ from src.iterator_reader.storage import (
     existing_book_manifest_file,
     existing_parse_state_file,
     existing_run_state_file,
+    existing_structure_file,
     resolve_output_relative_file,
     run_state_file,
 )
@@ -914,10 +915,13 @@ def _synthesized_current_reading_activity(
 
 
 def _analysis_current_reading_activity(
+    book_id: str,
     *,
     run_state: dict[str, Any],
     status: str,
     current_phase_step_key: str | None,
+    current_chapter_id: int | None = None,
+    root: Path | None = None,
 ) -> dict[str, Any] | None:
     """Return the live reading activity snapshot for the current analysis state."""
     current = run_state.get("current_reading_activity")
@@ -930,10 +934,19 @@ def _analysis_current_reading_activity(
                 "updated_at": str(current.get("updated_at", "") or run_state.get("updated_at", "") or _timestamp()),
             }
             segment_ref = str(current.get("segment_ref", "") or "").strip()
-            current_excerpt = str(current.get("current_excerpt", "") or "").strip()
+            current_excerpt = re.sub(r"\s+", " ", str(current.get("current_excerpt", "") or "")).strip()
             search_query = str(current.get("search_query", "") or "").strip()
             thought_family = str(current.get("thought_family", "") or "").strip().lower()
             problem_code = str(current.get("problem_code", "") or "").strip().lower()
+            if segment_ref and (not current_excerpt or current_excerpt.endswith("…") or current_excerpt.endswith("...")):
+                full_segment_text = _segment_text_for_ref(
+                    book_id,
+                    segment_ref,
+                    current_chapter_id=current_chapter_id,
+                    root=root,
+                )
+                if full_segment_text:
+                    current_excerpt = full_segment_text
             if segment_ref:
                 payload["segment_ref"] = segment_ref
             if current_excerpt:
@@ -953,6 +966,37 @@ def _analysis_current_reading_activity(
         current_chapter_ref=str(run_state.get("current_chapter_ref", "") or "") or None,
         updated_at=str(run_state.get("updated_at", "") or "") or None,
     )
+
+
+def _segment_text_for_ref(
+    book_id: str,
+    segment_ref: str,
+    *,
+    current_chapter_id: int | None = None,
+    root: Path | None = None,
+) -> str | None:
+    """Resolve one full segment text from structure.json for live excerpt backfills."""
+    normalized_segment_ref = str(segment_ref or "").strip()
+    if not normalized_segment_ref:
+        return None
+    structure_path = existing_structure_file(_book_dir(book_id, root))
+    if not structure_path.exists():
+        return None
+    structure = _load_json(structure_path)
+    for chapter in structure.get("chapters", []):
+        if not isinstance(chapter, dict):
+            continue
+        chapter_id = int(chapter.get("id", 0) or 0) or None
+        if current_chapter_id is not None and chapter_id is not None and chapter_id != current_chapter_id:
+            continue
+        for segment in chapter.get("segments", []):
+            if not isinstance(segment, dict):
+                continue
+            if str(segment.get("segment_ref", "") or "").strip() != normalized_segment_ref:
+                continue
+            normalized_text = re.sub(r"\s+", " ", str(segment.get("text", "") or "")).strip()
+            return normalized_text or None
+    return None
 
 
 def _analysis_pulse_message(
@@ -1092,9 +1136,12 @@ def get_analysis_state(book_id: str, root: Path | None = None) -> dict:
     )
     current_phase_step_key, current_phase_step_params = _analysis_phase_step_message(current_phase_step)
     current_reading_activity = _analysis_current_reading_activity(
+        book_id,
         run_state=run_state,
         status=status,
         current_phase_step_key=current_phase_step_key,
+        current_chapter_id=current_chapter_id,
+        root=root,
     )
     pulse_message = _analysis_pulse_message(
         status=status,

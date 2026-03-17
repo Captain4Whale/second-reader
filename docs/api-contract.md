@@ -183,7 +183,7 @@ except as migration compatibility text where the underlying value remains in the
   - `started_at`
   - `updated_at`
   - optional `segment_ref`
-  - optional `current_excerpt`
+  - optional `current_excerpt` carrying the normalized live excerpt text for the active segment
   - optional `search_query`
   - optional `thought_family`
   - optional `problem_code`

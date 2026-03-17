@@ -930,8 +930,12 @@ function contentCopy(
   return copyForLocale(key, locale as AppLocale, params);
 }
 
+function normalizeInlineText(value?: string | null) {
+  return String(value ?? "").replace(/\s+/g, " ").trim();
+}
+
 function excerptText(value?: string | null, maxLength = 120) {
-  const normalized = String(value ?? "").replace(/\s+/g, " ").trim();
+  const normalized = normalizeInlineText(value);
   if (!normalized) {
     return "";
   }
@@ -1263,20 +1267,20 @@ function liveProblemCopyKey(problemCode?: string | null): ControlledCopyKey {
 function buildCurrentMindstreamContext(
   activity: CurrentReadingActivitySnapshot,
 ): Pick<CurrentMindstreamActivity, "context" | "contextKind"> {
-  const excerpt = String(activity.current_excerpt ?? "").trim();
-  const query = String(activity.search_query ?? "").trim();
+  const excerpt = normalizeInlineText(activity.current_excerpt);
+  const query = normalizeInlineText(activity.search_query);
   const segmentRef = String(activity.segment_ref ?? "").trim();
 
   if (query) {
     return {
-      context: excerptText(query, 72),
+      context: query,
       contextKind: "query",
     };
   }
 
   if (excerpt && !looksLikeLocationToken(excerpt, segmentRef)) {
     return {
-      context: excerptText(excerpt, 180),
+      context: excerpt,
       contextKind: "excerpt",
     };
   }
@@ -1901,7 +1905,7 @@ function MindstreamHeroCard({
       <div className="mt-7 flex items-start gap-4 md:mt-9 md:gap-6">
         {currentActivity ? (
           <span
-            className="mt-3.5 h-2.5 w-2.5 shrink-0 rounded-full bg-[var(--amber-accent)] md:mt-4 md:h-3 md:w-3"
+            className="mt-2.5 h-2.5 w-2.5 shrink-0 rounded-full bg-[var(--amber-accent)] md:mt-2.5 md:h-3 md:w-3"
             aria-hidden="true"
           />
         ) : null}
@@ -1936,9 +1940,7 @@ function MindstreamHeroCard({
                 lineHeight: OVERVIEW_CARD_BODY_STYLE.lineHeight,
               }}
             >
-              <p className="line-clamp-4 md:line-clamp-3">
-                {quoteText}
-              </p>
+              <p>{quoteText}</p>
             </blockquote>
           ) : null}
 

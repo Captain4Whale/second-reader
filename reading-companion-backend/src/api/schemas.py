@@ -272,7 +272,7 @@ class CurrentReadingActivity(ApiModel):
         description="Current live reading phase."
     )
     segment_ref: Optional[str] = Field(default=None, description="Current semantic segment reference when known.")
-    current_excerpt: Optional[str] = Field(default=None, description="Short excerpt of the text currently under attention.")
+    current_excerpt: Optional[str] = Field(default=None, description="Excerpt of the text currently under attention.")
     search_query: Optional[str] = Field(default=None, description="Search query being investigated when the reader is searching.")
     thought_family: Optional[ReactionType] = Field(
         default=None,

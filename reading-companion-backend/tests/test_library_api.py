@@ -933,6 +933,42 @@ def test_analysis_state_exposes_current_reading_activity_snapshot(tmp_path):
     }
 
 
+def test_analysis_state_backfills_truncated_current_excerpt_from_structure(tmp_path):
+    """analysis-state should restore a full live excerpt when older runtime snapshots stored an ellipsized preview."""
+    book_id = _bootstrap_book(tmp_path, stage="deep_reading")
+    public_book_id = to_api_book_id(book_id)
+    output_dir = tmp_path / "output" / book_id
+
+    structure_path = output_dir / "structure.json"
+    structure = json.loads(structure_path.read_text(encoding="utf-8"))
+    structure["chapters"][0]["segments"][0]["text"] = "Alpha beta gamma delta epsilon."
+    structure_path.write_text(json.dumps(structure, ensure_ascii=False, indent=2), encoding="utf-8")
+
+    run_state_path = output_dir / "run_state.json"
+    run_state = json.loads(run_state_path.read_text(encoding="utf-8"))
+    run_state["current_reading_activity"] = {
+        "phase": "reflecting",
+        "started_at": "2026-03-15T07:04:50Z",
+        "updated_at": "2026-03-15T07:04:56Z",
+        "segment_ref": "1.1",
+        "current_excerpt": "Alpha beta gamma…",
+        "thought_family": "highlight",
+    }
+    run_state["current_segment_ref"] = "1.1"
+    run_state["updated_at"] = "2026-03-15T07:04:56Z"
+    run_state_path.write_text(json.dumps(run_state, ensure_ascii=False, indent=2), encoding="utf-8")
+
+    api_module.app.state.root = tmp_path
+    client = TestClient(api_module.app)
+
+    response = client.get(f"/api/books/{public_book_id}/analysis-state")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["current_reading_activity"]["current_excerpt"] == "Alpha beta gamma delta epsilon."
+    assert payload["current_state_panel"]["current_reading_activity"]["current_excerpt"] == "Alpha beta gamma delta epsilon."
+
+
 def test_chapter_api_tolerates_empty_legacy_target_locator(tmp_path):
     """Legacy featured reactions with empty locator dicts should normalize to null, not 500."""
     book_id = _bootstrap_book(tmp_path)

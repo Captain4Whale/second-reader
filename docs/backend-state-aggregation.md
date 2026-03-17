@@ -43,6 +43,7 @@ Use `docs/api-contract.md` for exact fields and routes. Use this file to underst
 - `GET /api/books/{book_id}/analysis-state`
   - Uses `book_manifest`, `run_state`, `parse_state`, `activity.jsonl`, and chapter result files together.
   - Builds progress metrics, chapter tree statuses, the live `current_reading_activity` snapshot, `resume_available`, `last_checkpoint_at`, recent completed chapters, recent reactions, and the `current_state_panel`.
+  - When older runtime snapshots contain a shortened `current_reading_activity.current_excerpt`, catalog backfills the full normalized segment text from `structure.json` by matching `segment_ref`.
 - `GET /api/books/{book_id}/activity`
   - Reads `activity.jsonl` and normalizes each event into the public event shape.
   - The routed frontend overview now consumes the `stream=mindstream` view; `stream=system` remains available for diagnostics.

@@ -121,16 +121,12 @@ _PROBLEM_EVENT_TYPES = {
 _READING_ACTIVITY_HEARTBEAT_SECONDS = 2.0
 
 
-def _activity_excerpt(text: str | None, limit: int = 96) -> str | None:
-    """Return a short human-readable excerpt for the live reading activity."""
+def _activity_excerpt(text: str | None) -> str | None:
+    """Return normalized live excerpt text for the current reading activity."""
     normalized = re.sub(r"\s+", " ", str(text or "")).strip()
     if not normalized:
         return None
-    parts = re.split(r"(?<=[.!?。！？])\s+", normalized, maxsplit=1)
-    excerpt = parts[0].strip() if parts else normalized
-    if len(excerpt) <= limit:
-        return excerpt
-    return excerpt[: limit - 1].rstrip() + "…"
+    return normalized
 
 
 def _normalize_current_reading_problem_code(value: object) -> CurrentReadingProblemCode | None:

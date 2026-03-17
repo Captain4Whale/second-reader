@@ -41,6 +41,7 @@ Frontend defaults can be overridden with:
 - Backend `target_url`, `result_url`, and `open_target` values are frontend routes, not backend URLs.
 - Backend analysis state and the mindstream view of the activity feed are used by the adaptive `/books/:id` overview when a book is in progress; WebSocket messages trigger refreshes, while polling remains the fallback.
 - The top live line in `Reading mindstream` is driven by `analysis-state.current_reading_activity`, which is a realtime snapshot of the active reading phase rather than a persisted history item.
+- `analysis-state.current_reading_activity.current_excerpt` is the normalized live excerpt text for the active segment; compact UI positions such as breadcrumbs are expected to truncate locally instead of depending on backend shortening.
 - The historical mindstream list still comes from `GET /api/books/{book_id}/activity` with `stream=mindstream` and remains separate from the live activity snapshot.
 - Runtime guard events such as stalled heartbeats, timeout detection, unsupported runtime launches, and forced pauses are still written into the same activity feed with `stream=system`, but they are now reserved for internal diagnostics rather than the main user-facing overview.
 - Additional system-side recovery events now include `resume_incompatible`, `fresh_rerun_started`, and `dev_run_abandoned`.
