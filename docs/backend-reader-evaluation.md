@@ -138,6 +138,8 @@ Use `docs/backend-reading-mechanism.md` for how the reader works. Use this file 
 
 ## Current Example: Subsegment Planning
 - The current subsegment planner is the first concrete example for this evaluation framework.
+- The benchmark for this change should compare `heuristic_only` and `llm_primary` on the same tracked cases, with search disabled and a dedicated eval-only runtime root so the signal stays focused on slicing quality.
+- The dedicated runner lives under `reading-companion-backend/eval/subsegment/` and should be invokable as one offline command rather than through the normal runtime read flow.
 - For this change, the goal is not:
   - more human-like slicing
   - more units
@@ -162,6 +164,8 @@ Use `docs/backend-reading-mechanism.md` for how the reader works. Use this file 
 - Stable methodology belongs in `docs/`.
 - Concrete evaluation reports belong in `reading-companion-backend/docs/evaluation/`.
 - Executable evaluation code belongs in `reading-companion-backend/eval/`.
+- Tracked benchmark datasets belong in `reading-companion-backend/eval/datasets/`.
+- Machine-generated benchmark runs belong in `reading-companion-backend/eval/runs/` and should stay out of normal runtime `state/` / `output/` paths.
 - Temporary experiment logs belong in `reading-companion-backend/docs/research/` only when they are not yet stable reports.
 
 ### Expectations For Evaluation Reports

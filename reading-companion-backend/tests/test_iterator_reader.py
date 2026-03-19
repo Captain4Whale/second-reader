@@ -698,7 +698,7 @@ def test_build_subsegments_single_sentence_short_circuits_planner(monkeypatch):
         output_language="en",
     )
 
-    subsegments, source = _build_subsegments(state)
+    subsegments, source, diagnostics = _build_subsegments(state)
 
     assert source == "single_sentence"
     assert subsegments == [
@@ -709,13 +709,16 @@ def test_build_subsegments_single_sentence_short_circuits_planner(monkeypatch):
             "sentence_end": 1,
         }
     ]
+    assert diagnostics["planner_status"] == "single_sentence"
+    assert diagnostics["materialized_unit_count"] == 1
 
 
 def test_build_subsegments_accepts_valid_llm_plan_with_single_sentence_units(monkeypatch):
     """Self-contained single-sentence units should survive planner validation."""
     monkeypatch.setattr(
         "src.iterator_reader.reader._plan_subsegments_with_llm",
-        lambda *_args, **_kwargs: {
+        lambda *_args, **_kwargs: (
+            {
             "units": [
                 {
                     "sentence_start": 1,
@@ -740,6 +743,8 @@ def test_build_subsegments_accepts_valid_llm_plan_with_single_sentence_units(mon
                 },
             ]
         },
+            "ok",
+        ),
     )
     state = create_reader_state(
         chapter_title="Chapter 1",
@@ -759,7 +764,7 @@ def test_build_subsegments_accepts_valid_llm_plan_with_single_sentence_units(mon
         output_language="en",
     )
 
-    subsegments, source = _build_subsegments(state)
+    subsegments, source, diagnostics = _build_subsegments(state)
 
     assert source == "llm"
     assert [item["reading_move"] for item in subsegments] == ["claim", "turn", "conclusion"]
@@ -769,13 +774,15 @@ def test_build_subsegments_accepts_valid_llm_plan_with_single_sentence_units(mon
         (2, 2),
         (3, 3),
     ]
+    assert diagnostics["validation_status"] == "ok"
+    assert diagnostics["materialized_unit_count"] == 3
 
 
 def test_build_subsegments_falls_back_on_malformed_planner_payload(monkeypatch):
     """Malformed planner payloads should fall back without partial repair."""
     monkeypatch.setattr(
         "src.iterator_reader.reader._plan_subsegments_with_llm",
-        lambda *_args, **_kwargs: {"units": "not-a-list"},
+        lambda *_args, **_kwargs: ({"units": "not-a-list"}, "ok"),
     )
     monkeypatch.setattr(
         "src.iterator_reader.reader._build_subsegments_fallback",
@@ -795,17 +802,19 @@ def test_build_subsegments_falls_back_on_malformed_planner_payload(monkeypatch):
         output_language="en",
     )
 
-    subsegments, source = _build_subsegments(state)
+    subsegments, source, diagnostics = _build_subsegments(state)
 
     assert source == "fallback"
     assert subsegments == [{"summary": "Fallback summary", "text": "Fallback text"}]
+    assert diagnostics["planner_failure_reason"] == "missing_units"
 
 
 def test_build_subsegments_falls_back_on_invalid_sentence_coverage(monkeypatch):
     """Non-contiguous planner coverage should be rejected outright."""
     monkeypatch.setattr(
         "src.iterator_reader.reader._plan_subsegments_with_llm",
-        lambda *_args, **_kwargs: {
+        lambda *_args, **_kwargs: (
+            {
             "units": [
                 {
                     "sentence_start": 1,
@@ -823,6 +832,8 @@ def test_build_subsegments_falls_back_on_invalid_sentence_coverage(monkeypatch):
                 },
             ]
         },
+            "ok",
+        ),
     )
     monkeypatch.setattr(
         "src.iterator_reader.reader._build_subsegments_fallback",
@@ -842,17 +853,19 @@ def test_build_subsegments_falls_back_on_invalid_sentence_coverage(monkeypatch):
         output_language="en",
     )
 
-    subsegments, source = _build_subsegments(state)
+    subsegments, source, diagnostics = _build_subsegments(state)
 
     assert source == "fallback"
     assert subsegments == [{"summary": "Fallback coverage", "text": "Fallback text"}]
+    assert diagnostics["planner_failure_reason"] == "non_contiguous_sentence_coverage"
 
 
 def test_build_subsegments_falls_back_when_planned_unit_exceeds_hard_token_cap(monkeypatch):
     """Planner units above the hard token cap should trigger heuristic fallback."""
     monkeypatch.setattr(
         "src.iterator_reader.reader._plan_subsegments_with_llm",
-        lambda *_args, **_kwargs: {
+        lambda *_args, **_kwargs: (
+            {
             "units": [
                 {
                     "sentence_start": 1,
@@ -863,6 +876,8 @@ def test_build_subsegments_falls_back_when_planned_unit_exceeds_hard_token_cap(m
                 }
             ]
         },
+            "ok",
+        ),
     )
     monkeypatch.setattr(
         "src.iterator_reader.reader._build_subsegments_fallback",
@@ -894,10 +909,44 @@ def test_build_subsegments_falls_back_when_planned_unit_exceeds_hard_token_cap(m
         },
     )
 
-    subsegments, source = _build_subsegments(state)
+    subsegments, source, diagnostics = _build_subsegments(state)
 
     assert source == "fallback"
     assert subsegments == [{"summary": "Fallback oversized", "text": "Fallback text"}]
+    assert diagnostics["planner_failure_reason"] == "oversized_or_empty_unit"
+
+
+def test_build_subsegments_honors_heuristic_only_override(monkeypatch):
+    """Eval-only strategy overrides should bypass the planner and force heuristic slicing."""
+    monkeypatch.setattr(
+        "src.iterator_reader.reader._plan_subsegments_with_llm",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(RuntimeError("planner should not run")),
+    )
+    monkeypatch.setattr(
+        "src.iterator_reader.reader._build_subsegments_fallback",
+        lambda _state: [{"summary": "Forced heuristic", "text": "Fallback text"}],
+    )
+    state = create_reader_state(
+        chapter_title="Chapter 1",
+        segment_id="1.5",
+        segment_summary="section summary",
+        segment_text="First point. Second point.",
+        memory={
+            "prior_segment_summaries": [],
+            "notable_findings": [],
+            "open_threads": [],
+            "highlighted_quotes": [],
+        },
+        output_language="en",
+        subsegment_strategy_override="heuristic_only",
+    )
+
+    subsegments, source, diagnostics = _build_subsegments(state)
+
+    assert source == "fallback"
+    assert subsegments == [{"summary": "Forced heuristic", "text": "Fallback text"}]
+    assert diagnostics["planner_status"] == "forced_heuristic"
+    assert diagnostics["planner_failure_reason"] == "strategy_override"
 
 
 def test_run_reader_segment_early_stop_avoids_express(monkeypatch):
@@ -1117,7 +1166,8 @@ def test_run_reader_segment_llm_planned_subsegments_merge_into_single_segment(mo
     )
     monkeypatch.setattr(
         "src.iterator_reader.reader._plan_subsegments_with_llm",
-        lambda *_args, **_kwargs: {
+        lambda *_args, **_kwargs: (
+            {
             "units": [
                 {
                     "sentence_start": 1,
@@ -1135,6 +1185,8 @@ def test_run_reader_segment_llm_planned_subsegments_merge_into_single_segment(mo
                 },
             ]
         },
+            "ok",
+        ),
     )
 
     monkeypatch.setattr(
@@ -1198,6 +1250,7 @@ def test_run_reader_segment_llm_planned_subsegments_merge_into_single_segment(mo
         "Claim move",
         "Turn move",
     ]
+    assert final_state["subsegment_plan_diagnostics"]["validation_status"] == "ok"
 
 
 def test_compact_segments_for_chapter_reflection_keeps_full_clause_quotes():

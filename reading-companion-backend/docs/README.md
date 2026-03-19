@@ -9,3 +9,5 @@ Update when: the archive layout or report categories change.
 - `research/`: historical analysis reports, experiment notes, and log captures
 - `evaluation/`: markdown evaluation reports and comparison writeups; not the stable methodology authority
 - active evaluation code remains in `../eval/`
+- tracked benchmark datasets live in `../eval/datasets/`
+- machine-generated eval runs live in `../eval/runs/` and should not be mixed into normal runtime artifact paths

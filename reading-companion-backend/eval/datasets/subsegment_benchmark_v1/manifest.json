@@ -1,0 +1,35 @@
+{
+  "dataset_id": "subsegment_benchmark_v1",
+  "version": "1",
+  "description": "Curated offline benchmark for comparing heuristic-only and LLM-primary subsegment slicing on nonfiction reader sections.",
+  "default_user_intent": "Read as a thoughtful co-reader and notice meaningful definitions, turns, causal links, and callbacks.",
+  "case_file": "cases.jsonl",
+  "core_case_ids": [
+    "core_fixture_01",
+    "core_c1_01",
+    "core_c1_02",
+    "core_c2_01",
+    "core_c2_02",
+    "core_c3_01",
+    "core_c3_02",
+    "core_c4_01",
+    "core_c5_01",
+    "core_c5_02",
+    "core_c6_01",
+    "core_c7_01",
+    "core_c8_01",
+    "core_c9_01",
+    "core_c9_02",
+    "core_c10_01",
+    "core_c11_01",
+    "core_c12_01"
+  ],
+  "audit_case_ids": [
+    "audit_preface_01",
+    "audit_c2_03",
+    "audit_c4_02",
+    "audit_c6_02",
+    "audit_c10_02",
+    "audit_c12_02"
+  ]
+}

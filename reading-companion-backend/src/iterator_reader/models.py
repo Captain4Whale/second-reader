@@ -63,6 +63,7 @@ CurrentReadingPhase = Literal[
     "preparing",
 ]
 ThoughtFamily = Literal["highlight", "association", "curious", "discern", "retrospect"]
+SubsegmentStrategy = Literal["llm_primary", "heuristic_only"]
 SubsegmentReadingMove = Literal[
     "definition",
     "claim",
@@ -426,6 +427,18 @@ class RuntimeSubsegment(TypedDict, total=False):
     sentence_end: int
 
 
+class SubsegmentPlanDiagnostics(TypedDict, total=False):
+    """Internal planner diagnostics retained for offline evaluation and debugging."""
+
+    strategy_requested: SubsegmentStrategy
+    planner_attempted: bool
+    planner_status: str
+    planner_failure_reason: str
+    validation_status: str
+    planner_payload: dict[str, object]
+    materialized_unit_count: int
+
+
 class ReaderMemory(TypedDict, total=False):
     """Running memory carried across semantic units in one read session."""
 
@@ -716,6 +729,8 @@ class ReaderState(TypedDict):
     segment_quality_flags: list[dict[str, str]]
     subsegment_plan: list[RuntimeSubsegment]
     subsegment_planner_source: str
+    subsegment_strategy_override: SubsegmentStrategy | None
+    subsegment_plan_diagnostics: SubsegmentPlanDiagnostics
 
 
 class UserMark(TypedDict):
