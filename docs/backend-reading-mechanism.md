@@ -14,6 +14,10 @@ Use `docs/backend-sequential-lifecycle.md` for the job-level workflow over time.
   - The persisted semantic unit created before deep reading begins.
   - Backend runtime code still often calls this unit a `segment`.
   - Public/UI language should treat this concept as `section`.
+- `body group`
+  - One parse-only contiguous body-text block formed before semantic section segmentation.
+  - It is separated by detected `section_heading` or `auxiliary` boundaries.
+  - It is an internal hygiene layer, not a product-facing reading unit.
 - `subsegment`
   - The runtime-only work unit created inside one selected section by the subsegment planner.
   - The active planner is LLM-primary for normal multi-sentence sections, with a heuristic sentence-boundary slicer as fallback.
@@ -41,6 +45,48 @@ Use `docs/backend-sequential-lifecycle.md` for the job-level workflow over time.
 - The planner preserves source order and full sentence coverage.
 - The heuristic fallback still uses sentence boundaries plus token/density heuristics, but those heuristics are now safety behavior, not the semantic target.
 - The public locus remains section-level even while the inner loop advances through runtime `subsegments`.
+
+## Parse-Side Section Formation
+- Raw source chapters are extracted first from the input book format.
+- Each chapter is then normalized into paragraph-sized text blocks called `paragraph records`.
+  - EPUB prefers XHTML block extraction so the records can retain href, CFI, block-tag, and paragraph-index metadata.
+  - When structured extraction is unavailable, the parser falls back to plain-text paragraph splitting.
+- Parse-time classification labels each paragraph record as one of:
+  - `chapter_heading`
+  - `section_heading`
+  - `body`
+  - `auxiliary`
+- `body groups` are formed before semantic section segmentation.
+  - A body group collects contiguous `body` records.
+  - A detected `section_heading` starts the next body group and is carried forward as boundary context, not as body prose.
+  - A detected `auxiliary` block acts as a hygiene boundary and can end the current body group without becoming section body text.
+- Semantic section segmentation runs per `body group`, not over the whole chapter at once.
+  - The prompt receives group-local numbered body paragraphs such as `[P1]`, `[P2]`, and so on.
+  - The prompt also receives chapter-heading and section-heading context as framing or boundary hints only.
+  - The prompt must return contiguous paragraph ranges plus short summaries in source order.
+- Prompt-local paragraph numbering is temporary.
+  - After the prompt returns group-local paragraph ranges, the parser remaps those ranges back onto the chapter's persisted paragraph indexes before writing the final section records.
+- Post-processing then rebalances obviously poor section outputs.
+  - Empty or invalid segmentation falls back to coarse coverage of the current body group.
+  - Very long under-segmented groups may be re-chunked into coarse sections.
+  - Obviously low-value section summaries may be dropped.
+  - Undersized adjacent sections may be merged back together.
+- Persisted `section` records are the output of this parse-side path.
+  - They carry stable text spans, paragraph ranges, locators, and `segment_ref`.
+  - Runtime `subsegment` planning only begins after the outer iterator selects one persisted section for live reading.
+
+### Why This Layer Exists
+- `body group` is a deterministic hygiene layer that keeps obvious structure text and auxiliary noise from defining the semantic target by accident.
+- `section` is the persisted semantic anchor that the outer iterator, checkpoints, and public state can rely on across runs.
+- `subsegment` remains the runtime execution unit used to take smaller reading steps inside one already-selected section.
+
+### Coverage And Limits
+- The parser aims not to lose `body` prose coverage.
+  - If semantic section segmentation returns nothing useful, the system falls back to coarse section coverage instead of leaving the body group unread.
+- Not all raw chapter text is intended to become section body text.
+  - `chapter_heading`, `section_heading`, and `auxiliary` content may remain context-only or be excluded from deep-reading body coverage altogether.
+- Heading and auxiliary detection are heuristic.
+  - Books with unusual formatting, title-like prose, dense metadata, or design-heavy layouts can still be misclassified at this parse-side stage.
 
 ## Reader Loop
 - The main inner loop is:
