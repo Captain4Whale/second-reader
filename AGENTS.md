@@ -44,6 +44,7 @@ Update when: document layering, reading order, task routing, or cross-project co
 - `docs/frontend-visual-system.md`: frontend typography system, reader-scale boundaries, and core visual tokens
 - `docs/backend-sequential-lifecycle.md`: sequential deep-reading job lifecycle, entrypoints, and runtime-state semantics
 - `docs/backend-reading-mechanism.md`: inner reader unit selection, prompt assembly, and attention-projection semantics
+- `docs/backend-reader-evaluation.md`: reader quality goals, evaluation layers, and offline evaluation methodology
 - `docs/backend-state-aggregation.md`: backend artifact aggregation, public state surfaces, and normalization boundary
 
 ### History Layer
@@ -75,6 +76,7 @@ Update when: document layering, reading order, task routing, or cross-project co
 - frontend typography, reader-scale boundaries, and visual token usage: `docs/frontend-visual-system.md`
 - backend sequential workflow, job lifecycle, resume behavior: `docs/backend-sequential-lifecycle.md`
 - backend reader unit selection, prompt assembly, and section/subsegment/excerpt boundaries: `docs/backend-reading-mechanism.md`
+- backend reader quality goals, evaluation layers, and offline eval methodology: `docs/backend-reader-evaluation.md`
 - backend artifact aggregation, state surfaces, normalization boundary: `docs/backend-state-aggregation.md`
 
 ### History Tasks
@@ -99,6 +101,7 @@ Update when: document layering, reading order, task routing, or cross-project co
 - frontend typography, visual tokens, reader-scale boundaries, and landing exceptions -> `docs/frontend-visual-system.md`
 - backend sequential workflow, job lifecycle, start/resume semantics -> `docs/backend-sequential-lifecycle.md`
 - backend reader core, attention unit, prompt assembly, section/subsegment/excerpt boundaries -> `docs/backend-reading-mechanism.md`
+- backend reader quality goals, evaluation methodology, LLM-as-judge usage, and local-vs-broad eval planning -> `docs/backend-reader-evaluation.md`
 - backend artifact aggregation, analysis-state sourcing, normalization boundary -> `docs/backend-state-aggregation.md`
 - current focus, temporary risks, active migration notes -> `docs/agent-handoff.md`
 - design evolution, rejected alternatives, key decision history -> `docs/history/README.md`
@@ -156,6 +159,11 @@ Update when: document layering, reading order, task routing, or cross-project co
   - section/subsegment/excerpt boundaries
   - prompt assembly and memory-packet composition
   - live attention projection semantics
+- `docs/backend-reader-evaluation.md`
+  - reader quality dimensions
+  - local mechanism eval vs broader regression eval
+  - offline LLM-as-judge methodology
+  - evaluation artifact routing
 - `docs/backend-state-aggregation.md`
   - source artifacts used by backend views
   - how bookshelf, detail, chapter, marks, and analysis-state are assembled
@@ -196,6 +204,7 @@ Update when: document layering, reading order, task routing, or cross-project co
 - If the same change also shifts workspace ownership boundaries or the recommended reading order for agents, update `docs/workspace-overview.md` and root `AGENTS.md`.
 - If a backend change materially alters the sequential deep-reading job lifecycle, upload/start/resume semantics, or runtime recovery behavior, update `docs/backend-sequential-lifecycle.md` in the same task.
 - If a backend change materially alters inner reader unit selection, prompt assembly, memory-packet composition, or live attention projection, update `docs/backend-reading-mechanism.md` in the same task.
+- If a backend change materially alters reader-quality dimensions, evaluation workflow, offline judge usage, or evaluation artifact routing, update `docs/backend-reader-evaluation.md` in the same task.
 - If a backend change materially alters which artifacts feed public state surfaces, or where normalization between internal and public shapes happens, update `docs/backend-state-aggregation.md` in the same task.
 - If a major project change creates a decision, reversal, or design inflection point that would be hard to reconstruct later, update `docs/history/decision-log.md` in the same task.
 - Treat a change as decision-bearing when it introduces a new primary mechanism, changes the default product/runtime direction, establishes a new canonical control surface or route model, or promotes a stable doc to subsystem authority.
