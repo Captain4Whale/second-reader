@@ -5,6 +5,19 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
+
+from eval.common.taxonomy import (
+    DETERMINISTIC_METRICS,
+    DIRECT_QUALITY,
+    LOCAL_IMPACT,
+    PAIRWISE_JUDGE,
+    TARGET_SUBSEGMENT_SEGMENTATION,
+    normalize_method,
+    normalize_scope,
+    normalize_scopes,
+    validate_target_slug,
+)
 from eval.subsegment.dataset import load_benchmark_dataset
 from eval.subsegment.report import build_markdown_report
 from eval.subsegment.run_benchmark import run_benchmark
@@ -84,6 +97,55 @@ def _write_dataset(tmp_path: Path) -> Path:
     return dataset_dir
 
 
+def _direct_plan_result(case_id: str, strategy: str) -> tuple[list[dict[str, object]], dict[str, object]]:
+    if strategy == "heuristic_only":
+        plan = [
+            {"summary": "Heuristic part 1", "text": "Alpha.", "sentence_start": 1, "sentence_end": 1},
+            {"summary": "Heuristic part 2", "text": "Beta.", "sentence_start": 2, "sentence_end": 2},
+        ]
+        planner_source = "fallback"
+        diagnostics = {
+            "strategy_requested": "heuristic_only",
+            "planner_status": "forced_heuristic",
+            "planner_failure_reason": "strategy_override",
+            "validation_status": "not_run",
+            "planner_payload": {},
+            "materialized_unit_count": 2,
+        }
+    else:
+        plan = [{"summary": "LLM unit", "text": "Alpha. Beta.", "sentence_start": 1, "sentence_end": 2}]
+        planner_source = "llm"
+        diagnostics = {
+            "strategy_requested": "llm_primary",
+            "planner_attempted": True,
+            "planner_status": "ok",
+            "planner_failure_reason": "",
+            "validation_status": "ok",
+            "planner_payload": {"units": []},
+            "materialized_unit_count": 1,
+        }
+    final_state = {
+        "segment_id": case_id,
+        "subsegment_plan": plan,
+        "subsegment_planner_source": planner_source,
+        "subsegment_plan_diagnostics": diagnostics,
+        "budget": {"segment_timed_out": False},
+    }
+    return plan, final_state
+
+
+def test_validate_target_slug_accepts_snake_case():
+    assert validate_target_slug(TARGET_SUBSEGMENT_SEGMENTATION) == TARGET_SUBSEGMENT_SEGMENTATION
+    assert normalize_scope(DIRECT_QUALITY) == DIRECT_QUALITY
+    assert normalize_method(PAIRWISE_JUDGE) == PAIRWISE_JUDGE
+    assert normalize_scopes([DIRECT_QUALITY, LOCAL_IMPACT, DIRECT_QUALITY]) == [DIRECT_QUALITY, LOCAL_IMPACT]
+
+
+def test_validate_target_slug_rejects_invalid_values():
+    with pytest.raises(ValueError):
+        validate_target_slug("Subsegment Segmentation")
+
+
 def test_load_benchmark_dataset_reads_manifest_and_cases(tmp_path: Path):
     """The curated benchmark dataset should load split metadata and cases together."""
     dataset = load_benchmark_dataset(_write_dataset(tmp_path))
@@ -94,83 +156,123 @@ def test_load_benchmark_dataset_reads_manifest_and_cases(tmp_path: Path):
     assert [case.case_id for case in dataset.cases] == ["core_case", "audit_case"]
 
 
-def test_build_markdown_report_summarizes_winners():
-    """The checked-in benchmark report should summarize aggregate winners and caveats."""
+def test_build_markdown_report_summarizes_scopes():
+    """The checked-in benchmark report should expose the taxonomy fields and scope headings."""
     markdown = build_markdown_report(
         dataset_id="subsegment_benchmark_test",
+        dataset_version="1",
+        target=TARGET_SUBSEGMENT_SEGMENTATION,
+        scopes=[DIRECT_QUALITY, LOCAL_IMPACT],
+        methods=[DETERMINISTIC_METRICS, PAIRWISE_JUDGE],
         comparison_target="heuristic_only vs llm_primary",
-        rubric_summary=["plan quality", "downstream quality"],
+        rubric_summary_by_scope={
+            DIRECT_QUALITY: ["direct rubric"],
+            LOCAL_IMPACT: ["impact rubric"],
+        },
         aggregate={
             "case_count": 2,
             "core_case_count": 1,
             "audit_case_count": 1,
-            "llm_fallback_rate": 0.5,
-            "llm_invalid_plan_rate": 0.0,
-            "llm_failure_rate": 0.0,
-            "heuristic_avg_unit_count": 2.0,
-            "llm_avg_unit_count": 1.5,
+            "dataset_case_count": 2,
+            "scope_metrics": {
+                DIRECT_QUALITY: {
+                    "case_count": 2,
+                    "llm_fallback_rate": 0.5,
+                    "llm_invalid_plan_rate": 0.0,
+                    "llm_failure_rate": 0.0,
+                    "heuristic_failure_rate": 0.0,
+                    "heuristic_avg_unit_count": 2.0,
+                    "llm_avg_unit_count": 1.5,
+                },
+                LOCAL_IMPACT: {
+                    "case_count": 2,
+                    "llm_fallback_rate": 0.0,
+                    "llm_invalid_plan_rate": 0.0,
+                    "llm_failure_rate": 0.0,
+                    "heuristic_failure_rate": 0.0,
+                    "heuristic_avg_unit_count": 2.0,
+                    "llm_avg_unit_count": 1.5,
+                },
+            },
         },
         case_results=[
             {
                 "case_id": "core_case",
                 "segment_ref": "1.1",
-                "plan_judgment": {"winner": "llm_primary"},
-                "downstream_judgment": {"winner": "llm_primary", "reason": "better focus"},
+                "scope_results": {
+                    DIRECT_QUALITY: {"judgment": {"winner": "llm_primary", "reason": "better direct quality"}},
+                    LOCAL_IMPACT: {"judgment": {"winner": "heuristic_only", "reason": "better local impact"}},
+                },
             },
             {
                 "case_id": "audit_case",
                 "segment_ref": "1.2",
-                "plan_judgment": {"winner": "heuristic_only"},
-                "downstream_judgment": {"winner": "tie", "reason": "roughly equal"},
+                "scope_results": {
+                    DIRECT_QUALITY: {"judgment": {"winner": "heuristic_only", "reason": "better direct quality"}},
+                    LOCAL_IMPACT: {"judgment": {"winner": "tie", "reason": "roughly equal"}},
+                },
             },
         ],
     )
 
-    assert "# Subsegment Benchmark Report: subsegment_benchmark_test" in markdown
-    assert "`llm_primary`: 1" in markdown
-    assert "Known Caveats" in markdown
+    assert "Target: `subsegment_segmentation`" in markdown
+    assert "Scope: `direct_quality`, `local_impact`" in markdown
+    assert "Method: `deterministic_metrics`, `pairwise_judge`" in markdown
+    assert "## Direct Quality (subsegment slicing)" in markdown
+    assert "## Local Impact (section-level carry-through)" in markdown
 
 
-def test_run_benchmark_writes_isolated_artifacts_and_report(tmp_path: Path, monkeypatch):
-    """Benchmark runs should write only under eval-local run roots and the chosen report path."""
+def test_run_benchmark_defaults_to_direct_quality_only(tmp_path: Path, monkeypatch):
+    """Default runs should evaluate direct slicing quality without invoking full downstream reader execution."""
     dataset_dir = _write_dataset(tmp_path)
     runs_root = tmp_path / "runs"
     report_path = tmp_path / "report.md"
 
+    def fake_plan_reader_subsegments(state):  # noqa: ANN001
+        strategy = state.get("subsegment_strategy_override") or "llm_primary"
+        return _direct_plan_result(state["segment_id"], str(strategy))
+
+    def fail_run_reader_segment(state, progress=None):  # noqa: ANN001
+        raise AssertionError("run_reader_segment should not be called for direct_quality-only runs")
+
+    monkeypatch.setattr("eval.subsegment.run_benchmark.plan_reader_subsegments", fake_plan_reader_subsegments)
+    monkeypatch.setattr("eval.subsegment.run_benchmark.run_reader_segment", fail_run_reader_segment)
+
+    summary = run_benchmark(
+        dataset_dir=dataset_dir,
+        runs_root=runs_root,
+        report_path=report_path,
+        run_id="direct-only-run",
+        judge_mode="llm",
+        direct_judge=lambda **_kwargs: {"winner": "llm_primary", "reason": "better direct quality"},
+    )
+
+    run_root = Path(summary["run_root"])
+    manifest = json.loads((run_root / "dataset_manifest.json").read_text(encoding="utf-8"))
+    assert summary["aggregate"]["target"] == TARGET_SUBSEGMENT_SEGMENTATION
+    assert summary["aggregate"]["scopes"] == [DIRECT_QUALITY]
+    assert summary["aggregate"]["methods"] == [DETERMINISTIC_METRICS, PAIRWISE_JUDGE]
+    assert manifest["scopes"] == [DIRECT_QUALITY]
+    assert (run_root / DIRECT_QUALITY / "plans" / "core_case.llm_primary.json").exists()
+    assert (run_root / DIRECT_QUALITY / "judge" / "core_case.json").exists()
+    assert not (run_root / LOCAL_IMPACT).exists()
+    assert report_path.exists()
+    assert not (tmp_path / "output").exists()
+    assert not (tmp_path / "state").exists()
+
+
+def test_run_benchmark_optional_local_impact_runs_downstream(tmp_path: Path, monkeypatch):
+    """Local-impact runs should execute the section-level comparison path only when explicitly requested."""
+    dataset_dir = _write_dataset(tmp_path)
+
+    def fake_plan_reader_subsegments(state):  # noqa: ANN001
+        strategy = state.get("subsegment_strategy_override") or "llm_primary"
+        return _direct_plan_result(state["segment_id"], str(strategy))
+
     def fake_run_reader_segment(state, progress=None):  # noqa: ANN001
         strategy = state.get("subsegment_strategy_override") or "llm_primary"
-        if strategy == "heuristic_only":
-            planner_source = "fallback"
-            diagnostics = {
-                "strategy_requested": "heuristic_only",
-                "planner_status": "forced_heuristic",
-                "planner_failure_reason": "strategy_override",
-                "validation_status": "not_run",
-                "planner_payload": {},
-                "materialized_unit_count": 2,
-            }
-            plan = [
-                {"summary": "Heuristic part 1", "text": "Alpha.", "sentence_start": 1, "sentence_end": 1},
-                {"summary": "Heuristic part 2", "text": "Beta.", "sentence_start": 2, "sentence_end": 2},
-            ]
-        else:
-            planner_source = "llm"
-            diagnostics = {
-                "strategy_requested": "llm_primary",
-                "planner_attempted": True,
-                "planner_status": "ok",
-                "planner_failure_reason": "",
-                "validation_status": "ok",
-                "planner_payload": {"units": []},
-                "materialized_unit_count": 1,
-            }
-            plan = [{"summary": "LLM unit", "text": "Alpha. Beta.", "sentence_start": 1, "sentence_end": 2}]
-        final_state = {
-            "subsegment_plan": plan,
-            "subsegment_planner_source": planner_source,
-            "subsegment_plan_diagnostics": diagnostics,
-            "budget": {"segment_timed_out": False},
-        }
+        plan, final_state = _direct_plan_result(state["segment_id"], str(strategy))
+        final_state["budget"] = {"segment_timed_out": False}
         rendered = {
             "segment_id": state["segment_id"],
             "summary": state["segment_summary"],
@@ -188,35 +290,31 @@ def test_run_benchmark_writes_isolated_artifacts_and_report(tmp_path: Path, monk
         }
         return rendered, final_state
 
+    monkeypatch.setattr("eval.subsegment.run_benchmark.plan_reader_subsegments", fake_plan_reader_subsegments)
     monkeypatch.setattr("eval.subsegment.run_benchmark.run_reader_segment", fake_run_reader_segment)
 
     summary = run_benchmark(
         dataset_dir=dataset_dir,
-        runs_root=runs_root,
-        report_path=report_path,
-        run_id="test-run",
+        runs_root=tmp_path / "runs",
+        report_path=tmp_path / "report.md",
+        run_id="local-impact-run",
         judge_mode="llm",
-        plan_judge=lambda **_kwargs: {"winner": "llm_primary", "reason": "better plan"},
-        downstream_judge=lambda **_kwargs: {"winner": "llm_primary", "reason": "better output"},
+        include_local_impact=True,
+        direct_judge=lambda **_kwargs: {"winner": "llm_primary", "reason": "better direct quality"},
+        local_impact_judge=lambda **_kwargs: {"winner": "llm_primary", "reason": "better local impact"},
     )
 
     run_root = Path(summary["run_root"])
-    assert (run_root / "inputs" / "core_case.json").exists()
-    assert (run_root / "plans" / "core_case.llm_primary.json").exists()
-    assert (run_root / "sections" / "core_case.heuristic_only.json").exists()
-    assert (run_root / "judge" / "core_case.plan.json").exists()
-    assert (run_root / "summary" / "aggregate.json").exists()
-    assert (run_root / "runtime").exists()
-    assert report_path.exists()
-    assert not (tmp_path / "output").exists()
-    assert not (tmp_path / "state").exists()
+    assert summary["aggregate"]["scopes"] == [DIRECT_QUALITY, LOCAL_IMPACT]
+    assert (run_root / LOCAL_IMPACT / "sections" / "core_case.llm_primary.json").exists()
+    assert (run_root / LOCAL_IMPACT / "judge" / "core_case.json").exists()
 
 
 def test_run_benchmark_records_invalid_plan_fallback(tmp_path: Path, monkeypatch):
-    """The harness should preserve invalid-plan fallback evidence in aggregate artifacts."""
+    """The harness should preserve invalid-plan fallback evidence in direct-quality artifacts."""
     dataset_dir = _write_dataset(tmp_path)
 
-    def fake_run_reader_segment(state, progress=None):  # noqa: ANN001
+    def fake_plan_reader_subsegments(state):  # noqa: ANN001
         strategy = state.get("subsegment_strategy_override") or "llm_primary"
         diagnostics = {
             "strategy_requested": strategy,
@@ -228,22 +326,15 @@ def test_run_benchmark_records_invalid_plan_fallback(tmp_path: Path, monkeypatch
             "materialized_unit_count": 2,
         }
         final_state = {
+            "segment_id": state["segment_id"],
             "subsegment_plan": [{"summary": "Fallback", "text": "Alpha."}, {"summary": "Fallback", "text": "Beta."}],
             "subsegment_planner_source": "fallback",
             "subsegment_plan_diagnostics": diagnostics,
             "budget": {"segment_timed_out": False},
         }
-        rendered = {
-            "segment_id": state["segment_id"],
-            "summary": state["segment_summary"],
-            "verdict": "pass",
-            "reactions": [],
-            "reflection_summary": "ok",
-            "reflection_reason_codes": ["OTHER"],
-        }
-        return rendered, final_state
+        return final_state["subsegment_plan"], final_state
 
-    monkeypatch.setattr("eval.subsegment.run_benchmark.run_reader_segment", fake_run_reader_segment)
+    monkeypatch.setattr("eval.subsegment.run_benchmark.plan_reader_subsegments", fake_plan_reader_subsegments)
 
     summary = run_benchmark(
         dataset_dir=dataset_dir,
@@ -253,4 +344,4 @@ def test_run_benchmark_records_invalid_plan_fallback(tmp_path: Path, monkeypatch
         judge_mode="none",
     )
 
-    assert summary["aggregate"]["llm_invalid_plan_rate"] == 1.0
+    assert summary["aggregate"]["scope_metrics"][DIRECT_QUALITY]["llm_invalid_plan_rate"] == 1.0

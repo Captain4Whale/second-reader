@@ -1589,6 +1589,20 @@ def _build_subsegments(
     return fallback, "fallback", diagnostics
 
 
+def plan_reader_subsegments(state: ReaderState) -> tuple[list[RuntimeSubsegment], ReaderState]:
+    """Plan runtime subsegments without running the downstream reader loop."""
+    current = dict(state)
+    budget = dict(_default_budget())
+    budget.update(current.get("budget") or {})
+    current["budget"] = budget
+
+    subsegments, planner_source, planner_diagnostics = _build_subsegments(current)
+    current["subsegment_plan"] = list(subsegments)
+    current["subsegment_planner_source"] = planner_source
+    current["subsegment_plan_diagnostics"] = dict(planner_diagnostics)
+    return subsegments, current
+
+
 def _initial_work_units(state: ReaderState) -> int:
     """Compute segment work units from text size and token budget ratio."""
     ratio = max(0.5, float((state.get("budget") or {}).get("token_budget_ratio", 1.5)))

@@ -35,6 +35,46 @@ Use `docs/backend-reading-mechanism.md` for how the reader works. Use this file 
 - The working standard is:
   - the reader should select and process text in ways that support focused, source-grounded, selective, and coherent co-reading reactions under realistic runtime constraints
 
+## Evaluation Taxonomy
+- Reader eval naming should separate:
+  - `target`
+    - what mechanism or object is under evaluation
+  - `scope`
+    - how far the evaluation follows the effect of that target
+  - `method`
+    - how the judgment is produced
+
+### Target
+- `target` names the evaluated mechanism or object, not the layer or scoring method.
+- Targets should use stable snake_case slugs.
+- Current examples:
+  - `subsegment_segmentation`
+  - `reaction_generation`
+  - `memory_carryover`
+  - `section_merge`
+  - `reader_end_to_end`
+
+### Scope
+- `direct_quality`
+  - evaluate the target's own direct output
+- `local_impact`
+  - evaluate the target's effect on the next meaningful output layer
+- `system_regression`
+  - evaluate the broader reader after multiple interacting changes
+
+### Method
+- `deterministic_metrics`
+- `pairwise_judge`
+- `rubric_judge`
+- `human_spot_check`
+
+- Reports and run artifacts should record:
+  - `target`
+  - `scope`
+  - `method`
+  - dataset version
+  - comparison target
+
 ## Evaluation Layers
 ### Subsegment
 - Evaluate whether the runtime reading unit itself is well chosen.
@@ -140,6 +180,14 @@ Use `docs/backend-reading-mechanism.md` for how the reader works. Use this file 
 - The current subsegment planner is the first concrete example for this evaluation framework.
 - The benchmark for this change should compare `heuristic_only` and `llm_primary` on the same tracked cases, with search disabled and a dedicated eval-only runtime root so the signal stays focused on slicing quality.
 - The dedicated runner lives under `reading-companion-backend/eval/subsegment/` and should be invokable as one offline command rather than through the normal runtime read flow.
+- In taxonomy terms:
+  - `target = subsegment_segmentation`
+  - default `scope = direct_quality`
+  - optional `scope = local_impact`
+- The older "plan-level" language maps to `scope = direct_quality`.
+- The older "downstream section-level" language maps to `scope = local_impact`.
+- The current benchmark should default to `direct_quality`.
+- `local_impact` should be opt-in and used when we specifically want evidence that better slicing carries through to better section-level reading output.
 - For this change, the goal is not:
   - more human-like slicing
   - more units
@@ -170,8 +218,12 @@ Use `docs/backend-reading-mechanism.md` for how the reader works. Use this file 
 
 ### Expectations For Evaluation Reports
 - Per-run or per-change reports should state:
+  - target
+  - scope
+  - method
   - comparison target
   - sample set
+  - dataset version
   - rubric used
   - summary conclusion
   - known caveats
