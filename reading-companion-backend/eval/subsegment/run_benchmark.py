@@ -29,7 +29,6 @@ from src.iterator_reader.reader import _estimate_tokens, create_reader_state, pl
 ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_DATASET_DIR = ROOT / "eval" / "datasets" / "subsegment_benchmark_v1"
 DEFAULT_RUNS_ROOT = ROOT / "eval" / "runs" / "subsegment"
-DEFAULT_REPORTS_ROOT = ROOT / "docs" / "evaluation" / "subsegment"
 DEFAULT_USER_INTENT = (
     "Read as a thoughtful co-reader and notice meaningful definitions, turns, causal links, and callbacks."
 )
@@ -58,16 +57,22 @@ def _case_to_dict(case: BenchmarkCase) -> dict[str, Any]:
     return asdict(case)
 
 
-def _build_eval_budget() -> dict[str, Any]:
+def _build_eval_budget(segment_timeout_seconds: int | None = None) -> dict[str, Any]:
     policy = default_budget_policy()
     policy["max_search_queries_per_segment"] = 0
     policy["max_search_queries_per_chapter"] = 0
-    policy["segment_timeout_seconds"] = 45
+    policy["segment_timeout_seconds"] = max(1, int(segment_timeout_seconds or 45))
     chapter_state = chapter_budget(policy)
     return segment_budget(chapter_state, policy)
 
 
-def _build_reader_state(case: BenchmarkCase, dataset: BenchmarkDataset, strategy: str) -> dict[str, Any]:
+def _build_reader_state(
+    case: BenchmarkCase,
+    dataset: BenchmarkDataset,
+    strategy: str,
+    *,
+    segment_timeout_seconds: int | None = None,
+) -> dict[str, Any]:
     return create_reader_state(
         chapter_title=case.chapter_title,
         segment_id=case.segment_id,
@@ -77,7 +82,7 @@ def _build_reader_state(case: BenchmarkCase, dataset: BenchmarkDataset, strategy
         output_language=case.output_language,
         user_intent=dataset.default_user_intent or DEFAULT_USER_INTENT,
         skill_policy=resolve_skill_policy("balanced"),
-        budget=_build_eval_budget(),
+        budget=_build_eval_budget(segment_timeout_seconds),
         max_revisions=0,
         segment_ref=case.segment_ref,
         book_title=case.book_title,
@@ -124,8 +129,14 @@ def _base_strategy_result(case_id: str, strategy: str) -> dict[str, Any]:
     }
 
 
-def _strategy_direct_result(case: BenchmarkCase, dataset: BenchmarkDataset, strategy: str) -> dict[str, Any]:
-    state = _build_reader_state(case, dataset, strategy)
+def _strategy_direct_result(
+    case: BenchmarkCase,
+    dataset: BenchmarkDataset,
+    strategy: str,
+    *,
+    segment_timeout_seconds: int | None = None,
+) -> dict[str, Any]:
+    state = _build_reader_state(case, dataset, strategy, segment_timeout_seconds=segment_timeout_seconds)
     result = _base_strategy_result(case.case_id, strategy)
     try:
         plan, final_state = plan_reader_subsegments(state)
@@ -149,8 +160,14 @@ def _strategy_direct_result(case: BenchmarkCase, dataset: BenchmarkDataset, stra
     return result
 
 
-def _strategy_local_impact_result(case: BenchmarkCase, dataset: BenchmarkDataset, strategy: str) -> dict[str, Any]:
-    state = _build_reader_state(case, dataset, strategy)
+def _strategy_local_impact_result(
+    case: BenchmarkCase,
+    dataset: BenchmarkDataset,
+    strategy: str,
+    *,
+    segment_timeout_seconds: int | None = None,
+) -> dict[str, Any]:
+    state = _build_reader_state(case, dataset, strategy, segment_timeout_seconds=segment_timeout_seconds)
     result = _base_strategy_result(case.case_id, strategy)
     try:
         rendered, final_state = run_reader_segment(state)
@@ -177,7 +194,20 @@ def _strategy_local_impact_result(case: BenchmarkCase, dataset: BenchmarkDataset
     return result
 
 
-def _select_cases(dataset: BenchmarkDataset, *, core_only: bool, limit: int | None) -> list[BenchmarkCase]:
+def _select_cases(
+    dataset: BenchmarkDataset,
+    *,
+    core_only: bool,
+    limit: int | None,
+    case_ids: list[str] | None = None,
+) -> list[BenchmarkCase]:
+    if case_ids:
+        by_id = {case.case_id: case for case in dataset.cases}
+        unknown = [case_id for case_id in case_ids if case_id not in by_id]
+        if unknown:
+            raise ValueError(f"unknown benchmark case ids: {', '.join(unknown)}")
+        return [by_id[case_id] for case_id in case_ids]
+
     case_ids = dataset.core_case_ids if core_only else dataset.core_case_ids + dataset.audit_case_ids
     cases = [case for case in dataset.cases if case.case_id in case_ids]
     cases.sort(key=lambda item: case_ids.index(item.case_id))
@@ -194,9 +224,18 @@ def _scope_result(
     judge_mode: str,
     direct_judge: JudgeFn,
     local_impact_judge: JudgeFn,
+    segment_timeout_seconds: int | None,
 ) -> dict[str, Any]:
     if scope == DIRECT_QUALITY:
-        strategies = {strategy: _strategy_direct_result(case, dataset, strategy) for strategy in STRATEGIES}
+        strategies = {
+            strategy: _strategy_direct_result(
+                case,
+                dataset,
+                strategy,
+                segment_timeout_seconds=segment_timeout_seconds,
+            )
+            for strategy in STRATEGIES
+        }
         judgment = (
             {"winner": "tie", "reason": "judge_disabled"}
             if judge_mode == "none"
@@ -210,7 +249,15 @@ def _scope_result(
             )
         )
     else:
-        strategies = {strategy: _strategy_local_impact_result(case, dataset, strategy) for strategy in STRATEGIES}
+        strategies = {
+            strategy: _strategy_local_impact_result(
+                case,
+                dataset,
+                strategy,
+                segment_timeout_seconds=segment_timeout_seconds,
+            )
+            for strategy in STRATEGIES
+        }
         judgment = (
             {"winner": "tie", "reason": "judge_disabled"}
             if judge_mode == "none"
@@ -297,21 +344,26 @@ def run_benchmark(
     runs_root: str | Path = DEFAULT_RUNS_ROOT,
     report_path: str | Path | None = None,
     run_id: str | None = None,
+    case_ids: list[str] | None = None,
     core_only: bool = False,
     limit: int | None = None,
+    scopes: list[str] | None = None,
     judge_mode: str = "llm",
     include_local_impact: bool = False,
+    segment_timeout_seconds: int | None = None,
     direct_judge: JudgeFn | None = None,
     local_impact_judge: JudgeFn | None = None,
 ) -> dict[str, Any]:
     """Execute the offline benchmark and return the aggregate summary."""
     dataset = load_benchmark_dataset(dataset_dir)
-    cases = _select_cases(dataset, core_only=core_only, limit=limit)
+    cases = _select_cases(dataset, core_only=core_only, limit=limit, case_ids=case_ids)
     if not cases:
         raise ValueError("no benchmark cases selected")
 
     target = DEFAULT_TARGET
-    scopes = normalize_scopes(DEFAULT_SCOPES + ([LOCAL_IMPACT] if include_local_impact else []))
+    effective_scopes = normalize_scopes(
+        scopes if scopes is not None else DEFAULT_SCOPES + ([LOCAL_IMPACT] if include_local_impact else [])
+    )
     methods = normalize_methods(
         [DETERMINISTIC_METRICS] + ([PAIRWISE_JUDGE] if judge_mode != "none" else [])
     )
@@ -326,10 +378,12 @@ def run_benchmark(
             "dataset_id": dataset.dataset_id,
             "dataset_version": dataset.version,
             "target": target,
-            "scopes": scopes,
+            "scopes": effective_scopes,
             "methods": methods,
             "comparison_target": COMPARISON_TARGET,
             "selected_case_ids": [case.case_id for case in cases],
+            "segment_timeout_seconds": max(1, int(segment_timeout_seconds or 45)),
+            "case_ids": list(case_ids or []),
             "core_only": core_only,
             "limit": limit,
             "judge_mode": judge_mode,
@@ -345,7 +399,7 @@ def run_benchmark(
     for case in cases:
         _json_dump(run_root / "inputs" / f"{case.case_id}.json", _case_to_dict(case))
         scope_results: dict[str, Any] = {}
-        for scope in scopes:
+        for scope in effective_scopes:
             scoped = _scope_result(
                 scope,
                 case=case,
@@ -353,6 +407,7 @@ def run_benchmark(
                 judge_mode=judge_mode,
                 direct_judge=effective_direct_judge,
                 local_impact_judge=effective_local_impact_judge,
+                segment_timeout_seconds=segment_timeout_seconds,
             )
             scope_results[scope] = scoped
             for strategy, payload in scoped["strategies"].items():
@@ -391,12 +446,14 @@ def run_benchmark(
 
     aggregate = _aggregate(
         target=target,
-        scopes=scopes,
+        scopes=effective_scopes,
         methods=methods,
         dataset=dataset,
         cases=cases,
         case_results=case_results,
     )
+    aggregate["segment_timeout_seconds"] = max(1, int(segment_timeout_seconds or 45))
+    aggregate["case_ids"] = [case.case_id for case in cases]
     _json_dump(run_root / "summary" / "case_results.json", case_results)
     _json_dump(run_root / "summary" / "aggregate.json", aggregate)
 
@@ -404,14 +461,14 @@ def run_benchmark(
         dataset_id=dataset.dataset_id,
         dataset_version=dataset.version,
         target=target,
-        scopes=scopes,
+        scopes=effective_scopes,
         methods=methods,
         comparison_target=COMPARISON_TARGET,
         rubric_summary_by_scope=RUBRIC_SUMMARY_BY_SCOPE,
         aggregate=aggregate,
         case_results=case_results,
     )
-    final_report_path = Path(report_path) if report_path is not None else DEFAULT_REPORTS_ROOT / f"{run_name}.md"
+    final_report_path = Path(report_path) if report_path is not None else run_root / "summary" / "report.md"
     final_report_path.parent.mkdir(parents=True, exist_ok=True)
     final_report_path.write_text(markdown, encoding="utf-8")
 
@@ -430,7 +487,11 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument("--runs-root", default=str(DEFAULT_RUNS_ROOT))
     parser.add_argument("--report-path", default="")
     parser.add_argument("--run-id", default="")
+    parser.add_argument("--case-id", action="append", default=[])
+    parser.add_argument("--case-ids", default="")
+    parser.add_argument("--scope", action="append", default=[])
     parser.add_argument("--judge-mode", choices=["llm", "none"], default="llm")
+    parser.add_argument("--segment-timeout-seconds", type=int, default=0)
     parser.add_argument("--limit", type=int, default=0)
     parser.add_argument("--core-only", action="store_true")
     parser.add_argument("--include-local-impact", action="store_true")
@@ -439,15 +500,22 @@ def _parse_args() -> argparse.Namespace:
 
 def main() -> int:
     args = _parse_args()
+    explicit_case_ids = [item.strip() for item in args.case_id if str(item).strip()]
+    if args.case_ids:
+        explicit_case_ids.extend([item.strip() for item in str(args.case_ids).split(",") if item.strip()])
+    explicit_scopes = [item.strip() for item in args.scope if str(item).strip()]
     summary = run_benchmark(
         dataset_dir=args.dataset_dir,
         runs_root=args.runs_root,
         report_path=args.report_path or None,
         run_id=args.run_id or None,
+        case_ids=explicit_case_ids or None,
         core_only=bool(args.core_only),
         limit=args.limit or None,
+        scopes=explicit_scopes or None,
         judge_mode=args.judge_mode,
         include_local_impact=bool(args.include_local_impact),
+        segment_timeout_seconds=args.segment_timeout_seconds or None,
     )
     print(json.dumps(summary["aggregate"], ensure_ascii=False, indent=2))
     print(f"run_root={summary['run_root']}")

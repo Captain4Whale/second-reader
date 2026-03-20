@@ -310,6 +310,136 @@ def test_run_benchmark_optional_local_impact_runs_downstream(tmp_path: Path, mon
     assert (run_root / LOCAL_IMPACT / "judge" / "core_case.json").exists()
 
 
+def test_run_benchmark_case_ids_override_order_and_limit(tmp_path: Path, monkeypatch):
+    """Explicit case_ids should override split/limit selection and preserve the requested order."""
+    dataset_dir = _write_dataset(tmp_path)
+
+    def fake_plan_reader_subsegments(state):  # noqa: ANN001
+        strategy = state.get("subsegment_strategy_override") or "llm_primary"
+        return _direct_plan_result(state["segment_id"], str(strategy))
+
+    monkeypatch.setattr("eval.subsegment.run_benchmark.plan_reader_subsegments", fake_plan_reader_subsegments)
+
+    summary = run_benchmark(
+        dataset_dir=dataset_dir,
+        runs_root=tmp_path / "runs",
+        run_id="case-order-run",
+        report_path=tmp_path / "runs" / "case-order-run" / "summary" / "report.md",
+        case_ids=["audit_case", "core_case"],
+        core_only=True,
+        limit=1,
+        judge_mode="none",
+    )
+
+    assert summary["aggregate"]["selected_case_ids"] == ["audit_case", "core_case"]
+    assert summary["aggregate"]["case_ids"] == ["audit_case", "core_case"]
+
+
+def test_run_benchmark_case_ids_reject_unknown_ids(tmp_path: Path):
+    """Explicit case selection should fail fast on unknown case ids."""
+    dataset_dir = _write_dataset(tmp_path)
+
+    with pytest.raises(ValueError, match="unknown benchmark case ids"):
+        run_benchmark(
+            dataset_dir=dataset_dir,
+            runs_root=tmp_path / "runs",
+            case_ids=["missing_case"],
+            judge_mode="none",
+        )
+
+
+def test_run_benchmark_timeout_override_is_recorded(tmp_path: Path, monkeypatch):
+    """The eval-only timeout override should flow into manifest and aggregate outputs."""
+    dataset_dir = _write_dataset(tmp_path)
+
+    def fake_plan_reader_subsegments(state):  # noqa: ANN001
+        strategy = state.get("subsegment_strategy_override") or "llm_primary"
+        _, final_state = _direct_plan_result(state["segment_id"], str(strategy))
+        final_state["budget"] = {"segment_timed_out": False, "segment_timeout_seconds": 120}
+        return final_state["subsegment_plan"], final_state
+
+    monkeypatch.setattr("eval.subsegment.run_benchmark.plan_reader_subsegments", fake_plan_reader_subsegments)
+
+    summary = run_benchmark(
+        dataset_dir=dataset_dir,
+        runs_root=tmp_path / "runs",
+        run_id="timeout-run",
+        segment_timeout_seconds=120,
+        judge_mode="none",
+    )
+
+    run_root = Path(summary["run_root"])
+    manifest = json.loads((run_root / "dataset_manifest.json").read_text(encoding="utf-8"))
+    assert manifest["segment_timeout_seconds"] == 120
+    assert summary["aggregate"]["segment_timeout_seconds"] == 120
+
+
+def test_run_benchmark_runtime_first_default_report_path(tmp_path: Path, monkeypatch):
+    """Default report output should stay under the run directory summary path."""
+    dataset_dir = _write_dataset(tmp_path)
+
+    def fake_plan_reader_subsegments(state):  # noqa: ANN001
+        strategy = state.get("subsegment_strategy_override") or "llm_primary"
+        return _direct_plan_result(state["segment_id"], str(strategy))
+
+    monkeypatch.setattr("eval.subsegment.run_benchmark.plan_reader_subsegments", fake_plan_reader_subsegments)
+
+    summary = run_benchmark(
+        dataset_dir=dataset_dir,
+        runs_root=tmp_path / "runs",
+        run_id="runtime-first-run",
+        judge_mode="none",
+    )
+
+    assert summary["report_path"].endswith("runtime-first-run/summary/report.md")
+    assert Path(summary["report_path"]).exists()
+
+
+def test_run_benchmark_scope_selection_can_run_local_impact_only(tmp_path: Path, monkeypatch):
+    """Explicit scope selection should allow a clean local-impact-only run."""
+    dataset_dir = _write_dataset(tmp_path)
+
+    def fake_run_reader_segment(state, progress=None):  # noqa: ANN001
+        strategy = state.get("subsegment_strategy_override") or "llm_primary"
+        plan, final_state = _direct_plan_result(state["segment_id"], str(strategy))
+        final_state["budget"] = {"segment_timed_out": False}
+        rendered = {
+            "segment_id": state["segment_id"],
+            "summary": state["segment_summary"],
+            "verdict": "pass",
+            "reactions": [
+                {
+                    "type": "highlight",
+                    "anchor_quote": plan[0]["text"],
+                    "content": f"note::{strategy}",
+                    "search_results": [],
+                }
+            ],
+            "reflection_summary": f"summary::{strategy}",
+            "reflection_reason_codes": ["OTHER"],
+        }
+        return rendered, final_state
+
+    def fail_plan_reader_subsegments(state):  # noqa: ANN001
+        raise AssertionError("plan_reader_subsegments should not be called for local_impact-only runs")
+
+    monkeypatch.setattr("eval.subsegment.run_benchmark.run_reader_segment", fake_run_reader_segment)
+    monkeypatch.setattr("eval.subsegment.run_benchmark.plan_reader_subsegments", fail_plan_reader_subsegments)
+
+    summary = run_benchmark(
+        dataset_dir=dataset_dir,
+        runs_root=tmp_path / "runs",
+        run_id="local-only-run",
+        scopes=[LOCAL_IMPACT],
+        judge_mode="none",
+    )
+
+    run_root = Path(summary["run_root"])
+    assert summary["aggregate"]["scopes"] == [LOCAL_IMPACT]
+    assert not (run_root / DIRECT_QUALITY).exists()
+    assert (run_root / LOCAL_IMPACT / "sections" / "core_case.llm_primary.json").exists()
+
+
 def test_run_benchmark_records_invalid_plan_fallback(tmp_path: Path, monkeypatch):
     """The harness should preserve invalid-plan fallback evidence in direct-quality artifacts."""
     dataset_dir = _write_dataset(tmp_path)

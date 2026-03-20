@@ -210,10 +210,11 @@ Use `docs/backend-reading-mechanism.md` for how the reader works. Use this file 
 
 ## Artifact Layout
 - Stable methodology belongs in `docs/`.
-- Concrete evaluation reports belong in `reading-companion-backend/docs/evaluation/`.
+- Reviewed, checked-in evaluation reports belong in `reading-companion-backend/docs/evaluation/`.
 - Executable evaluation code belongs in `reading-companion-backend/eval/`.
 - Tracked benchmark datasets belong in `reading-companion-backend/eval/datasets/`.
 - Machine-generated benchmark runs belong in `reading-companion-backend/eval/runs/` and should stay out of normal runtime `state/` / `output/` paths.
+- Runtime-first per-run markdown summaries may live under `reading-companion-backend/eval/runs/<benchmark>/<run_id>/summary/` until they are reviewed and promoted into `reading-companion-backend/docs/evaluation/`.
 - Temporary experiment logs belong in `reading-companion-backend/docs/research/` only when they are not yet stable reports.
 
 ### Expectations For Evaluation Reports
