@@ -12,20 +12,6 @@ from typing import Callable, Literal, Optional, Union
 
 from langgraph.graph import END, StateGraph
 
-from src.prompts.templates import (
-    READER_CHAPTER_REFLECT_PROMPT,
-    READER_CHAPTER_REFLECT_SYSTEM,
-    READER_CURIOSITY_FUSE_PROMPT,
-    READER_CURIOSITY_FUSE_SYSTEM,
-    READER_EXPRESS_PROMPT,
-    READER_EXPRESS_SYSTEM,
-    READER_REFLECT_PROMPT,
-    READER_REFLECT_SYSTEM,
-    READER_SUBSEGMENT_PLAN_PROMPT,
-    READER_SUBSEGMENT_PLAN_SYSTEM,
-    READER_THINK_PROMPT,
-    READER_THINK_SYSTEM,
-)
 from src.tools.search import classify_search_problem, search_web
 
 from .language import language_name
@@ -60,6 +46,7 @@ from .models import (
     SubsegmentStrategy,
     ThoughtPayload,
 )
+from .prompts import ITERATOR_V1_PROMPTS, IteratorV1PromptSet
 
 
 ProgressReporter = Optional[Callable[[Union[ReaderProgressEvent, str]], None]]
@@ -114,6 +101,12 @@ _CURRENT_READING_PROBLEM_CODES: set[str] = {
     "search_auth",
     "network_blocked",
 }
+
+
+def _prompt_set(state: ReaderState) -> IteratorV1PromptSet:
+    """Return the reader prompt bundle carried by one reader state."""
+    return state.get("prompt_set") or ITERATOR_V1_PROMPTS
+
 
 def _timestamp() -> str:
     """Return a stable UTC timestamp for memory updates."""
@@ -1415,10 +1408,11 @@ def _plan_subsegments_with_llm(
     if _estimate_tokens(state.get("segment_text", "")) > max_tokens * max_subsegments:
         return None, "input_too_large"
 
+    prompt_set = _prompt_set(state)
     try:
         payload = invoke_json(
-            READER_SUBSEGMENT_PLAN_SYSTEM,
-            READER_SUBSEGMENT_PLAN_PROMPT.format(
+            prompt_set.reader_subsegment_plan_system,
+            prompt_set.reader_subsegment_plan_prompt.format(
                 book_context=_format_book_context(state),
                 current_part_context=_format_current_part_context(state),
                 chapter_title=state.get("chapter_title", ""),
@@ -1932,6 +1926,7 @@ def run_chapter_reflection(
     output_language: str,
     chapter_primary_role: str = "body",
     chapter_role_tags: list[str] | None = None,
+    prompt_set: IteratorV1PromptSet = ITERATOR_V1_PROMPTS,
 ) -> dict[str, object]:
     """Run one chapter-end reflection pass with scoped repair hints."""
     if not segments:
@@ -1957,8 +1952,8 @@ def run_chapter_reflection(
     payload: object = {}
     try:
         payload = invoke_json(
-            READER_CHAPTER_REFLECT_SYSTEM,
-            READER_CHAPTER_REFLECT_PROMPT.format(
+            prompt_set.reader_chapter_reflect_system,
+            prompt_set.reader_chapter_reflect_prompt.format(
                 chapter_title=chapter_title,
                 chapter_primary_role=chapter_primary_role,
                 chapter_role_tags=", ".join(chapter_role_tags or []) or "none",
@@ -2157,6 +2152,7 @@ def create_reader_state(
     section_heading: str = "",
     nearby_outline: list[str] | None = None,
     subsegment_strategy_override: SubsegmentStrategy | None = None,
+    prompt_set: IteratorV1PromptSet = ITERATOR_V1_PROMPTS,
 ) -> ReaderState:
     """Create initial reader state for a semantic unit."""
     return {
@@ -2177,6 +2173,7 @@ def create_reader_state(
         "segment_text": segment_text,
         "user_intent": user_intent,
         "output_language": output_language,
+        "prompt_set": prompt_set,
         "memory": coerce_reader_memory(memory),
         "read_packet": "",
         "thought": None,
@@ -2217,9 +2214,10 @@ def read_node(state: ReaderState) -> ReaderState:
 def think_node(state: ReaderState) -> ReaderState:
     """Decide whether this semantic unit deserves expression."""
     memory_text, _budget = _assemble_memory_packet(state, "think")
+    prompt_set = _prompt_set(state)
     payload = invoke_json(
-        READER_THINK_SYSTEM,
-        READER_THINK_PROMPT.format(
+        prompt_set.reader_think_system,
+        prompt_set.reader_think_prompt.format(
             book_context=_format_book_context(state),
             current_part_context=_format_current_part_context(state),
             chapter_title=state.get("chapter_title", ""),
@@ -2244,9 +2242,10 @@ def think_node(state: ReaderState) -> ReaderState:
 def express_node(state: ReaderState) -> ReaderState:
     """Produce mixed reactions for this semantic unit."""
     memory_text, _budget = _assemble_memory_packet(state, "express")
+    prompt_set = _prompt_set(state)
     payload = invoke_json(
-        READER_EXPRESS_SYSTEM,
-        READER_EXPRESS_PROMPT.format(
+        prompt_set.reader_express_system,
+        prompt_set.reader_express_prompt.format(
             book_context=_format_book_context(state),
             current_part_context=_format_current_part_context(state),
             chapter_title=state.get("chapter_title", ""),
@@ -2337,10 +2336,11 @@ def _fuse_curiosity_reaction(reaction: ReactionPayload, state: ReaderState) -> R
     if reaction.get("type") != "curious" or not reaction.get("search_results"):
         return reaction
 
+    prompt_set = _prompt_set(state)
     try:
         payload = invoke_json(
-            READER_CURIOSITY_FUSE_SYSTEM,
-            READER_CURIOSITY_FUSE_PROMPT.format(
+            prompt_set.reader_curiosity_fuse_system,
+            prompt_set.reader_curiosity_fuse_prompt.format(
                 chapter_title=state.get("chapter_title", ""),
                 segment_ref=_segment_ref(state),
                 segment_summary=state.get("segment_summary", ""),
@@ -2384,9 +2384,10 @@ def reflect_node(state: ReaderState) -> ReaderState:
     active_reactions = _active_reactions(state.get("reactions", []))
     if active_reactions:
         memory_text, _budget = _assemble_memory_packet(state, "reflect")
+        prompt_set = _prompt_set(state)
         payload = invoke_json(
-            READER_REFLECT_SYSTEM,
-            READER_REFLECT_PROMPT.format(
+            prompt_set.reader_reflect_system,
+            prompt_set.reader_reflect_prompt.format(
                 book_context=_format_book_context(state),
                 current_part_context=_format_current_part_context(state),
                 chapter_title=state.get("chapter_title", ""),

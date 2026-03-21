@@ -15,15 +15,12 @@ from ebooklib import epub
 
 from src.config import get_backend_version, get_reader_resume_compat_version
 from src.parsers import parse_ebook
-from src.prompts.templates import (
-    SEMANTIC_SEGMENTATION_PROMPT,
-    SEMANTIC_SEGMENTATION_SYSTEM,
-)
 from src.reading_core.book_document import BookDocument, BookMetadata
 from src.reading_core.storage import book_document_file, existing_book_document_file, load_book_document, save_book_document
 
 from .language import detect_book_language, language_name, resolve_output_language
 from .llm_utils import invoke_json
+from .prompts import ITERATOR_V1_PROMPTS, IteratorV1PromptSet
 from .frontend_artifacts import (
     _reaction_target_locator,
     append_activity_event,
@@ -825,6 +822,7 @@ def segment_context_into_chapter(
     context: dict[str, object],
     *,
     progress: Callable[[str], None] | None = None,
+    prompt_set: IteratorV1PromptSet = ITERATOR_V1_PROMPTS,
 ) -> StructureChapter:
     """Segment one prepared chapter context into a persisted structure record."""
     chapter_id = int(context.get("id", 0))
@@ -859,6 +857,7 @@ def segment_context_into_chapter(
             paragraphs=[str(record.get("text", "")) for record in body_records],
             chapter_heading_text=str(chapter_heading.get("text", "")) if isinstance(chapter_heading, dict) else "",
             section_heading_text=section_heading_text,
+            prompt_set=prompt_set,
         )
         for segment in local_segments:
             start = int(segment.get("paragraph_start", 0) or 0)
@@ -1488,6 +1487,7 @@ def segment_chapter_semantically(
     *,
     chapter_heading_text: str = "",
     section_heading_text: str = "",
+    prompt_set: IteratorV1PromptSet = ITERATOR_V1_PROMPTS,
 ) -> list[SemanticSegment]:
     """Use the LLM to group chapter paragraphs into semantic units."""
     paragraphs = paragraphs or split_into_paragraphs(chapter_text)
@@ -1495,8 +1495,8 @@ def segment_chapter_semantically(
         return fallback_segments(chapter_id, [chapter_text], chapter_title)
 
     payload = invoke_json(
-        SEMANTIC_SEGMENTATION_SYSTEM,
-        SEMANTIC_SEGMENTATION_PROMPT.format(
+        prompt_set.semantic_segmentation_system,
+        prompt_set.semantic_segmentation_prompt.format(
             chapter_title=chapter_title,
             paragraph_count=len(paragraphs),
             numbered_paragraphs=_format_numbered_paragraphs(paragraphs),
@@ -1546,6 +1546,7 @@ def build_structure(
     continue_mode: bool = False,
     *,
     include_segments: bool = True,
+    prompt_set: IteratorV1PromptSet = ITERATOR_V1_PROMPTS,
 ) -> tuple[BookStructure, Path]:
     """Parse the ebook and persist structure.json incrementally."""
     title, author = extract_book_metadata(book_path)
@@ -1695,6 +1696,7 @@ def build_structure(
             output_dir,
             context,
             progress=lambda message: print(f"  ├─ {message}", flush=True),
+            prompt_set=prompt_set,
         )
 
         structure["chapters"] = [
@@ -1750,7 +1752,12 @@ def build_structure(
     return structure, output_dir
 
 
-def parse_book(book_path: Path, language_mode: str = "auto", continue_mode: bool = False) -> tuple[BookStructure, Path]:
+def parse_book(
+    book_path: Path,
+    language_mode: str = "auto",
+    continue_mode: bool = False,
+    prompt_set: IteratorV1PromptSet = ITERATOR_V1_PROMPTS,
+) -> tuple[BookStructure, Path]:
     """Public parse-stage entry point."""
     try:
         structure, output_dir = build_structure(
@@ -1758,6 +1765,7 @@ def parse_book(book_path: Path, language_mode: str = "auto", continue_mode: bool
             language_mode=language_mode,
             continue_mode=continue_mode,
             include_segments=False,
+            prompt_set=prompt_set,
         )
     except Exception as exc:
         title, author = extract_book_metadata(book_path)
@@ -1833,6 +1841,7 @@ def ensure_structure_for_book(
     *,
     continue_mode: bool = False,
     require_segments: bool = False,
+    prompt_set: IteratorV1PromptSet = ITERATOR_V1_PROMPTS,
 ) -> tuple[BookStructure, Path, bool]:
     """Load existing structure.json or create it when absent."""
     title, _author = extract_book_metadata(book_path)
@@ -1878,6 +1887,7 @@ def ensure_structure_for_book(
         language_mode=language_mode,
         continue_mode=continue_mode,
         include_segments=require_segments,
+        prompt_set=prompt_set,
     )
     return structure, output_dir, not had_existing_structure
 

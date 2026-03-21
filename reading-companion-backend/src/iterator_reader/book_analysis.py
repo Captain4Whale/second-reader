@@ -8,14 +8,7 @@ import re
 from datetime import datetime
 from pathlib import Path
 
-from src.prompts.templates import (
-    BOOK_ANALYSIS_QUERY_PROMPT,
-    BOOK_ANALYSIS_QUERY_SYSTEM,
-    BOOK_ANALYSIS_SKIM_PROMPT,
-    BOOK_ANALYSIS_SKIM_SYSTEM,
-    BOOK_ANALYSIS_SYNTHESIS_PROMPT,
-    BOOK_ANALYSIS_SYNTHESIS_SYSTEM,
-)
+from src.prompts.capabilities.book_analysis import BOOK_ANALYSIS_PROMPTS, BookAnalysisPromptSet
 from src.tools.search import search_web
 
 from .language import language_name
@@ -40,6 +33,7 @@ from .reader import (
     run_reader_segment_for_analysis,
     update_memory,
 )
+from .prompts import ITERATOR_V1_PROMPTS, IteratorV1PromptSet
 from .storage import (
     analysis_plan_file,
     analysis_trace_file,
@@ -501,10 +495,11 @@ def _synthesize_book_analysis_with_llm(
     chapter_arc: list[dict[str, object]],
     deep_dossiers: list[dict[str, object]],
     evidence_checks: list[dict[str, object]],
+    prompt_set: BookAnalysisPromptSet = BOOK_ANALYSIS_PROMPTS,
 ) -> str:
     payload = invoke_text(
-        BOOK_ANALYSIS_SYNTHESIS_SYSTEM,
-        BOOK_ANALYSIS_SYNTHESIS_PROMPT.format(
+        prompt_set.synthesis_system,
+        prompt_set.synthesis_prompt.format(
             user_intent=user_intent or "Not specified",
             output_language_name=language_name(output_language),
             claim_cards_json=json.dumps(claim_cards, ensure_ascii=False, indent=2),
@@ -551,6 +546,8 @@ def run_book_analysis(
     skill_profile: SkillProfileName,
     budget_policy: BudgetPolicy,
     analysis_policy: BookAnalysisPolicy,
+    prompt_set: BookAnalysisPromptSet = BOOK_ANALYSIS_PROMPTS,
+    reader_prompt_set: IteratorV1PromptSet = ITERATOR_V1_PROMPTS,
 ) -> tuple[BookStructure, BookAnalysisState]:
     """Run book-level plan-and-execute analysis and persist intermediate artifacts."""
     def emit_status(message: str) -> None:
@@ -610,8 +607,8 @@ def run_book_analysis(
             payload: object = {}
             try:
                 payload = invoke_json(
-                    BOOK_ANALYSIS_SKIM_SYSTEM,
-                    BOOK_ANALYSIS_SKIM_PROMPT.format(
+                    prompt_set.skim_system,
+                    prompt_set.skim_prompt.format(
                         chapter_title=chapter.get("title", ""),
                         segment_ref=segment_ref,
                         segment_summary=segment_summary,
@@ -810,8 +807,8 @@ def run_book_analysis(
         payload: object = {}
         try:
             payload = invoke_json(
-                BOOK_ANALYSIS_QUERY_SYSTEM,
-                BOOK_ANALYSIS_QUERY_PROMPT.format(
+                prompt_set.query_system,
+                prompt_set.query_prompt.format(
                     claim_statement=claim.get("statement", ""),
                     evidence_status=claim.get("evidence_status", "gap"),
                     max_queries=max_queries,
@@ -923,6 +920,7 @@ def run_book_analysis(
                 skill_policy=skill,
                 budget=segment_budget(chapter_budget_state, budget_policy),
                 max_revisions=int(budget_policy.get("max_revisions", 2)),
+                prompt_set=reader_prompt_set,
             )
             rendered, _final_state = run_reader_segment_for_analysis(
                 state,
@@ -1034,6 +1032,7 @@ def run_book_analysis(
                 chapter_arc=chapter_arc,
                 deep_dossiers=deep_dossiers,
                 evidence_checks=evidence_checks,
+                prompt_set=prompt_set,
             )
         except Exception:
             report_markdown = ""

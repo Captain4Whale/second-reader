@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
-from typing import Literal, TypedDict
+from typing import TYPE_CHECKING, Literal, TypedDict
 
 from src.reading_core.normalized_outputs import CurrentReadingPhase, ReactionType, SearchHit, ThoughtFamily
 from src.reading_core.runtime_contracts import CurrentReadingProblemCode, JobKind, JobRecord, JobStatus, MarkType, UserMark, UserMarksState
+
+if TYPE_CHECKING:
+    from .prompts import IteratorV1PromptSet
 
 
 ChapterStatus = Literal["pending", "in_progress", "done"]
@@ -685,6 +688,7 @@ class ReaderState(TypedDict):
     segment_text: str
     user_intent: str | None
     output_language: str
+    prompt_set: "IteratorV1PromptSet"
     memory: ReaderMemory
     read_packet: str
     thought: ThoughtPayload | None
@@ -702,4 +706,3 @@ class ReaderState(TypedDict):
     subsegment_planner_source: str
     subsegment_strategy_override: SubsegmentStrategy | None
     subsegment_plan_diagnostics: SubsegmentPlanDiagnostics
-

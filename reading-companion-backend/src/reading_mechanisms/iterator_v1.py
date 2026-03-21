@@ -8,6 +8,8 @@ from pathlib import Path
 
 from src.iterator_reader.iterator import read_book as iterator_read_book
 from src.iterator_reader.parse import parse_book as iterator_parse_book
+from src.iterator_reader.prompts import ITERATOR_V1_PROMPTS
+from src.prompts.capabilities.book_analysis import BOOK_ANALYSIS_PROMPTS
 from src.iterator_reader.storage import (
     existing_activity_file,
     existing_book_manifest_file,
@@ -56,6 +58,7 @@ class IteratorV1Mechanism:
             request.book_path,
             language_mode=request.language_mode,
             continue_mode=request.continue_mode,
+            prompt_set=ITERATOR_V1_PROMPTS,
         )
         book_document = load_book_document(existing_book_document_file(output_dir))
         return ParseResult(
@@ -83,6 +86,8 @@ class IteratorV1Mechanism:
             skill_profile=skill_profile,  # type: ignore[arg-type]
             budget_policy=budget_policy,  # type: ignore[arg-type]
             analysis_policy=analysis_policy,  # type: ignore[arg-type]
+            prompt_set=ITERATOR_V1_PROMPTS,
+            book_analysis_prompt_set=BOOK_ANALYSIS_PROMPTS,
         )
         book_document = load_book_document(existing_book_document_file(output_dir))
         normalized_eval_bundle = _normalized_eval_bundle(

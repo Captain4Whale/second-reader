@@ -210,7 +210,7 @@ Update when: a major product or engineering decision is made, reversed, or becom
 **Primary evidence**:
 - `docs/backend-reading-mechanism.md`
 - `reading-companion-backend/src/iterator_reader/reader.py`
-- `reading-companion-backend/src/prompts/templates.py`
+- `reading-companion-backend/src/iterator_reader/prompts.py`
 - `reading-companion-backend/src/iterator_reader/policy.py`
 
 ## Entry 11
@@ -384,3 +384,26 @@ Update when: a major product or engineering decision is made, reversed, or becom
 - `docs/backend-reading-mechanisms/attentional_v2.md`
 - `AGENTS.md`
 - `reading-companion-backend/AGENTS.md`
+
+## Entry 19
+**Decision / Inflection**: Split prompt ownership by boundary instead of keeping one global live prompt bank.
+
+**Period**: Late March 2026, after the shared mechanism/runtime boundaries and the multi-mechanism doc split were already in place.
+
+**Problem**: The repo still kept live parse, reader, book-analysis, shared fragment, and legacy prompt text together in one global `src/prompts/templates.py` module. That was workable while there was effectively one active reader, but it blurred which prompts belonged to a mechanism, which belonged to a reusable capability, and which fragments were truly shared infrastructure.
+
+**Alternatives considered**: Keep the global prompt bank and rely on naming discipline, build a global cross-mechanism prompt registry, or postpone prompt ownership cleanup until a second live mechanism was already implemented.
+
+**Why this path won**: Prompt ownership now matches the backend architecture. Shared fragments stay in `src/prompts/`, capability prompts such as `book_analysis` stay in capability-scoped modules, and mechanism-private prompts live with the mechanism implementation that owns them. That keeps future prompt work local to the reader or capability it actually changes, while the old `templates.py` can survive temporarily as a compatibility shim instead of remaining the canonical source of truth.
+
+**What changed in the system**: Shared language/query fragments moved into `src/prompts/shared.py`. `iterator_v1` parse and reader prompts moved into `src/iterator_reader/prompts.py` with a typed `IteratorV1PromptSet`. `book_analysis` prompts moved into `src/prompts/capabilities/book_analysis.py` with a typed `BookAnalysisPromptSet`. Legacy unused prompt families moved into `src/prompts/legacy.py`. The current mechanism adapter now selects prompt bundles explicitly, and the old `src/prompts/templates.py` only re-exports from the new modules for migration compatibility.
+
+**Why it matters later**: This is the prompt-boundary decision that keeps multi-mechanism work from collapsing back into one giant global template file. Later contributors need to know that prompt dispatch happens by mechanism or capability ownership, not by editing a universal prompt bank every time a reader changes.
+
+**Primary evidence**:
+- `reading-companion-backend/src/prompts/shared.py`
+- `reading-companion-backend/src/prompts/capabilities/book_analysis.py`
+- `reading-companion-backend/src/prompts/legacy.py`
+- `reading-companion-backend/src/iterator_reader/prompts.py`
+- `reading-companion-backend/src/reading_mechanisms/iterator_v1.py`
+- `reading-companion-backend/src/prompts/templates.py`

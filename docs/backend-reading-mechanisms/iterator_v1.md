@@ -175,7 +175,8 @@ Use `docs/backend-reading-mechanism.md` for shared mechanism-platform boundaries
     - the current `curious` reaction, `anchor_quote`, `search_query`, and normalized search results
   - `reflect`
     - `reactions_json` for the current subsegment plus the same contextual packet
-- Prompt wording is owned by `reading-companion-backend/src/prompts/templates.py`.
+- Prompt wording is owned by `reading-companion-backend/src/iterator_reader/prompts.py`.
+  - Shared fragments used by `iterator_v1` live under `reading-companion-backend/src/prompts/shared.py`.
   - This document describes prompt responsibilities and inputs, not the full prompt text.
 
 ## Memory And Revisit Logic

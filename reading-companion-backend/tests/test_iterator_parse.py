@@ -492,7 +492,11 @@ def test_ensure_structure_for_book_rehydrates_segments_after_outline_only_parse(
 
     assert created is False
     assert resolved_output_dir == output_dir
-    assert captured_calls == [{"language_mode": "auto", "continue_mode": True, "include_segments": True}]
+    assert len(captured_calls) == 1
+    assert captured_calls[0]["language_mode"] == "auto"
+    assert captured_calls[0]["continue_mode"] is True
+    assert captured_calls[0]["include_segments"] is True
+    assert captured_calls[0]["prompt_set"] is parse_module.ITERATOR_V1_PROMPTS
     assert structure["chapters"][0]["segments"][0]["id"] == "1.1"
 
 

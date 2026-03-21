@@ -1,22 +1,19 @@
-"""Regression tests for Reader and parse prompt guardrails."""
+"""Regression tests for iterator_v1 parse and reader prompt guardrails."""
 
 from __future__ import annotations
 
-from src.prompts.templates import (
-    BOOK_ANALYSIS_QUERY_PROMPT,
-    BOOK_ANALYSIS_SKIM_PROMPT,
-    BOOK_ANALYSIS_SYNTHESIS_PROMPT,
+from src.iterator_reader.prompts import (
     READER_CHAPTER_REFLECT_PROMPT,
     READER_CHAPTER_REFLECT_SYSTEM,
-    READER_CURIOSITY_FUSE_SYSTEM,
     READER_CURIOSITY_FUSE_PROMPT,
+    READER_CURIOSITY_FUSE_SYSTEM,
     READER_EXPRESS_PROMPT,
     READER_EXPRESS_SYSTEM,
     READER_REFLECT_PROMPT,
-    READER_THINK_PROMPT,
     READER_REFLECT_SYSTEM,
     READER_SUBSEGMENT_PLAN_PROMPT,
     READER_SUBSEGMENT_PLAN_SYSTEM,
+    READER_THINK_PROMPT,
     SEMANTIC_SEGMENTATION_SYSTEM,
 )
 
@@ -109,8 +106,8 @@ def test_reader_subsegment_planner_prompt_prefers_minimal_self_contained_units()
     assert '"reading_move": "claim"' in READER_SUBSEGMENT_PLAN_PROMPT
 
 
-def test_language_contract_preserves_quotes_and_search_hits():
-    """Core generation prompts should include the language contract for quote/search handling."""
+def test_iterator_prompts_include_language_contract():
+    """Iterator prompts should embed the shared language contract where generation happens."""
     prompts = [
         READER_THINK_PROMPT,
         READER_SUBSEGMENT_PLAN_PROMPT,
@@ -118,8 +115,6 @@ def test_language_contract_preserves_quotes_and_search_hits():
         READER_CURIOSITY_FUSE_PROMPT,
         READER_REFLECT_PROMPT,
         READER_CHAPTER_REFLECT_PROMPT,
-        BOOK_ANALYSIS_SKIM_PROMPT,
-        BOOK_ANALYSIS_SYNTHESIS_PROMPT,
     ]
     for prompt in prompts:
         assert "输出语言契约" in prompt
@@ -127,16 +122,8 @@ def test_language_contract_preserves_quotes_and_search_hits():
         assert "搜索命中字段（title/snippet/url）保持原样，不翻译、不改写" in prompt
 
 
-def test_book_analysis_prompts_use_neutral_placeholders_and_query_language_policy():
-    """Skim/query templates should avoid fixed-language examples while keeping retrieval flexibility."""
-    assert "<skim_summary_1_to_3_sentences>" in BOOK_ANALYSIS_SKIM_PROMPT
-    assert "<claim_1>" in BOOK_ANALYSIS_SKIM_PROMPT
-    assert "<deep_read_reason>" in BOOK_ANALYSIS_SKIM_PROMPT
-    assert "检索词语言策略" in BOOK_ANALYSIS_QUERY_PROMPT
-    assert "不受输出语言硬约束" in BOOK_ANALYSIS_QUERY_PROMPT
-
-
 def test_semantic_segmentation_keeps_definition_with_expansion():
     """Segmentation prompt should preserve concept-definition continuity."""
     assert "概念首次提出" in SEMANTIC_SEGMENTATION_SYSTEM
     assert "紧接着的段落是在展开、举例或论证这个定义时，应合并成同一个语义单元" in SEMANTIC_SEGMENTATION_SYSTEM
+

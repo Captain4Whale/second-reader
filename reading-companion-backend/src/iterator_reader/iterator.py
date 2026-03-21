@@ -54,6 +54,7 @@ from .policy import (
     segment_budget,
 )
 from .book_analysis import run_book_analysis
+from .prompts import ITERATOR_V1_PROMPTS, IteratorV1PromptSet
 from .reader import (
     apply_chapter_reflection_repairs,
     coerce_reader_memory,
@@ -64,6 +65,7 @@ from .reader import (
     run_reader_segment,
     update_memory,
 )
+from src.prompts.capabilities.book_analysis import BOOK_ANALYSIS_PROMPTS, BookAnalysisPromptSet
 from .storage import (
     chapter_markdown_file,
     chapter_reference,
@@ -1029,6 +1031,7 @@ def _run_single_chapter(
     allow_resume: bool,
     tracker: dict[str, object],
     io_lock: threading.RLock | None = None,
+    prompt_set: IteratorV1PromptSet = ITERATOR_V1_PROMPTS,
 ) -> ReaderMemory:
     """Execute one chapter and return updated memory."""
     write_context = io_lock if io_lock is not None else nullcontext()
@@ -1175,6 +1178,7 @@ def _run_single_chapter(
             role_confidence=str(chapter.get("role_confidence", "low") or "low"),
             section_heading=str(segment.get("section_heading", "") or ""),
             nearby_outline=nearby_outline,
+            prompt_set=prompt_set,
         )
         rendered, final_state = run_reader_segment(state, progress=progress)
         rendered_segments.append(rendered)
@@ -1237,6 +1241,7 @@ def _run_single_chapter(
         output_language=output_language,
         chapter_primary_role=str(chapter.get("primary_role", "body") or "body"),
         chapter_role_tags=list(chapter.get("role_tags", [])),
+        prompt_set=prompt_set,
     )
     rendered_segments = apply_chapter_reflection_repairs(
         segments=rendered_segments,
@@ -1334,6 +1339,7 @@ def _read_book_sequential(
     budget_policy: BudgetPolicy,
     continue_mode: bool,
     tuning: SequentialPipelineTuning,
+    prompt_set: IteratorV1PromptSet,
 ) -> BookStructure:
     """Run the sequential reader with background chapter segmentation."""
     memory = _load_reader_memory_snapshot(
@@ -1479,6 +1485,7 @@ def _read_book_sequential(
                     allow_resume=continue_mode,
                     tracker=tracker,
                     io_lock=io_lock,
+                    prompt_set=prompt_set,
                 )
             except Exception as exc:
                 with io_lock:
@@ -1526,6 +1533,8 @@ def read_book(
     skill_profile: SkillProfileName = "balanced",
     budget_policy: BudgetPolicy | None = None,
     analysis_policy: BookAnalysisPolicy | None = None,
+    prompt_set: IteratorV1PromptSet = ITERATOR_V1_PROMPTS,
+    book_analysis_prompt_set: BookAnalysisPromptSet = BOOK_ANALYSIS_PROMPTS,
 ) -> tuple[BookStructure, Path, bool]:
     """Run the outer iterator, writing checkpointed chapter markdown files."""
     structure, output_dir, created = ensure_structure_for_book(
@@ -1533,6 +1542,7 @@ def read_book(
         language_mode=language_mode,
         continue_mode=True,
         require_segments=False,
+        prompt_set=prompt_set,
     )
     selected_chapters = _chapter_selection(structure, chapter_number, continue_mode)
     if read_mode == "sequential":
@@ -1566,6 +1576,8 @@ def read_book(
             skill_profile=skill_profile,
             budget_policy=policy,
             analysis_policy=analysis,
+            prompt_set=book_analysis_prompt_set,
+            reader_prompt_set=prompt_set,
         )
     elif read_mode == "sequential":
         structure = _read_book_sequential(
@@ -1578,6 +1590,7 @@ def read_book(
             budget_policy=policy,
             continue_mode=continue_mode,
             tuning=tuning,
+            prompt_set=prompt_set,
         )
     else:
         raise ValueError(f'Unsupported read mode: "{read_mode}"')
