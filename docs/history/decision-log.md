@@ -276,3 +276,23 @@ Update when: a major product or engineering decision is made, reversed, or becom
 - `docs/product-interaction-model.md`
 - `docs/backend-reader-evaluation.md`
 - `AGENTS.md`
+
+## Entry 14
+**Decision / Inflection**: Make the reader evaluation constitution decision-complete around reader character, reader value, and runtime viability.
+
+**Period**: Late March 2026, after product-purpose authority moved into `docs/product-overview.md`.
+
+**Problem**: The evaluation frame was already product-first and mechanism-agnostic, but it still left important ambiguity about what the north star actually contained, how strong anti-goals should be, and which questions belonged in stable methodology versus in benchmark reports. Without that clarification, future contributors could still overfit evaluation to a flat blended checklist, over-police surprise or resonance, or quietly move benchmark policy into the constitution.
+
+**Alternatives considered**: Keep the earlier north star as a looser blended list, make stronger anti-goals that discouraged surprise or resonance as such, elevate recall and re-entry to first-class north-star territory, or let benchmark reports continue filling in the missing methodology by convention.
+
+**Why this path won**: Splitting the north star into `reader_character` and `reader_value`, with `runtime_viability` as a standing gate, makes the evaluation system clearer without hard-freezing current mechanisms. Narrowing anti-goals to anti-reduction rules preserves room for text-earned surprise, resonance, and delight while still protecting the product from collapsing into proxy optimization. Keeping recall and re-entry as secondary durable-trace audits also keeps the framework aligned with the actual product surfaces instead of forcing extra recap structure into the reader.
+
+**What changed in the system**: `docs/backend-reader-evaluation.md` now defines the stable evaluation constitution around two north-star families plus one runtime gate, reframes evaluation layers as mechanism-agnostic product lenses, makes `pairwise_judge` and `rubric_judge` the default semantic tools, keeps human review optional calibration, and sharpens the boundary between stable methodology and evolving benchmark/report policy.
+
+**Why it matters later**: This is the clarification that makes the evaluation constitution more usable as a day-to-day decision tool instead of only a high-level principle. Future contributors should be able to compare a subsegment-based reader, a non-slicing reader, or a search-heavy reader with the same framework without accidentally turning benchmark details, surprise effects, or recap-oriented audits into the product definition.
+
+**Primary evidence**:
+- `docs/backend-reader-evaluation.md`
+- `docs/product-overview.md`
+- `reading-companion-backend/docs/evaluation/subsegment/subsegment_benchmark_v1_baseline.md`

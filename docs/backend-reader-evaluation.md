@@ -1,84 +1,98 @@
 # Backend Reader Evaluation
 
-Purpose: define how the backend reader's quality should be evaluated across mechanism, output, and runtime layers.
-Use when: defining reader quality goals, planning evals for reader changes, choosing between deterministic metrics and LLM-as-judge, or deciding whether a change needs local A/B evaluation or broader regression evaluation.
-Not for: public API contract authority, runtime lifecycle semantics, or one-off benchmark results.
-Update when: reader quality dimensions, evaluation workflow, or evaluation artifact routing materially change.
+Purpose: define the stable constitution for evaluating reader quality across current and future mechanisms.
+Use when: aligning eval work to product purpose, choosing between reader mechanisms, deciding what belongs in stable methodology versus benchmark reports, or designing offline reader evals.
+Not for: public API contract authority, runtime lifecycle semantics, prompt-text authority, or one-off benchmark conclusions.
+Update when: north-star dimensions, anti-goals, taxonomy, method policy, or evaluation artifact routing materially change.
 
-Use `docs/backend-reading-mechanism.md` for how the reader works. Use this file for how we decide whether the reader is getting better or worse. Product-purpose authority lives in `docs/product-overview.md`; this file aligns evaluation to that purpose rather than redefining it.
+Use `docs/backend-reading-mechanism.md` for how the current reader works. Use this file for the stable comparison frame that any current or future reader mechanism should be judged against. Product-purpose authority lives in `docs/product-overview.md`; this file operationalizes that purpose for evaluation rather than redefining it.
 
 ## Evaluation Constitution
 - The evaluation system is product-first.
-  - The reader exists to preserve a living co-reader quality for nonfiction reading, not to maximize a single internal metric.
+  - The reader exists to preserve a living, curious, self-propelled co-reading mind, not to maximize one local benchmark proxy.
 - The evaluation system is mechanism-agnostic.
-  - `section`, `subsegment`, memory packing, search, reflection, and any future reader architecture are all candidate mechanisms, not protected truths.
-- The evaluation system should judge outputs and runtime behavior against the product goal, not defend the current implementation shape.
+  - `section`, `subsegment`, memory packing, search, reflection, and any future reader architecture are candidate mechanisms, not protected truths.
+- The evaluation system should judge outputs and runtime behavior against the product target, not defend the current implementation shape.
 - A mechanism wins only if it improves the product under realistic constraints.
 - A mechanism does not win just because it is elegant, locally clever, or easier to explain.
-- The product goal is deeper than any one downstream benefit.
-  - `unknown unknowns`, resonance, delight, recall, and companionship are important current value channels, but they are not the final definition of the product on their own.
-- Stable docs should preserve the constitution and the comparison frame.
-  - Detailed benchmark composition, per-run thresholds, and case selection can evolve in the benchmark layer and reports.
-- The core question is not "is slicing correct?"
-  - The core question is "what reader architecture best achieves the product goal?"
-
-## North Star
-- The reader should preserve the feeling of a living co-reader that:
-  - reads out of genuine curiosity rather than procedural obligation
-  - stays faithful to the source
-  - notices meaningful turns, definitions, tensions, and callbacks
-  - remains selective rather than mechanically verbose or performative
-  - accumulates coherent understanding across larger spans
-  - produces value that is legible and worth another person's attention
-  - behaves reliably enough to trust in real runtime conditions
-
-## Anti-Goals
-- Do not optimize toward a generic summary machine.
-- Do not treat more reactions as automatically better.
-- Do not treat more human-like output as automatically better.
-- Do not treat tighter lexical overlap with human highlights as automatically better.
-- Do not assume a more complex mechanism is better if the product result is not better.
-- Do not let benchmark quirks define the product goal.
+- Stable docs should preserve the constitution, the naming frame, and the benchmark/report boundary.
+- Benchmark code and reviewed reports should carry the living case sets, rubrics, thresholds, and per-run evidence.
+- The core question is not "is the current architecture correct?"
+  - The core question is "what reader mechanism best preserves the product goal?"
 
 ## Why Reader Evaluation Exists
 - Reader evaluation exists to guide optimization first and preserve evidence second.
-- The first job of eval is to make mechanism work legible:
+- Its first job is to make mechanism work legible:
   - what changed
-  - what "better" means for that change
+  - what "better" means for this change
   - whether the change improved the intended reader behavior
 - Records still matter because they:
   - preserve baselines
   - prevent "it feels better" drift
-  - make it easier to understand why later mechanism choices were made
+  - make later mechanism decisions easier to explain
 - A good evaluation practice should therefore support both:
-  - local mechanism decisions
+  - local mechanism attribution
   - longer-term reader quality memory
-- The same frame should let us compare competing architectures fairly.
-  - If a non-slicing approach beats the current section/subsegment path on the north star, the eval system should be able to show that clearly.
+- The same frame should let us compare competing architectures fairly without inventing new product definitions for each implementation.
+
+## North Star
+- Reader quality is a vector, not a single score.
+- The first-class north star has two families plus one standing gate.
+
+### Family A: `reader_character`
+- `text_groundedness`
+  - the reading mind stays answerable to the source text instead of drifting into free-floating cleverness
+- `self_propelled_curiosity`
+  - the reader moves out of genuine curiosity about the text rather than procedural obligation or generic helpfulness
+- `selective_legibility`
+  - the reader notices worthwhile things and expresses them in a way another person can follow
+- `coherent_accumulation`
+  - understanding compounds across span instead of becoming a pile of disconnected local sparks
+
+### Family B: `reader_value`
+- `insight_and_clarification`
+  - the reader surfaces meaningful turns, definitions, tensions, unknown unknowns, or clarifying distinctions
+- `resonance_and_delight_when_earned`
+  - the reading trail can produce resonance, surprise, or intellectual echo when those effects genuinely arise from good reading
+- `companionship`
+  - the experience feels like reading with a mind rather than consuming a report
+
+### Standing Gate: `runtime_viability`
+- A reader mechanism must remain reliable enough to trust in realistic use.
+- Quality that appears only at unrealistic fallback, latency, or cost levels is not a full product win.
+- Runtime viability includes:
+  - reliability and recoverability
+  - fallback and timeout health
+  - latency and cost acceptability
+  - operational trust under realistic conditions
+
+## Anti-Goals
+- Do not collapse the product into summary optimization.
+- Do not collapse the product into user-pleasing service behavior.
+- Do not reward self-enclosed or text-detached thinking.
+- Do not let benchmark proxies become the product.
+  - More reactions, longer notes, tighter lexical overlap, or more human-like surface style are not automatic wins.
+- Do not mistake a more complex mechanism for a better reader if the product result is not better.
+- Naturally arising surprise and resonance are permitted and valuable.
+  - The anti-goal is reducing the product to those effects as isolated targets, not their honest presence.
 
 ## What Good Means
-- Reader quality is layered, not a single score.
 - Product-good is the primary question.
-  - Does the system preserve a genuinely curious, text-grounded co-reading mind in a way that gives the user more insight, more felt value, and more trust?
+  - Does the system preserve a genuinely curious, text-grounded co-reading mind that produces real value and remains worth trusting?
 - Mechanism-good is subordinate but still important.
-  - Did one internal mechanism measurably improve the product while staying inside runtime constraints?
-- Good evaluation should therefore avoid collapsing everything into one vague judgment such as "smarter" or "more human."
-- Reader quality should also avoid bad proxies:
-  - more reactions is not automatically better
-  - more human-like is not automatically better
-  - longer notes are not automatically better
-  - tighter lexical overlap with human highlights is not automatically better
-- The working standard is:
-  - the reader should select and process text in ways that preserve a curious, source-grounded, selective, and coherent co-reading mind under realistic runtime constraints
+  - Did one internal mechanism improve the product without violating realistic constraints?
+- Good evaluation should therefore avoid collapsing everything into one vague judgment such as "smarter," "more human," or "more useful."
 
 ## Evaluation Taxonomy
-- Reader eval naming should separate:
+- Reader eval naming should continue to separate:
   - `target`
     - what mechanism or object is under evaluation
   - `scope`
     - how far the evaluation follows the effect of that target
   - `method`
     - how the judgment is produced
+- This taxonomy remains stable.
+- Evaluation layers and north-star dimensions shape rubric design, but they do not replace `target / scope / method` as the run-labeling frame.
 
 ### Target
 - `target` names the evaluated mechanism or object, not the layer or scoring method.
@@ -115,143 +129,99 @@ Use `docs/backend-reading-mechanism.md` for how the reader works. Use this file 
   - comparison target
 
 ## Evaluation Layers
-### Subsegment
-- Evaluate whether the runtime reading unit itself is well chosen.
-- This is an evaluable mechanism, not a permanent truth about the reader.
-- Core dimensions:
-  - `self-containedness`
-    - can the unit stand on its own as a local reading object?
-  - `minimal sufficiency`
-    - is it the smallest unit that still supports one complete local reading move?
-  - `one primary reading move`
-    - does the unit mostly support one main reading move instead of mixing several unrelated ones?
+- Evaluation layers are mechanism-agnostic lenses for designing rubrics and benchmark plans.
+- They are not permanent claims about today's pipeline.
 
-### Reaction
-- Evaluate whether the reader's local response is good once the unit is chosen.
-- Core dimensions:
-  - `focus`
-    - is each reaction centered on a clear point?
-  - `source anchoring`
-    - does the reaction stay grounded in the text and use a readable anchor quote?
-  - `selectivity`
-    - did the reader choose worthwhile things to say rather than reacting mechanically to everything?
-  - `meaningful curiosity`
-    - when curiosity appears, is it the kind that deepens reading rather than creating generic side-questions?
+### End-To-End Product Fit
+- Ask whether the overall reader still feels like the right kind of co-reader mind.
+- This layer is where the two north-star families come together most directly.
+- Use it when comparing whole architectures or major behavior shifts.
 
-### Section
-- Evaluate the merged section-level result after the reader finishes its local work.
-- This is also an evaluable mechanism, not a protected product boundary.
-- Core dimensions:
-  - `coverage of meaningful points`
-    - are important turns, definitions, causal links, or callbacks captured?
-  - `coherence after merge`
-    - do the section reactions still feel like one coherent reading trail after multiple runtime units are merged?
-  - `low redundancy`
-    - are repeated or near-duplicate reactions avoided?
+### Local Reading Behavior
+- Ask whether the reader takes good passage-level reading steps.
+- This can apply to any local working object:
+  - a planned runtime unit
+  - a local reaction
+  - a fused search result
+  - a non-slicing local read pass
+- Typical concerns include:
+  - focus
+  - source anchoring
+  - selectivity
+  - meaningful curiosity
 
-### Chapter / Book Trajectory
-- Evaluate whether the reader's understanding carries over across larger spans.
-- Core dimensions:
-  - `memory carry-over`
-    - do earlier findings and open threads help later reading?
-  - `thread continuity`
-    - do callbacks, retrospects, and chapter synthesis feel earned?
-  - `chapter-level arc quality`
-    - does a chapter read like a developing line of thought rather than a pile of local notes?
+### Span Trajectory
+- Ask whether understanding develops coherently across larger spans.
+- Typical concerns include:
+  - thread continuity
+  - memory carry-over
+  - callback quality
+  - chapter or book-level arc quality
 
-### Process / Runtime
-- Evaluate whether the reader remains operationally healthy while pursuing quality.
-- Core dimensions:
-  - `fallback rate`
-    - how often semantic mechanisms fail and revert to safety behavior
-  - `timeout rate`
-    - how often the reader runs out of time or work budget
-  - `cost / latency`
-    - whether gains remain acceptable for the intended usage
-  - `planner failure modes`
-    - whether malformed plans, invalid structure, or oversized units are under control
+### Runtime Viability
+- Ask whether the reader remains operationally healthy while pursuing quality.
+- Typical concerns include:
+  - fallback rate
+  - timeout rate
+  - invalid-structure or planner failure modes
+  - latency and cost under intended usage
+
+### Durable-Trace Audits
+- Audit whether saved marks, traces, or other durable surfaces preserve enough orientation for later return.
+- This includes recall and re-entry questions when they matter.
+- Durable-trace quality is important, but it is a secondary audit territory rather than a first-class north-star family.
+- It should not force the reader into extra recap structure when the core product surfaces already preserve position and traceability.
 
 ## Evaluation Methods
 ### Deterministic Metrics
-- Use deterministic metrics for structure and process questions.
+- Use deterministic metrics for structure, runtime, and guardrail questions.
 - Typical examples:
-  - subsegment count
+  - unit count
   - average unit size
   - fallback rate
   - timeout rate
-  - per-section reaction count
   - repeated-reaction rate
-- These metrics are useful for guardrails and trend lines, but they are not sufficient for semantic quality by themselves.
+- These metrics are useful for trend lines and safety checks, but they are not semantic winners by themselves.
 
-### LLM-As-Judge
-- Use LLM-as-judge for semantic quality questions that deterministic metrics cannot answer well.
-- Good uses include:
-  - whether one output is more focused than another
-  - whether a subsegment is self-contained
-  - whether a section output missed a meaningful turn or definition
-  - whether version A or B is the better co-reading result under a defined rubric
-- In this project, LLM-as-judge should be treated as an offline evaluator, not as a runtime reader agent.
-- The value of the judge comes from the rubric, not from the judge existing on its own.
-- The judge should compare competing mechanisms on the same product question whenever possible.
-  - The object of comparison can be a subsegment plan, a merged section output, a chapter trajectory, or a broader end-to-end reader run.
+### LLM-Led Semantic Evaluation
+- `pairwise_judge` and `rubric_judge` are the default semantic tools.
+- Use `pairwise_judge` when the core question is:
+  - which version is better overall for this specific product question?
+- Use `rubric_judge` when the core question is:
+  - what exactly improved or regressed, and along which named dimensions?
+- In practice, the two methods often work best together:
+  - pairwise for the outcome judgment
+  - rubric for the diagnostic explanation
+- In this project, these methods should be treated as offline evaluators, not runtime reader agents.
+- The value of the judge comes from the rubric, the matched comparison, and the product question being asked.
 
 ### Human Spot-Checking
-- Human review should audit the evaluation system, not replace it as the default scoring path.
+- Human review is optional calibration, not a standing requirement for every eval.
 - Human spot-checking is especially useful for:
-  - validating whether the judge rubric is sensible
+  - validating whether a rubric still matches product intent
   - catching judge drift
-  - distinguishing real regressions from reasonable reading-style differences
+  - distinguishing real regressions from defensible reading-style differences
 
-### Pairwise Preference vs Rubric Scoring
-- Use pairwise A/B preference when the question is:
-  - which version is better overall for this specific task?
-- Use rubric scoring when the question is:
-  - what exactly improved or regressed, and along which dimensions?
-- In practice, the two methods often work best together:
-  - pairwise for summary preference
-  - rubric for diagnostic explanation
+## Fair Comparison Rules
+- Compare mechanisms on the same product question whenever possible.
+- Keep comparisons grounded in realistic constraints rather than unconstrained demo conditions.
+- The stable methodology should not freeze exact budget-matching policy, threshold policy, or benchmark packaging into the constitution.
+- Those details belong in benchmark code and reviewed reports.
 
 ## When To Evaluate
-- Run local mechanism evaluation after major reader-core changes.
-- Use local evaluation when the goal is attribution:
-  - did this change itself improve the intended behavior?
-- Run broader regression evaluation after a cluster of changes to prompts, memory, search, reflection, or synthesis.
+- Run local mechanism evaluation after major reader-core changes when the goal is attribution.
+- Run broader regression evaluation after clusters of changes to prompts, memory, search, reflection, synthesis, or other interacting mechanisms.
 - Do not wait for every mechanism to change before first evaluation.
 - If evaluation is deferred too long, improvement and regression become hard to attribute.
 - If a different architecture becomes plausible, evaluate it with the same north-star frame instead of inventing a new metric language for each implementation.
 
-## Current Example: Subsegment Planning
-- The current subsegment planner is the first concrete example for this evaluation framework.
-- This is an example target, not the definition of the framework.
-- The benchmark for this change should compare `heuristic_only` and `llm_primary` on the same tracked cases, with search disabled and a dedicated eval-only runtime root so the signal stays focused on slicing quality.
-- The dedicated runner lives under `reading-companion-backend/eval/subsegment/` and should be invokable as one offline command rather than through the normal runtime read flow.
-- In taxonomy terms:
-  - `target = subsegment_segmentation`
-  - default `scope = direct_quality`
-  - optional `scope = local_impact`
-- The older "plan-level" language maps to `scope = direct_quality`.
-- The older "downstream section-level" language maps to `scope = local_impact`.
-- The current benchmark should default to `direct_quality`.
-- `local_impact` should be opt-in and used when we specifically want evidence that better slicing carries through to better section-level reading output.
-- For this change, the goal is not:
-  - more human-like slicing
-  - more units
-  - more reactions
-- For this change, the goal is:
-  - the fewest self-contained local reading units that support one main nonfiction reading move at a time
-- The most important success dimensions for this change are:
-  - `self-containedness`
-    - does each chosen unit stand as a readable local object?
-  - `reaction focus`
-    - are reactions less blurred across multiple ideas?
-  - `source-anchor quality`
-    - are anchor quotes more complete and readable?
-  - `coverage of meaningful turns / definitions / callbacks`
-    - are important local moves less likely to be missed?
-  - `coherence after merge back to section level`
-    - does the section output still feel like one reading trail?
-  - `acceptable runtime guardrails`
-    - are fallback, timeout, and cost still reasonable?
+## Same Frame Across Mechanisms
+- The same evaluation constitution should work for:
+  - the current subsegment-based reader
+  - a future non-slicing reader
+  - a future search-heavy or reflection-heavy reader
+- The mechanism may change.
+- The north star, layer model, and naming frame should not need to be reinvented each time.
 
 ## Artifact Layout
 - Stable methodology belongs in `docs/`.
@@ -261,8 +231,8 @@ Use `docs/backend-reading-mechanism.md` for how the reader works. Use this file 
 - Machine-generated benchmark runs belong in `reading-companion-backend/eval/runs/` and should stay out of normal runtime `state/` / `output/` paths.
 - Runtime-first per-run markdown summaries may live under `reading-companion-backend/eval/runs/<benchmark>/<run_id>/summary/` until they are reviewed and promoted into `reading-companion-backend/docs/evaluation/`.
 - Temporary experiment logs belong in `reading-companion-backend/docs/research/` only when they are not yet stable reports.
-- Stable docs should explain the methodology and the comparison frame.
-- Benchmarks and reports should carry the living case sets, thresholds, and per-run evidence.
+- Stable docs should explain the constitution, the comparison frame, and the report boundary.
+- Benchmarks and reports should carry the living case sets, rubrics, thresholds, run settings, sample sizes, and per-run conclusions.
 
 ### Expectations For Evaluation Reports
 - Per-run or per-change reports should state:
