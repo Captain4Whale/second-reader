@@ -19,7 +19,7 @@ Use `docs/backend-sequential-lifecycle.md` for the job-level workflow over time.
   - Backend runtime code still often calls this unit a `segment`.
   - Public/UI language should treat this concept as `section`.
 - `structure`
-  - The current `iterator_v1`-owned derived artifact persisted at `public/structure.json`.
+  - The current `iterator_v1`-owned derived artifact persisted at `_mechanisms/iterator_v1/derived/structure.json`.
   - It contains `section` records and other iterator-shaped traversal state.
   - It is not the backend's mechanism-neutral parsed-book substrate.
 - `body group`
@@ -60,7 +60,7 @@ Use `docs/backend-sequential-lifecycle.md` for the job-level workflow over time.
 - Each canonical chapter is normalized into paragraph-sized text blocks called `paragraph records`.
   - EPUB prefers XHTML block extraction so the records can retain href, CFI, block-tag, and paragraph-index metadata.
   - When structured extraction is unavailable, the parser falls back to plain-text paragraph splitting.
-- `iterator_v1` derives its parse-time `section` contexts from that canonical chapter/paragraph substrate rather than treating `structure.json` as the shared truth.
+- `iterator_v1` derives its parse-time `section` contexts from that canonical chapter/paragraph substrate rather than treating `_mechanisms/iterator_v1/derived/structure.json` as the shared truth.
 - Parse-time classification labels each paragraph record as one of:
   - `chapter_heading`
   - `section_heading`
@@ -83,13 +83,17 @@ Use `docs/backend-sequential-lifecycle.md` for the job-level workflow over time.
   - Undersized adjacent sections may be merged back together.
 - Persisted `section` records are the output of this parse-side path.
   - They carry stable text spans, paragraph ranges, locators, and `segment_ref`.
-  - They live in the iterator-owned `structure.json` artifact, not in `book_document.json`.
+  - They live in the iterator-owned `_mechanisms/iterator_v1/derived/structure.json` artifact, not in `book_document.json`.
   - Runtime `subsegment` planning only begins after the outer iterator selects one persisted section for live reading.
 
 ### Why This Layer Exists
 - `body group` is a deterministic hygiene layer that keeps obvious structure text and auxiliary noise from defining the semantic target by accident.
 - `section` is the persisted semantic anchor that the outer iterator, checkpoints, and public state can rely on across runs.
 - `subsegment` remains the runtime execution unit used to take smaller reading steps inside one already-selected section.
+- Ownership is intentionally split:
+  - `book -> chapter -> paragraph/locator` belongs to the shared `book_document`
+  - `chapter -> sections` belongs to the iterator-derived `structure`
+  - `section -> subsegments` plus planner state and memory belong to iterator runtime artifacts under `_mechanisms/iterator_v1/runtime/`
 
 ### Coverage And Limits
 - The parser aims not to lose `body` prose coverage.
@@ -204,7 +208,7 @@ Use `docs/backend-sequential-lifecycle.md` for the job-level workflow over time.
   - the locus still points at the current section
   - the projected attention text can point at a smaller runtime span inside that section
 - Catalog aggregation may widen that projection again.
-  - When older runtime snapshots only retain a shortened `current_excerpt`, catalog can backfill the normalized full section text by resolving `segment_ref` against `structure.json`.
+  - When older runtime snapshots only retain a shortened `current_excerpt`, catalog can backfill the normalized full section text by resolving `segment_ref` against `_mechanisms/iterator_v1/derived/structure.json`.
   - Public state therefore reflects the runtime attention target as best effort, not as a strict copy of the current subsegment payload.
 
 ## Stability And Drift Notes

@@ -9,7 +9,15 @@ from pathlib import Path
 from fastapi.testclient import TestClient
 from src.api.contract import to_api_book_id, to_api_reaction_id
 from src.config import get_reader_resume_compat_version
-from src.iterator_reader.storage import existing_activity_file, parse_state_file
+from src.iterator_reader.storage import (
+    activity_file,
+    book_manifest_file,
+    existing_activity_file,
+    parse_state_file,
+    public_chapters_dir,
+    run_state_file,
+    structure_file,
+)
 from src.library.jobs import refresh_job, save_job
 from src.library.storage import upload_file
 from src.library.user_marks import delete_mark, list_book_marks, load_marks_state, put_mark
@@ -38,6 +46,26 @@ def _load_jsonl(path: Path) -> list[dict]:
             continue
         items.append(json.loads(line))
     return items
+
+
+def _manifest_path(output_dir: Path) -> Path:
+    return book_manifest_file(output_dir)
+
+
+def _run_state_path(output_dir: Path) -> Path:
+    return run_state_file(output_dir)
+
+
+def _activity_path(output_dir: Path) -> Path:
+    return activity_file(output_dir)
+
+
+def _structure_path(output_dir: Path) -> Path:
+    return structure_file(output_dir)
+
+
+def _chapter_result_path(output_dir: Path) -> Path:
+    return public_chapters_dir(output_dir) / "ch01_deep_read.json"
 
 
 def _bootstrap_book(root: Path, *, stage: str = "completed") -> str:
@@ -70,9 +98,9 @@ def _bootstrap_book(root: Path, *, stage: str = "completed") -> str:
             }
         ],
     }
-    _write_json(output_dir / "structure.json", structure_payload)
+    _write_json(_structure_path(output_dir), structure_payload)
     _write_json(
-        output_dir / "book_manifest.json",
+        _manifest_path(output_dir),
         {
             "book_id": book_id,
             "book": "Demo Book",
@@ -100,7 +128,7 @@ def _bootstrap_book(root: Path, *, stage: str = "completed") -> str:
         },
     )
     _write_json(
-        output_dir / "run_state.json",
+        _run_state_path(output_dir),
         {
             "mode": "sequential",
             "stage": stage,
@@ -116,7 +144,7 @@ def _bootstrap_book(root: Path, *, stage: str = "completed") -> str:
         },
     )
     _write_jsonl(
-        output_dir / "activity.jsonl",
+        _activity_path(output_dir),
         [
             {
                 "event_id": "evt-1",
@@ -149,7 +177,7 @@ def _bootstrap_book(root: Path, *, stage: str = "completed") -> str:
         ],
     )
     _write_json(
-        output_dir / "ch01_deep_read.json",
+        _chapter_result_path(output_dir),
         {
             "chapter": {
                 "id": 1,
@@ -341,12 +369,12 @@ def test_chapter_outline_endpoint_returns_pending_stub_for_unready_chapter(tmp_p
     api_module.app.state.root = tmp_path
     client = TestClient(api_module.app)
     book_id = _bootstrap_book(tmp_path, stage="deep_reading")
-    manifest_path = tmp_path / "output" / book_id / "book_manifest.json"
+    manifest_path = _manifest_path(tmp_path / "output" / book_id)
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     manifest["chapters"][0]["status"] = "pending"
     manifest["chapters"][0]["visible_reaction_count"] = 0
     manifest_path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
-    (tmp_path / "output" / book_id / "ch01_deep_read.json").unlink()
+    _chapter_result_path(tmp_path / "output" / book_id).unlink()
 
     response = client.get(f"/api/books/{to_api_book_id(book_id)}/chapters/1/outline")
     assert response.status_code == 200
@@ -392,7 +420,7 @@ def test_refresh_job_matches_uploaded_copy_via_source_asset_digest(tmp_path):
     upload_path.parent.mkdir(parents=True, exist_ok=True)
     upload_path.write_bytes(b"epub")
     book_id = _bootstrap_book(tmp_path)
-    manifest_path = tmp_path / "output" / book_id / "book_manifest.json"
+    manifest_path = _manifest_path(tmp_path / "output" / book_id)
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     manifest["source_file"] = str((tmp_path / "data" / "original.epub").resolve())
     manifest_path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
@@ -483,7 +511,7 @@ def test_refresh_job_pauses_running_job_when_runtime_updates_go_stale(tmp_path, 
     jobs_module = importlib.import_module("src.library.jobs")
     book_id = _bootstrap_book(tmp_path, stage="deep_reading")
     output_dir = tmp_path / "output" / book_id
-    run_state_path = output_dir / "run_state.json"
+    run_state_path = _run_state_path(output_dir)
     run_state = json.loads(run_state_path.read_text(encoding="utf-8"))
     run_state["current_chapter_id"] = 1
     run_state["current_chapter_ref"] = "Chapter 1"
@@ -591,7 +619,7 @@ def test_refresh_job_fresh_reruns_incompatible_prod_checkpoint(tmp_path, monkeyp
         },
         tmp_path,
     )
-    run_state_path = output_dir / "run_state.json"
+    run_state_path = _run_state_path(output_dir)
     run_state = json.loads(run_state_path.read_text(encoding="utf-8"))
     run_state["resume_compat_version"] = compat_version - 1
     run_state_path.write_text(json.dumps(run_state, ensure_ascii=False, indent=2), encoding="utf-8")
@@ -612,7 +640,7 @@ def test_refresh_job_fresh_reruns_incompatible_prod_checkpoint(tmp_path, monkeyp
     refreshed = refresh_job("job-incompat", root=tmp_path)
     activity = _load_jsonl(existing_activity_file(output_dir))
     reset_run_state = json.loads(run_state_path.read_text(encoding="utf-8"))
-    structure = json.loads((output_dir / "structure.json").read_text(encoding="utf-8"))
+    structure = json.loads(_structure_path(output_dir).read_text(encoding="utf-8"))
 
     assert refreshed["job_id"] != "job-incompat"
     assert refreshed["pid"] == 8765
@@ -630,7 +658,7 @@ def test_refresh_job_auto_resumes_stalled_runtime_once_in_prod(tmp_path, monkeyp
     compat_version = get_reader_resume_compat_version()
     book_id = _bootstrap_book(tmp_path, stage="deep_reading")
     output_dir = tmp_path / "output" / book_id
-    run_state_path = output_dir / "run_state.json"
+    run_state_path = _run_state_path(output_dir)
     run_state = json.loads(run_state_path.read_text(encoding="utf-8"))
     run_state["resume_compat_version"] = compat_version
     run_state["updated_at"] = "2026-03-07T00:00:00Z"
@@ -772,7 +800,7 @@ def test_book_activity_supports_stream_filter(tmp_path):
     public_book_id = to_api_book_id(book_id)
     output_dir = tmp_path / "output" / book_id
     _write_jsonl(
-        output_dir / "activity.jsonl",
+        _activity_path(output_dir),
         [
             {
                 "event_id": "evt-1",
@@ -810,9 +838,9 @@ def test_activity_result_url_is_hidden_until_chapter_workspace_is_ready(tmp_path
     book_id = _bootstrap_book(tmp_path, stage="deep_reading")
     public_book_id = to_api_book_id(book_id)
     output_dir = tmp_path / "output" / book_id
-    (output_dir / "ch01_deep_read.json").unlink(missing_ok=True)
+    _chapter_result_path(output_dir).unlink(missing_ok=True)
     _write_jsonl(
-        output_dir / "activity.jsonl",
+        _activity_path(output_dir),
         [
             {
                 "event_id": "evt-segment",
@@ -898,7 +926,7 @@ def test_analysis_state_exposes_current_reading_activity_snapshot(tmp_path):
     book_id = _bootstrap_book(tmp_path, stage="deep_reading")
     public_book_id = to_api_book_id(book_id)
     output_dir = tmp_path / "output" / book_id
-    run_state_path = output_dir / "run_state.json"
+    run_state_path = _run_state_path(output_dir)
     run_state = json.loads(run_state_path.read_text(encoding="utf-8"))
     run_state["current_reading_activity"] = {
         "phase": "searching",
@@ -939,12 +967,12 @@ def test_analysis_state_backfills_truncated_current_excerpt_from_structure(tmp_p
     public_book_id = to_api_book_id(book_id)
     output_dir = tmp_path / "output" / book_id
 
-    structure_path = output_dir / "structure.json"
+    structure_path = _structure_path(output_dir)
     structure = json.loads(structure_path.read_text(encoding="utf-8"))
     structure["chapters"][0]["segments"][0]["text"] = "Alpha beta gamma delta epsilon."
     structure_path.write_text(json.dumps(structure, ensure_ascii=False, indent=2), encoding="utf-8")
 
-    run_state_path = output_dir / "run_state.json"
+    run_state_path = _run_state_path(output_dir)
     run_state = json.loads(run_state_path.read_text(encoding="utf-8"))
     run_state["current_reading_activity"] = {
         "phase": "reflecting",
@@ -974,9 +1002,9 @@ def test_chapter_api_tolerates_empty_legacy_target_locator(tmp_path):
     book_id = _bootstrap_book(tmp_path)
     public_book_id = to_api_book_id(book_id)
     output_dir = tmp_path / "output" / book_id
-    payload = json.loads((output_dir / "ch01_deep_read.json").read_text(encoding="utf-8"))
+    payload = json.loads(_chapter_result_path(output_dir).read_text(encoding="utf-8"))
     payload["featured_reactions"][0]["target_locator"] = {}
-    (output_dir / "ch01_deep_read.json").write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    _chapter_result_path(output_dir).write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
 
     api_module.app.state.root = tmp_path
     client = TestClient(api_module.app)
@@ -1130,7 +1158,7 @@ def test_api_errors_use_stable_error_envelope(tmp_path):
 def test_websocket_streams_snapshot_activity_and_heartbeat(tmp_path):
     """The job websocket should emit the snapshot, activity-created, and heartbeat events."""
     book_id = _bootstrap_book(tmp_path, stage="deep_reading")
-    run_state_path = tmp_path / "output" / book_id / "run_state.json"
+    run_state_path = _run_state_path(tmp_path / "output" / book_id)
     run_state = json.loads(run_state_path.read_text(encoding="utf-8"))
     run_state["updated_at"] = "3026-03-07T00:00:00Z"
     run_state_path.write_text(json.dumps(run_state, ensure_ascii=False, indent=2), encoding="utf-8")

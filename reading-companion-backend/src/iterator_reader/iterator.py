@@ -69,6 +69,8 @@ from .storage import (
     chapter_reference,
     chapter_result_name,
     existing_chapter_result_file,
+    existing_reader_memory_file,
+    existing_segment_checkpoint_file,
     load_json,
     reader_memory_file,
     relative_output_path,
@@ -722,7 +724,7 @@ def _load_reader_memory_snapshot(
     if not continue_mode:
         return initial_memory()
 
-    path = reader_memory_file(output_dir)
+    path = existing_reader_memory_file(output_dir)
     if path.exists():
         payload = load_json(path)
         if isinstance(payload, dict):
@@ -1040,7 +1042,7 @@ def _run_single_chapter(
     rendered_segments = []
     skill_policy = resolve_skill_policy(skill_profile)
     chapter_budget_state = chapter_budget(budget_policy)
-    checkpoint_path = segment_checkpoint_file(output_dir, chapter)
+    checkpoint_path = existing_segment_checkpoint_file(output_dir, chapter)
     resumed_segment_map: dict[str, dict] = {}
 
     if allow_resume and checkpoint_path.exists():

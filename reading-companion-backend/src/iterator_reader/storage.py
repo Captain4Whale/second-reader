@@ -7,7 +7,12 @@ import re
 import shutil
 from pathlib import Path
 
+from src.reading_runtime import artifacts as runtime_artifacts
+
 from .models import BookStructure, StructureChapter
+
+
+ITERATOR_V1_MECHANISM_KEY = "iterator_v1"
 
 
 def slugify(value: str) -> str:
@@ -102,7 +107,7 @@ def resolve_output_dir(
 
 def book_id_from_output_dir(output_dir: Path) -> str:
     """Derive the stable book id from the output directory name."""
-    return output_dir.name
+    return runtime_artifacts.book_id_from_output_dir(output_dir)
 
 
 def ensure_output_dir(path: Path) -> None:
@@ -112,37 +117,42 @@ def ensure_output_dir(path: Path) -> None:
 
 def public_dir(output_dir: Path) -> Path:
     """Directory storing user-visible stable artifacts."""
-    return output_dir / "public"
+    return runtime_artifacts.public_dir(output_dir)
 
 
 def public_chapters_dir(output_dir: Path) -> Path:
     """Directory storing public per-chapter artifacts."""
-    return public_dir(output_dir) / "chapters"
+    return runtime_artifacts.public_chapters_dir(output_dir)
 
 
 def internal_dir(output_dir: Path) -> Path:
-    """Directory storing internal-only diagnostics and QA artifacts."""
-    return output_dir / "_internal"
+    """Directory storing iterator_v1-private diagnostics and analysis artifacts."""
+
+    return runtime_artifacts.mechanism_internal_dir(output_dir, ITERATOR_V1_MECHANISM_KEY)
 
 
 def internal_qa_dir(output_dir: Path) -> Path:
-    """Directory storing chapter-level QA sidecars."""
-    return internal_dir(output_dir) / "qa" / "chapters"
+    """Directory storing iterator_v1 chapter-level QA sidecars."""
+
+    return runtime_artifacts.mechanism_internal_qa_dir(output_dir, ITERATOR_V1_MECHANISM_KEY)
 
 
 def internal_diagnostics_dir(output_dir: Path) -> Path:
-    """Directory storing parse/backfill diagnostics."""
-    return internal_dir(output_dir) / "diagnostics"
+    """Directory storing iterator_v1 parse/backfill diagnostics."""
+
+    return runtime_artifacts.mechanism_internal_diagnostics_dir(output_dir, ITERATOR_V1_MECHANISM_KEY)
 
 
 def structure_file(output_dir: Path) -> Path:
-    """Path to structure.json inside an output directory."""
-    return public_dir(output_dir) / "structure.json"
+    """Path to iterator_v1 structure.json inside an output directory."""
+
+    return runtime_artifacts.mechanism_derived_dir(output_dir, ITERATOR_V1_MECHANISM_KEY) / "structure.json"
 
 
 def structure_markdown_file(output_dir: Path) -> Path:
-    """Path to structure.md inside an output directory."""
-    return public_dir(output_dir) / "structure.md"
+    """Path to iterator_v1 structure.md inside an output directory."""
+
+    return runtime_artifacts.mechanism_derived_dir(output_dir, ITERATOR_V1_MECHANISM_KEY) / "structure.md"
 
 
 def legacy_structure_file(output_dir: Path) -> Path:
@@ -157,26 +167,22 @@ def legacy_structure_markdown_file(output_dir: Path) -> Path:
 
 def assets_dir(output_dir: Path) -> Path:
     """Directory storing frontend-accessible source assets."""
-    return output_dir / "_assets"
+    return runtime_artifacts.assets_dir(output_dir)
 
 
 def source_asset_file(output_dir: Path) -> Path:
     """Path to the copied source EPUB asset."""
-    return assets_dir(output_dir) / "source.epub"
+    return runtime_artifacts.source_asset_file(output_dir)
 
 
 def cover_asset_file(output_dir: Path, extension: str = ".jpg") -> Path:
     """Path to the copied cover image asset."""
-    suffix = extension if extension.startswith(".") else f".{extension}"
-    return assets_dir(output_dir) / f"cover{suffix}"
+    return runtime_artifacts.cover_asset_file(output_dir, extension)
 
 
 def existing_cover_asset_file(output_dir: Path) -> Path | None:
     """Return the first persisted cover image asset if present."""
-    for path in sorted(assets_dir(output_dir).glob("cover.*")):
-        if path.is_file():
-            return path
-    return None
+    return runtime_artifacts.existing_cover_asset_file(output_dir)
 
 
 def ensure_source_asset(book_path: Path, output_dir: Path) -> Path:
@@ -224,8 +230,9 @@ def legacy_chapter_result_file(output_dir: Path, chapter: StructureChapter) -> P
 
 
 def segment_checkpoint_dir(output_dir: Path) -> Path:
-    """Directory storing segment-level checkpoints."""
-    return runtime_dir(output_dir) / "checkpoints"
+    """Directory storing iterator_v1 segment-level checkpoints."""
+
+    return runtime_artifacts.mechanism_runtime_dir(output_dir, ITERATOR_V1_MECHANISM_KEY) / "checkpoints"
 
 
 def segment_checkpoint_file(output_dir: Path, chapter: StructureChapter) -> Path:
@@ -234,58 +241,62 @@ def segment_checkpoint_file(output_dir: Path, chapter: StructureChapter) -> Path
 
 
 def analysis_dir(output_dir: Path) -> Path:
-    """Directory storing book-analysis intermediate artifacts."""
-    return internal_dir(output_dir) / "analysis"
+    """Directory storing iterator_v1 book-analysis intermediate artifacts."""
+
+    return runtime_artifacts.mechanism_internal_analysis_dir(output_dir, ITERATOR_V1_MECHANISM_KEY)
 
 
 def book_analysis_file(output_dir: Path) -> Path:
-    """Path to book-level analysis markdown report."""
-    return public_dir(output_dir) / "book_analysis.md"
+    """Path to iterator_v1 book-analysis markdown report."""
+
+    return analysis_dir(output_dir) / "book_analysis.md"
 
 
 def book_manifest_file(output_dir: Path) -> Path:
     """Path to the frontend-facing book manifest JSON."""
-    return public_dir(output_dir) / "book_manifest.json"
+    return runtime_artifacts.book_manifest_file(output_dir)
 
 
 def run_state_file(output_dir: Path) -> Path:
     """Path to the frontend-facing sequential run state JSON."""
-    return runtime_dir(output_dir) / "run_state.json"
+    return runtime_artifacts.run_state_file(output_dir)
 
 
 def activity_file(output_dir: Path) -> Path:
     """Path to the frontend-facing sequential activity stream JSONL."""
-    return runtime_dir(output_dir) / "activity.jsonl"
+    return runtime_artifacts.activity_file(output_dir)
 
 
 def parse_state_file(output_dir: Path) -> Path:
     """Path to parse-stage checkpoint metadata."""
-    return runtime_dir(output_dir) / "parse_state.json"
+    return runtime_artifacts.parse_state_file(output_dir)
 
 
 def reader_memory_file(output_dir: Path) -> Path:
-    """Path to the canonical book-level reader memory snapshot."""
-    return runtime_dir(output_dir) / "reader_memory.json"
+    """Path to the iterator_v1 reader memory snapshot."""
+
+    return runtime_artifacts.mechanism_runtime_dir(output_dir, ITERATOR_V1_MECHANISM_KEY) / "reader_memory.json"
 
 
 def runtime_dir(output_dir: Path) -> Path:
     """Directory storing current live runtime state."""
-    return output_dir / "_runtime"
+    return runtime_artifacts.runtime_dir(output_dir)
 
 
 def history_dir(output_dir: Path) -> Path:
     """Directory storing archived run summaries."""
-    return output_dir / "_history"
+    return runtime_artifacts.history_dir(output_dir)
 
 
 def history_runs_dir(output_dir: Path) -> Path:
     """Directory storing archived runs keyed by job id."""
-    return history_dir(output_dir) / "runs"
+    return runtime_artifacts.history_runs_dir(output_dir)
 
 
 def plan_state_file(output_dir: Path) -> Path:
-    """Path to current persisted planning state."""
-    return runtime_dir(output_dir) / "plan_state.json"
+    """Path to iterator_v1 persisted planning state."""
+
+    return runtime_artifacts.mechanism_runtime_dir(output_dir, ITERATOR_V1_MECHANISM_KEY) / "plan_state.json"
 
 
 def legacy_plan_state_file(output_dir: Path) -> Path:
@@ -300,27 +311,33 @@ def legacy_run_trace_file(output_dir: Path) -> Path:
 
 def run_history_dir(output_dir: Path, run_id: str) -> Path:
     """Directory for one archived run."""
-    return history_runs_dir(output_dir) / run_id
+    return runtime_artifacts.run_history_dir(output_dir, run_id)
 
 
 def run_history_summary_file(output_dir: Path, run_id: str) -> Path:
     """Path to one archived run summary."""
-    return run_history_dir(output_dir, run_id) / "summary.json"
+    return runtime_artifacts.run_history_summary_file(output_dir, run_id)
 
 
 def run_history_trace_file(output_dir: Path, run_id: str) -> Path:
     """Path to one archived run trace JSONL."""
-    return run_history_dir(output_dir, run_id) / "trace.jsonl"
+    return runtime_artifacts.run_history_trace_file(output_dir, run_id)
 
 
 def run_history_job_file(output_dir: Path, run_id: str) -> Path:
     """Path to one archived job record."""
-    return run_history_dir(output_dir, run_id) / "job.json"
+    return runtime_artifacts.run_history_job_file(output_dir, run_id)
 
 
 def run_history_job_log_file(output_dir: Path, run_id: str) -> Path:
     """Path to one archived job log."""
-    return run_history_dir(output_dir, run_id) / "job.log"
+    return runtime_artifacts.run_history_job_log_file(output_dir, run_id)
+
+
+def normalized_eval_bundle_file(output_dir: Path) -> Path:
+    """Path to iterator_v1 normalized eval export."""
+
+    return runtime_artifacts.mechanism_export_file(output_dir, ITERATOR_V1_MECHANISM_KEY, "normalized_eval_bundle.json")
 
 
 def parse_diagnostics_file(output_dir: Path) -> Path:
@@ -345,17 +362,17 @@ def legacy_book_analysis_file(output_dir: Path) -> Path:
 
 def legacy_book_manifest_file(output_dir: Path) -> Path:
     """Legacy flat manifest path."""
-    return output_dir / "book_manifest.json"
+    return runtime_artifacts.legacy_book_manifest_file(output_dir)
 
 
 def legacy_run_state_file(output_dir: Path) -> Path:
     """Legacy flat run-state path."""
-    return output_dir / "run_state.json"
+    return runtime_artifacts.legacy_run_state_file(output_dir)
 
 
 def legacy_activity_file(output_dir: Path) -> Path:
     """Legacy flat activity-stream path."""
-    return output_dir / "activity.jsonl"
+    return runtime_artifacts.legacy_activity_file(output_dir)
 
 
 def legacy_segment_checkpoint_dir(output_dir: Path) -> Path:
@@ -373,66 +390,151 @@ def legacy_analysis_dir(output_dir: Path) -> Path:
     return output_dir / "_analysis"
 
 
-def _first_existing_path(*paths: Path) -> Path | None:
-    """Return the first existing path from a candidate list."""
-    for path in paths:
-        if path.exists():
-            return path
-    return None
+def current_shared_internal_dir(output_dir: Path) -> Path:
+    """Current pre-namespaced internal artifact directory kept for compatibility."""
+
+    return output_dir / "_internal"
+
+
+def current_shared_internal_qa_dir(output_dir: Path) -> Path:
+    """Current pre-namespaced QA directory kept for compatibility."""
+
+    return current_shared_internal_dir(output_dir) / "qa" / "chapters"
+
+
+def current_shared_internal_diagnostics_dir(output_dir: Path) -> Path:
+    """Current pre-namespaced diagnostics directory kept for compatibility."""
+
+    return current_shared_internal_dir(output_dir) / "diagnostics"
+
+
+def current_shared_analysis_dir(output_dir: Path) -> Path:
+    """Current pre-namespaced analysis directory kept for compatibility."""
+
+    return current_shared_internal_dir(output_dir) / "analysis"
+
+
+def current_shared_structure_file(output_dir: Path) -> Path:
+    """Current pre-namespaced structure.json location kept for compatibility."""
+
+    return public_dir(output_dir) / "structure.json"
+
+
+def current_shared_structure_markdown_file(output_dir: Path) -> Path:
+    """Current pre-namespaced structure.md location kept for compatibility."""
+
+    return public_dir(output_dir) / "structure.md"
+
+
+def current_shared_reader_memory_file(output_dir: Path) -> Path:
+    """Current pre-namespaced reader memory location kept for compatibility."""
+
+    return runtime_dir(output_dir) / "reader_memory.json"
+
+
+def current_shared_segment_checkpoint_dir(output_dir: Path) -> Path:
+    """Current pre-namespaced checkpoint directory kept for compatibility."""
+
+    return runtime_dir(output_dir) / "checkpoints"
+
+
+def current_shared_plan_state_file(output_dir: Path) -> Path:
+    """Current pre-namespaced plan state location kept for compatibility."""
+
+    return runtime_dir(output_dir) / "plan_state.json"
+
+
+def current_shared_book_analysis_file(output_dir: Path) -> Path:
+    """Current pre-namespaced book analysis report kept for compatibility."""
+
+    return public_dir(output_dir) / "book_analysis.md"
+
+
+def legacy_reader_memory_file(output_dir: Path) -> Path:
+    """Legacy flat reader-memory path."""
+
+    return output_dir / "reader_memory.json"
 
 
 def resolve_output_relative_file(output_dir: Path, relative_path: str | None, *, fallback: Path | None = None) -> Path:
     """Resolve a manifest-relative artifact path with legacy fallback support."""
-    candidate = output_dir / str(relative_path or "").strip() if relative_path else None
-    if candidate is not None and candidate.exists():
-        return candidate
-    if fallback is not None and fallback.exists():
-        return fallback
-    if candidate is not None:
-        return candidate
-    if fallback is not None:
-        return fallback
-    raise ValueError("A relative path or fallback must be provided.")
+    return runtime_artifacts.resolve_output_relative_file(output_dir, relative_path, fallback=fallback)
 
 
 def existing_structure_file(output_dir: Path) -> Path:
     """Return the existing structure.json path with legacy fallback."""
-    return _first_existing_path(structure_file(output_dir), legacy_structure_file(output_dir)) or structure_file(output_dir)
+    return runtime_artifacts.first_existing_path(
+        structure_file(output_dir),
+        current_shared_structure_file(output_dir),
+        legacy_structure_file(output_dir),
+    ) or structure_file(output_dir)
 
 
 def existing_structure_markdown_file(output_dir: Path) -> Path:
     """Return the existing structure.md path with legacy fallback."""
-    return _first_existing_path(structure_markdown_file(output_dir), legacy_structure_markdown_file(output_dir)) or structure_markdown_file(output_dir)
+    return runtime_artifacts.first_existing_path(
+        structure_markdown_file(output_dir),
+        current_shared_structure_markdown_file(output_dir),
+        legacy_structure_markdown_file(output_dir),
+    ) or structure_markdown_file(output_dir)
 
 
 def existing_book_manifest_file(output_dir: Path) -> Path:
     """Return the existing manifest path with legacy fallback."""
-    return _first_existing_path(book_manifest_file(output_dir), legacy_book_manifest_file(output_dir)) or book_manifest_file(output_dir)
+    return runtime_artifacts.existing_book_manifest_file(output_dir)
 
 
 def existing_run_state_file(output_dir: Path) -> Path:
     """Return the existing run-state path with legacy fallback."""
-    return _first_existing_path(run_state_file(output_dir), legacy_run_state_file(output_dir)) or run_state_file(output_dir)
+    return runtime_artifacts.existing_run_state_file(output_dir)
 
 
 def existing_activity_file(output_dir: Path) -> Path:
     """Return the existing activity stream path with legacy fallback."""
-    return _first_existing_path(activity_file(output_dir), legacy_activity_file(output_dir)) or activity_file(output_dir)
+    return runtime_artifacts.existing_activity_file(output_dir)
 
 
 def existing_parse_state_file(output_dir: Path) -> Path:
     """Return the existing parse-state path."""
-    return parse_state_file(output_dir)
+    return runtime_artifacts.existing_parse_state_file(output_dir)
 
 
 def existing_reader_memory_file(output_dir: Path) -> Path:
     """Return the existing reader-memory path."""
-    return reader_memory_file(output_dir)
+    return runtime_artifacts.first_existing_path(
+        reader_memory_file(output_dir),
+        current_shared_reader_memory_file(output_dir),
+        legacy_reader_memory_file(output_dir),
+    ) or reader_memory_file(output_dir)
+
+
+def existing_plan_state_file(output_dir: Path) -> Path:
+    """Return the existing iterator_v1 plan-state path with compatibility fallback."""
+
+    return runtime_artifacts.first_existing_path(
+        plan_state_file(output_dir),
+        current_shared_plan_state_file(output_dir),
+        legacy_plan_state_file(output_dir),
+    ) or plan_state_file(output_dir)
+
+
+def existing_segment_checkpoint_file(output_dir: Path, chapter: StructureChapter) -> Path:
+    """Return the existing iterator_v1 chapter checkpoint path with compatibility fallback."""
+
+    return runtime_artifacts.first_existing_path(
+        segment_checkpoint_file(output_dir, chapter),
+        current_shared_segment_checkpoint_dir(output_dir) / f"{chapter_output_name(chapter)}.segments.json",
+        legacy_segment_checkpoint_file(output_dir, chapter),
+    ) or segment_checkpoint_file(output_dir, chapter)
 
 
 def existing_book_analysis_file(output_dir: Path) -> Path:
     """Return the existing book-analysis markdown path with legacy fallback."""
-    return _first_existing_path(book_analysis_file(output_dir), legacy_book_analysis_file(output_dir)) or book_analysis_file(output_dir)
+    return runtime_artifacts.first_existing_path(
+        book_analysis_file(output_dir),
+        current_shared_book_analysis_file(output_dir),
+        legacy_book_analysis_file(output_dir),
+    ) or book_analysis_file(output_dir)
 
 
 def existing_chapter_markdown_file(output_dir: Path, chapter: StructureChapter) -> Path:
@@ -440,7 +542,7 @@ def existing_chapter_markdown_file(output_dir: Path, chapter: StructureChapter) 
     declared = str(chapter.get("output_file", "") or "").strip()
     declared_path = output_dir / declared if declared else None
     return (
-        _first_existing_path(
+        runtime_artifacts.first_existing_path(
             *(path for path in (declared_path, chapter_markdown_file(output_dir, chapter), legacy_chapter_markdown_file(output_dir, chapter)) if path is not None),
         )
         or chapter_markdown_file(output_dir, chapter)
@@ -449,7 +551,7 @@ def existing_chapter_markdown_file(output_dir: Path, chapter: StructureChapter) 
 
 def existing_chapter_result_file(output_dir: Path, chapter: StructureChapter) -> Path:
     """Return the existing chapter result path with legacy fallback."""
-    return _first_existing_path(
+    return runtime_artifacts.first_existing_path(
         chapter_result_file(output_dir, chapter),
         legacy_chapter_result_file(output_dir, chapter),
     ) or chapter_result_file(output_dir, chapter)
@@ -485,8 +587,41 @@ def analysis_trace_file(output_dir: Path) -> Path:
     return analysis_dir(output_dir) / "analysis_trace.jsonl"
 
 
+def clear_iterator_private_artifacts(output_dir: Path) -> None:
+    """Remove iterator_v1-private runtime and analysis artifacts across new and legacy layouts."""
+
+    for path in [
+        reader_memory_file(output_dir),
+        current_shared_reader_memory_file(output_dir),
+        legacy_reader_memory_file(output_dir),
+        plan_state_file(output_dir),
+        current_shared_plan_state_file(output_dir),
+        legacy_plan_state_file(output_dir),
+        book_analysis_file(output_dir),
+        current_shared_book_analysis_file(output_dir),
+        legacy_book_analysis_file(output_dir),
+        normalized_eval_bundle_file(output_dir),
+    ]:
+        path.unlink(missing_ok=True)
+
+    for directory in [
+        segment_checkpoint_dir(output_dir),
+        current_shared_segment_checkpoint_dir(output_dir),
+        legacy_segment_checkpoint_dir(output_dir),
+        analysis_dir(output_dir),
+        current_shared_analysis_dir(output_dir),
+        legacy_analysis_dir(output_dir),
+        internal_qa_dir(output_dir),
+        current_shared_internal_qa_dir(output_dir),
+        internal_diagnostics_dir(output_dir),
+        current_shared_internal_diagnostics_dir(output_dir),
+    ]:
+        shutil.rmtree(directory, ignore_errors=True)
+
+
 def save_structure(path: Path, structure: BookStructure) -> None:
     """Write structure.json with UTF-8 JSON formatting."""
+    runtime_artifacts.ensure_mechanism_manifest_for_artifact_path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(
         json.dumps(structure, ensure_ascii=False, indent=2),
@@ -501,6 +636,7 @@ def load_structure(path: Path) -> BookStructure:
 
 def save_json(path: Path, payload: object) -> None:
     """Write a generic JSON payload in UTF-8."""
+    runtime_artifacts.ensure_mechanism_manifest_for_artifact_path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(
         json.dumps(payload, ensure_ascii=False, indent=2),
@@ -515,6 +651,7 @@ def load_json(path: Path) -> dict:
 
 def append_jsonl(path: Path, payload: object) -> None:
     """Append one JSON line payload."""
+    runtime_artifacts.ensure_mechanism_manifest_for_artifact_path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("a", encoding="utf-8") as file:
         file.write(json.dumps(payload, ensure_ascii=False))

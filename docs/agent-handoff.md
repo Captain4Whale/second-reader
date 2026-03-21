@@ -24,6 +24,7 @@ Last updated: `2026-03-21`
 - resume edge cases around runtime artifacts under `reading-companion-backend/output/` and `reading-companion-backend/state/`
 - accidental leakage of `iterator_reader`-specific concepts back into backend-wide `reading_core` / `reading_runtime` boundaries
 - over-relying on `structure.json` in places that should treat `book_document.json` as the canonical parsed-book substrate
+- leaving mechanism-private artifacts in shared top-level directories and confusing future multi-mechanism work
 
 ## Migration Status
 - Landing remains frontend-owned. Do not reintroduce backend-owned landing or sample endpoints unless the stable docs change first.
@@ -31,7 +32,11 @@ Last updated: `2026-03-21`
 - Backend still accepts legacy `connect_back` artifacts on read, but new runtime outputs should write `retrospect`.
 - Public IDs are integer contract IDs. Some internal runtime artifacts still use string identifiers and must continue to be normalized at the API layer.
 - `reading_core` now owns the canonical parsed-book substrate (`public/book_document.json`), runtime contracts, and normalized eval/output types.
-- `iterator_reader` now derives `public/structure.json` from that substrate instead of acting as the shared parsed-book truth.
+- `iterator_reader` now derives `_mechanisms/iterator_v1/derived/structure.json` from that substrate instead of acting as the shared parsed-book truth.
+- Top-level `public/` and `_runtime/` are now reserved for cross-mechanism artifacts only.
+- Iterator-private derived structures, runtime memory/checkpoints, diagnostics, and `book_analysis` artifacts now belong under `_mechanisms/iterator_v1/`.
+- Storage helpers still read older shared-path and flat legacy artifacts for compatibility, but new writes should target the namespaced mechanism paths.
+- Normal reading runs do not persist normalized eval bundles; those exports are reserved for explicit eval-mode runs.
 - Backend mechanism work is still shifting toward a shared runtime shell plus multiple mechanism-specific implementations. During this migration, `iterator_reader` remains the only default/live reader path unless stable docs say otherwise.
 
 ## Temporary Warnings

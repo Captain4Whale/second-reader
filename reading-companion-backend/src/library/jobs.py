@@ -36,6 +36,7 @@ from src.iterator_reader.frontend_artifacts import (
     write_run_state,
 )
 from src.iterator_reader.storage import (
+    clear_iterator_private_artifacts,
     chapter_qa_file,
     book_id_from_output_dir,
     existing_activity_file,
@@ -50,7 +51,6 @@ from src.iterator_reader.storage import (
     legacy_run_state_file,
     load_json as load_structure_json,
     load_json as load_runtime_json,
-    reader_memory_file,
     runtime_dir,
     run_history_job_file,
     run_history_job_log_file,
@@ -585,6 +585,7 @@ def _clear_live_analysis_artifacts(book_id: str, root: Path | None = None) -> No
     preserve_legacy_run_state = legacy_run_state_path.exists()
     preserve_legacy_activity = legacy_activity_path.exists()
     if not structure_path.exists():
+        clear_iterator_private_artifacts(output_dir)
         shutil.rmtree(runtime_dir(output_dir), ignore_errors=True)
         return
 
@@ -601,7 +602,7 @@ def _clear_live_analysis_artifacts(book_id: str, root: Path | None = None) -> No
         chapter_qa_file(output_dir, chapter).unlink(missing_ok=True)
 
     shutil.rmtree(runtime_dir(output_dir), ignore_errors=True)
-    reader_memory_file(output_dir).unlink(missing_ok=True)
+    clear_iterator_private_artifacts(output_dir)
     save_structure(structure_path, structure)
     if manifest_path.exists():
         manifest = write_book_manifest(output_dir, structure)

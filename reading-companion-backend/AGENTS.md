@@ -45,6 +45,14 @@ Update when: backend-local constraints, recurring pitfalls, or stable implementa
 
 ## Runtime And Artifact Constraints
 - Preserve existing checkpoints, resume behavior, budget controls, and output artifact conventions unless the task is explicitly migrating them.
+- Treat `public/book_document.json` as the only shared parsed-book truth.
+- Keep top-level `public/` limited to cross-mechanism, product-facing artifacts.
+- Keep top-level `_runtime/` limited to cross-mechanism live shell state.
+- Keep anything that depends on `section`, `subsegment`, planner state, reader memory, or mechanism-specific diagnostics under `_mechanisms/<mechanism_key>/`.
+- Shared backend code must use neutral storage/runtime helpers instead of hardcoding `iterator_reader`-specific artifact paths.
+- Public aggregation may read mechanism-private artifacts through adapters or helpers, but it must not treat them as universal substrate.
+- Normal product runs must not persist normalized comparison bundles; mechanism export files such as `_mechanisms/<mechanism_key>/exports/normalized_eval_bundle.json` are reserved for explicit eval runs.
+- Compatibility fallback for older output directories is required until an explicit cleanup or migration step removes it.
 - Keep public API naming and normalization concerns at the API layer when internal runtime artifacts still use older names or identifiers.
 - Be conservative about changes that mainly benefit `book_analysis` but add complexity to the main sequential path.
 

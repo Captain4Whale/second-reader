@@ -9,10 +9,13 @@ from src.iterator_reader import iterator as iterator_module
 from src.iterator_reader.storage import (
     activity_file,
     chapter_result_file,
+    current_shared_reader_memory_file,
+    existing_reader_memory_file,
     reader_memory_file,
     run_state_file,
     segment_checkpoint_file,
     structure_file,
+    save_json,
 )
 
 
@@ -203,3 +206,43 @@ def test_reader_memory_backfills_from_completed_chapter_results(tmp_path):
 
     assert restored["chapter_memory_summaries"][0]["chapter_ref"] == "Chapter Summaries and Map"
     assert restored["findings"][0]["text"].startswith("Innovation loves disorder")
+
+
+def test_reader_memory_loads_from_pre_namespaced_runtime_file(tmp_path):
+    """Legacy shared reader_memory.json should still load after namespacing."""
+
+    output_dir = tmp_path / "output" / "demo-book"
+    output_dir.mkdir(parents=True, exist_ok=True)
+    structure = {
+        "book": "Demo Book",
+        "author": "Tester",
+        "book_language": "en",
+        "output_language": "en",
+        "source_file": "demo.epub",
+        "output_dir": str(output_dir),
+        "chapters": [],
+    }
+    save_json(
+        current_shared_reader_memory_file(output_dir),
+        {
+            "memory": {
+                "book_arc_summary": "Old shared memory snapshot.",
+                "chapter_memory_summaries": [],
+                "findings": [],
+                "threads": [],
+                "salience_ledger": [],
+                "recent_segment_flow": [],
+            },
+            "resume_compat_version": iterator_module.get_reader_resume_compat_version(),  # type: ignore[attr-defined]
+        },
+    )
+
+    restored = iterator_module._load_reader_memory_snapshot(  # type: ignore[attr-defined]
+        output_dir,
+        structure,
+        continue_mode=True,
+    )
+
+    assert existing_reader_memory_file(output_dir) == current_shared_reader_memory_file(output_dir)
+    assert restored["book_arc_summary"] == "Old shared memory snapshot."
+    assert not reader_memory_file(output_dir).exists()

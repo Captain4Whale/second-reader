@@ -8,7 +8,7 @@ from pathlib import Path
 import pytest
 
 import main as main_module
-from src.iterator_reader.storage import activity_file, chapter_result_file, reader_memory_file, run_state_file, save_json
+from src.iterator_reader.storage import activity_file, chapter_result_file, normalized_eval_bundle_file, reader_memory_file, run_state_file, save_json
 from src.reading_core.runtime_contracts import ReadRequest
 from src.reading_core.storage import save_book_document
 from src.reading_mechanisms import iterator_v1 as iterator_v1_module
@@ -213,3 +213,48 @@ def test_iterator_v1_read_result_includes_normalized_eval_bundle(tmp_path, monke
     assert result.normalized_eval_bundle["attention_events"][0]["event_id"] == "evt-1"
     assert result.normalized_eval_bundle["reactions"][0]["reaction_id"] == "r-1"
     assert result.normalized_eval_bundle["memory_summaries"]
+    assert not normalized_eval_bundle_file(output_dir).exists()
+
+
+def test_iterator_v1_can_persist_normalized_eval_bundle_for_eval_runs(tmp_path, monkeypatch):
+    """Dedicated eval runs may persist the normalized bundle, but normal runs should not."""
+
+    output_dir = tmp_path / "output" / "demo-book"
+    output_dir.mkdir(parents=True, exist_ok=True)
+    structure = {
+        "book": "Demo Book",
+        "author": "Tester",
+        "book_language": "en",
+        "output_language": "en",
+        "source_file": "demo.epub",
+        "output_dir": str(output_dir),
+        "chapters": [],
+    }
+    save_book_document(
+        output_dir / "public" / "book_document.json",
+        {
+            "metadata": {
+                "book": "Demo Book",
+                "author": "Tester",
+                "book_language": "en",
+                "output_language": "en",
+                "source_file": "demo.epub",
+            },
+            "chapters": [],
+        },
+    )
+    monkeypatch.setattr(
+        iterator_v1_module,
+        "iterator_read_book",
+        lambda *args, **kwargs: (structure, output_dir, False),
+    )
+
+    IteratorV1Mechanism().read_book(
+        ReadRequest(
+            book_path=Path("demo.epub"),
+            mechanism_key="iterator_v1",
+            mechanism_config={"persist_normalized_eval_bundle": True},
+        )
+    )
+
+    assert normalized_eval_bundle_file(output_dir).exists()

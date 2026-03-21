@@ -329,7 +329,7 @@ Update when: a major product or engineering decision is made, reversed, or becom
 
 **Why this path won**: Separating the canonical book substrate from current-mechanism traversal state creates a real narrow waist. The backend can now share chapter/paragraph/locator truth, mechanism-neutral runtime contracts, and normalized comparison outputs without pretending that all reader mechanisms share one internal planning shape.
 
-**What changed in the system**: The backend now has `src/reading_core/` for canonical book substrate, runtime contracts, and normalized cross-mechanism output types. Parse flow writes `public/book_document.json` first, then `iterator_v1` derives `public/structure.json` from that substrate. Shared runtime, library, and search modules now import neutral types from `reading_core` instead of from `iterator_reader.models`.
+**What changed in the system**: The backend now has `src/reading_core/` for canonical book substrate, runtime contracts, and normalized cross-mechanism output types. Parse flow writes `public/book_document.json` first, then `iterator_v1` derives its own structure artifact from that substrate. Shared runtime, library, and search modules now import neutral types from `reading_core` instead of from `iterator_reader.models`.
 
 **Why it matters later**: This is the design boundary that should let future readers differ radically in internal ontology while still sharing the same runtime shell and evaluation seam. Later contributors need to know that `structure.json` is not the universal parsed-book truth anymore, even if the current public surfaces still consult it for iterator-shaped section views.
 
@@ -337,4 +337,27 @@ Update when: a major product or engineering decision is made, reversed, or becom
 - `reading-companion-backend/src/reading_core/`
 - `reading-companion-backend/src/reading_runtime/`
 - `reading-companion-backend/src/iterator_reader/parse.py`
+- `docs/backend-state-aggregation.md`
+
+## Entry 17
+**Decision / Inflection**: Move mechanism-private reading artifacts under `_mechanisms/<mechanism_key>/` and reserve top-level `public/` plus `_runtime/` for shared cross-mechanism state.
+
+**Period**: Late March 2026, immediately after the shared substrate extraction.
+
+**Problem**: Even after `book_document.json` became the canonical parsed-book substrate, iterator-specific artifacts such as `structure.json`, `reader_memory.json`, checkpoints, and `book_analysis` outputs still lived in shared-looking top-level directories. That kept the output tree visually and semantically blurred, making it too easy for future contributors to mistake mechanism-private artifacts for universal runtime truth.
+
+**Alternatives considered**: Keep the mixed top-level layout and rely on naming discipline alone, duplicate artifacts into both shared and mechanism-specific paths, or postpone output-layout cleanup until a second reader mechanism was already live.
+
+**Why this path won**: Namespacing mechanism-private artifacts under `_mechanisms/<mechanism_key>/` finishes the same boundary that `reading_core` and `reading_runtime` were designed to create. It keeps shared product/runtime surfaces obvious, gives each mechanism room for its own derived structures and runtime state, and preserves backward compatibility through helper-based fallback instead of messy duplicate writes.
+
+**What changed in the system**: `iterator_v1` now writes derived section structure to `_mechanisms/iterator_v1/derived/structure.json`, private runtime memory/checkpoints/plan state to `_mechanisms/iterator_v1/runtime/`, and secondary analysis artifacts to `_mechanisms/iterator_v1/internal/`. Shared helpers still resolve older shared-path and flat legacy artifacts on read, but new writes use the namespaced canonical layout. Normal runs no longer persist normalized eval bundles; explicit eval runs may write `_mechanisms/iterator_v1/exports/normalized_eval_bundle.json`.
+
+**Why it matters later**: This is the artifact-layout decision that keeps future multi-mechanism work from collapsing back into top-level iterator assumptions. Later contributors need to know that top-level `public/` and `_runtime/` are shared shell territory, while `_mechanisms/` is where mechanism ontology, checkpoints, diagnostics, and optional eval exports belong.
+
+**Primary evidence**:
+- `reading-companion-backend/src/reading_runtime/artifacts.py`
+- `reading-companion-backend/src/iterator_reader/storage.py`
+- `reading-companion-backend/src/iterator_reader/iterator.py`
+- `reading-companion-backend/src/reading_mechanisms/iterator_v1.py`
+- `docs/backend-sequential-lifecycle.md`
 - `docs/backend-state-aggregation.md`

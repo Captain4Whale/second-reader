@@ -25,6 +25,7 @@ Update when: workspace structure, ownership boundaries, or primary shared entryp
 - runtime artifacts stored under:
   - `output/`
   - `state/`
+  - within `output/<book_id>/`, shared product/runtime artifacts live in top-level `public/` and `_runtime/`, while mechanism-private artifacts live under `_mechanisms/<mechanism_key>/`
 
 ### `reading-companion-frontend`
 - Vite + React application
@@ -67,4 +68,6 @@ Update when: workspace structure, ownership boundaries, or primary shared entryp
 - Use child directories when a task is clearly isolated.
 - Keep runtime data in `reading-companion-backend/`.
 - Keep shared runtime/mechanism boundaries in backend-owned infrastructure, and keep reader-internal ontology inside the specific mechanism that owns it.
+- Treat `reading-companion-backend/output/<book_id>/public/` and `reading-companion-backend/output/<book_id>/_runtime/` as shared cross-mechanism territory.
+- Treat `reading-companion-backend/output/<book_id>/_mechanisms/<mechanism_key>/` as mechanism-owned territory for derived structures, runtime memory, checkpoints, and diagnostics.
 - The workspace root is the shared Git root for both sub-applications.

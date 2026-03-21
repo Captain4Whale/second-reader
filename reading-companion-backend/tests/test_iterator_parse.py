@@ -19,8 +19,10 @@ from src.iterator_reader.storage import (
     save_json,
     save_structure,
     structure_file,
+    structure_markdown_file,
 )
 from src.reading_core.storage import book_document_file
+from src.reading_runtime.artifacts import mechanism_manifest_file
 
 
 def test_build_structure_persists_semantic_segments(tmp_path, monkeypatch):
@@ -72,7 +74,7 @@ def test_build_structure_persists_semantic_segments(tmp_path, monkeypatch):
     assert structure["output_language"] == "en"
     assert structure["chapters"][0]["segments"][0]["summary"] == "作者提出第一个判断"
 
-    saved = json.loads((output_dir / "public" / "structure.json").read_text(encoding="utf-8"))
+    saved = json.loads(structure_file(output_dir).read_text(encoding="utf-8"))
     assert saved["chapters"][0]["status"] == "pending"
     assert saved["chapters"][0]["segments"][0]["id"] == "1.1"
     assert saved["chapters"][0]["segments"][0]["segment_ref"] == "Chapter_One.1"
@@ -80,6 +82,9 @@ def test_build_structure_persists_semantic_segments(tmp_path, monkeypatch):
     assert saved["chapters"][0]["segments"][0]["paragraph_locators"][0]["start_cfi"] is None
     assert "Alpha opens the chapter." == saved["chapters"][0]["segments"][0]["paragraph_locators"][0]["text"]
     assert (output_dir / "_assets" / "source.epub").exists()
+    assert "_mechanisms/iterator_v1/derived/structure.json" in str(structure_file(output_dir))
+    manifest = json.loads(mechanism_manifest_file(output_dir, "iterator_v1").read_text(encoding="utf-8"))
+    assert manifest["mechanism_key"] == "iterator_v1"
     book_document = json.loads(book_document_file(output_dir).read_text(encoding="utf-8"))
     assert book_document["metadata"]["book"] == "Demo Book"
     assert book_document["metadata"]["author"] == "Tester"
@@ -87,7 +92,7 @@ def test_build_structure_persists_semantic_segments(tmp_path, monkeypatch):
     assert book_document["chapters"][0]["paragraphs"][0]["text"] == "Alpha opens the chapter."
     assert "segments" not in book_document["chapters"][0]
 
-    structure_md = (output_dir / "public" / "structure.md").read_text(encoding="utf-8")
+    structure_md = structure_markdown_file(output_dir).read_text(encoding="utf-8")
     assert "# Structure Overview: Demo Book" in structure_md
     assert "## Chapter One" in structure_md
     assert "### Section 1: 作者提出第一个判断" in structure_md

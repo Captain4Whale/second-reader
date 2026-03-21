@@ -15,6 +15,8 @@ from src.iterator_reader.storage import (
     existing_reader_memory_file,
     existing_run_state_file,
     load_json,
+    normalized_eval_bundle_file,
+    save_json,
 )
 from src.reading_core.normalized_outputs import (
     NormalizedAttentionEvent,
@@ -91,6 +93,8 @@ class IteratorV1Mechanism:
                 "mechanism_config": mechanism_config,
             },
         )
+        if bool(mechanism_config.get("persist_normalized_eval_bundle")):
+            save_json(normalized_eval_bundle_file(output_dir), normalized_eval_bundle)
         return ReadResult(
             mechanism=self.info,
             book_document=book_document,
