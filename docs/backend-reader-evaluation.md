@@ -7,6 +7,35 @@ Update when: reader quality dimensions, evaluation workflow, or evaluation artif
 
 Use `docs/backend-reading-mechanism.md` for how the reader works. Use this file for how we decide whether the reader is getting better or worse.
 
+## Evaluation Constitution
+- The evaluation system is product-first.
+  - The reader exists to help people read nonfiction as a thoughtful co-reader, not to maximize a single internal metric.
+- The evaluation system is mechanism-agnostic.
+  - `section`, `subsegment`, memory packing, search, reflection, and any future reader architecture are all candidate mechanisms, not protected truths.
+- The evaluation system should judge outputs and runtime behavior against the product goal, not defend the current implementation shape.
+- A mechanism wins only if it improves the product under realistic constraints.
+- A mechanism does not win just because it is elegant, locally clever, or easier to explain.
+- Stable docs should preserve the constitution and the comparison frame.
+  - Detailed benchmark composition, per-run thresholds, and case selection can evolve in the benchmark layer and reports.
+- The core question is not "is slicing correct?"
+  - The core question is "what reader architecture best achieves the product goal?"
+
+## North Star
+- The reader should feel like a thoughtful co-reader that:
+  - stays faithful to the source
+  - notices meaningful turns, definitions, tensions, and callbacks
+  - remains selective rather than mechanically verbose
+  - accumulates coherent understanding across larger spans
+  - behaves reliably enough to trust in real runtime conditions
+
+## Anti-Goals
+- Do not optimize toward a generic summary machine.
+- Do not treat more reactions as automatically better.
+- Do not treat more human-like output as automatically better.
+- Do not treat tighter lexical overlap with human highlights as automatically better.
+- Do not assume a more complex mechanism is better if the product result is not better.
+- Do not let benchmark quirks define the product goal.
+
 ## Why Reader Evaluation Exists
 - Reader evaluation exists to guide optimization first and preserve evidence second.
 - The first job of eval is to make mechanism work legible:
@@ -20,12 +49,15 @@ Use `docs/backend-reading-mechanism.md` for how the reader works. Use this file 
 - A good evaluation practice should therefore support both:
   - local mechanism decisions
   - longer-term reader quality memory
+- The same frame should let us compare competing architectures fairly.
+  - If a non-slicing approach beats the current section/subsegment path on the north star, the eval system should be able to show that clearly.
 
 ## What Good Means
 - Reader quality is layered, not a single score.
-- Product-good and mechanism-good are related but not identical:
-  - product-good asks whether the system feels like a thoughtful co-reader
-  - mechanism-good asks whether one internal mechanism improved the reader's behavior in the intended way
+- Product-good is the primary question.
+  - Does the system help a person read nonfiction with more insight, better focus, and more trust?
+- Mechanism-good is subordinate but still important.
+  - Did one internal mechanism measurably improve the product while staying inside runtime constraints?
 - Good evaluation should therefore avoid collapsing everything into one vague judgment such as "smarter" or "more human."
 - Reader quality should also avoid bad proxies:
   - more reactions is not automatically better
@@ -46,6 +78,8 @@ Use `docs/backend-reading-mechanism.md` for how the reader works. Use this file 
 
 ### Target
 - `target` names the evaluated mechanism or object, not the layer or scoring method.
+- Targets are deliberately mechanism-neutral.
+  - They may describe a current implementation object such as subsegment planning, or a higher-level reading behavior such as end-to-end reading.
 - Targets should use stable snake_case slugs.
 - Current examples:
   - `subsegment_segmentation`
@@ -61,6 +95,7 @@ Use `docs/backend-reading-mechanism.md` for how the reader works. Use this file 
   - evaluate the target's effect on the next meaningful output layer
 - `system_regression`
   - evaluate the broader reader after multiple interacting changes
+- Scope should follow the question we are asking, not the shape of the current pipeline.
 
 ### Method
 - `deterministic_metrics`
@@ -78,6 +113,7 @@ Use `docs/backend-reading-mechanism.md` for how the reader works. Use this file 
 ## Evaluation Layers
 ### Subsegment
 - Evaluate whether the runtime reading unit itself is well chosen.
+- This is an evaluable mechanism, not a permanent truth about the reader.
 - Core dimensions:
   - `self-containedness`
     - can the unit stand on its own as a local reading object?
@@ -100,6 +136,7 @@ Use `docs/backend-reading-mechanism.md` for how the reader works. Use this file 
 
 ### Section
 - Evaluate the merged section-level result after the reader finishes its local work.
+- This is also an evaluable mechanism, not a protected product boundary.
 - Core dimensions:
   - `coverage of meaningful points`
     - are important turns, definitions, causal links, or callbacks captured?
@@ -151,6 +188,8 @@ Use `docs/backend-reading-mechanism.md` for how the reader works. Use this file 
   - whether version A or B is the better co-reading result under a defined rubric
 - In this project, LLM-as-judge should be treated as an offline evaluator, not as a runtime reader agent.
 - The value of the judge comes from the rubric, not from the judge existing on its own.
+- The judge should compare competing mechanisms on the same product question whenever possible.
+  - The object of comparison can be a subsegment plan, a merged section output, a chapter trajectory, or a broader end-to-end reader run.
 
 ### Human Spot-Checking
 - Human review should audit the evaluation system, not replace it as the default scoring path.
@@ -175,9 +214,11 @@ Use `docs/backend-reading-mechanism.md` for how the reader works. Use this file 
 - Run broader regression evaluation after a cluster of changes to prompts, memory, search, reflection, or synthesis.
 - Do not wait for every mechanism to change before first evaluation.
 - If evaluation is deferred too long, improvement and regression become hard to attribute.
+- If a different architecture becomes plausible, evaluate it with the same north-star frame instead of inventing a new metric language for each implementation.
 
 ## Current Example: Subsegment Planning
 - The current subsegment planner is the first concrete example for this evaluation framework.
+- This is an example target, not the definition of the framework.
 - The benchmark for this change should compare `heuristic_only` and `llm_primary` on the same tracked cases, with search disabled and a dedicated eval-only runtime root so the signal stays focused on slicing quality.
 - The dedicated runner lives under `reading-companion-backend/eval/subsegment/` and should be invokable as one offline command rather than through the normal runtime read flow.
 - In taxonomy terms:
@@ -216,6 +257,8 @@ Use `docs/backend-reading-mechanism.md` for how the reader works. Use this file 
 - Machine-generated benchmark runs belong in `reading-companion-backend/eval/runs/` and should stay out of normal runtime `state/` / `output/` paths.
 - Runtime-first per-run markdown summaries may live under `reading-companion-backend/eval/runs/<benchmark>/<run_id>/summary/` until they are reviewed and promoted into `reading-companion-backend/docs/evaluation/`.
 - Temporary experiment logs belong in `reading-companion-backend/docs/research/` only when they are not yet stable reports.
+- Stable docs should explain the methodology and the comparison frame.
+- Benchmarks and reports should carry the living case sets, thresholds, and per-run evidence.
 
 ### Expectations For Evaluation Reports
 - Per-run or per-change reports should state:

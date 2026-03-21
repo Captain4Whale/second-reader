@@ -212,3 +212,25 @@ Update when: a major product or engineering decision is made, reversed, or becom
 - `reading-companion-backend/src/iterator_reader/reader.py`
 - `reading-companion-backend/src/prompts/templates.py`
 - `reading-companion-backend/src/iterator_reader/policy.py`
+
+## Entry 11
+**Decision / Inflection**: Freeze the evaluation frame as product-first and mechanism-agnostic.
+
+**Period**: March 2026, after the first stable subsegment benchmark baselines and benchmark taxonomy cleanup.
+
+**Problem**: The project needed a durable way to judge reader quality without assuming that the current `section` / `subsegment` pipeline was the final architecture. Without that frame, later mechanism changes could be debated as implementation preference instead of product evidence.
+
+**Alternatives considered**: Keep evaluation centered on the existing slicing pipeline, treat benchmark reports as the only meaningful authority, or delay a stable methodology until a future architecture change forced one.
+
+**Why this path won**: A product-first evaluation constitution makes the reader architecture comparable across implementations. It preserves the existing `target` / `scope` / `method` taxonomy while letting future mechanisms compete on the same north-star criteria instead of on internal shape.
+
+**What changed in the system**: The stable evaluation doc now explicitly treats `section`, `subsegment`, memory packing, search, and future reader designs as evaluable mechanisms rather than protected truths. It also separates stable methodology from evolving benchmark composition and per-run evidence.
+
+**Why it matters later**: This is the point where evaluation becomes the project-level constitution for reader work. Future contributors should be able to ask whether a different mechanism is better without first accepting the current pipeline as canonical.
+
+**Primary evidence**:
+- `2187335` `Record runtime-first subsegment benchmark outputs`
+- `6738155` `Refine subsegment eval taxonomy and direct-quality benchmark`
+- `b18043c` `Add reader evaluation methodology documentation`
+- `docs/backend-reader-evaluation.md`
+- `reading-companion-backend/eval/subsegment/run_benchmark.py`
