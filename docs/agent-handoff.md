@@ -7,7 +7,7 @@ Update when: current focus, active risks, temporary warnings, or migration statu
 
 This file is a temporary working note. It is not a source-of-truth document.
 
-Last updated: `2026-03-15`
+Last updated: `2026-03-21`
 
 ## Current Focus
 - better segment-level reading reactions
@@ -15,18 +15,21 @@ Last updated: `2026-03-15`
 - stronger chapter-level coherence
 - search supplementation that adds genuine curiosity instead of noise
 - reliability features such as checkpoint, resume, and budget control
+- introduce a shared runtime/mechanism scaffold while preserving `iterator_reader` as the current default reader
 
 ## Active Risks
 - route mismatches between frontend routes and backend-returned targets
 - reaction taxonomy drift between runtime artifacts, API normalization, and frontend filters
 - upload flow and live progress integration regressions
 - resume edge cases around runtime artifacts under `reading-companion-backend/output/` and `reading-companion-backend/state/`
+- accidental leakage of `iterator_reader`-specific concepts into backend-wide mechanism boundaries during the scaffold refactor
 
 ## Migration Status
 - Landing remains frontend-owned. Do not reintroduce backend-owned landing or sample endpoints unless the stable docs change first.
 - Landing live preview can pin real reactions by public ID. Configure `reading-companion-frontend/src/app/content/landing-content.ts` with `LANDING_PREVIEW_CONFIG.api.bookId`, `chapterId`, and optional `selectedReactionIds`.
 - Backend still accepts legacy `connect_back` artifacts on read, but new runtime outputs should write `retrospect`.
 - Public IDs are integer contract IDs. Some internal runtime artifacts still use string identifiers and must continue to be normalized at the API layer.
+- Backend mechanism work is shifting toward a shared runtime shell plus multiple mechanism-specific implementations. During this migration, `iterator_reader` remains the only default/live reader path unless stable docs say otherwise.
 
 ## Temporary Warnings
 - If a note here becomes repeated guidance across tasks, promote it into `AGENTS.md` or the relevant stable doc.

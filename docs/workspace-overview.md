@@ -18,6 +18,8 @@ Update when: workspace structure, ownership boundaries, or primary shared entryp
 - FastAPI app in `src/api/app.py`
 - public contract helpers in `src/api/contract.py`
 - book/catalog shaping in `src/library/catalog.py`
+- shared reading runtime and mechanism-hosting code under `src/`
+- current default reader implementation under `src/iterator_reader/`
 - runtime artifacts stored under:
   - `output/`
   - `state/`
@@ -35,6 +37,8 @@ Update when: workspace structure, ownership boundaries, or primary shared entryp
   - book manifests
   - chapter results
   - marks persistence
+  - shared reading runtime and mechanism selection boundaries
+  - mechanism-specific reader implementations
   - OpenAPI contract and payload normalization
 - Frontend owns:
   - route rendering
@@ -47,7 +51,9 @@ Update when: workspace structure, ownership boundaries, or primary shared entryp
 - Product-purpose authority: `docs/product-overview.md`
 - Product journey and surface authority: `docs/product-interaction-model.md`
 - Backend application entrypoint: `reading-companion-backend/src/api/app.py`
+- Backend read CLI/runtime entrypoint: `reading-companion-backend/main.py`
 - Backend contract and payload shaping: `reading-companion-backend/src/api/contract.py`, `reading-companion-backend/src/api/schemas.py`, `reading-companion-backend/src/library/catalog.py`
+- Backend current default reader implementation: `reading-companion-backend/src/iterator_reader/`
 - Frontend route entrypoint: `reading-companion-frontend/src/app/routes.tsx`
 - Frontend API adapter entrypoint: `reading-companion-frontend/src/app/lib/api.ts`
 
@@ -55,4 +61,5 @@ Update when: workspace structure, ownership boundaries, or primary shared entryp
 - Use the workspace root for shared commands and cross-project work.
 - Use child directories when a task is clearly isolated.
 - Keep runtime data in `reading-companion-backend/`.
+- Keep shared runtime/mechanism boundaries in backend-owned infrastructure, and keep reader-internal ontology inside the specific mechanism that owns it.
 - The workspace root is the shared Git root for both sub-applications.

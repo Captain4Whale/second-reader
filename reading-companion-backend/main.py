@@ -1,4 +1,4 @@
-"""CLI entry point for the Iterator-Reader architecture.
+"""CLI entry point for backend reading mechanisms.
 
 Usage:
   python main.py parse "book.epub"
@@ -13,9 +13,14 @@ import argparse
 import sys
 from pathlib import Path
 
-from src.iterator_reader import parse_book, read_book
 from src.iterator_reader.language import language_name
 from src.iterator_reader.storage import chapter_reference, structure_file, structure_markdown_file
+from src.reading_runtime import (
+    available_mechanism_keys,
+    default_mechanism_key,
+    parse_book,
+    read_book,
+)
 
 MIN_SUPPORTED_PYTHON = (3, 11)
 
@@ -72,7 +77,12 @@ def cmd_parse(args: argparse.Namespace) -> int:
     book_path = _require_book_path(args.book_file)
     print(f"正在解析书籍结构: {book_path}")
     try:
-        structure, output_dir = parse_book(book_path, language_mode=args.language, continue_mode=args.continue_mode)
+        structure, output_dir = parse_book(
+            book_path,
+            language_mode=args.language,
+            continue_mode=args.continue_mode,
+            mechanism=args.mechanism,
+        )
     except ValueError as exc:
         print(f"Error: {exc}")
         return 1
@@ -81,7 +91,7 @@ def cmd_parse(args: argparse.Namespace) -> int:
 
 
 def cmd_read(args: argparse.Namespace) -> int:
-    """Run the iterator-driven deep read stage."""
+    """Run the selected backend reading mechanism."""
     book_path = _require_book_path(args.book_file)
     try:
         budget_policy = {
@@ -112,6 +122,7 @@ def cmd_read(args: argparse.Namespace) -> int:
             skill_profile=args.skill_profile,
             budget_policy=budget_policy,
             analysis_policy=analysis_policy,
+            mechanism=args.mechanism,
         )
     except ValueError as exc:
         print(f"Error: {exc}")
@@ -129,6 +140,8 @@ def build_parser() -> argparse.ArgumentParser:
     """Build CLI parser."""
     parser = argparse.ArgumentParser(description="Reading Companion - 阅读伴侣")
     subparsers = parser.add_subparsers(dest="command", required=True)
+    mechanism_choices = available_mechanism_keys()
+    default_mechanism = default_mechanism_key()
 
     parse_parser = subparsers.add_parser("parse", help="解析书籍结构并生成 structure.json")
     parse_parser.add_argument("book_file", help="Path to the book file")
@@ -144,9 +157,15 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Resume structure parsing from the latest checkpoint when available",
     )
+    parse_parser.add_argument(
+        "--mechanism",
+        choices=mechanism_choices,
+        default=default_mechanism,
+        help=f"Backend reading mechanism scaffold to use (default: {default_mechanism})",
+    )
     parse_parser.set_defaults(func=cmd_parse)
 
-    read_parser = subparsers.add_parser("read", help="按 Iterator-Reader 架构深读书籍")
+    read_parser = subparsers.add_parser("read", help="按当前后端阅读机制深读书籍")
     read_parser.add_argument("book_file", help="Path to the book file")
     read_parser.add_argument("--chapter", type=int, metavar="N", help="Only deep-read chapter N")
     read_parser.add_argument(
@@ -275,6 +294,12 @@ def build_parser() -> argparse.ArgumentParser:
         default=1,
         metavar="0|1",
         help="Reuse existing chapter deep-read notes when possible (1=yes, 0=no)",
+    )
+    read_parser.add_argument(
+        "--mechanism",
+        choices=mechanism_choices,
+        default=default_mechanism,
+        help=f"Backend reading mechanism scaffold to use (default: {default_mechanism})",
     )
     read_parser.set_defaults(func=cmd_read)
 

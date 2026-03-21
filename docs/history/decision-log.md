@@ -296,3 +296,24 @@ Update when: a major product or engineering decision is made, reversed, or becom
 - `docs/backend-reader-evaluation.md`
 - `docs/product-overview.md`
 - `reading-companion-backend/docs/evaluation/subsegment/subsegment_benchmark_v1_baseline.md`
+
+## Entry 15
+**Decision / Inflection**: Introduce a shared backend runtime shell for multiple reader mechanisms while freezing `iterator_reader` as the current default implementation.
+
+**Period**: Late March 2026.
+
+**Problem**: The project now has at least two materially different reader directions in view: the existing `section` / `subsegment` pipeline and newer designs built around different attention and progression logic. Evolving all of that inside `iterator_reader` would either force incompatible mechanisms into one internal ontology or split the backend into ad hoc parallel stacks with duplicated runtime and integration code.
+
+**Alternatives considered**: Keep extending `iterator_reader` as the only backend architecture, build a "universal" internal reader model that every mechanism must conform to, or fork separate end-to-end backends per mechanism.
+
+**Why this path won**: A narrow shared runtime shell preserves one place for jobs, checkpoints, public-state projection, and evaluation wiring, while allowing each reader mechanism to keep its own internal ontology. That keeps future mechanisms comparable without pretending they share the same attention unit, memory shape, or movement logic.
+
+**What changed in the system**: Workspace and backend docs now distinguish backend-wide runtime/mechanism boundaries from the current default `iterator_reader` implementation. The backend direction is now "shared shell plus mechanism-specific readers," with `iterator_reader` retained as the only default/live mechanism during the first scaffold step.
+
+**Why it matters later**: This is the decision that prevents future reader work from becoming either a maze of duplicated orchestration code or a fake abstraction layer that weakens every mechanism. Later contributors need to know that compatibility is expected at the runtime/evaluation boundary, not by forcing identical internal structures.
+
+**Primary evidence**:
+- `docs/workspace-overview.md`
+- `reading-companion-backend/AGENTS.md`
+- `reading-companion-backend/main.py`
+- `reading-companion-backend/src/iterator_reader/`
