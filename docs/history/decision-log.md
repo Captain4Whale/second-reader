@@ -234,3 +234,45 @@ Update when: a major product or engineering decision is made, reversed, or becom
 - `b18043c` `Add reader evaluation methodology documentation`
 - `docs/backend-reader-evaluation.md`
 - `reading-companion-backend/eval/subsegment/run_benchmark.py`
+
+## Entry 12
+**Decision / Inflection**: Reframe the product purpose around a living co-reader mind rather than a narrower outcome-led promise.
+
+**Period**: March 2026, after the evaluation constitution was stabilized.
+
+**Problem**: The product promise was still dominated by outcome language such as helping readers notice blind spots or unknown unknowns. That language captured part of the value, but it was narrower than the actual product surfaces, which already emphasized live thought, resonance, saved marks, and the feeling of reading alongside an active mind.
+
+**Alternatives considered**: Keep the old purpose centered mainly on user blind-spot discovery, define the product through a fixed closed list of downstream benefits, or broaden the purpose immediately into explicit user-agent dialogue and steering.
+
+**Why this path won**: Centering the product on a genuinely curious co-reading mind preserves what feels special about the experience without locking the product to one narrow benefit channel. It also gives later evaluation and mechanism choices a deeper standard than "did it produce more surprises?" while avoiding premature commitment to a dialogue-first product.
+
+**What changed in the system**: The stable product-purpose language now lives explicitly in `docs/product-interaction-model.md` and defines the product through essence, lived reading experience, and illustrative value channels. The evaluation methodology doc now aligns to that framing instead of competing with it, and explicit user-agent steering remains marked as emerging rather than canonical.
+
+**Why it matters later**: This is the framing shift that lets future reader work optimize for a living reading intelligence rather than for a single visible outcome such as blind-spot discovery. It also explains why resonance, delight, recall, and companionship should be understood as important expressions of the product rather than as competing product identities.
+
+**Primary evidence**:
+- `docs/product-interaction-model.md`
+- `docs/backend-reader-evaluation.md`
+- `reading-companion-frontend/src/app/content/landing-content.ts`
+- `reading-companion-frontend/src/app/config/product-lexicon.ts`
+
+## Entry 13
+**Decision / Inflection**: Promote product purpose into its own stable authority document and separate it from interaction-flow authority.
+
+**Period**: March 2026, immediately after the living co-reader reframing.
+
+**Problem**: `docs/product-interaction-model.md` had started carrying both the deeper product-purpose framing and the route/page interaction model. That made one document do two jobs at once and blurred the difference between "what this product fundamentally is" and "how the current product is organized on screen."
+
+**Alternatives considered**: Keep product-purpose authority inside the interaction-model doc, duplicate the same product-purpose language across multiple stable docs, or create an overview doc but leave it outside the standard reading path.
+
+**Why this path won**: A dedicated product-overview doc creates a clearer authority chain. It gives the product essence, value channels, and canonical-vs-emerging boundaries one stable home, while letting the interaction-model and evaluation docs align to that purpose without competing with it.
+
+**What changed in the system**: `docs/product-overview.md` now owns product essence and value framing. `docs/product-interaction-model.md` now focuses on journey, routes, page responsibilities, and interaction rules. `docs/backend-reader-evaluation.md` now points to the overview doc as product-purpose authority. Root and child `AGENTS.md` files were updated so the new overview doc is part of the standard reading path.
+
+**Why it matters later**: This split makes future product, design, and evaluation work easier to reason about. Contributors can refine purpose without accidentally rewriting flow rules, and they can refine flow without accidentally redefining the product's core identity.
+
+**Primary evidence**:
+- `docs/product-overview.md`
+- `docs/product-interaction-model.md`
+- `docs/backend-reader-evaluation.md`
+- `AGENTS.md`

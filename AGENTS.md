@@ -36,6 +36,7 @@ Update when: document layering, reading order, task routing, or cross-project co
 
 ### Stable Facts Layer
 - `docs/workspace-overview.md`: workspace structure, ownership boundaries, and shared entrypoints
+- `docs/product-overview.md`: product essence, value channels, guardrails, and canonical-vs-emerging territory
 - `docs/product-interaction-model.md`: canonical product journey, page responsibilities, and interaction rules
 - `docs/api-contract.md`: public routes, fields, enums, IDs, and stable envelopes
 - `docs/api-integration.md`: active endpoint surface, polling/WebSocket coordination, and runtime data flow
@@ -68,6 +69,7 @@ Update when: document layering, reading order, task routing, or cross-project co
 
 ### Task-Gated Stable Docs
 - workspace ownership, file placement, shared entrypoints: `docs/workspace-overview.md`
+- product essence, value channels, and canonical-vs-emerging territory: `docs/product-overview.md`
 - product flow, canonical routes, page responsibilities: `docs/product-interaction-model.md`
 - public API fields, enums, IDs, stable payloads: `docs/api-contract.md`
 - current frontend-used endpoints, polling, WebSocket wiring: `docs/api-integration.md`
@@ -92,6 +94,7 @@ Update when: document layering, reading order, task routing, or cross-project co
 
 ## Task Routing
 - workspace ownership boundaries or shared entrypoints -> `docs/workspace-overview.md`
+- product essence, value channels, guardrails, canonical-now vs emerging territory -> `docs/product-overview.md`
 - product journey, page responsibilities, canonical user path -> `docs/product-interaction-model.md`
 - public routes, fields, enums, IDs, compatibility mappings -> `docs/api-contract.md`
 - runtime wiring, long-task coordination, polling/WebSocket behavior -> `docs/api-integration.md`
@@ -126,6 +129,11 @@ Update when: document layering, reading order, task routing, or cross-project co
   - backend/frontend ownership boundaries
   - shared entrypoints
   - cross-project collaboration model
+- `docs/product-overview.md`
+  - product essence
+  - value channels
+  - product guardrails
+  - canonical-now vs emerging product territory
 - `docs/product-interaction-model.md`
   - product interaction model
   - primary user journey or page responsibilities
@@ -200,6 +208,8 @@ Update when: document layering, reading order, task routing, or cross-project co
   - recurring pitfalls that should become stable rules
 
 ### Cross-Doc Rules
+- If product purpose, value framing, or canonical-vs-emerging product territory changes, update `docs/product-overview.md` in the same task.
+- If the same product-purpose change also affects journey framing or reader-quality evaluation, update `docs/product-interaction-model.md` and `docs/backend-reader-evaluation.md` in the same task.
 - If the product interaction flow changes and that also changes routes or public payloads, update `docs/product-interaction-model.md`, `docs/api-contract.md`, and `docs/api-integration.md` in the same task.
 - If the same change also shifts workspace ownership boundaries or the recommended reading order for agents, update `docs/workspace-overview.md` and root `AGENTS.md`.
 - If a backend change materially alters the sequential deep-reading job lifecycle, upload/start/resume semantics, or runtime recovery behavior, update `docs/backend-sequential-lifecycle.md` in the same task.
@@ -225,6 +235,7 @@ Update when: document layering, reading order, task routing, or cross-project co
 ## First Files To Read
 - `AGENTS.md`
 - `README.md`
+- `docs/product-overview.md` when the task touches product purpose, experience framing, or current-vs-emerging product territory
 - `reading-companion-backend/AGENTS.md` when the task touches backend code, prompts, runtime, or API shaping
 - `reading-companion-frontend/AGENTS.md` when the task touches frontend routes, API adapters, UI copy, or generated structure
 - Then load only the task-gated stable doc that matches the work at hand

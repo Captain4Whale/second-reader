@@ -9,6 +9,7 @@ Update when: workspace structure, ownership boundaries, or primary shared entryp
 - one place to understand the full product
 - one place to understand backend/frontend ownership boundaries
 - one place to find shared entrypoints before diving into subproject-local code
+- one place to find the top-level product-purpose doc before diving into journey or subsystem details
 
 ## Subprojects
 
@@ -43,6 +44,8 @@ Update when: workspace structure, ownership boundaries, or primary shared entryp
   - locale-driven interface copy
 
 ## Shared Entry Points
+- Product-purpose authority: `docs/product-overview.md`
+- Product journey and surface authority: `docs/product-interaction-model.md`
 - Backend application entrypoint: `reading-companion-backend/src/api/app.py`
 - Backend contract and payload shaping: `reading-companion-backend/src/api/contract.py`, `reading-companion-backend/src/api/schemas.py`, `reading-companion-backend/src/library/catalog.py`
 - Frontend route entrypoint: `reading-companion-frontend/src/app/routes.tsx`

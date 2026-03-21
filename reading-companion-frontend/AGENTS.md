@@ -7,7 +7,8 @@ Update when: frontend-local constraints, recurring pitfalls, or stable implement
 
 ## Scope
 - This directory contains the Reading Companion web client.
-- Use `../docs/product-interaction-model.md` for product flow and `../docs/api-contract.md` for the public contract.
+- Use `../docs/product-overview.md` for product purpose and `../docs/product-interaction-model.md` for product flow.
+- Use `../docs/api-contract.md` for the public contract.
 - Use `../docs/frontend-visual-system.md` for frontend typography, reader-scale boundaries, and core visual token rules.
 
 ## Local Rules

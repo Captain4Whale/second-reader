@@ -5,27 +5,31 @@ Use when: defining reader quality goals, planning evals for reader changes, choo
 Not for: public API contract authority, runtime lifecycle semantics, or one-off benchmark results.
 Update when: reader quality dimensions, evaluation workflow, or evaluation artifact routing materially change.
 
-Use `docs/backend-reading-mechanism.md` for how the reader works. Use this file for how we decide whether the reader is getting better or worse.
+Use `docs/backend-reading-mechanism.md` for how the reader works. Use this file for how we decide whether the reader is getting better or worse. Product-purpose authority lives in `docs/product-overview.md`; this file aligns evaluation to that purpose rather than redefining it.
 
 ## Evaluation Constitution
 - The evaluation system is product-first.
-  - The reader exists to help people read nonfiction as a thoughtful co-reader, not to maximize a single internal metric.
+  - The reader exists to preserve a living co-reader quality for nonfiction reading, not to maximize a single internal metric.
 - The evaluation system is mechanism-agnostic.
   - `section`, `subsegment`, memory packing, search, reflection, and any future reader architecture are all candidate mechanisms, not protected truths.
 - The evaluation system should judge outputs and runtime behavior against the product goal, not defend the current implementation shape.
 - A mechanism wins only if it improves the product under realistic constraints.
 - A mechanism does not win just because it is elegant, locally clever, or easier to explain.
+- The product goal is deeper than any one downstream benefit.
+  - `unknown unknowns`, resonance, delight, recall, and companionship are important current value channels, but they are not the final definition of the product on their own.
 - Stable docs should preserve the constitution and the comparison frame.
   - Detailed benchmark composition, per-run thresholds, and case selection can evolve in the benchmark layer and reports.
 - The core question is not "is slicing correct?"
   - The core question is "what reader architecture best achieves the product goal?"
 
 ## North Star
-- The reader should feel like a thoughtful co-reader that:
+- The reader should preserve the feeling of a living co-reader that:
+  - reads out of genuine curiosity rather than procedural obligation
   - stays faithful to the source
   - notices meaningful turns, definitions, tensions, and callbacks
-  - remains selective rather than mechanically verbose
+  - remains selective rather than mechanically verbose or performative
   - accumulates coherent understanding across larger spans
+  - produces value that is legible and worth another person's attention
   - behaves reliably enough to trust in real runtime conditions
 
 ## Anti-Goals
@@ -55,7 +59,7 @@ Use `docs/backend-reading-mechanism.md` for how the reader works. Use this file 
 ## What Good Means
 - Reader quality is layered, not a single score.
 - Product-good is the primary question.
-  - Does the system help a person read nonfiction with more insight, better focus, and more trust?
+  - Does the system preserve a genuinely curious, text-grounded co-reading mind in a way that gives the user more insight, more felt value, and more trust?
 - Mechanism-good is subordinate but still important.
   - Did one internal mechanism measurably improve the product while staying inside runtime constraints?
 - Good evaluation should therefore avoid collapsing everything into one vague judgment such as "smarter" or "more human."
@@ -65,7 +69,7 @@ Use `docs/backend-reading-mechanism.md` for how the reader works. Use this file 
   - longer notes are not automatically better
   - tighter lexical overlap with human highlights is not automatically better
 - The working standard is:
-  - the reader should select and process text in ways that support focused, source-grounded, selective, and coherent co-reading reactions under realistic runtime constraints
+  - the reader should select and process text in ways that preserve a curious, source-grounded, selective, and coherent co-reading mind under realistic runtime constraints
 
 ## Evaluation Taxonomy
 - Reader eval naming should separate:

@@ -2,13 +2,16 @@
 
 Purpose: define the canonical product journey, page responsibilities, and interaction rules.
 Use when: changing user flow, canonical frontend routes, page responsibilities, or compatibility-path behavior.
-Not for: field-level API schemas, endpoint wiring details, or temporary migration notes.
+Not for: the stable product-purpose definition, field-level API schemas, endpoint wiring details, or temporary migration notes.
 Update when: the primary product path, page responsibilities, or interaction model changes.
 
 ## Core Product Promise
-- Help readers discover viewpoints, tensions, and blind spots they did not notice while reading nonfiction.
-- Preserve the feeling of "AI thinking while reading" rather than collapsing into a generic summary experience.
-- Optimize for a thoughtful co-reader experience, not a report generator.
+- Stable product-purpose authority lives in `docs/product-overview.md`.
+- This product's canonical interaction model assumes:
+  - a living co-reader mind rather than a report generator
+  - visible thought while reading rather than only after-the-fact outputs
+  - marks and re-entry surfaces as part of the main experience rather than side utilities
+- Use this document for how that product purpose becomes journey, routes, page roles, and interaction rules.
 
 ## Primary Product Path
 ### 1. Landing
