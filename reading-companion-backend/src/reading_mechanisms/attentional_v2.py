@@ -1,4 +1,4 @@
-"""Phase 1 adapter scaffold for the attentional_v2 reading mechanism."""
+"""Phase 1/2 adapter scaffold for the attentional_v2 reading mechanism."""
 
 from __future__ import annotations
 
@@ -9,6 +9,8 @@ from src.attentional_v2.storage import (
     artifact_map,
     initialize_artifact_tree,
 )
+from src.attentional_v2.survey import write_book_survey_artifacts
+from src.reading_core import BookDocument
 from src.reading_core.runtime_contracts import MechanismInfo, ParseRequest, ParseResult, ReadRequest, ReadResult
 
 
@@ -17,7 +19,7 @@ class AttentionalV2Mechanism:
 
     info = MechanismInfo(
         key=ATTENTIONAL_V2_MECHANISM_KEY,
-        label="Attentional V2 scaffold (Phase 1)",
+        label="Attentional V2 scaffold (Phase 1/2)",
     )
 
     @property
@@ -42,18 +44,33 @@ class AttentionalV2Mechanism:
 
         return artifact_map(output_dir)
 
+    def build_survey_artifacts(
+        self,
+        output_dir: Path,
+        book_document: BookDocument,
+        *,
+        policy_snapshot: dict[str, object] | None = None,
+    ) -> dict[str, object]:
+        """Persist the orientation-only survey artifacts for one parsed book."""
+
+        return write_book_survey_artifacts(
+            output_dir,
+            book_document,
+            policy_snapshot=policy_snapshot,
+        )
+
     def parse_book(self, request: ParseRequest) -> ParseResult:
-        """Attentional V2 parse is not implemented in Phase 1."""
+        """Attentional V2 parse is not implemented in Phase 1/2."""
 
         raise NotImplementedError(
-            "attentional_v2 Phase 1 provides shell, schema, and artifact scaffolding only; "
+            "attentional_v2 Phase 1/2 provides shell, schema, sentence-substrate, and survey scaffolding only; "
             "its parse path will land in later phases."
         )
 
     def read_book(self, request: ReadRequest) -> ReadResult:
-        """Attentional V2 reading is not implemented in Phase 1."""
+        """Attentional V2 reading is not implemented in Phase 1/2."""
 
         raise NotImplementedError(
-            "attentional_v2 Phase 1 provides shell, schema, and artifact scaffolding only; "
+            "attentional_v2 Phase 1/2 provides shell, schema, sentence-substrate, and survey scaffolding only; "
             "its reading loop will land in later phases."
         )

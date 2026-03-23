@@ -43,6 +43,8 @@ Update when: the artifact layout, ownership boundary, or shell-envelope rule cha
   - planned retrieval index artifact
 
 ### Runtime State
+- `_mechanisms/attentional_v2/runtime/local_buffer.json`
+- `_mechanisms/attentional_v2/runtime/trigger_state.json`
 - `_mechanisms/attentional_v2/runtime/working_pressure.json`
 - `_mechanisms/attentional_v2/runtime/anchor_memory.json`
 - `_mechanisms/attentional_v2/runtime/reflective_summaries.json`

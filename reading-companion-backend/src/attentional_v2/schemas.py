@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Literal, TypedDict
 
-from src.reading_core.book_document import TextLocator
+from src.reading_core.book_document import TextLocator, TextRole
 
 
 GateState = Literal["quiet", "watch", "hot", "must_evaluate"]
@@ -15,6 +15,17 @@ KnowledgeUseMode = Literal["book_grounded_only", "book_grounded_plus_prior_knowl
 SearchPolicyMode = Literal["no_search", "defer_search", "search_now"]
 ActivationStatus = Literal["weak", "plausible", "strong", "rejected", "dropped"]
 AnchorRelationType = Literal["echo", "contrast", "cause", "support", "question_opened_by", "question_resolved_by", "callback"]
+TriggerFamily = Literal["integrity", "salience", "knowledge_risk"]
+TriggerSignalKind = Literal[
+    "discourse_turn",
+    "definition_or_distinction",
+    "claim_pressure",
+    "sentence_role_shift",
+    "local_cohesion_drop",
+    "callback_activation",
+    "pressure_update_proxy",
+    "cadence_guardrail",
+]
 
 ATTENTIONAL_V2_SCHEMA_VERSION = 1
 ATTENTIONAL_V2_MECHANISM_VERSION = "attentional_v2-phase1"
@@ -60,6 +71,55 @@ class WorkingPressureState(TypedDict, total=False):
     local_tensions: list[WorkingPressureItem]
     local_motifs: list[WorkingPressureItem]
     pressure_snapshot: PressureSnapshot
+
+
+class LocalBufferSentence(TypedDict, total=False):
+    """One recently seen sentence carried in the rolling local buffer."""
+
+    sentence_id: str
+    sentence_index: int
+    paragraph_index: int
+    text: str
+    text_role: TextRole
+
+
+class LocalBufferState(TypedDict, total=False):
+    """Current rolling sentence buffer and open local meaning-unit span."""
+
+    schema_version: int
+    mechanism_version: str
+    updated_at: str
+    current_sentence_id: str
+    current_sentence_index: int
+    recent_sentences: list[LocalBufferSentence]
+    open_meaning_unit_sentence_ids: list[str]
+    seen_sentence_ids: list[str]
+    last_meaning_unit_closed_at_sentence_id: str
+
+
+class TriggerSignal(TypedDict, total=False):
+    """One cheap trigger signal emitted by the always-on ensemble."""
+
+    signal_id: str
+    signal_kind: TriggerSignalKind
+    family: TriggerFamily
+    sentence_id: str
+    evidence: str
+    strength: str
+
+
+class TriggerState(TypedDict, total=False):
+    """Current trigger ensemble output and supporting cheap evidence."""
+
+    schema_version: int
+    mechanism_version: str
+    updated_at: str
+    current_sentence_id: str
+    output: TriggerDecision
+    gate_state: GateState
+    signals: list[TriggerSignal]
+    cadence_counter: int
+    callback_anchor_ids: list[str]
 
 
 class AnchorRecord(TypedDict, total=False):
@@ -231,6 +291,38 @@ def build_empty_working_pressure(*, mechanism_version: str = ATTENTIONAL_V2_MECH
             "bridge_pull_present": False,
             "reframe_pressure_present": False,
         },
+    }
+
+
+def build_empty_local_buffer(*, mechanism_version: str = ATTENTIONAL_V2_MECHANISM_VERSION) -> LocalBufferState:
+    """Return the default local buffer state."""
+
+    return {
+        "schema_version": ATTENTIONAL_V2_SCHEMA_VERSION,
+        "mechanism_version": mechanism_version,
+        "updated_at": _timestamp(),
+        "current_sentence_id": "",
+        "current_sentence_index": 0,
+        "recent_sentences": [],
+        "open_meaning_unit_sentence_ids": [],
+        "seen_sentence_ids": [],
+        "last_meaning_unit_closed_at_sentence_id": "",
+    }
+
+
+def build_empty_trigger_state(*, mechanism_version: str = ATTENTIONAL_V2_MECHANISM_VERSION) -> TriggerState:
+    """Return the default trigger state."""
+
+    return {
+        "schema_version": ATTENTIONAL_V2_SCHEMA_VERSION,
+        "mechanism_version": mechanism_version,
+        "updated_at": _timestamp(),
+        "current_sentence_id": "",
+        "output": "no_zoom",
+        "gate_state": "quiet",
+        "signals": [],
+        "cadence_counter": 0,
+        "callback_anchor_ids": [],
     }
 
 

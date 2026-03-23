@@ -90,6 +90,12 @@ def test_build_structure_persists_semantic_segments(tmp_path, monkeypatch):
     assert book_document["metadata"]["author"] == "Tester"
     assert book_document["chapters"][0]["title"] == "Chapter One"
     assert book_document["chapters"][0]["paragraphs"][0]["text"] == "Alpha opens the chapter."
+    assert [sentence["text"] for sentence in book_document["chapters"][0]["sentences"]] == [
+        "Alpha opens the chapter.",
+        "Beta extends the chapter argument.",
+    ]
+    assert book_document["chapters"][0]["sentences"][0]["sentence_id"] == "c1-s1"
+    assert book_document["chapters"][0]["sentences"][0]["locator"]["paragraph_index"] == 1
     assert "segments" not in book_document["chapters"][0]
 
     structure_md = structure_markdown_file(output_dir).read_text(encoding="utf-8")
@@ -555,6 +561,66 @@ def test_ensure_structure_for_book_backfills_missing_book_document_for_legacy_st
     assert structure["chapters"][0]["title"] == "Chapter 1"
     persisted_book_document = json.loads(book_document_file(output_dir).read_text(encoding="utf-8"))
     assert persisted_book_document["chapters"][0]["paragraphs"][0]["text"] == "Alpha opens the chapter."
+    assert [sentence["text"] for sentence in persisted_book_document["chapters"][0]["sentences"]] == [
+        "Alpha opens the chapter.",
+        "Beta extends the chapter argument.",
+    ]
+
+
+def test_load_or_build_book_document_upgrades_existing_paragraph_only_payload(tmp_path):
+    """Existing paragraph-only book documents should gain the shared sentence layer on reload."""
+
+    output_dir = tmp_path / "output" / "demo-book"
+    output_dir.mkdir(parents=True, exist_ok=True)
+    existing_document = {
+        "metadata": {
+            "book": "Demo Book",
+            "author": "Tester",
+            "book_language": "en",
+            "output_language": "en",
+            "source_file": str(tmp_path / "demo.epub"),
+        },
+        "chapters": [
+            {
+                "id": 3,
+                "title": "Chapter 3",
+                "chapter_number": 3,
+                "level": 1,
+                "paragraphs": [
+                    {
+                        "text": "Alpha opens the chapter. Beta extends the chapter argument.",
+                        "href": "chapter-3.xhtml",
+                        "start_cfi": "epubcfi(/6/4[chapter-3]!/4/2)",
+                        "end_cfi": "epubcfi(/6/4[chapter-3]!/4/2)",
+                        "paragraph_index": 1,
+                        "block_tag": "p",
+                        "heading_level": None,
+                        "text_role": "body",
+                    }
+                ],
+            }
+        ],
+    }
+    book_document_file(output_dir).parent.mkdir(parents=True, exist_ok=True)
+    book_document_file(output_dir).write_text(json.dumps(existing_document, ensure_ascii=False, indent=2), encoding="utf-8")
+
+    loaded = parse_module._load_or_build_book_document(
+        tmp_path / "demo.epub",
+        output_dir=output_dir,
+        title="Demo Book",
+        author="Tester",
+        book_language="en",
+        output_language="en",
+        raw_chapters=[],
+    )
+
+    assert [sentence["text"] for sentence in loaded["chapters"][0]["sentences"]] == [
+        "Alpha opens the chapter.",
+        "Beta extends the chapter argument.",
+    ]
+    assert loaded["chapters"][0]["sentences"][1]["sentence_id"] == "c3-s2"
+    persisted = json.loads(book_document_file(output_dir).read_text(encoding="utf-8"))
+    assert persisted["chapters"][0]["sentences"][0]["locator"]["char_start"] == 0
 
 
 def test_write_parse_progress_can_skip_run_state_updates(tmp_path):

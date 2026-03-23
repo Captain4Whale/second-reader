@@ -13,12 +13,14 @@ from src.attentional_v2.storage import (
     anchor_memory_file,
     event_stream_file,
     knowledge_activations_file,
+    local_buffer_file,
     move_history_file,
     reader_policy_file,
     reflective_summaries_file,
     reconsolidation_records_file,
     revisit_index_file,
     survey_map_file,
+    trigger_state_file,
     working_pressure_file,
 )
 from src.reading_core.runtime_contracts import ParseRequest, ReadRequest
@@ -53,6 +55,12 @@ def test_attentional_v2_initialization_writes_phase1_artifacts(tmp_path):
     working_pressure = json.loads(working_pressure_file(output_dir).read_text(encoding="utf-8"))
     assert working_pressure["schema_version"] == ATTENTIONAL_V2_SCHEMA_VERSION
     assert working_pressure["gate_state"] == "quiet"
+
+    local_buffer = json.loads(local_buffer_file(output_dir).read_text(encoding="utf-8"))
+    assert local_buffer["recent_sentences"] == []
+
+    trigger_state = json.loads(trigger_state_file(output_dir).read_text(encoding="utf-8"))
+    assert trigger_state["output"] == "no_zoom"
 
     anchor_memory = json.loads(anchor_memory_file(output_dir).read_text(encoding="utf-8"))
     assert anchor_memory["anchor_records"] == []

@@ -15,18 +15,18 @@ Update when: status changes, blockers appear, or phases complete.
 - Overall status:
   - `in_progress`
 - Current phase:
-  - `Phase 1: Runtime Foundation And Schemas`
+  - `Phase 4: Core Interpretive Loop`
 - Current blockers:
-  - shared sentence-substrate schema not yet designed or implemented
+  - `zoom_read`, `meaning_unit_closure`, and `controller_decision` are not implemented yet
   - public-surface adapter strategy not yet decided
 
 ## Phase Tracker
 | Phase | Status | Exit gate |
 | --- | --- | --- |
 | Phase 0 - Planning and scope lock | `in_progress` | temp docs live, design coverage mapped, open questions recorded |
-| Phase 1 - Runtime foundation and schemas | `in_progress` | mechanism shell, core schemas, policy/version surfaces defined |
-| Phase 2 - Sentence substrate and survey orientation | `planned` | sentence-order substrate verified, survey artifacts working |
-| Phase 3 - Deterministic intake, gates, and retrieval scaffolding | `planned` | trigger pipeline, boundary nomination, candidate generation working |
+| Phase 1 - Runtime foundation and schemas | `done` | mechanism shell, core schemas, policy/version surfaces defined |
+| Phase 2 - Sentence substrate and survey orientation | `done` | sentence-order substrate verified, survey artifacts working |
+| Phase 3 - Deterministic intake, gates, and retrieval scaffolding | `done` | trigger pipeline, boundary nomination, candidate generation working |
 | Phase 4 - Core interpretive loop | `planned` | `zoom_read`, `meaning_unit_closure`, `controller_decision`, emission gate working |
 | Phase 5 - Knowledge, memory, and bridge resolution | `planned` | activation lifecycle, anchor relations, bridge resolution working |
 | Phase 6 - Slow-cycle reasoning and historical integrity | `planned` | promotion, reconsolidation, chapter consolidation working |
@@ -63,24 +63,24 @@ Update when: status changes, blockers appear, or phases complete.
 - [x] Define `move_history` and `reconsolidation_records` schemas
 - [x] Define `reader_policy` schema and versioning
 - [x] Define event envelope and checkpoint-summary schemas
-- [ ] Implement explicit state-operation helpers
+- [x] Implement explicit state-operation helpers
 
 ### Phase 2 - Sentence Substrate And Survey Orientation
 - [x] Audit sentence ids and locators in shared parsed-book substrate
-- [ ] Close parser or substrate gaps needed for sentence-order reading
-- [ ] Implement `book_survey`
-- [ ] Persist survey artifacts
-- [ ] Validate non-cheating survey constraints
+- [x] Close parser or substrate gaps needed for sentence-order reading
+- [x] Implement `book_survey`
+- [x] Persist survey artifacts
+- [x] Validate non-cheating survey constraints
 
 ### Phase 3 - Deterministic Intake, Gates, And Retrieval Scaffolding
-- [ ] Implement sentence ingest and mark-seen flow
-- [ ] Implement local buffer maintenance
-- [ ] Implement qualitative gate state machine
-- [ ] Implement candidate-boundary signals
-- [ ] Implement trigger ensemble
-- [ ] Emit trigger output schema
-- [ ] Implement deterministic `candidate_generation`
-- [ ] Implement bounded look-back source retrieval
+- [x] Implement sentence ingest and mark-seen flow
+- [x] Implement local buffer maintenance
+- [x] Implement qualitative gate state machine
+- [x] Implement candidate-boundary signals
+- [x] Implement trigger ensemble
+- [x] Emit trigger output schema
+- [x] Implement deterministic `candidate_generation`
+- [x] Implement bounded look-back source retrieval
 
 ### Phase 4 - Core Interpretive Loop
 - [ ] Implement `zoom_read`
@@ -143,3 +143,8 @@ Update when: status changes, blockers appear, or phases complete.
   - Completed the Q2 substrate audit: the current shared `public/book_document.json` shape is paragraph-level, so Phase 2 must add a shared sentence layer before the new mechanism can rely on sentence-order traversal, bounded look-back, and precise source anchoring.
   - Resolved the Q3 runtime boundary: shared `_runtime/` is a thin compatibility shell, while `attentional_v2` keeps mechanism-authored core reading artifacts and private control machinery under `_mechanisms/attentional_v2/`.
   - Started Phase 1 implementation in code: added shared runtime-shell contracts and helpers, created the `attentional_v2` schema and storage scaffold, and wrote the concrete runtime artifact map for later phases.
+  - Finished the remaining Phase 1 helper slice: added pure `attentional_v2` state-operation helpers for gate, pressure, anchor, reflective, activation, move, reconsolidation, and policy updates.
+  - Landed the shared sentence substrate in code: canonical parse now writes chapter-level sentence inventories into `public/book_document.json`, sentence locators now carry character offsets, and older paragraph-only book documents are backfilled with sentence records when reloaded.
+  - Synced the stable backend docs and history log so the shared substrate is now documented as paragraph-plus-sentence canonical truth rather than paragraph-only truth.
+  - Completed the Phase 2 survey layer: `attentional_v2` now writes orientation-only `survey_map.json` and `revisit_index.json` artifacts from title, TOC, chapter boundaries, openings, closings, and structural pivots, with tests guarding the non-cheating boundary.
+  - Completed the deterministic Phase 3 scaffold: added explicit `local_buffer` and `trigger_state` schemas, sentence-intake and gate helpers, and memory-first bounded look-back candidate generation with focused tests.

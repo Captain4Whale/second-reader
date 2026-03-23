@@ -407,3 +407,25 @@ Update when: a major product or engineering decision is made, reversed, or becom
 - `reading-companion-backend/src/iterator_reader/prompts.py`
 - `reading-companion-backend/src/reading_mechanisms/iterator_v1.py`
 - `reading-companion-backend/src/prompts/templates.py`
+
+## Entry 20
+**Decision / Inflection**: Expand `book_document.json` from paragraph-only shared truth into a paragraph-plus-sentence canonical substrate.
+
+**Period**: March 2026, during the first `attentional_v2` implementation phases.
+
+**Problem**: The backend had already separated `book_document.json` from `iterator_v1`'s derived `structure.json`, but the shared substrate still stopped at paragraph records. That was enough for section-first readers, but not for a sentence-order mechanism that needs stable sentence ids, precise anchors, bounded look-back, and honest resume/reconstitution inputs without borrowing another mechanism's private splitter.
+
+**Alternatives considered**: Keep sentence splitting entirely mechanism-private, create a second shared sentence artifact parallel to `book_document.json`, or force future mechanisms to derive their own sentence cursors from paragraph-only substrate at runtime.
+
+**Why this path won**: Sentence order is substrate, not `attentional_v2`-only ontology. Extending `book_document.json` preserves one shared parsed-book truth while giving future mechanisms a stable chapter-local sentence inventory with grounded locators. Keeping the sentence layer parse-time and mechanism-neutral also avoids making `iterator_v1`'s `section` or `subsegment` logic the accidental universal authority for sentence-level reading.
+
+**What changed in the system**: `src/reading_core/book_document.py` now models sentence records and locator character offsets. Parse flow now writes sentence inventories into each chapter of `public/book_document.json`, and load/build helpers backfill missing sentence layers into older paragraph-only documents when they are reloaded. `attentional_v2`'s Phase 1 scaffold also now rests on a real shared sentence substrate instead of on a planned placeholder.
+
+**Why it matters later**: This is the substrate change that makes sentence-order mechanisms possible without introducing a second shared text authority. Future contributors will need to know that sentence ids and sentence-span locators belong to the canonical book document, even though current public surfaces may still remain section-shaped for compatibility.
+
+**Primary evidence**:
+- `reading-companion-backend/src/reading_core/book_document.py`
+- `reading-companion-backend/src/reading_core/sentences.py`
+- `reading-companion-backend/src/iterator_reader/parse.py`
+- `docs/backend-reading-mechanism.md`
+- `docs/backend-state-aggregation.md`

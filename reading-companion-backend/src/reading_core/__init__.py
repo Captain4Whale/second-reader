@@ -1,6 +1,6 @@
 """Shared canonical book substrate and cross-mechanism runtime contracts."""
 
-from .book_document import BookChapter, BookDocument, BookMetadata, ChapterHeadingBlock, ParagraphRecord, TextLocator, TextRole
+from .book_document import BookChapter, BookDocument, BookMetadata, ChapterHeadingBlock, ParagraphRecord, SentenceRecord, TextLocator, TextRole
 from .normalized_outputs import (
     AttentionEventKind,
     CurrentReadingPhase,
@@ -35,6 +35,7 @@ from .runtime_contracts import (
     UserMarksState,
     stable_config_fingerprint,
 )
+from .sentences import build_sentence_records, ensure_book_document_sentence_layer, split_text_into_sentence_spans, split_text_into_sentences
 from .storage import book_document_file, existing_book_document_file, load_book_document, save_book_document
 
 __all__ = [
@@ -57,6 +58,7 @@ __all__ = [
     "NormalizedReaction",
     "NormalizedRunSnapshot",
     "ParagraphRecord",
+    "SentenceRecord",
     "ParseRequest",
     "ParseResult",
     "ReactionType",
@@ -74,9 +76,13 @@ __all__ = [
     "ThoughtFamily",
     "UserMark",
     "UserMarksState",
+    "build_sentence_records",
     "book_document_file",
+    "ensure_book_document_sentence_layer",
     "existing_book_document_file",
     "load_book_document",
     "save_book_document",
+    "split_text_into_sentence_spans",
+    "split_text_into_sentences",
     "stable_config_fingerprint",
 ]

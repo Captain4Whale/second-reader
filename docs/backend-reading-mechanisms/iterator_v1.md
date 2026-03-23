@@ -23,7 +23,7 @@ Use `docs/backend-reading-mechanism.md` for shared mechanism-platform boundaries
   - One source-ordered chapter or major part from the parsed book structure.
 - `book document`
   - The shared parsed-book substrate persisted at `public/book_document.json`.
-  - It contains chapter order, paragraph records, and locators only.
+  - It contains chapter order, paragraph records, sentence records, and locators.
 - `section`
   - The persisted semantic unit created before deep reading begins.
   - Backend runtime code still often calls this unit a `segment`.
@@ -47,7 +47,7 @@ Use `docs/backend-reading-mechanism.md` for shared mechanism-platform boundaries
   - It is a reaction anchor, not a reading unit.
 
 ## Reading Progression Logic
-- Canonical parse first preserves the source book order as `book_document` chapters plus paragraph records and locators.
+- Canonical parse first preserves the source book order as `book_document` chapters plus paragraph records, sentence records, and locators.
 - `iterator_v1` then derives semantic sections from that canonical substrate before the main read run starts.
 - The outer iterator reads in source order:
   - book
@@ -69,6 +69,9 @@ Use `docs/backend-reading-mechanism.md` for shared mechanism-platform boundaries
 - Each canonical chapter is normalized into paragraph-sized text blocks called `paragraph records`.
   - EPUB prefers XHTML block extraction so the records can retain href, CFI, block-tag, and paragraph-index metadata.
   - When structured extraction is unavailable, the parser falls back to plain-text paragraph splitting.
+- The shared sentence layer is then derived over non-auxiliary paragraph records.
+  - Each sentence gets a stable chapter-local `sentence_id`, source-order index, paragraph back-reference, and sentence-span locator with character offsets.
+  - This shared sentence inventory is substrate, not `iterator_v1`'s persisted traversal ontology.
 - `iterator_v1` derives its parse-time `section` contexts from that canonical chapter/paragraph substrate rather than treating `_mechanisms/iterator_v1/derived/structure.json` as shared truth.
 - Parse-time classification labels each paragraph record as one of:
   - `chapter_heading`
@@ -100,7 +103,7 @@ Use `docs/backend-reading-mechanism.md` for shared mechanism-platform boundaries
 - `section` is the persisted semantic anchor that the outer iterator, checkpoints, and public state can rely on across runs.
 - `subsegment` remains the runtime execution unit used to take smaller reading steps inside one already-selected section.
 - Ownership is intentionally split:
-  - `book -> chapter -> paragraph/locator` belongs to the shared `book_document`
+  - `book -> chapter -> paragraph/sentence/locator` belongs to the shared `book_document`
   - `chapter -> sections` belongs to the iterator-derived `structure`
   - `section -> subsegments` plus planner state and memory belong to iterator runtime artifacts under `_mechanisms/iterator_v1/runtime/`
 

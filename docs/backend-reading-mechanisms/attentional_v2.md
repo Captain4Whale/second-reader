@@ -8,14 +8,15 @@ Update when: the planned ontology, progression logic, LLM schedule, memory model
 - Status: `design-only`
 - Mechanism key: `attentional_v2`
 - Defaultness: `not default`
-- Artifact root: `_mechanisms/attentional_v2/` (planned)
-- Authority scope: future `attentional_v2` mechanism design, including ontology, control loop, sparse-LLM schedule, memory model, and planned mechanism-private artifacts
+- Artifact root: `_mechanisms/attentional_v2/`
+- Authority scope: future `attentional_v2` mechanism design, including ontology, control loop, sparse-LLM schedule, memory model, and mechanism-private artifacts
 
 Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `docs/backend-state-aggregation.md` for shared public-state surfaces.
 
 ## Purpose And Status
 - `attentional_v2` is the planned future mechanism for a more self-propelled reading mind.
-- It is not implemented and does not describe live product behavior today.
+- It now has a Phase 1/2 scaffold under the shared runtime boundary plus deterministic Phase 3 intake/retrieval scaffolding.
+- It still does not describe live product parse/read behavior today.
 - Its goal is to preserve sentence-level fidelity while shifting the main reasoning unit from fixed sections toward dynamic meaning units and an explicit attention frontier.
 
 ## Core Primitives / Ontology
@@ -139,15 +140,26 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
 ## Runtime Artifacts
 - Shared substrate dependency
   - `public/book_document.json`
-- Planned mechanism-private derived artifacts
+  - The shared substrate now includes parse-time sentence records with stable ids and sentence-span locators.
+- Current scaffolded mechanism-private derived artifacts
   - `_mechanisms/attentional_v2/derived/survey_map.json`
   - `_mechanisms/attentional_v2/derived/revisit_index.json`
-- Planned mechanism-private runtime artifacts
-  - `_mechanisms/attentional_v2/runtime/frontier_state.json`
-  - `_mechanisms/attentional_v2/runtime/memory_state.json`
+- Current scaffolded mechanism-private runtime artifacts
+  - `_mechanisms/attentional_v2/runtime/local_buffer.json`
+  - `_mechanisms/attentional_v2/runtime/trigger_state.json`
+  - `_mechanisms/attentional_v2/runtime/working_pressure.json`
+  - `_mechanisms/attentional_v2/runtime/anchor_memory.json`
+  - `_mechanisms/attentional_v2/runtime/reflective_summaries.json`
+  - `_mechanisms/attentional_v2/runtime/knowledge_activations.json`
+  - `_mechanisms/attentional_v2/runtime/move_history.json`
+  - `_mechanisms/attentional_v2/runtime/reconsolidation_records.json`
+  - `_mechanisms/attentional_v2/runtime/reader_policy.json`
   - `_mechanisms/attentional_v2/runtime/checkpoints/*`
+- Later mechanism-private runtime artifacts may still add further controller-facing state if implementation proves they are needed.
+- Current scaffolded mechanism-private internal artifacts
+  - `_mechanisms/attentional_v2/internal/diagnostics/events.jsonl`
+  - `_mechanisms/attentional_v2/internal/prompt_manifests/*.json`
 - Planned mechanism-private internal artifacts
-  - `_mechanisms/attentional_v2/internal/diagnostics/*`
   - `_mechanisms/attentional_v2/internal/analysis/*`
 - Planned optional exports
   - `_mechanisms/attentional_v2/exports/normalized_eval_bundle.json` for explicit eval-mode runs

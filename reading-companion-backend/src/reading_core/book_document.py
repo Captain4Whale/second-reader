@@ -17,6 +17,8 @@ class TextLocator(TypedDict, total=False):
     paragraph_index: int
     paragraph_start: int
     paragraph_end: int
+    char_start: int
+    char_end: int
 
 
 class ChapterHeadingBlock(TypedDict, total=False):
@@ -44,8 +46,20 @@ class ParagraphRecord(TypedDict, total=False):
     spine_index: int | None
 
 
+class SentenceRecord(TypedDict, total=False):
+    """Canonical sentence-level text record derived from one paragraph record."""
+
+    sentence_id: str
+    sentence_index: int
+    sentence_in_paragraph: int
+    paragraph_index: int
+    text: str
+    text_role: TextRole
+    locator: TextLocator
+
+
 class BookChapter(TypedDict, total=False):
-    """Canonical chapter payload composed of ordered paragraph records."""
+    """Canonical chapter payload composed of ordered paragraph and sentence records."""
 
     id: int
     title: str
@@ -56,6 +70,7 @@ class BookChapter(TypedDict, total=False):
     spine_index: int | None
     chapter_heading: ChapterHeadingBlock
     paragraphs: list[ParagraphRecord]
+    sentences: list[SentenceRecord]
 
 
 class BookMetadata(TypedDict, total=False):

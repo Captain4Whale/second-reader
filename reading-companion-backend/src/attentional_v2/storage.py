@@ -14,10 +14,12 @@ from .schemas import (
     ATTENTIONAL_V2_SCHEMA_VERSION,
     build_default_reader_policy,
     build_empty_anchor_memory,
+    build_empty_local_buffer,
     build_empty_knowledge_activations,
     build_empty_move_history,
     build_empty_reconsolidation_records,
     build_empty_reflective_summaries,
+    build_empty_trigger_state,
     build_empty_working_pressure,
 )
 
@@ -77,6 +79,18 @@ def working_pressure_file(output_dir: Path) -> Path:
     """Return the current working-pressure path."""
 
     return runtime_dir(output_dir) / "working_pressure.json"
+
+
+def local_buffer_file(output_dir: Path) -> Path:
+    """Return the rolling local-buffer path."""
+
+    return runtime_dir(output_dir) / "local_buffer.json"
+
+
+def trigger_state_file(output_dir: Path) -> Path:
+    """Return the cheap trigger-state path."""
+
+    return runtime_dir(output_dir) / "trigger_state.json"
 
 
 def anchor_memory_file(output_dir: Path) -> Path:
@@ -143,6 +157,8 @@ def artifact_map(output_dir: Path) -> dict[str, str]:
         "shared_checkpoint_summaries": str(runtime_artifacts.checkpoint_summaries_dir(output_dir).relative_to(output_dir)),
         "survey_map": str(survey_map_file(output_dir).relative_to(output_dir)),
         "revisit_index": str(revisit_index_file(output_dir).relative_to(output_dir)),
+        "local_buffer": str(local_buffer_file(output_dir).relative_to(output_dir)),
+        "trigger_state": str(trigger_state_file(output_dir).relative_to(output_dir)),
         "working_pressure": str(working_pressure_file(output_dir).relative_to(output_dir)),
         "anchor_memory": str(anchor_memory_file(output_dir).relative_to(output_dir)),
         "reflective_summaries": str(reflective_summaries_file(output_dir).relative_to(output_dir)),
@@ -222,6 +238,8 @@ def initialize_artifact_tree(
             "motifs": {},
         },
     )
+    save_json(local_buffer_file(output_dir), build_empty_local_buffer(mechanism_version=mechanism_version))
+    save_json(trigger_state_file(output_dir), build_empty_trigger_state(mechanism_version=mechanism_version))
     save_json(working_pressure_file(output_dir), build_empty_working_pressure(mechanism_version=mechanism_version))
     save_json(anchor_memory_file(output_dir), build_empty_anchor_memory(mechanism_version=mechanism_version))
     save_json(

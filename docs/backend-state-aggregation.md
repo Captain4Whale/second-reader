@@ -14,7 +14,9 @@ Use `docs/api-contract.md` for exact fields and routes. Use this file to underst
 ## Source Artifacts
 - `public/book_document.json`
   - Canonical parsed-book substrate shared across backend reading mechanisms.
-  - Contains chapter order, paragraph records, and locators.
+  - Contains chapter order, paragraph records, sentence records, and locators.
+  - Sentence records are parse-time, source-order, mechanism-neutral substrate entries grounded back to paragraph locators with character offsets.
+  - Load/build helpers may backfill missing sentence inventories into older paragraph-only `book_document.json` payloads when the canonical document is reloaded.
   - Current public API surfaces do not expose it directly, but runtime and future eval tooling can rely on it as the mechanism-neutral text source.
 - `_mechanisms/iterator_v1/derived/structure.json`
   - Current `iterator_v1`-owned derived traversal artifact.
@@ -115,6 +117,7 @@ Use `docs/api-contract.md` for exact fields and routes. Use this file to underst
   - That fallback is an artifact-compatibility concern only; it must not leak legacy paths or legacy naming back into the public contract.
 - Shared substrate vs mechanism artifacts
   - `book_document.json` is the canonical parsed-book substrate for runtime and future mechanism work.
+  - Its sentence layer is shared substrate, not a mechanism-private derivative.
   - Top-level `public/` contains only cross-mechanism, product-facing artifacts.
   - Top-level `_runtime/` contains only cross-mechanism live shell state.
   - `_mechanisms/<mechanism_key>/` contains mechanism-private derived structures, runtime memory/checkpoints, diagnostics, and optional eval exports.

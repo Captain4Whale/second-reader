@@ -16,6 +16,7 @@ from ebooklib import epub
 from src.config import get_backend_version, get_reader_resume_compat_version
 from src.parsers import parse_ebook
 from src.reading_core.book_document import BookDocument, BookMetadata
+from src.reading_core.sentences import build_sentence_records, ensure_book_document_sentence_layer
 from src.reading_core.storage import book_document_file, existing_book_document_file, load_book_document, save_book_document
 
 from .language import detect_book_language, language_name, resolve_output_language
@@ -597,6 +598,7 @@ def _build_book_document(
             "chapter_number": infer_chapter_number(chapter_title),
             "level": int(raw_chapter.get("level", 1) or 1),
             "paragraphs": paragraph_records,
+            "sentences": build_sentence_records(paragraph_records, chapter_id=chapter_index),
         }
         chapter_heading = _chapter_heading_block(paragraph_records)
         if chapter_heading:
@@ -672,7 +674,11 @@ def _load_or_build_book_document(
 
     document_path = existing_book_document_file(output_dir)
     if document_path.exists():
-        return load_book_document(document_path)
+        document = load_book_document(document_path)
+        upgraded_document, changed = ensure_book_document_sentence_layer(document)
+        if changed:
+            save_book_document(document_path, upgraded_document)
+        return upgraded_document
 
     canonical = _build_book_document(
         raw_chapters if raw_chapters is not None else parse_ebook(str(book_path)),

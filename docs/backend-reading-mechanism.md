@@ -16,7 +16,8 @@ Use `docs/backend-sequential-lifecycle.md` for the job-level workflow over time.
 ## Shared Mechanism Boundary
 - Shared substrate
   - `public/book_document.json` is the only shared parsed-book truth.
-  - It contains canonical chapter order, paragraph records, and locators.
+  - It contains canonical chapter order, paragraph records, sentence records, and locators.
+  - The sentence layer is a parse-time, source-order, mechanism-neutral substrate, not a mechanism-private traversal plan.
   - It must not embed one mechanism's traversal ontology.
 - Shared runtime shell
   - `src/reading_runtime/` owns mechanism registration, runtime routing, and shared artifact layout authority.
@@ -78,7 +79,7 @@ Use `docs/backend-sequential-lifecycle.md` for the job-level workflow over time.
   - `attentional_v2`
     - status: `design-only`
     - doc: `docs/backend-reading-mechanisms/attentional_v2.md`
-    - artifact root: `_mechanisms/attentional_v2/` (planned)
+    - artifact root: `_mechanisms/attentional_v2/`
 
 ## Routing Guide
 - Read this file when the question is:
