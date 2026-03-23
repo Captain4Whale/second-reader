@@ -6,11 +6,15 @@ from datetime import datetime, timezone
 from typing import Literal, TypedDict
 
 from src.reading_core.book_document import TextLocator, TextRole
+from src.reading_core.normalized_outputs import ReactionType, SearchHit
 
 
 GateState = Literal["quiet", "watch", "hot", "must_evaluate"]
 TriggerDecision = Literal["no_zoom", "monitor", "zoom_now"]
 MoveType = Literal["advance", "dwell", "bridge", "reframe"]
+StateOperationType = Literal["create", "update", "cool", "drop", "retain_anchor", "link_anchors", "promote", "supersede", "reactivate"]
+ClosureDecision = Literal["continue", "close"]
+ReactionEmissionDecision = Literal["emit", "withhold"]
 KnowledgeUseMode = Literal["book_grounded_only", "book_grounded_plus_prior_knowledge"]
 SearchPolicyMode = Literal["no_search", "defer_search", "search_now"]
 ActivationStatus = Literal["weak", "plausible", "strong", "rejected", "dropped"]
@@ -120,6 +124,81 @@ class TriggerState(TypedDict, total=False):
     signals: list[TriggerSignal]
     cadence_counter: int
     callback_anchor_ids: list[str]
+
+
+class StateOperation(TypedDict, total=False):
+    """One explicit state mutation proposed by a Phase 4 node."""
+
+    operation_type: StateOperationType
+    target_store: str
+    item_id: str
+    reason: str
+    payload: dict[str, object]
+
+
+class BridgeCandidate(TypedDict, total=False):
+    """One bridge candidate record passed to later bridge judgment."""
+
+    candidate_kind: str
+    target_anchor_id: str
+    target_sentence_id: str
+    retrieval_channel: str
+    relation_type: AnchorRelationType | str
+    score: float
+    why_now: str
+    quote: str
+
+
+class ReactionCandidate(TypedDict, total=False):
+    """One candidate anchored reaction proposed before emission gating."""
+
+    type: ReactionType
+    anchor_quote: str
+    content: str
+    related_anchor_quotes: list[str]
+    search_query: str
+    search_results: list[SearchHit]
+
+
+class ZoomReadResult(TypedDict, total=False):
+    """Structured result from the sentence-level zoom node."""
+
+    local_interpretation: str
+    anchor_quote: str
+    pressure_updates: list[StateOperation]
+    activation_updates: list[StateOperation]
+    bridge_candidate: BridgeCandidate | None
+    consider_reaction_emission: bool
+    uncertainty_note: str
+
+
+class MeaningUnitClosureResult(TypedDict, total=False):
+    """Structured result from meaning-unit closure."""
+
+    closure_decision: ClosureDecision
+    meaning_unit_summary: str
+    dominant_move: MoveType
+    proposed_state_operations: list[StateOperation]
+    bridge_candidates: list[BridgeCandidate]
+    reaction_candidate: ReactionCandidate | None
+    unresolved_pressure_note: str
+
+
+class ControllerDecisionResult(TypedDict, total=False):
+    """Structured controller routing decision."""
+
+    chosen_move: MoveType
+    reason: str
+    target_anchor_id: str
+    target_sentence_id: str
+
+
+class ReactionEmissionResult(TypedDict, total=False):
+    """Anchored visible-reaction emission decision."""
+
+    decision: ReactionEmissionDecision
+    reason: str
+    reaction: ReactionCandidate | None
 
 
 class AnchorRecord(TypedDict, total=False):

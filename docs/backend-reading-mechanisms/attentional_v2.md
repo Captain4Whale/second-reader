@@ -15,7 +15,11 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
 
 ## Purpose And Status
 - `attentional_v2` is the planned future mechanism for a more self-propelled reading mind.
-- It now has a Phase 1/2 scaffold under the shared runtime boundary plus deterministic Phase 3 intake/retrieval scaffolding.
+- It now has a Phase 1-4 scaffold under the shared runtime boundary:
+  - shared sentence substrate
+  - orientation-only survey artifacts
+  - deterministic intake/gate/retrieval helpers
+  - Phase 4 interpretive nodes with prompt-version manifests
 - It still does not describe live product parse/read behavior today.
 - Its goal is to preserve sentence-level fidelity while shifting the main reasoning unit from fixed sections toward dynamic meaning units and an explicit attention frontier.
 
@@ -55,6 +59,9 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - consolidate into a meaning unit when enough text has accumulated
   - update the attention frontier
   - choose the next move
+- The current scaffold already has the Phase 4 node boundary and handoff shape:
+  - `zoom_read -> meaning_unit_closure -> controller_decision`
+  - optional `reaction_emission` gate after closure when the moment earns a visible anchored thought
 - The next move is one of:
   - `advance`
     - move to the next unresolved local span when understanding is good enough
@@ -72,6 +79,12 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
 
 ## LLM Call Schedule
 - The main LLM is not called on every sentence.
+- The current scaffolded node bundle is:
+  - `zoom_read`
+  - `meaning_unit_closure`
+  - `controller_decision`
+  - `reaction_emission`
+- These nodes are implemented and prompt-versioned, but not yet wired into a live end-to-end read loop.
 - Default call types are:
   - `chapter opening`
     - set initial expectations and open questions using title, chapter heading, and opening span
@@ -92,6 +105,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
 
 ## Context Packaging
 - Each LLM call should receive a structured packet rather than arbitrary raw chunks.
+- The current scaffold persists node-level prompt manifests under `_mechanisms/attentional_v2/internal/prompt_manifests/*.json`.
 - The packet contains:
   - `structural frame`
     - book title
@@ -178,7 +192,9 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
 
 ## Known Limits / Drift Notes
 - This is a stable design doc, not an implementation doc.
+- Phase 4 nodes exist, but the mechanism still does not run as a live parse/read path.
 - The precise storage schemas for survey maps, frontier state, and revisit indexes are still open implementation details.
+- `bridge_resolution`, reflective promotion, reconsolidation, resume, and public-surface adapters are still later-phase work.
 - The survey stage must stay coarse enough that it does not become hidden full-book cheating.
 - Retrieval pressure and revisit behavior will likely need careful budget control during implementation.
 - Public adapter behavior may need compatibility compromises if existing transport fields remain section-shaped.

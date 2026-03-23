@@ -1,5 +1,15 @@
-"""Phase 1 scaffold for the attentional_v2 reading mechanism."""
+"""Scaffold and node toolkit for the in-progress attentional_v2 reading mechanism."""
 
+from .nodes import controller_decision, meaning_unit_closure, reaction_emission, run_phase4_local_cycle, zoom_read
+from .prompts import (
+    ATTENTIONAL_V2_PROMPTS,
+    ATTENTIONAL_V2_PROMPTSET_VERSION,
+    CONTROLLER_DECISION_PROMPT_VERSION,
+    MEANING_UNIT_CLOSURE_PROMPT_VERSION,
+    REACTION_EMISSION_PROMPT_VERSION,
+    ZOOM_READ_PROMPT_VERSION,
+)
+from .retrieval import bounded_lookback_source_space, flatten_sentence_inventory, generate_candidate_set
 from .schemas import (
     ATTENTIONAL_V2_MECHANISM_VERSION,
     ATTENTIONAL_V2_POLICY_VERSION,
@@ -29,7 +39,6 @@ from .state_ops import (
     upsert_knowledge_activation,
     upsert_reflective_item,
 )
-from .retrieval import bounded_lookback_source_space, flatten_sentence_inventory, generate_candidate_set
 from .survey import build_book_survey, build_revisit_index, write_book_survey_artifacts
 from .storage import ATTENTIONAL_V2_MECHANISM_KEY, artifact_map, initialize_artifact_tree
 
@@ -37,7 +46,13 @@ __all__ = [
     "ATTENTIONAL_V2_MECHANISM_KEY",
     "ATTENTIONAL_V2_MECHANISM_VERSION",
     "ATTENTIONAL_V2_POLICY_VERSION",
+    "ATTENTIONAL_V2_PROMPTS",
+    "ATTENTIONAL_V2_PROMPTSET_VERSION",
     "ATTENTIONAL_V2_SCHEMA_VERSION",
+    "CONTROLLER_DECISION_PROMPT_VERSION",
+    "MEANING_UNIT_CLOSURE_PROMPT_VERSION",
+    "REACTION_EMISSION_PROMPT_VERSION",
+    "ZOOM_READ_PROMPT_VERSION",
     "append_anchor_relation",
     "append_move",
     "append_reconsolidation_record",
@@ -55,12 +70,16 @@ __all__ = [
     "build_empty_reflective_summaries",
     "build_empty_trigger_state",
     "build_empty_working_pressure",
+    "controller_decision",
     "flatten_sentence_inventory",
     "generate_candidate_set",
     "initialize_artifact_tree",
+    "meaning_unit_closure",
     "push_local_buffer_sentence",
+    "reaction_emission",
     "replace_policy_section",
     "replace_pressure_bucket",
+    "run_phase4_local_cycle",
     "set_gate_state",
     "set_pressure_snapshot",
     "set_trigger_result",
@@ -68,4 +87,5 @@ __all__ = [
     "upsert_knowledge_activation",
     "upsert_reflective_item",
     "write_book_survey_artifacts",
+    "zoom_read",
 ]

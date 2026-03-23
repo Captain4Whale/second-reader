@@ -15,9 +15,10 @@ Update when: status changes, blockers appear, or phases complete.
 - Overall status:
   - `in_progress`
 - Current phase:
-  - `Phase 4: Core Interpretive Loop`
+  - `Phase 5: Knowledge, Memory, And Bridge Resolution`
 - Current blockers:
-  - `zoom_read`, `meaning_unit_closure`, and `controller_decision` are not implemented yet
+  - `bridge_resolution` and the typed anchor-relation / activation lifecycle are not implemented yet
+  - search-scope decision `Q6` is still open before the full Phase 5 behavior can be finalized
   - public-surface adapter strategy not yet decided
 
 ## Phase Tracker
@@ -27,7 +28,7 @@ Update when: status changes, blockers appear, or phases complete.
 | Phase 1 - Runtime foundation and schemas | `done` | mechanism shell, core schemas, policy/version surfaces defined |
 | Phase 2 - Sentence substrate and survey orientation | `done` | sentence-order substrate verified, survey artifacts working |
 | Phase 3 - Deterministic intake, gates, and retrieval scaffolding | `done` | trigger pipeline, boundary nomination, candidate generation working |
-| Phase 4 - Core interpretive loop | `planned` | `zoom_read`, `meaning_unit_closure`, `controller_decision`, emission gate working |
+| Phase 4 - Core interpretive loop | `done` | `zoom_read`, `meaning_unit_closure`, `controller_decision`, emission gate working |
 | Phase 5 - Knowledge, memory, and bridge resolution | `planned` | activation lifecycle, anchor relations, bridge resolution working |
 | Phase 6 - Slow-cycle reasoning and historical integrity | `planned` | promotion, reconsolidation, chapter consolidation working |
 | Phase 7 - Persistence, checkpointing, and resume | `planned` | warm/cold/reconstitution resume working |
@@ -83,12 +84,12 @@ Update when: status changes, blockers appear, or phases complete.
 - [x] Implement bounded look-back source retrieval
 
 ### Phase 4 - Core Interpretive Loop
-- [ ] Implement `zoom_read`
-- [ ] Implement `meaning_unit_closure`
-- [ ] Implement `controller_decision`
-- [ ] Implement node handoff protocol
-- [ ] Implement `reaction_emission` gate
-- [ ] Add prompt manifests and prompt versioning for behavior-defining nodes
+- [x] Implement `zoom_read`
+- [x] Implement `meaning_unit_closure`
+- [x] Implement `controller_decision`
+- [x] Implement node handoff protocol
+- [x] Implement `reaction_emission` gate
+- [x] Add prompt manifests and prompt versioning for behavior-defining nodes
 
 ### Phase 5 - Knowledge, Memory, And Bridge Resolution
 - [ ] Implement knowledge-activation lifecycle
@@ -148,3 +149,4 @@ Update when: status changes, blockers appear, or phases complete.
   - Synced the stable backend docs and history log so the shared substrate is now documented as paragraph-plus-sentence canonical truth rather than paragraph-only truth.
   - Completed the Phase 2 survey layer: `attentional_v2` now writes orientation-only `survey_map.json` and `revisit_index.json` artifacts from title, TOC, chapter boundaries, openings, closings, and structural pivots, with tests guarding the non-cheating boundary.
   - Completed the deterministic Phase 3 scaffold: added explicit `local_buffer` and `trigger_state` schemas, sentence-intake and gate helpers, and memory-first bounded look-back candidate generation with focused tests.
+  - Completed the Phase 4 interpretive-node layer: added typed `zoom_read`, `meaning_unit_closure`, `controller_decision`, and `reaction_emission` nodes, wired the `zoom -> closure -> controller -> optional emission` handoff, and persisted node-level prompt manifests with explicit prompt versions.
