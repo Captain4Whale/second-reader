@@ -429,3 +429,25 @@ Update when: a major product or engineering decision is made, reversed, or becom
 - `reading-companion-backend/src/iterator_reader/parse.py`
 - `docs/backend-reading-mechanism.md`
 - `docs/backend-state-aggregation.md`
+
+## Entry 21
+**Decision / Inflection**: Keep `attentional_v2`'s v1 search design fully represented, but make search a rare escape hatch instead of a normal reading behavior.
+
+**Period**: March 2026, during Phase 5 of the first `attentional_v2` implementation push.
+
+**Problem**: The mechanism design explicitly included separate knowledge-use and search-policy state, but the implementation still had to choose whether version one would become search-heavy, silently defer real search to a later redesign, or preserve the full design while keeping the reading mind text-grounded.
+
+**Alternatives considered**: Remove real search from v1 entirely and treat it as future-only, make search a common loop action whenever curiosity appeared, or collapse search decisions into the broader prior-knowledge mode instead of giving them their own state machine.
+
+**Why this path won**: The project's core value is the visible reading mind, not a research reflex. Preserving `no_search`, `defer_search`, and `search_now` as real states keeps the design intact, but making `no_search` the normal posture protects the text-grounded reading direction. `defer_search` captures genuine curiosity without interrupting the read, while `search_now` survives only as a narrow escape hatch for identity-critical references or obscure allusions that would make continued reading less honest.
+
+**What changed in the system**: `attentional_v2` now has a real knowledge-activation lifecycle, a conservative search-policy helper, and a Phase 5 `bridge_resolution` layer that judges earlier source anchors over a deterministic candidate set. The mechanism also now writes durable anchor-memory updates, typed anchor relations, motif and unresolved-reference indexes, trace links, and bridge move history instead of leaving those behaviors as prompt-only intentions.
+
+**Why it matters later**: This is the decision that should stop future contributors from accidentally turning `attentional_v2` into a search-first reader while still preserving the original design's full control surface. It also marks the point where Phase 5 stopped being a design promise and became real durable state behavior in code.
+
+**Primary evidence**:
+- `reading-companion-backend/src/attentional_v2/knowledge.py`
+- `reading-companion-backend/src/attentional_v2/bridge.py`
+- `reading-companion-backend/src/attentional_v2/prompts.py`
+- `docs/backend-reading-mechanisms/attentional_v2.md`
+- `docs/implementation/new-reading-mechanism/open-questions.md`

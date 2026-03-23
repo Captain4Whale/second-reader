@@ -1,4 +1,4 @@
-"""Prompt bundle for attentional_v2 Phase 4 interpretive nodes."""
+"""Prompt bundle for attentional_v2 Phase 4-5 interpretive nodes."""
 
 from __future__ import annotations
 
@@ -7,16 +7,17 @@ from dataclasses import dataclass
 from src.prompts.shared import LANGUAGE_OUTPUT_CONTRACT
 
 
-ATTENTIONAL_V2_PROMPTSET_VERSION = "attentional_v2-phase4-v1"
+ATTENTIONAL_V2_PROMPTSET_VERSION = "attentional_v2-phase5-v1"
 ZOOM_READ_PROMPT_VERSION = "attentional_v2.zoom_read.v1"
 MEANING_UNIT_CLOSURE_PROMPT_VERSION = "attentional_v2.meaning_unit_closure.v1"
 CONTROLLER_DECISION_PROMPT_VERSION = "attentional_v2.controller_decision.v1"
 REACTION_EMISSION_PROMPT_VERSION = "attentional_v2.reaction_emission.v1"
+BRIDGE_RESOLUTION_PROMPT_VERSION = "attentional_v2.bridge_resolution.v1"
 
 
 @dataclass(frozen=True)
 class AttentionalV2PromptSet:
-    """Typed prompt bundle for attentional_v2 Phase 4 nodes."""
+    """Typed prompt bundle for attentional_v2 Phase 4-5 nodes."""
 
     language_output_contract: str
     promptset_version: str
@@ -32,6 +33,9 @@ class AttentionalV2PromptSet:
     reaction_emission_version: str
     reaction_emission_system: str
     reaction_emission_prompt: str
+    bridge_resolution_version: str
+    bridge_resolution_system: str
+    bridge_resolution_prompt: str
 
 
 ATTENTIONAL_V2_PROMPTS = AttentionalV2PromptSet(
@@ -227,5 +231,60 @@ Return JSON:
     "search_query": "",
     "search_results": []
   }
+}""",
+    bridge_resolution_version=BRIDGE_RESOLUTION_PROMPT_VERSION,
+    bridge_resolution_system="""You are the bridge-resolution node for a text-grounded reading mechanism.
+
+Your job is to judge whether the current reading moment should bridge to earlier source material from a deterministic candidate set.
+
+Rules:
+- Choose a real earlier source anchor or decline to bridge.
+- Do not invent targets outside the supplied candidate set.
+- Search is rare and must stay separate from ordinary prior-knowledge use.
+- Prefer no search unless interpretation is materially blocked by an identity-critical reference or obscure allusion.
+- Return JSON only.""",
+    bridge_resolution_prompt="""Structural frame:
+{structural_frame}
+
+Current local span:
+{current_span}
+
+Working pressure:
+{working_pressure}
+
+Relevant anchors:
+{anchor_context}
+
+Live activations:
+{activation_context}
+
+Deterministic candidate set:
+{candidate_set}
+
+Policy snapshot:
+{policy_snapshot}
+
+Output language contract:
+"""
+    + LANGUAGE_OUTPUT_CONTRACT
+    + """
+
+Return JSON:
+{
+  "decision": "decline",
+  "reason": "<brief reason>",
+  "primary_bridge": {
+    "target_anchor_id": "",
+    "target_sentence_id": "",
+    "relation_type": "echo",
+    "why_now": ""
+  },
+  "supporting_bridges": [],
+  "activation_updates": [],
+  "state_operations": [],
+  "knowledge_use_mode": "book_grounded_only",
+  "search_policy_mode": "no_search",
+  "search_trigger": "none",
+  "search_query": ""
 }""",
 )

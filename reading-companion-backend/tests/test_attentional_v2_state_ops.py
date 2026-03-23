@@ -15,6 +15,7 @@ from src.attentional_v2.state_ops import (
     append_anchor_relation,
     append_move,
     append_reconsolidation_record,
+    apply_working_pressure_operations,
     replace_policy_section,
     replace_pressure_bucket,
     set_gate_state,
@@ -47,6 +48,48 @@ def test_working_pressure_helpers_replace_bucket_and_gate_state():
     assert state["local_questions"] == []
     assert next_state["gate_state"] == "watch"
     assert next_state["local_questions"][0]["item_id"] == "q-1"
+
+
+def test_apply_working_pressure_operations_handles_create_and_drop():
+    """Phase 5 working-pressure operations should update the hot buckets explicitly."""
+
+    state = build_empty_working_pressure()
+    state = apply_working_pressure_operations(
+        state,
+        [
+            {
+                "operation_type": "create",
+                "target_store": "working_pressure",
+                "item_id": "m-1",
+                "reason": "motif became active",
+                "payload": {
+                    "bucket": "local_motifs",
+                    "kind": "motif",
+                    "statement": "value returns as a live motif",
+                    "support_anchor_ids": ["a-1"],
+                    "status": "active",
+                },
+            }
+        ],
+    )
+
+    dropped = apply_working_pressure_operations(
+        state,
+        [
+            {
+                "operation_type": "drop",
+                "target_store": "working_pressure",
+                "item_id": "m-1",
+                "reason": "motif cooled below the hot layer",
+                "payload": {
+                    "bucket": "local_motifs",
+                },
+            }
+        ],
+    )
+
+    assert state["local_motifs"][0]["item_id"] == "m-1"
+    assert dropped["local_motifs"] == []
 
 
 def test_anchor_and_activation_helpers_upsert_by_id():

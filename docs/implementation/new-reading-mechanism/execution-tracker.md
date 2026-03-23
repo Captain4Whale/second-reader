@@ -15,10 +15,10 @@ Update when: status changes, blockers appear, or phases complete.
 - Overall status:
   - `in_progress`
 - Current phase:
-  - `Phase 5: Knowledge, Memory, And Bridge Resolution`
+  - `Phase 6: Slow-Cycle Reasoning And Historical Integrity`
 - Current blockers:
-  - `bridge_resolution` and the typed anchor-relation / activation lifecycle are not implemented yet
-  - search-scope decision `Q6` is still open before the full Phase 5 behavior can be finalized
+  - `reflective_promotion`, `reconsolidation`, and `chapter_consolidation` are not implemented yet
+  - reaction-persistence mapping `Q5` is still open before later historical-integrity and public-surface compatibility work can be finalized
   - public-surface adapter strategy not yet decided
 
 ## Phase Tracker
@@ -29,7 +29,7 @@ Update when: status changes, blockers appear, or phases complete.
 | Phase 2 - Sentence substrate and survey orientation | `done` | sentence-order substrate verified, survey artifacts working |
 | Phase 3 - Deterministic intake, gates, and retrieval scaffolding | `done` | trigger pipeline, boundary nomination, candidate generation working |
 | Phase 4 - Core interpretive loop | `done` | `zoom_read`, `meaning_unit_closure`, `controller_decision`, emission gate working |
-| Phase 5 - Knowledge, memory, and bridge resolution | `planned` | activation lifecycle, anchor relations, bridge resolution working |
+| Phase 5 - Knowledge, memory, and bridge resolution | `done` | activation lifecycle, anchor relations, bridge resolution working |
 | Phase 6 - Slow-cycle reasoning and historical integrity | `planned` | promotion, reconsolidation, chapter consolidation working |
 | Phase 7 - Persistence, checkpointing, and resume | `planned` | warm/cold/reconstitution resume working |
 | Phase 8 - Observability, evaluation, and shared-surface integration | `planned` | event/checkpoint contracts and public adapters working |
@@ -92,13 +92,13 @@ Update when: status changes, blockers appear, or phases complete.
 - [x] Add prompt manifests and prompt versioning for behavior-defining nodes
 
 ### Phase 5 - Knowledge, Memory, And Bridge Resolution
-- [ ] Implement knowledge-activation lifecycle
-- [ ] Implement knowledge-use mode switching
-- [ ] Implement search-policy state handling
-- [ ] Implement anchor retention and typed relations
-- [ ] Implement motif and unresolved-reference indexes
-- [ ] Implement `bridge_resolution`
-- [ ] Implement bridge-driven state updates
+- [x] Implement knowledge-activation lifecycle
+- [x] Implement knowledge-use mode switching
+- [x] Implement search-policy state handling
+- [x] Implement anchor retention and typed relations
+- [x] Implement motif and unresolved-reference indexes
+- [x] Implement `bridge_resolution`
+- [x] Implement bridge-driven state updates
 
 ### Phase 6 - Slow-Cycle Reasoning And Historical Integrity
 - [ ] Implement `reflective_promotion`
@@ -150,3 +150,4 @@ Update when: status changes, blockers appear, or phases complete.
   - Completed the Phase 2 survey layer: `attentional_v2` now writes orientation-only `survey_map.json` and `revisit_index.json` artifacts from title, TOC, chapter boundaries, openings, closings, and structural pivots, with tests guarding the non-cheating boundary.
   - Completed the deterministic Phase 3 scaffold: added explicit `local_buffer` and `trigger_state` schemas, sentence-intake and gate helpers, and memory-first bounded look-back candidate generation with focused tests.
   - Completed the Phase 4 interpretive-node layer: added typed `zoom_read`, `meaning_unit_closure`, `controller_decision`, and `reaction_emission` nodes, wired the `zoom -> closure -> controller -> optional emission` handoff, and persisted node-level prompt manifests with explicit prompt versions.
+  - Resolved Q6 and completed Phase 5: the mechanism now has a real knowledge-activation lifecycle, explicit rare-search policy handling, typed bridge judgment over deterministic candidates, and durable anchor-memory updates including relations, motif indexes, unresolved-reference indexes, and move-history writes.

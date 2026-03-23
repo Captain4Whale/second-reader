@@ -105,7 +105,10 @@ def generate_candidate_set(
                 "candidate_kind": "source_lookback",
                 "sentence_id": str(sentence.get("sentence_id", "") or ""),
                 "chapter_id": int(sentence.get("chapter_id", 0) or 0),
+                "chapter_title": str(sentence.get("chapter_title", "") or ""),
                 "text": str(sentence.get("text", "") or ""),
+                "text_role": str(sentence.get("text_role", "") or ""),
+                "locator": dict(sentence.get("locator", {})) if isinstance(sentence.get("locator"), dict) else {},
                 "overlap_score": overlap,
             }
         )

@@ -15,11 +15,12 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
 
 ## Purpose And Status
 - `attentional_v2` is the planned future mechanism for a more self-propelled reading mind.
-- It now has a Phase 1-4 scaffold under the shared runtime boundary:
+- It now has a Phase 1-5 scaffold under the shared runtime boundary:
   - shared sentence substrate
   - orientation-only survey artifacts
   - deterministic intake/gate/retrieval helpers
   - Phase 4 interpretive nodes with prompt-version manifests
+  - Phase 5 knowledge, bridge, and anchor-memory state helpers
 - It still does not describe live product parse/read behavior today.
 - Its goal is to preserve sentence-level fidelity while shifting the main reasoning unit from fixed sections toward dynamic meaning units and an explicit attention frontier.
 
@@ -62,6 +63,8 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
 - The current scaffold already has the Phase 4 node boundary and handoff shape:
   - `zoom_read -> meaning_unit_closure -> controller_decision`
   - optional `reaction_emission` gate after closure when the moment earns a visible anchored thought
+- Phase 5 now adds the bridge-judgment layer after deterministic candidate generation:
+  - `candidate_generation -> bridge_resolution -> durable anchor / move updates`
 - The next move is one of:
   - `advance`
     - move to the next unresolved local span when understanding is good enough
@@ -84,6 +87,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - `meaning_unit_closure`
   - `controller_decision`
   - `reaction_emission`
+- `bridge_resolution`
 - These nodes are implemented and prompt-versioned, but not yet wired into a live end-to-end read loop.
 - Default call types are:
   - `chapter opening`
@@ -123,12 +127,22 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
     - active motifs and recurrence notes
   - `retrieved anchors`
     - a small set of earlier spans selected because they are semantically, structurally, or motif-recurrently relevant
+  - `deterministic candidate set`
+    - memory-first retained anchors plus bounded look-back source-space candidates for honest bridge judgment
 - Retrieved anchors are chosen by a mix of:
   - semantic similarity
   - motif recurrence
   - unresolved-question linkage
   - structural centrality
   - recency when helpful, but not as the only signal
+- Search posture is separate from prior-knowledge posture.
+  - Version-one search states are:
+    - `no_search`
+    - `defer_search`
+    - `search_now`
+  - The normal posture is `no_search`.
+  - `defer_search` is used for genuine curiosity when text-grounded reading can continue honestly.
+  - `search_now` is a rare escape hatch for interpretation-blocking references or allusions rather than a normal reading behavior.
 
 ## Memory And Revisit Logic
 - The mechanism keeps a live state that separates:
@@ -142,10 +156,18 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - active motifs or concepts
   - important anchor lines
   - revisit links
+- The current scaffold now makes several of those claims concrete:
+  - `knowledge_activations` tracks separate `recognition_confidence` and `reading_warrant`
+  - `knowledge_use_mode` is distinct from `search_policy_mode`
+  - `anchor_memory` keeps first-class typed relations
+  - `motif_index`, `unresolved_reference_index`, and `trace_links` are persisted state rather than prompt-only ideas
 - Sentence-level trigger detection should happen continuously during intake.
   - This protects against missing a crucial single sentence even when the main reasoning unit is larger.
 - Retroactive resurfacing is first-class.
   - A later span can promote an earlier sentence or paragraph into renewed focus.
+- The Phase 5 bridge helper now enforces source honesty:
+  - bridge targets must come from deterministic source candidates
+  - if no honest source target exists, bridge resolution declines instead of inventing one
 - Chapter-end backward sweeps should check:
   - which earlier lines turned out to matter most
   - which open tensions remain live
@@ -173,6 +195,12 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
 - Current scaffolded mechanism-private internal artifacts
   - `_mechanisms/attentional_v2/internal/diagnostics/events.jsonl`
   - `_mechanisms/attentional_v2/internal/prompt_manifests/*.json`
+- Current scaffolded prompt manifests now include:
+  - `zoom_read`
+  - `meaning_unit_closure`
+  - `controller_decision`
+  - `reaction_emission`
+  - `bridge_resolution`
 - Planned mechanism-private internal artifacts
   - `_mechanisms/attentional_v2/internal/analysis/*`
 - Planned optional exports
@@ -192,9 +220,9 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
 
 ## Known Limits / Drift Notes
 - This is a stable design doc, not an implementation doc.
-- Phase 4 nodes exist, but the mechanism still does not run as a live parse/read path.
-- The precise storage schemas for survey maps, frontier state, and revisit indexes are still open implementation details.
-- `bridge_resolution`, reflective promotion, reconsolidation, resume, and public-surface adapters are still later-phase work.
+- Phase 5 bridge and knowledge helpers exist, but the mechanism still does not run as a live parse/read path.
+- The precise storage schemas for frontier state and some slower-cycle outputs are still open implementation details.
+- Reflective promotion, reconsolidation, resume, and public-surface adapters are still later-phase work.
 - The survey stage must stay coarse enough that it does not become hidden full-book cheating.
-- Retrieval pressure and revisit behavior will likely need careful budget control during implementation.
+- Retrieval pressure, rare-search gating, and revisit behavior will likely need careful budget control during implementation.
 - Public adapter behavior may need compatibility compromises if existing transport fields remain section-shaped.

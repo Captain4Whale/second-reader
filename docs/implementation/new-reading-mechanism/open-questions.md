@@ -16,7 +16,6 @@ Update when: a question is added, resolved, deferred, or replaced by a stable do
 | --- | --- | --- | --- | --- |
 | Q4 | How should a non-section runtime locus map to the current public surfaces that still expose compatibility fields such as `segment_ref`? | Needed for analysis-state, activity, and chapter/detail compatibility. | Phase 8 | `open` |
 | Q5 | What is the initial reaction persistence mapping from anchored reactions to the current reaction storage and mark flows? | Needed to avoid breaking marks, activity, and chapter surfaces. | Phase 6 / 8 | `open` |
-| Q6 | How much of search behavior belongs in version one versus a later increment, given the design's rare-search posture? | Affects node inventory, policy defaults, and implementation scope. | Phase 5 | `open` |
 | Q7 | What exact bounded recent source window should `cold_resume` and `reconstitution_resume` reread? | Needed for honest state reconstruction and predictable runtime cost. | Phase 7 | `open` |
 | Q8 | Which observability fields are required in standard mode versus debug-only mode? | Needed to keep evaluation useful without exploding runtime storage. | Phase 8 | `open` |
 | Q9 | What dataset slices and acceptance thresholds will be used for mechanism-integrity and end-to-end evaluation? | Needed before comparing against `iterator_v1` or considering default promotion. | Phase 8 / 9 | `open` |
@@ -118,6 +117,29 @@ Update when: a question is added, resolved, deferred, or replaced by a stable do
     - keep full checkpoints private and expose checkpoint summaries through shared runtime
     - keep shared activity envelopes thin and leave deep node traces under mechanism-private diagnostics
     - treat this boundary as the controlling principle for Phase 1 schema work and later public-surface adaptation
+- `Q6` resolved on `2026-03-23`
+  - Decision:
+    - version one should implement the full search-policy state shape:
+      - `no_search`
+      - `defer_search`
+      - `search_now`
+    - the normal v1 posture should remain `no_search`
+    - `defer_search` should capture genuine curiosity when honest reading can continue without interruption
+    - `search_now` should remain a narrow controller-approved escape hatch for interpretation-blocking cases such as:
+      - identity-critical references
+      - obscure allusions
+      - moments where reading would become less honest without checking
+  - Why:
+    - the mechanism's core value is text-grounded reading, not a research-assistant reflex
+    - fully removing `search_now` would silently discard part of the design and force a later redesign
+    - making search common in v1 would distort the mechanism's thought direction and weaken the book-grounded reading mind the product is trying to surface
+    - the right compromise is to keep the state machine now while making real external search rare, explicit, and off the hot path
+  - Implementation effect:
+    - keep search policy separate from knowledge-use mode
+    - default `reader_policy.search.default_mode` and runtime `search_policy_mode` to `no_search`
+    - implement `defer_search` and `search_now` as explicit state values rather than leaving them implicit or prompt-only
+    - allow `search_now` only when narrow gating conditions are met; downgrade ordinary curiosity to `defer_search`
+    - keep Phase 5 focused mainly on book-grounded retrieval, anchors, relations, knowledge activations, and honest bridge resolution rather than broadening the mechanism into routine search behavior
 
 ## Promotion Rule
 - Resolve a question here first when the answer is still implementation-local or provisional.

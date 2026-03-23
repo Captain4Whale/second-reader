@@ -70,6 +70,7 @@ def test_attentional_v2_initialization_writes_phase1_artifacts(tmp_path):
 
     activations = json.loads(knowledge_activations_file(output_dir).read_text(encoding="utf-8"))
     assert activations["knowledge_use_mode"] == "book_grounded_only"
+    assert activations["search_policy_mode"] == "no_search"
 
     moves = json.loads(move_history_file(output_dir).read_text(encoding="utf-8"))
     assert moves["moves"] == []
@@ -80,6 +81,7 @@ def test_attentional_v2_initialization_writes_phase1_artifacts(tmp_path):
     policy = json.loads(reader_policy_file(output_dir).read_text(encoding="utf-8"))
     assert policy["policy_version"] == ATTENTIONAL_V2_POLICY_VERSION
     assert policy["bridge"]["source_anchor_required"] is True
+    assert policy["search"]["default_mode"] == "no_search"
 
     survey = json.loads(survey_map_file(output_dir).read_text(encoding="utf-8"))
     assert survey["status"] == "not_started"

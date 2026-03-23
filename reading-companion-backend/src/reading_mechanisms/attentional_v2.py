@@ -1,4 +1,4 @@
-"""Phase 1-4 adapter scaffold for the attentional_v2 reading mechanism."""
+"""Phase 1-5 adapter scaffold for the attentional_v2 reading mechanism."""
 
 from __future__ import annotations
 
@@ -19,7 +19,7 @@ class AttentionalV2Mechanism:
 
     info = MechanismInfo(
         key=ATTENTIONAL_V2_MECHANISM_KEY,
-        label="Attentional V2 scaffold (Phase 1-4)",
+        label="Attentional V2 scaffold (Phase 1-5)",
     )
 
     @property
@@ -60,17 +60,17 @@ class AttentionalV2Mechanism:
         )
 
     def parse_book(self, request: ParseRequest) -> ParseResult:
-        """Attentional V2 parse is not implemented in Phase 1-4."""
+        """Attentional V2 parse is not implemented in Phase 1-5."""
 
         raise NotImplementedError(
-            "attentional_v2 Phase 1-4 provides shell, schema, sentence-substrate, survey, intake, and interpretive-node scaffolding only; "
+            "attentional_v2 Phase 1-5 provides shell, schema, sentence-substrate, survey, intake, interpretive-node, and bridge-state scaffolding only; "
             "its parse path will land in later phases."
         )
 
     def read_book(self, request: ReadRequest) -> ReadResult:
-        """Attentional V2 reading is not implemented in Phase 1-4."""
+        """Attentional V2 reading is not implemented in Phase 1-5."""
 
         raise NotImplementedError(
-            "attentional_v2 Phase 1-4 provides shell, schema, sentence-substrate, survey, intake, and interpretive-node scaffolding only; "
+            "attentional_v2 Phase 1-5 provides shell, schema, sentence-substrate, survey, intake, interpretive-node, and bridge-state scaffolding only; "
             "its reading loop will land in later phases."
         )

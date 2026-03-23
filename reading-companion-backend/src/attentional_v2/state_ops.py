@@ -27,6 +27,7 @@ from .schemas import (
     TriggerState,
     WorkingPressureItem,
     WorkingPressureState,
+    StateOperation,
 )
 
 
@@ -75,6 +76,15 @@ def _upsert_by_id(items: list[dict[str, object]], item: dict[str, object], *, id
     return next_items
 
 
+def _remove_by_id(items: list[dict[str, object]], item_id: str, *, id_key: str) -> list[dict[str, object]]:
+    """Return one list with the selected id removed."""
+
+    selected = str(item_id or "")
+    if not selected:
+        return list(items)
+    return [item for item in items if str(item.get(id_key, "") or "") != selected]
+
+
 def set_gate_state(state: WorkingPressureState, gate_state: GateState) -> WorkingPressureState:
     """Set the controller gate state."""
 
@@ -101,6 +111,60 @@ def set_pressure_snapshot(state: WorkingPressureState, snapshot: PressureSnapsho
 
     next_state = _touch_state(state)
     next_state["pressure_snapshot"] = dict(snapshot)
+    return next_state  # type: ignore[return-value]
+
+
+def apply_working_pressure_operations(
+    state: WorkingPressureState,
+    operations: list[StateOperation],
+) -> WorkingPressureState:
+    """Apply explicit working-pressure mutations from node outputs."""
+
+    next_state = dict(state)
+    touched = False
+    for operation in operations:
+        if str(operation.get("target_store", "") or "") != "working_pressure":
+            continue
+        payload = operation.get("payload")
+        if not isinstance(payload, dict):
+            continue
+        bucket = str(payload.get("bucket", "") or "")
+        if bucket not in {"local_hypotheses", "local_questions", "local_tensions", "local_motifs"}:
+            continue
+        item_id = str(operation.get("item_id", "") or payload.get("item_id", "") or "")
+        if not item_id:
+            continue
+
+        bucket_items = [dict(existing) for existing in next_state.get(bucket, [])]
+        operation_type = str(operation.get("operation_type", "") or "")
+        if operation_type in {"create", "update", "reactivate", "cool"}:
+            existing = next((item for item in bucket_items if str(item.get("item_id", "") or "") == item_id), {})
+            merged_item = {
+                **existing,
+                **{
+                    key: value
+                    for key, value in payload.items()
+                    if key in {"kind", "statement", "support_anchor_ids", "status"}
+                },
+                "item_id": item_id,
+            }
+            if operation_type == "reactivate" and not merged_item.get("status"):
+                merged_item["status"] = "active"
+            if operation_type == "cool":
+                merged_item["status"] = str(payload.get("status", "") or "cooling")
+            bucket_items = _upsert_by_id(bucket_items, merged_item, id_key="item_id")
+            next_state[bucket] = bucket_items
+            touched = True
+            continue
+
+        if operation_type == "drop":
+            next_state[bucket] = _remove_by_id(bucket_items, item_id, id_key="item_id")
+            touched = True
+
+    if not touched:
+        return state
+
+    next_state["updated_at"] = _timestamp()
     return next_state  # type: ignore[return-value]
 
 

@@ -83,7 +83,7 @@ def test_zoom_read_writes_prompt_manifest_and_normalizes_payload(tmp_path, monke
     assert result["bridge_candidate"]["target_anchor_id"] == "a-1"
     assert result["consider_reaction_emission"] is True
     assert manifest["prompt_version"] == "attentional_v2.zoom_read.v1"
-    assert manifest["promptset_version"] == "attentional_v2-phase4-v1"
+    assert manifest["promptset_version"] == "attentional_v2-phase5-v1"
 
 
 def test_controller_decision_refuses_bridge_without_candidates(monkeypatch):

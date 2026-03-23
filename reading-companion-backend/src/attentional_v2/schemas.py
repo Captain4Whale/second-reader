@@ -15,8 +15,10 @@ MoveType = Literal["advance", "dwell", "bridge", "reframe"]
 StateOperationType = Literal["create", "update", "cool", "drop", "retain_anchor", "link_anchors", "promote", "supersede", "reactivate"]
 ClosureDecision = Literal["continue", "close"]
 ReactionEmissionDecision = Literal["emit", "withhold"]
+BridgeResolutionDecision = Literal["bridge", "decline"]
 KnowledgeUseMode = Literal["book_grounded_only", "book_grounded_plus_prior_knowledge"]
 SearchPolicyMode = Literal["no_search", "defer_search", "search_now"]
+SearchTrigger = Literal["none", "identity_critical_reference", "blocking_allusion", "genuine_curiosity", "ornamental_curiosity"]
 ActivationStatus = Literal["weak", "plausible", "strong", "rejected", "dropped"]
 AnchorRelationType = Literal["echo", "contrast", "cause", "support", "question_opened_by", "question_resolved_by", "callback"]
 TriggerFamily = Literal["integrity", "salience", "knowledge_risk"]
@@ -147,6 +149,7 @@ class BridgeCandidate(TypedDict, total=False):
     score: float
     why_now: str
     quote: str
+    locator: TextLocator
 
 
 class ReactionCandidate(TypedDict, total=False):
@@ -191,6 +194,21 @@ class ControllerDecisionResult(TypedDict, total=False):
     reason: str
     target_anchor_id: str
     target_sentence_id: str
+
+
+class BridgeResolutionResult(TypedDict, total=False):
+    """Structured bridge-judgment result over deterministic candidate retrieval."""
+
+    decision: BridgeResolutionDecision
+    reason: str
+    primary_bridge: BridgeCandidate | None
+    supporting_bridges: list[BridgeCandidate]
+    activation_updates: list[StateOperation]
+    state_operations: list[StateOperation]
+    knowledge_use_mode: KnowledgeUseMode
+    search_policy_mode: SearchPolicyMode
+    search_trigger: SearchTrigger
+    search_query: str
 
 
 class ReactionEmissionResult(TypedDict, total=False):
@@ -450,7 +468,7 @@ def build_empty_knowledge_activations(
         "mechanism_version": mechanism_version,
         "updated_at": _timestamp(),
         "knowledge_use_mode": "book_grounded_only",
-        "search_policy_mode": "defer_search",
+        "search_policy_mode": "no_search",
         "activations": [],
     }
 
@@ -494,9 +512,17 @@ def build_default_reader_policy(
         "updated_at": _timestamp(),
         "gate": {"default_state": "quiet"},
         "controller": {"default_move": "advance", "allow_bridge_without_anchor": False},
-        "knowledge": {"default_mode": "book_grounded_only"},
-        "search": {"default_mode": "defer_search"},
-        "bridge": {"source_anchor_required": True},
+        "knowledge": {
+            "default_mode": "book_grounded_only",
+            "allow_prior_knowledge_when_warranted": True,
+        },
+        "search": {
+            "default_mode": "no_search",
+            "allow_search_now": True,
+            "rare_search_posture": True,
+            "defer_curiosity_by_default": True,
+        },
+        "bridge": {"source_anchor_required": True, "max_supporting_candidates": 2},
         "resume": {"default_mode": "warm_resume"},
         "logging": {"event_stream": True, "checkpoint_summaries": True},
     }
