@@ -6,7 +6,7 @@ Not for: stable mechanism authority or prompt-text authority.
 Update when: the Notion design materially changes or when the source-to-workstream mapping becomes inaccurate.
 
 ## Source
-- Upstream design page:
+- Upstream design page(read using MCP):
   - `https://www.notion.so/new-reading-mechanism-design-32ad8f1822a5805e9864cf1c3cd0551b`
 - Repo-local capture date:
   - `2026-03-23`

@@ -21,9 +21,16 @@ Update when: the design capture, plan, tracker, or open-question set changes dur
 - When a conclusion becomes stable system behavior or a decision-bearing direction, promote it into the relevant long-term docs instead of leaving it here forever.
 
 ## Working Files
+- `source-mirror.md`
+  - full-fidelity repo-local mirror of the Notion design, organized by source section
+  - should preserve detail before normalization
+- `coverage-policy.md`
+  - omission-control rules for this implementation project
 - `design-capture.md`
   - repo-local structured capture of the Notion design
   - includes the source-to-workstream coverage map so scope does not disappear
+- `requirement-ledger.md`
+  - atomic traceability ledger mapping design points to implementation, deferral, rejection, or stable-doc promotion
 - `implementation-plan.md`
   - the phased execution order, dependency chain, and exit criteria
 - `execution-tracker.md`
@@ -39,15 +46,23 @@ Update when: the design capture, plan, tracker, or open-question set changes dur
 
 ## Working Rules
 - Do not treat this folder as a replacement for the stable docs.
+- Do not begin real implementation from the normalized digest alone when omission risk matters; first anchor the work to the source mirror and requirement ledger.
 - Keep the design capture aligned to the Notion page, but normalize its hierarchy for implementation.
 - Keep every major design block mapped to a workstream or tracker item.
+- Every design point must end in exactly one explicit disposition:
+  - implemented
+  - explicitly deferred
+  - explicitly rejected
+  - promoted into stable docs
 - Record implementation discoveries here first, then promote repeated stable facts into the long-term docs.
 - Keep the new mechanism non-default until its acceptance gates, migration work, and public-surface adapters are complete.
 - Do not let temporary tracker language silently redefine stable product or runtime behavior.
 
 ## Recommended Reading Order For This Project
 1. `design-capture.md`
-2. `implementation-plan.md`
-3. `execution-tracker.md`
-4. `open-questions.md`
-5. Stable docs listed above, as required by the task at hand
+2. `coverage-policy.md`
+3. `requirement-ledger.md`
+4. `implementation-plan.md`
+5. `execution-tracker.md`
+6. `open-questions.md`
+7. Stable docs listed above, as required by the task at hand

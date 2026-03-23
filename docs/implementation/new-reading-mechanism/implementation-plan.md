@@ -19,7 +19,9 @@ Purpose:
 Main work:
 - Decide whether the new design maps to `attentional_v2` or to a new mechanism key.
 - Freeze the temporary working-doc set in this folder.
+- Build the full-fidelity source mirror.
 - Build and maintain the design coverage map.
+- Build and maintain the atomic requirement ledger.
 - Record initial open questions and working assumptions.
 - Seed the temporary decision log.
 - Seed the validation matrix.
@@ -28,7 +30,9 @@ Main work:
 
 Exit criteria:
 - One named target mechanism exists for implementation work.
+- The source mirror exists and is far enough along to support trace review.
 - All major design blocks are mapped to phases.
+- The requirement ledger exists and the omission-control process is active.
 - The implementation tracker exists and is ready to drive execution.
 
 ## Phase 1: Runtime Foundation And Schemas
