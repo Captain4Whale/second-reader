@@ -133,7 +133,43 @@ Update when: the Notion design materially changes or when the source-to-workstre
 - Earlier persisted thoughts remain immutable.
 - Later thoughts stay independently anchored to later reading moments.
 
-### 8. Persistence, Resume, And Continuity
+### 8. Runtime Boundary Refinement
+- Shared runtime should be compatibility-oriented rather than ontology-imposing.
+- The universal shell should adapt to the mechanism instead of forcing the mechanism to fit an older traversal shape.
+- The implementation should preserve original mechanism-authored product artifacts rather than over-wrapping them into shell-invented objects.
+- Working principle:
+  - mechanism-authored core
+  - shell-authored envelope
+- Preserve upward with minimal rewriting:
+  - anchored reactions
+  - original thought direction
+  - focal span or anchor span
+  - reconsolidated follow-up thoughts
+  - meaningful bridge links when surfaced to the product
+- Keep private unless intentionally promoted:
+  - trigger internals
+  - gate transitions
+  - raw `working_pressure` internals
+  - candidate pools
+  - prompt packets
+  - low-level controller scaffolding
+  - deep diagnostics
+- Shared `_runtime/` should own only mechanism-neutral orchestration and transport facts:
+  - run identity and lifecycle
+  - sentence or span cursor on shared substrate
+  - checkpoint summaries
+  - pause or resume metadata
+  - thin activity and live-state envelopes
+- `_mechanisms/attentional_v2/` should own the actual reading-mind state:
+  - tiered state
+  - controller state
+  - bridge reasoning
+  - raw reaction and thought records
+  - full checkpoints
+  - diagnostics
+- Compatibility fields may still exist, but they should remain sidecars rather than becoming the primary semantics of the original object.
+
+### 9. Persistence, Resume, And Continuity
 - Persist:
   - reading position
   - local continuity state
@@ -149,7 +185,7 @@ Update when: the Notion design materially changes or when the source-to-workstre
   - no silent mutation of reflective summaries
   - no pretending reconstructed hot state is warm state
 
-### 9. Calibration, Failure Taxonomy, Observability, And Evaluation
+### 10. Calibration, Failure Taxonomy, Observability, And Evaluation
 - Versioned `reader_policy` tunes behavior without changing ontology.
 - Policy domains:
   - gate
@@ -173,7 +209,7 @@ Update when: the Notion design materially changes or when the source-to-workstre
   - `checkpoint_summaries`
 - Evaluation must align to shared project evaluation, with mechanism-specific integrity and trace criteria.
 
-### 10. Prompt Contracts And Node Handoffs
+### 11. Prompt Contracts And Node Handoffs
 - Deterministic by default:
   - sentence ingest
   - cheap trigger signals

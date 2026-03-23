@@ -7,6 +7,8 @@ Update when: phase order, dependencies, or exit criteria change.
 
 ## Planning Rules
 - Implement the mechanism behind the shared runtime and mechanism boundaries. Do not copy `iterator_v1` wiring into a second silo.
+- Treat the shared runtime shell as compatibility-oriented, not ontology-imposing.
+- Preserve mechanism-authored product artifacts upward whenever possible; add thin envelopes and compatibility sidecars instead of replacing the original thought objects.
 - Keep the public API contract stable until an intentional adapter or contract migration is ready.
 - Build deterministic scaffolding before prompt-node behavior that depends on it.
 - Do not switch the default mechanism during this plan. Default promotion is the final migration decision, not the starting assumption.
@@ -41,6 +43,8 @@ Purpose:
 
 Main work:
 - Add the mechanism adapter skeleton under the shared mechanism boundary.
+- Apply the `mechanism-authored core, shell-authored envelope` boundary to the runtime design.
+- Define the exact split between shared `_runtime/` envelopes and `_mechanisms/<mechanism_key>/` private state.
 - Define mechanism-private artifact roots under `_mechanisms/<mechanism_key>/`.
 - Define runtime schemas for:
   - `working_pressure`
@@ -63,6 +67,7 @@ Depends on:
 
 Exit criteria:
 - The new mechanism can be instantiated by the shared runtime shell.
+- Shared envelopes do not overwrite original mechanism-authored thought artifacts.
 - Artifact layout and core schemas are concrete enough for later phases to write against.
 - No later phase needs to invent its own state encoding ad hoc.
 

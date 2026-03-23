@@ -14,7 +14,6 @@ Update when: a question is added, resolved, deferred, or replaced by a stable do
 ## Open Questions
 | ID | Question | Why it matters | Target phase | Current status |
 | --- | --- | --- | --- | --- |
-| Q3 | What is the exact artifact and schema split between shared `_runtime/` state and `_mechanisms/<mechanism_key>/` state for this mechanism? | Prevents ontology leakage into shared runtime surfaces. | Phase 1 | `open` |
 | Q4 | How should a non-section runtime locus map to the current public surfaces that still expose compatibility fields such as `segment_ref`? | Needed for analysis-state, activity, and chapter/detail compatibility. | Phase 8 | `open` |
 | Q5 | What is the initial reaction persistence mapping from anchored reactions to the current reaction storage and mark flows? | Needed to avoid breaking marks, activity, and chapter surfaces. | Phase 6 / 8 | `open` |
 | Q6 | How much of search behavior belongs in version one versus a later increment, given the design's rare-search posture? | Affects node inventory, policy defaults, and implementation scope. | Phase 5 | `open` |
@@ -71,6 +70,54 @@ Update when: a question is added, resolved, deferred, or replaced by a stable do
     - preserve chapter-local source order
     - map each sentence back to one paragraph or paragraph span
     - carry sentence-span locator data precise enough for anchor and look-back use, including offsets when paragraph-level locators alone are not sufficient
+- `Q3` resolved on `2026-03-23`
+  - Decision:
+    - shared `_runtime/` should be a thin compatibility shell, not an ontology-imposing runtime that forces `attentional_v2` to fit older mechanism shapes
+    - product-core reading artifacts should remain mechanism-authored truth and rise upward source-preservingly whenever possible
+    - the shell may add envelopes, ids, routing metadata, and compatibility sidecars, but it should not rewrite the original thought direction or replace original reactions with shell-invented wrappers
+    - not every mechanism-internal control object should become shared or public; preserve original product truth, not the entire private control system
+  - Why:
+    - the product's core value is the visible reading mind, so over-wrapping the original reaction or thought would weaken the product rather than stabilize it
+    - future mechanisms should be able to plug into the shared runtime without first being reshaped into `iterator_v1`-style ontology
+    - the shell still needs a minimal neutral contract for orchestration, resume, API stability, and shared evaluation
+    - the right boundary is therefore additive rather than substitutive:
+      - mechanism-authored core
+      - shell-authored envelope
+  - Shared `_runtime/` should own:
+    - mechanism-neutral run identity and lifecycle:
+      - `mechanism_key`
+      - version references
+      - stage/status
+      - timestamps
+      - error state
+    - shared reading position on shared substrate:
+      - chapter position
+      - sentence cursor or equivalent neutral span cursor
+    - pause, resume, and checkpoint summaries
+    - thin shared live-state envelopes used by REST or WebSocket surfaces
+    - shared activity event envelopes and references to original mechanism-authored objects
+  - `_mechanisms/attentional_v2/` should own:
+    - local buffer and gate state
+    - trigger outputs and controller-facing local pressure state
+    - `working_pressure`
+    - `anchor_memory`
+    - `reflective_summaries`
+    - `knowledge_activations`
+    - `move_history`
+    - `reconsolidation_records`
+    - survey and revisit artifacts
+    - bridge candidates, bridge reasoning, and controller outputs
+    - raw reaction and thought records as the mechanism-authored product truth
+    - full checkpoints, prompt manifests, and diagnostics
+  - Boundary rule:
+    - if a field can be described in mechanism-neutral terms, shared `_runtime/` may own it
+    - if a field requires `attentional_v2` ontology such as trigger, pressure, bridge, reframe, promotion, or anchor-memory semantics, it should remain mechanism-private unless explicitly promoted later
+  - Implementation effect:
+    - build shared runtime envelopes that point to or lightly package original mechanism-authored artifacts rather than replacing them
+    - keep compatibility fields as sidecars, not the primary semantics of the object
+    - keep full checkpoints private and expose checkpoint summaries through shared runtime
+    - keep shared activity envelopes thin and leave deep node traces under mechanism-private diagnostics
+    - treat this boundary as the controlling principle for Phase 1 schema work and later public-surface adaptation
 
 ## Promotion Rule
 - Resolve a question here first when the answer is still implementation-local or provisional.

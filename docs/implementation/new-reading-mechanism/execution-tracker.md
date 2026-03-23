@@ -50,6 +50,7 @@ Update when: status changes, blockers appear, or phases complete.
 - [x] Create stable-doc impact map
 - [x] Decide target mechanism key and naming path
 - [x] Audit current shared parsed-book substrate for sentence-level readiness
+- [x] Resolve the shared `_runtime/` vs `_mechanisms/<mechanism_key>/` boundary
 - [ ] Decide when stable `attentional_v2` doc should be updated from working design
 
 ### Phase 1 - Runtime Foundation And Schemas
@@ -140,3 +141,4 @@ Update when: status changes, blockers appear, or phases complete.
   - Added omission-control docs, a source-block inventory, and seed coverage rows so untracked design areas stay visible.
   - Completed the split source mirror and moved the ledger from source-block seed coverage into an initial atomic expansion layer.
   - Completed the Q2 substrate audit: the current shared `public/book_document.json` shape is paragraph-level, so Phase 2 must add a shared sentence layer before the new mechanism can rely on sentence-order traversal, bounded look-back, and precise source anchoring.
+  - Resolved the Q3 runtime boundary: shared `_runtime/` is a thin compatibility shell, while `attentional_v2` keeps mechanism-authored core reading artifacts and private control machinery under `_mechanisms/attentional_v2/`.
