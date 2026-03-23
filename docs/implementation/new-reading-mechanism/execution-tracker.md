@@ -15,11 +15,11 @@ Update when: status changes, blockers appear, or phases complete.
 - Overall status:
   - `in_progress`
 - Current phase:
-  - `Phase 6: Slow-Cycle Reasoning And Historical Integrity`
+  - `Phase 7: Persistence, Checkpointing, And Resume`
 - Current blockers:
-  - `reflective_promotion`, `reconsolidation`, and `chapter_consolidation` are not implemented yet
-  - reaction-persistence mapping `Q5` is still open before later historical-integrity and public-surface compatibility work can be finalized
-  - public-surface adapter strategy not yet decided
+  - `Q7` is still open: the bounded reread window for `cold_resume` and `reconstitution_resume` is not fixed yet
+  - `warm_resume`, `cold_resume`, and `reconstitution_resume` are not implemented yet
+  - public-surface adapter strategy `Q4` is still open for later Phase 8 shared-surface work
 
 ## Phase Tracker
 | Phase | Status | Exit gate |
@@ -30,7 +30,7 @@ Update when: status changes, blockers appear, or phases complete.
 | Phase 3 - Deterministic intake, gates, and retrieval scaffolding | `done` | trigger pipeline, boundary nomination, candidate generation working |
 | Phase 4 - Core interpretive loop | `done` | `zoom_read`, `meaning_unit_closure`, `controller_decision`, emission gate working |
 | Phase 5 - Knowledge, memory, and bridge resolution | `done` | activation lifecycle, anchor relations, bridge resolution working |
-| Phase 6 - Slow-cycle reasoning and historical integrity | `planned` | promotion, reconsolidation, chapter consolidation working |
+| Phase 6 - Slow-cycle reasoning and historical integrity | `done` | promotion, reconsolidation, chapter consolidation working |
 | Phase 7 - Persistence, checkpointing, and resume | `planned` | warm/cold/reconstitution resume working |
 | Phase 8 - Observability, evaluation, and shared-surface integration | `planned` | event/checkpoint contracts and public adapters working |
 | Phase 9 - Migration, stabilization, and default-cutover readiness | `planned` | acceptance ladder reached and stable docs promoted |
@@ -101,12 +101,15 @@ Update when: status changes, blockers appear, or phases complete.
 - [x] Implement bridge-driven state updates
 
 ### Phase 6 - Slow-Cycle Reasoning And Historical Integrity
-- [ ] Implement `reflective_promotion`
-- [ ] Implement `reconsolidation`
-- [ ] Implement `chapter_consolidation`
-- [ ] Implement backward sweep
-- [ ] Implement cooling and carry-forward writes
-- [ ] Implement optional chapter reaction flow
+- [x] Persist mechanism-authored anchored reaction records as the source of truth
+- [x] Implement `reflective_promotion`
+- [x] Implement `reconsolidation`
+- [x] Implement `chapter_consolidation`
+- [x] Implement backward sweep
+- [x] Implement cooling and carry-forward writes
+- [x] Implement optional chapter reaction flow
+- [x] Project persisted reactions into current compatibility reaction cards without making them primary truth
+- [x] Preserve immutable `reaction_id` identity across reconsolidation and marks reuse
 
 ### Phase 7 - Persistence, Checkpointing, And Resume
 - [ ] Persist reading cursor and local continuity state
@@ -125,6 +128,12 @@ Update when: status changes, blockers appear, or phases complete.
 - [ ] Adapt new mechanism state into shared public surfaces
 - [ ] Verify compatibility with analysis-state and activity surfaces
 - [ ] Verify marks and reaction persistence compatibility
+- [ ] Plan and land additive API/top-layer refinements for mechanism-valued fields such as:
+  - `primary_anchor`
+  - `related_anchors`
+  - reconsolidation lineage
+  - span-based or sentence-based live locus
+  - current move type such as `advance`, `dwell`, `bridge`, or `reframe`
 
 ### Phase 9 - Migration, Stabilization, And Default-Cutover Readiness
 - [ ] Run mechanism-integrity evaluation
@@ -151,3 +160,5 @@ Update when: status changes, blockers appear, or phases complete.
   - Completed the deterministic Phase 3 scaffold: added explicit `local_buffer` and `trigger_state` schemas, sentence-intake and gate helpers, and memory-first bounded look-back candidate generation with focused tests.
   - Completed the Phase 4 interpretive-node layer: added typed `zoom_read`, `meaning_unit_closure`, `controller_decision`, and `reaction_emission` nodes, wired the `zoom -> closure -> controller -> optional emission` handoff, and persisted node-level prompt manifests with explicit prompt versions.
   - Resolved Q6 and completed Phase 5: the mechanism now has a real knowledge-activation lifecycle, explicit rare-search policy handling, typed bridge judgment over deterministic candidates, and durable anchor-memory updates including relations, motif indexes, unresolved-reference indexes, and move-history writes.
+  - Resolved Q5: durable visible thought will be persisted first as mechanism-authored anchored reaction truth, then projected into compatibility reaction cards for current chapter/API/marks surfaces; future top-layer/API refinements are now explicitly captured in the temp docs instead of only in chat.
+  - Completed Phase 6: `attentional_v2` now has slow-cycle node contracts for `reflective_promotion`, `reconsolidation`, and `chapter_consolidation`, a durable `reaction_records.json` source of truth, append-and-link reconsolidation behavior, chapter-end carry-forward helpers, and a mechanism-private chapter-result compatibility projection that preserves original reaction truth while feeding current envelope fields.

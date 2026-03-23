@@ -7,6 +7,7 @@ from src.attentional_v2.schemas import (
     build_empty_anchor_memory,
     build_empty_knowledge_activations,
     build_empty_move_history,
+    build_empty_reaction_records,
     build_empty_reconsolidation_records,
     build_empty_reflective_summaries,
     build_empty_working_pressure,
@@ -14,11 +15,13 @@ from src.attentional_v2.schemas import (
 from src.attentional_v2.state_ops import (
     append_anchor_relation,
     append_move,
+    append_reaction_record,
     append_reconsolidation_record,
     apply_working_pressure_operations,
     replace_policy_section,
     replace_pressure_bucket,
     set_gate_state,
+    supersede_reflective_item,
     upsert_anchor_record,
     upsert_knowledge_activation,
     upsert_reflective_item,
@@ -180,7 +183,7 @@ def test_anchor_and_activation_helpers_upsert_by_id():
     assert activation_state["activations"][0]["status"] == "strong"
 
 
-def test_reflective_move_reconsolidation_and_policy_helpers_append_cleanly():
+def test_reflective_move_reaction_reconsolidation_and_policy_helpers_append_cleanly():
     """The helper layer should support the remaining Phase 1 state stores."""
 
     reflective_state = upsert_reflective_item(
@@ -207,15 +210,43 @@ def test_reflective_move_reconsolidation_and_policy_helpers_append_cleanly():
             "created_at": "2026-03-23T00:00:00Z",
         },
     )
+    reaction_state = append_reaction_record(
+        build_empty_reaction_records(),
+        {
+            "reaction_id": "rx-1",
+            "chapter_id": 1,
+            "chapter_ref": "Chapter 1",
+            "emitted_at_sentence_id": "c1-s4",
+            "type": "discern",
+            "thought": "The later sentence changes the frame.",
+            "primary_anchor": {
+                "anchor_id": "a-1",
+                "sentence_start_id": "c1-s4",
+                "sentence_end_id": "c1-s4",
+                "quote": "The frame changes here.",
+                "locator": {"href": "chapter-1.xhtml", "paragraph_index": 4, "paragraph_start": 4, "paragraph_end": 4},
+            },
+            "related_anchors": [],
+            "created_at": "2026-03-23T00:00:30Z",
+        },
+    )
     reconsolidation_state = append_reconsolidation_record(
         build_empty_reconsolidation_records(),
         {
             "record_id": "rc-1",
             "prior_reaction_id": "rx-1",
             "new_reaction_id": "rx-2",
+            "change_kind": "tightened",
+            "what_changed": "The later sentence makes the earlier claim narrower.",
             "rationale": "later sentence tightened the earlier claim",
             "created_at": "2026-03-23T00:01:00Z",
         },
+    )
+    reflective_state = supersede_reflective_item(
+        reflective_state,
+        bucket="chapter_understandings",
+        item_id="r-1",
+        superseded_by_item_id="r-2",
     )
     policy = replace_policy_section(
         build_default_reader_policy(),
@@ -223,7 +254,8 @@ def test_reflective_move_reconsolidation_and_policy_helpers_append_cleanly():
         payload={"checkpoint_summary_required": True, "reentry_window_sentences": 3},
     )
 
-    assert reflective_state["chapter_understandings"][0]["item_id"] == "r-1"
+    assert reflective_state["chapter_understandings"][0]["status"] == "superseded"
     assert move_state["moves"][0]["move_type"] == "bridge"
+    assert reaction_state["records"][0]["reaction_id"] == "rx-1"
     assert reconsolidation_state["records"][0]["record_id"] == "rc-1"
     assert policy["resume"]["reentry_window_sentences"] == 3

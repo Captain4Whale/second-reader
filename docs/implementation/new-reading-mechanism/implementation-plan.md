@@ -157,11 +157,13 @@ Purpose:
 - Add the slower, historically meaningful parts of the design that govern durable understanding and revision.
 
 Main work:
+- Persist mechanism-authored anchored reaction records as the source of truth for durable visible thought.
 - Implement `reflective_promotion`.
 - Implement `reconsolidation`.
 - Implement `chapter_consolidation`.
 - Implement backward sweep, cooling, carry-forward, and optional chapter reaction.
 - Preserve immutable earlier reactions plus append-and-link reconsolidation behavior.
+- Project persisted reactions into current chapter-result compatibility shapes without letting those wrappers become primary truth.
 
 Depends on:
 - Phase 5
@@ -169,6 +171,7 @@ Depends on:
 Exit criteria:
 - Durable understanding can be promoted without over-promotion.
 - Later reading can revise current understanding without rewriting history.
+- Visible reaction history remains anchored, append-only, and mark-safe.
 - Chapter transitions preserve continuity without carry-forward bloat.
 
 ## Phase 7: Persistence, Checkpointing, And Resume
@@ -205,6 +208,12 @@ Main work:
   - `current_reading_activity`
   - `current_excerpt`
   - current chapter position and compatible live-state fields
+- Additive top-layer/API refinement planning and implementation for mechanism-valued fields that current surfaces cannot fully express yet, including:
+  - reaction `primary_anchor`
+  - `related_anchors`
+  - reconsolidation lineage
+  - span-based or sentence-based live locus
+  - current move type such as `advance`, `dwell`, `bridge`, or `reframe`
 - Verify compatibility with current analysis-state, activity, and marks surfaces.
 
 Depends on:
@@ -213,6 +222,7 @@ Depends on:
 Exit criteria:
 - Every major mechanism move has observable evidence.
 - The mechanism can be evaluated without raw private traces becoming the primary comparison surface.
+- The top layer can expose more of the mechanism's real value without forcing the mechanism back into section-first ontology.
 - Shared product views can consume the new mechanism through adapters instead of ontology leakage.
 
 ## Phase 9: Migration, Stabilization, And Default-Cutover Readiness

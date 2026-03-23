@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 from typing import Literal
 
 from .schemas import (
+    AnchoredReactionRecord,
     AnchorMemoryState,
     AnchorRecord,
     AnchorRelation,
@@ -17,6 +18,7 @@ from .schemas import (
     MoveHistoryState,
     MoveRecord,
     PressureSnapshot,
+    ReactionRecordsState,
     ReaderPolicy,
     ReconsolidationRecord,
     ReconsolidationRecordsState,
@@ -279,6 +281,17 @@ def append_move(state: MoveHistoryState, move: MoveRecord) -> MoveHistoryState:
     return next_state  # type: ignore[return-value]
 
 
+def append_reaction_record(
+    state: ReactionRecordsState,
+    record: AnchoredReactionRecord,
+) -> ReactionRecordsState:
+    """Append one durable anchored reaction in occurrence order."""
+
+    next_state = _touch_state(state)
+    next_state["records"] = [*state.get("records", []), dict(record)]
+    return next_state  # type: ignore[return-value]
+
+
 def append_reconsolidation_record(
     state: ReconsolidationRecordsState,
     record: ReconsolidationRecord,
@@ -287,6 +300,43 @@ def append_reconsolidation_record(
 
     next_state = _touch_state(state)
     next_state["records"] = [*state.get("records", []), dict(record)]
+    return next_state  # type: ignore[return-value]
+
+
+def supersede_reflective_item(
+    state: ReflectiveSummariesState,
+    *,
+    bucket: ReflectiveBucket,
+    item_id: str,
+    superseded_by_item_id: str,
+) -> ReflectiveSummariesState:
+    """Mark one reflective item as superseded without mutating its statement."""
+
+    selected_item_id = str(item_id or "")
+    if not selected_item_id:
+        return state
+
+    bucket_items = [dict(existing) for existing in state.get(bucket, [])]
+    touched = False
+    next_bucket: list[dict[str, object]] = []
+    for item in bucket_items:
+        if str(item.get("item_id", "") or "") == selected_item_id:
+            next_bucket.append(
+                {
+                    **item,
+                    "status": "superseded",
+                    "superseded_by_item_id": str(superseded_by_item_id or ""),
+                }
+            )
+            touched = True
+        else:
+            next_bucket.append(item)
+
+    if not touched:
+        return state
+
+    next_state = _touch_state(state)
+    next_state[bucket] = next_bucket
     return next_state  # type: ignore[return-value]
 
 

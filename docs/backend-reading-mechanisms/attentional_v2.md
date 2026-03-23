@@ -15,12 +15,13 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
 
 ## Purpose And Status
 - `attentional_v2` is the planned future mechanism for a more self-propelled reading mind.
-- It now has a Phase 1-5 scaffold under the shared runtime boundary:
+- It now has a Phase 1-6 scaffold under the shared runtime boundary:
   - shared sentence substrate
   - orientation-only survey artifacts
   - deterministic intake/gate/retrieval helpers
   - Phase 4 interpretive nodes with prompt-version manifests
   - Phase 5 knowledge, bridge, and anchor-memory state helpers
+  - Phase 6 slow-cycle helpers for durable anchored reaction truth, reflective promotion, reconsolidation, chapter consolidation, and mechanism-private compatibility projection
 - It still does not describe live product parse/read behavior today.
 - Its goal is to preserve sentence-level fidelity while shifting the main reasoning unit from fixed sections toward dynamic meaning units and an explicit attention frontier.
 
@@ -87,7 +88,10 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - `meaning_unit_closure`
   - `controller_decision`
   - `reaction_emission`
-- `bridge_resolution`
+  - `bridge_resolution`
+  - `reflective_promotion`
+  - `reconsolidation`
+  - `chapter_consolidation`
 - These nodes are implemented and prompt-versioned, but not yet wired into a live end-to-end read loop.
 - Default call types are:
   - `chapter opening`
@@ -161,6 +165,8 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - `knowledge_use_mode` is distinct from `search_policy_mode`
   - `anchor_memory` keeps first-class typed relations
   - `motif_index`, `unresolved_reference_index`, and `trace_links` are persisted state rather than prompt-only ideas
+  - durable visible thought now persists as mechanism-authored anchored reaction records rather than only as projected current-contract cards
+  - reconsolidation now uses append-and-link history instead of mutating earlier persisted reactions
 - Sentence-level trigger detection should happen continuously during intake.
   - This protects against missing a crucial single sentence even when the main reasoning unit is larger.
 - Retroactive resurfacing is first-class.
@@ -180,6 +186,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
 - Current scaffolded mechanism-private derived artifacts
   - `_mechanisms/attentional_v2/derived/survey_map.json`
   - `_mechanisms/attentional_v2/derived/revisit_index.json`
+  - `_mechanisms/attentional_v2/derived/chapter_result_compatibility/*.json`
 - Current scaffolded mechanism-private runtime artifacts
   - `_mechanisms/attentional_v2/runtime/local_buffer.json`
   - `_mechanisms/attentional_v2/runtime/trigger_state.json`
@@ -188,6 +195,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - `_mechanisms/attentional_v2/runtime/reflective_summaries.json`
   - `_mechanisms/attentional_v2/runtime/knowledge_activations.json`
   - `_mechanisms/attentional_v2/runtime/move_history.json`
+  - `_mechanisms/attentional_v2/runtime/reaction_records.json`
   - `_mechanisms/attentional_v2/runtime/reconsolidation_records.json`
   - `_mechanisms/attentional_v2/runtime/reader_policy.json`
   - `_mechanisms/attentional_v2/runtime/checkpoints/*`
@@ -201,6 +209,9 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - `controller_decision`
   - `reaction_emission`
   - `bridge_resolution`
+  - `reflective_promotion`
+  - `reconsolidation`
+  - `chapter_consolidation`
 - Planned mechanism-private internal artifacts
   - `_mechanisms/attentional_v2/internal/analysis/*`
 - Planned optional exports
@@ -212,6 +223,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - `current_reading_activity`
   - `current_excerpt`
   - `search_query` when applicable
+- Phase 6 now adds a mechanism-private compatibility projector that can shape durable anchored reactions into the current chapter-result envelope while keeping the anchored reaction record as the source of truth.
 - The mechanism's internal locus will not necessarily be a fixed `section`.
   - Adapters must project the current focal span and reading phase into shared public fields without claiming that the private ontology is section-based.
 - When possible, the projected live attention text should reflect:
@@ -220,9 +232,9 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
 
 ## Known Limits / Drift Notes
 - This is a stable design doc, not an implementation doc.
-- Phase 5 bridge and knowledge helpers exist, but the mechanism still does not run as a live parse/read path.
-- The precise storage schemas for frontier state and some slower-cycle outputs are still open implementation details.
-- Reflective promotion, reconsolidation, resume, and public-surface adapters are still later-phase work.
+- Phase 6 slow-cycle helpers exist, but the mechanism still does not run as a live parse/read path.
+- The current compatibility projector is intentionally temporary and paragraph-shaped; richer top-layer fields such as `primary_anchor`, `related_anchors`, reconsolidation lineage, and span-based live locus remain later work.
+- Resume and shared public-surface adapters are still later-phase work.
 - The survey stage must stay coarse enough that it does not become hidden full-book cheating.
 - Retrieval pressure, rare-search gating, and revisit behavior will likely need careful budget control during implementation.
 - Public adapter behavior may need compatibility compromises if existing transport fields remain section-shaped.

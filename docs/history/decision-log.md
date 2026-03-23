@@ -451,3 +451,26 @@ Update when: a major product or engineering decision is made, reversed, or becom
 - `reading-companion-backend/src/attentional_v2/prompts.py`
 - `docs/backend-reading-mechanisms/attentional_v2.md`
 - `docs/implementation/new-reading-mechanism/open-questions.md`
+
+## Entry 22
+**Decision / Inflection**: Make mechanism-authored anchored reactions the durable Phase 6 source of truth, and treat current chapter/API shapes as compatibility projections.
+
+**Period**: March 2026, during Phase 6 of the first `attentional_v2` implementation push.
+
+**Problem**: The new mechanism design says the durable visible object is an anchored reaction, but the existing app still depends on section-shaped chapter results, current reaction cards, integer reaction ids, and mark lookup through persisted chapter payloads. The implementation needed a way to preserve the original thought object without breaking future compatibility work.
+
+**Alternatives considered**: Store only current chapter-result reaction cards and treat them as truth, re-key marks on anchors instead of reactions, or postpone durable reaction truth until after all top-layer/API redesign work.
+
+**Why this path won**: A dual-layer model preserves the product's real value. The mechanism now owns the original anchored reaction record, while the current chapter-result-style envelope becomes a compatibility projection derived from that truth. That keeps history append-only, lets reconsolidation create later linked thoughts instead of mutating earlier ones, and avoids letting current section-shaped transport fields silently redefine the mechanism's ontology.
+
+**What changed in the system**: `attentional_v2` now writes a `reaction_records.json` runtime ledger, has Phase 6 node contracts for `reflective_promotion`, `reconsolidation`, and `chapter_consolidation`, and can project mechanism-authored reactions into a mechanism-private current-contract chapter-result compatibility payload. Reconsolidation now produces append-and-link records, and chapter-end slow-cycle helpers can cool pressure, carry forward live questions, promote reflective summaries, and optionally emit a chapter-level anchored reaction.
+
+**Why it matters later**: This is the historical-integrity boundary for the new mechanism. Future contributors need to know that `section_ref` and similar fields are compatibility sidecars, not the source of truth, and that earlier persisted reactions must remain immutable even when later reading materially changes their meaning.
+
+**Primary evidence**:
+- `reading-companion-backend/src/attentional_v2/slow_cycle.py`
+- `reading-companion-backend/src/attentional_v2/schemas.py`
+- `reading-companion-backend/src/attentional_v2/storage.py`
+- `reading-companion-backend/src/attentional_v2/prompts.py`
+- `docs/backend-reading-mechanisms/attentional_v2.md`
+- `docs/implementation/new-reading-mechanism/open-questions.md`

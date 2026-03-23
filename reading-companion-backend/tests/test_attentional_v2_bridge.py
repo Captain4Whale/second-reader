@@ -140,7 +140,7 @@ def test_bridge_resolution_writes_manifest_and_keeps_search_rare(tmp_path, monke
     assert result["supporting_bridges"][0]["target_sentence_id"] == "c1-s2"
     assert result["search_policy_mode"] == "defer_search"
     assert manifest["prompt_version"] == "attentional_v2.bridge_resolution.v1"
-    assert manifest["promptset_version"] == "attentional_v2-phase5-v1"
+    assert manifest["promptset_version"] == "attentional_v2-phase6-v1"
 
 
 def test_run_phase5_bridge_cycle_materializes_anchor_state(monkeypatch):

@@ -15,7 +15,6 @@ Update when: a question is added, resolved, deferred, or replaced by a stable do
 | ID | Question | Why it matters | Target phase | Current status |
 | --- | --- | --- | --- | --- |
 | Q4 | How should a non-section runtime locus map to the current public surfaces that still expose compatibility fields such as `segment_ref`? | Needed for analysis-state, activity, and chapter/detail compatibility. | Phase 8 | `open` |
-| Q5 | What is the initial reaction persistence mapping from anchored reactions to the current reaction storage and mark flows? | Needed to avoid breaking marks, activity, and chapter surfaces. | Phase 6 / 8 | `open` |
 | Q7 | What exact bounded recent source window should `cold_resume` and `reconstitution_resume` reread? | Needed for honest state reconstruction and predictable runtime cost. | Phase 7 | `open` |
 | Q8 | Which observability fields are required in standard mode versus debug-only mode? | Needed to keep evaluation useful without exploding runtime storage. | Phase 8 | `open` |
 | Q9 | What dataset slices and acceptance thresholds will be used for mechanism-integrity and end-to-end evaluation? | Needed before comparing against `iterator_v1` or considering default promotion. | Phase 8 / 9 | `open` |
@@ -140,6 +139,46 @@ Update when: a question is added, resolved, deferred, or replaced by a stable do
     - implement `defer_search` and `search_now` as explicit state values rather than leaving them implicit or prompt-only
     - allow `search_now` only when narrow gating conditions are met; downgrade ordinary curiosity to `defer_search`
     - keep Phase 5 focused mainly on book-grounded retrieval, anchors, relations, knowledge activations, and honest bridge resolution rather than broadening the mechanism into routine search behavior
+- `Q5` resolved on `2026-03-23`
+  - Decision:
+    - persist `attentional_v2` reactions in two layers, with only one source of truth
+    - the source of truth is the mechanism-authored anchored reaction record under `_mechanisms/attentional_v2/`
+    - current APIs, chapter outputs, marks, and other top-layer surfaces should consume a compatibility projection derived from that original reaction record rather than treating the projection as primary truth
+    - marks should remain keyed by immutable `reaction_id`
+    - reconsolidation must create a new reaction with a new `reaction_id` and link it to the earlier reaction; it must not rewrite the older reaction in place
+  - Why:
+    - the design says the durable visible object is an anchored reaction, not a section-centered wrapper
+    - the current product still expects marks, activity, chapter cards, and previews to resolve through current API-friendly reaction shapes
+    - a dual-layer model preserves the original mechanism-authored thought while allowing compatibility with the existing storage and marks flow
+    - rekeying marks to anchors or mutating older reactions during reconsolidation would weaken historical integrity and break the append-and-link design
+  - Mechanism-authored reaction truth should center on:
+    - `reaction_id`
+    - canonical public reaction type
+    - `primary_anchor`
+    - `thought`
+    - optional `related_anchors`
+    - optional `reconsolidation_record_id`
+    - `created_at`
+  - Compatibility projection should derive:
+    - `anchor_quote` from `primary_anchor`
+    - `target_locator` from `primary_anchor.locator`
+    - `chapter_id` / `chapter_ref`
+    - compatibility `section_ref` / `segment_ref` sidecars
+    - the current reaction-card fields needed by chapter, activity, and marks surfaces
+  - Implementation effect:
+    - Phase 6 should persist original mechanism-authored reaction objects first
+    - Phase 6 / 8 should project those objects into current chapter-result and marks-facing shapes without treating the projected wrapper as primary truth
+    - reconsolidation should append a new anchored reaction and link it to the earlier reaction instead of overwriting history
+    - existing marks should continue to attach to immutable `reaction_id`
+  - Future work captured for later phases:
+    - Q4 remains open because current APIs cannot yet fully express all of the mechanism's valuable product truth
+    - later additive top-layer/API refinement should consider fields such as:
+      - `primary_anchor`
+      - `related_anchors`
+      - reconsolidation lineage such as `reconsolidation_record_id` or `supersedes_reaction_id`
+      - a span-based or sentence-based live locus
+      - current move type such as `advance`, `dwell`, `bridge`, or `reframe`
+    - these additions should be additive and compatibility-preserving rather than destructive contract replacements
 
 ## Promotion Rule
 - Resolve a question here first when the answer is still implementation-local or provisional.

@@ -1,4 +1,4 @@
-"""Prompt bundle for attentional_v2 Phase 4-5 interpretive nodes."""
+"""Prompt bundle for attentional_v2 Phase 4-6 interpretive nodes."""
 
 from __future__ import annotations
 
@@ -7,17 +7,20 @@ from dataclasses import dataclass
 from src.prompts.shared import LANGUAGE_OUTPUT_CONTRACT
 
 
-ATTENTIONAL_V2_PROMPTSET_VERSION = "attentional_v2-phase5-v1"
+ATTENTIONAL_V2_PROMPTSET_VERSION = "attentional_v2-phase6-v1"
 ZOOM_READ_PROMPT_VERSION = "attentional_v2.zoom_read.v1"
 MEANING_UNIT_CLOSURE_PROMPT_VERSION = "attentional_v2.meaning_unit_closure.v1"
 CONTROLLER_DECISION_PROMPT_VERSION = "attentional_v2.controller_decision.v1"
 REACTION_EMISSION_PROMPT_VERSION = "attentional_v2.reaction_emission.v1"
 BRIDGE_RESOLUTION_PROMPT_VERSION = "attentional_v2.bridge_resolution.v1"
+REFLECTIVE_PROMOTION_PROMPT_VERSION = "attentional_v2.reflective_promotion.v1"
+RECONSOLIDATION_PROMPT_VERSION = "attentional_v2.reconsolidation.v1"
+CHAPTER_CONSOLIDATION_PROMPT_VERSION = "attentional_v2.chapter_consolidation.v1"
 
 
 @dataclass(frozen=True)
 class AttentionalV2PromptSet:
-    """Typed prompt bundle for attentional_v2 Phase 4-5 nodes."""
+    """Typed prompt bundle for attentional_v2 Phase 4-6 nodes."""
 
     language_output_contract: str
     promptset_version: str
@@ -36,6 +39,15 @@ class AttentionalV2PromptSet:
     bridge_resolution_version: str
     bridge_resolution_system: str
     bridge_resolution_prompt: str
+    reflective_promotion_version: str
+    reflective_promotion_system: str
+    reflective_promotion_prompt: str
+    reconsolidation_version: str
+    reconsolidation_system: str
+    reconsolidation_prompt: str
+    chapter_consolidation_version: str
+    chapter_consolidation_system: str
+    chapter_consolidation_prompt: str
 
 
 ATTENTIONAL_V2_PROMPTS = AttentionalV2PromptSet(
@@ -286,5 +298,168 @@ Return JSON:
   "search_policy_mode": "no_search",
   "search_trigger": "none",
   "search_query": ""
+}""",
+    reflective_promotion_version=REFLECTIVE_PROMOTION_PROMPT_VERSION,
+    reflective_promotion_system="""You are the reflective-promotion node for a text-grounded reading mechanism.
+
+Your job is to decide whether a candidate understanding has earned promotion into durable reflective summaries.
+
+Rules:
+- Promote only when the candidate is source-supported and durable enough to matter beyond the immediate local moment.
+- Do not silently overwrite older reflective meaning.
+- If the new item replaces an older reflective item, supersede it explicitly.
+- Return JSON only.""",
+    reflective_promotion_prompt="""Structural frame:
+{structural_frame}
+
+Chapter reference:
+{chapter_ref}
+
+Promotion candidate:
+{candidate}
+
+Current reflective state:
+{current_reflective_state}
+
+Policy snapshot:
+{policy_snapshot}
+
+Output language contract:
+"""
+    + LANGUAGE_OUTPUT_CONTRACT
+    + """
+
+Return JSON:
+{
+  "decision": "withhold",
+  "reason": "<brief reason>",
+  "target_bucket": "chapter_understandings",
+  "reflective_item": {
+    "item_id": "<optional stable id>",
+    "statement": "<durable reflective statement>",
+    "support_anchor_ids": [],
+    "confidence_band": "working",
+    "promoted_from": "chapter_sweep",
+    "status": "active"
+  },
+  "supersede_bucket": "",
+  "supersede_item_id": "",
+  "state_operations": []
+}""",
+    reconsolidation_version=RECONSOLIDATION_PROMPT_VERSION,
+    reconsolidation_system="""You are the reconsolidation node for a text-grounded reading mechanism.
+
+Your job is to decide whether a later reading moment materially changes the meaning of an earlier persisted reaction.
+
+Rules:
+- The earlier persisted reaction is immutable.
+- Only reconsolidate when the interpretive change is material rather than cosmetic.
+- The later thought must stay independently anchored to the later reading moment.
+- Do not search, bridge, or choose the next move here.
+- Return JSON only.""",
+    reconsolidation_prompt="""Structural frame:
+{structural_frame}
+
+Earlier persisted reaction:
+{earlier_reaction}
+
+Earlier anchor context:
+{earlier_anchor_context}
+
+Later trigger anchor:
+{later_anchor}
+
+Current understanding snapshot:
+{current_understanding_snapshot}
+
+Policy snapshot:
+{policy_snapshot}
+
+Output language contract:
+"""
+    + LANGUAGE_OUTPUT_CONTRACT
+    + """
+
+Return JSON:
+{
+  "decision": "keep_prior",
+  "reason": "<brief reason>",
+  "reconsolidation_record": {
+    "record_id": "",
+    "change_kind": "reframed",
+    "what_changed": "<what materially changed>",
+    "rationale": "<why the change matters>"
+  },
+  "later_reaction": {
+    "type": "discern",
+    "anchor_quote": "<later anchor quote>",
+    "content": "<later anchored thought>",
+    "related_anchor_quotes": [],
+    "search_query": "",
+    "search_results": []
+  },
+  "state_updates": []
+}""",
+    chapter_consolidation_version=CHAPTER_CONSOLIDATION_PROMPT_VERSION,
+    chapter_consolidation_system="""You are the chapter-consolidation node for a text-grounded reading mechanism.
+
+Your job is to perform a chapter-end backward sweep and propose the durable updates that should happen before the next chapter.
+
+Rules:
+- Chapter end is a chance to cool, sweep backward, and prepare promotion; it is not permission for false closure.
+- Do not directly promote reflective summaries here; return promotion candidates instead.
+- Do not rewrite earlier persisted reactions.
+- Do not read future chapter text or search.
+- Return JSON only.""",
+    chapter_consolidation_prompt="""Structural frame:
+{structural_frame}
+
+Chapter reference:
+{chapter_ref}
+
+Meaning units in chapter:
+{meaning_units_in_chapter}
+
+Working pressure snapshot:
+{working_pressure_snapshot}
+
+Anchor-memory chapter slice:
+{anchor_memory_chapter_slice}
+
+Reflective summaries snapshot:
+{reflective_summaries_snapshot}
+
+Knowledge activations snapshot:
+{knowledge_activations_snapshot}
+
+Persisted reactions in chapter:
+{persisted_reactions_in_chapter}
+
+Policy snapshot:
+{policy_snapshot}
+
+Output language contract:
+"""
+    + LANGUAGE_OUTPUT_CONTRACT
+    + """
+
+Return JSON:
+{
+  "chapter_ref": "<chapter reference>",
+  "backward_sweep": [],
+  "cooling_operations": [],
+  "promotion_candidates": [],
+  "anchor_status_updates": [],
+  "knowledge_activation_updates": [],
+  "cross_chapter_carry_forward": [],
+  "chapter_summary_note": "<brief note>",
+  "optional_chapter_reaction": {
+    "type": "retrospect",
+    "anchor_quote": "<chapter-end anchor quote>",
+    "content": "<optional chapter-level anchored thought>",
+    "related_anchor_quotes": [],
+    "search_query": "",
+    "search_results": []
+  }
 }""",
 )

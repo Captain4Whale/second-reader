@@ -15,6 +15,7 @@ from src.attentional_v2.storage import (
     knowledge_activations_file,
     local_buffer_file,
     move_history_file,
+    reaction_records_file,
     reader_policy_file,
     reflective_summaries_file,
     reconsolidation_records_file,
@@ -29,8 +30,8 @@ from src.reading_runtime.artifacts import checkpoint_summary_file, mechanism_man
 from src.reading_runtime.shell_state import load_runtime_shell
 
 
-def test_attentional_v2_initialization_writes_phase1_artifacts(tmp_path):
-    """The Phase 1 scaffold should write the shared shell and private state files."""
+def test_attentional_v2_initialization_writes_phase6_artifacts(tmp_path):
+    """The Phase 1-6 scaffold should write the shared shell and private state files."""
 
     output_dir = tmp_path / "output" / "demo-book"
 
@@ -75,6 +76,9 @@ def test_attentional_v2_initialization_writes_phase1_artifacts(tmp_path):
     moves = json.loads(move_history_file(output_dir).read_text(encoding="utf-8"))
     assert moves["moves"] == []
 
+    reaction_records = json.loads(reaction_records_file(output_dir).read_text(encoding="utf-8"))
+    assert reaction_records["records"] == []
+
     reconsolidation = json.loads(reconsolidation_records_file(output_dir).read_text(encoding="utf-8"))
     assert reconsolidation["records"] == []
 
@@ -93,7 +97,7 @@ def test_attentional_v2_initialization_writes_phase1_artifacts(tmp_path):
     assert result["artifact_map"]["working_pressure"].endswith("working_pressure.json")
 
 
-def test_attentional_v2_adapter_is_honest_about_phase1_scope():
+def test_attentional_v2_adapter_is_honest_about_phase6_scope():
     """The adapter should not claim parse/read behavior before later phases land."""
 
     mechanism = AttentionalV2Mechanism()

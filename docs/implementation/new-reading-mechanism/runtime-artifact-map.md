@@ -41,6 +41,8 @@ Update when: the artifact layout, ownership boundary, or shell-envelope rule cha
   - planned orientation artifact
 - `_mechanisms/attentional_v2/derived/revisit_index.json`
   - planned retrieval index artifact
+- `_mechanisms/attentional_v2/derived/chapter_result_compatibility/*.json`
+  - mechanism-private current-contract compatibility projections built from original anchored reaction truth
 
 ### Runtime State
 - `_mechanisms/attentional_v2/runtime/local_buffer.json`
@@ -50,6 +52,7 @@ Update when: the artifact layout, ownership boundary, or shell-envelope rule cha
 - `_mechanisms/attentional_v2/runtime/reflective_summaries.json`
 - `_mechanisms/attentional_v2/runtime/knowledge_activations.json`
 - `_mechanisms/attentional_v2/runtime/move_history.json`
+- `_mechanisms/attentional_v2/runtime/reaction_records.json`
 - `_mechanisms/attentional_v2/runtime/reconsolidation_records.json`
 - `_mechanisms/attentional_v2/runtime/reader_policy.json`
 - `_mechanisms/attentional_v2/runtime/checkpoints/*.json`
@@ -69,4 +72,4 @@ Update when: the artifact layout, ownership boundary, or shell-envelope rule cha
 ## Phase 1 Notes
 - Phase 1 creates the artifact map and default state files.
 - Phase 1 does not yet claim that `attentional_v2` parse or read execution is complete.
-- Phase 2 and later phases will fill these artifacts with real runtime behavior.
+- Later phases fill these artifacts with real runtime behavior; Phase 6 now adds durable reaction truth and mechanism-private chapter-result compatibility projections without yet making `attentional_v2` a live parse/read path.

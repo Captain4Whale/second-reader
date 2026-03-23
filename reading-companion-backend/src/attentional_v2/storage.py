@@ -17,6 +17,7 @@ from .schemas import (
     build_empty_local_buffer,
     build_empty_knowledge_activations,
     build_empty_move_history,
+    build_empty_reaction_records,
     build_empty_reconsolidation_records,
     build_empty_reflective_summaries,
     build_empty_trigger_state,
@@ -117,6 +118,12 @@ def move_history_file(output_dir: Path) -> Path:
     return runtime_dir(output_dir) / "move_history.json"
 
 
+def reaction_records_file(output_dir: Path) -> Path:
+    """Return the durable anchored-reaction ledger path."""
+
+    return runtime_dir(output_dir) / "reaction_records.json"
+
+
 def reconsolidation_records_file(output_dir: Path) -> Path:
     """Return the reconsolidation-records path."""
 
@@ -149,6 +156,12 @@ def prompt_manifest_file(output_dir: Path, node_name: str) -> Path:
     return prompt_manifests_dir(output_dir) / f"{slug}.json"
 
 
+def chapter_result_compatibility_file(output_dir: Path, chapter_id: int) -> Path:
+    """Return one mechanism-private current-contract compatibility chapter payload path."""
+
+    return derived_dir(output_dir) / "chapter_result_compatibility" / f"chapter-{int(chapter_id):03d}.json"
+
+
 def artifact_map(output_dir: Path) -> dict[str, str]:
     """Return the Phase 1 artifact map relative to one output directory."""
 
@@ -164,8 +177,10 @@ def artifact_map(output_dir: Path) -> dict[str, str]:
         "reflective_summaries": str(reflective_summaries_file(output_dir).relative_to(output_dir)),
         "knowledge_activations": str(knowledge_activations_file(output_dir).relative_to(output_dir)),
         "move_history": str(move_history_file(output_dir).relative_to(output_dir)),
+        "reaction_records": str(reaction_records_file(output_dir).relative_to(output_dir)),
         "reconsolidation_records": str(reconsolidation_records_file(output_dir).relative_to(output_dir)),
         "reader_policy": str(reader_policy_file(output_dir).relative_to(output_dir)),
+        "chapter_result_compatibility": str(chapter_result_compatibility_file(output_dir, 1).parent.relative_to(output_dir)),
         "full_checkpoints": str(checkpoints_dir(output_dir).relative_to(output_dir)),
         "event_stream": str(event_stream_file(output_dir).relative_to(output_dir)),
         "prompt_manifests": str(prompt_manifests_dir(output_dir).relative_to(output_dir)),
@@ -251,6 +266,7 @@ def initialize_artifact_tree(
         build_empty_knowledge_activations(mechanism_version=mechanism_version),
     )
     save_json(move_history_file(output_dir), build_empty_move_history(mechanism_version=mechanism_version))
+    save_json(reaction_records_file(output_dir), build_empty_reaction_records(mechanism_version=mechanism_version))
     save_json(
         reconsolidation_records_file(output_dir),
         build_empty_reconsolidation_records(mechanism_version=mechanism_version),

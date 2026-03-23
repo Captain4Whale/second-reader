@@ -16,6 +16,8 @@ StateOperationType = Literal["create", "update", "cool", "drop", "retain_anchor"
 ClosureDecision = Literal["continue", "close"]
 ReactionEmissionDecision = Literal["emit", "withhold"]
 BridgeResolutionDecision = Literal["bridge", "decline"]
+ReflectivePromotionDecision = Literal["promote", "withhold"]
+ReconsolidationDecision = Literal["reconsolidate", "keep_prior"]
 KnowledgeUseMode = Literal["book_grounded_only", "book_grounded_plus_prior_knowledge"]
 SearchPolicyMode = Literal["no_search", "defer_search", "search_now"]
 SearchTrigger = Literal["none", "identity_critical_reference", "blocking_allusion", "genuine_curiosity", "ornamental_curiosity"]
@@ -34,8 +36,8 @@ TriggerSignalKind = Literal[
 ]
 
 ATTENTIONAL_V2_SCHEMA_VERSION = 1
-ATTENTIONAL_V2_MECHANISM_VERSION = "attentional_v2-phase1"
-ATTENTIONAL_V2_POLICY_VERSION = "attentional_v2-policy-phase1"
+ATTENTIONAL_V2_MECHANISM_VERSION = "attentional_v2-phase6"
+ATTENTIONAL_V2_POLICY_VERSION = "attentional_v2-policy-phase6"
 
 
 def _timestamp() -> str:
@@ -48,6 +50,7 @@ class WorkingPressureItem(TypedDict, total=False):
     """One hot local item carried in the current pressure state."""
 
     item_id: str
+    bucket: str
     kind: str
     statement: str
     support_anchor_ids: list[str]
@@ -163,6 +166,35 @@ class ReactionCandidate(TypedDict, total=False):
     search_results: list[SearchHit]
 
 
+class ReactionAnchor(TypedDict, total=False):
+    """One persisted source anchor embedded directly into a durable visible reaction."""
+
+    anchor_id: str
+    sentence_start_id: str
+    sentence_end_id: str
+    quote: str
+    locator: TextLocator
+
+
+class AnchoredReactionRecord(TypedDict, total=False):
+    """Mechanism-authored durable visible thought with source-preserving anchors."""
+
+    reaction_id: str
+    chapter_id: int
+    chapter_ref: str
+    emitted_at_sentence_id: str
+    type: ReactionType
+    thought: str
+    primary_anchor: ReactionAnchor
+    related_anchors: list[ReactionAnchor]
+    reconsolidation_record_id: str
+    supersedes_reaction_id: str
+    compatibility_section_ref: str
+    search_query: str
+    search_results: list[SearchHit]
+    created_at: str
+
+
 class ZoomReadResult(TypedDict, total=False):
     """Structured result from the sentence-level zoom node."""
 
@@ -266,6 +298,31 @@ class ReflectiveItem(TypedDict, total=False):
     confidence_band: str
     promoted_from: str
     status: str
+    superseded_by_item_id: str
+    chapter_ref: str
+
+
+class ReflectivePromotionCandidate(TypedDict, total=False):
+    """One candidate statement that may earn promotion into reflective summaries."""
+
+    candidate_id: str
+    statement: str
+    support_anchor_ids: list[str]
+    promoted_from: str
+    target_bucket: str
+    rationale: str
+
+
+class ReflectivePromotionResult(TypedDict, total=False):
+    """Structured result from the reflective-promotion node."""
+
+    decision: ReflectivePromotionDecision
+    reason: str
+    target_bucket: str
+    reflective_item: ReflectiveItem | None
+    supersede_bucket: str
+    supersede_item_id: str
+    state_operations: list[StateOperation]
 
 
 class ReflectiveSummariesState(TypedDict, total=False):
@@ -333,12 +390,23 @@ class MoveHistoryState(TypedDict, total=False):
     moves: list[MoveRecord]
 
 
+class ReactionRecordsState(TypedDict, total=False):
+    """Append-only mechanism-owned durable reaction history."""
+
+    schema_version: int
+    mechanism_version: str
+    updated_at: str
+    records: list[AnchoredReactionRecord]
+
+
 class ReconsolidationRecord(TypedDict, total=False):
     """Append-only record of later reinterpretation linked to earlier thought."""
 
     record_id: str
     prior_reaction_id: str
     new_reaction_id: str
+    change_kind: str
+    what_changed: str
     rationale: str
     created_at: str
 
@@ -350,6 +418,30 @@ class ReconsolidationRecordsState(TypedDict, total=False):
     mechanism_version: str
     updated_at: str
     records: list[ReconsolidationRecord]
+
+
+class ReconsolidationResult(TypedDict, total=False):
+    """Structured result from the reconsolidation node."""
+
+    decision: ReconsolidationDecision
+    reason: str
+    reconsolidation_record: ReconsolidationRecord | None
+    later_reaction: AnchoredReactionRecord | None
+    state_updates: list[StateOperation]
+
+
+class ChapterConsolidationResult(TypedDict, total=False):
+    """Structured chapter-end sweep and carry-forward result."""
+
+    chapter_ref: str
+    backward_sweep: list[dict[str, object]]
+    cooling_operations: list[StateOperation]
+    promotion_candidates: list[ReflectivePromotionCandidate]
+    anchor_status_updates: list[dict[str, object]]
+    knowledge_activation_updates: list[StateOperation]
+    cross_chapter_carry_forward: list[WorkingPressureItem]
+    chapter_summary_note: str
+    optional_chapter_reaction: ReactionCandidate | None
 
 
 class ReaderPolicy(TypedDict, total=False):
@@ -481,6 +573,20 @@ def build_empty_move_history(*, mechanism_version: str = ATTENTIONAL_V2_MECHANIS
         "mechanism_version": mechanism_version,
         "updated_at": _timestamp(),
         "moves": [],
+    }
+
+
+def build_empty_reaction_records(
+    *,
+    mechanism_version: str = ATTENTIONAL_V2_MECHANISM_VERSION,
+) -> ReactionRecordsState:
+    """Return the default durable anchored-reaction state."""
+
+    return {
+        "schema_version": ATTENTIONAL_V2_SCHEMA_VERSION,
+        "mechanism_version": mechanism_version,
+        "updated_at": _timestamp(),
+        "records": [],
     }
 
 
