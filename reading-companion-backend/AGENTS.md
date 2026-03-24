@@ -33,6 +33,7 @@ Update when: backend-local constraints, recurring pitfalls, or stable implementa
 - Backend-wide infrastructure must not depend on `src.iterator_reader.models`; shared code should import neutral types from `src.reading_core/`.
 - Treat `state/uploads/` as transient user-upload intake, not as the durable source library for manually curated books.
 - Treat `state/library_sources/` as the local durable source-library territory for repeated backend imports, demos, and evaluation preparation.
+- Treat `state/eval_local_datasets/` as the local-only mirror for evaluation packages derived from private books; use it when excerpt/chapter packages should not be checked into the repo.
 - Treat `eval/datasets/` and `eval/manifests/` as evaluation-package territory; do not use transient uploads as the benchmark corpus by default.
 - Avoid new abstractions unless they clearly improve the current sequential workflow or future multi-mechanism comparability.
 

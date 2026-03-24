@@ -53,7 +53,7 @@ Update when: the design capture, plan, tracker, or open-question set changes dur
   - separates what curation can solve from what the source books must already satisfy
 - `evaluation-dataset-layout.md`
   - concrete family-first dataset-package design for the bilingual `attentional_v2` benchmark build
-  - defines package ids, folder roots, and the split between tracked datasets and tracked manifests
+  - defines package ids, folder roots, and the split between tracked datasets, tracked manifests, and local-only private dataset packages
 - `stable-doc-impact.md`
   - map of which long-term docs must be updated when each workstream lands
 - `runtime-artifact-map.md`

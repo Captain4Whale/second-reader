@@ -201,7 +201,7 @@ For the real corpus-building step, the most helpful input is:
 ## Source-Book Organization
 We should organize books by role and lifecycle, not by "all EPUBs in one folder."
 
-### Four storage territories
+### Five storage territories
 1. `transient_uploads`
 - Purpose:
   - raw user-upload intake
@@ -252,6 +252,17 @@ We should organize books by role and lifecycle, not by "all EPUBs in one folder.
   - excerpt datasets can be repo-tracked
   - full-book evaluation corpus should usually be referenced by manifest and local path, not duplicated into runtime output directories
 
+5. `private_local_evaluation_packages`
+- Purpose:
+  - local-only excerpt, chapter, runtime, or compatibility packages derived from private or copyrighted books
+- Recommended home:
+  - `reading-companion-backend/state/eval_local_datasets/`
+- Rules:
+  - mirror the same family-first package layout used under `reading-companion-backend/eval/datasets/`
+  - keep text-bearing private packages local instead of checking them into the repo
+  - point to them through tracked manifests under `reading-companion-backend/eval/manifests/local_refs/`
+  - use this territory when the source books are valuable for evaluation but not appropriate for repo-tracked datasets
+
 ### Core identity rule
 We should keep these identities separate:
 - `source_asset`
@@ -301,6 +312,9 @@ For durable library and evaluation use, each source book should eventually carry
 - Evaluation corpus:
   - build it from screened durable sources
   - do not treat ad hoc runtime outputs or uploads as the benchmark corpus
+- Private or copyrighted evaluation packages:
+  - build them under `state/eval_local_datasets/`
+  - keep only manifests and references tracked in the repo
 - Repo fixtures:
   - keep minimal and intentional under `tests/fixtures/` or tracked `eval/datasets/`
 

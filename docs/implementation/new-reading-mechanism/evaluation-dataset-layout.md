@@ -10,6 +10,7 @@ Update when: package naming changes, new dataset families are added, or the bili
   - family-first dataset layout under `reading-companion-backend/eval/datasets/`
 - Current project rule:
   - build the first `attentional_v2` evaluation packages inside that stable family-first layout
+  - mirror the same family-first structure under `reading-companion-backend/state/eval_local_datasets/` whenever the package contains copyrighted or otherwise private source text
 
 ## Family Mapping
 ### `excerpt_cases`
@@ -124,6 +125,7 @@ The following belong in `reading-companion-backend/eval/manifests/`, not inside 
 - corpus selection manifests
 - bilingual split manifests
 - local-path reference files for private/local corpora
+- local package reference files for private/local dataset packages
 
 ## Bilingual Rule
 - English and Chinese stay in separate tracked packages.
@@ -137,6 +139,13 @@ The project should have these family roots available now:
 - `reading-companion-backend/eval/datasets/runtime_fixtures/`
 - `reading-companion-backend/eval/datasets/compatibility_fixtures/`
 - `reading-companion-backend/eval/datasets/templates/`
+
+The local-only mirror should also exist for private packages:
+- `reading-companion-backend/state/eval_local_datasets/excerpt_cases/`
+- `reading-companion-backend/state/eval_local_datasets/chapter_corpora/`
+- `reading-companion-backend/state/eval_local_datasets/runtime_fixtures/`
+- `reading-companion-backend/state/eval_local_datasets/compatibility_fixtures/`
+- `reading-companion-backend/state/eval_local_datasets/templates/`
 
 The manifest side should have these roots available now:
 - `reading-companion-backend/eval/manifests/source_books/`
@@ -172,3 +181,43 @@ Important status nuance:
 - runtime fixtures are real seed inputs grounded in selected chapter units
 - excerpt cases are auto-extracted seed inputs and still require later manual curation before benchmark promotion
 - compatibility fixtures are spec-level audit inputs and still require live runtime outputs to become fully materialized audit fixtures
+
+## Private Downloads Supplement Status
+The first private-local supplement sourced from the user's Downloads EPUB pool has now landed outside the tracked dataset tree:
+
+- tracked manifests:
+  - `reading-companion-backend/eval/manifests/source_books/attentional_v2_private_downloads_screen_v1.json`
+  - `reading-companion-backend/eval/manifests/local_refs/attentional_v2_private_downloads_seed_v1.json`
+  - `reading-companion-backend/eval/manifests/corpora/attentional_v2_private_downloads_bilingual_v1.json`
+  - `reading-companion-backend/eval/manifests/splits/attentional_v2_private_downloads_bilingual_v1.json`
+- promoted private source books:
+  - `reading-companion-backend/state/library_sources/en/private/`
+  - `reading-companion-backend/state/library_sources/zh/private/`
+- local-only package mirror:
+  - `reading-companion-backend/state/eval_local_datasets/chapter_corpora/attentional_v2_private_chapters_en_v1/`
+  - `reading-companion-backend/state/eval_local_datasets/chapter_corpora/attentional_v2_private_chapters_zh_v1/`
+  - `reading-companion-backend/state/eval_local_datasets/runtime_fixtures/attentional_v2_private_runtime_en_v1/`
+  - `reading-companion-backend/state/eval_local_datasets/runtime_fixtures/attentional_v2_private_runtime_zh_v1/`
+  - `reading-companion-backend/state/eval_local_datasets/excerpt_cases/attentional_v2_private_excerpt_en_v1/`
+  - `reading-companion-backend/state/eval_local_datasets/excerpt_cases/attentional_v2_private_excerpt_zh_v1/`
+  - `reading-companion-backend/state/eval_local_datasets/compatibility_fixtures/attentional_v2_private_compat_shared_v1/`
+
+Current counts:
+- `9` promoted private source books
+- `14` English chapter rows
+- `4` Chinese chapter rows
+- `36` English runtime fixtures
+- `6` Chinese runtime fixtures
+- `24` English excerpt cases
+- `4` Chinese excerpt cases
+- `18` shared compatibility fixture specs
+
+Important status nuance:
+- these private-local packages are structurally real and grounded in canonical parse
+- their text-bearing payloads intentionally remain outside the tracked repo dataset tree
+- the private excerpt cases are still auto-extracted seed cases and still require later manual curation before benchmark promotion
+
+## Private Local Supplement Rule
+- Use the tracked `eval/datasets/` tree for public-domain or otherwise repo-safe packages.
+- Use `state/eval_local_datasets/` for packages derived from private books, including local excerpt packages that carry copyrighted source text.
+- Keep the family roots, package contract, and manifest shape aligned across both trees so later evaluation code can treat them as parallel package territories.

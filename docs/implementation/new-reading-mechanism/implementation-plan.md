@@ -284,11 +284,13 @@ Main work:
 - Curate the tracked `attentional_v2` benchmark datasets under `reading-companion-backend/eval/datasets/` before any real end-to-end comparison.
   - Local mechanism-integrity datasets may embed the excerpt text they need directly.
   - Chapter-level / end-to-end comparison must use an intentional evaluation corpus rather than transient runtime files from `output/` or `state/uploads/`.
+  - When the source books are private or copyrighted, mirror the same family-first package layout under `reading-companion-backend/state/eval_local_datasets/` and reference those local packages through tracked manifests.
 - Build the dataset package by question family rather than by convenience:
   - excerpt dataset for local attribution questions
   - chapter corpus for cross-mechanism span/end-to-end comparison
   - runtime/resume fixtures for resume and hard-gate questions
   - persisted compatibility fixtures for migration-surface audits
+- Screen and promote high-signal private local books into `state/library_sources/` when they improve corpus quality, then keep their text-bearing packages in the local-only package mirror instead of the tracked dataset tree.
 - Apply the source-book standards from `evaluation-corpus-requirements.md` before accepting books into the benchmark pool.
 - Run mechanism-integrity and end-to-end evaluation passes.
 - Compare against `iterator_v1` on shared evaluation frame.

@@ -1,0 +1,40 @@
+{
+  "manifest_id": "attentional_v2_private_downloads_bilingual_v1_splits",
+  "description": "Split definitions for the private Downloads-based attentional_v2 seed supplement.",
+  "splits": {
+    "private_candidate_pool": {
+      "en": [
+        "antifragile_private_en",
+        "fooled_by_randomness_private_en",
+        "skin_in_the_game_private_en",
+        "black_swan_private_en",
+        "value_of_others_private_en",
+        "making_of_a_manager_private_en",
+        "inspired_private_en",
+        "chance_private_en",
+        "cracking_pm_career_private_en",
+        "cracking_pm_interview_private_en",
+        "decode_and_conquer_private_en"
+      ],
+      "zh": [
+        "biji_de_fangfa_private_zh",
+        "fooled_by_randomness_private_zh"
+      ]
+    },
+    "selected_private_seed": {
+      "en": [
+        "antifragile_private_en",
+        "fooled_by_randomness_private_en",
+        "skin_in_the_game_private_en",
+        "value_of_others_private_en",
+        "making_of_a_manager_private_en",
+        "inspired_private_en",
+        "chance_private_en"
+      ],
+      "zh": [
+        "biji_de_fangfa_private_zh",
+        "fooled_by_randomness_private_zh"
+      ]
+    }
+  }
+}

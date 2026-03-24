@@ -78,6 +78,12 @@ Datasets and manifests are different:
   - source-book inventories
   - corpus selection manifests
   - split definitions
-  - local-path reference files for private/local corpora
+  - local-path reference files for private/local corpora and local-only dataset packages
+
+## Private-Local Mirror
+- When a package contains copyrighted or otherwise private source text, keep it out of this tracked tree.
+- Put the package instead under:
+  - `state/eval_local_datasets/<family>/<dataset_id>/`
+- Keep the same family roots and package contract there so tracked and local packages stay structurally comparable.
 
 Do not duplicate source-book inventory metadata into every dataset package.

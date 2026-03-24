@@ -62,9 +62,12 @@ Use `docs/backend-reading-mechanism.md` when the question is about shared mechan
 - `state/library_sources/`
   - durable local source-library territory for manually curated backend books
   - suitable for repeated imports, demos, and evaluation preparation
+- `state/eval_local_datasets/`
+  - local-only evaluation-package territory for excerpt, chapter, runtime, or compatibility packages derived from private books
+  - should mirror the family-first benchmark layout without checking copyrighted or otherwise private source text into the repo
 - `eval/datasets/` and `eval/manifests/`
   - evaluation-package territory
-  - tracked benchmark definitions and corpus manifests belong here rather than in transient uploads
+  - tracked benchmark definitions, public-safe datasets, and corpus manifests belong here rather than in transient uploads
 
 Promotion from user upload into the durable source library or evaluation corpus should be explicit rather than automatic.
 

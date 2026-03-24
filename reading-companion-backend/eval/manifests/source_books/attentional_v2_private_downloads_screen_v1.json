@@ -1,0 +1,583 @@
+{
+  "manifest_id": "attentional_v2_private_downloads_screen_v1",
+  "description": "Tracked screening inventory for private local EPUB candidates sourced from the user's Downloads folder.",
+  "books": [
+    {
+      "source_id": "antifragile_private_en",
+      "title": "Antifragile",
+      "author": "Nassim Nicholas Taleb",
+      "language": "en",
+      "download_filename": "Antifragile (Nassim Nicholas Taleb) (Z-Library).epub",
+      "promoted_local_path": "en/private/antifragile.epub",
+      "screening_status": "promote_seed",
+      "storage_policy": "private-local",
+      "origin": "manual-local-download",
+      "type_tags": [
+        "essayistic",
+        "argumentative",
+        "philosophical",
+        "modern_nonfiction"
+      ],
+      "suitability_notes": [
+        "Good modern English conceptual-pressure book for local meaning-unit and bridge evaluation.",
+        "Useful for distinction, reversal, and reconsolidation-worthy later reinterpretation."
+      ],
+      "download_sha256": "2df80ff9f39d226ff0b1ea99be5c63502604e22be93aa723397ef4afbe54c4f9",
+      "download_file_size": 10130653,
+      "relative_local_path": "state/library_sources/en/private/antifragile.epub",
+      "local_sha256": "2df80ff9f39d226ff0b1ea99be5c63502604e22be93aa723397ef4afbe54c4f9",
+      "local_file_size": 10130653,
+      "output_dir": "output/antifragile",
+      "detected_book_language": "en",
+      "output_language": "en",
+      "chapter_count": 268,
+      "sentence_count_total": 76662,
+      "median_chapter_sentences": 249,
+      "median_chapter_paragraphs": 80,
+      "screening_first_titles": [
+        "Chapter Summaries and Map",
+        "Prologue",
+        "Appendix: The Triad, or A Map of the World and Things Along the Three Properties",
+        "Book I: The Antifragile: An Introduction",
+        "Chapter 1. Between Damocles and Hydra"
+      ],
+      "selected_seed_chapter_numbers": [
+        0,
+        0
+      ],
+      "selected_seed_chapter_ids": [
+        "6",
+        "140"
+      ]
+    },
+    {
+      "source_id": "fooled_by_randomness_private_en",
+      "title": "Fooled by Randomness",
+      "author": "Nassim Nicholas Taleb",
+      "language": "en",
+      "download_filename": "Fooled by Randomness The Hidden Role of Chance in Life and in the Markets (Nassim Nicholas Taleb) (Z-Library).epub",
+      "promoted_local_path": "en/private/fooled_by_randomness.epub",
+      "screening_status": "promote_seed",
+      "storage_policy": "private-local",
+      "origin": "manual-local-download",
+      "type_tags": [
+        "essayistic",
+        "argumentative",
+        "risk_thought",
+        "modern_nonfiction"
+      ],
+      "suitability_notes": [
+        "Useful for uncertainty, luck, and interpretive-pressure passages.",
+        "Complements the older public-domain pool with contemporary argumentative prose."
+      ],
+      "download_sha256": "c867fccf0bd2bc399641cc7ea30a835d99b8a5ca8baeeea534f5ce6e5e332168",
+      "download_file_size": 1304072,
+      "relative_local_path": "state/library_sources/en/private/fooled_by_randomness.epub",
+      "local_sha256": "c867fccf0bd2bc399641cc7ea30a835d99b8a5ca8baeeea534f5ce6e5e332168",
+      "local_file_size": 1304072,
+      "output_dir": "output/fooled-by-randomness-the-hidden-role-of-chance-in-life-and-in-the-markets-incerto",
+      "detected_book_language": "en",
+      "output_language": "en",
+      "chapter_count": 29,
+      "sentence_count_total": 5434,
+      "median_chapter_sentences": 124,
+      "median_chapter_paragraphs": 32,
+      "screening_first_titles": [
+        "Preface",
+        "Chapter Summaries",
+        "Prologue",
+        "PART I",
+        "Chapter One"
+      ],
+      "selected_seed_chapter_numbers": [
+        0,
+        0
+      ],
+      "selected_seed_chapter_ids": [
+        "4",
+        "18"
+      ]
+    },
+    {
+      "source_id": "skin_in_the_game_private_en",
+      "title": "Skin in the Game",
+      "author": "Nassim Nicholas Taleb",
+      "language": "en",
+      "download_filename": "Skin In The Game Hidden Asymmetries In Daily Life (Nassim Nicholas Taleb) (Z-Library).epub",
+      "promoted_local_path": "en/private/skin_in_the_game.epub",
+      "screening_status": "promote_seed",
+      "storage_policy": "private-local",
+      "origin": "manual-local-download",
+      "type_tags": [
+        "essayistic",
+        "argumentative",
+        "ethical_pressure",
+        "modern_nonfiction"
+      ],
+      "suitability_notes": [
+        "Good for asymmetry, accountability, and bridge-worthy argument turns."
+      ],
+      "download_sha256": "a66cec5a33719bbcd91497347a1ae282f2bbbe8750f6648f0a58447117ef4bf4",
+      "download_file_size": 5165730,
+      "relative_local_path": "state/library_sources/en/private/skin_in_the_game.epub",
+      "local_sha256": "a66cec5a33719bbcd91497347a1ae282f2bbbe8750f6648f0a58447117ef4bf4",
+      "local_file_size": 5165730,
+      "output_dir": "output/skin-in-the-game-hidden-asymmetries-in-daily-life",
+      "detected_book_language": "en",
+      "output_language": "en",
+      "chapter_count": 31,
+      "sentence_count_total": 4305,
+      "median_chapter_sentences": 106,
+      "median_chapter_paragraphs": 32,
+      "screening_first_titles": [
+        "Prologue, Part 1: Antaeus Whacked",
+        "Prologue, Part 2: A Brief Tour of Symmetry",
+        "Prologue, Part 3: The Ribs of the Incerto",
+        "Appendix: Asymmetries in Life and Things",
+        "Chapter 1: Why Each One Should Eat His Own Turtles: Equality in Uncertainty"
+      ],
+      "selected_seed_chapter_numbers": [
+        0,
+        11
+      ],
+      "selected_seed_chapter_ids": [
+        "5",
+        "25"
+      ]
+    },
+    {
+      "source_id": "black_swan_private_en",
+      "title": "The Black Swan",
+      "author": "Nassim Nicholas Taleb",
+      "language": "en",
+      "download_filename": "The Black Swan Second Edition The Impact of the Highly Improbable With a New Section On Robustness and Fragility (Nassim Nicholas Taleb) (Z-Library).epub",
+      "promoted_local_path": null,
+      "screening_status": "reserve_candidate",
+      "storage_policy": "private-local",
+      "origin": "manual-local-download",
+      "type_tags": [
+        "essayistic",
+        "argumentative",
+        "allusion_dense",
+        "modern_nonfiction"
+      ],
+      "suitability_notes": [
+        "Strong modern source, but large and too Taleb-heavy for the first private supplement slice."
+      ],
+      "download_sha256": "5f6b4d9db24802c33547c34ea94521776ff79029f4e412f9bfbb3805146523fc",
+      "download_file_size": 885522,
+      "relative_local_path": null,
+      "local_sha256": null,
+      "local_file_size": null,
+      "output_dir": "output/the-black-swan-second-edition-the-impact-of-the-highly-improbable-with-a-new-section-on-robustness-and-fragility",
+      "detected_book_language": "en",
+      "output_language": "en",
+      "chapter_count": 281,
+      "sentence_count_total": 89373,
+      "median_chapter_sentences": 276,
+      "median_chapter_paragraphs": 75,
+      "screening_first_titles": [
+        "Prologue",
+        "On the Plumage of Birds",
+        "What You Do Not Know",
+        "Experts and “Empty Suits”",
+        "Learning to Learn"
+      ],
+      "selected_seed_chapter_numbers": [],
+      "selected_seed_chapter_ids": []
+    },
+    {
+      "source_id": "value_of_others_private_en",
+      "title": "The Value of Others",
+      "author": "Orion Taraban",
+      "language": "en",
+      "download_filename": "_OceanofPDF.com_The_Value_of_Others_-_Orion_Taraban.epub",
+      "promoted_local_path": "en/private/the_value_of_others.epub",
+      "screening_status": "promote_seed",
+      "storage_policy": "private-local",
+      "origin": "manual-local-download",
+      "type_tags": [
+        "philosophical",
+        "relationship_thought",
+        "modern_nonfiction"
+      ],
+      "suitability_notes": [
+        "Useful modern philosophical prose with strong reaction-worthy lines and local conceptual distinctions."
+      ],
+      "download_sha256": "dc1c6061cd0e05b43069f56736e6c9795b8f41832a14a3bd01099afdb35c581f",
+      "download_file_size": 2646018,
+      "relative_local_path": "state/library_sources/en/private/the_value_of_others.epub",
+      "local_sha256": "dc1c6061cd0e05b43069f56736e6c9795b8f41832a14a3bd01099afdb35c581f",
+      "local_file_size": 2646018,
+      "output_dir": "output/the-value-of-others-understanding-the-economic-model-of-relationships-to-get-and-keep-more-of-what-you-want-in-the-sexual-marketplace",
+      "detected_book_language": "en",
+      "output_language": "en",
+      "chapter_count": 15,
+      "sentence_count_total": 5524,
+      "median_chapter_sentences": 435,
+      "median_chapter_paragraphs": 81,
+      "screening_first_titles": [
+        "Preface",
+        "Prologue",
+        "Chapter 1",
+        "Chapter 2",
+        "Chapter 3"
+      ],
+      "selected_seed_chapter_numbers": [
+        0,
+        6
+      ],
+      "selected_seed_chapter_ids": [
+        "5",
+        "12"
+      ]
+    },
+    {
+      "source_id": "making_of_a_manager_private_en",
+      "title": "The Making of a Manager",
+      "author": "Julie Zhuo",
+      "language": "en",
+      "download_filename": "The Making of a Manager What to Do When Everyone Looks to You (Julie Zhuo) (Z-Library).epub",
+      "promoted_local_path": "en/private/the_making_of_a_manager.epub",
+      "screening_status": "promote_seed",
+      "storage_policy": "private-local",
+      "origin": "manual-local-download",
+      "type_tags": [
+        "narrative_reflective",
+        "management",
+        "modern_nonfiction"
+      ],
+      "suitability_notes": [
+        "Adds reflective managerial prose and contemporary narrative examples."
+      ],
+      "download_sha256": "6388a9cd3262bb5f4f8c643a04f774c99ffd99a7e0cb2f4f33cf3bad39587180",
+      "download_file_size": 4341855,
+      "relative_local_path": "state/library_sources/en/private/the_making_of_a_manager.epub",
+      "local_sha256": "6388a9cd3262bb5f4f8c643a04f774c99ffd99a7e0cb2f4f33cf3bad39587180",
+      "local_file_size": 4341855,
+      "output_dir": "output/the-making-of-a-manager-what-to-do-when-everyone-looks-to-you",
+      "detected_book_language": "en",
+      "output_language": "en",
+      "chapter_count": 63,
+      "sentence_count_total": 21428,
+      "median_chapter_sentences": 380,
+      "median_chapter_paragraphs": 143,
+      "screening_first_titles": [
+        "Introduction: Great Managers Are Made, Not Born",
+        "Chapter One: What Is Management?",
+        "The One-Line Definition of a Manager’s Job",
+        "How Do You Tell a Great Manager from an Average Manager?",
+        "The Three Things Managers Think About All Day"
+      ],
+      "selected_seed_chapter_numbers": [
+        0,
+        0
+      ],
+      "selected_seed_chapter_ids": [
+        "5",
+        "36"
+      ]
+    },
+    {
+      "source_id": "inspired_private_en",
+      "title": "INSPIRED",
+      "author": "Marty Cagan et al.",
+      "language": "en",
+      "download_filename": "INSPIRED How to Create Tech Products Customers Love (Marty Cagan, Christian Idiodi, Lea Hickman etc.) (Z-Library).epub",
+      "promoted_local_path": "en/private/inspired.epub",
+      "screening_status": "promote_seed",
+      "storage_policy": "private-local",
+      "origin": "manual-local-download",
+      "type_tags": [
+        "expository",
+        "product_thought",
+        "modern_nonfiction"
+      ],
+      "suitability_notes": [
+        "Useful modern expository/product book with many short chapter units and practical distinctions."
+      ],
+      "download_sha256": "bbfd7e6d9d4efa482b2ce253568856c97e3380ee853b037feb2d4f64630bd911",
+      "download_file_size": 477658,
+      "relative_local_path": "state/library_sources/en/private/inspired.epub",
+      "local_sha256": "bbfd7e6d9d4efa482b2ce253568856c97e3380ee853b037feb2d4f64630bd911",
+      "local_file_size": 477658,
+      "output_dir": "output/inspired",
+      "detected_book_language": "en",
+      "output_language": "en",
+      "chapter_count": 171,
+      "sentence_count_total": 13551,
+      "median_chapter_sentences": 60,
+      "median_chapter_paragraphs": 28,
+      "screening_first_titles": [
+        "Preface to the Second Edition",
+        "PART I: Lessons from Top Tech Companies",
+        "CHAPTER 1: Behind Every Great Product",
+        "CHAPTER 2: Technology‐Powered Products and Services",
+        "CHAPTER 3: Startups: Getting to Product/Market Fit"
+      ],
+      "selected_seed_chapter_numbers": [
+        0,
+        34
+      ],
+      "selected_seed_chapter_ids": [
+        "2",
+        "87"
+      ]
+    },
+    {
+      "source_id": "chance_private_en",
+      "title": "Chance",
+      "author": "Joseph Conrad",
+      "language": "en",
+      "download_filename": "joseph-conrad_chance.epub",
+      "promoted_local_path": "en/private/chance.epub",
+      "screening_status": "promote_seed",
+      "storage_policy": "private-local",
+      "origin": "manual-local-download",
+      "type_tags": [
+        "narrative_reflective",
+        "novel",
+        "social_detail"
+      ],
+      "suitability_notes": [
+        "Useful narrative supplement so the private seed does not become all modern nonfiction."
+      ],
+      "download_sha256": "484b0c17bd4da39d8a39b75471316ce7b86c4b1493fc5c82a94b7d57348b449b",
+      "download_file_size": 675610,
+      "relative_local_path": "state/library_sources/en/private/chance.epub",
+      "local_sha256": "484b0c17bd4da39d8a39b75471316ce7b86c4b1493fc5c82a94b7d57348b449b",
+      "local_file_size": 675610,
+      "output_dir": "output/chance",
+      "detected_book_language": "en",
+      "output_language": "en",
+      "chapter_count": 22,
+      "sentence_count_total": 10412,
+      "median_chapter_sentences": 541,
+      "median_chapter_paragraphs": 88,
+      "screening_first_titles": [
+        "Titlepage",
+        "Imprint",
+        "Epigraph",
+        "Author’s Note",
+        "Chance"
+      ],
+      "selected_seed_chapter_numbers": [
+        0,
+        0
+      ],
+      "selected_seed_chapter_ids": [
+        "1",
+        "13"
+      ]
+    },
+    {
+      "source_id": "biji_de_fangfa_private_zh",
+      "title": "笔记的方法",
+      "author": "刘少楠, 刘白光",
+      "language": "zh",
+      "download_filename": "笔记的方法 (刘少楠, 刘白光) (Z-Library).epub",
+      "promoted_local_path": "zh/private/bijidefangfa.epub",
+      "screening_status": "promote_seed",
+      "storage_policy": "private-local",
+      "origin": "manual-local-download",
+      "type_tags": [
+        "expository",
+        "modern_vernacular",
+        "method"
+      ],
+      "suitability_notes": [
+        "Adds modern vernacular Chinese expository prose to complement the older seed pool."
+      ],
+      "download_sha256": "595367c00cff2dfb31a46a2fb0b3683ab373c3340d2230125456632cd633f73b",
+      "download_file_size": 5316878,
+      "relative_local_path": "state/library_sources/zh/private/bijidefangfa.epub",
+      "local_sha256": "595367c00cff2dfb31a46a2fb0b3683ab373c3340d2230125456632cd633f73b",
+      "local_file_size": 5316878,
+      "output_dir": "output/笔记的方法",
+      "detected_book_language": "zh",
+      "output_language": "zh",
+      "chapter_count": 21,
+      "sentence_count_total": 3391,
+      "median_chapter_sentences": 95,
+      "median_chapter_paragraphs": 43,
+      "screening_first_titles": [
+        "版权信息",
+        "推荐序 我读这本书的15个收获",
+        "推荐序 好笔记是智慧的土壤",
+        "自序 记笔记，是为了增援未来的自己",
+        "PART ONE 第一部分 应用篇 如何用笔记，增援未来的自己"
+      ],
+      "selected_seed_chapter_numbers": [
+        0,
+        0
+      ],
+      "selected_seed_chapter_ids": [
+        "1",
+        "11"
+      ]
+    },
+    {
+      "source_id": "fooled_by_randomness_private_zh",
+      "title": "随机漫步的傻瓜",
+      "author": "纳西姆·尼古拉斯·塔勒布",
+      "language": "zh",
+      "download_filename": "随机漫步的傻瓜：发现市场和人生中的隐藏机遇 = Fooled by Randomness The Hidden Role of Chance in Life and in the Markets ( etc.) (Z-Library).epub",
+      "promoted_local_path": "zh/private/suijimanbudesagua.epub",
+      "screening_status": "promote_seed",
+      "storage_policy": "private-local",
+      "origin": "manual-local-download",
+      "type_tags": [
+        "essayistic",
+        "argumentative",
+        "modern_vernacular",
+        "risk_thought"
+      ],
+      "suitability_notes": [
+        "Adds contemporary Chinese-language argumentative prose with strong chapter lengths for resume and span tests."
+      ],
+      "download_sha256": "73ca38f0fe0f219f2cc60b38235f6976b567b2d77cd2a222321cc9985c020308",
+      "download_file_size": 616122,
+      "relative_local_path": "state/library_sources/zh/private/suijimanbudesagua.epub",
+      "local_sha256": "73ca38f0fe0f219f2cc60b38235f6976b567b2d77cd2a222321cc9985c020308",
+      "local_file_size": 616122,
+      "output_dir": "output/随机漫步的傻瓜",
+      "detected_book_language": "zh",
+      "output_language": "zh",
+      "chapter_count": 23,
+      "sentence_count_total": 34411,
+      "median_chapter_sentences": 947,
+      "median_chapter_paragraphs": 223,
+      "screening_first_titles": [
+        "版权信息",
+        "各方赞誉",
+        "专家推荐",
+        "自序 任何人都会买卖",
+        "前言 幸运的交易员"
+      ],
+      "selected_seed_chapter_numbers": [
+        0,
+        0
+      ],
+      "selected_seed_chapter_ids": [
+        "1",
+        "12"
+      ]
+    },
+    {
+      "source_id": "cracking_pm_career_private_en",
+      "title": "Cracking the PM Career",
+      "author": "Jackie Bavaro, Gayle McDowell",
+      "language": "en",
+      "download_filename": "Cracking the PM Career The Skills, Frameworks, and Practices To Become a Great Product Manager (Cracking the Interview … (Jackie Bavaro, Gayle McDowell) (Z-Library).epub",
+      "promoted_local_path": null,
+      "screening_status": "reserve_candidate",
+      "storage_policy": "private-local",
+      "origin": "manual-local-download",
+      "type_tags": [
+        "career_guidance",
+        "framework_heavy",
+        "modern_nonfiction"
+      ],
+      "suitability_notes": [
+        "Parseable and potentially useful for later expository/runtime slices, but lower priority for the first reading-quality corpus."
+      ],
+      "download_sha256": "3ff1001fa089e235b8c35568984ffbc9737df4758925468ad8f6eddafcad1a49",
+      "download_file_size": 2515681,
+      "relative_local_path": null,
+      "local_sha256": null,
+      "local_file_size": null,
+      "output_dir": "output/cracking-the-pm-career-the-skills-frameworks-and-practices-to-become-a-great-product-manager",
+      "detected_book_language": "en",
+      "output_language": "en",
+      "chapter_count": 77,
+      "sentence_count_total": 15623,
+      "median_chapter_sentences": 159,
+      "median_chapter_paragraphs": 76,
+      "screening_first_titles": [
+        "Table of Contents",
+        "Part A: Foreword by Marissa Mayer",
+        "Chapter 0: Foreword by Marissa Mayer",
+        "Part B: The Product Manager Role",
+        "Chapter 1: Getting Started"
+      ],
+      "selected_seed_chapter_numbers": [],
+      "selected_seed_chapter_ids": []
+    },
+    {
+      "source_id": "cracking_pm_interview_private_en",
+      "title": "Cracking the PM Interview",
+      "author": "Gayle Laakmann McDowell",
+      "language": "en",
+      "download_filename": "Cracking the PM Interview - How to Land a Product Manager Job in Technology (Gayle Laakmann McDowell) (Z-Library).epub",
+      "promoted_local_path": null,
+      "screening_status": "reject_first_corpus",
+      "storage_policy": "private-local",
+      "origin": "manual-local-download",
+      "type_tags": [
+        "interview_prep",
+        "qa_heavy",
+        "modern_nonfiction"
+      ],
+      "suitability_notes": [
+        "Rejected for the first corpus because the EPUB collapses into one full-content chapter and overweights interview-prep style instead of stable chaptered prose."
+      ],
+      "download_sha256": "ae8884ad6dc3bb429ace123994ee3c4b28cde3bb73668b790c370b54ce610458",
+      "download_file_size": 681677,
+      "relative_local_path": null,
+      "local_sha256": null,
+      "local_file_size": null,
+      "output_dir": "output/cracking-the-pm-interview-how-to-land-a-product-manager-job-in-technology",
+      "detected_book_language": "en",
+      "output_language": "en",
+      "chapter_count": 1,
+      "sentence_count_total": 9717,
+      "median_chapter_sentences": 9717,
+      "median_chapter_paragraphs": 5753,
+      "screening_first_titles": [
+        "Full Content"
+      ],
+      "selected_seed_chapter_numbers": [],
+      "selected_seed_chapter_ids": []
+    },
+    {
+      "source_id": "decode_and_conquer_private_en",
+      "title": "Decode and Conquer",
+      "author": "Lewis C. Lin",
+      "language": "en",
+      "download_filename": "Decode and Conquer Answers to Product Management Interviews (Lewis C. Lin) (Z-Library).epub",
+      "promoted_local_path": null,
+      "screening_status": "reserve_candidate",
+      "storage_policy": "private-local",
+      "origin": "manual-local-download",
+      "type_tags": [
+        "interview_prep",
+        "qa_heavy",
+        "framework_heavy"
+      ],
+      "suitability_notes": [
+        "Usable for future structured-runtime experiments, but not a first-tier co-reading benchmark source."
+      ],
+      "download_sha256": "59f9431e6c314efd3d16c00ca6f76746dc81d00aece2884aca8eff4f3b1147dc",
+      "download_file_size": 1065706,
+      "relative_local_path": null,
+      "local_sha256": null,
+      "local_file_size": null,
+      "output_dir": "output/decode-and-conquer-answers-to-product-management-interviews",
+      "detected_book_language": "en",
+      "output_language": "en",
+      "chapter_count": 129,
+      "sentence_count_total": 15106,
+      "median_chapter_sentences": 47,
+      "median_chapter_paragraphs": 23,
+      "screening_first_titles": [
+        "Copyright Page",
+        "Table of Contents",
+        "Introduction",
+        "Chapter 1 Critiquing Design",
+        "Practice Questions"
+      ],
+      "selected_seed_chapter_numbers": [],
+      "selected_seed_chapter_ids": []
+    }
+  ]
+}

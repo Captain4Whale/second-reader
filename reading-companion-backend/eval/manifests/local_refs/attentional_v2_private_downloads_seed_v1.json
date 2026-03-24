@@ -1,0 +1,104 @@
+{
+  "manifest_id": "attentional_v2_private_downloads_seed_v1_local_refs",
+  "description": "Local source-file and local-package references for the private Downloads-based attentional_v2 seed supplement.",
+  "source_refs": [
+    {
+      "source_id": "antifragile_private_en",
+      "relative_local_path": "state/library_sources/en/private/antifragile.epub",
+      "sha256": "2df80ff9f39d226ff0b1ea99be5c63502604e22be93aa723397ef4afbe54c4f9",
+      "file_size": 10130653
+    },
+    {
+      "source_id": "fooled_by_randomness_private_en",
+      "relative_local_path": "state/library_sources/en/private/fooled_by_randomness.epub",
+      "sha256": "c867fccf0bd2bc399641cc7ea30a835d99b8a5ca8baeeea534f5ce6e5e332168",
+      "file_size": 1304072
+    },
+    {
+      "source_id": "skin_in_the_game_private_en",
+      "relative_local_path": "state/library_sources/en/private/skin_in_the_game.epub",
+      "sha256": "a66cec5a33719bbcd91497347a1ae282f2bbbe8750f6648f0a58447117ef4bf4",
+      "file_size": 5165730
+    },
+    {
+      "source_id": "value_of_others_private_en",
+      "relative_local_path": "state/library_sources/en/private/the_value_of_others.epub",
+      "sha256": "dc1c6061cd0e05b43069f56736e6c9795b8f41832a14a3bd01099afdb35c581f",
+      "file_size": 2646018
+    },
+    {
+      "source_id": "making_of_a_manager_private_en",
+      "relative_local_path": "state/library_sources/en/private/the_making_of_a_manager.epub",
+      "sha256": "6388a9cd3262bb5f4f8c643a04f774c99ffd99a7e0cb2f4f33cf3bad39587180",
+      "file_size": 4341855
+    },
+    {
+      "source_id": "inspired_private_en",
+      "relative_local_path": "state/library_sources/en/private/inspired.epub",
+      "sha256": "bbfd7e6d9d4efa482b2ce253568856c97e3380ee853b037feb2d4f64630bd911",
+      "file_size": 477658
+    },
+    {
+      "source_id": "chance_private_en",
+      "relative_local_path": "state/library_sources/en/private/chance.epub",
+      "sha256": "484b0c17bd4da39d8a39b75471316ce7b86c4b1493fc5c82a94b7d57348b449b",
+      "file_size": 675610
+    },
+    {
+      "source_id": "biji_de_fangfa_private_zh",
+      "relative_local_path": "state/library_sources/zh/private/bijidefangfa.epub",
+      "sha256": "595367c00cff2dfb31a46a2fb0b3683ab373c3340d2230125456632cd633f73b",
+      "file_size": 5316878
+    },
+    {
+      "source_id": "fooled_by_randomness_private_zh",
+      "relative_local_path": "state/library_sources/zh/private/suijimanbudesagua.epub",
+      "sha256": "73ca38f0fe0f219f2cc60b38235f6976b567b2d77cd2a222321cc9985c020308",
+      "file_size": 616122
+    }
+  ],
+  "local_dataset_packages": [
+    {
+      "dataset_id": "attentional_v2_private_chapters_en_v1",
+      "family": "chapter_corpora",
+      "language_track": "en",
+      "relative_local_path": "state/eval_local_datasets/chapter_corpora/attentional_v2_private_chapters_en_v1"
+    },
+    {
+      "dataset_id": "attentional_v2_private_chapters_zh_v1",
+      "family": "chapter_corpora",
+      "language_track": "zh",
+      "relative_local_path": "state/eval_local_datasets/chapter_corpora/attentional_v2_private_chapters_zh_v1"
+    },
+    {
+      "dataset_id": "attentional_v2_private_runtime_en_v1",
+      "family": "runtime_fixtures",
+      "language_track": "en",
+      "relative_local_path": "state/eval_local_datasets/runtime_fixtures/attentional_v2_private_runtime_en_v1"
+    },
+    {
+      "dataset_id": "attentional_v2_private_runtime_zh_v1",
+      "family": "runtime_fixtures",
+      "language_track": "zh",
+      "relative_local_path": "state/eval_local_datasets/runtime_fixtures/attentional_v2_private_runtime_zh_v1"
+    },
+    {
+      "dataset_id": "attentional_v2_private_excerpt_en_v1",
+      "family": "excerpt_cases",
+      "language_track": "en",
+      "relative_local_path": "state/eval_local_datasets/excerpt_cases/attentional_v2_private_excerpt_en_v1"
+    },
+    {
+      "dataset_id": "attentional_v2_private_excerpt_zh_v1",
+      "family": "excerpt_cases",
+      "language_track": "zh",
+      "relative_local_path": "state/eval_local_datasets/excerpt_cases/attentional_v2_private_excerpt_zh_v1"
+    },
+    {
+      "dataset_id": "attentional_v2_private_compat_shared_v1",
+      "family": "compatibility_fixtures",
+      "language_track": "shared",
+      "relative_local_path": "state/eval_local_datasets/compatibility_fixtures/attentional_v2_private_compat_shared_v1"
+    }
+  ]
+}

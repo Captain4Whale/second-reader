@@ -6,6 +6,7 @@ Use this directory for:
 - corpus manifests
 - source-book inventory files
 - local-path reference files that point to private/local full-book corpora
+- local-path reference files that point to private/local evaluation packages
 - bilingual corpus split definitions
 
 Recommended subdirectories:
@@ -24,4 +25,5 @@ Related territories:
 - transient uploads: `reading-companion-backend/state/uploads/`
 - durable local source library: `reading-companion-backend/state/library_sources/`
 - tracked excerpt datasets: `reading-companion-backend/eval/datasets/`
+- local-only private evaluation packages: `reading-companion-backend/state/eval_local_datasets/`
 - machine-generated benchmark runs: `reading-companion-backend/eval/runs/`

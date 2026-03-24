@@ -165,6 +165,8 @@ Update when: status changes, blockers appear, or phases complete.
 - [x] Screen and fetch the first bilingual public-domain seed source pool into the durable local source library
 - [x] Build tracked source-book, corpus, split, and local-ref manifests for the first bilingual public-domain seed corpus
 - [x] Build the first seed dataset packages for chapter, runtime, excerpt, and compatibility work
+- [x] Add the local-only evaluation-package mirror for private/copyrighted source books
+- [x] Screen the first private Downloads EPUB pool, promote the selected books into `state/library_sources/`, and build the first local-only seed package mirror under `state/eval_local_datasets/`
 - [ ] Run mechanism-integrity evaluation
 - [ ] Run local-reading and span-trajectory evaluation
 - [ ] Run durable-trace and re-entry evaluation
@@ -213,3 +215,5 @@ Update when: status changes, blockers appear, or phases complete.
   - Froze the dataset-organization rule before population: stable docs now require a family-first dataset layout under `eval/datasets/`, the backend `eval` README now defines the package contract, the temp implementation docs now define the first bilingual `attentional_v2` package plan, and the dataset/manifests folder skeleton now exists on disk.
   - Built the first bilingual public-domain seed corpus locally under `state/library_sources/` from Project Gutenberg sources, then ran it through canonical parse and used that parsed substrate to generate tracked source manifests plus the first seed dataset packages under `reading-companion-backend/eval/`.
   - Important honesty note for later work: the seed chapter and runtime packages are directly grounded in parsed substrate, but the seed excerpt packages are still auto-extracted and require manual curation before benchmark promotion, while the compatibility package is still spec-level until live attentional runtime outputs are generated for those books.
+  - Tightened the storage rule for private books: stable and temp docs now reserve `state/eval_local_datasets/` as the family-first local-only mirror for excerpt/chapter/runtime/compatibility packages derived from private books, while tracked manifests in `eval/manifests/` now point to both local source books and local package roots.
+  - Screened the first private Downloads EPUB pool against the corpus rules, promoted `9` selected books into `state/library_sources/en/private/` and `state/library_sources/zh/private/`, recorded the full keep/reserve/reject screen in tracked source manifests, and built the first local-only private seed package mirror under `state/eval_local_datasets/`.

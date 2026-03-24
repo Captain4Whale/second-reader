@@ -9,3 +9,4 @@ These manifests should describe:
 - storage policy
 - coarse type tags
 - parsing and suitability notes
+- optional screening status such as `promote_seed`, `reserve_candidate`, or `reject_first_corpus`

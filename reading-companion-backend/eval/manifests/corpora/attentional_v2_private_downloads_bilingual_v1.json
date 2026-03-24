@@ -1,0 +1,19 @@
+{
+  "manifest_id": "attentional_v2_private_downloads_bilingual_v1",
+  "description": "Private local bilingual source corpus selected from the user's Downloads pool for attentional_v2 evaluation supplementation.",
+  "language_tracks": {
+    "en": [
+      "antifragile_private_en",
+      "fooled_by_randomness_private_en",
+      "skin_in_the_game_private_en",
+      "value_of_others_private_en",
+      "making_of_a_manager_private_en",
+      "inspired_private_en",
+      "chance_private_en"
+    ],
+    "zh": [
+      "biji_de_fangfa_private_zh",
+      "fooled_by_randomness_private_zh"
+    ]
+  }
+}

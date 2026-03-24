@@ -385,6 +385,28 @@ Update when: a major product or engineering decision is made, reversed, or becom
 - `reading-companion-backend/eval/manifests/README.md`
 - `docs/implementation/new-reading-mechanism/evaluation-dataset-layout.md`
 
+## Entry 19
+**Decision / Inflection**: Mirror the family-first evaluation dataset layout under a local-only package territory for private books instead of forcing copyrighted inputs into tracked benchmark packages.
+
+**Period**: Late March 2026, when the first serious private-book supplement from the user's local Downloads corpus entered `attentional_v2` evaluation planning.
+
+**Problem**: The project already had a stable tracked dataset layout under `eval/datasets/`, but that layout alone was not enough once private contemporary books became part of the evaluation plan. We needed a way to use those books for excerpt, chapter, and runtime packages without quietly checking copyrighted source text into the repo or losing the same family-first structure that later evaluation code should rely on.
+
+**Alternatives considered**: Keep all benchmark packages tracked and hope contributors avoid private books, store private excerpt/chapter packages in ad hoc local folders without a stable rule, or avoid using valuable local books entirely and limit the benchmark corpus to public-domain sources.
+
+**Why this path won**: A local-only mirror keeps the legal and storage boundary honest while preserving the same package contract across tracked and private benchmark inputs. That lets the project benefit from richer modern books without making future evaluation code depend on a second informal layout.
+
+**What changed in the system**: Stable docs now reserve `reading-companion-backend/state/eval_local_datasets/` as the local-only mirror for excerpt, chapter, runtime, and compatibility packages derived from private books. Tracked manifests under `reading-companion-backend/eval/manifests/` now explicitly cover both local source-book references and local dataset-package references, while tracked `eval/datasets/` remains the home for repo-safe benchmark packages.
+
+**Why it matters later**: This is the rule that lets the benchmark corpus grow beyond public-domain books without making the repo itself a dumping ground for copyrighted text. Later contributors need to know that "private local package" is a first-class evaluation territory, not an ad hoc exception.
+
+**Primary evidence**:
+- `docs/backend-reader-evaluation.md`
+- `docs/workspace-overview.md`
+- `docs/backend-sequential-lifecycle.md`
+- `reading-companion-backend/AGENTS.md`
+- `docs/implementation/new-reading-mechanism/evaluation-corpus-requirements.md`
+
 ## Entry 17
 **Decision / Inflection**: Move mechanism-private reading artifacts under `_mechanisms/<mechanism_key>/` and reserve top-level `public/` plus `_runtime/` for shared cross-mechanism state.
 
