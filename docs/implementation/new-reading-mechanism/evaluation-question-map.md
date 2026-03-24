@@ -1,0 +1,74 @@
+# New Reading Mechanism Evaluation Question Map
+
+Purpose: turn the current evaluation work into an explicit question map before dataset and corpus design begins.
+Use when: deciding what benchmark datasets to curate, which questions belong to this implementation project, or how to separate cross-mechanism evaluation from attentional-specific proof work.
+Not for: stable evaluation constitution, one-off benchmark reports, or final acceptance conclusions.
+Update when: a new evaluation question is added, a question changes owner, or a question moves from temporary planning into a stable doc/report.
+
+## Working Rules
+- Question-first, dataset-second.
+- Dataset and corpus design must answer explicit questions instead of collecting convenient texts first.
+- Cross-mechanism evaluation work is still part of the current `attentional_v2` implementation job.
+  - We cannot decide whether the new mechanism is viable without comparing it against `iterator_v1`.
+  - The stable owner of the comparison frame is still `docs/backend-reader-evaluation.md`.
+- Mechanism-specific attribution questions are also part of the current `attentional_v2` implementation job.
+  - They tell us whether the mechanism is honoring its own promises rather than merely staying schema-valid.
+- Runtime and compatibility gate questions are not optional.
+  - A mechanism that looks good locally but fails resume, marks, or shared-surface compatibility is not ready.
+
+## Question Families
+- `cross_mechanism_product_comparison`
+  - compare `attentional_v2` against `iterator_v1` under the shared product/evaluation frame
+- `attentional_specific_attribution`
+  - test whether `attentional_v2`'s own distinctive design promises are actually being met
+- `runtime_and_compatibility_gate`
+  - test whether the mechanism remains operationally trustworthy and integration-safe
+
+## Question Map
+| ID | Family | Exact question | Why this belongs in the current `attentional_v2` job | Stable owner | Likely evidence shape | Dataset / corpus need | Current status |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| EQ-CM-001 | `cross_mechanism_product_comparison` | Under realistic constraints, does `attentional_v2` preserve the product's intended co-reading mind better than `iterator_v1` overall? | This is the actual product-level promotion question for the new mechanism. | `docs/backend-reader-evaluation.md` | pairwise + rubric end-to-end comparison | chapter corpus | `not started` |
+| EQ-CM-002 | `cross_mechanism_product_comparison` | On local passages, does `attentional_v2` take better reading steps than `iterator_v1`? | We need local comparison evidence, not only whole-run impressions. | `docs/backend-reader-evaluation.md` | excerpt-case pairwise + rubric | excerpt dataset | `not started` |
+| EQ-CM-003 | `cross_mechanism_product_comparison` | Across larger spans, does `attentional_v2` accumulate understanding more coherently than `iterator_v1`? | Coherent accumulation is one of the mechanism's main promised wins. | `docs/backend-reader-evaluation.md` | chapter trajectory comparison | chapter corpus | `not started` |
+| EQ-CM-004 | `cross_mechanism_product_comparison` | Does `attentional_v2` leave behind a more useful durable reading trail than `iterator_v1`? | The product includes marks, return, and later recall, not only first-pass reading. | `docs/backend-reader-evaluation.md` | durable-trace audit + re-entry judging | excerpt cases + persisted trace fixtures | `not started` |
+| EQ-CM-005 | `cross_mechanism_product_comparison` | Is `attentional_v2` operationally viable enough relative to `iterator_v1` for controlled product use? | A mechanism does not win if quality appears only at unrealistic reliability, latency, or cost. | `docs/backend-reader-evaluation.md` | deterministic runtime metrics + gate checks | runtime fixtures + chapter runs | `partially scaffolded` |
+| EQ-AV2-001 | `attentional_specific_attribution` | Does `attentional_v2` preserve sentence-order intake honesty and avoid future-text leakage? | This is a core design promise, not a generic reader question. | `docs/backend-reading-mechanisms/attentional_v2.md` | deterministic integrity checks + targeted rubric cases | excerpt dataset | `partially scaffolded` |
+| EQ-AV2-002 | `attentional_specific_attribution` | Does `attentional_v2` produce strong meaning-unit closure instead of shallow sentence sparks or vague paragraph blur? | Meaning-unit reasoning is the mechanism's main interpretive unit. | `docs/backend-reading-mechanisms/attentional_v2.md` | local rubric judging | excerpt dataset | `not started` |
+| EQ-AV2-003 | `attentional_specific_attribution` | Does `attentional_v2` choose `advance`, `dwell`, `bridge`, and `reframe` well? | Controller-move quality is central to whether the mechanism feels alive rather than procedural. | `docs/backend-reading-mechanisms/attentional_v2.md` | attributed local-case judging | excerpt dataset | `not started` |
+| EQ-AV2-004 | `attentional_specific_attribution` | When `attentional_v2` bridges backward, are the links honest, source-grounded, and worth making? | Bridge resolution is a signature mechanism behavior and a likely failure mode. | `docs/backend-reading-mechanisms/attentional_v2.md` | targeted bridge-case judging | excerpt dataset | `not started` |
+| EQ-AV2-005 | `attentional_specific_attribution` | Are emitted visible reactions selective, worthwhile, and faithfully anchored? | Good runtime does not help if visible thoughts become noisy or weakly anchored. | `docs/backend-reading-mechanisms/attentional_v2.md` | local rubric judging + structural anchor checks | excerpt dataset | `partially scaffolded` |
+| EQ-AV2-006 | `attentional_specific_attribution` | Does reconsolidation preserve historical integrity through append-and-link rather than silent overwrite? | This is one of the clearest places where the mechanism must prove it is not regressing into convenience. | `docs/backend-reading-mechanisms/attentional_v2.md` | structural checks + judged later-interpretation cases | excerpt dataset + persisted history fixtures | `partially scaffolded` |
+| EQ-AV2-007 | `attentional_specific_attribution` | Is resume and reconstitution honest enough to feel like the same reading mind without hidden oversized rereads? | Resume quality is part of the mechanism's identity, not just an ops feature. | `docs/backend-reading-mechanisms/attentional_v2.md` | runtime fixtures + judged re-entry cases | resume fixtures + chapter excerpts | `partially scaffolded` |
+| EQ-AV2-008 | `attentional_specific_attribution` | Do public/API compatibility projections preserve attentional thought direction faithfully enough during the migration period? | The mechanism should not lose its value when adapted upward into current surfaces. | `docs/backend-reading-mechanisms/attentional_v2.md` | compatibility audit + spot judging | persisted chapter/activity/marks fixtures | `partially scaffolded` |
+| EQ-GATE-001 | `runtime_and_compatibility_gate` | Are shared cursor ids, anchor locators, reaction ids, and resume bounds always structurally valid? | These are hard gates, not style preferences. | temp implementation docs now; later reports | deterministic integrity checks | runtime fixtures | `partially scaffolded` |
+| EQ-GATE-002 | `runtime_and_compatibility_gate` | Do analysis-state, activity, chapter, and marks surfaces stay schema-valid and usable during migration? | Current product compatibility still matters while section-first surfaces exist. | temp implementation docs now; later reports | compatibility tests + fixture audits | persisted API fixtures | `partially scaffolded` |
+| EQ-GATE-003 | `runtime_and_compatibility_gate` | Can the mechanism complete runs, resume correctly, and stay within acceptable latency/cost bounds? | Runtime viability is a standing gate for promotion. | `docs/backend-reader-evaluation.md` | deterministic runtime metrics | runtime fixtures + chapter corpus | `not started` |
+
+## What This Means For Current Work
+- The current new-mechanism implementation project still has to do both:
+  - cross-mechanism comparison work
+  - attentional-specific attribution work
+- Cross-mechanism work is not "someone else's later project."
+  - It is part of deciding whether `attentional_v2` is actually good enough.
+- The practical next preparation step is:
+  - map each question to the right input source type:
+    - excerpt-case dataset
+    - chapter corpus
+    - runtime/resume fixture set
+    - persisted compatibility fixture set
+- Only after that should we design the actual datasets and corpora.
+
+## Dataset Design Implications
+- `excerpt dataset`
+  - best for local reading behavior, bridge, reaction, reconsolidation, and some durable-trace questions
+- `chapter corpus`
+  - best for whole-reader product fit, span trajectory, and runtime viability comparison
+- `runtime/resume fixtures`
+  - best for resume honesty, mechanism-key continuity, and hard structural gates
+- `persisted compatibility fixtures`
+  - best for activity, chapter, marks, and public-surface faithfulness during migration
+
+## Promotion Rule
+- Promote stable cross-mechanism question families into `docs/backend-reader-evaluation.md`.
+- Promote stable mechanism-specific proof questions into `docs/backend-reading-mechanisms/attentional_v2.md`.
+- Keep dataset design, case packaging, sample sizes, thresholds, and current implementation status in the temporary workspace until they become reviewed benchmark assets or stable methodology.

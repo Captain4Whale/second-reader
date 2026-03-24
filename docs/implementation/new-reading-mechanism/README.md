@@ -45,6 +45,9 @@ Update when: the design capture, plan, tracker, or open-question set changes dur
   - temporary implementation decisions, reversals, and promotion status
 - `validation-matrix.md`
   - required verification by phase, including runtime, evaluation, and compatibility checks
+- `evaluation-question-map.md`
+  - question-first bridge between evaluation design and later dataset/corpus curation
+  - separates cross-mechanism comparison, attentional-specific attribution, and runtime/compatibility gate questions
 - `stable-doc-impact.md`
   - map of which long-term docs must be updated when each workstream lands
 - `runtime-artifact-map.md`
@@ -72,5 +75,6 @@ Update when: the design capture, plan, tracker, or open-question set changes dur
 4. `implementation-plan.md`
 5. `execution-tracker.md`
 6. `open-questions.md`
-7. `runtime-artifact-map.md`
-8. Stable docs listed above, as required by the task at hand
+7. `evaluation-question-map.md`
+8. `runtime-artifact-map.md`
+9. Stable docs listed above, as required by the task at hand

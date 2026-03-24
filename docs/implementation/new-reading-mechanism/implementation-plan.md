@@ -275,9 +275,19 @@ Purpose:
 - Move from "implemented mechanism" to "mechanism ready for real product use."
 
 Main work:
+- Freeze the evaluation-question map before dataset design so question-first evaluation remains explicit.
+- Separate:
+  - cross-mechanism comparison questions
+  - attentional-specific attribution questions
+  - runtime / compatibility gate questions
 - Curate the tracked `attentional_v2` benchmark datasets under `reading-companion-backend/eval/datasets/` before any real end-to-end comparison.
   - Local mechanism-integrity datasets may embed the excerpt text they need directly.
   - Chapter-level / end-to-end comparison must use an intentional evaluation corpus rather than transient runtime files from `output/` or `state/uploads/`.
+- Build the dataset package by question family rather than by convenience:
+  - excerpt dataset for local attribution questions
+  - chapter corpus for cross-mechanism span/end-to-end comparison
+  - runtime/resume fixtures for resume and hard-gate questions
+  - persisted compatibility fixtures for migration-surface audits
 - Run mechanism-integrity and end-to-end evaluation passes.
 - Compare against `iterator_v1` on shared evaluation frame.
 - Decide compatibility strategy for:

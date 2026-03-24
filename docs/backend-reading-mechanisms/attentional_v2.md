@@ -281,6 +281,27 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - the current focal span
   - or the current interpretive question if that better explains what the mechanism is doing now
 
+## Evaluation Questions
+- These are the enduring mechanism-specific questions `attentional_v2` should eventually be able to answer well.
+- They are not the same thing as benchmark case lists or current temporary thresholds.
+- They state what this mechanism must prove as a mechanism.
+- `sentence_order_intake_honesty`
+  - Does the mechanism preserve source-order intake and avoid future-text leakage while still remaining selective at the reasoning layer?
+- `meaning_unit_closure_quality`
+  - Does the mechanism form strong meaning-unit interpretations instead of producing sentence-by-sentence sparks or vague paragraph blur?
+- `move_choice_quality`
+  - Does the mechanism choose `advance`, `dwell`, `bridge`, and `reframe` in a way that feels text-earned rather than procedural or arbitrary?
+- `bridge_resolution_honesty`
+  - When the mechanism links backward, are those links source-grounded and interpretively justified rather than merely suggestive?
+- `reaction_selectivity_and_anchor_fidelity`
+  - When the mechanism emits visible thoughts, are they selective, worthwhile, and honestly anchored to the text?
+- `reconsolidation_integrity`
+  - When later reading changes earlier understanding, does the mechanism preserve historical integrity through append-and-link reconsolidation instead of silent overwrite?
+- `resume_reconstitution_honesty`
+  - After interruption, does the mechanism rebuild the same reading mind honestly enough without hiding oversized reread windows or fake warm continuity?
+- `projection_faithfulness`
+  - Do current public/API compatibility projections preserve the original attentional thought direction instead of forcing it back into old section ontology?
+
 ## Known Limits / Drift Notes
 - `attentional_v2` is now a stable experimental mechanism doc, not just a future design sketch.
 - The mechanism now runs as a live parse/read path, but it remains non-default.

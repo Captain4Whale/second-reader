@@ -185,6 +185,28 @@ Use `docs/backend-reading-mechanism.md` for shared mechanism-platform boundaries
 - Durable-trace quality is important, but it is a secondary audit territory rather than a first-class north-star family.
 - It should not force the reader into extra recap structure when the core product surfaces already preserve position and traceability.
 
+## Stable Evaluation Questions
+- These are the stable question families that any serious reader-mechanism evaluation should be able to answer.
+- They are intentionally question-shaped rather than dataset-shaped.
+- Exact case sets, thresholds, and benchmark packaging belong in benchmark code, reviewed reports, or temporary implementation docs.
+
+### Cross-Mechanism Product Questions
+- `whole_reader_product_fit`
+  - Under realistic constraints, which mechanism better preserves the product's intended co-reading mind?
+- `local_reading_behavior`
+  - Which mechanism takes better passage-level reading steps when faced with the same source text?
+- `span_trajectory`
+  - Which mechanism accumulates understanding more coherently across a larger span such as a chapter?
+- `durable_trace_and_reentry`
+  - Which mechanism leaves behind a more useful trail for later return, recall, and re-entry?
+- `runtime_viability_and_compatibility`
+  - Which mechanism remains more operationally trustworthy and integration-safe while pursuing product quality?
+
+### Mechanism-Specific Attribution Questions
+- Stable evaluation may also ask whether one mechanism is actually honoring its own distinctive promises.
+- These questions are still evaluated under the same north-star frame, but they do not need to be symmetrical across all mechanisms.
+- Mechanism-specific questions should live in the relevant mechanism doc plus temporary working docs when they are still being operationalized.
+
 ## Evaluation Methods
 ### Deterministic Metrics
 - Use deterministic metrics for structure, runtime, and guardrail questions.
