@@ -4,6 +4,10 @@ Purpose: define how tracked benchmark datasets are organized on disk.
 
 This directory is family-first, not mechanism-first.
 
+Conceptual rule:
+- benchmark families are defined by evaluation role, not by storage location
+- a package under `eval/datasets/` and a package under `state/eval_local_datasets/` may belong to the same benchmark family if they differ only by `storage_mode`
+
 ## Family Roots
 - `excerpt_cases/`
   - local passage or short-span benchmark inputs
@@ -59,6 +63,11 @@ Each `manifest.json` should record at least:
 - `source_manifest_refs`
 - `split_refs`
 
+Recommended additional field:
+- `storage_mode`
+  - `tracked`
+  - `local-only`
+
 ## Language Tracks
 Use:
 - `en`
@@ -84,6 +93,6 @@ Datasets and manifests are different:
 - When a package contains copyrighted or otherwise private source text, keep it out of this tracked tree.
 - Put the package instead under:
   - `state/eval_local_datasets/<family>/<dataset_id>/`
-- Keep the same family roots and package contract there so tracked and local packages stay structurally comparable.
+- Keep the same family roots and package contract there so tracked and local packages stay structurally comparable as one benchmark family across two storage modes.
 
 Do not duplicate source-book inventory metadata into every dataset package.

@@ -2,6 +2,10 @@
 
 Purpose: store tracked corpus manifests and local-source reference files for benchmark and evaluation work.
 
+Conceptual rule:
+- manifests unify one benchmark family across storage modes
+- they should let us relate `tracked` and `local-only` packages without treating them as different benchmark concepts
+
 Use this directory for:
 - corpus manifests
 - source-book inventory files

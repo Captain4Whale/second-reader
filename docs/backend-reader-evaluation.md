@@ -275,11 +275,13 @@ Use `docs/backend-reading-mechanism.md` for shared mechanism-platform boundaries
 - Normal product runs should not persist normalized comparison bundles into book output directories.
 - If a runtime-backed eval explicitly asks for export persistence, the mechanism may write `_mechanisms/<mechanism_key>/exports/normalized_eval_bundle.json` for that run.
 - Tracked benchmark datasets remain the source of truth for benchmark inputs.
+  - Conceptually, one benchmark family may span more than one storage mode.
+  - The difference between `tracked` and `local-only` is packaging and portability, not evaluation meaning.
   - Excerpt-case datasets may carry the excerpt text they need directly.
   - End-to-end chapter/book comparisons should use an intentional evaluation corpus rather than ad hoc runtime `output/` or `state/uploads/` files.
   - User uploads and runtime book copies should only enter the benchmark corpus after explicit promotion and screening.
   - The durable local source-library territory for that screening flow is `reading-companion-backend/state/library_sources/`.
-  - When the source books are private or copyrighted, keep excerpt/chapter fixture packages local under `reading-companion-backend/state/eval_local_datasets/` and point to them through tracked manifests instead of checking those text-bearing packages into the repo.
+  - When the source books are private or copyrighted, keep the text-bearing package in `reading-companion-backend/state/eval_local_datasets/` and point to it through tracked manifests instead of checking that package into the repo.
 
 ## Dataset Organization Rules
 - Organize benchmark inputs by evidence family first, not by whichever mechanism happens to be under active development.
@@ -288,7 +290,7 @@ Use `docs/backend-reading-mechanism.md` for shared mechanism-platform boundaries
   - `chapter_corpora/`
   - `runtime_fixtures/`
   - `compatibility_fixtures/`
-- When a package contains private or copyrighted source text, mirror the same family-first layout under `reading-companion-backend/state/eval_local_datasets/` instead of forcing it into the tracked dataset tree.
+- The same benchmark family may also have `storage_mode = local-only` packages under `reading-companion-backend/state/eval_local_datasets/` when the package contains private or copyrighted source text.
 - Keep English and Chinese as separate language tracks.
   - Use `en` and `zh` package tracks for language-bound datasets.
   - Use `shared` only when a dataset is intentionally language-agnostic.
@@ -298,9 +300,21 @@ Use `docs/backend-reading-mechanism.md` for shared mechanism-platform boundaries
   - one primary payload file such as `cases.jsonl`, `chapters.jsonl`, or `fixtures.jsonl`
 - Tracked corpus/source metadata should not be mixed into the dataset package itself.
   - Put source-book inventories, corpus-selection manifests, split manifests, and local-path references under `reading-companion-backend/eval/manifests/`.
-- The local-only mirror should keep the same family roots and package contract when possible so tracked and local packages stay comparable.
+- The local-only mirror should keep the same family roots and package contract so tracked and local packages stay comparable as one benchmark family.
 - Machine-generated run output must stay under `reading-companion-backend/eval/runs/`, never inside tracked dataset packages.
 - Detailed package naming and payload-shape rules may evolve in repo-local READMEs and benchmark code, but the family-first plus separate-language-track structure is the stable rule.
+
+### Storage Mode Rule
+- Every benchmark package should be thought of as belonging to one benchmark family first.
+- `storage_mode` only answers:
+  - can this package live in the tracked repo dataset tree?
+  - or must it stay in the local-only mirror?
+- Use:
+  - `tracked`
+    - for repo-safe packages under `reading-companion-backend/eval/datasets/`
+  - `local-only`
+    - for packages kept under `reading-companion-backend/state/eval_local_datasets/`
+- Do not let `storage_mode` create a fake conceptual split such as "public benchmark" versus "private benchmark" when the evaluation question and package role are the same.
 
 ### Expectations For Evaluation Reports
 - Per-run or per-change reports should state:

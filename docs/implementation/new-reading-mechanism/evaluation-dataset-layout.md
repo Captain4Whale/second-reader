@@ -9,8 +9,9 @@ Update when: package naming changes, new dataset families are added, or the bili
 - Stable project rule:
   - family-first dataset layout under `reading-companion-backend/eval/datasets/`
 - Current project rule:
-  - build the first `attentional_v2` evaluation packages inside that stable family-first layout
-  - mirror the same family-first structure under `reading-companion-backend/state/eval_local_datasets/` whenever the package contains copyrighted or otherwise private source text
+  - build one `attentional_v2` benchmark family per evidence family and language track
+  - let each package declare or imply `storage_mode = tracked` or `storage_mode = local-only`
+  - keep the same family-first structure under `reading-companion-backend/state/eval_local_datasets/` whenever the package contains copyrighted or otherwise private source text
 
 ## Family Mapping
 ### `excerpt_cases`
@@ -109,6 +110,11 @@ Recommended optional files:
 - `source_manifest_refs`
 - `split_refs`
 
+Recommended additional key:
+- `storage_mode`
+  - `tracked`
+  - `local-only`
+
 ### Primary payload rules
 - `cases.jsonl`
   - one record per excerpt case
@@ -126,6 +132,18 @@ The following belong in `reading-companion-backend/eval/manifests/`, not inside 
 - bilingual split manifests
 - local-path reference files for private/local corpora
 - local package reference files for private/local dataset packages
+
+## Unified Benchmark Family Rule
+- Tracked packages and local-only packages are not different benchmark concepts when they answer the same evaluation questions.
+- They are the same benchmark family in different storage modes.
+- The real organizing dimensions are:
+  - `family`
+  - `language_track`
+  - `version`
+  - `storage_mode`
+- The purpose of `storage_mode` is operational:
+  - whether the package can live in the tracked repo dataset tree
+  - or must stay in the local-only mirror
 
 ## Bilingual Rule
 - English and Chinese stay in separate tracked packages.
@@ -183,12 +201,12 @@ Important status nuance:
 - compatibility fixtures are spec-level audit inputs and still require live runtime outputs to become fully materialized audit fixtures
 
 ## Curated Excerpt Status
-The first curated excerpt layer has now been frozen on top of the seed pool:
+The first curated excerpt benchmark family has now been frozen on top of the seed pool:
 
-- tracked curated packs:
+- `storage_mode = tracked` packages:
   - `reading-companion-backend/eval/datasets/excerpt_cases/attentional_v2_excerpt_en_curated_v1/`
   - `reading-companion-backend/eval/datasets/excerpt_cases/attentional_v2_excerpt_zh_curated_v1/`
-- local-only curated packs:
+- `storage_mode = local-only` packages:
   - `reading-companion-backend/state/eval_local_datasets/excerpt_cases/attentional_v2_private_excerpt_en_curated_v1/`
   - `reading-companion-backend/state/eval_local_datasets/excerpt_cases/attentional_v2_private_excerpt_zh_curated_v1/`
 - supporting manifests:
@@ -196,10 +214,12 @@ The first curated excerpt layer has now been frozen on top of the seed pool:
   - `reading-companion-backend/eval/manifests/local_refs/attentional_v2_private_excerpt_curated_v1.json`
 
 Current curated counts:
-- tracked English curated cases: `5`
-- tracked Chinese curated cases: `2`
-- local English curated cases: `10`
-- local Chinese curated cases: `4`
+- English curated cases:
+  - `5` in `storage_mode = tracked`
+  - `10` in `storage_mode = local-only`
+- Chinese curated cases:
+  - `2` in `storage_mode = tracked`
+  - `4` in `storage_mode = local-only`
 
 Curated-case rules in this pass:
 - every curated case has explicit:
@@ -211,12 +231,12 @@ Curated-case rules in this pass:
 - the curated layer intentionally does not inherit the duplicate/weak `case_id` patterns from the raw seed layer
 
 Important status nuance:
-- the curated English packs are strong enough for a first-pass local evaluation run
-- the repo-safe Chinese curated pack is intentionally thin, because the public-domain Chinese seed pool yielded much weaker parse-safe excerpt material than the local supplement
-- later corpus work should expand public-safe Chinese sources if we want a larger tracked Chinese excerpt benchmark instead of relying mostly on local supplements
+- the curated English family is strong enough for a first-pass local evaluation run
+- within the Chinese curated family, `storage_mode = tracked` is still intentionally thin because the current public-domain Chinese source pool yielded much weaker parse-safe excerpt material than the manually added supplement
+- later corpus work should expand public-safe Chinese sources if we want a larger `storage_mode = tracked` slice of the same Chinese excerpt benchmark family
 
-## Private Downloads Supplement Status
-The first private-local supplement sourced from the user's Downloads EPUB pool has now landed outside the tracked dataset tree:
+## Local-Only Supplement Status
+The first `storage_mode = local-only` supplement sourced from the user's Downloads EPUB pool has now landed in the local package mirror:
 
 - tracked manifests:
   - `reading-companion-backend/eval/manifests/source_books/attentional_v2_private_downloads_screen_v1.json`
@@ -226,7 +246,7 @@ The first private-local supplement sourced from the user's Downloads EPUB pool h
 - promoted private source books:
   - `reading-companion-backend/state/library_sources/en/private/`
   - `reading-companion-backend/state/library_sources/zh/private/`
-- local-only package mirror:
+- `storage_mode = local-only` package mirror:
   - `reading-companion-backend/state/eval_local_datasets/chapter_corpora/attentional_v2_private_chapters_en_v1/`
   - `reading-companion-backend/state/eval_local_datasets/chapter_corpora/attentional_v2_private_chapters_zh_v1/`
   - `reading-companion-backend/state/eval_local_datasets/runtime_fixtures/attentional_v2_private_runtime_en_v1/`
@@ -246,11 +266,11 @@ Current counts:
 - `18` shared compatibility fixture specs
 
 Important status nuance:
-- these private-local packages are structurally real and grounded in canonical parse
+- these `storage_mode = local-only` packages are structurally real and grounded in canonical parse
 - their text-bearing payloads intentionally remain outside the tracked repo dataset tree
 - the private excerpt cases are still auto-extracted seed cases and still require later manual curation before benchmark promotion
 
 ## Private Local Supplement Rule
-- Use the tracked `eval/datasets/` tree for public-domain or otherwise repo-safe packages.
-- Use `state/eval_local_datasets/` for packages derived from private books, including local excerpt packages that carry copyrighted source text.
-- Keep the family roots, package contract, and manifest shape aligned across both trees so later evaluation code can treat them as parallel package territories.
+- Use the tracked `eval/datasets/` tree for `storage_mode = tracked` packages.
+- Use `state/eval_local_datasets/` for `storage_mode = local-only` packages, including local excerpt packages that carry copyrighted source text.
+- Keep the family roots, package contract, and manifest shape aligned across both trees so later evaluation code can treat them as one benchmark family with two storage modes.

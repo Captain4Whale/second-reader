@@ -23,6 +23,7 @@ Update when: evaluation-question coverage changes, the source-policy changes, or
 - annotate case purpose and provenance
 - create tuning vs holdout splits
 - freeze manifests, fingerprints, and dataset versions
+- assign the right `storage_mode` for each package without changing its benchmark meaning
 - derive runtime/resume fixtures and persisted compatibility fixtures
 - reject weak chapters/excerpts even if they came from otherwise good books
 
@@ -198,6 +199,10 @@ For the real corpus-building step, the most helpful input is:
     - tracked excerpt datasets and manifests
     - private local full-book corpus when needed
 
+Important conceptual rule:
+- source policy and `storage_mode` should not create separate benchmark concepts when the evaluation question is the same
+- they only decide how the package is stored and shared
+
 ## Source-Book Organization
 We should organize books by role and lifecycle, not by "all EPUBs in one folder."
 
@@ -254,7 +259,7 @@ We should organize books by role and lifecycle, not by "all EPUBs in one folder.
 
 5. `private_local_evaluation_packages`
 - Purpose:
-  - local-only excerpt, chapter, runtime, or compatibility packages derived from private or copyrighted books
+  - `storage_mode = local-only` excerpt, chapter, runtime, or compatibility packages derived from books whose text-bearing packages should stay outside the tracked repo dataset tree
 - Recommended home:
   - `reading-companion-backend/state/eval_local_datasets/`
 - Rules:
@@ -310,11 +315,12 @@ For durable library and evaluation use, each source book should eventually carry
 - Manually added backend books:
   - place them in a durable source-library territory, not in `state/uploads/`
 - Evaluation corpus:
-  - build it from screened durable sources
-  - do not treat ad hoc runtime outputs or uploads as the benchmark corpus
+- build it from screened durable sources
+- do not treat ad hoc runtime outputs or uploads as the benchmark corpus
 - Private or copyrighted evaluation packages:
   - build them under `state/eval_local_datasets/`
   - keep only manifests and references tracked in the repo
+- When the benchmark role is the same, treat tracked and local-only packages as the same benchmark family with different storage modes rather than as different conceptual datasets.
 - Repo fixtures:
   - keep minimal and intentional under `tests/fixtures/` or tracked `eval/datasets/`
 
