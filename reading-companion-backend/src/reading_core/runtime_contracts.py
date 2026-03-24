@@ -62,6 +62,7 @@ class JobRecord(TypedDict):
     job_id: str
     status: JobStatus
     job_kind: JobKind
+    mechanism_key: str | None
     upload_path: str
     book_id: str | None
     language: str

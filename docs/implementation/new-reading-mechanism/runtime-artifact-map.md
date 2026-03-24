@@ -76,7 +76,10 @@ Update when: the artifact layout, ownership boundary, or shell-envelope rule cha
 - If a field needs `attentional_v2` ontology such as trigger, gate, pressure, bridge, reframe, promotion, or anchor-memory semantics, it belongs under `_mechanisms/attentional_v2/`.
 - Product-core reading artifacts should remain mechanism-authored truth even when shared `_runtime/` points to them.
 
-## Phase 1 Notes
-- Phase 1 creates the artifact map and default state files.
-- Phase 1 does not yet claim that `attentional_v2` parse or read execution is complete.
-- Later phases fill these artifacts with real runtime behavior; Phase 6 adds durable reaction truth and mechanism-private chapter-result compatibility projections, and Phase 7 adds compact local continuity, resume metadata, full checkpoint payloads, and bounded warm/cold/reconstitution resume helpers without yet making `attentional_v2` a live parse/read path.
+## Phase Notes
+- Phase 1 created the artifact map and default state files.
+- Later phases filled these artifacts with real runtime behavior:
+  - Phase 6 added durable reaction truth and mechanism-private chapter-result compatibility projections.
+  - Phase 7 added compact local continuity, resume metadata, and full checkpoint payloads.
+  - Phase 8 added shared/public additive locus-anchor projection plus eval/observability exports.
+  - Phase 8.5 made `attentional_v2` a live parse/read path that now writes these shared and mechanism-private artifacts through the shared runtime shell, CLI, and async job lifecycle.

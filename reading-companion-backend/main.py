@@ -73,6 +73,38 @@ def _print_structure_overview(book_path: Path, structure: dict, output_dir: Path
     print(f'  python main.py read "{book_path}" --chapter 3')
 
 
+def _print_parse_overview(book_path: Path, artifact: dict[str, object], output_dir: Path) -> None:
+    """Print a readable parse summary for either iterator or non-iterator mechanisms."""
+
+    chapters = artifact.get("chapters", [])
+    if isinstance(chapters, list) and any(isinstance(chapter, dict) and "segments" in chapter for chapter in chapters):
+        _print_structure_overview(book_path, artifact, output_dir)
+        return
+
+    print("=" * 60)
+    print(f'书籍: {artifact.get("book", book_path.stem)}')
+    print(f'作者: {artifact.get("author", "Unknown")}')
+    print(f'书籍语言: {artifact.get("book_language", "unknown")}')
+    print(f'输出语言: {artifact.get("output_language", "unknown")} ({language_name(str(artifact.get("output_language", "en")) or "en")})')
+    print(f'章节数: {artifact.get("chapter_count", len(chapters) if isinstance(chapters, list) else 0)}')
+    print(f"输出目录: {output_dir}")
+    print("=" * 60)
+    print("")
+    if isinstance(chapters, list) and chapters:
+        print("章节概览：")
+        for chapter in chapters:
+            if not isinstance(chapter, dict):
+                continue
+            sentence_count = int(chapter.get("sentence_count", 0) or 0)
+            suffix = f" ({sentence_count} 句)" if sentence_count > 0 else ""
+            print(f'  {chapter.get("reference", chapter.get("title", ""))}{suffix}')
+        print("")
+    print("下一步：")
+    print(f'  python main.py read "{book_path}"')
+    print(f'  python main.py read "{book_path}" --continue')
+    print(f'  python main.py read "{book_path}" --chapter 3')
+
+
 def cmd_parse(args: argparse.Namespace) -> int:
     """Run the parse stage and persist structure.json."""
     book_path = _require_book_path(args.book_file)
@@ -90,7 +122,7 @@ def cmd_parse(args: argparse.Namespace) -> int:
         print(f"Error: {exc}")
         return 1
     structure = dict(result.mechanism_artifact or {})
-    _print_structure_overview(book_path, structure, result.output_dir)
+    _print_parse_overview(book_path, structure, result.output_dir)
     return 0
 
 

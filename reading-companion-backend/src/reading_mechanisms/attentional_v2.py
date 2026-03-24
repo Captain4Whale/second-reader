@@ -11,6 +11,7 @@ from src.attentional_v2.evaluation import (
     persist_normalized_eval_bundle,
     run_mechanism_integrity_checks,
 )
+from src.attentional_v2.runner import parse_attentional_v2, read_attentional_v2
 from src.attentional_v2.storage import (
     ATTENTIONAL_V2_MECHANISM_KEY,
     artifact_map,
@@ -92,17 +93,11 @@ class AttentionalV2Mechanism:
         return run_mechanism_integrity_checks(output_dir)
 
     def parse_book(self, request: ParseRequest) -> ParseResult:
-        """Attentional V2 parse is not implemented in Phase 1-8."""
+        """Run the real parse-stage attentional_v2 integration path."""
 
-        raise NotImplementedError(
-            "attentional_v2 Phase 1-8 provides shell, schema, sentence-substrate, survey, intake, interpretive-node, bridge-state, slow-cycle, resume, observability, and evaluation scaffolding only; "
-            "its parse path will land in later phases."
-        )
+        return parse_attentional_v2(request, self.info)
 
     def read_book(self, request: ReadRequest) -> ReadResult:
-        """Attentional V2 reading is not implemented in Phase 1-8."""
+        """Run the real attentional_v2 sequential live runner."""
 
-        raise NotImplementedError(
-            "attentional_v2 Phase 1-8 provides shell, schema, sentence-substrate, survey, intake, interpretive-node, bridge-state, slow-cycle, resume, observability, and evaluation scaffolding only; "
-            "its reading loop will land in later phases."
-        )
+        return read_attentional_v2(request, self.info)

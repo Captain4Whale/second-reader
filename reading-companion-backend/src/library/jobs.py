@@ -23,17 +23,23 @@ from .storage import (
 )
 from src.config import (
     get_backend_boot_id,
+    get_backend_reading_mechanism_key,
     get_backend_run_mode,
     get_backend_version,
     get_reader_resume_compat_version,
 )
-from src.iterator_reader.frontend_artifacts import (
+from src.reading_runtime import default_mechanism_key
+from src.reading_runtime.artifacts import existing_runtime_shell_file
+from src.reading_runtime.provisioning import ensure_book_assets, ensure_output_dir, inspect_book
+from src.reading_runtime.sequential_state import (
     append_activity_event,
     append_deduped_activity_event,
     build_run_state,
+    build_minimal_book_manifest,
     reset_activity,
     write_book_manifest,
     write_run_state,
+    write_parse_progress,
 )
 from src.iterator_reader.storage import (
     clear_iterator_private_artifacts,
@@ -73,6 +79,7 @@ def _job_record(
     status: str,
     upload_path: Path,
     job_kind: str,
+    mechanism_key: str | None = None,
     language: str = "auto",
     intent: str | None = None,
     resume_count: int = 0,
@@ -88,6 +95,7 @@ def _job_record(
         "job_id": job_id,
         "status": status,
         "job_kind": job_kind,
+        "mechanism_key": str(mechanism_key or "").strip() or None,
         "upload_path": str(upload_path),
         "book_id": book_id,
         "language": language,
@@ -115,6 +123,7 @@ def _normalize_record(record: dict) -> dict:
     return {
         **record,
         "job_kind": job_kind,
+        "mechanism_key": str(record.get("mechanism_key", "") or "").strip() or None,
         "language": str(record.get("language", "auto") or "auto"),
         "intent": str(record.get("intent", "") or "") or None,
         "resume_count": int(record.get("resume_count", 0) or 0),
@@ -281,12 +290,29 @@ def load_job(job_id: str, root: Path | None = None) -> dict:
     return _normalize_record(load_job_json(job_file(job_id, root)))
 
 
-def _job_command(record: dict, *, continue_mode: bool) -> list[str]:
+def _normalized_mechanism_key(value: object) -> str | None:
+    """Return one cleaned mechanism key or None."""
+
+    cleaned = str(value or "").strip()
+    return cleaned or None
+
+
+def _resolved_mechanism_key(value: object) -> str | None:
+    """Resolve one mechanism key while omitting the current default from CLI flags."""
+
+    mechanism_key = _normalized_mechanism_key(value)
+    if mechanism_key == default_mechanism_key():
+        return None
+    return mechanism_key
+
+
+def _job_command(record: dict, *, continue_mode: bool, mechanism_key: str | None = None) -> list[str]:
     """Build the CLI command for one persisted job record."""
     upload_path = Path(str(record.get("upload_path", "")))
     language = str(record.get("language", "auto") or "auto")
     intent = str(record.get("intent", "") or "") or None
     job_kind = str(record.get("job_kind", "read") or "read")
+    selected_mechanism = _resolved_mechanism_key(mechanism_key or record.get("mechanism_key"))
 
     if job_kind == "parse":
         command = [
@@ -299,6 +325,8 @@ def _job_command(record: dict, *, continue_mode: bool) -> list[str]:
         ]
         if continue_mode:
             command.append("--continue")
+        if selected_mechanism:
+            command.extend(["--mechanism", selected_mechanism])
         return command
 
     command = [
@@ -315,6 +343,8 @@ def _job_command(record: dict, *, continue_mode: bool) -> list[str]:
         command.append("--continue")
     if intent:
         command.extend(["--intent", intent])
+    if selected_mechanism:
+        command.extend(["--mechanism", selected_mechanism])
     return command
 
 
@@ -323,6 +353,7 @@ def _launch_subprocess_job(
     upload_path: Path,
     command: list[str],
     job_kind: str,
+    mechanism_key: str | None = None,
     language: str = "auto",
     intent: str | None = None,
     root: Path | None = None,
@@ -339,6 +370,7 @@ def _launch_subprocess_job(
         status="error" if runtime_issue else initial_status,
         upload_path=upload_path,
         job_kind=job_kind,
+        mechanism_key=mechanism_key,
         language=language,
         intent=intent,
         book_id=book_id,
@@ -378,6 +410,7 @@ def _launch_subprocess_job(
             status=initial_status,
             upload_path=upload_path,
             job_kind=job_kind,
+            mechanism_key=mechanism_key,
             language=language,
             intent=intent,
             book_id=book_id,
@@ -392,6 +425,7 @@ def _launch_subprocess_job(
 def launch_sequential_job(
     upload_path: Path,
     *,
+    mechanism_key: str | None = None,
     language: str = "auto",
     intent: str | None = None,
     root: Path | None = None,
@@ -408,6 +442,8 @@ def launch_sequential_job(
         "--language",
         language,
     ]
+    if _resolved_mechanism_key(mechanism_key):
+        command.extend(["--mechanism", str(mechanism_key)])
     if intent:
         command.extend(["--intent", intent])
 
@@ -415,6 +451,7 @@ def launch_sequential_job(
         upload_path=upload_path,
         command=command,
         job_kind="read",
+        mechanism_key=mechanism_key,
         language=language,
         intent=intent,
         root=root,
@@ -426,6 +463,7 @@ def launch_sequential_job(
 def launch_parse_job(
     upload_path: Path,
     *,
+    mechanism_key: str | None = None,
     language: str = "auto",
     root: Path | None = None,
     book_id: str | None = None,
@@ -439,10 +477,13 @@ def launch_parse_job(
         "--language",
         language,
     ]
+    if _resolved_mechanism_key(mechanism_key):
+        command.extend(["--mechanism", str(mechanism_key)])
     return _launch_subprocess_job(
         upload_path=upload_path,
         command=command,
         job_kind="parse",
+        mechanism_key=mechanism_key,
         language=language,
         root=root,
         initial_status="queued",
@@ -453,44 +494,36 @@ def launch_parse_job(
 def provision_uploaded_book(
     upload_path: Path,
     *,
+    mechanism_key: str | None = None,
     language: str = "auto",
     root: Path | None = None,
 ) -> str | None:
     """Create a minimal book shell so uploads can resolve a book id immediately."""
-    from src.iterator_reader.frontend_artifacts import build_run_state, write_book_manifest, write_run_state
-    from src.iterator_reader.language import detect_book_language, resolve_output_language
-    from src.iterator_reader.parse import _extract_epub_cover, extract_book_metadata
-    from src.iterator_reader.storage import ensure_output_dir, ensure_source_asset, existing_book_manifest_file, resolve_output_dir
-
     try:
-        title, author = extract_book_metadata(upload_path)
-        book_language = detect_book_language(upload_path, sample_text="")
-        output_language = resolve_output_language(language, book_language)
-        output_dir = resolve_output_dir(upload_path, title, book_language, output_language)
+        provisioned = inspect_book(upload_path, language_mode=language, sample_text="")
+        output_dir = provisioned.output_dir
         book_id = book_id_from_output_dir(output_dir)
         manifest_path = existing_book_manifest_file(output_dir)
         if manifest_path.exists():
             return book_id
 
         ensure_output_dir(output_dir)
-        ensure_source_asset(upload_path, output_dir)
-        if upload_path.suffix.lower() == ".epub":
-            _extract_epub_cover(upload_path, output_dir)
+        ensure_book_assets(upload_path, output_dir)
 
-        structure = {
-            "book": title,
-            "author": author,
-            "book_language": book_language,
-            "output_language": output_language,
-            "source_file": str(upload_path),
-            "output_dir": str(output_dir),
-            "chapters": [],
-        }
-        write_book_manifest(output_dir, structure)
+        manifest = build_minimal_book_manifest(
+            output_dir,
+            book_title=provisioned.title,
+            author=provisioned.author,
+            book_language=provisioned.book_language,
+            output_language=provisioned.output_language,
+            source_file=str(upload_path),
+            chapters=[],
+        )
+        write_book_manifest(output_dir, manifest)
         write_run_state(
             output_dir,
             build_run_state(
-                structure,
+                book_title=provisioned.title,
                 stage="ready",
                 total_chapters=0,
                 completed_chapters=0,
@@ -511,6 +544,7 @@ def provision_uploaded_book(
 def launch_book_analysis_job(
     book_id: str,
     *,
+    mechanism_key: str | None = None,
     language: str = "auto",
     intent: str | None = None,
     root: Path | None = None,
@@ -519,6 +553,8 @@ def launch_book_analysis_job(
     source_path = source_asset_path(book_id, root=root)
     if not source_path.exists():
         raise FileNotFoundError(source_path)
+    if _normalized_mechanism_key(mechanism_key) == "attentional_v2":
+        raise RuntimeError("attentional_v2 does not support book_analysis mode yet.")
 
     command = [
         sys.executable,
@@ -530,6 +566,8 @@ def launch_book_analysis_job(
         "--language",
         language,
     ]
+    if _resolved_mechanism_key(mechanism_key):
+        command.extend(["--mechanism", str(mechanism_key)])
     if intent:
         command.extend(["--intent", intent])
 
@@ -537,6 +575,7 @@ def launch_book_analysis_job(
         upload_path=source_path,
         command=command,
         job_kind="read",
+        mechanism_key=mechanism_key,
         language=language,
         intent=intent,
         root=root,
@@ -563,6 +602,28 @@ def _load_book_parse_state(book_id: str, root: Path | None = None) -> dict | Non
     return load_runtime_json(path) if path.exists() else None
 
 
+def _load_book_runtime_shell(book_id: str, root: Path | None = None) -> dict | None:
+    """Read the shared runtime shell payload for one book when available."""
+
+    path = existing_runtime_shell_file(_book_output_dir(book_id, root))
+    return load_runtime_json(path) if path.exists() else None
+
+
+def _resume_mechanism_key(record: dict, *, book_id: str | None, root: Path | None = None) -> str | None:
+    """Resolve the mechanism key for resume/recovery with shell-first precedence."""
+
+    if book_id:
+        runtime_shell = _load_book_runtime_shell(book_id, root)
+        if isinstance(runtime_shell, dict):
+            mechanism_key = _normalized_mechanism_key(runtime_shell.get("mechanism_key"))
+            if mechanism_key:
+                return mechanism_key
+    mechanism_key = _normalized_mechanism_key(record.get("mechanism_key"))
+    if mechanism_key:
+        return mechanism_key
+    return default_mechanism_key()
+
+
 def _terminate_process(pid: int | None) -> None:
     """Best-effort terminate one stale background worker."""
     if not pid:
@@ -575,6 +636,11 @@ def _terminate_process(pid: int | None) -> None:
 
 def _clear_live_analysis_artifacts(book_id: str, root: Path | None = None) -> None:
     """Reset live deep-reading artifacts so one fresh run can start cleanly."""
+    from src.iterator_reader.frontend_artifacts import (
+        build_run_state as build_iterator_run_state,
+        write_book_manifest as write_iterator_book_manifest,
+    )
+
     output_dir = _book_output_dir(book_id, root)
     structure_path = existing_structure_file(output_dir)
     manifest_path = existing_book_manifest_file(output_dir)
@@ -605,13 +671,13 @@ def _clear_live_analysis_artifacts(book_id: str, root: Path | None = None) -> No
     clear_iterator_private_artifacts(output_dir)
     save_structure(structure_path, structure)
     if manifest_path.exists():
-        manifest = write_book_manifest(output_dir, structure)
+        manifest = write_iterator_book_manifest(output_dir, structure)
         if preserve_legacy_manifest:
             save_job_json(legacy_manifest_path, manifest)
     reset_activity(output_dir)
     run_state = write_run_state(
         output_dir,
-        build_run_state(
+        build_iterator_run_state(
             structure,
             stage="ready",
             total_chapters=len(chapters),
@@ -717,6 +783,7 @@ def _fresh_rerun_after_incompatibility(record: dict, *, book_id: str | None, roo
     """Archive one incompatible run, reset live artifacts, and launch a fresh job."""
     normalized = _normalize_record(record)
     resolved_book_id = str(book_id or normalized.get("book_id", "") or "").strip() or None
+    mechanism_key = _resume_mechanism_key(normalized, book_id=resolved_book_id, root=root)
     reason = "Detected an incompatible resume checkpoint; clearing live analysis artifacts and starting a fresh run."
     _terminate_process(int(normalized.get("pid", 0) or 0) or None)
     archived_job = save_job(
@@ -735,8 +802,9 @@ def _fresh_rerun_after_incompatibility(record: dict, *, book_id: str | None, roo
 
     fresh_record = _launch_subprocess_job(
         upload_path=Path(str(normalized.get("upload_path", ""))),
-        command=_job_command(normalized, continue_mode=False),
+        command=_job_command(normalized, continue_mode=False, mechanism_key=mechanism_key),
         job_kind=str(normalized.get("job_kind", "read") or "read"),
+        mechanism_key=mechanism_key,
         language=str(normalized.get("language", "auto") or "auto"),
         intent=normalized.get("intent"),
         root=root,
@@ -781,7 +849,8 @@ def _resume_job(record: dict, root: Path | None = None, *, automatic: bool) -> d
     normalized = _normalize_record(record)
     book_id = str(normalized.get("book_id", "") or "") or find_book_id_by_source(Path(str(normalized.get("upload_path", ""))), root=root)
     target_status = _resume_target_status(normalized, book_id, root)
-    command = _job_command(normalized, continue_mode=True)
+    mechanism_key = _resume_mechanism_key(normalized, book_id=book_id, root=root)
+    command = _job_command(normalized, continue_mode=True, mechanism_key=mechanism_key)
     log_path = job_log_file(str(normalized.get("job_id", "")), root)
     log_path.parent.mkdir(parents=True, exist_ok=True)
     with log_path.open("ab") as log:
@@ -809,6 +878,7 @@ def _resume_job(record: dict, root: Path | None = None, *, automatic: bool) -> d
             status=target_status,
             upload_path=Path(str(normalized.get("upload_path", ""))),
             job_kind=str(normalized.get("job_kind", "read")),
+            mechanism_key=mechanism_key,
             language=str(normalized.get("language", "auto")),
             intent=normalized.get("intent"),
             resume_count=int(normalized.get("resume_count", 0)) + 1,
@@ -1005,6 +1075,7 @@ def refresh_job(job_id: str, root: Path | None = None) -> dict:
         status=status,
         upload_path=upload_path,
         job_kind=str(record.get("job_kind", "read")),
+        mechanism_key=_resume_mechanism_key(record, book_id=book_id, root=root) if book_id else _normalized_mechanism_key(record.get("mechanism_key")),
         language=str(record.get("language", "auto")),
         intent=record.get("intent"),
         resume_count=int(record.get("resume_count", 0) or 0),

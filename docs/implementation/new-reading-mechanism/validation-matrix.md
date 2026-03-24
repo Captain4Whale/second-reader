@@ -30,7 +30,8 @@ Update when: a phase gains new obligations, a check is split out, or acceptance 
 | Phase 5 - Knowledge, memory, and bridge resolution | Verify recognition vs reading-warrant separation, source-anchor bridge targeting, relation writes, and knowledge/search policy transitions. | `unit` / `integration` / `evaluation` | `done` |
 | Phase 6 - Slow-cycle reasoning and historical integrity | Verify promotion/supersede rules, reconsolidation append-and-link behavior, reaction immutability, and chapter carry-forward discipline. | `integration` / `runtime` / `evaluation` | `done` |
 | Phase 7 - Persistence, checkpointing, and resume | Run warm/cold/reconstitution resume fixtures; verify no durable-anchor loss, no visible-reaction loss, and explicit reconstructed-state signaling. | `runtime` / `integration` | `done` |
-| Phase 8 - Observability, evaluation, and shared-surface integration | Verify additive anchor/locus public fields, event streams, checkpoint summaries, normalized eval artifacts, and compatibility with analysis-state, activity, chapter, and marks surfaces. | `compatibility` / `runtime` / `evaluation` | `in_progress` |
+| Phase 8 - Observability, evaluation, and shared-surface integration | Verify additive anchor/locus public fields, event streams, checkpoint summaries, normalized eval artifacts, and compatibility with analysis-state, activity, chapter, and marks surfaces. | `compatibility` / `runtime` / `evaluation` | `done` |
+| Phase 8.5 - Live runner integration | Verify shared provisioning/job propagation, real `attentional_v2` parse/read runs, resume/recovery mechanism-key continuity, non-iterator compatibility aggregation, and unchanged public contract gates. | `integration` / `compatibility` / `runtime` / `docs` | `done` |
 | Phase 9 - Migration, stabilization, and default-cutover readiness | Run end-to-end comparison against `iterator_v1`, confirm acceptance ladder, and verify long-term doc promotions for every landed behavior change. | `evaluation` / `compatibility` / `docs` | `planned` |
 
 ## Minimum Acceptance Ladder
@@ -59,6 +60,11 @@ Update when: a phase gains new obligations, a check is split out, or acceptance 
 - The current Q9 landing now also requires evaluation/runtime validation for:
   - normalized eval bundle export from persisted `attentional_v2` artifacts
   - structural integrity checks over cursor sentence ids, anchor locators, reconsolidation links, Q7 resume-policy bounds, and compatibility projections
+- The new Phase 8.5 landing now also requires integration/runtime validation for:
+  - shared `mechanism_key` propagation through launch, resume, auto-resume, and incompatible fresh rerun flows
+  - live `attentional_v2` parse/read entrypoints without iterator `structure.json`
+  - explicit `attentional_v2 + book_analysis` failure behavior
+  - `make contract-check` staying green after the runner integration
 - Before any true Phase 9 end-to-end comparison, curate the tracked `attentional_v2` benchmark datasets and chapter-level evaluation corpus instead of using ad hoc runtime outputs as the benchmark source of truth.
 - Future Phase 8 / 9 work still needs explicit validation for the eventual removal of section-first chapter/detail and marks assumptions.
-- Future Phase 8 work still needs node-level observability validation once the live runner wires standard/debug traces across the real interpretive loop.
+- Future Phase 9 work still needs deeper node-level observability validation once standard/debug traces are expanded across the full live interpretive loop.

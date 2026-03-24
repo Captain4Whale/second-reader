@@ -52,3 +52,12 @@ Update when: the project scope expands, a workstream changes, or a new stable-do
   - `docs/backend-reader-evaluation.md`
   - `docs/backend-reading-mechanisms/attentional_v2.md`
   - because normalized eval exports and structural integrity checks are now real mechanism behavior, while the future dataset/corpus curation work still remains intentionally deferred to Phase 9.
+- Current Phase 8.5 live-runner landing touches:
+  - `docs/backend-sequential-lifecycle.md`
+  - `docs/backend-reading-mechanism.md`
+  - `docs/backend-reading-mechanisms/README.md`
+  - `docs/backend-reading-mechanisms/attentional_v2.md`
+  - `docs/backend-state-aggregation.md`
+  - `reading-companion-backend/AGENTS.md`
+  - `docs/history/decision-log.md`
+  - because `attentional_v2` is now a real experimental parse/read mechanism with shared runtime/job propagation, non-iterator compatibility aggregation, and explicit unsupported legacy `book_analysis` behavior.

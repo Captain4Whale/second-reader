@@ -22,9 +22,13 @@ Use `docs/api-contract.md` for exact fields and routes. Use this file to underst
   - Current `iterator_v1`-owned derived traversal artifact.
   - Carries chapter section trees, `segment_ref`, and iterator-specific traversal metadata.
   - Public aggregation still uses it where section-level backfill or iterator-era chapter structure is required.
+- `_mechanisms/attentional_v2/derived/chapter_result_compatibility/*.json`
+  - `attentional_v2`-owned compatibility chapter results derived from anchored reaction truth.
+  - These are the source chapter-result artifacts for the current routed frontend when `attentional_v2` is active.
 - `public/book_manifest.json`
   - Book identity, language metadata, chapter tree, source asset pointers, and chapter result file hints.
   - Legacy flat manifests are still readable through fallback resolution, but public aggregation prefers the canonical `public/` location.
+  - For non-iterator mechanisms such as `attentional_v2`, the shared manifest can now be built from `book_document.json` plus mechanism-owned compatibility chapter results instead of from `iterator_v1` structure.
 - `_runtime/run_state.json`
   - The live runtime snapshot for the sequential workflow.
   - Carries top-level stage, chapter and segment pointers, `current_phase_step`, `current_reading_activity`, checkpoint metadata, errors, and ETA-like progress hints.
@@ -72,6 +76,11 @@ Use `docs/api-contract.md` for exact fields and routes. Use this file to underst
 - `GET /api/books/{book_id}/analysis-state`
   - Uses `book_manifest`, `run_state`, `runtime_shell`, `parse_state`, `activity.jsonl`, and chapter result files together.
   - Builds progress metrics, chapter tree statuses, the live `current_reading_activity` snapshot, `resume_available`, `last_checkpoint_at`, recent completed chapters, recent reactions, and the `current_state_panel`.
+  - For non-iterator mechanisms, additive locus projection now prefers:
+    - explicit `reading_locus`
+    - shared runtime-shell cursor
+    - shared `book_document.json`
+    before any iterator-era `segment_ref` structure lookup
   - When older runtime snapshots contain a shortened `current_reading_activity.current_excerpt`, catalog backfills the full normalized section text from the current default mechanism's `_mechanisms/iterator_v1/derived/structure.json` by matching `segment_ref`.
   - Current public payloads may now additively expose `reading_locus`, `move_type`, `reconstructed_hot_state`, `last_resume_kind`, and `active_reaction_id` while keeping `segment_ref` as a compatibility sidecar.
 - `GET /api/books/{book_id}/activity`
@@ -86,9 +95,11 @@ Use `docs/api-contract.md` for exact fields and routes. Use this file to underst
 - `GET /api/books/{book_id}/chapters/{chapter_id}`
   - Uses the chapter result file for structured sections, featured reactions, and chapter-level summaries.
   - Uses `user_marks` to attach the current mark state to each returned reaction card.
+  - This surface no longer hard-requires `iterator_v1` structure as long as the manifest points at a valid mechanism-owned chapter result file.
   - Reaction cards and featured reaction previews may now additively expose `primary_anchor`, `related_anchors`, and reconsolidation lineage sidecars while the page still remains section-shaped for compatibility.
 - `GET /api/books/{book_id}/chapters/{chapter_id}/outline`
   - Starts from the manifest chapter tree, then enriches the outline with section previews from the chapter result file when that result exists.
+  - It does not hard-require `iterator_v1` structure; non-iterator runs can now serve outline sections from compatibility chapter payloads alone.
 - `GET /api/marks` and `GET /api/books/{book_id}/marks`
   - Read from `state/user_marks.json`.
   - Rely on previously persisted book/chapter metadata and reaction lookup against chapter results to keep marks anchored to real reading artifacts.
@@ -99,6 +110,7 @@ Use `docs/api-contract.md` for exact fields and routes. Use this file to underst
   - Owns artifact discovery, legacy-path fallback, view aggregation, and most product-facing payload shaping.
   - Converts raw manifests, runtime files, activity streams, and chapter artifacts into bookshelf, book detail, chapter detail, chapter outline, and analysis-state views.
   - May consume `_mechanisms/iterator_v1/derived/structure.json` for iterator-era section backfill, but should not treat that artifact as the universal parsed-book substrate.
+  - Must keep non-iterator chapter/result flows functional without forcing every mechanism to emit `structure.json`.
   - Now also projects additive anchor- and locus-native fields upward without removing current compatibility fields prematurely.
 - `reading-companion-backend/src/api/app.py`
   - Owns endpoint-level response shaping and public-ID resolution.

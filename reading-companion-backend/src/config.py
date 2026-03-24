@@ -141,6 +141,17 @@ def get_backend_version() -> str | None:
     return None
 
 
+def get_backend_reading_mechanism_key() -> str | None:
+    """Return the internally selected backend reading mechanism, if overridden."""
+
+    raw = os.getenv("BACKEND_READING_MECHANISM", "").strip().lower()
+    if not raw or raw == "iterator_v1":
+        return None
+    if raw == "attentional_v2":
+        return raw
+    return None
+
+
 def get_backend_test_mode() -> bool:
     """Return whether backend fixture mode is enabled."""
     raw = os.getenv("BACKEND_TEST_MODE", "").strip().lower()

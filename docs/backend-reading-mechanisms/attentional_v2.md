@@ -1,22 +1,24 @@
 # Attentional V2 Mechanism
 
-Purpose: define the future attention-frontier reading mechanism that reads every sentence, reasons mainly over meaning units, and moves forward through unresolved interpretive pressure rather than fixed section traversal.
-Use when: refining the future attention-frontier mechanism design, clarifying its ontology, or preparing later implementation planning.
-Not for: shared mechanism-platform rules, live/default behavior claims, or the internals of `iterator_v1`.
-Update when: the planned ontology, progression logic, LLM schedule, memory model, or artifact design for `attentional_v2` materially changes.
+Purpose: define the experimental attention-frontier reading mechanism that reads every sentence, reasons mainly over meaning units, and moves forward through unresolved interpretive pressure rather than fixed section traversal.
+Use when: changing the live `attentional_v2` parse/read path, clarifying its ontology, or updating its mechanism-private runtime behavior.
+Not for: shared mechanism-platform rules, default-mechanism claims, or the internals of `iterator_v1`.
+Update when: the live ontology, progression logic, LLM schedule, memory model, unsupported modes, or artifact design for `attentional_v2` materially changes.
 
-- Status: `design-only`
+- Status: `experimental`
 - Mechanism key: `attentional_v2`
 - Defaultness: `not default`
 - Artifact root: `_mechanisms/attentional_v2/`
-- Authority scope: future `attentional_v2` mechanism design, including ontology, control loop, sparse-LLM schedule, memory model, and mechanism-private artifacts
+- Authority scope: live `attentional_v2` mechanism behavior, including ontology, control loop, sparse-LLM schedule, memory model, unsupported modes, and mechanism-private artifacts
 
 Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `docs/backend-state-aggregation.md` for shared public-state surfaces.
 
 ## Purpose And Status
-- `attentional_v2` is the planned future mechanism for a more self-propelled reading mind.
-- It now has a Phase 1-8 scaffold under the shared runtime boundary:
+- `attentional_v2` is the experimental non-default mechanism for a more self-propelled reading mind.
+- It is now wired end to end through the shared runtime, CLI `--mechanism attentional_v2`, and the existing async analysis job lifecycle.
+- It now has a live Phase 1-8.5 implementation under the shared runtime boundary:
   - shared sentence substrate
+  - shared canonical parse/provisioning and shared manifest/run-state shells
   - orientation-only survey artifacts
   - deterministic intake/gate/retrieval helpers
   - Phase 4 interpretive nodes with prompt-version manifests
@@ -24,7 +26,14 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - Phase 6 slow-cycle helpers for durable anchored reaction truth, reflective promotion, reconsolidation, chapter consolidation, and mechanism-private compatibility projection
   - Phase 7 checkpointing and resume helpers for compact local continuity, full checkpoints, shared checkpoint summaries, and bounded warm/cold/reconstitution resume reconstruction
   - Phase 8 normalized eval export and structural integrity checks over persisted artifacts
-- It still does not describe live product parse/read behavior today.
+- Phase 8.5 live runner integration now adds:
+  - real `parse_book`
+  - real sequential `read_book`
+  - shared runtime-shell and manifest updates during live execution
+  - job/resume mechanism-key propagation
+  - compatibility chapter-result outputs without requiring `iterator_v1`-style `structure.json`
+- It is still not the default mechanism.
+- It is still intentionally unsupported for legacy `book_analysis` mode in this slice.
 - Its goal is to preserve sentence-level fidelity while shifting the main reasoning unit from fixed sections toward dynamic meaning units and an explicit attention frontier.
 
 ## Core Primitives / Ontology
@@ -94,7 +103,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - `reflective_promotion`
   - `reconsolidation`
   - `chapter_consolidation`
-- These nodes are implemented and prompt-versioned, but not yet wired into a live end-to-end read loop.
+- These nodes are implemented, prompt-versioned, and now wired into the live experimental sentence-order runner.
 - Default call types are:
   - `chapter opening`
     - set initial expectations and open questions using title, chapter heading, and opening span
@@ -188,7 +197,8 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
 - Current scaffolded mechanism-private derived artifacts
   - `_mechanisms/attentional_v2/derived/survey_map.json`
   - `_mechanisms/attentional_v2/derived/revisit_index.json`
-  - `_mechanisms/attentional_v2/derived/chapter_result_compatibility/*.json`
+- `_mechanisms/attentional_v2/derived/chapter_result_compatibility/*.json`
+  - live compatibility chapter results used by current chapter/detail and marks surfaces when `attentional_v2` is the active mechanism
 - Current scaffolded mechanism-private runtime artifacts
   - `_mechanisms/attentional_v2/runtime/local_buffer.json`
   - `_mechanisms/attentional_v2/runtime/local_continuity.json`
@@ -233,6 +243,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - `current_reading_activity`
   - `current_excerpt`
   - `search_query` when applicable
+- Live parse/read integration now means those surfaces can be populated by `attentional_v2` through the same upload/start/resume flows as other mechanisms, without requiring `_mechanisms/iterator_v1/derived/structure.json`.
 - Phase 6 now adds a mechanism-private compatibility projector that can shape durable anchored reactions into the current chapter-result envelope while keeping the anchored reaction record as the source of truth.
 - Phase 7 now adds bounded resume helpers that keep non-warm rereads chapter-local, preserve durable state, and explicitly mark reconstructed hot state instead of presenting it as warm continuity.
 - Phase 8 now lands the first additive public-surface projection layer:
@@ -271,19 +282,20 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - or the current interpretive question if that better explains what the mechanism is doing now
 
 ## Known Limits / Drift Notes
-- This is a stable design doc, not an implementation doc.
-- Phase 6 slow-cycle helpers and Phase 7 resume helpers exist, but the mechanism still does not run as a live parse/read path.
-- The current compatibility projector is still intentionally temporary and paragraph-shaped, even though Phase 8 now exposes additive anchor/locus fields on shared public surfaces.
+- `attentional_v2` is now a stable experimental mechanism doc, not just a future design sketch.
+- The mechanism now runs as a live parse/read path, but it remains non-default.
+- Legacy `book_analysis` mode is intentionally unsupported for `attentional_v2` in this slice.
+- The current compatibility projector is still intentionally temporary and section-shaped, even though Phase 8 now exposes additive anchor/locus fields on shared public surfaces.
 - Shared public-surface adapter work is now partially landed, but the frontend and stable API are still section-first in chapter/detail and marks views.
 - Future migration still needed:
   - redesign chapter/detail around chapter text plus anchored reactions instead of semantic sections as the primary container
   - retire section-first requirements from the stable API/frontend contract once the frontend has switched to locus/anchor-native rendering
 - Future observability work still needed:
-  - wire standard/debug node-level traces once the live parse/read path exists
+  - deepen standard/debug node-level traces now that the live parse/read path exists
   - keep debug mode optional rather than making deep diagnostics the baseline requirement for normal evaluation runs
 - Future evaluation work still needed:
   - curate the tracked `attentional_v2` benchmark datasets and later chapter-level evaluation corpus before any real end-to-end comparison
-  - run the true `iterator_v1` comparison only after the live parse/read path exists and that dataset work is complete
+  - run the true `iterator_v1` comparison only after that dataset work is complete
 - The survey stage must stay coarse enough that it does not become hidden full-book cheating.
 - Retrieval pressure, rare-search gating, and revisit behavior will likely need careful budget control during implementation.
 - Stable doc-promotion timing under `Q10` still remains open.

@@ -18,6 +18,7 @@ def register_builtin_mechanisms() -> None:
     if _BUILTINS_REGISTERED:
         return
     register_mechanism(IteratorV1Mechanism(), default=True)
+    register_mechanism(AttentionalV2Mechanism(), default=False)
     _BUILTINS_REGISTERED = True
 
 

@@ -16,11 +16,13 @@ Use `docs/backend-reading-mechanism.md` when the question is about shared mechan
 - `POST /api/uploads/epub`
   - Stores the EPUB under `state/uploads/<job_id>.epub`.
   - Provisions a minimal book shell immediately so the frontend can resolve a book card and book route before deep reading starts.
+  - The public route does not expose a mechanism selector yet, but backend-internal rollout can still choose a non-default mechanism through shared `mechanism_key` plumbing.
   - `start_mode=immediate` launches a `read` job for the main sequential workflow.
   - `start_mode=deferred` launches a `parse` job that stops after structure parsing.
 - `POST /api/books/{book_id}/analysis/start`
   - Starts the main sequential workflow for an uploaded book that is currently `not_started`.
   - Reuses the copied source asset under the book output directory rather than requiring a new upload.
+  - `attentional_v2` is now a valid internal runtime choice for the main sequential workflow, but it still rejects the legacy `book_analysis` mode in this slice.
 - `POST /api/books/{book_id}/analysis/resume`
   - Resumes the latest paused or interrupted sequential job from the newest compatible checkpoint.
   - In demo/prod mode, an incompatible checkpoint triggers a fresh rerun instead of an unsafe resume.
@@ -36,13 +38,16 @@ Use `docs/backend-reading-mechanism.md` when the question is about shared mechan
 ## Main Lifecycle
 1. Upload accepts an EPUB and writes a provisional manifest plus an initial run-state shell so the book exists immediately.
 2. A background job record is created in `state/jobs/` with `job_kind=parse` or `job_kind=read`.
+  - When backend-internal rollout selected a non-default mechanism, the job record also carries `mechanism_key`.
 3. The job enters `queued`, then begins structure preparation under `parsing_structure`.
 4. Parse preparation now has two layers:
   - canonical parse writes `public/book_document.json` as the mechanism-neutral book substrate
-  - the current default mechanism (`iterator_v1`) derives `_mechanisms/iterator_v1/derived/structure.json` from that substrate for chapter/section traversal
-5. Deferred uploads stop at `ready`, which means the canonical book substrate and the current default outline structure exist but deep reading has not started.
-6. Immediate uploads or `analysis/start` move from preparation into semantic segmentation and then chapter-by-chapter deep reading on the same long-task surface.
-7. While the reader is active, cross-mechanism runtime artifacts update stage-level state in `_runtime/`, while iterator-private planner state, memory, and checkpoints update under `_mechanisms/iterator_v1/runtime/`.
+  - the selected mechanism then derives its own parse-side artifacts from that substrate:
+    - `iterator_v1` derives `_mechanisms/iterator_v1/derived/structure.json`
+    - `attentional_v2` initializes survey/runtime artifacts under `_mechanisms/attentional_v2/`
+5. Deferred uploads stop at `ready`, which means the canonical book substrate and the selected mechanism's parse-stage readiness artifacts exist but deep reading has not started.
+6. Immediate uploads or `analysis/start` move from preparation into chapter-by-chapter deep reading on the same long-task surface.
+7. While the reader is active, cross-mechanism runtime artifacts update stage-level state in `_runtime/`, while mechanism-private memory, checkpoints, and diagnostics update under `_mechanisms/<mechanism_key>/`.
 8. If the worker stops cleanly, deferred parse work finishes at `ready` and full read work finishes at `completed`. If runtime guards intervene, the run becomes `paused`. If recovery is no longer safe, the run becomes `error` or is restarted from scratch.
 9. Terminal runs are mirrored into `_history/runs/<job_id>/` so the latest live artifacts and run history stay separate.
 
@@ -50,13 +55,20 @@ Use `docs/backend-reading-mechanism.md` when the question is about shared mechan
 ### `parse` jobs
 - Used by deferred upload.
 - Primary path: `queued -> parsing_structure -> ready`.
-- Goal: produce `public/book_document.json`, derive the current default mechanism's `_mechanisms/iterator_v1/derived/structure.json`, persist a resumable parse checkpoint, and leave the book ready to start explicitly later.
+- Goal: produce `public/book_document.json`, derive the selected mechanism's parse-stage artifacts, persist a resumable parse checkpoint, and leave the book ready to start explicitly later.
 
 ### `read` jobs
 - Used by immediate upload, `analysis/start`, and `analysis/resume`.
 - Primary path: `queued -> parsing_structure -> deep_reading -> completed`.
 - The `parsing_structure` phase still appears here because canonical parse plus current-mechanism derivation happen before the reader settles into steady-state deep reading.
-- For the current default mechanism, read-time mutable artifacts such as `reader_memory.json`, `plan_state.json`, and segment checkpoints live under `_mechanisms/iterator_v1/runtime/`, not under the shared top-level `_runtime/` directory.
+- The current live mechanisms are:
+  - `iterator_v1`
+    - default section/subsegment reader
+  - `attentional_v2`
+    - experimental sentence-order meaning-unit reader
+- Read-time mutable artifacts remain mechanism-private:
+  - `iterator_v1` uses `_mechanisms/iterator_v1/runtime/`
+  - `attentional_v2` uses `_mechanisms/attentional_v2/runtime/`
 
 ### Status semantics
 - `queued`
@@ -86,6 +98,12 @@ Use `docs/backend-reading-mechanism.md` when the question is about shared mechan
 - `resume_compat_version`
   - Demo/prod resume safety is governed by `resume_compat_version` across the job record, `run_state`, and `parse_state`.
   - If those versions do not match the current runtime, the backend archives the old run, clears live artifacts, emits `resume_incompatible` plus `fresh_rerun_started`, and launches a fresh run without `--continue`.
+- Mechanism selection continuity
+  - Resume and incompatible fresh rerun preserve the selected mechanism through shared job/runtime plumbing.
+  - Source of truth order is:
+    1. `_runtime/runtime_shell.json.mechanism_key`
+    2. persisted job-record `mechanism_key`
+    3. current default mechanism only when neither earlier source exists
 - Stale runtime handling
   - If the process is still alive but live runtime updates stop arriving, the backend pauses the book, writes a human-facing stalled message, and appends `runtime_stalled` plus `job_paused_by_runtime_guard` into the system stream.
   - The default active-runtime stale threshold is 45 seconds.

@@ -17,6 +17,7 @@ Update when: backend-local constraints, recurring pitfalls, or stable implementa
 - Default to improving `sequential` deep-reading quality.
 - Treat `book_analysis` as a secondary capability unless the task explicitly prioritizes it.
 - Treat `iterator_reader` as the current default mechanism, not as the only permanent backend architecture.
+- Treat `attentional_v2` as the current experimental non-default mechanism: it now has a live parse/read path, but it must not silently become the default or inherit unsupported `book_analysis` behavior.
 - If product intent is unclear, preserve the feeling of a thoughtful co-reader rather than drifting toward a generic summary product.
 
 ## Local Structure Rules
@@ -26,6 +27,7 @@ Update when: backend-local constraints, recurring pitfalls, or stable implementa
 - Keep tool definitions under `src/tools/`.
 - Keep canonical book substrate, shared runtime contracts, and cross-mechanism normalized output types in `src/reading_core/`.
 - Put shared runtime/mechanism boundaries in backend-level infrastructure instead of burying them inside one mechanism package.
+- Keep shared canonical parse/provisioning and shared sequential manifest/run-state builders in `src/reading_runtime/`.
 - Keep mechanism-internal ontology local to the mechanism that owns it; do not force future readers to reuse `section` / `subsegment` concepts unless they genuinely fit.
 - Prefer wrapping the current `iterator_reader` behind shared mechanism boundaries over copying API/job wiring into each new reader.
 - Backend-wide infrastructure must not depend on `src.iterator_reader.models`; shared code should import neutral types from `src.reading_core/`.
@@ -34,6 +36,7 @@ Update when: backend-local constraints, recurring pitfalls, or stable implementa
 ## Platform Direction
 - The backend is evolving toward one shared runtime shell plus multiple mechanism-specific reader implementations.
 - `iterator_reader` remains the current default mechanism until another mechanism is explicitly wired through the same shared boundary.
+- `attentional_v2` is now wired through that shared boundary as an experimental end-to-end runner, but remains non-default.
 - `docs/backend-reading-mechanism.md` is authoritative for shared mechanism-platform rules.
 - `docs/backend-reading-mechanisms/iterator_v1.md` is authoritative for current `iterator_reader` internals.
 

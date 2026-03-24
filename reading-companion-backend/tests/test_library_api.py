@@ -7,6 +7,7 @@ import json
 from pathlib import Path
 
 from fastapi.testclient import TestClient
+import pytest
 from src.api.contract import to_api_book_id, to_api_reaction_id
 from src.config import get_reader_resume_compat_version
 from src.iterator_reader.storage import (
@@ -507,6 +508,50 @@ def test_launch_sequential_job_records_runtime_environment_error_when_python_is_
     assert activity[-1]["type"] == "runtime_environment_error"
 
 
+def test_launch_sequential_job_persists_non_default_mechanism_key(tmp_path, monkeypatch):
+    """Launching a non-default mechanism should persist the mechanism key and pass the CLI flag."""
+
+    jobs_module = importlib.import_module("src.library.jobs")
+    upload_path = upload_file("job-attn", tmp_path)
+    upload_path.parent.mkdir(parents=True, exist_ok=True)
+    upload_path.write_bytes(b"epub")
+
+    launched: list[list[str]] = []
+
+    class _FakeProcess:
+        pid = 5555
+
+    monkeypatch.setattr(
+        jobs_module.subprocess,
+        "Popen",
+        lambda command, cwd, stdout, stderr: launched.append(command) or _FakeProcess(),
+    )
+
+    record = jobs_module.launch_sequential_job(
+        upload_path,
+        root=tmp_path,
+        mechanism_key="attentional_v2",
+        intent="focus on the book's interpretive pressure",
+    )
+    persisted = jobs_module.load_job(str(record["job_id"]), root=tmp_path)
+
+    assert launched
+    assert "--mechanism" in launched[0]
+    assert "attentional_v2" in launched[0]
+    assert persisted["mechanism_key"] == "attentional_v2"
+    assert persisted["job_kind"] == "read"
+
+
+def test_launch_book_analysis_job_rejects_attentional_v2(tmp_path):
+    """The legacy book-analysis launcher should fail fast for attentional_v2 in this slice."""
+
+    jobs_module = importlib.import_module("src.library.jobs")
+    book_id = _bootstrap_book(tmp_path, stage="ready")
+
+    with pytest.raises(RuntimeError, match="attentional_v2 does not support book_analysis mode yet"):
+        jobs_module.launch_book_analysis_job(book_id, root=tmp_path, mechanism_key="attentional_v2")
+
+
 def test_refresh_job_pauses_running_job_when_runtime_updates_go_stale(tmp_path, monkeypatch):
     """Jobs that keep a live PID but stop updating runtime state should move into a diagnosable paused state."""
     jobs_module = importlib.import_module("src.library.jobs")
@@ -653,6 +698,74 @@ def test_refresh_job_fresh_reruns_incompatible_prod_checkpoint(tmp_path, monkeyp
     assert structure["chapters"][0]["segments"][0]["status"] == "pending"
 
 
+def test_refresh_job_fresh_rerun_prefers_runtime_shell_mechanism_key(tmp_path, monkeypatch):
+    """Fresh reruns should inherit the live mechanism key from the shared runtime shell."""
+
+    jobs_module = importlib.import_module("src.library.jobs")
+    compat_version = get_reader_resume_compat_version()
+    book_id = _bootstrap_book(tmp_path, stage="deep_reading")
+    output_dir = tmp_path / "output" / book_id
+    _write_json(
+        runtime_shell_file(output_dir),
+        {
+            "mechanism_key": "attentional_v2",
+            "mechanism_version": "attentional_v2-phase8",
+            "policy_version": "attentional_v2-policy-v1",
+            "status": "paused",
+            "phase": "resume",
+            "cursor": {},
+            "active_artifact_refs": {},
+            "resume_available": True,
+            "last_checkpoint_id": "ckpt-1",
+            "last_checkpoint_at": "2026-03-15T07:04:56Z",
+            "updated_at": "2026-03-15T07:04:56Z",
+        },
+    )
+
+    upload_path = upload_file("job-incompat-attn", tmp_path)
+    upload_path.parent.mkdir(parents=True, exist_ok=True)
+    upload_path.write_bytes(b"epub")
+    save_job(
+        {
+            "job_id": "job-incompat-attn",
+            "status": "deep_reading",
+            "job_kind": "read",
+            "upload_path": str(upload_path),
+            "book_id": book_id,
+            "pid": None,
+            "resume_compat_version": compat_version - 1,
+            "created_at": "2026-03-07T00:00:00Z",
+            "updated_at": "2026-03-07T00:00:00Z",
+            "error": None,
+        },
+        tmp_path,
+    )
+    run_state_path = _run_state_path(output_dir)
+    run_state = json.loads(run_state_path.read_text(encoding="utf-8"))
+    run_state["resume_compat_version"] = compat_version - 1
+    run_state_path.write_text(json.dumps(run_state, ensure_ascii=False, indent=2), encoding="utf-8")
+
+    launched: list[list[str]] = []
+
+    class _FakeProcess:
+        pid = 8766
+
+    monkeypatch.setattr(jobs_module, "_process_running", lambda _pid: False)
+    monkeypatch.setattr(jobs_module, "get_backend_run_mode", lambda: "prod")
+    monkeypatch.setattr(
+        jobs_module.subprocess,
+        "Popen",
+        lambda command, cwd, stdout, stderr: launched.append(command) or _FakeProcess(),
+    )
+
+    refreshed = refresh_job("job-incompat-attn", root=tmp_path)
+
+    assert launched and "--continue" not in launched[0]
+    assert "--mechanism" in launched[0]
+    assert "attentional_v2" in launched[0]
+    assert refreshed["mechanism_key"] == "attentional_v2"
+
+
 def test_refresh_job_auto_resumes_stalled_runtime_once_in_prod(tmp_path, monkeypatch):
     """Stalled prod/demo jobs should auto-resume once from the latest checkpoint."""
     jobs_module = importlib.import_module("src.library.jobs")
@@ -707,6 +820,77 @@ def test_refresh_job_auto_resumes_stalled_runtime_once_in_prod(tmp_path, monkeyp
     assert refreshed["auto_resume_count"] == 1
     assert launched and "--continue" in launched[0]
     assert {item["type"] for item in activity} >= {"runtime_stalled", "job_paused_by_runtime_guard", "resume_detected"}
+
+
+def test_refresh_job_auto_resume_prefers_runtime_shell_mechanism_key(tmp_path, monkeypatch):
+    """Auto-resume should use the shared runtime-shell mechanism key before the persisted job record."""
+
+    jobs_module = importlib.import_module("src.library.jobs")
+    compat_version = get_reader_resume_compat_version()
+    book_id = _bootstrap_book(tmp_path, stage="deep_reading")
+    output_dir = tmp_path / "output" / book_id
+    _write_json(
+        runtime_shell_file(output_dir),
+        {
+            "mechanism_key": "attentional_v2",
+            "mechanism_version": "attentional_v2-phase8",
+            "policy_version": "attentional_v2-policy-v1",
+            "status": "running",
+            "phase": "reading",
+            "cursor": {},
+            "active_artifact_refs": {},
+            "resume_available": True,
+            "last_checkpoint_id": "ckpt-1",
+            "last_checkpoint_at": "2026-03-15T07:04:56Z",
+            "updated_at": "2026-03-15T07:04:56Z",
+        },
+    )
+    run_state_path = _run_state_path(output_dir)
+    run_state = json.loads(run_state_path.read_text(encoding="utf-8"))
+    run_state["resume_compat_version"] = compat_version
+    run_state["updated_at"] = "2026-03-07T00:00:00Z"
+    run_state_path.write_text(json.dumps(run_state, ensure_ascii=False, indent=2), encoding="utf-8")
+
+    upload_path = upload_file("job-prod-stalled-attn", tmp_path)
+    upload_path.parent.mkdir(parents=True, exist_ok=True)
+    upload_path.write_bytes(b"epub")
+    save_job(
+        {
+            "job_id": "job-prod-stalled-attn",
+            "status": "deep_reading",
+            "job_kind": "read",
+            "upload_path": str(upload_path),
+            "book_id": book_id,
+            "pid": 1234,
+            "resume_compat_version": compat_version,
+            "created_at": "2026-03-07T00:00:00Z",
+            "updated_at": "2026-03-07T00:00:00Z",
+            "error": None,
+        },
+        tmp_path,
+    )
+
+    launched: list[list[str]] = []
+
+    class _FakeProcess:
+        pid = 3333
+
+    monkeypatch.setattr(jobs_module, "_process_running", lambda _pid: True)
+    monkeypatch.setattr(jobs_module, "get_backend_run_mode", lambda: "prod")
+    monkeypatch.setattr(jobs_module, "ACTIVE_RUNTIME_STALE_SECONDS", 1)
+    monkeypatch.setattr(jobs_module, "_seconds_since", lambda _value: 120.0)
+    monkeypatch.setattr(
+        jobs_module.subprocess,
+        "Popen",
+        lambda command, cwd, stdout, stderr: launched.append(command) or _FakeProcess(),
+    )
+
+    refreshed = refresh_job("job-prod-stalled-attn", root=tmp_path)
+
+    assert launched and "--continue" in launched[0]
+    assert "--mechanism" in launched[0]
+    assert "attentional_v2" in launched[0]
+    assert refreshed["mechanism_key"] == "attentional_v2"
 
 
 def test_api_reads_books_chapters_marks_and_docs(tmp_path):
@@ -1147,6 +1331,47 @@ def test_api_upload_and_job_polling(tmp_path, monkeypatch):
     assert job_response.json()["status"] == "deep_reading"
 
 
+def test_api_upload_propagates_internal_mechanism_override(tmp_path, monkeypatch):
+    """Immediate upload should pass the configured backend mechanism through the internal launch path."""
+
+    api_module.app.state.root = tmp_path
+    client = TestClient(api_module.app)
+    seen: dict[str, object] = {}
+
+    monkeypatch.setattr(api_module, "create_upload_job", lambda root: ("jobattn", root / "state" / "uploads" / "jobattn.epub"))
+    monkeypatch.setattr(api_module, "get_backend_reading_mechanism_key", lambda: "attentional_v2")
+
+    def _provision(upload_path, language="auto", root=None, mechanism_key=None):
+        seen["provision_mechanism_key"] = mechanism_key
+        return "demo-book"
+
+    def _launch(upload_path, root=None, book_id=None, mechanism_key=None):
+        seen["launch_mechanism_key"] = mechanism_key
+        return {
+            "job_id": "jobattn",
+            "status": "queued",
+            "upload_path": str(upload_path),
+            "book_id": book_id,
+            "mechanism_key": mechanism_key,
+            "pid": 123,
+            "created_at": "2026-03-07T00:00:00Z",
+            "updated_at": "2026-03-07T00:00:00Z",
+            "error": None,
+        }
+
+    monkeypatch.setattr(api_module, "provision_uploaded_book", _provision)
+    monkeypatch.setattr(api_module, "launch_sequential_job", _launch)
+
+    response = client.post(
+        "/api/uploads/epub",
+        files={"file": ("demo.epub", b"epub-bytes", "application/epub+zip")},
+    )
+
+    assert response.status_code == 202
+    assert seen["provision_mechanism_key"] == "attentional_v2"
+    assert seen["launch_mechanism_key"] == "attentional_v2"
+
+
 def test_api_upload_deferred_returns_ready_job(tmp_path, monkeypatch):
     """Deferred uploads should launch parse-only work and return the ready job envelope."""
     api_module.app.state.root = tmp_path
@@ -1207,6 +1432,30 @@ def test_api_start_analysis_for_uploaded_book(tmp_path, monkeypatch):
     assert response.json()["book_id"] == public_book_id
 
 
+def test_api_start_analysis_rejects_internal_attentional_book_analysis_mode(tmp_path, monkeypatch):
+    """The start-analysis route should surface the unsupported attentional book-analysis path as a stable 409."""
+
+    book_id = _bootstrap_book(tmp_path, stage="ready")
+    public_book_id = to_api_book_id(book_id)
+    api_module.app.state.root = tmp_path
+    client = TestClient(api_module.app)
+
+    monkeypatch.setattr(api_module, "get_backend_reading_mechanism_key", lambda: "attentional_v2")
+    monkeypatch.setattr(
+        api_module,
+        "launch_book_analysis_job",
+        lambda internal_book_id, root=None, mechanism_key=None: (_ for _ in ()).throw(
+            RuntimeError("attentional_v2 does not support book_analysis mode yet.")
+        ),
+    )
+
+    response = client.post(f"/api/books/{public_book_id}/analysis/start")
+
+    assert response.status_code == 409
+    assert response.json()["code"] == "ANALYSIS_NOT_STARTABLE"
+    assert "attentional_v2 does not support book_analysis mode yet." in response.json()["message"]
+
+
 def test_api_errors_use_stable_error_envelope(tmp_path):
     """Validation and missing-resource failures should use the shared ErrorResponse schema."""
     api_module.app.state.root = tmp_path
@@ -1262,4 +1511,4 @@ def test_websocket_streams_snapshot_activity_and_heartbeat(tmp_path):
     assert first["payload"]["status"] == "deep_reading"
     assert first["payload"]["stage_label_key"] == "system.stage.deepReadingChapter"
     assert second["event_type"] in {"structure.ready", "activity.created"}
-    assert third["event_type"] in {"activity.created", "heartbeat", "chapter.completed"}
+    assert third["event_type"] in {"activity.created", "heartbeat", "chapter.completed", "stage.changed"}

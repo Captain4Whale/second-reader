@@ -21,8 +21,10 @@ Use `docs/backend-sequential-lifecycle.md` for the job-level workflow over time.
   - It must not embed one mechanism's traversal ontology.
 - Shared runtime shell
   - `src/reading_runtime/` owns mechanism registration, runtime routing, and shared artifact layout authority.
+  - Shared canonical parse/provisioning helpers and shared sequential manifest/run-state builders also live under `src/reading_runtime/`.
   - Top-level `public/` and `_runtime/` are shared cross-mechanism territory.
   - `_mechanisms/<mechanism_key>/` is mechanism-owned territory.
+  - Internal mechanism selection may be carried through shared job/runtime plumbing by `mechanism_key`, even when the public HTTP contract still exposes only the current analysis routes.
 - Shared public-state surface
   - Public API and websocket surfaces are allowed to expose stable compatibility fields such as `segment_ref`.
   - Internal mechanism structure must be adapted into shared public-state surfaces instead of leaking through directly.
@@ -45,6 +47,7 @@ Use `docs/backend-sequential-lifecycle.md` for the job-level workflow over time.
   - mechanism-private artifacts
   - fallback and drift notes
 - Design-only mechanisms belong in the same stable mechanism-doc system as implemented mechanisms, but must be clearly labeled `design-only`.
+- Experimental mechanisms should document their live parse/read entrypoints, runtime artifact root, and any intentionally unsupported modes such as legacy `book_analysis`.
 
 ## Terminology Discipline
 - Shared docs should prefer neutral terms such as:
@@ -77,7 +80,7 @@ Use `docs/backend-sequential-lifecycle.md` for the job-level workflow over time.
     - doc: `docs/backend-reading-mechanisms/iterator_v1.md`
     - artifact root: `_mechanisms/iterator_v1/`
   - `attentional_v2`
-    - status: `design-only`
+    - status: `experimental`
     - doc: `docs/backend-reading-mechanisms/attentional_v2.md`
     - artifact root: `_mechanisms/attentional_v2/`
 
@@ -96,8 +99,8 @@ Use `docs/backend-sequential-lifecycle.md` for the job-level workflow over time.
   - what does `section` or `subsegment` mean in the live system?
   - how does `iterator_v1` package prompts, memory, and progress?
 - Read `docs/backend-reading-mechanisms/attentional_v2.md` when the question is:
-  - what is the future attention-frontier mechanism design?
-  - what ontology or control loop is planned for that mechanism?
+  - how does the experimental non-default attention-frontier mechanism parse and read today?
+  - what ontology or control loop does that mechanism own?
 
 ## Maintenance Rules
 - Shared mechanism-boundary changes update this file.

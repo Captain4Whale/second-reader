@@ -245,6 +245,31 @@ Exit criteria:
 - The top layer can expose more of the mechanism's real value without forcing the mechanism back into section-first ontology.
 - Shared product views can consume the new mechanism through adapters instead of ontology leakage.
 
+## Phase 8.5: Live Runner Integration
+Purpose:
+- Move `attentional_v2` from scaffolded behavior into a real experimental parse/read mechanism that runs through the shared runtime and existing async lifecycle.
+
+Main work:
+- Extract shared canonical parse/provisioning helpers into `src/reading_runtime/`.
+- Extract shared sequential manifest/run-state helpers into `src/reading_runtime/`.
+- Propagate optional `mechanism_key` through internal launch, resume, recovery, and fresh-rerun flows without changing the public HTTP contract yet.
+- Implement real `attentional_v2.parse_book` on top of the shared canonical parse pipeline.
+- Implement real `attentional_v2.read_book` on top of the shared runtime shell, sentence-order loop, checkpointing, compatibility chapter results, and existing async job lifecycle.
+- Keep `attentional_v2` experimental and non-default.
+- Reject `attentional_v2 + book_analysis` explicitly instead of allowing silent misbehavior.
+- Make shared aggregation and compatibility surfaces work without requiring `iterator_v1`-style `structure.json`.
+- Register `AttentionalV2Mechanism()` as a built-in experimental mechanism once parse/read tests pass.
+
+Depends on:
+- Phase 8
+
+Exit criteria:
+- CLI `--mechanism attentional_v2` is fully functional for parse and read.
+- Existing upload/start/resume flows can drive `attentional_v2` through backend-internal mechanism selection without adding new public route fields.
+- Resume and incompatible fresh rerun preserve mechanism selection correctly.
+- Current chapter/detail, analysis-state, activity, and marks surfaces remain functional through compatibility payloads even when no iterator structure exists.
+- Stable and temp docs reflect that `attentional_v2` is experimental rather than design-only.
+
 ## Phase 9: Migration, Stabilization, And Default-Cutover Readiness
 Purpose:
 - Move from "implemented mechanism" to "mechanism ready for real product use."
@@ -266,7 +291,7 @@ Main work:
 - Decide whether and when to promote the mechanism to default.
 
 Depends on:
-- Phase 8
+- Phase 8.5
 
 Exit criteria:
 - Acceptance ladder reaches at least `v1_acceptable`.

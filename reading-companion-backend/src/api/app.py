@@ -48,6 +48,7 @@ from src.config import (
     get_backend_cors_origins,
     get_backend_host,
     get_backend_port,
+    get_backend_reading_mechanism_key,
     get_backend_run_mode,
     get_backend_runtime_root,
     get_backend_test_fixture_profile,
@@ -154,15 +155,18 @@ async def upload_epub(
         job_id, upload_path = create_upload_job(_root())
     upload_path.parent.mkdir(parents=True, exist_ok=True)
     upload_path.write_bytes(content)
-    provisional_book_id = provision_uploaded_book(upload_path, root=_root())
+    mechanism_key = get_backend_reading_mechanism_key()
+    provision_kwargs: dict[str, object] = {"root": _root()}
+    if mechanism_key:
+        provision_kwargs["mechanism_key"] = mechanism_key
+    provisional_book_id = provision_uploaded_book(upload_path, **provision_kwargs)
     if get_backend_test_mode() and get_backend_test_fixture_profile() == "e2e":
         record = launch_e2e_fixture_job(upload_path, upload_filename=filename, root=_root(), start_mode=start_mode)
     else:
-        record = (
-            launch_sequential_job(upload_path, root=_root(), book_id=provisional_book_id)
-            if start_mode == "immediate"
-            else launch_parse_job(upload_path, root=_root(), book_id=provisional_book_id)
-        )
+        launch_kwargs: dict[str, object] = {"root": _root(), "book_id": provisional_book_id}
+        if mechanism_key:
+            launch_kwargs["mechanism_key"] = mechanism_key
+        record = launch_sequential_job(upload_path, **launch_kwargs) if start_mode == "immediate" else launch_parse_job(upload_path, **launch_kwargs)
     return UploadAcceptedResponse(upload_filename=filename, **_job_accepted_payload(record))
 
 
@@ -228,9 +232,15 @@ def start_book_analysis(book_id: int) -> AnalysisStartAcceptedResponse:
         record = launch_e2e_fixture_analysis(internal_book_id, root=_root())
     else:
         try:
-            record = launch_book_analysis_job(internal_book_id, root=_root())
+            analysis_kwargs: dict[str, object] = {"root": _root()}
+            mechanism_key = get_backend_reading_mechanism_key()
+            if mechanism_key:
+                analysis_kwargs["mechanism_key"] = mechanism_key
+            record = launch_book_analysis_job(internal_book_id, **analysis_kwargs)
         except FileNotFoundError as exc:
             raise ApiError(status=404, code="BOOK_NOT_FOUND", message=f"Book '{book_id}' was not found.") from exc
+        except RuntimeError as exc:
+            raise ApiError(status=409, code="ANALYSIS_NOT_STARTABLE", message=str(exc)) from exc
     return AnalysisStartAcceptedResponse(**_job_accepted_payload(record))
 
 

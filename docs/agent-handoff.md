@@ -7,23 +7,19 @@ Update when: current focus, active risks, temporary warnings, or migration statu
 
 This file is a temporary working note. It is not a source-of-truth document.
 
-Last updated: `2026-03-23`
+Last updated: `2026-03-24`
 
 ## Current Focus
-- implementation prep for the new reading mechanism design
+- Phase 9 preparation for the new reading mechanism project
 - use `docs/implementation/new-reading-mechanism/` as the temporary working set for design capture, planning, progress tracking, and open questions
-- better segment-level reading reactions
-- better prompt quality and context packing
-- stronger chapter-level coherence
-- search supplementation that adds genuine curiosity instead of noise
-- reliability features such as checkpoint, resume, and budget control
-- finish the shared substrate/runtime extraction while preserving `iterator_reader` as the current default reader
+- curate the later evaluation corpus and benchmark datasets before any true end-to-end comparison
+- decide `Q10`: how much of the detailed working design should be promoted from temp docs into stable `attentional_v2` documentation
+- keep `iterator_reader` as the current default reader while `attentional_v2` matures as an experimental end-to-end runner
+- finish the later frontend/API migration away from section-first chapter/detail and marks surfaces
 
 ## Active Risks
-- unclear mapping between the new Notion design and the existing `attentional_v2` design-only mechanism key
-- sentence-level substrate gaps could force parser or shared-substrate work earlier than expected
 - current public analysis and chapter surfaces still carry section-shaped compatibility assumptions that may not fit the new mechanism directly
-- the new mechanism design includes state, observability, evaluation, and resume requirements; if those are deferred, the implementation can look finished while still violating the design
+- the new mechanism now runs live, so missing benchmark-corpus curation could make later evaluation look stronger than it really is
 - route mismatches between frontend routes and backend-returned targets
 - reaction taxonomy drift between runtime artifacts, API normalization, and frontend filters
 - upload flow and live progress integration regressions
@@ -43,10 +39,13 @@ Last updated: `2026-03-23`
 - `iterator_reader` now derives `_mechanisms/iterator_v1/derived/structure.json` from that substrate instead of acting as the shared parsed-book truth.
 - Top-level `public/` and `_runtime/` are now reserved for cross-mechanism artifacts only.
 - Iterator-private derived structures, runtime memory/checkpoints, diagnostics, and `book_analysis` artifacts now belong under `_mechanisms/iterator_v1/`.
+- `attentional_v2` is now a live experimental mechanism under `_mechanisms/attentional_v2/` with real parse/read entrypoints, shared runtime-shell integration, and async job lifecycle support.
+- Internal job launchers, resume, and incompatible fresh rerun now preserve `mechanism_key` through shared runtime/job plumbing.
+- `attentional_v2` remains intentionally unsupported for legacy `book_analysis` mode in this slice.
 - Stable mechanism docs are now split between the shared platform doc (`docs/backend-reading-mechanism.md`) and per-mechanism docs under `docs/backend-reading-mechanisms/`.
 - Storage helpers still read older shared-path and flat legacy artifacts for compatibility, but new writes should target the namespaced mechanism paths.
 - Normal reading runs do not persist normalized eval bundles; those exports are reserved for explicit eval-mode runs.
-- Backend mechanism work is still shifting toward a shared runtime shell plus multiple mechanism-specific implementations. During this migration, `iterator_reader` remains the only default/live reader path unless stable docs say otherwise.
+- Backend mechanism work is still shifting toward one shared runtime shell plus multiple mechanism-specific implementations. During this migration, `iterator_reader` remains the only default mechanism unless stable docs say otherwise.
 
 ## Temporary Warnings
 - If a note here becomes repeated guidance across tasks, promote it into `AGENTS.md` or the relevant stable doc.

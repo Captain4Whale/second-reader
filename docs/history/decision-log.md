@@ -543,3 +543,28 @@ Update when: a major product or engineering decision is made, reversed, or becom
 - `docs/backend-state-aggregation.md`
 - `docs/backend-reader-evaluation.md`
 - `docs/backend-reading-mechanisms/attentional_v2.md`
+
+## Entry 26
+**Decision / Inflection**: Promote `attentional_v2` from a design-only scaffold to an experimental end-to-end mechanism behind the shared runtime shell.
+
+**Period**: March 2026, during the Phase 8.5 live-runner integration pass.
+
+**Problem**: The project had already landed sentence substrate, node contracts, slow-cycle state, resume helpers, observability, and eval exports, but `attentional_v2` still was not honestly live. Parse and read entrypoints still needed to run through shared provisioning, CLI `--mechanism`, async job launch/resume/recovery, and non-iterator compatibility aggregation without pretending `iterator_v1`'s `structure.json` was universal.
+
+**Alternatives considered**: Keep `attentional_v2` marked design-only until the later evaluation corpus existed, fork more of `iterator_v1`'s job/runtime wiring into a second silo, or universalize the old mechanism's reader mind instead of extracting only the neutral lifecycle and provisioning helpers.
+
+**Why this path won**: The backend direction is one shared runtime shell with multiple mechanism-specific reading minds. The right move was to extract mechanism-neutral provisioning and job plumbing into shared runtime helpers, keep mechanism ontology private, and then let `attentional_v2` run end to end as an experimental non-default mechanism. That preserves `iterator_v1` as default, keeps the public HTTP contract stable, and records that unsupported legacy `book_analysis` behavior should fail explicitly rather than by accident.
+
+**What changed in the system**: Shared canonical provisioning now routes through `src/reading_runtime/`. Internal job launchers, resume, auto-resume, and incompatible fresh rerun now preserve `mechanism_key` with runtime-shell precedence. `AttentionalV2Mechanism()` is registered as a built-in experimental mechanism, `parse_book` and `read_book` are real entrypoints, CLI `--mechanism attentional_v2` is functional, and the backend can build manifests, analysis-state, chapter results, and marks-compatible payloads for non-iterator runs without requiring `iterator_v1` structure.
+
+**Why it matters later**: This is the inflection point where `attentional_v2` stopped being a design promise and became a real backend runtime path. Future contributors need to know that experimental does not mean design-only anymore, that mechanism selection continuity across recovery now matters, and that the remaining work shifted from “make it runnable” to “evaluate it honestly and migrate the product surfaces intentionally.”
+
+**Primary evidence**:
+- `reading-companion-backend/src/reading_runtime/provisioning.py`
+- `reading-companion-backend/src/library/jobs.py`
+- `reading-companion-backend/src/attentional_v2/runner.py`
+- `reading-companion-backend/src/reading_mechanisms/attentional_v2.py`
+- `docs/backend-sequential-lifecycle.md`
+- `docs/backend-reading-mechanism.md`
+- `docs/backend-reading-mechanisms/README.md`
+- `docs/backend-reading-mechanisms/attentional_v2.md`

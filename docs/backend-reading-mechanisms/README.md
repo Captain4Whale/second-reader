@@ -11,7 +11,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
 | Mechanism key | Status | Defaultness | Doc | Artifact root | Notes |
 | --- | --- | --- | --- | --- | --- |
 | `iterator_v1` | `default` | current default/live mechanism | `docs/backend-reading-mechanisms/iterator_v1.md` | `_mechanisms/iterator_v1/` | current shipped section/subsegment reader |
-| `attentional_v2` | `design-only` | not default | `docs/backend-reading-mechanisms/attentional_v2.md` | `_mechanisms/attentional_v2/` | future attention-frontier design with scaffolded runtime, survey, intake, Phase 4 interpretive nodes, Phase 5 bridge/knowledge state helpers, Phase 6 slow-cycle reaction/history scaffolding, and Phase 7 checkpoint/resume helpers |
+| `attentional_v2` | `experimental` | not default | `docs/backend-reading-mechanisms/attentional_v2.md` | `_mechanisms/attentional_v2/` | live end-to-end experimental runner with shared canonical parse, survey, sentence-order loop, checkpoint/resume, compatibility chapter results, and non-default rollout |
 
 ## Status Meanings
 - `default`
@@ -56,6 +56,7 @@ Additional mechanism-specific sections are allowed when they clarify the design,
 - Mechanism docs own mechanism-private ontology and runtime behavior.
 - Mechanism docs must not claim shared-platform authority.
 - Design-only docs must say so explicitly and must not claim live/default behavior.
+- Experimental docs should state which runtime path is live, what remains unsupported, and why the mechanism is still non-default.
 - If one mechanism depends on shared fields or artifact boundaries, describe the dependency briefly and point back to `docs/backend-reading-mechanism.md` or `docs/backend-state-aggregation.md` instead of redefining them.
 - If the mechanism changes in a way that alters shared boundaries or defaultness, update the shared docs in the same task.
 

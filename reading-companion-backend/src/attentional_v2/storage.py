@@ -219,6 +219,14 @@ def save_json(path: Path, payload: object) -> None:
     path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
+def ensure_json(path: Path, payload: object) -> None:
+    """Persist one JSON artifact only when it does not already exist."""
+
+    if path.exists():
+        return
+    save_json(path, payload)
+
+
 def load_json(path: Path) -> dict[str, object]:
     """Load one JSON dictionary artifact."""
 
@@ -266,7 +274,7 @@ def initialize_artifact_tree(
             observability_mode="debug" if observability_mode == "debug" else "standard",
         ),
     )
-    save_json(
+    ensure_json(
         survey_map_file(output_dir),
         {
             "schema_version": ATTENTIONAL_V2_SCHEMA_VERSION,
@@ -275,7 +283,7 @@ def initialize_artifact_tree(
             "chapters": [],
         },
     )
-    save_json(
+    ensure_json(
         revisit_index_file(output_dir),
         {
             "schema_version": ATTENTIONAL_V2_SCHEMA_VERSION,
@@ -284,30 +292,30 @@ def initialize_artifact_tree(
             "motifs": {},
         },
     )
-    save_json(local_buffer_file(output_dir), build_empty_local_buffer(mechanism_version=mechanism_version))
-    save_json(trigger_state_file(output_dir), build_empty_trigger_state(mechanism_version=mechanism_version))
-    save_json(local_continuity_file(output_dir), build_empty_local_continuity(mechanism_version=mechanism_version))
-    save_json(working_pressure_file(output_dir), build_empty_working_pressure(mechanism_version=mechanism_version))
-    save_json(anchor_memory_file(output_dir), build_empty_anchor_memory(mechanism_version=mechanism_version))
-    save_json(
+    ensure_json(local_buffer_file(output_dir), build_empty_local_buffer(mechanism_version=mechanism_version))
+    ensure_json(trigger_state_file(output_dir), build_empty_trigger_state(mechanism_version=mechanism_version))
+    ensure_json(local_continuity_file(output_dir), build_empty_local_continuity(mechanism_version=mechanism_version))
+    ensure_json(working_pressure_file(output_dir), build_empty_working_pressure(mechanism_version=mechanism_version))
+    ensure_json(anchor_memory_file(output_dir), build_empty_anchor_memory(mechanism_version=mechanism_version))
+    ensure_json(
         reflective_summaries_file(output_dir),
         build_empty_reflective_summaries(mechanism_version=mechanism_version),
     )
-    save_json(
+    ensure_json(
         knowledge_activations_file(output_dir),
         build_empty_knowledge_activations(mechanism_version=mechanism_version),
     )
-    save_json(move_history_file(output_dir), build_empty_move_history(mechanism_version=mechanism_version))
-    save_json(reaction_records_file(output_dir), build_empty_reaction_records(mechanism_version=mechanism_version))
-    save_json(
+    ensure_json(move_history_file(output_dir), build_empty_move_history(mechanism_version=mechanism_version))
+    ensure_json(reaction_records_file(output_dir), build_empty_reaction_records(mechanism_version=mechanism_version))
+    ensure_json(
         reconsolidation_records_file(output_dir),
         build_empty_reconsolidation_records(mechanism_version=mechanism_version),
     )
-    save_json(
+    ensure_json(
         reader_policy_file(output_dir),
         reader_policy,
     )
-    save_json(
+    ensure_json(
         resume_metadata_file(output_dir),
         build_empty_resume_metadata(
             mechanism_version=mechanism_version,
@@ -315,7 +323,8 @@ def initialize_artifact_tree(
         ),
     )
     event_stream_file(output_dir).parent.mkdir(parents=True, exist_ok=True)
-    event_stream_file(output_dir).write_text("", encoding="utf-8")
+    if not event_stream_file(output_dir).exists():
+        event_stream_file(output_dir).write_text("", encoding="utf-8")
     return {
         "mechanism_key": ATTENTIONAL_V2_MECHANISM_KEY,
         "mechanism_version": mechanism_version,

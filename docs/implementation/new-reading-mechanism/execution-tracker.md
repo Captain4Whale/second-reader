@@ -15,11 +15,11 @@ Update when: status changes, blockers appear, or phases complete.
 - Overall status:
   - `in_progress`
 - Current phase:
-  - `Phase 8: Observability, Evaluation, And Shared-Surface Integration`
+  - `Phase 9: Migration, Stabilization, And Default-Cutover Readiness`
 - Current blockers:
   - final end-to-end comparison still waits on:
-    - a live parse/read runner
     - curated `attentional_v2` benchmark datasets and chapter corpus
+    - later frontend/API retirement of section-first chapter/detail and marks surfaces
     - later stable-doc promotion timing under `Q10`
 
 ## Phase Tracker
@@ -33,7 +33,8 @@ Update when: status changes, blockers appear, or phases complete.
 | Phase 5 - Knowledge, memory, and bridge resolution | `done` | activation lifecycle, anchor relations, bridge resolution working |
 | Phase 6 - Slow-cycle reasoning and historical integrity | `done` | promotion, reconsolidation, chapter consolidation working |
 | Phase 7 - Persistence, checkpointing, and resume | `done` | warm/cold/reconstitution resume working |
-| Phase 8 - Observability, evaluation, and shared-surface integration | `in_progress` | event/checkpoint contracts and public adapters working |
+| Phase 8 - Observability, evaluation, and shared-surface integration | `done` | event/checkpoint contracts and public adapters working |
+| Phase 8.5 - Live runner integration | `done` | real parse/read path works through shared runtime, CLI, and async jobs |
 | Phase 9 - Migration, stabilization, and default-cutover readiness | `planned` | acceptance ladder reached and stable docs promoted |
 
 ## Detailed Checklist
@@ -141,13 +142,27 @@ Update when: status changes, blockers appear, or phases complete.
   - reconsolidation lineage via `supersedes_reaction_id`
   - span-based or sentence-based live locus via `reading_locus`
   - current move type such as `advance`, `dwell`, `bridge`, or `reframe`
-- [ ] Migrate the frontend and stable API away from section-first chapter/detail and marks surfaces once the section model is intentionally retired
+
+### Phase 8.5 - Live Runner Integration
+- [x] Extract shared canonical parse/provisioning helpers under `src/reading_runtime/`
+- [x] Extract shared sequential manifest/run-state helpers under `src/reading_runtime/`
+- [x] Propagate optional `mechanism_key` through internal job launchers
+- [x] Preserve mechanism selection across manual resume, auto-resume, and incompatible fresh rerun
+- [x] Keep public HTTP routes unchanged while allowing backend-internal non-default mechanism rollout
+- [x] Reject `attentional_v2 + book_analysis` explicitly
+- [x] Implement `attentional_v2.parse_book` as a real parse-stage entrypoint
+- [x] Implement `attentional_v2.read_book` as a real sequential runner
+- [x] Register `AttentionalV2Mechanism()` as a built-in experimental mechanism
+- [x] Keep `IteratorV1Mechanism()` as the default mechanism
+- [x] Make shared aggregation and compatibility paths work without requiring `iterator_v1` `structure.json`
+- [x] Validate the live runner through backend tests and `make contract-check`
 
 ### Phase 9 - Migration, Stabilization, And Default-Cutover Readiness
 - [ ] Run mechanism-integrity evaluation
 - [ ] Run local-reading and span-trajectory evaluation
 - [ ] Run durable-trace and re-entry evaluation
 - [ ] Run runtime-viability evaluation
+- [ ] Migrate the frontend and stable API away from section-first chapter/detail and marks surfaces once the section model is intentionally retired
 - [ ] Curate the tracked `attentional_v2` benchmark datasets and the later chapter-level evaluation corpus before any real end-to-end comparison
 - [ ] Compare against `iterator_v1`
 - [ ] Promote landed behavior into stable docs
@@ -179,3 +194,5 @@ Update when: status changes, blockers appear, or phases complete.
   - Recorded future Phase 8 work explicitly instead of leaving it implicit: once the live parse/read path exists, node-level observability still needs to be wired across the local loop, bridge cycle, and slow-cycle nodes before the phase can claim full live-run coverage.
   - Resolved Q9: the project now has a staged evaluation pack, explicit acceptance thresholds, and an explicit future task to curate the real `attentional_v2` benchmark datasets and chapter corpus before any meaningful end-to-end comparison or default-promotion discussion.
   - Landed the remaining current-scope Phase 8 evaluation slice in code: `attentional_v2` can now build and explicitly persist a normalized eval bundle from persisted artifacts, and it now has structural integrity checks over shared cursor resolution, anchored reaction ids/locators, reconsolidation links, Q7 resume-policy bounds, and compatibility projection fidelity.
+  - Added the explicit Phase 8.5 live-runner workstream to reflect the real dependency chain more honestly: minimal runner wiring was not enough, so the project now tracks shared provisioning extraction, mechanism-key job propagation, real `attentional_v2` parse/read entrypoints, non-default experimental registration, and non-iterator compatibility aggregation as their own completed slice.
+  - Completed Phase 8.5: `attentional_v2` now runs end to end through the shared runtime, CLI, and existing async job lifecycle; resume and incompatible fresh reruns preserve `mechanism_key`; the backend rejects legacy `book_analysis` for `attentional_v2` explicitly; and stable/temp docs now treat `attentional_v2` as experimental instead of design-only.
