@@ -31,6 +31,9 @@ Update when: backend-local constraints, recurring pitfalls, or stable implementa
 - Keep mechanism-internal ontology local to the mechanism that owns it; do not force future readers to reuse `section` / `subsegment` concepts unless they genuinely fit.
 - Prefer wrapping the current `iterator_reader` behind shared mechanism boundaries over copying API/job wiring into each new reader.
 - Backend-wide infrastructure must not depend on `src.iterator_reader.models`; shared code should import neutral types from `src.reading_core/`.
+- Treat `state/uploads/` as transient user-upload intake, not as the durable source library for manually curated books.
+- Treat `state/library_sources/` as the local durable source-library territory for repeated backend imports, demos, and evaluation preparation.
+- Treat `eval/datasets/` and `eval/manifests/` as evaluation-package territory; do not use transient uploads as the benchmark corpus by default.
 - Avoid new abstractions unless they clearly improve the current sequential workflow or future multi-mechanism comparability.
 
 ## Platform Direction

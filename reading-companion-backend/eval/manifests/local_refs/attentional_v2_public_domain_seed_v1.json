@@ -1,0 +1,66 @@
+{
+  "manifest_id": "attentional_v2_public_domain_seed_v1_local_refs",
+  "description": "Local source-file references and checksums for the public-domain attentional_v2 seed corpus.",
+  "refs": [
+    {
+      "source_id": "walden_205_en",
+      "relative_local_path": "state/library_sources/en/walden_205.epub",
+      "sha256": "611551be1134794ad3edf996db55a8a13d9a3c5a157441138eb6fcfbb83805ac",
+      "file_size": 688009
+    },
+    {
+      "source_id": "souls_of_black_folk_408_en",
+      "relative_local_path": "state/library_sources/en/souls_of_black_folk_408.epub",
+      "sha256": "d106f906cd24b0e32152039e4c6f42e2c84fc943ec21d4169b1c5c979f8ddd5b",
+      "file_size": 2012882
+    },
+    {
+      "source_id": "pride_and_prejudice_1342_en",
+      "relative_local_path": "state/library_sources/en/pride_and_prejudice_1342.epub",
+      "sha256": "56141234a7c6a62593e972a3ed62b10cdc8e7e29607ccce124fc757a2e65b115",
+      "file_size": 24837301
+    },
+    {
+      "source_id": "moby_dick_2701_en",
+      "relative_local_path": "state/library_sources/en/moby_dick_2701.epub",
+      "sha256": "143339d0134d0f90bc57c414aac44960f0a469b48d2f2d51d785a0a430e7c423",
+      "file_size": 816021
+    },
+    {
+      "source_id": "middlemarch_145_en",
+      "relative_local_path": "state/library_sources/en/middlemarch_145.epub",
+      "sha256": "d6177079d1db5d915c7f8e516cf0f28bfabb7bb42c329d395b27d6c0f242ab8d",
+      "file_size": 1053947
+    },
+    {
+      "source_id": "zhaohua_xishi_25271_zh",
+      "relative_local_path": "state/library_sources/zh/zhaohua_xishi_25271.epub",
+      "sha256": "df7ed1c5e378a41b3b7c701e34f0f1f83dba0023eebe55a8024a40c901c9c276",
+      "file_size": 114740
+    },
+    {
+      "source_id": "nahan_27166_zh",
+      "relative_local_path": "state/library_sources/zh/nahan_27166.epub",
+      "sha256": "09d6daaed4b29cd3e2bd5f1adc9b196ad59fe78fccd88f16d3f4f4ca33fe693a",
+      "file_size": 181425
+    },
+    {
+      "source_id": "rulin_waishi_24032_zh",
+      "relative_local_path": "state/library_sources/zh/rulin_waishi_24032.epub",
+      "sha256": "9052de41ad8bcbc1b880dd12381c07f8c5e68176f46064937cca6afd1212efae",
+      "file_size": 410420
+    },
+    {
+      "source_id": "laocan_youji_25124_zh",
+      "relative_local_path": "state/library_sources/zh/laocan_youji_25124.epub",
+      "sha256": "2195fc64198790325cb1c6ee358ac9e3ecb49a98a973ddb9d9e623da780c802f",
+      "file_size": 217068
+    },
+    {
+      "source_id": "jinghua_yuan_25377_zh",
+      "relative_local_path": "state/library_sources/zh/jinghua_yuan_25377.epub",
+      "sha256": "e421f9431494169e9d987716ad9ef6b26b9f16e4110376c5f43234d138d13ac0",
+      "file_size": 619286
+    }
+  ]
+}

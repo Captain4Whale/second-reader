@@ -1,0 +1,20 @@
+{
+  "dataset_id": "attentional_v2_compat_shared_v1",
+  "family": "compatibility_fixtures",
+  "language_track": "shared",
+  "version": "1",
+  "description": "Shared compatibility audit specs for attentional_v2 public-surface projection. These are spec-level fixtures until live runtime outputs are generated.",
+  "primary_file": "fixtures.jsonl",
+  "question_ids": [
+    "EQ-AV2-008",
+    "EQ-GATE-002"
+  ],
+  "source_manifest_refs": [
+    "eval/manifests/source_books/attentional_v2_public_domain_seed_v1.json",
+    "eval/manifests/local_refs/attentional_v2_public_domain_seed_v1.json",
+    "eval/manifests/corpora/attentional_v2_public_domain_seed_bilingual_v1.json"
+  ],
+  "split_refs": [
+    "eval/manifests/splits/attentional_v2_public_domain_seed_bilingual_v1.json"
+  ]
+}

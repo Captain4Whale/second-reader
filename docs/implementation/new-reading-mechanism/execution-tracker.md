@@ -158,9 +158,13 @@ Update when: status changes, blockers appear, or phases complete.
 - [x] Validate the live runner through backend tests and `make contract-check`
 
 ### Phase 9 - Migration, Stabilization, And Default-Cutover Readiness
-- [ ] Freeze the evaluation-question map before dataset/corpus design begins
-- [ ] Freeze the corpus-requirements doc before requesting or screening books
-- [ ] Separate cross-mechanism comparison questions from attentional-specific attribution questions and runtime/compatibility gate questions
+- [x] Freeze the evaluation-question map before dataset/corpus design begins
+- [x] Freeze the corpus-requirements doc before requesting or screening books
+- [x] Freeze the dataset-organization rule and family-first folder layout before populating benchmark packages
+- [x] Separate cross-mechanism comparison questions from attentional-specific attribution questions and runtime/compatibility gate questions
+- [x] Screen and fetch the first bilingual public-domain seed source pool into the durable local source library
+- [x] Build tracked source-book, corpus, split, and local-ref manifests for the first bilingual public-domain seed corpus
+- [x] Build the first seed dataset packages for chapter, runtime, excerpt, and compatibility work
 - [ ] Run mechanism-integrity evaluation
 - [ ] Run local-reading and span-trajectory evaluation
 - [ ] Run durable-trace and re-entry evaluation
@@ -205,3 +209,7 @@ Update when: status changes, blockers appear, or phases complete.
   - Completed Phase 8.5: `attentional_v2` now runs end to end through the shared runtime, CLI, and existing async job lifecycle; resume and incompatible fresh reruns preserve `mechanism_key`; the backend rejects legacy `book_analysis` for `attentional_v2` explicitly; and stable/temp docs now treat `attentional_v2` as experimental instead of design-only.
   - Added the explicit evaluation-question layer before dataset design: stable cross-mechanism questions now live in `docs/backend-reader-evaluation.md`, stable attentional-specific proof questions now live in `docs/backend-reading-mechanisms/attentional_v2.md`, and the temporary `evaluation-question-map.md` now records exactly which questions this implementation project still has to answer, including the cross-mechanism comparison work that remains part of the current `attentional_v2` job.
   - Added the corpus-requirements layer before book collection: `evaluation-corpus-requirements.md` now separates what the future data process can satisfy during curation from what the source books themselves must already satisfy, and it records the source-policy recommendation plus the concrete book-pool requirements for the first serious benchmark build.
+  - Promoted source-book organization into the stable project docs: the workspace/backend/evaluation docs and backend agent guide now distinguish transient uploads, durable local source-library books, runtime book copies, and evaluation-package territory, and the history log now records that storage-boundary decision explicitly.
+  - Froze the dataset-organization rule before population: stable docs now require a family-first dataset layout under `eval/datasets/`, the backend `eval` README now defines the package contract, the temp implementation docs now define the first bilingual `attentional_v2` package plan, and the dataset/manifests folder skeleton now exists on disk.
+  - Built the first bilingual public-domain seed corpus locally under `state/library_sources/` from Project Gutenberg sources, then ran it through canonical parse and used that parsed substrate to generate tracked source manifests plus the first seed dataset packages under `reading-companion-backend/eval/`.
+  - Important honesty note for later work: the seed chapter and runtime packages are directly grounded in parsed substrate, but the seed excerpt packages are still auto-extracted and require manual curation before benchmark promotion, while the compatibility package is still spec-level until live attentional runtime outputs are generated for those books.

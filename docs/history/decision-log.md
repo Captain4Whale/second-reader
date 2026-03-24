@@ -340,6 +340,52 @@ Update when: a major product or engineering decision is made, reversed, or becom
 - `docs/backend-state-aggregation.md`
 
 ## Entry 17
+**Decision / Inflection**: Separate transient uploads, durable source-library books, runtime book copies, and evaluation packages into distinct source-asset territories.
+
+**Period**: March 2026, during the first serious `attentional_v2` evaluation-corpus planning pass.
+
+**Problem**: The backend already had user uploads, runtime book copies, local data files, fixtures, and benchmark assets, but they were too easy to blur together conceptually. Without an explicit territory model, future contributors could quietly treat `state/uploads/` as a de facto library, build evaluation corpora from ad hoc runtime files, or lose the difference between one analyzed `book_id` and a durable source-book identity.
+
+**Alternatives considered**: Keep all source books informally under one "backend data" idea, treat runtime book copies as the natural evaluation corpus, or let uploads flow into evaluation use without an explicit promotion boundary.
+
+**Why this path won**: A territory model makes upstream and downstream responsibilities clearer. It preserves the product/runtime upload flow while also giving evaluation work a cleaner, more reproducible path. It also keeps manually curated backend books distinct from transient user uploads without forcing every durable source into the repo.
+
+**What changed in the system**: Stable docs now distinguish:
+- `state/uploads/` as transient intake
+- per-book runtime copies under `output/<book_id>/...` as one analyzed book's reproducible source territory
+- `state/library_sources/` as the durable local source-library territory for manually curated books
+- `eval/datasets/` and `eval/manifests/` as evaluation-package territory
+
+**Why it matters later**: This is the storage rule that should stop future evaluation work from becoming "whatever books happened to be uploaded recently." It also explains why user uploads are not automatically part of the durable library or benchmark corpus, and why promotion into those roles should remain explicit.
+
+**Primary evidence**:
+- `docs/workspace-overview.md`
+- `docs/backend-sequential-lifecycle.md`
+- `docs/backend-reader-evaluation.md`
+- `reading-companion-backend/AGENTS.md`
+
+## Entry 18
+**Decision / Inflection**: Organize benchmark inputs by evidence family and language track instead of by one active mechanism's folder tree.
+
+**Period**: March 2026, during the first bilingual `attentional_v2` benchmark preparation pass.
+
+**Problem**: The project now needs multiple kinds of benchmark inputs at once: excerpt cases, chapter corpora, runtime fixtures, and compatibility fixtures. Without a durable dataset layout, those assets would drift into ad hoc folders, silently mix tracked inputs with generated outputs, and make it harder to reuse the same structure for later mechanisms.
+
+**Alternatives considered**: Keep adding one-off benchmark folders per mechanism, store all benchmark inputs in one flat dataset directory, or let manifests and tracked datasets live together without a stronger boundary.
+
+**Why this path won**: A family-first layout matches the evaluation-question structure more closely than a mechanism-first pile. It also makes bilingual handling clearer by separating `en`, `zh`, and `shared` tracks at the package level, while keeping source-book inventories and corpus-selection manifests in their own manifest territory.
+
+**What changed in the system**: The stable evaluation doc now defines dataset-organization rules for `excerpt_cases`, `chapter_corpora`, `runtime_fixtures`, and `compatibility_fixtures` under `reading-companion-backend/eval/datasets/`. The repo now also has tracked family roots and manifest roots under `reading-companion-backend/eval/manifests/` for source-book inventories, corpus manifests, split manifests, and local-path references.
+
+**Why it matters later**: This is the storage rule that should keep future benchmark work reproducible and comparable across mechanisms. It also prevents the first `attentional_v2` benchmark package shape from becoming an accidental one-off that later mechanisms have to work around.
+
+**Primary evidence**:
+- `docs/backend-reader-evaluation.md`
+- `reading-companion-backend/eval/datasets/README.md`
+- `reading-companion-backend/eval/manifests/README.md`
+- `docs/implementation/new-reading-mechanism/evaluation-dataset-layout.md`
+
+## Entry 17
 **Decision / Inflection**: Move mechanism-private reading artifacts under `_mechanisms/<mechanism_key>/` and reserve top-level `public/` plus `_runtime/` for shared cross-mechanism state.
 
 **Period**: Late March 2026, immediately after the shared substrate extraction.

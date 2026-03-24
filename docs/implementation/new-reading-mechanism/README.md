@@ -51,6 +51,9 @@ Update when: the design capture, plan, tracker, or open-question set changes dur
 - `evaluation-corpus-requirements.md`
   - source-book and corpus-quality requirements for the future benchmark datasets
   - separates what curation can solve from what the source books must already satisfy
+- `evaluation-dataset-layout.md`
+  - concrete family-first dataset-package design for the bilingual `attentional_v2` benchmark build
+  - defines package ids, folder roots, and the split between tracked datasets and tracked manifests
 - `stable-doc-impact.md`
   - map of which long-term docs must be updated when each workstream lands
 - `runtime-artifact-map.md`
@@ -80,5 +83,6 @@ Update when: the design capture, plan, tracker, or open-question set changes dur
 6. `open-questions.md`
 7. `evaluation-question-map.md`
 8. `evaluation-corpus-requirements.md`
-9. `runtime-artifact-map.md`
-10. Stable docs listed above, as required by the task at hand
+9. `evaluation-dataset-layout.md`
+10. `runtime-artifact-map.md`
+11. Stable docs listed above, as required by the task at hand

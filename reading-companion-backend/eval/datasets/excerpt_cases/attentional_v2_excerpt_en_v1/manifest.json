@@ -1,0 +1,25 @@
+{
+  "dataset_id": "attentional_v2_excerpt_en_v1",
+  "family": "excerpt_cases",
+  "language_track": "en",
+  "version": "1",
+  "description": "English auto-extracted seed excerpt cases from the public-domain attentional_v2 corpus. These require later manual curation before benchmark promotion.",
+  "primary_file": "cases.jsonl",
+  "question_ids": [
+    "EQ-CM-002",
+    "EQ-AV2-001",
+    "EQ-AV2-002",
+    "EQ-AV2-003",
+    "EQ-AV2-004",
+    "EQ-AV2-005",
+    "EQ-AV2-006"
+  ],
+  "source_manifest_refs": [
+    "eval/manifests/source_books/attentional_v2_public_domain_seed_v1.json",
+    "eval/manifests/local_refs/attentional_v2_public_domain_seed_v1.json",
+    "eval/manifests/corpora/attentional_v2_public_domain_seed_bilingual_v1.json"
+  ],
+  "split_refs": [
+    "eval/manifests/splits/attentional_v2_public_domain_seed_bilingual_v1.json"
+  ]
+}

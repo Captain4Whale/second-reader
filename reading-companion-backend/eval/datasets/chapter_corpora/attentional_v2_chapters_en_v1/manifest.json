@@ -1,0 +1,22 @@
+{
+  "dataset_id": "attentional_v2_chapters_en_v1",
+  "family": "chapter_corpora",
+  "language_track": "en",
+  "version": "1",
+  "description": "English seed chapter corpus grounded in the first public-domain attentional_v2 source pool.",
+  "primary_file": "chapters.jsonl",
+  "question_ids": [
+    "EQ-CM-001",
+    "EQ-CM-003",
+    "EQ-CM-004",
+    "EQ-GATE-003"
+  ],
+  "source_manifest_refs": [
+    "eval/manifests/source_books/attentional_v2_public_domain_seed_v1.json",
+    "eval/manifests/local_refs/attentional_v2_public_domain_seed_v1.json",
+    "eval/manifests/corpora/attentional_v2_public_domain_seed_bilingual_v1.json"
+  ],
+  "split_refs": [
+    "eval/manifests/splits/attentional_v2_public_domain_seed_bilingual_v1.json"
+  ]
+}

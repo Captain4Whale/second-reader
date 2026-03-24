@@ -1,0 +1,20 @@
+{
+  "manifest_id": "attentional_v2_public_domain_seed_bilingual_v1",
+  "description": "Bilingual public-domain source corpus for the first attentional_v2 evaluation build.",
+  "language_tracks": {
+    "en": [
+      "walden_205_en",
+      "souls_of_black_folk_408_en",
+      "pride_and_prejudice_1342_en",
+      "moby_dick_2701_en",
+      "middlemarch_145_en"
+    ],
+    "zh": [
+      "zhaohua_xishi_25271_zh",
+      "nahan_27166_zh",
+      "rulin_waishi_24032_zh",
+      "laocan_youji_25124_zh",
+      "jinghua_yuan_25377_zh"
+    ]
+  }
+}

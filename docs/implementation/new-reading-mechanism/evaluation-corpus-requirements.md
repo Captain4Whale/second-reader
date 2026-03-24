@@ -51,8 +51,11 @@ These are requirements for the books themselves, before curation.
   - Prefer prose books for the first corpus.
   - Poetry, highly fragmented aphorism collections, heavily tabular books, or image-dominant books should not dominate the initial corpus.
 - `language_control`
-  - For the first serious benchmark corpus, prefer one primary language.
-  - Recommendation: English-first for the first corpus to reduce evaluation noise.
+  - Support two primary languages:
+    - English
+    - Chinese
+  - Keep them as parallel evaluation tracks rather than one mixed scoring pool.
+  - Do not mix English and Chinese chapters inside the same pairwise/rubric comparison slice unless a later explicit multilingual methodology is defined.
 - `reasonable_text_quality`
   - Avoid severely corrupted EPUBs, OCR-noisy text, or malformed files that would turn the benchmark into a parser-quality test.
 
@@ -164,7 +167,7 @@ For the real corpus-building step, the most helpful input is:
 ### Preferred book pool
 - ideally `6-10` candidate books for the first corpus-building pass
 - EPUB preferred
-- primarily English prose for the first corpus
+- English and Chinese prose, kept as separate evaluation tracks
 - a mix of:
   - expository
   - argumentative
@@ -195,8 +198,198 @@ For the real corpus-building step, the most helpful input is:
     - tracked excerpt datasets and manifests
     - private local full-book corpus when needed
 
+## Source-Book Organization
+We should organize books by role and lifecycle, not by "all EPUBs in one folder."
+
+### Four storage territories
+1. `transient_uploads`
+- Purpose:
+  - raw user-upload intake
+- Current home:
+  - `reading-companion-backend/state/uploads/`
+- Rules:
+  - job-scoped, not library-scoped
+  - may be temporary
+  - should not be treated as the authoritative evaluation corpus
+  - should not become the long-term manually curated source library by accident
+
+2. `runtime_book_copies`
+- Purpose:
+  - the source asset actually attached to one analyzed book run
+- Current home:
+  - copied into the per-book runtime/output area and surfaced through the book manifest
+- Rules:
+  - book-instance scoped
+  - belongs to one output/book identity
+  - may originate from either manual import or user upload
+  - this is the right place for one run to remain reproducible after intake
+
+3. `durable_source_library`
+- Purpose:
+  - manually prepared books that we intentionally keep available for repeated backend use
+  - especially useful for evaluation, demos, fixture building, and repeated mechanism work
+- Recommended home:
+  - private local source-library root, separate from transient uploads
+  - for example:
+    - `reading-companion-backend/state/library_sources/`
+    - or another explicit local-only path outside the repo if preferred
+- Rules:
+  - organized by stable source identity, not by job id
+  - should carry metadata such as language, rights/storage policy, and coarse type tags
+  - this is where manually added English/Chinese books should primarily live
+
+4. `evaluation_packages`
+- Purpose:
+  - tracked benchmark definitions, excerpt datasets, manifests, fixture references, and reports
+- Current / recommended home:
+  - tracked manifests and excerpt datasets:
+    - `reading-companion-backend/eval/datasets/`
+  - evaluation code:
+    - `reading-companion-backend/eval/`
+  - local full-book corpus for chapter-level evaluation:
+    - keep private/local and reference it by manifest rather than treating runtime copies as the corpus
+- Rules:
+  - excerpt datasets can be repo-tracked
+  - full-book evaluation corpus should usually be referenced by manifest and local path, not duplicated into runtime output directories
+
+### Core identity rule
+We should keep these identities separate:
+- `source_asset`
+  - one concrete file you provide
+- `work_or_edition`
+  - the bibliographic work/edition identity
+- `runtime_book`
+  - one ingested/analyzed book in the product runtime
+- `evaluation_case`
+  - one excerpt/chapter fixture derived from a source
+
+The most important practical rule is:
+- never use runtime `book_id` as the long-term identity of the source book itself
+
+### Promotion rule
+- A user-uploaded book should stay in `transient_uploads` plus its runtime copy by default.
+- It should only become part of the durable source library or evaluation corpus if we explicitly promote it.
+- Promotion should be intentional because:
+  - rights/storage policy may differ
+  - evaluation suitability must be screened
+  - not every uploaded book is a good benchmark source
+
+### Recommended future metadata
+For durable library and evaluation use, each source book should eventually carry:
+- stable source id
+- title
+- author
+- language
+- file path
+- storage policy:
+  - repo-tracked
+  - private-local
+- origin:
+  - manual-import
+  - user-upload-promoted
+  - fixture
+  - public-domain-source
+- rough type tags
+- parsing notes
+- evaluation suitability notes
+
+### What this means operationally
+- User uploads:
+  - keep using `state/uploads/` and per-book runtime copies
+- Manually added backend books:
+  - place them in a durable source-library territory, not in `state/uploads/`
+- Evaluation corpus:
+  - build it from screened durable sources
+  - do not treat ad hoc runtime outputs or uploads as the benchmark corpus
+- Repo fixtures:
+  - keep minimal and intentional under `tests/fixtures/` or tracked `eval/datasets/`
+
+## Book Search Strategy
+The search strategy should be driven by coverage, not by famous-title collecting.
+
+### Two-track acquisition plan
+- Build two parallel pools:
+  - English
+  - Chinese
+- Keep each language pool internally balanced before trying to enlarge it.
+- For the first pass, prefer a smaller high-signal pool over a large random pile.
+
+### Target acquisition shape
+For each language, the best first pass is:
+- `4-6` candidate books
+- with at least:
+  - `1` expository or philosophical work
+  - `1` argumentative or essayistic work
+  - `1` narrative or reflective work
+  - `1` reference-heavy, allusion-dense, or callback-rich work
+
+That means the combined first bilingual pool should usually be:
+- `8-12` books total
+
+### Search order
+For each language, search in this order:
+1. books you already legally own and can provide locally as EPUB
+2. public-domain or open-access books with clean machine-readable text
+3. only then, additional books bought or gathered specifically for corpus coverage gaps
+
+### What to search for
+When searching, prefer books that give us:
+- clear chapter boundaries
+- prose-dominant text
+- dense conceptual turns or interpretive pressure
+- callbacks, motifs, or later reinterpretation opportunities
+- passages that can reasonably produce strong anchored reactions
+
+Avoid making the first pool depend too much on:
+- highly technical specialist books
+- image-heavy or scan-only books
+- poetry-dominant books
+- books with unstable or badly corrupted EPUB conversion
+- books that are all the same voice, genre, or period
+
+### English search guidance
+- Good first sources:
+  - existing local EPUBs you already own
+  - Standard Ebooks for clean public-domain EPUBs
+  - Project Gutenberg when a Standard Ebooks edition is unavailable
+- Good first categories:
+  - reflective novels
+  - essay collections
+  - philosophy / social thought with chapter structure
+  - allusion-rich classics
+
+### Chinese search guidance
+- Good first sources:
+  - existing local EPUBs you already own
+  - Chinese public-domain texts with exportable machine-readable text
+  - Chinese EPUBs you can provide locally for modern vernacular coverage
+- Good first categories:
+  - modern vernacular essays or reflective prose
+  - chaptered novels with strong callbacks or reinterpretation opportunities
+  - classical prose only when the text remains reasonably judgeable for our rubric
+- For Chinese, do not let the first pool become only classical terse texts.
+  - We want some modern vernacular prose too, if you can provide it.
+
+### Selection rule
+If two books look equally good, prefer the one that:
+- parses more cleanly
+- has stronger chapter boundaries
+- adds a missing coverage type
+- is easier to keep as a stable evaluation source
+
+### What I should do after you gather candidates
+Once you provide the candidate pool, I should:
+- screen parse quality
+- tag each book by evaluation usefulness
+- reject weak or redundant candidates
+- propose the final bilingual corpus split
+- derive excerpt datasets, chapter corpus, and runtime fixtures from that screened pool
+
 ## Immediate Next Step
 - Gather a candidate book pool that satisfies the source-book requirements above.
+- When gathering the pool, label each book by language so I can build:
+  - an English evaluation track
+  - a Chinese evaluation track
 - Then I can do the next layer:
   - corpus intake screening
   - chapter/excerpt selection

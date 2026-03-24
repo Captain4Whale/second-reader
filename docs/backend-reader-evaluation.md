@@ -263,6 +263,7 @@ Use `docs/backend-reading-mechanism.md` for shared mechanism-platform boundaries
 - Reviewed, checked-in evaluation reports belong in `reading-companion-backend/docs/evaluation/`.
 - Executable evaluation code belongs in `reading-companion-backend/eval/`.
 - Tracked benchmark datasets belong in `reading-companion-backend/eval/datasets/`.
+- Tracked corpus manifests and local-source reference files belong in `reading-companion-backend/eval/manifests/`.
 - Machine-generated benchmark runs belong in `reading-companion-backend/eval/runs/` and should stay out of normal runtime `state/` / `output/` paths.
 - Runtime-first per-run markdown summaries may live under `reading-companion-backend/eval/runs/<benchmark>/<run_id>/summary/` until they are reviewed and promoted into `reading-companion-backend/docs/evaluation/`.
 - Temporary experiment logs belong in `reading-companion-backend/docs/research/` only when they are not yet stable reports.
@@ -275,6 +276,27 @@ Use `docs/backend-reading-mechanism.md` for shared mechanism-platform boundaries
 - Tracked benchmark datasets remain the source of truth for benchmark inputs.
   - Excerpt-case datasets may carry the excerpt text they need directly.
   - End-to-end chapter/book comparisons should use an intentional evaluation corpus rather than ad hoc runtime `output/` or `state/uploads/` files.
+  - User uploads and runtime book copies should only enter the benchmark corpus after explicit promotion and screening.
+  - The durable local source-library territory for that screening flow is `reading-companion-backend/state/library_sources/`.
+
+## Dataset Organization Rules
+- Organize benchmark inputs by evidence family first, not by whichever mechanism happens to be under active development.
+- The primary tracked dataset families under `reading-companion-backend/eval/datasets/` are:
+  - `excerpt_cases/`
+  - `chapter_corpora/`
+  - `runtime_fixtures/`
+  - `compatibility_fixtures/`
+- Keep English and Chinese as separate language tracks.
+  - Use `en` and `zh` package tracks for language-bound datasets.
+  - Use `shared` only when a dataset is intentionally language-agnostic.
+- Each concrete dataset package should live in its own directory under the correct family root.
+- Each concrete dataset package must include:
+  - `manifest.json`
+  - one primary payload file such as `cases.jsonl`, `chapters.jsonl`, or `fixtures.jsonl`
+- Tracked corpus/source metadata should not be mixed into the dataset package itself.
+  - Put source-book inventories, corpus-selection manifests, split manifests, and local-path references under `reading-companion-backend/eval/manifests/`.
+- Machine-generated run output must stay under `reading-companion-backend/eval/runs/`, never inside tracked dataset packages.
+- Detailed package naming and payload-shape rules may evolve in repo-local READMEs and benchmark code, but the family-first plus separate-language-track structure is the stable rule.
 
 ### Expectations For Evaluation Reports
 - Per-run or per-change reports should state:

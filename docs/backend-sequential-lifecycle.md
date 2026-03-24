@@ -15,6 +15,7 @@ Use `docs/backend-reading-mechanism.md` when the question is about shared mechan
 ## Entry Points
 - `POST /api/uploads/epub`
   - Stores the EPUB under `state/uploads/<job_id>.epub`.
+  - `state/uploads/` is transient intake territory rather than the durable source library or evaluation corpus.
   - Provisions a minimal book shell immediately so the frontend can resolve a book card and book route before deep reading starts.
   - The public route does not expose a mechanism selector yet, but backend-internal rollout can still choose a non-default mechanism through shared `mechanism_key` plumbing.
   - `start_mode=immediate` launches a `read` job for the main sequential workflow.
@@ -50,6 +51,22 @@ Use `docs/backend-reading-mechanism.md` when the question is about shared mechan
 7. While the reader is active, cross-mechanism runtime artifacts update stage-level state in `_runtime/`, while mechanism-private memory, checkpoints, and diagnostics update under `_mechanisms/<mechanism_key>/`.
 8. If the worker stops cleanly, deferred parse work finishes at `ready` and full read work finishes at `completed`. If runtime guards intervene, the run becomes `paused`. If recovery is no longer safe, the run becomes `error` or is restarted from scratch.
 9. Terminal runs are mirrored into `_history/runs/<job_id>/` so the latest live artifacts and run history stay separate.
+
+## Source Asset Territories
+- `state/uploads/`
+  - transient user-upload intake
+  - job-scoped rather than library-scoped
+- `output/<book_id>/...`
+  - one runtime book's copied source asset plus its derived artifacts
+  - this is the reproducible source territory for one analyzed book
+- `state/library_sources/`
+  - durable local source-library territory for manually curated backend books
+  - suitable for repeated imports, demos, and evaluation preparation
+- `eval/datasets/` and `eval/manifests/`
+  - evaluation-package territory
+  - tracked benchmark definitions and corpus manifests belong here rather than in transient uploads
+
+Promotion from user upload into the durable source library or evaluation corpus should be explicit rather than automatic.
 
 ## Job Kinds And Status Progression
 ### `parse` jobs

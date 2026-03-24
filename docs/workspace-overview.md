@@ -25,6 +25,11 @@ Update when: workspace structure, ownership boundaries, or primary shared entryp
 - runtime artifacts stored under:
   - `output/`
   - `state/`
+    - `state/uploads/` is transient user-upload intake
+    - `state/library_sources/` is the durable local source-library territory for manually curated books
+  - `eval/`
+    - `eval/datasets/` stores tracked benchmark datasets
+    - `eval/manifests/` stores tracked corpus manifests and local-source references for evaluation work
   - within `output/<book_id>/`, shared product/runtime artifacts live in top-level `public/` and `_runtime/`, while mechanism-private artifacts live under `_mechanisms/<mechanism_key>/`
 
 ### `reading-companion-frontend`
@@ -70,6 +75,9 @@ Update when: workspace structure, ownership boundaries, or primary shared entryp
 - Use child directories when a task is clearly isolated.
 - Keep runtime data in `reading-companion-backend/`.
 - Keep shared runtime/mechanism boundaries in backend-owned infrastructure, and keep reader-internal ontology inside the specific mechanism that owns it.
+- Treat `reading-companion-backend/state/uploads/` as transient intake, not as the durable source library or benchmark corpus.
+- Treat `reading-companion-backend/state/library_sources/` as the local manually curated source-book territory for repeated backend and evaluation use.
+- Treat `reading-companion-backend/eval/datasets/` and `reading-companion-backend/eval/manifests/` as evaluation-package territory rather than as product runtime state.
 - Use `docs/backend-reading-mechanism.md` for shared mechanism boundaries and `docs/backend-reading-mechanisms/<mechanism>.md` for mechanism-private reading logic.
 - Treat `reading-companion-backend/output/<book_id>/public/` and `reading-companion-backend/output/<book_id>/_runtime/` as shared cross-mechanism territory.
 - Treat `reading-companion-backend/output/<book_id>/_mechanisms/<mechanism_key>/` as mechanism-owned territory for derived structures, runtime memory, checkpoints, and diagnostics.

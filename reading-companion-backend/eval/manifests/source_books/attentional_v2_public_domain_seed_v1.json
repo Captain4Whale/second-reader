@@ -1,0 +1,332 @@
+{
+  "manifest_id": "attentional_v2_public_domain_seed_v1",
+  "description": "Tracked source-book inventory for the first bilingual public-domain seed corpus used in attentional_v2 evaluation preparation.",
+  "books": [
+    {
+      "source_id": "walden_205_en",
+      "title": "Walden, and On The Duty Of Civil Disobedience",
+      "author": "Henry David Thoreau",
+      "language": "en",
+      "local_path": "en/walden_205.epub",
+      "source_url": "https://www.gutenberg.org/ebooks/205",
+      "storage_policy": "private-local",
+      "origin": "public-domain-source",
+      "type_tags": [
+        "expository",
+        "philosophical",
+        "essayistic"
+      ],
+      "suitability_notes": [
+        "Good for conceptual pressure and reflective prose.",
+        "Useful for local closure and chapter-scale accumulation."
+      ],
+      "relative_local_path": "state/library_sources/en/walden_205.epub",
+      "sha256": "611551be1134794ad3edf996db55a8a13d9a3c5a157441138eb6fcfbb83805ac",
+      "file_size": 688009,
+      "output_dir": "output/walden-and-on-the-duty-of-civil-disobedience",
+      "detected_book_language": "en",
+      "output_language": "en",
+      "chapter_count": 23,
+      "selected_seed_chapter_numbers": [
+        0,
+        0
+      ],
+      "selected_seed_chapter_ids": [
+        "1",
+        "13"
+      ]
+    },
+    {
+      "source_id": "souls_of_black_folk_408_en",
+      "title": "The Souls of Black Folk",
+      "author": "W. E. B. Du Bois",
+      "language": "en",
+      "local_path": "en/souls_of_black_folk_408.epub",
+      "source_url": "https://www.gutenberg.org/ebooks/408",
+      "storage_policy": "private-local",
+      "origin": "public-domain-source",
+      "type_tags": [
+        "essayistic",
+        "argumentative",
+        "social_thought"
+      ],
+      "suitability_notes": [
+        "Good for argumentative and reflective chapter passages.",
+        "Likely useful for bridge-worthy concepts and durable trace."
+      ],
+      "relative_local_path": "state/library_sources/en/souls_of_black_folk_408.epub",
+      "sha256": "d106f906cd24b0e32152039e4c6f42e2c84fc943ec21d4169b1c5c979f8ddd5b",
+      "file_size": 2012882,
+      "output_dir": "output/the-souls-of-black-folk",
+      "detected_book_language": "en",
+      "output_language": "en",
+      "chapter_count": 19,
+      "selected_seed_chapter_numbers": [
+        0,
+        0
+      ],
+      "selected_seed_chapter_ids": [
+        "1",
+        "10"
+      ]
+    },
+    {
+      "source_id": "pride_and_prejudice_1342_en",
+      "title": "Pride and Prejudice",
+      "author": "Jane Austen",
+      "language": "en",
+      "local_path": "en/pride_and_prejudice_1342.epub",
+      "source_url": "https://www.gutenberg.org/ebooks/1342",
+      "storage_policy": "private-local",
+      "origin": "public-domain-source",
+      "type_tags": [
+        "narrative_reflective",
+        "novel",
+        "social_detail"
+      ],
+      "suitability_notes": [
+        "Good for character judgment, revision, and later reinterpretation."
+      ],
+      "relative_local_path": "state/library_sources/en/pride_and_prejudice_1342.epub",
+      "sha256": "56141234a7c6a62593e972a3ed62b10cdc8e7e29607ccce124fc757a2e65b115",
+      "file_size": 24837301,
+      "output_dir": "output/pride-and-prejudice",
+      "detected_book_language": "en",
+      "output_language": "en",
+      "chapter_count": 63,
+      "selected_seed_chapter_numbers": [
+        0,
+        0
+      ],
+      "selected_seed_chapter_ids": [
+        "1",
+        "32"
+      ]
+    },
+    {
+      "source_id": "moby_dick_2701_en",
+      "title": "Moby Dick; Or, The Whale",
+      "author": "Herman Melville",
+      "language": "en",
+      "local_path": "en/moby_dick_2701.epub",
+      "source_url": "https://www.gutenberg.org/ebooks/2701",
+      "storage_policy": "private-local",
+      "origin": "public-domain-source",
+      "type_tags": [
+        "narrative_reflective",
+        "allusion_dense",
+        "novel"
+      ],
+      "suitability_notes": [
+        "Good for motif, callback, and chapter-scale accumulation."
+      ],
+      "relative_local_path": "state/library_sources/en/moby_dick_2701.epub",
+      "sha256": "143339d0134d0f90bc57c414aac44960f0a469b48d2f2d51d785a0a430e7c423",
+      "file_size": 816021,
+      "output_dir": "output/moby-dick-or-the-whale",
+      "detected_book_language": "en",
+      "output_language": "en",
+      "chapter_count": 146,
+      "selected_seed_chapter_numbers": [
+        0,
+        68
+      ],
+      "selected_seed_chapter_ids": [
+        "1",
+        "74"
+      ]
+    },
+    {
+      "source_id": "middlemarch_145_en",
+      "title": "Middlemarch",
+      "author": "George Eliot",
+      "language": "en",
+      "local_path": "en/middlemarch_145.epub",
+      "source_url": "https://www.gutenberg.org/ebooks/145",
+      "storage_policy": "private-local",
+      "origin": "public-domain-source",
+      "type_tags": [
+        "narrative_reflective",
+        "novel",
+        "social_thought"
+      ],
+      "suitability_notes": [
+        "Good long-span reflective novel for chapter trajectory comparisons."
+      ],
+      "relative_local_path": "state/library_sources/en/middlemarch_145.epub",
+      "sha256": "d6177079d1db5d915c7f8e516cf0f28bfabb7bb42c329d395b27d6c0f242ab8d",
+      "file_size": 1053947,
+      "output_dir": "output/middlemarch",
+      "detected_book_language": "en",
+      "output_language": "en",
+      "chapter_count": 101,
+      "selected_seed_chapter_numbers": [
+        0,
+        0
+      ],
+      "selected_seed_chapter_ids": [
+        "1",
+        "52"
+      ]
+    },
+    {
+      "source_id": "zhaohua_xishi_25271_zh",
+      "title": "朝花夕拾",
+      "author": "魯迅",
+      "language": "zh",
+      "local_path": "zh/zhaohua_xishi_25271.epub",
+      "source_url": "https://www.gutenberg.org/ebooks/25271",
+      "storage_policy": "private-local",
+      "origin": "public-domain-source",
+      "type_tags": [
+        "essayistic",
+        "narrative_reflective",
+        "modern_vernacular"
+      ],
+      "suitability_notes": [
+        "Important modern vernacular Chinese track.",
+        "Good for reflective prose and durable trace."
+      ],
+      "relative_local_path": "state/library_sources/zh/zhaohua_xishi_25271.epub",
+      "sha256": "df7ed1c5e378a41b3b7c701e34f0f1f83dba0023eebe55a8024a40c901c9c276",
+      "file_size": 114740,
+      "output_dir": "output/朝花夕拾",
+      "detected_book_language": "zh",
+      "output_language": "zh",
+      "chapter_count": 1,
+      "selected_seed_chapter_numbers": [
+        0
+      ],
+      "selected_seed_chapter_ids": [
+        "1"
+      ]
+    },
+    {
+      "source_id": "nahan_27166_zh",
+      "title": "吶喊",
+      "author": "魯迅",
+      "language": "zh",
+      "local_path": "zh/nahan_27166.epub",
+      "source_url": "https://www.gutenberg.org/ebooks/27166",
+      "storage_policy": "private-local",
+      "origin": "public-domain-source",
+      "type_tags": [
+        "narrative_reflective",
+        "short_story",
+        "modern_vernacular"
+      ],
+      "suitability_notes": [
+        "Useful modern vernacular Chinese fiction track.",
+        "Good for tension, turn, and anchored reactions."
+      ],
+      "relative_local_path": "state/library_sources/zh/nahan_27166.epub",
+      "sha256": "09d6daaed4b29cd3e2bd5f1adc9b196ad59fe78fccd88f16d3f4f4ca33fe693a",
+      "file_size": 181425,
+      "output_dir": "output/吶喊",
+      "detected_book_language": "zh",
+      "output_language": "zh",
+      "chapter_count": 2,
+      "selected_seed_chapter_numbers": [
+        0,
+        0
+      ],
+      "selected_seed_chapter_ids": [
+        "1",
+        "2"
+      ]
+    },
+    {
+      "source_id": "rulin_waishi_24032_zh",
+      "title": "儒林外史",
+      "author": "吳敬梓",
+      "language": "zh",
+      "local_path": "zh/rulin_waishi_24032.epub",
+      "source_url": "https://www.gutenberg.org/ebooks/24032",
+      "storage_policy": "private-local",
+      "origin": "public-domain-source",
+      "type_tags": [
+        "argumentative",
+        "satirical",
+        "vernacular_classic"
+      ],
+      "suitability_notes": [
+        "Good for social critique and satirical pressure."
+      ],
+      "relative_local_path": "state/library_sources/zh/rulin_waishi_24032.epub",
+      "sha256": "9052de41ad8bcbc1b880dd12381c07f8c5e68176f46064937cca6afd1212efae",
+      "file_size": 410420,
+      "output_dir": "output/儒林外史",
+      "detected_book_language": "zh",
+      "output_language": "zh",
+      "chapter_count": 1,
+      "selected_seed_chapter_numbers": [
+        0
+      ],
+      "selected_seed_chapter_ids": [
+        "1"
+      ]
+    },
+    {
+      "source_id": "laocan_youji_25124_zh",
+      "title": "老殘遊記",
+      "author": "劉鶚",
+      "language": "zh",
+      "local_path": "zh/laocan_youji_25124.epub",
+      "source_url": "https://www.gutenberg.org/ebooks/25124",
+      "storage_policy": "private-local",
+      "origin": "public-domain-source",
+      "type_tags": [
+        "narrative_reflective",
+        "social_critique",
+        "vernacular_classic"
+      ],
+      "suitability_notes": [
+        "Good for social reflection and longer Chinese narrative spans."
+      ],
+      "relative_local_path": "state/library_sources/zh/laocan_youji_25124.epub",
+      "sha256": "2195fc64198790325cb1c6ee358ac9e3ecb49a98a973ddb9d9e623da780c802f",
+      "file_size": 217068,
+      "output_dir": "output/老殘遊記",
+      "detected_book_language": "zh",
+      "output_language": "zh",
+      "chapter_count": 1,
+      "selected_seed_chapter_numbers": [
+        0
+      ],
+      "selected_seed_chapter_ids": [
+        "1"
+      ]
+    },
+    {
+      "source_id": "jinghua_yuan_25377_zh",
+      "title": "鏡花緣",
+      "author": "李汝珍",
+      "language": "zh",
+      "local_path": "zh/jinghua_yuan_25377.epub",
+      "source_url": "https://www.gutenberg.org/ebooks/25377",
+      "storage_policy": "private-local",
+      "origin": "public-domain-source",
+      "type_tags": [
+        "allusion_dense",
+        "fantasy",
+        "vernacular_classic"
+      ],
+      "suitability_notes": [
+        "Good for unusual transitions, motifs, and bridge opportunities."
+      ],
+      "relative_local_path": "state/library_sources/zh/jinghua_yuan_25377.epub",
+      "sha256": "e421f9431494169e9d987716ad9ef6b26b9f16e4110376c5f43234d138d13ac0",
+      "file_size": 619286,
+      "output_dir": "output/鏡花緣",
+      "detected_book_language": "zh",
+      "output_language": "zh",
+      "chapter_count": 1,
+      "selected_seed_chapter_numbers": [
+        0
+      ],
+      "selected_seed_chapter_ids": [
+        "1"
+      ]
+    }
+  ]
+}
