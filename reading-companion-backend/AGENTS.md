@@ -19,6 +19,10 @@ Update when: backend-local constraints, recurring pitfalls, or stable implementa
 - Treat `iterator_reader` as the current default mechanism, not as the only permanent backend architecture.
 - Treat `attentional_v2` as the current experimental non-default mechanism: it now has a live parse/read path, but it must not silently become the default or inherit unsupported `book_analysis` behavior.
 - If product intent is unclear, preserve the feeling of a thoughtful co-reader rather than drifting toward a generic summary product.
+- When working on benchmark or evaluation tasks, apply dual diagnosis:
+  - inspect mechanism weakness
+  - inspect dataset / case / harness weakness
+  - do not blame one side by default
 
 ## Local Structure Rules
 - Keep each major LangGraph or workflow node as an independent function when possible.

@@ -171,8 +171,8 @@ Update when: status changes, blockers appear, or phases complete.
 - [x] Promote the selected public/open-access books into the tracked benchmark pool through the manifest-driven builder
 - [x] Freeze the tracked `v2` source-book, corpus, split, and local-ref manifests for the combined public benchmark family
 - [x] Run mechanism-integrity evaluation
-- [ ] Add the dataset-quality hardening workflow before broader semantic comparison work
-- [ ] Build an offline case-audit workflow for curated excerpt cases
+- [x] Add the dataset-quality hardening workflow before broader semantic comparison work
+- [x] Build an offline case-audit workflow for curated excerpt cases
 - [ ] Review and harden the weakest local buckets:
   - `callback_bridge`
   - `reconsolidation_later_reinterpretation`
@@ -245,4 +245,5 @@ Update when: status changes, blockers appear, or phases complete.
   - Important first-pass result: the benchmark layer is viable, but `attentional_v2` is not yet at the planned local acceptance line. The English slice is mixed-but-closer, the Chinese slice is clearly below target, and the weakest buckets are `callback_bridge` and `reconsolidation_later_reinterpretation`.
   - Important harness note: the first attempted judged run exposed a score-scale bug in the rubric prompt, so the earlier run with all-`1.0` averages is superseded. The authoritative first-pass result is the corrected run above, after fixing sentence-id ordering in structural checks and the rubric scale contract.
   - Important interpretation note for next work: every evaluated local case still chose `advance`, which suggests the excerpt harness is currently best at testing closure and anchored selectivity but still under-exercises meaningful `dwell` / `bridge` / `reframe` diversity. The next evaluation step should keep the current run result, but also refine bridge and reconsolidation case pressure before treating local move quality as mature evidence.
+  - Landed the dataset-quality hardening workflow as executable project infrastructure rather than just a note: the stable evaluation docs now require dual diagnosis of mechanism problems versus dataset/harness problems, the backend agent guide now reminds future coding agents about that rule, and the backend now has packet-based export/import tooling for human review of benchmark cases without a frontend UI.
   - Promoted dataset-quality hardening into its own explicit Phase 9 work item. The project now treats benchmark-case review as a first-class task rather than a quiet background assumption, and the immediate recommendation is to harden the local excerpt slice before trusting broader semantic comparison work too much.

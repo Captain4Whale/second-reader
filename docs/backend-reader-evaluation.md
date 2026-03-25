@@ -20,6 +20,43 @@ Use `docs/backend-reading-mechanism.md` for shared mechanism-platform boundaries
 - The core question is not "is the current architecture correct?"
   - The core question is "what reader mechanism best preserves the product goal?"
 
+## Dataset Trust Model
+- Evaluation should distinguish between:
+  - factual dataset truth
+    - source text
+    - provenance
+    - stable boundaries
+    - split membership
+    - version identity
+  - benchmark judgment targets
+    - why the case exists
+    - what pressure it is meant to test
+    - what kinds of reading behavior would count as strong, weak, or misleading
+- Factual dataset truth should be reproducible and auditable.
+- Benchmark judgment targets should be reviewable and improvable.
+- A versioned benchmark package is not automatically gold-standard just because it is machine-valid.
+- Strong evaluation practice therefore includes:
+  - documented curation rationale
+  - provenance manifests
+  - structural validation
+  - explicit case-purpose metadata
+  - targeted human review for ambiguous or high-impact cases
+
+## Dual Diagnosis Rule
+- Every meaningful evaluation pass should inspect two possibilities:
+  - the mechanism is weak
+  - the dataset, case framing, or evaluation harness is weak
+- We should not attribute a bad score to the mechanism alone unless the dataset and harness have survived the same scrutiny.
+- We should also not protect the mechanism by assuming every bad result is a benchmark flaw.
+- The required practice is dual diagnosis:
+  - inspect the evaluation result itself
+  - inspect whether the dataset, case label, case boundary, or harness design may have produced a misleading signal
+- This rule is especially important for:
+  - builder-curated cases
+  - new mechanism-specific buckets
+  - new judge prompts or scoring contracts
+  - the first serious run on a newly expanded benchmark family
+
 ## Why Reader Evaluation Exists
 - Reader evaluation exists to guide optimization first and preserve evidence second.
 - Its first job is to make mechanism work legible:

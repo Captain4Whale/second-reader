@@ -636,3 +636,26 @@ Update when: a major product or engineering decision is made, reversed, or becom
 - `docs/backend-reading-mechanism.md`
 - `docs/backend-reading-mechanisms/README.md`
 - `docs/backend-reading-mechanisms/attentional_v2.md`
+
+## Entry 27
+**Decision / Inflection**: Treat benchmark quality as a first-class evaluation concern and require dual diagnosis plus packet-based human review for high-impact case hardening.
+
+**Period**: March 2026, immediately after the first corrected `attentional_v2` `mechanism_integrity` run on the tracked curated `v2` excerpt family.
+
+**Problem**: The first serious local benchmark pass proved that the new bilingual excerpt benchmark family was viable, but it also showed that some weak results could plausibly come from benchmark-case design or harness behavior rather than the mechanism alone. Without an explicit rule, future work could overfit to mislabeled or under-reviewed cases and mistake benchmark weakness for mechanism weakness.
+
+**Alternatives considered**: Treat the versioned curated dataset as de facto ground truth after the first full run, rely on ad hoc chat-based human feedback when a case looked suspicious, or keep all hardening inside LLM-only case-audit prompts without a durable human-review loop.
+
+**Why this path won**: Evaluation needs stronger discipline than "run benchmark, trust score." The project now distinguishes factual dataset truth from reviewable benchmark judgment targets, requires dual diagnosis of mechanism versus dataset/harness problems, and adds a lightweight packet-based human review loop that works on the shared local machine without a frontend website. This keeps the benchmark executable and fast while making it much harder for weak cases to quietly steer the mechanism in the wrong direction.
+
+**What changed in the system**: Stable evaluation docs now include a dataset trust model and the dual-diagnosis rule, the backend agent guide reminds coding agents not to blame mechanism or benchmark by default, and the backend now ships export/import tooling for packet-based benchmark review under `eval/review_packets/`. The temp implementation docs now record the full dataset-hardening method and the specific packet workflow for excerpt-case review and reimport.
+
+**Why it matters later**: This is the point where dataset quality stopped being implicit benchmark hygiene and became an explicit project rule. Future contributors need this context to understand why some evaluation work now pauses for case hardening, why builder-curated cases are not automatically treated as final ground truth, and why packet-based human review exists even though there is no frontend review tool.
+
+**Primary evidence**:
+- `docs/backend-reader-evaluation.md`
+- `reading-companion-backend/AGENTS.md`
+- `docs/implementation/new-reading-mechanism/dataset-quality-hardening.md`
+- `reading-companion-backend/eval/attentional_v2/export_dataset_review_packet.py`
+- `reading-companion-backend/eval/attentional_v2/import_dataset_review_packet.py`
+- `reading-companion-backend/eval/review_packets/README.md`

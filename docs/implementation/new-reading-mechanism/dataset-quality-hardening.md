@@ -5,6 +5,20 @@ Use when: deciding whether to keep evaluating on the current dataset, how to rev
 Not for: stable evaluation constitution, one-off benchmark results, or source-book acquisition rules.
 Update when: the review workflow changes, status tiers change, or the hardening gate for broader evaluation changes.
 
+## External Design Inputs
+This hardening workflow is informed by a small set of external benchmark and data-governance references:
+- [Data Statements for NLP](https://aclanthology.org/Q18-1041/)
+- [Datasheets for Datasets](https://cacm.acm.org/research/datasheets-for-datasets/)
+- [Hugging Face Dataset Cards](https://huggingface.co/docs/hub/en/datasets-cards)
+- [Klie et al. 2024 on annotation quality management](https://aclanthology.org/2024.cl-3.1/)
+
+We are not copying those frameworks literally. We are using their strongest practical ideas:
+- document provenance and curation rationale
+- keep review guidance visible
+- use iterative quality management
+- include human inspection where benchmark trust matters
+- avoid treating versioned data as automatically trustworthy
+
 ## Why This Work Exists
 - Dataset quality is now a first-class Phase 9 concern.
 - A weak dataset can push the mechanism work in the wrong direction.
@@ -126,6 +140,82 @@ The human reviewer should decide:
 - relabel the bucket
 - move to reserve
 - drop and replace
+
+## Packet-Based Human Review Workflow
+The human loop should stay intentionally simple and not require a frontend website.
+
+### Packet folders
+- `reading-companion-backend/eval/review_packets/pending/`
+- `reading-companion-backend/eval/review_packets/archive/`
+
+### Export tool
+- `reading-companion-backend/eval/attentional_v2/export_dataset_review_packet.py`
+
+Codex uses this tool to create a packet under:
+- `reading-companion-backend/eval/review_packets/pending/<packet_id>/`
+
+Packet contents:
+- `packet_manifest.json`
+- `cases.review.csv`
+- `cases.preview.md`
+- `cases.source.jsonl`
+- `README.md`
+
+### What the human reviewer does
+1. Read `cases.preview.md`.
+2. Open `cases.review.csv` in Numbers, Excel, Google Sheets, VS Code, or any CSV-capable editor.
+3. Edit only the `review__...` columns.
+4. Save the file in place.
+5. Tell Codex that the packet is ready.
+
+### Required marking field
+- `review__action`
+  - `keep`
+  - `revise`
+  - `drop`
+  - `unclear`
+
+### Recommended marking fields
+- `review__confidence`
+  - `high`
+  - `medium`
+  - `low`
+- `review__problem_types`
+  - separate multiple codes with `|`
+- `review__revised_bucket`
+- `review__revised_selection_reason`
+- `review__revised_judge_focus`
+- `review__notes`
+
+### Recommended problem-type codes
+- `wrong_bucket`
+- `weak_excerpt`
+- `ambiguous_focus`
+- `text_noise`
+- `duplicate_case`
+- `too_easy`
+- `too_hard`
+- `source_parse_problem`
+- `other`
+
+### Import tool
+- `reading-companion-backend/eval/attentional_v2/import_dataset_review_packet.py`
+
+Codex imports the completed packet with:
+- `python -m eval.attentional_v2.import_dataset_review_packet --packet-id <packet_id> --archive`
+
+The importer:
+- validates the review file
+- writes `import_summary.json`
+- saves `dataset_before_import.jsonl`
+- merges review metadata into the dataset rows
+- archives the packet under `eval/review_packets/archive/`
+
+### Why this workflow exists
+- It keeps review executable on the same machine with no upload ceremony.
+- It keeps the human task readable.
+- It preserves provenance and pre-import state.
+- It lets later dataset rebuilding use review metadata instead of relying only on memory or chat.
 
 ### Stage 5: Re-freeze and rerun
 After edits:
