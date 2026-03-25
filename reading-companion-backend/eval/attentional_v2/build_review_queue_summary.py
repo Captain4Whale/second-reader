@@ -7,6 +7,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from .case_audit_runs import latest_case_audit_run, load_json
 
 ROOT = Path(__file__).resolve().parents[2]
 PENDING_ROOT = ROOT / "eval" / "review_packets" / "pending"
@@ -17,33 +18,6 @@ OUTPUT_MD = ROOT / "eval" / "review_packets" / "review_queue_summary.md"
 
 def utc_now() -> str:
     return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
-
-
-def load_json(path: Path) -> dict[str, Any]:
-    payload = json.loads(path.read_text(encoding="utf-8"))
-    if not isinstance(payload, dict):
-        raise ValueError(f"Expected object JSON at {path}")
-    return payload
-
-
-def latest_audit_for_packet(packet_id: str) -> dict[str, Any] | None:
-    matching_dirs = sorted([path for path in RUNS_ROOT.iterdir() if path.is_dir() and path.name.startswith(f"{packet_id}__")])
-    if not matching_dirs:
-        return None
-    for latest_dir in reversed(matching_dirs):
-        aggregate_path = latest_dir / "summary" / "aggregate.json"
-        report_path = latest_dir / "summary" / "report.md"
-        if not aggregate_path.exists():
-            continue
-        aggregate = load_json(aggregate_path)
-        return {
-            "run_id": latest_dir.name,
-            "run_dir": str(latest_dir),
-            "aggregate_path": str(aggregate_path),
-            "report_path": str(report_path) if report_path.exists() else "",
-            "aggregate": aggregate,
-        }
-    return None
 
 
 def build_summary() -> dict[str, Any]:
@@ -66,7 +40,8 @@ def build_summary() -> dict[str, Any]:
                 "storage_mode": str(manifest.get("storage_mode", "")),
                 "case_count": int(manifest.get("case_count", 0) or 0),
                 "selection_filters": dict(manifest.get("selection_filters", {})),
-                "latest_case_audit": latest_audit_for_packet(packet_id),
+                "latest_case_audit": latest_case_audit_run(packet_id, RUNS_ROOT, require_completed=False),
+                "latest_completed_case_audit": latest_case_audit_run(packet_id, RUNS_ROOT, require_completed=True),
             }
         )
     return {
@@ -98,13 +73,32 @@ def render_markdown(summary: dict[str, Any]) -> str:
         )
         audit = packet.get("latest_case_audit")
         if isinstance(audit, dict) and audit:
-            aggregate = audit.get("aggregate", {})
+            progress = audit.get("progress", {})
             lines.extend(
                 [
                     f"- latest_case_audit: `{audit.get('run_id', '')}`",
-                    f"- audit_primary_decisions: `{json.dumps(aggregate.get('primary_decisions', {}), ensure_ascii=False, sort_keys=True)}`",
-                    f"- audit_risk_counts: `{json.dumps(aggregate.get('adversarial_risk_counts', {}), ensure_ascii=False, sort_keys=True)}`",
-                    f"- audit_excerpt_strength: `{aggregate.get('average_excerpt_strength', '')}`",
+                    f"- audit_status: `{audit.get('status', '')}`",
+                    f"- audit_progress: `{json.dumps(progress, ensure_ascii=False, sort_keys=True)}`",
+                ]
+            )
+            aggregate = audit.get("aggregate", {})
+            if aggregate:
+                lines.extend(
+                    [
+                        f"- audit_primary_decisions: `{json.dumps(aggregate.get('primary_decisions', {}), ensure_ascii=False, sort_keys=True)}`",
+                        f"- audit_risk_counts: `{json.dumps(aggregate.get('adversarial_risk_counts', {}), ensure_ascii=False, sort_keys=True)}`",
+                        f"- audit_excerpt_strength: `{aggregate.get('average_excerpt_strength', '')}`",
+                    ]
+                )
+        completed_audit = packet.get("latest_completed_case_audit")
+        if isinstance(completed_audit, dict) and completed_audit and completed_audit.get("run_id") != (audit or {}).get("run_id"):
+            aggregate = completed_audit.get("aggregate", {})
+            lines.extend(
+                [
+                    f"- latest_completed_case_audit: `{completed_audit.get('run_id', '')}`",
+                    f"- completed_audit_primary_decisions: `{json.dumps(aggregate.get('primary_decisions', {}), ensure_ascii=False, sort_keys=True)}`",
+                    f"- completed_audit_risk_counts: `{json.dumps(aggregate.get('adversarial_risk_counts', {}), ensure_ascii=False, sort_keys=True)}`",
+                    f"- completed_audit_excerpt_strength: `{aggregate.get('average_excerpt_strength', '')}`",
                 ]
             )
         lines.append("")

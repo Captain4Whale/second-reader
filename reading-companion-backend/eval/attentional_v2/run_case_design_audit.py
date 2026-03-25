@@ -5,19 +5,37 @@ It combines:
 - factual excerpt/boundary checks
 - a primary case-design review
 - an adversarial disagreement review
+
+The runner is intentionally traceable:
+- `run_state.json` tracks packet-level status and progress
+- `case_states/<case_id>.json` tracks per-case stage progress
+- `summary/*.partial.*` files update after each completed case
 """
 
 from __future__ import annotations
 
 import argparse
 import json
+import os
+import time
 from collections import Counter
+from concurrent.futures import Future, ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
 from pathlib import Path
 from statistics import mean
 from typing import Any
 
+from src.config import get_llm_max_concurrency
 from src.iterator_reader.llm_utils import ReaderLLMError, invoke_json
+
+from .case_audit_runs import (
+    AGGREGATE_FILE,
+    PARTIAL_AGGREGATE_FILE,
+    PARTIAL_REPORT_FILE,
+    REPORT_FILE,
+    RUN_STATE_FILE,
+    SUMMARY_DIR,
+)
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -141,6 +159,14 @@ def load_source_index(dataset_manifest: dict[str, Any]) -> dict[str, dict[str, A
             if isinstance(item, dict) and item.get("source_id"):
                 sources[str(item["source_id"])] = dict(item)
     return sources
+
+
+def default_context() -> dict[str, list[str]]:
+    return {
+        "lookback_sentences": [],
+        "excerpt_sentences": [],
+        "lookahead_sentences": [],
+    }
 
 
 def find_span_and_context(case: dict[str, Any], source_index: dict[str, dict[str, Any]]) -> tuple[dict[str, Any], dict[str, Any]]:
@@ -273,85 +299,157 @@ def normalize_adversarial(payload: Any) -> dict[str, Any]:
     return normalized
 
 
-def run_primary(case: dict[str, Any], context: dict[str, Any]) -> dict[str, Any]:
+def invoke_review_with_meta(
+    *,
+    stage_name: str,
+    system_prompt: str,
+    user_prompt: str,
+    default_payload: dict[str, Any],
+    normalize: Any,
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    started_at = utc_now()
+    started_perf = time.perf_counter()
+    error: Exception | None = None
+    status = "ok"
     try:
-        payload = invoke_json(
-            PRIMARY_SYSTEM,
-            PRIMARY_PROMPT.format(
-                case_json=json.dumps(
-                    {
-                        "case_id": case.get("case_id"),
-                        "case_title": case.get("case_title"),
-                        "question_ids": case.get("question_ids", []),
-                        "phenomena": case.get("phenomena", []),
-                        "selection_reason": case.get("selection_reason", ""),
-                        "judge_focus": case.get("judge_focus", ""),
-                        "excerpt_text": case.get("excerpt_text", ""),
-                    },
-                    ensure_ascii=False,
-                    indent=2,
-                ),
-                context_json=json.dumps(context, ensure_ascii=False, indent=2),
+        payload = invoke_json(system_prompt, user_prompt, default=default_payload)
+    except ReaderLLMError as exc:
+        payload = default_payload
+        error = exc
+        status = "reader_llm_error"
+    except Exception as exc:  # pragma: no cover - defensive fallback
+        payload = default_payload
+        error = exc
+        status = "unexpected_error"
+    completed_at = utc_now()
+    duration_ms = int((time.perf_counter() - started_perf) * 1000)
+    metadata = {
+        "stage": stage_name,
+        "status": status,
+        "started_at": started_at,
+        "completed_at": completed_at,
+        "duration_ms": duration_ms,
+        "error_type": error.__class__.__name__ if error else "",
+        "error_message": str(error) if error else "",
+        "problem_code": getattr(error, "problem_code", "") if error else "",
+    }
+    return normalize(payload), metadata
+
+
+def run_primary(case: dict[str, Any], context: dict[str, Any]) -> tuple[dict[str, Any], dict[str, Any]]:
+    return invoke_review_with_meta(
+        stage_name="primary_review",
+        system_prompt=PRIMARY_SYSTEM,
+        user_prompt=PRIMARY_PROMPT.format(
+            case_json=json.dumps(
+                {
+                    "case_id": case.get("case_id"),
+                    "case_title": case.get("case_title"),
+                    "question_ids": case.get("question_ids", []),
+                    "phenomena": case.get("phenomena", []),
+                    "selection_reason": case.get("selection_reason", ""),
+                    "judge_focus": case.get("judge_focus", ""),
+                    "excerpt_text": case.get("excerpt_text", ""),
+                },
+                ensure_ascii=False,
+                indent=2,
             ),
-            default=default_primary(),
-        )
-    except ReaderLLMError:
-        return default_primary()
-    except Exception:
-        return default_primary()
-    return normalize_primary(payload)
+            context_json=json.dumps(context, ensure_ascii=False, indent=2),
+        ),
+        default_payload=default_primary(),
+        normalize=normalize_primary,
+    )
 
 
-def run_adversarial(case: dict[str, Any], context: dict[str, Any]) -> dict[str, Any]:
-    try:
-        payload = invoke_json(
-            ADVERSARIAL_SYSTEM,
-            ADVERSARIAL_PROMPT.format(
-                case_json=json.dumps(
-                    {
-                        "case_id": case.get("case_id"),
-                        "case_title": case.get("case_title"),
-                        "question_ids": case.get("question_ids", []),
-                        "phenomena": case.get("phenomena", []),
-                        "selection_reason": case.get("selection_reason", ""),
-                        "judge_focus": case.get("judge_focus", ""),
-                        "excerpt_text": case.get("excerpt_text", ""),
-                    },
-                    ensure_ascii=False,
-                    indent=2,
-                ),
-                context_json=json.dumps(context, ensure_ascii=False, indent=2),
+def run_adversarial(case: dict[str, Any], context: dict[str, Any]) -> tuple[dict[str, Any], dict[str, Any]]:
+    return invoke_review_with_meta(
+        stage_name="adversarial_review",
+        system_prompt=ADVERSARIAL_SYSTEM,
+        user_prompt=ADVERSARIAL_PROMPT.format(
+            case_json=json.dumps(
+                {
+                    "case_id": case.get("case_id"),
+                    "case_title": case.get("case_title"),
+                    "question_ids": case.get("question_ids", []),
+                    "phenomena": case.get("phenomena", []),
+                    "selection_reason": case.get("selection_reason", ""),
+                    "judge_focus": case.get("judge_focus", ""),
+                    "excerpt_text": case.get("excerpt_text", ""),
+                },
+                ensure_ascii=False,
+                indent=2,
             ),
-            default=default_adversarial(),
-        )
-    except ReaderLLMError:
-        return default_adversarial()
-    except Exception:
-        return default_adversarial()
-    return normalize_adversarial(payload)
+            context_json=json.dumps(context, ensure_ascii=False, indent=2),
+        ),
+        default_payload=default_adversarial(),
+        normalize=normalize_adversarial,
+    )
 
 
-def aggregate(rows: list[dict[str, Any]]) -> dict[str, Any]:
-    primary_decisions = Counter(str(row["primary_review"]["decision"]) for row in rows)
-    adversarial_risks = Counter(str(row["adversarial_review"]["risk_level"]) for row in rows)
-    factual_failures = sum(1 for row in rows if not bool(row["factual_audit"]["ok"]))
+def case_state_path(run_dir: Path, case_id: str) -> Path:
+    return run_dir / "case_states" / f"{case_id}.json"
+
+
+def write_case_state(run_dir: Path, case_id: str, payload: dict[str, Any]) -> None:
+    write_json(case_state_path(run_dir, case_id), payload)
+
+
+def write_run_state(run_dir: Path, payload: dict[str, Any]) -> None:
+    write_json(run_dir / RUN_STATE_FILE, payload)
+
+
+def make_case_state(packet_id: str, case_id: str) -> dict[str, Any]:
     return {
-        "case_count": len(rows),
-        "factual_failure_count": factual_failures,
-        "primary_decisions": dict(primary_decisions),
-        "adversarial_risk_counts": dict(adversarial_risks),
-        "average_bucket_fit": round(mean(row["primary_review"]["bucket_fit"] for row in rows), 3) if rows else 0.0,
-        "average_focus_clarity": round(mean(row["primary_review"]["focus_clarity"] for row in rows), 3) if rows else 0.0,
-        "average_excerpt_strength": round(mean(row["primary_review"]["excerpt_strength"] for row in rows), 3) if rows else 0.0,
+        "packet_id": packet_id,
+        "case_id": case_id,
+        "status": "queued",
+        "current_stage": "queued",
+        "started_at": "",
+        "updated_at": utc_now(),
+        "completed_at": "",
+        "factual_ok": None,
+        "timing_ms": {},
+        "llm_calls": {},
+        "stage_statuses": {
+            "factual_audit": "queued",
+            "primary_review": "queued",
+            "adversarial_review": "queued",
+        },
+        "error": {},
     }
 
 
-def write_report(run_dir: Path, rows: list[dict[str, Any]], summary: dict[str, Any], *, packet_id: str) -> None:
+def aggregate(rows: list[dict[str, Any]], *, total_case_count: int, status: str) -> dict[str, Any]:
+    completed_rows = [row for row in rows if row.get("status") == "completed"]
+    failed_rows = [row for row in rows if row.get("status") == "failed"]
+    primary_decisions = Counter(str(row["primary_review"]["decision"]) for row in completed_rows)
+    adversarial_risks = Counter(str(row["adversarial_review"]["risk_level"]) for row in completed_rows)
+    factual_failures = sum(1 for row in completed_rows if not bool(row["factual_audit"]["ok"]))
+    return {
+        "status": status,
+        "case_count": total_case_count,
+        "completed_case_count": len(completed_rows),
+        "failed_case_count": len(failed_rows),
+        "incomplete_case_count": max(0, total_case_count - len(completed_rows) - len(failed_rows)),
+        "factual_failure_count": factual_failures,
+        "primary_decisions": dict(primary_decisions),
+        "adversarial_risk_counts": dict(adversarial_risks),
+        "average_bucket_fit": round(mean(row["primary_review"]["bucket_fit"] for row in completed_rows), 3) if completed_rows else 0.0,
+        "average_focus_clarity": round(mean(row["primary_review"]["focus_clarity"] for row in completed_rows), 3) if completed_rows else 0.0,
+        "average_excerpt_strength": round(mean(row["primary_review"]["excerpt_strength"] for row in completed_rows), 3) if completed_rows else 0.0,
+    }
+
+
+def render_report(rows: list[dict[str, Any]], summary: dict[str, Any], *, packet_id: str) -> str:
     lines = [
         f"# Case Design Audit: `{packet_id}`",
         "",
         "## Summary",
+        f"- status: `{summary['status']}`",
         f"- case_count: `{summary['case_count']}`",
+        f"- completed_case_count: `{summary['completed_case_count']}`",
+        f"- failed_case_count: `{summary['failed_case_count']}`",
+        f"- incomplete_case_count: `{summary['incomplete_case_count']}`",
         f"- factual_failure_count: `{summary['factual_failure_count']}`",
         f"- primary_decisions: `{json.dumps(summary['primary_decisions'], ensure_ascii=False)}`",
         f"- adversarial_risk_counts: `{json.dumps(summary['adversarial_risk_counts'], ensure_ascii=False)}`",
@@ -359,9 +457,11 @@ def write_report(run_dir: Path, rows: list[dict[str, Any]], summary: dict[str, A
         f"- average_focus_clarity: `{summary['average_focus_clarity']}`",
         f"- average_excerpt_strength: `{summary['average_excerpt_strength']}`",
         "",
-        "## Flagged Cases",
+        "## Completed / Flagged Cases",
     ]
     for row in rows:
+        if row.get("status") != "completed":
+            continue
         primary = row["primary_review"]
         adversarial = row["adversarial_review"]
         factual = row["factual_audit"]
@@ -377,7 +477,131 @@ def write_report(run_dir: Path, rows: list[dict[str, Any]], summary: dict[str, A
                 f"  - challenge_summary: {adversarial['challenge_summary']}",
             ]
         )
-    (run_dir / "summary" / "report.md").write_text("\n".join(lines).rstrip() + "\n", encoding="utf-8")
+    failed_rows = [row for row in rows if row.get("status") == "failed"]
+    if failed_rows:
+        lines.extend(["", "## Failed Cases"])
+        for row in failed_rows:
+            error = row.get("error", {})
+            lines.extend(
+                [
+                    f"- `{row['case_id']}`",
+                    f"  - error_type: `{error.get('error_type', '')}`",
+                    f"  - error_message: {error.get('error_message', '')}",
+                ]
+            )
+    return "\n".join(lines).rstrip() + "\n"
+
+
+def write_summary_outputs(
+    run_dir: Path,
+    rows: list[dict[str, Any]],
+    summary: dict[str, Any],
+    *,
+    packet_id: str,
+    partial: bool,
+) -> None:
+    summary_dir = run_dir / SUMMARY_DIR
+    if partial:
+        write_json(summary_dir / PARTIAL_AGGREGATE_FILE, summary)
+        write_jsonl(summary_dir / "case_results.partial.jsonl", rows)
+        (summary_dir / PARTIAL_REPORT_FILE).write_text(render_report(rows, summary, packet_id=packet_id), encoding="utf-8")
+        return
+    write_json(summary_dir / AGGREGATE_FILE, summary)
+    write_jsonl(summary_dir / "case_results.jsonl", rows)
+    (summary_dir / REPORT_FILE).write_text(render_report(rows, summary, packet_id=packet_id), encoding="utf-8")
+
+
+def ordered_rows(results_by_case_id: dict[str, dict[str, Any]], case_order: list[str]) -> list[dict[str, Any]]:
+    return [results_by_case_id[case_id] for case_id in case_order if case_id in results_by_case_id]
+
+
+def process_case(
+    case: dict[str, Any],
+    *,
+    packet_id: str,
+    source_index: dict[str, dict[str, Any]],
+    run_dir: Path,
+) -> dict[str, Any]:
+    case_id = str(case.get("case_id", ""))
+    state = make_case_state(packet_id, case_id)
+    state["status"] = "running"
+    state["current_stage"] = "factual_audit"
+    state["started_at"] = utc_now()
+    state["updated_at"] = state["started_at"]
+    state["stage_statuses"]["factual_audit"] = "running"
+    write_case_state(run_dir, case_id, state)
+
+    overall_started = time.perf_counter()
+    try:
+        factual_started = time.perf_counter()
+        factual = factual_audit(case, source_index)
+        state["timing_ms"]["factual_audit"] = int((time.perf_counter() - factual_started) * 1000)
+        state["factual_ok"] = bool(factual.get("ok"))
+        state["stage_statuses"]["factual_audit"] = "completed"
+        state["current_stage"] = "primary_review"
+        state["stage_statuses"]["primary_review"] = "running"
+        state["updated_at"] = utc_now()
+        write_case_state(run_dir, case_id, state)
+
+        context = default_context()
+        if factual.get("ok"):
+            _, context = find_span_and_context(case, source_index)
+
+        primary, primary_meta = run_primary(case, context)
+        state["llm_calls"]["primary_review"] = primary_meta
+        state["timing_ms"]["primary_review"] = primary_meta["duration_ms"]
+        state["stage_statuses"]["primary_review"] = "completed"
+        state["current_stage"] = "adversarial_review"
+        state["stage_statuses"]["adversarial_review"] = "running"
+        state["updated_at"] = utc_now()
+        write_case_state(run_dir, case_id, state)
+
+        adversarial, adversarial_meta = run_adversarial(case, context)
+        state["llm_calls"]["adversarial_review"] = adversarial_meta
+        state["timing_ms"]["adversarial_review"] = adversarial_meta["duration_ms"]
+        state["timing_ms"]["total"] = int((time.perf_counter() - overall_started) * 1000)
+        state["stage_statuses"]["adversarial_review"] = "completed"
+        state["status"] = "completed"
+        state["current_stage"] = "completed"
+        state["updated_at"] = utc_now()
+        state["completed_at"] = state["updated_at"]
+        write_case_state(run_dir, case_id, state)
+
+        return {
+            "case_id": case_id,
+            "case_title": case.get("case_title"),
+            "packet_id": packet_id,
+            "status": "completed",
+            "factual_audit": factual,
+            "primary_review": primary,
+            "adversarial_review": adversarial,
+            "audit_metadata": {
+                "timing_ms": dict(state["timing_ms"]),
+                "llm_calls": dict(state["llm_calls"]),
+            },
+        }
+    except Exception as exc:  # pragma: no cover - defensive fallback
+        state["status"] = "failed"
+        state["current_stage"] = "failed"
+        state["updated_at"] = utc_now()
+        state["completed_at"] = state["updated_at"]
+        state["error"] = {
+            "error_type": exc.__class__.__name__,
+            "error_message": str(exc),
+        }
+        state["timing_ms"]["total"] = int((time.perf_counter() - overall_started) * 1000)
+        write_case_state(run_dir, case_id, state)
+        return {
+            "case_id": case_id,
+            "case_title": case.get("case_title"),
+            "packet_id": packet_id,
+            "status": "failed",
+            "error": dict(state["error"]),
+            "audit_metadata": {
+                "timing_ms": dict(state["timing_ms"]),
+                "llm_calls": dict(state["llm_calls"]),
+            },
+        }
 
 
 def parse_args() -> argparse.Namespace:
@@ -385,6 +609,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--packet-id")
     parser.add_argument("--packet-dir")
     parser.add_argument("--limit", type=int, default=0)
+    parser.add_argument("--max-workers", type=int, default=2)
     return parser.parse_args()
 
 
@@ -398,37 +623,156 @@ def main() -> int:
     cases = load_jsonl(packet_dir / "cases.source.jsonl")
     if args.limit > 0:
         cases = cases[: args.limit]
+    case_order = [str(case.get("case_id", "")) for case in cases]
+    if not case_order:
+        raise ValueError("No cases selected for audit")
 
+    max_workers = max(1, min(args.max_workers, get_llm_max_concurrency(), len(cases)))
     run_id = f"{packet_id}__{datetime.now(timezone.utc).strftime('%Y%m%d-%H%M%S')}"
     run_dir = RUNS_ROOT / run_id
     run_dir.mkdir(parents=True, exist_ok=False)
+    (run_dir / "cases").mkdir(parents=True, exist_ok=True)
+    (run_dir / "case_states").mkdir(parents=True, exist_ok=True)
+    (run_dir / SUMMARY_DIR).mkdir(parents=True, exist_ok=True)
 
-    results: list[dict[str, Any]] = []
-    for index, case in enumerate(cases, start=1):
-        print(f"[{index}/{len(cases)}] {case.get('case_id')}")
-        factual = factual_audit(case, source_index)
-        _, context = find_span_and_context(case, source_index) if factual.get("ok") else ({}, {"lookback_sentences": [], "excerpt_sentences": [], "lookahead_sentences": []})
-        primary = run_primary(case, context)
-        adversarial = run_adversarial(case, context)
-        row = {
-            "case_id": case.get("case_id"),
-            "case_title": case.get("case_title"),
-            "packet_id": packet_id,
-            "factual_audit": factual,
-            "primary_review": primary,
-            "adversarial_review": adversarial,
-        }
-        results.append(row)
-        write_json(run_dir / "cases" / f"{case.get('case_id')}.json", row)
+    for case_id in case_order:
+        write_case_state(run_dir, case_id, make_case_state(packet_id, case_id))
 
-    summary = aggregate(results)
-    write_json(run_dir / "summary" / "aggregate.json", summary)
-    write_jsonl(run_dir / "summary" / "case_results.jsonl", results)
-    write_report(run_dir, results, summary, packet_id=packet_id)
+    run_state = {
+        "packet_id": packet_id,
+        "run_id": run_id,
+        "status": "running",
+        "pid": os.getpid(),
+        "started_at": utc_now(),
+        "updated_at": utc_now(),
+        "completed_at": "",
+        "case_count": len(cases),
+        "max_workers": max_workers,
+        "queued_case_count": len(cases),
+        "running_case_count": 0,
+        "completed_case_count": 0,
+        "failed_case_count": 0,
+        "queued_case_ids": list(case_order),
+        "running_case_ids": [],
+        "completed_case_ids": [],
+        "failed_case_ids": [],
+    }
+    write_run_state(run_dir, run_state)
+    write_summary_outputs(
+        run_dir,
+        [],
+        aggregate([], total_case_count=len(cases), status="running"),
+        packet_id=packet_id,
+        partial=True,
+    )
 
-    print(json.dumps(summary, ensure_ascii=False, indent=2))
-    print(f"run_dir={run_dir}")
-    return 0
+    results_by_case_id: dict[str, dict[str, Any]] = {}
+    submitted: dict[Future[dict[str, Any]], str] = {}
+    pending_cases = iter(cases)
+
+    def submit_next(executor: ThreadPoolExecutor) -> bool:
+        try:
+            case = next(pending_cases)
+        except StopIteration:
+            return False
+        case_id = str(case.get("case_id", ""))
+        future = executor.submit(
+            process_case,
+            case,
+            packet_id=packet_id,
+            source_index=source_index,
+            run_dir=run_dir,
+        )
+        submitted[future] = case_id
+        run_state["queued_case_ids"].remove(case_id)
+        run_state["running_case_ids"].append(case_id)
+        run_state["queued_case_count"] = len(run_state["queued_case_ids"])
+        run_state["running_case_count"] = len(run_state["running_case_ids"])
+        run_state["updated_at"] = utc_now()
+        write_run_state(run_dir, run_state)
+        print(f"[submitted] {case_id}", flush=True)
+        return True
+
+    try:
+        with ThreadPoolExecutor(max_workers=max_workers, thread_name_prefix="case-audit") as executor:
+            for _ in range(max_workers):
+                if not submit_next(executor):
+                    break
+
+            while submitted:
+                future = next(as_completed(tuple(submitted.keys())))
+                case_id = submitted.pop(future)
+                row = future.result()
+                results_by_case_id[case_id] = row
+                write_json(run_dir / "cases" / f"{case_id}.json", row)
+
+                if case_id in run_state["running_case_ids"]:
+                    run_state["running_case_ids"].remove(case_id)
+                if row.get("status") == "completed":
+                    run_state["completed_case_ids"].append(case_id)
+                else:
+                    run_state["failed_case_ids"].append(case_id)
+                run_state["running_case_count"] = len(run_state["running_case_ids"])
+                run_state["completed_case_count"] = len(run_state["completed_case_ids"])
+                run_state["failed_case_count"] = len(run_state["failed_case_ids"])
+                run_state["updated_at"] = utc_now()
+                write_run_state(run_dir, run_state)
+
+                ordered = ordered_rows(results_by_case_id, case_order)
+                write_summary_outputs(
+                    run_dir,
+                    ordered,
+                    aggregate(ordered, total_case_count=len(cases), status="running"),
+                    packet_id=packet_id,
+                    partial=True,
+                )
+                print(
+                    f"[completed {run_state['completed_case_count'] + run_state['failed_case_count']}/{len(cases)}] "
+                    f"{case_id} -> {row.get('status')}",
+                    flush=True,
+                )
+                submit_next(executor)
+
+        run_state["status"] = "completed"
+        run_state["completed_at"] = utc_now()
+        run_state["updated_at"] = run_state["completed_at"]
+        write_run_state(run_dir, run_state)
+        ordered = ordered_rows(results_by_case_id, case_order)
+        summary = aggregate(ordered, total_case_count=len(cases), status="completed")
+        write_summary_outputs(run_dir, ordered, summary, packet_id=packet_id, partial=True)
+        write_summary_outputs(run_dir, ordered, summary, packet_id=packet_id, partial=False)
+
+        print(json.dumps(summary, ensure_ascii=False, indent=2))
+        print(f"run_dir={run_dir}")
+        return 0
+    except KeyboardInterrupt:  # pragma: no cover - operational behavior
+        run_state["status"] = "incomplete"
+        run_state["completed_at"] = utc_now()
+        run_state["updated_at"] = run_state["completed_at"]
+        write_run_state(run_dir, run_state)
+        ordered = ordered_rows(results_by_case_id, case_order)
+        write_summary_outputs(
+            run_dir,
+            ordered,
+            aggregate(ordered, total_case_count=len(cases), status="incomplete"),
+            packet_id=packet_id,
+            partial=True,
+        )
+        raise
+    except Exception:  # pragma: no cover - operational behavior
+        run_state["status"] = "failed"
+        run_state["completed_at"] = utc_now()
+        run_state["updated_at"] = run_state["completed_at"]
+        write_run_state(run_dir, run_state)
+        ordered = ordered_rows(results_by_case_id, case_order)
+        write_summary_outputs(
+            run_dir,
+            ordered,
+            aggregate(ordered, total_case_count=len(cases), status="failed"),
+            packet_id=packet_id,
+            partial=True,
+        )
+        raise
 
 
 if __name__ == "__main__":

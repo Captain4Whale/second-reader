@@ -181,6 +181,9 @@ Update when: status changes, blockers appear, or phases complete.
 - [x] Replace manual packet review with default LLM adjudication for current dataset-hardening work
 - [x] Apply LLM adjudication to the first weak-case review packets and import the results
 - [x] Generate the next Chinese revision/replacement packet automatically from the `needs_revision` / `needs_replacement` cases
+- [x] Make packet-level case audits traceable with run-state, per-case state, and partial-summary artifacts
+- [x] Add bounded case-level parallelism to the packet case-audit runner
+- [x] Complete the machine-side case audit on the Chinese round-2 revision/replacement packet
 - [ ] Review and harden the weakest local buckets:
   - `callback_bridge`
   - `reconsolidation_later_reinterpretation`
@@ -284,5 +287,11 @@ Update when: status changes, blockers appear, or phases complete.
     - `attentional_v2_zh_revision_replacement_round2`
     - contains the `4` Chinese `needs_revision` cases and the `2` Chinese `needs_replacement` cases from `attentional_v2_excerpt_zh_curated_v2`
     - was created by the new helper `reading-companion-backend/eval/attentional_v2/generate_revision_replacement_packet.py`
-  - Important current-state note: the round-2 Chinese packet itself is ready and visible in the queue summary, but the attempted machine-side case audit for that packet has not yet produced a finished summary. Treat the packet as actionable; do not treat a fresh audit result as landed evidence yet.
+  - Tightened the packet-audit workflow so slow LLM review no longer looks like a silent freeze:
+    - packet-level case audits now write `run_state.json`
+    - per-case state now lives under `case_states/`
+    - partial summaries are written while the packet is still running
+    - queue summaries now distinguish `running`, `completed`, and `incomplete` audit runs instead of treating any partial run as landed evidence
+    - packet case audits now support bounded case-level parallelism while preserving ordered primary/adversarial review inside each case
+  - Completed the machine-side case audit on the active Chinese round-2 revision/replacement packet at `reading-companion-backend/eval/runs/attentional_v2/case_audits/attentional_v2_zh_revision_replacement_round2__20260325-143403/`. Result: `6` completed, `0` factual failures, primary decisions `4 keep` / `2 revise`, adversarial risk counts `4 medium` / `1 high` / `1 low`.
   - Recorded an additional Phase 9 reminder so the project does not forget the benchmark-size question: after the reviewed-slice rerun and first broader comparisons, we must explicitly decide whether the current `v2` benchmark family is still too small for high-confidence method judgment. If it is, the next expansion targets are roughly `25-30` curated excerpt cases per language and `24-30` chapter units per language before stronger promotion claims.

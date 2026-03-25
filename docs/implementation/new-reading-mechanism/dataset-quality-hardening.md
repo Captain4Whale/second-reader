@@ -170,7 +170,12 @@ The review loop should stay intentionally simple and not require a frontend webs
     - `2` `needs_replacement`
     - source dataset: tracked `attentional_v2_excerpt_zh_curated_v2`
     - purpose: run the next Chinese hardening pass directly on the status-marked weak cases
-    - machine-side case-audit summary is not available yet; the packet itself is ready, but the attempted audit has not produced a finished summary
+    - completed machine-side case audit:
+      - `reading-companion-backend/eval/runs/attentional_v2/case_audits/attentional_v2_zh_revision_replacement_round2__20260325-143403/`
+      - `6` completed
+      - `0` factual failures
+      - primary decisions: `4 keep`, `2 revise`
+      - adversarial risk counts: `4 medium`, `1 high`, `1 low`
 - archived round 1 packet results:
   - `attentional_v2_zh_weak_buckets_round1`
     - `0 keep`
@@ -200,6 +205,20 @@ Packet contents:
 - `cases.source.jsonl`
 - `README.md`
 
+### Case-audit run artifacts
+- `reading-companion-backend/eval/runs/attentional_v2/case_audits/<packet_id>__<timestamp>/`
+- Each packet-level case audit should now produce:
+  - `run_state.json`
+    - packet status and progress
+  - `case_states/<case_id>.json`
+    - per-case stage state and LLM timing metadata
+  - `summary/aggregate.partial.json`
+  - `summary/report.partial.md`
+  - `summary/aggregate.json`
+  - `summary/report.md`
+- Queue/report surfaces should treat only completed runs as landed evidence.
+  - Incomplete or stale runs should remain visible for diagnosis, but they should not silently replace the latest completed audit summary.
+
 ### Current operational review mode
 - Default reviewer:
   - multi-prompt LLM adjudication
@@ -209,6 +228,9 @@ Packet contents:
   - primary case-design review
   - adversarial disagreement review
   - final adjudication review with a separate prompt role
+- The packet-level case-audit runner may use bounded case-level parallelism.
+  - primary and adversarial review still remain ordered within each case
+  - packet-level concurrency should stay conservative enough that the provider path remains stable and traceable
 
 ### What Codex does in the current operational mode
 1. Run factual audit.

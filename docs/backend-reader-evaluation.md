@@ -191,6 +191,14 @@ Use `docs/backend-reading-mechanism.md` for shared mechanism-platform boundaries
   - primary case-design review
   - adversarial disagreement review
   - final adjudication review with a separate prompt role
+- Packet-level case audits should remain traceable while they run.
+  - packet-level `run_state.json` should expose status and progress
+  - per-case state artifacts should expose the active stage
+  - partial summaries should be written before the whole packet finishes so slow judge calls do not look like silent failure
+- Case-level parallelism is acceptable for packet audits when:
+  - primary and adversarial review remain ordered inside each case
+  - concurrency stays bounded by the backend LLM semaphore or a stricter packet-local limit
+  - queue/reporting artifacts still distinguish `running`, `completed`, and `incomplete` audit runs honestly
 - This rule exists to keep dataset hardening executable even when human review capacity is limited.
 - Manual human review remains valuable, but it is optional escalation for later higher-trust promotion work rather than a default blocker for current packet review tasks.
 

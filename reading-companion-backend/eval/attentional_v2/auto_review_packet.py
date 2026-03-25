@@ -10,6 +10,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from .case_audit_runs import latest_case_audit_run as find_latest_case_audit_run
 from src.iterator_reader.llm_utils import ReaderLLMError, invoke_json
 
 
@@ -113,14 +114,6 @@ def packet_dir_from_args(packet_id: str | None, packet_dir: str | None) -> Path:
     if not packet_id:
         raise ValueError("Provide --packet-id or --packet-dir")
     return (REVIEW_PACKET_ROOT / packet_id).resolve()
-
-
-def latest_case_audit_run(packet_id: str) -> Path:
-    candidates = sorted(path for path in CASE_AUDIT_RUNS_ROOT.iterdir() if path.is_dir() and path.name.startswith(f"{packet_id}__"))
-    if not candidates:
-        raise FileNotFoundError(f"No case audit run found for packet {packet_id}")
-    return candidates[-1]
-
 
 def parse_review_rows(path: Path) -> tuple[list[str], list[dict[str, str]]]:
     with path.open(encoding="utf-8", newline="") as handle:
@@ -234,7 +227,10 @@ def main() -> int:
     packet_manifest_path = packet_dir / "packet_manifest.json"
     packet_manifest = load_json(packet_manifest_path)
     packet_id = str(packet_manifest["packet_id"])
-    audit_run_dir = latest_case_audit_run(packet_id)
+    audit_run = find_latest_case_audit_run(packet_id, CASE_AUDIT_RUNS_ROOT, require_completed=True)
+    if audit_run is None:
+        raise FileNotFoundError(f"No completed case audit run found for packet {packet_id}")
+    audit_run_dir = Path(str(audit_run["run_dir"]))
     audit_cases_dir = audit_run_dir / "cases"
 
     fieldnames, review_rows = parse_review_rows(packet_dir / "cases.review.csv")

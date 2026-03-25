@@ -10,9 +10,29 @@ This directory contains review packets for benchmark datasets.
 - `archive/`
   - packets already imported back into the dataset with their review CSV preserved
 - `review_queue_summary.json`
-  - machine-readable snapshot of the active packet queue and its latest machine-side audits
+  - machine-readable snapshot of the active packet queue and its latest packet-level case audits
 - `review_queue_summary.md`
   - readable snapshot of the same queue
+
+Packet-level case-audit runs live under:
+- `reading-companion-backend/eval/runs/attentional_v2/case_audits/<packet_id>__<timestamp>/`
+
+Each case-audit run should expose:
+- `run_state.json`
+  - packet-level status and progress
+- `case_states/<case_id>.json`
+  - per-case stage state and timing metadata
+- `summary/aggregate.partial.json`
+- `summary/report.partial.md`
+- `summary/aggregate.json`
+- `summary/report.md`
+
+Queue/reporting surfaces should distinguish:
+- `running`
+- `completed`
+- `incomplete`
+
+Only completed case-audit runs should be treated as landed evidence for later packet review or import decisions.
 
 ## Packet Contents
 Each packet folder should contain:
@@ -31,6 +51,7 @@ Each packet folder should contain:
 ## Review Workflow
 Current operational mode:
 - Codex may fill the `review__...` columns automatically through multi-prompt LLM adjudication.
+- Packet-level case audits may use bounded case-level parallelism, but the primary and adversarial review stages remain ordered within each case.
 
 Optional manual mode:
 1. Open `cases.preview.md` for the readable view.
