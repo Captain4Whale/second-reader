@@ -1,0 +1,3265 @@
+{
+  "manifest_id": "attentional_v2_private_library_screen_v2",
+  "description": "Tracked screening inventory for the combined private-library supplement built from the user's /BOOK directory plus earlier private Downloads books.",
+  "summary": {
+    "book_count_total": 29,
+    "language_counts": {
+      "en": 22,
+      "zh": 7
+    },
+    "corpus_lane_counts": {
+      "chapter_corpus_eligible": 28,
+      "excerpt_only": 1
+    },
+    "acquisition_batch_counts": {
+      "book_directory_20260326": 16,
+      "legacy_private_downloads_v1": 13
+    },
+    "type_tag_counts": {
+      "biography": 6,
+      "business": 17,
+      "history": 3,
+      "literature": 2,
+      "management_economics": 15,
+      "method": 1,
+      "modern_nonfiction": 27,
+      "novel": 2,
+      "philosophical": 1,
+      "psychology_decision": 6,
+      "science_technology": 4,
+      "social_reportage": 2,
+      "social_thought": 1
+    }
+  },
+  "books": [
+    {
+      "source_id": "antifragile_private_en",
+      "title": "Antifragile",
+      "author": "Nassim Nicholas Taleb",
+      "language": "en",
+      "origin": "manual-local-download",
+      "source_url": null,
+      "storage_mode": "local-only",
+      "relative_local_path": "state/library_sources/en/private/antifragile.epub",
+      "type_tags": [
+        "management_economics",
+        "psychology_decision",
+        "modern_nonfiction"
+      ],
+      "role_tags": [
+        "argumentative",
+        "reference_heavy",
+        "management_economics",
+        "modern_nonfiction",
+        "psychology_decision"
+      ],
+      "selection_priority": 20,
+      "notes": [
+        "Legacy private source retained in the combined private-library supplement.",
+        "Useful for distinction, fragility, and anti-intuitive argumentative pressure."
+      ],
+      "sha256": "2df80ff9f39d226ff0b1ea99be5c63502604e22be93aa723397ef4afbe54c4f9",
+      "file_size": 10130653,
+      "output_dir": "output/antifragile",
+      "detected_book_language": "en",
+      "output_language": "en",
+      "chapter_count": 268,
+      "sentence_count_total": 76662,
+      "median_chapter_sentences": 249.0,
+      "median_chapter_paragraphs": 80.0,
+      "screening_status": "screened_private_library_v2",
+      "corpus_lane": "chapter_corpus_eligible",
+      "candidate_chapters": [
+        {
+          "chapter_id": "46",
+          "chapter_number": 0,
+          "chapter_title": "Away from Extremistan",
+          "sentence_count": 268,
+          "paragraph_count": 83,
+          "href": "OEBPS/Tale_9780679645276_epub_c05_r1.htm",
+          "spine_index": 14,
+          "position_bucket": "early",
+          "score": 6.75
+        },
+        {
+          "chapter_id": "95",
+          "chapter_number": 0,
+          "chapter_title": "The Foundational Asymmetry",
+          "sentence_count": 135,
+          "paragraph_count": 52,
+          "href": "OEBPS/Tale_9780679645276_epub_c10_r1.htm",
+          "spine_index": 20,
+          "position_bucket": "middle",
+          "score": 6.75
+        },
+        {
+          "chapter_id": "187",
+          "chapter_number": 19,
+          "chapter_title": "Chapter 19. The Philosopher’s Stone and Its Inverse",
+          "sentence_count": 208,
+          "paragraph_count": 69,
+          "href": "OEBPS/Tale_9780679645276_epub_c19_r1.htm",
+          "spine_index": 31,
+          "position_bucket": "late",
+          "score": 6.75
+        },
+        {
+          "chapter_id": "47",
+          "chapter_number": 0,
+          "chapter_title": "The Great Turkey Problem",
+          "sentence_count": 268,
+          "paragraph_count": 83,
+          "href": "OEBPS/Tale_9780679645276_epub_c05_r1.htm",
+          "spine_index": 14,
+          "position_bucket": "early",
+          "score": 6.75
+        },
+        {
+          "chapter_id": "48",
+          "chapter_number": 0,
+          "chapter_title": "Twelve Thousand Years",
+          "sentence_count": 268,
+          "paragraph_count": 83,
+          "href": "OEBPS/Tale_9780679645276_epub_c05_r1.htm",
+          "spine_index": 14,
+          "position_bucket": "early",
+          "score": 6.75
+        },
+        {
+          "chapter_id": "49",
+          "chapter_number": 0,
+          "chapter_title": "War, Prison, or Both",
+          "sentence_count": 268,
+          "paragraph_count": 83,
+          "href": "OEBPS/Tale_9780679645276_epub_c05_r1.htm",
+          "spine_index": 14,
+          "position_bucket": "early",
+          "score": 6.75
+        }
+      ],
+      "acquisition": {
+        "download_url": null,
+        "input_filename": "Antifragile (Nassim Nicholas Taleb) (Z-Library).epub",
+        "acquisition_batch_id": "legacy_private_downloads_v1"
+      },
+      "storage_policy": "private-local",
+      "acquisition_batch_id": "legacy_private_downloads_v1",
+      "origin_filename": "Antifragile (Nassim Nicholas Taleb) (Z-Library).epub"
+    },
+    {
+      "source_id": "fooled_by_randomness_private_en",
+      "title": "Fooled by Randomness",
+      "author": "Nassim Nicholas Taleb",
+      "language": "en",
+      "origin": "manual-local-download",
+      "source_url": null,
+      "storage_mode": "local-only",
+      "relative_local_path": "state/library_sources/en/private/fooled_by_randomness.epub",
+      "type_tags": [
+        "psychology_decision",
+        "management_economics",
+        "modern_nonfiction"
+      ],
+      "role_tags": [
+        "argumentative",
+        "reference_heavy",
+        "management_economics",
+        "modern_nonfiction",
+        "psychology_decision"
+      ],
+      "selection_priority": 6,
+      "notes": [
+        "Legacy private source retained in the combined private-library supplement.",
+        "Useful for luck-versus-skill, risk, and conceptual-boundary evaluation."
+      ],
+      "sha256": "c867fccf0bd2bc399641cc7ea30a835d99b8a5ca8baeeea534f5ce6e5e332168",
+      "file_size": 1304072,
+      "output_dir": "output/fooled-by-randomness-the-hidden-role-of-chance-in-life-and-in-the-markets-incerto",
+      "detected_book_language": "en",
+      "output_language": "en",
+      "chapter_count": 29,
+      "sentence_count_total": 5434,
+      "median_chapter_sentences": 124.0,
+      "median_chapter_paragraphs": 32.0,
+      "screening_status": "screened_private_library_v2",
+      "corpus_lane": "chapter_corpus_eligible",
+      "candidate_chapters": [
+        {
+          "chapter_id": "8",
+          "chapter_number": 0,
+          "chapter_title": "Chapter One",
+          "sentence_count": 279,
+          "paragraph_count": 50,
+          "href": "text00007.html",
+          "spine_index": 8,
+          "position_bucket": "early",
+          "score": 6.75
+        },
+        {
+          "chapter_id": "14",
+          "chapter_number": 0,
+          "chapter_title": "Chapter Seven",
+          "sentence_count": 259,
+          "paragraph_count": 60,
+          "href": "text00013.html",
+          "spine_index": 14,
+          "position_bucket": "middle",
+          "score": 6.75
+        },
+        {
+          "chapter_id": "25",
+          "chapter_number": 0,
+          "chapter_title": "Postscript",
+          "sentence_count": 161,
+          "paragraph_count": 36,
+          "href": "text00024.html",
+          "spine_index": 25,
+          "position_bucket": "late",
+          "score": 6.75
+        },
+        {
+          "chapter_id": "9",
+          "chapter_number": 0,
+          "chapter_title": "Chapter Two",
+          "sentence_count": 283,
+          "paragraph_count": 59,
+          "href": "text00008.html",
+          "spine_index": 9,
+          "position_bucket": "early",
+          "score": 6.75
+        },
+        {
+          "chapter_id": "11",
+          "chapter_number": 0,
+          "chapter_title": "Chapter Four",
+          "sentence_count": 113,
+          "paragraph_count": 32,
+          "href": "text00010.html",
+          "spine_index": 11,
+          "position_bucket": "early",
+          "score": 6.75
+        },
+        {
+          "chapter_id": "13",
+          "chapter_number": 0,
+          "chapter_title": "Chapter Six",
+          "sentence_count": 293,
+          "paragraph_count": 64,
+          "href": "text00012.html",
+          "spine_index": 13,
+          "position_bucket": "early",
+          "score": 6.75
+        }
+      ],
+      "acquisition": {
+        "download_url": null,
+        "input_filename": "Fooled by Randomness The Hidden Role of Chance in Life and in the Markets (Nassim Nicholas Taleb) (Z-Library).epub",
+        "acquisition_batch_id": "legacy_private_downloads_v1"
+      },
+      "storage_policy": "private-local",
+      "acquisition_batch_id": "legacy_private_downloads_v1",
+      "origin_filename": "Fooled by Randomness The Hidden Role of Chance in Life and in the Markets (Nassim Nicholas Taleb) (Z-Library).epub"
+    },
+    {
+      "source_id": "skin_in_the_game_private_en",
+      "title": "Skin in the Game",
+      "author": "Nassim Nicholas Taleb",
+      "language": "en",
+      "origin": "manual-local-download",
+      "source_url": null,
+      "storage_mode": "local-only",
+      "relative_local_path": "state/library_sources/en/private/skin_in_the_game.epub",
+      "type_tags": [
+        "management_economics",
+        "business",
+        "modern_nonfiction"
+      ],
+      "role_tags": [
+        "argumentative",
+        "reference_heavy",
+        "business",
+        "management_economics",
+        "modern_nonfiction"
+      ],
+      "selection_priority": 21,
+      "notes": [
+        "Legacy private source retained in the combined private-library supplement.",
+        "Useful for asymmetry, accountability, and ethical-pressure argument turns."
+      ],
+      "sha256": "a66cec5a33719bbcd91497347a1ae282f2bbbe8750f6648f0a58447117ef4bf4",
+      "file_size": 5165730,
+      "output_dir": "output/skin-in-the-game-hidden-asymmetries-in-daily-life",
+      "detected_book_language": "en",
+      "output_language": "en",
+      "chapter_count": 31,
+      "sentence_count_total": 4305,
+      "median_chapter_sentences": 106.0,
+      "median_chapter_paragraphs": 32.0,
+      "screening_status": "screened_private_library_v2",
+      "corpus_lane": "chapter_corpus_eligible",
+      "candidate_chapters": [
+        {
+          "chapter_id": "10",
+          "chapter_number": 1,
+          "chapter_title": "Chapter 1: Why Each One Should Eat His Own Turtles: Equality in Uncertainty",
+          "sentence_count": 300,
+          "paragraph_count": 98,
+          "href": "text00010.html",
+          "spine_index": 10,
+          "position_bucket": "early",
+          "score": 6.75
+        },
+        {
+          "chapter_id": "20",
+          "chapter_number": 7,
+          "chapter_title": "Chapter 7: Inequality and Skin in the Game",
+          "sentence_count": 198,
+          "paragraph_count": 77,
+          "href": "text00020.html",
+          "spine_index": 20,
+          "position_bucket": "middle",
+          "score": 6.75
+        },
+        {
+          "chapter_id": "34",
+          "chapter_number": 18,
+          "chapter_title": "Chapter 18: How to Be Rational About Rationality",
+          "sentence_count": 165,
+          "paragraph_count": 69,
+          "href": "text00034.html",
+          "spine_index": 34,
+          "position_bucket": "late",
+          "score": 6.75
+        },
+        {
+          "chapter_id": "15",
+          "chapter_number": 3,
+          "chapter_title": "Chapter 3: How to Legally Own Another Person",
+          "sentence_count": 260,
+          "paragraph_count": 86,
+          "href": "text00015.html",
+          "spine_index": 15,
+          "position_bucket": "early",
+          "score": 6.75
+        },
+        {
+          "chapter_id": "16",
+          "chapter_number": 4,
+          "chapter_title": "Chapter 4: The Skin of Others in Your Game",
+          "sentence_count": 116,
+          "paragraph_count": 40,
+          "href": "text00016.html",
+          "spine_index": 16,
+          "position_bucket": "early",
+          "score": 6.75
+        },
+        {
+          "chapter_id": "18",
+          "chapter_number": 5,
+          "chapter_title": "Chapter 5: Life in the Simulation Machine",
+          "sentence_count": 73,
+          "paragraph_count": 28,
+          "href": "text00018.html",
+          "spine_index": 18,
+          "position_bucket": "early",
+          "score": 6.75
+        }
+      ],
+      "acquisition": {
+        "download_url": null,
+        "input_filename": "Skin In The Game Hidden Asymmetries In Daily Life (Nassim Nicholas Taleb) (Z-Library).epub",
+        "acquisition_batch_id": "legacy_private_downloads_v1"
+      },
+      "storage_policy": "private-local",
+      "acquisition_batch_id": "legacy_private_downloads_v1",
+      "origin_filename": "Skin In The Game Hidden Asymmetries In Daily Life (Nassim Nicholas Taleb) (Z-Library).epub"
+    },
+    {
+      "source_id": "black_swan_private_en",
+      "title": "The Black Swan",
+      "author": "Nassim Nicholas Taleb",
+      "language": "en",
+      "origin": "manual-local-download",
+      "source_url": null,
+      "storage_mode": "local-only",
+      "relative_local_path": "state/library_sources/en/private/the_black_swan.epub",
+      "type_tags": [
+        "psychology_decision",
+        "management_economics",
+        "modern_nonfiction"
+      ],
+      "role_tags": [
+        "argumentative",
+        "reference_heavy",
+        "management_economics",
+        "modern_nonfiction",
+        "psychology_decision"
+      ],
+      "selection_priority": 22,
+      "notes": [
+        "Previously screened but not promoted; now included so the combined supplement covers the full reachable private library.",
+        "Useful for high-variance causality, anti-explanation pressure, and long-range argument structure."
+      ],
+      "sha256": "5f6b4d9db24802c33547c34ea94521776ff79029f4e412f9bfbb3805146523fc",
+      "file_size": 885522,
+      "output_dir": "output/the-black-swan-second-edition-the-impact-of-the-highly-improbable-with-a-new-section-on-robustness-and-fragility",
+      "detected_book_language": "en",
+      "output_language": "en",
+      "chapter_count": 281,
+      "sentence_count_total": 89373,
+      "median_chapter_sentences": 276.0,
+      "median_chapter_paragraphs": 75.0,
+      "screening_status": "screened_private_library_v2",
+      "corpus_lane": "chapter_corpus_eligible",
+      "candidate_chapters": [
+        {
+          "chapter_id": "43",
+          "chapter_number": 0,
+          "chapter_title": "A Brief History of the Black Swan Problem",
+          "sentence_count": 231,
+          "paragraph_count": 70,
+          "href": "The_Black_Swan__Second_Edition__split_011.html",
+          "spine_index": 12,
+          "position_bucket": "early",
+          "score": 6.75
+        },
+        {
+          "chapter_id": "100",
+          "chapter_number": 0,
+          "chapter_title": "The Ludic Fallacy, or The Uncertainty of the Nerd",
+          "sentence_count": 183,
+          "paragraph_count": 52,
+          "href": "The_Black_Swan__Second_Edition__split_016.html",
+          "spine_index": 17,
+          "position_bucket": "middle",
+          "score": 6.75
+        },
+        {
+          "chapter_id": "209",
+          "chapter_number": 0,
+          "chapter_title": "Locke’s Madmen, or Bell Curves in the Wrong Places",
+          "sentence_count": 217,
+          "paragraph_count": 53,
+          "href": "The_Black_Swan__Second_Edition__split_027.html",
+          "spine_index": 28,
+          "position_bucket": "late",
+          "score": 6.75
+        },
+        {
+          "chapter_id": "44",
+          "chapter_number": 0,
+          "chapter_title": "Sextus the (Alas) Empirical",
+          "sentence_count": 231,
+          "paragraph_count": 70,
+          "href": "The_Black_Swan__Second_Edition__split_011.html",
+          "spine_index": 12,
+          "position_bucket": "early",
+          "score": 6.75
+        },
+        {
+          "chapter_id": "45",
+          "chapter_number": 0,
+          "chapter_title": "Algazel",
+          "sentence_count": 231,
+          "paragraph_count": 70,
+          "href": "The_Black_Swan__Second_Edition__split_011.html",
+          "spine_index": 12,
+          "position_bucket": "early",
+          "score": 6.75
+        },
+        {
+          "chapter_id": "46",
+          "chapter_number": 0,
+          "chapter_title": "The Skeptic, Friend of Religion",
+          "sentence_count": 231,
+          "paragraph_count": 70,
+          "href": "The_Black_Swan__Second_Edition__split_011.html",
+          "spine_index": 12,
+          "position_bucket": "early",
+          "score": 6.75
+        }
+      ],
+      "acquisition": {
+        "download_url": null,
+        "input_filename": "The Black Swan Second Edition The Impact of the Highly Improbable With a New Section On Robustness and Fragility (Nassim Nicholas Taleb) (Z-Library).epub",
+        "acquisition_batch_id": "legacy_private_downloads_v1"
+      },
+      "storage_policy": "private-local",
+      "acquisition_batch_id": "legacy_private_downloads_v1",
+      "origin_filename": "The Black Swan Second Edition The Impact of the Highly Improbable With a New Section On Robustness and Fragility (Nassim Nicholas Taleb) (Z-Library).epub"
+    },
+    {
+      "source_id": "value_of_others_private_en",
+      "title": "The Value of Others",
+      "author": "Orion Taraban",
+      "language": "en",
+      "origin": "manual-local-download",
+      "source_url": null,
+      "storage_mode": "local-only",
+      "relative_local_path": "state/library_sources/en/private/the_value_of_others.epub",
+      "type_tags": [
+        "psychology_decision",
+        "social_thought",
+        "modern_nonfiction"
+      ],
+      "role_tags": [
+        "expository",
+        "argumentative",
+        "modern_nonfiction",
+        "psychology_decision",
+        "social_thought"
+      ],
+      "selection_priority": 24,
+      "notes": [
+        "Legacy private source retained in the combined private-library supplement.",
+        "Useful for modern philosophical prose with compressed distinctions and reaction-worthy lines."
+      ],
+      "sha256": "dc1c6061cd0e05b43069f56736e6c9795b8f41832a14a3bd01099afdb35c581f",
+      "file_size": 2646018,
+      "output_dir": "output/the-value-of-others-understanding-the-economic-model-of-relationships-to-get-and-keep-more-of-what-you-want-in-the-sexual-marketplace",
+      "detected_book_language": "en",
+      "output_language": "en",
+      "chapter_count": 15,
+      "sentence_count_total": 5524,
+      "median_chapter_sentences": 435.0,
+      "median_chapter_paragraphs": 81.0,
+      "screening_status": "screened_private_library_v2",
+      "corpus_lane": "chapter_corpus_eligible",
+      "candidate_chapters": [
+        {
+          "chapter_id": "7",
+          "chapter_number": 1,
+          "chapter_title": "Chapter 1",
+          "sentence_count": 442,
+          "paragraph_count": 89,
+          "href": "part0007.xhtml",
+          "spine_index": 7,
+          "position_bucket": "early",
+          "score": 5.75
+        },
+        {
+          "chapter_id": "10",
+          "chapter_number": 4,
+          "chapter_title": "Chapter 4",
+          "sentence_count": 360,
+          "paragraph_count": 79,
+          "href": "part0010.xhtml",
+          "spine_index": 10,
+          "position_bucket": "middle",
+          "score": 5.75
+        },
+        {
+          "chapter_id": "16",
+          "chapter_number": 10,
+          "chapter_title": "Chapter 10",
+          "sentence_count": 430,
+          "paragraph_count": 76,
+          "href": "part0016.xhtml",
+          "spine_index": 16,
+          "position_bucket": "late",
+          "score": 5.75
+        },
+        {
+          "chapter_id": "9",
+          "chapter_number": 3,
+          "chapter_title": "Chapter 3",
+          "sentence_count": 333,
+          "paragraph_count": 75,
+          "href": "part0009.xhtml",
+          "spine_index": 9,
+          "position_bucket": "early",
+          "score": 5.75
+        },
+        {
+          "chapter_id": "11",
+          "chapter_number": 5,
+          "chapter_title": "Chapter 5",
+          "sentence_count": 426,
+          "paragraph_count": 81,
+          "href": "part0011.xhtml",
+          "spine_index": 11,
+          "position_bucket": "middle",
+          "score": 5.75
+        },
+        {
+          "chapter_id": "12",
+          "chapter_number": 6,
+          "chapter_title": "Chapter 6",
+          "sentence_count": 472,
+          "paragraph_count": 89,
+          "href": "part0012.xhtml",
+          "spine_index": 12,
+          "position_bucket": "middle",
+          "score": 5.75
+        }
+      ],
+      "acquisition": {
+        "download_url": null,
+        "input_filename": "_OceanofPDF.com_The_Value_of_Others_-_Orion_Taraban.epub",
+        "acquisition_batch_id": "legacy_private_downloads_v1"
+      },
+      "storage_policy": "private-local",
+      "acquisition_batch_id": "legacy_private_downloads_v1",
+      "origin_filename": "_OceanofPDF.com_The_Value_of_Others_-_Orion_Taraban.epub"
+    },
+    {
+      "source_id": "making_of_a_manager_private_en",
+      "title": "The Making of a Manager",
+      "author": "Julie Zhuo",
+      "language": "en",
+      "origin": "manual-local-download",
+      "source_url": null,
+      "storage_mode": "local-only",
+      "relative_local_path": "state/library_sources/en/private/the_making_of_a_manager.epub",
+      "type_tags": [
+        "management_economics",
+        "business",
+        "modern_nonfiction"
+      ],
+      "role_tags": [
+        "expository",
+        "narrative_reflective",
+        "business",
+        "management_economics",
+        "modern_nonfiction"
+      ],
+      "selection_priority": 11,
+      "notes": [
+        "Legacy private source retained in the combined private-library supplement.",
+        "Useful for reflective management prose and contemporary workplace examples."
+      ],
+      "sha256": "6388a9cd3262bb5f4f8c643a04f774c99ffd99a7e0cb2f4f33cf3bad39587180",
+      "file_size": 4341855,
+      "output_dir": "output/the-making-of-a-manager-what-to-do-when-everyone-looks-to-you",
+      "detected_book_language": "en",
+      "output_language": "en",
+      "chapter_count": 63,
+      "sentence_count_total": 21428,
+      "median_chapter_sentences": 380.0,
+      "median_chapter_paragraphs": 143.0,
+      "screening_status": "screened_private_library_v2",
+      "corpus_lane": "chapter_corpus_eligible",
+      "candidate_chapters": [
+        {
+          "chapter_id": "14",
+          "chapter_number": 0,
+          "chapter_title": "The Apprentice",
+          "sentence_count": 298,
+          "paragraph_count": 135,
+          "href": "text/part0013.html",
+          "spine_index": 14,
+          "position_bucket": "early",
+          "score": 6.75
+        },
+        {
+          "chapter_id": "27",
+          "chapter_number": 0,
+          "chapter_title": "What Does Great Feedback Look Like?",
+          "sentence_count": 452,
+          "paragraph_count": 157,
+          "href": "text/part0019.html",
+          "spine_index": 20,
+          "position_bucket": "middle",
+          "score": 5.75
+        },
+        {
+          "chapter_id": "47",
+          "chapter_number": 0,
+          "chapter_title": "Hiring When You Need Five, Ten, or Hundreds of People",
+          "sentence_count": 437,
+          "paragraph_count": 153,
+          "href": "text/part0028.html",
+          "spine_index": 29,
+          "position_bucket": "late",
+          "score": 5.75
+        },
+        {
+          "chapter_id": "15",
+          "chapter_number": 0,
+          "chapter_title": "The Pioneer",
+          "sentence_count": 298,
+          "paragraph_count": 135,
+          "href": "text/part0013.html",
+          "spine_index": 14,
+          "position_bucket": "early",
+          "score": 6.75
+        },
+        {
+          "chapter_id": "16",
+          "chapter_number": 0,
+          "chapter_title": "The New Boss",
+          "sentence_count": 298,
+          "paragraph_count": 135,
+          "href": "text/part0013.html",
+          "spine_index": 14,
+          "position_bucket": "early",
+          "score": 6.75
+        },
+        {
+          "chapter_id": "17",
+          "chapter_number": 0,
+          "chapter_title": "The Successor",
+          "sentence_count": 298,
+          "paragraph_count": 135,
+          "href": "text/part0013.html",
+          "spine_index": 14,
+          "position_bucket": "early",
+          "score": 6.75
+        }
+      ],
+      "acquisition": {
+        "download_url": null,
+        "input_filename": "The Making of a Manager What to Do When Everyone Looks to You (Julie Zhuo) (Z-Library).epub",
+        "acquisition_batch_id": "legacy_private_downloads_v1"
+      },
+      "storage_policy": "private-local",
+      "acquisition_batch_id": "legacy_private_downloads_v1",
+      "origin_filename": "The Making of a Manager What to Do When Everyone Looks to You (Julie Zhuo) (Z-Library).epub"
+    },
+    {
+      "source_id": "inspired_private_en",
+      "title": "INSPIRED",
+      "author": "Marty Cagan",
+      "language": "en",
+      "origin": "manual-local-download",
+      "source_url": null,
+      "storage_mode": "local-only",
+      "relative_local_path": "state/library_sources/en/private/inspired.epub",
+      "type_tags": [
+        "management_economics",
+        "business",
+        "science_technology",
+        "modern_nonfiction"
+      ],
+      "role_tags": [
+        "expository",
+        "reference_heavy",
+        "business",
+        "management_economics",
+        "modern_nonfiction",
+        "science_technology"
+      ],
+      "selection_priority": 18,
+      "notes": [
+        "Legacy private source retained in the combined private-library supplement.",
+        "Useful for product-thinking distinctions and practical framework-heavy prose."
+      ],
+      "sha256": "bbfd7e6d9d4efa482b2ce253568856c97e3380ee853b037feb2d4f64630bd911",
+      "file_size": 477658,
+      "output_dir": "output/inspired",
+      "detected_book_language": "en",
+      "output_language": "en",
+      "chapter_count": 171,
+      "sentence_count_total": 13551,
+      "median_chapter_sentences": 60.0,
+      "median_chapter_paragraphs": 28.0,
+      "screening_status": "screened_private_library_v2",
+      "corpus_lane": "chapter_corpus_eligible",
+      "candidate_chapters": [
+        {
+          "chapter_id": "27",
+          "chapter_number": 0,
+          "chapter_title": "Team Location",
+          "sentence_count": 121,
+          "paragraph_count": 74,
+          "href": "c09.xhtml",
+          "spine_index": 18,
+          "position_bucket": "early",
+          "score": 6.75
+        },
+        {
+          "chapter_id": "59",
+          "chapter_number": 17,
+          "chapter_title": "CHAPTER 17: The Head of Product Role",
+          "sentence_count": 98,
+          "paragraph_count": 54,
+          "href": "c17.xhtml",
+          "spine_index": 27,
+          "position_bucket": "middle",
+          "score": 6.75
+        },
+        {
+          "chapter_id": "125",
+          "chapter_number": 50,
+          "chapter_title": "CHAPTER 50: Testing Usability",
+          "sentence_count": 122,
+          "paragraph_count": 41,
+          "href": "c50.xhtml",
+          "spine_index": 72,
+          "position_bucket": "late",
+          "score": 6.75
+        },
+        {
+          "chapter_id": "28",
+          "chapter_number": 0,
+          "chapter_title": "Team Scope",
+          "sentence_count": 121,
+          "paragraph_count": 74,
+          "href": "c09.xhtml",
+          "spine_index": 18,
+          "position_bucket": "early",
+          "score": 6.75
+        },
+        {
+          "chapter_id": "29",
+          "chapter_number": 0,
+          "chapter_title": "Team Duration",
+          "sentence_count": 121,
+          "paragraph_count": 74,
+          "href": "c09.xhtml",
+          "spine_index": 18,
+          "position_bucket": "early",
+          "score": 6.75
+        },
+        {
+          "chapter_id": "30",
+          "chapter_number": 0,
+          "chapter_title": "Team Autonomy",
+          "sentence_count": 121,
+          "paragraph_count": 74,
+          "href": "c09.xhtml",
+          "spine_index": 18,
+          "position_bucket": "early",
+          "score": 6.75
+        }
+      ],
+      "acquisition": {
+        "download_url": null,
+        "input_filename": "INSPIRED How to Create Tech Products Customers Love (Marty Cagan, Christian Idiodi, Lea Hickman etc.) (Z-Library).epub",
+        "acquisition_batch_id": "legacy_private_downloads_v1"
+      },
+      "storage_policy": "private-local",
+      "acquisition_batch_id": "legacy_private_downloads_v1",
+      "origin_filename": "INSPIRED How to Create Tech Products Customers Love (Marty Cagan, Christian Idiodi, Lea Hickman etc.) (Z-Library).epub"
+    },
+    {
+      "source_id": "chance_private_en",
+      "title": "Chance",
+      "author": "Joseph Conrad",
+      "language": "en",
+      "origin": "manual-local-download",
+      "source_url": null,
+      "storage_mode": "local-only",
+      "relative_local_path": "state/library_sources/en/private/chance.epub",
+      "type_tags": [
+        "literature",
+        "novel"
+      ],
+      "role_tags": [
+        "narrative_reflective",
+        "literature",
+        "novel"
+      ],
+      "selection_priority": 29,
+      "notes": [
+        "Legacy literary control title retained so the combined private library does not become pure nonfiction."
+      ],
+      "sha256": "484b0c17bd4da39d8a39b75471316ce7b86c4b1493fc5c82a94b7d57348b449b",
+      "file_size": 675610,
+      "output_dir": "output/chance",
+      "detected_book_language": "en",
+      "output_language": "en",
+      "chapter_count": 22,
+      "sentence_count_total": 10412,
+      "median_chapter_sentences": 500.0,
+      "median_chapter_paragraphs": 85.0,
+      "screening_status": "screened_private_library_v2",
+      "corpus_lane": "chapter_corpus_eligible",
+      "candidate_chapters": [
+        {
+          "chapter_id": "5",
+          "chapter_number": 0,
+          "chapter_title": "Author’s Note",
+          "sentence_count": 49,
+          "paragraph_count": 9,
+          "href": "text/preface.xhtml",
+          "spine_index": 4,
+          "position_bucket": "early",
+          "score": 5.75
+        },
+        {
+          "chapter_id": "16",
+          "chapter_number": 0,
+          "chapter_title": "I: The Ferndale",
+          "sentence_count": 345,
+          "paragraph_count": 61,
+          "href": "text/chapter-2-1.xhtml",
+          "spine_index": 15,
+          "position_bucket": "middle",
+          "score": 5.75
+        },
+        {
+          "chapter_id": "17",
+          "chapter_number": 0,
+          "chapter_title": "II: Young Powell Sees and Hears",
+          "sentence_count": 459,
+          "paragraph_count": 88,
+          "href": "text/chapter-2-2.xhtml",
+          "spine_index": 16,
+          "position_bucket": "late",
+          "score": 5.75
+        },
+        {
+          "chapter_id": "8",
+          "chapter_number": 0,
+          "chapter_title": "I: Young Powell and His Chance",
+          "sentence_count": 647,
+          "paragraph_count": 157,
+          "href": "text/chapter-1-1.xhtml",
+          "spine_index": 7,
+          "position_bucket": "early",
+          "score": 4.25
+        },
+        {
+          "chapter_id": "10",
+          "chapter_number": 0,
+          "chapter_title": "III: Thrift—and the Child",
+          "sentence_count": 580,
+          "paragraph_count": 82,
+          "href": "text/chapter-1-3.xhtml",
+          "spine_index": 9,
+          "position_bucket": "middle",
+          "score": 4.25
+        },
+        {
+          "chapter_id": "11",
+          "chapter_number": 0,
+          "chapter_title": "IV: The Governess",
+          "sentence_count": 671,
+          "paragraph_count": 93,
+          "href": "text/chapter-1-4.xhtml",
+          "spine_index": 10,
+          "position_bucket": "middle",
+          "score": 4.25
+        }
+      ],
+      "acquisition": {
+        "download_url": null,
+        "input_filename": "joseph-conrad_chance.epub",
+        "acquisition_batch_id": "legacy_private_downloads_v1"
+      },
+      "storage_policy": "private-local",
+      "acquisition_batch_id": "legacy_private_downloads_v1",
+      "origin_filename": "joseph-conrad_chance.epub"
+    },
+    {
+      "source_id": "biji_de_fangfa_private_zh",
+      "title": "笔记的方法",
+      "author": "刘少楠, 刘白光",
+      "language": "zh",
+      "origin": "manual-local-download",
+      "source_url": null,
+      "storage_mode": "local-only",
+      "relative_local_path": "state/library_sources/zh/private/bijidefangfa.epub",
+      "type_tags": [
+        "management_economics",
+        "method",
+        "modern_nonfiction"
+      ],
+      "role_tags": [
+        "expository",
+        "management_economics",
+        "method",
+        "modern_nonfiction"
+      ],
+      "selection_priority": 15,
+      "notes": [
+        "Legacy private source retained in the combined private-library supplement.",
+        "Useful for modern Chinese expository prose and method-oriented distinctions."
+      ],
+      "sha256": "595367c00cff2dfb31a46a2fb0b3683ab373c3340d2230125456632cd633f73b",
+      "file_size": 5316878,
+      "output_dir": "output/笔记的方法",
+      "detected_book_language": "zh",
+      "output_language": "zh",
+      "chapter_count": 21,
+      "sentence_count_total": 3391,
+      "median_chapter_sentences": 95.0,
+      "median_chapter_paragraphs": 43.0,
+      "screening_status": "screened_private_library_v2",
+      "corpus_lane": "chapter_corpus_eligible",
+      "candidate_chapters": [
+        {
+          "chapter_id": "6",
+          "chapter_number": 0,
+          "chapter_title": "# 给“想法”，让你拿来就能用",
+          "sentence_count": 127,
+          "paragraph_count": 50,
+          "href": "xhtml/Chapter_4_0001.xhtml",
+          "spine_index": 6,
+          "position_bucket": "early",
+          "score": 6.75
+        },
+        {
+          "chapter_id": "12",
+          "chapter_number": 0,
+          "chapter_title": "# 审视自己和信息之间的关系",
+          "sentence_count": 95,
+          "paragraph_count": 37,
+          "href": "xhtml/Chapter_6_1_0001.xhtml",
+          "spine_index": 12,
+          "position_bucket": "middle",
+          "score": 6.75
+        },
+        {
+          "chapter_id": "15",
+          "chapter_number": 0,
+          "chapter_title": "# 建议二：做加法，增加书本之外的优质信息源",
+          "sentence_count": 110,
+          "paragraph_count": 43,
+          "href": "xhtml/Chapter_6_4",
+          "spine_index": 15,
+          "position_bucket": "late",
+          "score": 6.75
+        },
+        {
+          "chapter_id": "13",
+          "chapter_number": 0,
+          "chapter_title": "# 三项原则，掌握获取信息的主动权",
+          "sentence_count": 78,
+          "paragraph_count": 34,
+          "href": "xhtml/Chapter_6_2",
+          "spine_index": 13,
+          "position_bucket": "middle",
+          "score": 6.75
+        },
+        {
+          "chapter_id": "14",
+          "chapter_number": 0,
+          "chapter_title": "# 建议一：做减法，削减你的信息源",
+          "sentence_count": 91,
+          "paragraph_count": 39,
+          "href": "xhtml/Chapter_6_3",
+          "spine_index": 14,
+          "position_bucket": "middle",
+          "score": 6.75
+        },
+        {
+          "chapter_id": "16",
+          "chapter_number": 0,
+          "chapter_title": "# 建议三：做乘法，用多重视角看待信息",
+          "sentence_count": 126,
+          "paragraph_count": 56,
+          "href": "xhtml/Chapter_6_5",
+          "spine_index": 16,
+          "position_bucket": "late",
+          "score": 6.75
+        }
+      ],
+      "acquisition": {
+        "download_url": null,
+        "input_filename": "笔记的方法 (刘少楠, 刘白光) (Z-Library).epub",
+        "acquisition_batch_id": "legacy_private_downloads_v1"
+      },
+      "storage_policy": "private-local",
+      "acquisition_batch_id": "legacy_private_downloads_v1",
+      "origin_filename": "笔记的方法 (刘少楠, 刘白光) (Z-Library).epub"
+    },
+    {
+      "source_id": "fooled_by_randomness_private_zh",
+      "title": "随机漫步的傻瓜",
+      "author": "纳西姆·尼古拉斯·塔勒布",
+      "language": "zh",
+      "origin": "manual-local-download",
+      "source_url": null,
+      "storage_mode": "local-only",
+      "relative_local_path": "state/library_sources/zh/private/suijimanbudesagua.epub",
+      "type_tags": [
+        "psychology_decision",
+        "management_economics",
+        "modern_nonfiction"
+      ],
+      "role_tags": [
+        "argumentative",
+        "reference_heavy",
+        "management_economics",
+        "modern_nonfiction",
+        "psychology_decision"
+      ],
+      "selection_priority": 5,
+      "notes": [
+        "Legacy private source retained in the combined private-library supplement.",
+        "Useful for Chinese argumentative prose on luck, uncertainty, and mistaken causality."
+      ],
+      "sha256": "73ca38f0fe0f219f2cc60b38235f6976b567b2d77cd2a222321cc9985c020308",
+      "file_size": 616122,
+      "output_dir": "output/随机漫步的傻瓜",
+      "detected_book_language": "zh",
+      "output_language": "zh",
+      "chapter_count": 23,
+      "sentence_count_total": 34411,
+      "median_chapter_sentences": 947.0,
+      "median_chapter_paragraphs": 223.0,
+      "screening_status": "screened_private_library_v2",
+      "corpus_lane": "chapter_corpus_eligible",
+      "candidate_chapters": [
+        {
+          "chapter_id": "2",
+          "chapter_number": 0,
+          "chapter_title": "各方赞誉",
+          "sentence_count": 83,
+          "paragraph_count": 63,
+          "href": "Text/Section0001.xhtml",
+          "spine_index": 2,
+          "position_bucket": "early",
+          "score": 5.75
+        },
+        {
+          "chapter_id": "9",
+          "chapter_number": 0,
+          "chapter_title": "第三章 从数学的角度思考历史",
+          "sentence_count": 3439,
+          "paragraph_count": 429,
+          "href": "Text/Part1.xhtml",
+          "spine_index": 6,
+          "position_bucket": "middle",
+          "score": 2.75
+        },
+        {
+          "chapter_id": "19",
+          "chapter_number": 0,
+          "chapter_title": "第三篇 活在随机世界中",
+          "sentence_count": 393,
+          "paragraph_count": 95,
+          "href": "Text/Part3.xhtml",
+          "spine_index": 8,
+          "position_bucket": "late",
+          "score": 5.75
+        },
+        {
+          "chapter_id": "3",
+          "chapter_number": 0,
+          "chapter_title": "专家推荐",
+          "sentence_count": 98,
+          "paragraph_count": 44,
+          "href": "Text/Section0002.xhtml",
+          "spine_index": 3,
+          "position_bucket": "early",
+          "score": 5.75
+        },
+        {
+          "chapter_id": "23",
+          "chapter_number": 0,
+          "chapter_title": "后记 遇上黑天鹅",
+          "sentence_count": 318,
+          "paragraph_count": 156,
+          "href": "Text/postscript.xhtml",
+          "spine_index": 9,
+          "position_bucket": "late",
+          "score": 5.75
+        },
+        {
+          "chapter_id": "20",
+          "chapter_number": 0,
+          "chapter_title": "第十二章 赌徒的迷信和笼中的鸽子",
+          "sentence_count": 393,
+          "paragraph_count": 95,
+          "href": "Text/Part3.xhtml",
+          "spine_index": 8,
+          "position_bucket": "late",
+          "score": 4.75
+        }
+      ],
+      "acquisition": {
+        "download_url": null,
+        "input_filename": "随机漫步的傻瓜：发现市场和人生中的隐藏机遇 = Fooled by Randomness The Hidden Role of Chance in Life and in the Markets ( etc.) (Z-Library).epub",
+        "acquisition_batch_id": "legacy_private_downloads_v1"
+      },
+      "storage_policy": "private-local",
+      "acquisition_batch_id": "legacy_private_downloads_v1",
+      "origin_filename": "随机漫步的傻瓜：发现市场和人生中的隐藏机遇 = Fooled by Randomness The Hidden Role of Chance in Life and in the Markets ( etc.) (Z-Library).epub"
+    },
+    {
+      "source_id": "cracking_pm_career_private_en",
+      "title": "Cracking the PM Career",
+      "author": "Jackie Bavaro, Gayle McDowell",
+      "language": "en",
+      "origin": "manual-local-download",
+      "source_url": null,
+      "storage_mode": "local-only",
+      "relative_local_path": "state/library_sources/en/private/cracking_pm_career.epub",
+      "type_tags": [
+        "management_economics",
+        "business",
+        "modern_nonfiction"
+      ],
+      "role_tags": [
+        "expository",
+        "reference_heavy",
+        "business",
+        "management_economics",
+        "modern_nonfiction"
+      ],
+      "selection_priority": 25,
+      "notes": [
+        "Previously reserved; now included so all reachable private books are part of the combined supplement.",
+        "Useful for framework-heavy management/career prose."
+      ],
+      "sha256": "3ff1001fa089e235b8c35568984ffbc9737df4758925468ad8f6eddafcad1a49",
+      "file_size": 2515681,
+      "output_dir": "output/cracking-the-pm-career-the-skills-frameworks-and-practices-to-become-a-great-product-manager",
+      "detected_book_language": "en",
+      "output_language": "en",
+      "chapter_count": 77,
+      "sentence_count_total": 15623,
+      "median_chapter_sentences": 159.0,
+      "median_chapter_paragraphs": 76.0,
+      "screening_status": "screened_private_library_v2",
+      "corpus_lane": "chapter_corpus_eligible",
+      "candidate_chapters": [
+        {
+          "chapter_id": "15",
+          "chapter_number": 9,
+          "chapter_title": "Chapter 9: Writing Product Documentation",
+          "sentence_count": 136,
+          "paragraph_count": 101,
+          "href": "text00014.html",
+          "spine_index": 15,
+          "position_bucket": "early",
+          "score": 6.75
+        },
+        {
+          "chapter_id": "28",
+          "chapter_number": 18,
+          "chapter_title": "Chapter 18: Team Goals",
+          "sentence_count": 188,
+          "paragraph_count": 103,
+          "href": "text00027.html",
+          "spine_index": 28,
+          "position_bucket": "middle",
+          "score": 6.75
+        },
+        {
+          "chapter_id": "52",
+          "chapter_number": 36,
+          "chapter_title": "Chapter 36: Beyond PM",
+          "sentence_count": 109,
+          "paragraph_count": 57,
+          "href": "text00051.html",
+          "spine_index": 52,
+          "position_bucket": "late",
+          "score": 6.75
+        },
+        {
+          "chapter_id": "19",
+          "chapter_number": 11,
+          "chapter_title": "Chapter 11: Scoping and Incremental Development",
+          "sentence_count": 247,
+          "paragraph_count": 110,
+          "href": "text00018.html",
+          "spine_index": 19,
+          "position_bucket": "early",
+          "score": 6.75
+        },
+        {
+          "chapter_id": "24",
+          "chapter_number": 14,
+          "chapter_title": "Chapter 14: Product Strategy Overview",
+          "sentence_count": 290,
+          "paragraph_count": 159,
+          "href": "text00023.html",
+          "spine_index": 24,
+          "position_bucket": "early",
+          "score": 6.75
+        },
+        {
+          "chapter_id": "25",
+          "chapter_number": 15,
+          "chapter_title": "Chapter 15: Vision",
+          "sentence_count": 132,
+          "paragraph_count": 66,
+          "href": "text00024.html",
+          "spine_index": 25,
+          "position_bucket": "early",
+          "score": 6.75
+        }
+      ],
+      "acquisition": {
+        "download_url": null,
+        "input_filename": "Cracking the PM Career The Skills, Frameworks, and Practices To Become a Great Product Manager (Cracking the Interview … (Jackie Bavaro, Gayle McDowell) (Z-Library).epub",
+        "acquisition_batch_id": "legacy_private_downloads_v1"
+      },
+      "storage_policy": "private-local",
+      "acquisition_batch_id": "legacy_private_downloads_v1",
+      "origin_filename": "Cracking the PM Career The Skills, Frameworks, and Practices To Become a Great Product Manager (Cracking the Interview … (Jackie Bavaro, Gayle McDowell) (Z-Library).epub"
+    },
+    {
+      "source_id": "cracking_pm_interview_private_en",
+      "title": "Cracking the PM Interview",
+      "author": "Gayle Laakmann McDowell",
+      "language": "en",
+      "origin": "manual-local-download",
+      "source_url": null,
+      "storage_mode": "local-only",
+      "relative_local_path": "state/library_sources/en/private/cracking_pm_interview.epub",
+      "type_tags": [
+        "management_economics",
+        "business",
+        "modern_nonfiction"
+      ],
+      "role_tags": [
+        "expository",
+        "reference_heavy",
+        "business",
+        "management_economics",
+        "modern_nonfiction"
+      ],
+      "selection_priority": 27,
+      "notes": [
+        "Previously rejected for the first tiny seed slice; now retained in the combined supplement inventory.",
+        "Useful mainly as framework-heavy local supplement material rather than top-tier benchmark promotion material."
+      ],
+      "sha256": "ae8884ad6dc3bb429ace123994ee3c4b28cde3bb73668b790c370b54ce610458",
+      "file_size": 681677,
+      "output_dir": "output/cracking-the-pm-interview-how-to-land-a-product-manager-job-in-technology",
+      "detected_book_language": "en",
+      "output_language": "en",
+      "chapter_count": 1,
+      "sentence_count_total": 9717,
+      "median_chapter_sentences": 9717.0,
+      "median_chapter_paragraphs": 5753.0,
+      "screening_status": "screened_private_library_v2",
+      "corpus_lane": "excerpt_only",
+      "candidate_chapters": [
+        {
+          "chapter_id": "1",
+          "chapter_number": 0,
+          "chapter_title": "Full Content",
+          "sentence_count": 9717,
+          "paragraph_count": 5753,
+          "href": null,
+          "spine_index": null,
+          "position_bucket": "early",
+          "score": 1.75
+        }
+      ],
+      "acquisition": {
+        "download_url": null,
+        "input_filename": "Cracking the PM Interview - How to Land a Product Manager Job in Technology (Gayle Laakmann McDowell) (Z-Library).epub",
+        "acquisition_batch_id": "legacy_private_downloads_v1"
+      },
+      "storage_policy": "private-local",
+      "acquisition_batch_id": "legacy_private_downloads_v1",
+      "origin_filename": "Cracking the PM Interview - How to Land a Product Manager Job in Technology (Gayle Laakmann McDowell) (Z-Library).epub"
+    },
+    {
+      "source_id": "decode_and_conquer_private_en",
+      "title": "Decode and Conquer",
+      "author": "Lewis C. Lin",
+      "language": "en",
+      "origin": "manual-local-download",
+      "source_url": null,
+      "storage_mode": "local-only",
+      "relative_local_path": "state/library_sources/en/private/decode_and_conquer.epub",
+      "type_tags": [
+        "management_economics",
+        "business",
+        "modern_nonfiction"
+      ],
+      "role_tags": [
+        "expository",
+        "reference_heavy",
+        "business",
+        "management_economics",
+        "modern_nonfiction"
+      ],
+      "selection_priority": 28,
+      "notes": [
+        "Previously reserved; now included so all reachable private books are part of the combined supplement.",
+        "Useful for structured answer frameworks and distinction-heavy expository prose."
+      ],
+      "sha256": "59f9431e6c314efd3d16c00ca6f76746dc81d00aece2884aca8eff4f3b1147dc",
+      "file_size": 1065706,
+      "output_dir": "output/decode-and-conquer-answers-to-product-management-interviews",
+      "detected_book_language": "en",
+      "output_language": "en",
+      "chapter_count": 129,
+      "sentence_count_total": 15106,
+      "median_chapter_sentences": 47.0,
+      "median_chapter_paragraphs": 23.0,
+      "screening_status": "screened_private_library_v2",
+      "corpus_lane": "chapter_corpus_eligible",
+      "candidate_chapters": [
+        {
+          "chapter_id": "32",
+          "chapter_number": 0,
+          "chapter_title": "Answers",
+          "sentence_count": 173,
+          "paragraph_count": 83,
+          "href": "text/part0008_split_003.html",
+          "spine_index": 25,
+          "position_bucket": "early",
+          "score": 6.75
+        },
+        {
+          "chapter_id": "50",
+          "chapter_number": 0,
+          "chapter_title": "Answers",
+          "sentence_count": 242,
+          "paragraph_count": 144,
+          "href": "text/part0011_split_003.html",
+          "spine_index": 37,
+          "position_bucket": "middle",
+          "score": 6.75
+        },
+        {
+          "chapter_id": "95",
+          "chapter_number": 0,
+          "chapter_title": "Answers",
+          "sentence_count": 206,
+          "paragraph_count": 120,
+          "href": "text/part0016_split_003.html",
+          "spine_index": 60,
+          "position_bucket": "late",
+          "score": 6.75
+        },
+        {
+          "chapter_id": "34",
+          "chapter_number": 0,
+          "chapter_title": "Design a new iPad app for Google Spreadsheet.",
+          "sentence_count": 173,
+          "paragraph_count": 83,
+          "href": "text/part0008_split_003.html",
+          "spine_index": 25,
+          "position_bucket": "early",
+          "score": 6.75
+        },
+        {
+          "chapter_id": "35",
+          "chapter_number": 0,
+          "chapter_title": "How would you improve the LinkedIn mobile app?",
+          "sentence_count": 173,
+          "paragraph_count": 83,
+          "href": "text/part0008_split_003.html",
+          "spine_index": 25,
+          "position_bucket": "early",
+          "score": 6.75
+        },
+        {
+          "chapter_id": "44",
+          "chapter_number": 0,
+          "chapter_title": "Answers",
+          "sentence_count": 149,
+          "paragraph_count": 80,
+          "href": "text/part0010_split_003.html",
+          "spine_index": 33,
+          "position_bucket": "early",
+          "score": 6.75
+        }
+      ],
+      "acquisition": {
+        "download_url": null,
+        "input_filename": "Decode and Conquer Answers to Product Management Interviews (Lewis C. Lin) (Z-Library).epub",
+        "acquisition_batch_id": "legacy_private_downloads_v1"
+      },
+      "storage_policy": "private-local",
+      "acquisition_batch_id": "legacy_private_downloads_v1",
+      "origin_filename": "Decode and Conquer Answers to Product Management Interviews (Lewis C. Lin) (Z-Library).epub"
+    },
+    {
+      "source_id": "elon_musk_private_en",
+      "title": "Elon Musk",
+      "author": "Walter Isaacson",
+      "language": "en",
+      "origin": "user-book-directory",
+      "source_url": null,
+      "storage_mode": "local-only",
+      "relative_local_path": "state/library_sources/en/private/elon_musk.epub",
+      "type_tags": [
+        "biography",
+        "business",
+        "science_technology",
+        "modern_nonfiction"
+      ],
+      "role_tags": [
+        "narrative_reflective",
+        "reference_heavy",
+        "biography",
+        "business",
+        "modern_nonfiction",
+        "science_technology"
+      ],
+      "selection_priority": 2,
+      "notes": [
+        "New /BOOK batch title with strong multi-project biography pressure and institution-level causality."
+      ],
+      "sha256": "5f9c36d7cd4a99e302b306ee0bd8d601849dc563205fa9c6540948cdbf2fb541",
+      "file_size": 27719597,
+      "output_dir": "output/elon-musk",
+      "detected_book_language": "en",
+      "output_language": "en",
+      "chapter_count": 102,
+      "sentence_count_total": 3477,
+      "median_chapter_sentences": 4.0,
+      "median_chapter_paragraphs": 4.0,
+      "screening_status": "screened_private_library_v2",
+      "corpus_lane": "chapter_corpus_eligible",
+      "candidate_chapters": [
+        {
+          "chapter_id": "55",
+          "chapter_number": 52,
+          "chapter_title": "Chapter 52: Starlink: SpaceX, 2015–2018",
+          "sentence_count": 82,
+          "paragraph_count": 21,
+          "href": "OEBPS/part0107.xhtml",
+          "spine_index": 107,
+          "position_bucket": "middle",
+          "score": 6.75
+        },
+        {
+          "chapter_id": "70",
+          "chapter_number": 67,
+          "chapter_title": "Chapter 67: Money: 2021–2022",
+          "sentence_count": 70,
+          "paragraph_count": 18,
+          "href": "OEBPS/part0135.xhtml",
+          "spine_index": 135,
+          "position_bucket": "late",
+          "score": 6.75
+        },
+        {
+          "chapter_id": "57",
+          "chapter_number": 54,
+          "chapter_title": "Chapter 54: Autonomy Day: Tesla, April 2019",
+          "sentence_count": 60,
+          "paragraph_count": 16,
+          "href": "OEBPS/part0110.xhtml",
+          "spine_index": 110,
+          "position_bucket": "middle",
+          "score": 6.75
+        },
+        {
+          "chapter_id": "72",
+          "chapter_number": 69,
+          "chapter_title": "Chapter 69: Politics: 2020–2022",
+          "sentence_count": 230,
+          "paragraph_count": 52,
+          "href": "OEBPS/part0138.xhtml",
+          "spine_index": 138,
+          "position_bucket": "late",
+          "score": 6.75
+        },
+        {
+          "chapter_id": "73",
+          "chapter_number": 70,
+          "chapter_title": "Chapter 70: Ukraine: 2022",
+          "sentence_count": 155,
+          "paragraph_count": 38,
+          "href": "OEBPS/part0139.xhtml",
+          "spine_index": 139,
+          "position_bucket": "late",
+          "score": 6.75
+        },
+        {
+          "chapter_id": "76",
+          "chapter_number": 73,
+          "chapter_title": "Chapter 73: “I made an offer”: Twitter, April 2022",
+          "sentence_count": 201,
+          "paragraph_count": 62,
+          "href": "OEBPS/part0144.xhtml",
+          "spine_index": 144,
+          "position_bucket": "late",
+          "score": 6.75
+        }
+      ],
+      "acquisition": {
+        "download_url": null,
+        "input_filename": "Elon Musk (Walter Isaacson) (z-library.sk, 1lib.sk, z-lib.sk).epub",
+        "acquisition_batch_id": "book_directory_20260326"
+      },
+      "storage_policy": "private-local",
+      "acquisition_batch_id": "book_directory_20260326",
+      "origin_filename": "Elon Musk (Walter Isaacson) (z-library.sk, 1lib.sk, z-lib.sk).epub"
+    },
+    {
+      "source_id": "evicted_private_en",
+      "title": "Evicted",
+      "author": "Matthew Desmond",
+      "language": "en",
+      "origin": "user-book-directory",
+      "source_url": null,
+      "storage_mode": "local-only",
+      "relative_local_path": "state/library_sources/en/private/evicted.epub",
+      "type_tags": [
+        "social_reportage",
+        "history",
+        "modern_nonfiction"
+      ],
+      "role_tags": [
+        "expository",
+        "narrative_reflective",
+        "history",
+        "modern_nonfiction",
+        "social_reportage"
+      ],
+      "selection_priority": 13,
+      "notes": [
+        "New /BOOK batch title covering fact-rich social reportage and institution-individual causality."
+      ],
+      "sha256": "76a88b567625fb86ab6e66663dd9d11b27e8001e2afb01db4019a45e842f24c7",
+      "file_size": 5098854,
+      "output_dir": "output/evicted",
+      "detected_book_language": "en",
+      "output_language": "en",
+      "chapter_count": 36,
+      "sentence_count_total": 9640,
+      "median_chapter_sentences": 267.0,
+      "median_chapter_paragraphs": 65.0,
+      "screening_status": "screened_private_library_v2",
+      "corpus_lane": "chapter_corpus_eligible",
+      "candidate_chapters": [
+        {
+          "chapter_id": "10",
+          "chapter_number": 1,
+          "chapter_title": "Chapter 1: The Business of Owning the City",
+          "sentence_count": 250,
+          "paragraph_count": 71,
+          "href": "OEBPS/Desm_9780553447446_epub3_c001_r1.xhtml",
+          "spine_index": 9,
+          "position_bucket": "early",
+          "score": 6.75
+        },
+        {
+          "chapter_id": "17",
+          "chapter_number": 8,
+          "chapter_title": "Chapter 8: Christmas in Room 400",
+          "sentence_count": 320,
+          "paragraph_count": 90,
+          "href": "OEBPS/Desm_9780553447446_epub3_c008_r1.xhtml",
+          "spine_index": 16,
+          "position_bucket": "middle",
+          "score": 6.75
+        },
+        {
+          "chapter_id": "29",
+          "chapter_number": 18,
+          "chapter_title": "Chapter 18: Lobster on Food Stamps",
+          "sentence_count": 297,
+          "paragraph_count": 74,
+          "href": "OEBPS/Desm_9780553447446_epub3_c018_r1.xhtml",
+          "spine_index": 28,
+          "position_bucket": "late",
+          "score": 6.75
+        },
+        {
+          "chapter_id": "11",
+          "chapter_number": 2,
+          "chapter_title": "Chapter 2: Making Rent",
+          "sentence_count": 275,
+          "paragraph_count": 66,
+          "href": "OEBPS/Desm_9780553447446_epub3_c002_r1.xhtml",
+          "spine_index": 10,
+          "position_bucket": "early",
+          "score": 6.75
+        },
+        {
+          "chapter_id": "12",
+          "chapter_number": 3,
+          "chapter_title": "Chapter 3: Hot Water",
+          "sentence_count": 302,
+          "paragraph_count": 64,
+          "href": "OEBPS/Desm_9780553447446_epub3_c003_r1.xhtml",
+          "spine_index": 11,
+          "position_bucket": "early",
+          "score": 6.75
+        },
+        {
+          "chapter_id": "13",
+          "chapter_number": 4,
+          "chapter_title": "Chapter 4: A Beautiful Collection",
+          "sentence_count": 222,
+          "paragraph_count": 53,
+          "href": "OEBPS/Desm_9780553447446_epub3_c004_r1.xhtml",
+          "spine_index": 12,
+          "position_bucket": "early",
+          "score": 6.75
+        }
+      ],
+      "acquisition": {
+        "download_url": null,
+        "input_filename": "Evicted (Matthew Desmond) (z-library.sk, 1lib.sk, z-lib.sk).epub",
+        "acquisition_batch_id": "book_directory_20260326"
+      },
+      "storage_policy": "private-local",
+      "acquisition_batch_id": "book_directory_20260326",
+      "origin_filename": "Evicted (Matthew Desmond) (z-library.sk, 1lib.sk, z-lib.sk).epub"
+    },
+    {
+      "source_id": "good_strategy_bad_strategy_private_en",
+      "title": "Good Strategy/Bad Strategy",
+      "author": "Richard Rumelt",
+      "language": "en",
+      "origin": "user-book-directory",
+      "source_url": null,
+      "storage_mode": "local-only",
+      "relative_local_path": "state/library_sources/en/private/good_strategy_bad_strategy.epub",
+      "type_tags": [
+        "management_economics",
+        "business",
+        "modern_nonfiction"
+      ],
+      "role_tags": [
+        "expository",
+        "argumentative",
+        "business",
+        "management_economics",
+        "modern_nonfiction"
+      ],
+      "selection_priority": 3,
+      "notes": [
+        "New /BOOK batch title covering diagnosis, guiding policy, and action coherence."
+      ],
+      "sha256": "a15bac10b5b0fcd1c78ab4acb73d0f2aad72f25df3c0182ff21692454a1c0f12",
+      "file_size": 677499,
+      "output_dir": "output/good-strategybad-strategy",
+      "detected_book_language": "en",
+      "output_language": "en",
+      "chapter_count": 70,
+      "sentence_count_total": 24379,
+      "median_chapter_sentences": 364.5,
+      "median_chapter_paragraphs": 86.0,
+      "screening_status": "screened_private_library_v2",
+      "corpus_lane": "chapter_corpus_eligible",
+      "candidate_chapters": [
+        {
+          "chapter_id": "22",
+          "chapter_number": 6,
+          "chapter_title": "CHAPTER 6 USING LEVERAGE",
+          "sentence_count": 166,
+          "paragraph_count": 39,
+          "href": "dummy_split_013.html",
+          "spine_index": 14,
+          "position_bucket": "early",
+          "score": 6.75
+        },
+        {
+          "chapter_id": "25",
+          "chapter_number": 0,
+          "chapter_title": "Harold Williams uses concentration to make the Getty a world presence in art",
+          "sentence_count": 166,
+          "paragraph_count": 39,
+          "href": "dummy_split_013.html",
+          "spine_index": 14,
+          "position_bucket": "middle",
+          "score": 6.75
+        },
+        {
+          "chapter_id": "55",
+          "chapter_number": 15,
+          "chapter_title": "CHAPTER 15 PUTTING IT TOGETHER",
+          "sentence_count": 286,
+          "paragraph_count": 71,
+          "href": "dummy_split_022.html",
+          "spine_index": 23,
+          "position_bucket": "late",
+          "score": 6.75
+        },
+        {
+          "chapter_id": "23",
+          "chapter_number": 0,
+          "chapter_title": "Anticipation by Toyota and insurgents in Iraq",
+          "sentence_count": 166,
+          "paragraph_count": 39,
+          "href": "dummy_split_013.html",
+          "spine_index": 14,
+          "position_bucket": "early",
+          "score": 6.75
+        },
+        {
+          "chapter_id": "24",
+          "chapter_number": 0,
+          "chapter_title": "Pivot points at 7-Eleven and the Brandenburg Gate",
+          "sentence_count": 166,
+          "paragraph_count": 39,
+          "href": "dummy_split_013.html",
+          "spine_index": 14,
+          "position_bucket": "early",
+          "score": 6.75
+        },
+        {
+          "chapter_id": "26",
+          "chapter_number": 7,
+          "chapter_title": "CHAPTER 7 PROXIMATE OBJECTIVES",
+          "sentence_count": 178,
+          "paragraph_count": 49,
+          "href": "dummy_split_014.html",
+          "spine_index": 15,
+          "position_bucket": "middle",
+          "score": 6.75
+        }
+      ],
+      "acquisition": {
+        "download_url": null,
+        "input_filename": "Good StrategyBad Strategy (Rumelt, Richard) (z-library.sk, 1lib.sk, z-lib.sk).epub",
+        "acquisition_batch_id": "book_directory_20260326"
+      },
+      "storage_policy": "private-local",
+      "acquisition_batch_id": "book_directory_20260326",
+      "origin_filename": "Good StrategyBad Strategy (Rumelt, Richard) (z-library.sk, 1lib.sk, z-lib.sk).epub"
+    },
+    {
+      "source_id": "poor_charlies_almanack_private_en",
+      "title": "Poor Charlie's Almanack",
+      "author": "Charles T. Munger",
+      "language": "en",
+      "origin": "user-book-directory",
+      "source_url": null,
+      "storage_mode": "local-only",
+      "relative_local_path": "state/library_sources/en/private/poor_charlies_almanack.epub",
+      "type_tags": [
+        "business",
+        "management_economics",
+        "modern_nonfiction"
+      ],
+      "role_tags": [
+        "argumentative",
+        "reference_heavy",
+        "business",
+        "management_economics",
+        "modern_nonfiction"
+      ],
+      "selection_priority": 1,
+      "notes": [
+        "New /BOOK batch title with strong principle extraction and example-to-principle mapping pressure."
+      ],
+      "sha256": "25661e61be54075c380a3e9b0659a39762921b79b739883a01020526deaadf1f",
+      "file_size": 1372123,
+      "output_dir": "output/poor-charlies-almanack_-the-wit-and-wisdom-of-charles-t-munger-expanded-third-edition",
+      "detected_book_language": "en",
+      "output_language": "en",
+      "chapter_count": 24,
+      "sentence_count_total": 242304,
+      "median_chapter_sentences": 10096.0,
+      "median_chapter_paragraphs": 4597.0,
+      "screening_status": "screened_private_library_v2",
+      "corpus_lane": "chapter_corpus_eligible",
+      "candidate_chapters": [
+        {
+          "chapter_id": "5",
+          "chapter_number": 0,
+          "chapter_title": "A Portrait of Charles T Munger By Michael Broggie",
+          "sentence_count": 10096,
+          "paragraph_count": 4597,
+          "href": "Text/index_split_000.xhtml",
+          "spine_index": 1,
+          "position_bucket": "early",
+          "score": 2.75
+        },
+        {
+          "chapter_id": "10",
+          "chapter_number": 0,
+          "chapter_title": "The Munger Approach to Life, Learning, and Decision Making",
+          "sentence_count": 10096,
+          "paragraph_count": 4597,
+          "href": "Text/index_split_000.xhtml",
+          "spine_index": 1,
+          "position_bucket": "middle",
+          "score": 2.75
+        },
+        {
+          "chapter_id": "19",
+          "chapter_number": 0,
+          "chapter_title": "6. Investment Practices of Leading Charitable Foundations",
+          "sentence_count": 10096,
+          "paragraph_count": 4597,
+          "href": "Text/index_split_000.xhtml",
+          "spine_index": 1,
+          "position_bucket": "late",
+          "score": 2.75
+        },
+        {
+          "chapter_id": "6",
+          "chapter_number": 0,
+          "chapter_title": "Praising Old Age",
+          "sentence_count": 10096,
+          "paragraph_count": 4597,
+          "href": "Text/index_split_000.xhtml",
+          "spine_index": 1,
+          "position_bucket": "early",
+          "score": 2.75
+        },
+        {
+          "chapter_id": "7",
+          "chapter_number": 0,
+          "chapter_title": "Remembering, The Children on Charlie",
+          "sentence_count": 10096,
+          "paragraph_count": 4597,
+          "href": "Text/index_split_000.xhtml",
+          "spine_index": 1,
+          "position_bucket": "early",
+          "score": 2.75
+        },
+        {
+          "chapter_id": "8",
+          "chapter_number": 0,
+          "chapter_title": "And Bill Gates has to Say:",
+          "sentence_count": 10096,
+          "paragraph_count": 4597,
+          "href": "Text/index_split_000.xhtml",
+          "spine_index": 1,
+          "position_bucket": "early",
+          "score": 2.75
+        }
+      ],
+      "acquisition": {
+        "download_url": null,
+        "input_filename": "Poor Charlie’s Almanack The Wit and Wisdom of Charles T. Munger (Charles T. Munger) (z-library.sk, 1lib.sk, z-lib.sk).epub",
+        "acquisition_batch_id": "book_directory_20260326"
+      },
+      "storage_policy": "private-local",
+      "acquisition_batch_id": "book_directory_20260326",
+      "origin_filename": "Poor Charlie’s Almanack The Wit and Wisdom of Charles T. Munger (Charles T. Munger) (z-library.sk, 1lib.sk, z-lib.sk).epub"
+    },
+    {
+      "source_id": "principles_private_en",
+      "title": "Principles",
+      "author": "Ray Dalio",
+      "language": "en",
+      "origin": "user-book-directory",
+      "source_url": null,
+      "storage_mode": "local-only",
+      "relative_local_path": "state/library_sources/en/private/principles.epub",
+      "type_tags": [
+        "management_economics",
+        "business",
+        "modern_nonfiction"
+      ],
+      "role_tags": [
+        "expository",
+        "reference_heavy",
+        "business",
+        "management_economics",
+        "modern_nonfiction"
+      ],
+      "selection_priority": 7,
+      "notes": [
+        "New /BOOK batch title with explicit rule systems, abstraction ladders, and principle/exception handling pressure."
+      ],
+      "sha256": "4069b815c01d494343bac4d69cc62687b8cf55d859c59f693acedd18615649df",
+      "file_size": 607901,
+      "output_dir": "output/principles",
+      "detected_book_language": "en",
+      "output_language": "en",
+      "chapter_count": 53,
+      "sentence_count_total": 12896,
+      "median_chapter_sentences": 240.0,
+      "median_chapter_paragraphs": 83.0,
+      "screening_status": "screened_private_library_v2",
+      "corpus_lane": "chapter_corpus_eligible",
+      "candidate_chapters": [
+        {
+          "chapter_id": "8",
+          "chapter_number": 0,
+          "chapter_title": "[5]",
+          "sentence_count": 240,
+          "paragraph_count": 83,
+          "href": "index_split_026.html",
+          "spine_index": 27,
+          "position_bucket": "early",
+          "score": 6.75
+        },
+        {
+          "chapter_id": "19",
+          "chapter_number": 0,
+          "chapter_title": "[16]",
+          "sentence_count": 240,
+          "paragraph_count": 83,
+          "href": "index_split_026.html",
+          "spine_index": 27,
+          "position_bucket": "middle",
+          "score": 6.75
+        },
+        {
+          "chapter_id": "36",
+          "chapter_number": 0,
+          "chapter_title": "[33]",
+          "sentence_count": 240,
+          "paragraph_count": 83,
+          "href": "index_split_026.html",
+          "spine_index": 27,
+          "position_bucket": "late",
+          "score": 6.75
+        },
+        {
+          "chapter_id": "9",
+          "chapter_number": 0,
+          "chapter_title": "[6]",
+          "sentence_count": 240,
+          "paragraph_count": 83,
+          "href": "index_split_026.html",
+          "spine_index": 27,
+          "position_bucket": "early",
+          "score": 6.75
+        },
+        {
+          "chapter_id": "10",
+          "chapter_number": 0,
+          "chapter_title": "[7]",
+          "sentence_count": 240,
+          "paragraph_count": 83,
+          "href": "index_split_026.html",
+          "spine_index": 27,
+          "position_bucket": "early",
+          "score": 6.75
+        },
+        {
+          "chapter_id": "11",
+          "chapter_number": 0,
+          "chapter_title": "[8]",
+          "sentence_count": 240,
+          "paragraph_count": 83,
+          "href": "index_split_026.html",
+          "spine_index": 27,
+          "position_bucket": "early",
+          "score": 6.75
+        }
+      ],
+      "acquisition": {
+        "download_url": null,
+        "input_filename": "Principles (Ray Dalio) (z-library.sk, 1lib.sk, z-lib.sk).epub",
+        "acquisition_batch_id": "book_directory_20260326"
+      },
+      "storage_policy": "private-local",
+      "acquisition_batch_id": "book_directory_20260326",
+      "origin_filename": "Principles (Ray Dalio) (z-library.sk, 1lib.sk, z-lib.sk).epub"
+    },
+    {
+      "source_id": "shoe_dog_private_en",
+      "title": "Shoe Dog",
+      "author": "Phil Knight",
+      "language": "en",
+      "origin": "user-book-directory",
+      "source_url": null,
+      "storage_mode": "local-only",
+      "relative_local_path": "state/library_sources/en/private/shoe_dog.epub",
+      "type_tags": [
+        "business",
+        "biography",
+        "modern_nonfiction"
+      ],
+      "role_tags": [
+        "narrative_reflective",
+        "biography",
+        "business",
+        "modern_nonfiction"
+      ],
+      "selection_priority": 10,
+      "notes": [
+        "New /BOOK batch title with entrepreneurial narrative nonfiction and long-horizon decision pressure."
+      ],
+      "sha256": "c1bebe48aaf79382bb061f0bcc5a061dec6047e60275945d3b33c6483ef696e4",
+      "file_size": 703878,
+      "output_dir": "output/shoe-dog",
+      "detected_book_language": "en",
+      "output_language": "en",
+      "chapter_count": 26,
+      "sentence_count_total": 11399,
+      "median_chapter_sentences": 464.0,
+      "median_chapter_paragraphs": 97.5,
+      "screening_status": "screened_private_library_v2",
+      "corpus_lane": "chapter_corpus_eligible",
+      "candidate_chapters": [
+        {
+          "chapter_id": "7",
+          "chapter_number": 0,
+          "chapter_title": "1963",
+          "sentence_count": 150,
+          "paragraph_count": 34,
+          "href": "xhtml/ch02.xhtml",
+          "spine_index": 8,
+          "position_bucket": "early",
+          "score": 6.75
+        },
+        {
+          "chapter_id": "14",
+          "chapter_number": 0,
+          "chapter_title": "1970",
+          "sentence_count": 365,
+          "paragraph_count": 74,
+          "href": "xhtml/ch09.xhtml",
+          "spine_index": 15,
+          "position_bucket": "middle",
+          "score": 5.75
+        },
+        {
+          "chapter_id": "21",
+          "chapter_number": 0,
+          "chapter_title": "1975",
+          "sentence_count": 101,
+          "paragraph_count": 29,
+          "href": "xhtml/ch15.xhtml",
+          "spine_index": 22,
+          "position_bucket": "late",
+          "score": 6.75
+        },
+        {
+          "chapter_id": "4",
+          "chapter_number": 0,
+          "chapter_title": "Dawn",
+          "sentence_count": 154,
+          "paragraph_count": 33,
+          "href": "xhtml/dawn.xhtml",
+          "spine_index": 5,
+          "position_bucket": "early",
+          "score": 5.75
+        },
+        {
+          "chapter_id": "9",
+          "chapter_number": 0,
+          "chapter_title": "1965",
+          "sentence_count": 421,
+          "paragraph_count": 90,
+          "href": "xhtml/ch04.xhtml",
+          "spine_index": 10,
+          "position_bucket": "early",
+          "score": 5.75
+        },
+        {
+          "chapter_id": "10",
+          "chapter_number": 0,
+          "chapter_title": "1966",
+          "sentence_count": 377,
+          "paragraph_count": 87,
+          "href": "xhtml/ch05.xhtml",
+          "spine_index": 11,
+          "position_bucket": "early",
+          "score": 5.75
+        }
+      ],
+      "acquisition": {
+        "download_url": null,
+        "input_filename": "Shoe Dog (Phil Knight) (z-library.sk, 1lib.sk, z-lib.sk).epub",
+        "acquisition_batch_id": "book_directory_20260326"
+      },
+      "storage_policy": "private-local",
+      "acquisition_batch_id": "book_directory_20260326",
+      "origin_filename": "Shoe Dog (Phil Knight) (z-library.sk, 1lib.sk, z-lib.sk).epub"
+    },
+    {
+      "source_id": "snowball_private_en",
+      "title": "Snowball",
+      "author": "Gregory Bastianelli",
+      "language": "en",
+      "origin": "user-book-directory",
+      "source_url": null,
+      "storage_mode": "local-only",
+      "relative_local_path": "state/library_sources/en/private/snowball.epub",
+      "type_tags": [
+        "business",
+        "biography",
+        "modern_nonfiction"
+      ],
+      "role_tags": [
+        "narrative_reflective",
+        "reference_heavy",
+        "biography",
+        "business",
+        "modern_nonfiction"
+      ],
+      "selection_priority": 12,
+      "notes": [
+        "New /BOOK batch title included as-supplied; category tags treat it as business/biographical nonfiction pending later finer review."
+      ],
+      "sha256": "8c8c8d2b9c2f6423c230571fef4068a166efdb0f8d03c93dbfaee6214a2677c8",
+      "file_size": 4220710,
+      "output_dir": "output/snowball",
+      "detected_book_language": "en",
+      "output_language": "en",
+      "chapter_count": 67,
+      "sentence_count_total": 8228,
+      "median_chapter_sentences": 113.0,
+      "median_chapter_paragraphs": 37.0,
+      "screening_status": "screened_private_library_v2",
+      "corpus_lane": "chapter_corpus_eligible",
+      "candidate_chapters": [
+        {
+          "chapter_id": "11",
+          "chapter_number": 0,
+          "chapter_title": "Chapter Ten",
+          "sentence_count": 154,
+          "paragraph_count": 49,
+          "href": "US_PB_256pp_-_Snowball_-_Gregory_Bastianelli_for_digital_continuous-12.xhtml",
+          "spine_index": 13,
+          "position_bucket": "early",
+          "score": 6.75
+        },
+        {
+          "chapter_id": "24",
+          "chapter_number": 0,
+          "chapter_title": "Chapter Twenty-Three",
+          "sentence_count": 63,
+          "paragraph_count": 27,
+          "href": "US_PB_256pp_-_Snowball_-_Gregory_Bastianelli_for_digital_continuous-25.xhtml",
+          "spine_index": 26,
+          "position_bucket": "middle",
+          "score": 6.75
+        },
+        {
+          "chapter_id": "46",
+          "chapter_number": 0,
+          "chapter_title": "Chapter Eleven",
+          "sentence_count": 113,
+          "paragraph_count": 47,
+          "href": "US_PB_256pp_-_Snowball_-_Gregory_Bastianelli_for_digital_continuous-45.xhtml",
+          "spine_index": 46,
+          "position_bucket": "late",
+          "score": 6.75
+        },
+        {
+          "chapter_id": "13",
+          "chapter_number": 0,
+          "chapter_title": "Chapter Twelve",
+          "sentence_count": 180,
+          "paragraph_count": 58,
+          "href": "US_PB_256pp_-_Snowball_-_Gregory_Bastianelli_for_digital_continuous-14.xhtml",
+          "spine_index": 15,
+          "position_bucket": "early",
+          "score": 6.75
+        },
+        {
+          "chapter_id": "15",
+          "chapter_number": 0,
+          "chapter_title": "Chapter Fourteen",
+          "sentence_count": 105,
+          "paragraph_count": 37,
+          "href": "US_PB_256pp_-_Snowball_-_Gregory_Bastianelli_for_digital_continuous-16.xhtml",
+          "spine_index": 17,
+          "position_bucket": "early",
+          "score": 6.75
+        },
+        {
+          "chapter_id": "16",
+          "chapter_number": 0,
+          "chapter_title": "Chapter Fifteen",
+          "sentence_count": 62,
+          "paragraph_count": 16,
+          "href": "US_PB_256pp_-_Snowball_-_Gregory_Bastianelli_for_digital_continuous-17.xhtml",
+          "spine_index": 18,
+          "position_bucket": "early",
+          "score": 6.75
+        }
+      ],
+      "acquisition": {
+        "download_url": null,
+        "input_filename": "Snowball (Gregory Bastianelli) (z-library.sk, 1lib.sk, z-lib.sk).epub",
+        "acquisition_batch_id": "book_directory_20260326"
+      },
+      "storage_policy": "private-local",
+      "acquisition_batch_id": "book_directory_20260326",
+      "origin_filename": "Snowball (Gregory Bastianelli) (z-library.sk, 1lib.sk, z-lib.sk).epub"
+    },
+    {
+      "source_id": "steve_jobs_private_en",
+      "title": "Steve Jobs",
+      "author": "Walter Isaacson",
+      "language": "en",
+      "origin": "user-book-directory",
+      "source_url": null,
+      "storage_mode": "local-only",
+      "relative_local_path": "state/library_sources/en/private/steve_jobs.epub",
+      "type_tags": [
+        "biography",
+        "business",
+        "science_technology",
+        "modern_nonfiction"
+      ],
+      "role_tags": [
+        "narrative_reflective",
+        "reference_heavy",
+        "biography",
+        "business",
+        "modern_nonfiction",
+        "science_technology"
+      ],
+      "selection_priority": 4,
+      "notes": [
+        "New /BOOK batch title with long-range character pattern and product/company causality."
+      ],
+      "sha256": "1c6e39319886d54b34cbe72aefd5ccde66fe60efb5083016f3f730bde68f4cee",
+      "file_size": 13854148,
+      "output_dir": "output/steve-jobs",
+      "detected_book_language": "en",
+      "output_language": "en",
+      "chapter_count": 55,
+      "sentence_count_total": 15709,
+      "median_chapter_sentences": 240.0,
+      "median_chapter_paragraphs": 47.0,
+      "screening_status": "screened_private_library_v2",
+      "corpus_lane": "chapter_corpus_eligible",
+      "candidate_chapters": [
+        {
+          "chapter_id": "16",
+          "chapter_number": 0,
+          "chapter_title": "Chapter Seven: Chrisann and Lisa: He Who Is Abandoned . . .",
+          "sentence_count": 143,
+          "paragraph_count": 24,
+          "href": "xhtml/ch07.html",
+          "spine_index": 18,
+          "position_bucket": "early",
+          "score": 6.75
+        },
+        {
+          "chapter_id": "24",
+          "chapter_number": 0,
+          "chapter_title": "Chapter Fifteen: The Launch: A Dent in the Universe",
+          "sentence_count": 264,
+          "paragraph_count": 46,
+          "href": "xhtml/ch15.html",
+          "spine_index": 26,
+          "position_bucket": "middle",
+          "score": 6.75
+        },
+        {
+          "chapter_id": "43",
+          "chapter_number": 0,
+          "chapter_title": "Chapter Thirty-Four: Twenty-first-century Macs: Setting Apple Apart",
+          "sentence_count": 160,
+          "paragraph_count": 34,
+          "href": "xhtml/ch34.html",
+          "spine_index": 45,
+          "position_bucket": "late",
+          "score": 6.75
+        },
+        {
+          "chapter_id": "17",
+          "chapter_number": 0,
+          "chapter_title": "Chapter Eight: Xerox and Lisa: Graphical User Interfaces",
+          "sentence_count": 218,
+          "paragraph_count": 40,
+          "href": "xhtml/ch08.html",
+          "spine_index": 19,
+          "position_bucket": "early",
+          "score": 6.75
+        },
+        {
+          "chapter_id": "18",
+          "chapter_number": 0,
+          "chapter_title": "Chapter Nine: Going Public: A Man of Wealth and Fame",
+          "sentence_count": 128,
+          "paragraph_count": 24,
+          "href": "xhtml/ch09.html",
+          "spine_index": 20,
+          "position_bucket": "early",
+          "score": 6.75
+        },
+        {
+          "chapter_id": "19",
+          "chapter_number": 0,
+          "chapter_title": "Chapter Ten: The Mac Is Born: You Say You Want a Revolution",
+          "sentence_count": 200,
+          "paragraph_count": 33,
+          "href": "xhtml/ch10.html",
+          "spine_index": 21,
+          "position_bucket": "early",
+          "score": 6.75
+        }
+      ],
+      "acquisition": {
+        "download_url": null,
+        "input_filename": "Steve Jobs (Walter Isaacson) (z-library.sk, 1lib.sk, z-lib.sk).epub",
+        "acquisition_batch_id": "book_directory_20260326"
+      },
+      "storage_policy": "private-local",
+      "acquisition_batch_id": "book_directory_20260326",
+      "origin_filename": "Steve Jobs (Walter Isaacson) (z-library.sk, 1lib.sk, z-lib.sk).epub"
+    },
+    {
+      "source_id": "supremacy_private_en",
+      "title": "Supremacy",
+      "author": "Parmy Olson",
+      "language": "en",
+      "origin": "user-book-directory",
+      "source_url": null,
+      "storage_mode": "local-only",
+      "relative_local_path": "state/library_sources/en/private/supremacy.epub",
+      "type_tags": [
+        "business",
+        "science_technology",
+        "modern_nonfiction"
+      ],
+      "role_tags": [
+        "argumentative",
+        "reference_heavy",
+        "business",
+        "modern_nonfiction",
+        "science_technology"
+      ],
+      "selection_priority": 8,
+      "notes": [
+        "New /BOOK batch title with modern AI-company rivalry, institutional incentives, and technology/business overlap."
+      ],
+      "sha256": "9b0106e167e31b9bc5f71e48aae2911c11021ec1573a68d8b4be7595f15af2cd",
+      "file_size": 2904691,
+      "output_dir": "output/supremacy",
+      "detected_book_language": "en",
+      "output_language": "en",
+      "chapter_count": 26,
+      "sentence_count_total": 5716,
+      "median_chapter_sentences": 234.5,
+      "median_chapter_paragraphs": 50.0,
+      "screening_status": "screened_private_library_v2",
+      "corpus_lane": "chapter_corpus_eligible",
+      "candidate_chapters": [
+        {
+          "chapter_id": "7",
+          "chapter_number": 2,
+          "chapter_title": "Chapter 2. Winning, Winning, Winning",
+          "sentence_count": 237,
+          "paragraph_count": 49,
+          "href": "xhtml/chapter2.xhtml",
+          "spine_index": 8,
+          "position_bucket": "early",
+          "score": 6.75
+        },
+        {
+          "chapter_id": "13",
+          "chapter_number": 7,
+          "chapter_title": "Chapter 7. Playing Games",
+          "sentence_count": 232,
+          "paragraph_count": 50,
+          "href": "xhtml/chapter7.xhtml",
+          "spine_index": 14,
+          "position_bucket": "middle",
+          "score": 6.75
+        },
+        {
+          "chapter_id": "23",
+          "chapter_number": 15,
+          "chapter_title": "Chapter 15. Checkmate",
+          "sentence_count": 256,
+          "paragraph_count": 56,
+          "href": "xhtml/chapter15.xhtml",
+          "spine_index": 24,
+          "position_bucket": "late",
+          "score": 6.75
+        },
+        {
+          "chapter_id": "8",
+          "chapter_number": 3,
+          "chapter_title": "Chapter 3. Save the Humans",
+          "sentence_count": 190,
+          "paragraph_count": 48,
+          "href": "xhtml/chapter3.xhtml",
+          "spine_index": 9,
+          "position_bucket": "early",
+          "score": 6.75
+        },
+        {
+          "chapter_id": "10",
+          "chapter_number": 5,
+          "chapter_title": "Chapter 5. For Utopia, for Money",
+          "sentence_count": 242,
+          "paragraph_count": 58,
+          "href": "xhtml/chapter5.xhtml",
+          "spine_index": 11,
+          "position_bucket": "early",
+          "score": 6.75
+        },
+        {
+          "chapter_id": "11",
+          "chapter_number": 6,
+          "chapter_title": "Chapter 6. The Mission",
+          "sentence_count": 280,
+          "paragraph_count": 64,
+          "href": "xhtml/chapter6.xhtml",
+          "spine_index": 12,
+          "position_bucket": "early",
+          "score": 6.75
+        }
+      ],
+      "acquisition": {
+        "download_url": null,
+        "input_filename": "Supremacy AI, ChatGPT, and the Race That Will Change the World (Parmy Olson) (z-library.sk, 1lib.sk, z-lib.sk).epub",
+        "acquisition_batch_id": "book_directory_20260326"
+      },
+      "storage_policy": "private-local",
+      "acquisition_batch_id": "book_directory_20260326",
+      "origin_filename": "Supremacy AI, ChatGPT, and the Race That Will Change the World (Parmy Olson) (z-library.sk, 1lib.sk, z-lib.sk).epub"
+    },
+    {
+      "source_id": "naval_almanack_private_en",
+      "title": "The Almanack of Naval Ravikant",
+      "author": "Eric Jorgenson",
+      "language": "en",
+      "origin": "user-book-directory",
+      "source_url": null,
+      "storage_mode": "local-only",
+      "relative_local_path": "state/library_sources/en/private/the_almanack_of_naval_ravikant.epub",
+      "type_tags": [
+        "business",
+        "management_economics",
+        "modern_nonfiction"
+      ],
+      "role_tags": [
+        "expository",
+        "argumentative",
+        "business",
+        "management_economics",
+        "modern_nonfiction"
+      ],
+      "selection_priority": 9,
+      "notes": [
+        "New /BOOK batch title with aphoristic nonfiction and selective-anchor pressure."
+      ],
+      "sha256": "7c7a7def126809a852ff5ac62a3e7a8f316ce7c83df985839bd3ac134e69afd4",
+      "file_size": 1042074,
+      "output_dir": "output/the-almanack-of-naval-ravikant-a-guide-to-wealth-and-happiness",
+      "detected_book_language": "en",
+      "output_language": "en",
+      "chapter_count": 57,
+      "sentence_count_total": 30881,
+      "median_chapter_sentences": 621.0,
+      "median_chapter_paragraphs": 193.0,
+      "screening_status": "screened_private_library_v2",
+      "corpus_lane": "chapter_corpus_eligible",
+      "candidate_chapters": [
+        {
+          "chapter_id": "1",
+          "chapter_number": 0,
+          "chapter_title": "Important Notes On This Book (Disclaimer)",
+          "sentence_count": 45,
+          "paragraph_count": 27,
+          "href": "Eric-Jorgenson_The-Almanack-of-Naval-Ravikant_PRODUCTION_v102-3.xhtml",
+          "spine_index": 4,
+          "position_bucket": "early",
+          "score": 4.75
+        },
+        {
+          "chapter_id": "20",
+          "chapter_number": 0,
+          "chapter_title": "Judgment",
+          "sentence_count": 543,
+          "paragraph_count": 192,
+          "href": "Eric-Jorgenson_The-Almanack-of-Naval-Ravikant_PRODUCTION_v102-10.xhtml",
+          "spine_index": 11,
+          "position_bucket": "middle",
+          "score": 4.25
+        },
+        {
+          "chapter_id": "44",
+          "chapter_number": 0,
+          "chapter_title": "Philosophy",
+          "sentence_count": 172,
+          "paragraph_count": 54,
+          "href": "Eric-Jorgenson_The-Almanack-of-Naval-Ravikant_PRODUCTION_v102-14.xhtml",
+          "spine_index": 15,
+          "position_bucket": "late",
+          "score": 6.75
+        },
+        {
+          "chapter_id": "45",
+          "chapter_number": 0,
+          "chapter_title": "The Meanings of Life",
+          "sentence_count": 172,
+          "paragraph_count": 54,
+          "href": "Eric-Jorgenson_The-Almanack-of-Naval-Ravikant_PRODUCTION_v102-14.xhtml",
+          "spine_index": 15,
+          "position_bucket": "late",
+          "score": 6.75
+        },
+        {
+          "chapter_id": "46",
+          "chapter_number": 0,
+          "chapter_title": "Live by Your Values",
+          "sentence_count": 172,
+          "paragraph_count": 54,
+          "href": "Eric-Jorgenson_The-Almanack-of-Naval-Ravikant_PRODUCTION_v102-14.xhtml",
+          "spine_index": 15,
+          "position_bucket": "late",
+          "score": 6.75
+        },
+        {
+          "chapter_id": "47",
+          "chapter_number": 0,
+          "chapter_title": "Rational Buddhism",
+          "sentence_count": 172,
+          "paragraph_count": 54,
+          "href": "Eric-Jorgenson_The-Almanack-of-Naval-Ravikant_PRODUCTION_v102-14.xhtml",
+          "spine_index": 15,
+          "position_bucket": "late",
+          "score": 6.75
+        }
+      ],
+      "acquisition": {
+        "download_url": null,
+        "input_filename": "The Almanack of Naval Ravikant A Guide to Wealth and Happiness (Eric Jorgenson) (z-library.sk, 1lib.sk, z-lib.sk).epub",
+        "acquisition_batch_id": "book_directory_20260326"
+      },
+      "storage_policy": "private-local",
+      "acquisition_batch_id": "book_directory_20260326",
+      "origin_filename": "The Almanack of Naval Ravikant A Guide to Wealth and Happiness (Eric Jorgenson) (z-library.sk, 1lib.sk, z-lib.sk).epub"
+    },
+    {
+      "source_id": "book_of_elon_private_en",
+      "title": "The Book of Elon",
+      "author": "Eric Jorgenson",
+      "language": "en",
+      "origin": "user-book-directory",
+      "source_url": null,
+      "storage_mode": "local-only",
+      "relative_local_path": "state/library_sources/en/private/the_book_of_elon.epub",
+      "type_tags": [
+        "biography",
+        "business",
+        "modern_nonfiction"
+      ],
+      "role_tags": [
+        "expository",
+        "narrative_reflective",
+        "biography",
+        "business",
+        "modern_nonfiction"
+      ],
+      "selection_priority": 17,
+      "notes": [
+        "New /BOOK batch title with entrepreneurial/personality framing that complements the larger Isaacson biography."
+      ],
+      "sha256": "12becb31999d448545e2ca4aef3e29274e01bd3be3cf4d06121777fbe6e1c36e",
+      "file_size": 2401878,
+      "output_dir": "output/the-book-of-elon-a-guide-to-purpose-and-success",
+      "detected_book_language": "en",
+      "output_language": "en",
+      "chapter_count": 114,
+      "sentence_count_total": 4294,
+      "median_chapter_sentences": 35.5,
+      "median_chapter_paragraphs": 13.0,
+      "screening_status": "screened_private_library_v2",
+      "corpus_lane": "chapter_corpus_eligible",
+      "candidate_chapters": [
+        {
+          "chapter_id": "18",
+          "chapter_number": 0,
+          "chapter_title": "Aspire to Be Less Wrong",
+          "sentence_count": 64,
+          "paragraph_count": 20,
+          "href": "cMX.xhtml",
+          "spine_index": 24,
+          "position_bucket": "early",
+          "score": 6.75
+        },
+        {
+          "chapter_id": "42",
+          "chapter_number": 0,
+          "chapter_title": "The Algorithm",
+          "sentence_count": 106,
+          "paragraph_count": 38,
+          "href": "c19T.xhtml",
+          "spine_index": 48,
+          "position_bucket": "middle",
+          "score": 6.75
+        },
+        {
+          "chapter_id": "80",
+          "chapter_number": 0,
+          "chapter_title": "Building the Just Barely Possible",
+          "sentence_count": 96,
+          "paragraph_count": 31,
+          "href": "c2DA.xhtml",
+          "spine_index": 86,
+          "position_bucket": "late",
+          "score": 6.75
+        },
+        {
+          "chapter_id": "38",
+          "chapter_number": 0,
+          "chapter_title": "Remove Organizational Boundaries",
+          "sentence_count": 61,
+          "paragraph_count": 29,
+          "href": "c160.xhtml",
+          "spine_index": 44,
+          "position_bucket": "early",
+          "score": 6.75
+        },
+        {
+          "chapter_id": "55",
+          "chapter_number": 0,
+          "chapter_title": "Becoming a Founder",
+          "sentence_count": 68,
+          "paragraph_count": 22,
+          "href": "c1M2.xhtml",
+          "spine_index": 61,
+          "position_bucket": "middle",
+          "score": 6.75
+        },
+        {
+          "chapter_id": "56",
+          "chapter_number": 0,
+          "chapter_title": "Starting Zip2",
+          "sentence_count": 86,
+          "paragraph_count": 24,
+          "href": "c1N0.xhtml",
+          "spine_index": 62,
+          "position_bucket": "middle",
+          "score": 6.75
+        }
+      ],
+      "acquisition": {
+        "download_url": null,
+        "input_filename": "The Book of Elon (Eric Jorgenson) (z-library.sk, 1lib.sk, z-lib.sk).epub",
+        "acquisition_batch_id": "book_directory_20260326"
+      },
+      "storage_policy": "private-local",
+      "acquisition_batch_id": "book_directory_20260326",
+      "origin_filename": "The Book of Elon (Eric Jorgenson) (z-library.sk, 1lib.sk, z-lib.sk).epub"
+    },
+    {
+      "source_id": "kangxi_hongpiao_private_zh",
+      "title": "康熙的红票：全球化中的清朝",
+      "author": "孙立天",
+      "language": "zh",
+      "origin": "user-book-directory",
+      "source_url": null,
+      "storage_mode": "local-only",
+      "relative_local_path": "state/library_sources/zh/private/kangxidehongpiao.epub",
+      "type_tags": [
+        "history",
+        "modern_nonfiction"
+      ],
+      "role_tags": [
+        "argumentative",
+        "reference_heavy",
+        "history",
+        "modern_nonfiction"
+      ],
+      "selection_priority": 14,
+      "notes": [
+        "New /BOOK batch title with Chinese historical/institutional causality and diplomacy pressure."
+      ],
+      "sha256": "831cb519e846daf2713a6e5722a0b113a9797e0dd92f80cedde8296e476aaad8",
+      "file_size": 12558171,
+      "output_dir": "output/康熙的红票全球化中的清朝",
+      "detected_book_language": "zh",
+      "output_language": "zh",
+      "chapter_count": 76,
+      "sentence_count_total": 52508,
+      "median_chapter_sentences": 815.0,
+      "median_chapter_paragraphs": 177.0,
+      "screening_status": "screened_private_library_v2",
+      "corpus_lane": "chapter_corpus_eligible",
+      "candidate_chapters": [
+        {
+          "chapter_id": "12",
+          "chapter_number": 0,
+          "chapter_title": "消除奴籍",
+          "sentence_count": 629,
+          "paragraph_count": 177,
+          "href": "Text/ch005.xhtml",
+          "spine_index": 6,
+          "position_bucket": "early",
+          "score": 4.25
+        },
+        {
+          "chapter_id": "27",
+          "chapter_number": 0,
+          "chapter_title": "功不可没的南怀仁",
+          "sentence_count": 924,
+          "paragraph_count": 197,
+          "href": "Text/ch007.xhtml",
+          "spine_index": 8,
+          "position_bucket": "middle",
+          "score": 2.75
+        },
+        {
+          "chapter_id": "73",
+          "chapter_number": 0,
+          "chapter_title": "附录三 颜珰关于中国礼仪布告",
+          "sentence_count": 68,
+          "paragraph_count": 27,
+          "href": "Text/ch018.xhtml",
+          "spine_index": 18,
+          "position_bucket": "late",
+          "score": 5.75
+        },
+        {
+          "chapter_id": "76",
+          "chapter_number": 0,
+          "chapter_title": "致谢",
+          "sentence_count": 119,
+          "paragraph_count": 18,
+          "href": "Text/ch021.xhtml",
+          "spine_index": 21,
+          "position_bucket": "late",
+          "score": 5.75
+        },
+        {
+          "chapter_id": "70",
+          "chapter_number": 0,
+          "chapter_title": "跋",
+          "sentence_count": 344,
+          "paragraph_count": 52,
+          "href": "Text/ch014.xhtml",
+          "spine_index": 15,
+          "position_bucket": "late",
+          "score": 4.75
+        },
+        {
+          "chapter_id": "71",
+          "chapter_number": 0,
+          "chapter_title": "附录一 雍亲王致年羹尧书",
+          "sentence_count": 43,
+          "paragraph_count": 11,
+          "href": "Text/ch016.xhtml",
+          "spine_index": 16,
+          "position_bucket": "late",
+          "score": 4.75
+        }
+      ],
+      "acquisition": {
+        "download_url": null,
+        "input_filename": "康熙的红票：全球化中的清朝 (孙立天) (z-library.sk, 1lib.sk, z-lib.sk).epub",
+        "acquisition_batch_id": "book_directory_20260326"
+      },
+      "storage_policy": "private-local",
+      "acquisition_batch_id": "book_directory_20260326",
+      "origin_filename": "康熙的红票：全球化中的清朝 (孙立天) (z-library.sk, 1lib.sk, z-lib.sk).epub"
+    },
+    {
+      "source_id": "zhangzhongmou_zizhuan_private_zh",
+      "title": "张忠谋自传(1931-1964)",
+      "author": "张忠谋",
+      "language": "zh",
+      "origin": "user-book-directory",
+      "source_url": null,
+      "storage_mode": "local-only",
+      "relative_local_path": "state/library_sources/zh/private/zhangzhongmou_zizhuan_1931_1964.epub",
+      "type_tags": [
+        "biography",
+        "business",
+        "modern_nonfiction"
+      ],
+      "role_tags": [
+        "narrative_reflective",
+        "biography",
+        "business",
+        "modern_nonfiction"
+      ],
+      "selection_priority": 16,
+      "notes": [
+        "New /BOOK batch title with long-range career formation and business/technology biography pressure."
+      ],
+      "sha256": "7cb7892bc46a27311b281e189bbb6cd86466399d3681ad957f8384380b1c1f67",
+      "file_size": 1606657,
+      "output_dir": "output/张忠谋自传1931-1964",
+      "detected_book_language": "zh",
+      "output_language": "zh",
+      "chapter_count": 15,
+      "sentence_count_total": 18588,
+      "median_chapter_sentences": 1886.0,
+      "median_chapter_paragraphs": 458.0,
+      "screening_status": "screened_private_library_v2",
+      "corpus_lane": "chapter_corpus_eligible",
+      "candidate_chapters": [
+        {
+          "chapter_id": "4",
+          "chapter_number": 0,
+          "chapter_title": "第一章 “大时代”中的幼少年",
+          "sentence_count": 1886,
+          "paragraph_count": 458,
+          "href": "text00000.html",
+          "spine_index": 0,
+          "position_bucket": "early",
+          "score": 2.75
+        },
+        {
+          "chapter_id": "9",
+          "chapter_number": 0,
+          "chapter_title": "附录",
+          "sentence_count": 500,
+          "paragraph_count": 224,
+          "href": "text00001.html",
+          "spine_index": 1,
+          "position_bucket": "middle",
+          "score": 5.75
+        },
+        {
+          "chapter_id": "11",
+          "chapter_number": 0,
+          "chapter_title": "胜利的前夕",
+          "sentence_count": 500,
+          "paragraph_count": 224,
+          "href": "text00001.html",
+          "spine_index": 1,
+          "position_bucket": "late",
+          "score": 5.75
+        },
+        {
+          "chapter_id": "10",
+          "chapter_number": 0,
+          "chapter_title": "伊莉莎伯",
+          "sentence_count": 500,
+          "paragraph_count": 224,
+          "href": "text00001.html",
+          "spine_index": 1,
+          "position_bucket": "middle",
+          "score": 5.75
+        },
+        {
+          "chapter_id": "12",
+          "chapter_number": 0,
+          "chapter_title": "杀臭虫",
+          "sentence_count": 500,
+          "paragraph_count": 224,
+          "href": "text00001.html",
+          "spine_index": 1,
+          "position_bucket": "late",
+          "score": 5.75
+        },
+        {
+          "chapter_id": "13",
+          "chapter_number": 0,
+          "chapter_title": "台湾半导体业的机会",
+          "sentence_count": 500,
+          "paragraph_count": 224,
+          "href": "text00001.html",
+          "spine_index": 1,
+          "position_bucket": "late",
+          "score": 4.75
+        }
+      ],
+      "acquisition": {
+        "download_url": null,
+        "input_filename": "张忠谋自传 (1931-1964) = Autobiography of Morris C. M. Chang (张忠谋) (z-library.sk, 1lib.sk, z-lib.sk).epub",
+        "acquisition_batch_id": "book_directory_20260326"
+      },
+      "storage_policy": "private-local",
+      "acquisition_batch_id": "book_directory_20260326",
+      "origin_filename": "张忠谋自传 (1931-1964) = Autobiography of Morris C. M. Chang (张忠谋) (z-library.sk, 1lib.sk, z-lib.sk).epub"
+    },
+    {
+      "source_id": "canglang_zhishui_private_zh",
+      "title": "沧浪之水",
+      "author": "阎真",
+      "language": "zh",
+      "origin": "user-book-directory",
+      "source_url": null,
+      "storage_mode": "local-only",
+      "relative_local_path": "state/library_sources/zh/private/canglangzhishui.epub",
+      "type_tags": [
+        "literature",
+        "novel"
+      ],
+      "role_tags": [
+        "narrative_reflective",
+        "literature",
+        "novel"
+      ],
+      "selection_priority": 23,
+      "notes": [
+        "New /BOOK batch literary control title for contemporary Chinese narrative pressure."
+      ],
+      "sha256": "fb78102bf91c863e8da452a7b65a54f287e5719b24e1cfabc664fefa7eb47546",
+      "file_size": 652564,
+      "output_dir": "output/沧浪之水",
+      "detected_book_language": "zh",
+      "output_language": "zh",
+      "chapter_count": 99,
+      "sentence_count_total": 14789,
+      "median_chapter_sentences": 146.0,
+      "median_chapter_paragraphs": 8.0,
+      "screening_status": "screened_private_library_v2",
+      "corpus_lane": "chapter_corpus_eligible",
+      "candidate_chapters": [
+        {
+          "chapter_id": "16",
+          "chapter_number": 0,
+          "chapter_title": "十四",
+          "sentence_count": 110,
+          "paragraph_count": 9,
+          "href": "index_split_016.html",
+          "spine_index": 17,
+          "position_bucket": "early",
+          "score": 6.75
+        },
+        {
+          "chapter_id": "34",
+          "chapter_number": 0,
+          "chapter_title": "三十一",
+          "sentence_count": 168,
+          "paragraph_count": 8,
+          "href": "index_split_033.html",
+          "spine_index": 34,
+          "position_bucket": "middle",
+          "score": 6.75
+        },
+        {
+          "chapter_id": "69",
+          "chapter_number": 0,
+          "chapter_title": "六十五",
+          "sentence_count": 180,
+          "paragraph_count": 12,
+          "href": "index_split_067.html",
+          "spine_index": 68,
+          "position_bucket": "late",
+          "score": 6.75
+        },
+        {
+          "chapter_id": "17",
+          "chapter_number": 0,
+          "chapter_title": "十五",
+          "sentence_count": 156,
+          "paragraph_count": 8,
+          "href": "index_split_017.html",
+          "spine_index": 18,
+          "position_bucket": "early",
+          "score": 6.75
+        },
+        {
+          "chapter_id": "18",
+          "chapter_number": 0,
+          "chapter_title": "十六",
+          "sentence_count": 143,
+          "paragraph_count": 10,
+          "href": "index_split_018.html",
+          "spine_index": 19,
+          "position_bucket": "early",
+          "score": 6.75
+        },
+        {
+          "chapter_id": "21",
+          "chapter_number": 0,
+          "chapter_title": "第二篇",
+          "sentence_count": 119,
+          "paragraph_count": 9,
+          "href": "index_split_021.html",
+          "spine_index": 22,
+          "position_bucket": "early",
+          "score": 6.75
+        }
+      ],
+      "acquisition": {
+        "download_url": null,
+        "input_filename": "沧浪之水 (阎真) (z-library.sk, 1lib.sk, z-lib.sk).epub",
+        "acquisition_batch_id": "book_directory_20260326"
+      },
+      "storage_policy": "private-local",
+      "acquisition_batch_id": "book_directory_20260326",
+      "origin_filename": "沧浪之水 (阎真) (z-library.sk, 1lib.sk, z-lib.sk).epub"
+    },
+    {
+      "source_id": "meiguoren_de_xingge_private_zh",
+      "title": "美国人的性格",
+      "author": "费孝通",
+      "language": "zh",
+      "origin": "user-book-directory",
+      "source_url": null,
+      "storage_mode": "local-only",
+      "relative_local_path": "state/library_sources/zh/private/meiguorendexingge.epub",
+      "type_tags": [
+        "social_reportage",
+        "history",
+        "modern_nonfiction"
+      ],
+      "role_tags": [
+        "expository",
+        "argumentative",
+        "history",
+        "modern_nonfiction",
+        "social_reportage"
+      ],
+      "selection_priority": 19,
+      "notes": [
+        "New /BOOK batch title with sociology/cultural interpretation pressure and cross-society comparison."
+      ],
+      "sha256": "78c8c59423c4dc53adee9e6190932d139652a68c17602300d0a97325e73c9fd4",
+      "file_size": 561511,
+      "output_dir": "output/美国人的性格费孝通先生经典作品-中国社会学人类学奠基人之一费孝通学术经典赢得纽约时报时代周刊赞誉探索美国人的性格特征及形成原因透视超级大国崛起背后的文化奥秘",
+      "detected_book_language": "zh",
+      "output_language": "zh",
+      "chapter_count": 53,
+      "sentence_count_total": 7067,
+      "median_chapter_sentences": 146.0,
+      "median_chapter_paragraphs": 22.0,
+      "screening_status": "screened_private_library_v2",
+      "corpus_lane": "chapter_corpus_eligible",
+      "candidate_chapters": [
+        {
+          "chapter_id": "8",
+          "chapter_number": 0,
+          "chapter_title": "4 不令人服输的成功",
+          "sentence_count": 80,
+          "paragraph_count": 14,
+          "href": "text00005.html",
+          "spine_index": 5,
+          "position_bucket": "early",
+          "score": 6.75
+        },
+        {
+          "chapter_id": "19",
+          "chapter_number": 0,
+          "chapter_title": "5 幸福单车的脱节",
+          "sentence_count": 98,
+          "paragraph_count": 16,
+          "href": "text00010.html",
+          "spine_index": 10,
+          "position_bucket": "middle",
+          "score": 6.75
+        },
+        {
+          "chapter_id": "36",
+          "chapter_number": 0,
+          "chapter_title": "4 车、油、路的三位一体",
+          "sentence_count": 153,
+          "paragraph_count": 22,
+          "href": "text00016.html",
+          "spine_index": 16,
+          "position_bucket": "late",
+          "score": 6.75
+        },
+        {
+          "chapter_id": "9",
+          "chapter_number": 0,
+          "chapter_title": "5 猜不透上帝的意志",
+          "sentence_count": 80,
+          "paragraph_count": 14,
+          "href": "text00005.html",
+          "spine_index": 5,
+          "position_bucket": "early",
+          "score": 6.75
+        },
+        {
+          "chapter_id": "10",
+          "chapter_number": 0,
+          "chapter_title": "6 蛮一点，孩子！",
+          "sentence_count": 97,
+          "paragraph_count": 14,
+          "href": "text00006.html",
+          "spine_index": 6,
+          "position_bucket": "early",
+          "score": 6.75
+        },
+        {
+          "chapter_id": "11",
+          "chapter_number": 0,
+          "chapter_title": "7 道德上有个毒刺",
+          "sentence_count": 97,
+          "paragraph_count": 14,
+          "href": "text00006.html",
+          "spine_index": 6,
+          "position_bucket": "early",
+          "score": 6.75
+        }
+      ],
+      "acquisition": {
+        "download_url": null,
+        "input_filename": "美国人的性格【（费孝通先生经典作品） 中国社会学、人类学奠基人之一费孝通学术经典赢得《纽约时报》《时代周刊》赞誉探索美国人的性格特征... (z-library.sk, 1lib.sk, z-lib.sk).epub",
+        "acquisition_batch_id": "book_directory_20260326"
+      },
+      "storage_policy": "private-local",
+      "acquisition_batch_id": "book_directory_20260326",
+      "origin_filename": "美国人的性格【（费孝通先生经典作品） 中国社会学、人类学奠基人之一费孝通学术经典赢得《纽约时报》《时代周刊》赞誉探索美国人的性格特征... (z-library.sk, 1lib.sk, z-lib.sk).epub"
+    },
+    {
+      "source_id": "zouchu_weiyi_zhenliguan_private_zh",
+      "title": "走出唯一真理观",
+      "author": "陈嘉映",
+      "language": "zh",
+      "origin": "user-book-directory",
+      "source_url": null,
+      "storage_mode": "local-only",
+      "relative_local_path": "state/library_sources/zh/private/zouchu_weiyi_zhenliguan.epub",
+      "type_tags": [
+        "psychology_decision",
+        "philosophical",
+        "modern_nonfiction"
+      ],
+      "role_tags": [
+        "expository",
+        "argumentative",
+        "modern_nonfiction",
+        "philosophical",
+        "psychology_decision"
+      ],
+      "selection_priority": 26,
+      "notes": [
+        "New /BOOK batch title with philosophical distinction pressure and modern Chinese argumentative prose."
+      ],
+      "sha256": "d58e941b074916015008fb9e555724f79904a1284814d57dc0717abe5f1d6d70",
+      "file_size": 405520,
+      "output_dir": "output/走出唯一真理观豆瓣评分90中国最接近哲学家称呼的人十三邀嘉宾陈嘉映继何为良好生活后重磅新作我们之所求首先不是让别人明白而是求自己明白",
+      "detected_book_language": "zh",
+      "output_language": "zh",
+      "chapter_count": 38,
+      "sentence_count_total": 6734,
+      "median_chapter_sentences": 101.0,
+      "median_chapter_paragraphs": 29.0,
+      "screening_status": "screened_private_library_v2",
+      "corpus_lane": "chapter_corpus_eligible",
+      "candidate_chapters": [
+        {
+          "chapter_id": "8",
+          "chapter_number": 0,
+          "chapter_title": "思想增益元气",
+          "sentence_count": 116,
+          "paragraph_count": 32,
+          "href": "text/part0007.html",
+          "spine_index": 8,
+          "position_bucket": "early",
+          "score": 6.75
+        },
+        {
+          "chapter_id": "14",
+          "chapter_number": 0,
+          "chapter_title": "说理与对话",
+          "sentence_count": 234,
+          "paragraph_count": 55,
+          "href": "text/part0013.html",
+          "spine_index": 14,
+          "position_bucket": "middle",
+          "score": 6.75
+        },
+        {
+          "chapter_id": "27",
+          "chapter_number": 0,
+          "chapter_title": "书是地图，是画，是歌",
+          "sentence_count": 99,
+          "paragraph_count": 27,
+          "href": "text/part0026.html",
+          "spine_index": 27,
+          "position_bucket": "late",
+          "score": 6.75
+        },
+        {
+          "chapter_id": "9",
+          "chapter_number": 0,
+          "chapter_title": "未来之思的臆测",
+          "sentence_count": 217,
+          "paragraph_count": 81,
+          "href": "text/part0008.html",
+          "spine_index": 9,
+          "position_bucket": "early",
+          "score": 6.75
+        },
+        {
+          "chapter_id": "10",
+          "chapter_number": 0,
+          "chapter_title": "聊聊爱情与死亡",
+          "sentence_count": 91,
+          "paragraph_count": 43,
+          "href": "text/part0009.html",
+          "spine_index": 10,
+          "position_bucket": "early",
+          "score": 6.75
+        },
+        {
+          "chapter_id": "13",
+          "chapter_number": 0,
+          "chapter_title": "漫谈人工智能",
+          "sentence_count": 144,
+          "paragraph_count": 31,
+          "href": "text/part0012.html",
+          "spine_index": 13,
+          "position_bucket": "early",
+          "score": 6.75
+        }
+      ],
+      "acquisition": {
+        "download_url": null,
+        "input_filename": "走出唯一真理观【豆瓣评分9.0！“中国最接近哲学家称呼的人”、《十三邀》嘉宾陈嘉映继《何为良好生活》后重磅新作！我们之所求，首先不是让... (z-library.sk, 1lib.sk, z-lib.sk).epub",
+        "acquisition_batch_id": "book_directory_20260326"
+      },
+      "storage_policy": "private-local",
+      "acquisition_batch_id": "book_directory_20260326",
+      "origin_filename": "走出唯一真理观【豆瓣评分9.0！“中国最接近哲学家称呼的人”、《十三邀》嘉宾陈嘉映继《何为良好生活》后重磅新作！我们之所求，首先不是让... (z-library.sk, 1lib.sk, z-lib.sk).epub"
+    }
+  ]
+}

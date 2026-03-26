@@ -256,17 +256,86 @@ Why this subset first:
   - both English and Chinese tracks should eventually have enough nonfiction coverage
   - do not let all modern nonfiction land in only one language track
 
-## Next Execution Step
-When the files are available, the next acquisition pass should:
-1. fingerprint and register the books in source manifests
-2. import them into `state/library_sources/`
-3. parse them through the canonical pipeline
-4. screen them for:
-   - chapter usability
-   - excerpt richness
-   - runtime-fixture suitability
-5. build local-only benchmark packages from them under `state/eval_local_datasets/`
-6. update the reviewed excerpt benchmark and later chapter corpus from the strongest resulting material
+## Actual Received Batch (`2026-03-26`)
+The first real `/Users/baiweijiang/Documents/BOOK` batch differs somewhat from the frozen shortlist above.
+
+Received `16` new books:
+- English (`11`):
+  - `Elon Musk`
+  - `Evicted`
+  - `Good Strategy/Bad Strategy`
+  - `Poor Charlie's Almanack`
+  - `Principles`
+  - `Shoe Dog`
+  - `Snowball`
+  - `Steve Jobs`
+  - `Supremacy`
+  - `The Almanack of Naval Ravikant`
+  - `The Book of Elon`
+- Chinese (`5`):
+  - `康熙的红票：全球化中的清朝`
+  - `张忠谋自传(1931-1964)`
+  - `沧浪之水`
+  - `美国人的性格`
+  - `走出唯一真理观`
+
+Important result:
+- the received `/BOOK` batch was merged with the earlier private-download pool instead of being treated as a separate tiny corpus
+- the combined private-library source pool now contains `29` books total:
+  - English:
+    - `22`
+  - Chinese:
+    - `7`
+
+## Landed Combined Private-Library Supplement (`v2`)
+The combined local-only supplement is now built and recorded in the workspace.
+
+Tracked manifests:
+- `reading-companion-backend/eval/manifests/source_books/attentional_v2_private_library_screen_v2.json`
+- `reading-companion-backend/eval/manifests/local_refs/attentional_v2_private_library_v2.json`
+- `reading-companion-backend/eval/manifests/corpora/attentional_v2_private_library_bilingual_v2.json`
+- `reading-companion-backend/eval/manifests/splits/attentional_v2_private_library_bilingual_v2.json`
+
+Local-only dataset packages:
+- `reading-companion-backend/state/eval_local_datasets/chapter_corpora/attentional_v2_private_library_chapters_en_v2/`
+- `reading-companion-backend/state/eval_local_datasets/chapter_corpora/attentional_v2_private_library_chapters_zh_v2/`
+- `reading-companion-backend/state/eval_local_datasets/runtime_fixtures/attentional_v2_private_library_runtime_en_v2/`
+- `reading-companion-backend/state/eval_local_datasets/runtime_fixtures/attentional_v2_private_library_runtime_zh_v2/`
+- `reading-companion-backend/state/eval_local_datasets/excerpt_cases/attentional_v2_private_library_excerpt_en_v2/`
+- `reading-companion-backend/state/eval_local_datasets/excerpt_cases/attentional_v2_private_library_excerpt_zh_v2/`
+- `reading-companion-backend/state/eval_local_datasets/compatibility_fixtures/attentional_v2_private_library_compat_shared_v2/`
+
+Build result:
+- total registered private-library books:
+  - `29`
+- corpus-lane screen:
+  - `28` `chapter_corpus_eligible`
+  - `1` `excerpt_only`
+  - `0` `reject`
+- local-only package sizes:
+  - chapter candidates:
+    - English:
+      - `85`
+    - Chinese:
+      - `28`
+  - excerpt seed candidates:
+    - English:
+      - `170`
+    - Chinese:
+      - `56`
+  - runtime fixtures:
+    - English:
+      - `66`
+    - Chinese:
+      - `21`
+  - compatibility fixture specs:
+    - shared:
+      - `29`
+
+Important nuance:
+- this is intentionally larger than the original `16`-book estimate because the user explicitly asked that all currently supplied books, including the earlier private books, be included
+- the combined `v2` private-library supplement is now the real local-only promotion source for later benchmark growth
+- the original shortlist above still matters as the rationale snapshot, but the landed source pool now reflects the actual supplied files
 
 ## Post-Download Expansion Workflow
 This pass should happen in two layers so we can grow the dataset aggressively without losing benchmark discipline.
@@ -315,6 +384,16 @@ This pass should be larger than the earlier small hardening rounds.
 - books promoted into the modern local supplement:
   - target `12+`
 
+Current landed result:
+- registered private-library books:
+  - `29`
+- parseable/screened:
+  - `29`
+- chapter-corpus-eligible:
+  - `28`
+- excerpt-only:
+  - `1`
+
 ### Candidate-pool targets
 These are deliberately larger than the final reviewed benchmark targets.
 
@@ -327,6 +406,14 @@ These are deliberately larger than the final reviewed benchmark targets.
 - runtime candidates:
   - derive from the chapter-eligible set
   - expected total: roughly `50-80` local-only fixtures
+
+Current landed result:
+- excerpt seed candidates:
+  - `226`
+- chapter candidates:
+  - `113`
+- runtime fixtures:
+  - `87`
 
 ### Formal benchmark-growth targets
 After review and promotion from the supplement pool, the next target sizes should be:

@@ -38,15 +38,16 @@ Authoritative first-pass evidence:
   - structurally trustworthy benchmark inputs
   - serious first-pass semantic cases
   - still eligible for review and promotion
-- Pause broader semantic comparison work until the weakest local buckets are reviewed.
+- Pause broader semantic comparison work until the weakest local buckets are reviewed and the first serious reviewed-slice repair gate has been rerun.
 - It is still acceptable to continue purely structural or runtime-gate work in parallel when that work does not depend on the semantic case labels being final.
 - The first packet-level machine-side audit already indicates real benchmark-design weakness in the targeted Chinese weak-bucket slice, so that slice should now be treated as review-required rather than merely review-optional.
 - The current operational rule is now LLM-led review by default:
   - multi-prompt LLM adjudication replaces manual human packet review unless the user explicitly requests manual review
   - human review is now optional later escalation for higher-trust `gold` slices, not the default blocker for current hardening work
-- Do **not** broadly retune the mechanism against the current reviewed slice while it remains tiny and skewed.
+- Do **not** broadly retune the mechanism against a tiny or skewed reviewed slice.
   - no-regret mechanism fixes are still allowed
-  - broad mechanism tuning should wait for a larger reviewed excerpt slice
+  - once the reviewed slice is large enough and the post-repair rerun holds up, broader comparison work becomes eligible again
+  - do not overfit against the last one or two remaining failures even after the reviewed slice becomes meaningful
 
 ## Truth Layers
 ### Strong factual truth
@@ -495,6 +496,43 @@ The review loop should stay intentionally simple and not require a frontend webs
       - this is now the next decision gate:
         - rerun the full reviewed slice immediately
         - or land one more narrow repair on distinction / anchorless-callback handling first
+  - full reviewed-slice rerun after repair pass 2:
+    - benchmark run:
+      - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_integrity_reviewed_slice_round3_repair_pass2_20260326/`
+    - result:
+      - `18` total cases
+      - `16 pass`
+      - `2 fail`
+      - `0` structural failures
+      - global averages:
+        - `text_groundedness`: `4.333`
+        - `meaning_unit_quality`: `4.278`
+        - `move_quality`: `4.056`
+        - `reaction_quality`: `4.278`
+        - `case_fit`: `4.444`
+      - English:
+        - `8 pass`
+        - `1 fail`
+      - Chinese:
+        - `8 pass`
+        - `1 fail`
+    - comparison against the pre-repair full rerun:
+      - old result:
+        - `7 pass`
+        - `10 fail`
+        - `1 partial`
+      - new result:
+        - `16 pass`
+        - `2 fail`
+    - remaining failing cases:
+      - `darkwater_public_en__12__tension_reversal__v2`
+      - `nahan_27166_zh__2__callback_bridge__v2`
+    - interpretation:
+      - the reviewed slice is no longer merely "good enough to diagnose"; it now supports a real decision about unblocking broader semantic comparison
+      - the mechanism-repair work generalized beyond the targeted weak slice instead of only overfitting to it
+      - the next decision is now whether to:
+        - unblock broader semantic comparison
+        - or land one more narrow repair on the two remaining failures before unblocking
 
 ### Export tool
 - `reading-companion-backend/eval/attentional_v2/export_dataset_review_packet.py`

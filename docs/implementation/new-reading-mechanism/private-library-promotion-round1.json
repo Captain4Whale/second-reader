@@ -1,0 +1,204 @@
+{
+  "round_id": "private_library_promotion_round1",
+  "source_manifest_id": "attentional_v2_private_library_screen_v2",
+  "corpus_manifest_id": "attentional_v2_private_library_bilingual_v2",
+  "objective": "Prepare the first balanced nonfiction-heavy promotion round from the combined private-library v2 supplement into later formal benchmark growth.",
+  "targets": {
+    "prioritized_books_per_language": 6,
+    "chapter_candidates_per_language": 8,
+    "excerpt_candidates_per_language": 16,
+    "chapter_role_mix": {
+      "argumentative": 3,
+      "expository": 3,
+      "narrative_reflective": 2
+    },
+    "excerpt_role_mix": {
+      "argumentative": 5,
+      "expository": 6,
+      "narrative_reflective": 5
+    }
+  },
+  "language_tracks": {
+    "en": {
+      "prioritized_books": [
+        {
+          "source_id": "good_strategy_bad_strategy_private_en",
+          "title": "Good Strategy/Bad Strategy",
+          "target_chapters": 2,
+          "target_excerpts": 3,
+          "tags": ["management_economics", "business", "modern_nonfiction"],
+          "why": [
+            "Strongest management-argument source in the pool",
+            "Useful for argument-evidence linkage",
+            "Useful for principle-boundary control"
+          ]
+        },
+        {
+          "source_id": "poor_charlies_almanack_private_en",
+          "title": "Poor Charlie's Almanack",
+          "target_chapters": 2,
+          "target_excerpts": 3,
+          "tags": ["business", "management_economics", "modern_nonfiction"],
+          "why": [
+            "Strong example-to-principle mapping",
+            "Exposes over-generalization risk",
+            "Complements strategy prose with denser principle prose"
+          ]
+        },
+        {
+          "source_id": "steve_jobs_private_en",
+          "title": "Steve Jobs",
+          "target_chapters": 1,
+          "target_excerpts": 3,
+          "tags": ["biography", "business", "science_technology", "modern_nonfiction"],
+          "why": [
+            "Strong long-range biography and causal reinterpretation",
+            "Useful for character-pattern establishment in nonfiction",
+            "Adds science/technology-adjacent biography"
+          ]
+        },
+        {
+          "source_id": "evicted_private_en",
+          "title": "Evicted",
+          "target_chapters": 1,
+          "target_excerpts": 3,
+          "tags": ["social_reportage", "history", "modern_nonfiction"],
+          "why": [
+            "Best English social-reportage source in the pool",
+            "Useful for evidence-heavy explanation",
+            "Reduces executive-memoir overconcentration"
+          ]
+        },
+        {
+          "source_id": "fooled_by_randomness_private_en",
+          "title": "Fooled by Randomness",
+          "target_chapters": 1,
+          "target_excerpts": 2,
+          "tags": ["psychology_decision", "management_economics", "modern_nonfiction"],
+          "why": [
+            "Strong probability and luck-versus-skill distinctions",
+            "Improves conceptual-boundary testing",
+            "Broadens beyond business memoir voice"
+          ]
+        },
+        {
+          "source_id": "supremacy_private_en",
+          "title": "Supremacy",
+          "target_chapters": 1,
+          "target_excerpts": 2,
+          "tags": ["business", "science_technology", "modern_nonfiction"],
+          "why": [
+            "Modern multi-actor AI/business rivalry",
+            "Useful for institutional incentives and timeline pressure",
+            "Keeps the supplement current"
+          ]
+        }
+      ],
+      "reserve_books": [
+        "antifragile_private_en",
+        "skin_in_the_game_private_en",
+        "black_swan_private_en",
+        "principles_private_en",
+        "shoe_dog_private_en",
+        "snowball_private_en",
+        "naval_almanack_private_en",
+        "making_of_a_manager_private_en",
+        "inspired_private_en"
+      ],
+      "defer_books": [
+        "book_of_elon_private_en",
+        "elon_musk_private_en",
+        "cracking_pm_career_private_en",
+        "cracking_pm_interview_private_en",
+        "decode_and_conquer_private_en",
+        "chance_private_en"
+      ]
+    },
+    "zh": {
+      "prioritized_books": [
+        {
+          "source_id": "kangxi_hongpiao_private_zh",
+          "title": "康熙的红票：全球化中的清朝",
+          "target_chapters": 2,
+          "target_excerpts": 3,
+          "tags": ["history", "modern_nonfiction"],
+          "why": [
+            "Strongest Chinese history/institutional-causality source in the pool",
+            "Useful for diplomacy, state, and policy interaction",
+            "Balances nonfiction diversification"
+          ]
+        },
+        {
+          "source_id": "zhangzhongmou_zizhuan_private_zh",
+          "title": "张忠谋自传(1931-1964)",
+          "target_chapters": 2,
+          "target_excerpts": 3,
+          "tags": ["biography", "business", "modern_nonfiction"],
+          "why": [
+            "Strongest Chinese biography/business source",
+            "Useful for timeline and decision pressure",
+            "Provides a real biography counterpart for the Chinese track"
+          ]
+        },
+        {
+          "source_id": "meiguoren_de_xingge_private_zh",
+          "title": "美国人的性格",
+          "target_chapters": 1,
+          "target_excerpts": 3,
+          "tags": ["social_reportage", "history", "modern_nonfiction"],
+          "why": [
+            "Best Chinese social-observation/culture-history line in the pool",
+            "Useful for evidence-to-claim discipline",
+            "Broadens beyond business-only growth material"
+          ]
+        },
+        {
+          "source_id": "fooled_by_randomness_private_zh",
+          "title": "随机漫步的傻瓜",
+          "target_chapters": 1,
+          "target_excerpts": 3,
+          "tags": ["psychology_decision", "management_economics", "modern_nonfiction"],
+          "why": [
+            "Useful for conceptual distinction and probability language in Chinese",
+            "Adds a decision/uncertainty pressure source",
+            "Provides a cross-language comparison lane"
+          ]
+        },
+        {
+          "source_id": "biji_de_fangfa_private_zh",
+          "title": "笔记的方法",
+          "target_chapters": 1,
+          "target_excerpts": 2,
+          "tags": ["management_economics", "method", "modern_nonfiction"],
+          "why": [
+            "Strong Chinese expository method/management source",
+            "Useful for claim-to-application structure",
+            "Broadens the Chinese expository lane"
+          ]
+        },
+        {
+          "source_id": "zouchu_weiyi_zhenliguan_private_zh",
+          "title": "走出唯一真理观",
+          "target_chapters": 1,
+          "target_excerpts": 2,
+          "tags": ["psychology_decision", "philosophical", "modern_nonfiction"],
+          "why": [
+            "Strong Chinese philosophical/decision-distinction source",
+            "Useful for concept definition and contrast",
+            "Adds a precision-demanding argumentative voice"
+          ]
+        }
+      ],
+      "reserve_books": [
+        "canglang_zhishui_private_zh"
+      ],
+      "defer_books": []
+    }
+  },
+  "risks": [
+    "Chinese pool is much thinner than the English pool and should not be exhausted in one pass",
+    "English Taleb-family and business-memoir overlap is high",
+    "Product-management interview books are too tactical for the first formal promotion round",
+    "The tracked benchmark already leans literary, so literature-control sources should stay reserve-first in round 1"
+  ]
+}

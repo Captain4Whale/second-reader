@@ -21,10 +21,10 @@ Update when: status changes, blockers appear, or phases complete.
   - the universal shared LLM invocation and traceability layer is landed, and the route has returned to active benchmark hardening
 - Current blockers:
   - final end-to-end comparison still waits on:
-    - a decision at the current repair gate:
-      - rerun the full `9 + 9` reviewed slice now after the second targeted repair pass
-      - or land one more narrow repair on distinction / anchorless-callback handling first
-    - broader semantic comparison remains blocked until that decision and the next follow-up rerun land
+    - a decision at the current post-repair gate:
+      - unblock broader semantic comparison now that the full `9 + 9` reviewed slice rerun improved to `16 pass / 2 fail`
+      - or land one more narrow repair on the two remaining failing cases before unblocking
+    - balanced benchmark promotion from the modern private-library `v2` supplement remains prepared but not yet curated into the formal tracked benchmark
     - later frontend/API retirement of section-first chapter/detail and marks surfaces
     - later stable-doc promotion timing under `Q10`
 
@@ -241,14 +241,18 @@ Update when: status changes, blockers appear, or phases complete.
   - route chosen:
     - start a first mechanism-repair pass from the current `9 + 9` reviewed slice
 - [x] Start a first mechanism-repair pass from the current `9 + 9` reviewed slice
-- [ ] Continue mechanism repair after the first pass:
+- [x] Continue mechanism repair after the first pass:
   - explicit callback-cue reading
   - distinction / recognition-gap closure
   - durable-pattern recognition for reconsolidation cases
-- [ ] Make the post-second-repair decision before the next full reviewed-slice rerun:
-  - choose one:
+- [x] Make the post-second-repair decision before the next full reviewed-slice rerun:
+  - route chosen:
     - rerun the full `9 + 9` reviewed slice now
-    - or land one more narrow repair on distinction / anchorless-callback handling first
+- [x] Rerun the full `9 + 9` reviewed slice after the second repair pass
+- [ ] Make the post-rerun decision before broader semantic comparison:
+  - choose one:
+    - unblock broader semantic comparison now
+    - or land one more narrow repair on the two remaining failing cases first
 - [ ] Reach the preferred reviewed-slice confidence target before broad mechanism tuning:
   - `10-12` `reviewed_active` excerpt cases per language
 - [ ] Run local-reading and span-trajectory evaluation
@@ -258,29 +262,48 @@ Update when: status changes, blockers appear, or phases complete.
 - [ ] If needed, expand the semantic benchmark family before default-cutover work:
   - curated excerpt cases toward roughly `25-30` per language
   - chapter corpus toward roughly `24-30` per language
-- [ ] Run the next modern-nonfiction gap-filling acquisition pass once the books are locally available:
-  - use the frozen `16`-book shortlist in `modern-nonfiction-expansion-booklist.md`
-  - keep category coverage broad
-  - keep emphasis on:
-    - management / economics
-    - business
-    - biography
-- [ ] Register the downloaded modern-nonfiction books in source manifests:
+- [x] Run the next modern-nonfiction gap-filling acquisition pass once the books are locally available:
+  - the actual first received batch came from `/Users/baiweijiang/Documents/BOOK`
+  - it was merged with the earlier private-download pool instead of being treated as a standalone tiny batch
+  - the resulting combined private-library source pool now contains `29` books
+- [x] Register the downloaded modern-nonfiction books in source manifests:
   - fingerprint each file
   - assign category tags
   - assign language tag
   - assign acquisition batch id
-- [ ] Import the downloaded modern-nonfiction books into `state/library_sources/`
-- [ ] Canonical-parse the downloaded modern-nonfiction pool
-- [ ] Produce a modern supplement screening report:
+  - landed manifest:
+    - `reading-companion-backend/eval/manifests/source_books/attentional_v2_private_library_screen_v2.json`
+- [x] Import the downloaded modern-nonfiction books into `state/library_sources/`
+- [x] Canonical-parse the downloaded modern-nonfiction pool
+- [x] Produce a modern supplement screening report:
   - `chapter_corpus_eligible`
   - `excerpt_only`
   - `reserve`
   - `reject_this_pass`
-- [ ] Build the large local-only modern supplement dataset family under `state/eval_local_datasets/`:
-  - target `120-160` excerpt seed candidates
-  - target `30-50` chapter candidates
-  - target `50-80` runtime candidates
+  - landed result:
+    - `28` `chapter_corpus_eligible`
+    - `1` `excerpt_only`
+    - `0` `reject`
+- [x] Build the large local-only modern supplement dataset family under `state/eval_local_datasets/`:
+  - landed package sizes:
+    - excerpt seed candidates:
+      - English `170`
+      - Chinese `56`
+    - chapter candidates:
+      - English `85`
+      - Chinese `28`
+    - runtime fixtures:
+      - English `66`
+      - Chinese `21`
+    - compatibility fixtures:
+      - shared `29`
+- [x] Prepare the first balanced promotion-preparation plan from the modern supplement pool
+  - landed planning artifacts:
+    - `docs/implementation/new-reading-mechanism/private-library-promotion-round1.md`
+    - `docs/implementation/new-reading-mechanism/private-library-promotion-round1.json`
+  - round-1 recommendation:
+    - prioritize `6` English books and `6` Chinese books
+    - lift `8` chapter candidates and `16` excerpt candidates per language into the next curation/review pass
 - [ ] Curate and review promotion candidates from the modern supplement pool
 - [ ] Promote balanced modern additions into the formal benchmark:
   - curated excerpt target:
@@ -427,6 +450,33 @@ Update when: status changes, blockers appear, or phases complete.
       - one distinction / recognition-gap case is still too shallow
       - one callback case still lacks honest handling of a cue whose strongest supporting anchor may be absent in the retrieved already-read space
     - the next real decision is now whether to rerun the full `9 + 9` reviewed slice immediately or do one more narrow repair first
+  - Closed that decision gate by rerunning the full reviewed slice at `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_integrity_reviewed_slice_round3_repair_pass2_20260326/`.
+  - Full reviewed-slice result after repair pass 2:
+    - `18` total cases
+    - `16` `pass`
+    - `2` `fail`
+    - `0` structural failures
+    - English:
+      - `8` `pass`
+      - `1` `fail`
+    - Chinese:
+      - `8` `pass`
+      - `1` `fail`
+  - Important comparison against the pre-repair full rerun:
+    - old result:
+      - `7` `pass`
+      - `10` `fail`
+      - `1` `partial`
+    - new result:
+      - `16` `pass`
+      - `2` `fail`
+    - this is strong evidence that the mechanism-repair work generalized beyond the tiny targeted slice instead of only overfitting to it
+  - The remaining failing cases are now narrow and concrete:
+    - `darkwater_public_en__12__tension_reversal__v2`
+    - `nahan_27166_zh__2__callback_bridge__v2`
+  - Important route implication after the full rerun:
+    - the current reviewed benchmark is now strong enough to justify a real decision about unblocking broader semantic comparison
+    - the next decision is no longer "is the reviewed slice meaningful?" but "do we broaden comparison now or land one more narrow repair first?"
   - Completed Phase 8.5: `attentional_v2` now runs end to end through the shared runtime, CLI, and existing async job lifecycle; resume and incompatible fresh reruns preserve `mechanism_key`; the backend rejects legacy `book_analysis` for `attentional_v2` explicitly; and stable/temp docs now treat `attentional_v2` as experimental instead of design-only.
   - Added the explicit evaluation-question layer before dataset design: stable cross-mechanism questions now live in `docs/backend-reader-evaluation.md`, stable attentional-specific proof questions now live in `docs/backend-reading-mechanisms/attentional_v2.md`, and the temporary `evaluation-question-map.md` now records exactly which questions this implementation project still has to answer, including the cross-mechanism comparison work that remains part of the current `attentional_v2` job.
   - Added the corpus-requirements layer before book collection: `evaluation-corpus-requirements.md` now separates what the future data process can satisfy during curation from what the source books themselves must already satisfy, and it records the source-policy recommendation plus the concrete book-pool requirements for the first serious benchmark build.
@@ -448,6 +498,32 @@ Update when: status changes, blockers appear, or phases complete.
         - reviewed-active slice toward `12+` per language
         - chapter corpus toward `30` per language
         - runtime fixtures toward `54` per language when the new books improve coverage materially
+  - Landed the combined private-library supplement build from the real supplied files instead of leaving the modern-nonfiction plan hypothetical:
+    - merged the `/Users/baiweijiang/Documents/BOOK` batch with the earlier reachable private-download pool
+    - registered all `29` reachable books in `attentional_v2_private_library_screen_v2`
+    - promoted them into the durable local source library under `state/library_sources/`
+    - canonical-parsed and screened the full pool into:
+      - `28` `chapter_corpus_eligible`
+      - `1` `excerpt_only`
+      - `0` `reject`
+    - built the larger `v2` local-only supplement under `state/eval_local_datasets/` with:
+      - `85` English chapter candidates
+      - `28` Chinese chapter candidates
+      - `170` English excerpt seed candidates
+      - `56` Chinese excerpt seed candidates
+      - `66` English runtime fixtures
+      - `21` Chinese runtime fixtures
+      - `29` shared compatibility fixture specs
+    - important route implication:
+      - all currently supplied private books are now part of the dataset infrastructure
+      - the next dataset-growth work is no longer raw ingestion; it is balanced curation and benchmark promotion from this larger private-library supplement
+  - Landed the first parallel private-library promotion-preparation plan without changing the benchmark yet:
+    - `docs/implementation/new-reading-mechanism/private-library-promotion-round1.md`
+    - `docs/implementation/new-reading-mechanism/private-library-promotion-round1.json`
+  - Promotion-round1 recommendation from the combined private-library `v2` supplement:
+    - use a balanced `6`-book English set and `6`-book Chinese set
+    - lift `8` chapter candidates and `16` excerpt candidates per language into the next curation/review pass
+    - prioritize modern nonfiction first and keep literature controls plus tactical PM/interview books in reserve for later rounds
   - Promoted source-book organization into the stable project docs: the workspace/backend/evaluation docs and backend agent guide now distinguish transient uploads, durable local source-library books, runtime book copies, and evaluation-package territory, and the history log now records that storage-boundary decision explicitly.
   - Froze the dataset-organization rule before population: stable docs now require a family-first dataset layout under `eval/datasets/`, the backend `eval` README now defines the package contract, the temp implementation docs now define the first bilingual `attentional_v2` package plan, and the dataset/manifests folder skeleton now exists on disk.
   - Built the first bilingual public-domain seed corpus locally under `state/library_sources/` from Project Gutenberg sources, then ran it through canonical parse and used that parsed substrate to generate tracked source manifests plus the first seed dataset packages under `reading-companion-backend/eval/`.

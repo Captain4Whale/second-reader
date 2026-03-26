@@ -13,19 +13,23 @@ Last updated: `2026-03-26`
 - Phase 9 preparation for the new reading mechanism project
 - use `docs/implementation/new-reading-mechanism/` as the temporary working set for design capture, planning, progress tracking, and open questions
 - keep the current active route explicit:
-  - keep broader semantic comparison blocked while the current mechanism-repair gate is unresolved
+  - the repair-gate rerun is now landed
   - the next real choice is:
-    - rerun the full `9 + 9` reviewed slice now after repair pass 2
-    - or land one more narrow repair on distinction / anchorless-callback handling first
+    - unblock broader semantic comparison now that the full `9 + 9` reviewed slice improved to `16 pass / 2 fail`
+    - or land one more narrow repair on the two remaining failing cases first
   - keep the next corpus-growth direction explicit too:
     - the benchmark should no longer grow as literature-heavy by default
     - the next acquisition pass should diversify into modern nonfiction with emphasis on management / economics, business, and biography
-    - once the books are downloaded, treat that pass as a large supplement build rather than a tiny patch
+    - that download pass is now landed as a combined private-library `v2` supplement from:
+      - `/Users/baiweijiang/Documents/BOOK`
+      - the earlier private-download pool
+    - the first balanced promotion-preparation plan from that supplement is now landed too
+    - formal promotion from that supplement remains future benchmark work and should not be forgotten while the current comparison decision is pending
 - the temporary side branch for a universal shared LLM invocation/traceability layer is now landed
   - shared provider contracts, key-pool failover, task-level profiles, and standard/debug trace sinks now live in backend infrastructure
   - the return path is direct:
     - reviewed-slice rerun of `mechanism_integrity`
-    - only then broader semantic comparison
+    - then an explicit decision on broader semantic comparison
 - decide `Q10`: how much of the detailed working design should be promoted from temp docs into stable `attentional_v2` documentation
 - keep `iterator_reader` as the current default reader while `attentional_v2` matures as an experimental end-to-end runner
 - finish the later frontend/API migration away from section-first chapter/detail and marks surfaces
@@ -64,14 +68,31 @@ Last updated: `2026-03-26`
 - The refreshed reviewed datasets are now frozen at:
   - `reading-companion-backend/eval/datasets/excerpt_cases/attentional_v2_excerpt_en_curated_v2_llm_reviewed_round3/`
   - `reading-companion-backend/eval/datasets/excerpt_cases/attentional_v2_excerpt_zh_curated_v2_llm_reviewed_round3/`
-- The latest reviewed-slice rerun is:
-  - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_integrity_reviewed_slice_round3_20260326/`
+- The latest reviewed-slice reruns are:
+  - pre-repair full rerun:
+    - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_integrity_reviewed_slice_round3_20260326/`
+  - post-repair full rerun:
+    - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_integrity_reviewed_slice_round3_repair_pass2_20260326/`
 - Important current interpretation:
   - the reviewed slice is no longer too small to be meaningful
-  - dataset cleanup and expansion helped, but they did not erase the problem
-  - English is mixed but usable
-  - Chinese still shows robust weakness, especially around callback / tension / reconsolidation handling
-  - broader semantic comparison should remain blocked for now
+  - the second repair pass generalized strongly on the full slice:
+    - old full rerun:
+      - `7 pass`
+      - `10 fail`
+      - `1 partial`
+    - new full rerun:
+      - `16 pass`
+      - `2 fail`
+  - English is now strong enough to stop treating it as a generally weak slice:
+    - `8 pass`
+    - `1 fail`
+  - Chinese is no longer broadly weak across the reviewed slice:
+    - `8 pass`
+    - `1 fail`
+  - the remaining weakness is now narrow and concrete:
+    - `darkwater_public_en__12__tension_reversal__v2`
+    - `nahan_27166_zh__2__callback_bridge__v2`
+  - the next route decision is whether to unblock broader semantic comparison now or land one more narrow repair first
 - The review queue is empty again. The current route is now active mechanism repair rather than more packet expansion.
 - The first mechanism-repair pass has already landed:
   - deterministic bridge candidates now reach live Phase 4
@@ -86,12 +107,7 @@ Last updated: `2026-03-26`
     - `1 partial`
     - one callback case improved from `fail` to `partial`
     - the targeted weak set still remains below trust overall
-- The next route is:
-  - keep broader semantic comparison blocked
-  - continue mechanism repair on:
-    - exact callback-cue reading
-    - distinction / recognition-gap closure
-    - durable-pattern framing for reconsolidation cases
+- The previous route of "keep broader semantic comparison blocked and continue mechanism repair first" has now reached its rerun checkpoint successfully.
 - The second mechanism-repair pass has now landed:
   - Phase 4 zoom/closure receive deterministic local textual cue packets for:
     - `callback_cue`
@@ -113,8 +129,8 @@ Last updated: `2026-03-26`
       - one distinction / recognition-gap case is still shallow
       - one callback case still misbridges because the actual supporting prior-acquaintance anchor is not honestly resolved
 - The next real decision point is now:
-  - rerun the full `9 + 9` reviewed slice immediately
-  - or land one more narrow repair first
+  - unblock broader semantic comparison and begin the next evaluation layer
+  - or land one more narrow repair first on the two remaining failing cases
 - Stable mechanism docs are now split between the shared platform doc (`docs/backend-reading-mechanism.md`) and per-mechanism docs under `docs/backend-reading-mechanisms/`.
 - The next modern source-book expansion is now recorded explicitly in:
   - it now includes both:
@@ -124,8 +140,53 @@ Last updated: `2026-03-26`
   - use that file for:
     - why the current corpus mix is still too literature-heavy
     - the first `16`-book executable shortlist
+    - the actual received `/BOOK` batch and the landed combined private-library `v2` supplement
     - category coverage and priority
     - post-download supplement-build workflow and larger size targets
+- The combined private-library supplement is now concretely landed:
+  - tracked manifests:
+    - `reading-companion-backend/eval/manifests/source_books/attentional_v2_private_library_screen_v2.json`
+    - `reading-companion-backend/eval/manifests/local_refs/attentional_v2_private_library_v2.json`
+    - `reading-companion-backend/eval/manifests/corpora/attentional_v2_private_library_bilingual_v2.json`
+    - `reading-companion-backend/eval/manifests/splits/attentional_v2_private_library_bilingual_v2.json`
+  - local-only packages:
+    - `reading-companion-backend/state/eval_local_datasets/chapter_corpora/attentional_v2_private_library_chapters_en_v2/`
+    - `reading-companion-backend/state/eval_local_datasets/chapter_corpora/attentional_v2_private_library_chapters_zh_v2/`
+    - `reading-companion-backend/state/eval_local_datasets/runtime_fixtures/attentional_v2_private_library_runtime_en_v2/`
+    - `reading-companion-backend/state/eval_local_datasets/runtime_fixtures/attentional_v2_private_library_runtime_zh_v2/`
+    - `reading-companion-backend/state/eval_local_datasets/excerpt_cases/attentional_v2_private_library_excerpt_en_v2/`
+    - `reading-companion-backend/state/eval_local_datasets/excerpt_cases/attentional_v2_private_library_excerpt_zh_v2/`
+    - `reading-companion-backend/state/eval_local_datasets/compatibility_fixtures/attentional_v2_private_library_compat_shared_v2/`
+  - landed size:
+    - `29` books total
+    - `113` chapter candidates
+    - `226` excerpt seed candidates
+    - `87` runtime fixtures
+    - `29` compatibility fixture specs
+- The first parallel promotion-preparation plan from that supplement is now also landed:
+  - planning artifacts:
+    - `docs/implementation/new-reading-mechanism/private-library-promotion-round1.md`
+    - `docs/implementation/new-reading-mechanism/private-library-promotion-round1.json`
+  - round-1 recommendation:
+    - `6` English books
+    - `6` Chinese books
+    - `8` chapter candidates per language
+    - `16` excerpt candidates per language
+  - recommended priority sources:
+    - English:
+      - `Good Strategy/Bad Strategy`
+      - `Poor Charlie's Almanack`
+      - `Steve Jobs`
+      - `Evicted`
+      - `Fooled by Randomness`
+      - `Supremacy`
+    - Chinese:
+      - `康熙的红票：全球化中的清朝`
+      - `张忠谋自传(1931-1964)`
+      - `美国人的性格`
+      - `随机漫步的傻瓜`
+      - `笔记的方法`
+      - `走出唯一真理观`
 - Storage helpers still read older shared-path and flat legacy artifacts for compatibility, but new writes should target the namespaced mechanism paths.
 - Normal reading runs do not persist normalized eval bundles; those exports are reserved for explicit eval-mode runs.
 - Backend mechanism work is still shifting toward one shared runtime shell plus multiple mechanism-specific implementations. During this migration, `iterator_reader` remains the only default mechanism unless stable docs say otherwise.

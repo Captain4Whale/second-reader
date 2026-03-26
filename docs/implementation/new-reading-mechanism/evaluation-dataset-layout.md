@@ -432,40 +432,65 @@ Important status nuance:
 - the local-only supplement still matters for fallback and later gap-filling, but it is no longer the primary answer to the Chinese tracked-curation gap
 
 ## Local-Only Supplement Status
-The first `storage_mode = local-only` supplement sourced from the user's Downloads EPUB pool has now landed in the local package mirror:
+The current active `storage_mode = local-only` supplement is now the combined private-library `v2` pool built from:
+- the earlier private Downloads EPUB batch
+- the newer `/Users/baiweijiang/Documents/BOOK` batch
+
+The earlier Downloads-only `v1` supplement still exists as historical seed infrastructure, but the combined private-library `v2` build is now the operative local-only source pool for later benchmark promotion work.
 
 - tracked manifests:
-  - `reading-companion-backend/eval/manifests/source_books/attentional_v2_private_downloads_screen_v1.json`
-  - `reading-companion-backend/eval/manifests/local_refs/attentional_v2_private_downloads_seed_v1.json`
-  - `reading-companion-backend/eval/manifests/corpora/attentional_v2_private_downloads_bilingual_v1.json`
-  - `reading-companion-backend/eval/manifests/splits/attentional_v2_private_downloads_bilingual_v1.json`
+  - `reading-companion-backend/eval/manifests/source_books/attentional_v2_private_library_screen_v2.json`
+  - `reading-companion-backend/eval/manifests/local_refs/attentional_v2_private_library_v2.json`
+  - `reading-companion-backend/eval/manifests/corpora/attentional_v2_private_library_bilingual_v2.json`
+  - `reading-companion-backend/eval/manifests/splits/attentional_v2_private_library_bilingual_v2.json`
 - promoted private source books:
   - `reading-companion-backend/state/library_sources/en/private/`
   - `reading-companion-backend/state/library_sources/zh/private/`
 - `storage_mode = local-only` package mirror:
-  - `reading-companion-backend/state/eval_local_datasets/chapter_corpora/attentional_v2_private_chapters_en_v1/`
-  - `reading-companion-backend/state/eval_local_datasets/chapter_corpora/attentional_v2_private_chapters_zh_v1/`
-  - `reading-companion-backend/state/eval_local_datasets/runtime_fixtures/attentional_v2_private_runtime_en_v1/`
-  - `reading-companion-backend/state/eval_local_datasets/runtime_fixtures/attentional_v2_private_runtime_zh_v1/`
-  - `reading-companion-backend/state/eval_local_datasets/excerpt_cases/attentional_v2_private_excerpt_en_v1/`
-  - `reading-companion-backend/state/eval_local_datasets/excerpt_cases/attentional_v2_private_excerpt_zh_v1/`
-  - `reading-companion-backend/state/eval_local_datasets/compatibility_fixtures/attentional_v2_private_compat_shared_v1/`
+  - `reading-companion-backend/state/eval_local_datasets/chapter_corpora/attentional_v2_private_library_chapters_en_v2/`
+  - `reading-companion-backend/state/eval_local_datasets/chapter_corpora/attentional_v2_private_library_chapters_zh_v2/`
+  - `reading-companion-backend/state/eval_local_datasets/runtime_fixtures/attentional_v2_private_library_runtime_en_v2/`
+  - `reading-companion-backend/state/eval_local_datasets/runtime_fixtures/attentional_v2_private_library_runtime_zh_v2/`
+  - `reading-companion-backend/state/eval_local_datasets/excerpt_cases/attentional_v2_private_library_excerpt_en_v2/`
+  - `reading-companion-backend/state/eval_local_datasets/excerpt_cases/attentional_v2_private_library_excerpt_zh_v2/`
+  - `reading-companion-backend/state/eval_local_datasets/compatibility_fixtures/attentional_v2_private_library_compat_shared_v2/`
 
 Current counts:
-- `9` promoted local-only supplement books
-- `14` English chapter rows
-- `4` Chinese chapter rows
-- `36` English runtime fixtures
-- `6` Chinese runtime fixtures
-- `24` English excerpt cases
-- `4` Chinese excerpt cases
-- `18` shared compatibility fixture specs
+- total registered private-library books:
+  - `29`
+- language mix:
+  - English:
+    - `22`
+  - Chinese:
+    - `7`
+- corpus-lane screen:
+  - `28` `chapter_corpus_eligible`
+  - `1` `excerpt_only`
+  - `0` `reject`
+- chapter candidates:
+  - English:
+    - `85`
+  - Chinese:
+    - `28`
+- runtime fixtures:
+  - English:
+    - `66`
+  - Chinese:
+    - `21`
+- excerpt seed candidates:
+  - English:
+    - `170`
+  - Chinese:
+    - `56`
+- shared compatibility fixture specs:
+  - `29`
 
 Important status nuance:
 - these `storage_mode = local-only` packages are structurally real and grounded in canonical parse
 - their text-bearing payloads intentionally remain outside the tracked repo dataset tree
-- the local-only excerpt cases are still primarily seed/support material in the current public-first strategy
-- after the tracked `v2` public benchmark build, these local-only packages should now be treated as fallback or gap-filling material rather than as the main benchmark layer
+- the local-only excerpt cases remain seed/support material until curated and reviewed for formal promotion
+- because the user asked that all currently supplied private books be included, the combined `v2` supplement is intentionally larger than the original smaller Downloads-only seed slice
+- after the tracked `v2` public benchmark build, these local-only packages should still be treated as the promotion source for later gap-filling rather than as the default tracked benchmark layer itself
 
 ## Private Local Supplement Rule
 - Use the tracked `eval/datasets/` tree for `storage_mode = tracked` packages.
