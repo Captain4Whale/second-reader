@@ -426,6 +426,39 @@ The review loop should stay intentionally simple and not require a frontend webs
       - the next real decision is whether to:
         - start mechanism repair from this `9 + 9` reviewed slice
         - or keep expanding toward the preferred `10-12` reviewed-active cases per language before broader mechanism tuning
+  - first mechanism-repair pass:
+    - route chosen:
+      - start mechanism repair from the current `9 + 9` reviewed slice
+    - code changes:
+      - restore deterministic bridge candidates into the live Phase 4 runner instead of dropping them before `controller_decision`
+      - merge zoom-level bridge hints into the Phase 4 controller candidate pool
+      - make deterministic retrieval callback-aware:
+        - better Chinese tokenization
+        - broader already-read source scan only when explicit backward-looking markers are present
+      - tighten Phase 4 prompt instructions so zoom/closure name exact callback cues and distinctions instead of generic scene summary
+    - focused verification:
+      - targeted tests passed for retrieval, Phase 4 node behavior, and live runner bridge-candidate handoff
+      - targeted rerun:
+        - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_integrity_repair_pass1_targeted_20260326/`
+        - cases:
+          - `jinghua_yuan_25377_zh__15__callback_bridge__v2`
+          - `jinghua_yuan_25377_zh__34__callback_bridge__v2`
+          - `gushi_xinbian_public_zh__4__distinction_definition__v2`
+          - `chenlun_public_zh__4__reconsolidation_later_reinterpretation__v2`
+    - result:
+      - `3 fail`
+      - `1 partial`
+      - the strongest improvement was `jinghua_yuan_25377_zh__34__callback_bridge__v2`, which moved from `fail` to `partial` after real cross-span callback candidates started surfacing
+      - the pass did **not** resolve:
+        - explicit prior-acquaintance callback detection
+        - distinction / recognition-gap closure
+        - durable-pattern framing for reconsolidation candidates
+    - next repair focus:
+      - keep broader semantic comparison blocked
+      - continue mechanism repair on:
+        - exact callback-cue reading
+        - exact distinction / recognition-gap reading
+        - durable-pattern recognition before withholding reaction or defaulting to generic biography summary
 
 ### Export tool
 - `reading-companion-backend/eval/attentional_v2/export_dataset_review_packet.py`

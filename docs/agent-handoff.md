@@ -67,9 +67,26 @@ Last updated: `2026-03-26`
   - English is mixed but usable
   - Chinese still shows robust weakness, especially around callback / tension / reconsolidation handling
   - broader semantic comparison should remain blocked for now
-- The review queue is empty again. The next route is now a real decision point:
-  - start a first mechanism-repair pass from the current `9 + 9` reviewed slice
-  - or keep expanding toward the preferred `10-12` reviewed-active cases per language before broader mechanism tuning
+- The review queue is empty again. The current route is now active mechanism repair rather than more packet expansion.
+- The first mechanism-repair pass has already landed:
+  - deterministic bridge candidates now reach live Phase 4
+  - zoom-level bridge hints are no longer dropped before controller choice
+  - callback-aware broader prior retrieval now exists for explicit backward-looking cues
+  - Phase 4 prompts now ask for exact callback cues and distinctions rather than generic scene paraphrase
+- First repair-pass evidence:
+  - targeted run:
+    - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_integrity_repair_pass1_targeted_20260326/`
+  - result:
+    - `3 fail`
+    - `1 partial`
+    - one callback case improved from `fail` to `partial`
+    - the targeted weak set still remains below trust overall
+- The next route is:
+  - keep broader semantic comparison blocked
+  - continue mechanism repair on:
+    - exact callback-cue reading
+    - distinction / recognition-gap closure
+    - durable-pattern framing for reconsolidation cases
 - Stable mechanism docs are now split between the shared platform doc (`docs/backend-reading-mechanism.md`) and per-mechanism docs under `docs/backend-reading-mechanisms/`.
 - Storage helpers still read older shared-path and flat legacy artifacts for compatibility, but new writes should target the namespaced mechanism paths.
 - Normal reading runs do not persist normalized eval bundles; those exports are reserved for explicit eval-mode runs.

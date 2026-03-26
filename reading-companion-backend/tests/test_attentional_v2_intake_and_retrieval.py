@@ -128,3 +128,43 @@ def test_generate_candidate_set_is_memory_first_then_bounded_lookback():
     assert [candidate["anchor_id"] for candidate in candidates["memory_candidates"]] == ["a-2"]
     assert [candidate["sentence_id"] for candidate in candidates["lookback_candidates"]] == ["c1-s2", "c1-s3"]
     assert [sentence["sentence_id"] for sentence in lookback] == ["c1-s2", "c1-s3"]
+
+
+def test_generate_candidate_set_can_surface_nonlocal_callback_candidates():
+    """Explicit callback cues should allow deterministic retrieval beyond the bounded local window."""
+
+    document = {
+        "metadata": {
+            "book": "Callback Demo",
+            "author": "Tester",
+            "book_language": "zh",
+            "output_language": "zh",
+            "source_file": "demo.epub",
+        },
+        "chapters": [
+            {
+                "id": 1,
+                "title": "第一章",
+                "sentences": [
+                    _sentence("c1-s1", 1, "自從那日尋訪林之洋下落，始終沒有消息。"),
+                    _sentence("c1-s2", 2, "宮門外忽然熱鬧起來。"),
+                    _sentence("c1-s3", 3, "眾人都望著殿上。"),
+                    _sentence("c1-s4", 4, "唐敖一時不語。"),
+                    _sentence("c1-s5", 5, "國王正要進宮。"),
+                    _sentence("c1-s6", 6, "唐敖自從那日同多九公尋訪林之洋下落，訪來訪去，絕無消息。"),
+                ],
+            }
+        ],
+    }
+
+    candidates = generate_candidate_set(
+        document,  # type: ignore[arg-type]
+        current_sentence_id="c1-s6",
+        current_text="唐敖自從那日同多九公尋訪林之洋下落，訪來訪去，絕無消息。",
+        anchor_memory=build_empty_anchor_memory(),
+        max_memory_candidates=0,
+        max_lookback_candidates=2,
+    )
+
+    assert candidates["lookback_candidates"][0]["sentence_id"] == "c1-s1"
+    assert candidates["lookback_candidates"][0]["candidate_kind"] == "source_callback"

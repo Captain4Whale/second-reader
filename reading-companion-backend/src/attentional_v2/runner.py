@@ -25,7 +25,7 @@ from src.reading_runtime.sequential_state import (
 from src.reading_runtime.shell_state import load_runtime_shell, save_runtime_shell
 from src.iterator_reader.llm_utils import llm_invocation_scope, runtime_trace_context
 
-from .bridge import build_anchor_record, run_phase5_bridge_cycle
+from .bridge import build_anchor_record, candidate_pool_for_bridge_resolution, run_phase5_bridge_cycle
 from .evaluation import build_normalized_eval_bundle, persist_normalized_eval_bundle
 from .intake import process_sentence_intake
 from .nodes import run_phase4_local_cycle
@@ -654,6 +654,10 @@ def read_attentional_v2(request: ReadRequest, mechanism: MechanismInfo) -> ReadR
                     current_text=_clean_text(sentence.get("text")),
                     anchor_memory=anchor_memory,
                 )
+                bridge_candidates = candidate_pool_for_bridge_resolution(
+                    candidate_set,
+                    max_supporting_candidates=int(reader_policy.get("bridge", {}).get("max_supporting_candidates", 2) or 2),
+                )
                 phase4 = run_phase4_local_cycle(
                     focal_sentence=sentence,
                     current_span_sentences=current_span_sentences,
@@ -662,7 +666,7 @@ def read_attentional_v2(request: ReadRequest, mechanism: MechanismInfo) -> ReadR
                     anchor_memory=anchor_memory,
                     knowledge_activations=knowledge_activations,
                     reader_policy=reader_policy,
-                    bridge_candidates=[],
+                    bridge_candidates=bridge_candidates,
                     output_language=provisioned.output_language,
                     output_dir=output_dir,
                     book_title=provisioned.title,

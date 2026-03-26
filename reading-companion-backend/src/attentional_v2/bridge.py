@@ -129,11 +129,11 @@ def candidate_pool_for_bridge_resolution(
             continue
         pool.append(
             {
-                "candidate_kind": "source_lookback",
+                "candidate_kind": _clean_text(candidate.get("candidate_kind")) or "source_lookback",
                 "target_anchor_id": "",
                 "target_sentence_id": _clean_text(candidate.get("sentence_id")),
-                "retrieval_channel": "source_lookback",
-                "relation_type": "echo",
+                "retrieval_channel": _clean_text(candidate.get("retrieval_channel")) or "source_lookback",
+                "relation_type": _clean_text(candidate.get("relation_type")) or "echo",
                 "score": float(candidate.get("overlap_score", 0) or 0.0),
                 "why_now": "",
                 "quote": _clean_text(candidate.get("text")),

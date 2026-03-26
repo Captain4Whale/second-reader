@@ -241,6 +241,11 @@ Update when: status changes, blockers appear, or phases complete.
   - choose one:
     - start a first mechanism-repair pass from the current `9 + 9` reviewed slice
     - or run another balanced expansion round toward the preferred `10-12` reviewed-active cases per language
+- [x] Start a first mechanism-repair pass from the current `9 + 9` reviewed slice
+- [ ] Continue mechanism repair after the first pass:
+  - explicit callback-cue reading
+  - distinction / recognition-gap closure
+  - durable-pattern recognition for reconsolidation cases
 - [ ] Reach the preferred reviewed-slice confidence target before broad mechanism tuning:
   - `10-12` `reviewed_active` excerpt cases per language
 - [ ] Run local-reading and span-trajectory evaluation
@@ -329,6 +334,25 @@ Update when: status changes, blockers appear, or phases complete.
       - start a first mechanism-repair pass from the current `9 + 9` reviewed slice
       - or keep expanding toward the preferred `10-12` reviewed-active cases per language before broader mechanism tuning
     - broader semantic comparison should remain blocked until that decision and a follow-up rerun land
+  - Started the first mechanism-repair pass from the current `9 + 9` reviewed slice instead of running another expansion round immediately.
+  - Landed the first repair slice in code:
+    - deterministic bridge candidates now reach the live Phase 4 runner instead of being dropped before `controller_decision`
+    - Phase 4 now keeps zoom-level bridge hints in the controller candidate pool
+    - deterministic retrieval now does callback-aware broader prior scanning when explicit backward-looking markers are present
+    - Phase 4 prompt wording now pushes zoom/closure to name exact callback cues and distinctions instead of flattening them into generic scene summary
+  - Verified the repair slice with focused tests over:
+    - retrieval
+    - Phase 4 node handoff
+    - live runner bridge-candidate plumbing
+  - Ran the first targeted post-repair benchmark at `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_integrity_repair_pass1_targeted_20260326/` over four weak Chinese reviewed cases.
+  - First repair-pass result:
+    - `3 fail`
+    - `1 partial`
+    - one callback case (`jinghua_yuan_25377_zh__34__callback_bridge__v2`) improved from `fail` to `partial` because real cross-span callback candidates now surfaced
+    - the other targeted cases remained below target, which means the pass helped bridge retrieval but did not yet solve exact cue-reading or durable-pattern framing
+  - Next route:
+    - keep broader semantic comparison blocked
+    - continue mechanism repair before rerunning the full reviewed slice again
   - Completed Phase 8.5: `attentional_v2` now runs end to end through the shared runtime, CLI, and existing async job lifecycle; resume and incompatible fresh reruns preserve `mechanism_key`; the backend rejects legacy `book_analysis` for `attentional_v2` explicitly; and stable/temp docs now treat `attentional_v2` as experimental instead of design-only.
   - Added the explicit evaluation-question layer before dataset design: stable cross-mechanism questions now live in `docs/backend-reader-evaluation.md`, stable attentional-specific proof questions now live in `docs/backend-reading-mechanisms/attentional_v2.md`, and the temporary `evaluation-question-map.md` now records exactly which questions this implementation project still has to answer, including the cross-mechanism comparison work that remains part of the current `attentional_v2` job.
   - Added the corpus-requirements layer before book collection: `evaluation-corpus-requirements.md` now separates what the future data process can satisfy during curation from what the source books themselves must already satisfy, and it records the source-policy recommendation plus the concrete book-pool requirements for the first serious benchmark build.

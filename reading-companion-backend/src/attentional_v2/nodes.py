@@ -567,7 +567,12 @@ def run_phase4_local_cycle(
         chapter_title=chapter_title,
         zoom_result=zoom_result,
     )
-    merged_bridge_candidates = [*closure_result.get("bridge_candidates", []), *bridge_candidates]
+    merged_bridge_candidates = []
+    zoom_bridge_candidate = (zoom_result or {}).get("bridge_candidate") if zoom_result else None
+    if zoom_bridge_candidate:
+        merged_bridge_candidates.append(zoom_bridge_candidate)
+    merged_bridge_candidates.extend(closure_result.get("bridge_candidates", []))
+    merged_bridge_candidates.extend(bridge_candidates)
     controller_result = controller_decision(
         working_pressure=working_pressure,
         closure_result=closure_result,

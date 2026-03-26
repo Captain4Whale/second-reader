@@ -12,6 +12,7 @@ from statistics import mean
 from typing import Any
 
 from eval.common.taxonomy import DETERMINISTIC_METRICS, DIRECT_QUALITY, RUBRIC_JUDGE, normalize_methods, normalize_scopes, validate_target_slug
+from src.attentional_v2.bridge import candidate_pool_for_bridge_resolution
 from src.attentional_v2.nodes import run_phase4_local_cycle
 from src.attentional_v2.retrieval import generate_candidate_set
 from src.attentional_v2.schemas import build_default_reader_policy, build_empty_anchor_memory, build_empty_knowledge_activations, build_empty_working_pressure
@@ -317,32 +318,21 @@ def _build_bridge_candidates(document: BookDocument, case: ExcerptCase, current_
     candidate_set = generate_candidate_set(
         document,
         current_sentence_id=str(focal_sentence.get("sentence_id", "")),
-        current_text=case.excerpt_text,
+        current_text=_clean_text(focal_sentence.get("text")),
         anchor_memory=build_empty_anchor_memory(mechanism_version="attentional_v2-phase8"),
         max_memory_candidates=0,
-        max_lookback_candidates=8,
+        max_lookback_candidates=12,
     )
-    bridge_candidates: list[dict[str, Any]] = []
-    for item in candidate_set.get("lookback_candidates", []):
-        if not isinstance(item, dict):
-            continue
-        overlap = int(item.get("overlap_score", 0) or 0)
-        sentence_id = str(item.get("sentence_id", "") or "")
-        if not sentence_id or overlap <= 0:
-            continue
-        bridge_candidates.append(
-            {
-                "candidate_kind": "source_lookback",
-                "target_anchor_id": "",
-                "target_sentence_id": sentence_id,
-                "retrieval_channel": "source_lookback",
-                "relation_type": "echo",
-                "score": float(overlap),
-                "why_now": "Lexical overlap from bounded lookback source space.",
-                "quote": _clean_text(item.get("text"))[:280],
-            }
-        )
-    return bridge_candidates[:3]
+    bridge_candidates = candidate_pool_for_bridge_resolution(candidate_set, max_supporting_candidates=2)
+    return [
+        {
+            **dict(candidate),
+            "why_now": _clean_text(candidate.get("why_now")) or "Deterministic source candidate for local bridge judgment.",
+            "quote": _clean_text(candidate.get("quote"))[:280],
+        }
+        for candidate in bridge_candidates
+        if _clean_text(candidate.get("target_sentence_id")) and float(candidate.get("score", 0.0) or 0.0) > 0.0
+    ][:3]
 
 
 def _deterministic_metrics(

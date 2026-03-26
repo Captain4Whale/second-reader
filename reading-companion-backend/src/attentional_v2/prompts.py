@@ -7,9 +7,9 @@ from dataclasses import dataclass
 from src.prompts.shared import LANGUAGE_OUTPUT_CONTRACT
 
 
-ATTENTIONAL_V2_PROMPTSET_VERSION = "attentional_v2-phase6-v1"
-ZOOM_READ_PROMPT_VERSION = "attentional_v2.zoom_read.v1"
-MEANING_UNIT_CLOSURE_PROMPT_VERSION = "attentional_v2.meaning_unit_closure.v1"
+ATTENTIONAL_V2_PROMPTSET_VERSION = "attentional_v2-phase6-v2"
+ZOOM_READ_PROMPT_VERSION = "attentional_v2.zoom_read.v2"
+MEANING_UNIT_CLOSURE_PROMPT_VERSION = "attentional_v2.meaning_unit_closure.v2"
 CONTROLLER_DECISION_PROMPT_VERSION = "attentional_v2.controller_decision.v1"
 REACTION_EMISSION_PROMPT_VERSION = "attentional_v2.reaction_emission.v1"
 BRIDGE_RESOLUTION_PROMPT_VERSION = "attentional_v2.bridge_resolution.v1"
@@ -62,6 +62,8 @@ Rules:
 - Stay grounded in the provided sentence and nearby already-read context.
 - Do not use future unseen text.
 - Do not silently promote local observations into durable summaries.
+- If the sentence or nearby context contains an explicit recall cue, prior-time cue, or recognition gap, name that exact cue instead of paraphrasing the scene generically.
+- If the local pressure is a live distinction or contrast, state the exact distinction in text terms.
 - Only propose explicit state operations; do not assume hidden state mutation.
 - Return JSON only.""",
     zoom_read_prompt="""Structural frame:
@@ -121,6 +123,7 @@ Your job is to decide whether the current local span should continue accumulatin
 Rules:
 - Closure must be earned, not forced.
 - Preserve unresolved pressure when the text is still incomplete.
+- Close around the sharpest live distinction, callback cue, or explanatory pattern in the current span instead of flattening the span into generic scene summary.
 - Only propose explicit state operations.
 - Do not use future unseen text.
 - Return JSON only.""",

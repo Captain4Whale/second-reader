@@ -229,10 +229,12 @@ def test_attentional_v2_read_book_runs_live_loop_and_persists_compatibility_resu
 
     monkeypatch.chdir(tmp_path)
     monkeypatch.setattr(runner_module, "ensure_canonical_parse", lambda *args, **kwargs: _provisioned_book())
+    captured_bridge_candidates: list[dict[str, object]] = []
 
     def fake_phase4_local_cycle(**kwargs):
         focal_sentence = kwargs["focal_sentence"]
         anchor_quote = str(focal_sentence.get("text", "") or "").strip()[:80]
+        captured_bridge_candidates.extend(kwargs["bridge_candidates"])
         return {
             "zoom_result": None,
             "closure_result": {
@@ -312,6 +314,28 @@ def test_attentional_v2_read_book_runs_live_loop_and_persists_compatibility_resu
             "callback_anchor_ids": [],
         }
 
+    monkeypatch.setattr(
+        runner_module,
+        "generate_candidate_set",
+        lambda *args, **kwargs: {
+            "current_sentence_id": "c1-s2",
+            "memory_candidates": [],
+            "lookback_candidates": [
+                {
+                    "candidate_kind": "source_callback",
+                    "sentence_id": "c1-s1",
+                    "chapter_id": 1,
+                    "chapter_title": "Chapter 1",
+                    "text": "Alpha sentence.",
+                    "text_role": "body",
+                    "locator": {},
+                    "overlap_score": 3.5,
+                    "retrieval_channel": "source_callback",
+                    "relation_type": "callback",
+                }
+            ],
+        },
+    )
     monkeypatch.setattr(runner_module, "process_sentence_intake", fake_process_sentence_intake)
     monkeypatch.setattr(runner_module, "run_phase4_local_cycle", fake_phase4_local_cycle)
     monkeypatch.setattr(runner_module, "run_phase6_chapter_cycle", fake_phase6_chapter_cycle)
@@ -329,6 +353,8 @@ def test_attentional_v2_read_book_runs_live_loop_and_persists_compatibility_resu
     assert result.normalized_eval_bundle["mechanism_key"] == ATTENTIONAL_V2_MECHANISM_KEY
     chapter_payload = json.loads(chapter_result_compatibility_file(result.output_dir, 1).read_text(encoding="utf-8"))
     assert chapter_payload["visible_reaction_count"] >= 1
+    assert captured_bridge_candidates[0]["target_sentence_id"] == "c1-s1"
+    assert captured_bridge_candidates[0]["retrieval_channel"] == "source_callback"
     shell = load_runtime_shell(runtime_shell_file(result.output_dir))
     assert shell["mechanism_key"] == ATTENTIONAL_V2_MECHANISM_KEY
     assert shell["status"] == "completed"

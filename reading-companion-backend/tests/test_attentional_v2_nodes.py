@@ -82,8 +82,8 @@ def test_zoom_read_writes_prompt_manifest_and_normalizes_payload(tmp_path, monke
     assert result["pressure_updates"][0]["operation_type"] == "update"
     assert result["bridge_candidate"]["target_anchor_id"] == "a-1"
     assert result["consider_reaction_emission"] is True
-    assert manifest["prompt_version"] == "attentional_v2.zoom_read.v1"
-    assert manifest["promptset_version"] == "attentional_v2-phase6-v1"
+    assert manifest["prompt_version"] == "attentional_v2.zoom_read.v2"
+    assert manifest["promptset_version"] == "attentional_v2-phase6-v2"
 
 
 def test_controller_decision_refuses_bridge_without_candidates(monkeypatch):
@@ -245,4 +245,70 @@ def test_run_phase4_local_cycle_honors_node_handoff_and_reaction_gate(tmp_path, 
     assert result["controller_result"]["chosen_move"] == "bridge"
     assert result["reaction_result"]["decision"] == "emit"
     assert result["reaction_result"]["reaction"]["type"] == "discern"
+    assert result["bridge_candidates"][0]["target_anchor_id"] == "a-1"
     assert emit_manifest.exists()
+
+
+def test_run_phase4_local_cycle_keeps_zoom_bridge_hints(monkeypatch):
+    """The Phase 4 bridge pool should keep a valid zoom-level bridge hint."""
+
+    def fake_invoke_json(system_prompt: str, _prompt: str, default: object) -> object:
+        if "sentence-level zoom node" in system_prompt:
+            return {
+                "local_interpretation": "The line explicitly points back to an earlier claim.",
+                "anchor_quote": "However, value shifts here.",
+                "pressure_updates": [],
+                "activation_updates": [],
+                "bridge_candidate": {
+                    "target_anchor_id": "",
+                    "target_sentence_id": "c1-s1",
+                    "relation_type": "contrast",
+                    "why_now": "the sentence explicitly turns back toward the opening claim",
+                },
+                "consider_reaction_emission": False,
+                "uncertainty_note": "",
+            }
+        if "meaning-unit closure node" in system_prompt:
+            return {
+                "closure_decision": "close",
+                "meaning_unit_summary": "The local unit is closed but bridge-aware.",
+                "dominant_move": "advance",
+                "proposed_state_operations": [],
+                "bridge_candidates": [],
+                "reaction_candidate": None,
+                "unresolved_pressure_note": "",
+            }
+        if "controller-decision node" in system_prompt:
+            return {
+                "chosen_move": "bridge",
+                "reason": "the callback should be tested against the earlier claim",
+                "target_anchor_id": "",
+                "target_sentence_id": "",
+            }
+        return default
+
+    monkeypatch.setattr(nodes_module, "invoke_json", fake_invoke_json)
+
+    result = run_phase4_local_cycle(
+        focal_sentence=_sentence("c1-s2", "However, value shifts here.", sentence_index=2),
+        current_span_sentences=[
+            _sentence("c1-s1", "Value looks stable at first.", sentence_index=1),
+            _sentence("c1-s2", "However, value shifts here.", sentence_index=2),
+        ],
+        trigger_state={"output": "zoom_now", "gate_state": "hot"},
+        working_pressure=build_empty_working_pressure(),
+        anchor_memory=build_empty_anchor_memory(),
+        knowledge_activations=build_empty_knowledge_activations(),
+        reader_policy=build_default_reader_policy(),
+        bridge_candidates=[],
+        output_language="en",
+        output_dir=None,
+        book_title="Demo Book",
+        author="Tester",
+        chapter_title="Chapter 1",
+        boundary_context={"gate_state": "hot", "candidate_boundary": True},
+    )
+
+    assert result["bridge_candidates"][0]["target_sentence_id"] == "c1-s1"
+    assert result["controller_result"]["chosen_move"] == "bridge"
+    assert result["controller_result"]["target_sentence_id"] == "c1-s1"

@@ -75,6 +75,10 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
 - The current scaffold already has the Phase 4 node boundary and handoff shape:
   - `zoom_read -> meaning_unit_closure -> controller_decision`
   - optional `reaction_emission` gate after closure when the moment earns a visible anchored thought
+- The current Phase 4 controller candidate pool now merges three sources before choosing the next move:
+  - one optional zoom-level bridge hint
+  - closure-level bridge candidates
+  - deterministic bridge candidates generated from the already-read source
 - Phase 5 now adds the bridge-judgment layer after deterministic candidate generation:
   - `candidate_generation -> bridge_resolution -> durable anchor / move updates`
 - The next move is one of:
@@ -150,6 +154,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - unresolved-question linkage
   - structural centrality
   - recency when helpful, but not as the only signal
+- Deterministic source retrieval now stays local by default, but when the focal sentence carries explicit backward-looking callback markers it may widen to a broader already-read source scan to surface earlier callback candidates instead of only nearby lexical echoes.
 - Search posture is separate from prior-knowledge posture.
   - Version-one search states are:
     - `no_search`
@@ -180,6 +185,11 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - reconsolidation now uses append-and-link history instead of mutating earlier persisted reactions
 - Sentence-level trigger detection should happen continuously during intake.
   - This protects against missing a crucial single sentence even when the main reasoning unit is larger.
+- The current prompt set now explicitly tells the local interpretation and closure nodes to name:
+  - exact callback cues
+  - exact distinctions or recognition gaps
+  - explanatory patterns
+  rather than flattening these moments into generic scene summary.
 - Retroactive resurfacing is first-class.
   - A later span can promote an earlier sentence or paragraph into renewed focus.
 - The Phase 5 bridge helper now enforces source honesty:
