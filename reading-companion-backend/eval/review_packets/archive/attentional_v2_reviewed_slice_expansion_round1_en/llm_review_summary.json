@@ -1,0 +1,13 @@
+{
+  "packet_id": "attentional_v2_reviewed_slice_expansion_round1_en",
+  "run_id": "attentional_v2_reviewed_slice_expansion_round1_en__llm_review__20260326-040832",
+  "generated_at": "2026-03-26T04:09:54.436138Z",
+  "review_origin": "llm",
+  "review_policy": "llm_multi_prompt_adjudication_v1",
+  "case_count": 6,
+  "action_counts": {
+    "keep": 4,
+    "revise": 2
+  },
+  "source_case_audit_run_id": "attentional_v2_reviewed_slice_expansion_round1_en__20260326-040401"
+}

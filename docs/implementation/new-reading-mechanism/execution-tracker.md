@@ -21,8 +21,10 @@ Update when: status changes, blockers appear, or phases complete.
   - the universal shared LLM invocation and traceability layer is landed, and the route has returned to active benchmark hardening
 - Current blockers:
   - final end-to-end comparison still waits on:
-    - completion of the balanced bilingual reviewed-slice expansion round after the latest hardening import
-    - actual evaluation runs over the tracked `v2` benchmark family
+    - a decision at the current reviewed-slice gate:
+      - start a first mechanism-repair pass from the current `9 + 9` reviewed slice
+      - or keep expanding toward the preferred `10-12` reviewed-active cases per language first
+    - broader semantic comparison remains blocked until that decision and the next follow-up rerun land
     - later frontend/API retirement of section-first chapter/detail and marks surfaces
     - later stable-doc promotion timing under `Q10`
 
@@ -203,7 +205,7 @@ Update when: status changes, blockers appear, or phases complete.
   - allow same-model key failover when policy permits
   - do not silently switch model families inside one packet-review run or one evaluation run
 - [x] Migrate the main runtime and eval call sites onto the shared LLM layer
-- [ ] Return from the universal-LLM side branch to active benchmark hardening:
+- [x] Return from the universal-LLM side branch to active benchmark hardening:
   - [x] final adjudication/import for `attentional_v2_zh_revision_replacement_round2`
   - [x] reviewed-slice rerun of `mechanism_integrity`
 - [ ] Review and harden the weakest local buckets:
@@ -229,12 +231,16 @@ Update when: status changes, blockers appear, or phases complete.
   - current counts:
     - English `reviewed_active`: `5`
     - Chinese `reviewed_active`: `4`
-- [ ] Run the next bilingual reviewed-slice expansion packet
+- [x] Run the next bilingual reviewed-slice expansion packet
   - round target:
     - `6` English promotion candidates
     - `6` Chinese promotion candidates
-- [ ] Reach the next reviewed-slice floor before broader semantic comparison:
+- [x] Reach the next reviewed-slice floor before broader semantic comparison:
   - at least `8` `reviewed_active` excerpt cases per language
+- [ ] Make the next post-floor decision before broader semantic comparison:
+  - choose one:
+    - start a first mechanism-repair pass from the current `9 + 9` reviewed slice
+    - or run another balanced expansion round toward the preferred `10-12` reviewed-active cases per language
 - [ ] Reach the preferred reviewed-slice confidence target before broad mechanism tuning:
   - `10-12` `reviewed_active` excerpt cases per language
 - [ ] Run local-reading and span-trajectory evaluation
@@ -299,6 +305,30 @@ Update when: status changes, blockers appear, or phases complete.
     - English: `5` `reviewed_active`, `2` `needs_revision`
     - Chinese: `4` `reviewed_active`, `1` `needs_revision`, `1` `needs_replacement`
   - The queue is empty again, but the reviewed slice is still below the `8`-per-language floor. The next route is now the planned bilingual `6+6` reviewed-slice expansion packet rather than broader semantic comparison.
+  - Completed the first balanced bilingual `6+6` reviewed-slice expansion round end-to-end:
+    - English packet:
+      - `attentional_v2_reviewed_slice_expansion_round1_en`
+      - machine-side audit: `reading-companion-backend/eval/runs/attentional_v2/case_audits/attentional_v2_reviewed_slice_expansion_round1_en__20260326-040401/`
+      - adjudication/import result: `4 keep`, `2 revise`
+    - Chinese packet:
+      - `attentional_v2_reviewed_slice_expansion_round1_zh`
+      - machine-side audit: `reading-companion-backend/eval/runs/attentional_v2/case_audits/attentional_v2_reviewed_slice_expansion_round1_zh__20260326-040401/`
+      - adjudication/import result: `5 keep`, `1 revise`
+  - After import, the tracked curated excerpt datasets now stand at:
+    - English: `9` `reviewed_active`, `4` `needs_revision`
+    - Chinese: `9` `reviewed_active`, `2` `needs_revision`, `1` `needs_replacement`
+  - Reached the current minimum reviewed-slice trust floor in both languages and froze refreshed reviewed datasets at:
+    - `reading-companion-backend/eval/datasets/excerpt_cases/attentional_v2_excerpt_en_curated_v2_llm_reviewed_round3/`
+    - `reading-companion-backend/eval/datasets/excerpt_cases/attentional_v2_excerpt_zh_curated_v2_llm_reviewed_round3/`
+  - Reran `mechanism_integrity` on that expanded reviewed slice at `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_integrity_reviewed_slice_round3_20260326/`.
+  - The expanded reviewed-slice rerun produced `18` cases with `7 pass`, `1 partial`, `10 fail`, and no structural failures. English remained mixed-but-usable (`6 pass`, `3 fail`), while Chinese remained clearly below trust (`1 pass`, `1 partial`, `7 fail`).
+  - Important interpretation note for the next route:
+    - the dataset is no longer too tiny to be meaningful
+    - dataset weakness was part of the earlier distortion, but the new rerun shows robust remaining mechanism weakness, especially on the Chinese slice
+    - the next real decision is now substantive rather than procedural:
+      - start a first mechanism-repair pass from the current `9 + 9` reviewed slice
+      - or keep expanding toward the preferred `10-12` reviewed-active cases per language before broader mechanism tuning
+    - broader semantic comparison should remain blocked until that decision and a follow-up rerun land
   - Completed Phase 8.5: `attentional_v2` now runs end to end through the shared runtime, CLI, and existing async job lifecycle; resume and incompatible fresh reruns preserve `mechanism_key`; the backend rejects legacy `book_analysis` for `attentional_v2` explicitly; and stable/temp docs now treat `attentional_v2` as experimental instead of design-only.
   - Added the explicit evaluation-question layer before dataset design: stable cross-mechanism questions now live in `docs/backend-reader-evaluation.md`, stable attentional-specific proof questions now live in `docs/backend-reading-mechanisms/attentional_v2.md`, and the temporary `evaluation-question-map.md` now records exactly which questions this implementation project still has to answer, including the cross-mechanism comparison work that remains part of the current `attentional_v2` job.
   - Added the corpus-requirements layer before book collection: `evaluation-corpus-requirements.md` now separates what the future data process can satisfy during curation from what the source books themselves must already satisfy, and it records the source-policy recommendation plus the concrete book-pool requirements for the first serious benchmark build.

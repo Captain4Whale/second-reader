@@ -163,6 +163,11 @@ Per-language coverage target for this expansion packet:
 Immediate reviewed-slice gate after Lane A + Lane B:
 - aim for at least `8` `reviewed_active` excerpt cases per language before broader semantic comparison
 - do not trust broader semantic comparison if one language remains far below that floor
+- status:
+  - reached on `2026-03-26` after the first balanced bilingual `6+6` reviewed-slice expansion round
+  - current reviewed-active counts:
+    - English: `9`
+    - Chinese: `9`
 
 Preferred next confidence gate after the following round:
 - `10-12` `reviewed_active` excerpt cases per language
@@ -256,7 +261,14 @@ The review loop should stay intentionally simple and not require a frontend webs
   - currently `0` active packets
   - see `reading-companion-backend/eval/review_packets/review_queue_summary.md`
   - immediate next hardening step:
-    - start the bilingual reviewed-slice expansion round
+    - none
+    - the first balanced bilingual `6+6` reviewed-slice expansion round is complete
+  - current decision point:
+    - the reviewed slice is no longer too small to be meaningful
+    - broader semantic comparison should still remain blocked for now
+    - the next real choice is:
+      - start a first mechanism-repair pass from the current `9 + 9` reviewed slice
+      - or run one more balanced expansion round to reach the preferred `10-12` reviewed-active cases per language before broad mechanism tuning
   - most recent bilingual hardening round:
     - implementation note:
       - the current import path is dataset-local, so one balanced bilingual round is represented as a synchronized packet pair rather than one mixed packet
@@ -342,6 +354,78 @@ The review loop should stay intentionally simple and not require a frontend webs
       - Chinese callback handling still shows real mechanism weakness even after dataset cleanup
       - broader semantic comparison should remain blocked until the next balanced bilingual reviewed-slice expansion round lands
       - the later bilingual hardening round improved the reviewed-active counts, but the benchmark still remains below the `8`-per-language minimum trust floor for broader semantic comparison
+  - reviewed-slice expansion round 1:
+    - implementation note:
+      - the current import path remains dataset-local, so one balanced bilingual expansion round is represented as a synchronized packet pair rather than one mixed packet
+    - English packet:
+      - `attentional_v2_reviewed_slice_expansion_round1_en`
+      - `6` cases
+      - source policy:
+        - current tracked curated `v2` rows still marked `builder_curated`
+      - machine-side case audit:
+        - `reading-companion-backend/eval/runs/attentional_v2/case_audits/attentional_v2_reviewed_slice_expansion_round1_en__20260326-040401/`
+        - `6` completed
+        - primary decisions: `4 keep`, `2 revise`
+        - adversarial risk counts: `2 low`, `4 medium`
+      - final adjudication/import:
+        - `4 keep`
+        - `2 revise`
+    - Chinese packet:
+      - `attentional_v2_reviewed_slice_expansion_round1_zh`
+      - `6` cases
+      - source policy:
+        - current tracked curated `v2` rows still marked `builder_curated`
+      - machine-side case audit:
+        - `reading-companion-backend/eval/runs/attentional_v2/case_audits/attentional_v2_reviewed_slice_expansion_round1_zh__20260326-040401/`
+        - `6` completed
+        - primary decisions: `5 keep`, `1 revise`
+        - adversarial risk counts: `2 low`, `4 medium`
+      - final adjudication/import:
+        - `5 keep`
+        - `1 revise`
+    - imported status effect on tracked curated `v2` datasets:
+      - English:
+        - `9` `reviewed_active`
+        - `4` `needs_revision`
+      - Chinese:
+        - `9` `reviewed_active`
+        - `2` `needs_revision`
+        - `1` `needs_replacement`
+  - reviewed-slice rerun after expansion:
+    - frozen reviewed datasets:
+      - `reading-companion-backend/eval/datasets/excerpt_cases/attentional_v2_excerpt_en_curated_v2_llm_reviewed_round3/`
+      - `reading-companion-backend/eval/datasets/excerpt_cases/attentional_v2_excerpt_zh_curated_v2_llm_reviewed_round3/`
+    - benchmark run:
+      - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_integrity_reviewed_slice_round3_20260326/`
+    - result:
+      - `18` total cases
+      - `7 pass`
+      - `1 partial`
+      - `10 fail`
+      - `0` structural failures
+      - global averages:
+        - `text_groundedness`: `3.278`
+        - `meaning_unit_quality`: `2.889`
+        - `move_quality`: `3.111`
+        - `reaction_quality`: `3.167`
+        - `case_fit`: `2.667`
+      - English:
+        - `6 pass`
+        - `3 fail`
+        - `3.444` average on `meaning_unit_quality`, `move_quality`, and `case_fit`
+      - Chinese:
+        - `1 pass`
+        - `1 partial`
+        - `7 fail`
+        - `1.889` `case_fit`
+    - interpretation:
+      - the benchmark is now large enough to give a real signal instead of only a tiny-slice hint
+      - dataset weakness was part of the earlier problem, but it is no longer the whole story
+      - real mechanism weakness remains, especially on the Chinese slice and especially around `callback_bridge`, `tension_reversal`, and `reconsolidation_later_reinterpretation`
+      - broader semantic comparison should still remain blocked
+      - the next real decision is whether to:
+        - start mechanism repair from this `9 + 9` reviewed slice
+        - or keep expanding toward the preferred `10-12` reviewed-active cases per language before broader mechanism tuning
 
 ### Export tool
 - `reading-companion-backend/eval/attentional_v2/export_dataset_review_packet.py`

@@ -50,16 +50,26 @@ Last updated: `2026-03-26`
 - `attentional_v2` is now a live experimental mechanism under `_mechanisms/attentional_v2/` with real parse/read entrypoints, shared runtime-shell integration, and async job lifecycle support.
 - Internal job launchers, resume, and incompatible fresh rerun now preserve `mechanism_key` through shared runtime/job plumbing.
 - `attentional_v2` remains intentionally unsupported for legacy `book_analysis` mode in this slice.
-- Dataset hardening now has an active balanced bilingual hardening round. The Chinese round-2 revision/replacement packet has already been adjudicated and imported through the shared LLM layer, and the reviewed-slice rerun of `mechanism_integrity` has also completed.
-- The tracked Chinese curated `v2` dataset still carries `2` `reviewed_active`, `3` `needs_revision`, and `1` `needs_replacement` cases in the round-2 target slice. The reviewed-slice benchmark is cleaner than before, but it is still too thin and still weak on Chinese callback behavior, so broader semantic comparison should remain blocked until the next balanced bilingual excerpt hardening and expansion round lands.
-- The first balanced bilingual hardening round is now prepared as a synchronized packet pair under `reading-companion-backend/eval/review_packets/pending/`:
-  - `attentional_v2_bilingual_hardening_round3_en`
-  - `attentional_v2_bilingual_hardening_round3_zh`
-  - that round has now completed end-to-end and is archived
-- After the bilingual hardening import, the tracked curated excerpt datasets now stand at:
-  - English: `5` `reviewed_active`, `2` `needs_revision`
-  - Chinese: `4` `reviewed_active`, `1` `needs_revision`, `1` `needs_replacement`
-- The review queue is empty again. The next route is the planned bilingual `6+6` reviewed-slice expansion packet, because the benchmark still remains below the `8`-per-language minimum trust floor.
+- Dataset hardening has now completed both:
+  - the balanced bilingual `4+4` hardening round
+  - the first balanced bilingual `6+6` reviewed-slice expansion round
+- After the expansion import, the tracked curated excerpt datasets now stand at:
+  - English: `9` `reviewed_active`, `4` `needs_revision`
+  - Chinese: `9` `reviewed_active`, `2` `needs_revision`, `1` `needs_replacement`
+- The refreshed reviewed datasets are now frozen at:
+  - `reading-companion-backend/eval/datasets/excerpt_cases/attentional_v2_excerpt_en_curated_v2_llm_reviewed_round3/`
+  - `reading-companion-backend/eval/datasets/excerpt_cases/attentional_v2_excerpt_zh_curated_v2_llm_reviewed_round3/`
+- The latest reviewed-slice rerun is:
+  - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_integrity_reviewed_slice_round3_20260326/`
+- Important current interpretation:
+  - the reviewed slice is no longer too small to be meaningful
+  - dataset cleanup and expansion helped, but they did not erase the problem
+  - English is mixed but usable
+  - Chinese still shows robust weakness, especially around callback / tension / reconsolidation handling
+  - broader semantic comparison should remain blocked for now
+- The review queue is empty again. The next route is now a real decision point:
+  - start a first mechanism-repair pass from the current `9 + 9` reviewed slice
+  - or keep expanding toward the preferred `10-12` reviewed-active cases per language before broader mechanism tuning
 - Stable mechanism docs are now split between the shared platform doc (`docs/backend-reading-mechanism.md`) and per-mechanism docs under `docs/backend-reading-mechanisms/`.
 - Storage helpers still read older shared-path and flat legacy artifacts for compatibility, but new writes should target the namespaced mechanism paths.
 - Normal reading runs do not persist normalized eval bundles; those exports are reserved for explicit eval-mode runs.
