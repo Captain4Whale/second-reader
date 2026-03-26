@@ -176,6 +176,8 @@ The review loop should stay intentionally simple and not require a frontend webs
       - `0` factual failures
       - primary decisions: `4 keep`, `2 revise`
       - adversarial risk counts: `4 medium`, `1 high`, `1 low`
+  - immediate next hardening step:
+    - after the temporary universal shared LLM layer detour, run final LLM adjudication/import for this packet and then rerun `mechanism_integrity` on the reviewed slice
 - archived round 1 packet results:
   - `attentional_v2_zh_weak_buckets_round1`
     - `0 keep`

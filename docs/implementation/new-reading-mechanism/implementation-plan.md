@@ -270,6 +270,45 @@ Exit criteria:
 - Current chapter/detail, analysis-state, activity, and marks surfaces remain functional through compatibility payloads even when no iterator structure exists.
 - Stable and temp docs reflect that `attentional_v2` is experimental rather than design-only.
 
+## Phase 9 Side Branch: Universal LLM Invocation And Traceability Layer
+Purpose:
+- Prevent the new packet-level case-audit traceability work from remaining a one-off evaluation tool.
+- Promote project-owned prompt-to-provider calls onto one shared backend invocation layer before broader evaluation and stabilization work goes further.
+
+Main work:
+- Extract the reusable provider invocation helper out of `src/iterator_reader/llm_utils.py` into shared backend infrastructure.
+- Define one shared trace contract for project-owned LLM calls, including:
+  - call identity
+  - provider/model
+  - mechanism or eval context
+  - stage/node identity
+  - timing and retry metadata
+  - success/failure classification
+- Preserve the existing standard-vs-debug observability posture:
+  - `standard` should keep lightweight call metadata and failure diagnosis
+  - `debug` may add prompt/response diagnostics when explicitly enabled
+- Migrate the main current callers onto the shared layer:
+  - `iterator_v1`
+  - `attentional_v2`
+  - evaluation judges and packet hardening tools
+  - one-off eval scripts that still instantiate provider clients directly
+- Keep this as a shared-infrastructure slice rather than a hidden mechanism change.
+
+Depends on:
+- Phase 8
+- Phase 8.5
+
+Return path:
+- After this side branch lands, return immediately to the current Phase 9 evaluation-hardening route:
+  - final LLM adjudication/import for the active Chinese round-2 packet
+  - reviewed-slice rerun of `mechanism_integrity`
+  - broader comparison/evaluation only after that rerun
+
+Exit criteria:
+- The project no longer relies on a review-runner-only tracing pattern for LLM visibility.
+- Shared project-owned LLM calls can be traced consistently across runtime and eval paths.
+- The active benchmark-hardening route is resumed explicitly after the shared layer lands.
+
 ## Phase 9: Migration, Stabilization, And Default-Cutover Readiness
 Purpose:
 - Move from "implemented mechanism" to "mechanism ready for real product use."
@@ -297,6 +336,7 @@ Main work:
   - land the tracked `v2` benchmark packages for chapter, runtime, excerpt, and compatibility work
 - Screen and promote high-signal private local books into `state/library_sources/` when they improve corpus quality, then keep their text-bearing packages in the local-only package mirror instead of the tracked dataset tree.
 - Apply the source-book standards from `evaluation-corpus-requirements.md` before accepting books into the benchmark pool.
+- Land the universal shared LLM invocation/traceability side branch without losing the current evaluation-hardening route.
 - Run mechanism-integrity and end-to-end evaluation passes.
 - Compare against `iterator_v1` on shared evaluation frame.
 - Decide compatibility strategy for:

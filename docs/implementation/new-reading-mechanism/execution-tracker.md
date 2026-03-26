@@ -16,8 +16,15 @@ Update when: status changes, blockers appear, or phases complete.
   - `in_progress`
 - Current phase:
   - `Phase 9: Migration, Stabilization, And Default-Cutover Readiness`
+- Current side branch:
+  - universal shared LLM invocation and traceability layer
+  - purpose: promote the new packet-level audit tracing into shared backend infrastructure without losing the active evaluation-hardening route
+  - return point:
+    - final LLM adjudication/import for the active Chinese round-2 packet
+    - reviewed-slice rerun of `mechanism_integrity`
 - Current blockers:
   - final end-to-end comparison still waits on:
+    - completion of the temporary universal-LLM-layer side branch
     - actual evaluation runs over the tracked `v2` benchmark family
     - later frontend/API retirement of section-first chapter/detail and marks surfaces
     - later stable-doc promotion timing under `Q10`
@@ -184,6 +191,12 @@ Update when: status changes, blockers appear, or phases complete.
 - [x] Make packet-level case audits traceable with run-state, per-case state, and partial-summary artifacts
 - [x] Add bounded case-level parallelism to the packet case-audit runner
 - [x] Complete the machine-side case audit on the Chinese round-2 revision/replacement packet
+- [ ] Extract a shared backend LLM invocation layer out of the iterator-specific helper path
+- [ ] Define shared standard/debug trace outputs for project-owned LLM calls
+- [ ] Migrate the main runtime and eval call sites onto the shared LLM layer
+- [ ] Return from the universal-LLM side branch to active benchmark hardening:
+  - final adjudication/import for `attentional_v2_zh_revision_replacement_round2`
+  - reviewed-slice rerun of `mechanism_integrity`
 - [ ] Review and harden the weakest local buckets:
   - `callback_bridge`
   - `reconsolidation_later_reinterpretation`
