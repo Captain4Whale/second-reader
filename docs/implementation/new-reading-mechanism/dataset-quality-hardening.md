@@ -38,7 +38,11 @@ Authoritative first-pass evidence:
   - structurally trustworthy benchmark inputs
   - serious first-pass semantic cases
   - still eligible for review and promotion
-- Pause broader semantic comparison work until the weakest local buckets are reviewed and the first serious reviewed-slice repair gate has been rerun.
+- Broader semantic comparison should stay blocked until the weakest local buckets are reviewed and the first serious reviewed-slice repair gate has been rerun.
+- That gate has now been satisfied:
+  - the reviewed-slice rerun improved to `16 pass / 2 fail`
+  - the first chapter-scale broader comparison pass is now landed
+  - the next work should interpret and respond to that result rather than asking whether broader comparison may begin
 - It is still acceptable to continue purely structural or runtime-gate work in parallel when that work does not depend on the semantic case labels being final.
 - The first packet-level machine-side audit already indicates real benchmark-design weakness in the targeted Chinese weak-bucket slice, so that slice should now be treated as review-required rather than merely review-optional.
 - The current operational rule is now LLM-led review by default:

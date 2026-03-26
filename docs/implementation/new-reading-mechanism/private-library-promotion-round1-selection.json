@@ -1,0 +1,194 @@
+{
+  "round_id": "private_library_promotion_round1_selection",
+  "based_on_plan": "private_library_promotion_round1",
+  "status": "ready_for_curation_review_prep",
+  "source_manifest_id": "attentional_v2_private_library_screen_v2",
+  "corpus_manifest_id": "attentional_v2_private_library_bilingual_v2",
+  "overrides": [
+    {
+      "type": "chapter_quality_override",
+      "language_track": "en",
+      "source_id": "poor_charlies_almanack_private_en",
+      "decision": "defer_chapter_lane_keep_excerpt_lane",
+      "reason": "Current chapter candidates are oversized and parse-unsafe for the first chapter-level lift."
+    },
+    {
+      "type": "chapter_quality_override",
+      "language_track": "zh",
+      "source_id": "fooled_by_randomness_private_zh",
+      "decision": "use___19_for_chapter_lane",
+      "reason": "Avoid front matter and the oversized first-pass chapter candidate."
+    },
+    {
+      "type": "excerpt_balance_override",
+      "language_track": "zh",
+      "source_id": "canglang_zhishui_private_zh",
+      "decision": "use_one_reserve_narrative_excerpt",
+      "reason": "Priority Chinese narrative source does not yield five distinct high-quality narrative seed excerpts."
+    }
+  ],
+  "chapter_lift": {
+    "en": {
+      "target_count": 8,
+      "role_mix": {
+        "expository": 3,
+        "argumentative": 3,
+        "narrative_reflective": 2
+      },
+      "selected_ids": [
+        "good_strategy_bad_strategy_private_en__22",
+        "good_strategy_bad_strategy_private_en__55",
+        "evicted_private_en__10",
+        "fooled_by_randomness_private_en__14",
+        "supremacy_private_en__13",
+        "supremacy_private_en__23",
+        "steve_jobs_private_en__17",
+        "steve_jobs_private_en__24"
+      ]
+    },
+    "zh": {
+      "target_count": 8,
+      "role_mix": {
+        "expository": 3,
+        "argumentative": 3,
+        "narrative_reflective": 2
+      },
+      "selected_ids": [
+        "kangxi_hongpiao_private_zh__12",
+        "kangxi_hongpiao_private_zh__27",
+        "fooled_by_randomness_private_zh__19",
+        "meiguoren_de_xingge_private_zh__8",
+        "biji_de_fangfa_private_zh__13",
+        "zouchu_weiyi_zhenliguan_private_zh__14",
+        "zhangzhongmou_zizhuan_private_zh__10",
+        "zhangzhongmou_zizhuan_private_zh__11"
+      ]
+    }
+  },
+  "excerpt_lift": {
+    "en": {
+      "target_count": 16,
+      "role_mix": {
+        "expository": 6,
+        "argumentative": 5,
+        "narrative_reflective": 5
+      },
+      "selected_ids": [
+        "good_strategy_bad_strategy_private_en__22__seed_1",
+        "good_strategy_bad_strategy_private_en__22__seed_2",
+        "good_strategy_bad_strategy_private_en__55__seed_2",
+        "evicted_private_en__10__seed_1",
+        "evicted_private_en__17__seed_2",
+        "evicted_private_en__29__seed_1",
+        "poor_charlies_almanack_private_en__10__seed_1",
+        "poor_charlies_almanack_private_en__10__seed_2",
+        "fooled_by_randomness_private_en__14__seed_1",
+        "fooled_by_randomness_private_en__14__seed_2",
+        "supremacy_private_en__13__seed_1",
+        "steve_jobs_private_en__17__seed_1",
+        "steve_jobs_private_en__17__seed_2",
+        "steve_jobs_private_en__24__seed_1",
+        "steve_jobs_private_en__24__seed_2",
+        "steve_jobs_private_en__43__seed_1"
+      ]
+    },
+    "zh": {
+      "target_count": 16,
+      "role_mix": {
+        "expository": 6,
+        "argumentative": 5,
+        "narrative_reflective": 5
+      },
+      "selected_ids": [
+        "kangxi_hongpiao_private_zh__12__seed_1",
+        "kangxi_hongpiao_private_zh__12__seed_2",
+        "kangxi_hongpiao_private_zh__27__seed_1",
+        "fooled_by_randomness_private_zh__9__seed_1",
+        "fooled_by_randomness_private_zh__19__seed_2",
+        "meiguoren_de_xingge_private_zh__8__seed_1",
+        "meiguoren_de_xingge_private_zh__19__seed_2",
+        "biji_de_fangfa_private_zh__13__seed_1",
+        "biji_de_fangfa_private_zh__15__seed_2",
+        "zouchu_weiyi_zhenliguan_private_zh__14__seed_1",
+        "zouchu_weiyi_zhenliguan_private_zh__8__seed_1",
+        "zhangzhongmou_zizhuan_private_zh__4__seed_1",
+        "zhangzhongmou_zizhuan_private_zh__4__seed_2",
+        "zhangzhongmou_zizhuan_private_zh__10__seed_1",
+        "zhangzhongmou_zizhuan_private_zh__10__seed_2",
+        "canglang_zhishui_private_zh__16__seed_2"
+      ]
+    }
+  },
+  "review_first": {
+    "chapter_ids": [
+      "supremacy_private_en__23",
+      "kangxi_hongpiao_private_zh__27",
+      "fooled_by_randomness_private_zh__19",
+      "zhangzhongmou_zizhuan_private_zh__10",
+      "zhangzhongmou_zizhuan_private_zh__11"
+    ],
+    "excerpt_ids": [
+      "good_strategy_bad_strategy_private_en__22__seed_1",
+      "good_strategy_bad_strategy_private_en__22__seed_2",
+      "good_strategy_bad_strategy_private_en__55__seed_2",
+      "poor_charlies_almanack_private_en__10__seed_1",
+      "poor_charlies_almanack_private_en__10__seed_2",
+      "kangxi_hongpiao_private_zh__12__seed_2",
+      "zhangzhongmou_zizhuan_private_zh__4__seed_1",
+      "zhangzhongmou_zizhuan_private_zh__4__seed_2",
+      "zhangzhongmou_zizhuan_private_zh__10__seed_1",
+      "zhangzhongmou_zizhuan_private_zh__10__seed_2",
+      "canglang_zhishui_private_zh__16__seed_2"
+    ]
+  },
+  "reserve_or_defer": {
+    "chapter_ids": [
+      "poor_charlies_almanack_private_en__5",
+      "poor_charlies_almanack_private_en__6",
+      "poor_charlies_almanack_private_en__10",
+      "poor_charlies_almanack_private_en__19",
+      "kangxi_hongpiao_private_zh__73",
+      "kangxi_hongpiao_private_zh__76",
+      "fooled_by_randomness_private_zh__2",
+      "fooled_by_randomness_private_zh__3",
+      "zhangzhongmou_zizhuan_private_zh__4",
+      "zhangzhongmou_zizhuan_private_zh__9"
+    ],
+    "book_ids": {
+      "en_reserve": [
+        "antifragile_private_en",
+        "skin_in_the_game_private_en",
+        "black_swan_private_en",
+        "principles_private_en",
+        "shoe_dog_private_en",
+        "snowball_private_en",
+        "naval_almanack_private_en",
+        "making_of_a_manager_private_en",
+        "inspired_private_en"
+      ],
+      "en_defer": [
+        "book_of_elon_private_en",
+        "elon_musk_private_en",
+        "cracking_pm_career_private_en",
+        "cracking_pm_interview_private_en",
+        "decode_and_conquer_private_en",
+        "chance_private_en"
+      ],
+      "zh_reserve": [
+        "canglang_zhishui_private_zh"
+      ]
+    }
+  },
+  "next_step": {
+    "workflow": [
+      "Materialize one English and one Chinese excerpt review packet from excerpt_lift.selected_ids.",
+      "Run machine-side case audits on those excerpt packets first.",
+      "In parallel, perform chapter-lane sanity validation on chapter_lift.selected_ids, especially review_first.chapter_ids.",
+      "Only then promote reviewed survivors into the next curated excerpt pass and chapter-comparison candidate pack."
+    ],
+    "do_not_do": [
+      "Do not reselect round-1 candidates directly from the raw supplement pool unless this selection file is revised.",
+      "Do not pull the deferred chapter ids into the first chapter-comparison pass."
+    ]
+  }
+}

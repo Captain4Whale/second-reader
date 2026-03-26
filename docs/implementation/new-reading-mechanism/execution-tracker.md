@@ -21,9 +21,9 @@ Update when: status changes, blockers appear, or phases complete.
   - the universal shared LLM invocation and traceability layer is landed, and the route has returned to active benchmark hardening
 - Current blockers:
   - final end-to-end comparison still waits on:
-    - a decision at the current post-repair gate:
-      - unblock broader semantic comparison now that the full `9 + 9` reviewed slice rerun improved to `16 pass / 2 fail`
-      - or land one more narrow repair on the two remaining failing cases before unblocking
+    - follow-up after the first broader semantic comparison pass:
+      - `local_reading_behavior` is now clearly weaker than `iterator_v1` on the English chapter pack
+      - `span_trajectory` is now clearly stronger than `iterator_v1` on the Chinese chapter pack and positive overall
     - balanced benchmark promotion from the modern private-library `v2` supplement remains prepared but not yet curated into the formal tracked benchmark
     - later frontend/API retirement of section-first chapter/detail and marks surfaces
     - later stable-doc promotion timing under `Q10`
@@ -249,13 +249,38 @@ Update when: status changes, blockers appear, or phases complete.
   - route chosen:
     - rerun the full `9 + 9` reviewed slice now
 - [x] Rerun the full `9 + 9` reviewed slice after the second repair pass
-- [ ] Make the post-rerun decision before broader semantic comparison:
-  - choose one:
+- [x] Make the post-rerun decision before broader semantic comparison:
+  - route chosen:
     - unblock broader semantic comparison now
-    - or land one more narrow repair on the two remaining failing cases first
 - [ ] Reach the preferred reviewed-slice confidence target before broad mechanism tuning:
   - `10-12` `reviewed_active` excerpt cases per language
-- [ ] Run local-reading and span-trajectory evaluation
+- [x] Run local-reading and span-trajectory evaluation
+  - landed as two parallel balanced chapter-core packs:
+    - English:
+      - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_vs_iterator_v1_chapter_core_en_round1_20260326/`
+    - Chinese:
+      - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_vs_iterator_v1_chapter_core_zh_round1_20260326/`
+  - first-pass result:
+    - `local_impact` overall:
+      - `attentional_v2`: `2` wins + `1` tie out of `8`
+      - `iterator_v1`: `5` wins out of `8`
+    - `local_impact` by language:
+      - English:
+        - `iterator_v1` wins all `4`
+      - Chinese:
+        - `attentional_v2`: `2` wins + `1` tie out of `4`
+    - `system_regression` overall:
+      - `attentional_v2`: `6` wins out of `8`
+      - `iterator_v1`: `2` wins out of `8`
+    - `system_regression` by language:
+      - English:
+        - split `2` / `2`
+      - Chinese:
+        - `attentional_v2` wins all `4`
+  - immediate interpretation:
+    - broader semantic comparison is now truly active rather than hypothetical
+    - `attentional_v2` still trails on chapter-local reading quality in the English pack
+    - `attentional_v2` is already stronger on chapter-scale span trajectory, especially in Chinese
 - [ ] Run durable-trace and re-entry evaluation
 - [ ] Run runtime-viability evaluation
 - [ ] Decide whether the current benchmark family is still too small for high-confidence cross-mechanism judgment after the reviewed-slice rerun
@@ -304,6 +329,12 @@ Update when: status changes, blockers appear, or phases complete.
   - round-1 recommendation:
     - prioritize `6` English books and `6` Chinese books
     - lift `8` chapter candidates and `16` excerpt candidates per language into the next curation/review pass
+- [x] Prepare the formal curation/review execution pass for private-library promotion round 1
+  - landed execution artifacts:
+    - `docs/implementation/new-reading-mechanism/private-library-promotion-round1-execution.md`
+    - `docs/implementation/new-reading-mechanism/private-library-promotion-round1-selection.json`
+  - round-1 execution rule:
+    - use the frozen selection file rather than reselecting ad hoc from the raw supplement pool
 - [ ] Curate and review promotion candidates from the modern supplement pool
 - [ ] Promote balanced modern additions into the formal benchmark:
   - curated excerpt target:

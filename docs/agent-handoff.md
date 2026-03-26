@@ -7,16 +7,21 @@ Update when: current focus, active risks, temporary warnings, or migration statu
 
 This file is a temporary working note. It is not a source-of-truth document.
 
-Last updated: `2026-03-26`
+Last updated: `2026-03-27`
 
 ## Current Focus
 - Phase 9 preparation for the new reading mechanism project
 - use `docs/implementation/new-reading-mechanism/` as the temporary working set for design capture, planning, progress tracking, and open questions
 - keep the current active route explicit:
   - the repair-gate rerun is now landed
-  - the next real choice is:
-    - unblock broader semantic comparison now that the full `9 + 9` reviewed slice improved to `16 pass / 2 fail`
-    - or land one more narrow repair on the two remaining failing cases first
+  - the first broader semantic comparison pass is now landed too:
+    - English chapter-core pack:
+      - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_vs_iterator_v1_chapter_core_en_round1_20260326/`
+    - Chinese chapter-core pack:
+      - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_vs_iterator_v1_chapter_core_zh_round1_20260326/`
+  - the next real comparison follow-up is now:
+    - explain and respond to the split result
+    - not decide whether broader semantic comparison should start, because it already has
   - keep the next corpus-growth direction explicit too:
     - the benchmark should no longer grow as literature-heavy by default
     - the next acquisition pass should diversify into modern nonfiction with emphasis on management / economics, business, and biography
@@ -29,7 +34,7 @@ Last updated: `2026-03-26`
   - shared provider contracts, key-pool failover, task-level profiles, and standard/debug trace sinks now live in backend infrastructure
   - the return path is direct:
     - reviewed-slice rerun of `mechanism_integrity`
-    - then an explicit decision on broader semantic comparison
+    - then broader semantic comparison itself
 - decide `Q10`: how much of the detailed working design should be promoted from temp docs into stable `attentional_v2` documentation
 - keep `iterator_reader` as the current default reader while `attentional_v2` matures as an experimental end-to-end runner
 - finish the later frontend/API migration away from section-first chapter/detail and marks surfaces
@@ -92,7 +97,8 @@ Last updated: `2026-03-26`
   - the remaining weakness is now narrow and concrete:
     - `darkwater_public_en__12__tension_reversal__v2`
     - `nahan_27166_zh__2__callback_bridge__v2`
-  - the next route decision is whether to unblock broader semantic comparison now or land one more narrow repair first
+  - the next route decision is no longer whether to unblock broader semantic comparison
+  - that route is now active and has first-pass evidence
 - The review queue is empty again. The current route is now active mechanism repair rather than more packet expansion.
 - The first mechanism-repair pass has already landed:
   - deterministic bridge candidates now reach live Phase 4
@@ -128,9 +134,26 @@ Last updated: `2026-03-26`
     - remaining narrow weakness:
       - one distinction / recognition-gap case is still shallow
       - one callback case still misbridges because the actual supporting prior-acquaintance anchor is not honestly resolved
+- The broader semantic comparison pass is now landed:
+  - English run:
+    - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_vs_iterator_v1_chapter_core_en_round1_20260326/`
+  - Chinese run:
+    - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_vs_iterator_v1_chapter_core_zh_round1_20260326/`
+  - first-pass interpretation:
+    - `local_reading_behavior`
+      - English:
+        - `iterator_v1` wins all `4`
+      - Chinese:
+        - `attentional_v2` wins `2` and ties `1`
+    - `span_trajectory`
+      - English:
+        - split `2` / `2`
+      - Chinese:
+        - `attentional_v2` wins all `4`
 - The next real decision point is now:
-  - unblock broader semantic comparison and begin the next evaluation layer
-  - or land one more narrow repair first on the two remaining failing cases
+  - how to respond to the new split result:
+    - chapter-local reading quality still needs English-side work
+    - chapter-scale span trajectory is already strong enough to justify continuing the broader evaluation ladder
 - Stable mechanism docs are now split between the shared platform doc (`docs/backend-reading-mechanism.md`) and per-mechanism docs under `docs/backend-reading-mechanisms/`.
 - The next modern source-book expansion is now recorded explicitly in:
   - it now includes both:
@@ -167,6 +190,9 @@ Last updated: `2026-03-26`
   - planning artifacts:
     - `docs/implementation/new-reading-mechanism/private-library-promotion-round1.md`
     - `docs/implementation/new-reading-mechanism/private-library-promotion-round1.json`
+  - execution artifacts:
+    - `docs/implementation/new-reading-mechanism/private-library-promotion-round1-execution.md`
+    - `docs/implementation/new-reading-mechanism/private-library-promotion-round1-selection.json`
   - round-1 recommendation:
     - `6` English books
     - `6` Chinese books
