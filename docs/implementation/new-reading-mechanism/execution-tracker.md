@@ -355,6 +355,12 @@ Update when: status changes, blockers appear, or phases complete.
 - [x] Curate the chapter corpus for cross-mechanism span/end-to-end comparison
 - [x] Curate runtime/resume and persisted compatibility fixture packs for gate and migration audits
 - [ ] Compare against `iterator_v1`
+- [x] Establish a reusable mechanism-pattern capture rule and living ledger for later mechanism synthesis
+  - stable rule lives in:
+    - `docs/backend-reader-evaluation.md`
+    - `reading-companion-backend/AGENTS.md`
+  - working ledger lives in:
+    - `docs/implementation/new-reading-mechanism/mechanism-pattern-ledger.md`
 - [ ] Promote landed behavior into stable docs
 - [ ] Record decision-bearing changes in history doc when needed
 - [ ] Make explicit default-cutover decision

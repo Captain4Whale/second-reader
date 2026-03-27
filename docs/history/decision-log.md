@@ -705,3 +705,71 @@ Update when: a major product or engineering decision is made, reversed, or becom
 - `docs/backend-reading-mechanism.md`
 - `docs/backend-reader-evaluation.md`
 - `README.md`
+
+## Entry 30
+**Decision / Inflection**: Treat reviewed-slice hardening plus mechanism repair as the gate for broader semantic comparison, then explicitly unblock chapter-scale comparison once the repaired reviewed slice generalized.
+
+**Period**: Late March 2026, after the bilingual hardening and reviewed-slice expansion rounds, through repair pass 2.
+
+**Problem**: The project had reached the point where `attentional_v2` was runnable and benchmarkable, but the first serious local excerpt results still mixed benchmark weakness with mechanism weakness. Moving straight into chapter-scale cross-mechanism comparison too early would have risked comparing architectures on a half-hardened benchmark and then overreacting to whatever the first broad results happened to say.
+
+**Alternatives considered**: Start broader comparison as soon as the first reviewed slice existed, keep delaying broader comparison until every weak local case was repaired, or tune the mechanism directly against the still-small early reviewed slice without first proving that repairs generalized.
+
+**Why this path won**: The project needed one explicit gate between local benchmark trust-building and broader comparison. The chosen rule was: harden the excerpt benchmark until the reviewed slice is meaningful, run narrowly targeted repair passes against the clearly weak local behaviors, then rerun the full reviewed slice. Only once that rerun showed strong generalization would broader chapter-scale comparison be unblocked. This protected the project from both premature broad claims and endless local overfitting.
+
+**What changed in the system**: The tracker and handoff now record benchmark hardening as an explicit gating lane rather than a side chore. The project ran bilingual `4+4` hardening, bilingual `6+6` reviewed-slice expansion, a first reviewed-slice floor check, two mechanism-repair passes, and then a repaired full reviewed-slice rerun before allowing broader chapter comparison to proceed. The resulting first chapter-core comparison then produced split evidence instead of a flat win/loss story: `iterator_v1` remained stronger on English chapter-local reading, while `attentional_v2` was stronger on span trajectory overall and especially in Chinese.
+
+**Why it matters later**: This is the historical hinge between “make the new mechanism evaluable” and “compare it honestly at chapter scale.” Later contributors need to know that broader semantic comparison was not simply delayed or rushed by instinct; it was explicitly gated by benchmark hardening and repaired-slice generalization, and the first broad comparison produced mixed evidence rather than a simplistic promotion signal.
+
+**Primary evidence**:
+- `docs/implementation/new-reading-mechanism/dataset-quality-hardening.md`
+- `docs/implementation/new-reading-mechanism/execution-tracker.md`
+- `docs/agent-handoff.md`
+- `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_integrity_reviewed_slice_round3_repair_pass2_20260326/summary/report.md`
+- `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_vs_iterator_v1_chapter_core_en_round1_20260326/summary/report.md`
+- `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_vs_iterator_v1_chapter_core_zh_round1_20260326/summary/report.md`
+
+## Entry 31
+**Decision / Inflection**: Turn the modern private-library supplement into the formal benchmark-diversification and growth lane, instead of leaving copyright-restricted nonfiction as an ad hoc local side pool.
+
+**Period**: Late March 2026, after the `/Users/baiweijiang/Documents/BOOK` batch was merged with the earlier private local books.
+
+**Problem**: The tracked public/open benchmark family had become strong enough for first serious evaluation, but it was still skewed toward older public-domain material and literary/nonfiction mixes that did not reflect the user's actual reading priorities. The project needed a way to widen genre coverage toward modern business, management, biography, history, science, and other nonfiction without pretending that copyrighted books could live in the tracked repo dataset.
+
+**Alternatives considered**: Keep relying on the public/open corpus as the main long-term benchmark source, add modern private books only opportunistically when a specific gap appeared, or treat the private books as useful local reading material but not as a formal benchmark-growth lane.
+
+**Why this path won**: The project needed both breadth and honesty. A local-only supplement preserves copyright boundaries while still letting the benchmark grow in the directions that matter for real reading quality. Formalizing the supplement as its own manifest-backed source pool also keeps the process reproducible: ingest, fingerprint, parse, screen, package, then promote into the formal benchmark through balanced curation instead of ad hoc cherry-picking.
+
+**What changed in the system**: The repo now treats the combined private library as a first-class local-only source family with source manifests, local refs, corpus manifests, split manifests, and generated local-only dataset packages. The current combined pool contains the newly supplied `/Users/baiweijiang/Documents/BOOK` titles plus the earlier private books, and the execution plan now includes a frozen round-1 promotion-preparation pass to lift balanced English/Chinese chapter and excerpt candidates from that supplement into the next formal curation/review cycle. The category strategy also shifted explicitly toward a more diversified benchmark mix, with special weight on business, management, and biography.
+
+**Why it matters later**: This is the moment where benchmark growth stopped meaning “find more public-domain books” and started meaning “grow a diversified bilingual benchmark family across tracked public sources and local-only modern sources.” Later contributors need this context to understand why local-only manifests and package families exist, why modern nonfiction expansion is now part of the main evaluation roadmap, and why benchmark size and genre coverage are expected to grow together.
+
+**Primary evidence**:
+- `docs/implementation/new-reading-mechanism/modern-nonfiction-expansion-booklist.md`
+- `docs/implementation/new-reading-mechanism/private-library-promotion-round1.md`
+- `docs/implementation/new-reading-mechanism/private-library-promotion-round1-execution.md`
+- `docs/implementation/new-reading-mechanism/execution-tracker.md`
+- `reading-companion-backend/eval/manifests/source_books/attentional_v2_private_library_screen_v2.json`
+- `reading-companion-backend/eval/manifests/local_refs/attentional_v2_private_library_v2.json`
+
+## Entry 32
+**Decision / Inflection**: Make evaluation preserve portable strengths and repeatable failures, not only winner/loser conclusions.
+
+**Period**: Late March 2026, after the first broader chapter-core comparison made the split result concrete.
+
+**Problem**: The evaluation process had become strong enough to identify mixed results across mechanisms, but a plain winner/loser summary was not enough to support later mechanism synthesis. If the project only remembered which mechanism won each scope, it would lose the more valuable design memory: which local reading habits were genuinely strong, which chapter-scale accumulation behaviors were worth carrying forward, and which failures should not be repeated.
+
+**Alternatives considered**: Keep comparison results mostly as run artifacts plus prose interpretation, store only high-level winner summaries in the tracker, or leave strength/failure extraction to later ad hoc chat reconstruction when synthesis work starts.
+
+**Why this path won**: The project is not trying to preserve two permanently separate reader tribes. It is trying to build a better reader over time. That means evaluation must preserve both adoption candidates and anti-pattern memory. Turning this into an explicit rule keeps strong observed behaviors portable across mechanisms and keeps repeated mistakes visible before they re-enter future prompt, retrieval, memory, or controller work.
+
+**What changed in the system**: Stable evaluation docs now require meaningful comparison and repair passes to preserve both positive adoption candidates and negative anti-patterns. The backend agent guide now reminds coding agents not to stop at winner/loser language when a run exposes transferable strengths or repeatable mistakes. The implementation workspace now also has a dedicated mechanism-pattern ledger that records concrete strengths, adoption candidates, failure modes, evidence links, and adoption status.
+
+**Why it matters later**: This is the policy that makes later synthesis work possible without relying on fragile memory. Future contributors should be able to look back and answer not only "who won this run?" but also "what should survive into the next mechanism?" and "what must not be repeated?"
+
+**Primary evidence**:
+- `docs/backend-reader-evaluation.md`
+- `reading-companion-backend/AGENTS.md`
+- `docs/implementation/new-reading-mechanism/mechanism-pattern-ledger.md`
+- `docs/implementation/new-reading-mechanism/execution-tracker.md`
+- `docs/agent-handoff.md`

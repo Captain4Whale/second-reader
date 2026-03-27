@@ -23,6 +23,14 @@ Update when: backend-local constraints, recurring pitfalls, or stable implementa
   - inspect mechanism weakness
   - inspect dataset / case / harness weakness
   - do not blame one side by default
+- When working on cross-mechanism comparison or repair-oriented evaluation tasks, preserve both:
+  - adoption candidates worth carrying forward from any mechanism
+  - failure modes / anti-patterns worth avoiding later
+  - do not let evaluation end at winner/loser language if the run exposed transferable strengths or repeatable mistakes
+- If a meaningful evaluation or repair pass reveals transferable strengths, causal drivers, or repeatable failures, update the relevant docs in the same task:
+  - the stable rule lives in `../docs/backend-reader-evaluation.md`
+  - the living record lives in `../docs/implementation/new-reading-mechanism/mechanism-pattern-ledger.md`
+  - if the finding changes project direction or would be hard to reconstruct later, also update `../docs/history/decision-log.md`
 - Current dataset-hardening rule:
   - use multi-prompt LLM adjudication as the default packet reviewer unless the user explicitly requests manual human review
   - treat manual human review as optional future escalation for higher-trust `gold` slices, not as the default blocker for current benchmark hardening

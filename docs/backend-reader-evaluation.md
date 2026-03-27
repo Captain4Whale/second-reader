@@ -89,6 +89,35 @@ Use `docs/backend-reading-mechanism.md` for shared mechanism-platform boundaries
   - longer-term reader quality memory
 - The same frame should let us compare competing architectures fairly without inventing new product definitions for each implementation.
 
+## Mechanism Pattern Capture Rule
+- Evaluation should preserve both:
+  - positive adoption candidates
+    - behaviors, design choices, prompt shapes, retrieval choices, control heuristics, or representation choices that proved genuinely strong
+  - negative anti-patterns
+    - failure modes, brittle shortcuts, misleading reaction habits, weak retrieval patterns, or benchmark-triggered regressions we do not want to repeat
+- We should not treat a comparison run as finished once it only names the winner.
+- Every meaningful cross-mechanism or repair-oriented evaluation pass should try to answer four questions:
+  - what worked well in mechanism A
+  - what worked well in mechanism B
+  - what failed in mechanism A
+  - what failed in mechanism B
+- Positive findings should be treated as portable design candidates rather than as property of one mechanism forever.
+  - The later goal is not to keep a permanent winner/loser story.
+  - The later goal is to extract the best preserved behaviors into a stronger reader.
+- Negative findings should be preserved as explicit anti-pattern memory rather than left as one-off chat conclusions.
+  - This helps prevent repeating the same mistakes during later prompt, retrieval, memory, or controller redesigns.
+- The stable rule is:
+  - stable methodology docs define the capture requirement
+  - a living ledger tracks concrete strengths, adoption candidates, anti-patterns, and evidence links
+  - decision-bearing adoptions or rejections should eventually be promoted into stable mechanism docs or the decision log
+- A useful ledger entry should record at least:
+  - source mechanism
+  - pattern kind: `strength`, `adoption_candidate`, `failure_mode`, or `anti_pattern`
+  - concise description
+  - why it mattered
+  - evidence links
+  - adoption status
+
 ## North Star
 - Reader quality is a vector, not a single score.
 - The first-class north star has two families plus one standing gate.

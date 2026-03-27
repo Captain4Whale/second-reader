@@ -22,6 +22,9 @@ Last updated: `2026-03-27`
   - the next real comparison follow-up is now:
     - explain and respond to the split result
     - not decide whether broader semantic comparison should start, because it already has
+  - preserve evaluation memory in two forms:
+    - keep the raw run artifacts and reports
+    - also keep a living pattern ledger of strengths worth adopting and failures worth avoiding later
   - keep the next corpus-growth direction explicit too:
     - the benchmark should no longer grow as literature-heavy by default
     - the next acquisition pass should diversify into modern nonfiction with emphasis on management / economics, business, and biography
@@ -213,6 +216,15 @@ Last updated: `2026-03-27`
       - `随机漫步的傻瓜`
       - `笔记的方法`
       - `走出唯一真理观`
+- A reusable mechanism-pattern capture rule is now part of the evaluation workflow:
+  - stable rule:
+    - `docs/backend-reader-evaluation.md`
+    - `reading-companion-backend/AGENTS.md`
+  - living working ledger:
+    - `docs/implementation/new-reading-mechanism/mechanism-pattern-ledger.md`
+  - use it to preserve:
+    - strengths worth carrying forward from either mechanism
+    - failure modes and anti-patterns worth avoiding in future synthesis work
 - Storage helpers still read older shared-path and flat legacy artifacts for compatibility, but new writes should target the namespaced mechanism paths.
 - Normal reading runs do not persist normalized eval bundles; those exports are reserved for explicit eval-mode runs.
 - Backend mechanism work is still shifting toward one shared runtime shell plus multiple mechanism-specific implementations. During this migration, `iterator_reader` remains the only default mechanism unless stable docs say otherwise.

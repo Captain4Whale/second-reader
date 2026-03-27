@@ -232,6 +232,10 @@ Update when: document layering, reading order, task routing, or cross-project co
 - If a backend change adds a mechanism, archives one, or changes which mechanism is default, update `docs/backend-reading-mechanisms/README.md` in the same task.
 - If a backend change changes which mechanism is default, update `docs/backend-reading-mechanism.md`, `docs/workspace-overview.md`, `docs/backend-sequential-lifecycle.md`, `docs/backend-state-aggregation.md`, `reading-companion-backend/AGENTS.md`, and `docs/history/decision-log.md` in the same task.
 - If a backend change materially alters reader-quality dimensions, evaluation workflow, offline judge usage, or evaluation artifact routing, update `docs/backend-reader-evaluation.md` in the same task.
+- If a meaningful evaluation/comparison or repair pass reveals portable design strengths, causal drivers, or repeatable failure patterns, update the relevant evaluation docs in the same task.
+  - keep the stable requirement in `docs/backend-reader-evaluation.md`
+  - keep the living implementation record in `docs/implementation/new-reading-mechanism/mechanism-pattern-ledger.md`
+  - if the finding changes project direction or would be hard to reconstruct later, also update `docs/history/decision-log.md`
 - If a backend change materially alters which artifacts feed public state surfaces, or where normalization between internal and public shapes happens, update `docs/backend-state-aggregation.md` in the same task.
 - If a major project change creates a decision, reversal, or design inflection point that would be hard to reconstruct later, update `docs/history/decision-log.md` in the same task.
 - Treat a change as decision-bearing when it introduces a new primary mechanism, changes the default product/runtime direction, establishes a new canonical control surface or route model, or promotes a stable doc to subsystem authority.

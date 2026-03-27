@@ -60,6 +60,9 @@ Update when: the design capture, plan, tracker, or open-question set changes dur
 - `dataset-quality-hardening.md`
   - explicit plan for strengthening semantic case trust before broader semantic comparison work
   - defines the review-status ladder, the weak-bucket hardening workflow, and the LLM-plus-human review split
+- `mechanism-pattern-ledger.md`
+  - living ledger of reusable strengths, adoption candidates, failure modes, and anti-patterns observed during evaluation and repair work
+  - use this to preserve what should be carried forward from either mechanism and what should be avoided later
 - `stable-doc-impact.md`
   - map of which long-term docs must be updated when each workstream lands
 - `runtime-artifact-map.md`
@@ -94,5 +97,6 @@ Update when: the design capture, plan, tracker, or open-question set changes dur
 9. `modern-nonfiction-expansion-booklist.md`
 10. `evaluation-dataset-layout.md`
 11. `dataset-quality-hardening.md`
-12. `runtime-artifact-map.md`
-13. Stable docs listed above, as required by the task at hand
+12. `mechanism-pattern-ledger.md`
+13. `runtime-artifact-map.md`
+14. Stable docs listed above, as required by the task at hand
