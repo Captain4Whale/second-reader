@@ -31,6 +31,11 @@ Update when: backend-local constraints, recurring pitfalls, or stable implementa
   - the stable rule lives in `../docs/backend-reader-evaluation.md`
   - the living record lives in `../docs/implementation/new-reading-mechanism/mechanism-pattern-ledger.md`
   - if the finding changes project direction or would be hard to reconstruct later, also update `../docs/history/decision-log.md`
+- Long-running eval or dataset-creation work must be registered durably instead of being tracked only in chat.
+  - Use `state/job_registry/active_jobs.json` as the source of truth for active agent/eval background work.
+  - Use `state/job_registry/active_jobs.md` as the human-readable mirror when handing off work.
+  - Register jobs that are expected to run longer than roughly `10-15` minutes.
+  - Before starting overlapping long-running work, refresh the registry first with the checker script.
 - Do not stop at storing findings in docs.
   - After each meaningful evaluation round, investigate what specifically contributed to the result and turn the highest-value findings into a selective implementation plan.
   - Either implement a small number of fitting improvements in the current approved mechanism, or record an explicit defer reason.
@@ -60,6 +65,7 @@ Update when: backend-local constraints, recurring pitfalls, or stable implementa
 - Treat `state/uploads/` as transient user-upload intake, not as the durable source library for manually curated books.
 - Treat `state/library_sources/` as the local durable source-library territory for repeated backend imports, demos, and evaluation preparation.
 - Treat `state/eval_local_datasets/` as the local-only mirror for evaluation packages derived from private books; use it when excerpt/chapter packages should not be checked into the repo.
+- Treat `state/job_registry/` as durable agent/eval background-job tracking territory for long-running offline work such as evaluation, packet audits, and dataset creation.
 - Treat `eval/datasets/` and `eval/manifests/` as evaluation-package territory; do not use transient uploads as the benchmark corpus by default.
 - Avoid new abstractions unless they clearly improve the current sequential workflow or future multi-mechanism comparability.
 

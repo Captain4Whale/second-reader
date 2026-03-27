@@ -25,6 +25,9 @@ Update when: document layering, reading order, task routing, or cross-project co
   - backend contract changes require frontend route/client review
   - frontend integration changes require backend contract verification
 - Prefer codifying workflows in root scripts and docs instead of leaving process knowledge only in chat.
+- Long-running eval or dataset jobs should not live only in chat memory.
+  - If a task is expected to run longer than roughly `10-15` minutes, register it in the backend background-job registry before or immediately after launch.
+  - Before starting overlapping long-running work, check the active registry first so a new agent does not duplicate or lose an in-flight run.
 - Keep runtime artifacts in `reading-companion-backend/` unless a task explicitly migrates them.
 - Do not remove the frontend repo's Figma Make history or generated structure unless the change has a clear maintenance benefit.
 

@@ -86,6 +86,21 @@ Important frontend variables:
 - `make backfill-covers`: scan existing backend outputs, extract missing EPUB covers, and refresh manifests
 - `cd reading-companion-frontend && npm run generate-api-types`: refresh generated frontend API types after the backend OpenAPI snapshot changes
 
+## Long-Running Eval Jobs
+Use the backend background-job registry for evaluation, packet review, or dataset jobs that may run for `10-15` minutes or longer.
+
+- Register or update one job:
+  - `cd reading-companion-backend && .venv/bin/python scripts/register_background_job.py --task-ref "execution-tracker#example" --lane mechanism_eval --purpose "English chapter-core rerun" --command ".venv/bin/python eval/attentional_v2/run_chapter_comparison.py --help" --cwd "$PWD"`
+- Refresh active jobs:
+  - `cd reading-companion-backend && .venv/bin/python scripts/check_background_jobs.py`
+- Refresh and also execute stored `check_command` probes:
+  - `cd reading-companion-backend && .venv/bin/python scripts/check_background_jobs.py --run-check-commands`
+
+Registry files live under `reading-companion-backend/state/job_registry/`:
+- `active_jobs.json`: source of truth for active background jobs
+- `active_jobs.md`: human-readable mirror for handoff and agent recovery
+- `history_jobs.jsonl`: archived terminal jobs
+
 ## Validation
 - `make contract-check` is the first guard for public contract drift.
 - `make e2e` is the canonical upload -> analysis -> book -> chapter -> marks regression.

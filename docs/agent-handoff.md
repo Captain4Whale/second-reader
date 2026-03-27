@@ -9,6 +9,22 @@ This file is a temporary working note. It is not a source-of-truth document.
 
 Last updated: `2026-03-27`
 
+## Active Background Jobs
+- For long-running eval or dataset work, do not rely on chat history alone.
+- Source of truth:
+  - `reading-companion-backend/state/job_registry/active_jobs.json`
+- Human-readable mirror:
+  - `reading-companion-backend/state/job_registry/active_jobs.md`
+- Before starting overlapping long-running work, refresh the registry with:
+  - `cd reading-companion-backend && .venv/bin/python scripts/check_background_jobs.py`
+- If a later agent needs to recover a run, use the stored:
+  - `task_ref`
+  - `run_dir`
+  - `status_file`
+  - `check_command`
+  - `decision_if_success`
+  - `decision_if_failure`
+
 ## Current Focus
 - Phase 9 preparation for the new reading mechanism project
 - use `docs/implementation/new-reading-mechanism/` as the temporary working set for design capture, planning, progress tracking, and open questions

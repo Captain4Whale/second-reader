@@ -794,3 +794,27 @@ Update when: a major product or engineering decision is made, reversed, or becom
 - `reading-companion-backend/AGENTS.md`
 - `AGENTS.md`
 - `docs/implementation/new-reading-mechanism/mechanism-pattern-ledger.md`
+
+## Entry 34
+**Decision / Inflection**: Add a durable registry for long-running eval and dataset background jobs so agent handoffs no longer depend on chat memory.
+
+**Period**: Late March 2026, after repeated multi-minute and multi-hour evaluation runs made agent changes and overlapping reruns harder to manage safely.
+
+**Problem**: The project increasingly relied on long-running offline work such as chapter comparison reruns, packet audits, packet adjudication, and dataset-construction passes. Those runs often lasted far longer than one chat turn or one active agent session. Without a durable job registry, later agents had to infer what was still running from scattered chat history, half-written handoff notes, or raw process output. That made it too easy to duplicate work, lose check commands, or forget what decision a still-running job was supposed to inform.
+
+**Alternatives considered**: Keep relying on `docs/agent-handoff.md` plus informal chat summaries, reuse the product-runtime `state/jobs/` records even though they describe user-upload analysis jobs rather than offline eval work, or leave long-running eval jobs untracked except for their run directories.
+
+**Why this path won**: The project needed a lightweight but durable workflow boundary for agent-owned offline work. A separate background-job registry keeps product runtime jobs and offline evaluation jobs distinct while still giving future agents one source of truth for what is running, what should be checked next, and what decision the job belongs to. Pairing the machine-readable registry with a generated human summary preserves handoff readability without forcing agents to hand-edit dynamic state into docs.
+
+**What changed in the system**: Backend infrastructure now includes a shared background-job registry helper plus two scripts: one to create/update/archive job records and one to refresh and inspect them. The registry lives under `reading-companion-backend/state/job_registry/` with `active_jobs.json` as the source of truth, `active_jobs.md` as the handoff-facing mirror, and `history_jobs.jsonl` as the archive. Workspace and backend agent rules now require jobs expected to run longer than roughly `10-15` minutes to be registered, and require later agents to refresh the registry before starting overlapping long-running work.
+
+**Why it matters later**: Future contributors will otherwise see the registry files and helper scripts without understanding why the project chose a separate eval/agent job ledger instead of overloading product runtime jobs. This entry records that the registry exists to preserve task linkage, check commands, and decision context across agent changes, not simply to list processes.
+
+**Primary evidence**:
+- `reading-companion-backend/src/reading_runtime/background_job_registry.py`
+- `reading-companion-backend/scripts/register_background_job.py`
+- `reading-companion-backend/scripts/check_background_jobs.py`
+- `docs/backend-reader-evaluation.md`
+- `docs/agent-handoff.md`
+- `AGENTS.md`
+- `reading-companion-backend/AGENTS.md`

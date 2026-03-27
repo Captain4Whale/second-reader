@@ -320,6 +320,37 @@ Use `docs/backend-reading-mechanism.md` for shared mechanism-platform boundaries
 - Silent cross-model switching inside one packet review run or one evaluation run is not allowed.
 - Eval reports should be able to recover which provider/model profile actually judged the run from the trace artifacts.
 
+### Background Eval Job Tracking
+- Long-running offline evaluation and dataset jobs should be tracked durably instead of relying on one agent's chat memory.
+- The operational source of truth is:
+  - `reading-companion-backend/state/job_registry/active_jobs.json`
+- The human-readable mirror is:
+  - `reading-companion-backend/state/job_registry/active_jobs.md`
+- Terminal jobs should be archived into:
+  - `reading-companion-backend/state/job_registry/history_jobs.jsonl`
+- Register a job when:
+  - the run is expected to last longer than roughly `10-15` minutes
+  - the output matters enough that another agent may need to resume, inspect, or avoid duplicating it later
+- Each registered job should record at least:
+  - `job_id`
+  - `task_ref`
+  - `lane`
+  - `purpose`
+  - `command`
+  - `cwd`
+  - `pid`
+  - `run_dir`
+  - `status_file`
+  - `log_file`
+  - `expected_outputs`
+  - `check_command`
+  - `next_check_hint`
+  - `decision_if_success`
+  - `decision_if_failure`
+  - `status`
+- Before starting a new long-running evaluation or dataset task, refresh the registry first so overlapping work does not silently duplicate or overwrite in-flight runs.
+- This registry supplements product runtime jobs in `state/jobs/`; it does not replace them.
+
 ## Observability Posture For Evaluation
 - Default evaluation should rely on `standard` observability first.
   - Standard mode should preserve enough runtime history for trustworthy resume, durable trace audits, and baseline cross-mechanism comparison.

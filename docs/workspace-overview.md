@@ -28,6 +28,7 @@ Update when: workspace structure, ownership boundaries, or primary shared entryp
     - `state/uploads/` is transient user-upload intake
     - `state/library_sources/` is the durable local source-library territory for manually curated books
     - `state/eval_local_datasets/` is the local-only evaluation-package mirror for copyrighted or otherwise private benchmark inputs
+    - `state/job_registry/` is the durable registry for long-running agent/eval background jobs
   - `eval/`
     - `eval/datasets/` stores tracked benchmark datasets
     - `eval/manifests/` stores tracked corpus manifests plus references to local source books and local-only evaluation packages
@@ -79,6 +80,7 @@ Update when: workspace structure, ownership boundaries, or primary shared entryp
 - Treat `reading-companion-backend/state/uploads/` as transient intake, not as the durable source library or benchmark corpus.
 - Treat `reading-companion-backend/state/library_sources/` as the local manually curated source-book territory for repeated backend and evaluation use.
 - Treat `reading-companion-backend/state/eval_local_datasets/` as the local-only mirror for evaluation packages that should not be checked into the repo because they contain copyrighted or otherwise private source text.
+- Treat `reading-companion-backend/state/job_registry/` as the durable state for long-running agent/eval jobs whose status must survive agent changes or handoffs.
 - Treat `reading-companion-backend/eval/datasets/` and `reading-companion-backend/eval/manifests/` as evaluation-package territory rather than as product runtime state.
 - Use `docs/backend-reading-mechanism.md` for shared mechanism boundaries and `docs/backend-reading-mechanisms/<mechanism>.md` for mechanism-private reading logic.
 - Treat `reading-companion-backend/output/<book_id>/public/` and `reading-companion-backend/output/<book_id>/_runtime/` as shared cross-mechanism territory.

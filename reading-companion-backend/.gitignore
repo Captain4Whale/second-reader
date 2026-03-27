@@ -42,3 +42,6 @@ Thumbs.db
 data/
 output/
 eval/runs/
+state/job_registry/active_jobs.json
+state/job_registry/active_jobs.md
+state/job_registry/history_jobs.jsonl
