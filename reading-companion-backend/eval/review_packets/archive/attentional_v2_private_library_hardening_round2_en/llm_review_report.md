@@ -1,0 +1,84 @@
+# LLM Packet Review: `attentional_v2_private_library_hardening_round2_en`
+
+- run_id: `attentional_v2_private_library_hardening_round2_en__llm_review__20260327-233434`
+- generated_at: `2026-03-27T23:36:01.390944Z`
+- case_count: `15`
+- action_counts: `{"drop": 2, "keep": 5, "revise": 8}`
+
+## Case Decisions
+
+- `evicted_private_en__10__seed_1`
+  - action: `drop`
+  - confidence: `high`
+  - problem_types: `weak_excerpt`
+  - notes: This case lacks all critical metadata (no case_title, question_ids, phenomena, selection_reason, or judge_focus) required for benchmark function. The excerpt is a straightforward relationship origin story with no ethical tension, moral reasoning challenge, or clear evaluation purpose. Even though the primary reviewer proposed potential framing, the current case state cannot function as a benchmark evaluation case and should be dropped.
+- `evicted_private_en__17__seed_2`
+  - action: `revise`
+  - confidence: `high`
+  - problem_types: `ambiguous_focus|weak_excerpt`
+  - notes: This case has critical metadata gaps (empty case_title, question_ids, phenomena, selection_reason, judge_focus) that make it unusable as a benchmark case. The excerpt mixes Rent Recovery Service's systemic debt collection critique with an Arleen courtroom scene without coherent focus. Needs either: (1) extract systemic debt collection analysis with proper metadata, or (2) frame the Arleen scene as specific case study with defined focus.
+- `evicted_private_en__29__seed_1`
+  - action: `keep`
+  - confidence: `high`
+  - problem_types: `other`
+  - notes: The case is now properly populated with metadata. The excerpt is coherent, demonstrates clear phenomena (dignity preservation through aspirational identity under chronic poverty), and the judge_focus appropriately challenges models to make nuanced interpretations rather than surface-level judgments. Minor footnote marker '4' is negligible text noise that doesn't impact comprehension. The case is ready for benchmark inclusion.
+- `fooled_by_randomness_private_en__14__seed_1`
+  - action: `keep`
+  - confidence: `high`
+  - problem_types: `other`
+  - notes: All three reviews converge on 'keep'. The primary review confirms strong bucket fit, focus clarity, and excerpt strength (all scores 1). The adversarial review confirms the case correctly illustrates Popper's falsification principle and the logical asymmetry between verification and falsification. The metadata deficiencies noted in the original LLM review have been resolved—both selection_reason and judge_focus are now populated and appropriate.
+- `fooled_by_randomness_private_en__14__seed_2`
+  - action: `revise`
+  - confidence: `high`
+  - problem_types: `text_noise|source_parse_problem`
+  - notes: Two critical issues remain: (1) The chapter_id (14) still mismatches chapter_title (Chapter Seven), indicating unresolved source parsing that needs correction. (2) The lookback_sentences contain contradictory noise ('These are scientists. But they could be anything.') that the primary reviewer correctly identified as undermining test clarity. The excerpt itself is strong and thematically appropriate for Taleb's work, but requires the lookback context to be replaced with supportive material before promotion.
+- `good_strategy_bad_strategy_private_en__22__seed_1`
+  - action: `keep`
+  - confidence: `high`
+  - problem_types: `other`
+  - notes: The primary review correctly identifies this as a strong benchmark case. The excerpt does present a causal chain: observable patterns (income/population/reserves in oil-producing countries) → predicted behavior (motivation for price increases) → anticipated outcomes (OPEC rise, energy crisis). While the 1981 retreat reference is contextually irrelevant, the core causal inference mechanism is adequately demonstrated. The adversarial concern about 'post-hoc narrative' is partially valid but doesn't outweigh the excerpt's clear illustration of pattern-to-prediction reasoning. Minor footnote noise is acceptable.
+- `good_strategy_bad_strategy_private_en__55__seed_2`
+  - action: `keep`
+  - confidence: `high`
+  - problem_types: `text_noise`
+  - notes: The duplicate sentence ('Diamond should have made the deal with Nvidia...') is a text_noise issue requiring cleanup, but this is a straightforward curation fix. The case content from a legitimate business strategy book demonstrates coherent competitive dynamics: technological shift (2D to 3D graphics) eroding Diamond's value add, combined with concentrated buyer power (Dell/HP) enabling Nvidia to bypass the incumbent brand. The bucket (competitive_strategy), selection_reason, and judge_focus are all appropriate. The adversarial concerns about causal mechanism conflation are reasonable interpretive differences but don't invalidate the case's fundamental relevance to competitive strategy analysis.
+- `poor_charlies_almanack_private_en__10__seed_1`
+  - action: `revise`
+  - confidence: `high`
+  - problem_types: `text_noise|weak_excerpt`
+  - notes: The excerpt content is coherent and discusses accounting limitations with a concrete example (Carl Braun's engineering company). However, critical metadata fields (case_title, question_ids, phenomena, selection_reason, judge_focus) remain empty, preventing proper benchmark evaluation. Additionally, the text parsing artifact where 'C.' and 'E. Braun Engineering Company' are split across lines should be corrected to 'C.E. Braun Engineering Company'. Requires metadata population and text cleaning before re-evaluation.
+- `poor_charlies_almanack_private_en__10__seed_2`
+  - action: `drop`
+  - confidence: `high`
+  - problem_types: `weak_excerpt|ambiguous_focus|text_noise|source_parse_problem`
+  - notes: Case has empty critical metadata (selection_reason, judge_focus, question_ids) making it untestable. The excerpt is a vague philosophical complaint about academic psychology with decorative Samuel Johnson anecdote that reads as text noise. No clear evaluation criteria or focus on any specific dangerous idea or misinformation. Fails multiple review dimensions consistently - not worth further curation investment.
+- `steve_jobs_private_en__17__seed_1`
+  - action: `revise`
+  - confidence: `high`
+  - problem_types: `ambiguous_focus|weak_excerpt`
+  - notes: The core issue is the mismatch between the stated judge focus ('chronological sequence') and the excerpt content which explicitly presents three parallel 'ponies' in fall 1979 with no temporal ordering. Additionally, the selection reason references the Macintosh emergence but the excerpt doesn't show what became of Raskin's project - this disconnect between claimed significance and excerpt content weakens the case. The case needs either a matching judge focus or expanded excerpt showing project outcomes.
+- `steve_jobs_private_en__17__seed_2`
+  - action: `revise`
+  - confidence: `high`
+  - problem_types: `wrong_bucket|too_easy`
+  - notes: The bucket 'narrative_reflective' is wrong - this excerpt is fundamentally about business strategy (why execution matters as much as innovation). The 'too_easy' concern is valid: the excerpt explicitly states 'good execution is as important as good ideas' and lists three clear failure factors verbatim. However, the case has concrete verifiable details ($16,595, 30k units) that still require causal reasoning to properly evaluate. Should be re-bucketed to business_strategy before benchmark entry.
+- `steve_jobs_private_en__24__seed_1`
+  - action: `revise`
+  - confidence: `high`
+  - problem_types: `other`
+  - notes: This is a seed excerpt (status: private_library_seed_v2) explicitly flagged for later curation before benchmark promotion. The missing metadata (case_title, question_ids, judge_focus) is by design, not a case defect. The excerpt itself is coherent biographical content about Jobs and the 1984 Apple ad. Return to curation pipeline to add required evaluation metadata rather than dropping.
+- `steve_jobs_private_en__24__seed_2`
+  - action: `revise`
+  - confidence: `medium`
+  - problem_types: `other`
+  - notes: While the excerpt content is coherent and the primary review provided useful framing (strategic flattery/manipulation), the case still lacks essential evaluation metadata (question_ids, phenomena). The adversarial review correctly notes that the alleged wrongdoing (flattery vs. deception) is ambiguous. The case needs proper evaluation questions configured before it can be assessed as a benchmark entry.
+- `steve_jobs_private_en__43__seed_1`
+  - action: `keep`
+  - confidence: `medium`
+  - problem_types: `other`
+  - notes: The excerpt clearly demonstrates Jobs' design philosophy through his criticism of lack of 'purity' and directive to 'let each element be true to itself.' The primary review correctly identifies this as a strong case with bucket_fit=1 and focus_clarity=1. The 'too_easy' flag from adversarial review is a minor difficulty concern but not a validity issue - the case appropriately illustrates the concept. The original 'revise' decision was overly conservative; metadata now exists and the excerpt is coherent.
+- `supremacy_private_en__13__seed_1`
+  - action: `revise`
+  - confidence: `high`
+  - problem_types: `weak_excerpt|wrong_bucket`
+  - notes: The original 'supremacy' bucket is incorrect—this excerpt discusses corporate governance structures, not AI capability risks. The excerpt is weakened by being entirely prospective ('Decisions would be made', 'would also be') with no evidence of actual outcomes. It describes who was asked to join but not whether they served, what decisions they made, or if the structure functioned. The case needs either outcome-based information about whether this governance model actually worked, or should be dropped if such evidence doesn't exist in the source material.

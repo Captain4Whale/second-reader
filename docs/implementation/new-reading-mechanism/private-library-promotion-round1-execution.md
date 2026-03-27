@@ -290,5 +290,62 @@ The main agent should treat [private-library-promotion-round1-selection.json](/U
 - treat `zhangzhongmou_zizhuan_private_zh__4__seed_1` as a replacement case, not as a revision target
 - only after survivor promotion plus revision hardening should the private-library excerpt lane feed broader benchmark growth
 
+## Round-2 Hardening Follow-Up
+The round-1 revised/replacement pool has now been lifted into the next bilingual hardening pass instead of being left as a passive backlog.
+
+### Pending Round-2 Packets
+- English packet:
+  - [attentional_v2_private_library_hardening_round2_en](/Users/baiweijiang/Documents/Projects/reading-companion/reading-companion-backend/eval/review_packets/pending/attentional_v2_private_library_hardening_round2_en)
+  - source pool:
+    - `15` `needs_revision`
+- Chinese packet:
+  - [attentional_v2_private_library_hardening_round2_zh](/Users/baiweijiang/Documents/Projects/reading-companion/reading-companion-backend/eval/review_packets/pending/attentional_v2_private_library_hardening_round2_zh)
+  - source pool:
+    - `14` `needs_revision`
+    - `1` `needs_replacement`
+
+Queue state after round-2 packet materialization:
+- [review_queue_summary.md](/Users/baiweijiang/Documents/Projects/reading-companion/reading-companion-backend/eval/review_packets/review_queue_summary.md)
+- `active packets = 2`
+
+### Round-2 Machine Audit Results
+- English audit:
+  - [attentional_v2_private_library_hardening_round2_en__20260327-232945](/Users/baiweijiang/Documents/Projects/reading-companion/reading-companion-backend/eval/runs/attentional_v2/case_audits/attentional_v2_private_library_hardening_round2_en__20260327-232945)
+  - outcome:
+    - `6 keep`
+    - `6 revise`
+    - `1 unclear`
+    - `2 drop`
+  - averages:
+    - bucket fit `1.4`
+    - focus clarity `1.4`
+    - excerpt strength `1.333`
+- Chinese audit:
+  - [attentional_v2_private_library_hardening_round2_zh__20260327-232945](/Users/baiweijiang/Documents/Projects/reading-companion/reading-companion-backend/eval/runs/attentional_v2/case_audits/attentional_v2_private_library_hardening_round2_zh__20260327-232945)
+  - outcome:
+    - `7 keep`
+    - `6 revise`
+    - `1 unclear`
+    - `1 drop`
+  - averages:
+    - bucket fit `1.4`
+    - focus clarity `1.467`
+    - excerpt strength `1.667`
+
+Interpretation:
+- the revised pool is no longer dominated by blanket `revise` outcomes the way round 1 was
+- but machine-side `keep` counts are still not promotion-ready truth by themselves
+- the lane should continue through final packet adjudication/import before any survivor list is treated as trustworthy
+
+### Immediate Next Step
+Final LLM adjudication/import for both round-2 hardening packets is now running in the background registry as:
+- `bgjob_private_library_hardening_round2_adjudication_20260328`
+
+When that job completes:
+- archive both packets
+- refresh the local-only excerpt dataset statuses
+- refresh the review queue
+- carry only the adjudicated survivors into the next curated promotion pass
+
 Important rule:
 - do not reselect the round-1 candidates by hand from the raw supplement pool unless this execution file is explicitly revised

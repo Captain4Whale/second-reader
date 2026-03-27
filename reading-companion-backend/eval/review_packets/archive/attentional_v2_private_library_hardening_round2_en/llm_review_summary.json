@@ -1,0 +1,14 @@
+{
+  "packet_id": "attentional_v2_private_library_hardening_round2_en",
+  "run_id": "attentional_v2_private_library_hardening_round2_en__llm_review__20260327-233434",
+  "generated_at": "2026-03-27T23:36:01.390944Z",
+  "review_origin": "llm",
+  "review_policy": "llm_multi_prompt_adjudication_v1",
+  "case_count": 15,
+  "action_counts": {
+    "drop": 2,
+    "revise": 8,
+    "keep": 5
+  },
+  "source_case_audit_run_id": "attentional_v2_private_library_hardening_round2_en__20260327-232945"
+}

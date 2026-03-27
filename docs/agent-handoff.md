@@ -7,7 +7,7 @@ Update when: current focus, active risks, temporary warnings, or migration statu
 
 This file is a temporary working note. It is not a source-of-truth document.
 
-Last updated: `2026-03-27`
+Last updated: `2026-03-28`
 
 ## Active Background Jobs
 - For long-running eval or dataset work, do not rely on chat history alone.
@@ -24,15 +24,22 @@ Last updated: `2026-03-27`
   - `check_command`
   - `decision_if_success`
   - `decision_if_failure`
-- Current live job:
-  - `bgjob_en_chapter_core_rerun_20260327`
-  - purpose:
-    - full English chapter-core rerun after the local micro-selectivity repair
-  - current run:
-    - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_vs_iterator_v1_chapter_core_en_round2_microselectivity_20260327/`
-  - current state:
-    - still running
-    - runtime trace confirms real progress inside `women_and_economics_public_en__9`
+- Current live jobs:
+  - `bgjob_en_chapter_core_rerun_retry2_20260328`
+    - purpose:
+      - full English chapter-core rerun after the local micro-selectivity repair
+    - current run:
+      - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_vs_iterator_v1_chapter_core_en_round2_microselectivity_retry2_20260328/`
+    - current state:
+      - running
+      - retry 2 was launched after adding bounded `ReaderLLMError` fallbacks to the `attentional_v2` phase-4 nodes
+  - `bgjob_private_library_hardening_round2_adjudication_20260328`
+    - purpose:
+      - final adjudication/import for the round-2 private-library hardening packets plus queue refresh
+    - current state:
+      - running
+- Recently completed and archived:
+  - the two round-2 private-library hardening machine-audit jobs completed successfully and were archived from the active registry after their summaries landed
 
 ## Current Focus
 - Phase 9 preparation for the new reading mechanism project
@@ -59,6 +66,17 @@ Last updated: `2026-03-27`
       - the earlier private-download pool
     - the first balanced promotion-preparation plan from that supplement is now landed too
     - formal promotion from that supplement remains future benchmark work and should not be forgotten while the current comparison decision is pending
+    - the next bilingual hardening follow-up from the revised/replacement pool is now also active:
+      - pending packets:
+        - `reading-companion-backend/eval/review_packets/pending/attentional_v2_private_library_hardening_round2_en/`
+        - `reading-companion-backend/eval/review_packets/pending/attentional_v2_private_library_hardening_round2_zh/`
+      - queue state:
+        - `active packets = 2`
+      - machine-side audit status:
+        - English round-2 audit: completed
+        - Chinese round-2 audit: completed
+      - next excerpt action:
+        - final adjudication/import for both round-2 packets is now running in the background registry
 - the temporary side branch for a universal shared LLM invocation/traceability layer is now landed
   - shared provider contracts, key-pool failover, task-level profiles, and standard/debug trace sinks now live in backend infrastructure
   - the return path is direct:
@@ -263,6 +281,29 @@ Last updated: `2026-03-27`
         - `fooled_by_randomness_private_zh__9__seed_1`
     - next excerpt action:
       - treat the remaining `29` revised cases as the next bilingual hardening pool
+  - round-2 revised-pool hardening status:
+    - pending packet ids:
+      - `attentional_v2_private_library_hardening_round2_en`
+      - `attentional_v2_private_library_hardening_round2_zh`
+    - queue state:
+      - `active packets = 2`
+    - machine-side audits:
+      - English:
+        - `reading-companion-backend/eval/runs/attentional_v2/case_audits/attentional_v2_private_library_hardening_round2_en__20260327-232945/`
+        - result:
+          - `6 keep`
+          - `6 revise`
+          - `1 unclear`
+          - `2 drop`
+      - Chinese:
+        - `reading-companion-backend/eval/runs/attentional_v2/case_audits/attentional_v2_private_library_hardening_round2_zh__20260327-232945/`
+        - result:
+          - `7 keep`
+          - `6 revise`
+          - `1 unclear`
+          - `1 drop`
+    - next step:
+      - adjudicate/import both round-2 packets before any survivor promotion
   - chapter-lane status:
     - sanity checklist: done
     - results:

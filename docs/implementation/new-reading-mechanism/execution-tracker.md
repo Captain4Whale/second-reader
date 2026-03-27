@@ -24,7 +24,12 @@ Update when: status changes, blockers appear, or phases complete.
     - follow-up after the first broader semantic comparison pass:
       - `local_reading_behavior` is now clearly weaker than `iterator_v1` on the English chapter pack
       - `span_trajectory` is now clearly stronger than `iterator_v1` on the Chinese chapter pack and positive overall
-    - balanced benchmark promotion from the modern private-library `v2` supplement remains prepared but not yet curated into the formal tracked benchmark
+      - the repaired full English rerun is now active again at:
+        - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_vs_iterator_v1_chapter_core_en_round2_microselectivity_retry2_20260328/`
+    - balanced benchmark promotion from the modern private-library `v2` supplement remains mid-hardening rather than ready for formal benchmark promotion:
+      - the round-2 bilingual revised-pool packets are now materialized
+      - machine-side audits are completed
+      - final adjudication/import is now running in the background registry
     - later frontend/API retirement of section-first chapter/detail and marks surfaces
     - later stable-doc promotion timing under `Q10`
 
@@ -320,20 +325,64 @@ Update when: status changes, blockers appear, or phases complete.
   - immediate implication:
     - English chapter lift can continue as selected
     - Chinese chapter lift should be pruned and recut before a full `8`-pack promotion
+- [x] Generate the next bilingual hardening packets from the private-library revised/replacement excerpt pool
+  - pending packet ids:
+    - `attentional_v2_private_library_hardening_round2_en`
+    - `attentional_v2_private_library_hardening_round2_zh`
+  - packet roots:
+    - `reading-companion-backend/eval/review_packets/pending/attentional_v2_private_library_hardening_round2_en/`
+    - `reading-companion-backend/eval/review_packets/pending/attentional_v2_private_library_hardening_round2_zh/`
+  - source pool carried forward from round 1:
+    - English:
+      - `15` `needs_revision`
+    - Chinese:
+      - `14` `needs_revision`
+      - `1` `needs_replacement`
+  - queue state after packet materialization:
+    - `active packets = 2`
+- [x] Run machine-side case audits on the private-library hardening round2 excerpt packets
+  - audit runs:
+    - English:
+      - `reading-companion-backend/eval/runs/attentional_v2/case_audits/attentional_v2_private_library_hardening_round2_en__20260327-232945/`
+    - Chinese:
+      - `reading-companion-backend/eval/runs/attentional_v2/case_audits/attentional_v2_private_library_hardening_round2_zh__20260327-232945/`
+  - machine-audit outcomes:
+    - English:
+      - `6 keep`
+      - `6 revise`
+      - `1 unclear`
+      - `2 drop`
+    - Chinese:
+      - `7 keep`
+      - `6 revise`
+      - `1 unclear`
+      - `1 drop`
+  - immediate implication:
+    - the revised pool is materially stronger after one hardening cycle
+    - it still needs adjudication/import before any survivor promotion or next benchmark lift
+- [ ] Complete the private-library hardening round2 excerpt adjudication/import pass
+  - prerequisite:
+    - both machine-side audits are now done
+  - active background job:
+    - `bgjob_private_library_hardening_round2_adjudication_20260328`
+  - next output:
+    - archived packet roots under `reading-companion-backend/eval/review_packets/archive/`
+    - refreshed dataset statuses for the local-only excerpt families
+    - refreshed review queue state after archive move
 - [ ] Complete the full English chapter-core rerun after the local micro-selectivity repair
   - active background job:
     - `reading-companion-backend/state/job_registry/active_jobs.md`
   - run id:
-    - `attentional_v2_vs_iterator_v1_chapter_core_en_round2_microselectivity_20260327`
+    - `attentional_v2_vs_iterator_v1_chapter_core_en_round2_microselectivity_retry2_20260328`
   - current scope:
     - `women_and_economics_public_en__9`
     - `on_liberty_public_en__10`
     - `up_from_slavery_public_en__10`
     - `walden_205_en__10`
   - current status:
-    - launched and actively progressing
-    - first visible case still `women_and_economics_public_en__9`
-    - runtime trace confirms real Phase 4 progress rather than a fake hang
+    - first run failed on a `reaction=None` crash path in `attentional_v2/runner.py`
+    - retry 1 launched after the `None` guard fix, progressed through real Phase 4 work, and then failed again inside `women_and_economics_public_en__9`
+    - the original `None`-reaction crash path is fixed, but the full chapter comparison lane is still not yet stable enough to complete
   - first-pass result:
     - `local_impact` overall:
       - `attentional_v2`: `2` wins + `1` tie out of `8`

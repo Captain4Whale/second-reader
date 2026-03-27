@@ -8,7 +8,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from src.iterator_reader.language import language_name
-from src.iterator_reader.llm_utils import LLMTraceContext, invoke_json, llm_invocation_scope
+from src.iterator_reader.llm_utils import LLMTraceContext, ReaderLLMError, invoke_json, llm_invocation_scope
 
 from .prompts import ATTENTIONAL_V2_PROMPTS
 from .schemas import (
@@ -718,49 +718,75 @@ def run_phase4_local_cycle(
 
     local_context = current_span_sentences[:-1] if len(current_span_sentences) > 1 else []
     zoom_result: ZoomReadResult | None = None
+    llm_fallbacks: list[dict[str, str]] = []
     if str(trigger_state.get("output", "no_zoom")) == "zoom_now":
-        zoom_result = zoom_read(
-            focal_sentence=focal_sentence,
-            local_context_sentences=local_context,
+        try:
+            zoom_result = zoom_read(
+                focal_sentence=focal_sentence,
+                local_context_sentences=local_context,
+                working_pressure=working_pressure,
+                anchor_memory=anchor_memory,
+                knowledge_activations=knowledge_activations,
+                reader_policy=reader_policy,
+                output_language=output_language,
+                output_dir=output_dir,
+                book_title=book_title,
+                author=author,
+                chapter_title=chapter_title,
+            )
+        except ReaderLLMError as exc:
+            llm_fallbacks.append({"node": "zoom_read", "problem_code": exc.problem_code})
+            zoom_result = None
+
+    try:
+        closure_result = meaning_unit_closure(
+            current_span_sentences=current_span_sentences,
             working_pressure=working_pressure,
             anchor_memory=anchor_memory,
             knowledge_activations=knowledge_activations,
+            boundary_context=boundary_context,
             reader_policy=reader_policy,
             output_language=output_language,
             output_dir=output_dir,
             book_title=book_title,
             author=author,
             chapter_title=chapter_title,
+            zoom_result=zoom_result,
         )
-
-    closure_result = meaning_unit_closure(
-        current_span_sentences=current_span_sentences,
-        working_pressure=working_pressure,
-        anchor_memory=anchor_memory,
-        knowledge_activations=knowledge_activations,
-        boundary_context=boundary_context,
-        reader_policy=reader_policy,
-        output_language=output_language,
-        output_dir=output_dir,
-        book_title=book_title,
-        author=author,
-        chapter_title=chapter_title,
-        zoom_result=zoom_result,
-    )
+    except ReaderLLMError as exc:
+        llm_fallbacks.append({"node": "meaning_unit_closure", "problem_code": exc.problem_code})
+        closure_result = {
+            "closure_decision": "continue",
+            "meaning_unit_summary": "",
+            "dominant_move": "advance",
+            "proposed_state_operations": [],
+            "bridge_candidates": [],
+            "reaction_candidate": None,
+            "unresolved_pressure_note": "meaning_unit_closure_unavailable",
+        }
     merged_bridge_candidates = []
     zoom_bridge_candidate = (zoom_result or {}).get("bridge_candidate") if zoom_result else None
     if zoom_bridge_candidate:
         merged_bridge_candidates.append(zoom_bridge_candidate)
     merged_bridge_candidates.extend(closure_result.get("bridge_candidates", []))
     merged_bridge_candidates.extend(bridge_candidates)
-    controller_result = controller_decision(
-        working_pressure=working_pressure,
-        closure_result=closure_result,
-        bridge_candidates=merged_bridge_candidates,
-        gate_state=str(trigger_state.get("gate_state", "quiet")),  # type: ignore[arg-type]
-        reader_policy=reader_policy,
-        output_dir=output_dir,
-    )
+    try:
+        controller_result = controller_decision(
+            working_pressure=working_pressure,
+            closure_result=closure_result,
+            bridge_candidates=merged_bridge_candidates,
+            gate_state=str(trigger_state.get("gate_state", "quiet")),  # type: ignore[arg-type]
+            reader_policy=reader_policy,
+            output_dir=output_dir,
+        )
+    except ReaderLLMError as exc:
+        llm_fallbacks.append({"node": "controller_decision", "problem_code": exc.problem_code})
+        controller_result = {
+            "chosen_move": str(closure_result.get("dominant_move", "advance")) or "advance",
+            "reason": "controller_unavailable",
+            "target_anchor_id": "",
+            "target_sentence_id": "",
+        }
 
     reaction_result: ReactionEmissionResult | None = None
     suggested_reaction = closure_result.get("reaction_candidate")
@@ -785,27 +811,35 @@ def run_phase4_local_cycle(
         or compact_local_anchor
     )
     if should_consider_reaction:
-        reaction_result = reaction_emission(
-            current_interpretation=_clean_text(
-                (zoom_result or {}).get("local_interpretation") or closure_result.get("meaning_unit_summary")
-            ),
-            focal_sentence=_clean_text(focal_sentence.get("text")),
-            primary_anchor=_clean_text(
-                (effective_suggested_reaction or {}).get("anchor_quote") or (zoom_result or {}).get("anchor_quote")
-            ),
-            related_anchors=list((effective_suggested_reaction or {}).get("related_anchor_quotes", [])),
-            suggested_reaction=effective_suggested_reaction,
-            local_textual_cues=reaction_local_cues,
-            state_snapshot={
-                "trigger_output": str(trigger_state.get("output", "no_zoom")),
-                "closure_decision": str(closure_result.get("closure_decision", "continue")),
-                "chosen_move": str(controller_result.get("chosen_move", "advance")),
-                "compact_local_anchor": compact_local_anchor,
-                "synthetic_local_candidate": bool(effective_suggested_reaction and not suggested_reaction),
-            },
-            output_language=output_language,
-            output_dir=output_dir,
-        )
+        try:
+            reaction_result = reaction_emission(
+                current_interpretation=_clean_text(
+                    (zoom_result or {}).get("local_interpretation") or closure_result.get("meaning_unit_summary")
+                ),
+                focal_sentence=_clean_text(focal_sentence.get("text")),
+                primary_anchor=_clean_text(
+                    (effective_suggested_reaction or {}).get("anchor_quote") or (zoom_result or {}).get("anchor_quote")
+                ),
+                related_anchors=list((effective_suggested_reaction or {}).get("related_anchor_quotes", [])),
+                suggested_reaction=effective_suggested_reaction,
+                local_textual_cues=reaction_local_cues,
+                state_snapshot={
+                    "trigger_output": str(trigger_state.get("output", "no_zoom")),
+                    "closure_decision": str(closure_result.get("closure_decision", "continue")),
+                    "chosen_move": str(controller_result.get("chosen_move", "advance")),
+                    "compact_local_anchor": compact_local_anchor,
+                    "synthetic_local_candidate": bool(effective_suggested_reaction and not suggested_reaction),
+                },
+                output_language=output_language,
+                output_dir=output_dir,
+            )
+        except ReaderLLMError as exc:
+            llm_fallbacks.append({"node": "reaction_emission", "problem_code": exc.problem_code})
+            reaction_result = {
+                "decision": "withhold",
+                "reason": "reaction_emission_unavailable",
+                "reaction": None,
+            }
 
     return {
         "zoom_result": zoom_result,
@@ -813,4 +847,5 @@ def run_phase4_local_cycle(
         "controller_result": controller_result,
         "reaction_result": reaction_result,
         "bridge_candidates": merged_bridge_candidates,
+        "llm_fallbacks": llm_fallbacks,
     }

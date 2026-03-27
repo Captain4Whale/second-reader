@@ -12,6 +12,7 @@ from src.attentional_v2.schemas import (
     build_empty_knowledge_activations,
     build_empty_working_pressure,
 )
+from src.iterator_reader.llm_utils import ReaderLLMError
 from src.reading_mechanisms.attentional_v2 import AttentionalV2Mechanism
 
 
@@ -547,3 +548,145 @@ def test_run_phase4_local_cycle_considers_compact_local_anchor_for_reaction_emis
     assert result["reaction_result"]["decision"] == "emit"
     assert result["reaction_result"]["reaction"]["anchor_quote"] == "one very simple principle"
     assert result["reaction_result"]["reaction"]["type"] == "discern"
+
+
+def test_run_phase4_local_cycle_degrades_zoom_llm_error(monkeypatch):
+    """A transient zoom_read LLM failure should not abort the whole Phase 4 cycle."""
+
+    calls: list[str] = []
+
+    def fake_invoke_json(system_prompt: str, _prompt: str, default: object) -> object:
+        if "sentence-level zoom node" in system_prompt:
+            calls.append("zoom")
+            raise ReaderLLMError("zoom unavailable", problem_code="network_blocked")
+        if "meaning-unit closure node" in system_prompt:
+            calls.append("closure")
+            return {
+                "closure_decision": "close",
+                "meaning_unit_summary": "The local turn still closes cleanly without zoom support.",
+                "dominant_move": "advance",
+                "proposed_state_operations": [],
+                "bridge_candidates": [],
+                "reaction_candidate": None,
+                "unresolved_pressure_note": "",
+            }
+        if "controller-decision node" in system_prompt:
+            calls.append("controller")
+            return {
+                "chosen_move": "advance",
+                "reason": "move forward with the safe local close",
+                "target_anchor_id": "",
+                "target_sentence_id": "",
+            }
+        return default
+
+    monkeypatch.setattr(nodes_module, "invoke_json", fake_invoke_json)
+
+    result = run_phase4_local_cycle(
+        focal_sentence=_sentence("c1-s2", "However, value shifts here.", sentence_index=2),
+        current_span_sentences=[
+            _sentence("c1-s1", "Value looks stable at first.", sentence_index=1),
+            _sentence("c1-s2", "However, value shifts here.", sentence_index=2),
+        ],
+        trigger_state={"output": "zoom_now", "gate_state": "hot"},
+        working_pressure=build_empty_working_pressure(),
+        anchor_memory=build_empty_anchor_memory(),
+        knowledge_activations=build_empty_knowledge_activations(),
+        reader_policy=build_default_reader_policy(),
+        bridge_candidates=[],
+        output_language="en",
+        output_dir=None,
+        book_title="Demo Book",
+        author="Tester",
+        chapter_title="Chapter 1",
+        boundary_context={"gate_state": "hot", "candidate_boundary": True},
+    )
+
+    assert calls == ["zoom", "closure", "controller"]
+    assert result["zoom_result"] is None
+    assert result["closure_result"]["closure_decision"] == "close"
+    assert result["controller_result"]["chosen_move"] == "advance"
+    assert result["llm_fallbacks"] == [{"node": "zoom_read", "problem_code": "network_blocked"}]
+
+
+def test_run_phase4_local_cycle_withholds_when_reaction_emission_llm_fails(monkeypatch):
+    """A reaction-emission LLM failure should degrade to withhold rather than aborting the run."""
+
+    calls: list[str] = []
+
+    def fake_invoke_json(system_prompt: str, _prompt: str, default: object) -> object:
+        if "sentence-level zoom node" in system_prompt:
+            calls.append("zoom")
+            return {
+                "local_interpretation": "The phrase carries unusually compressed pressure.",
+                "anchor_quote": "single channel and a single choice",
+                "pressure_updates": [],
+                "activation_updates": [],
+                "bridge_candidate": {},
+                "consider_reaction_emission": True,
+                "uncertainty_note": "",
+            }
+        if "meaning-unit closure node" in system_prompt:
+            calls.append("closure")
+            return {
+                "closure_decision": "close",
+                "meaning_unit_summary": "The sentence narrows many desires into one forced route.",
+                "dominant_move": "advance",
+                "proposed_state_operations": [],
+                "bridge_candidates": [],
+                "reaction_candidate": {
+                    "type": "discern",
+                    "anchor_quote": "single channel and a single choice",
+                    "content": "The narrowing phrase is the local hinge.",
+                    "related_anchor_quotes": [],
+                    "search_query": "",
+                    "search_results": [],
+                },
+                "unresolved_pressure_note": "",
+            }
+        if "controller-decision node" in system_prompt:
+            calls.append("controller")
+            return {
+                "chosen_move": "advance",
+                "reason": "the local narrowing can move forward after surfacing the phrase",
+                "target_anchor_id": "",
+                "target_sentence_id": "",
+            }
+        if "reaction-emission gate" in system_prompt:
+            calls.append("emit")
+            raise ReaderLLMError("reaction emission unavailable", problem_code="network_blocked")
+        return default
+
+    monkeypatch.setattr(nodes_module, "invoke_json", fake_invoke_json)
+
+    result = run_phase4_local_cycle(
+        focal_sentence=_sentence(
+            "c1-s1",
+            "But all that she may wish to have, all that she may wish to do, must come through a single channel and a single choice.",
+            sentence_index=1,
+        ),
+        current_span_sentences=[
+            _sentence(
+                "c1-s1",
+                "But all that she may wish to have, all that she may wish to do, must come through a single channel and a single choice.",
+                sentence_index=1,
+            ),
+        ],
+        trigger_state={"output": "zoom_now", "gate_state": "hot"},
+        working_pressure=build_empty_working_pressure(),
+        anchor_memory=build_empty_anchor_memory(),
+        knowledge_activations=build_empty_knowledge_activations(),
+        reader_policy=build_default_reader_policy(),
+        bridge_candidates=[],
+        output_language="en",
+        output_dir=None,
+        book_title="Women and Economics",
+        author="Gilman",
+        chapter_title="Chapter 9",
+        boundary_context={"gate_state": "hot", "candidate_boundary": True},
+    )
+
+    assert calls == ["zoom", "closure", "controller", "emit"]
+    assert result["reaction_result"]["decision"] == "withhold"
+    assert result["reaction_result"]["reaction"] is None
+    assert result["llm_fallbacks"] == [{"node": "reaction_emission", "problem_code": "network_blocked"}]

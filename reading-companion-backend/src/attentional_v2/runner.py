@@ -697,6 +697,25 @@ def read_attentional_v2(request: ReadRequest, mechanism: MechanismInfo) -> ReadR
                 closure_result = dict(phase4.get("closure_result") or {})
                 controller_result = dict(phase4.get("controller_result") or {})
                 reaction_result = dict(phase4.get("reaction_result") or {})
+                for fallback in phase4.get("llm_fallbacks", []) or []:
+                    if not isinstance(fallback, dict):
+                        continue
+                    append_activity_event(
+                        output_dir,
+                        {
+                            "type": "llm_fallback",
+                            "stream": "mindstream",
+                            "kind": "transition",
+                            "visibility": "hidden",
+                            "message": f"Phase 4 fallback for {_clean_text(fallback.get('node')) or 'unknown_node'}.",
+                            "chapter_id": chapter_id,
+                            "chapter_ref": chapter_ref,
+                            "segment_ref": _compatibility_section_ref(chapter_id, sentence),
+                            "reading_locus": _reading_locus(chapter_id, chapter_ref, sentence, local_buffer),
+                            "current_excerpt": _clean_text(sentence.get("text"))[:220],
+                            "problem_code": _clean_text(fallback.get("problem_code")),
+                        },
+                    )
                 working_pressure = apply_working_pressure_operations(working_pressure, zoom_result.get("pressure_updates", []))
                 working_pressure = apply_working_pressure_operations(
                     working_pressure,
