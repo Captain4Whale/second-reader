@@ -53,6 +53,22 @@ Current operational mode:
 - Codex may fill the `review__...` columns automatically through multi-prompt LLM adjudication.
 - Packet-level case audits may use bounded case-level parallelism, but the primary and adversarial review stages remain ordered within each case.
 
+Default mechanical path:
+- from the workspace root, run `make dataset-review-pipeline DATASET_REVIEW_PIPELINE_ARGS="--dataset-id <dataset_id> --family <family> --storage-mode <tracked|local-only> [--packet-id <packet_id>]"`
+- from the backend directly, run `.venv/bin/python -m eval.attentional_v2.run_dataset_review_pipeline --dataset-id <dataset_id> --family <family> --storage-mode <tracked|local-only>`
+- the pipeline stages stay direct:
+  - `generate_packet` -> `generate_revision_replacement_packet.py`
+  - `audit_packet` -> `run_case_design_audit.py`
+  - `adjudicate_packet` -> `auto_review_packet.py`
+  - `import_packet` -> `import_dataset_review_packet.py --archive`
+  - `refresh_queue_summary` -> `build_review_queue_summary.py`
+  - `final_summary` -> write `dataset_review_pipeline_summary.json` and `dataset_review_pipeline_summary.md` into the archived packet dir when available, otherwise the active packet dir
+- the pipeline is intentionally mechanical only:
+  - it does not reopen benchmark promotion automatically
+  - it does not freeze reviewed slices automatically
+  - it does not launch durable-trace, re-entry, or runtime-viability follow-up work
+  - it stops with the final summary artifact instead of making a decision-bearing next move
+
 Optional manual mode:
 1. Open `cases.preview.md` for the readable view.
 2. Edit only the `review__...` columns in `cases.review.csv`.

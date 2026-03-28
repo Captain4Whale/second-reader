@@ -108,7 +108,25 @@ Important frontend variables:
 - `make agent-context`: print the canonical agent-switching brief from current state, tasks, jobs, and git status
 - `make agent-check`: run contract/doc checks plus switching-memory traceability warnings
 - `make backfill-covers`: scan existing backend outputs, extract missing EPUB covers, and refresh manifests
+- `make dataset-review-pipeline DATASET_REVIEW_PIPELINE_ARGS="..."`: run the reusable mechanical dataset-review packet pipeline from the workspace root
 - `cd reading-companion-frontend && npm run generate-api-types`: refresh generated frontend API types after the backend OpenAPI snapshot changes
+
+## Dataset Review Pipeline
+Use the reusable dataset-review pipeline when the work is limited to the mechanical packet lifecycle:
+- generate a revision/replacement packet
+- run packet case-design audit
+- run LLM packet adjudication
+- import and archive the packet
+- refresh the review queue summary
+- emit a final stop-and-summarize report
+
+The pipeline intentionally stops there. It does not reopen benchmark promotion, freeze reviewed slices, or launch durable-trace, re-entry, or runtime-viability work automatically.
+
+Current local-only English cleanup example:
+- `make dataset-review-pipeline DATASET_REVIEW_PIPELINE_ARGS="--dataset-id attentional_v2_private_library_excerpt_en_v2 --family excerpt_cases --storage-mode local-only --packet-id attentional_v2_private_library_cleanup_en_example"`
+
+Long-running wrapper example:
+- `cd reading-companion-backend && .venv/bin/python scripts/run_registered_job.py --task-ref "execution-tracker#example" --lane dataset_growth --purpose "English dataset review pipeline" --cwd "$PWD" -- .venv/bin/python -m eval.attentional_v2.run_dataset_review_pipeline --dataset-id attentional_v2_private_library_excerpt_en_v2 --family excerpt_cases --storage-mode local-only --packet-id attentional_v2_private_library_cleanup_en_example`
 
 ## Long-Running Eval Jobs
 Use the backend background-job registry for evaluation, packet review, or dataset jobs that may run for `10-15` minutes or longer.

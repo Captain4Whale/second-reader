@@ -1,6 +1,8 @@
 SHELL := /bin/bash
 
-.PHONY: doctor setup dev-backend dev-frontend dev run-demo test build contract-check agent-check agent-context e2e preview-reactions backfill-covers
+.PHONY: doctor setup dev-backend dev-frontend dev run-demo test build contract-check agent-check agent-context e2e preview-reactions backfill-covers dataset-review-pipeline
+
+DATASET_REVIEW_PIPELINE_ARGS ?=
 
 doctor:
 	./scripts/doctor.sh
@@ -43,3 +45,6 @@ preview-reactions:
 
 backfill-covers:
 	./scripts/backfill-covers.sh
+
+dataset-review-pipeline:
+	./scripts/dataset-review-pipeline.sh $(DATASET_REVIEW_PIPELINE_ARGS)
