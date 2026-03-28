@@ -155,7 +155,7 @@ def main() -> int:
 
     for field in CURRENT_STATE_REQUIRED_FIELDS:
         value = current_state.get(field)
-        if value in (None, "", []):
+        if value in (None, ""):
             warnings.append(f"docs/current-state.md is missing required appendix field '{field}'.")
 
     tasks = task_registry.get("tasks")

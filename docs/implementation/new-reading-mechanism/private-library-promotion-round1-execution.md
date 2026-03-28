@@ -338,14 +338,14 @@ Interpretation:
 - the lane should continue through final packet adjudication/import before any survivor list is treated as trustworthy
 
 ### Immediate Next Step
-Final LLM adjudication/import for both round-2 hardening packets is now running in the background registry as:
-- `bgjob_private_library_hardening_round2_adjudication_20260328`
-
-When that job completes:
-- archive both packets
-- refresh the local-only excerpt dataset statuses
-- refresh the review queue
-- carry only the adjudicated survivors into the next curated promotion pass
+The old round-2 adjudication/import background step is now historical:
+- completed job:
+  - `bgjob_private_library_hardening_round2_adjudication_20260328`
+- completed outcomes:
+  - both round-2 packets were archived
+  - the local-only excerpt dataset statuses were refreshed
+  - the review queue was cleared
+  - adjudicated survivors were carried forward into the next cleanup/promotion gate
 
 Important rule:
 - do not reselect the round-1 candidates by hand from the raw supplement pool unless this execution file is explicitly revised
@@ -357,4 +357,6 @@ Important rule:
 - Correction to the earlier round-1 interpretation: `zhangzhongmou_zizhuan_private_zh__4__seed_1` is now `reviewed_active` in the live local-only excerpt dataset, so the old round-1 drop note remains historical packet output only and is no longer the current survivor truth.
 - The policy-bearing round-2 decision artifact is now `/Users/baiweijiang/Documents/Projects/reading-companion/docs/implementation/new-reading-mechanism/private-library-promotion-round2.md` with decision `hold_for_backlog_rescue`.
 - Do not materialize a new curated promotion packet in this slice; use the round-2 draft plus the parked backlog list for the next decision point.
+- The cleanup orchestrator background lane is now complete and archived:
+  - `bgjob_private_library_cleanup_round3_orchestrator_20260328`
 <!-- END private_library_cleanup_round3_20260328 -->

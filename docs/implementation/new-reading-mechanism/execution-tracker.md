@@ -24,12 +24,16 @@ Update when: status changes, blockers appear, or phases complete.
     - follow-up after the first broader semantic comparison pass:
       - `local_reading_behavior` is now clearly weaker than `iterator_v1` on the English chapter pack
       - `span_trajectory` is now clearly stronger than `iterator_v1` on the Chinese chapter pack and positive overall
-      - the repaired full English rerun is now active again at:
+      - the repaired full English rerun is now landed at:
         - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_vs_iterator_v1_chapter_core_en_round2_microselectivity_retry2_20260328/`
+      - retry-2 improved the English split materially but did not fully close it:
+        - `local_impact` moved from `0/4` win-or-tie to `2/4` win-or-tie
+        - `system_regression` moved from `2/4` wins to `3/4` wins
     - balanced benchmark promotion from the modern private-library `v2` supplement remains mid-hardening rather than ready for formal benchmark promotion:
-      - the round-2 bilingual revised-pool packets are now materialized
-      - machine-side audits are completed
-      - final adjudication/import is completed; round-2 survivor interpretation is now the next benchmark-growth gate
+      - the cleanup orchestrator is now completed and the round-2 promotion draft is landed
+      - the explicit decision is now `hold_for_backlog_rescue`
+      - English excerpt promotion remains withheld because the private-library lane is still thin at `6` `reviewed_active` against threshold `7`
+      - Chinese excerpt promotion now passes the gate at `11` `reviewed_active` against threshold `9`, but the formal bilingual promotion packet is still withheld until the English side catches up
     - later frontend/API retirement of section-first chapter/detail and marks surfaces
     - later stable-doc promotion timing under `Q10`
 
@@ -369,41 +373,37 @@ Update when: status changes, blockers appear, or phases complete.
     - archived packet roots under `reading-companion-backend/eval/review_packets/archive/`
     - refreshed dataset statuses for the local-only excerpt families
     - refreshed review queue state after archive move
-- [ ] Complete the full English chapter-core rerun after the local micro-selectivity repair
-  - active background job:
-    - `reading-companion-backend/state/job_registry/active_jobs.md`
+- [x] Complete the full English chapter-core rerun after the local micro-selectivity repair
+  - terminal background job:
+    - `bgjob_en_chapter_core_rerun_retry2_20260328`
   - run id:
     - `attentional_v2_vs_iterator_v1_chapter_core_en_round2_microselectivity_retry2_20260328`
-  - current scope:
+  - rerun scope:
     - `women_and_economics_public_en__9`
     - `on_liberty_public_en__10`
     - `up_from_slavery_public_en__10`
     - `walden_205_en__10`
-  - current status:
+  - completion status:
     - first run failed on a `reaction=None` crash path in `attentional_v2/runner.py`
     - retry 1 launched after the `None` guard fix, progressed through real Phase 4 work, and then failed again inside `women_and_economics_public_en__9`
-    - the original `None`-reaction crash path is fixed, but the full chapter comparison lane is still not yet stable enough to complete
-  - first-pass result:
-    - `local_impact` overall:
-      - `attentional_v2`: `2` wins + `1` tie out of `8`
-      - `iterator_v1`: `5` wins out of `8`
-    - `local_impact` by language:
-      - English:
+    - retry 2 completed after the bounded phase-4 `ReaderLLMError` fallbacks landed; the job checker observed the process exit and archived the job after both summary outputs were present
+  - round-1 vs retry-2 result:
+    - English `local_impact`:
+      - round 1:
         - `iterator_v1` wins all `4`
-      - Chinese:
-        - `attentional_v2`: `2` wins + `1` tie out of `4`
-    - `system_regression` overall:
-      - `attentional_v2`: `6` wins out of `8`
-      - `iterator_v1`: `2` wins out of `8`
-    - `system_regression` by language:
-      - English:
+      - retry 2:
+        - `attentional_v2`: `1` win + `1` tie out of `4`
+        - `iterator_v1`: `2` wins out of `4`
+    - English `system_regression`:
+      - round 1:
         - split `2` / `2`
-      - Chinese:
-        - `attentional_v2` wins all `4`
+      - retry 2:
+        - `attentional_v2`: `3` wins out of `4`
+        - `iterator_v1`: `1` win out of `4`
   - immediate interpretation:
     - broader semantic comparison is now truly active rather than hypothetical
-    - `attentional_v2` still trails on chapter-local reading quality in the English pack
-    - `attentional_v2` is already stronger on chapter-scale span trajectory, especially in Chinese
+    - the micro-selectivity repair generalized enough to improve the English local split, but not enough to erase the remaining local-reading gap
+    - `attentional_v2` is now stronger on English chapter-scale span trajectory as well as on the earlier Chinese span result
 - [ ] Run durable-trace and re-entry evaluation
 - [ ] Run runtime-viability evaluation
 - [ ] Decide whether the current benchmark family is still too small for high-confidence cross-mechanism judgment after the reviewed-slice rerun
@@ -766,4 +766,8 @@ Update when: status changes, blockers appear, or phases complete.
   - `/Users/baiweijiang/Documents/Projects/reading-companion/docs/implementation/new-reading-mechanism/private-library-promotion-round2.md`
   - `/Users/baiweijiang/Documents/Projects/reading-companion/docs/implementation/new-reading-mechanism/private-library-promotion-round2.json`
 - Chapter constraint remains EN `8` vs ZH `2` eligible chapter candidates.
+- Immediate next move:
+  - do not materialize a formal curated promotion packet yet
+  - rescue the thin English excerpt backlog first
+  - preserve the Chinese reviewed-active gains while keeping the chapter lane constrained
 <!-- END private_library_cleanup_round3_20260328 -->

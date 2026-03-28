@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-03-28T05:59:20Z",
+  "updated_at": "2026-03-28T07:33:36Z",
   "tasks": [
     {
       "id": "TASK-MECH-EN-RERUN",
@@ -19,9 +19,7 @@
         "DEC-015",
         "DEC-021"
       ],
-      "job_refs": [
-        "bgjob_en_chapter_core_rerun_retry2_20260328"
-      ],
+      "job_refs": [],
       "acceptance_ref": "docs/implementation/new-reading-mechanism/execution-tracker.md",
       "next_action": "Compare the retry-2 English chapter-core outputs against round 1, decide whether another local-reading repair is needed, and record the selective implementation queue.",
       "blocked_by": [],
@@ -30,16 +28,16 @@
         "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_vs_iterator_v1_chapter_core_en_round2_microselectivity_retry2_20260328/summary/aggregate.json",
         "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_vs_iterator_v1_chapter_core_en_round1_20260326/"
       ],
-      "last_updated": "2026-03-28T05:59:20Z",
+      "last_updated": "2026-03-28T07:33:36Z",
       "last_updated_by": "codex"
     },
     {
-      "id": "TASK-BENCH-ROUND3-CLEANUP",
-      "title": "Finish private-library cleanup round 3 and materialize the round-2 promotion draft",
+      "id": "TASK-BENCH-BACKLOG-RESCUE",
+      "title": "Apply the round-2 backlog-rescue decision from the modern supplement",
       "status": "active",
       "lane": "dataset_growth",
       "priority": "high",
-      "detail_ref": "docs/implementation/new-reading-mechanism/execution-tracker.md",
+      "detail_ref": "docs/implementation/new-reading-mechanism/private-library-promotion-round2.md",
       "truth_refs": [
         "docs/backend-reader-evaluation.md",
         "docs/workspace-overview.md",
@@ -49,29 +47,27 @@
         "DEC-018",
         "DEC-019"
       ],
-      "job_refs": [
-        "bgjob_private_library_cleanup_round3_orchestrator_20260328"
-      ],
-      "acceptance_ref": "docs/implementation/new-reading-mechanism/execution-tracker.md",
-      "next_action": "Let the orchestrator finish its Lane A dependency, then review the round-2 draft and make the benchmark-promotion decision explicit.",
+      "job_refs": [],
+      "acceptance_ref": "docs/implementation/new-reading-mechanism/private-library-promotion-round2.md",
+      "next_action": "Rescue the thin English excerpt lane first, preserve the Chinese gains, and defer formal curated promotion until the English reviewed-active threshold is met.",
       "blocked_by": [
-        "TASK-MECH-EN-RERUN"
       ],
       "evidence_refs": [
-        "reading-companion-backend/state/job_registry/active_jobs.json",
-        "reading-companion-backend/state/job_registry/logs/bgjob_private_library_cleanup_round3_orchestrator_20260328.log",
-        "docs/implementation/new-reading-mechanism/private-library-promotion-round1-execution.md"
+        "docs/implementation/new-reading-mechanism/private-library-promotion-round2.md",
+        "docs/implementation/new-reading-mechanism/private-library-promotion-round2.json",
+        "reading-companion-backend/eval/review_packets/archive/attentional_v2_private_library_cleanup_round3_en_ready/",
+        "reading-companion-backend/eval/review_packets/archive/attentional_v2_private_library_cleanup_round3_zh_ready/"
       ],
-      "last_updated": "2026-03-28T05:59:20Z",
+      "last_updated": "2026-03-28T07:33:36Z",
       "last_updated_by": "codex"
     },
     {
       "id": "TASK-BENCH-PROMOTION-ROUND2",
       "title": "Decide the next benchmark-promotion move from the modern supplement round-2 draft",
-      "status": "blocked",
+      "status": "done",
       "lane": "dataset_growth",
       "priority": "medium",
-      "detail_ref": "docs/implementation/new-reading-mechanism/private-library-promotion-round1-execution.md",
+      "detail_ref": "docs/implementation/new-reading-mechanism/private-library-promotion-round2.md",
       "truth_refs": [
         "docs/backend-reader-evaluation.md",
         "docs/workspace-overview.md"
@@ -80,19 +76,15 @@
         "DEC-018",
         "DEC-019"
       ],
-      "job_refs": [
-        "bgjob_private_library_cleanup_round3_orchestrator_20260328"
-      ],
-      "acceptance_ref": "docs/implementation/new-reading-mechanism/execution-tracker.md",
-      "next_action": "Use the round-2 draft to choose between materializing a curated promotion packet and keeping the backlog/chapter lane as the next move.",
-      "blocked_by": [
-        "TASK-BENCH-ROUND3-CLEANUP"
-      ],
+      "job_refs": [],
+      "acceptance_ref": "docs/implementation/new-reading-mechanism/private-library-promotion-round2.md",
+      "next_action": "Apply the recorded hold_for_backlog_rescue decision instead of materializing a curated promotion packet immediately.",
+      "blocked_by": [],
       "evidence_refs": [
-        "docs/implementation/new-reading-mechanism/private-library-promotion-round1.md",
-        "docs/implementation/new-reading-mechanism/private-library-promotion-round1-execution.md"
+        "docs/implementation/new-reading-mechanism/private-library-promotion-round2.md",
+        "docs/implementation/new-reading-mechanism/private-library-promotion-round2.json"
       ],
-      "last_updated": "2026-03-28T05:59:20Z",
+      "last_updated": "2026-03-28T07:33:36Z",
       "last_updated_by": "codex"
     },
     {
@@ -120,7 +112,7 @@
       "evidence_refs": [
         "docs/implementation/new-reading-mechanism/execution-tracker.md"
       ],
-      "last_updated": "2026-03-28T05:59:20Z",
+      "last_updated": "2026-03-28T07:33:36Z",
       "last_updated_by": "codex"
     },
     {
@@ -143,13 +135,13 @@
       "next_action": "Resolve Q10 after benchmark stabilization is strong enough that stable mechanism behavior can be frozen intentionally.",
       "blocked_by": [
         "TASK-MECH-EN-RERUN",
-        "TASK-BENCH-PROMOTION-ROUND2"
+        "TASK-BENCH-BACKLOG-RESCUE"
       ],
       "evidence_refs": [
         "docs/implementation/new-reading-mechanism/open-questions.md",
         "docs/implementation/new-reading-mechanism/execution-tracker.md"
       ],
-      "last_updated": "2026-03-28T05:59:20Z",
+      "last_updated": "2026-03-28T07:33:36Z",
       "last_updated_by": "codex"
     },
     {
@@ -182,7 +174,35 @@
         "docs/api-contract.md",
         "docs/api-integration.md"
       ],
-      "last_updated": "2026-03-28T05:59:20Z",
+      "last_updated": "2026-03-28T07:33:36Z",
+      "last_updated_by": "codex"
+    },
+    {
+      "id": "TASK-BENCH-ROUND3-CLEANUP",
+      "title": "Finish private-library cleanup round 3 and materialize the round-2 promotion draft",
+      "status": "done",
+      "lane": "dataset_growth",
+      "priority": "high",
+      "detail_ref": "docs/implementation/new-reading-mechanism/execution-tracker.md",
+      "truth_refs": [
+        "docs/backend-reader-evaluation.md",
+        "docs/workspace-overview.md",
+        "docs/source-of-truth-map.md"
+      ],
+      "decision_refs": [
+        "DEC-018",
+        "DEC-019"
+      ],
+      "job_refs": [],
+      "acceptance_ref": "docs/implementation/new-reading-mechanism/private-library-promotion-round2.md",
+      "next_action": "Use the landed round-2 draft as the source of truth for the next dataset-growth move.",
+      "blocked_by": [],
+      "evidence_refs": [
+        "docs/implementation/new-reading-mechanism/private-library-promotion-round2.md",
+        "docs/implementation/new-reading-mechanism/private-library-promotion-round2.json",
+        "reading-companion-backend/state/job_registry/history_jobs.jsonl"
+      ],
+      "last_updated": "2026-03-28T07:33:36Z",
       "last_updated_by": "codex"
     },
     {
@@ -209,7 +229,7 @@
         "scripts/check-agent-traceability.py",
         "scripts/print-agent-context.py"
       ],
-      "last_updated": "2026-03-28T05:59:20Z",
+      "last_updated": "2026-03-28T07:33:36Z",
       "last_updated_by": "codex"
     }
   ]

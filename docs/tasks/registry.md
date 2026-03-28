@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-03-28T05:59:20Z`
+Last updated: `2026-03-28T07:33:36Z`
 
 ## Status Values
 - `active`
@@ -26,25 +26,15 @@ Last updated: `2026-03-28T05:59:20Z`
 - Priority: `high`
 - Detail: `docs/implementation/new-reading-mechanism/execution-tracker.md`
 - Next: compare retry-2 outputs against round 1 and turn the split result into a bounded implementation queue
-- Jobs: `bgjob_en_chapter_core_rerun_retry2_20260328`
+- Jobs: none
 
-### `TASK-BENCH-ROUND3-CLEANUP` — Finish private-library cleanup and write the round-2 promotion draft
+### `TASK-BENCH-BACKLOG-RESCUE` — Apply the round-2 backlog-rescue decision from the modern supplement
 - Status: `active`
 - Lane: `dataset_growth`
 - Priority: `high`
-- Detail: `docs/implementation/new-reading-mechanism/execution-tracker.md`
-- Next: wait for the cleanup orchestrator to finish, then review the draft and choose promotion vs backlog rescue
-- Jobs: `bgjob_private_library_cleanup_round3_orchestrator_20260328`
-
-## Blocked
-
-### `TASK-BENCH-PROMOTION-ROUND2` — Decide the next benchmark-promotion move from the modern supplement
-- Status: `blocked`
-- Lane: `dataset_growth`
-- Priority: `medium`
-- Detail: `docs/implementation/new-reading-mechanism/private-library-promotion-round1-execution.md`
-- Blocked by: `TASK-BENCH-ROUND3-CLEANUP`
-- Next: use the round-2 draft to choose curated promotion packet vs backlog/chapter-lane rescue
+- Detail: `docs/implementation/new-reading-mechanism/private-library-promotion-round2.md`
+- Next: rescue the thin English excerpt lane first, preserve the Chinese gains, and defer formal curated promotion until the English reviewed-active threshold is met
+- Jobs: none
 
 ## Queued
 
@@ -61,7 +51,7 @@ Last updated: `2026-03-28T05:59:20Z`
 - Lane: `documentation`
 - Priority: `medium`
 - Detail: `docs/implementation/new-reading-mechanism/open-questions.md`
-- Blocked by: `TASK-MECH-EN-RERUN`, `TASK-BENCH-PROMOTION-ROUND2`
+- Blocked by: `TASK-MECH-EN-RERUN`, `TASK-BENCH-BACKLOG-RESCUE`
 - Next: resolve `Q10` once benchmark stabilization has settled enough to freeze stable mechanism behavior
 
 ### `TASK-FE-SECTION-RETIREMENT` — Retire section-first chapter/detail and marks surfaces
@@ -73,6 +63,22 @@ Last updated: `2026-03-28T05:59:20Z`
 - Next: start only after benchmark direction and stable public-surface timing are intentionally fixed
 
 ## Done
+
+### `TASK-BENCH-ROUND3-CLEANUP` — Finish private-library cleanup and write the round-2 promotion draft
+- Status: `done`
+- Lane: `dataset_growth`
+- Priority: `high`
+- Detail: `docs/implementation/new-reading-mechanism/execution-tracker.md`
+- Next: use the landed round-2 draft as the source of truth for the next dataset-growth move
+- Jobs: none
+
+### `TASK-BENCH-PROMOTION-ROUND2` — Decide the next benchmark-promotion move from the modern supplement
+- Status: `done`
+- Lane: `dataset_growth`
+- Priority: `medium`
+- Detail: `docs/implementation/new-reading-mechanism/private-library-promotion-round2.md`
+- Next: apply the recorded `hold_for_backlog_rescue` decision instead of materializing a curated promotion packet immediately
+- Jobs: none
 
 ### `TASK-AGENT-SWITCHING-SYSTEM` — Land the repo-first agent-switching memory system
 - Status: `done`

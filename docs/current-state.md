@@ -7,27 +7,42 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-03-28T05:59:20Z`
+Last verified: `2026-03-28T07:33:36Z`
 
 ## Current Objective
 - Keep Phase 9 of the new reading mechanism project recoverable and decision-ready:
-  - review the English chapter-core retry-2 evidence
-  - finish the private-library cleanup lane so the next benchmark-promotion decision is explicit
+  - review the landed English chapter-core retry-2 evidence and turn it into a bounded repair queue
+  - apply the round-2 private-library benchmark-growth decision now that cleanup and draft generation are finished
   - preserve later migration and doc-promotion work without letting it disappear into chat memory
 
 ## Now
 - Treat `attentional_v2` as experimental and `iterator_v1` as the current default mechanism.
-- Review the English chapter-core retry-2 outputs now that the run artifacts exist, even though the job record itself ended in terminal `abandoned` state after the checker observed the process exit.
-- Keep the private-library cleanup orchestrator visible as the only currently running long job in the registry.
+- The English chapter-core retry-2 run is fully landed and archived:
+  - run:
+    - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_vs_iterator_v1_chapter_core_en_round2_microselectivity_retry2_20260328/`
+  - retry-2 vs round-1 shift:
+    - English `local_impact` improved from `0/4` win-or-tie to `2/4` win-or-tie
+    - English `system_regression` improved from `2/4` wins to `3/4` wins
+- The private-library cleanup orchestrator is also fully landed and archived:
+  - decision artifact:
+    - `docs/implementation/new-reading-mechanism/private-library-promotion-round2.md`
+    - `docs/implementation/new-reading-mechanism/private-library-promotion-round2.json`
+  - current dataset-growth result:
+    - decision `hold_for_backlog_rescue`
+    - English private-library excerpt lane remains thin at `6` `reviewed_active` against threshold `7`
+    - Chinese private-library excerpt lane now passes the gate at `11` `reviewed_active` against threshold `9`
+- There are no active long-running background jobs in the registry right now.
 - Use the task registry plus the execution tracker as the route back into detailed mechanism work.
 
 ## Next
 - Compare retry-2 English chapter-core results against round 1 and turn the split result into a bounded implementation queue.
-- Once the cleanup orchestrator finishes, review the round-2 promotion draft and decide whether to materialize a curated promotion packet or keep working the backlog/chapter lane.
+- Apply the round-2 `hold_for_backlog_rescue` decision:
+  - rescue the English private-library excerpt backlog before formal curated promotion
+  - preserve the Chinese gains without expanding the chapter lane beyond the current `2` eligible chapter candidates
 - After the current chapter-core follow-up is dispositioned, run durable-trace, re-entry, and runtime-viability evaluation.
 
 ## Blocked
-- Formal round-2 benchmark-promotion decisions are blocked on the cleanup orchestrator writing the draft outputs.
+- Formal curated promotion from the modern private-library supplement remains withheld by the round-2 `hold_for_backlog_rescue` decision while the English excerpt lane stays below threshold.
 - The later frontend/API retirement of section-first chapter/detail and marks surfaces remains blocked on benchmark stabilization plus stable doc promotion timing.
 - `Q10` remains open: when the detailed `attentional_v2` working design should be promoted from temp docs into stable mechanism docs.
 
@@ -48,10 +63,10 @@ Last verified: `2026-03-28T05:59:20Z`
 
 ## Active Task IDs
 - `TASK-MECH-EN-RERUN`
-- `TASK-BENCH-ROUND3-CLEANUP`
+- `TASK-BENCH-BACKLOG-RESCUE`
 
 ## Active Job IDs
-- `bgjob_private_library_cleanup_round3_orchestrator_20260328`
+- none
 
 ## Recommended Reading Path
 1. `AGENTS.md`
@@ -66,18 +81,14 @@ Last verified: `2026-03-28T05:59:20Z`
 ## Machine-Readable Appendix
 ```json
 {
-  "updated_at": "2026-03-28T05:59:20Z",
+  "updated_at": "2026-03-28T07:33:36Z",
   "last_updated_by": "codex",
   "active_task_ids": [
     "TASK-MECH-EN-RERUN",
-    "TASK-BENCH-ROUND3-CLEANUP"
+    "TASK-BENCH-BACKLOG-RESCUE"
   ],
-  "blocked_task_ids": [
-    "TASK-BENCH-PROMOTION-ROUND2"
-  ],
-  "active_job_ids": [
-    "bgjob_private_library_cleanup_round3_orchestrator_20260328"
-  ],
+  "blocked_task_ids": [],
+  "active_job_ids": [],
   "open_decision_ids": [
     "OD-CHAPTER-CORE-SPLIT-RESPONSE",
     "OD-BENCHMARK-SIZE",
@@ -86,7 +97,8 @@ Last verified: `2026-03-28T05:59:20Z`
   "detail_refs": [
     "docs/implementation/new-reading-mechanism/execution-tracker.md",
     "docs/implementation/new-reading-mechanism/open-questions.md",
-    "docs/implementation/new-reading-mechanism/private-library-promotion-round1-execution.md"
+    "docs/implementation/new-reading-mechanism/private-library-promotion-round1-execution.md",
+    "docs/implementation/new-reading-mechanism/private-library-promotion-round2.md"
   ],
   "truth_refs": [
     "docs/source-of-truth-map.md",
