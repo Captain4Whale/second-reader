@@ -1,0 +1,84 @@
+# LLM Packet Review: `attentional_v2_private_library_hardening_round2_zh`
+
+- run_id: `attentional_v2_private_library_hardening_round2_zh__llm_review__20260327-233601`
+- generated_at: `2026-03-27T23:37:26.589031Z`
+- case_count: `15`
+- action_counts: `{"drop": 1, "keep": 7, "revise": 7}`
+
+## Case Decisions
+
+- `biji_de_fangfa_private_zh__13__seed_1`
+  - action: `revise`
+  - confidence: `high`
+  - problem_types: `other`
+  - notes: The 'wrong_bucket' classification was mistaken - the excerpt clearly fits self-improvement/learning_strategy bucket and does not represent a bucket mismatch. The book title being about note-taking doesn't require every excerpt to cover note-taking mechanics; strategic advice about what/where to focus is relevant to knowledge management methodology. Only the selection_reason text needs correction. Recommend keeping with corrected reasoning.
+- `biji_de_fangfa_private_zh__15__seed_2`
+  - action: `keep`
+  - confidence: `high`
+  - problem_types: `other`
+  - notes: The case is now properly curated with complete metadata. The excerpt is coherent and substantive, demonstrating a clear principle about learning from others' failures with the flomo case as concrete evidence. The adversarial note about judge_focus misalignment describes a subtle task difficulty nuance, not a fundamental case flaw - the model can still synthesize the full argument from the excerpt plus reasonable adjacent context.
+- `canglang_zhishui_private_zh__16__seed_2`
+  - action: `keep`
+  - confidence: `high`
+  - problem_types: `other`
+  - notes: The case is now ready. The excerpt clearly demonstrates private-vs-public speech tension with explicit contrast between the speaker's private intention to stay silent and public action forced by social pressure from the director. The metadata (selection_reason, judge_focus) has been populated. The primary review gives a strong 'keep' with high confidence, and the adversarial review only flags potential ease - which does not invalidate the case's fundamental correctness. No further revision needed.
+- `fooled_by_randomness_private_zh__19__seed_2`
+  - action: `revise`
+  - confidence: `high`
+  - problem_types: `ambiguous_focus|source_parse_problem`
+  - notes: The excerpt content is coherent and thematically valid - Taleb's critique of quantitative finance is a legitimate methodology critique. However, the case has incomplete metadata (missing phenomena, selection_reason, judge_focus) and appears to be mid-discussion fragment. Needs curation to add required metadata and verify it's not a truncated excerpt. Content quality supports 'revise' rather than 'drop' - with proper metadata this could be benchmark-ready.
+- `kangxi_hongpiao_private_zh__12__seed_1`
+  - action: `revise`
+  - confidence: `high`
+  - problem_types: `wrong_bucket|too_easy`
+  - notes: Change role_tag from 'argumentative' to 'reference_heavy'. The excerpt is too straightforward for meaningful complexity testing but works as factual reference material. Consider whether this should be paired with a more complex test item (as suggested in adversarial review) rather than used as standalone passage.
+- `kangxi_hongpiao_private_zh__12__seed_2`
+  - action: `revise`
+  - confidence: `high`
+  - problem_types: `ambiguous_focus|text_noise|source_parse_problem`
+  - notes: The historical excerpt about two Catholic priests becoming enslaved war captives in the Qing Eight Banners is coherent and meaningful, but critical benchmark metadata is entirely missing: no case_title, question_ids, phenomena, selection_reason, or judge_focus are defined. The [97] reference artifact should also be removed. Without this metadata, the case cannot function as a benchmark evaluation unit.
+- `kangxi_hongpiao_private_zh__27__seed_1`
+  - action: `drop`
+  - confidence: `high`
+  - problem_types: `weak_excerpt|ambiguous_focus|too_easy`
+  - notes: The excerpt lacks essential benchmark elements: no question_ids, phenomena, selection_reason, or judge_focus are defined. It presents only straightforward historical description without any analytical task, question, or ambiguity to resolve. All three review layers consistently identify this as descriptive background rather than a properly formed benchmark case requiring reading comprehension.
+- `meiguoren_de_xingge_private_zh__19__seed_2`
+  - action: `keep`
+  - confidence: `high`
+  - problem_types: `other`
+  - notes: The excerpt is explicitly analytical (expository role from academic cultural analysis), so the explicit naming of '矛盾的态度' is structurally appropriate. While the phenomenon is named directly, the excerpt still requires nuanced analysis to unpack the components (心服 + 负气, 报复 + 想要被认可) and their implications for American cultural identity formation. The adversarial 'too_easy' concern is noted but doesn't constitute a fatal flaw in this expository context where the author is explicitly analyzing rather than describing behaviors from which the model must infer.
+- `meiguoren_de_xingge_private_zh__8__seed_1`
+  - action: `keep`
+  - confidence: `high`
+  - problem_types: `other`
+  - notes: The case is ready for benchmark inclusion. The excerpt directly presents the core cultural contrast (American 'home' as defensive island vs Chinese rootedness in community), with explicit textual support for the 'social travelers' vs 'birthplace communities' comparison. While the adversarial review notes the excerpt is explicit about its thesis, this is characteristic of Fei Xiaotong's scholarly anthropological writing style and does not constitute a flaw requiring revision. The metadata is complete with appropriate bucket (cultural_comparison_reasoning), selection_reason, and judge_focus. No text noise or parsing issues detected in the factual audit.
+- `zhangzhongmou_zizhuan_private_zh__10__seed_1`
+  - action: `revise`
+  - confidence: `high`
+  - problem_types: `other`
+  - notes: The excerpt itself is coherent and depicts a clear emotional scenario, but critical benchmark metadata (question_ids, phenomena, selection_reason, judge_focus) is entirely missing. This case cannot function as a benchmark without defined evaluation criteria. The content supports a bucket of emotional_hurt_or_regret based on the romantic disappointment context, but the reference to '伊莉莎伯' remains unexplained which creates some focus ambiguity. Recommend metadata population and clarification of the Elizabeth reference before reconsideration.
+- `zhangzhongmou_zizhuan_private_zh__10__seed_2`
+  - action: `keep`
+  - confidence: `high`
+  - problem_types: `other`
+  - notes: The excerpt effectively tests comparative reasoning and causal attribution in university-industry linkage. The primary review gives high-confidence keep with clear focus and strong excerpt quality. While the adversarial review flags 'too_easy' as a potential concern, the risk level is low and the case still requires understanding of causal claims and comparative analysis between different innovation ecosystem models.
+- `zhangzhongmou_zizhuan_private_zh__4__seed_2`
+  - action: `revise`
+  - confidence: `high`
+  - problem_types: `ambiguous_focus|weak_excerpt`
+  - notes: Critical metadata fields (case_title, question_ids, phenomena, selection_reason, judge_focus) are empty. The excerpt discusses 1950s US economy, civil rights timeline, highway construction, and personal travel without a clear thematic focus. Cannot function as a benchmark case until proper pedagogical framing and metadata are added.
+- `zouchu_weiyi_zhenliguan_private_zh__14__seed_1`
+  - action: `keep`
+  - confidence: `high`
+  - problem_types: `other`
+  - notes: Case is strong and ready for benchmark inclusion. The distinction between caring about truth (关心道理) vs. ability to reason (讲道理) is clearly presented with apt historical examples (Tolstoy's weak theoretical writing, Hegel's inability to write fiction). The selection_reason and judge_focus metadata are now properly populated, addressing the earlier revision concerns. The text_noise from lookback_sentences is minor and does not undermine the excerpt's core evaluative value.
+- `zouchu_weiyi_zhenliguan_private_zh__8__seed_1`
+  - action: `revise`
+  - confidence: `high`
+  - problem_types: `weak_excerpt|ambiguous_focus|source_parse_problem`
+  - notes: The excerpt combines two poorly integrated parts: advice about reading philosophy based on 元气, followed by a question citing Bernard Williams. The Williams quote is embedded in 谢玉's question about a 2015 interview rather than serving as authorial support for the advice. Recommend either separating into two cases or restructuring the excerpt to explicitly link the Williams reference to the energy management theme.
+- `zhangzhongmou_zizhuan_private_zh__4__seed_1`
+  - action: `keep`
+  - confidence: `medium`
+  - problem_types: `other`
+  - notes: This is explicitly a seed case ('excerpt_seed_status: private_library_seed_v2') requiring later curation. The metadata gaps are expected and acknowledged. The excerpt itself is coherent, with clear context about the author's path to becoming a Jiaotong alumni via affiliated school and his writing aspirations. The adversarial review confirms no significant issues. Given the seed status and coherent content, the case can enter the reviewed slice for further curation rather than being dropped.

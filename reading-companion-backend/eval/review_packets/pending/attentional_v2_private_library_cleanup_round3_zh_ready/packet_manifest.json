@@ -1,7 +1,7 @@
 {
-  "packet_id": "attentional_v2_private_library_hardening_round2_zh",
+  "packet_id": "attentional_v2_private_library_cleanup_round3_zh_ready",
   "packet_kind": "revision_replacement",
-  "created_at": "2026-03-27T23:27:58.615240Z",
+  "created_at": "2026-03-28T01:03:46.685036Z",
   "dataset_id": "attentional_v2_private_library_excerpt_zh_v2",
   "family": "excerpt_cases",
   "storage_mode": "local-only",
@@ -13,12 +13,16 @@
       "needs_replacement"
     ],
     "limit": 0,
-    "case_ids": []
+    "case_ids": [
+      "biji_de_fangfa_private_zh__13__seed_1",
+      "kangxi_hongpiao_private_zh__12__seed_1",
+      "zhangzhongmou_zizhuan_private_zh__4__seed_2",
+      "zhangzhongmou_zizhuan_private_zh__10__seed_1"
+    ]
   },
-  "case_count": 15,
+  "case_count": 4,
   "status_counts": {
-    "needs_revision": 14,
-    "needs_replacement": 1
+    "needs_revision": 4
   },
   "import_contract_version": "1"
 }

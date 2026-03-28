@@ -29,7 +29,7 @@ Update when: status changes, blockers appear, or phases complete.
     - balanced benchmark promotion from the modern private-library `v2` supplement remains mid-hardening rather than ready for formal benchmark promotion:
       - the round-2 bilingual revised-pool packets are now materialized
       - machine-side audits are completed
-      - final adjudication/import is now running in the background registry
+      - final adjudication/import is completed; round-2 survivor interpretation is now the next benchmark-growth gate
     - later frontend/API retirement of section-first chapter/detail and marks surfaces
     - later stable-doc promotion timing under `Q10`
 
@@ -359,11 +359,11 @@ Update when: status changes, blockers appear, or phases complete.
       - `1 drop`
   - immediate implication:
     - the revised pool is materially stronger after one hardening cycle
-    - it still needs adjudication/import before any survivor promotion or next benchmark lift
-- [ ] Complete the private-library hardening round2 excerpt adjudication/import pass
+    - adjudication/import is now complete, so the next gate is survivor interpretation rather than packet processing
+- [x] Complete the private-library hardening round2 excerpt adjudication/import pass
   - prerequisite:
     - both machine-side audits are now done
-  - active background job:
+  - completed background job:
     - `bgjob_private_library_hardening_round2_adjudication_20260328`
   - next output:
     - archived packet roots under `reading-companion-backend/eval/review_packets/archive/`

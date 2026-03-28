@@ -33,13 +33,10 @@ Last updated: `2026-03-28`
     - current state:
       - running
       - retry 2 was launched after adding bounded `ReaderLLMError` fallbacks to the `attentional_v2` phase-4 nodes
-  - `bgjob_private_library_hardening_round2_adjudication_20260328`
-    - purpose:
-      - final adjudication/import for the round-2 private-library hardening packets plus queue refresh
-    - current state:
-      - running
 - Recently completed and archived:
   - the two round-2 private-library hardening machine-audit jobs completed successfully and were archived from the active registry after their summaries landed
+  - `bgjob_private_library_hardening_round2_adjudication_20260328`
+    - final adjudication/import for the round-2 private-library hardening packets completed and was archived after both packet imports landed
 
 ## Current Focus
 - Phase 9 preparation for the new reading mechanism project
@@ -67,16 +64,13 @@ Last updated: `2026-03-28`
     - the first balanced promotion-preparation plan from that supplement is now landed too
     - formal promotion from that supplement remains future benchmark work and should not be forgotten while the current comparison decision is pending
     - the next bilingual hardening follow-up from the revised/replacement pool is now also active:
-      - pending packets:
-        - `reading-companion-backend/eval/review_packets/pending/attentional_v2_private_library_hardening_round2_en/`
-        - `reading-companion-backend/eval/review_packets/pending/attentional_v2_private_library_hardening_round2_zh/`
       - queue state:
-        - `active packets = 2`
+        - `active packets = 0`
       - machine-side audit status:
         - English round-2 audit: completed
         - Chinese round-2 audit: completed
       - next excerpt action:
-        - final adjudication/import for both round-2 packets is now running in the background registry
+        - final adjudication/import for both round-2 packets is completed; survivor interpretation is now the next gate
 - the temporary side branch for a universal shared LLM invocation/traceability layer is now landed
   - shared provider contracts, key-pool failover, task-level profiles, and standard/debug trace sinks now live in backend infrastructure
   - the return path is direct:
