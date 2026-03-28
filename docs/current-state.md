@@ -7,48 +7,56 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-03-28T07:33:36Z`
+Last verified: `2026-03-28T08:18:41Z`
 
 ## Current Objective
 - Keep Phase 9 of the new reading mechanism project recoverable and decision-ready:
-  - review the landed English chapter-core retry-2 evidence and turn it into a bounded repair queue
-  - apply the round-2 private-library benchmark-growth decision now that cleanup and draft generation are finished
+  - carry forward the bounded English local-reading repair queue that came out of the landed retry-2 comparison
+  - resolve the post-rescue private-library promotion gate without reopening the whole English backlog blindly
   - preserve later migration and doc-promotion work without letting it disappear into chat memory
 
 ## Now
 - Treat `attentional_v2` as experimental and `iterator_v1` as the current default mechanism.
-- The English chapter-core retry-2 run is fully landed and archived:
+- The English chapter-core retry-2 closeout is now dispositioned into a bounded queue:
   - run:
     - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_vs_iterator_v1_chapter_core_en_round2_microselectivity_retry2_20260328/`
-  - retry-2 vs round-1 shift:
+  - round-1 vs retry-2 shift:
     - English `local_impact` improved from `0/4` win-or-tie to `2/4` win-or-tie
     - English `system_regression` improved from `2/4` wins to `3/4` wins
-- The private-library cleanup orchestrator is also fully landed and archived:
+  - verified interpretation:
+    - the landed micro-selectivity repair helped most on argumentative / expository English chapters
+    - the remaining local gap is now concentrated on narrative / reference-heavy English cases rather than on the whole pack
+  - live queue record:
+    - `docs/implementation/new-reading-mechanism/mechanism-pattern-ledger.md`
+    - `docs/implementation/new-reading-mechanism/execution-tracker.md`
+- The private-library cleanup orchestrator and first narrow English rescue are both landed and archived:
   - decision artifact:
     - `docs/implementation/new-reading-mechanism/private-library-promotion-round2.md`
     - `docs/implementation/new-reading-mechanism/private-library-promotion-round2.json`
-  - current dataset-growth result:
-    - decision `hold_for_backlog_rescue`
-    - English private-library excerpt lane remains thin at `6` `reviewed_active` against threshold `7`
-    - Chinese private-library excerpt lane now passes the gate at `11` `reviewed_active` against threshold `9`
+  - rescue packet:
+    - `reading-companion-backend/eval/review_packets/archive/attentional_v2_private_library_backlog_rescue_en_round1/`
+  - current dataset-growth result after the rescue:
+    - the recorded round-2 decision remains `hold_for_backlog_rescue`
+    - English private-library excerpt lane now sits at `7` `reviewed_active` against threshold `7`
+    - Chinese private-library excerpt lane remains preserved at `11` `reviewed_active` against threshold `9`
 - There are no active long-running background jobs in the registry right now.
 - Use the task registry plus the execution tracker as the route back into detailed mechanism work.
 
 ## Next
-- Compare retry-2 English chapter-core results against round 1 and turn the split result into a bounded implementation queue.
-- Apply the round-2 `hold_for_backlog_rescue` decision:
-  - rescue the English private-library excerpt backlog before formal curated promotion
-  - preserve the Chinese gains without expanding the chapter lane beyond the current `2` eligible chapter candidates
-- After the current chapter-core follow-up is dispositioned, run durable-trace, re-entry, and runtime-viability evaluation.
+- Make the post-rescue benchmark gate decision:
+  - decide whether crossing the English threshold through the narrow bucket-only rescue is enough to reopen formal curated promotion
+  - or require one more metadata-only English cleanup pass first
+- Keep the Chinese gains unchanged while that decision is made.
+- After the post-rescue benchmark gate is fixed, run durable-trace, re-entry, and runtime-viability evaluation.
 
 ## Blocked
-- Formal curated promotion from the modern private-library supplement remains withheld by the round-2 `hold_for_backlog_rescue` decision while the English excerpt lane stays below threshold.
+- Formal curated promotion from the modern private-library supplement remains paused until the post-rescue English gate decision is explicit.
 - The later frontend/API retirement of section-first chapter/detail and marks surfaces remains blocked on benchmark stabilization plus stable doc promotion timing.
 - `Q10` remains open: when the detailed `attentional_v2` working design should be promoted from temp docs into stable mechanism docs.
 
 ## Open Decisions
-- `OD-CHAPTER-CORE-SPLIT-RESPONSE`
-  - How much additional English-side local-reading repair should land before the broader comparison ladder continues unchanged?
+- `OD-PRIVATE-LIBRARY-POST-RESCUE-GATE`
+  - With the English lane now at `7` `reviewed_active`, should formal curated promotion reopen immediately, or should the metadata-only English cases get one more cleanup pass first?
 - `OD-BENCHMARK-SIZE`
   - Is the current benchmark family already large enough for high-confidence cross-mechanism judgment, or should the benchmark expand before any default-cutover decision?
 - `Q10`
@@ -62,7 +70,6 @@ Last verified: `2026-03-28T07:33:36Z`
 - Benchmark confidence can look stronger than it really is if corpus growth, promotion, and reviewed-slice confidence gates drift apart.
 
 ## Active Task IDs
-- `TASK-MECH-EN-RERUN`
 - `TASK-BENCH-BACKLOG-RESCUE`
 
 ## Active Job IDs
@@ -75,27 +82,29 @@ Last verified: `2026-03-28T07:33:36Z`
 4. relevant child `AGENTS.md`
 5. `docs/tasks/registry.md`
 6. `docs/implementation/new-reading-mechanism/execution-tracker.md`
-7. `reading-companion-backend/state/job_registry/active_jobs.md`
-8. `docs/source-of-truth-map.md` when you need to decide where durable information belongs
+7. `docs/implementation/new-reading-mechanism/private-library-promotion-round2.md`
+8. `docs/implementation/new-reading-mechanism/mechanism-pattern-ledger.md`
+9. `reading-companion-backend/state/job_registry/active_jobs.md`
+10. `docs/source-of-truth-map.md` when you need to decide where durable information belongs
 
 ## Machine-Readable Appendix
 ```json
 {
-  "updated_at": "2026-03-28T07:33:36Z",
+  "updated_at": "2026-03-28T08:18:41Z",
   "last_updated_by": "codex",
   "active_task_ids": [
-    "TASK-MECH-EN-RERUN",
     "TASK-BENCH-BACKLOG-RESCUE"
   ],
   "blocked_task_ids": [],
   "active_job_ids": [],
   "open_decision_ids": [
-    "OD-CHAPTER-CORE-SPLIT-RESPONSE",
+    "OD-PRIVATE-LIBRARY-POST-RESCUE-GATE",
     "OD-BENCHMARK-SIZE",
     "Q10"
   ],
   "detail_refs": [
     "docs/implementation/new-reading-mechanism/execution-tracker.md",
+    "docs/implementation/new-reading-mechanism/mechanism-pattern-ledger.md",
     "docs/implementation/new-reading-mechanism/open-questions.md",
     "docs/implementation/new-reading-mechanism/private-library-promotion-round1-execution.md",
     "docs/implementation/new-reading-mechanism/private-library-promotion-round2.md"

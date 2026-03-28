@@ -1,11 +1,11 @@
 {
   "version": 1,
-  "updated_at": "2026-03-28T07:33:36Z",
+  "updated_at": "2026-03-28T08:18:41Z",
   "tasks": [
     {
       "id": "TASK-MECH-EN-RERUN",
       "title": "Review English chapter-core retry-2 outputs and convert them into a bounded implementation queue",
-      "status": "active",
+      "status": "done",
       "lane": "mechanism_eval",
       "priority": "high",
       "detail_ref": "docs/implementation/new-reading-mechanism/execution-tracker.md",
@@ -21,14 +21,14 @@
       ],
       "job_refs": [],
       "acceptance_ref": "docs/implementation/new-reading-mechanism/execution-tracker.md",
-      "next_action": "Compare the retry-2 English chapter-core outputs against round 1, decide whether another local-reading repair is needed, and record the selective implementation queue.",
+      "next_action": "Use the recorded narrative/reference-heavy local-reading queue as the source of the next bounded attentional_v2 repair.",
       "blocked_by": [],
       "evidence_refs": [
         "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_vs_iterator_v1_chapter_core_en_round2_microselectivity_retry2_20260328/summary/report.md",
         "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_vs_iterator_v1_chapter_core_en_round2_microselectivity_retry2_20260328/summary/aggregate.json",
         "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_vs_iterator_v1_chapter_core_en_round1_20260326/"
       ],
-      "last_updated": "2026-03-28T07:33:36Z",
+      "last_updated": "2026-03-28T08:18:41Z",
       "last_updated_by": "codex"
     },
     {
@@ -49,16 +49,17 @@
       ],
       "job_refs": [],
       "acceptance_ref": "docs/implementation/new-reading-mechanism/private-library-promotion-round2.md",
-      "next_action": "Rescue the thin English excerpt lane first, preserve the Chinese gains, and defer formal curated promotion until the English reviewed-active threshold is met.",
+      "next_action": "Use the landed one-case English rescue to decide whether formal curated promotion can reopen now or whether the metadata-only English cases should get one more cleanup pass first.",
       "blocked_by": [
       ],
       "evidence_refs": [
         "docs/implementation/new-reading-mechanism/private-library-promotion-round2.md",
         "docs/implementation/new-reading-mechanism/private-library-promotion-round2.json",
+        "reading-companion-backend/eval/review_packets/archive/attentional_v2_private_library_backlog_rescue_en_round1/",
         "reading-companion-backend/eval/review_packets/archive/attentional_v2_private_library_cleanup_round3_en_ready/",
         "reading-companion-backend/eval/review_packets/archive/attentional_v2_private_library_cleanup_round3_zh_ready/"
       ],
-      "last_updated": "2026-03-28T07:33:36Z",
+      "last_updated": "2026-03-28T08:18:41Z",
       "last_updated_by": "codex"
     },
     {
@@ -105,14 +106,14 @@
       ],
       "job_refs": [],
       "acceptance_ref": "docs/implementation/new-reading-mechanism/execution-tracker.md",
-      "next_action": "Launch the remaining runtime viability gates once the English chapter-core follow-up has a concrete disposition.",
+      "next_action": "Launch the remaining runtime viability gates once the post-rescue benchmark gate decision is explicit.",
       "blocked_by": [
-        "TASK-MECH-EN-RERUN"
+        "TASK-BENCH-BACKLOG-RESCUE"
       ],
       "evidence_refs": [
         "docs/implementation/new-reading-mechanism/execution-tracker.md"
       ],
-      "last_updated": "2026-03-28T07:33:36Z",
+      "last_updated": "2026-03-28T08:18:41Z",
       "last_updated_by": "codex"
     },
     {
@@ -134,14 +135,13 @@
       "acceptance_ref": "docs/implementation/new-reading-mechanism/open-questions.md",
       "next_action": "Resolve Q10 after benchmark stabilization is strong enough that stable mechanism behavior can be frozen intentionally.",
       "blocked_by": [
-        "TASK-MECH-EN-RERUN",
         "TASK-BENCH-BACKLOG-RESCUE"
       ],
       "evidence_refs": [
         "docs/implementation/new-reading-mechanism/open-questions.md",
         "docs/implementation/new-reading-mechanism/execution-tracker.md"
       ],
-      "last_updated": "2026-03-28T07:33:36Z",
+      "last_updated": "2026-03-28T08:18:41Z",
       "last_updated_by": "codex"
     },
     {

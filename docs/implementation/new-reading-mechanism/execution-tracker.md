@@ -30,10 +30,10 @@ Update when: status changes, blockers appear, or phases complete.
         - `local_impact` moved from `0/4` win-or-tie to `2/4` win-or-tie
         - `system_regression` moved from `2/4` wins to `3/4` wins
     - balanced benchmark promotion from the modern private-library `v2` supplement remains mid-hardening rather than ready for formal benchmark promotion:
-      - the cleanup orchestrator is now completed and the round-2 promotion draft is landed
-      - the explicit decision is now `hold_for_backlog_rescue`
-      - English excerpt promotion remains withheld because the private-library lane is still thin at `6` `reviewed_active` against threshold `7`
-      - Chinese excerpt promotion now passes the gate at `11` `reviewed_active` against threshold `9`, but the formal bilingual promotion packet is still withheld until the English side catches up
+      - the cleanup orchestrator is now completed, the round-2 promotion draft is landed, and the first narrow English rescue pass is archived
+      - the explicit decision was `hold_for_backlog_rescue`, and the rescue pass moved the English excerpt lane to `7` `reviewed_active`
+      - Chinese excerpt promotion remains preserved at `11` `reviewed_active` against threshold `9`
+      - formal bilingual promotion is still paused until we decide whether threshold-crossing alone is enough or whether the remaining English metadata-only cases deserve one more cleanup pass first
     - later frontend/API retirement of section-first chapter/detail and marks surfaces
     - later stable-doc promotion timing under `Q10`
 
@@ -743,13 +743,14 @@ Update when: status changes, blockers appear, or phases complete.
     - packet case audits now support bounded case-level parallelism while preserving ordered primary/adversarial review inside each case
   - Completed the machine-side case audit on the active Chinese round-2 revision/replacement packet at `reading-companion-backend/eval/runs/attentional_v2/case_audits/attentional_v2_zh_revision_replacement_round2__20260325-143403/`. Result: `6` completed, `0` factual failures, primary decisions `4 keep` / `2 revise`, adversarial risk counts `4 medium` / `1 high` / `1 low`.
   - Recorded an additional Phase 9 reminder so the project does not forget the benchmark-size question: after the reviewed-slice rerun and first broader comparisons, we must explicitly decide whether the current `v2` benchmark family is still too small for high-confidence method judgment. If it is, the next expansion targets are roughly `25-30` curated excerpt cases per language and `24-30` chapter units per language before stronger promotion claims.
-- [ ] Convert the first broader comparison into a selective implementation queue
+- [x] Convert the first broader comparison into a selective implementation queue
   - required closeout:
     - explain the split result
     - record the likely contributing causes
     - choose small high-confidence implementation moves
   - current selected queue:
-    - raise local micro-selectivity inside `attentional_v2` without breaking gated closure
+    - preserve the landed micro-selectivity gains on `women_and_economics_public_en__9` and `on_liberty_public_en__10`
+    - target the remaining narrative/reference-heavy local gap on `up_from_slavery_public_en__10` and `walden_205_en__10` with bounded Phase-4 cue/emission refinements instead of another broad redesign
     - preserve chapter-scale thematic threading as a protected invariant
     - continue honest callback-anchor resolution
     - deepen distinction / recognition-gap closure
@@ -771,3 +772,35 @@ Update when: status changes, blockers appear, or phases complete.
   - rescue the thin English excerpt backlog first
   - preserve the Chinese reviewed-active gains while keeping the chapter lane constrained
 <!-- END private_library_cleanup_round3_20260328 -->
+## `2026-03-28` English Retry2 Closeout And EN Backlog Rescue
+- Compared the landed English retry-2 run against round 1 and verified that the gain was real but uneven:
+  - `women_and_economics_public_en__9`
+    - local result improved from `loss` to `tie`
+    - system result stayed `win`
+  - `on_liberty_public_en__10`
+    - local result improved from `loss` to `win`
+    - system result stayed `win`
+  - `walden_205_en__10`
+    - local result stayed `loss`
+    - system result improved from `loss` to `win`
+  - `up_from_slavery_public_en__10`
+    - still `loss` at both local and system levels
+- Interpreted the likely contributor as the landed Phase-4 micro-selectivity repair:
+  - retry-2 carried more phrase-level and section-distributed local contact than round 1
+  - the gain concentrated on argumentative / expository English chapters rather than narrative / reference-heavy ones
+  - the repair improved local contact without giving up chapter-scale thematic threading
+- Converted the mechanism follow-up into a bounded queue rather than a new redesign:
+  - keep the new micro-selective cue stack and prompt emphasis as baseline
+  - next repair should target actor intention, social pressure, and concrete causal stakes in narrative / reference-heavy English local cases
+  - do not widen reaction count globally or flatten `attentional_v2` into an iterator-style stream
+- Materialized and imported the first narrow English backlog rescue packet:
+  - packet id: `attentional_v2_private_library_backlog_rescue_en_round1`
+  - archive: `/Users/baiweijiang/Documents/Projects/reading-companion/reading-companion-backend/eval/review_packets/archive/attentional_v2_private_library_backlog_rescue_en_round1/`
+  - rescued case: `steve_jobs_private_en__17__seed_2`
+  - action: promote to `reviewed_active` with the recorded `business_strategy` bucket
+- Live private-library excerpt counts after the rescue now stand at:
+  - English: `7` `reviewed_active`, `5` `needs_revision`, `4` `needs_replacement`
+  - Chinese: `11` `reviewed_active`, `4` `needs_revision`, `1` `needs_replacement`
+- Immediate next move:
+  - keep the Chinese lane unchanged
+  - decide whether the English lane is now ready to reopen formal curated promotion or whether the metadata-only English cases should get one more cleanup pass first

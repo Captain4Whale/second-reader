@@ -59,7 +59,11 @@ This file is a living working ledger. Stable rules still belong in `docs/backend
   - curiosity/search is allowed to extend local investigation when a phrase genuinely opens a line of inquiry
 - Evidence:
   - `attentional_v2_vs_iterator_v1_chapter_core_zh_round1_20260326`
+  - `attentional_v2_vs_iterator_v1_chapter_core_en_microselectivity_probe_pass3_20260327`
+  - `attentional_v2_vs_iterator_v1_chapter_core_en_round2_microselectivity_retry2_20260328`
   - `ouyou_zaji_public_zh__4`
+  - `women_and_economics_public_en__9`
+  - `on_liberty_public_en__10`
   - Example local expressions and reactions:
     - original excerpt:
       - `大運河穿過威尼斯像反寫的S；這就是大街。`
@@ -67,9 +71,10 @@ This file is a living working ledger. Stable rules still belong in `docs/backend
     - iterator-style reactions:
       - `「反写的S」这个比喻是否当时旅欧文学中的常见套语？还是作者的原创观察？`
       - `作者用中国传统看戏经验来理解威尼斯建筑布局的视角——不对称本身就可以是美。`
-- Status: `adopt_now`
+- Status: `partially_adopted`
 - Next action:
-  - trial a narrowly bounded increase in local micro-selectivity inside the approved `attentional_v2` framework without abandoning gated reaction emission or meaning-unit closure
+  - treat the landed phrase-level cue and prompt repair as the new baseline inside the approved `attentional_v2` framework
+  - extend it next into narrative / reference-heavy local investigation without abandoning gated reaction emission or meaning-unit closure
 
 ### 2. Attentional V2 chapter-scale thematic threading
 - Pattern kind: `strength`
@@ -135,13 +140,17 @@ This file is a living working ledger. Stable rules still belong in `docs/backend
   - this can produce correct chapter sense while still missing the small local expression that the judge rewards in `local_impact`
 - Evidence:
   - `attentional_v2_vs_iterator_v1_chapter_core_en_round1_20260326`
+  - `attentional_v2_vs_iterator_v1_chapter_core_en_round2_microselectivity_retry2_20260328`
   - `women_and_economics_public_en__9`
   - `on_liberty_public_en__10`
+  - `up_from_slavery_public_en__10`
+  - `walden_205_en__10`
   - pattern seen in judge reasons:
     - V2 often read correctly but felt like retrospective summary rather than live local investigation.
 - Status: `avoid`
 - Next action:
   - use this as a guardrail when testing local-reading improvements; reject repairs that only improve chapter summary polish without increasing earned local contact
+  - the next repair should target narrative / reference-heavy local pressure and concrete actor / causal stakes, not more summary polish
 
 ### 5. Wrong-chapter or wrong-target traversal corrupts chapter-scale evaluation even if local reactions look rich
 - Pattern kind: `anti_pattern`
@@ -201,18 +210,19 @@ This file is a living working ledger. Stable rules still belong in `docs/backend
 
 ## Current Selective Implementation Queue
 
-### Priority 1. Increase local micro-selectivity inside `attentional_v2`
+### Priority 1. Extend the landed micro-selectivity repair into narrative / reference-heavy English local cases
 - Why now:
-  - the last chapter-core comparison showed the clearest remaining weakness is chapter-local reading behavior, especially on the English pack
-  - this is also the cleanest high-confidence positive adoption candidate from `iterator_v1`
+  - retry-2 already improved the English local split on `women_and_economics_public_en__9` and `on_liberty_public_en__10`
+  - the remaining local losses are now concentrated on `up_from_slavery_public_en__10` and `walden_205_en__10`, where the mechanism still feels too retrospective or too globally correct instead of locally earned
 - Boundaries:
   - keep gated reaction emission
   - keep meaning-unit closure as the controlling frame
   - do not convert `attentional_v2` into a flat multi-reaction stream
 - Concrete implementation direction:
-  - let the local cycle surface one additional micro-observation when a compact phrase carries real local pressure
-  - improve explicit handling of analogy, unusual wording, and compact rhetorical turns
-  - prefer "small earned local contact" over broader retrospective summary in those moments
+  - keep the new phrase-level cue stack as baseline rather than reopening the earlier micro-selectivity debate
+  - strengthen Phase-4 handling of actor intention, social pressure, and concrete causal stakes when the chapter is narrative / reference-heavy
+  - prefer one grounded local why-now observation over a broader retrospective restatement in those moments
+  - do not add generic reaction density just to make the local layer look busier
 
 ### Priority 2. Preserve chapter-scale thematic threading as a protected invariant
 - Why now:
