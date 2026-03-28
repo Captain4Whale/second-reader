@@ -52,6 +52,30 @@ def get_llm_registry_json() -> str:
     return os.getenv("LLM_REGISTRY_JSON", "").strip()
 
 
+def get_llm_targets_path() -> str:
+    """Return the optional structured LLM target-catalog path."""
+
+    return os.getenv("LLM_TARGETS_PATH", "").strip()
+
+
+def get_llm_targets_json() -> str:
+    """Return the optional inline structured LLM target-catalog payload."""
+
+    return os.getenv("LLM_TARGETS_JSON", "").strip()
+
+
+def get_llm_profile_bindings_path() -> str:
+    """Return the optional structured LLM profile-binding path."""
+
+    return os.getenv("LLM_PROFILE_BINDINGS_PATH", "").strip()
+
+
+def get_llm_profile_bindings_json() -> str:
+    """Return the optional inline structured LLM profile-binding payload."""
+
+    return os.getenv("LLM_PROFILE_BINDINGS_JSON", "").strip()
+
+
 def _env_int(name: str, default: int, *, minimum: int = 1) -> int:
     """Parse one integer env var with a lower bound fallback."""
     raw = os.getenv(name, "").strip()

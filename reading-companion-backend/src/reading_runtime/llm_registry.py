@@ -12,10 +12,14 @@ from typing import Any, Literal
 from src.config import (
     get_llm_config,
     get_llm_max_concurrency,
+    get_llm_profile_bindings_json,
+    get_llm_profile_bindings_path,
     get_llm_provider_contract,
     get_llm_registry_json,
     get_llm_registry_path,
     get_llm_retry_attempts,
+    get_llm_targets_json,
+    get_llm_targets_path,
 )
 
 
@@ -26,10 +30,54 @@ DEFAULT_DATASET_REVIEW_PROFILE_ID = "dataset_review_high_trust"
 DEFAULT_EVAL_JUDGE_PROFILE_ID = "eval_judge_high_trust"
 
 _ALLOWED_CONTRACTS = {"anthropic", "google_genai", "openai_compatible"}
+_TARGET_PROVIDER_OPTIONAL_FIELDS = (
+    "timeout_seconds",
+    "retry_attempts",
+    "max_concurrency",
+    "initial_max_concurrency",
+    "probe_max_concurrency",
+    "min_stable_concurrency",
+    "backoff_window_seconds",
+    "recover_window_seconds",
+    "quota_cooldown_base_seconds",
+    "quota_cooldown_max_seconds",
+    "quota_state_ttl_seconds",
+)
+_PROFILE_OPTIONAL_FIELDS = (
+    "temperature",
+    "max_tokens",
+    "timeout_seconds",
+    "retry_attempts",
+    "max_concurrency",
+    "default_burst_concurrency",
+    "quota_retry_attempts",
+    "quota_wait_budget_seconds",
+)
 
 
 class LLMRegistryError(RuntimeError):
     """Raised when provider/profile registry configuration is invalid."""
+
+
+@dataclass(frozen=True)
+class LLMKeySlot:
+    """One resolved-or-resolvable API-key slot within a provider pool."""
+
+    slot_id: str
+    api_key: str | None = None
+    api_key_env: str | None = None
+
+    def resolve_api_key(self) -> str | None:
+        """Return the direct or env-backed API key when one is available."""
+
+        direct_value = (self.api_key or "").strip()
+        if direct_value:
+            return direct_value
+        env_name = (self.api_key_env or "").strip()
+        if not env_name:
+            return None
+        env_value = os.getenv(env_name, "").strip()
+        return env_value or None
 
 
 @dataclass(frozen=True)
@@ -39,8 +87,7 @@ class LLMProviderConfig:
     provider_id: str
     contract: LLMProviderContract
     base_url: str | None
-    api_key_env: str | None
-    key_pool_envs: tuple[str, ...]
+    key_slots: tuple[LLMKeySlot, ...]
     supported_models: tuple[str, ...]
     timeout_seconds: int
     retry_attempts: int
@@ -55,17 +102,13 @@ class LLMProviderConfig:
     quota_state_ttl_seconds: int
 
     def resolved_key_pool(self) -> list[dict[str, str]]:
-        """Return the configured key slots that currently resolve to non-empty env values."""
+        """Return the configured key slots that currently resolve to non-empty values."""
 
         slots: list[dict[str, str]] = []
-        ordered_envs: list[str] = []
-        if self.api_key_env:
-            ordered_envs.append(self.api_key_env)
-        ordered_envs.extend(env for env in self.key_pool_envs if env and env not in ordered_envs)
-        for env_name in ordered_envs:
-            value = os.getenv(env_name, "").strip()
-            if value:
-                slots.append({"slot_id": env_name, "api_key": value})
+        for slot in self.key_slots:
+            api_key = slot.resolve_api_key()
+            if api_key:
+                slots.append({"slot_id": slot.slot_id, "api_key": api_key})
         return slots
 
 
@@ -132,6 +175,22 @@ def _clean_str(value: object) -> str:
     return str(value or "").strip()
 
 
+def _require_text(entry: dict[str, Any], key: str, *, context: str) -> str:
+    value = _clean_str(entry.get(key))
+    if not value:
+        raise LLMRegistryError(f"{context} is missing {key}.")
+    return value
+
+
+def _copy_present_fields(source: dict[str, Any], field_names: tuple[str, ...]) -> dict[str, Any]:
+    copied: dict[str, Any] = {}
+    for field_name in field_names:
+        value = source.get(field_name)
+        if value is not None:
+            copied[field_name] = value
+    return copied
+
+
 def _resolve_model(entry: dict[str, Any], *, env_fallbacks: tuple[str, ...] = ()) -> str:
     model = _clean_str(entry.get("model"))
     if model:
@@ -164,17 +223,210 @@ def _default_quota_wait_budget_seconds(profile_id: str) -> int:
     return 60
 
 
+def _load_json_env(raw_json: str, *, env_name: str) -> dict[str, Any]:
+    try:
+        payload = json.loads(raw_json)
+    except json.JSONDecodeError as exc:
+        raise LLMRegistryError(f"{env_name} does not contain valid JSON.") from exc
+    if not isinstance(payload, dict):
+        raise LLMRegistryError(f"{env_name} must contain a JSON object.")
+    return payload
+
+
+def _load_json_path(raw_path: str, *, env_name: str) -> tuple[dict[str, Any], Path]:
+    path = Path(raw_path).expanduser().resolve()
+    if not path.exists():
+        raise LLMRegistryError(f"{env_name} path does not exist: {path}")
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        raise LLMRegistryError(f"{env_name} path does not contain valid JSON: {path}") from exc
+    if not isinstance(payload, dict):
+        raise LLMRegistryError(f"{env_name} path must contain a JSON object: {path}")
+    return payload, path
+
+
+def _compile_target_key_slot(entry: Any, *, target_id: str) -> dict[str, str]:
+    if not isinstance(entry, dict):
+        raise LLMRegistryError(f"Target {target_id} credential entry must be an object.")
+    credential_id = _require_text(entry, "credential_id", context=f"Target {target_id} credential")
+    api_key = _clean_str(entry.get("api_key"))
+    api_key_env = _clean_str(entry.get("api_key_env"))
+    if bool(api_key) == bool(api_key_env):
+        raise LLMRegistryError(
+            f"Target {target_id} credential {credential_id} must define exactly one of api_key or api_key_env."
+        )
+    compiled = {"slot_id": credential_id}
+    if api_key:
+        compiled["api_key"] = api_key
+    else:
+        compiled["api_key_env"] = api_key_env
+    return compiled
+
+
+def _compile_target_entry(entry: Any) -> dict[str, Any]:
+    if not isinstance(entry, dict):
+        raise LLMRegistryError("Target entry must be an object.")
+    target_id = _require_text(entry, "target_id", context="Target entry")
+    contract = _require_text(entry, "contract", context=f"Target {target_id}").lower()
+    if contract not in _ALLOWED_CONTRACTS:
+        raise LLMRegistryError(f"Target {target_id} has unsupported contract: {contract}")
+    base_url = _require_text(entry, "base_url", context=f"Target {target_id}")
+    model = _require_text(entry, "model", context=f"Target {target_id}")
+    raw_credentials = entry.get("credentials", [])
+    if not isinstance(raw_credentials, list) or not raw_credentials:
+        raise LLMRegistryError(f"Target {target_id} must define at least one credential.")
+
+    key_slots: list[dict[str, str]] = []
+    seen_credential_ids: set[str] = set()
+    for raw_credential in raw_credentials:
+        key_slot = _compile_target_key_slot(raw_credential, target_id=target_id)
+        slot_id = key_slot["slot_id"]
+        if slot_id in seen_credential_ids:
+            raise LLMRegistryError(f"Target {target_id} reuses credential_id {slot_id}.")
+        seen_credential_ids.add(slot_id)
+        key_slots.append(key_slot)
+
+    provider_entry: dict[str, Any] = {
+        "provider_id": target_id,
+        "contract": contract,
+        "base_url": base_url,
+        "key_slots": key_slots,
+        "supported_models": [model],
+    }
+    provider_entry.update(_copy_present_fields(entry, _TARGET_PROVIDER_OPTIONAL_FIELDS))
+    return {
+        "target_id": target_id,
+        "enabled": bool(entry.get("enabled", True)),
+        "model": model,
+        "provider_entry": provider_entry,
+    }
+
+
+def _compile_profile_binding_entry(entry: Any, *, compiled_targets: dict[str, dict[str, Any]]) -> dict[str, Any]:
+    if not isinstance(entry, dict):
+        raise LLMRegistryError("Profile binding entry must be an object.")
+    profile_id = _require_text(entry, "profile_id", context="Profile binding")
+    target_id = _require_text(entry, "target_id", context=f"Profile {profile_id}")
+    target = compiled_targets.get(target_id)
+    if target is None:
+        raise LLMRegistryError(f"Profile {profile_id} refers to unknown target_id {target_id}.")
+    if not target["enabled"]:
+        raise LLMRegistryError(f"Profile {profile_id} refers to disabled target_id {target_id}.")
+
+    raw_fallback_target_ids = entry.get("fallback_target_ids", [])
+    if not isinstance(raw_fallback_target_ids, list):
+        raise LLMRegistryError(f"Profile {profile_id} fallback_target_ids must be a list.")
+    fallback_provider_ids: list[str] = []
+    seen_fallback_ids: set[str] = set()
+    for raw_fallback_target_id in raw_fallback_target_ids:
+        fallback_target_id = _clean_str(raw_fallback_target_id)
+        if not fallback_target_id or fallback_target_id == target_id or fallback_target_id in seen_fallback_ids:
+            continue
+        fallback_target = compiled_targets.get(fallback_target_id)
+        if fallback_target is None:
+            raise LLMRegistryError(
+                f"Profile {profile_id} refers to unknown fallback target_id {fallback_target_id}."
+            )
+        if not fallback_target["enabled"]:
+            raise LLMRegistryError(
+                f"Profile {profile_id} refers to disabled fallback target_id {fallback_target_id}."
+            )
+        seen_fallback_ids.add(fallback_target_id)
+        fallback_provider_ids.append(fallback_target_id)
+
+    compiled_profile: dict[str, Any] = {
+        "profile_id": profile_id,
+        "provider_id": target_id,
+        "model": target["model"],
+    }
+    compiled_profile.update(_copy_present_fields(entry, _PROFILE_OPTIONAL_FIELDS))
+    if "allow_cross_provider_failover" in entry:
+        compiled_profile["allow_cross_provider_failover"] = bool(entry.get("allow_cross_provider_failover"))
+    if fallback_provider_ids:
+        compiled_profile["fallback_provider_ids"] = fallback_provider_ids
+    return compiled_profile
+
+
+def _compile_target_bindings_payload(
+    targets_payload: dict[str, Any],
+    bindings_payload: dict[str, Any],
+) -> dict[str, Any]:
+    raw_targets = targets_payload.get("targets", [])
+    if not isinstance(raw_targets, list) or not raw_targets:
+        raise LLMRegistryError("LLM targets payload must define at least one target.")
+
+    compiled_targets: dict[str, dict[str, Any]] = {}
+    providers: list[dict[str, Any]] = []
+    for raw_target in raw_targets:
+        compiled_target = _compile_target_entry(raw_target)
+        target_id = compiled_target["target_id"]
+        if target_id in compiled_targets:
+            raise LLMRegistryError(f"LLM targets payload reuses target_id {target_id}.")
+        compiled_targets[target_id] = compiled_target
+        if compiled_target["enabled"]:
+            providers.append(compiled_target["provider_entry"])
+
+    if not providers:
+        raise LLMRegistryError("LLM targets payload must define at least one enabled target.")
+
+    raw_profiles = bindings_payload.get("profiles", [])
+    if not isinstance(raw_profiles, list) or not raw_profiles:
+        raise LLMRegistryError("LLM profile bindings payload must define at least one profile.")
+
+    profiles: list[dict[str, Any]] = []
+    seen_profile_ids: set[str] = set()
+    for raw_profile in raw_profiles:
+        compiled_profile = _compile_profile_binding_entry(raw_profile, compiled_targets=compiled_targets)
+        profile_id = compiled_profile["profile_id"]
+        if profile_id in seen_profile_ids:
+            raise LLMRegistryError(f"LLM profile bindings payload reuses profile_id {profile_id}.")
+        seen_profile_ids.add(profile_id)
+        profiles.append(compiled_profile)
+
+    return {"providers": providers, "profiles": profiles}
+
+
 def _load_registry_payload() -> tuple[dict[str, Any], str]:
+    raw_targets_json = get_llm_targets_json()
+    raw_bindings_json = get_llm_profile_bindings_json()
+    if raw_targets_json or raw_bindings_json:
+        if not raw_targets_json or not raw_bindings_json:
+            raise LLMRegistryError(
+                "LLM_TARGETS_JSON and LLM_PROFILE_BINDINGS_JSON must be set together."
+            )
+        targets_payload = _load_json_env(raw_targets_json, env_name="LLM_TARGETS_JSON")
+        bindings_payload = _load_json_env(raw_bindings_json, env_name="LLM_PROFILE_BINDINGS_JSON")
+        return (
+            _compile_target_bindings_payload(targets_payload, bindings_payload),
+            "env:LLM_TARGETS_JSON+LLM_PROFILE_BINDINGS_JSON",
+        )
+
+    raw_targets_path = get_llm_targets_path()
+    raw_bindings_path = get_llm_profile_bindings_path()
+    if raw_targets_path or raw_bindings_path:
+        if not raw_targets_path or not raw_bindings_path:
+            raise LLMRegistryError(
+                "LLM_TARGETS_PATH and LLM_PROFILE_BINDINGS_PATH must be set together."
+            )
+        targets_payload, targets_path = _load_json_path(raw_targets_path, env_name="LLM_TARGETS_PATH")
+        bindings_payload, bindings_path = _load_json_path(
+            raw_bindings_path,
+            env_name="LLM_PROFILE_BINDINGS_PATH",
+        )
+        return (
+            _compile_target_bindings_payload(targets_payload, bindings_payload),
+            f"{targets_path} + {bindings_path}",
+        )
+
     raw_json = get_llm_registry_json()
     if raw_json:
-        return json.loads(raw_json), "env:LLM_REGISTRY_JSON"
+        return _load_json_env(raw_json, env_name="LLM_REGISTRY_JSON"), "env:LLM_REGISTRY_JSON"
 
     raw_path = get_llm_registry_path()
     if raw_path:
-        path = Path(raw_path).expanduser().resolve()
-        if not path.exists():
-            raise LLMRegistryError(f"LLM registry path does not exist: {path}")
-        return json.loads(path.read_text(encoding="utf-8")), str(path)
+        payload, path = _load_json_path(raw_path, env_name="LLM_REGISTRY_PATH")
+        return payload, str(path)
 
     return _legacy_registry_payload(), "legacy_env"
 
@@ -272,6 +524,57 @@ def _legacy_registry_payload() -> dict[str, Any]:
     }
 
 
+def _parse_key_slot(entry: Any, *, provider_id: str) -> LLMKeySlot:
+    if not isinstance(entry, dict):
+        raise LLMRegistryError(f"Provider {provider_id} key slot entry must be an object.")
+    slot_id = _clean_str(entry.get("slot_id") or entry.get("credential_id"))
+    if not slot_id:
+        raise LLMRegistryError(f"Provider {provider_id} key slot entry is missing slot_id.")
+    api_key = _clean_str(entry.get("api_key"))
+    api_key_env = _clean_str(entry.get("api_key_env"))
+    if bool(api_key) == bool(api_key_env):
+        raise LLMRegistryError(
+            f"Provider {provider_id} key slot {slot_id} must define exactly one of api_key or api_key_env."
+        )
+    return LLMKeySlot(
+        slot_id=slot_id,
+        api_key=api_key or None,
+        api_key_env=api_key_env or None,
+    )
+
+
+def _parse_provider_key_slots(entry: dict[str, Any], *, provider_id: str) -> tuple[LLMKeySlot, ...]:
+    raw_key_slots = entry.get("key_slots")
+    normalized_entries: list[dict[str, str]] = []
+    if raw_key_slots is not None:
+        if not isinstance(raw_key_slots, list):
+            raise LLMRegistryError(f"Provider {provider_id} key_slots must be a list.")
+        normalized_entries = [item for item in raw_key_slots if item]
+    else:
+        primary_env = _clean_str(entry.get("api_key_env"))
+        if primary_env:
+            normalized_entries.append({"slot_id": primary_env, "api_key_env": primary_env})
+        raw_key_pool_envs = entry.get("key_pool_envs", [])
+        if raw_key_pool_envs is None:
+            raw_key_pool_envs = []
+        if not isinstance(raw_key_pool_envs, list):
+            raise LLMRegistryError(f"Provider {provider_id} key_pool_envs must be a list.")
+        for raw_env_name in raw_key_pool_envs:
+            env_name = _clean_str(raw_env_name)
+            if env_name:
+                normalized_entries.append({"slot_id": env_name, "api_key_env": env_name})
+
+    key_slots: list[LLMKeySlot] = []
+    seen_slot_ids: set[str] = set()
+    for normalized_entry in normalized_entries:
+        key_slot = _parse_key_slot(normalized_entry, provider_id=provider_id)
+        if key_slot.slot_id in seen_slot_ids:
+            raise LLMRegistryError(f"Provider {provider_id} reuses key slot {key_slot.slot_id}.")
+        seen_slot_ids.add(key_slot.slot_id)
+        key_slots.append(key_slot)
+    return tuple(key_slots)
+
+
 def _parse_provider(entry: Any) -> LLMProviderConfig:
     if not isinstance(entry, dict):
         raise LLMRegistryError("Provider entry must be an object.")
@@ -281,15 +584,21 @@ def _parse_provider(entry: Any) -> LLMProviderConfig:
     contract = _clean_str(entry.get("contract")).lower()
     if contract not in _ALLOWED_CONTRACTS:
         raise LLMRegistryError(f"Provider {provider_id} has unsupported contract: {contract}")
-    key_pool_envs = tuple(
-        env_name
-        for env_name in (_clean_str(item) for item in entry.get("key_pool_envs", []))
-        if env_name
-    )
+
+    raw_supported_models = entry.get("supported_models", [])
+    if raw_supported_models is None:
+        raw_supported_models = []
+    if not isinstance(raw_supported_models, list):
+        raise LLMRegistryError(f"Provider {provider_id} supported_models must be a list.")
     supported_models = tuple(
-        item for item in (_clean_str(item) for item in entry.get("supported_models", [])) if item
+        item for item in (_clean_str(item) for item in raw_supported_models) if item
     ) or ("*",)
-    max_concurrency = max(1, int(entry.get("max_concurrency", get_llm_max_concurrency()) or get_llm_max_concurrency()))
+
+    key_slots = _parse_provider_key_slots(entry, provider_id=provider_id)
+    max_concurrency = max(
+        1,
+        int(entry.get("max_concurrency", get_llm_max_concurrency()) or get_llm_max_concurrency()),
+    )
     probe_max_concurrency = max(
         1,
         int(entry.get("probe_max_concurrency", max_concurrency) or max_concurrency),
@@ -307,11 +616,13 @@ def _parse_provider(entry: Any) -> LLMProviderConfig:
         provider_id=provider_id,
         contract=contract,  # type: ignore[arg-type]
         base_url=_clean_str(entry.get("base_url")) or None,
-        api_key_env=_clean_str(entry.get("api_key_env")) or None,
-        key_pool_envs=key_pool_envs,
+        key_slots=key_slots,
         supported_models=supported_models,
         timeout_seconds=max(1, int(entry.get("timeout_seconds", 120) or 120)),
-        retry_attempts=max(1, int(entry.get("retry_attempts", get_llm_retry_attempts()) or get_llm_retry_attempts())),
+        retry_attempts=max(
+            1,
+            int(entry.get("retry_attempts", get_llm_retry_attempts()) or get_llm_retry_attempts()),
+        ),
         max_concurrency=max(max_concurrency, probe_max_concurrency),
         initial_max_concurrency=initial_max_concurrency,
         probe_max_concurrency=max(probe_max_concurrency, min_stable_concurrency),
@@ -354,14 +665,20 @@ def _parse_profile(entry: Any, providers: dict[str, LLMProviderConfig]) -> LLMPr
             f"Profile {profile_id} requests model {model}, which is not listed in provider {provider_id} supported_models."
         )
 
+    raw_fallback_provider_ids = entry.get("fallback_provider_ids", [])
+    if raw_fallback_provider_ids is None:
+        raw_fallback_provider_ids = []
+    if not isinstance(raw_fallback_provider_ids, list):
+        raise LLMRegistryError(f"Profile {profile_id} fallback_provider_ids must be a list.")
     fallback_provider_ids = tuple(
-        item for item in (_clean_str(item) for item in entry.get("fallback_provider_ids", [])) if item
+        item for item in (_clean_str(item) for item in raw_fallback_provider_ids) if item
     )
     for fallback_provider_id in fallback_provider_ids:
         if fallback_provider_id not in providers:
             raise LLMRegistryError(
                 f"Profile {profile_id} refers to unknown fallback provider {fallback_provider_id}."
             )
+
     quota_retry_attempts_default = _default_quota_retry_attempts(profile_id)
     quota_wait_budget_seconds_default = _default_quota_wait_budget_seconds(profile_id)
     raw_quota_retry_attempts = entry.get("quota_retry_attempts")
@@ -417,6 +734,8 @@ def get_llm_registry() -> LLMRegistry:
     providers: dict[str, LLMProviderConfig] = {}
     for entry in provider_entries:
         provider = _parse_provider(entry)
+        if provider.provider_id in providers:
+            raise LLMRegistryError(f"LLM registry reuses provider_id {provider.provider_id}.")
         providers[provider.provider_id] = provider
 
     profile_entries = payload.get("profiles", [])
@@ -425,6 +744,8 @@ def get_llm_registry() -> LLMRegistry:
     profiles: dict[str, LLMProfileConfig] = {}
     for entry in profile_entries:
         profile = _parse_profile(entry, providers)
+        if profile.profile_id in profiles:
+            raise LLMRegistryError(f"LLM registry reuses profile_id {profile.profile_id}.")
         profiles[profile.profile_id] = profile
 
     for required_profile in (
@@ -460,12 +781,14 @@ def clear_llm_registry_cache() -> None:
     """Clear cached registry state for tests or dynamic env reloading."""
 
     get_llm_registry.cache_clear()
+    get_llm_config.cache_clear()
 
 
 __all__ = [
     "DEFAULT_DATASET_REVIEW_PROFILE_ID",
     "DEFAULT_EVAL_JUDGE_PROFILE_ID",
     "DEFAULT_RUNTIME_PROFILE_ID",
+    "LLMKeySlot",
     "LLMProfileConfig",
     "LLMProviderConfig",
     "LLMProviderContract",

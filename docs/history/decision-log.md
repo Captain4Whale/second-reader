@@ -1007,3 +1007,30 @@ Update when: a major product or engineering decision is made, reversed, or becom
 - `scripts/print-agent-context.py`
 - `scripts/check-agent-traceability.py`
 - `AGENTS.md`
+
+## Entry 38
+**ID**: DEC-041
+**Status**: active
+
+**Decision / Inflection**: Shift local LLM operator setup from provider-first registry editing to named model targets plus profile bindings.
+
+**Period**: Late March 2026, after the shared LLM layer had already centralized invocation, retry, cooldown, tracing, and adaptive concurrency but the editing surface still made multi-provider local setup awkward.
+
+**Problem**: The shared LLM platform had become strong enough to support multiple providers, URLs, models, and pooled credentials, but the main local editing surface still exposed that power as one provider-first registry. In practice this made a simple operator question harder than it should have been: “where do I write the URL, model name, and key for this concrete target, and where do I decide which project profile uses it?” The older shape was workable for one provider or one compatibility file, but it became harder to edit safely once runtime, packet review, and evaluation judging could point at different endpoints or key pools.
+
+**Alternatives considered**: Keep recommending the single provider/profile registry as the main editing path, fall back to env-only configuration for local secrets and target swapping, or redesign the gateway and call sites around a brand-new runtime abstraction instead of compiling a clearer operator surface into the existing registry.
+
+**Why this path won**: The project needed a better operator experience without destabilizing the shared runtime policy layer. Splitting local setup into named targets plus profile bindings makes editing clearer: one file owns endpoint identity and credentials, the other owns project-role assignment and profile-level invocation settings. Compiling those files back into the existing provider/profile registry keeps the shared gateway, retry, cooldown, tracing, and concurrency logic intact while making multi-provider local configuration easier to reason about and safer to edit.
+
+**What changed in the system**: The backend now supports `LLM_TARGETS_PATH` / `LLM_PROFILE_BINDINGS_PATH` plus inline JSON variants as the preferred structured local setup. Operators can define named targets in `reading-companion-backend/config/llm_targets.local.json`, bind stable project profile ids in `reading-companion-backend/config/llm_profile_bindings.local.json`, and keep those real local files untracked under `config/*.local.json`. The registry layer now compiles the new target/binding format into the existing internal provider/profile model, supports direct raw keys or env-backed credentials inside one neutral key-slot pool, and preserves the older `LLM_REGISTRY_PATH` / `LLM_REGISTRY_JSON` and legacy single-provider env fallback as compatibility modes.
+
+**Why it matters later**: Future contributors will otherwise see both the target/binding files and the older registry files and assume the duplication is accidental. This entry records that the shared LLM platform itself still centers on one compiled registry and one gateway, while the local operator-facing surface intentionally changed to make endpoint/model/key editing and profile assignment clearer in multi-provider setups.
+
+**Primary evidence**:
+- `reading-companion-backend/src/reading_runtime/llm_registry.py`
+- `reading-companion-backend/src/config.py`
+- `reading-companion-backend/config/llm_targets.local.example.json`
+- `reading-companion-backend/config/llm_profile_bindings.local.example.json`
+- `reading-companion-backend/config/llm_registry.minimax_legacy_compatible.json`
+- `README.md`
+- `docs/backend-reader-evaluation.md`

@@ -1,0 +1,46 @@
+{
+  "targets": [
+    {
+      "target_id": "minimax_m25_highspeed",
+      "contract": "anthropic",
+      "base_url": "https://api.minimaxi.com/anthropic",
+      "model": "MiniMax-M2.5-highspeed",
+      "credentials": [
+        {
+          "credential_id": "primary",
+          "api_key": "paste-real-key-only-into-llm_targets.local.json"
+        },
+        {
+          "credential_id": "secondary_env",
+          "api_key_env": "MINIMAX_API_KEY_SECONDARY"
+        }
+      ],
+      "timeout_seconds": 120,
+      "retry_attempts": 3,
+      "max_concurrency": 12,
+      "initial_max_concurrency": 6,
+      "probe_max_concurrency": 12,
+      "min_stable_concurrency": 2,
+      "backoff_window_seconds": 10,
+      "recover_window_seconds": 20,
+      "quota_cooldown_base_seconds": 10,
+      "quota_cooldown_max_seconds": 60,
+      "quota_state_ttl_seconds": 120
+    },
+    {
+      "target_id": "claude_opus_judge",
+      "contract": "anthropic",
+      "base_url": "https://api.anthropic.com",
+      "model": "claude-opus-4-6",
+      "credentials": [
+        {
+          "credential_id": "primary_env",
+          "api_key_env": "ANTHROPIC_API_KEY_PRIMARY"
+        }
+      ],
+      "timeout_seconds": 120,
+      "retry_attempts": 3,
+      "max_concurrency": 8
+    }
+  ]
+}

@@ -37,26 +37,11 @@ The project is maintained as one product with two sub-applications:
 Backend environment lives in `reading-companion-backend/.env`.
 
 Important backend variables:
-- `LLM_REGISTRY_PATH`
-- provider secret env vars referenced by the registry, for example:
-  - default local compat registry:
-    - `LLM_API_KEY`
-    - optional `LLM_API_KEY_SECONDARY`
-    - `LLM_MODEL`
-    - optional `LLM_DATASET_REVIEW_MODEL`
-    - optional `LLM_EVAL_JUDGE_MODEL`
-  - richer multi-provider example:
-    - `MINIMAX_API_KEY`
-    - `ANTHROPIC_API_KEY_PRIMARY`
-    - `ANTHROPIC_API_KEY_SECONDARY`
-    - `GOOGLE_GENAI_API_KEY`
-- legacy compatibility variables still work when a structured registry is not configured:
-  - `LLM_PROVIDER_CONTRACT`
-  - `LLM_BASE_URL`
-  - `LLM_API_KEY`
-  - `LLM_MODEL`
-  - optional `LLM_DATASET_REVIEW_MODEL`
-  - optional `LLM_EVAL_JUDGE_MODEL`
+- `LLM_TARGETS_PATH`
+- `LLM_PROFILE_BINDINGS_PATH`
+- optional `LLM_TARGETS_JSON`
+- optional `LLM_PROFILE_BINDINGS_JSON`
+- compatibility: `LLM_REGISTRY_PATH`, `LLM_REGISTRY_JSON`
 - `TAVILY_API_KEY`
 - `UPLOAD_MAX_BYTES`
 - `BACKEND_RUNTIME_ROOT`
@@ -64,13 +49,48 @@ Important backend variables:
 - `BACKEND_HOST`
 - `BACKEND_PORT`
 
-The backend ships a structured registry example at
-`reading-companion-backend/config/llm_registry.example.json`.
-It also ships a Minimax-compatible structured registry for the current local runtime at
-`reading-companion-backend/config/llm_registry.minimax_legacy_compatible.json`.
-Use that file to define:
+Recommended local LLM setup:
+- point the backend at two untracked local JSON files from `reading-companion-backend/.env`:
+  - `LLM_TARGETS_PATH=config/llm_targets.local.json`
+  - `LLM_PROFILE_BINDINGS_PATH=config/llm_profile_bindings.local.json`
+- edit `reading-companion-backend/config/llm_targets.local.json` to define named runtime targets
+  - write the provider `contract`, `base_url`, `model`, and one or more credentials there
+  - this is the file where you put URL, model name, and API key information
+- edit `reading-companion-backend/config/llm_profile_bindings.local.json` to bind stable project profile ids to those named targets
+  - current stable profile ids are:
+    - `runtime_reader_default`
+    - `dataset_review_high_trust`
+    - `eval_judge_high_trust`
+  - this is the file where you choose which target each profile uses and any profile-level overrides such as `temperature`, `max_tokens`, `retry_attempts`, `max_concurrency`, `quota_retry_attempts`, and `quota_wait_budget_seconds`
+
+Tracked templates for the new local setup:
+- `reading-companion-backend/config/llm_targets.local.example.json`
+- `reading-companion-backend/config/llm_profile_bindings.local.example.json`
+
+Compatibility and fallback modes:
+- inline equivalents also work:
+  - `LLM_TARGETS_JSON`
+  - `LLM_PROFILE_BINDINGS_JSON`
+- the older single registry surface still works:
+  - `LLM_REGISTRY_PATH`
+  - `LLM_REGISTRY_JSON`
+- legacy env-only fallback still works when no structured config is provided:
+  - `LLM_PROVIDER_CONTRACT`
+  - `LLM_BASE_URL`
+  - `LLM_API_KEY`
+  - `LLM_MODEL`
+  - optional `LLM_DATASET_REVIEW_MODEL`
+  - optional `LLM_EVAL_JUDGE_MODEL`
+
+Reference and compatibility files:
+- shared provider/profile registry example:
+  - `reading-companion-backend/config/llm_registry.example.json`
+- Minimax-focused compatibility-mode registry:
+  - `reading-companion-backend/config/llm_registry.minimax_legacy_compatible.json`
+
+The shared LLM layer still supports:
 - provider contracts such as `anthropic`, `google_genai`, and `openai_compatible`
-- key pools for same-model failover
+- multiple credentials inside one named target for same-model failover
 - adaptive same-key concurrency policy:
   - `initial_max_concurrency`
   - `probe_max_concurrency`
@@ -81,14 +101,10 @@ Use that file to define:
   - `quota_cooldown_base_seconds`
   - `quota_cooldown_max_seconds`
   - `quota_state_ttl_seconds`
-- pinned task-level profiles:
+- stable project profile ids with profile-level invocation settings:
   - `runtime_reader_default`
   - `dataset_review_high_trust`
   - `eval_judge_high_trust`
-  - each profile may also set:
-    - `default_burst_concurrency`
-    - `quota_retry_attempts`
-    - `quota_wait_budget_seconds`
 
 Current backend defaults are now throughput-oriented for new Python processes:
 - same-key parallelism is enabled by default

@@ -87,6 +87,8 @@ Use `docs/backend-reading-mechanism.md` for shared mechanism-platform boundaries
   - extra keys mainly help with throughput headroom, failover, or rate-limit resilience
 - New scaling work should target the shared `src/reading_runtime/` LLM registry and gateway layer rather than adding new mechanism-local provider clients.
 - Structured registry configuration is preferred over legacy environment compatibility when tuning concurrency, key pools, or failover because it makes those choices explicit and reviewable.
+  - the recommended local operator surface is now the split target catalog plus profile-binding pair under `reading-companion-backend/config/llm_targets.local.json` and `reading-companion-backend/config/llm_profile_bindings.local.json`
+  - those two local files still compile into one shared backend registry and one shared gateway policy surface
 - New eval/review runners should default to shared-policy worker counts instead of hardcoded local worker limits.
   - case-level fanout is preferred when cases are independent
   - deterministic artifact ordering must still be preserved in final summaries and reports
@@ -315,6 +317,7 @@ Use `docs/backend-reading-mechanism.md` for shared mechanism-platform boundaries
   - dataset hardening / packet review
   - evaluation judging
 - Those profiles should be resolved through one shared backend provider registry rather than ad hoc per-script model config.
+  - operators should therefore edit named targets separately from profile bindings instead of hardcoding URL/model/key choices into each task runner
 - Default policy:
   - dataset hardening and evaluation judging should prefer the strongest trustworthy pinned model profile available
   - live runtime reading may prefer a cheaper/stabler pinned model profile when book-scale cost and throughput matter

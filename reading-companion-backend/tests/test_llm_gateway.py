@@ -151,6 +151,10 @@ class _SequencedRecordingAdapter(_RecordingAdapter):
 @pytest.fixture(autouse=True)
 def _clear_registry_and_env(monkeypatch: pytest.MonkeyPatch):
     for key in [
+        "LLM_TARGETS_JSON",
+        "LLM_TARGETS_PATH",
+        "LLM_PROFILE_BINDINGS_JSON",
+        "LLM_PROFILE_BINDINGS_PATH",
         "LLM_REGISTRY_JSON",
         "LLM_REGISTRY_PATH",
         "LLM_PROVIDER_CONTRACT",
@@ -161,6 +165,7 @@ def _clear_registry_and_env(monkeypatch: pytest.MonkeyPatch):
         "LLM_EVAL_JUDGE_MODEL",
         "BACKEND_RUNTIME_ROOT",
         "PRIMARY_KEY",
+        "SECONDARY_KEY",
         "POOL_A",
         "POOL_B",
         "ANTHROPIC_KEY",
@@ -178,8 +183,461 @@ def _set_registry(monkeypatch: pytest.MonkeyPatch, payload: dict[str, Any]) -> N
     clear_llm_registry_cache()
 
 
+def _set_targets_and_bindings(
+    monkeypatch: pytest.MonkeyPatch,
+    *,
+    targets: dict[str, Any],
+    bindings: dict[str, Any],
+) -> None:
+    monkeypatch.setenv("LLM_TARGETS_JSON", json.dumps(targets))
+    monkeypatch.setenv("LLM_PROFILE_BINDINGS_JSON", json.dumps(bindings))
+    clear_llm_registry_cache()
+
+
+def _set_targets_and_bindings_path(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    *,
+    targets: dict[str, Any],
+    bindings: dict[str, Any],
+) -> tuple[Path, Path]:
+    targets_path = tmp_path / "llm_targets.local.json"
+    bindings_path = tmp_path / "llm_profile_bindings.local.json"
+    targets_path.write_text(json.dumps(targets), encoding="utf-8")
+    bindings_path.write_text(json.dumps(bindings), encoding="utf-8")
+    monkeypatch.setenv("LLM_TARGETS_PATH", str(targets_path))
+    monkeypatch.setenv("LLM_PROFILE_BINDINGS_PATH", str(bindings_path))
+    clear_llm_registry_cache()
+    return targets_path, bindings_path
+
+
+def _required_bindings(
+    runtime_target_id: str,
+    *,
+    dataset_target_id: str | None = None,
+    eval_target_id: str | None = None,
+) -> dict[str, Any]:
+    return {
+        "profiles": [
+            {
+                "profile_id": DEFAULT_RUNTIME_PROFILE_ID,
+                "target_id": runtime_target_id,
+            },
+            {
+                "profile_id": DEFAULT_DATASET_REVIEW_PROFILE_ID,
+                "target_id": dataset_target_id or runtime_target_id,
+            },
+            {
+                "profile_id": DEFAULT_EVAL_JUDGE_PROFILE_ID,
+                "target_id": eval_target_id or dataset_target_id or runtime_target_id,
+            },
+        ]
+    }
+
+
 def _read_jsonl(path: Path) -> list[dict[str, Any]]:
     return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
+
+
+def test_registry_parses_target_bindings_and_direct_keys(monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setenv("PRIMARY_KEY", "env-secret")
+    _set_targets_and_bindings(
+        monkeypatch,
+        targets={
+            "targets": [
+                {
+                    "target_id": "minimax_runtime",
+                    "contract": "anthropic",
+                    "base_url": "https://api.minimaxi.com/anthropic",
+                    "model": "MiniMax-M2.5-highspeed",
+                    "credentials": [
+                        {"credential_id": "primary", "api_key": "direct-secret"},
+                        {"credential_id": "secondary_env", "api_key_env": "PRIMARY_KEY"},
+                    ],
+                    "timeout_seconds": 95,
+                    "retry_attempts": 4,
+                    "max_concurrency": 7,
+                }
+            ]
+        },
+        bindings={
+            "profiles": [
+                {
+                    "profile_id": DEFAULT_RUNTIME_PROFILE_ID,
+                    "target_id": "minimax_runtime",
+                    "temperature": 0.1,
+                    "max_tokens": 2048,
+                },
+                {
+                    "profile_id": DEFAULT_DATASET_REVIEW_PROFILE_ID,
+                    "target_id": "minimax_runtime",
+                },
+                {
+                    "profile_id": DEFAULT_EVAL_JUDGE_PROFILE_ID,
+                    "target_id": "minimax_runtime",
+                },
+            ]
+        },
+    )
+
+    registry = get_llm_registry()
+    provider = registry.get_provider("minimax_runtime")
+    runtime_profile = get_llm_profile(DEFAULT_RUNTIME_PROFILE_ID)
+
+    assert registry.source == "env:LLM_TARGETS_JSON+LLM_PROFILE_BINDINGS_JSON"
+    assert provider.base_url == "https://api.minimaxi.com/anthropic"
+    assert provider.resolved_key_pool() == [
+        {"slot_id": "primary", "api_key": "direct-secret"},
+        {"slot_id": "secondary_env", "api_key": "env-secret"},
+    ]
+    assert runtime_profile.provider_id == "minimax_runtime"
+    assert runtime_profile.model == "MiniMax-M2.5-highspeed"
+    assert runtime_profile.temperature == 0.1
+    assert runtime_profile.max_tokens == 2048
+
+
+def test_profile_binding_requires_target_id(monkeypatch: pytest.MonkeyPatch):
+    _set_targets_and_bindings(
+        monkeypatch,
+        targets={
+            "targets": [
+                {
+                    "target_id": "minimax_runtime",
+                    "contract": "anthropic",
+                    "base_url": "https://api.minimaxi.com/anthropic",
+                    "model": "MiniMax-M2.5-highspeed",
+                    "credentials": [{"credential_id": "primary", "api_key": "secret"}],
+                }
+            ]
+        },
+        bindings={
+            "profiles": [
+                {"profile_id": DEFAULT_RUNTIME_PROFILE_ID},
+                {
+                    "profile_id": DEFAULT_DATASET_REVIEW_PROFILE_ID,
+                    "target_id": "minimax_runtime",
+                },
+                {
+                    "profile_id": DEFAULT_EVAL_JUDGE_PROFILE_ID,
+                    "target_id": "minimax_runtime",
+                },
+            ]
+        },
+    )
+
+    with pytest.raises(LLMRegistryError, match="Profile runtime_reader_default is missing target_id."):
+        get_llm_registry()
+
+
+@pytest.mark.parametrize(
+    ("targets", "bindings", "expected_error"),
+    [
+        (
+            {
+                "targets": [
+                    {
+                        "target_id": "shared_target",
+                        "contract": "anthropic",
+                        "base_url": "https://api.minimaxi.com/anthropic",
+                        "model": "MiniMax-M2.5-highspeed",
+                        "credentials": [{"credential_id": "primary", "api_key": "one"}],
+                    },
+                    {
+                        "target_id": "shared_target",
+                        "contract": "anthropic",
+                        "base_url": "https://api.minimaxi.com/anthropic",
+                        "model": "MiniMax-M2.5-highspeed",
+                        "credentials": [{"credential_id": "secondary", "api_key": "two"}],
+                    },
+                ]
+            },
+            _required_bindings("shared_target"),
+            "LLM targets payload reuses target_id shared_target.",
+        ),
+        (
+            {
+                "targets": [
+                    {
+                        "target_id": "minimax_runtime",
+                        "contract": "anthropic",
+                        "base_url": "https://api.minimaxi.com/anthropic",
+                        "model": "MiniMax-M2.5-highspeed",
+                        "credentials": [
+                            {"credential_id": "primary", "api_key": "one"},
+                            {"credential_id": "primary", "api_key": "two"},
+                        ],
+                    }
+                ]
+            },
+            _required_bindings("minimax_runtime"),
+            "Target minimax_runtime reuses credential_id primary.",
+        ),
+        (
+            {
+                "targets": [
+                    {
+                        "target_id": "minimax_runtime",
+                        "contract": "anthropic",
+                        "base_url": "https://api.minimaxi.com/anthropic",
+                        "model": "MiniMax-M2.5-highspeed",
+                        "credentials": [{"credential_id": "primary", "api_key": "one"}],
+                    }
+                ]
+            },
+            {
+                "profiles": [
+                    {
+                        "profile_id": DEFAULT_RUNTIME_PROFILE_ID,
+                        "target_id": "minimax_runtime",
+                    },
+                    {
+                        "profile_id": DEFAULT_RUNTIME_PROFILE_ID,
+                        "target_id": "minimax_runtime",
+                    },
+                    {
+                        "profile_id": DEFAULT_DATASET_REVIEW_PROFILE_ID,
+                        "target_id": "minimax_runtime",
+                    },
+                    {
+                        "profile_id": DEFAULT_EVAL_JUDGE_PROFILE_ID,
+                        "target_id": "minimax_runtime",
+                    },
+                ]
+            },
+            "LLM profile bindings payload reuses profile_id runtime_reader_default.",
+        ),
+    ],
+)
+def test_target_binding_rejects_identifier_collisions(
+    monkeypatch: pytest.MonkeyPatch,
+    targets: dict[str, Any],
+    bindings: dict[str, Any],
+    expected_error: str,
+):
+    _set_targets_and_bindings(
+        monkeypatch,
+        targets=targets,
+        bindings=bindings,
+    )
+
+    with pytest.raises(LLMRegistryError, match=expected_error):
+        get_llm_registry()
+
+
+@pytest.mark.parametrize(
+    ("field_to_remove", "expected_error"),
+    [
+        ("contract", "Target minimax_runtime is missing contract."),
+        ("base_url", "Target minimax_runtime is missing base_url."),
+        ("model", "Target minimax_runtime is missing model."),
+        ("credentials", "Target minimax_runtime must define at least one credential."),
+    ],
+)
+def test_target_binding_requires_complete_target_fields(
+    monkeypatch: pytest.MonkeyPatch,
+    field_to_remove: str,
+    expected_error: str,
+):
+    target = {
+        "target_id": "minimax_runtime",
+        "contract": "anthropic",
+        "base_url": "https://api.minimaxi.com/anthropic",
+        "model": "MiniMax-M2.5-highspeed",
+        "credentials": [{"credential_id": "primary", "api_key": "secret"}],
+    }
+    if field_to_remove == "credentials":
+        target["credentials"] = []
+    else:
+        target.pop(field_to_remove)
+
+    _set_targets_and_bindings(
+        monkeypatch,
+        targets={"targets": [target]},
+        bindings=_required_bindings("minimax_runtime"),
+    )
+
+    with pytest.raises(LLMRegistryError, match=expected_error):
+        get_llm_registry()
+
+
+def test_same_target_pooled_credentials_failover_uses_credential_ids(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    _set_targets_and_bindings(
+        monkeypatch,
+        targets={
+            "targets": [
+                {
+                    "target_id": "minimax_runtime",
+                    "contract": "anthropic",
+                    "base_url": "https://api.minimaxi.com/anthropic",
+                    "model": "MiniMax-M2.5-highspeed",
+                    "credentials": [
+                        {"credential_id": "primary", "api_key": "bad-key"},
+                        {"credential_id": "secondary", "api_key": "good-key"},
+                    ],
+                    "retry_attempts": 1,
+                    "max_concurrency": 2,
+                }
+            ]
+        },
+        bindings=_required_bindings("minimax_runtime"),
+    )
+    adapter = _RecordingAdapter(
+        {"bad-key": "auth_error", "good-key": "ok"},
+        response_content='{"ok": true, "api_key": "__API_KEY__"}',
+    )
+    monkeypatch.setitem(CONTRACT_ADAPTERS, "anthropic", adapter)
+
+    output_dir = tmp_path / "output" / "target-first-demo"
+    with llm_invocation_scope(
+        profile_id=DEFAULT_RUNTIME_PROFILE_ID,
+        trace_context=runtime_trace_context(output_dir, mechanism_key="iterator_v1"),
+    ):
+        payload = invoke_json("system", "user", {})
+
+    standard_rows = _read_jsonl(runtime_artifacts.llm_standard_trace_file(output_dir))
+
+    assert payload == {"ok": True, "api_key": "good-key"}
+    assert [call["api_key"] for call in adapter.calls] == ["bad-key", "good-key"]
+    assert standard_rows[-1]["fallback"]["key_slots_tried"] == ["primary", "secondary"]
+    assert standard_rows[-1]["key_slot_id"] == "secondary"
+
+
+def test_mixed_target_bindings_support_different_contracts_and_models(monkeypatch: pytest.MonkeyPatch):
+    _set_targets_and_bindings(
+        monkeypatch,
+        targets={
+            "targets": [
+                {
+                    "target_id": "minimax_runtime",
+                    "contract": "anthropic",
+                    "base_url": "https://api.minimaxi.com/anthropic",
+                    "model": "MiniMax-M2.5-highspeed",
+                    "credentials": [{"credential_id": "primary", "api_key": "runtime-key"}],
+                },
+                {
+                    "target_id": "gemini_judge",
+                    "contract": "google_genai",
+                    "base_url": "https://generativelanguage.googleapis.com",
+                    "model": "gemini-3.1-pro",
+                    "credentials": [{"credential_id": "judge", "api_key": "judge-key"}],
+                },
+            ]
+        },
+        bindings=_required_bindings(
+            "minimax_runtime",
+            dataset_target_id="gemini_judge",
+            eval_target_id="gemini_judge",
+        ),
+    )
+
+    registry = get_llm_registry()
+    runtime_profile = get_llm_profile(DEFAULT_RUNTIME_PROFILE_ID)
+    dataset_profile = get_llm_profile(DEFAULT_DATASET_REVIEW_PROFILE_ID)
+
+    assert registry.get_provider("minimax_runtime").contract == "anthropic"
+    assert registry.get_provider("gemini_judge").contract == "google_genai"
+    assert runtime_profile.provider_id == "minimax_runtime"
+    assert runtime_profile.model == "MiniMax-M2.5-highspeed"
+    assert dataset_profile.provider_id == "gemini_judge"
+    assert dataset_profile.model == "gemini-3.1-pro"
+
+
+def test_target_binding_path_loader_smoke_invokes_gateway(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    targets_path, bindings_path = _set_targets_and_bindings_path(
+        monkeypatch,
+        tmp_path,
+        targets={
+            "targets": [
+                {
+                    "target_id": "minimax_runtime",
+                    "contract": "anthropic",
+                    "base_url": "https://api.minimaxi.com/anthropic",
+                    "model": "MiniMax-M2.5-highspeed",
+                    "credentials": [{"credential_id": "primary", "api_key": "path-key"}],
+                }
+            ]
+        },
+        bindings=_required_bindings("minimax_runtime"),
+    )
+    adapter = _RecordingAdapter(response_content='{"ok": true, "api_key": "__API_KEY__"}')
+    monkeypatch.setitem(CONTRACT_ADAPTERS, "anthropic", adapter)
+
+    registry = get_llm_registry()
+    with llm_invocation_scope(profile_id=DEFAULT_RUNTIME_PROFILE_ID):
+        payload = invoke_json("system", "user", {})
+
+    assert payload == {"ok": True, "api_key": "path-key"}
+    assert str(targets_path) in registry.source
+    assert str(bindings_path) in registry.source
+    assert adapter.calls[0]["model"] == "MiniMax-M2.5-highspeed"
+
+
+def test_registry_path_backward_compatibility_still_loads(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setenv("PRIMARY_KEY", "secret-a")
+    registry_path = tmp_path / "llm_registry.json"
+    registry_path.write_text(
+        json.dumps(
+            {
+                "providers": [
+                    {
+                        "provider_id": "anthropic_primary",
+                        "contract": "anthropic",
+                        "api_key_env": "PRIMARY_KEY",
+                        "supported_models": ["claude-opus-4-6"],
+                    }
+                ],
+                "profiles": [
+                    {
+                        "profile_id": DEFAULT_RUNTIME_PROFILE_ID,
+                        "provider_id": "anthropic_primary",
+                        "model": "claude-opus-4-6",
+                    },
+                    {
+                        "profile_id": DEFAULT_DATASET_REVIEW_PROFILE_ID,
+                        "provider_id": "anthropic_primary",
+                        "model": "claude-opus-4-6",
+                    },
+                    {
+                        "profile_id": DEFAULT_EVAL_JUDGE_PROFILE_ID,
+                        "provider_id": "anthropic_primary",
+                        "model": "claude-opus-4-6",
+                    },
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setenv("LLM_REGISTRY_PATH", str(registry_path))
+    clear_llm_registry_cache()
+
+    registry = get_llm_registry()
+
+    assert registry.source == str(registry_path)
+    assert registry.get_provider("anthropic_primary").resolved_key_pool() == [
+        {"slot_id": "PRIMARY_KEY", "api_key": "secret-a"}
+    ]
+
+
+def test_legacy_env_fallback_registry_still_loads(monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setenv("LLM_PROVIDER_CONTRACT", "anthropic")
+    monkeypatch.setenv("LLM_BASE_URL", "https://api.minimaxi.com/anthropic")
+    monkeypatch.setenv("LLM_API_KEY", "legacy-key")
+    monkeypatch.setenv("LLM_MODEL", "MiniMax-M2.5-highspeed")
+    monkeypatch.setenv("LLM_DATASET_REVIEW_MODEL", "MiniMax-M2.5-highspeed")
+    monkeypatch.setenv("LLM_EVAL_JUDGE_MODEL", "MiniMax-M2.5-highspeed")
+    clear_llm_registry_cache()
+
+    registry = get_llm_registry()
+    runtime_profile = get_llm_profile(DEFAULT_RUNTIME_PROFILE_ID)
+
+    assert registry.source == "legacy_env"
+    assert registry.get_provider("legacy_default").resolved_key_pool() == [
+        {"slot_id": "LLM_API_KEY", "api_key": "legacy-key"}
+    ]
+    assert runtime_profile.model == "MiniMax-M2.5-highspeed"
 
 
 def test_registry_parses_structured_profiles_and_env_keys(monkeypatch: pytest.MonkeyPatch):
