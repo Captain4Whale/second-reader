@@ -19,6 +19,7 @@ from typing import Any, Mapping, Protocol
 
 from langchain_core.messages import HumanMessage, SystemMessage
 
+from src.config import get_backend_runtime_root
 from src.reading_core.runtime_contracts import CurrentReadingProblemCode
 from src.reading_runtime import artifacts as runtime_artifacts
 
@@ -30,6 +31,11 @@ from .llm_registry import (
     get_llm_profile,
     get_llm_registry,
 )
+
+try:  # pragma: no cover - platform import guard
+    import fcntl
+except ModuleNotFoundError:  # pragma: no cover - non-posix fallback
+    fcntl = None
 
 
 class ReaderLLMError(RuntimeError):
@@ -116,6 +122,20 @@ _CURRENT_SCOPE: contextvars.ContextVar[LLMInvocationScopeState | None] = context
 _SEMAPHORES_LOCK = threading.Lock()
 _PROFILE_GATES: dict[tuple[str, str, int], "_DynamicProfileGate"] = {}
 _PROVIDER_CONTROLLERS: dict[str, "_AdaptiveProviderController"] = {}
+_QUOTA_STATE_VERSION = 1
+
+
+@dataclass(frozen=True)
+class _QuotaCooldownState:
+    provider_id: str
+    cooldown_until_epoch: float
+    cooldown_seconds: int
+    strike_count: int
+    updated_at_epoch: float
+
+    @property
+    def remaining_seconds(self) -> float:
+        return max(0.0, self.cooldown_until_epoch - time.time())
 
 
 def _utc_now() -> str:
@@ -200,6 +220,131 @@ def parse_json_payload(text: str, default: Any) -> Any:
             continue
 
     return default
+
+
+def _quota_state_dir() -> Path:
+    return get_backend_runtime_root() / "state" / "llm_gateway" / "providers"
+
+
+def _quota_state_path(provider: LLMProviderConfig) -> Path:
+    return _quota_state_dir() / f"{provider.provider_id}.json"
+
+
+def _quota_lock_path(provider: LLMProviderConfig) -> Path:
+    return _quota_state_dir() / f"{provider.provider_id}.lock"
+
+
+@contextlib.contextmanager
+def _quota_state_lock(provider: LLMProviderConfig) -> Any:
+    lock_path = _quota_lock_path(provider)
+    lock_path.parent.mkdir(parents=True, exist_ok=True)
+    with lock_path.open("a+", encoding="utf-8") as handle:
+        if fcntl is not None:
+            fcntl.flock(handle.fileno(), fcntl.LOCK_EX)
+        try:
+            yield
+        finally:
+            if fcntl is not None:
+                fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
+
+
+def _clear_quota_state_locked(provider: LLMProviderConfig) -> None:
+    with contextlib.suppress(FileNotFoundError):
+        _quota_state_path(provider).unlink()
+
+
+def _read_quota_state_locked(provider: LLMProviderConfig) -> _QuotaCooldownState | None:
+    path = _quota_state_path(provider)
+    if not path.exists():
+        return None
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        _clear_quota_state_locked(provider)
+        return None
+    if not isinstance(payload, dict):
+        _clear_quota_state_locked(provider)
+        return None
+    updated_at_epoch = float(payload.get("updated_at_epoch", 0.0) or 0.0)
+    if updated_at_epoch <= 0:
+        _clear_quota_state_locked(provider)
+        return None
+    if time.time() - updated_at_epoch > float(provider.quota_state_ttl_seconds):
+        _clear_quota_state_locked(provider)
+        return None
+    try:
+        return _QuotaCooldownState(
+            provider_id=str(payload.get("provider_id", "") or provider.provider_id),
+            cooldown_until_epoch=float(payload.get("cooldown_until_epoch", 0.0) or 0.0),
+            cooldown_seconds=max(0, int(payload.get("cooldown_seconds", 0) or 0)),
+            strike_count=max(0, int(payload.get("strike_count", 0) or 0)),
+            updated_at_epoch=updated_at_epoch,
+        )
+    except (TypeError, ValueError):
+        _clear_quota_state_locked(provider)
+        return None
+
+
+def _write_quota_state_locked(provider: LLMProviderConfig, state: _QuotaCooldownState) -> None:
+    path = _quota_state_path(provider)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    payload = {
+        "version": _QUOTA_STATE_VERSION,
+        "provider_id": state.provider_id,
+        "cooldown_until_epoch": state.cooldown_until_epoch,
+        "cooldown_seconds": state.cooldown_seconds,
+        "strike_count": state.strike_count,
+        "updated_at_epoch": state.updated_at_epoch,
+        "updated_at": datetime.fromtimestamp(state.updated_at_epoch, timezone.utc).isoformat().replace("+00:00", "Z"),
+    }
+    temp_path = path.with_suffix(".tmp")
+    temp_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    temp_path.replace(path)
+
+
+def _current_quota_state(provider: LLMProviderConfig) -> _QuotaCooldownState | None:
+    with _quota_state_lock(provider):
+        return _read_quota_state_locked(provider)
+
+
+def _quota_wait_seconds(provider: LLMProviderConfig) -> float:
+    state = _current_quota_state(provider)
+    if state is None:
+        return 0.0
+    return state.remaining_seconds
+
+
+def _record_quota_pressure(provider: LLMProviderConfig) -> _QuotaCooldownState:
+    now = time.time()
+    with _quota_state_lock(provider):
+        previous = _read_quota_state_locked(provider)
+        previous_strikes = previous.strike_count if previous is not None else 0
+        if previous is not None and previous.remaining_seconds > 0:
+            strike_count = previous_strikes + 1
+        else:
+            strike_count = max(1, previous_strikes + 1)
+        cooldown_seconds = min(
+            provider.quota_cooldown_max_seconds,
+            provider.quota_cooldown_base_seconds * (2 ** max(0, strike_count - 1)),
+        )
+        state = _QuotaCooldownState(
+            provider_id=provider.provider_id,
+            cooldown_until_epoch=now + float(cooldown_seconds),
+            cooldown_seconds=int(cooldown_seconds),
+            strike_count=strike_count,
+            updated_at_epoch=now,
+        )
+        _write_quota_state_locked(provider, state)
+        return state
+
+
+def _clear_quota_pressure_if_recovered(provider: LLMProviderConfig) -> None:
+    with _quota_state_lock(provider):
+        state = _read_quota_state_locked(provider)
+        if state is None:
+            return
+        if state.remaining_seconds <= 0:
+            _clear_quota_state_locked(provider)
 
 
 class AnthropicContractAdapter:
@@ -512,6 +657,8 @@ def _effective_profile(scope: LLMInvocationScopeState | None, explicit_profile_i
         retry_attempts=overrides.retry_attempts if overrides.retry_attempts is not None else profile.retry_attempts,
         max_concurrency=overrides.max_concurrency if overrides.max_concurrency is not None else profile.max_concurrency,
         default_burst_concurrency=profile.default_burst_concurrency,
+        quota_retry_attempts=profile.quota_retry_attempts,
+        quota_wait_budget_seconds=profile.quota_wait_budget_seconds,
     )
 
 
@@ -574,6 +721,13 @@ def clear_llm_gateway_runtime_state() -> None:
     with _SEMAPHORES_LOCK:
         _PROFILE_GATES.clear()
         _PROVIDER_CONTROLLERS.clear()
+    quota_dir = _quota_state_dir()
+    if quota_dir.exists():
+        for path in quota_dir.glob("*"):
+            with contextlib.suppress(OSError):
+                path.unlink()
+        with contextlib.suppress(OSError):
+            quota_dir.rmdir()
 
 
 def _write_standard_trace(
@@ -623,8 +777,46 @@ def _invoke_response(
     final_problem_code = ""
     last_error: Exception | None = None
     response: Any | None = None
+    quota_retry_attempt_count = 0
+    quota_wait_budget_remaining_seconds = float(profile.quota_wait_budget_seconds)
+    quota_wait_ms_total = 0
+    max_rounds = max(1, profile.retry_attempts, profile.quota_retry_attempts + 1)
 
-    for round_index in range(1, max(1, profile.retry_attempts) + 1):
+    def _attempt_payload(
+        *,
+        round_index: int,
+        provider: LLMProviderConfig,
+        key_slot_id: str,
+        status: str,
+        started_at: str,
+        started_perf: float,
+        problem_code: str = "",
+        error_type: str = "",
+        error_message: str = "",
+        quota_wait_ms_before_attempt: int = 0,
+        shared_quota_cooldown_honored: bool = False,
+    ) -> dict[str, Any]:
+        return {
+            "attempt": len(attempts) + 1,
+            "round": round_index,
+            "provider_id": provider.provider_id,
+            "contract": provider.contract,
+            "key_slot_id": key_slot_id,
+            "status": status,
+            "started_at": started_at,
+            "completed_at": _utc_now(),
+            "duration_ms": int((time.perf_counter() - started_perf) * 1000),
+            "problem_code": problem_code,
+            "error_type": error_type,
+            "error_message": error_message,
+            "quota_wait_ms_before_attempt": quota_wait_ms_before_attempt,
+            "shared_quota_cooldown_honored": shared_quota_cooldown_honored,
+        }
+
+    for round_index in range(1, max_rounds + 1):
+        if round_index > profile.retry_attempts and quota_retry_attempt_count == 0:
+            break
+        round_attempted_provider_call = False
         for provider in providers:
             key_slots = provider.resolved_key_pool()
             if not key_slots:
@@ -635,13 +827,72 @@ def _invoke_response(
             provider_controller = _provider_controller_for(provider)
             profile_gate = _profile_gate_for(profile, provider_controller)
             ordered_key_slots = provider_controller.ordered_key_slots(key_slots)
+            provider_skipped_for_quota = False
             for key_index, key_slot in enumerate(ordered_key_slots, start=1):
                 attempt_started = _utc_now()
                 attempt_perf = time.perf_counter()
                 final_provider_id = provider.provider_id
                 final_contract = provider.contract
                 final_slot_id = key_slot["slot_id"]
+                quota_wait_ms_before_attempt = 0
+                shared_quota_cooldown_honored = False
+                shared_quota_wait_seconds = _quota_wait_seconds(provider)
+                if shared_quota_wait_seconds > 0:
+                    if quota_retry_attempt_count >= profile.quota_retry_attempts:
+                        reason = (
+                            f"Provider {provider.provider_id} quota cooldown remains active for "
+                            f"{shared_quota_wait_seconds:.1f}s but the quota retry budget is exhausted."
+                        )
+                        last_error = ReaderLLMError(reason, problem_code="llm_quota")
+                        final_problem_code = "llm_quota"
+                        attempts.append(
+                            _attempt_payload(
+                                round_index=round_index,
+                                provider=provider,
+                                key_slot_id=key_slot["slot_id"],
+                                status="error",
+                                started_at=attempt_started,
+                                started_perf=attempt_perf,
+                                problem_code="llm_quota",
+                                error_type=last_error.__class__.__name__,
+                                error_message=str(last_error),
+                            )
+                        )
+                        provider_skipped_for_quota = True
+                        break
+                    if shared_quota_wait_seconds > quota_wait_budget_remaining_seconds:
+                        reason = (
+                            f"Provider {provider.provider_id} quota cooldown remains active for "
+                            f"{shared_quota_wait_seconds:.1f}s but only "
+                            f"{quota_wait_budget_remaining_seconds:.1f}s of quota wait budget remain."
+                        )
+                        last_error = ReaderLLMError(reason, problem_code="llm_quota")
+                        final_problem_code = "llm_quota"
+                        attempts.append(
+                            _attempt_payload(
+                                round_index=round_index,
+                                provider=provider,
+                                key_slot_id=key_slot["slot_id"],
+                                status="error",
+                                started_at=attempt_started,
+                                started_perf=attempt_perf,
+                                problem_code="llm_quota",
+                                error_type=last_error.__class__.__name__,
+                                error_message=str(last_error),
+                            )
+                        )
+                        provider_skipped_for_quota = True
+                        break
+                    time.sleep(shared_quota_wait_seconds)
+                    quota_wait_budget_remaining_seconds = max(
+                        0.0,
+                        quota_wait_budget_remaining_seconds - shared_quota_wait_seconds,
+                    )
+                    quota_wait_ms_before_attempt = int(round(shared_quota_wait_seconds * 1000))
+                    quota_wait_ms_total += quota_wait_ms_before_attempt
+                    shared_quota_cooldown_honored = True
                 try:
+                    round_attempted_provider_call = True
                     adapter = CONTRACT_ADAPTERS[provider.contract]
                     provider_controller.acquire()
                     profile_gate.acquire()
@@ -661,20 +912,17 @@ def _invoke_response(
                         if parsed is _JSON_MALFORMED:
                             raise RuntimeError("malformed json payload")
                     provider_controller.report_success()
-                    attempt = {
-                        "attempt": len(attempts) + 1,
-                        "round": round_index,
-                        "provider_id": provider.provider_id,
-                        "contract": provider.contract,
-                        "key_slot_id": key_slot["slot_id"],
-                        "status": "ok",
-                        "started_at": attempt_started,
-                        "completed_at": _utc_now(),
-                        "duration_ms": int((time.perf_counter() - attempt_perf) * 1000),
-                        "problem_code": "",
-                        "error_type": "",
-                        "error_message": "",
-                    }
+                    _clear_quota_pressure_if_recovered(provider)
+                    attempt = _attempt_payload(
+                        round_index=round_index,
+                        provider=provider,
+                        key_slot_id=key_slot["slot_id"],
+                        status="ok",
+                        started_at=attempt_started,
+                        started_perf=attempt_perf,
+                        quota_wait_ms_before_attempt=quota_wait_ms_before_attempt,
+                        shared_quota_cooldown_honored=shared_quota_cooldown_honored,
+                    )
                     attempts.append(attempt)
                     duration_ms = int((time.perf_counter() - started_perf) * 1000)
                     standard_payload = {
@@ -694,6 +942,8 @@ def _invoke_response(
                         "duration_ms": duration_ms,
                         "status": "ok",
                         "problem_code": "",
+                        "quota_wait_ms_total": quota_wait_ms_total,
+                        "quota_retry_attempt_count": quota_retry_attempt_count,
                         "fallback": {
                             "used_failover": len(attempts) > 1,
                             "providers_tried": [item["provider_id"] for item in attempts],
@@ -722,27 +972,35 @@ def _invoke_response(
                     message = str(exc).lower()
                     if classified in {"llm_timeout", "llm_quota"} or "malformed json payload" in message:
                         provider_controller.report_pressure()
+                    if classified == "llm_quota":
+                        quota_retry_attempt_count += 1
+                        _record_quota_pressure(provider)
                     attempts.append(
-                        {
-                            "attempt": len(attempts) + 1,
-                            "round": round_index,
-                            "provider_id": provider.provider_id,
-                            "contract": provider.contract,
-                            "key_slot_id": key_slot["slot_id"],
-                            "status": "error",
-                            "started_at": attempt_started,
-                            "completed_at": _utc_now(),
-                            "duration_ms": int((time.perf_counter() - attempt_perf) * 1000),
-                            "problem_code": classified,
-                            "error_type": exc.__class__.__name__,
-                            "error_message": str(exc),
-                        }
+                        _attempt_payload(
+                            round_index=round_index,
+                            provider=provider,
+                            key_slot_id=key_slot["slot_id"],
+                            status="error",
+                            started_at=attempt_started,
+                            started_perf=attempt_perf,
+                            problem_code=classified,
+                            error_type=exc.__class__.__name__,
+                            error_message=str(exc),
+                            quota_wait_ms_before_attempt=quota_wait_ms_before_attempt,
+                            shared_quota_cooldown_honored=shared_quota_cooldown_honored,
+                        )
                     )
                     if classified in {"llm_auth", "llm_quota"}:
                         continue
                     if round_index >= profile.retry_attempts and key_index >= len(key_slots) and provider is providers[-1]:
                         break
                     time.sleep(min(4.0, 0.5 * (2 ** (round_index - 1))))
+            if provider_skipped_for_quota:
+                continue
+        if not round_attempted_provider_call and isinstance(last_error, ReaderLLMError) and last_error.problem_code == "llm_quota":
+            break
+        if round_index >= profile.retry_attempts and final_problem_code not in {"", "llm_quota"}:
+            break
 
     completed_at = _utc_now()
     duration_ms = int((time.perf_counter() - started_perf) * 1000)
@@ -763,6 +1021,8 @@ def _invoke_response(
         "duration_ms": duration_ms,
         "status": "error",
         "problem_code": final_problem_code or "network_blocked",
+        "quota_wait_ms_total": quota_wait_ms_total,
+        "quota_retry_attempt_count": quota_retry_attempt_count,
         "fallback": {
             "used_failover": len(attempts) > 1,
             "providers_tried": [item["provider_id"] for item in attempts],

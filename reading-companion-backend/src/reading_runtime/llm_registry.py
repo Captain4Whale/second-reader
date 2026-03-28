@@ -50,6 +50,9 @@ class LLMProviderConfig:
     min_stable_concurrency: int
     backoff_window_seconds: int
     recover_window_seconds: int
+    quota_cooldown_base_seconds: int
+    quota_cooldown_max_seconds: int
+    quota_state_ttl_seconds: int
 
     def resolved_key_pool(self) -> list[dict[str, str]]:
         """Return the configured key slots that currently resolve to non-empty env values."""
@@ -81,6 +84,8 @@ class LLMProfileConfig:
     retry_attempts: int
     max_concurrency: int
     default_burst_concurrency: int
+    quota_retry_attempts: int
+    quota_wait_budget_seconds: int
 
 
 @dataclass(frozen=True)
@@ -143,6 +148,22 @@ def _resolve_model(entry: dict[str, Any], *, env_fallbacks: tuple[str, ...] = ()
     raise LLMRegistryError("Profile is missing a configured model or model_env.")
 
 
+def _default_quota_retry_attempts(profile_id: str) -> int:
+    if profile_id == DEFAULT_RUNTIME_PROFILE_ID:
+        return 2
+    if profile_id in {DEFAULT_DATASET_REVIEW_PROFILE_ID, DEFAULT_EVAL_JUDGE_PROFILE_ID}:
+        return 6
+    return 3
+
+
+def _default_quota_wait_budget_seconds(profile_id: str) -> int:
+    if profile_id == DEFAULT_RUNTIME_PROFILE_ID:
+        return 25
+    if profile_id in {DEFAULT_DATASET_REVIEW_PROFILE_ID, DEFAULT_EVAL_JUDGE_PROFILE_ID}:
+        return 180
+    return 60
+
+
 def _load_registry_payload() -> tuple[dict[str, Any], str]:
     raw_json = get_llm_registry_json()
     if raw_json:
@@ -180,6 +201,9 @@ def _legacy_registry_payload() -> dict[str, Any]:
         "min_stable_concurrency": _env_int("LLM_MIN_STABLE_CONCURRENCY", 2),
         "backoff_window_seconds": _env_int("LLM_BACKOFF_WINDOW_SECONDS", 10),
         "recover_window_seconds": _env_int("LLM_RECOVER_WINDOW_SECONDS", 20),
+        "quota_cooldown_base_seconds": _env_int("LLM_QUOTA_COOLDOWN_BASE_SECONDS", 10),
+        "quota_cooldown_max_seconds": _env_int("LLM_QUOTA_COOLDOWN_MAX_SECONDS", 60),
+        "quota_state_ttl_seconds": _env_int("LLM_QUOTA_STATE_TTL_SECONDS", 120),
     }
     return {
         "providers": [provider],
@@ -194,6 +218,15 @@ def _legacy_registry_payload() -> dict[str, Any]:
                 "retry_attempts": get_llm_retry_attempts(),
                 "max_concurrency": get_llm_max_concurrency(),
                 "default_burst_concurrency": _env_int("LLM_RUNTIME_DEFAULT_BURST_CONCURRENCY", 6),
+                "quota_retry_attempts": _env_int(
+                    "LLM_RUNTIME_QUOTA_RETRY_ATTEMPTS",
+                    _default_quota_retry_attempts(DEFAULT_RUNTIME_PROFILE_ID),
+                ),
+                "quota_wait_budget_seconds": _env_int(
+                    "LLM_RUNTIME_QUOTA_WAIT_BUDGET_SECONDS",
+                    _default_quota_wait_budget_seconds(DEFAULT_RUNTIME_PROFILE_ID),
+                    minimum=0,
+                ),
             },
             {
                 "profile_id": DEFAULT_DATASET_REVIEW_PROFILE_ID,
@@ -205,6 +238,15 @@ def _legacy_registry_payload() -> dict[str, Any]:
                 "retry_attempts": _env_int("LLM_DATASET_REVIEW_RETRY_ATTEMPTS", get_llm_retry_attempts()),
                 "max_concurrency": _env_int("LLM_DATASET_REVIEW_MAX_CONCURRENCY", get_llm_max_concurrency()),
                 "default_burst_concurrency": _env_int("LLM_DATASET_REVIEW_DEFAULT_BURST_CONCURRENCY", 6),
+                "quota_retry_attempts": _env_int(
+                    "LLM_DATASET_REVIEW_QUOTA_RETRY_ATTEMPTS",
+                    _default_quota_retry_attempts(DEFAULT_DATASET_REVIEW_PROFILE_ID),
+                ),
+                "quota_wait_budget_seconds": _env_int(
+                    "LLM_DATASET_REVIEW_QUOTA_WAIT_BUDGET_SECONDS",
+                    _default_quota_wait_budget_seconds(DEFAULT_DATASET_REVIEW_PROFILE_ID),
+                    minimum=0,
+                ),
             },
             {
                 "profile_id": DEFAULT_EVAL_JUDGE_PROFILE_ID,
@@ -216,6 +258,15 @@ def _legacy_registry_payload() -> dict[str, Any]:
                 "retry_attempts": _env_int("LLM_EVAL_JUDGE_RETRY_ATTEMPTS", get_llm_retry_attempts()),
                 "max_concurrency": _env_int("LLM_EVAL_JUDGE_MAX_CONCURRENCY", get_llm_max_concurrency()),
                 "default_burst_concurrency": _env_int("LLM_EVAL_JUDGE_DEFAULT_BURST_CONCURRENCY", 6),
+                "quota_retry_attempts": _env_int(
+                    "LLM_EVAL_JUDGE_QUOTA_RETRY_ATTEMPTS",
+                    _default_quota_retry_attempts(DEFAULT_EVAL_JUDGE_PROFILE_ID),
+                ),
+                "quota_wait_budget_seconds": _env_int(
+                    "LLM_EVAL_JUDGE_QUOTA_WAIT_BUDGET_SECONDS",
+                    _default_quota_wait_budget_seconds(DEFAULT_EVAL_JUDGE_PROFILE_ID),
+                    minimum=0,
+                ),
             },
         ],
     }
@@ -267,6 +318,12 @@ def _parse_provider(entry: Any) -> LLMProviderConfig:
         min_stable_concurrency=min_stable_concurrency,
         backoff_window_seconds=max(1, int(entry.get("backoff_window_seconds", 10) or 10)),
         recover_window_seconds=max(1, int(entry.get("recover_window_seconds", 20) or 20)),
+        quota_cooldown_base_seconds=max(1, int(entry.get("quota_cooldown_base_seconds", 10) or 10)),
+        quota_cooldown_max_seconds=max(
+            max(1, int(entry.get("quota_cooldown_base_seconds", 10) or 10)),
+            int(entry.get("quota_cooldown_max_seconds", 60) or 60),
+        ),
+        quota_state_ttl_seconds=max(1, int(entry.get("quota_state_ttl_seconds", 120) or 120)),
     )
 
 
@@ -305,6 +362,10 @@ def _parse_profile(entry: Any, providers: dict[str, LLMProviderConfig]) -> LLMPr
             raise LLMRegistryError(
                 f"Profile {profile_id} refers to unknown fallback provider {fallback_provider_id}."
             )
+    quota_retry_attempts_default = _default_quota_retry_attempts(profile_id)
+    quota_wait_budget_seconds_default = _default_quota_wait_budget_seconds(profile_id)
+    raw_quota_retry_attempts = entry.get("quota_retry_attempts")
+    raw_quota_wait_budget_seconds = entry.get("quota_wait_budget_seconds")
 
     return LLMProfileConfig(
         profile_id=profile_id,
@@ -325,6 +386,18 @@ def _parse_profile(entry: Any, providers: dict[str, LLMProviderConfig]) -> LLMPr
                     min(provider.initial_max_concurrency, provider.max_concurrency),
                 )
                 or min(provider.initial_max_concurrency, provider.max_concurrency)
+            ),
+        ),
+        quota_retry_attempts=max(
+            1,
+            int(quota_retry_attempts_default if raw_quota_retry_attempts is None else raw_quota_retry_attempts),
+        ),
+        quota_wait_budget_seconds=max(
+            0,
+            int(
+                quota_wait_budget_seconds_default
+                if raw_quota_wait_budget_seconds is None
+                else raw_quota_wait_budget_seconds
             ),
         ),
     )

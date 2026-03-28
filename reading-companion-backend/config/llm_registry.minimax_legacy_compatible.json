@@ -14,7 +14,10 @@
       "probe_max_concurrency": 12,
       "min_stable_concurrency": 2,
       "backoff_window_seconds": 10,
-      "recover_window_seconds": 20
+      "recover_window_seconds": 20,
+      "quota_cooldown_base_seconds": 10,
+      "quota_cooldown_max_seconds": 60,
+      "quota_state_ttl_seconds": 120
     }
   ],
   "profiles": [
@@ -27,7 +30,9 @@
       "timeout_seconds": 120,
       "retry_attempts": 3,
       "max_concurrency": 12,
-      "default_burst_concurrency": 12
+      "default_burst_concurrency": 12,
+      "quota_retry_attempts": 2,
+      "quota_wait_budget_seconds": 25
     },
     {
       "profile_id": "dataset_review_high_trust",
@@ -38,7 +43,9 @@
       "timeout_seconds": 120,
       "retry_attempts": 3,
       "max_concurrency": 12,
-      "default_burst_concurrency": 12
+      "default_burst_concurrency": 12,
+      "quota_retry_attempts": 6,
+      "quota_wait_budget_seconds": 180
     },
     {
       "profile_id": "eval_judge_high_trust",
@@ -49,7 +56,9 @@
       "timeout_seconds": 120,
       "retry_attempts": 3,
       "max_concurrency": 12,
-      "default_burst_concurrency": 12
+      "default_burst_concurrency": 12,
+      "quota_retry_attempts": 6,
+      "quota_wait_budget_seconds": 180
     }
   ]
 }

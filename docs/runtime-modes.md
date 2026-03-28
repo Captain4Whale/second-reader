@@ -132,6 +132,10 @@ then update this document in the same task.
 - New backend Python processes also inherit the structured LLM registry and its adaptive concurrency policy at startup.
   - same-key parallelism is enabled by default for configured providers
   - the current local default starts at `6` in-flight calls, can probe upward to `12`, and backs off automatically under sustained provider pressure
+  - provider quota cooldown state is shared on disk under `BACKEND_RUNTIME_ROOT/state/llm_gateway/providers/` so sibling Python processes can honor the same bounded wait window instead of rediscovering the same `429` independently
+  - quota waiting is profile-tuned inside the shared gateway:
+    - `runtime_reader_default` gets a short bounded wait so product runs still surface back to the existing pause/resume layer quickly when quota pressure persists
+    - `dataset_review_high_trust` and `eval_judge_high_trust` get a longer bounded wait so offline review and evaluation jobs can ride out short quota windows automatically
   - already-running Python processes keep the code and env they started with; changing the registry or concurrency code on disk does not mutate an in-flight run until restart
 
 ## Resume And Recovery

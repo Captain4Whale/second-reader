@@ -117,6 +117,10 @@ Promotion from user upload into the durable source library or evaluation corpus 
 - Shared concurrency budget
   - New backend processes inherit the structured LLM registry's adaptive concurrency budget when they start.
   - Product reading, evaluation, review, and adjudication jobs now share one provider-level same-key budget per process instead of relying on fixed per-script worker defaults.
+  - Those jobs also share file-backed provider quota cooldown state under `BACKEND_RUNTIME_ROOT/state/llm_gateway/providers/`, so separate Python processes can coordinate bounded retries after provider `429` pressure.
+  - The shared gateway keeps profile-specific wait budgets:
+    - product runtime uses a short bounded quota wait before the existing pause/resume layer takes over
+    - dataset review and eval judge profiles use a longer bounded quota wait for offline work
   - This changes default throughput for future jobs, but it does not mutate already-running Python workers in place.
 - Development boot mismatch
   - Development mode treats unfinished jobs from an older backend `boot_id` as untrusted.

@@ -77,15 +77,24 @@ Use that file to define:
   - `min_stable_concurrency`
   - `backoff_window_seconds`
   - `recover_window_seconds`
+- quota-pressure coordination policy:
+  - `quota_cooldown_base_seconds`
+  - `quota_cooldown_max_seconds`
+  - `quota_state_ttl_seconds`
 - pinned task-level profiles:
   - `runtime_reader_default`
   - `dataset_review_high_trust`
   - `eval_judge_high_trust`
-  - each profile may also set `default_burst_concurrency`
+  - each profile may also set:
+    - `default_burst_concurrency`
+    - `quota_retry_attempts`
+    - `quota_wait_budget_seconds`
 
 Current backend defaults are now throughput-oriented for new Python processes:
 - same-key parallelism is enabled by default
 - provider concurrency starts at `6`, can probe up to `12`, and backs off automatically on sustained timeout/rate-limit pressure
+- provider quota cooldown state is shared under `BACKEND_RUNTIME_ROOT/state/llm_gateway/providers/` so sibling Python processes can honor the same bounded wait window
+- runtime keeps a short bounded quota wait budget before surfacing `llm_quota`, while dataset review and eval judge profiles keep a longer bounded quota wait budget for offline work
 - eval/review worker counts derive from the shared concurrency policy rather than fixed script-local defaults
 
 Frontend environment is optional for local development and can be set via `reading-companion-frontend/.env.local`.

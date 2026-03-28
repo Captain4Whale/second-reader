@@ -3,7 +3,11 @@
 from __future__ import annotations
 
 import json
+import os
+import subprocess
+import sys
 import threading
+import textwrap
 import time
 from dataclasses import dataclass
 from pathlib import Path
@@ -109,6 +113,41 @@ class _SleepingRecordingAdapter(_RecordingAdapter):
                 self.active_calls -= 1
 
 
+class _SequencedRecordingAdapter(_RecordingAdapter):
+    def __init__(self, actions: list[str], *, response_content: str | None = None):
+        super().__init__(response_content=response_content)
+        self._actions = list(actions)
+
+    def invoke(
+        self,
+        messages: list[Any],
+        *,
+        provider: Any,
+        profile: Any,
+        api_key: str,
+        timeout_seconds: int,
+    ) -> Any:
+        self.calls.append(
+            {
+                "provider_id": provider.provider_id,
+                "contract": provider.contract,
+                "model": profile.model,
+                "api_key": api_key,
+                "timeout_seconds": timeout_seconds,
+                "message_count": len(messages),
+            }
+        )
+        action = self._actions.pop(0) if self._actions else "ok"
+        if action == "quota":
+            raise RuntimeError("429 rate limit")
+        if action == "auth_error":
+            raise RuntimeError("invalid api key")
+        if action == "timeout":
+            raise RuntimeError("timed out")
+        payload = self.response_content.replace("__API_KEY__", api_key)
+        return _FakeResponse(payload)
+
+
 @pytest.fixture(autouse=True)
 def _clear_registry_and_env(monkeypatch: pytest.MonkeyPatch):
     for key in [
@@ -120,6 +159,7 @@ def _clear_registry_and_env(monkeypatch: pytest.MonkeyPatch):
         "LLM_MODEL",
         "LLM_DATASET_REVIEW_MODEL",
         "LLM_EVAL_JUDGE_MODEL",
+        "BACKEND_RUNTIME_ROOT",
         "PRIMARY_KEY",
         "POOL_A",
         "POOL_B",
@@ -188,6 +228,66 @@ def test_registry_parses_structured_profiles_and_env_keys(monkeypatch: pytest.Mo
     assert provider.resolved_key_pool() == [{"slot_id": "PRIMARY_KEY", "api_key": "secret-a"}]
     assert runtime_profile.model == "claude-opus-4-6"
     assert runtime_profile.provider_id == "anthropic_primary"
+    assert provider.quota_cooldown_base_seconds == 10
+    assert provider.quota_cooldown_max_seconds == 60
+    assert provider.quota_state_ttl_seconds == 120
+    assert runtime_profile.quota_retry_attempts == 2
+    assert runtime_profile.quota_wait_budget_seconds == 25
+
+
+def test_registry_parses_explicit_quota_retry_fields(monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setenv("PRIMARY_KEY", "secret-a")
+    _set_registry(
+        monkeypatch,
+        {
+            "providers": [
+                {
+                    "provider_id": "anthropic_primary",
+                    "contract": "anthropic",
+                    "api_key_env": "PRIMARY_KEY",
+                    "supported_models": ["claude-opus-4-6"],
+                    "quota_cooldown_base_seconds": 7,
+                    "quota_cooldown_max_seconds": 21,
+                    "quota_state_ttl_seconds": 45,
+                }
+            ],
+            "profiles": [
+                {
+                    "profile_id": DEFAULT_RUNTIME_PROFILE_ID,
+                    "provider_id": "anthropic_primary",
+                    "model": "claude-opus-4-6",
+                    "quota_retry_attempts": 4,
+                    "quota_wait_budget_seconds": 30,
+                },
+                {
+                    "profile_id": DEFAULT_DATASET_REVIEW_PROFILE_ID,
+                    "provider_id": "anthropic_primary",
+                    "model": "claude-opus-4-6",
+                    "quota_retry_attempts": 8,
+                    "quota_wait_budget_seconds": 240,
+                },
+                {
+                    "profile_id": DEFAULT_EVAL_JUDGE_PROFILE_ID,
+                    "provider_id": "anthropic_primary",
+                    "model": "claude-opus-4-6",
+                    "quota_retry_attempts": 9,
+                    "quota_wait_budget_seconds": 300,
+                },
+            ],
+        },
+    )
+
+    provider = get_llm_registry().get_provider("anthropic_primary")
+    runtime_profile = get_llm_profile(DEFAULT_RUNTIME_PROFILE_ID)
+    review_profile = get_llm_profile(DEFAULT_DATASET_REVIEW_PROFILE_ID)
+
+    assert provider.quota_cooldown_base_seconds == 7
+    assert provider.quota_cooldown_max_seconds == 21
+    assert provider.quota_state_ttl_seconds == 45
+    assert runtime_profile.quota_retry_attempts == 4
+    assert runtime_profile.quota_wait_budget_seconds == 30
+    assert review_profile.quota_retry_attempts == 8
+    assert review_profile.quota_wait_budget_seconds == 240
 
 
 def test_registry_rejects_missing_required_profiles(monkeypatch: pytest.MonkeyPatch):
@@ -663,3 +763,320 @@ def test_provider_backoff_reduces_stable_limit_after_timeout_pressure(monkeypatc
 
     assert get_llm_provider_stable_concurrency("anthropic_primary") == 5
     assert get_llm_profile_stable_concurrency(DEFAULT_RUNTIME_PROFILE_ID) == 5
+
+
+def test_eval_profile_waits_through_shared_quota_cooldown_and_emits_trace_metadata(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    monkeypatch.setenv("PRIMARY_KEY", "quota-key")
+    monkeypatch.setenv("BACKEND_RUNTIME_ROOT", str(tmp_path))
+    _set_registry(
+        monkeypatch,
+        {
+            "providers": [
+                {
+                    "provider_id": "anthropic_primary",
+                    "contract": "anthropic",
+                    "api_key_env": "PRIMARY_KEY",
+                    "supported_models": ["claude-opus-4-6"],
+                    "retry_attempts": 1,
+                    "quota_cooldown_base_seconds": 1,
+                    "quota_cooldown_max_seconds": 1,
+                    "quota_state_ttl_seconds": 30,
+                }
+            ],
+            "profiles": [
+                {
+                    "profile_id": DEFAULT_RUNTIME_PROFILE_ID,
+                    "provider_id": "anthropic_primary",
+                    "model": "claude-opus-4-6",
+                },
+                {
+                    "profile_id": DEFAULT_DATASET_REVIEW_PROFILE_ID,
+                    "provider_id": "anthropic_primary",
+                    "model": "claude-opus-4-6",
+                },
+                {
+                    "profile_id": DEFAULT_EVAL_JUDGE_PROFILE_ID,
+                    "provider_id": "anthropic_primary",
+                    "model": "claude-opus-4-6",
+                    "quota_retry_attempts": 2,
+                    "quota_wait_budget_seconds": 5,
+                },
+            ],
+        },
+    )
+    adapter = _SequencedRecordingAdapter(
+        ["quota", "ok"],
+        response_content='{"ok": true, "mode": "judge"}',
+    )
+    monkeypatch.setitem(CONTRACT_ADAPTERS, "anthropic", adapter)
+
+    run_dir = tmp_path / "eval-run"
+    started = time.monotonic()
+    with llm_invocation_scope(
+        profile_id=DEFAULT_EVAL_JUDGE_PROFILE_ID,
+        trace_context=eval_trace_context(run_dir, eval_target="quota:judge", debug_enabled=True),
+    ):
+        payload = invoke_json("system", "user", {})
+    elapsed = time.monotonic() - started
+
+    standard_rows = _read_jsonl(run_dir / "llm_traces" / "standard.jsonl")
+    debug_rows = _read_jsonl(run_dir / "llm_traces" / "debug.jsonl")
+
+    assert payload == {"ok": True, "mode": "judge"}
+    assert len(adapter.calls) == 2
+    assert elapsed >= 0.9
+    assert standard_rows[-1]["quota_retry_attempt_count"] == 1
+    assert standard_rows[-1]["quota_wait_ms_total"] >= 900
+    assert debug_rows[-1]["attempts"][1]["shared_quota_cooldown_honored"] is True
+    assert debug_rows[-1]["attempts"][1]["quota_wait_ms_before_attempt"] >= 900
+
+
+def test_runtime_profile_fails_when_quota_wait_budget_is_too_small(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    monkeypatch.setenv("PRIMARY_KEY", "quota-key")
+    monkeypatch.setenv("BACKEND_RUNTIME_ROOT", str(tmp_path))
+    _set_registry(
+        monkeypatch,
+        {
+            "providers": [
+                {
+                    "provider_id": "anthropic_primary",
+                    "contract": "anthropic",
+                    "api_key_env": "PRIMARY_KEY",
+                    "supported_models": ["claude-opus-4-6"],
+                    "retry_attempts": 1,
+                    "quota_cooldown_base_seconds": 1,
+                    "quota_cooldown_max_seconds": 1,
+                    "quota_state_ttl_seconds": 30,
+                }
+            ],
+            "profiles": [
+                {
+                    "profile_id": DEFAULT_RUNTIME_PROFILE_ID,
+                    "provider_id": "anthropic_primary",
+                    "model": "claude-opus-4-6",
+                    "quota_retry_attempts": 2,
+                    "quota_wait_budget_seconds": 0,
+                },
+                {
+                    "profile_id": DEFAULT_DATASET_REVIEW_PROFILE_ID,
+                    "provider_id": "anthropic_primary",
+                    "model": "claude-opus-4-6",
+                },
+                {
+                    "profile_id": DEFAULT_EVAL_JUDGE_PROFILE_ID,
+                    "provider_id": "anthropic_primary",
+                    "model": "claude-opus-4-6",
+                },
+            ],
+        },
+    )
+    adapter = _SequencedRecordingAdapter(["quota", "ok"])
+    monkeypatch.setitem(CONTRACT_ADAPTERS, "anthropic", adapter)
+
+    with llm_invocation_scope(profile_id=DEFAULT_RUNTIME_PROFILE_ID):
+        with pytest.raises(ReaderLLMError, match="quota cooldown remains active"):
+            invoke_json("system", "user", {})
+
+    assert len(adapter.calls) == 1
+
+
+def test_non_quota_retries_do_not_expand_after_quota_recovery_round(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    monkeypatch.setenv("PRIMARY_KEY", "quota-key")
+    monkeypatch.setenv("BACKEND_RUNTIME_ROOT", str(tmp_path))
+    _set_registry(
+        monkeypatch,
+        {
+            "providers": [
+                {
+                    "provider_id": "anthropic_primary",
+                    "contract": "anthropic",
+                    "api_key_env": "PRIMARY_KEY",
+                    "supported_models": ["claude-opus-4-6"],
+                    "retry_attempts": 1,
+                    "quota_cooldown_base_seconds": 1,
+                    "quota_cooldown_max_seconds": 1,
+                    "quota_state_ttl_seconds": 30,
+                }
+            ],
+            "profiles": [
+                {
+                    "profile_id": DEFAULT_RUNTIME_PROFILE_ID,
+                    "provider_id": "anthropic_primary",
+                    "model": "claude-opus-4-6",
+                    "retry_attempts": 1,
+                    "quota_retry_attempts": 2,
+                    "quota_wait_budget_seconds": 5,
+                },
+                {
+                    "profile_id": DEFAULT_DATASET_REVIEW_PROFILE_ID,
+                    "provider_id": "anthropic_primary",
+                    "model": "claude-opus-4-6",
+                },
+                {
+                    "profile_id": DEFAULT_EVAL_JUDGE_PROFILE_ID,
+                    "provider_id": "anthropic_primary",
+                    "model": "claude-opus-4-6",
+                },
+            ],
+        },
+    )
+    adapter = _SequencedRecordingAdapter(["quota", "timeout", "ok"])
+    monkeypatch.setitem(CONTRACT_ADAPTERS, "anthropic", adapter)
+
+    with llm_invocation_scope(profile_id=DEFAULT_RUNTIME_PROFILE_ID):
+        with pytest.raises(ReaderLLMError):
+            invoke_json("system", "user", {})
+
+    assert len(adapter.calls) == 2
+
+
+def test_quota_cooldown_state_is_shared_across_processes(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    backend_root = Path(__file__).resolve().parents[1]
+    fake_module_dir = tmp_path / "fake_modules"
+    fake_module_dir.mkdir(parents=True)
+    fake_module_path = fake_module_dir / "langchain_anthropic.py"
+    fake_module_path.write_text(
+        textwrap.dedent(
+            """
+            import json
+            import os
+            import time
+            from pathlib import Path
+
+
+            class _FakeResponse:
+                def __init__(self, content):
+                    self.content = content
+
+
+            class ChatAnthropic:
+                def __init__(self, **kwargs):
+                    self.kwargs = kwargs
+
+                def invoke(self, messages):
+                    log_path = Path(os.environ["FAKE_LANGCHAIN_LOG_PATH"])
+                    log_path.parent.mkdir(parents=True, exist_ok=True)
+                    with log_path.open("a", encoding="utf-8") as handle:
+                        handle.write(json.dumps({"ts": time.time(), "mode": os.environ.get("FAKE_LANGCHAIN_MODE", "ok")}) + "\\n")
+                    if os.environ.get("FAKE_LANGCHAIN_MODE", "ok") == "quota":
+                        raise RuntimeError("429 rate limit")
+                    return _FakeResponse('{"ok": true}')
+            """
+        ),
+        encoding="utf-8",
+    )
+
+    script = textwrap.dedent(
+        """
+        import json
+        import time
+
+        from src.reading_runtime.llm_gateway import invoke_json, llm_invocation_scope
+        from src.reading_runtime.llm_registry import DEFAULT_RUNTIME_PROFILE_ID
+
+        started = time.monotonic()
+        try:
+            with llm_invocation_scope(profile_id=DEFAULT_RUNTIME_PROFILE_ID):
+                payload = invoke_json("system", "user", {})
+            print(json.dumps({"ok": True, "elapsed": time.monotonic() - started, "payload": payload}))
+        except Exception as exc:
+            print(json.dumps({"ok": False, "elapsed": time.monotonic() - started, "error": str(exc), "problem_code": getattr(exc, "problem_code", None)}))
+            raise
+        """
+    )
+
+    registry_payload = {
+        "providers": [
+            {
+                "provider_id": "anthropic_primary",
+                "contract": "anthropic",
+                "api_key_env": "PRIMARY_KEY",
+                "supported_models": ["claude-opus-4-6"],
+                "retry_attempts": 1,
+                "quota_cooldown_base_seconds": 1,
+                "quota_cooldown_max_seconds": 1,
+                "quota_state_ttl_seconds": 30,
+            }
+        ],
+        "profiles": [
+            {
+                "profile_id": DEFAULT_RUNTIME_PROFILE_ID,
+                "provider_id": "anthropic_primary",
+                "model": "claude-opus-4-6",
+                "quota_retry_attempts": 1,
+                "quota_wait_budget_seconds": 0,
+            },
+            {
+                "profile_id": DEFAULT_DATASET_REVIEW_PROFILE_ID,
+                "provider_id": "anthropic_primary",
+                "model": "claude-opus-4-6",
+            },
+            {
+                "profile_id": DEFAULT_EVAL_JUDGE_PROFILE_ID,
+                "provider_id": "anthropic_primary",
+                "model": "claude-opus-4-6",
+            },
+        ],
+    }
+
+    base_env = os.environ.copy()
+    base_env.update(
+        {
+            "BACKEND_RUNTIME_ROOT": str(tmp_path / "runtime-root"),
+            "LLM_REGISTRY_JSON": json.dumps(registry_payload),
+            "PRIMARY_KEY": "quota-key",
+            "FAKE_LANGCHAIN_LOG_PATH": str(tmp_path / "fake-provider.log"),
+            "PYTHONPATH": os.pathsep.join([str(fake_module_dir), base_env.get("PYTHONPATH", "")]).strip(os.pathsep),
+        }
+    )
+
+    first_env = dict(base_env)
+    first_env["FAKE_LANGCHAIN_MODE"] = "quota"
+    first = subprocess.run(
+        [sys.executable, "-c", script],
+        cwd=backend_root,
+        capture_output=True,
+        text=True,
+        env=first_env,
+    )
+    first_payload = json.loads(first.stdout.strip().splitlines()[-1])
+
+    assert first.returncode != 0
+    assert first_payload["ok"] is False
+    assert first_payload["problem_code"] == "llm_quota"
+
+    second_registry = dict(registry_payload)
+    second_registry["profiles"] = [
+        {
+            "profile_id": DEFAULT_RUNTIME_PROFILE_ID,
+            "provider_id": "anthropic_primary",
+            "model": "claude-opus-4-6",
+            "quota_retry_attempts": 1,
+            "quota_wait_budget_seconds": 5,
+        },
+        *registry_payload["profiles"][1:],
+    ]
+    second_env = dict(base_env)
+    second_env["LLM_REGISTRY_JSON"] = json.dumps(second_registry)
+    second_env["FAKE_LANGCHAIN_MODE"] = "ok"
+    second = subprocess.run(
+        [sys.executable, "-c", script],
+        cwd=backend_root,
+        capture_output=True,
+        text=True,
+        env=second_env,
+        check=True,
+    )
+    second_payload = json.loads(second.stdout.strip().splitlines()[-1])
+
+    assert second_payload["ok"] is True
+    assert second_payload["elapsed"] >= 0.5
