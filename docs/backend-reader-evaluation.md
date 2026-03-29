@@ -88,7 +88,10 @@ Use `docs/backend-reading-mechanism.md` for shared mechanism-platform boundaries
 - New scaling work should target the shared `src/reading_runtime/` LLM registry and gateway layer rather than adding new mechanism-local provider clients.
 - Structured registry configuration is preferred over legacy environment compatibility when tuning concurrency, key pools, or failover because it makes those choices explicit and reviewable.
   - the recommended local operator surface is now the split target catalog plus profile-binding pair under `reading-companion-backend/config/llm_targets.local.json` and `reading-companion-backend/config/llm_profile_bindings.local.json`
+  - the profile-binding file should prefer ordered `target_tiers` over one hardcoded target plus ad hoc fallback fields
   - those two local files still compile into one shared backend registry and one shared gateway policy surface
+  - the shared gateway now chooses one concrete target when a runtime, dataset-review, or evaluation scope starts and keeps that target pinned for the whole scope
+  - cross-target or cross-model fallback is allowed only when a new scope starts; the gateway should not mix models/providers mid-run
 - New eval/review runners should default to shared-policy worker counts instead of hardcoded local worker limits.
   - case-level fanout is preferred when cases are independent
   - deterministic artifact ordering must still be preserved in final summaries and reports

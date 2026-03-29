@@ -22,6 +22,7 @@ from src.reading_runtime.llm_gateway import (
     JsonlTraceSink,
     ReaderLLMError,
     clear_llm_gateway_runtime_state,
+    current_llm_scope,
     eval_trace_context,
     get_llm_profile_stable_concurrency,
     get_llm_provider_stable_concurrency,
@@ -157,6 +158,8 @@ def _clear_registry_and_env(monkeypatch: pytest.MonkeyPatch):
         "LLM_PROFILE_BINDINGS_PATH",
         "LLM_REGISTRY_JSON",
         "LLM_REGISTRY_PATH",
+        "LLM_FORCE_TARGET_ID",
+        "LLM_FORCE_TIER_ID",
         "LLM_PROVIDER_CONTRACT",
         "LLM_BASE_URL",
         "LLM_API_KEY",
@@ -233,6 +236,82 @@ def _required_bindings(
             {
                 "profile_id": DEFAULT_EVAL_JUDGE_PROFILE_ID,
                 "target_id": eval_target_id or dataset_target_id or runtime_target_id,
+            },
+        ]
+    }
+
+
+def _tiered_bindings(
+    primary_target_id: str,
+    *,
+    backup_target_ids: list[str] | None = None,
+    min_required_stable_concurrency: int | None = None,
+) -> dict[str, Any]:
+    primary_tier: dict[str, Any] = {
+        "tier_id": "primary",
+        "target_ids": [primary_target_id],
+    }
+    if min_required_stable_concurrency is not None:
+        primary_tier["min_required_stable_concurrency"] = min_required_stable_concurrency
+    target_tiers = [primary_tier]
+    if backup_target_ids:
+        target_tiers.append({"tier_id": "backup", "target_ids": list(backup_target_ids)})
+    return {
+        "profiles": [
+            {
+                "profile_id": DEFAULT_RUNTIME_PROFILE_ID,
+                "target_tiers": target_tiers,
+                "max_concurrency": 12,
+                "default_burst_concurrency": 12,
+            },
+            {
+                "profile_id": DEFAULT_DATASET_REVIEW_PROFILE_ID,
+                "target_tiers": target_tiers,
+                "max_concurrency": 12,
+                "default_burst_concurrency": 12,
+            },
+            {
+                "profile_id": DEFAULT_EVAL_JUDGE_PROFILE_ID,
+                "target_tiers": target_tiers,
+                "max_concurrency": 12,
+                "default_burst_concurrency": 12,
+            },
+        ]
+    }
+
+
+def _two_minimax_targets(
+    *,
+    primary_max_concurrency: int = 12,
+    primary_initial_max_concurrency: int = 6,
+    primary_probe_max_concurrency: int = 12,
+    backup_max_concurrency: int = 12,
+    backup_initial_max_concurrency: int = 6,
+    backup_probe_max_concurrency: int = 12,
+) -> dict[str, Any]:
+    return {
+        "targets": [
+            {
+                "target_id": "MiniMax-M2.7-highspeed",
+                "contract": "anthropic",
+                "base_url": "https://api.minimaxi.com/anthropic",
+                "model": "MiniMax-M2.7-highspeed",
+                "credentials": [{"credential_id": "primary", "api_key": "highspeed-key"}],
+                "max_concurrency": primary_max_concurrency,
+                "initial_max_concurrency": primary_initial_max_concurrency,
+                "probe_max_concurrency": primary_probe_max_concurrency,
+                "min_stable_concurrency": 1,
+            },
+            {
+                "target_id": "MiniMax-M2.7",
+                "contract": "anthropic",
+                "base_url": "https://api.minimaxi.com/anthropic",
+                "model": "MiniMax-M2.7",
+                "credentials": [{"credential_id": "primary", "api_key": "backup-key"}],
+                "max_concurrency": backup_max_concurrency,
+                "initial_max_concurrency": backup_initial_max_concurrency,
+                "probe_max_concurrency": backup_probe_max_concurrency,
+                "min_stable_concurrency": 1,
             },
         ]
     }
@@ -586,6 +665,122 @@ def test_mixed_target_bindings_support_different_contracts_and_models(monkeypatc
     assert dataset_profile.model == "gemini-3.1-pro"
 
 
+def test_target_tiers_compile_into_profile_selection_policy(monkeypatch: pytest.MonkeyPatch):
+    _set_targets_and_bindings(
+        monkeypatch,
+        targets={
+            "targets": [
+                {
+                    "target_id": "MiniMax-M2.7-highspeed",
+                    "contract": "anthropic",
+                    "base_url": "https://api.minimaxi.com/anthropic",
+                    "model": "MiniMax-M2.7-highspeed",
+                    "credentials": [{"credential_id": "primary", "api_key": "highspeed-key"}],
+                },
+                {
+                    "target_id": "MiniMax-M2.7",
+                    "contract": "anthropic",
+                    "base_url": "https://api.minimaxi.com/anthropic",
+                    "model": "MiniMax-M2.7",
+                    "credentials": [{"credential_id": "primary", "api_key": "backup-key"}],
+                },
+            ]
+        },
+        bindings=_tiered_bindings(
+            "MiniMax-M2.7-highspeed",
+            backup_target_ids=["MiniMax-M2.7"],
+            min_required_stable_concurrency=4,
+        ),
+    )
+
+    runtime_profile = get_llm_profile(DEFAULT_RUNTIME_PROFILE_ID)
+
+    assert runtime_profile.provider_id == "MiniMax-M2.7-highspeed"
+    assert runtime_profile.model == "MiniMax-M2.7-highspeed"
+    assert runtime_profile.model_source == "selected_target"
+    assert runtime_profile.fallback_provider_ids == ("MiniMax-M2.7",)
+    assert [tier.tier_id for tier in runtime_profile.target_tiers] == ["primary", "backup"]
+    assert runtime_profile.target_tiers[0].target_ids == ("MiniMax-M2.7-highspeed",)
+    assert runtime_profile.target_tiers[0].min_required_stable_concurrency == 4
+    assert runtime_profile.target_tiers[1].target_ids == ("MiniMax-M2.7",)
+
+
+def test_legacy_target_and_fallback_bindings_compile_into_tiers(monkeypatch: pytest.MonkeyPatch):
+    _set_targets_and_bindings(
+        monkeypatch,
+        targets={
+            "targets": [
+                {
+                    "target_id": "MiniMax-M2.7-highspeed",
+                    "contract": "anthropic",
+                    "base_url": "https://api.minimaxi.com/anthropic",
+                    "model": "MiniMax-M2.7-highspeed",
+                    "credentials": [{"credential_id": "primary", "api_key": "highspeed-key"}],
+                },
+                {
+                    "target_id": "MiniMax-M2.7",
+                    "contract": "anthropic",
+                    "base_url": "https://api.minimaxi.com/anthropic",
+                    "model": "MiniMax-M2.7",
+                    "credentials": [{"credential_id": "primary", "api_key": "backup-key"}],
+                },
+            ]
+        },
+        bindings={
+            "profiles": [
+                {
+                    "profile_id": DEFAULT_RUNTIME_PROFILE_ID,
+                    "target_id": "MiniMax-M2.7-highspeed",
+                    "fallback_target_ids": ["MiniMax-M2.7"],
+                },
+                {
+                    "profile_id": DEFAULT_DATASET_REVIEW_PROFILE_ID,
+                    "target_id": "MiniMax-M2.7-highspeed",
+                    "fallback_target_ids": ["MiniMax-M2.7"],
+                },
+                {
+                    "profile_id": DEFAULT_EVAL_JUDGE_PROFILE_ID,
+                    "target_id": "MiniMax-M2.7-highspeed",
+                    "fallback_target_ids": ["MiniMax-M2.7"],
+                },
+            ]
+        },
+    )
+
+    runtime_profile = get_llm_profile(DEFAULT_RUNTIME_PROFILE_ID)
+
+    assert [tier.tier_id for tier in runtime_profile.target_tiers] == ["primary", "fallback"]
+    assert runtime_profile.target_tiers[0].target_ids == ("MiniMax-M2.7-highspeed",)
+    assert runtime_profile.target_tiers[1].target_ids == ("MiniMax-M2.7",)
+
+
+def test_target_tiers_reject_unknown_target_id(monkeypatch: pytest.MonkeyPatch):
+    _set_targets_and_bindings(
+        monkeypatch,
+        targets={
+            "targets": [
+                {
+                    "target_id": "MiniMax-M2.7-highspeed",
+                    "contract": "anthropic",
+                    "base_url": "https://api.minimaxi.com/anthropic",
+                    "model": "MiniMax-M2.7-highspeed",
+                    "credentials": [{"credential_id": "primary", "api_key": "highspeed-key"}],
+                }
+            ]
+        },
+        bindings=_tiered_bindings(
+            "MiniMax-M2.7-highspeed",
+            backup_target_ids=["MiniMax-M2.7"],
+        ),
+    )
+
+    with pytest.raises(
+        LLMRegistryError,
+        match="Profile runtime_reader_default refers to unknown target_id MiniMax-M2.7 in tier backup.",
+    ):
+        get_llm_registry()
+
+
 def test_target_binding_path_loader_smoke_invokes_gateway(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     targets_path, bindings_path = _set_targets_and_bindings_path(
         monkeypatch,
@@ -931,7 +1126,7 @@ def test_same_model_key_failover_succeeds_and_emits_runtime_trace(tmp_path: Path
     assert debug_rows[-1]["response_excerpt"]
 
 
-def test_cross_model_fallback_is_rejected(monkeypatch: pytest.MonkeyPatch):
+def test_legacy_cross_model_fallback_is_rejected(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setenv("POOL_A", "good-key")
     monkeypatch.setenv("POOL_B", "other-key")
     _set_registry(
@@ -972,12 +1167,11 @@ def test_cross_model_fallback_is_rejected(monkeypatch: pytest.MonkeyPatch):
             ],
         },
     )
-    monkeypatch.setitem(CONTRACT_ADAPTERS, "anthropic", _RecordingAdapter())
-    monkeypatch.setitem(CONTRACT_ADAPTERS, "google_genai", _RecordingAdapter())
-
-    with llm_invocation_scope(profile_id=DEFAULT_RUNTIME_PROFILE_ID):
-        with pytest.raises(LLMRegistryError, match="cannot use fallback provider"):
-            invoke_json("system", "user", {})
+    with pytest.raises(
+        LLMRegistryError,
+        match="Profile runtime_reader_default requests model claude-opus-4-6, which is not listed in provider gemini_backup supported_models.",
+    ):
+        get_llm_registry()
 
 
 def test_eval_trace_context_writes_eval_run_artifacts(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
@@ -1249,6 +1443,187 @@ def test_same_key_parallelism_allows_multiple_inflight_calls(monkeypatch: pytest
 
     assert len(results) == 2
     assert adapter.max_active_calls >= 2
+
+
+def test_scope_pins_one_target_and_nested_scopes_inherit_it(monkeypatch: pytest.MonkeyPatch):
+    _set_targets_and_bindings(
+        monkeypatch,
+        targets=_two_minimax_targets(),
+        bindings=_tiered_bindings(
+            "MiniMax-M2.7-highspeed",
+            backup_target_ids=["MiniMax-M2.7"],
+            min_required_stable_concurrency=4,
+        ),
+    )
+    adapter = _RecordingAdapter(response_content='{"ok": true, "provider": "__API_KEY__"}')
+    monkeypatch.setitem(CONTRACT_ADAPTERS, "anthropic", adapter)
+
+    with llm_invocation_scope(profile_id=DEFAULT_RUNTIME_PROFILE_ID):
+        assert current_llm_scope() is not None
+        assert current_llm_scope().pinned_target_id == "MiniMax-M2.7-highspeed"
+        invoke_json("system", "user", {})
+        with llm_invocation_scope():
+            assert current_llm_scope() is not None
+            assert current_llm_scope().pinned_target_id == "MiniMax-M2.7-highspeed"
+            invoke_json("system", "user", {})
+
+    assert [call["provider_id"] for call in adapter.calls] == [
+        "MiniMax-M2.7-highspeed",
+        "MiniMax-M2.7-highspeed",
+    ]
+
+
+def test_backup_tier_is_chosen_when_primary_is_under_quota_cooldown(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    from src.reading_runtime import llm_gateway as llm_gateway_module
+
+    _set_targets_and_bindings(
+        monkeypatch,
+        targets=_two_minimax_targets(),
+        bindings=_tiered_bindings(
+            "MiniMax-M2.7-highspeed",
+            backup_target_ids=["MiniMax-M2.7"],
+            min_required_stable_concurrency=4,
+        ),
+    )
+    primary_provider = get_llm_registry().get_provider("MiniMax-M2.7-highspeed")
+    llm_gateway_module._record_quota_pressure(primary_provider)
+    adapter = _RecordingAdapter(response_content='{"ok": true, "api_key": "__API_KEY__"}')
+    monkeypatch.setitem(CONTRACT_ADAPTERS, "anthropic", adapter)
+
+    output_dir = tmp_path / "output" / "quota-fallback"
+    with llm_invocation_scope(
+        profile_id=DEFAULT_RUNTIME_PROFILE_ID,
+        trace_context=runtime_trace_context(output_dir, mechanism_key="iterator_v1"),
+    ):
+        assert current_llm_scope() is not None
+        assert current_llm_scope().pinned_target_id == "MiniMax-M2.7"
+        payload = invoke_json("system", "user", {})
+
+    standard_rows = _read_jsonl(runtime_artifacts.llm_standard_trace_file(output_dir))
+    assert payload["ok"] is True
+    assert adapter.calls[0]["provider_id"] == "MiniMax-M2.7"
+    assert standard_rows[-1]["selected_target_id"] == "MiniMax-M2.7"
+    assert standard_rows[-1]["selected_tier_id"] == "backup"
+
+
+def test_backup_tier_is_chosen_when_primary_is_below_required_stable_concurrency(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    _set_targets_and_bindings(
+        monkeypatch,
+        targets=_two_minimax_targets(
+            primary_max_concurrency=2,
+            primary_initial_max_concurrency=2,
+            primary_probe_max_concurrency=2,
+        ),
+        bindings=_tiered_bindings(
+            "MiniMax-M2.7-highspeed",
+            backup_target_ids=["MiniMax-M2.7"],
+            min_required_stable_concurrency=4,
+        ),
+    )
+    adapter = _RecordingAdapter(response_content='{"ok": true, "api_key": "__API_KEY__"}')
+    monkeypatch.setitem(CONTRACT_ADAPTERS, "anthropic", adapter)
+
+    with llm_invocation_scope(profile_id=DEFAULT_RUNTIME_PROFILE_ID):
+        assert current_llm_scope() is not None
+        assert current_llm_scope().pinned_target_id == "MiniMax-M2.7"
+        payload = invoke_json("system", "user", {})
+
+    assert payload["ok"] is True
+    assert adapter.calls[0]["provider_id"] == "MiniMax-M2.7"
+    assert get_llm_profile_stable_concurrency(DEFAULT_RUNTIME_PROFILE_ID) >= 6
+
+
+def test_scope_pin_prevents_mid_run_cross_model_switch(monkeypatch: pytest.MonkeyPatch):
+    from src.reading_runtime import llm_gateway as llm_gateway_module
+
+    _set_targets_and_bindings(
+        monkeypatch,
+        targets=_two_minimax_targets(),
+        bindings=_tiered_bindings(
+            "MiniMax-M2.7-highspeed",
+            backup_target_ids=["MiniMax-M2.7"],
+            min_required_stable_concurrency=4,
+        ),
+    )
+    adapter = _RecordingAdapter(response_content='{"ok": true, "api_key": "__API_KEY__"}')
+    monkeypatch.setitem(CONTRACT_ADAPTERS, "anthropic", adapter)
+
+    registry = get_llm_registry()
+    primary_provider = registry.get_provider("MiniMax-M2.7-highspeed")
+    controller = llm_gateway_module._provider_controller_for(primary_provider)
+
+    with llm_invocation_scope(profile_id=DEFAULT_RUNTIME_PROFILE_ID):
+        assert current_llm_scope() is not None
+        assert current_llm_scope().pinned_target_id == "MiniMax-M2.7-highspeed"
+        invoke_json("system", "user", {})
+        with controller._condition:
+            controller._current_limit = 1
+        with llm_invocation_scope():
+            assert current_llm_scope() is not None
+            assert current_llm_scope().pinned_target_id == "MiniMax-M2.7-highspeed"
+            invoke_json("system", "user", {})
+
+    with llm_invocation_scope(profile_id=DEFAULT_RUNTIME_PROFILE_ID):
+        assert current_llm_scope() is not None
+        assert current_llm_scope().pinned_target_id == "MiniMax-M2.7"
+        invoke_json("system", "user", {})
+
+    assert [call["provider_id"] for call in adapter.calls] == [
+        "MiniMax-M2.7-highspeed",
+        "MiniMax-M2.7-highspeed",
+        "MiniMax-M2.7",
+    ]
+
+
+def test_manual_override_can_force_target_or_tier(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    _set_targets_and_bindings(
+        monkeypatch,
+        targets=_two_minimax_targets(),
+        bindings=_tiered_bindings(
+            "MiniMax-M2.7-highspeed",
+            backup_target_ids=["MiniMax-M2.7"],
+            min_required_stable_concurrency=4,
+        ),
+    )
+    adapter = _RecordingAdapter(response_content='{"ok": true, "api_key": "__API_KEY__"}')
+    monkeypatch.setitem(CONTRACT_ADAPTERS, "anthropic", adapter)
+    monkeypatch.setenv("LLM_FORCE_TARGET_ID", "MiniMax-M2.7")
+
+    env_output_dir = tmp_path / "output" / "forced-target"
+    with llm_invocation_scope(
+        profile_id=DEFAULT_RUNTIME_PROFILE_ID,
+        trace_context=runtime_trace_context(env_output_dir, mechanism_key="iterator_v1"),
+    ):
+        assert current_llm_scope() is not None
+        assert current_llm_scope().pinned_target_id == "MiniMax-M2.7"
+        invoke_json("system", "user", {})
+
+    monkeypatch.delenv("LLM_FORCE_TARGET_ID", raising=False)
+    tier_output_dir = tmp_path / "output" / "forced-tier"
+    with llm_invocation_scope(
+        profile_id=DEFAULT_RUNTIME_PROFILE_ID,
+        pinned_tier_id="backup",
+        trace_context=runtime_trace_context(tier_output_dir, mechanism_key="iterator_v1"),
+    ):
+        assert current_llm_scope() is not None
+        assert current_llm_scope().pinned_target_id == "MiniMax-M2.7"
+        invoke_json("system", "user", {})
+
+    env_rows = _read_jsonl(runtime_artifacts.llm_standard_trace_file(env_output_dir))
+    tier_rows = _read_jsonl(runtime_artifacts.llm_standard_trace_file(tier_output_dir))
+    assert [call["provider_id"] for call in adapter.calls] == ["MiniMax-M2.7", "MiniMax-M2.7"]
+    assert env_rows[-1]["selection_reason"] == "manual_override"
+    assert env_rows[-1]["selection_override_source"] == "env"
+    assert tier_rows[-1]["selection_reason"] == "manual_override"
+    assert tier_rows[-1]["selection_override_source"] == "scope"
 
 
 def test_provider_backoff_reduces_stable_limit_after_timeout_pressure(monkeypatch: pytest.MonkeyPatch):

@@ -41,6 +41,7 @@ Important backend variables:
 - `LLM_PROFILE_BINDINGS_PATH`
 - optional `LLM_TARGETS_JSON`
 - optional `LLM_PROFILE_BINDINGS_JSON`
+- optional operator overrides: `LLM_FORCE_TARGET_ID`, `LLM_FORCE_TIER_ID`
 - compatibility: `LLM_REGISTRY_PATH`, `LLM_REGISTRY_JSON`
 - `TAVILY_API_KEY`
 - `UPLOAD_MAX_BYTES`
@@ -61,7 +62,41 @@ Recommended local LLM setup:
     - `runtime_reader_default`
     - `dataset_review_high_trust`
     - `eval_judge_high_trust`
-  - this is the file where you choose which target each profile uses and any profile-level overrides such as `temperature`, `max_output_tokens`, `retry_attempts`, `max_concurrency`, `quota_retry_attempts`, and `quota_wait_budget_seconds`
+  - the recommended universal pattern is ordered `target_tiers`
+    - put the preferred high-throughput target in the `primary` tier
+    - put backup targets in later tiers
+    - each scope chooses one concrete target up front and stays pinned to it for the full runtime, dataset-review, or evaluation scope
+  - this is the file where you choose which target tier policy each profile uses and any profile-level overrides such as `temperature`, `max_output_tokens`, `retry_attempts`, `max_concurrency`, `quota_retry_attempts`, and `quota_wait_budget_seconds`
+
+Recommended tiered binding shape:
+```json
+{
+  "profiles": [
+    {
+      "profile_id": "runtime_reader_default",
+      "target_tiers": [
+        {
+          "tier_id": "primary",
+          "target_ids": ["minimax_m27_highspeed"],
+          "min_required_stable_concurrency": 4
+        },
+        {
+          "tier_id": "backup",
+          "target_ids": ["minimax_m27_standard"]
+        }
+      ],
+      "temperature": 0.2,
+      "max_output_tokens": 4096,
+      "timeout_seconds": 120,
+      "retry_attempts": 3,
+      "max_concurrency": 12,
+      "default_burst_concurrency": 12,
+      "quota_retry_attempts": 2,
+      "quota_wait_budget_seconds": 25
+    }
+  ]
+}
+```
 
 Tracked templates for the new local setup:
 - `reading-companion-backend/config/llm_targets.local.example.json`
@@ -94,6 +129,9 @@ Reference and compatibility files:
 The shared LLM layer still supports:
 - provider contracts such as `anthropic`, `google_genai`, and `openai_compatible`
 - multiple credentials inside one named target for same-model failover
+- ordered target tiers for profile routing
+  - primary and backup routing is no longer hardcoded to one provider family
+  - new scopes pick the first healthy target that meets the tier policy, then stay pinned to that target for the whole scope
 - adaptive same-key concurrency policy:
   - `initial_max_concurrency`
   - `probe_max_concurrency`
@@ -108,6 +146,13 @@ The shared LLM layer still supports:
   - `runtime_reader_default`
   - `dataset_review_high_trust`
   - `eval_judge_high_trust`
+
+Temporary operator overrides:
+- `LLM_FORCE_TARGET_ID`
+  - force new scopes onto one named target for debugging or recovery
+- `LLM_FORCE_TIER_ID`
+  - force new scopes onto one named tier such as `primary` or `backup`
+- these overrides apply only when a new scope starts and should not be the normal policy surface
 
 Current backend defaults are now throughput-oriented for new Python processes:
 - same-key parallelism is enabled by default

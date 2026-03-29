@@ -12,14 +12,18 @@ import threading
 import time
 import uuid
 from collections import deque
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Mapping, Protocol
 
 from langchain_core.messages import HumanMessage, SystemMessage
 
-from src.config import get_backend_runtime_root
+from src.config import (
+    get_backend_runtime_root,
+    get_llm_force_target_id,
+    get_llm_force_tier_id,
+)
 from src.reading_core.runtime_contracts import CurrentReadingProblemCode
 from src.reading_runtime import artifacts as runtime_artifacts
 
@@ -28,6 +32,7 @@ from .llm_registry import (
     LLMProfileConfig,
     LLMProviderConfig,
     LLMRegistryError,
+    LLMTargetTierConfig,
     get_llm_profile,
     get_llm_registry,
 )
@@ -113,6 +118,11 @@ class LLMInvocationScopeState:
     profile_id: str | None = None
     trace_context: LLMTraceContext | None = None
     overrides: LLMInvocationOverrides | None = None
+    required_stable_concurrency: int | None = None
+    pinned_target_id: str | None = None
+    pinned_tier_id: str | None = None
+    selection_reason: str | None = None
+    selection_override_source: str | None = None
 
 
 _CURRENT_SCOPE: contextvars.ContextVar[LLMInvocationScopeState | None] = contextvars.ContextVar(
@@ -568,21 +578,252 @@ def _merge_overrides(base: LLMInvocationOverrides | None, overlay: LLMInvocation
     )
 
 
+def _effective_required_stable_concurrency(*values: int | None) -> int:
+    normalized = [max(1, int(value)) for value in values if value is not None]
+    return max(normalized) if normalized else 1
+
+
+def _selected_model_for_provider(profile: LLMProfileConfig, provider: LLMProviderConfig) -> str:
+    if profile.model_source == "profile":
+        if "*" not in provider.supported_models and profile.model not in provider.supported_models:
+            raise LLMRegistryError(
+                f"Profile {profile.profile_id} cannot use provider {provider.provider_id} with model {profile.model}."
+            )
+        return profile.model
+    if profile.model and profile.model in provider.supported_models:
+        return profile.model
+    if "*" in provider.supported_models:
+        return profile.model
+    if len(provider.supported_models) == 1:
+        return provider.supported_models[0]
+    raise LLMRegistryError(
+        f"Profile {profile.profile_id} cannot resolve one model from provider {provider.provider_id}."
+    )
+
+
+def _pinned_profile_for_target(
+    profile: LLMProfileConfig,
+    provider: LLMProviderConfig,
+    tier: LLMTargetTierConfig,
+    *,
+    selection_reason: str,
+    selection_override_source: str | None = None,
+) -> LLMProfileConfig:
+    return replace(
+        profile,
+        provider_id=provider.provider_id,
+        fallback_provider_ids=(),
+        allow_cross_provider_failover=False,
+        model=_selected_model_for_provider(profile, provider),
+        selected_target_id=provider.provider_id,
+        selected_tier_id=tier.tier_id,
+        selection_reason=selection_reason,
+        selection_override_source=selection_override_source,
+    )
+
+
+def _resolve_tier(profile: LLMProfileConfig, tier_id: str) -> LLMTargetTierConfig:
+    for tier in profile.target_tiers:
+        if tier.tier_id == tier_id:
+            return tier
+    raise LLMRegistryError(f"Profile {profile.profile_id} does not define tier {tier_id}.")
+
+
+def _resolve_target_membership(profile: LLMProfileConfig, target_id: str) -> tuple[LLMTargetTierConfig, int]:
+    for tier in profile.target_tiers:
+        if target_id in tier.target_ids:
+            return tier, tier.target_ids.index(target_id)
+    raise LLMRegistryError(f"Profile {profile.profile_id} does not define target {target_id}.")
+
+
+def _target_is_reachable(provider: LLMProviderConfig) -> bool:
+    return bool(provider.resolved_key_pool())
+
+
+def _target_meets_threshold(provider: LLMProviderConfig, *, required_stable_concurrency: int) -> bool:
+    if _quota_wait_seconds(provider) > 0:
+        return False
+    return _provider_controller_for(provider).current_limit >= required_stable_concurrency
+
+
+def _select_target_within_tier(
+    profile: LLMProfileConfig,
+    tier: LLMTargetTierConfig,
+    *,
+    required_stable_concurrency: int,
+    selection_reason: str,
+    selection_override_source: str | None = None,
+    allow_threshold_relaxation: bool = False,
+) -> LLMProfileConfig | None:
+    registry = get_llm_registry()
+    reachable_profile: LLMProfileConfig | None = None
+    for target_id in tier.target_ids:
+        provider = registry.get_provider(target_id)
+        if not _target_is_reachable(provider):
+            continue
+        pinned = _pinned_profile_for_target(
+            profile,
+            provider,
+            tier,
+            selection_reason=selection_reason,
+            selection_override_source=selection_override_source,
+        )
+        if _target_meets_threshold(provider, required_stable_concurrency=required_stable_concurrency):
+            return pinned
+        if allow_threshold_relaxation and reachable_profile is None:
+            reachable_profile = pinned
+    return reachable_profile
+
+
+def _select_profile_target(
+    profile: LLMProfileConfig,
+    *,
+    required_stable_concurrency: int | None = None,
+    pinned_target_id: str | None = None,
+    pinned_tier_id: str | None = None,
+) -> LLMProfileConfig:
+    target_override = _clean_text(pinned_target_id)
+    tier_override = _clean_text(pinned_tier_id)
+    if not target_override and not tier_override:
+        target_override = _clean_text(get_llm_force_target_id())
+        tier_override = _clean_text(get_llm_force_tier_id())
+        override_source = "env" if target_override or tier_override else None
+    else:
+        override_source = "scope"
+
+    if target_override or tier_override:
+        if target_override:
+            tier, _ = _resolve_target_membership(profile, target_override)
+            if tier_override and tier.tier_id != tier_override:
+                raise LLMRegistryError(
+                    f"Profile {profile.profile_id} target {target_override} is not in tier {tier_override}."
+                )
+        else:
+            tier = _resolve_tier(profile, tier_override)
+            target_override = tier.target_ids[0]
+        effective_threshold = _effective_required_stable_concurrency(
+            required_stable_concurrency,
+            tier.min_required_stable_concurrency,
+        )
+        selected = _select_target_within_tier(
+            profile,
+            tier,
+            required_stable_concurrency=effective_threshold,
+            selection_reason="manual_override",
+            selection_override_source=override_source,
+            allow_threshold_relaxation=True,
+        )
+        if selected is None or selected.selected_target_id != target_override:
+            registry = get_llm_registry()
+            provider = registry.get_provider(target_override)
+            if not _target_is_reachable(provider):
+                raise LLMRegistryError(
+                    f"Profile {profile.profile_id} forced target {target_override} has no resolved credentials."
+                )
+            selected = _pinned_profile_for_target(
+                profile,
+                provider,
+                tier,
+                selection_reason="manual_override",
+                selection_override_source=override_source,
+            )
+        return selected
+
+    reachable_profile: LLMProfileConfig | None = None
+    for tier in profile.target_tiers:
+        effective_threshold = _effective_required_stable_concurrency(
+            required_stable_concurrency,
+            tier.min_required_stable_concurrency,
+        )
+        selected = _select_target_within_tier(
+            profile,
+            tier,
+            required_stable_concurrency=effective_threshold,
+            selection_reason="healthy_tier_selection",
+        )
+        if selected is not None:
+            return selected
+        if reachable_profile is None:
+            reachable_profile = _select_target_within_tier(
+                profile,
+                tier,
+                required_stable_concurrency=effective_threshold,
+                selection_reason="reachable_fallback_selection",
+                allow_threshold_relaxation=True,
+            )
+
+    if reachable_profile is not None:
+        return reachable_profile
+    raise LLMRegistryError(f"Profile {profile.profile_id} has no reachable targets with resolved credentials.")
+
+
+def _apply_profile_overrides(
+    profile: LLMProfileConfig,
+    overrides: LLMInvocationOverrides | None,
+) -> LLMProfileConfig:
+    if overrides is None:
+        return profile
+    return replace(
+        profile,
+        temperature=overrides.temperature if overrides.temperature is not None else profile.temperature,
+        max_output_tokens=(
+            overrides.max_output_tokens if overrides.max_output_tokens is not None else profile.max_output_tokens
+        ),
+        timeout_seconds=overrides.timeout_seconds if overrides.timeout_seconds is not None else profile.timeout_seconds,
+        retry_attempts=overrides.retry_attempts if overrides.retry_attempts is not None else profile.retry_attempts,
+        max_concurrency=overrides.max_concurrency if overrides.max_concurrency is not None else profile.max_concurrency,
+    )
+
+
 @contextlib.contextmanager
 def llm_invocation_scope(
     *,
     profile_id: str | None = None,
     trace_context: LLMTraceContext | None = None,
     overrides: LLMInvocationOverrides | None = None,
+    required_stable_concurrency: int | None = None,
+    pinned_target_id: str | None = None,
+    pinned_tier_id: str | None = None,
 ) -> Any:
     """Layer one shared LLM invocation scope over the current thread/task context."""
 
     current = _CURRENT_SCOPE.get()
+    next_profile_id = profile_id or (current.profile_id if current else None)
+    inherited_selection = (
+        current is not None
+        and current.profile_id == next_profile_id
+        and current.pinned_target_id is not None
+        and pinned_target_id is None
+        and pinned_tier_id is None
+    )
+    next_required_stable_concurrency = _effective_required_stable_concurrency(
+        current.required_stable_concurrency if current else None,
+        required_stable_concurrency,
+    )
     next_scope = LLMInvocationScopeState(
-        profile_id=profile_id or (current.profile_id if current else None),
+        profile_id=next_profile_id,
         trace_context=_merge_trace_context(current.trace_context if current else None, trace_context),
         overrides=_merge_overrides(current.overrides if current else None, overrides),
+        required_stable_concurrency=next_required_stable_concurrency,
+        pinned_target_id=current.pinned_target_id if inherited_selection else None,
+        pinned_tier_id=current.pinned_tier_id if inherited_selection else None,
+        selection_reason=current.selection_reason if inherited_selection else None,
+        selection_override_source=current.selection_override_source if inherited_selection else None,
     )
+    if next_scope.profile_id and not inherited_selection:
+        selected_profile = _select_profile_target(
+            get_llm_profile(next_scope.profile_id),
+            required_stable_concurrency=next_required_stable_concurrency,
+            pinned_target_id=pinned_target_id,
+            pinned_tier_id=pinned_tier_id,
+        )
+        next_scope = replace(
+            next_scope,
+            pinned_target_id=selected_profile.selected_target_id,
+            pinned_tier_id=selected_profile.selected_tier_id,
+            selection_reason=selected_profile.selection_reason,
+            selection_override_source=selected_profile.selection_override_source,
+        )
     token = _CURRENT_SCOPE.set(next_scope)
     try:
         yield next_scope
@@ -643,47 +884,59 @@ def eval_trace_context(
 
 def _effective_profile(scope: LLMInvocationScopeState | None, explicit_profile_id: str | None) -> LLMProfileConfig:
     profile_id = explicit_profile_id or (scope.profile_id if scope else None) or DEFAULT_RUNTIME_PROFILE_ID
-    profile = get_llm_profile(profile_id)
-    overrides = scope.overrides if scope else None
-    if overrides is None:
-        return profile
-    return LLMProfileConfig(
-        profile_id=profile.profile_id,
-        provider_id=profile.provider_id,
-        fallback_provider_ids=profile.fallback_provider_ids,
-        allow_cross_provider_failover=profile.allow_cross_provider_failover,
-        model=profile.model,
-        temperature=overrides.temperature if overrides.temperature is not None else profile.temperature,
-        max_output_tokens=(
-            overrides.max_output_tokens
-            if overrides.max_output_tokens is not None
-            else profile.max_output_tokens
-        ),
-        timeout_seconds=overrides.timeout_seconds if overrides.timeout_seconds is not None else profile.timeout_seconds,
-        retry_attempts=overrides.retry_attempts if overrides.retry_attempts is not None else profile.retry_attempts,
-        max_concurrency=overrides.max_concurrency if overrides.max_concurrency is not None else profile.max_concurrency,
-        default_burst_concurrency=profile.default_burst_concurrency,
-        quota_retry_attempts=profile.quota_retry_attempts,
-        quota_wait_budget_seconds=profile.quota_wait_budget_seconds,
-    )
+    base_profile = get_llm_profile(profile_id)
+    if scope and scope.profile_id == profile_id and scope.pinned_target_id:
+        registry = get_llm_registry()
+        provider = registry.get_provider(scope.pinned_target_id)
+        if scope.pinned_tier_id:
+            tier = _resolve_tier(base_profile, scope.pinned_tier_id)
+        else:
+            tier, _ = _resolve_target_membership(base_profile, scope.pinned_target_id)
+        selected_profile = _pinned_profile_for_target(
+            base_profile,
+            provider,
+            tier,
+            selection_reason=scope.selection_reason or "scope_pin",
+            selection_override_source=scope.selection_override_source,
+        )
+    else:
+        selected_profile = _select_profile_target(
+            base_profile,
+            required_stable_concurrency=scope.required_stable_concurrency if scope else None,
+            pinned_target_id=scope.pinned_target_id if scope and scope.profile_id == profile_id else None,
+            pinned_tier_id=scope.pinned_tier_id if scope and scope.profile_id == profile_id else None,
+        )
+    return _apply_profile_overrides(selected_profile, scope.overrides if scope else None)
 
 
 def _resolve_provider_sequence(profile: LLMProfileConfig) -> list[LLMProviderConfig]:
-    registry_provider_ids = [profile.provider_id]
-    if profile.allow_cross_provider_failover:
-        registry_provider_ids.extend(
-            provider_id for provider_id in profile.fallback_provider_ids if provider_id not in registry_provider_ids
-        )
-    providers: list[LLMProviderConfig] = []
     registry = get_llm_registry()
-    for provider_id in registry_provider_ids:
-        provider = registry.get_provider(provider_id)
-        if "*" not in provider.supported_models and profile.model not in provider.supported_models:
+    if profile.selected_target_id:
+        provider = registry.get_provider(profile.selected_target_id)
+        if provider.provider_id != profile.provider_id:
             raise LLMRegistryError(
-                f"Profile {profile.profile_id} cannot use fallback provider {provider_id} with model {profile.model}."
+                f"Profile {profile.profile_id} pinned target {profile.selected_target_id} does not match provider_id {profile.provider_id}."
             )
-        providers.append(provider)
-    return providers
+        return [provider]
+    provider = registry.get_provider(profile.provider_id)
+    if "*" not in provider.supported_models and profile.model not in provider.supported_models:
+        raise LLMRegistryError(
+            f"Profile {profile.profile_id} cannot use provider {profile.provider_id} with model {profile.model}."
+        )
+    return [provider]
+
+
+def _selected_provider_for_profile(
+    profile_id: str,
+    *,
+    required_stable_concurrency: int | None = None,
+) -> tuple[LLMProfileConfig, LLMProviderConfig]:
+    profile = _select_profile_target(
+        get_llm_profile(profile_id),
+        required_stable_concurrency=required_stable_concurrency,
+    )
+    registry = get_llm_registry()
+    return profile, registry.get_provider(profile.provider_id)
 
 
 def _provider_controller_for(provider: LLMProviderConfig) -> _AdaptiveProviderController:
@@ -715,8 +968,7 @@ def get_llm_provider_stable_concurrency(provider_id: str) -> int:
 def get_llm_profile_stable_concurrency(profile_id: str = DEFAULT_RUNTIME_PROFILE_ID) -> int:
     """Return the current effective stable concurrency for one profile."""
 
-    profile = get_llm_profile(profile_id)
-    provider = get_llm_registry().get_provider(profile.provider_id)
+    profile, provider = _selected_provider_for_profile(profile_id)
     controller = _provider_controller_for(provider)
     return max(1, min(profile.max_concurrency, controller.current_limit))
 
@@ -935,6 +1187,10 @@ def _invoke_response(
                         "call_id": call_id,
                         "profile_id": profile.profile_id,
                         "provider_id": provider.provider_id,
+                        "selected_target_id": profile.selected_target_id or provider.provider_id,
+                        "selected_tier_id": profile.selected_tier_id or "",
+                        "selection_reason": profile.selection_reason or "",
+                        "selection_override_source": profile.selection_override_source or "",
                         "contract": provider.contract,
                         "model": profile.model,
                         "mechanism_key": trace_context.mechanism_key if trace_context else "",
@@ -1014,6 +1270,10 @@ def _invoke_response(
         "call_id": call_id,
         "profile_id": profile.profile_id,
         "provider_id": final_provider_id,
+        "selected_target_id": profile.selected_target_id or final_provider_id,
+        "selected_tier_id": profile.selected_tier_id or "",
+        "selection_reason": profile.selection_reason or "",
+        "selection_override_source": profile.selection_override_source or "",
         "contract": final_contract,
         "model": profile.model,
         "mechanism_key": trace_context.mechanism_key if trace_context else "",

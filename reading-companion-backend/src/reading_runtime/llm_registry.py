@@ -24,6 +24,7 @@ from src.config import (
 
 
 LLMProviderContract = Literal["anthropic", "google_genai", "openai_compatible"]
+LLMProfileModelSource = Literal["profile", "selected_target"]
 
 DEFAULT_RUNTIME_PROFILE_ID = "runtime_reader_default"
 DEFAULT_DATASET_REVIEW_PROFILE_ID = "dataset_review_high_trust"
@@ -53,6 +54,7 @@ _PROFILE_OPTIONAL_FIELDS = (
     "quota_retry_attempts",
     "quota_wait_budget_seconds",
 )
+_ALLOWED_PROFILE_MODEL_SOURCES = {"profile", "selected_target"}
 
 
 class LLMRegistryError(RuntimeError):
@@ -120,6 +122,8 @@ class LLMProfileConfig:
     provider_id: str
     fallback_provider_ids: tuple[str, ...]
     allow_cross_provider_failover: bool
+    model_source: LLMProfileModelSource
+    target_tiers: tuple["LLMTargetTierConfig", ...]
     model: str
     temperature: float
     max_output_tokens: int
@@ -129,6 +133,19 @@ class LLMProfileConfig:
     default_burst_concurrency: int
     quota_retry_attempts: int
     quota_wait_budget_seconds: int
+    selected_target_id: str | None = None
+    selected_tier_id: str | None = None
+    selection_reason: str | None = None
+    selection_override_source: str | None = None
+
+
+@dataclass(frozen=True)
+class LLMTargetTierConfig:
+    """Ordered target tier used to select one concrete provider/model at scope start."""
+
+    tier_id: str
+    target_ids: tuple[str, ...]
+    min_required_stable_concurrency: int = 1
 
 
 @dataclass(frozen=True)
@@ -189,6 +206,32 @@ def _copy_present_fields(source: dict[str, Any], field_names: tuple[str, ...]) -
         if value is not None:
             copied[field_name] = value
     return copied
+
+
+def _clean_str_list(value: Any, *, context: str) -> list[str]:
+    if value is None:
+        return []
+    if not isinstance(value, list):
+        raise LLMRegistryError(f"{context} must be a list.")
+    return [item for item in (_clean_str(item) for item in value) if item]
+
+
+def _require_int(
+    entry: dict[str, Any],
+    key: str,
+    *,
+    context: str,
+    default: int | None = None,
+    minimum: int = 1,
+) -> int:
+    raw_value = entry.get(key, default)
+    if raw_value is None:
+        raise LLMRegistryError(f"{context} is missing {key}.")
+    try:
+        value = int(raw_value)
+    except (TypeError, ValueError) as exc:
+        raise LLMRegistryError(f"{context} has invalid integer {key}: {raw_value!r}.") from exc
+    return max(minimum, value)
 
 
 def _resolve_model(entry: dict[str, Any], *, env_fallbacks: tuple[str, ...] = ()) -> str:
@@ -303,14 +346,77 @@ def _compile_target_entry(entry: Any) -> dict[str, Any]:
     }
 
 
-def _compile_profile_binding_entry(entry: Any, *, compiled_targets: dict[str, dict[str, Any]]) -> dict[str, Any]:
-    if not isinstance(entry, dict):
-        raise LLMRegistryError("Profile binding entry must be an object.")
-    profile_id = _require_text(entry, "profile_id", context="Profile binding")
-    if "max" "_tokens" in entry:
-        raise LLMRegistryError(
-            f"Profile {profile_id} uses the retired output-limit field; use max_output_tokens."
-        )
+def _compile_profile_binding_tiers(
+    entry: dict[str, Any],
+    *,
+    profile_id: str,
+    compiled_targets: dict[str, dict[str, Any]],
+) -> tuple[list[dict[str, Any]], str]:
+    raw_target_tiers = entry.get("target_tiers")
+    if raw_target_tiers is not None:
+        if "target_id" in entry or "fallback_target_ids" in entry:
+            raise LLMRegistryError(
+                f"Profile {profile_id} cannot mix target_tiers with target_id or fallback_target_ids."
+            )
+        if not isinstance(raw_target_tiers, list) or not raw_target_tiers:
+            raise LLMRegistryError(f"Profile {profile_id} target_tiers must be a non-empty list.")
+        compiled_tiers: list[dict[str, Any]] = []
+        seen_tier_ids: set[str] = set()
+        seen_target_ids: set[str] = set()
+        for raw_tier in raw_target_tiers:
+            if not isinstance(raw_tier, dict):
+                raise LLMRegistryError(f"Profile {profile_id} target tier entry must be an object.")
+            tier_id = _require_text(raw_tier, "tier_id", context=f"Profile {profile_id} tier")
+            if tier_id in seen_tier_ids:
+                raise LLMRegistryError(f"Profile {profile_id} reuses tier_id {tier_id}.")
+            seen_tier_ids.add(tier_id)
+            target_ids = _clean_str_list(
+                raw_tier.get("target_ids"),
+                context=f"Profile {profile_id} tier {tier_id} target_ids",
+            )
+            if not target_ids:
+                raise LLMRegistryError(
+                    f"Profile {profile_id} tier {tier_id} must define at least one target_id."
+                )
+            ordered_target_ids: list[str] = []
+            tier_seen_ids: set[str] = set()
+            for target_id in target_ids:
+                if target_id in tier_seen_ids:
+                    raise LLMRegistryError(
+                        f"Profile {profile_id} tier {tier_id} reuses target_id {target_id}."
+                    )
+                if target_id in seen_target_ids:
+                    raise LLMRegistryError(
+                        f"Profile {profile_id} reuses target_id {target_id} across multiple tiers."
+                    )
+                tier_seen_ids.add(target_id)
+                seen_target_ids.add(target_id)
+                target = compiled_targets.get(target_id)
+                if target is None:
+                    raise LLMRegistryError(
+                        f"Profile {profile_id} refers to unknown target_id {target_id} in tier {tier_id}."
+                    )
+                if not target["enabled"]:
+                    raise LLMRegistryError(
+                        f"Profile {profile_id} refers to disabled target_id {target_id} in tier {tier_id}."
+                    )
+                ordered_target_ids.append(target_id)
+            compiled_tiers.append(
+                {
+                    "tier_id": tier_id,
+                    "target_ids": ordered_target_ids,
+                    "min_required_stable_concurrency": _require_int(
+                        raw_tier,
+                        "min_required_stable_concurrency",
+                        context=f"Profile {profile_id} tier {tier_id}",
+                        default=1,
+                        minimum=1,
+                    ),
+                }
+            )
+        primary_target_id = compiled_tiers[0]["target_ids"][0]
+        return compiled_tiers, primary_target_id
+
     target_id = _require_text(entry, "target_id", context=f"Profile {profile_id}")
     target = compiled_targets.get(target_id)
     if target is None:
@@ -318,14 +424,14 @@ def _compile_profile_binding_entry(entry: Any, *, compiled_targets: dict[str, di
     if not target["enabled"]:
         raise LLMRegistryError(f"Profile {profile_id} refers to disabled target_id {target_id}.")
 
-    raw_fallback_target_ids = entry.get("fallback_target_ids", [])
-    if not isinstance(raw_fallback_target_ids, list):
-        raise LLMRegistryError(f"Profile {profile_id} fallback_target_ids must be a list.")
-    fallback_provider_ids: list[str] = []
+    raw_fallback_target_ids = _clean_str_list(
+        entry.get("fallback_target_ids"),
+        context=f"Profile {profile_id} fallback_target_ids",
+    )
+    fallback_target_ids: list[str] = []
     seen_fallback_ids: set[str] = set()
-    for raw_fallback_target_id in raw_fallback_target_ids:
-        fallback_target_id = _clean_str(raw_fallback_target_id)
-        if not fallback_target_id or fallback_target_id == target_id or fallback_target_id in seen_fallback_ids:
+    for fallback_target_id in raw_fallback_target_ids:
+        if fallback_target_id == target_id or fallback_target_id in seen_fallback_ids:
             continue
         fallback_target = compiled_targets.get(fallback_target_id)
         if fallback_target is None:
@@ -337,18 +443,43 @@ def _compile_profile_binding_entry(entry: Any, *, compiled_targets: dict[str, di
                 f"Profile {profile_id} refers to disabled fallback target_id {fallback_target_id}."
             )
         seen_fallback_ids.add(fallback_target_id)
-        fallback_provider_ids.append(fallback_target_id)
+        fallback_target_ids.append(fallback_target_id)
+
+    compiled_tiers = [{"tier_id": "primary", "target_ids": [target_id], "min_required_stable_concurrency": 1}]
+    if fallback_target_ids:
+        compiled_tiers.append(
+            {
+                "tier_id": "fallback",
+                "target_ids": fallback_target_ids,
+                "min_required_stable_concurrency": 1,
+            }
+        )
+    return compiled_tiers, target_id
+
+
+def _compile_profile_binding_entry(entry: Any, *, compiled_targets: dict[str, dict[str, Any]]) -> dict[str, Any]:
+    if not isinstance(entry, dict):
+        raise LLMRegistryError("Profile binding entry must be an object.")
+    profile_id = _require_text(entry, "profile_id", context="Profile binding")
+    if "max" "_tokens" in entry:
+        raise LLMRegistryError(
+            f"Profile {profile_id} uses the retired output-limit field; use max_output_tokens."
+        )
+    compiled_tiers, primary_target_id = _compile_profile_binding_tiers(
+        entry,
+        profile_id=profile_id,
+        compiled_targets=compiled_targets,
+    )
+    primary_target = compiled_targets[primary_target_id]
 
     compiled_profile: dict[str, Any] = {
         "profile_id": profile_id,
-        "provider_id": target_id,
-        "model": target["model"],
+        "provider_id": primary_target_id,
+        "model": primary_target["model"],
+        "model_source": "selected_target",
+        "target_tiers": compiled_tiers,
     }
     compiled_profile.update(_copy_present_fields(entry, _PROFILE_OPTIONAL_FIELDS))
-    if "allow_cross_provider_failover" in entry:
-        compiled_profile["allow_cross_provider_failover"] = bool(entry.get("allow_cross_provider_failover"))
-    if fallback_provider_ids:
-        compiled_profile["fallback_provider_ids"] = fallback_provider_ids
     return compiled_profile
 
 
@@ -642,6 +773,145 @@ def _parse_provider(entry: Any) -> LLMProviderConfig:
     )
 
 
+def _resolve_profile_model_for_provider(
+    provider: LLMProviderConfig,
+    *,
+    requested_model: str,
+    model_source: LLMProfileModelSource,
+    context: str,
+) -> str:
+    if model_source == "profile":
+        if "*" not in provider.supported_models and requested_model not in provider.supported_models:
+            raise LLMRegistryError(
+                f"{context} requests model {requested_model}, which is not listed in provider {provider.provider_id} supported_models."
+            )
+        return requested_model
+
+    if requested_model and requested_model in provider.supported_models:
+        return requested_model
+    if "*" in provider.supported_models:
+        return requested_model
+    if len(provider.supported_models) == 1:
+        return provider.supported_models[0]
+    raise LLMRegistryError(
+        f"{context} cannot resolve one model from provider {provider.provider_id} supported_models."
+    )
+
+
+def _parse_target_tiers(
+    entry: dict[str, Any],
+    *,
+    profile_id: str,
+    providers: dict[str, LLMProviderConfig],
+    provider_id: str,
+    fallback_provider_ids: tuple[str, ...],
+    requested_model: str,
+    model_source: LLMProfileModelSource,
+) -> tuple[LLMTargetTierConfig, ...]:
+    raw_target_tiers = entry.get("target_tiers")
+    if raw_target_tiers is not None:
+        if fallback_provider_ids:
+            raise LLMRegistryError(
+                f"Profile {profile_id} cannot mix target_tiers with fallback_provider_ids."
+            )
+        if not isinstance(raw_target_tiers, list) or not raw_target_tiers:
+            raise LLMRegistryError(f"Profile {profile_id} target_tiers must be a non-empty list.")
+        tiers: list[LLMTargetTierConfig] = []
+        seen_tier_ids: set[str] = set()
+        seen_target_ids: set[str] = set()
+        for raw_tier in raw_target_tiers:
+            if not isinstance(raw_tier, dict):
+                raise LLMRegistryError(f"Profile {profile_id} target tier entry must be an object.")
+            tier_id = _require_text(raw_tier, "tier_id", context=f"Profile {profile_id} tier")
+            if tier_id in seen_tier_ids:
+                raise LLMRegistryError(f"Profile {profile_id} reuses tier_id {tier_id}.")
+            seen_tier_ids.add(tier_id)
+            target_ids = _clean_str_list(
+                raw_tier.get("target_ids"),
+                context=f"Profile {profile_id} tier {tier_id} target_ids",
+            )
+            if not target_ids:
+                raise LLMRegistryError(
+                    f"Profile {profile_id} tier {tier_id} must define at least one target_id."
+                )
+            ordered_target_ids: list[str] = []
+            tier_seen_ids: set[str] = set()
+            for target_id in target_ids:
+                if target_id in tier_seen_ids:
+                    raise LLMRegistryError(
+                        f"Profile {profile_id} tier {tier_id} reuses target_id {target_id}."
+                    )
+                if target_id in seen_target_ids:
+                    raise LLMRegistryError(
+                        f"Profile {profile_id} reuses target_id {target_id} across multiple tiers."
+                    )
+                provider = providers.get(target_id)
+                if provider is None:
+                    raise LLMRegistryError(
+                        f"Profile {profile_id} refers to unknown target/provider {target_id} in tier {tier_id}."
+                    )
+                _resolve_profile_model_for_provider(
+                    provider,
+                    requested_model=requested_model,
+                    model_source=model_source,
+                    context=f"Profile {profile_id} tier {tier_id}",
+                )
+                tier_seen_ids.add(target_id)
+                seen_target_ids.add(target_id)
+                ordered_target_ids.append(target_id)
+            tiers.append(
+                LLMTargetTierConfig(
+                    tier_id=tier_id,
+                    target_ids=tuple(ordered_target_ids),
+                    min_required_stable_concurrency=_require_int(
+                        raw_tier,
+                        "min_required_stable_concurrency",
+                        context=f"Profile {profile_id} tier {tier_id}",
+                        default=1,
+                        minimum=1,
+                    ),
+                )
+            )
+        if tiers[0].target_ids[0] != provider_id:
+            raise LLMRegistryError(
+                f"Profile {profile_id} provider_id must match the first target in the first tier."
+            )
+        return tuple(tiers)
+
+    target_ids = [provider_id, *fallback_provider_ids]
+    unique_target_ids: list[str] = []
+    seen_target_ids: set[str] = set()
+    for target_id in target_ids:
+        if target_id in seen_target_ids:
+            continue
+        provider = providers.get(target_id)
+        if provider is None:
+            raise LLMRegistryError(f"Profile {profile_id} refers to unknown provider {target_id}.")
+        _resolve_profile_model_for_provider(
+            provider,
+            requested_model=requested_model,
+            model_source=model_source,
+            context=f"Profile {profile_id}",
+        )
+        seen_target_ids.add(target_id)
+        unique_target_ids.append(target_id)
+    primary_tier = LLMTargetTierConfig(
+        tier_id="primary",
+        target_ids=(provider_id,),
+        min_required_stable_concurrency=1,
+    )
+    if len(unique_target_ids) == 1:
+        return (primary_tier,)
+    return (
+        primary_tier,
+        LLMTargetTierConfig(
+            tier_id="fallback",
+            target_ids=tuple(unique_target_ids[1:]),
+            min_required_stable_concurrency=1,
+        ),
+    )
+
+
 def _parse_profile(entry: Any, providers: dict[str, LLMProviderConfig]) -> LLMProfileConfig:
     if not isinstance(entry, dict):
         raise LLMRegistryError("Profile entry must be an object.")
@@ -668,24 +938,40 @@ def _parse_profile(entry: Any, providers: dict[str, LLMProviderConfig]) -> LLMPr
         env_fallbacks = ("LLM_MODEL",)
 
     model = _resolve_model(entry, env_fallbacks=env_fallbacks)
-    if "*" not in provider.supported_models and model not in provider.supported_models:
-        raise LLMRegistryError(
-            f"Profile {profile_id} requests model {model}, which is not listed in provider {provider_id} supported_models."
-        )
+    raw_model_source = _clean_str(entry.get("model_source")).lower() or "profile"
+    if raw_model_source not in _ALLOWED_PROFILE_MODEL_SOURCES:
+        raise LLMRegistryError(f"Profile {profile_id} has unsupported model_source: {raw_model_source}")
+    model_source: LLMProfileModelSource = raw_model_source  # type: ignore[assignment]
+    _resolve_profile_model_for_provider(
+        provider,
+        requested_model=model,
+        model_source=model_source,
+        context=f"Profile {profile_id}",
+    )
 
-    raw_fallback_provider_ids = entry.get("fallback_provider_ids", [])
-    if raw_fallback_provider_ids is None:
-        raw_fallback_provider_ids = []
-    if not isinstance(raw_fallback_provider_ids, list):
-        raise LLMRegistryError(f"Profile {profile_id} fallback_provider_ids must be a list.")
     fallback_provider_ids = tuple(
-        item for item in (_clean_str(item) for item in raw_fallback_provider_ids) if item
+        _clean_str_list(entry.get("fallback_provider_ids"), context=f"Profile {profile_id} fallback_provider_ids")
     )
     for fallback_provider_id in fallback_provider_ids:
         if fallback_provider_id not in providers:
             raise LLMRegistryError(
                 f"Profile {profile_id} refers to unknown fallback provider {fallback_provider_id}."
             )
+
+    target_tiers = _parse_target_tiers(
+        entry,
+        profile_id=profile_id,
+        providers=providers,
+        provider_id=provider_id,
+        fallback_provider_ids=fallback_provider_ids,
+        requested_model=model,
+        model_source=model_source,
+    )
+    flattened_target_ids: list[str] = []
+    for tier in target_tiers:
+        for target_id in tier.target_ids:
+            if target_id != provider_id and target_id not in flattened_target_ids:
+                flattened_target_ids.append(target_id)
 
     quota_retry_attempts_default = _default_quota_retry_attempts(profile_id)
     quota_wait_budget_seconds_default = _default_quota_wait_budget_seconds(profile_id)
@@ -695,8 +981,10 @@ def _parse_profile(entry: Any, providers: dict[str, LLMProviderConfig]) -> LLMPr
     return LLMProfileConfig(
         profile_id=profile_id,
         provider_id=provider_id,
-        fallback_provider_ids=fallback_provider_ids,
-        allow_cross_provider_failover=bool(entry.get("allow_cross_provider_failover", False)),
+        fallback_provider_ids=tuple(flattened_target_ids),
+        allow_cross_provider_failover=bool(entry.get("allow_cross_provider_failover", bool(flattened_target_ids))),
+        model_source=model_source,
+        target_tiers=target_tiers,
         model=model,
         temperature=float(entry.get("temperature", 0.2) or 0.2),
         max_output_tokens=max(1, int(entry.get("max_output_tokens", 4096) or 4096)),
@@ -798,6 +1086,7 @@ __all__ = [
     "DEFAULT_RUNTIME_PROFILE_ID",
     "LLMKeySlot",
     "LLMProfileConfig",
+    "LLMTargetTierConfig",
     "LLMProviderConfig",
     "LLMProviderContract",
     "LLMRegistry",

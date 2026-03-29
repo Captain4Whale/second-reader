@@ -1034,3 +1034,29 @@ Update when: a major product or engineering decision is made, reversed, or becom
 - `reading-companion-backend/config/llm_registry.minimax_legacy_compatible.json`
 - `README.md`
 - `docs/backend-reader-evaluation.md`
+
+## Entry 39
+**ID**: DEC-042
+**Status**: active
+
+**Decision / Inflection**: Make profile routing tier-based and scope-pinned so target selection stays universal while each run keeps one consistent model/provider.
+
+**Period**: Late March 2026, after the project had already moved local setup to named targets plus profile bindings and needed a cleaner answer to “primary now, backup only when headroom is not enough.”
+
+**Problem**: The target-first editing model solved where operators write URLs, model names, and keys, but profile routing still leaned too much on one selected target plus fallback semantics that looked provider-specific and could still be interpreted as call-by-call failover. That was not a good fit for evaluation and dataset-review quality, where one scope should keep one model identity, and it was not a good long-term fit for future non-MiniMax primary/backup combinations.
+
+**Alternatives considered**: Keep one hardcoded primary target plus provider-style fallback fields, move target switching into each individual call, or redesign the gateway around a brand-new planner layer instead of refining the existing profile-binding model.
+
+**Why this path won**: Ordered target tiers keep the operator surface simple and universal. One profile can now express “prefer this pool, then that pool” without baking MiniMax-specific rules into the shared platform. Scope-start target selection preserves semantic consistency because runtime, packet review, and evaluation scopes now choose one concrete target up front and stay pinned to it, while same-target key-slot failover remains available inside that chosen target.
+
+**What changed in the system**: `llm_profile_bindings.local.json` now supports ordered `target_tiers`, legacy `target_id` / `fallback_target_ids` compile into tiers for compatibility, and the shared gateway resolves one concrete target when an invocation scope starts. The gateway records the selected target/tier plus override reason in traces, supports temporary operator pins with `LLM_FORCE_TARGET_ID` and `LLM_FORCE_TIER_ID`, and only considers backup tiers when a new scope begins or when manual overrides request them. The current three shared profiles now all follow the same two-tier policy: prefer `MiniMax-M2.7-highspeed`, then fall back to `MiniMax-M2.7` when the primary tier cannot carry the required stable concurrency or is under quota pressure.
+
+**Why it matters later**: Future contributors will otherwise see tier metadata, pinned-target trace fields, and override env vars without understanding why the project did not keep simpler per-call fallback. This entry records that the platform intentionally separates two concerns: within-target key failover can happen during a run, but cross-target model/provider choice is a scope-start decision so review and evaluation semantics stay stable.
+
+**Primary evidence**:
+- `reading-companion-backend/src/reading_runtime/llm_registry.py`
+- `reading-companion-backend/src/reading_runtime/llm_gateway.py`
+- `reading-companion-backend/tests/test_llm_gateway.py`
+- `reading-companion-backend/config/llm_profile_bindings.local.example.json`
+- `README.md`
+- `docs/backend-reader-evaluation.md`

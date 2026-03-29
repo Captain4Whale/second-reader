@@ -76,6 +76,18 @@ def get_llm_profile_bindings_json() -> str:
     return os.getenv("LLM_PROFILE_BINDINGS_JSON", "").strip()
 
 
+def get_llm_force_target_id() -> str:
+    """Return the optional process-wide forced target id."""
+
+    return os.getenv("LLM_FORCE_TARGET_ID", "").strip()
+
+
+def get_llm_force_tier_id() -> str:
+    """Return the optional process-wide forced tier id."""
+
+    return os.getenv("LLM_FORCE_TIER_ID", "").strip()
+
+
 def _env_int(name: str, default: int, *, minimum: int = 1) -> int:
     """Parse one integer env var with a lower bound fallback."""
     raw = os.getenv(name, "").strip()
