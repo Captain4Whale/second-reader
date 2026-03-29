@@ -29,7 +29,9 @@ Update when: status changes, blockers appear, or phases complete.
       - retry-2 improved the English split materially but did not fully close it:
         - `local_impact` moved from `0/4` win-or-tie to `2/4` win-or-tie
         - `system_regression` moved from `2/4` wins to `3/4` wins
-      - the next bounded narrative/reference-heavy Phase 4 repair is now landed in code and unit-tested, but the focused round-3 two-case rerun is still waiting on provider quota headroom after March 28 smoke attempts hit `429` rate limits before producing trustworthy comparison evidence
+      - the next bounded narrative/reference-heavy Phase 4 repair is now landed in code and unit-tested, and the detached two-case rerun completed after the malformed-JSON recovery patch, case-isolation repair, and launcher hardening
+      - that detached rerun was launched in evidence mode with `--judge-mode none` to validate harness stability rather than to produce final judged comparison evidence
+      - a judged rerun over the same two cases remains optional follow-up if we want decision-usable mechanism comparison evidence after the cleanup passes
     - balanced benchmark promotion from the modern private-library `v2` supplement remains mid-hardening rather than ready for formal benchmark promotion:
       - the cleanup orchestrator is now completed, the round-2 promotion draft is landed, and the first narrow English rescue pass is archived
       - the explicit decision was `hold_for_backlog_rescue`, and the rescue pass moved the English excerpt lane to `7` `reviewed_active`
@@ -843,13 +845,23 @@ Update when: status changes, blockers appear, or phases complete.
 - Verified the repair slice locally with focused node tests and compile checks:
   - `cd /Users/baiweijiang/Documents/Projects/reading-companion/reading-companion-backend && .venv/bin/python -m pytest tests/test_attentional_v2_nodes.py -q`
   - `cd /Users/baiweijiang/Documents/Projects/reading-companion/reading-companion-backend && python3 -m py_compile src/attentional_v2/nodes.py src/attentional_v2/prompts.py`
-- Attempted the focused round-3 two-case rerun, but do not treat the new smoke run directories as authoritative benchmark evidence:
+- The earlier smoke attempts remain non-authoritative benchmark evidence:
   - attempted run ids:
     - `attentional_v2_vs_iterator_v1_chapter_core_en_round3_narrative_reference_repair_smoke`
     - `attentional_v2_vs_iterator_v1_chapter_core_en_round3_narrative_reference_repair_smoke_serial`
   - stop reason:
     - provider `429` / quota pressure during mechanism execution
-    - the retry produced partial artifacts and fallback events instead of a trustworthy completed comparison
+    - the retries produced partial artifacts and fallback events instead of a trustworthy completed comparison
+- The detached evidence rerun completed successfully and validated the harness repairs:
+  - run id:
+    - `attentional_v2_vs_iterator_v1_chapter_core_en_round3_narrative_reference_repair_parallel_caseiso_detached_20260329_125043`
+  - command note:
+    - launched with `--judge-mode none` so the run would answer the narrow operational question first: can the repaired launcher plus repaired per-case isolation complete both cases cleanly and package their outputs correctly
+  - verified outcome:
+    - registry job `bgjob_en_chapter_core_rerun_round3_parallel_caseiso_detached_20260329_125043` finished with `status = completed` and `exit_code = 0`
+    - both `up_from_slavery_public_en__10` and `walden_205_en__10` now point at their own isolated output directories
+    - the summary artifact reports placeholder `tie` results with `judge_unavailable`, so it must not be treated as judged benchmark evidence
 - Immediate next move:
-  - retry the focused two-case comparison once provider quota headroom is available again
   - keep the dataset-growth decision human-owned; do not treat the bounded repair as automatic permission to reopen promotion
+  - prioritize the next English cleanup pass on the recovered live local-only dataset
+  - run a judged two-case rerun later if we want actual mechanism-comparison evidence from this repaired slice

@@ -76,6 +76,9 @@ Use `docs/backend-reading-mechanism.md` for shared mechanism-platform boundaries
 
 ## Parallel Eval Execution Rule
 - Evaluation throughput may improve by parallelizing independent work, but parallelism must not change what is being judged.
+- When offline lanes are isolated and parallelism does not change the judgment semantics, prefer running them in parallel rather than serializing them by habit.
+- Unnecessary serialization is discouraged for long-running dataset-building, cleanup, and evaluation work.
+  - prefer sequencing only when there is a true dependency, a shared destructive write, or a decision-bearing quality risk
 - Safe parallel evaluation examples include:
   - running different mechanisms for the same case in isolated processes and isolated output directories
   - running independent judge scopes over the same completed artifacts
@@ -85,6 +88,7 @@ Use `docs/backend-reading-mechanism.md` for shared mechanism-platform boundaries
 - Same-key parallel LLM usage is allowed when the configured provider and profile concurrency support it.
   - multiple API keys are not required for basic parallelism
   - extra keys mainly help with throughput headroom, failover, or rate-limit resilience
+- When multiple heavy jobs share one provider/profile budget, set explicit per-job worker caps instead of letting each job assume it owns the full shared budget.
 - New scaling work should target the shared `src/reading_runtime/` LLM registry and gateway layer rather than adding new mechanism-local provider clients.
 - Structured registry configuration is preferred over legacy environment compatibility when tuning concurrency, key pools, or failover because it makes those choices explicit and reviewable.
   - the recommended local operator surface is now the split target catalog plus profile-binding pair under `reading-companion-backend/config/llm_targets.local.json` and `reading-companion-backend/config/llm_profile_bindings.local.json`
@@ -95,6 +99,9 @@ Use `docs/backend-reading-mechanism.md` for shared mechanism-platform boundaries
 - New eval/review runners should default to shared-policy worker counts instead of hardcoded local worker limits.
   - case-level fanout is preferred when cases are independent
   - deterministic artifact ordering must still be preserved in final summaries and reports
+- Global derived artifacts should be coordinated explicitly during concurrent work.
+  - packet-local and run-local artifacts should stay owned by each job
+  - shared summaries should usually be refreshed once after concurrent imports or job completions finish
 - The shared gateway now owns adaptive same-key concurrency for new processes.
   - the provider-wide gate starts from a configured initial limit, backs off on sustained timeout/rate-limit or malformed-response pressure, and recovers slowly after clean windows
   - profile-level default worker sizing should follow the current stable shared budget rather than guessing a fixed number like `1` or `2`

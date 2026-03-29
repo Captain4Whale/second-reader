@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-03-29T04:52:25Z`
+Last updated: `2026-03-29T06:55:56Z`
 
 ## Status Values
 - `active`
@@ -25,7 +25,7 @@ Last updated: `2026-03-29T04:52:25Z`
 - Lane: `dataset_growth`
 - Priority: `high`
 - Detail: `docs/implementation/new-reading-mechanism/private-library-promotion-round2.md`
-- Next: work from the recovered live local-only datasets, disposition the remaining `9` English and `3` Chinese open cases, and prepare a human-owned post-recovery gate review without reopening promotion or freezing a reviewed slice automatically
+- Next: run the English follow-up cleanup packet lifecycle first, then the Chinese follow-up cleanup packet lifecycle, then prepare a human-owned post-cleanup gate review without reopening promotion or freezing a reviewed slice automatically
 - Jobs: none
 
 ### `TASK-MECH-EN-RERUN` — Run the focused English round-3 narrative/reference rerun
@@ -33,9 +33,8 @@ Last updated: `2026-03-29T04:52:25Z`
 - Lane: `mechanism_eval`
 - Priority: `high`
 - Detail: `docs/implementation/new-reading-mechanism/execution-tracker.md`
-- Next: monitor the running `bgjob_en_chapter_core_rerun_round3_parallel_caseiso_detached_20260329_125043` rerun after the malformed-JSON repair, case-isolation repair, and detached-launcher fix, then compare its outputs against the prior failed `bgjob_en_chapter_core_rerun_round3_parallel_20260329` artifacts
-- Jobs:
-  - `bgjob_en_chapter_core_rerun_round3_parallel_caseiso_detached_20260329_125043`
+- Next: inspect the completed evidence-only rerun after the malformed-JSON repair, case-isolation repair, and detached-launcher fix; keep its placeholder `tie: 2` result non-decision-bearing because it used `--judge-mode none`; relaunch the same two-case slice in judge mode only if actual comparison evidence is needed
+- Jobs: none
 
 ## Queued
 

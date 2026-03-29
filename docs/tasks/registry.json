@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-03-29T04:52:25Z",
+  "updated_at": "2026-03-29T06:55:56Z",
   "tasks": [
     {
       "id": "TASK-MECH-EN-RERUN",
@@ -19,24 +19,24 @@
         "DEC-015",
         "DEC-021"
       ],
-      "job_refs": [
-        "bgjob_en_chapter_core_rerun_round3_parallel_caseiso_detached_20260329_125043"
-      ],
+      "job_refs": [],
       "acceptance_ref": "docs/implementation/new-reading-mechanism/execution-tracker.md",
-      "next_action": "Monitor the running bgjob_en_chapter_core_rerun_round3_parallel_caseiso_detached_20260329_125043 rerun after the malformed-JSON repair, case-isolation repair, and detached-launcher fix, then compare its outputs against the prior failed bgjob_en_chapter_core_rerun_round3_parallel_20260329 artifacts.",
+      "next_action": "Inspect the completed evidence-only rerun after the malformed-JSON repair, case-isolation repair, and detached-launcher fix; keep its placeholder tie result non-decision-bearing because it used --judge-mode none; relaunch the same two-case slice in judge mode only if actual comparison evidence is needed.",
       "blocked_by": [],
       "evidence_refs": [
         "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_vs_iterator_v1_chapter_core_en_round2_microselectivity_retry2_20260328/summary/report.md",
         "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_vs_iterator_v1_chapter_core_en_round2_microselectivity_retry2_20260328/summary/aggregate.json",
         "reading-companion-backend/state/job_registry/jobs/bgjob_en_chapter_core_rerun_round3_parallel_caseiso_detached_20260329_125043.json",
         "reading-companion-backend/state/job_registry/logs/bgjob_en_chapter_core_rerun_round3_parallel_caseiso_detached_20260329_125043.log",
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_vs_iterator_v1_chapter_core_en_round3_narrative_reference_repair_parallel_caseiso_detached_20260329_125043/summary/report.md",
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_vs_iterator_v1_chapter_core_en_round3_narrative_reference_repair_parallel_caseiso_detached_20260329_125043/summary/aggregate.json",
         "reading-companion-backend/state/job_registry/jobs/bgjob_en_chapter_core_rerun_round3_parallel_20260329.json",
         "reading-companion-backend/state/job_registry/logs/bgjob_en_chapter_core_rerun_round3_parallel_20260329.log",
         "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_vs_iterator_v1_chapter_core_en_round3_narrative_reference_repair_parallel_20260329/cases/up_from_slavery_public_en__10.json",
         "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_vs_iterator_v1_chapter_core_en_round3_narrative_reference_repair_parallel_20260329/outputs/walden_205_en__10/iterator_v1/_runtime/activity.jsonl",
         "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_vs_iterator_v1_chapter_core_en_round3_narrative_reference_repair_parallel_20260329/bundles/attentional_v2/walden_205_en__10.json"
       ],
-      "last_updated": "2026-03-29T04:52:25Z",
+      "last_updated": "2026-03-29T06:55:56Z",
       "last_updated_by": "codex"
     },
     {
@@ -57,7 +57,7 @@
       ],
       "job_refs": [],
       "acceptance_ref": "docs/implementation/new-reading-mechanism/private-library-promotion-round2.md",
-      "next_action": "Work from the recovered live local-only datasets: disposition the remaining 9 English and 3 Chinese open cases, then prepare a human-owned post-recovery gate review without reopening promotion or freezing a reviewed slice automatically.",
+      "next_action": "Run the English follow-up cleanup packet lifecycle first, then the Chinese follow-up cleanup packet lifecycle, then prepare a human-owned post-cleanup gate review without reopening promotion or freezing a reviewed slice automatically.",
       "blocked_by": [],
       "evidence_refs": [
         "docs/implementation/new-reading-mechanism/private-library-promotion-round2.md",
@@ -68,7 +68,7 @@
         "reading-companion-backend/state/eval_local_datasets/excerpt_cases/attentional_v2_private_library_excerpt_en_v2/cases.jsonl",
         "reading-companion-backend/state/eval_local_datasets/excerpt_cases/attentional_v2_private_library_excerpt_zh_v2/cases.jsonl"
       ],
-      "last_updated": "2026-03-29T03:33:02Z",
+      "last_updated": "2026-03-29T06:55:56Z",
       "last_updated_by": "codex"
     },
     {

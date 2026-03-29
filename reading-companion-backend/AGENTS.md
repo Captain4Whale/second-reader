@@ -36,6 +36,10 @@ Update when: backend-local constraints, recurring pitfalls, or stable implementa
   - Use `state/job_registry/active_jobs.json` and `state/job_registry/active_jobs.md` as the derived operator-facing views for offline long-running work.
   - Register jobs that are expected to run longer than roughly `10-15` minutes.
   - Before starting overlapping long-running work, refresh the registry first with the checker script.
+  - Optimize for efficiency and automation by default when quality, reproducibility, and isolation can still be assured.
+  - Independent offline jobs may be launched concurrently when they use isolated packets, datasets, run dirs, and job records.
+  - The registry refresh is for overlap awareness and coordination, not a default instruction to serialize unrelated work.
+  - If concurrent jobs converge on one shared global summary, schedule one follow-up refresh step after the concurrent jobs finish instead of treating that shared summary as the ownership of multiple parallel jobs.
 - Do not stop at storing findings in docs.
   - After each meaningful evaluation round, investigate what specifically contributed to the result and turn the highest-value findings into a selective implementation plan.
   - Either implement a small number of fitting improvements in the current approved mechanism, or record an explicit defer reason.
