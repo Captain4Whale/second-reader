@@ -18,6 +18,7 @@ from src.parsers import parse_ebook
 from src.reading_core import BookDocument
 
 from . import artifacts as runtime_artifacts
+from .output_dir_overrides import get_output_dir_override
 
 
 @dataclass(frozen=True)
@@ -50,6 +51,9 @@ def resolve_output_dir(
 ) -> Path:
     """Resolve the output directory for one canonical book substrate."""
 
+    override = get_output_dir_override()
+    if override is not None:
+        return override
     slug = slugify(book_title or book_path.stem)
     if output_language != book_language:
         slug = f"{slug}-{output_language}"

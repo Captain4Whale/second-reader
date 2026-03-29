@@ -7,6 +7,8 @@ import contextvars
 import hashlib
 import importlib
 import json
+import ast
+from json import JSONDecodeError
 import re
 import threading
 import time
@@ -202,34 +204,243 @@ def response_text(response: Any) -> str:
 def parse_json_payload(text: str, default: Any) -> Any:
     """Parse the most likely JSON object or array from model output."""
 
-    stripped = text.strip()
+    stripped = text.strip().lstrip("\ufeff")
+    if not stripped:
+        return default
 
-    fenced_match = re.search(
-        r"```json\s*(\{[\s\S]*?\}|\[[\s\S]*?\])\s*```",
-        stripped,
-    )
-    if fenced_match:
-        try:
-            return json.loads(fenced_match.group(1))
-        except json.JSONDecodeError:
-            pass
-
-    try:
-        return json.loads(stripped)
-    except json.JSONDecodeError:
-        pass
-
-    for left, right in (("{", "}"), ("[", "]")):
-        start = stripped.find(left)
-        end = stripped.rfind(right)
-        if start == -1 or end == -1 or end <= start:
-            continue
-        try:
-            return json.loads(stripped[start : end + 1])
-        except json.JSONDecodeError:
-            continue
+    for candidate in _json_parse_candidates(stripped):
+        parsed = _parse_json_candidate(candidate)
+        if parsed is not _JSON_MALFORMED:
+            return parsed
 
     return default
+
+
+def _json_parse_candidates(text: str) -> list[str]:
+    candidates: list[str] = []
+    seen: set[str] = set()
+
+    def _add(candidate: str) -> None:
+        cleaned = candidate.strip()
+        if cleaned and cleaned not in seen:
+            seen.add(cleaned)
+            candidates.append(cleaned)
+
+    _add(text)
+    for match in re.finditer(r"```(?:json)?\s*([\s\S]*?)```", text, flags=re.IGNORECASE):
+        _add(match.group(1))
+    for candidate in _iter_balanced_json_candidates(text):
+        _add(candidate)
+    for marker in ("{", "["):
+        start = text.find(marker)
+        if start != -1:
+            _add(text[start:])
+    return candidates
+
+
+def _parse_json_candidate(candidate: str) -> Any:
+    decoder = json.JSONDecoder()
+    attempts = _json_candidate_variants(candidate)
+
+    for attempt in attempts:
+        try:
+            return json.loads(attempt)
+        except JSONDecodeError:
+            pass
+
+        for offset, char in enumerate(attempt):
+            if char not in "{[":
+                continue
+            try:
+                parsed, _end = decoder.raw_decode(attempt[offset:])
+                return parsed
+            except JSONDecodeError:
+                continue
+        try:
+            return ast.literal_eval(_pythonize_json_literals(attempt))
+        except (SyntaxError, ValueError):
+            continue
+
+    return _JSON_MALFORMED
+
+
+def _iter_balanced_json_candidates(text: str) -> list[str]:
+    candidates: list[str] = []
+    for start, char in enumerate(text):
+        if char not in "{[":
+            continue
+        stack = [char]
+        quote: str | None = None
+        escaped = False
+        for end in range(start + 1, len(text)):
+            current = text[end]
+            if quote is not None:
+                if escaped:
+                    escaped = False
+                elif current == "\\":
+                    escaped = True
+                elif current == quote:
+                    quote = None
+                continue
+            if current in {'"', "'"}:
+                quote = current
+                continue
+            if current in "{[":
+                stack.append(current)
+                continue
+            if current not in "}]":
+                continue
+            opener = stack[-1]
+            if (opener, current) not in {("{", "}"), ("[", "]")}:
+                break
+            stack.pop()
+            if not stack:
+                candidates.append(text[start : end + 1].strip())
+                break
+    return candidates
+
+
+def _json_candidate_variants(candidate: str) -> list[str]:
+    stripped = candidate.strip().lstrip("\ufeff")
+    if stripped.lower().startswith("json"):
+        stripped = stripped[4:].lstrip(" \t\r\n:-")
+
+    variants: list[str] = []
+    seen: set[str] = set()
+
+    def _add(value: str) -> None:
+        cleaned = value.strip()
+        if cleaned and cleaned not in seen:
+            seen.add(cleaned)
+            variants.append(cleaned)
+
+    _add(stripped)
+    _add(_strip_json_trailing_commas(stripped))
+    escaped_controls = _escape_controls_in_quoted_strings(stripped)
+    _add(escaped_controls)
+    _add(_strip_json_trailing_commas(escaped_controls))
+    return variants
+
+
+def _strip_json_trailing_commas(text: str) -> str:
+    chars: list[str] = []
+    in_string = False
+    escaped = False
+    index = 0
+
+    while index < len(text):
+        char = text[index]
+        if in_string:
+            chars.append(char)
+            if escaped:
+                escaped = False
+            elif char == "\\":
+                escaped = True
+            elif char == '"':
+                in_string = False
+            index += 1
+            continue
+
+        if char == '"':
+            in_string = True
+            chars.append(char)
+            index += 1
+            continue
+
+        if char == ",":
+            lookahead = index + 1
+            while lookahead < len(text) and text[lookahead].isspace():
+                lookahead += 1
+            if lookahead < len(text) and text[lookahead] in "}]":
+                index += 1
+                continue
+
+        chars.append(char)
+        index += 1
+
+    return "".join(chars)
+
+
+def _escape_controls_in_quoted_strings(text: str) -> str:
+    chars: list[str] = []
+    quote: str | None = None
+    escaped = False
+
+    for char in text:
+        if quote is None:
+            if char in {'"', "'"}:
+                quote = char
+            chars.append(char)
+            continue
+        if escaped:
+            chars.append(char)
+            escaped = False
+            continue
+        if char == "\\":
+            chars.append(char)
+            escaped = True
+            continue
+        if char == quote:
+            chars.append(char)
+            quote = None
+            continue
+        if char == "\n":
+            chars.append("\\n")
+            continue
+        if char == "\r":
+            chars.append("\\r")
+            continue
+        if char == "\t":
+            chars.append("\\t")
+            continue
+        chars.append(char)
+
+    return "".join(chars)
+
+
+def _pythonize_json_literals(text: str) -> str:
+    replacements = {"true": "True", "false": "False", "null": "None"}
+    chars: list[str] = []
+    quote: str | None = None
+    escaped = False
+    index = 0
+
+    while index < len(text):
+        char = text[index]
+        if quote is not None:
+            chars.append(char)
+            if escaped:
+                escaped = False
+            elif char == "\\":
+                escaped = True
+            elif char == quote:
+                quote = None
+            index += 1
+            continue
+        if char in {'"', "'"}:
+            quote = char
+            chars.append(char)
+            index += 1
+            continue
+        matched = False
+        for source, replacement in replacements.items():
+            if text.startswith(source, index):
+                left_ok = index == 0 or not (text[index - 1].isalnum() or text[index - 1] == "_")
+                right_index = index + len(source)
+                right_ok = right_index >= len(text) or not (
+                    text[right_index].isalnum() or text[right_index] == "_"
+                )
+                if left_ok and right_ok:
+                    chars.append(replacement)
+                    index = right_index
+                    matched = True
+                    break
+        if matched:
+            continue
+        chars.append(char)
+        index += 1
+
+    return "".join(chars)
 
 
 def _quota_state_dir() -> Path:
@@ -1289,6 +1500,8 @@ def _invoke_response(
         "problem_code": final_problem_code or "network_blocked",
         "quota_wait_ms_total": quota_wait_ms_total,
         "quota_retry_attempt_count": quota_retry_attempt_count,
+        "error_type": last_error.__class__.__name__ if last_error is not None else "",
+        "error_message": str(last_error or ""),
         "fallback": {
             "used_failover": len(attempts) > 1,
             "providers_tried": [item["provider_id"] for item in attempts],

@@ -8,6 +8,7 @@ import shutil
 from pathlib import Path
 
 from src.reading_runtime import artifacts as runtime_artifacts
+from src.reading_runtime.output_dir_overrides import get_output_dir_override
 
 from .models import BookStructure, StructureChapter
 
@@ -99,6 +100,9 @@ def resolve_output_dir(
     output_language: str,
 ) -> Path:
     """Resolve the output directory for a given book."""
+    override = get_output_dir_override()
+    if override is not None:
+        return override
     slug = slugify(book_title or book_path.stem)
     if output_language != book_language:
         slug = f"{slug}-{output_language}"

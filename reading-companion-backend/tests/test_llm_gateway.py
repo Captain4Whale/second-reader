@@ -28,6 +28,7 @@ from src.reading_runtime.llm_gateway import (
     get_llm_provider_stable_concurrency,
     invoke_json,
     llm_invocation_scope,
+    parse_json_payload,
     runtime_trace_context,
 )
 from src.reading_runtime.llm_registry import (
@@ -115,7 +116,7 @@ class _SleepingRecordingAdapter(_RecordingAdapter):
 
 
 class _SequencedRecordingAdapter(_RecordingAdapter):
-    def __init__(self, actions: list[str], *, response_content: str | None = None):
+    def __init__(self, actions: list[Any], *, response_content: str | None = None):
         super().__init__(response_content=response_content)
         self._actions = list(actions)
 
@@ -145,6 +146,10 @@ class _SequencedRecordingAdapter(_RecordingAdapter):
             raise RuntimeError("invalid api key")
         if action == "timeout":
             raise RuntimeError("timed out")
+        if action == "malformed":
+            return _FakeResponse("not json at all")
+        if isinstance(action, tuple) and len(action) == 2 and action[0] == "response":
+            return _FakeResponse(str(action[1]))
         payload = self.response_content.replace("__API_KEY__", api_key)
         return _FakeResponse(payload)
 
@@ -319,6 +324,30 @@ def _two_minimax_targets(
 
 def _read_jsonl(path: Path) -> list[dict[str, Any]]:
     return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
+
+
+def test_parse_json_payload_recovers_double_quoted_strings_with_literal_newlines_and_trailing_commas():
+    payload = """
+    {
+      "ok": true,
+      "note": "line one
+line two",
+    }
+    """
+
+    assert parse_json_payload(payload, {}) == {
+        "ok": True,
+        "note": "line one\nline two",
+    }
+
+
+def test_parse_json_payload_recovers_python_like_single_quoted_payloads():
+    payload = """{'ok': true, 'reason': 'kept',}"""
+
+    assert parse_json_payload(payload, {}) == {
+        "ok": True,
+        "reason": "kept",
+    }
 
 
 def test_registry_parses_target_bindings_and_direct_keys(monkeypatch: pytest.MonkeyPatch):
@@ -1174,6 +1203,44 @@ def test_legacy_cross_model_fallback_is_rejected(monkeypatch: pytest.MonkeyPatch
         get_llm_registry()
 
 
+def test_standard_trace_records_malformed_json_error_details(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    _set_targets_and_bindings(
+        monkeypatch,
+        targets={
+            "targets": [
+                {
+                    "target_id": "minimax_runtime",
+                    "contract": "anthropic",
+                    "base_url": "https://api.minimaxi.com/anthropic",
+                    "model": "MiniMax-M2.7-highspeed",
+                    "credentials": [{"credential_id": "primary", "api_key": "runtime-key"}],
+                    "retry_attempts": 1,
+                }
+            ]
+        },
+        bindings=_required_bindings("minimax_runtime"),
+    )
+    adapter = _RecordingAdapter(response_content="not valid json")
+    monkeypatch.setitem(CONTRACT_ADAPTERS, "anthropic", adapter)
+
+    output_dir = tmp_path / "output" / "malformed-json"
+    with llm_invocation_scope(
+        profile_id=DEFAULT_RUNTIME_PROFILE_ID,
+        trace_context=runtime_trace_context(output_dir, mechanism_key="iterator_v1"),
+    ):
+        with pytest.raises(ReaderLLMError, match="malformed json payload"):
+            invoke_json("system", "user", {})
+
+    standard_rows = _read_jsonl(runtime_artifacts.llm_standard_trace_file(output_dir))
+    assert standard_rows[-1]["status"] == "error"
+    assert standard_rows[-1]["problem_code"] == "network_blocked"
+    assert standard_rows[-1]["error_type"] == "RuntimeError"
+    assert standard_rows[-1]["error_message"] == "malformed json payload"
+
+
 def test_eval_trace_context_writes_eval_run_artifacts(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setenv("PRIMARY_KEY", "judge-key")
     _set_registry(
@@ -1243,6 +1310,67 @@ def test_legacy_wrapper_uses_shared_gateway(monkeypatch: pytest.MonkeyPatch):
     assert payload["ok"] is True
     assert adapter.calls[0]["api_key"] == "legacy-key"
     assert adapter.calls[0]["model"] == "claude-opus-4-6"
+
+
+def test_parse_json_payload_recovers_from_trailing_commas() -> None:
+    payload = parse_json_payload('{"ok": true, "items": [1, 2,],}', {})
+
+    assert payload == {"ok": True, "items": [1, 2]}
+
+
+def test_parse_json_payload_recovers_when_prose_after_json_contains_braces() -> None:
+    payload = parse_json_payload('{"ok": true}\nNote: keep {diagnostic} prose outside the payload.', {})
+
+    assert payload == {"ok": True}
+
+
+def test_invoke_json_retries_after_unrecoverable_malformed_payload(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    monkeypatch.setenv("PRIMARY_KEY", "runtime-key")
+    monkeypatch.setenv("BACKEND_RUNTIME_ROOT", str(tmp_path))
+    _set_registry(
+        monkeypatch,
+        {
+            "providers": [
+                {
+                    "provider_id": "anthropic_primary",
+                    "contract": "anthropic",
+                    "api_key_env": "PRIMARY_KEY",
+                    "supported_models": ["claude-opus-4-6"],
+                }
+            ],
+            "profiles": [
+                {
+                    "profile_id": DEFAULT_RUNTIME_PROFILE_ID,
+                    "provider_id": "anthropic_primary",
+                    "model": "claude-opus-4-6",
+                    "retry_attempts": 2,
+                },
+                {
+                    "profile_id": DEFAULT_DATASET_REVIEW_PROFILE_ID,
+                    "provider_id": "anthropic_primary",
+                    "model": "claude-opus-4-6",
+                },
+                {
+                    "profile_id": DEFAULT_EVAL_JUDGE_PROFILE_ID,
+                    "provider_id": "anthropic_primary",
+                    "model": "claude-opus-4-6",
+                },
+            ],
+        },
+    )
+    adapter = _SequencedRecordingAdapter(
+        ["malformed", ("response", '{"ok": true, "attempt": 2}')],
+    )
+    monkeypatch.setitem(CONTRACT_ADAPTERS, "anthropic", adapter)
+
+    with llm_invocation_scope(profile_id=DEFAULT_RUNTIME_PROFILE_ID):
+        payload = invoke_json("system", "user", {})
+
+    assert payload == {"ok": True, "attempt": 2}
+    assert len(adapter.calls) == 2
 
 
 def test_attentional_node_uses_shared_runtime_trace(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):

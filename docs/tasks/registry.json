@@ -1,11 +1,11 @@
 {
   "version": 1,
-  "updated_at": "2026-03-28T12:49:23Z",
+  "updated_at": "2026-03-29T04:20:09Z",
   "tasks": [
     {
       "id": "TASK-MECH-EN-RERUN",
-      "title": "Review English chapter-core retry-2 outputs and convert them into a bounded implementation queue",
-      "status": "done",
+      "title": "Run the focused English round-3 narrative/reference rerun",
+      "status": "active",
       "lane": "mechanism_eval",
       "priority": "high",
       "detail_ref": "docs/implementation/new-reading-mechanism/execution-tracker.md",
@@ -19,16 +19,24 @@
         "DEC-015",
         "DEC-021"
       ],
-      "job_refs": [],
+      "job_refs": [
+        "bgjob_20260329_041914_5de2c4c4"
+      ],
       "acceptance_ref": "docs/implementation/new-reading-mechanism/execution-tracker.md",
-      "next_action": "Retry the focused round-3 up_from_slavery_public_en__10 / walden_205_en__10 comparison when provider quota headroom returns; the bounded Phase-4 repair is already landed in code and unit-tested.",
+      "next_action": "Monitor the running bgjob_20260329_041914_5de2c4c4 rerun after the malformed-JSON and case-isolation repairs, then compare its outputs against the prior failed bgjob_en_chapter_core_rerun_round3_parallel_20260329 artifacts.",
       "blocked_by": [],
       "evidence_refs": [
         "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_vs_iterator_v1_chapter_core_en_round2_microselectivity_retry2_20260328/summary/report.md",
         "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_vs_iterator_v1_chapter_core_en_round2_microselectivity_retry2_20260328/summary/aggregate.json",
-        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_vs_iterator_v1_chapter_core_en_round1_20260326/"
+        "reading-companion-backend/state/job_registry/jobs/bgjob_20260329_041914_5de2c4c4.json",
+        "reading-companion-backend/state/job_registry/logs/bgjob_20260329_041914_5de2c4c4.log",
+        "reading-companion-backend/state/job_registry/jobs/bgjob_en_chapter_core_rerun_round3_parallel_20260329.json",
+        "reading-companion-backend/state/job_registry/logs/bgjob_en_chapter_core_rerun_round3_parallel_20260329.log",
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_vs_iterator_v1_chapter_core_en_round3_narrative_reference_repair_parallel_20260329/cases/up_from_slavery_public_en__10.json",
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_vs_iterator_v1_chapter_core_en_round3_narrative_reference_repair_parallel_20260329/outputs/walden_205_en__10/iterator_v1/_runtime/activity.jsonl",
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_vs_iterator_v1_chapter_core_en_round3_narrative_reference_repair_parallel_20260329/bundles/attentional_v2/walden_205_en__10.json"
       ],
-      "last_updated": "2026-03-28T12:49:23Z",
+      "last_updated": "2026-03-29T04:20:09Z",
       "last_updated_by": "codex"
     },
     {
@@ -49,19 +57,18 @@
       ],
       "job_refs": [],
       "acceptance_ref": "docs/implementation/new-reading-mechanism/private-library-promotion-round2.md",
-      "next_action": "Use the archived full English cleanup packet and the live English 7 reviewed_active / 3 needs_revision / 6 needs_replacement counts to decide whether formal curated promotion can reopen now or should stay paused.",
-      "blocked_by": [
-      ],
+      "next_action": "Work from the recovered live local-only datasets: disposition the remaining 9 English and 3 Chinese open cases, then prepare a human-owned post-recovery gate review without reopening promotion or freezing a reviewed slice automatically.",
+      "blocked_by": [],
       "evidence_refs": [
         "docs/implementation/new-reading-mechanism/private-library-promotion-round2.md",
         "docs/implementation/new-reading-mechanism/private-library-promotion-round2.json",
-        "reading-companion-backend/eval/review_packets/archive/attentional_v2_private_library_backlog_rescue_en_round1/",
-        "reading-companion-backend/eval/review_packets/archive/attentional_v2_private_library_cleanup_en_round_next/",
+        "reading-companion-backend/eval/review_packets/archive/attentional_v2_private_library_cleanup_en_recovery_20260329/dataset_review_pipeline_summary.json",
+        "reading-companion-backend/eval/review_packets/archive/attentional_v2_private_library_cleanup_zh_recovery_20260329/dataset_review_pipeline_summary.json",
         "reading-companion-backend/eval/review_packets/review_queue_summary.json",
-        "reading-companion-backend/eval/review_packets/archive/attentional_v2_private_library_cleanup_round3_en_ready/",
-        "reading-companion-backend/eval/review_packets/archive/attentional_v2_private_library_cleanup_round3_zh_ready/"
+        "reading-companion-backend/state/eval_local_datasets/excerpt_cases/attentional_v2_private_library_excerpt_en_v2/cases.jsonl",
+        "reading-companion-backend/state/eval_local_datasets/excerpt_cases/attentional_v2_private_library_excerpt_zh_v2/cases.jsonl"
       ],
-      "last_updated": "2026-03-28T12:49:23Z",
+      "last_updated": "2026-03-29T03:33:02Z",
       "last_updated_by": "codex"
     },
     {
@@ -81,13 +88,13 @@
       ],
       "job_refs": [],
       "acceptance_ref": "docs/implementation/new-reading-mechanism/private-library-promotion-round2.md",
-      "next_action": "Apply the recorded hold_for_backlog_rescue decision instead of materializing a curated promotion packet immediately.",
+      "next_action": "Keep the recorded hold_for_backlog_rescue decision in force until a human explicitly reopens the post-recovery gate discussion.",
       "blocked_by": [],
       "evidence_refs": [
         "docs/implementation/new-reading-mechanism/private-library-promotion-round2.md",
         "docs/implementation/new-reading-mechanism/private-library-promotion-round2.json"
       ],
-      "last_updated": "2026-03-28T07:33:36Z",
+      "last_updated": "2026-03-29T03:33:02Z",
       "last_updated_by": "codex"
     },
     {
@@ -108,14 +115,15 @@
       ],
       "job_refs": [],
       "acceptance_ref": "docs/implementation/new-reading-mechanism/execution-tracker.md",
-      "next_action": "Launch the remaining runtime viability gates once the post-rescue benchmark gate decision is explicit.",
+      "next_action": "Launch the remaining runtime-viability gates only after the failed rerun is dispositioned and the post-recovery benchmark gate decision is explicit.",
       "blocked_by": [
-        "TASK-BENCH-BACKLOG-RESCUE"
+        "TASK-BENCH-BACKLOG-RESCUE",
+        "TASK-MECH-EN-RERUN"
       ],
       "evidence_refs": [
         "docs/implementation/new-reading-mechanism/execution-tracker.md"
       ],
-      "last_updated": "2026-03-28T08:18:41Z",
+      "last_updated": "2026-03-29T03:33:02Z",
       "last_updated_by": "codex"
     },
     {
@@ -197,14 +205,15 @@
       ],
       "job_refs": [],
       "acceptance_ref": "docs/implementation/new-reading-mechanism/private-library-promotion-round2.md",
-      "next_action": "Use the landed round-2 draft as the source of truth for the next dataset-growth move.",
+      "next_action": "Use the landed round-2 draft plus the March 29 recovery summaries as the source of truth for the next dataset-growth move.",
       "blocked_by": [],
       "evidence_refs": [
         "docs/implementation/new-reading-mechanism/private-library-promotion-round2.md",
         "docs/implementation/new-reading-mechanism/private-library-promotion-round2.json",
-        "reading-companion-backend/state/job_registry/history_jobs.jsonl"
+        "reading-companion-backend/eval/review_packets/archive/attentional_v2_private_library_cleanup_en_recovery_20260329/dataset_review_pipeline_summary.json",
+        "reading-companion-backend/eval/review_packets/archive/attentional_v2_private_library_cleanup_zh_recovery_20260329/dataset_review_pipeline_summary.json"
       ],
-      "last_updated": "2026-03-28T07:33:36Z",
+      "last_updated": "2026-03-29T03:33:02Z",
       "last_updated_by": "codex"
     },
     {

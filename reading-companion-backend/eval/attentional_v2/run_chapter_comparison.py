@@ -10,13 +10,12 @@ import sys
 import tempfile
 from collections import Counter, defaultdict
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from contextlib import ExitStack, contextmanager
+from contextlib import contextmanager
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from statistics import mean
 from typing import Any
-from unittest.mock import patch
 
 from eval.common.taxonomy import (
     DETERMINISTIC_METRICS,
@@ -34,6 +33,7 @@ from src.reading_mechanisms.attentional_v2 import AttentionalV2Mechanism
 from src.reading_mechanisms.iterator_v1 import IteratorV1Mechanism
 from src.reading_runtime.job_concurrency import resolve_worker_policy, submit_inherited_context
 from src.reading_runtime.llm_registry import DEFAULT_EVAL_JUDGE_PROFILE_ID, DEFAULT_RUNTIME_PROFILE_ID
+from src.reading_runtime.output_dir_overrides import override_output_dir
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -342,14 +342,7 @@ def _summarize_bundle(bundle: dict[str, Any]) -> dict[str, Any]:
 
 @contextmanager
 def _isolated_output_dir(output_dir: Path):
-    import src.iterator_reader.parse as iterator_parse_module
-    import src.iterator_reader.storage as iterator_storage_module
-    import src.reading_runtime.provisioning as provisioning_module
-
-    with ExitStack() as stack:
-        stack.enter_context(patch.object(provisioning_module, "resolve_output_dir", lambda *_args, **_kwargs: output_dir))
-        stack.enter_context(patch.object(iterator_storage_module, "resolve_output_dir", lambda *_args, **_kwargs: output_dir))
-        stack.enter_context(patch.object(iterator_parse_module, "resolve_output_dir", lambda *_args, **_kwargs: output_dir))
+    with override_output_dir(output_dir):
         yield
 
 
@@ -413,6 +406,32 @@ def _run_mechanism_worker(payload_path: Path, result_path: Path) -> int:
     return 0
 
 
+def _run_case_worker(payload_path: Path, result_path: Path) -> int:
+    payload = json.loads(payload_path.read_text(encoding="utf-8"))
+    case = ChapterCase(**dict(payload["case"]))
+    source = dict(payload["source"])
+    result = _evaluate_case(
+        case,
+        source=source,
+        run_root=Path(str(payload["run_root"])),
+        judge_mode=str(payload["judge_mode"]),
+        mechanism_execution_mode=str(payload["mechanism_execution_mode"]),
+        judge_execution_mode=str(payload["judge_execution_mode"]),
+    )
+    _write_json_payload(result_path, result)
+    return 0
+
+
+def _run_payload_worker(payload_path: Path, result_path: Path) -> int:
+    payload = json.loads(payload_path.read_text(encoding="utf-8"))
+    worker_kind = str(payload.get("worker_kind", "mechanism")).strip() or "mechanism"
+    if worker_kind == "mechanism":
+        return _run_mechanism_worker(payload_path, result_path)
+    if worker_kind == "case":
+        return _run_case_worker(payload_path, result_path)
+    raise ValueError(f"unsupported worker kind: {worker_kind}")
+
+
 def _run_mechanism_subprocess(
     case: ChapterCase,
     source: dict[str, Any],
@@ -427,10 +446,48 @@ def _run_mechanism_subprocess(
         _write_json_payload(
             payload_path,
             {
+                "worker_kind": "mechanism",
                 "case": asdict(case),
                 "source": source,
                 "mechanism_key": mechanism_key,
                 "run_root": str(run_root),
+            },
+        )
+        command = [
+            sys.executable,
+            str(Path(__file__).resolve()),
+            "--worker-payload",
+            str(payload_path),
+            "--worker-result",
+            str(result_path),
+        ]
+        subprocess.run(command, cwd=str(ROOT), check=True)
+        return json.loads(result_path.read_text(encoding="utf-8"))
+
+
+def _run_case_subprocess(
+    case: ChapterCase,
+    *,
+    source: dict[str, Any],
+    run_root: Path,
+    judge_mode: str,
+    mechanism_execution_mode: str,
+    judge_execution_mode: str,
+) -> dict[str, Any]:
+    with tempfile.TemporaryDirectory(prefix="chapter-comparison-case-worker-") as temp_dir_str:
+        temp_dir = Path(temp_dir_str)
+        payload_path = temp_dir / "payload.json"
+        result_path = temp_dir / "result.json"
+        _write_json_payload(
+            payload_path,
+            {
+                "worker_kind": "case",
+                "case": asdict(case),
+                "source": source,
+                "run_root": str(run_root),
+                "judge_mode": judge_mode,
+                "mechanism_execution_mode": mechanism_execution_mode,
+                "judge_execution_mode": judge_execution_mode,
             },
         )
         command = [
@@ -799,6 +856,7 @@ def run_benchmark(
         per_worker_parallelism=per_case_parallelism,
         explicit_max_workers=case_workers if case_workers and case_workers > 0 else None,
     )
+    case_runner = _run_case_subprocess if worker_policy.worker_count > 1 else _evaluate_case
     results_by_case_id: dict[str, dict[str, Any]] = {}
     with ThreadPoolExecutor(max_workers=max(1, worker_policy.worker_count), thread_name_prefix="chapter-case") as executor:
         future_to_case = {}
@@ -807,7 +865,7 @@ def run_benchmark(
             future_to_case[
                 submit_inherited_context(
                     executor,
-                    _evaluate_case,
+                    case_runner,
                     case,
                     source=source_index[case.source_id],
                     run_root=run_root,
@@ -862,7 +920,7 @@ def main() -> int:
     if args.worker_payload:
         if not args.worker_result:
             raise ValueError("--worker-result is required when --worker-payload is set")
-        return _run_mechanism_worker(Path(args.worker_payload).resolve(), Path(args.worker_result).resolve())
+        return _run_payload_worker(Path(args.worker_payload).resolve(), Path(args.worker_result).resolve())
     dataset_dirs = [Path(item).resolve() for item in args.dataset_dir] if args.dataset_dir else list(DEFAULT_DATASET_DIRS)
     case_ids = [item.strip() for item in args.case_id if str(item).strip()]
     if args.case_ids:
