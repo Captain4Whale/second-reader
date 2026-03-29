@@ -61,7 +61,7 @@ Recommended local LLM setup:
     - `runtime_reader_default`
     - `dataset_review_high_trust`
     - `eval_judge_high_trust`
-  - this is the file where you choose which target each profile uses and any profile-level overrides such as `temperature`, `max_tokens`, `retry_attempts`, `max_concurrency`, `quota_retry_attempts`, and `quota_wait_budget_seconds`
+  - this is the file where you choose which target each profile uses and any profile-level overrides such as `temperature`, `max_output_tokens`, `retry_attempts`, `max_concurrency`, `quota_retry_attempts`, and `quota_wait_budget_seconds`
 
 Tracked templates for the new local setup:
 - `reading-companion-backend/config/llm_targets.local.example.json`
@@ -81,6 +81,9 @@ Compatibility and fallback modes:
   - `LLM_MODEL`
   - optional `LLM_DATASET_REVIEW_MODEL`
   - optional `LLM_EVAL_JUDGE_MODEL`
+  - optional `LLM_RUNTIME_MAX_OUTPUT_TOKENS`
+  - optional `LLM_DATASET_REVIEW_MAX_OUTPUT_TOKENS`
+  - optional `LLM_EVAL_JUDGE_MAX_OUTPUT_TOKENS`
 
 Reference and compatibility files:
 - shared provider/profile registry example:

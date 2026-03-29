@@ -100,7 +100,7 @@ class LLMInvocationOverrides:
     """Optional per-scope overrides layered over a profile."""
 
     temperature: float | None = None
-    max_tokens: int | None = None
+    max_output_tokens: int | None = None
     timeout_seconds: int | None = None
     retry_attempts: int | None = None
     max_concurrency: int | None = None
@@ -368,7 +368,7 @@ class AnthropicContractAdapter:
             api_key=api_key,
             model=profile.model,
             temperature=profile.temperature,
-            max_tokens=profile.max_tokens,
+            max_tokens=profile.max_output_tokens,
             timeout=timeout_seconds,
         )
         return client.invoke(messages)
@@ -395,7 +395,7 @@ class OpenAICompatibleContractAdapter:
             api_key=api_key,
             model=profile.model,
             temperature=profile.temperature,
-            max_tokens=profile.max_tokens,
+            max_tokens=profile.max_output_tokens,
             timeout=timeout_seconds,
         )
         return client.invoke(messages)
@@ -421,7 +421,7 @@ class GoogleGenAIContractAdapter:
             model=profile.model,
             google_api_key=api_key,
             temperature=profile.temperature,
-            max_output_tokens=profile.max_tokens,
+            max_output_tokens=profile.max_output_tokens,
             timeout=timeout_seconds,
         )
         return client.invoke(messages)
@@ -559,7 +559,9 @@ def _merge_overrides(base: LLMInvocationOverrides | None, overlay: LLMInvocation
         return base
     return LLMInvocationOverrides(
         temperature=overlay.temperature if overlay.temperature is not None else base.temperature,
-        max_tokens=overlay.max_tokens if overlay.max_tokens is not None else base.max_tokens,
+        max_output_tokens=(
+            overlay.max_output_tokens if overlay.max_output_tokens is not None else base.max_output_tokens
+        ),
         timeout_seconds=overlay.timeout_seconds if overlay.timeout_seconds is not None else base.timeout_seconds,
         retry_attempts=overlay.retry_attempts if overlay.retry_attempts is not None else base.retry_attempts,
         max_concurrency=overlay.max_concurrency if overlay.max_concurrency is not None else base.max_concurrency,
@@ -652,7 +654,11 @@ def _effective_profile(scope: LLMInvocationScopeState | None, explicit_profile_i
         allow_cross_provider_failover=profile.allow_cross_provider_failover,
         model=profile.model,
         temperature=overrides.temperature if overrides.temperature is not None else profile.temperature,
-        max_tokens=overrides.max_tokens if overrides.max_tokens is not None else profile.max_tokens,
+        max_output_tokens=(
+            overrides.max_output_tokens
+            if overrides.max_output_tokens is not None
+            else profile.max_output_tokens
+        ),
         timeout_seconds=overrides.timeout_seconds if overrides.timeout_seconds is not None else profile.timeout_seconds,
         retry_attempts=overrides.retry_attempts if overrides.retry_attempts is not None else profile.retry_attempts,
         max_concurrency=overrides.max_concurrency if overrides.max_concurrency is not None else profile.max_concurrency,

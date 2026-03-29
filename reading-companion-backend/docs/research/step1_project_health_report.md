@@ -336,7 +336,7 @@ flowchart TD
   - Prompt 以 JSON 输出为主，随后用本地 JSON 提取器解析
 
 - 参数差异：
-  - Reader / Generate-then-Verify 主线：`temperature=0.2`, `max_tokens=4096`, `timeout=120`，见 `src/agents/generate_then_verify.py:62-72`
+  - Reader / Generate-then-Verify 主线：`temperature=0.2`, `max_output_tokens=4096`, `timeout=120`，见 `src/agents/generate_then_verify.py:62-72`
   - 旧版外层图：`temperature=0.7`，见 `src/graph/outer.py:33-41`
 
 #### 模型名状态

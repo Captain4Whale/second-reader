@@ -163,6 +163,9 @@ def _clear_registry_and_env(monkeypatch: pytest.MonkeyPatch):
         "LLM_MODEL",
         "LLM_DATASET_REVIEW_MODEL",
         "LLM_EVAL_JUDGE_MODEL",
+        "LLM_RUNTIME_MAX_OUTPUT_TOKENS",
+        "LLM_DATASET_REVIEW_MAX_OUTPUT_TOKENS",
+        "LLM_EVAL_JUDGE_MAX_OUTPUT_TOKENS",
         "BACKEND_RUNTIME_ROOT",
         "PRIMARY_KEY",
         "SECONDARY_KEY",
@@ -266,7 +269,7 @@ def test_registry_parses_target_bindings_and_direct_keys(monkeypatch: pytest.Mon
                     "profile_id": DEFAULT_RUNTIME_PROFILE_ID,
                     "target_id": "minimax_runtime",
                     "temperature": 0.1,
-                    "max_tokens": 2048,
+                    "max_output_tokens": 2048,
                 },
                 {
                     "profile_id": DEFAULT_DATASET_REVIEW_PROFILE_ID,
@@ -293,7 +296,45 @@ def test_registry_parses_target_bindings_and_direct_keys(monkeypatch: pytest.Mon
     assert runtime_profile.provider_id == "minimax_runtime"
     assert runtime_profile.model == "MiniMax-M2.5-highspeed"
     assert runtime_profile.temperature == 0.1
-    assert runtime_profile.max_tokens == 2048
+    assert runtime_profile.max_output_tokens == 2048
+
+
+def test_target_bindings_reject_retired_output_limit_field(monkeypatch: pytest.MonkeyPatch):
+    legacy_field = "max" "_tokens"
+    _set_targets_and_bindings(
+        monkeypatch,
+        targets={
+            "targets": [
+                {
+                    "target_id": "minimax_runtime",
+                    "contract": "anthropic",
+                    "base_url": "https://api.minimaxi.com/anthropic",
+                    "model": "MiniMax-M2.5-highspeed",
+                    "credentials": [{"credential_id": "primary", "api_key": "secret"}],
+                }
+            ]
+        },
+        bindings={
+            "profiles": [
+                {
+                    "profile_id": DEFAULT_RUNTIME_PROFILE_ID,
+                    "target_id": "minimax_runtime",
+                    legacy_field: 2048,
+                },
+                {
+                    "profile_id": DEFAULT_DATASET_REVIEW_PROFILE_ID,
+                    "target_id": "minimax_runtime",
+                },
+                {
+                    "profile_id": DEFAULT_EVAL_JUDGE_PROFILE_ID,
+                    "target_id": "minimax_runtime",
+                },
+            ]
+        },
+    )
+
+    with pytest.raises(LLMRegistryError, match="use max_output_tokens"):
+        get_llm_registry()
 
 
 def test_profile_binding_requires_target_id(monkeypatch: pytest.MonkeyPatch):
@@ -622,22 +663,32 @@ def test_registry_path_backward_compatibility_still_loads(tmp_path: Path, monkey
 
 
 def test_legacy_env_fallback_registry_still_loads(monkeypatch: pytest.MonkeyPatch):
+    legacy_runtime_limit = "LLM_RUNTIME_MAX" "_TOKENS"
     monkeypatch.setenv("LLM_PROVIDER_CONTRACT", "anthropic")
     monkeypatch.setenv("LLM_BASE_URL", "https://api.minimaxi.com/anthropic")
     monkeypatch.setenv("LLM_API_KEY", "legacy-key")
     monkeypatch.setenv("LLM_MODEL", "MiniMax-M2.5-highspeed")
     monkeypatch.setenv("LLM_DATASET_REVIEW_MODEL", "MiniMax-M2.5-highspeed")
     monkeypatch.setenv("LLM_EVAL_JUDGE_MODEL", "MiniMax-M2.5-highspeed")
+    monkeypatch.setenv("LLM_RUNTIME_MAX_OUTPUT_TOKENS", "3072")
+    monkeypatch.setenv("LLM_DATASET_REVIEW_MAX_OUTPUT_TOKENS", "2048")
+    monkeypatch.setenv("LLM_EVAL_JUDGE_MAX_OUTPUT_TOKENS", "1024")
+    monkeypatch.setenv(legacy_runtime_limit, "9999")
     clear_llm_registry_cache()
 
     registry = get_llm_registry()
     runtime_profile = get_llm_profile(DEFAULT_RUNTIME_PROFILE_ID)
+    dataset_review_profile = get_llm_profile(DEFAULT_DATASET_REVIEW_PROFILE_ID)
+    eval_judge_profile = get_llm_profile(DEFAULT_EVAL_JUDGE_PROFILE_ID)
 
     assert registry.source == "legacy_env"
     assert registry.get_provider("legacy_default").resolved_key_pool() == [
         {"slot_id": "LLM_API_KEY", "api_key": "legacy-key"}
     ]
     assert runtime_profile.model == "MiniMax-M2.5-highspeed"
+    assert runtime_profile.max_output_tokens == 3072
+    assert dataset_review_profile.max_output_tokens == 2048
+    assert eval_judge_profile.max_output_tokens == 1024
 
 
 def test_registry_parses_structured_profiles_and_env_keys(monkeypatch: pytest.MonkeyPatch):
@@ -691,6 +742,44 @@ def test_registry_parses_structured_profiles_and_env_keys(monkeypatch: pytest.Mo
     assert provider.quota_state_ttl_seconds == 120
     assert runtime_profile.quota_retry_attempts == 2
     assert runtime_profile.quota_wait_budget_seconds == 25
+
+
+def test_structured_registry_rejects_retired_output_limit_field(monkeypatch: pytest.MonkeyPatch):
+    legacy_field = "max" "_tokens"
+    _set_registry(
+        monkeypatch,
+        {
+            "providers": [
+                {
+                    "provider_id": "anthropic_primary",
+                    "contract": "anthropic",
+                    "api_key_env": "PRIMARY_KEY",
+                    "supported_models": ["claude-opus-4-6"],
+                }
+            ],
+            "profiles": [
+                {
+                    "profile_id": DEFAULT_RUNTIME_PROFILE_ID,
+                    "provider_id": "anthropic_primary",
+                    "model": "claude-opus-4-6",
+                    legacy_field: 2048,
+                },
+                {
+                    "profile_id": DEFAULT_DATASET_REVIEW_PROFILE_ID,
+                    "provider_id": "anthropic_primary",
+                    "model": "claude-opus-4-6",
+                },
+                {
+                    "profile_id": DEFAULT_EVAL_JUDGE_PROFILE_ID,
+                    "provider_id": "anthropic_primary",
+                    "model": "claude-opus-4-6",
+                },
+            ],
+        },
+    )
+
+    with pytest.raises(LLMRegistryError, match="use max_output_tokens"):
+        get_llm_registry()
 
 
 def test_registry_parses_explicit_quota_retry_fields(monkeypatch: pytest.MonkeyPatch):

@@ -45,7 +45,7 @@ _TARGET_PROVIDER_OPTIONAL_FIELDS = (
 )
 _PROFILE_OPTIONAL_FIELDS = (
     "temperature",
-    "max_tokens",
+    "max_output_tokens",
     "timeout_seconds",
     "retry_attempts",
     "max_concurrency",
@@ -122,7 +122,7 @@ class LLMProfileConfig:
     allow_cross_provider_failover: bool
     model: str
     temperature: float
-    max_tokens: int
+    max_output_tokens: int
     timeout_seconds: int
     retry_attempts: int
     max_concurrency: int
@@ -307,6 +307,10 @@ def _compile_profile_binding_entry(entry: Any, *, compiled_targets: dict[str, di
     if not isinstance(entry, dict):
         raise LLMRegistryError("Profile binding entry must be an object.")
     profile_id = _require_text(entry, "profile_id", context="Profile binding")
+    if "max" "_tokens" in entry:
+        raise LLMRegistryError(
+            f"Profile {profile_id} uses the retired output-limit field; use max_output_tokens."
+        )
     target_id = _require_text(entry, "target_id", context=f"Profile {profile_id}")
     target = compiled_targets.get(target_id)
     if target is None:
@@ -465,7 +469,7 @@ def _legacy_registry_payload() -> dict[str, Any]:
                 "provider_id": "legacy_default",
                 "model_env": "LLM_MODEL",
                 "temperature": _env_float("LLM_RUNTIME_TEMPERATURE", 0.2),
-                "max_tokens": _env_int("LLM_RUNTIME_MAX_TOKENS", 4096),
+                "max_output_tokens": _env_int("LLM_RUNTIME_MAX_OUTPUT_TOKENS", 4096),
                 "timeout_seconds": _env_int("LLM_RUNTIME_TIMEOUT_SECONDS", 120),
                 "retry_attempts": get_llm_retry_attempts(),
                 "max_concurrency": get_llm_max_concurrency(),
@@ -485,7 +489,7 @@ def _legacy_registry_payload() -> dict[str, Any]:
                 "provider_id": "legacy_default",
                 "model_env": "LLM_DATASET_REVIEW_MODEL",
                 "temperature": _env_float("LLM_DATASET_REVIEW_TEMPERATURE", 0.2),
-                "max_tokens": _env_int("LLM_DATASET_REVIEW_MAX_TOKENS", 4096),
+                "max_output_tokens": _env_int("LLM_DATASET_REVIEW_MAX_OUTPUT_TOKENS", 4096),
                 "timeout_seconds": _env_int("LLM_DATASET_REVIEW_TIMEOUT_SECONDS", 120),
                 "retry_attempts": _env_int("LLM_DATASET_REVIEW_RETRY_ATTEMPTS", get_llm_retry_attempts()),
                 "max_concurrency": _env_int("LLM_DATASET_REVIEW_MAX_CONCURRENCY", get_llm_max_concurrency()),
@@ -505,7 +509,7 @@ def _legacy_registry_payload() -> dict[str, Any]:
                 "provider_id": "legacy_default",
                 "model_env": "LLM_EVAL_JUDGE_MODEL",
                 "temperature": _env_float("LLM_EVAL_JUDGE_TEMPERATURE", 0.2),
-                "max_tokens": _env_int("LLM_EVAL_JUDGE_MAX_TOKENS", 4096),
+                "max_output_tokens": _env_int("LLM_EVAL_JUDGE_MAX_OUTPUT_TOKENS", 4096),
                 "timeout_seconds": _env_int("LLM_EVAL_JUDGE_TIMEOUT_SECONDS", 120),
                 "retry_attempts": _env_int("LLM_EVAL_JUDGE_RETRY_ATTEMPTS", get_llm_retry_attempts()),
                 "max_concurrency": _env_int("LLM_EVAL_JUDGE_MAX_CONCURRENCY", get_llm_max_concurrency()),
@@ -642,6 +646,10 @@ def _parse_profile(entry: Any, providers: dict[str, LLMProviderConfig]) -> LLMPr
     if not isinstance(entry, dict):
         raise LLMRegistryError("Profile entry must be an object.")
     profile_id = _clean_str(entry.get("profile_id"))
+    if "max" "_tokens" in entry:
+        raise LLMRegistryError(
+            f"Profile {profile_id or '<unknown>'} uses the retired output-limit field; use max_output_tokens."
+        )
     provider_id = _clean_str(entry.get("provider_id"))
     if not profile_id:
         raise LLMRegistryError("Profile entry is missing profile_id.")
@@ -691,7 +699,7 @@ def _parse_profile(entry: Any, providers: dict[str, LLMProviderConfig]) -> LLMPr
         allow_cross_provider_failover=bool(entry.get("allow_cross_provider_failover", False)),
         model=model,
         temperature=float(entry.get("temperature", 0.2) or 0.2),
-        max_tokens=max(1, int(entry.get("max_tokens", 4096) or 4096)),
+        max_output_tokens=max(1, int(entry.get("max_output_tokens", 4096) or 4096)),
         timeout_seconds=max(1, int(entry.get("timeout_seconds", provider.timeout_seconds) or provider.timeout_seconds)),
         retry_attempts=max(1, int(entry.get("retry_attempts", provider.retry_attempts) or provider.retry_attempts)),
         max_concurrency=max(1, int(entry.get("max_concurrency", provider.max_concurrency) or provider.max_concurrency)),

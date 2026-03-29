@@ -204,7 +204,7 @@ def safe_invoke_json(system_prompt: str, user_prompt: str, default: dict) -> dic
     try:
         with llm_invocation_scope(
             profile_id=DEFAULT_EVAL_JUDGE_PROFILE_ID,
-            overrides=LLMInvocationOverrides(temperature=0.1, max_tokens=1200, timeout_seconds=25),
+            overrides=LLMInvocationOverrides(temperature=0.1, max_output_tokens=1200, timeout_seconds=25),
         ):
             payload = invoke_json(system_prompt, user_prompt, default)
     except Exception:
@@ -217,7 +217,7 @@ def safe_invoke_text(system_prompt: str, user_prompt: str, default: str) -> str:
     try:
         with llm_invocation_scope(
             profile_id=DEFAULT_EVAL_JUDGE_PROFILE_ID,
-            overrides=LLMInvocationOverrides(temperature=0.1, max_tokens=1200, timeout_seconds=25),
+            overrides=LLMInvocationOverrides(temperature=0.1, max_output_tokens=1200, timeout_seconds=25),
         ):
             text = invoke_text(system_prompt, user_prompt, default)
     except Exception:
