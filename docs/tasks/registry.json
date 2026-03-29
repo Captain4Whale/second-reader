@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-03-29T04:20:09Z",
+  "updated_at": "2026-03-29T04:52:25Z",
   "tasks": [
     {
       "id": "TASK-MECH-EN-RERUN",
@@ -20,23 +20,23 @@
         "DEC-021"
       ],
       "job_refs": [
-        "bgjob_20260329_041914_5de2c4c4"
+        "bgjob_en_chapter_core_rerun_round3_parallel_caseiso_detached_20260329_125043"
       ],
       "acceptance_ref": "docs/implementation/new-reading-mechanism/execution-tracker.md",
-      "next_action": "Monitor the running bgjob_20260329_041914_5de2c4c4 rerun after the malformed-JSON and case-isolation repairs, then compare its outputs against the prior failed bgjob_en_chapter_core_rerun_round3_parallel_20260329 artifacts.",
+      "next_action": "Monitor the running bgjob_en_chapter_core_rerun_round3_parallel_caseiso_detached_20260329_125043 rerun after the malformed-JSON repair, case-isolation repair, and detached-launcher fix, then compare its outputs against the prior failed bgjob_en_chapter_core_rerun_round3_parallel_20260329 artifacts.",
       "blocked_by": [],
       "evidence_refs": [
         "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_vs_iterator_v1_chapter_core_en_round2_microselectivity_retry2_20260328/summary/report.md",
         "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_vs_iterator_v1_chapter_core_en_round2_microselectivity_retry2_20260328/summary/aggregate.json",
-        "reading-companion-backend/state/job_registry/jobs/bgjob_20260329_041914_5de2c4c4.json",
-        "reading-companion-backend/state/job_registry/logs/bgjob_20260329_041914_5de2c4c4.log",
+        "reading-companion-backend/state/job_registry/jobs/bgjob_en_chapter_core_rerun_round3_parallel_caseiso_detached_20260329_125043.json",
+        "reading-companion-backend/state/job_registry/logs/bgjob_en_chapter_core_rerun_round3_parallel_caseiso_detached_20260329_125043.log",
         "reading-companion-backend/state/job_registry/jobs/bgjob_en_chapter_core_rerun_round3_parallel_20260329.json",
         "reading-companion-backend/state/job_registry/logs/bgjob_en_chapter_core_rerun_round3_parallel_20260329.log",
         "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_vs_iterator_v1_chapter_core_en_round3_narrative_reference_repair_parallel_20260329/cases/up_from_slavery_public_en__10.json",
         "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_vs_iterator_v1_chapter_core_en_round3_narrative_reference_repair_parallel_20260329/outputs/walden_205_en__10/iterator_v1/_runtime/activity.jsonl",
         "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_vs_iterator_v1_chapter_core_en_round3_narrative_reference_repair_parallel_20260329/bundles/attentional_v2/walden_205_en__10.json"
       ],
-      "last_updated": "2026-03-29T04:20:09Z",
+      "last_updated": "2026-03-29T04:52:25Z",
       "last_updated_by": "codex"
     },
     {

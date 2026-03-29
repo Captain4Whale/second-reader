@@ -99,17 +99,38 @@ def main() -> int:
     )
 
     process: subprocess.Popen[bytes] | None = None
+    termination_signal: int | None = None
     started_at = _timestamp()
     try:
         log_file.parent.mkdir(parents=True, exist_ok=True)
         with log_file.open("ab") as log_handle:
             banner = f"[{started_at}] launching: {' '.join(command)}\n"
             log_handle.write(banner.encode("utf-8"))
+            log_handle.flush()
+
+            def _handle_termination(signum: int, _frame) -> None:
+                nonlocal termination_signal
+                termination_signal = signum
+                notice = f"[{_timestamp()}] wrapper received signal {signum}; forwarding to child\n"
+                try:
+                    log_handle.write(notice.encode("utf-8"))
+                    log_handle.flush()
+                except Exception:
+                    pass
+                if process is not None and process.poll() is None:
+                    try:
+                        process.send_signal(signum)
+                    except OSError:
+                        pass
+
+            previous_sigterm = signal.signal(signal.SIGTERM, _handle_termination)
+            previous_sighup = signal.signal(signal.SIGHUP, _handle_termination)
             process = subprocess.Popen(
                 command,
                 cwd=str(cwd),
                 stdout=log_handle,
                 stderr=subprocess.STDOUT,
+                start_new_session=True,
             )
             upsert_background_job(
                 job_id=job_id,
@@ -120,6 +141,8 @@ def main() -> int:
                 started_at=started_at,
             )
             exit_code = process.wait()
+            signal.signal(signal.SIGTERM, previous_sigterm)
+            signal.signal(signal.SIGHUP, previous_sighup)
     except KeyboardInterrupt:
         if process is not None:
             try:
@@ -154,11 +177,15 @@ def main() -> int:
     upsert_background_job(
         job_id=job_id,
         root=root,
-        status="running" if exit_code == 0 else "failed",
+        status="abandoned" if termination_signal is not None else ("running" if exit_code == 0 else "failed"),
         pid=None,
         exit_code=exit_code,
         ended_at=ended_at,
-        error=None if exit_code == 0 else f"Wrapped command exited with code {exit_code}.",
+        error=(
+            f"Registry wrapper received signal {termination_signal}."
+            if termination_signal is not None
+            else (None if exit_code == 0 else f"Wrapped command exited with code {exit_code}.")
+        ),
     )
     refreshed = refresh_background_jobs(root=root, job_ids=[job_id], run_check_commands=bool(args.check_command))
     payload = {"job_id": job_id, "exit_code": exit_code, "refreshed": refreshed}

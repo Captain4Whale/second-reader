@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-03-29T04:20:09Z`
+Last verified: `2026-03-29T04:52:25Z`
 
 ## Current Objective
 - Keep Phase 9 of the new reading mechanism project recoverable and decision-ready:
@@ -102,18 +102,35 @@ Last verified: `2026-03-29T04:20:09Z`
   - terminal status:
     - registry now reports `status = abandoned` and `ended_at = 2026-03-29T04:18:48.646303Z`
     - the rerun was stopped intentionally after confirming the same parallel case path could still cross-wire isolated output directories
-- A case-isolation follow-up rerun is now active after the malformed-JSON recovery patch and the packaging isolation repair:
+- The first case-isolation rerun did not finish cleanly:
   - job id:
     - `bgjob_20260329_041914_5de2c4c4`
   - run dir:
     - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_vs_iterator_v1_chapter_core_en_round3_narrative_reference_repair_parallel_caseiso_20260329/`
   - log:
     - `reading-companion-backend/state/job_registry/logs/bgjob_20260329_041914_5de2c4c4.log`
+  - terminal status:
+    - registry now reports `status = abandoned` and `ended_at = 2026-03-29T04:24:43.447157Z`
+    - the log stops after initial submit/skip lines, with no traceback and no summary outputs
+  - launcher diagnosis:
+    - the wrapper was launched from the Codex shell session and appears to have been terminated externally before it could record an exit code or traceback
+    - the missing wrapper launch banner in the earlier failed log was consistent with the wrapper being killed before its buffered write flushed
+- A detached-launch follow-up rerun is now active after the malformed-JSON recovery patch, the packaging isolation repair, and the launcher hardening:
+  - job id:
+    - `bgjob_en_chapter_core_rerun_round3_parallel_caseiso_detached_20260329_125043`
+  - run dir:
+    - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_vs_iterator_v1_chapter_core_en_round3_narrative_reference_repair_parallel_caseiso_detached_20260329_125043/`
+  - log:
+    - `reading-companion-backend/state/job_registry/logs/bgjob_en_chapter_core_rerun_round3_parallel_caseiso_detached_20260329_125043.log`
   - current state:
-    - registry reports `status = running`
+    - the wrapper was launched via `scripts/launch_registered_job_detached.py`
+    - both the wrapper and the child rerun process remained alive past the earlier abandonment window during the immediate stability check
     - the rerun is still evidence-only and does not change promotion or default-cutover policy automatically
-  - packaging diagnosis:
-    - the prior `up_from_slavery` -> `walden` mispackaging is consistent with process-wide `resolve_output_dir` patching during parallel case execution, so pre-fix partial artifacts remain untrusted until this replacement rerun lands
+  - diagnosis/fix summary:
+    - the prior `up_from_slavery` -> `walden` mispackaging is consistent with process-wide `resolve_output_dir` patching during parallel case execution
+    - `run_chapter_comparison.py` now uses context-local output-dir overrides plus per-case subprocess isolation when parallel case workers are used
+    - `run_registered_job.py` now flushes its launch banner, isolates the wrapped command into a new session, and records signal-based abandonment explicitly
+    - `scripts/launch_registered_job_detached.py` is now the reliable path for launching long-running registered jobs from agent/non-interactive shells
 - No benchmark promotion reopening, reviewed-slice freezing, durable-trace, re-entry, runtime-viability, or default-cutover work has been launched automatically after recovery.
 - The optional deterministic 10-book expansion lane was not launched:
   - the repo-visible private-library source pool still matches the tracked `29`-book supplement
@@ -122,7 +139,7 @@ Last verified: `2026-03-29T04:20:09Z`
 - Use the task registry plus the execution tracker as the route back into detailed mechanism work.
 
 ## Next
-- Monitor the running `bgjob_20260329_041914_5de2c4c4` rerun and inspect its `summary/report.md` plus `summary/aggregate.json` once they land.
+- Monitor the running `bgjob_en_chapter_core_rerun_round3_parallel_caseiso_detached_20260329_125043` rerun and inspect its `summary/report.md` plus `summary/aggregate.json` once they land.
 - Keep the prior failed `bgjob_en_chapter_core_rerun_round3_parallel_20260329` artifacts as debugging evidence:
   - treat `up_from_slavery_public_en__10` as packaging-corrupted because the `attentional_v2` case entry points at `walden` outputs
   - treat `walden_205_en__10` as incomplete because no case artifact or summary artifacts were written
@@ -151,6 +168,7 @@ Last verified: `2026-03-29T04:20:09Z`
 - Re-running `build_private_library_supplement.py` without explicit intent to rebuild seed datasets can wipe live private-library review status again.
 - Pre-fix parallel comparison artifacts can misassign case-to-output mappings, so partial outputs from the earlier round-3 reruns must be sanity-checked before they are treated as evidence.
 - Malformed-JSON handling in the reading path can still terminate a bounded rerun after substantial partial output has already been written.
+- Launching `run_registered_job.py` from a transient agent shell without the detached launcher can leave long-running jobs looking `abandoned` even when the wrapped command itself never raised a Python traceback.
 - Current public chapter/detail surfaces still carry section-shaped compatibility assumptions that may not fit the new mechanism directly.
 - Route mismatches between frontend routes and backend-returned targets can still regress the canonical product path.
 - Resume behavior remains sensitive to artifact placement under `reading-companion-backend/output/` and `reading-companion-backend/state/`.
@@ -161,7 +179,7 @@ Last verified: `2026-03-29T04:20:09Z`
 - `TASK-MECH-EN-RERUN`
 
 ## Active Job IDs
-- `bgjob_20260329_041914_5de2c4c4`
+- `bgjob_en_chapter_core_rerun_round3_parallel_caseiso_detached_20260329_125043`
 
 ## Recommended Reading Path
 1. `AGENTS.md`
@@ -169,8 +187,8 @@ Last verified: `2026-03-29T04:20:09Z`
 3. `docs/current-state.md`
 4. relevant child `AGENTS.md`
 5. `docs/tasks/registry.md`
-6. `reading-companion-backend/state/job_registry/jobs/bgjob_20260329_041914_5de2c4c4.json`
-7. `reading-companion-backend/state/job_registry/logs/bgjob_20260329_041914_5de2c4c4.log`
+6. `reading-companion-backend/state/job_registry/jobs/bgjob_en_chapter_core_rerun_round3_parallel_caseiso_detached_20260329_125043.json`
+7. `reading-companion-backend/state/job_registry/logs/bgjob_en_chapter_core_rerun_round3_parallel_caseiso_detached_20260329_125043.log`
 8. `reading-companion-backend/state/job_registry/jobs/bgjob_en_chapter_core_rerun_round3_parallel_20260329.json`
 9. `reading-companion-backend/state/job_registry/logs/bgjob_en_chapter_core_rerun_round3_parallel_20260329.log`
 10. `reading-companion-backend/eval/review_packets/archive/attentional_v2_private_library_cleanup_en_recovery_20260329/dataset_review_pipeline_summary.json`
@@ -181,7 +199,7 @@ Last verified: `2026-03-29T04:20:09Z`
 ## Machine-Readable Appendix
 ```json
 {
-  "updated_at": "2026-03-29T04:20:09Z",
+  "updated_at": "2026-03-29T04:52:25Z",
   "last_updated_by": "codex",
   "active_task_ids": [
     "TASK-BENCH-BACKLOG-RESCUE",
@@ -189,7 +207,7 @@ Last verified: `2026-03-29T04:20:09Z`
   ],
   "blocked_task_ids": [],
   "active_job_ids": [
-    "bgjob_20260329_041914_5de2c4c4"
+    "bgjob_en_chapter_core_rerun_round3_parallel_caseiso_detached_20260329_125043"
   ],
   "open_decision_ids": [
     "OD-PRIVATE-LIBRARY-POST-RESCUE-GATE",
@@ -199,8 +217,8 @@ Last verified: `2026-03-29T04:20:09Z`
   "detail_refs": [
     "docs/implementation/new-reading-mechanism/execution-tracker.md",
     "docs/implementation/new-reading-mechanism/private-library-promotion-round2.md",
-    "reading-companion-backend/state/job_registry/jobs/bgjob_20260329_041914_5de2c4c4.json",
-    "reading-companion-backend/state/job_registry/logs/bgjob_20260329_041914_5de2c4c4.log",
+    "reading-companion-backend/state/job_registry/jobs/bgjob_en_chapter_core_rerun_round3_parallel_caseiso_detached_20260329_125043.json",
+    "reading-companion-backend/state/job_registry/logs/bgjob_en_chapter_core_rerun_round3_parallel_caseiso_detached_20260329_125043.log",
     "reading-companion-backend/state/job_registry/jobs/bgjob_en_chapter_core_rerun_round3_parallel_20260329.json",
     "reading-companion-backend/state/job_registry/logs/bgjob_en_chapter_core_rerun_round3_parallel_20260329.log",
     "reading-companion-backend/eval/review_packets/archive/attentional_v2_private_library_cleanup_en_recovery_20260329/dataset_review_pipeline_summary.json",

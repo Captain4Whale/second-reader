@@ -208,6 +208,9 @@ Use the backend background-job registry for evaluation, packet review, or datase
   - `cd reading-companion-backend && .venv/bin/python scripts/register_background_job.py --task-ref "execution-tracker#example" --lane mechanism_eval --purpose "English chapter-core rerun" --command ".venv/bin/python eval/attentional_v2/run_chapter_comparison.py --help" --cwd "$PWD"`
 - Launch one generic job through the registry wrapper:
   - `cd reading-companion-backend && .venv/bin/python scripts/run_registered_job.py --task-ref "execution-tracker#example" --lane mechanism_eval --purpose "English chapter-core rerun" --cwd "$PWD" -- .venv/bin/python eval/attentional_v2/run_chapter_comparison.py --help`
+- Launch one generic job through the detached wrapper when the shell/session itself may go away:
+  - `cd reading-companion-backend && .venv/bin/python scripts/launch_registered_job_detached.py -- --root "$PWD" --task-ref "execution-tracker#example" --lane mechanism_eval --purpose "English chapter-core rerun" --cwd "$PWD" -- .venv/bin/python eval/attentional_v2/run_chapter_comparison.py --help`
+  - this starts `run_registered_job.py` in a new session so the registered job can survive non-interactive tooling shells more reliably
 - Refresh active jobs:
   - `cd reading-companion-backend && .venv/bin/python scripts/check_background_jobs.py`
 - Refresh and also execute stored `check_command` probes:

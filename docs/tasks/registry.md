@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-03-29T04:20:09Z`
+Last updated: `2026-03-29T04:52:25Z`
 
 ## Status Values
 - `active`
@@ -33,9 +33,9 @@ Last updated: `2026-03-29T04:20:09Z`
 - Lane: `mechanism_eval`
 - Priority: `high`
 - Detail: `docs/implementation/new-reading-mechanism/execution-tracker.md`
-- Next: monitor the running `bgjob_20260329_041914_5de2c4c4` rerun after the malformed-JSON and case-isolation repairs, then compare its outputs against the prior failed `bgjob_en_chapter_core_rerun_round3_parallel_20260329` artifacts
+- Next: monitor the running `bgjob_en_chapter_core_rerun_round3_parallel_caseiso_detached_20260329_125043` rerun after the malformed-JSON repair, case-isolation repair, and detached-launcher fix, then compare its outputs against the prior failed `bgjob_en_chapter_core_rerun_round3_parallel_20260329` artifacts
 - Jobs:
-  - `bgjob_20260329_041914_5de2c4c4`
+  - `bgjob_en_chapter_core_rerun_round3_parallel_caseiso_detached_20260329_125043`
 
 ## Queued
 
