@@ -266,6 +266,19 @@ Update when: status changes, blockers appear, or phases complete.
     - unblock broader semantic comparison now
 - [ ] Reach the preferred reviewed-slice confidence target before broad mechanism tuning:
   - `10-12` `reviewed_active` excerpt cases per language
+- [ ] Make the dataset-build method smarter, more effective, and more efficient.
+  - move from coarse fixed-window excerpt sampling toward question-first, phenomenon-aware case mining
+  - make excerpt selection answer explicit evaluation buckets such as local reading, bridge, anchored reaction, and reconsolidation
+- [ ] Make dataset building fully automated end to end, with LLM replacing remaining non-decision curation where policy allows.
+  - cover source intake, screening, dataset packaging, weak-case review, mechanical adjudication/import, and adequacy reporting
+  - treat human-owned promotion, freeze, and default-cutover decisions as explicit stop points rather than silent automation targets
+- [ ] Make source-book intake and intermediate-artifact management clear and durable.
+  - keep canonical managed copies of original books inside project-owned storage instead of relying on external source paths as the long-term truth
+  - define one documented drop-folder workflow for future book additions so new intake can be fetched and processed reproducibly
+  - recommended strategy: design these three items as one unified dataset-platform lane, then implement in phases:
+    - source/artifact governance first
+    - smarter question-first case mining second
+    - end-to-end automation/orchestration third
 - [x] Run local-reading and span-trajectory evaluation
   - landed as two parallel balanced chapter-core packs:
     - English:

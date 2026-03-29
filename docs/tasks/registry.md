@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-03-29T06:55:56Z`
+Last updated: `2026-03-29T09:12:56Z`
 
 ## Status Values
 - `active`
@@ -25,7 +25,7 @@ Last updated: `2026-03-29T06:55:56Z`
 - Lane: `dataset_growth`
 - Priority: `high`
 - Detail: `docs/implementation/new-reading-mechanism/private-library-promotion-round2.md`
-- Next: run the English follow-up cleanup packet lifecycle first, then the Chinese follow-up cleanup packet lifecycle, then prepare a human-owned post-cleanup gate review without reopening promotion or freezing a reviewed slice automatically
+- Next: use the completed English and Chinese follow-up packet summaries as the new benchmark-hardening truth, then prepare a human-owned post-cleanup gate review without reopening promotion or freezing a reviewed slice automatically
 - Jobs: none
 
 ### `TASK-MECH-EN-RERUN` — Run the focused English round-3 narrative/reference rerun
@@ -33,10 +33,37 @@ Last updated: `2026-03-29T06:55:56Z`
 - Lane: `mechanism_eval`
 - Priority: `high`
 - Detail: `docs/implementation/new-reading-mechanism/execution-tracker.md`
-- Next: inspect the completed evidence-only rerun after the malformed-JSON repair, case-isolation repair, and detached-launcher fix; keep its placeholder `tie: 2` result non-decision-bearing because it used `--judge-mode none`; relaunch the same two-case slice in judge mode only if actual comparison evidence is needed
-- Jobs: none
+- Next: keep the active judged two-case rerun in place, because the apparent stall was parent-log sparsity rather than another early launcher failure; confirm health from the live per-case runtime files and `llm_standard.jsonl` traces, then inspect the judged summary outputs as real mechanism evidence while keeping the earlier detached `--judge-mode none` rerun as harness-only evidence
+- Jobs:
+  - `bgjob_en_chapter_core_rerun_round3_parallel_caseiso_judged_20260329`
 
 ## Queued
+
+### `TASK-DATASET-SOURCE-GOVERNANCE` — Make source-book intake and intermediate artifacts clear and durable
+- Status: `queued`
+- Lane: `dataset_platform`
+- Priority: `high`
+- Detail: `docs/implementation/new-reading-mechanism/execution-tracker.md`
+- Next: replace indirect external-root references with a managed source catalog, canonical project-owned copies of original books, and one documented drop-folder workflow for future book additions
+- Jobs: none
+
+### `TASK-DATASET-SMART-BUILDER` — Make dataset building question-first, smarter, and more effective
+- Status: `queued`
+- Lane: `dataset_platform`
+- Priority: `high`
+- Detail: `docs/implementation/new-reading-mechanism/execution-tracker.md`
+- Blocked by: `TASK-DATASET-SOURCE-GOVERNANCE`
+- Next: design a phenomenon-aware case-mining layer that starts from evaluation questions and bucket requirements instead of fixed excerpt windows and broad role heuristics
+- Jobs: none
+
+### `TASK-DATASET-FULL-AUTOMATION` — Make dataset building fully automated end to end
+- Status: `queued`
+- Lane: `dataset_platform`
+- Priority: `high`
+- Detail: `docs/implementation/new-reading-mechanism/execution-tracker.md`
+- Blocked by: `TASK-DATASET-SOURCE-GOVERNANCE`, `TASK-DATASET-SMART-BUILDER`
+- Next: design one reusable orchestration flow that can run intake, screening, dataset packaging, weak-case review, mechanical adjudication/import, and adequacy reporting with LLM replacing remaining non-decision curation where policy allows
+- Jobs: none
 
 ### `TASK-RUNTIME-VIABILITY-GATES` — Run durable-trace, re-entry, and runtime-viability evaluation
 - Status: `queued`

@@ -1,0 +1,54 @@
+# LLM Packet Review: `attentional_v2_private_library_cleanup_en_followup_after_recovery_20260329`
+
+- run_id: `attentional_v2_private_library_cleanup_en_followup_after_recovery_20260329__llm_review__20260329-075859`
+- generated_at: `2026-03-29T07:59:58.227344Z`
+- case_count: `9`
+- action_counts: `{"drop": 6, "revise": 3}`
+
+## Case Decisions
+
+- `poor_charlies_almanack_private_en__10__seed_1`
+  - action: `revise`
+  - confidence: `medium`
+  - problem_types: `text_noise|too_easy`
+  - notes: The excerpt content is thematically valid and discusses accounting limitations with concrete examples. However, the adversarial review correctly identifies that the excerpt is too easy—the limitations are stated explicitly and repetitively ('crude approximation,' 'just guess at,' 'not very hard to understand its limitations'), making the judge focus trivially satisfiable without inference. Additionally, the C./E Braun parsing artifact should be corrected to 'C.E. Braun Engineering Company' for readability. Consider finding a less explicit excerpt that requires the model to infer limitations from concrete examples rather than having them stated directly.
+- `steve_jobs_private_en__17__seed_1`
+  - action: `revise`
+  - confidence: `high`
+  - problem_types: `too_easy`
+  - notes: The primary reviewer's 'keep' decision conflicts with four consecutive LLM reviews flagging too_easy and an adversarial review confirming medium risk. The excerpt is overly explicit—it directly names all three projects, uses the 'three ponies' metaphor to signal simultaneity, and quotes Raskin's 'computer for the masses' vision verbatim. This reduces the challenge to basic enumeration rather than inference. While the core content is historically valuable, the case needs either a narrower focus on less explicit aspects (e.g., why Jobs overlooked the skunkworks), an expanded excerpt showing project outcomes, or a different passage from the same source requiring actual reasoning about strategic trade-offs.
+- `steve_jobs_private_en__24__seed_1`
+  - action: `revise`
+  - confidence: `medium`
+  - problem_types: `weak_excerpt|ambiguous_focus`
+  - notes: The excerpt captures Jobs' personal goals for requesting a commercial ('thunderclap,' 'stop people in their tracks') but does not describe the actual strategic purpose or content of the 1984 ad itself. The current judge_focus conflates 'Jobs' stated goals for the request' with 'the purpose of the 1984 commercial,' creating a mismatch—a reader could answer the question using only the excerpt yet miss the actual purpose of the resulting advertisement. The excerpt should be redesigned to either (a) include description of the ad's actual content and strategic positioning, or (b) have a judge_focus that accurately matches what the excerpt can answer (Jobs' vision for a revolutionary commercial).
+- `evicted_private_en__10__seed_1`
+  - action: `drop`
+  - confidence: `high`
+  - problem_types: `wrong_bucket|weak_excerpt|ambiguous_focus`
+  - notes: All four prior reviews converge on drop with high confidence. The excerpt describes Sherrena and Quentin's courtship and teaching mannerisms with zero content about eviction, housing instability, or poverty—the core phenomena the 'Evicted' bucket addresses. The text functions as literary character backstory with no evaluative tension, reading-mechanism challenge, or metadata to indicate an evaluation purpose. No viable revision path exists given the fundamental bucket mismatch.
+- `evicted_private_en__17__seed_2`
+  - action: `drop`
+  - confidence: `high`
+  - problem_types: `ambiguous_focus|weak_excerpt|source_parse_problem`
+  - notes: This case has been reviewed five times across multiple rounds and consistently identified with the same core problems: ambiguous focus from concatenating two structurally unrelated passages (Rent Recovery Service's systemic debt critique + Arleen's courtroom scene) and weak excerpt cohesion. The narrative journalism excerpt lacks a coherent analytical thread and would require external interpretive work to unify. Critical metadata gaps (empty case_title, question_ids, phenomena, selection_reason, judge_focus) confirm the case cannot function as a valid benchmark. No evidence suggests these issues can be resolved through further revision given the source material's inherent disconnect.
+- `fooled_by_randomness_private_en__14__seed_2`
+  - action: `drop`
+  - confidence: `high`
+  - problem_types: `too_easy|source_parse_problem`
+  - notes: The anaphoric resolution task is fundamentally broken because 'These people' is explicitly defined in the same sentence that introduces it ('These people were sometimes called the logical positivists'), leaving no ambiguity to resolve. While the philosophical content about Popper's falsificationism is substantive, it cannot compensate for a core design flaw that makes the reading mechanism test trivial. The unresolved chapter_id (14) / chapter_title ('Chapter Seven') mismatch further indicates source parsing issues that undermine case reliability. The excerpt should be dropped rather than revised, as relabeling the purpose cannot fix an inherently trivial anaphoric challenge.
+- `poor_charlies_almanack_private_en__10__seed_2`
+  - action: `drop`
+  - confidence: `high`
+  - problem_types: `weak_excerpt|source_parse_problem|ambiguous_focus`
+  - notes: Four independent reviews consistently identify the same critical failures: missing essential metadata (selection_reason, judge_focus, question_ids, phenomena) making the case untestable, combined with a fragmented excerpt that starts mid-sentence and ends mid-thought with no discernible central claim. The Samuel Johnson anecdote is decorative rather than substantive, and the excerpt amounts to vague meta-commentary about academic psychology lacking clear evaluation criteria. No evidence suggests this case warrants further curation investment.
+- `steve_jobs_private_en__24__seed_2`
+  - action: `drop`
+  - confidence: `high`
+  - problem_types: `source_parse_problem|wrong_bucket|ambiguous_focus`
+  - notes: This case has failed five consecutive review rounds due to entirely absent evaluation metadata (question_ids, phenomena, selection_reason, judge_focus), despite primary and adversarial reviews consistently flagging this as a blocking issue. The excerpt content is coherent and depicts strategic manipulation/flattery, but cannot function as a benchmark case without defined evaluation criteria. Additionally, the 'private_en' bucket appears mismatched—extracting private entities is not the apparent evaluation purpose. Dropping to allow proper metadata configuration before future consideration.
+- `supremacy_private_en__13__seed_1`
+  - action: `drop`
+  - confidence: `high`
+  - problem_types: `weak_excerpt`
+  - notes: Five consecutive reviews correctly identified this as a weak_excerpt: the passage describes governance intentions (future tense throughout) rather than documented outcomes. The judge focus asks to evaluate 'effectiveness and credibility of independent oversight structures,' but the content offers only planning-phase proposals—no evidence directors served, decisions were made, or the structure functioned. A source attributing claims to 'someone who was close to that work' rather than documented governance records is insufficient for evaluating real-world oversight effectiveness. The excerpt presents aspirational governance design as potential governance evidence, which is misleading for the stated evaluation goals.

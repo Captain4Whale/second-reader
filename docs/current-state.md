@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-03-29T06:55:56Z`
+Last verified: `2026-03-29T09:12:56Z`
 
 ## Current Objective
 - Keep Phase 9 of the new reading mechanism project recoverable and decision-ready:
@@ -135,29 +135,79 @@ Last verified: `2026-03-29T06:55:56Z`
     - `run_registered_job.py` now flushes its launch banner, isolates the wrapped command into a new session, and records signal-based abandonment explicitly
     - `scripts/launch_registered_job_detached.py` is now the reliable path for launching long-running registered jobs from agent/non-interactive shells
 - No benchmark promotion reopening, reviewed-slice freezing, durable-trace, re-entry, runtime-viability, or default-cutover work has been launched automatically after recovery.
-- The optional deterministic 10-book expansion lane was not launched:
+- The new cleanup follow-up packet pair is now completed and archived:
+  - English follow-up:
+    - job id: `bgjob_private_library_cleanup_en_followup_after_recovery_20260329_launch`
+    - packet id: `attentional_v2_private_library_cleanup_en_followup_after_recovery_20260329`
+    - archived summary: `reading-companion-backend/eval/review_packets/archive/attentional_v2_private_library_cleanup_en_followup_after_recovery_20260329/dataset_review_pipeline_summary.json`
+    - import result:
+      - `drop = 6`
+      - `revise = 3`
+      - `keep = 0`
+    - post-import counts remain:
+      - `7` `reviewed_active`
+      - `3` `needs_revision`
+      - `6` `needs_replacement`
+      - `154` `unset`
+  - Chinese follow-up:
+    - job id: `bgjob_private_library_cleanup_zh_followup_after_recovery_20260329_launch`
+    - packet id: `attentional_v2_private_library_cleanup_zh_followup_after_recovery_20260329`
+    - archived summary: `reading-companion-backend/eval/review_packets/archive/attentional_v2_private_library_cleanup_zh_followup_after_recovery_20260329/dataset_review_pipeline_summary.json`
+    - import result:
+      - `drop = 2`
+      - `revise = 1`
+      - `keep = 0`
+    - post-import counts remain:
+      - `13` `reviewed_active`
+      - `1` `needs_revision`
+      - `2` `needs_replacement`
+      - `40` `unset`
+- The coordination lane closeout is complete:
+  - `eval/review_packets/review_queue_summary.json` was refreshed once after both imports
+  - both archived follow-up packets now have `dataset_review_pipeline_summary.json`
+- The judged mechanism-evidence lane remains active:
+  - job id: `bgjob_en_chapter_core_rerun_round3_parallel_caseiso_judged_20260329`
+  - run id: `attentional_v2_vs_iterator_v1_chapter_core_en_round3_narrative_reference_repair_parallel_caseiso_judged_20260329`
+  - this rerun uses `--judge-mode llm` and is intended to produce real comparison evidence rather than placeholder `judge_unavailable` ties
+  - latest diagnosis:
+    - the job is not currently showing the same early silent-exit pattern as the earlier abandoned launcher run
+    - both case-worker subprocesses remain alive and are still writing fresh `attentional_v2` runtime state under:
+      - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_vs_iterator_v1_chapter_core_en_round3_narrative_reference_repair_parallel_caseiso_judged_20260329/outputs/up_from_slavery_public_en__10/attentional_v2/_runtime/run_state.json`
+      - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_vs_iterator_v1_chapter_core_en_round3_narrative_reference_repair_parallel_caseiso_judged_20260329/outputs/walden_205_en__10/attentional_v2/_runtime/run_state.json`
+    - both case workers are still emitting successful LLM trace rows into their local `llm_standard.jsonl` files with `MiniMax-M2.7-highspeed` and `quota_wait_ms_total = 0`
+    - the wrapper log still looks almost frozen because `eval/attentional_v2/run_chapter_comparison.py` prints only submit and whole-case completion lines at the parent level; it does not surface per-case worker progress while a case is still inside mechanism execution
+    - operational conclusion: do not relaunch this judged rerun unless the per-case runtime files stop advancing or the worker processes exit without writing case summaries
+- The earlier "10 more books" note now appears to have been a misunderstanding rather than a separate visible intake wave:
   - the repo-visible private-library source pool still matches the tracked `29`-book supplement
-  - `state/library_sources/` has no extra private EPUBs beyond the tracked manifest
-  - `/Users/baiweijiang/Documents/BOOK/` still contains the same `16` files already represented in the current supplement build
+  - that supplement already includes the known `16`-book `/Users/baiweijiang/Documents/BOOK/` batch plus the earlier `13` private Downloads books
+  - `state/library_sources/` has no extra private EPUBs beyond that tracked manifest
+  - no separate new 10-book wave is currently visible to the private-library builder
+- The next queued dataset-platform roadmap is now explicit:
+  - make the dataset build method smarter, more effective, and more efficient
+  - make dataset building fully automated end to end, with LLM replacing remaining non-decision curation where policy allows
+  - make source-book intake and intermediate-artifact management clear and durable, with canonical managed copies and one documented drop-folder workflow for future additions
 - Use the task registry plus the execution tracker as the route back into detailed mechanism work.
 
 ## Next
-- Inspect the completed `bgjob_en_chapter_core_rerun_round3_parallel_caseiso_detached_20260329_125043` rerun as harness evidence only:
-  - treat the successful completion as confirmation that the malformed-JSON recovery patch, case-isolation repair, and detached launcher path can finish this two-case slice cleanly
-  - do not treat the placeholder `tie: 2` summary as mechanism-comparison evidence because the run used `--judge-mode none`
-- Run the next English cleanup packet lifecycle on the recovered live local-only excerpt dataset:
-  - use the reusable mechanical dataset-review pipeline with packet id `attentional_v2_private_library_cleanup_en_followup_after_recovery_20260329`
-  - keep the pipeline mechanical only; do not reopen promotion or freeze a reviewed slice automatically
-- After the English cleanup pass, run the corresponding Chinese cleanup packet lifecycle:
-  - packet id `attentional_v2_private_library_cleanup_zh_followup_after_recovery_20260329`
-- If actual mechanism-comparison evidence is needed after the cleanup passes, relaunch the same two-case English slice in judge mode so the result is decision-usable.
+- Monitor the remaining active judged rerun:
+  - `bgjob_en_chapter_core_rerun_round3_parallel_caseiso_judged_20260329`
+- Treat the current sparse wrapper log as a visibility limitation rather than as proof of another early failure.
+  - confirm health from the live case runtime files and per-case `llm_standard.jsonl` traces until `summary/report.md` lands
+- Inspect the judged rerun as real mechanism evidence once its `summary/report.md` and `summary/aggregate.json` land.
+- Use the cleanup follow-up summaries as the new benchmark-hardening truth:
+  - the extra cleanup pass did not produce any `keep` decisions
+  - the English `9` and Chinese `3` open cases were reaffirmed as `revise` / `drop` rather than promoted into `reviewed_active`
+- Prepare the next dataset-platform design while the judged rerun is still in flight, but implement it in phases:
+  - source-book intake and intermediate-artifact governance first
+  - smarter question-first case mining second
+  - end-to-end dataset automation/orchestration third
 - Keep the prior failed `bgjob_en_chapter_core_rerun_round3_parallel_20260329` artifacts as debugging evidence:
   - treat `up_from_slavery_public_en__10` as packaging-corrupted because the `attentional_v2` case entry points at `walden` outputs
   - treat `walden_205_en__10` as incomplete because no case artifact or summary artifacts were written
 - Work from the recovered live local-only excerpt datasets:
-  - disposition the remaining `9` English open cases and `3` Chinese open cases through packet review rather than ad hoc edits
+  - the current follow-up cleanup pass has now dispositioned those cases mechanically, but it did not clear the open benchmark-status backlog
   - keep the review queue empty unless a deliberate new packet is created
-- Prepare a human-owned post-cleanup gate review from the recovered counts and remaining open cases.
+- Prepare a human-owned post-cleanup gate review from the recovered counts, the two new follow-up packet summaries, and the still-open benchmark statuses.
 - Keep benchmark promotion, reviewed-slice freezing, durable-trace, re-entry, runtime-viability, and any default-cutover decision paused until a human explicitly asks for them.
 
 ## Blocked
@@ -169,7 +219,7 @@ Last verified: `2026-03-29T06:55:56Z`
 
 ## Open Decisions
 - `OD-PRIVATE-LIBRARY-POST-RESCUE-GATE`
-  - The live reviewed state has been restored, and the current quality-first route is to complete another bounded cleanup/review pass before reopening benchmark-promotion discussion. The remaining human-owned question is whether the post-cleanup state is strong enough to reopen the gate.
+  - The live reviewed state has been restored, and the extra cleanup/review pass is now complete. The new follow-up packet summaries did not add any `keep` decisions, so the remaining human-owned question is whether promotion should stay closed until a more substantive backlog-clearing move is chosen.
 - `OD-BENCHMARK-SIZE`
   - Is the current benchmark family already large enough for high-confidence cross-mechanism judgment, or should the benchmark expand before any default-cutover decision?
 - `Q10`
@@ -180,7 +230,9 @@ Last verified: `2026-03-29T06:55:56Z`
 - Pre-fix parallel comparison artifacts can misassign case-to-output mappings, so partial outputs from the earlier round-3 reruns must be sanity-checked before they are treated as evidence.
 - Malformed-JSON handling in the reading path can still terminate a bounded rerun after substantial partial output has already been written.
 - Launching `run_registered_job.py` from a transient agent shell without the detached launcher can leave long-running jobs looking `abandoned` even when the wrapped command itself never raised a Python traceback.
+- The current judged rerun's parent log is sparse enough to resemble a stall even while child workers continue making progress, so health checks should look at per-case runtime files and local LLM traces rather than only the top-level job log.
 - The completed detached two-case rerun used `--judge-mode none`, so its `tie: 2` aggregate can be mistaken for a real comparison result unless we keep the placeholder nature explicit.
+- Private-library source intake still depends on hard-coded builder specs and indirect external roots, which makes future book addition, provenance control, and zero-touch automation harder than it should be.
 - Current public chapter/detail surfaces still carry section-shaped compatibility assumptions that may not fit the new mechanism directly.
 - Route mismatches between frontend routes and backend-returned targets can still regress the canonical product path.
 - Resume behavior remains sensitive to artifact placement under `reading-companion-backend/output/` and `reading-companion-backend/state/`.
@@ -191,7 +243,7 @@ Last verified: `2026-03-29T06:55:56Z`
 - `TASK-MECH-EN-RERUN`
 
 ## Active Job IDs
-- none
+- `bgjob_en_chapter_core_rerun_round3_parallel_caseiso_judged_20260329`
 
 ## Recommended Reading Path
 1. `AGENTS.md`
@@ -199,28 +251,31 @@ Last verified: `2026-03-29T06:55:56Z`
 3. `docs/current-state.md`
 4. relevant child `AGENTS.md`
 5. `docs/tasks/registry.md`
-6. `reading-companion-backend/state/job_registry/jobs/bgjob_en_chapter_core_rerun_round3_parallel_caseiso_detached_20260329_125043.json`
-7. `reading-companion-backend/state/job_registry/logs/bgjob_en_chapter_core_rerun_round3_parallel_caseiso_detached_20260329_125043.log`
-8. `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_vs_iterator_v1_chapter_core_en_round3_narrative_reference_repair_parallel_caseiso_detached_20260329_125043/summary/report.md`
-9. `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_vs_iterator_v1_chapter_core_en_round3_narrative_reference_repair_parallel_caseiso_detached_20260329_125043/summary/aggregate.json`
-10. `reading-companion-backend/state/job_registry/jobs/bgjob_en_chapter_core_rerun_round3_parallel_20260329.json`
-11. `reading-companion-backend/state/job_registry/logs/bgjob_en_chapter_core_rerun_round3_parallel_20260329.log`
-12. `reading-companion-backend/eval/review_packets/archive/attentional_v2_private_library_cleanup_en_recovery_20260329/dataset_review_pipeline_summary.json`
-13. `reading-companion-backend/eval/review_packets/archive/attentional_v2_private_library_cleanup_zh_recovery_20260329/dataset_review_pipeline_summary.json`
-14. `docs/implementation/new-reading-mechanism/private-library-promotion-round2.md`
-15. `docs/source-of-truth-map.md` when you need to decide where durable information belongs
+6. `reading-companion-backend/state/job_registry/jobs/bgjob_en_chapter_core_rerun_round3_parallel_caseiso_judged_20260329.json`
+7. `reading-companion-backend/state/job_registry/logs/bgjob_en_chapter_core_rerun_round3_parallel_caseiso_judged_20260329.log`
+8. `reading-companion-backend/eval/review_packets/archive/attentional_v2_private_library_cleanup_en_followup_after_recovery_20260329/dataset_review_pipeline_summary.json`
+9. `reading-companion-backend/eval/review_packets/archive/attentional_v2_private_library_cleanup_zh_followup_after_recovery_20260329/dataset_review_pipeline_summary.json`
+10. `reading-companion-backend/state/job_registry/jobs/bgjob_en_chapter_core_rerun_round3_parallel_caseiso_detached_20260329_125043.json`
+11. `reading-companion-backend/eval/review_packets/archive/attentional_v2_private_library_cleanup_en_recovery_20260329/dataset_review_pipeline_summary.json`
+12. `reading-companion-backend/eval/review_packets/archive/attentional_v2_private_library_cleanup_zh_recovery_20260329/dataset_review_pipeline_summary.json`
+13. `docs/implementation/new-reading-mechanism/private-library-promotion-round2.md`
+14. `docs/implementation/new-reading-mechanism/evaluation-question-map.md`
+15. `docs/implementation/new-reading-mechanism/evaluation-corpus-requirements.md`
+16. `docs/source-of-truth-map.md` when you need to decide where durable information belongs
 
 ## Machine-Readable Appendix
 ```json
 {
-  "updated_at": "2026-03-29T06:55:56Z",
+  "updated_at": "2026-03-29T09:12:56Z",
   "last_updated_by": "codex",
   "active_task_ids": [
     "TASK-BENCH-BACKLOG-RESCUE",
     "TASK-MECH-EN-RERUN"
   ],
   "blocked_task_ids": [],
-  "active_job_ids": [],
+  "active_job_ids": [
+    "bgjob_en_chapter_core_rerun_round3_parallel_caseiso_judged_20260329"
+  ],
   "open_decision_ids": [
     "OD-PRIVATE-LIBRARY-POST-RESCUE-GATE",
     "OD-BENCHMARK-SIZE",
@@ -229,6 +284,12 @@ Last verified: `2026-03-29T06:55:56Z`
   "detail_refs": [
     "docs/implementation/new-reading-mechanism/execution-tracker.md",
     "docs/implementation/new-reading-mechanism/private-library-promotion-round2.md",
+    "docs/implementation/new-reading-mechanism/evaluation-question-map.md",
+    "docs/implementation/new-reading-mechanism/evaluation-corpus-requirements.md",
+    "reading-companion-backend/state/job_registry/jobs/bgjob_en_chapter_core_rerun_round3_parallel_caseiso_judged_20260329.json",
+    "reading-companion-backend/state/job_registry/logs/bgjob_en_chapter_core_rerun_round3_parallel_caseiso_judged_20260329.log",
+    "reading-companion-backend/eval/review_packets/archive/attentional_v2_private_library_cleanup_en_followup_after_recovery_20260329/dataset_review_pipeline_summary.json",
+    "reading-companion-backend/eval/review_packets/archive/attentional_v2_private_library_cleanup_zh_followup_after_recovery_20260329/dataset_review_pipeline_summary.json",
     "reading-companion-backend/state/job_registry/jobs/bgjob_en_chapter_core_rerun_round3_parallel_caseiso_detached_20260329_125043.json",
     "reading-companion-backend/state/job_registry/logs/bgjob_en_chapter_core_rerun_round3_parallel_caseiso_detached_20260329_125043.log",
     "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_vs_iterator_v1_chapter_core_en_round3_narrative_reference_repair_parallel_caseiso_detached_20260329_125043/summary/report.md",

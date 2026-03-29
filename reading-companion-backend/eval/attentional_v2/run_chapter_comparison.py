@@ -346,6 +346,10 @@ def _isolated_output_dir(output_dir: Path):
         yield
 
 
+def _log_case_progress(case: ChapterCase, message: str) -> None:
+    print(f"[case {case.chapter_case_id}] {message}", flush=True)
+
+
 def _run_mechanism_for_case(
     case: ChapterCase,
     source: dict[str, Any],
@@ -362,6 +366,7 @@ def _run_mechanism_for_case(
 
     book_path = ROOT / str(source["relative_local_path"])
     isolated_output_dir = run_root / "outputs" / case.chapter_case_id / mechanism_key
+    _log_case_progress(case, f"[mechanism-start] {mechanism_key}")
     shutil.rmtree(isolated_output_dir, ignore_errors=True)
     isolated_output_dir.parent.mkdir(parents=True, exist_ok=True)
     with _isolated_output_dir(isolated_output_dir):
@@ -379,6 +384,7 @@ def _run_mechanism_for_case(
         )
     bundle = dict(result.normalized_eval_bundle or {})
     _json_dump(run_root / "bundles" / mechanism_key / f"{case.chapter_case_id}.json", bundle)
+    _log_case_progress(case, f"[mechanism-completed] {mechanism_key}")
     return {
         "mechanism_key": mechanism_key,
         "mechanism_label": result.mechanism.label,
@@ -571,8 +577,11 @@ def _judge_scope(
         raise ValueError(f"unsupported scope: {scope}")
 
     if judge_mode == "none":
-        return _normalize_judgment({}, left_key="attentional_v2", right_key="iterator_v1", score_keys=score_keys)
+        judgment = _normalize_judgment({}, left_key="attentional_v2", right_key="iterator_v1", score_keys=score_keys)
+        _log_case_progress(case, f"[judge-skip] {scope} winner={judgment['winner']}")
+        return judgment
 
+    _log_case_progress(case, f"[judge-start] {scope}")
     try:
         with llm_invocation_scope(
             profile_id=DEFAULT_EVAL_JUDGE_PROFILE_ID,
@@ -616,7 +625,9 @@ def _judge_scope(
         payload = {}
     except Exception:
         payload = {}
-    return _normalize_judgment(payload, left_key="attentional_v2", right_key="iterator_v1", score_keys=score_keys)
+    judgment = _normalize_judgment(payload, left_key="attentional_v2", right_key="iterator_v1", score_keys=score_keys)
+    _log_case_progress(case, f"[judge-completed] {scope} winner={judgment['winner']}")
+    return judgment
 
 
 def _score_average(side_scores: dict[str, int]) -> float:
@@ -679,12 +690,25 @@ def _evaluate_case(
     mechanism_execution_mode: str,
     judge_execution_mode: str,
 ) -> dict[str, Any]:
+    _log_case_progress(
+        case,
+        (
+            "[case-start] "
+            f"judge_mode={judge_mode} "
+            f"mechanism_execution_mode={mechanism_execution_mode} "
+            f"judge_execution_mode={judge_execution_mode}"
+        ),
+    )
     mechanism_results = _run_mechanisms_for_case(
         case,
         source,
         run_root=run_root,
         mechanism_execution_mode=mechanism_execution_mode,
     )
+    if judge_mode == "none":
+        _log_case_progress(case, "[case-stage] mechanisms completed; judge disabled")
+    else:
+        _log_case_progress(case, "[case-stage] mechanisms completed; starting judgment scopes")
     scope_results = _judge_scopes_for_case(
         case=case,
         mechanism_results=mechanism_results,
@@ -692,6 +716,7 @@ def _evaluate_case(
         judge_mode=judge_mode,
         judge_execution_mode=judge_execution_mode,
     )
+    _log_case_progress(case, "[case-completed]")
     return {
         "chapter_case_id": case.chapter_case_id,
         "language_track": case.language_track,
