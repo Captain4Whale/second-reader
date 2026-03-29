@@ -286,7 +286,7 @@ Update when: status changes, blockers appear, or phases complete.
     - `auto_review_packet.py`
     - `import_dataset_review_packet.py`
     - `run_dataset_review_pipeline.py`
-- [ ] Make source-book intake and intermediate-artifact management clear and durable.
+- [x] Make source-book intake and intermediate-artifact management clear and durable.
   - keep canonical managed copies of original books inside project-owned storage instead of relying on external source paths as the long-term truth
   - define one documented drop-folder workflow for future book additions so new intake can be fetched and processed reproducibly
   - Phase 1 managed intake is now landed:
@@ -295,6 +295,7 @@ Update when: status changes, blockers appear, or phases complete.
     - root operator surface:
       - `make library-source-intake`
     - durable catalog outputs under `reading-companion-backend/state/dataset_build/`
+    - the current private-library supplement builder now reads managed source-catalog entries plus canonical `state/library_sources/` copies instead of external `/BOOK` or `Downloads` roots
   - make the intermediate-artifact chain explicit so the later automation loop has stable handoff points:
     - source book -> canonical parse -> screened source record -> candidate chapters/spans -> dataset package rows -> review packets -> archived review outcomes
   - keep provenance lightweight and operational rather than heavy:

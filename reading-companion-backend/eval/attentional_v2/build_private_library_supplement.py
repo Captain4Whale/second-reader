@@ -1,12 +1,9 @@
-"""Build a combined private-library local supplement from all user-provided books.
+"""Build a combined private-library local supplement from managed source-catalog inputs.
 
-This script combines:
-- the earlier private Downloads batch
-- the newer /Users/baiweijiang/Documents/BOOK batch
-
-It then:
-- promotes every reachable book into the durable local source library
-- screens every book through the canonical parse pipeline
+This script now:
+- reads private managed-source records from `state/dataset_build/source_catalog.json`
+- reuses canonical copied books under `state/library_sources/`
+- screens every reachable book through the canonical parse pipeline
 - writes tracked source/corpus/split/local-ref manifests for the combined local pool
 - writes larger local-only supplement datasets under state/eval_local_datasets/
 
@@ -21,30 +18,45 @@ from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Any
 
-from corpus_builder import (
-    ROOT,
-    MANIFEST_ROOT,
-    STATE_LOCAL_DATASET_ROOT,
-    CandidateSpec,
-    chapter_row_from_candidate,
-    dataset_manifest,
-    load_book_document,
-    make_compatibility_fixtures,
-    make_runtime_fixtures,
-    promote_candidate,
-    screen_source_book,
-    write_json,
-    write_jsonl,
-)
-
-
-DOWNLOAD_ROOT = Path.home() / "Downloads"
-BOOK_ROOT = Path("/Users/baiweijiang/Documents/BOOK")
+try:
+    from .corpus_builder import (
+        ROOT,
+        MANIFEST_ROOT,
+        STATE_LOCAL_DATASET_ROOT,
+        CandidateSpec,
+        chapter_row_from_candidate,
+        dataset_manifest,
+        load_json,
+        load_book_document,
+        make_compatibility_fixtures,
+        make_runtime_fixtures,
+        screen_source_book,
+        write_json,
+        write_jsonl,
+    )
+except ImportError:  # pragma: no cover - script execution path
+    from corpus_builder import (
+        ROOT,
+        MANIFEST_ROOT,
+        STATE_LOCAL_DATASET_ROOT,
+        CandidateSpec,
+        chapter_row_from_candidate,
+        dataset_manifest,
+        load_json,
+        load_book_document,
+        make_compatibility_fixtures,
+        make_runtime_fixtures,
+        screen_source_book,
+        write_json,
+        write_jsonl,
+    )
 
 SOURCE_MANIFEST_ID = "attentional_v2_private_library_screen_v2"
 LOCAL_REFS_MANIFEST_ID = "attentional_v2_private_library_v2_local_refs"
 CORPUS_MANIFEST_ID = "attentional_v2_private_library_bilingual_v2"
 SPLITS_MANIFEST_ID = "attentional_v2_private_library_bilingual_v2_splits"
+SOURCE_CATALOG_PATH = ROOT / "state" / "dataset_build" / "source_catalog.json"
+TRACKED_SOURCE_MANIFEST_PATH = MANIFEST_ROOT / "source_books" / f"{SOURCE_MANIFEST_ID}.json"
 
 PRIMARY_ROLE_ORDER = ("expository", "argumentative", "narrative_reflective", "reference_heavy")
 EXCERPT_FRACTIONS = (0.24, 0.72)
@@ -52,521 +64,203 @@ MAX_CHAPTERS_PER_SOURCE = 4
 MIN_RUNTIME_SENTENCE_COUNT = 18
 
 
-def _spec(
+def _clean_text(value: Any) -> str:
+    return str(value or "").strip()
+
+
+def _normalize_list(value: Any) -> list[str]:
+    items = value if isinstance(value, list) else []
+    return [str(item).strip() for item in items if str(item).strip()]
+
+
+def _selection_priority(value: Any, *, fallback: int = 9999) -> int:
+    try:
+        parsed = int(value)
+    except (TypeError, ValueError):
+        return fallback
+    return parsed if parsed > 0 else fallback
+
+
+def _language_group(source_records: list[dict[str, Any]], *, language: str) -> list[str]:
+    return sorted(str(record["source_id"]) for record in source_records if record["language"] == language)
+
+
+def _tracked_private_library_overrides(path: Path = TRACKED_SOURCE_MANIFEST_PATH) -> dict[str, dict[str, Any]]:
+    if not path.exists():
+        return {}
+    payload = load_json(path)
+    books = payload.get("books", [])
+    if not isinstance(books, list):
+        return {}
+    overrides: dict[str, dict[str, Any]] = {}
+    for record in books:
+        if not isinstance(record, dict):
+            continue
+        source_id = _clean_text(record.get("source_id"))
+        if not source_id:
+            continue
+        overrides[source_id] = dict(record)
+    return overrides
+
+
+def _catalog_records(path: Path) -> list[dict[str, Any]]:
+    if not path.exists():
+        raise FileNotFoundError(
+            f"Missing managed source catalog at {path}. Run make library-source-intake first."
+        )
+    payload = load_json(path)
+    records = payload.get("records", [])
+    if not isinstance(records, list):
+        raise ValueError(f"Expected 'records' list in managed source catalog at {path}")
+    return [dict(record) for record in records if isinstance(record, dict)]
+
+
+def _resolve_batch_id(record: dict[str, Any], override: dict[str, Any]) -> str:
+    override_batch = _clean_text(override.get("acquisition_batch_id"))
+    if override_batch:
+        return override_batch
+    ingest_batches = record.get("ingest_batch_ids")
+    if isinstance(ingest_batches, list):
+        for value in reversed(ingest_batches):
+            cleaned = _clean_text(value)
+            if cleaned:
+                return cleaned
+    acquisition = record.get("acquisition")
+    if isinstance(acquisition, dict):
+        return _clean_text(acquisition.get("ingest_batch_id"))
+    return ""
+
+
+def load_private_library_source_items(
     *,
-    source_id: str,
-    title: str,
-    author: str,
-    language: str,
-    source_path: Path,
-    promoted_local_path: str,
-    origin: str,
-    acquisition_batch_id: str,
-    type_tags: list[str],
-    role_tags: list[str],
-    selection_priority: int,
-    notes: list[str],
-) -> dict[str, Any]:
-    return {
-        "spec": CandidateSpec(
-            source_id=source_id,
-            title=title,
-            author=author,
-            language=language,
-            origin=origin,
-            storage_mode="local-only",
-            promoted_local_path=promoted_local_path,
-            acquisition={"kind": "manual_local_file"},
-            type_tags=type_tags,
-            role_tags=role_tags,
-            selection_priority=selection_priority,
-            notes=notes,
-        ),
-        "source_path": source_path,
-        "acquisition_batch_id": acquisition_batch_id,
-        "origin_filename": source_path.name,
+    root: Path = ROOT,
+    catalog_path: Path = SOURCE_CATALOG_PATH,
+    tracked_manifest_path: Path = TRACKED_SOURCE_MANIFEST_PATH,
+) -> list[dict[str, Any]]:
+    overrides = _tracked_private_library_overrides(tracked_manifest_path)
+    items: list[dict[str, Any]] = []
+    for record in _catalog_records(catalog_path):
+        if _clean_text(record.get("visibility")) != "private":
+            continue
+        language = _clean_text(record.get("language"))
+        if language not in {"en", "zh"}:
+            continue
+        source_id = _clean_text(record.get("source_id"))
+        relative_local_path = _clean_text(record.get("relative_local_path"))
+        if not source_id or not relative_local_path:
+            continue
+        if not relative_local_path.startswith("state/library_sources/"):
+            continue
+
+        source_path = root / relative_local_path
+        if not source_path.exists():
+            raise FileNotFoundError(source_path)
+
+        override = overrides.get(source_id, {})
+        selection_priority = _selection_priority(record.get("selection_priority"))
+        if selection_priority == 9999:
+            selection_priority = _selection_priority(override.get("selection_priority"))
+
+        type_tags = _normalize_list(record.get("type_tags")) or _normalize_list(override.get("type_tags"))
+        role_tags = _normalize_list(record.get("role_tags")) or _normalize_list(override.get("role_tags"))
+        notes = _normalize_list(record.get("notes")) or _normalize_list(override.get("notes"))
+        title = _clean_text(record.get("title")) or _clean_text(override.get("title")) or source_path.stem
+        author = _clean_text(record.get("author")) or _clean_text(override.get("author"))
+        origin = _clean_text(record.get("origin")) or _clean_text(override.get("origin")) or "managed-library-source"
+        acquisition_batch_id = _resolve_batch_id(record, override)
+        acquisition = record.get("acquisition") if isinstance(record.get("acquisition"), dict) else {}
+        promoted_local_path = relative_local_path.replace("state/library_sources/", "", 1)
+
+        items.append(
+            {
+                "spec": CandidateSpec(
+                    source_id=source_id,
+                    title=title,
+                    author=author,
+                    language=language,
+                    origin=origin,
+                    storage_mode="local-only",
+                    promoted_local_path=promoted_local_path,
+                    acquisition={"kind": "managed_source_catalog", **acquisition},
+                    type_tags=type_tags,
+                    role_tags=role_tags,
+                    selection_priority=selection_priority,
+                    notes=notes,
+                ),
+                "source_path": source_path,
+                "acquisition_batch_id": acquisition_batch_id,
+                "origin_filename": _clean_text(record.get("original_filename")) or source_path.name,
+                "relative_local_path": relative_local_path,
+            }
+        )
+    items.sort(
+        key=lambda item: (
+            int(item["spec"].selection_priority),
+            str(item["spec"].language),
+            str(item["spec"].source_id),
+        )
+    )
+    return items
+
+
+def build_private_library_splits(source_records: list[dict[str, Any]]) -> dict[str, dict[str, list[str]]]:
+    splits: dict[str, dict[str, list[str]]] = {
+        "all_private_library_sources": {
+            "en": _language_group(source_records, language="en"),
+            "zh": _language_group(source_records, language="zh"),
+        },
+        "chapter_corpus_eligible": {
+            "en": sorted(
+                str(record["source_id"])
+                for record in source_records
+                if record["language"] == "en" and record["corpus_lane"] == "chapter_corpus_eligible"
+            ),
+            "zh": sorted(
+                str(record["source_id"])
+                for record in source_records
+                if record["language"] == "zh" and record["corpus_lane"] == "chapter_corpus_eligible"
+            ),
+        },
+        "excerpt_only": {
+            "en": sorted(
+                str(record["source_id"])
+                for record in source_records
+                if record["language"] == "en" and record["corpus_lane"] == "excerpt_only"
+            ),
+            "zh": sorted(
+                str(record["source_id"])
+                for record in source_records
+                if record["language"] == "zh" and record["corpus_lane"] == "excerpt_only"
+            ),
+        },
+        "reject_this_pass": {
+            "en": sorted(
+                str(record["source_id"])
+                for record in source_records
+                if record["language"] == "en" and record["corpus_lane"] == "reject"
+            ),
+            "zh": sorted(
+                str(record["source_id"])
+                for record in source_records
+                if record["language"] == "zh" and record["corpus_lane"] == "reject"
+            ),
+        },
     }
-
-
-def _private_specs() -> list[dict[str, Any]]:
-    return [
-        _spec(
-            source_id="antifragile_private_en",
-            title="Antifragile",
-            author="Nassim Nicholas Taleb",
-            language="en",
-            source_path=DOWNLOAD_ROOT / "Antifragile (Nassim Nicholas Taleb) (Z-Library).epub",
-            promoted_local_path="en/private/antifragile.epub",
-            origin="manual-local-download",
-            acquisition_batch_id="legacy_private_downloads_v1",
-            type_tags=["management_economics", "psychology_decision", "modern_nonfiction"],
-            role_tags=["argumentative", "reference_heavy"],
-            selection_priority=20,
-            notes=[
-                "Legacy private source retained in the combined private-library supplement.",
-                "Useful for distinction, fragility, and anti-intuitive argumentative pressure.",
-            ],
-        ),
-        _spec(
-            source_id="fooled_by_randomness_private_en",
-            title="Fooled by Randomness",
-            author="Nassim Nicholas Taleb",
-            language="en",
-            source_path=DOWNLOAD_ROOT / "Fooled by Randomness The Hidden Role of Chance in Life and in the Markets (Nassim Nicholas Taleb) (Z-Library).epub",
-            promoted_local_path="en/private/fooled_by_randomness.epub",
-            origin="manual-local-download",
-            acquisition_batch_id="legacy_private_downloads_v1",
-            type_tags=["psychology_decision", "management_economics", "modern_nonfiction"],
-            role_tags=["argumentative", "reference_heavy"],
-            selection_priority=6,
-            notes=[
-                "Legacy private source retained in the combined private-library supplement.",
-                "Useful for luck-versus-skill, risk, and conceptual-boundary evaluation.",
-            ],
-        ),
-        _spec(
-            source_id="skin_in_the_game_private_en",
-            title="Skin in the Game",
-            author="Nassim Nicholas Taleb",
-            language="en",
-            source_path=DOWNLOAD_ROOT / "Skin In The Game Hidden Asymmetries In Daily Life (Nassim Nicholas Taleb) (Z-Library).epub",
-            promoted_local_path="en/private/skin_in_the_game.epub",
-            origin="manual-local-download",
-            acquisition_batch_id="legacy_private_downloads_v1",
-            type_tags=["management_economics", "business", "modern_nonfiction"],
-            role_tags=["argumentative", "reference_heavy"],
-            selection_priority=21,
-            notes=[
-                "Legacy private source retained in the combined private-library supplement.",
-                "Useful for asymmetry, accountability, and ethical-pressure argument turns.",
-            ],
-        ),
-        _spec(
-            source_id="black_swan_private_en",
-            title="The Black Swan",
-            author="Nassim Nicholas Taleb",
-            language="en",
-            source_path=DOWNLOAD_ROOT / "The Black Swan Second Edition The Impact of the Highly Improbable With a New Section On Robustness and Fragility (Nassim Nicholas Taleb) (Z-Library).epub",
-            promoted_local_path="en/private/the_black_swan.epub",
-            origin="manual-local-download",
-            acquisition_batch_id="legacy_private_downloads_v1",
-            type_tags=["psychology_decision", "management_economics", "modern_nonfiction"],
-            role_tags=["argumentative", "reference_heavy"],
-            selection_priority=22,
-            notes=[
-                "Previously screened but not promoted; now included so the combined supplement covers the full reachable private library.",
-                "Useful for high-variance causality, anti-explanation pressure, and long-range argument structure.",
-            ],
-        ),
-        _spec(
-            source_id="value_of_others_private_en",
-            title="The Value of Others",
-            author="Orion Taraban",
-            language="en",
-            source_path=DOWNLOAD_ROOT / "_OceanofPDF.com_The_Value_of_Others_-_Orion_Taraban.epub",
-            promoted_local_path="en/private/the_value_of_others.epub",
-            origin="manual-local-download",
-            acquisition_batch_id="legacy_private_downloads_v1",
-            type_tags=["psychology_decision", "social_thought", "modern_nonfiction"],
-            role_tags=["argumentative", "expository"],
-            selection_priority=24,
-            notes=[
-                "Legacy private source retained in the combined private-library supplement.",
-                "Useful for modern philosophical prose with compressed distinctions and reaction-worthy lines.",
-            ],
-        ),
-        _spec(
-            source_id="making_of_a_manager_private_en",
-            title="The Making of a Manager",
-            author="Julie Zhuo",
-            language="en",
-            source_path=DOWNLOAD_ROOT / "The Making of a Manager What to Do When Everyone Looks to You (Julie Zhuo) (Z-Library).epub",
-            promoted_local_path="en/private/the_making_of_a_manager.epub",
-            origin="manual-local-download",
-            acquisition_batch_id="legacy_private_downloads_v1",
-            type_tags=["management_economics", "business", "modern_nonfiction"],
-            role_tags=["narrative_reflective", "expository"],
-            selection_priority=11,
-            notes=[
-                "Legacy private source retained in the combined private-library supplement.",
-                "Useful for reflective management prose and contemporary workplace examples.",
-            ],
-        ),
-        _spec(
-            source_id="inspired_private_en",
-            title="INSPIRED",
-            author="Marty Cagan",
-            language="en",
-            source_path=DOWNLOAD_ROOT / "INSPIRED How to Create Tech Products Customers Love (Marty Cagan, Christian Idiodi, Lea Hickman etc.) (Z-Library).epub",
-            promoted_local_path="en/private/inspired.epub",
-            origin="manual-local-download",
-            acquisition_batch_id="legacy_private_downloads_v1",
-            type_tags=["management_economics", "business", "science_technology", "modern_nonfiction"],
-            role_tags=["expository", "reference_heavy"],
-            selection_priority=18,
-            notes=[
-                "Legacy private source retained in the combined private-library supplement.",
-                "Useful for product-thinking distinctions and practical framework-heavy prose.",
-            ],
-        ),
-        _spec(
-            source_id="chance_private_en",
-            title="Chance",
-            author="Joseph Conrad",
-            language="en",
-            source_path=DOWNLOAD_ROOT / "joseph-conrad_chance.epub",
-            promoted_local_path="en/private/chance.epub",
-            origin="manual-local-download",
-            acquisition_batch_id="legacy_private_downloads_v1",
-            type_tags=["literature", "novel"],
-            role_tags=["narrative_reflective"],
-            selection_priority=29,
-            notes=[
-                "Legacy literary control title retained so the combined private library does not become pure nonfiction.",
-            ],
-        ),
-        _spec(
-            source_id="biji_de_fangfa_private_zh",
-            title="笔记的方法",
-            author="刘少楠, 刘白光",
-            language="zh",
-            source_path=DOWNLOAD_ROOT / "笔记的方法 (刘少楠, 刘白光) (Z-Library).epub",
-            promoted_local_path="zh/private/bijidefangfa.epub",
-            origin="manual-local-download",
-            acquisition_batch_id="legacy_private_downloads_v1",
-            type_tags=["management_economics", "method", "modern_nonfiction"],
-            role_tags=["expository"],
-            selection_priority=15,
-            notes=[
-                "Legacy private source retained in the combined private-library supplement.",
-                "Useful for modern Chinese expository prose and method-oriented distinctions.",
-            ],
-        ),
-        _spec(
-            source_id="fooled_by_randomness_private_zh",
-            title="随机漫步的傻瓜",
-            author="纳西姆·尼古拉斯·塔勒布",
-            language="zh",
-            source_path=DOWNLOAD_ROOT / "随机漫步的傻瓜：发现市场和人生中的隐藏机遇 = Fooled by Randomness The Hidden Role of Chance in Life and in the Markets ( etc.) (Z-Library).epub",
-            promoted_local_path="zh/private/suijimanbudesagua.epub",
-            origin="manual-local-download",
-            acquisition_batch_id="legacy_private_downloads_v1",
-            type_tags=["psychology_decision", "management_economics", "modern_nonfiction"],
-            role_tags=["argumentative", "reference_heavy"],
-            selection_priority=5,
-            notes=[
-                "Legacy private source retained in the combined private-library supplement.",
-                "Useful for Chinese argumentative prose on luck, uncertainty, and mistaken causality.",
-            ],
-        ),
-        _spec(
-            source_id="cracking_pm_career_private_en",
-            title="Cracking the PM Career",
-            author="Jackie Bavaro, Gayle McDowell",
-            language="en",
-            source_path=DOWNLOAD_ROOT / "Cracking the PM Career The Skills, Frameworks, and Practices To Become a Great Product Manager (Cracking the Interview … (Jackie Bavaro, Gayle McDowell) (Z-Library).epub",
-            promoted_local_path="en/private/cracking_pm_career.epub",
-            origin="manual-local-download",
-            acquisition_batch_id="legacy_private_downloads_v1",
-            type_tags=["management_economics", "business", "modern_nonfiction"],
-            role_tags=["expository", "reference_heavy"],
-            selection_priority=25,
-            notes=[
-                "Previously reserved; now included so all reachable private books are part of the combined supplement.",
-                "Useful for framework-heavy management/career prose.",
-            ],
-        ),
-        _spec(
-            source_id="cracking_pm_interview_private_en",
-            title="Cracking the PM Interview",
-            author="Gayle Laakmann McDowell",
-            language="en",
-            source_path=DOWNLOAD_ROOT / "Cracking the PM Interview - How to Land a Product Manager Job in Technology (Gayle Laakmann McDowell) (Z-Library).epub",
-            promoted_local_path="en/private/cracking_pm_interview.epub",
-            origin="manual-local-download",
-            acquisition_batch_id="legacy_private_downloads_v1",
-            type_tags=["management_economics", "business", "modern_nonfiction"],
-            role_tags=["expository", "reference_heavy"],
-            selection_priority=27,
-            notes=[
-                "Previously rejected for the first tiny seed slice; now retained in the combined supplement inventory.",
-                "Useful mainly as framework-heavy local supplement material rather than top-tier benchmark promotion material.",
-            ],
-        ),
-        _spec(
-            source_id="decode_and_conquer_private_en",
-            title="Decode and Conquer",
-            author="Lewis C. Lin",
-            language="en",
-            source_path=DOWNLOAD_ROOT / "Decode and Conquer Answers to Product Management Interviews (Lewis C. Lin) (Z-Library).epub",
-            promoted_local_path="en/private/decode_and_conquer.epub",
-            origin="manual-local-download",
-            acquisition_batch_id="legacy_private_downloads_v1",
-            type_tags=["management_economics", "business", "modern_nonfiction"],
-            role_tags=["expository", "reference_heavy"],
-            selection_priority=28,
-            notes=[
-                "Previously reserved; now included so all reachable private books are part of the combined supplement.",
-                "Useful for structured answer frameworks and distinction-heavy expository prose.",
-            ],
-        ),
-        _spec(
-            source_id="elon_musk_private_en",
-            title="Elon Musk",
-            author="Walter Isaacson",
-            language="en",
-            source_path=BOOK_ROOT / "Elon Musk (Walter Isaacson) (z-library.sk, 1lib.sk, z-lib.sk).epub",
-            promoted_local_path="en/private/elon_musk.epub",
-            origin="user-book-directory",
-            acquisition_batch_id="book_directory_20260326",
-            type_tags=["biography", "business", "science_technology", "modern_nonfiction"],
-            role_tags=["narrative_reflective", "reference_heavy"],
-            selection_priority=2,
-            notes=[
-                "New /BOOK batch title with strong multi-project biography pressure and institution-level causality.",
-            ],
-        ),
-        _spec(
-            source_id="evicted_private_en",
-            title="Evicted",
-            author="Matthew Desmond",
-            language="en",
-            source_path=BOOK_ROOT / "Evicted (Matthew Desmond) (z-library.sk, 1lib.sk, z-lib.sk).epub",
-            promoted_local_path="en/private/evicted.epub",
-            origin="user-book-directory",
-            acquisition_batch_id="book_directory_20260326",
-            type_tags=["social_reportage", "history", "modern_nonfiction"],
-            role_tags=["narrative_reflective", "expository"],
-            selection_priority=13,
-            notes=[
-                "New /BOOK batch title covering fact-rich social reportage and institution-individual causality.",
-            ],
-        ),
-        _spec(
-            source_id="good_strategy_bad_strategy_private_en",
-            title="Good Strategy/Bad Strategy",
-            author="Richard Rumelt",
-            language="en",
-            source_path=BOOK_ROOT / "Good StrategyBad Strategy (Rumelt, Richard) (z-library.sk, 1lib.sk, z-lib.sk).epub",
-            promoted_local_path="en/private/good_strategy_bad_strategy.epub",
-            origin="user-book-directory",
-            acquisition_batch_id="book_directory_20260326",
-            type_tags=["management_economics", "business", "modern_nonfiction"],
-            role_tags=["argumentative", "expository"],
-            selection_priority=3,
-            notes=[
-                "New /BOOK batch title covering diagnosis, guiding policy, and action coherence.",
-            ],
-        ),
-        _spec(
-            source_id="poor_charlies_almanack_private_en",
-            title="Poor Charlie's Almanack",
-            author="Charles T. Munger",
-            language="en",
-            source_path=BOOK_ROOT / "Poor Charlie’s Almanack The Wit and Wisdom of Charles T. Munger (Charles T. Munger) (z-library.sk, 1lib.sk, z-lib.sk).epub",
-            promoted_local_path="en/private/poor_charlies_almanack.epub",
-            origin="user-book-directory",
-            acquisition_batch_id="book_directory_20260326",
-            type_tags=["business", "management_economics", "modern_nonfiction"],
-            role_tags=["reference_heavy", "argumentative"],
-            selection_priority=1,
-            notes=[
-                "New /BOOK batch title with strong principle extraction and example-to-principle mapping pressure.",
-            ],
-        ),
-        _spec(
-            source_id="principles_private_en",
-            title="Principles",
-            author="Ray Dalio",
-            language="en",
-            source_path=BOOK_ROOT / "Principles (Ray Dalio) (z-library.sk, 1lib.sk, z-lib.sk).epub",
-            promoted_local_path="en/private/principles.epub",
-            origin="user-book-directory",
-            acquisition_batch_id="book_directory_20260326",
-            type_tags=["management_economics", "business", "modern_nonfiction"],
-            role_tags=["expository", "reference_heavy"],
-            selection_priority=7,
-            notes=[
-                "New /BOOK batch title with explicit rule systems, abstraction ladders, and principle/exception handling pressure.",
-            ],
-        ),
-        _spec(
-            source_id="shoe_dog_private_en",
-            title="Shoe Dog",
-            author="Phil Knight",
-            language="en",
-            source_path=BOOK_ROOT / "Shoe Dog (Phil Knight) (z-library.sk, 1lib.sk, z-lib.sk).epub",
-            promoted_local_path="en/private/shoe_dog.epub",
-            origin="user-book-directory",
-            acquisition_batch_id="book_directory_20260326",
-            type_tags=["business", "biography", "modern_nonfiction"],
-            role_tags=["narrative_reflective"],
-            selection_priority=10,
-            notes=[
-                "New /BOOK batch title with entrepreneurial narrative nonfiction and long-horizon decision pressure.",
-            ],
-        ),
-        _spec(
-            source_id="snowball_private_en",
-            title="Snowball",
-            author="Gregory Bastianelli",
-            language="en",
-            source_path=BOOK_ROOT / "Snowball (Gregory Bastianelli) (z-library.sk, 1lib.sk, z-lib.sk).epub",
-            promoted_local_path="en/private/snowball.epub",
-            origin="user-book-directory",
-            acquisition_batch_id="book_directory_20260326",
-            type_tags=["business", "biography", "modern_nonfiction"],
-            role_tags=["narrative_reflective", "reference_heavy"],
-            selection_priority=12,
-            notes=[
-                "New /BOOK batch title included as-supplied; category tags treat it as business/biographical nonfiction pending later finer review.",
-            ],
-        ),
-        _spec(
-            source_id="steve_jobs_private_en",
-            title="Steve Jobs",
-            author="Walter Isaacson",
-            language="en",
-            source_path=BOOK_ROOT / "Steve Jobs (Walter Isaacson) (z-library.sk, 1lib.sk, z-lib.sk).epub",
-            promoted_local_path="en/private/steve_jobs.epub",
-            origin="user-book-directory",
-            acquisition_batch_id="book_directory_20260326",
-            type_tags=["biography", "business", "science_technology", "modern_nonfiction"],
-            role_tags=["narrative_reflective", "reference_heavy"],
-            selection_priority=4,
-            notes=[
-                "New /BOOK batch title with long-range character pattern and product/company causality.",
-            ],
-        ),
-        _spec(
-            source_id="supremacy_private_en",
-            title="Supremacy",
-            author="Parmy Olson",
-            language="en",
-            source_path=BOOK_ROOT / "Supremacy AI, ChatGPT, and the Race That Will Change the World (Parmy Olson) (z-library.sk, 1lib.sk, z-lib.sk).epub",
-            promoted_local_path="en/private/supremacy.epub",
-            origin="user-book-directory",
-            acquisition_batch_id="book_directory_20260326",
-            type_tags=["business", "science_technology", "modern_nonfiction"],
-            role_tags=["argumentative", "reference_heavy"],
-            selection_priority=8,
-            notes=[
-                "New /BOOK batch title with modern AI-company rivalry, institutional incentives, and technology/business overlap.",
-            ],
-        ),
-        _spec(
-            source_id="naval_almanack_private_en",
-            title="The Almanack of Naval Ravikant",
-            author="Eric Jorgenson",
-            language="en",
-            source_path=BOOK_ROOT / "The Almanack of Naval Ravikant A Guide to Wealth and Happiness (Eric Jorgenson) (z-library.sk, 1lib.sk, z-lib.sk).epub",
-            promoted_local_path="en/private/the_almanack_of_naval_ravikant.epub",
-            origin="user-book-directory",
-            acquisition_batch_id="book_directory_20260326",
-            type_tags=["business", "management_economics", "modern_nonfiction"],
-            role_tags=["expository", "argumentative"],
-            selection_priority=9,
-            notes=[
-                "New /BOOK batch title with aphoristic nonfiction and selective-anchor pressure.",
-            ],
-        ),
-        _spec(
-            source_id="book_of_elon_private_en",
-            title="The Book of Elon",
-            author="Eric Jorgenson",
-            language="en",
-            source_path=BOOK_ROOT / "The Book of Elon (Eric Jorgenson) (z-library.sk, 1lib.sk, z-lib.sk).epub",
-            promoted_local_path="en/private/the_book_of_elon.epub",
-            origin="user-book-directory",
-            acquisition_batch_id="book_directory_20260326",
-            type_tags=["biography", "business", "modern_nonfiction"],
-            role_tags=["expository", "narrative_reflective"],
-            selection_priority=17,
-            notes=[
-                "New /BOOK batch title with entrepreneurial/personality framing that complements the larger Isaacson biography.",
-            ],
-        ),
-        _spec(
-            source_id="kangxi_hongpiao_private_zh",
-            title="康熙的红票：全球化中的清朝",
-            author="孙立天",
-            language="zh",
-            source_path=BOOK_ROOT / "康熙的红票：全球化中的清朝 (孙立天) (z-library.sk, 1lib.sk, z-lib.sk).epub",
-            promoted_local_path="zh/private/kangxidehongpiao.epub",
-            origin="user-book-directory",
-            acquisition_batch_id="book_directory_20260326",
-            type_tags=["history", "modern_nonfiction"],
-            role_tags=["argumentative", "reference_heavy"],
-            selection_priority=14,
-            notes=[
-                "New /BOOK batch title with Chinese historical/institutional causality and diplomacy pressure.",
-            ],
-        ),
-        _spec(
-            source_id="zhangzhongmou_zizhuan_private_zh",
-            title="张忠谋自传(1931-1964)",
-            author="张忠谋",
-            language="zh",
-            source_path=BOOK_ROOT / "张忠谋自传 (1931-1964) = Autobiography of Morris C. M. Chang (张忠谋) (z-library.sk, 1lib.sk, z-lib.sk).epub",
-            promoted_local_path="zh/private/zhangzhongmou_zizhuan_1931_1964.epub",
-            origin="user-book-directory",
-            acquisition_batch_id="book_directory_20260326",
-            type_tags=["biography", "business", "modern_nonfiction"],
-            role_tags=["narrative_reflective"],
-            selection_priority=16,
-            notes=[
-                "New /BOOK batch title with long-range career formation and business/technology biography pressure.",
-            ],
-        ),
-        _spec(
-            source_id="canglang_zhishui_private_zh",
-            title="沧浪之水",
-            author="阎真",
-            language="zh",
-            source_path=BOOK_ROOT / "沧浪之水 (阎真) (z-library.sk, 1lib.sk, z-lib.sk).epub",
-            promoted_local_path="zh/private/canglangzhishui.epub",
-            origin="user-book-directory",
-            acquisition_batch_id="book_directory_20260326",
-            type_tags=["literature", "novel"],
-            role_tags=["narrative_reflective"],
-            selection_priority=23,
-            notes=[
-                "New /BOOK batch literary control title for contemporary Chinese narrative pressure.",
-            ],
-        ),
-        _spec(
-            source_id="meiguoren_de_xingge_private_zh",
-            title="美国人的性格",
-            author="费孝通",
-            language="zh",
-            source_path=BOOK_ROOT / "美国人的性格【（费孝通先生经典作品） 中国社会学、人类学奠基人之一费孝通学术经典赢得《纽约时报》《时代周刊》赞誉探索美国人的性格特征... (z-library.sk, 1lib.sk, z-lib.sk).epub",
-            promoted_local_path="zh/private/meiguorendexingge.epub",
-            origin="user-book-directory",
-            acquisition_batch_id="book_directory_20260326",
-            type_tags=["social_reportage", "history", "modern_nonfiction"],
-            role_tags=["argumentative", "expository"],
-            selection_priority=19,
-            notes=[
-                "New /BOOK batch title with sociology/cultural interpretation pressure and cross-society comparison.",
-            ],
-        ),
-        _spec(
-            source_id="zouchu_weiyi_zhenliguan_private_zh",
-            title="走出唯一真理观",
-            author="陈嘉映",
-            language="zh",
-            source_path=BOOK_ROOT / "走出唯一真理观【豆瓣评分9.0！“中国最接近哲学家称呼的人”、《十三邀》嘉宾陈嘉映继《何为良好生活》后重磅新作！我们之所求，首先不是让... (z-library.sk, 1lib.sk, z-lib.sk).epub",
-            promoted_local_path="zh/private/zouchu_weiyi_zhenliguan.epub",
-            origin="user-book-directory",
-            acquisition_batch_id="book_directory_20260326",
-            type_tags=["psychology_decision", "philosophical", "modern_nonfiction"],
-            role_tags=["argumentative", "expository"],
-            selection_priority=26,
-            notes=[
-                "New /BOOK batch title with philosophical distinction pressure and modern Chinese argumentative prose.",
-            ],
-        ),
-    ]
+    batch_ids = sorted({_clean_text(record.get("acquisition_batch_id")) for record in source_records if _clean_text(record.get("acquisition_batch_id"))})
+    for batch_id in batch_ids:
+        splits[batch_id] = {
+            "en": sorted(
+                str(record["source_id"])
+                for record in source_records
+                if record["language"] == "en" and _clean_text(record.get("acquisition_batch_id")) == batch_id
+            ),
+            "zh": sorted(
+                str(record["source_id"])
+                for record in source_records
+                if record["language"] == "zh" and _clean_text(record.get("acquisition_batch_id")) == batch_id
+            ),
+        }
+    return splits
 
 
 def _primary_selection_role(role_tags: list[str]) -> str:
@@ -672,7 +366,12 @@ def _summary_counts(source_records: list[dict[str, Any]]) -> dict[str, Any]:
 
 
 def main() -> None:
-    items = _private_specs()
+    items = load_private_library_source_items()
+    if not items:
+        raise ValueError(
+            "No private managed-library sources are available in the source catalog. "
+            "Run make library-source-intake first, then retry the private-library supplement build."
+        )
 
     source_records: list[dict[str, Any]] = []
     source_refs: list[dict[str, Any]] = []
@@ -684,11 +383,10 @@ def main() -> None:
         if not source_path.exists():
             raise FileNotFoundError(source_path)
 
-        promoted_path = promote_candidate(source_path, spec.promoted_local_path)
-        relative_local_path = str(promoted_path.relative_to(ROOT))
+        relative_local_path = str(item["relative_local_path"])
         record = screen_source_book(
             spec=spec,
-            local_path=promoted_path,
+            local_path=source_path,
             relative_local_path=relative_local_path,
             acquisition_metadata={
                 "download_url": None,
@@ -757,7 +455,7 @@ def main() -> None:
         source_manifest_path,
         {
             "manifest_id": SOURCE_MANIFEST_ID,
-            "description": "Tracked screening inventory for the combined private-library supplement built from the user's /BOOK directory plus earlier private Downloads books.",
+            "description": "Tracked screening inventory for the combined private-library supplement built from the managed source catalog and canonical local source library.",
             "summary": _summary_counts(source_records),
             "books": source_records,
         },
@@ -779,7 +477,7 @@ def main() -> None:
         local_refs_manifest_path,
         {
             "manifest_id": LOCAL_REFS_MANIFEST_ID,
-            "description": "Local source-file and local-package references for the combined private-library attentional_v2 supplement.",
+            "description": "Local source-file and local-package references for the combined private-library attentional_v2 supplement built from managed source-catalog inputs.",
             "source_refs": source_refs,
             "local_dataset_packages": local_package_refs,
         },
@@ -789,45 +487,19 @@ def main() -> None:
         corpora_manifest_path,
         {
             "manifest_id": CORPUS_MANIFEST_ID,
-            "description": "Combined bilingual private-library source corpus for attentional_v2 evaluation supplementation.",
+            "description": "Combined bilingual private-library source corpus for attentional_v2 evaluation supplementation, sourced from the managed local source catalog.",
             "language_tracks": {
                 "en": [record["source_id"] for record in source_records if record["language"] == "en"],
                 "zh": [record["source_id"] for record in source_records if record["language"] == "zh"],
             },
         },
     )
-
-    splits = {
-        "all_private_library_sources": {
-            "en": [record["source_id"] for record in source_records if record["language"] == "en"],
-            "zh": [record["source_id"] for record in source_records if record["language"] == "zh"],
-        },
-        "legacy_private_downloads_v1": {
-            "en": [record["source_id"] for record in source_records if record["acquisition_batch_id"] == "legacy_private_downloads_v1" and record["language"] == "en"],
-            "zh": [record["source_id"] for record in source_records if record["acquisition_batch_id"] == "legacy_private_downloads_v1" and record["language"] == "zh"],
-        },
-        "book_directory_20260326": {
-            "en": [record["source_id"] for record in source_records if record["acquisition_batch_id"] == "book_directory_20260326" and record["language"] == "en"],
-            "zh": [record["source_id"] for record in source_records if record["acquisition_batch_id"] == "book_directory_20260326" and record["language"] == "zh"],
-        },
-        "chapter_corpus_eligible": {
-            "en": [record["source_id"] for record in source_records if record["language"] == "en" and record["corpus_lane"] == "chapter_corpus_eligible"],
-            "zh": [record["source_id"] for record in source_records if record["language"] == "zh" and record["corpus_lane"] == "chapter_corpus_eligible"],
-        },
-        "excerpt_only": {
-            "en": [record["source_id"] for record in source_records if record["language"] == "en" and record["corpus_lane"] == "excerpt_only"],
-            "zh": [record["source_id"] for record in source_records if record["language"] == "zh" and record["corpus_lane"] == "excerpt_only"],
-        },
-        "reject_this_pass": {
-            "en": [record["source_id"] for record in source_records if record["language"] == "en" and record["corpus_lane"] == "reject"],
-            "zh": [record["source_id"] for record in source_records if record["language"] == "zh" and record["corpus_lane"] == "reject"],
-        },
-    }
+    splits = build_private_library_splits(source_records)
     write_json(
         splits_manifest_path,
         {
             "manifest_id": SPLITS_MANIFEST_ID,
-            "description": "Split definitions for the combined private-library attentional_v2 supplement.",
+            "description": "Split definitions for the combined private-library attentional_v2 supplement built from managed source-catalog inputs.",
             "splits": splits,
         },
     )

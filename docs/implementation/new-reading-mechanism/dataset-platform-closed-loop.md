@@ -47,7 +47,7 @@ The weakest current layer is semantic case mining.
 Current limitations:
 - excerpt seeds are still often fixed-window slices
 - bucket assignment still depends too much on role and position heuristics
-- source intake still depends on hard-coded external roots for private-library work
+- the current private-library builder is now catalog-wired, but semantic case mining still does not start from explicit target phenomena
 - the builder stops after packaging instead of iterating from review outcomes
 
 ## Closed Loop Target
@@ -200,8 +200,8 @@ The explicit Phase 1 handoff chain is:
 Phase 1 does not replace the current builders immediately.
 
 It gives them a better upstream source territory:
-- instead of hard-coded `/Users/.../BOOK` or `~/Downloads` roots
-- later builders should pull from the managed catalog and canonical library
+- the current private-library supplement builder now pulls from the managed catalog and canonical library
+- later builders should do the same instead of reaching back to ad hoc external roots
 
 ## Immediate Next Work After Phase 1
 1. Teach the smart builder to read from the managed source catalog.

@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-03-29T10:25:32Z`
+Last verified: `2026-03-29T14:26:06Z`
 
 ## Current Objective
 - Keep Phase 9 of the new reading mechanism project recoverable and decision-ready:
@@ -200,6 +200,7 @@ Last verified: `2026-03-29T10:25:32Z`
     - root operator surface:
       - `make library-source-intake`
     - durable source catalog outputs under `reading-companion-backend/state/dataset_build/`
+    - the current private-library supplement builder now consumes that managed source catalog and canonical local source copies instead of external `/BOOK` or `Downloads` roots
   - build the next dataset platform as one closed loop:
     - managed source intake and project-owned artifact layout
     - question-first candidate mining and case construction
@@ -218,11 +219,11 @@ Last verified: `2026-03-29T10:25:32Z`
   - drop books into `reading-companion-backend/state/library_inbox/`
   - use nested folders only for optional batch organization
   - run `make library-source-intake`
-- Connect the current private-library builder inputs to the managed source catalog before starting smart target-case mining, so later automation loops consume one durable source of truth.
-- Prepare the next dataset-platform design while the judged rerun is still in flight, but design it as one closed build-review-refine loop and implement it in phases:
-  - source-book intake and intermediate-artifact governance first
-  - smarter question-first case mining on top of the current corpus/review schema second
-  - closed-loop automation that reuses packet audit/adjudication/import plus adequacy checks third
+- Start the smart-builder phase on top of the managed source catalog, the current private-library supplement manifests, and the existing reviewed/curated case signals.
+- Prepare the next dataset-platform design on top of the now-completed judged rerun and the landed source-governance work, and design it as one closed build-review-refine loop implemented in phases:
+  - source-book intake and intermediate-artifact governance is now landed
+  - smarter question-first case mining on top of the current corpus/review schema is next
+  - closed-loop automation that reuses packet audit/adjudication/import plus adequacy checks remains after that
 - Keep the prior failed `bgjob_en_chapter_core_rerun_round3_parallel_20260329` artifacts as debugging evidence:
   - treat `up_from_slavery_public_en__10` as packaging-corrupted because the `attentional_v2` case entry points at `walden` outputs
   - treat `walden_205_en__10` as incomplete because no case artifact or summary artifacts were written
@@ -254,7 +255,7 @@ Last verified: `2026-03-29T10:25:32Z`
 - Launching `run_registered_job.py` from a transient agent shell without the detached launcher can leave long-running jobs looking `abandoned` even when the wrapped command itself never raised a Python traceback.
 - Judged rerun parent logs can look sparse while case workers are still making progress, so future health checks should look at per-case runtime files and local LLM traces rather than only the top-level job log.
 - The completed detached two-case rerun used `--judge-mode none`, so its `tie: 2` aggregate can be mistaken for a real comparison result unless we keep the placeholder nature explicit.
-- Private-library source intake still depends on hard-coded builder specs and indirect external roots, which makes future book addition, provenance control, and zero-touch automation harder than it should be.
+- The managed source catalog now drives both intake and the current private-library supplement build, but semantic case mining still depends too much on fixed-window and role/position heuristics.
 - Current public chapter/detail surfaces still carry section-shaped compatibility assumptions that may not fit the new mechanism directly.
 - Route mismatches between frontend routes and backend-returned targets can still regress the canonical product path.
 - Resume behavior remains sensitive to artifact placement under `reading-companion-backend/output/` and `reading-companion-backend/state/`.
@@ -263,7 +264,7 @@ Last verified: `2026-03-29T10:25:32Z`
 ## Active Task IDs
 - `TASK-BENCH-BACKLOG-RESCUE`
 - `TASK-MECH-EN-RERUN`
-- `TASK-DATASET-SOURCE-GOVERNANCE`
+- `TASK-DATASET-SMART-BUILDER`
 
 ## Active Job IDs
 - none
@@ -292,12 +293,12 @@ Last verified: `2026-03-29T10:25:32Z`
 ## Machine-Readable Appendix
 ```json
 {
-  "updated_at": "2026-03-29T10:25:32Z",
+  "updated_at": "2026-03-29T14:26:06Z",
   "last_updated_by": "codex",
   "active_task_ids": [
     "TASK-BENCH-BACKLOG-RESCUE",
     "TASK-MECH-EN-RERUN",
-    "TASK-DATASET-SOURCE-GOVERNANCE"
+    "TASK-DATASET-SMART-BUILDER"
   ],
   "blocked_task_ids": [],
   "active_job_ids": [],
@@ -314,6 +315,8 @@ Last verified: `2026-03-29T10:25:32Z`
     "docs/implementation/new-reading-mechanism/dataset-platform-closed-loop.md",
     "reading-companion-backend/eval/attentional_v2/ingest_library_sources.py",
     "reading-companion-backend/tests/test_source_intake.py",
+    "reading-companion-backend/eval/attentional_v2/build_private_library_supplement.py",
+    "reading-companion-backend/tests/test_private_library_supplement.py",
     "reading-companion-backend/state/job_registry/jobs/bgjob_en_chapter_core_rerun_round3_parallel_caseiso_judged_20260329.json",
     "reading-companion-backend/state/job_registry/logs/bgjob_en_chapter_core_rerun_round3_parallel_caseiso_judged_20260329.log",
     "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_vs_iterator_v1_chapter_core_en_round3_narrative_reference_repair_parallel_caseiso_judged_20260329/summary/report.md",

@@ -450,6 +450,8 @@ And records them in:
 - `reading-companion-backend/state/dataset_build/source_catalog.json`
 - `reading-companion-backend/state/dataset_build/source_intake_runs/`
 
+The current private-library supplement builder now consumes that managed source catalog plus canonical `state/library_sources/` copies instead of reading directly from external `/BOOK` or `Downloads` roots.
+
 - tracked manifests:
   - `reading-companion-backend/eval/manifests/source_books/attentional_v2_private_library_screen_v2.json`
   - `reading-companion-backend/eval/manifests/local_refs/attentional_v2_private_library_v2.json`

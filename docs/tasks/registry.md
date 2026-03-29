@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-03-29T10:25:32Z`
+Last updated: `2026-03-29T13:51:50Z`
 
 ## Status Values
 - `active`
@@ -36,31 +36,22 @@ Last updated: `2026-03-29T10:25:32Z`
 - Next: inspect the completed judged two-case rerun as real mechanism evidence, preserve the `walden` win, and diagnose the `up_from_slavery` chapter mismatch before deciding what to repair next
 - Jobs: none
 
-### `TASK-DATASET-SOURCE-GOVERNANCE` — Make source-book intake and intermediate artifacts clear and durable
+### `TASK-DATASET-SMART-BUILDER` — Make dataset case mining question-first, smarter, and more effective
 - Status: `active`
 - Lane: `dataset_platform`
 - Priority: `high`
 - Detail: `docs/implementation/new-reading-mechanism/execution-tracker.md`
-- Next: use the landed managed intake layer as the new source of truth for future book additions, then connect the current private-library builder inputs to the managed source catalog instead of hard-coded external roots
+- Next: teach the smart builder to consume the managed source catalog and existing curated/reviewed case signals, then replace fixed excerpt windows and role-and-position proxy buckets with target-case mining
 - Jobs: none
 
 ## Queued
-
-### `TASK-DATASET-SMART-BUILDER` — Make dataset case mining question-first, smarter, and more effective
-- Status: `queued`
-- Lane: `dataset_platform`
-- Priority: `high`
-- Detail: `docs/implementation/new-reading-mechanism/execution-tracker.md`
-- Blocked by: `TASK-DATASET-SOURCE-GOVERNANCE`
-- Next: teach the smart builder to consume the managed source catalog and existing curated/reviewed case signals, then replace fixed excerpt windows and role-and-position proxy buckets with target-case mining
-- Jobs: none
 
 ### `TASK-DATASET-FULL-AUTOMATION` — Make dataset building fully automated as one closed build-review-refine loop
 - Status: `queued`
 - Lane: `dataset_platform`
 - Priority: `high`
 - Detail: `docs/implementation/new-reading-mechanism/execution-tracker.md`
-- Blocked by: `TASK-DATASET-SOURCE-GOVERNANCE`, `TASK-DATASET-SMART-BUILDER`
+- Blocked by: `TASK-DATASET-SMART-BUILDER`
 - Next: design one reusable orchestration flow that can run intake, screening, target-case generation, dataset packaging, weak-case review, mechanical adjudication/import, adequacy scoring, and targeted regeneration until thresholds are met, the source pool is exhausted, or an explicit human-owned policy stop is reached
 - Jobs: none
 
@@ -112,3 +103,11 @@ Last updated: `2026-03-29T10:25:32Z`
 - Priority: `high`
 - Detail: `docs/source-of-truth-map.md`
 - Next: keep `docs/current-state.md` and `docs/tasks/registry.*` updated whenever live work changes
+
+### `TASK-DATASET-SOURCE-GOVERNANCE` — Make source-book intake and intermediate artifacts clear and durable
+- Status: `done`
+- Lane: `dataset_platform`
+- Priority: `high`
+- Detail: `docs/implementation/new-reading-mechanism/execution-tracker.md`
+- Next: keep using the managed inbox plus source catalog as the source of truth for future book additions and private-library supplement refreshes
+- Jobs: none
