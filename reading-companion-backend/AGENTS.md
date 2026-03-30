@@ -94,6 +94,10 @@ Update when: backend-local constraints, recurring pitfalls, or stable implementa
 
 ## Runtime And Artifact Constraints
 - Preserve existing checkpoints, resume behavior, budget controls, and output artifact conventions unless the task is explicitly migrating them.
+- Generated scratch validation artifacts are runtime output, not durable source.
+  - If a workflow emits bulk scratch packet archives, closed-loop validation packets, or similar local review evidence under tracked `eval/` territory for convenience, route them into `state/` or cover them with narrow ignore rules.
+  - Do not let repetitive offline smoke runs create commit noise just because they wrote into a tracked subtree.
+  - If a derived summary is intentionally tracked for operator visibility, keep it stable and avoid timestamp-only rewrites when the underlying queue state did not change.
 - Treat `public/book_document.json` as the only shared parsed-book truth.
 - Keep top-level `public/` limited to cross-mechanism, product-facing artifacts.
 - Keep top-level `_runtime/` limited to cross-mechanism live shell state.

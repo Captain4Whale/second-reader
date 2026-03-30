@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-03-30T13:25:41Z`
+Last verified: `2026-03-30T13:50:41Z`
 
 ## Current Objective
 - Keep Phase 9 of the new reading mechanism project recoverable and decision-ready:
@@ -353,23 +353,38 @@ Last verified: `2026-03-30T13:25:41Z`
   - diagnosis:
     - the Chinese cue-guard shaping held through the broader bilingual packet lifecycle and removed the earlier dropped Chinese tail
     - the shared English rows still showed `source_input_drift = 0`, `audit_input_drift = 8`, and `action_drift = 5` against the post-fix English-only run
-- The judged two-case mechanism follow-up rerun is still running:
+- The judged two-case mechanism follow-up rerun is now completed:
   - job id:
     - `bgjob_en_chapter_core_rerun_round3_caseiso_judged_followup_20260330`
   - run id:
     - `attentional_v2_vs_iterator_v1_chapter_core_en_round3_narrative_reference_repair_parallel_caseiso_judged_followup_20260330`
-  - purpose:
-    - test whether `up_from_slavery_public_en__10` gains earlier chapter presence without losing the `walden_205_en__10` win
-- The next guarded dataset-platform rerun is now running:
+  - registry status:
+    - `completed`
+    - `exit_code = 0`
+    - `ended_at = 2026-03-30T13:46:45.547987Z`
+  - current top-line result:
+    - `local_impact`: `attentional_v2` wins both cases, win-or-tie rate `1.0`, average scores `4.4` vs `3.6`
+    - `system_regression`: `attentional_v2` wins both cases, win-or-tie rate `1.0`, average scores `4.0` vs `2.4`
+  - interpretation to carry forward:
+    - the bounded follow-up repair preserved the `walden_205_en__10` strength
+    - `up_from_slavery_public_en__10` also flipped in favor of `attentional_v2`, so the next mechanism step is selective generalization and overfitting checks rather than emergency rescue
+- The next guarded dataset-platform rerun is now completed:
   - job id:
     - `bgjob_closed_loop_en_broader_auditsemanticretry_20260330`
   - run id:
     - `closed_loop_full_smoke_en_broader_auditsemanticretry_20260330`
-  - purpose:
-    - rerun the broader English scratch closed-loop sample under the new audit semantic-retry guard
-    - compare it against the prior post-fix broader English run to see whether the earlier `audit_input_drift = 8` instability shrinks or converts into explicit audit failure
-  - boundary:
-    - keep unattended widening paused until that guarded rerun produces either better reproducibility or a clearer failure mode
+  - registry status:
+    - `completed`
+    - `exit_code = 0`
+    - `ended_at = 2026-03-30T13:29:35.050505Z`
+  - result:
+    - English `keep = 4`, `revise = 4`, `drop = 0`
+    - post-import English benchmark counts: `reviewed_active = 4`, `needs_revision = 4`
+    - `variability_guard_triggered = false`
+  - interpretation to carry forward:
+    - the guarded rerun completed cleanly and reproduced the broader English `4 keep / 4 revise` split
+    - the next dataset-platform step is comparison and reproducibility diagnosis, not more queue plumbing
+- There are currently no active background jobs.
 - The dataset-platform route is now underway, and it should keep reusing the machinery already landed rather than replace it:
   - keep the current strengths:
     - manifest-driven source promotion and canonical parsing from `corpus_builder.py`
@@ -447,7 +462,7 @@ Last verified: `2026-03-30T13:25:41Z`
   - use the new compare tooling on the bilingual English pair to keep separating source-equal builder state from regenerated audit drift and final adjudication drift
   - use the completed first broader English post-fix run as the baseline packet for a same-config repeat rather than treating the pre-fix versus post-fix pair as a clean reproducibility verdict
 - Keep the bounded controller as the active automation surface, but defer wider unattended expansion until the bilingual route is more reproducible:
-  - the running same-config broader English repeat is now the active post-fix reproducibility check
+  - the completed audit semantic-retry broader English rerun is now the latest post-fix reproducibility check
   - the multi-iteration unattended scheduler still remains after that stability pass, not before it
 - Keep the dataset-platform route phased rather than monolithic:
   - source-book intake and intermediate-artifact governance is now landed
@@ -503,8 +518,7 @@ Last verified: `2026-03-30T13:25:41Z`
 - `TASK-DATASET-FULL-AUTOMATION`
 
 ## Active Job IDs
-- `bgjob_en_chapter_core_rerun_round3_caseiso_judged_followup_20260330`
-- `bgjob_closed_loop_en_broader_auditsemanticretry_20260330`
+- none
 
 ## Recommended Reading Path
 1. `AGENTS.md`
@@ -551,7 +565,7 @@ Last verified: `2026-03-30T13:25:41Z`
 ## Machine-Readable Appendix
 ```json
 {
-  "updated_at": "2026-03-30T13:25:41Z",
+  "updated_at": "2026-03-30T13:50:41Z",
   "last_updated_by": "codex",
   "active_task_ids": [
     "TASK-BENCH-BACKLOG-RESCUE",
@@ -560,10 +574,7 @@ Last verified: `2026-03-30T13:25:41Z`
     "TASK-DATASET-FULL-AUTOMATION"
   ],
   "blocked_task_ids": [],
-  "active_job_ids": [
-    "bgjob_en_chapter_core_rerun_round3_caseiso_judged_followup_20260330",
-    "bgjob_closed_loop_en_broader_auditsemanticretry_20260330"
-  ],
+  "active_job_ids": [],
   "open_decision_ids": [
     "OD-PRIVATE-LIBRARY-POST-RESCUE-GATE",
     "OD-BENCHMARK-SIZE",

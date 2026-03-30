@@ -33,9 +33,9 @@ Last updated: `2026-03-30T12:42:11Z`
 - Lane: `mechanism_eval`
 - Priority: `high`
 - Detail: `docs/implementation/new-reading-mechanism/execution-tracker.md`
-- Next: finish the running judged follow-up rerun, then convert its result into one bounded repair plan that preserves the `walden` one-axis threading win while testing whether `up_from_slavery` gains earlier chapter presence and chapter-label trust
+- Next: use the completed judged follow-up rerun as the new mechanism-evidence baseline, then convert it into one bounded repair/generalization plan that preserves the `walden` one-axis threading win while checking which `up_from_slavery` improvements are robust enough to keep
 - Jobs:
-  - `bgjob_en_chapter_core_rerun_round3_caseiso_judged_followup_20260330`
+  - `bgjob_en_chapter_core_rerun_round3_caseiso_judged_followup_20260330` (`completed`)
 
 ### `TASK-DATASET-QUESTION-ALIGNED-CASE-CONSTRUCTION` — Build question-aligned case construction for evaluation datasets
 - Status: `active`
@@ -51,9 +51,9 @@ Last updated: `2026-03-30T12:42:11Z`
 - Lane: `dataset_platform`
 - Priority: `high`
 - Detail: `docs/implementation/new-reading-mechanism/execution-tracker.md`
-- Next: rerun a scratch English closed-loop sample under the new audit semantic-retry guard, compare it against the prior post-fix broader English run, and do not widen to the multi-iteration unattended scheduler until source-equal packets stop showing heavy audit-input drift or the new guard turns that instability into an explicit audit failure
+- Next: compare the completed audit semantic-retry broader English rerun against the earlier broader English runs, decide whether it reduced source-equal drift or mainly reproduced the current `4 keep / 4 revise` split, and keep the multi-iteration unattended scheduler on hold until audit reproducibility is trustworthy
 - Jobs:
-  - `bgjob_closed_loop_en_broader_auditsemanticretry_20260330`
+  - `bgjob_closed_loop_en_broader_auditsemanticretry_20260330` (`completed`)
   - `bgjob_closed_loop_en_broader_auditcoherencefix_repeat_20260330` (`completed`)
   - `bgjob_closed_loop_bilingual_broader_auditcoherencefix_20260330` (`completed`)
 

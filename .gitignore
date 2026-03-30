@@ -37,6 +37,7 @@ test-results/
 
 # Logs / temp output
 *.log
+/output/
 
 # Backend runtime artifacts
 reading-companion-backend/data/

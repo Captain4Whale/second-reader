@@ -9,10 +9,13 @@ This directory contains review packets for benchmark datasets.
   - packets exported by Codex and waiting for review
 - `archive/`
   - packets already imported back into the dataset with their review CSV preserved
+  - long-lived hardening or recovery packet archives may stay as durable evidence when intentionally referenced in docs or current-state records
+  - repetitive scratch validation archives are runtime artifacts and should stay ignored or move under local `state/` storage instead of creating commit noise
 - `review_queue_summary.json`
   - machine-readable snapshot of the active packet queue and its latest packet-level case audits
 - `review_queue_summary.md`
   - readable snapshot of the same queue
+  - these queue summaries are intentionally visible, but they should only change when queue substance changes rather than on timestamp-only refreshes
 
 Packet-level case-audit runs live under:
 - `reading-companion-backend/eval/runs/attentional_v2/case_audits/<packet_id>__<timestamp>/`

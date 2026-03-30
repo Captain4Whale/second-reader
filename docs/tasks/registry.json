@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-03-30T12:42:11Z",
+  "updated_at": "2026-03-30T13:50:41Z",
   "tasks": [
     {
       "id": "TASK-MECH-EN-RERUN",
@@ -23,7 +23,7 @@
         "bgjob_en_chapter_core_rerun_round3_caseiso_judged_followup_20260330"
       ],
       "acceptance_ref": "docs/implementation/new-reading-mechanism/execution-tracker.md",
-      "next_action": "Finish the running judged follow-up rerun, then convert its result into one bounded repair plan that preserves the walden one-axis threading win while testing whether up_from_slavery gains earlier chapter presence and chapter-label trust.",
+      "next_action": "Use the completed judged follow-up rerun as the new mechanism-evidence baseline, then convert it into one bounded repair/generalization plan that preserves the walden one-axis threading win while checking which up_from_slavery improvements are robust enough to keep.",
       "blocked_by": [],
       "evidence_refs": [
         "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_vs_iterator_v1_chapter_core_en_round2_microselectivity_retry2_20260328/summary/report.md",
@@ -42,7 +42,7 @@
         "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_vs_iterator_v1_chapter_core_en_round3_narrative_reference_repair_parallel_20260329/outputs/walden_205_en__10/iterator_v1/_runtime/activity.jsonl",
         "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_vs_iterator_v1_chapter_core_en_round3_narrative_reference_repair_parallel_20260329/bundles/attentional_v2/walden_205_en__10.json"
       ],
-      "last_updated": "2026-03-30T12:28:54Z",
+      "last_updated": "2026-03-30T13:50:41Z",
       "last_updated_by": "codex"
     },
     {
@@ -221,7 +221,7 @@
         "bgjob_closed_loop_bilingual_broader_auditcoherencefix_20260330"
       ],
       "acceptance_ref": "docs/implementation/new-reading-mechanism/execution-tracker.md",
-      "next_action": "Rerun a scratch English closed-loop sample under the new audit semantic-retry guard, compare it against the prior post-fix broader English run, and do not widen to the multi-iteration unattended scheduler until source-equal packets stop showing heavy audit-input drift or the new guard turns that instability into an explicit audit failure.",
+      "next_action": "Compare the completed audit semantic-retry broader English rerun against the earlier broader English runs, decide whether it reduced source-equal drift or mainly reproduced the current 4 keep / 4 revise split, and keep the multi-iteration unattended scheduler on hold until audit reproducibility is trustworthy.",
       "blocked_by": [],
       "evidence_refs": [
         "docs/implementation/new-reading-mechanism/question-aligned-case-construction.md",
@@ -257,7 +257,7 @@
         "reading-companion-backend/state/job_registry/jobs/bgjob_closed_loop_bilingual_broader_auditcoherencefix_20260330.json",
         "reading-companion-backend/state/job_registry/logs/bgjob_closed_loop_bilingual_broader_auditcoherencefix_20260330.log"
       ],
-      "last_updated": "2026-03-30T13:25:41Z",
+      "last_updated": "2026-03-30T13:50:41Z",
       "last_updated_by": "codex"
     },
     {

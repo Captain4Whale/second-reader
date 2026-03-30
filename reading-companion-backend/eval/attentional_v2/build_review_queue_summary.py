@@ -51,6 +51,33 @@ def build_summary() -> dict[str, Any]:
     }
 
 
+def stable_payload(summary: dict[str, Any]) -> dict[str, Any]:
+    payload = dict(summary)
+    payload.pop("generated_at", None)
+    return payload
+
+
+def load_existing_summary(path: Path) -> dict[str, Any] | None:
+    if not path.exists():
+        return None
+    try:
+        loaded = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return None
+    return loaded if isinstance(loaded, dict) else None
+
+
+def write_if_changed(path: Path, content: str) -> bool:
+    if path.exists():
+        try:
+            if path.read_text(encoding="utf-8") == content:
+                return False
+        except OSError:
+            pass
+    path.write_text(content, encoding="utf-8")
+    return True
+
+
 def render_markdown(summary: dict[str, Any]) -> str:
     lines = [
         "# Review Queue Summary",
@@ -107,9 +134,25 @@ def render_markdown(summary: dict[str, Any]) -> str:
 
 def main() -> int:
     summary = build_summary()
-    OUTPUT_JSON.write_text(json.dumps(summary, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    OUTPUT_MD.write_text(render_markdown(summary) + "\n", encoding="utf-8")
-    print(json.dumps({"status": "ok", "active_packet_count": summary["active_packet_count"]}, ensure_ascii=False, indent=2))
+    existing_summary = load_existing_summary(OUTPUT_JSON)
+    if existing_summary and stable_payload(existing_summary) == stable_payload(summary):
+        preserved_generated_at = existing_summary.get("generated_at")
+        if isinstance(preserved_generated_at, str) and preserved_generated_at:
+            summary["generated_at"] = preserved_generated_at
+
+    json_changed = write_if_changed(OUTPUT_JSON, json.dumps(summary, ensure_ascii=False, indent=2) + "\n")
+    md_changed = write_if_changed(OUTPUT_MD, render_markdown(summary) + "\n")
+    print(
+        json.dumps(
+            {
+                "status": "ok",
+                "active_packet_count": summary["active_packet_count"],
+                "changed": json_changed or md_changed,
+            },
+            ensure_ascii=False,
+            indent=2,
+        )
+    )
     return 0
 
 
