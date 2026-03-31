@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-03-31T02:05:12Z`
+Last verified: `2026-03-31T02:30:53Z`
 
 ## Current Objective
 - Keep Phase 9 of the new reading mechanism project recoverable and decision-ready:
@@ -293,7 +293,7 @@ Last verified: `2026-03-31T02:05:12Z`
     - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_vs_iterator_v1_chapter_core_en_round3_caseiso_judged_substantive_backup_20260331/`
   - launch policy:
     - the replacement rerun is pinned to the generic `backup` tier for the full scope so the run can finish consistently without mid-run target switching
-- The next bounded callback reproducibility lane is now active under durable tracking:
+- The bounded callback reproducibility retry is now completed under durable tracking:
   - original registered job:
     - `bgjob_callbackslice_auditv4_packet_20260331`
   - packet:
@@ -313,18 +313,50 @@ Last verified: `2026-03-31T02:05:12Z`
     - `bgjob_callbackslice_auditv4_packet_retry_quota_20260331`
   - replacement audit run:
     - `reading-companion-backend/eval/runs/attentional_v2/case_audits/attentional_v2_private_library_excerpt_en_question_aligned_v1__scratch__callbackslice_auditv4_20260331__20260331-020431/`
+  - final archive:
+    - `reading-companion-backend/eval/review_packets/archive/attentional_v2_private_library_excerpt_en_question_aligned_v1__scratch__callbackslice_auditv4_20260331/`
   - launch policy:
     - full mechanical packet lifecycle only (`generate -> audit -> adjudicate -> import -> refresh -> summarize`)
     - explicit worker caps stay at `audit=1`, `review=1` so this packet can share the LLM budget safely with the active mechanism rerun
     - this is bounded reproducibility evidence only; no wider unattended automation or decision-bearing phase was auto-launched
     - inline-target callback cases now trigger a bounded primary-review replica escalation (`3` base replicas plus `2` extra replicas) before consensus is frozen
-  - live interpretation:
+  - result:
+    - retry action counts: `keep = 1`, `revise = 1`, `drop = 0`, `unclear = 0`
+    - post-import benchmark counts: `reviewed_active = 7`, `needs_revision = 1`
+    - queue summary returned to `active_packet_count = 0`
+  - interpretation:
     - the failed first run is pre-patch operational evidence, not final callback-quality truth
-    - the retry job resumes the same packet from `audit_packet` under the new audit quota-recovery path, so its result is the one that should decide whether callback wobble actually narrowed
+    - the retry under the new audit quota-recovery path imported `education_of_henry_adams_public_en__29__callback_bridge__seed_v1` as `keep` / `reviewed_active`
+    - the same retry left `on_liberty_public_en__10__callback_bridge__seed_v1` as `revise` / `needs_revision`, which re-framed the live callback holdout as argumentative focus clarity rather than quota instability or Henry-specific breadth
   - local validation:
     - `reading-companion-backend/tests/test_case_design_audit.py`
     - `reading-companion-backend/tests/test_case_design_audit_reproducibility.py`
     - focused result before the quota-recovery follow-up: `26 passed`
+- A bounded argumentative callback attribution patch is now landed locally:
+  - code:
+    - `reading-companion-backend/eval/attentional_v2/question_aligned_case_construction.py`
+    - `reading-companion-backend/tests/test_question_aligned_case_construction.py`
+  - bounded changes:
+    - argumentative / reference-heavy callback cases now draft `selection_reason` and `judge_focus` as an explicit anchor-to-earlier-target bridge instead of only naming generic "specific earlier material"
+    - those callback drafts now keep source attribution explicit for the author/work so argumentative callback cases stay source-grounded instead of reading like commentary
+  - local validation:
+    - `reading-companion-backend/tests/test_question_aligned_case_construction.py`
+    - `reading-companion-backend/tests/test_case_design_audit.py`
+    - `reading-companion-backend/tests/test_case_design_audit_reproducibility.py`
+    - `reading-companion-backend/tests/test_closed_loop_benchmark_curation.py`
+    - focused result: `70 passed`
+- The narrow On Liberty callback-prompt follow-up is now completed:
+  - run id:
+    - `closed_loop_on_liberty_callbackpromptfix_20260331`
+  - summary:
+    - `reading-companion-backend/state/dataset_build/build_runs/closed_loop_on_liberty_callbackpromptfix_20260331/closed_loop_benchmark_curation_summary.json`
+  - result:
+    - English `keep = 3`, `revise = 1`, `drop = 0`
+    - post-import English benchmark counts: `reviewed_active = 3`, `needs_revision = 1`
+  - diagnosis:
+    - the repaired argumentative callback drafting now clears `on_liberty_public_en__4__callback_bridge__seed_v1` as a real `keep` on a one-source scratch slice
+    - `on_liberty_public_en__10__callback_bridge__reserve_v1` remains available as a sharpened reserve rather than the active callback export for this source slice
+    - the remaining revise in this narrow run is no longer callback-specific: `on_liberty_public_en__5__anchored_reaction_selectivity__seed_v1` still needs tighter focus framing
 - A bounded mechanism evidence-control mode is now landed in code:
   - code:
     - `reading-companion-backend/eval/attentional_v2/run_chapter_comparison.py`
@@ -1101,9 +1133,9 @@ Last verified: `2026-03-31T02:05:12Z`
   - treat the mixed `tensionfocusfix` bilingual packet as audit/adjudication drift on unchanged callback cases until the reproducibility tooling says otherwise
 - Keep the bounded controller as the active automation surface, but use the new callback-audit hardening before the next broader validation wave:
   - the completed v4 frozen-input pair is already the clean proof that final-action instability is no longer the primary blocker
-  - the new live blocker is callback-case audit variance on structurally borderline rows, not missing controller plumbing
-  - the next bounded automation move should finish or disposition the active narrow callback slice, then rerun that same slice under the new audit quota-recovery path if the pre-patch run ends in quota-shaped failure
-  - only after the callback rows stop wobbling under the new contract plus recovery path should the controller widen back out again
+  - the remaining uncertainty is broader-slice generalization and any surviving focus drift, not missing controller plumbing
+  - the callback retry plus the one-source On Liberty callback-prompt follow-up now clear the narrow callback blocker on the targeted slice
+  - the next bounded automation move should widen the current argumentative callback drafting across a broader English or bilingual scratch slice, then treat `on_liberty_public_en__5__anchored_reaction_selectivity__seed_v1` as a separate focus-framing follow-up if it still survives
 - Keep the dataset-platform route phased rather than monolithic:
   - source-book intake and intermediate-artifact governance is now landed
   - the first Question-Aligned Case Construction landing on top of the current corpus/review schema is now landed

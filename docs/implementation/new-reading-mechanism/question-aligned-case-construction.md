@@ -368,7 +368,23 @@ Current real-run evidence:
       - original job: `bgjob_callbackslice_auditv4_packet_20260331`
       - retry job: `bgjob_callbackslice_auditv4_packet_retry_quota_20260331`
     - the first callbackslice run finished with Henry completed and `on_liberty_public_en__10__callback_bridge__seed_v1` failed under pre-patch quota exhaustion
-    - the retry now resumes the same packet under the new quota-recovery path, and that rerun is the acceptance check before we widen again
+    - the retry under the new quota-recovery path completed with `keep = 1`, `revise = 1`
+    - `education_of_henry_adams_public_en__29__callback_bridge__seed_v1` now clears as `keep` / `reviewed_active`
+    - `on_liberty_public_en__10__callback_bridge__seed_v1` remains the one bounded `revise`, so the live callback blocker shifts to argumentative focus clarity rather than quota instability or Henry-specific breadth
+    - one bounded argumentative callback drafting follow-up is now landed locally:
+      - argumentative / reference-heavy callback cases now draft explicit anchor-to-earlier-target bridge language with visible author/work attribution
+      - focused validation:
+        - `tests/test_question_aligned_case_construction.py`
+        - `tests/test_case_design_audit.py`
+        - `tests/test_case_design_audit_reproducibility.py`
+        - `tests/test_closed_loop_benchmark_curation.py`
+        - `70 passed`
+    - one narrow one-source follow-up is now completed:
+      - run: `closed_loop_on_liberty_callbackpromptfix_20260331`
+      - result: English `keep = 3`, `revise = 1`, `drop = 0`
+      - `on_liberty_public_en__4__callback_bridge__seed_v1` now clears as `keep`
+      - `on_liberty_public_en__10__callback_bridge__reserve_v1` stays in reserve with the sharper callback drafting
+      - the remaining revise on this narrow slice is `on_liberty_public_en__5__anchored_reaction_selectivity__seed_v1`, not another callback row
 
 Current interpretation:
 - the excerpt-boundary / fragment-quality bug was real and materially important

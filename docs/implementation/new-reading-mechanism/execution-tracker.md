@@ -402,7 +402,7 @@ Update when: status changes, blockers appear, or phases complete.
     - finish the remaining Chinese callback excerpt shaping so the stronger late-scene opportunity remains the primary pick cleanly
     - use the landed callback-aware audit contract plus the compare tooling to rerun the narrow unchanged callback rows before widening again
     - only then widen the same artifact model across the broader managed source pool
-  - active narrow reproducibility follow-up:
+  - completed narrow reproducibility follow-up:
     - original job:
       - `bgjob_callbackslice_auditv4_packet_20260331`
     - source dataset:
@@ -416,13 +416,36 @@ Update when: status changes, blockers appear, or phases complete.
       - `reading-companion-backend/eval/runs/attentional_v2/case_audits/attentional_v2_private_library_excerpt_en_question_aligned_v1__scratch__callbackslice_auditv4_20260331__20260331-014454/`
     - replacement retry job:
       - `bgjob_callbackslice_auditv4_packet_retry_quota_20260331`
-    - active retry audit run:
+    - retry audit run:
       - `reading-companion-backend/eval/runs/attentional_v2/case_audits/attentional_v2_private_library_excerpt_en_question_aligned_v1__scratch__callbackslice_auditv4_20260331__20260331-020431/`
+    - final archive:
+      - `reading-companion-backend/eval/review_packets/archive/attentional_v2_private_library_excerpt_en_question_aligned_v1__scratch__callbackslice_auditv4_20260331/`
     - scope:
       - full mechanical packet lifecycle only, with explicit `audit=1` and `review=1` worker caps so the packet can run in parallel with the active mechanism-evidence lane without claiming the whole shared LLM budget
     - interpretation:
       - the first run is pre-patch quota evidence only: Henry completed, but `on_liberty_public_en__10__callback_bridge__seed_v1` failed before quota recovery existed
-      - the retry now resumes the same packet from `audit_packet` under the new recovery path, so that rerun is the real acceptance check before any widening
+      - the retry under the new recovery path completed cleanly with `keep = 1`, `revise = 1`
+      - `education_of_henry_adams_public_en__29__callback_bridge__seed_v1` is now imported as `keep` / `reviewed_active`
+      - `on_liberty_public_en__10__callback_bridge__seed_v1` remains the one bounded `revise`, which points to argumentative callback focus clarity rather than quota handling
+  - bounded argumentative callback follow-up now landed locally:
+    - argumentative / reference-heavy callback drafts now name the anchor-to-earlier-target bridge explicitly and keep source attribution visible in `selection_reason` / `judge_focus`
+    - focused validation:
+      - `tests/test_question_aligned_case_construction.py`
+      - `tests/test_case_design_audit.py`
+      - `tests/test_case_design_audit_reproducibility.py`
+      - `tests/test_closed_loop_benchmark_curation.py`
+      - `70 passed`
+  - narrow one-source callback follow-up now completed:
+    - run:
+      - `closed_loop_on_liberty_callbackpromptfix_20260331`
+    - summary:
+      - `reading-companion-backend/state/dataset_build/build_runs/closed_loop_on_liberty_callbackpromptfix_20260331/closed_loop_benchmark_curation_summary.json`
+    - result:
+      - English `keep = 3`, `revise = 1`, `drop = 0`
+    - interpretation:
+      - `on_liberty_public_en__4__callback_bridge__seed_v1` now clears as a real `keep` on the targeted source slice
+      - `on_liberty_public_en__10__callback_bridge__reserve_v1` stays available as a sharpened reserve rather than the active callback export for this slice
+      - the remaining narrow revise is `on_liberty_public_en__5__anchored_reaction_selectivity__seed_v1`, so the next widening move should no longer be blocked on callback prompt drift alone
   - the loop boundary is now defined and partially materialized:
     - target-profile contract
     - opportunity-card contract

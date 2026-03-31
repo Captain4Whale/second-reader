@@ -665,11 +665,18 @@ def _build_opportunity_cards_for_chapter(
                         profile_id=profile_id,
                         sentence_text=anchor_display_text,
                         callback_target_text=callback_target_text,
+                        selection_role=str(row.get("selection_role", "")),
+                        author=str(row.get("author", "")),
+                        book_title=str(row.get("book_title", "")),
                         tension_target_text=tension_target_text,
                     ),
                     "judge_focus_draft": _judge_focus_draft(
                         profile_id=profile_id,
+                        sentence_text=anchor_display_text,
                         callback_target_text=callback_target_text,
+                        selection_role=str(row.get("selection_role", "")),
+                        author=str(row.get("author", "")),
+                        book_title=str(row.get("book_title", "")),
                         tension_target_text=tension_target_text,
                     ),
                     "rejection_reasons": [],
@@ -1024,11 +1031,22 @@ def _selection_reason_draft(
     profile_id: str,
     sentence_text: str,
     callback_target_text: str = "",
+    selection_role: str = "",
+    author: str = "",
+    book_title: str = "",
     tension_target_text: str = "",
 ) -> str:
     profile = EXCERPT_TARGET_PROFILES[profile_id]
     clipped = _clip_prompt_text(sentence_text, max_length=160)
     if profile_id == "callback_bridge" and callback_target_text:
+        if _uses_argumentative_callback_draft(selection_role):
+            source_label = _callback_source_label(author=author, book_title=book_title)
+            return (
+                "Selected because the passage contains a backward bridge from "
+                f"'{clipped}' to earlier material: '{callback_target_text}'. "
+                "The bridge advances the argument and must remain source-grounded "
+                f"with clear attribution to {source_label}, not associative."
+            )
         return (
             f"{profile['selection_reason_template']} Earlier bridge target: "
             f"{callback_target_text}. Anchor line: {clipped}"
@@ -1056,10 +1074,25 @@ def _selection_reason_anchor_text(*, anchor_text: str, window_texts: list[str]) 
 def _judge_focus_draft(
     *,
     profile_id: str,
+    sentence_text: str = "",
     callback_target_text: str = "",
+    selection_role: str = "",
+    author: str = "",
+    book_title: str = "",
     tension_target_text: str = "",
 ) -> str:
     if profile_id == "callback_bridge" and callback_target_text:
+        if _uses_argumentative_callback_draft(selection_role):
+            source_label = _callback_source_label(author=author, book_title=book_title)
+            anchor_text = _clip_prompt_text(sentence_text, max_length=160)
+            return (
+                "Can the reader trace the backward bridge from "
+                f"'{anchor_text}' to the earlier '{callback_target_text}' passage "
+                f"while maintaining clear, non-associative attribution to "
+                f"{source_label}? Does the reader identify that the author is "
+                "making a forward-moving argumentative connection rather than an "
+                "associative gloss?"
+            )
         return (
             "Can the reader trace the backward bridge to this specific earlier "
             f"material: {callback_target_text}, while keeping the attribution of "
@@ -1087,6 +1120,22 @@ def _case_signature(opportunity: dict[str, Any]) -> tuple[str, str, str, str]:
         excerpt_text,
         prior_context_text,
     )
+
+
+def _uses_argumentative_callback_draft(selection_role: str) -> bool:
+    return selection_role in {"argumentative", "reference_heavy"}
+
+
+def _callback_source_label(*, author: str, book_title: str) -> str:
+    cleaned_author = _normalize_sentence_text(author)
+    cleaned_book_title = _normalize_sentence_text(book_title)
+    if cleaned_author and cleaned_book_title:
+        return f"{cleaned_author}'s {cleaned_book_title}"
+    if cleaned_author:
+        return f"{cleaned_author}'s text"
+    if cleaned_book_title:
+        return cleaned_book_title
+    return "the source text"
 
 
 def _position_bucket(*, index: int, total: int) -> str:

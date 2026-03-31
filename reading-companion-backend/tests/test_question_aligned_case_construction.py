@@ -1189,8 +1189,10 @@ def test_callback_bridge_judge_focus_emphasizes_traceability_and_attribution(tmp
     assert en_case["target_profile_id"] == "callback_bridge"
     assert "trace" in en_case["judge_focus"].lower()
     assert "attribution" in en_case["judge_focus"].lower()
+    assert "forward-moving argumentative connection" in en_case["judge_focus"].lower()
     assert "surrenden" in en_case["judge_focus"].lower()
     assert "surrenden" in en_case["selection_reason"].lower()
+    assert "source-grounded" in en_case["selection_reason"].lower()
 
 
 def test_callback_bridge_drafts_name_specific_earlier_target() -> None:
@@ -1216,6 +1218,43 @@ def test_callback_bridge_drafts_name_specific_earlier_target() -> None:
     assert "cause of my writing it" in selection_reason.lower()
     assert "specific earlier material" in judge_focus.lower()
     assert "cause of my writing it" in judge_focus.lower()
+
+
+def test_argumentative_callback_bridge_drafts_anchor_to_target_with_source_attribution() -> None:
+    target_text = (
+        "Society can and does execute its own mandates: and if it issues wrong "
+        "mandates instead of right, or any mandates at all in things with which it "
+        "ought not to meddle."
+    )
+    anchor_text = (
+        "Protection, therefore, against the tyranny of the magistrate is not "
+        "enough: there needs protection also against the tyranny of the prevailing "
+        "opinion and feeling."
+    )
+
+    selection_reason = _selection_reason_draft(
+        profile_id="callback_bridge",
+        sentence_text=anchor_text,
+        callback_target_text=target_text,
+        selection_role="argumentative",
+        author="John Stuart Mill",
+        book_title="On Liberty",
+    )
+    judge_focus = _judge_focus_draft(
+        profile_id="callback_bridge",
+        sentence_text=anchor_text,
+        callback_target_text=target_text,
+        selection_role="argumentative",
+        author="John Stuart Mill",
+        book_title="On Liberty",
+    )
+
+    assert "backward bridge from" in selection_reason.lower()
+    assert "advances the argument" in selection_reason.lower()
+    assert "john stuart mill's on liberty" in selection_reason.lower()
+    assert "protection, therefore" in judge_focus.lower()
+    assert "john stuart mill's on liberty" in judge_focus.lower()
+    assert "forward-moving argumentative connection" in judge_focus.lower()
 
 
 def test_tension_reversal_drafts_specific_dual_claim_focus() -> None:
