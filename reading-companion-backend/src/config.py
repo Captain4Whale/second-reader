@@ -7,17 +7,30 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-# Load environment variables from .env file
-load_dotenv()
-
 
 READER_RESUME_COMPAT_VERSION = 1
 _BACKEND_BOOT_ID = uuid.uuid4().hex
+BACKEND_ROOT = Path(__file__).resolve().parents[1]
+
+
+# Load backend-local environment defaults regardless of caller cwd.
+load_dotenv(BACKEND_ROOT / ".env")
 
 
 def _backend_root() -> Path:
     """Return the backend project root directory."""
-    return Path(__file__).resolve().parents[1]
+    return BACKEND_ROOT
+
+
+def _resolve_backend_relative_path(raw_path: str) -> Path:
+    """Resolve one env path relative to the backend root when needed."""
+
+    path = Path(raw_path).expanduser()
+    if not path.is_absolute():
+        path = (_backend_root() / path).resolve()
+    else:
+        path = path.resolve()
+    return path
 
 
 @lru_cache()
@@ -140,7 +153,7 @@ def get_backend_runtime_root() -> Path:
     """Return the root directory used for runtime state and output."""
     raw = os.getenv("BACKEND_RUNTIME_ROOT", "").strip()
     if raw:
-        return Path(raw).expanduser().resolve()
+        return _resolve_backend_relative_path(raw)
     return _backend_root()
 
 

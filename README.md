@@ -50,6 +50,10 @@ Important backend variables:
 - `BACKEND_HOST`
 - `BACKEND_PORT`
 
+Relative backend config paths resolve from `reading-companion-backend/`, not from the shell cwd.
+- this applies to `BACKEND_RUNTIME_ROOT`, `LLM_TARGETS_PATH`, `LLM_PROFILE_BINDINGS_PATH`, and `LLM_REGISTRY_PATH`
+- keeping `BACKEND_RUNTIME_ROOT=.` in `reading-companion-backend/.env` is therefore safe when you launch backend scripts from the workspace root
+
 Recommended local LLM setup:
 - point the backend at two untracked local JSON files from `reading-companion-backend/.env`:
   - `LLM_TARGETS_PATH=config/llm_targets.local.json`

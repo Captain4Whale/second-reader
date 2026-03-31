@@ -15,6 +15,7 @@ from typing import Any
 
 import pytest
 
+from src import config as config_module
 from src.iterator_reader import llm_utils
 from src.reading_runtime import artifacts as runtime_artifacts
 from src.reading_runtime import llm_registry as llm_registry_module
@@ -864,6 +865,18 @@ def test_relative_target_binding_paths_resolve_from_backend_root(
 
     assert str(targets_path) in registry.source
     assert str(bindings_path) in registry.source
+
+
+def test_relative_backend_runtime_root_resolves_from_backend_root(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    runtime_root = tmp_path / "runtime-root"
+    monkeypatch.setattr(config_module, "BACKEND_ROOT", tmp_path)
+    monkeypatch.setenv("BACKEND_RUNTIME_ROOT", "runtime-root")
+    monkeypatch.chdir(tmp_path.parent)
+
+    assert config_module.get_backend_runtime_root() == runtime_root.resolve()
 
 
 def test_registry_path_backward_compatibility_still_loads(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):

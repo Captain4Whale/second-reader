@@ -1050,7 +1050,24 @@ Update when: status changes, blockers appear, or phases complete.
     - registry job `bgjob_en_chapter_core_rerun_round3_parallel_caseiso_detached_20260329_125043` finished with `status = completed` and `exit_code = 0`
     - both `up_from_slavery_public_en__10` and `walden_205_en__10` now point at their own isolated output directories
     - the summary artifact reports placeholder `tie` results with `judge_unavailable`, so it must not be treated as judged benchmark evidence
+- The first substantive-evidence rerun did not finish cleanly:
+  - attempted run id:
+    - `attentional_v2_vs_iterator_v1_chapter_core_en_round3_caseiso_judged_substantive_20260331`
+  - useful partial evidence:
+    - `up_from_slavery_public_en__10` finished and both judged scopes favored `attentional_v2`
+  - stop reason:
+    - the run never reached a trustworthy aggregate summary because `attentional_v2` on `walden_205_en__10` exhausted the `runtime_reader_default` quota wait budget while the shared `MiniMax-M2.7-highspeed` cooldown was still active
+    - treat this as an operational quota/tier-selection failure, not as a new mechanism-quality verdict
+- The replacement substantive rerun is now registered and running on the generic backup tier:
+  - registry job:
+    - `bgjob_en_chapter_core_rerun_round3_caseiso_judged_substantive_backup_20260331`
+  - run id:
+    - `attentional_v2_vs_iterator_v1_chapter_core_en_round3_caseiso_judged_substantive_backup_20260331`
+  - launch note:
+    - this relaunch uses `LLM_FORCE_TIER_ID=backup` for the full scope so the rerun stays whole-job pinned while avoiding another highspeed cooldown stop
+- Root-launched backend scripts now resolve `BACKEND_RUNTIME_ROOT` relative to `reading-companion-backend/`:
+  - this keeps future reruns from leaking runtime lock/state artifacts into workspace-root `state/` when operators launch them from the shared workspace root
 - Immediate next move:
   - keep the dataset-growth decision human-owned; do not treat the bounded repair as automatic permission to reopen promotion
-  - prioritize the next English cleanup pass on the recovered live local-only dataset
-  - run a judged two-case rerun later if we want actual mechanism-comparison evidence from this repaired slice
+  - prioritize the active backup-tier substantive rerun as the next mechanism-evidence checkpoint
+  - keep the next English cleanup pass on the recovered live local-only dataset separate from this mechanism-evidence lane

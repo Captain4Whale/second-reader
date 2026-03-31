@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-03-31T01:09:07Z`
+Last verified: `2026-03-31T01:35:14Z`
 
 ## Current Objective
 - Keep Phase 9 of the new reading mechanism project recoverable and decision-ready:
@@ -258,6 +258,28 @@ Last verified: `2026-03-31T01:09:07Z`
     - the audit prompt contract is now `case_design_audit_v4`
     - callback audit prompts now carry `target_profile_id`, `selection_role`, and any carried `prior_context_text` instead of only the narrower case fields
     - primary/adversarial audit guidance now explicitly allows inline callback antecedents when the bridge remains sharply traceable, instead of treating inline placement as automatically defective
+- Root-launched backend path resolution is now hardened:
+  - code:
+    - `reading-companion-backend/src/config.py`
+    - `reading-companion-backend/tests/test_llm_gateway.py`
+  - operator-facing docs:
+    - `README.md`
+    - `docs/runtime-modes.md`
+  - bounded change:
+    - relative `BACKEND_RUNTIME_ROOT` values now resolve from `reading-companion-backend/`, matching the existing relative LLM config path behavior
+    - this stops workspace-root runtime spill such as accidental `state/llm_gateway/providers/*.lock` files when backend scripts are launched from the workspace root
+- The substantive-evidence rerun lane is active again under durable tracking:
+  - the unregistered highspeed attempt:
+    - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_vs_iterator_v1_chapter_core_en_round3_caseiso_judged_substantive_20260331/`
+  - current disposition:
+    - `up_from_slavery_public_en__10` completed, but the run stopped before producing a trustworthy summary because `attentional_v2` hit `runtime_reader_default` quota-wait exhaustion while the shared `MiniMax-M2.7-highspeed` cooldown was still active
+    - this was an operational quota/tier-selection stop, not a new judged mechanism conclusion
+  - replacement registered job:
+    - `bgjob_en_chapter_core_rerun_round3_caseiso_judged_substantive_backup_20260331`
+  - replacement run:
+    - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_vs_iterator_v1_chapter_core_en_round3_caseiso_judged_substantive_backup_20260331/`
+  - launch policy:
+    - the replacement rerun is pinned to the generic `backup` tier for the full scope so the run can finish consistently without mid-run target switching
     - inline-target callback cases now trigger a bounded primary-review replica escalation (`3` base replicas plus `2` extra replicas) before consensus is frozen
   - local validation:
     - `reading-companion-backend/tests/test_case_design_audit.py`

@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-03-31T01:09:07Z`
+Last updated: `2026-03-31T01:35:14Z`
 
 ## Status Values
 - `active`
@@ -33,9 +33,10 @@ Last updated: `2026-03-31T01:09:07Z`
 - Lane: `mechanism_eval`
 - Priority: `high`
 - Detail: `docs/implementation/new-reading-mechanism/execution-tracker.md`
-- Next: use the completed judged follow-up rerun as the mechanism-evidence baseline, then inspect the new bounded substantive-evidence rerun so we can separate real reading-quality gain from judge penalties on parse/wait/error clutter
+- Next: use the completed judged follow-up rerun as the mechanism-evidence baseline, treat the unregistered highspeed substantive attempt as an operational quota failure rather than a new mechanism result, and inspect the registered backup-tier substantive rerun once it finishes so we can separate real reading-quality gain from judge penalties on parse/wait/error clutter
 - Jobs:
   - `bgjob_en_chapter_core_rerun_round3_caseiso_judged_followup_20260330` (`completed`)
+  - `bgjob_en_chapter_core_rerun_round3_caseiso_judged_substantive_backup_20260331` (`running`)
 
 ### `TASK-DATASET-QUESTION-ALIGNED-CASE-CONSTRUCTION` — Build question-aligned case construction for evaluation datasets
 - Status: `active`

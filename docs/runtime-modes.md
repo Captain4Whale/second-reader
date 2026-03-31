@@ -66,6 +66,8 @@ Behavior:
   - port
   - runtime root
 - no built-in restart loop is attached in this launcher
+- relative backend env paths resolve from `reading-companion-backend/`, not from the caller cwd
+  - this includes `BACKEND_RUNTIME_ROOT` and the structured LLM config paths
 
 Use cases:
 - `demo`: local stable backend without autoreload

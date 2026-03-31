@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-03-31T01:09:07Z",
+  "updated_at": "2026-03-31T01:35:14Z",
   "tasks": [
     {
       "id": "TASK-MECH-EN-RERUN",
@@ -20,10 +20,11 @@
         "DEC-021"
       ],
       "job_refs": [
-        "bgjob_en_chapter_core_rerun_round3_caseiso_judged_followup_20260330"
+        "bgjob_en_chapter_core_rerun_round3_caseiso_judged_followup_20260330",
+        "bgjob_en_chapter_core_rerun_round3_caseiso_judged_substantive_backup_20260331"
       ],
       "acceptance_ref": "docs/implementation/new-reading-mechanism/execution-tracker.md",
-      "next_action": "Use the completed judged follow-up rerun as the mechanism-evidence baseline, then inspect the new bounded substantive-evidence rerun so we can separate real reading-quality gain from judge penalties on parse/wait/error clutter.",
+      "next_action": "Use the completed judged follow-up rerun as the mechanism-evidence baseline, treat the unregistered highspeed substantive attempt as an operational quota failure rather than a new mechanism result, and inspect the registered backup-tier substantive rerun once it finishes so we can separate real reading-quality gain from judge penalties on parse/wait/error clutter.",
       "blocked_by": [],
       "evidence_refs": [
         "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_vs_iterator_v1_chapter_core_en_round2_microselectivity_retry2_20260328/summary/report.md",
@@ -40,13 +41,16 @@
         "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_vs_iterator_v1_chapter_core_en_round3_narrative_reference_repair_parallel_caseiso_judged_20260329/summary/aggregate.json",
         "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_vs_iterator_v1_chapter_core_en_round3_narrative_reference_repair_parallel_caseiso_judged_followup_20260330/summary/report.md",
         "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_vs_iterator_v1_chapter_core_en_round3_narrative_reference_repair_parallel_caseiso_judged_followup_20260330/summary/aggregate.json",
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_vs_iterator_v1_chapter_core_en_round3_caseiso_judged_substantive_20260331/cases/up_from_slavery_public_en__10.json",
+        "reading-companion-backend/state/job_registry/jobs/bgjob_en_chapter_core_rerun_round3_caseiso_judged_substantive_backup_20260331.json",
+        "reading-companion-backend/state/job_registry/logs/bgjob_en_chapter_core_rerun_round3_caseiso_judged_substantive_backup_20260331.log",
         "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_vs_iterator_v1_chapter_core_en_round3_narrative_reference_repair_parallel_20260329/cases/up_from_slavery_public_en__10.json",
         "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_vs_iterator_v1_chapter_core_en_round3_narrative_reference_repair_parallel_20260329/outputs/walden_205_en__10/iterator_v1/_runtime/activity.jsonl",
         "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_vs_iterator_v1_chapter_core_en_round3_narrative_reference_repair_parallel_20260329/bundles/attentional_v2/walden_205_en__10.json",
         "reading-companion-backend/eval/attentional_v2/run_chapter_comparison.py",
         "reading-companion-backend/tests/test_run_chapter_comparison.py"
       ],
-      "last_updated": "2026-03-31T01:09:07Z",
+      "last_updated": "2026-03-31T01:35:14Z",
       "last_updated_by": "codex"
     },
     {
