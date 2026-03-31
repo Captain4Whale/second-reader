@@ -15,6 +15,7 @@ from .auto_review_packet import (
     SYSTEM,
     _case_input_payload,
     _fingerprint,
+    _prompt_case_fingerprint,
     _review_prompt,
     _load_jsonl,
     _prompt_hash,
@@ -146,16 +147,32 @@ def load_audit_rows(source_case_audit_run_id: str) -> dict[str, dict[str, Any]]:
 
 
 def load_case_records(context: AdjudicationRunContext, summary: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    source_rows = source_rows_by_case_id(context.source_jsonl_path)
     cases_dir = context.run_dir / "cases"
     if cases_dir.exists():
-        return {
-            str(payload.get("case_id", "")).strip(): payload
-            for payload in (load_json(path) for path in sorted(cases_dir.glob("*.json")))
-            if str(payload.get("case_id", "")).strip()
-        }
+        records: dict[str, dict[str, Any]] = {}
+        for payload in (load_json(path) for path in sorted(cases_dir.glob("*.json"))):
+            case_id = str(payload.get("case_id", "")).strip()
+            if not case_id:
+                continue
+            source_row = source_rows.get(case_id, {})
+            packet_source_row_fingerprint = str(payload.get("packet_source_row_fingerprint", "")).strip()
+            if not packet_source_row_fingerprint and source_row:
+                packet_source_row_fingerprint = _fingerprint(source_row)
+            prompt_case_fingerprint = str(payload.get("prompt_case_fingerprint", "")).strip()
+            if not prompt_case_fingerprint:
+                input_payload = payload.get("input_payload")
+                if isinstance(input_payload, dict):
+                    prompt_case_fingerprint = _prompt_case_fingerprint(input_payload.get("case"))
+            enriched = dict(payload)
+            if packet_source_row_fingerprint:
+                enriched["packet_source_row_fingerprint"] = packet_source_row_fingerprint
+            if prompt_case_fingerprint:
+                enriched["prompt_case_fingerprint"] = prompt_case_fingerprint
+            records[case_id] = enriched
+        return records
 
     review_rows = parse_review_rows(context.review_csv_path)
-    source_rows = source_rows_by_case_id(context.source_jsonl_path)
     packet_manifest = load_json(context.packet_manifest_path)
     audit_run_id = str(
         summary.get("source_case_audit_run_id")
@@ -188,6 +205,12 @@ def load_case_records(context: AdjudicationRunContext, summary: dict[str, Any]) 
                 source_case_audit_run_id=audit_run_id,
             ),
             "source_row_fingerprint": _fingerprint(source_rows.get(case_id, {})) if case_id in source_rows else "",
+            "packet_source_row_fingerprint": _fingerprint(source_rows.get(case_id, {}))
+            if case_id in source_rows
+            else "",
+            "prompt_case_fingerprint": _prompt_case_fingerprint(source_rows.get(case_id, {}))
+            if case_id in source_rows
+            else "",
             "audit_row_fingerprint": _fingerprint(_stable_audit_prompt_inputs(audit_rows.get(case_id, {})))
             if case_id in audit_rows
             else "",
@@ -245,6 +268,12 @@ def compare_adjudication_runs(left: Path, right: Path) -> dict[str, Any]:
         record_b = cases_b[case_id]
         review_a = dict(record_a.get("normalized_review") or {})
         review_b = dict(record_b.get("normalized_review") or {})
+        source_fingerprint_a = str(record_a.get("packet_source_row_fingerprint", "")).strip() or str(
+            record_a.get("source_row_fingerprint", "")
+        ).strip()
+        source_fingerprint_b = str(record_b.get("packet_source_row_fingerprint", "")).strip() or str(
+            record_b.get("source_row_fingerprint", "")
+        ).strip()
         provider_fields = (
             "provider_id",
             "selected_target_id",
@@ -275,8 +304,9 @@ def compare_adjudication_runs(left: Path, right: Path) -> dict[str, Any]:
             "contract_b": str(record_b.get("contract", "")).strip(),
             "model_a": str(record_a.get("model", "")).strip(),
             "model_b": str(record_b.get("model", "")).strip(),
-            "same_source_row_fingerprint": str(record_a.get("source_row_fingerprint", "")).strip()
-            == str(record_b.get("source_row_fingerprint", "")).strip(),
+            "same_source_row_fingerprint": source_fingerprint_a == source_fingerprint_b,
+            "same_prompt_case_fingerprint": str(record_a.get("prompt_case_fingerprint", "")).strip()
+            == str(record_b.get("prompt_case_fingerprint", "")).strip(),
             "same_audit_row_fingerprint": str(record_a.get("audit_row_fingerprint", "")).strip()
             == str(record_b.get("audit_row_fingerprint", "")).strip(),
         }
@@ -343,6 +373,7 @@ def render_markdown(payload: dict[str, Any]) -> str:
                 f"- `{item['case_id']}`",
                 f"  - same_input_fingerprint: `{item['same_input_fingerprint']}`",
                 f"  - same_source_row_fingerprint: `{item['same_source_row_fingerprint']}`",
+                f"  - same_prompt_case_fingerprint: `{item['same_prompt_case_fingerprint']}`",
                 f"  - same_audit_row_fingerprint: `{item['same_audit_row_fingerprint']}`",
                 f"  - action: `{item['action_a']}` -> `{item['action_b']}`",
                 f"  - confidence: `{item['confidence_a']}` -> `{item['confidence_b']}`",

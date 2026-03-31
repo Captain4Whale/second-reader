@@ -92,6 +92,10 @@ def _write_saved_probe_input_run(
     run_id: str,
     case_excerpt: str,
     problem_types: list[str] | None = None,
+    source_fingerprint: str | None = None,
+    packet_source_fingerprint: str | None = None,
+    prompt_case_fingerprint: str | None = None,
+    audit_fingerprint: str | None = None,
 ) -> None:
     saved_input_payload = {
         "review_policy": auto_review_packet.REVIEW_POLICY,
@@ -125,21 +129,26 @@ def _write_saved_probe_input_run(
         "system_prompt_hash": "saved-system",
         "user_prompt_hash": "saved-user",
     }
-    _write_json(
-        packet_dir / "llm_review_runs" / run_id / "cases" / "demo_case.json",
-        {
-            "case_id": "demo_case",
-            "input_payload": saved_input_payload,
-            "adjudication_input_fingerprint": auto_review_packet._fingerprint(saved_input_payload),
-            "source_row_fingerprint": auto_review_packet._fingerprint(saved_input_payload["case"]),
-            "audit_row_fingerprint": auto_review_packet._fingerprint(saved_input_payload["audit_prompt_inputs"]),
-            "normalized_review": {
-                "review__action": "revise",
-                "review__confidence": "medium",
-                "review__problem_types": problem_types or ["weak_excerpt"],
-            },
+    case_payload = {
+        "case_id": "demo_case",
+        "input_payload": saved_input_payload,
+        "adjudication_input_fingerprint": auto_review_packet._fingerprint(saved_input_payload),
+        "source_row_fingerprint": source_fingerprint
+        or packet_source_fingerprint
+        or auto_review_packet._fingerprint(saved_input_payload["case"]),
+        "audit_row_fingerprint": audit_fingerprint
+        or auto_review_packet._fingerprint(saved_input_payload["audit_prompt_inputs"]),
+        "normalized_review": {
+            "review__action": "revise",
+            "review__confidence": "medium",
+            "review__problem_types": problem_types or ["weak_excerpt"],
         },
-    )
+    }
+    if packet_source_fingerprint is not None:
+        case_payload["packet_source_row_fingerprint"] = packet_source_fingerprint
+    if prompt_case_fingerprint is not None:
+        case_payload["prompt_case_fingerprint"] = prompt_case_fingerprint
+    _write_json(packet_dir / "llm_review_runs" / run_id / "cases" / "demo_case.json", case_payload)
 
 
 def _write_compare_run(
@@ -151,6 +160,10 @@ def _write_compare_run(
     case_fingerprint: str = "same-case",
     source_fingerprint: str = "same-source",
     audit_fingerprint: str = "same-audit",
+    packet_source_fingerprint: str | None = None,
+    prompt_case_fingerprint: str | None = None,
+    input_payload_case: dict[str, object] | None = None,
+    source_row: dict[str, object] | None = None,
 ) -> None:
     _write_json(
         run_dir / "summary.json",
@@ -163,26 +176,35 @@ def _write_compare_run(
             "action_counts": {action: 1},
         },
     )
-    _write_json(
-        run_dir / "cases" / "demo_case.json",
-        {
-            "case_id": "demo_case",
-            "adjudication_input_fingerprint": case_fingerprint,
-            "source_row_fingerprint": source_fingerprint,
-            "audit_row_fingerprint": audit_fingerprint,
-            "normalized_review": {
-                "review__action": action,
-                "review__confidence": confidence,
-                "review__problem_types": ["weak_excerpt"] if action == "revise" else ["other"],
-            },
-            "provider_id": "minimax_highspeed_provider",
-            "selected_target_id": "minimax_m27_highspeed",
-            "selected_tier_id": "primary",
-            "key_slot_id": "primary",
-            "contract": "anthropic",
-            "model": "MiniMax-M2.7-highspeed",
+    case_payload = {
+        "case_id": "demo_case",
+        "adjudication_input_fingerprint": case_fingerprint,
+        "source_row_fingerprint": source_fingerprint,
+        "audit_row_fingerprint": audit_fingerprint,
+        "normalized_review": {
+            "review__action": action,
+            "review__confidence": confidence,
+            "review__problem_types": ["weak_excerpt"] if action == "revise" else ["other"],
         },
-    )
+        "provider_id": "minimax_highspeed_provider",
+        "selected_target_id": "minimax_m27_highspeed",
+        "selected_tier_id": "primary",
+        "key_slot_id": "primary",
+        "contract": "anthropic",
+        "model": "MiniMax-M2.7-highspeed",
+    }
+    if packet_source_fingerprint is not None:
+        case_payload["packet_source_row_fingerprint"] = packet_source_fingerprint
+    if prompt_case_fingerprint is not None:
+        case_payload["prompt_case_fingerprint"] = prompt_case_fingerprint
+    if input_payload_case is not None:
+        case_payload["input_payload"] = {"case": input_payload_case}
+    _write_json(run_dir / "cases" / "demo_case.json", case_payload)
+    if source_row is not None:
+        (run_dir / "cases.source.jsonl").write_text(
+            json.dumps(source_row, ensure_ascii=False) + "\n",
+            encoding="utf-8",
+        )
 
 
 def _write_legacy_compare_packet(
@@ -500,6 +522,161 @@ def test_probe_only_reuses_saved_input_payload_from_prior_review_run(monkeypatch
     )
 
 
+def test_probe_only_preserves_prior_source_row_fingerprint_when_reusing_saved_inputs(
+    monkeypatch, tmp_path: Path
+) -> None:
+    packet_dir = tmp_path / "packet"
+    audit_run_dir = tmp_path / "audit_run"
+    _write_packet(packet_dir)
+    _write_completed_audit(audit_run_dir)
+    prior_run_id = "llm_review__20260330-120000__savedprobe"
+    prior_source_fingerprint = "live-source-row-fingerprint"
+    prior_audit_fingerprint = "live-audit-row-fingerprint"
+    _write_json(
+        packet_dir / "packet_manifest.json",
+        {
+            "packet_id": "demo_packet",
+            "dataset_id": "demo_dataset",
+            "llm_review_run_id": prior_run_id,
+            "llm_review_run_dir": str(packet_dir / "llm_review_runs" / prior_run_id),
+        },
+    )
+    _write_saved_probe_input_run(
+        packet_dir,
+        run_id=prior_run_id,
+        case_excerpt="Frozen excerpt from saved run.",
+        source_fingerprint=prior_source_fingerprint,
+        audit_fingerprint=prior_audit_fingerprint,
+    )
+
+    monkeypatch.setattr(
+        auto_review_packet,
+        "find_latest_case_audit_run",
+        lambda *_args, **_kwargs: {"run_dir": str(audit_run_dir)},
+    )
+    monkeypatch.setattr(
+        auto_review_packet,
+        "invoke_json",
+        lambda *_args, **_kwargs: {
+            "benchmark_readiness": "ready",
+            "bucket_fit": "correct",
+            "focus_clarity": "clear",
+            "excerpt_integrity": "strong",
+            "review__action": "keep",
+            "review__confidence": "high",
+            "review__problem_types": ["other"],
+            "review__revised_bucket": "",
+            "review__revised_selection_reason": "",
+            "review__revised_judge_focus": "",
+            "review__notes": "Benchmark-ready.",
+        },
+    )
+    monkeypatch.setattr(
+        auto_review_packet,
+        "resolve_worker_policy",
+        lambda **_kwargs: JobConcurrencyPolicy(
+            job_kind="packet_adjudication",
+            profile_id="dataset_review_high_trust",
+            task_count=1,
+            llm_budget=1,
+            per_worker_parallelism=1,
+            worker_count=1,
+        ),
+    )
+    monkeypatch.setattr(auto_review_packet, "llm_invocation_scope", lambda **_kwargs: nullcontext())
+
+    exit_code = auto_review_packet.main(["--packet-dir", str(packet_dir), "--probe-only", "--max-workers", "1"])
+
+    assert exit_code == 0
+    run_dirs = sorted((packet_dir / "llm_review_runs").iterdir())
+    assert len(run_dirs) == 2
+    new_run_dir = [run_dir for run_dir in run_dirs if run_dir.name != prior_run_id][0]
+    case_payload = json.loads((new_run_dir / "cases" / "demo_case.json").read_text(encoding="utf-8"))
+
+    assert case_payload["source_row_fingerprint"] == prior_source_fingerprint
+    assert case_payload["packet_source_row_fingerprint"] == prior_source_fingerprint
+    assert case_payload["audit_row_fingerprint"] == prior_audit_fingerprint
+    assert case_payload["prompt_case_fingerprint"] == auto_review_packet._prompt_case_fingerprint(
+        case_payload["input_payload"]["case"]
+    )
+
+
+def test_probe_only_prefers_explicit_packet_source_fingerprint_over_legacy_source_field(
+    monkeypatch, tmp_path: Path
+) -> None:
+    packet_dir = tmp_path / "packet"
+    audit_run_dir = tmp_path / "audit_run"
+    _write_packet(packet_dir)
+    _write_completed_audit(audit_run_dir)
+    prior_run_id = "llm_review__20260330-120000__savedprobe"
+    legacy_source_fingerprint = "legacy-prompt-case-fingerprint"
+    packet_source_fingerprint = "live-source-row-fingerprint"
+    _write_json(
+        packet_dir / "packet_manifest.json",
+        {
+            "packet_id": "demo_packet",
+            "dataset_id": "demo_dataset",
+            "llm_review_run_id": prior_run_id,
+            "llm_review_run_dir": str(packet_dir / "llm_review_runs" / prior_run_id),
+        },
+    )
+    _write_saved_probe_input_run(
+        packet_dir,
+        run_id=prior_run_id,
+        case_excerpt="Frozen excerpt from saved run.",
+        source_fingerprint=legacy_source_fingerprint,
+        packet_source_fingerprint=packet_source_fingerprint,
+    )
+
+    monkeypatch.setattr(
+        auto_review_packet,
+        "find_latest_case_audit_run",
+        lambda *_args, **_kwargs: {"run_dir": str(audit_run_dir)},
+    )
+    monkeypatch.setattr(
+        auto_review_packet,
+        "invoke_json",
+        lambda *_args, **_kwargs: {
+            "benchmark_readiness": "ready",
+            "bucket_fit": "correct",
+            "focus_clarity": "clear",
+            "excerpt_integrity": "strong",
+            "review__action": "keep",
+            "review__confidence": "high",
+            "review__problem_types": ["other"],
+            "review__revised_bucket": "",
+            "review__revised_selection_reason": "",
+            "review__revised_judge_focus": "",
+            "review__notes": "Benchmark-ready.",
+        },
+    )
+    monkeypatch.setattr(
+        auto_review_packet,
+        "resolve_worker_policy",
+        lambda **_kwargs: JobConcurrencyPolicy(
+            job_kind="packet_adjudication",
+            profile_id="dataset_review_high_trust",
+            task_count=1,
+            llm_budget=1,
+            per_worker_parallelism=1,
+            worker_count=1,
+        ),
+    )
+    monkeypatch.setattr(auto_review_packet, "llm_invocation_scope", lambda **_kwargs: nullcontext())
+
+    exit_code = auto_review_packet.main(["--packet-dir", str(packet_dir), "--probe-only", "--max-workers", "1"])
+
+    assert exit_code == 0
+    run_dirs = sorted((packet_dir / "llm_review_runs").iterdir())
+    assert len(run_dirs) == 2
+    new_run_dir = [run_dir for run_dir in run_dirs if run_dir.name != prior_run_id][0]
+    case_payload = json.loads((new_run_dir / "cases" / "demo_case.json").read_text(encoding="utf-8"))
+
+    assert case_payload["source_row_fingerprint"] == packet_source_fingerprint
+    assert case_payload["packet_source_row_fingerprint"] == packet_source_fingerprint
+    assert case_payload["source_row_fingerprint"] != legacy_source_fingerprint
+
+
 def test_probe_only_retries_quota_failed_cases_before_finalizing(monkeypatch, tmp_path: Path) -> None:
     packet_dir = tmp_path / "packet"
     audit_run_dir = tmp_path / "audit_run"
@@ -736,6 +913,103 @@ def test_compare_adjudication_runs_reports_audit_input_drift_separately(tmp_path
     assert payload["drift_counts"]["audit_input_drift"] == 1
     assert payload["case_diffs"][0]["same_source_row_fingerprint"] is True
     assert payload["case_diffs"][0]["same_audit_row_fingerprint"] is False
+
+
+def test_compare_adjudication_runs_prefers_explicit_packet_source_fingerprint(tmp_path: Path) -> None:
+    run_dir_a = tmp_path / "run_a"
+    run_dir_b = tmp_path / "run_b"
+    shared_packet_source = "shared-source-row"
+    prompt_case_a = "prompt-case-a"
+    prompt_case_b = "prompt-case-b"
+    _write_compare_run(
+        run_dir_a,
+        action="keep",
+        confidence="high",
+        source_fingerprint=prompt_case_a,
+        packet_source_fingerprint=shared_packet_source,
+        prompt_case_fingerprint=prompt_case_a,
+    )
+    _write_compare_run(
+        run_dir_b,
+        action="keep",
+        confidence="high",
+        source_fingerprint=prompt_case_b,
+        packet_source_fingerprint=shared_packet_source,
+        prompt_case_fingerprint=prompt_case_b,
+    )
+    (run_dir_a / "llm_traces").mkdir(parents=True, exist_ok=True)
+    (run_dir_b / "llm_traces").mkdir(parents=True, exist_ok=True)
+    (run_dir_a / "llm_traces" / "standard.jsonl").write_text("", encoding="utf-8")
+    (run_dir_b / "llm_traces" / "standard.jsonl").write_text("", encoding="utf-8")
+
+    payload = compare_adjudication_runs(run_dir_a, run_dir_b)
+
+    assert payload["drift_counts"]["source_input_drift"] == 0
+    assert payload["case_diffs"][0]["same_source_row_fingerprint"] is True
+    assert payload["case_diffs"][0]["same_prompt_case_fingerprint"] is False
+
+
+def test_compare_adjudication_runs_reconstructs_packet_source_fingerprint_from_source_rows(
+    tmp_path: Path,
+) -> None:
+    run_dir_a = tmp_path / "run_a"
+    run_dir_b = tmp_path / "run_b"
+    source_row = {
+        "case_id": "demo_case",
+        "book_title": "Demo Book",
+        "author": "Demo Author",
+        "chapter_id": "1",
+        "chapter_title": "Demo Chapter",
+        "question_ids": ["Q1"],
+        "phenomena": ["focus"],
+        "selection_reason": "Needs a cleanup pass.",
+        "judge_focus": "Does the case stay anchored?",
+        "excerpt_text": "Demo excerpt.",
+    }
+    input_case_a = {
+        "case_id": "demo_case",
+        "book_title": "Demo Book",
+        "author": "Demo Author",
+        "chapter_id": "1",
+        "chapter_title": "Demo Chapter",
+        "question_ids": ["Q1"],
+        "phenomena": ["focus"],
+        "selection_reason": "Replay wording A.",
+        "judge_focus": "Prompt focus A.",
+        "excerpt_text": "Replay excerpt A.",
+    }
+    input_case_b = {
+        **input_case_a,
+        "selection_reason": "Replay wording B.",
+        "judge_focus": "Prompt focus B.",
+        "excerpt_text": "Replay excerpt B.",
+    }
+    _write_compare_run(
+        run_dir_a,
+        action="keep",
+        confidence="high",
+        source_fingerprint=auto_review_packet._prompt_case_fingerprint(input_case_a),
+        input_payload_case=input_case_a,
+        source_row=source_row,
+    )
+    _write_compare_run(
+        run_dir_b,
+        action="keep",
+        confidence="high",
+        source_fingerprint=auto_review_packet._prompt_case_fingerprint(input_case_b),
+        input_payload_case=input_case_b,
+        source_row=source_row,
+    )
+    (run_dir_a / "llm_traces").mkdir(parents=True, exist_ok=True)
+    (run_dir_b / "llm_traces").mkdir(parents=True, exist_ok=True)
+    (run_dir_a / "llm_traces" / "standard.jsonl").write_text("", encoding="utf-8")
+    (run_dir_b / "llm_traces" / "standard.jsonl").write_text("", encoding="utf-8")
+
+    payload = compare_adjudication_runs(run_dir_a, run_dir_b)
+
+    assert payload["drift_counts"]["source_input_drift"] == 0
+    assert payload["case_diffs"][0]["same_source_row_fingerprint"] is True
+    assert payload["case_diffs"][0]["same_prompt_case_fingerprint"] is False
 
 
 def test_compare_legacy_runs_ignores_audit_wrapper_metadata_in_input_fingerprint(

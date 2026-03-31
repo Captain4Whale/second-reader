@@ -228,6 +228,13 @@ def _case_prompt_inputs(case: dict[str, Any]) -> dict[str, Any]:
     return prompt_case
 
 
+def _prompt_case_fingerprint(case: Any) -> str:
+    payload = _dict_payload(case)
+    if not payload:
+        return ""
+    return _fingerprint(_case_prompt_inputs(payload))
+
+
 def _score_band(value: Any) -> str:
     try:
         score = int(value)
@@ -589,9 +596,16 @@ def _resolve_probe_input_reuse(
             if not input_payload:
                 reusable_records = {}
                 break
+            packet_source_row_fingerprint = str(
+                records[case_id].get("packet_source_row_fingerprint", "")
+            ).strip() or str(records[case_id].get("source_row_fingerprint", "")).strip()
             reusable_records[case_id] = {
                 "case_id": case_id,
                 "input_payload": input_payload,
+                "source_row_fingerprint": packet_source_row_fingerprint,
+                "packet_source_row_fingerprint": packet_source_row_fingerprint,
+                "prompt_case_fingerprint": str(records[case_id].get("prompt_case_fingerprint", "")).strip(),
+                "audit_row_fingerprint": str(records[case_id].get("audit_row_fingerprint", "")).strip(),
             }
         if reusable_records:
             return reusable_records, resolved.name
@@ -658,6 +672,8 @@ def adjudicate(
     standard_trace_path: Path,
     source_case_audit_run_id: str,
     frozen_input_payload: dict[str, Any] | None = None,
+    frozen_source_row_fingerprint: str = "",
+    frozen_audit_row_fingerprint: str = "",
 ) -> dict[str, Any]:
     system_prompt = SYSTEM
     if frozen_input_payload is None:
@@ -672,6 +688,7 @@ def adjudicate(
             source_case_audit_run_id=source_case_audit_run_id,
         )
         source_row_fingerprint = _fingerprint(case)
+        prompt_case_fingerprint = _prompt_case_fingerprint(input_payload.get("case"))
         audit_row_fingerprint = _fingerprint(_stable_audit_prompt_inputs(audit_row))
         policy_audit_inputs = _stable_audit_prompt_inputs(audit_row)
     else:
@@ -681,8 +698,9 @@ def adjudicate(
         case = _dict_payload(input_payload.get("case"))
         audit_inputs = _dict_payload(input_payload.get("audit_prompt_inputs"))
         user_prompt = _review_prompt_from_inputs(case, audit_inputs)
-        source_row_fingerprint = _fingerprint(case)
-        audit_row_fingerprint = _fingerprint(audit_inputs)
+        prompt_case_fingerprint = _prompt_case_fingerprint(case)
+        source_row_fingerprint = str(frozen_source_row_fingerprint).strip() or prompt_case_fingerprint
+        audit_row_fingerprint = str(frozen_audit_row_fingerprint).strip() or _fingerprint(audit_inputs)
         policy_audit_inputs = _audit_prompt_inputs_for_policy(audit_inputs)
     raw_payload: Any = default_review()
     status = "ok"
@@ -710,6 +728,8 @@ def adjudicate(
                 "normalized_review": normalized,
                 "adjudication_input_fingerprint": _fingerprint(input_payload),
                 "source_row_fingerprint": source_row_fingerprint,
+                "packet_source_row_fingerprint": source_row_fingerprint,
+                "prompt_case_fingerprint": prompt_case_fingerprint,
                 "audit_row_fingerprint": audit_row_fingerprint,
                 "prompt_hashes": {
                     "system_prompt_hash": input_payload["system_prompt_hash"],
@@ -750,6 +770,8 @@ def adjudicate(
         "normalized_review": normalized,
         "adjudication_input_fingerprint": _fingerprint(input_payload),
         "source_row_fingerprint": source_row_fingerprint,
+        "packet_source_row_fingerprint": source_row_fingerprint,
+        "prompt_case_fingerprint": prompt_case_fingerprint,
         "audit_row_fingerprint": audit_row_fingerprint,
         "prompt_hashes": {
             "system_prompt_hash": input_payload["system_prompt_hash"],
@@ -798,6 +820,11 @@ def adjudicate_review_row(
                 standard_trace_path=standard_trace_path,
                 source_case_audit_run_id=source_case_audit_run_id,
                 frozen_input_payload=frozen_case.get("input_payload"),
+                frozen_source_row_fingerprint=str(
+                    frozen_case.get("packet_source_row_fingerprint", "")
+                ).strip()
+                or str(frozen_case.get("source_row_fingerprint", "")).strip(),
+                frozen_audit_row_fingerprint=str(frozen_case.get("audit_row_fingerprint", "")).strip(),
             )
     source_row = source_rows[case_id]
     audit_row = load_json(audit_cases_dir / f"{case_id}.json")
