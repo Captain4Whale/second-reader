@@ -104,6 +104,16 @@ Update when: status changes, blockers appear, or phases complete.
           - placeholder primary/adversarial audit payloads now retry before the audit row is accepted
           - if a usable audit payload still does not land, the audit command now fails nonzero and that run no longer counts as a completed audit for downstream pipeline resume
         - so unattended widening still waits on audit/adjudication reproducibility, not on missing controller plumbing
+        - the latest same-packet callbackslice follow-up has now classified that blocker more sharply:
+          - the archived-packet adjudication probe held packet inputs fixed with `same_packet_input_fingerprint = true` and `audit_input_drift = 0`, but still showed `action_drift = 1`
+          - the same-packet audit rerun held packet, case, context, prompt, and audit inputs fixed with `audit_input_drift = 0`, but still showed `primary_decision_drift = 1` and `primary_score_drift = 2`
+          - the compare-layer `source_input_drift = 2` on the adjudication probe is bookkeeping noise from mixed `source_row_fingerprint` semantics between live and replayed probe payloads, not real builder/input drift
+          - current disposition: do not open another builder repair wave from this evidence, do not widen automation, and treat frozen-slice comparison as a human-owned bounded-variance decision rather than an automatic next step
+    - fresh live gate counts on the recovered local-only `v2` datasets remain:
+      - English: `7` `reviewed_active`, `3` `needs_revision`, `6` `needs_replacement`, `154` `unset`
+      - Chinese: `13` `reviewed_active`, `1` `needs_revision`, `2` `needs_replacement`, `40` `unset`
+      - review queue: `active_packet_count = 0`
+      - current gate posture: benchmark gate stays on `hold`; no promotion reopening, reviewed-slice freeze, or runtime-viability launch is authorized from this checkpoint alone
     - later frontend/API retirement of section-first chapter/detail and marks surfaces
     - later stable-doc promotion timing under `Q10`
 
@@ -408,9 +418,13 @@ Update when: status changes, blockers appear, or phases complete.
       - the compare tool now distinguishes source-input drift from audit-input drift on both new and legacy runs
   - next:
     - keep the current callback-quality and tension-turn gains
-    - finish the remaining Chinese callback excerpt shaping so the stronger late-scene opportunity remains the primary pick cleanly
-    - use the landed callback-aware audit contract plus the compare tooling to rerun the narrow unchanged callback rows before widening again
-    - only then widen the same artifact model across the broader managed source pool
+    - keep the remaining Chinese callback excerpt-shaping backlog visible, but do not open another builder repair wave from the completed callbackslice reproducibility evidence alone
+    - the same-packet adjudication probe over the archived callback slice held packet inputs fixed and still showed `action_drift = 1` with `audit_input_drift = 0`
+    - the same-packet audit rerun held packet, case, context, prompt, and audit inputs fixed and still showed `primary_decision_drift = 1` with `primary_score_drift = 2`
+    - treat the adjudication compare `source_input_drift = 2` as bookkeeping noise from mixed `source_row_fingerprint` semantics, not as real builder drift
+    - current interpretation: the remaining blocker is same-input audit/adjudication variance, not builder/input drift
+    - do not open another builder repair wave automatically
+    - the slice is not auto-freeze-ready; either a human explicitly accepts this bounded variance for frozen-slice comparison or one later audit-stage-only reproducibility pass runs before any widening
   - completed narrow reproducibility follow-up:
     - original job:
       - `bgjob_callbackslice_auditv4_packet_20260331`
@@ -436,6 +450,37 @@ Update when: status changes, blockers appear, or phases complete.
       - the retry under the new recovery path completed cleanly with `keep = 1`, `revise = 1`
       - `education_of_henry_adams_public_en__29__callback_bridge__seed_v1` is now imported as `keep` / `reviewed_active`
       - `on_liberty_public_en__10__callback_bridge__seed_v1` remains the one bounded `revise`, which points to argumentative callback focus clarity rather than quota handling
+  - completed same-packet callbackslice reproducibility classification:
+    - adjudication probe job:
+      - `bgjob_callbackslice_probeonly_20260331`
+    - adjudication compare outcome on the archived packet:
+      - `same_packet_input_fingerprint = true`
+      - `audit_input_drift = 0`
+      - `action_drift = 1`
+      - `confidence_drift = 1`
+      - `problem_type_drift = 1`
+      - `education_of_henry_adams_public_en__29__callback_bridge__seed_v1` moved from `keep` to `revise`
+      - `on_liberty_public_en__10__callback_bridge__seed_v1` stayed `revise`
+    - audit rerun job:
+      - `bgjob_callbackslice_auditrerun_20260331`
+    - audit compare outcome on the same archived packet:
+      - `same_run_input_fingerprint = true`
+      - `same_run_audit_prompt_input_fingerprint = true`
+      - `input_drift = 0`
+      - `case_input_drift = 0`
+      - `context_input_drift = 0`
+      - `prompt_drift = 0`
+      - `audit_input_drift = 0`
+      - `primary_decision_drift = 1`
+      - `primary_problem_type_drift = 1`
+      - `primary_score_drift = 2`
+      - `on_liberty_public_en__10__callback_bridge__seed_v1` moved from `revise` to `drop`
+      - `education_of_henry_adams_public_en__29__callback_bridge__seed_v1` stayed `drop`
+    - disposition:
+      - this is same-input adjudication / audit-stage variance, not builder/input drift
+      - stop this Track A wave without another builder repair
+      - do not widen unattended automation from this evidence
+      - the slice is not auto-freeze-ready unless a human explicitly accepts the bounded variance
   - bounded argumentative callback follow-up now landed locally:
     - argumentative / reference-heavy callback drafts now name the anchor-to-earlier-target bridge explicitly and keep source attribution visible in `selection_reason` / `judge_focus`
     - focused validation:
@@ -514,8 +559,10 @@ Update when: status changes, blockers appear, or phases complete.
   - next:
     - keep the bounded controller as the active automation surface
     - do not widen to the multi-iteration unattended scheduler until repeated bilingual scratch runs are more reproducible
-    - separate builder-quality gains from audit/adjudication variability before trusting unattended widening
-    - the next automatic controller-side step is the bounded reproducibility repair wave on the unchanged callback cases exposed by `tensionfocusfix`, not another broad rerun by default
+    - the completed callbackslice probe/rerun separated builder quality from same-input audit/adjudication variance without clearing that variance, so there is no new automatic widening step now
+    - comparison return is the governing stop condition:
+      - either a human explicitly accepts the current bounded variance and freezes the slice for comparison cadence
+      - or one later audit-stage-only reproducibility pass runs before any widening or new builder wave
 - [x] Make source-book intake and intermediate-artifact management clear and durable.
   - keep canonical managed copies of original books inside project-owned storage instead of relying on external source paths as the long-term truth
   - define one documented drop-folder workflow for future book additions so new intake can be fetched and processed reproducibly

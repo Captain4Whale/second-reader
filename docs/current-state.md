@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-03-31T11:46:43Z`
+Last verified: `2026-03-31T13:18:00Z`
 
 ## Current Objective
 - Keep Phase 9 of the new reading mechanism project recoverable and decision-ready:
@@ -101,6 +101,23 @@ Last verified: `2026-03-31T11:46:43Z`
       - `kangxi_hongpiao_private_zh__27__seed_1`
       - `zouchu_weiyi_zhenliguan_private_zh__8__seed_1`
   - both recovery summaries explicitly recorded `decision_bearing_followup_launched: false`
+- A fresh live gate check on the recovered local-only excerpt datasets is now recorded:
+  - English benchmark counts remain:
+    - `7` `reviewed_active`
+    - `3` `needs_revision`
+    - `6` `needs_replacement`
+    - `154` `unset`
+  - Chinese benchmark counts remain:
+    - `13` `reviewed_active`
+    - `1` `needs_revision`
+    - `2` `needs_replacement`
+    - `40` `unset`
+  - queue summary remains:
+    - `reading-companion-backend/eval/review_packets/review_queue_summary.json`
+    - `active_packet_count = 0`
+  - current gate posture:
+    - benchmark gate stays on `hold`
+    - no promotion reopening, reviewed-slice freeze, or runtime-viability launch is authorized from these counts alone
 - The audit reproducibility wave is now fully complete in durable repo evidence:
   - the canonical wave-end checkpoint still lives in `reading-companion-backend/eval/review_packets/review_queue_summary.json`
   - `generated_at = 2026-03-30T20:05:14.323982Z`
@@ -364,6 +381,45 @@ Last verified: `2026-03-31T11:46:43Z`
     - `reading-companion-backend/tests/test_case_design_audit.py`
     - `reading-companion-backend/tests/test_case_design_audit_reproducibility.py`
     - focused result before the quota-recovery follow-up: `26 passed`
+- The same-packet callbackslice reproducibility follow-up is now completed under durable tracking:
+  - adjudication probe job:
+    - `bgjob_callbackslice_probeonly_20260331`
+  - adjudication baseline run:
+    - `reading-companion-backend/eval/review_packets/archive/attentional_v2_private_library_excerpt_en_question_aligned_v1__scratch__callbackslice_auditv4_20260331/llm_review_runs/llm_review__20260331-020939__1e09365bb0cb/`
+  - adjudication probe run:
+    - `reading-companion-backend/eval/review_packets/archive/attentional_v2_private_library_excerpt_en_question_aligned_v1__scratch__callbackslice_auditv4_20260331/llm_review_runs/llm_review__20260331-122614__1e09365bb0cb/`
+  - audit rerun job:
+    - `bgjob_callbackslice_auditrerun_20260331`
+  - audit baseline run:
+    - `reading-companion-backend/eval/runs/attentional_v2/case_audits/attentional_v2_private_library_excerpt_en_question_aligned_v1__scratch__callbackslice_auditv4_20260331__20260331-020431/`
+  - audit rerun:
+    - `reading-companion-backend/eval/runs/attentional_v2/case_audits/attentional_v2_private_library_excerpt_en_question_aligned_v1__scratch__callbackslice_auditv4_20260331__20260331-122848/`
+  - adjudication probe result:
+    - `same_packet_input_fingerprint = true`
+    - `audit_input_drift = 0`
+    - `action_drift = 1`
+    - `confidence_drift = 1`
+    - `problem_type_drift = 1`
+    - `education_of_henry_adams_public_en__29__callback_bridge__seed_v1` moved from `keep` to `revise`
+    - `on_liberty_public_en__10__callback_bridge__seed_v1` stayed `revise`
+  - audit rerun result:
+    - `same_run_input_fingerprint = true`
+    - `same_run_audit_prompt_input_fingerprint = true`
+    - `input_drift = 0`
+    - `case_input_drift = 0`
+    - `context_input_drift = 0`
+    - `prompt_drift = 0`
+    - `audit_input_drift = 0`
+    - `primary_decision_drift = 1`
+    - `primary_problem_type_drift = 1`
+    - `primary_score_drift = 2`
+    - `on_liberty_public_en__10__callback_bridge__seed_v1` moved from `revise` to `drop`
+    - `education_of_henry_adams_public_en__29__callback_bridge__seed_v1` stayed `drop`
+  - interpretation:
+    - this is same-input adjudication / audit-stage variance, not builder/input drift
+    - the adjudication compare still reports `source_input_drift = 2`, but that is bookkeeping noise caused by mixed `source_row_fingerprint` semantics between live adjudication rows and probe-reused prompt-case payloads, not real source-row drift
+    - do not open another builder repair wave from this evidence
+    - the callback slice is not auto-freeze-ready; only hand it back to frozen-slice comparison cadence if a human explicitly accepts this bounded variance, otherwise schedule one later audit-stage-only reproducibility pass
 - A bounded argumentative callback attribution patch is now landed locally:
   - code:
     - `reading-companion-backend/eval/attentional_v2/question_aligned_case_construction.py`
@@ -1164,7 +1220,8 @@ Last verified: `2026-03-31T11:46:43Z`
   - keep the broader bilingual adjudication-v4 result (`en: keep = 5 / revise = 3`, `zh: keep = 1 / revise = 1`) as the current cross-language baseline
   - keep the completed Chinese callback-priorcontext rerun as proof that `chenlun` bridge evidence now survives into packet review
   - shift the Chinese follow-up from “add prior context” to “tighten callback excerpt boundaries so the bridge is more legible as a benchmark case”
-  - keep replayed frozen-input `auto_review_packet.py --probe-only` runs as the clean adjudication-only measurement path, because the v4 pair now shows `action_drift = 0` on frozen inputs
+  - keep replayed frozen-input `auto_review_packet.py --probe-only` runs as the clean adjudication-only measurement path, because the latest callbackslice probe held packet inputs fixed and still exposed bounded same-input adjudication variance (`action_drift = 1`) without any `audit_input_drift`
+  - keep the completed callbackslice same-input audit rerun as the narrow live-stability checkpoint, because it held packet, case, context, prompt, and audit-input fingerprints fixed while still showing bounded audit-stage variance (`primary_decision_drift = 1`, `primary_score_drift = 2`)
   - use the completed `auditpair` compare artifact as the narrow live-stability baseline, because it shows `audit_input_drift = 0` with only `primary_decision_drift = 2` on the shared English cases
   - treat the completed `auditcontractv2` compare result as proof that the stricter all-strong keep gate did not solve the blocker and in fact widened `primary_decision_drift` to `5`
   - treat the completed `auditcontractv3` compare result as a partial improvement rather than a finish line, because it reduced `primary_score_drift` to `5` and `primary_decision_drift` to `4` but still left the audit too unstable for unattended widening
@@ -1175,14 +1232,14 @@ Last verified: `2026-03-31T11:46:43Z`
   - keep `callbackfocusfix` as the strongest current four-source bilingual callback checkpoint (`en: 7 keep / 1 revise`, `zh: 1 keep`)
   - keep the new tension-specific window/focus patch, because it turned `on_liberty_public_en__5__tension_reversal__seed_v1` into a real `keep`
   - treat the mixed `tensionfocusfix` bilingual packet as audit/adjudication drift on unchanged callback cases until the reproducibility tooling says otherwise
-- Keep the bounded controller as the active automation surface, but use the new callback-audit hardening before the next broader validation wave:
-  - the completed v4 frozen-input pair is already the clean proof that final-action instability is no longer the primary blocker
-  - the remaining uncertainty is broader-slice generalization and any surviving focus drift, not missing controller plumbing
-  - the callback retry plus the one-source On Liberty callback-prompt follow-up now clear the narrow callback blocker on the targeted slice
-  - the completed broader English callback-prompt rerun now proves the repair holds on the full two-source English slice
-  - the next automatic controller-side step is the bounded reproducibility repair wave on the unchanged callback rows exposed by `tensionfocusfix`, not another broad rerun by default
-  - only after that reproducibility check holds should we consider another bilingual widening pass
-  - only if `on_liberty_public_en__5__anchored_reaction_selectivity__seed_v1` still survives after that should it become the next bounded focus-framing follow-up
+- Keep the bounded controller as the active automation surface without opening another broader validation wave yet:
+  - the callback retry plus the one-source and broader-English callback-prompt follow-ups remain valid builder-quality gains
+  - the finished callbackslice probe/rerun now separates those builder gains from the remaining same-input adjudication / audit variance on unchanged callback rows
+  - do not open another builder repair wave from this evidence
+  - do not widen unattended automation again until it demonstrably shortens the loop back to trusted frozen-slice comparison
+  - the callback slice is not auto-freeze-ready:
+    - either a human explicitly accepts the current bounded variance and returns the slice to frozen-slice comparison cadence
+    - or one later audit-stage-only reproducibility pass is scheduled before any widening or new builder wave
 - Keep the dataset-platform route phased rather than monolithic:
   - source-book intake and intermediate-artifact governance is now landed
   - the first Question-Aligned Case Construction landing on top of the current corpus/review schema is now landed
@@ -1195,19 +1252,21 @@ Last verified: `2026-03-31T11:46:43Z`
   - the current follow-up cleanup pass has now dispositioned those cases mechanically, but it did not clear the open benchmark-status backlog
   - the `auditpair`, `auditcontractv2`, `auditcontractv3`, and `auditconsensusv3` waves all completed cleanly and their compare artifacts now form the durable audit-hardening evidence ladder
   - the review queue remains empty (`active_packet_count = 0`), and the later callback/tension follow-ups also finished with no active packet left open after import/archive
-- Prepare a human-owned post-cleanup gate review from the recovered counts, the two new follow-up packet summaries, and the still-open benchmark statuses.
-- Keep benchmark promotion, reviewed-slice freezing, durable-trace, re-entry, runtime-viability, and any default-cutover decision paused until a human explicitly asks for them.
+- Prepare a human-owned post-cleanup gate review from the recovered counts, the callbackslice variance evidence, the recent follow-up packet summaries, and the still-open benchmark statuses.
+- Keep benchmark promotion, reviewed-slice freezing, durable-trace, re-entry, runtime-viability, and any default-cutover decision paused until the relevant gate and bounded-variance decisions are made explicitly.
 
 ## Blocked
 - Formal curated promotion from the modern private-library supplement remains paused until the remaining open cases are dispositioned and a human explicitly reopens the post-recovery gate discussion.
-- Reviewed-slice freezing remains paused until a human explicitly chooses to freeze a slice.
-- Durable-trace, re-entry, and runtime-viability remain intentionally queued until the post-recovery benchmark gate becomes an explicit human-owned decision.
+- Reviewed-slice freezing remains paused until a human explicitly chooses to freeze a slice; the current callback slice is not auto-freeze-ready because same-input adjudication / audit variance is still bounded but nonzero.
+- Durable-trace, re-entry, and runtime-viability remain intentionally queued until the post-recovery benchmark gate becomes an explicit human-owned decision and a frozen comparison slice is intentionally accepted.
 - The later frontend/API retirement of section-first chapter/detail and marks surfaces remains blocked on benchmark stabilization plus stable doc promotion timing.
 - `Q10` remains open: when the detailed `attentional_v2` working design should be promoted from temp docs into stable mechanism docs.
 
 ## Open Decisions
 - `OD-PRIVATE-LIBRARY-POST-RESCUE-GATE`
   - The live reviewed state has been restored, and the extra cleanup/review pass is now complete. The new follow-up packet summaries did not add any `keep` decisions, so the remaining human-owned question is whether promotion should stay closed until a more substantive backlog-clearing move is chosen.
+- `OD-CALLBACKSLICE-BOUNDED-VARIANCE`
+  - The callbackslice same-input probe/rerun shows no builder/input drift but still leaves bounded adjudication / audit variance (`action_drift = 1`, `primary_decision_drift = 1`). The remaining human-owned question is whether that slice is already good enough to freeze for comparison cadence, or whether one later audit-stage-only reproducibility pass should run first.
 - `OD-BENCHMARK-SIZE`
   - Is the current benchmark family already large enough for high-confidence cross-mechanism judgment, or should the benchmark expand before any default-cutover decision?
 - `Q10`
@@ -1223,7 +1282,9 @@ Last verified: `2026-03-31T11:46:43Z`
 - The managed source catalog now drives both intake and the current private-library supplement build on this checkout, but the first real scratch evidence says the next bottleneck is case quality rather than source-input plumbing.
 - The first real scratch builder/controller runs were intentionally narrow: the earliest English baseline still yielded no `keep` outcomes, but the later quality-fix runs improved that materially; the remaining narrowness is now bilingual stability rather than the mere absence of `keep` results.
 - The last bilingual English pair held source rows constant but still regenerated materially different audit judgments, so current bilingual widening is constrained by audit/adjudication reproducibility as well as by builder quality.
-- The adjudication-v4 frozen-input pair removed same-input action drift, but the broader English-only versus broader bilingual v4 runs still show `source_input_drift = 0`, `audit_input_drift = 5`, and `action_drift = 3` on the shared English case set.
+- The latest callbackslice same-packet adjudication probe held packet inputs fixed and still showed `action_drift = 1`, while the same-packet audit rerun held audit inputs fixed and still showed `primary_decision_drift = 1`, so frozen-slice readiness still depends on an explicit human variance threshold.
+- Probe-only adjudication compares can over-report `source_input_drift` because `auto_review_packet.py` currently reuses `source_row_fingerprint` for different payload shapes in live vs replayed runs; the callbackslice `source_input_drift = 2` is bookkeeping noise unless packet-input or audit-row fingerprints also move.
+- The broader English-only versus broader bilingual v4 runs still show `source_input_drift = 0`, `audit_input_drift = 5`, and `action_drift = 3` on the shared English case set.
 - The fresh audit-pair compare artifact now shows `audit_input_drift = 0` but `primary_score_drift = 8`, so the remaining live instability is audit-stage model variance rather than builder/input drift.
 - One remaining English outlier had invisible Unicode whitespace inside the emitted excerpt and selection-reason text even though the audit input fingerprints matched across runs; the builder-side normalization patch fixed that defect on the current builder path.
 - The current strongest narrow callback result is `callbackfocusfix`, but the later tension follow-up showed that unchanged callback rows can still drift at audit/adjudication time even when the builder-side callback inputs stay effectively fixed.
@@ -1250,21 +1311,21 @@ Last verified: `2026-03-31T11:46:43Z`
 5. `docs/tasks/registry.md`
 6. `docs/implementation/new-reading-mechanism/question-aligned-case-construction.md`
 7. `reading-companion-backend/eval/review_packets/review_queue_summary.json`
-8. `reading-companion-backend/state/job_registry/jobs/bgjob_closed_loop_bilingual_broader_callbackfocusfix_20260331.json`
-9. `reading-companion-backend/state/dataset_build/build_runs/closed_loop_full_smoke_bilingual_broader_callbackfocusfix_20260331/closed_loop_benchmark_curation_summary.json`
-10. `reading-companion-backend/state/job_registry/jobs/bgjob_closed_loop_bilingual_broader_tensionfocusfix_20260331.json`
-11. `reading-companion-backend/state/dataset_build/build_runs/closed_loop_full_smoke_bilingual_broader_tensionfocusfix_20260331/closed_loop_benchmark_curation_summary.json`
-12. `reading-companion-backend/state/dataset_build/build_runs/closed_loop_full_smoke_en_broader_callbackpromptfix_20260331/closed_loop_benchmark_curation_summary.json`
-13. `reading-companion-backend/eval/runs/attentional_v2/case_audits/attentional_v2_private_library_excerpt_en_question_aligned_v1__scratch__closed_loop_full_smoke_en_broader_callbackpromptfix_20260331__initial_review__closed_loop_full_smoke_en_broader_callbackpromptfix_20260331__20260331-042216/run_state.json`
-14. `reading-companion-backend/state/dataset_build/build_runs/closed_loop_on_liberty_callbackpromptfix_20260331/closed_loop_benchmark_curation_summary.json`
-15. `reading-companion-backend/state/job_registry/jobs/bgjob_en_chapter_core_rerun_round3_caseiso_judged_substantive_backup_20260331.json`
-16. `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_vs_iterator_v1_chapter_core_en_round3_caseiso_judged_substantive_backup_20260331/summary/aggregate.json`
+8. `reading-companion-backend/state/job_registry/jobs/bgjob_callbackslice_probeonly_20260331.json`
+9. `reading-companion-backend/eval/review_packets/archive/attentional_v2_private_library_excerpt_en_question_aligned_v1__scratch__callbackslice_auditv4_20260331/llm_review_runs/llm_review__20260331-020939__1e09365bb0cb/summary.json`
+10. `reading-companion-backend/eval/review_packets/archive/attentional_v2_private_library_excerpt_en_question_aligned_v1__scratch__callbackslice_auditv4_20260331/llm_review_runs/llm_review__20260331-122614__1e09365bb0cb/summary.json`
+11. `reading-companion-backend/state/job_registry/jobs/bgjob_callbackslice_auditrerun_20260331.json`
+12. `reading-companion-backend/eval/runs/attentional_v2/case_audits/attentional_v2_private_library_excerpt_en_question_aligned_v1__scratch__callbackslice_auditv4_20260331__20260331-020431/run_state.json`
+13. `reading-companion-backend/eval/runs/attentional_v2/case_audits/attentional_v2_private_library_excerpt_en_question_aligned_v1__scratch__callbackslice_auditv4_20260331__20260331-122848/run_state.json`
+14. `reading-companion-backend/state/job_registry/jobs/bgjob_closed_loop_bilingual_broader_callbackfocusfix_20260331.json`
+15. `reading-companion-backend/state/dataset_build/build_runs/closed_loop_full_smoke_bilingual_broader_callbackfocusfix_20260331/closed_loop_benchmark_curation_summary.json`
+16. `reading-companion-backend/state/job_registry/jobs/bgjob_en_chapter_core_rerun_round3_caseiso_judged_substantive_backup_20260331.json`
 17. `docs/implementation/new-reading-mechanism/private-library-promotion-round2.md`
 
 ## Machine-Readable Appendix
 ```json
 {
-  "updated_at": "2026-03-31T11:46:43Z",
+  "updated_at": "2026-03-31T13:18:00Z",
   "last_updated_by": "codex",
   "active_task_ids": [
     "TASK-BENCH-BACKLOG-RESCUE",
@@ -1275,6 +1336,7 @@ Last verified: `2026-03-31T11:46:43Z`
   "active_job_ids": [],
   "open_decision_ids": [
     "OD-PRIVATE-LIBRARY-POST-RESCUE-GATE",
+    "OD-CALLBACKSLICE-BOUNDED-VARIANCE",
     "OD-BENCHMARK-SIZE",
     "Q10"
   ],
@@ -1300,6 +1362,12 @@ Last verified: `2026-03-31T11:46:43Z`
     "reading-companion-backend/state/dataset_build/build_runs/closed_loop_full_smoke_bilingual_selectionfix_20260330/closed_loop_benchmark_curation_summary.json",
     "reading-companion-backend/state/dataset_build/build_runs/closed_loop_full_smoke_bilingual_broader_selectionfix_20260330/closed_loop_benchmark_curation_summary.json",
     "reading-companion-backend/state/dataset_build/build_runs/closed_loop_full_smoke_en_broader_auditcoherencefix_20260330/closed_loop_benchmark_curation_summary.json",
+    "reading-companion-backend/state/job_registry/jobs/bgjob_callbackslice_probeonly_20260331.json",
+    "reading-companion-backend/eval/review_packets/archive/attentional_v2_private_library_excerpt_en_question_aligned_v1__scratch__callbackslice_auditv4_20260331/llm_review_runs/llm_review__20260331-020939__1e09365bb0cb/summary.json",
+    "reading-companion-backend/eval/review_packets/archive/attentional_v2_private_library_excerpt_en_question_aligned_v1__scratch__callbackslice_auditv4_20260331/llm_review_runs/llm_review__20260331-122614__1e09365bb0cb/summary.json",
+    "reading-companion-backend/state/job_registry/jobs/bgjob_callbackslice_auditrerun_20260331.json",
+    "reading-companion-backend/eval/runs/attentional_v2/case_audits/attentional_v2_private_library_excerpt_en_question_aligned_v1__scratch__callbackslice_auditv4_20260331__20260331-020431/run_state.json",
+    "reading-companion-backend/eval/runs/attentional_v2/case_audits/attentional_v2_private_library_excerpt_en_question_aligned_v1__scratch__callbackslice_auditv4_20260331__20260331-122848/run_state.json",
     "reading-companion-backend/eval/review_packets/archive/attentional_v2_private_library_excerpt_zh_question_aligned_v1__scratch__closed_loop_full_smoke_bilingual_selectionfix_20260330__initial_review__closed_loop_full_smoke_bilingual_selectionfix_20260330/llm_review_report.md",
     "reading-companion-backend/eval/review_packets/archive/attentional_v2_private_library_excerpt_en_question_aligned_v1__scratch__closed_loop_full_smoke_bilingual_paratextfix_20260330__initial_review__closed_loop_full_smoke_bilingual_paratextfix_20260330/llm_review_report.md",
     "reading-companion-backend/eval/review_packets/archive/attentional_v2_private_library_excerpt_en_question_aligned_v1__scratch__closed_loop_full_smoke_bilingual_selectionfix_20260330__initial_review__closed_loop_full_smoke_bilingual_selectionfix_20260330/llm_review_report.md",

@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-03-31T11:46:43Z`
+Last updated: `2026-03-31T13:18:00Z`
 
 ## Status Values
 - `active`
@@ -33,7 +33,7 @@ Last updated: `2026-03-31T11:46:43Z`
 - Lane: `dataset_platform`
 - Priority: `high`
 - Detail: `docs/implementation/new-reading-mechanism/execution-tracker.md`
-- Next: keep builder work in bounded-hardening mode only for callback-bridge shaping and same-input audit/adjudication reproducibility, complete one bounded repair wave on the unchanged callback rows exposed by `tensionfocusfix`, then freeze the resulting slice and hand comparison cadence back to the mechanism-eval lane before opening another builder focus
+- Next: keep builder work in bounded-hardening mode only for callback-bridge shaping and same-input audit/adjudication reproducibility, but do not open another builder repair wave from the completed callbackslice probe/rerun because it showed no builder/input drift and still left bounded same-input variance (`action_drift = 1`, `primary_decision_drift = 1`); only hand the slice back to frozen-slice comparison if that variance is explicitly accepted, otherwise schedule one later audit-stage-only reproducibility pass
 - Jobs:
   - `bgjob_closed_loop_en_broader_callbackpromptfix_20260331` (`completed`)
   - `bgjob_closed_loop_zh_callbacklookback_20260330` (`completed`)
@@ -46,18 +46,22 @@ Last updated: `2026-03-31T11:46:43Z`
   - `bgjob_closed_loop_bilingual_broader_tensionfocusfix_20260331` (`completed`)
   - `bgjob_callbackslice_auditv4_packet_20260331` (`failed`)
   - `bgjob_callbackslice_auditv4_packet_retry_quota_20260331` (`completed`)
+  - `bgjob_callbackslice_probeonly_20260331` (`completed`)
+  - `bgjob_callbackslice_auditrerun_20260331` (`completed`)
 
 ### `TASK-DATASET-FULL-AUTOMATION` — Make dataset building fully automated as one closed build-review-refine loop
 - Status: `active`
 - Lane: `dataset_platform`
 - Priority: `high`
 - Detail: `docs/implementation/new-reading-mechanism/execution-tracker.md`
-- Next: keep the controller bounded and scratch-safe, use the next automatic step only for the current reproducibility repair wave on the unchanged callback rows, and do not widen unattended automation again until it demonstrably shortens the loop back to trusted frozen-slice comparison
+- Next: keep the controller bounded and scratch-safe, but do not authorize another automatic widening step from the completed callbackslice probe/rerun because it separated builder quality from same-input audit/adjudication variance without clearing that variance; only return to frozen-slice comparison if bounded variance is explicitly accepted, otherwise keep widening closed until one later audit-stage-only reproducibility pass is requested
 - Jobs:
   - `bgjob_closed_loop_en_broader_callbackpromptfix_20260331` (`completed`)
   - `bgjob_closed_loop_bilingual_broader_callbackpromptfix_20260331` (`failed`)
   - `bgjob_callbackslice_auditv4_packet_20260331` (`failed`)
   - `bgjob_callbackslice_auditv4_packet_retry_quota_20260331` (`completed`)
+  - `bgjob_callbackslice_probeonly_20260331` (`completed`)
+  - `bgjob_callbackslice_auditrerun_20260331` (`completed`)
   - `bgjob_closed_loop_bilingual_broader_callbackfocusfix_20260331` (`completed`)
   - `bgjob_closed_loop_bilingual_broader_tensionfocusfix_20260331` (`completed`)
   - `bgjob_closed_loop_bilingual_broader_callbackinferencefix_20260331` (`completed`)
@@ -93,7 +97,7 @@ Last updated: `2026-03-31T11:46:43Z`
 - Priority: `medium`
 - Detail: `docs/implementation/new-reading-mechanism/execution-tracker.md`
 - Blocked by: `TASK-BENCH-BACKLOG-RESCUE`
-- Next: treat this as the next required decisive mechanism-eval lane after the current bounded hardening wave freezes a comparison slice, and launch the durable-trace, re-entry, and runtime-viability evaluation once the post-recovery benchmark gate decision is explicit instead of letting dataset-platform work postpone it again
+- Next: treat this as the next required decisive mechanism-eval lane once a frozen comparison slice is intentionally accepted and the post-recovery benchmark gate decision is explicit; do not let unresolved callbackslice variance or general dataset-platform work postpone durable-trace, re-entry, and runtime viability indefinitely
 
 ### `TASK-DOC-Q10` — Decide when to promote `attentional_v2` working design into stable docs
 - Status: `queued`
