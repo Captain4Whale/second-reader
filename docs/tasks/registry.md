@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-03-31T15:25:45Z`
+Last updated: `2026-03-31T23:23:47Z`
 
 ## Status Values
 - `active`
@@ -25,7 +25,7 @@ Last updated: `2026-03-31T15:25:45Z`
 - Lane: `dataset_growth`
 - Priority: `high`
 - Detail: `docs/implementation/new-reading-mechanism/private-library-promotion-round2.md`
-- Next: keep the post-cleanup gate on `hold`, treat the `0`-new-keep follow-up result as the new benchmark-hardening truth, and only reopen promotion after a human explicitly chooses that route or a more substantive backlog-clearing move lands
+- Next: run the post-recovery gate review with [post-recovery-gate-review-checklist.md](/Users/baiweijiang/Documents/Projects/reading-companion/docs/implementation/new-reading-mechanism/post-recovery-gate-review-checklist.md), keep the gate on `hold` unless that review records an explicit reopen decision, and use the outcome to either hand the main cadence back to durable-trace / re-entry / runtime-viability or schedule one last audit-stage-only reproducibility pass
 - Jobs: none
 
 ### `TASK-DATASET-QUESTION-ALIGNED-CASE-CONSTRUCTION` — Build question-aligned case construction for evaluation datasets

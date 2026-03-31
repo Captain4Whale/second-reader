@@ -56,6 +56,8 @@
 - the human-owned decisions still open are:
   - `OD-PRIVATE-LIBRARY-POST-RESCUE-GATE`
   - `OD-BENCHMARK-SIZE`
+- the operational review procedure for resolving the current gate now lives in:
+  - [post-recovery-gate-review-checklist.md](/Users/baiweijiang/Documents/Projects/reading-companion/docs/implementation/new-reading-mechanism/post-recovery-gate-review-checklist.md)
 - safe mechanical work may continue:
   - build better replacement candidates
   - generate new revision/replacement packets

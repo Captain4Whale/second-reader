@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-03-31T15:25:45Z",
+  "updated_at": "2026-03-31T23:23:47Z",
   "tasks": [
     {
       "id": "TASK-MECH-EN-RERUN",
@@ -74,10 +74,11 @@
       ],
       "job_refs": [],
       "acceptance_ref": "docs/implementation/new-reading-mechanism/private-library-promotion-round2.md",
-      "next_action": "Keep the post-cleanup gate on hold, treat the 0-new-keep follow-up result as the new benchmark-hardening truth, and only reopen promotion after a human explicitly chooses that route or a more substantive backlog-clearing move lands.",
+      "next_action": "Run the post-recovery gate review with docs/implementation/new-reading-mechanism/post-recovery-gate-review-checklist.md, keep the gate on hold unless that review records an explicit reopen decision, and use the outcome to either hand the main cadence back to durable-trace / re-entry / runtime-viability or schedule one last audit-stage-only reproducibility pass.",
       "blocked_by": [],
       "evidence_refs": [
         "docs/implementation/new-reading-mechanism/private-library-promotion-round2.md",
+        "docs/implementation/new-reading-mechanism/post-recovery-gate-review-checklist.md",
         "docs/implementation/new-reading-mechanism/private-library-promotion-round2.json",
         "reading-companion-backend/eval/review_packets/archive/attentional_v2_private_library_cleanup_en_recovery_20260329/dataset_review_pipeline_summary.json",
         "reading-companion-backend/eval/review_packets/archive/attentional_v2_private_library_cleanup_zh_recovery_20260329/dataset_review_pipeline_summary.json",
@@ -87,7 +88,7 @@
         "reading-companion-backend/state/eval_local_datasets/excerpt_cases/attentional_v2_private_library_excerpt_en_v2/cases.jsonl",
         "reading-companion-backend/state/eval_local_datasets/excerpt_cases/attentional_v2_private_library_excerpt_zh_v2/cases.jsonl"
       ],
-      "last_updated": "2026-03-29T16:35:43Z",
+      "last_updated": "2026-03-31T23:23:47Z",
       "last_updated_by": "codex"
     },
     {

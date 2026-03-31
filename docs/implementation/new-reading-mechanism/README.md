@@ -67,6 +67,9 @@ Update when: the design capture, plan, tracker, or open-question set changes dur
 - `dataset-quality-hardening.md`
   - explicit plan for strengthening semantic case trust before broader semantic comparison work
   - defines the review-status ladder, the weak-bucket hardening workflow, and the LLM-plus-human review split
+- `post-recovery-gate-review-checklist.md`
+  - concrete operator checklist for resolving the current post-cleanup benchmark gate and callbackslice bounded-variance decisions
+  - use this when deciding whether the project returns to decisive mechanism-eval lanes now or after one last audit-stage-only reproducibility pass
 - `mechanism-pattern-ledger.md`
   - living ledger of reusable strengths, adoption candidates, failure modes, and anti-patterns observed during evaluation and repair work
   - use this to preserve what should be carried forward from either mechanism and what should be avoided later
@@ -106,6 +109,7 @@ Update when: the design capture, plan, tracker, or open-question set changes dur
 11. `dataset-platform-closed-loop.md`
 12. `question-aligned-case-construction.md`
 13. `dataset-quality-hardening.md`
-14. `mechanism-pattern-ledger.md`
-15. `runtime-artifact-map.md`
-16. Stable docs listed above, as required by the task at hand
+14. `post-recovery-gate-review-checklist.md`
+15. `mechanism-pattern-ledger.md`
+16. `runtime-artifact-map.md`
+17. Stable docs listed above, as required by the task at hand

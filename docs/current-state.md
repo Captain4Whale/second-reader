@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-03-31T15:25:45Z`
+Last verified: `2026-03-31T23:23:47Z`
 
 ## Current Objective
 - Keep Phase 9 of the new reading mechanism project recoverable and decision-ready:
@@ -1253,6 +1253,7 @@ Last verified: `2026-03-31T15:25:45Z`
   - the `auditpair`, `auditcontractv2`, `auditcontractv3`, and `auditconsensusv3` waves all completed cleanly and their compare artifacts now form the durable audit-hardening evidence ladder
   - the review queue remains empty (`active_packet_count = 0`), and the later callback/tension follow-ups also finished with no active packet left open after import/archive
 - Prepare a human-owned post-cleanup gate review from the recovered counts, the callbackslice variance evidence, the recent follow-up packet summaries, and the still-open benchmark statuses.
+  - use [post-recovery-gate-review-checklist.md](/Users/baiweijiang/Documents/Projects/reading-companion/docs/implementation/new-reading-mechanism/post-recovery-gate-review-checklist.md) as the required operating procedure
 - After that gate review, keep the next fork narrow rather than reopening general dataset-platform expansion:
   - if the current bounded variance is acceptable, hand the frozen slice back to mechanism-comparison cadence and start durable-trace / re-entry / runtime-viability work before any new general builder or automation wave
   - if the current bounded variance is not acceptable, run one later audit-stage-only reproducibility pass, then return to the same decisive mechanism-eval lanes
@@ -1312,23 +1313,24 @@ Last verified: `2026-03-31T15:25:45Z`
 3. `docs/current-state.md`
 4. relevant child `AGENTS.md`
 5. `docs/tasks/registry.md`
-6. `docs/implementation/new-reading-mechanism/question-aligned-case-construction.md`
-7. `reading-companion-backend/eval/review_packets/review_queue_summary.json`
-8. `reading-companion-backend/state/job_registry/jobs/bgjob_callbackslice_probeonly_20260331.json`
-9. `reading-companion-backend/eval/review_packets/archive/attentional_v2_private_library_excerpt_en_question_aligned_v1__scratch__callbackslice_auditv4_20260331/llm_review_runs/llm_review__20260331-020939__1e09365bb0cb/summary.json`
-10. `reading-companion-backend/eval/review_packets/archive/attentional_v2_private_library_excerpt_en_question_aligned_v1__scratch__callbackslice_auditv4_20260331/llm_review_runs/llm_review__20260331-122614__1e09365bb0cb/summary.json`
-11. `reading-companion-backend/state/job_registry/jobs/bgjob_callbackslice_auditrerun_20260331.json`
-12. `reading-companion-backend/eval/runs/attentional_v2/case_audits/attentional_v2_private_library_excerpt_en_question_aligned_v1__scratch__callbackslice_auditv4_20260331__20260331-020431/run_state.json`
-13. `reading-companion-backend/eval/runs/attentional_v2/case_audits/attentional_v2_private_library_excerpt_en_question_aligned_v1__scratch__callbackslice_auditv4_20260331__20260331-122848/run_state.json`
-14. `reading-companion-backend/state/job_registry/jobs/bgjob_closed_loop_bilingual_broader_callbackfocusfix_20260331.json`
-15. `reading-companion-backend/state/dataset_build/build_runs/closed_loop_full_smoke_bilingual_broader_callbackfocusfix_20260331/closed_loop_benchmark_curation_summary.json`
-16. `reading-companion-backend/state/job_registry/jobs/bgjob_en_chapter_core_rerun_round3_caseiso_judged_substantive_backup_20260331.json`
-17. `docs/implementation/new-reading-mechanism/private-library-promotion-round2.md`
+6. `docs/implementation/new-reading-mechanism/post-recovery-gate-review-checklist.md`
+7. `docs/implementation/new-reading-mechanism/question-aligned-case-construction.md`
+8. `reading-companion-backend/eval/review_packets/review_queue_summary.json`
+9. `reading-companion-backend/state/job_registry/jobs/bgjob_callbackslice_probeonly_20260331.json`
+10. `reading-companion-backend/eval/review_packets/archive/attentional_v2_private_library_excerpt_en_question_aligned_v1__scratch__callbackslice_auditv4_20260331/llm_review_runs/llm_review__20260331-020939__1e09365bb0cb/summary.json`
+11. `reading-companion-backend/eval/review_packets/archive/attentional_v2_private_library_excerpt_en_question_aligned_v1__scratch__callbackslice_auditv4_20260331/llm_review_runs/llm_review__20260331-122614__1e09365bb0cb/summary.json`
+12. `reading-companion-backend/state/job_registry/jobs/bgjob_callbackslice_auditrerun_20260331.json`
+13. `reading-companion-backend/eval/runs/attentional_v2/case_audits/attentional_v2_private_library_excerpt_en_question_aligned_v1__scratch__callbackslice_auditv4_20260331__20260331-020431/run_state.json`
+14. `reading-companion-backend/eval/runs/attentional_v2/case_audits/attentional_v2_private_library_excerpt_en_question_aligned_v1__scratch__callbackslice_auditv4_20260331__20260331-122848/run_state.json`
+15. `reading-companion-backend/state/job_registry/jobs/bgjob_closed_loop_bilingual_broader_callbackfocusfix_20260331.json`
+16. `reading-companion-backend/state/dataset_build/build_runs/closed_loop_full_smoke_bilingual_broader_callbackfocusfix_20260331/closed_loop_benchmark_curation_summary.json`
+17. `reading-companion-backend/state/job_registry/jobs/bgjob_en_chapter_core_rerun_round3_caseiso_judged_substantive_backup_20260331.json`
+18. `docs/implementation/new-reading-mechanism/private-library-promotion-round2.md`
 
 ## Machine-Readable Appendix
 ```json
 {
-  "updated_at": "2026-03-31T13:18:00Z",
+  "updated_at": "2026-03-31T23:23:47Z",
   "last_updated_by": "codex",
   "active_task_ids": [
     "TASK-BENCH-BACKLOG-RESCUE",
@@ -1346,6 +1348,7 @@ Last verified: `2026-03-31T15:25:45Z`
   "detail_refs": [
     "docs/implementation/new-reading-mechanism/execution-tracker.md",
     "docs/implementation/new-reading-mechanism/private-library-promotion-round2.md",
+    "docs/implementation/new-reading-mechanism/post-recovery-gate-review-checklist.md",
     "docs/implementation/new-reading-mechanism/evaluation-question-map.md",
     "docs/implementation/new-reading-mechanism/evaluation-corpus-requirements.md",
     "docs/implementation/new-reading-mechanism/dataset-platform-closed-loop.md",
