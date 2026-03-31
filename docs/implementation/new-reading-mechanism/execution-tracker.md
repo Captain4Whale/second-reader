@@ -34,6 +34,9 @@ Update when: status changes, blockers appear, or phases complete.
       - the judged rerun over the same two cases is now complete:
         - `walden_205_en__10` is a real `attentional_v2` win driven by one disciplined interpretive thread carried across the chapter
         - `up_from_slavery_public_en__10` still loses because `attentional_v2` under-covered the long chapter too sparsely and too late, with ambiguous chapter numbering metadata further weakening judge trust
+      - a bounded evidence-control mode is now landed in `run_chapter_comparison.py`:
+        - `--judge-evidence-mode substantive` filters lifecycle / operational attention events out of the judge-facing bundle only
+        - full bundles remain preserved on disk for later inspection
     - balanced benchmark promotion from the modern private-library `v2` supplement remains mid-hardening rather than ready for formal benchmark promotion:
       - the cleanup orchestrator is now completed, the round-2 promotion draft is landed, and the English and Chinese follow-up cleanup packets are archived
       - the explicit decision remains `hold_for_backlog_rescue`
@@ -383,6 +386,10 @@ Update when: status changes, blockers appear, or phases complete.
         - English `unclear = 1`
         - Chinese `keep = 1`
         - diagnosis: the tension-turn improvement held, but unchanged callback cases still drifted during audit/adjudication
+    - bounded callback audit hardening is now landed after that diagnosis:
+      - `run_case_design_audit.py` now carries `target_profile_id`, `selection_role`, and `prior_context_text` into the audit prompt payload
+      - the callback audit contract now explicitly allows inline antecedents when they are intentionally self-contained and sharply traceable
+      - inline-target callback cases now receive `2` extra primary-review replicas before consensus is frozen
     - adjudication reproducibility tooling is now landed:
       - `reading-companion-backend/eval/attentional_v2/auto_review_packet.py`
       - `reading-companion-backend/eval/attentional_v2/compare_packet_adjudication_runs.py`
@@ -391,7 +398,7 @@ Update when: status changes, blockers appear, or phases complete.
   - next:
     - keep the current callback-quality and tension-turn gains
     - finish the remaining Chinese callback excerpt shaping so the stronger late-scene opportunity remains the primary pick cleanly
-    - use `callbackfocusfix` versus `tensionfocusfix` plus the compare tooling to harden audit/adjudication reproducibility on unchanged callback rows
+    - use the landed callback-aware audit contract plus the compare tooling to rerun the narrow unchanged callback rows before widening again
     - only then widen the same artifact model across the broader managed source pool
   - the loop boundary is now defined and partially materialized:
     - target-profile contract

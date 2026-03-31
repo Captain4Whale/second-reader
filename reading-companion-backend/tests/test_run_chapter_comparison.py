@@ -5,7 +5,10 @@ from __future__ import annotations
 import json
 from pathlib import Path
 from types import SimpleNamespace
+from contextlib import nullcontext
 from typing import Any
+
+import pytest
 
 from eval.attentional_v2 import run_chapter_comparison as chapter_comparison
 
@@ -166,11 +169,13 @@ def test_run_benchmark_uses_case_subprocess_for_parallel_case_workers(monkeypatc
         judge_mode: str,
         mechanism_execution_mode: str,
         judge_execution_mode: str,
+        judge_evidence_mode: str,
     ) -> dict[str, Any]:
         assert source["source_id"] == case.source_id
         assert judge_mode == "none"
         assert mechanism_execution_mode == "serial"
         assert judge_execution_mode == "serial"
+        assert judge_evidence_mode == chapter_comparison.DEFAULT_JUDGE_EVIDENCE_MODE
         assert run_root.parent == tmp_path / "runs"
         dispatched.append(case.chapter_case_id)
         return _case_result(case)
@@ -196,10 +201,12 @@ def test_run_benchmark_uses_case_subprocess_for_parallel_case_workers(monkeypatc
 
     assert set(dispatched) == set(case_ids)
     run_root = Path(summary["run_root"])
+    dataset_manifest = json.loads((run_root / "dataset_manifest.json").read_text(encoding="utf-8"))
     assert (run_root / "cases" / "case_a.json").exists()
     assert (run_root / "cases" / "case_b.json").exists()
     assert (run_root / "summary" / "aggregate.json").exists()
     assert (run_root / "summary" / "report.md").exists()
+    assert dataset_manifest["judge_evidence_mode"] == chapter_comparison.DEFAULT_JUDGE_EVIDENCE_MODE
 
 
 def test_run_benchmark_keeps_single_worker_case_eval_in_process(monkeypatch, tmp_path: Path) -> None:
@@ -219,11 +226,13 @@ def test_run_benchmark_keeps_single_worker_case_eval_in_process(monkeypatch, tmp
         judge_mode: str,
         mechanism_execution_mode: str,
         judge_execution_mode: str,
+        judge_evidence_mode: str,
     ) -> dict[str, Any]:
         assert source["source_id"] == case.source_id
         assert judge_mode == "none"
         assert mechanism_execution_mode == "serial"
         assert judge_execution_mode == "serial"
+        assert judge_evidence_mode == chapter_comparison.DEFAULT_JUDGE_EVIDENCE_MODE
         assert run_root.parent == tmp_path / "runs"
         evaluated.append(case.chapter_case_id)
         return _case_result(case)
@@ -251,6 +260,118 @@ def test_run_benchmark_keeps_single_worker_case_eval_in_process(monkeypatch, tmp
     run_root = Path(summary["run_root"])
     assert (run_root / "cases" / "case_a.json").exists()
     assert (run_root / "cases" / "case_b.json").exists()
+
+
+def test_build_judge_bundle_summary_substantive_filters_operational_events() -> None:
+    summary = {
+        "reaction_count": 1,
+        "attention_event_count": 3,
+        "reactions": [{"type": "discern", "content": "Reasoned move."}],
+        "attention_events": [
+            {"kind": "parse", "message": "Parsing..."},
+            {"kind": "thought", "message": "Substantive thought."},
+            {"kind": "transition", "message": "Transition."},
+        ],
+    }
+
+    filtered = chapter_comparison._build_judge_bundle_summary(
+        summary,
+        judge_evidence_mode="substantive",
+    )
+
+    assert filtered["attention_event_count"] == 1
+    assert filtered["attention_events"] == [{"kind": "thought", "message": "Substantive thought."}]
+    assert filtered["reactions"] == summary["reactions"]
+
+
+def test_judge_scope_uses_substantive_bundle_summary(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    captured: dict[str, str] = {}
+
+    def fake_invoke_json(_system_prompt: str, user_prompt: str, _default: object) -> dict[str, Any]:
+        captured["user_prompt"] = user_prompt
+        return {
+            "winner": "tie",
+            "confidence": "low",
+            "scores": {
+                "attentional_v2": {
+                    "text_groundedness": 3,
+                    "focus_selectivity": 3,
+                    "source_anchoring": 3,
+                    "meaningful_curiosity": 3,
+                    "local_step_quality": 3,
+                },
+                "iterator_v1": {
+                    "text_groundedness": 3,
+                    "focus_selectivity": 3,
+                    "source_anchoring": 3,
+                    "meaningful_curiosity": 3,
+                    "local_step_quality": 3,
+                },
+            },
+            "reason": "Tie.",
+        }
+
+    monkeypatch.setattr(chapter_comparison, "invoke_json", fake_invoke_json)
+    monkeypatch.setattr(chapter_comparison, "llm_invocation_scope", lambda **kwargs: nullcontext())
+
+    case = chapter_comparison.ChapterCase(
+        chapter_case_id="case_a",
+        source_id="source_a",
+        book_title="Book A",
+        author="Author A",
+        language_track="en",
+        type_tags=["narrative_reflective"],
+        role_tags=["narrative_reflective"],
+        output_dir="output/book-a",
+        chapter_id=1,
+        chapter_title="Chapter 1",
+        sentence_count=10,
+        paragraph_count=2,
+        candidate_position_bucket="middle",
+        candidate_score=5.0,
+        selection_status="selected_v2",
+        selection_priority=1,
+        selection_role="narrative_reflective",
+        dataset_id="demo_dataset",
+        dataset_version="1",
+    )
+    attentional = {
+        "bundle_summary": {
+            "reaction_count": 1,
+            "attention_event_count": 2,
+            "reactions": [{"type": "discern", "content": "Attentional reading."}],
+            "attention_events": [
+                {"kind": "thought", "message": "Attentional thought."},
+                {"kind": "parse", "message": "Should disappear."},
+            ],
+        }
+    }
+    iterator = {
+        "bundle_summary": {
+            "reaction_count": 1,
+            "attention_event_count": 2,
+            "reactions": [{"type": "discern", "content": "Iterator reading."}],
+            "attention_events": [
+                {"kind": "parse", "message": "Should disappear too."},
+                {"kind": "thought", "message": "Iterator thought."},
+            ],
+        }
+    }
+
+    judgment = chapter_comparison._judge_scope(
+        scope=chapter_comparison.LOCAL_IMPACT,
+        case=case,
+        attentional=attentional,
+        iterator=iterator,
+        run_root=tmp_path,
+        judge_mode="llm",
+        judge_evidence_mode="substantive",
+    )
+
+    assert judgment["winner"] == "tie"
+    assert "Should disappear" not in captured["user_prompt"]
+    assert "Attentional thought." in captured["user_prompt"]
+    assert "Iterator thought." in captured["user_prompt"]
 
 
 def test_run_payload_worker_dispatches_case_payload(monkeypatch, tmp_path: Path) -> None:
@@ -290,6 +411,7 @@ def test_run_payload_worker_dispatches_case_payload(monkeypatch, tmp_path: Path)
             "judge_mode": "none",
             "mechanism_execution_mode": "serial",
             "judge_execution_mode": "serial",
+            "judge_evidence_mode": "substantive",
         },
     )
 

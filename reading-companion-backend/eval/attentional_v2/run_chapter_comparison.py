@@ -52,6 +52,15 @@ DEFAULT_USER_INTENT = (
 )
 SELECTION_ROLES = ("expository", "argumentative", "narrative_reflective", "reference_heavy")
 MECHANISM_KEYS = ("attentional_v2", "iterator_v1")
+DEFAULT_JUDGE_EVIDENCE_MODE = "standard"
+SUBSTANTIVE_ONLY_ATTENTION_EVENT_KINDS = {
+    "parse",
+    "waiting",
+    "error",
+    "transition",
+    "segment_complete",
+    "chapter_complete",
+}
 
 LOCAL_READING_SYSTEM = """You are doing offline cross-mechanism reader evaluation.
 
@@ -340,6 +349,25 @@ def _summarize_bundle(bundle: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _build_judge_bundle_summary(bundle_summary: dict[str, Any], *, judge_evidence_mode: str) -> dict[str, Any]:
+    if judge_evidence_mode == DEFAULT_JUDGE_EVIDENCE_MODE:
+        return dict(bundle_summary)
+    if judge_evidence_mode != "substantive":
+        raise ValueError(f"unsupported judge evidence mode: {judge_evidence_mode}")
+
+    filtered = dict(bundle_summary)
+    attention_events = []
+    for item in list(bundle_summary.get("attention_events") or []):
+        if not isinstance(item, dict):
+            continue
+        if _clean_text(item.get("kind")) in SUBSTANTIVE_ONLY_ATTENTION_EVENT_KINDS:
+            continue
+        attention_events.append(dict(item))
+    filtered["attention_events"] = attention_events
+    filtered["attention_event_count"] = len(attention_events)
+    return filtered
+
+
 @contextmanager
 def _isolated_output_dir(output_dir: Path):
     with override_output_dir(output_dir):
@@ -423,6 +451,7 @@ def _run_case_worker(payload_path: Path, result_path: Path) -> int:
         judge_mode=str(payload["judge_mode"]),
         mechanism_execution_mode=str(payload["mechanism_execution_mode"]),
         judge_execution_mode=str(payload["judge_execution_mode"]),
+        judge_evidence_mode=str(payload.get("judge_evidence_mode") or DEFAULT_JUDGE_EVIDENCE_MODE),
     )
     _write_json_payload(result_path, result)
     return 0
@@ -479,6 +508,7 @@ def _run_case_subprocess(
     judge_mode: str,
     mechanism_execution_mode: str,
     judge_execution_mode: str,
+    judge_evidence_mode: str,
 ) -> dict[str, Any]:
     with tempfile.TemporaryDirectory(prefix="chapter-comparison-case-worker-") as temp_dir_str:
         temp_dir = Path(temp_dir_str)
@@ -494,6 +524,7 @@ def _run_case_subprocess(
                 "judge_mode": judge_mode,
                 "mechanism_execution_mode": mechanism_execution_mode,
                 "judge_execution_mode": judge_execution_mode,
+                "judge_evidence_mode": judge_evidence_mode,
             },
         )
         command = [
@@ -550,6 +581,7 @@ def _judge_scope(
     iterator: dict[str, Any],
     run_root: Path,
     judge_mode: str,
+    judge_evidence_mode: str,
 ) -> dict[str, Any]:
     if scope == LOCAL_IMPACT:
         system_prompt = LOCAL_READING_SYSTEM
@@ -582,6 +614,14 @@ def _judge_scope(
         return judgment
 
     _log_case_progress(case, f"[judge-start] {scope}")
+    attentional_summary = _build_judge_bundle_summary(
+        attentional["bundle_summary"],
+        judge_evidence_mode=judge_evidence_mode,
+    )
+    iterator_summary = _build_judge_bundle_summary(
+        iterator["bundle_summary"],
+        judge_evidence_mode=judge_evidence_mode,
+    )
     try:
         with llm_invocation_scope(
             profile_id=DEFAULT_EVAL_JUDGE_PROFILE_ID,
@@ -611,8 +651,8 @@ def _judge_scope(
                         ensure_ascii=False,
                         indent=2,
                     ),
-                    left_json=json.dumps(attentional["bundle_summary"], ensure_ascii=False, indent=2),
-                    right_json=json.dumps(iterator["bundle_summary"], ensure_ascii=False, indent=2),
+                    left_json=json.dumps(attentional_summary, ensure_ascii=False, indent=2),
+                    right_json=json.dumps(iterator_summary, ensure_ascii=False, indent=2),
                 ),
                 {
                     "winner": "tie",
@@ -642,6 +682,7 @@ def _judge_scopes_for_case(
     run_root: Path,
     judge_mode: str,
     judge_execution_mode: str,
+    judge_evidence_mode: str,
 ) -> dict[str, dict[str, Any]]:
     if judge_execution_mode == "serial" or judge_mode == "none" or len(DEFAULT_SCOPES) <= 1:
         return {
@@ -653,6 +694,7 @@ def _judge_scopes_for_case(
                     iterator=mechanism_results["iterator_v1"],
                     run_root=run_root,
                     judge_mode=judge_mode,
+                    judge_evidence_mode=judge_evidence_mode,
                 )
             }
             for scope in DEFAULT_SCOPES
@@ -672,6 +714,7 @@ def _judge_scopes_for_case(
                 iterator=mechanism_results["iterator_v1"],
                 run_root=run_root,
                 judge_mode=judge_mode,
+                judge_evidence_mode=judge_evidence_mode,
             ): scope
             for scope in DEFAULT_SCOPES
         }
@@ -689,6 +732,7 @@ def _evaluate_case(
     judge_mode: str,
     mechanism_execution_mode: str,
     judge_execution_mode: str,
+    judge_evidence_mode: str,
 ) -> dict[str, Any]:
     _log_case_progress(
         case,
@@ -696,7 +740,8 @@ def _evaluate_case(
             "[case-start] "
             f"judge_mode={judge_mode} "
             f"mechanism_execution_mode={mechanism_execution_mode} "
-            f"judge_execution_mode={judge_execution_mode}"
+            f"judge_execution_mode={judge_execution_mode} "
+            f"judge_evidence_mode={judge_evidence_mode}"
         ),
     )
     mechanism_results = _run_mechanisms_for_case(
@@ -715,6 +760,7 @@ def _evaluate_case(
         run_root=run_root,
         judge_mode=judge_mode,
         judge_execution_mode=judge_execution_mode,
+        judge_evidence_mode=judge_evidence_mode,
     )
     _log_case_progress(case, "[case-completed]")
     return {
@@ -837,6 +883,7 @@ def run_benchmark(
     mechanism_execution_mode: str = "parallel",
     judge_execution_mode: str = "parallel",
     case_workers: int | None = None,
+    judge_evidence_mode: str = DEFAULT_JUDGE_EVIDENCE_MODE,
 ) -> dict[str, Any]:
     manifests: list[dict[str, Any]] = []
     all_cases: list[ChapterCase] = []
@@ -869,6 +916,7 @@ def run_benchmark(
             "judge_mode": judge_mode,
             "mechanism_execution_mode": mechanism_execution_mode,
             "judge_execution_mode": judge_execution_mode,
+            "judge_evidence_mode": judge_evidence_mode,
             "generated_at": _timestamp(),
         },
     )
@@ -897,6 +945,7 @@ def run_benchmark(
                     judge_mode=judge_mode,
                     mechanism_execution_mode=mechanism_execution_mode,
                     judge_execution_mode=judge_execution_mode,
+                    judge_evidence_mode=judge_evidence_mode,
                 )
             ] = case
         for future in as_completed(future_to_case):
@@ -930,6 +979,7 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument("--runs-root", default=str(DEFAULT_RUNS_ROOT))
     parser.add_argument("--run-id", default="")
     parser.add_argument("--judge-mode", choices=["llm", "none"], default="llm")
+    parser.add_argument("--judge-evidence-mode", choices=[DEFAULT_JUDGE_EVIDENCE_MODE, "substantive"], default=DEFAULT_JUDGE_EVIDENCE_MODE)
     parser.add_argument("--mechanism-execution-mode", choices=["serial", "parallel"], default="parallel")
     parser.add_argument("--judge-execution-mode", choices=["serial", "parallel"], default="parallel")
     parser.add_argument("--case-workers", type=int, default=0)
@@ -960,6 +1010,7 @@ def main() -> int:
         mechanism_execution_mode=args.mechanism_execution_mode,
         judge_execution_mode=args.judge_execution_mode,
         case_workers=args.case_workers or None,
+        judge_evidence_mode=args.judge_evidence_mode,
     )
     print(json.dumps(summary["aggregate"], ensure_ascii=False, indent=2))
     print(f"run_root={summary['run_root']}")

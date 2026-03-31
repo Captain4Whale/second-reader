@@ -60,10 +60,14 @@ BOILERPLATE_MARKERS = (
     "www.gutenberg.org",
 )
 SEMANTIC_VALIDATION_ATTEMPTS = 3
-AUDIT_PROMPT_CONTRACT_VERSION = "case_design_audit_v3"
+AUDIT_PROMPT_CONTRACT_VERSION = "case_design_audit_v4"
 AUDIT_REVIEW_OVERRIDES = LLMInvocationOverrides(temperature=0.0)
 PRIMARY_REVIEW_REPLICA_COUNT = 3
+PRIMARY_REVIEW_CALLBACK_ESCALATION_REPLICA_COUNT = 2
 PRIMARY_REVIEW_CONSENSUS_POLICY = "majority_vote_median_scores_conservative_tiebreak"
+PRIMARY_REVIEW_CALLBACK_ESCALATION_POLICY = (
+    "majority_vote_median_scores_conservative_tiebreak_callback_inline_target_escalation"
+)
 
 PRIMARY_SYSTEM = """You audit benchmark case design for a reading-mechanism evaluation dataset.
 
@@ -84,6 +88,9 @@ Scoring rules:
 - `strong` means benchmark-worthy now on that axis
 - `adequate` means promising but not yet strong on that axis
 - `weak` means materially weak on that axis
+- For `callback` / `cross_span_link` style cases:
+  - it is acceptable for the earlier bridge target to appear inside the excerpt when the anchor line makes the inferential backlink explicit and sharply traceable
+  - if the supposed callback is only broad thematic continuation, or the target/anchor relation is not clearly signaled, prefer `revise` or `drop` for `ambiguous_focus`
 - Keep the bands coherent with the decision:
   - `keep` means no axis is `weak` and at most one axis is `adequate`
   - `revise` means more than one axis is `adequate`, or any axis is `weak` but still salvageable
@@ -120,6 +127,9 @@ ADVERSARIAL_PROMPT = """Case metadata:
 
 Immediate context:
 {context_json}
+
+- For `callback` / `cross_span_link` style cases, do not treat an inline earlier bridge target as a defect by itself.
+- Only attack callback framing when the target/anchor relation is actually incoherent, weakly signaled, or thematically loose.
 
 Return JSON:
 {{
@@ -215,10 +225,17 @@ def _case_prompt_inputs(case: dict[str, Any]) -> dict[str, Any]:
     return {
         "case_id": str(case.get("case_id", "")).strip(),
         "case_title": str(case.get("case_title", "")).strip(),
+        "target_profile_id": str(case.get("target_profile_id", "")).strip(),
+        "selection_role": str(case.get("selection_role", "")).strip(),
         "question_ids": list(case.get("question_ids") or []),
         "phenomena": list(case.get("phenomena") or []),
         "selection_reason": str(case.get("selection_reason", "")).strip(),
         "judge_focus": str(case.get("judge_focus", "")).strip(),
+        "prior_context_text": str(
+            case.get("prior_context_text")
+            or case.get("prior_context_excerpt_text")
+            or ""
+        ).strip(),
         "excerpt_text": str(case.get("excerpt_text", "")).strip(),
     }
 
@@ -457,6 +474,47 @@ def _pick_primary_exemplar_index(
         return matches, -payloads.index(payload)
 
     return max(range(len(payloads)), key=lambda index: _score(payloads[index]))
+
+
+def _is_callback_case(case: dict[str, Any]) -> bool:
+    title = str(case.get("case_title", "")).strip().lower()
+    selection_reason = str(case.get("selection_reason", "")).strip().lower()
+    judge_focus = str(case.get("judge_focus", "")).strip().lower()
+    phenomena = {
+        str(item).strip().lower()
+        for item in list(case.get("phenomena") or [])
+        if str(item).strip()
+    }
+    if "callback_bridge" in title:
+        return True
+    if {"callback", "cross_span_link", "bridge_potential"}.intersection(phenomena):
+        return True
+    return "backward bridge" in selection_reason or "backward bridge" in judge_focus
+
+
+def _callback_case_needs_replica_escalation(
+    case: dict[str, Any],
+    normalized_payloads: list[dict[str, Any]],
+) -> bool:
+    if not _is_callback_case(case):
+        return False
+    if len(normalized_payloads) < PRIMARY_REVIEW_REPLICA_COUNT:
+        return False
+    inline_target = "earlier bridge target:" in str(case.get("selection_reason", "")).strip().lower()
+    if inline_target and not list(case.get("prior_context_sentence_ids") or []):
+        return True
+    decisions = {
+        str(payload.get("decision", "")).strip().lower()
+        for payload in normalized_payloads
+        if str(payload.get("decision", "")).strip()
+    }
+    if len(decisions) > 1:
+        return True
+    problem_type_sets = {
+        tuple(sorted(str(item).strip() for item in list(payload.get("problem_types") or []) if str(item).strip()))
+        for payload in normalized_payloads
+    }
+    return len(problem_type_sets) > 1
 
 
 def summarize_primary_consensus(payloads: list[dict[str, Any]]) -> tuple[dict[str, Any], int]:
@@ -797,6 +855,25 @@ def run_primary(case: dict[str, Any], context: dict[str, Any]) -> tuple[dict[str
         replica_payloads.append(payload)
         replica_metadata.append(metadata)
 
+    escalated = False
+    if _callback_case_needs_replica_escalation(case, replica_payloads):
+        escalated = True
+        for replica_index in range(
+            PRIMARY_REVIEW_REPLICA_COUNT,
+            PRIMARY_REVIEW_REPLICA_COUNT + PRIMARY_REVIEW_CALLBACK_ESCALATION_REPLICA_COUNT,
+        ):
+            payload, metadata = invoke_review_with_meta(
+                stage_name=f"primary_review_replica_{replica_index + 1}",
+                system_prompt=system_prompt,
+                user_prompt=user_prompt,
+                default_payload=default_primary(),
+                normalize=normalize_primary,
+                validation_error=primary_validation_issue,
+                scope_overrides=AUDIT_REVIEW_OVERRIDES,
+            )
+            replica_payloads.append(payload)
+            replica_metadata.append(metadata)
+
     consensus_payload, exemplar_index = summarize_primary_consensus(replica_payloads)
     return consensus_payload, {
         "stage": "primary_review",
@@ -805,7 +882,11 @@ def run_primary(case: dict[str, Any], context: dict[str, Any]) -> tuple[dict[str
         "completed_at": replica_metadata[-1]["completed_at"] if replica_metadata else "",
         "duration_ms": sum(int(metadata.get("duration_ms", 0) or 0) for metadata in replica_metadata),
         "replica_count": len(replica_metadata),
-        "selection_policy": PRIMARY_REVIEW_CONSENSUS_POLICY,
+        "selection_policy": (
+            PRIMARY_REVIEW_CALLBACK_ESCALATION_POLICY if escalated else PRIMARY_REVIEW_CONSENSUS_POLICY
+        ),
+        "callback_replica_escalation_applied": escalated,
+        "base_replica_count": PRIMARY_REVIEW_REPLICA_COUNT,
         "selected_replica_index": exemplar_index,
         "consensus_decision": consensus_payload["decision"],
         "consensus_problem_types": list(consensus_payload["problem_types"]),

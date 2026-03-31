@@ -54,6 +54,9 @@ Use `docs/backend-reading-mechanism.md` for shared mechanism-platform boundaries
 - When reproducibility is the question, isolate the layer that is being measured.
   - same-packet adjudication reproducibility should be measured on frozen packet inputs, for example by rerunning `auto_review_packet.py --probe-only` on an archived packet
   - same-input case-audit reproducibility should persist stable prompt inputs/fingerprints per case so later comparisons can distinguish audit-model variance from builder/input drift
+  - if callback-style case validity depends on structured builder identity such as `target_profile_id`, `selection_role`, or carried `prior_context_text`, those fields should be part of the audit prompt payload rather than left as operator-only metadata
+  - callback audit contracts should also say explicitly when an inline antecedent is an intentional self-containment choice rather than an automatic defect
+    - otherwise same-input callback cases can wobble between `keep` and `drop` just because the audit model alternates between "traceable inline bridge" and "malformed callback" readings
   - builder-emitted excerpt, anchor, and selection-reason text should normalize invisible Unicode formatting and non-breaking whitespace before the audit layer sees it
     - otherwise a text-corruption defect can masquerade as audit-model drift even when the real issue is upstream excerpt rendering
   - if a real case-audit comparison shows `audit_input_drift = 0` while primary decisions, scores, or problem types still move materially, treat the next repair as audit-stage reproducibility hardening rather than as builder/input debugging
@@ -117,6 +120,9 @@ Use `docs/backend-reading-mechanism.md` for shared mechanism-platform boundaries
 - Unsafe parallel evaluation includes:
   - shared mutable artifact paths between concurrently running mechanisms
   - parallel execution that changes prompt content, evidence packaging, or judgment order in a way that affects the meaning of the result
+- When full mechanism bundles contain lifecycle or operational noise that is not part of the quality question, a judged rerun may use a judge-only evidence filter.
+  - for example, chapter comparison may filter `parse`, `waiting`, `error`, `transition`, `segment_complete`, and `chapter_complete` out of the judge-facing bundle while preserving the full bundle on disk
+  - keep this as a prompt-input control, not a destructive rewrite of the underlying mechanism artifacts
 - Same-key parallel LLM usage is allowed when the configured provider and profile concurrency support it.
   - multiple API keys are not required for basic parallelism
   - extra keys mainly help with throughput headroom, failover, or rate-limit resilience

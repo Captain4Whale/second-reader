@@ -29,6 +29,7 @@ LLMProfileModelSource = Literal["profile", "selected_target"]
 DEFAULT_RUNTIME_PROFILE_ID = "runtime_reader_default"
 DEFAULT_DATASET_REVIEW_PROFILE_ID = "dataset_review_high_trust"
 DEFAULT_EVAL_JUDGE_PROFILE_ID = "eval_judge_high_trust"
+BACKEND_ROOT = Path(__file__).resolve().parents[2]
 
 _ALLOWED_CONTRACTS = {"anthropic", "google_genai", "openai_compatible"}
 _TARGET_PROVIDER_OPTIONAL_FIELDS = (
@@ -277,7 +278,11 @@ def _load_json_env(raw_json: str, *, env_name: str) -> dict[str, Any]:
 
 
 def _load_json_path(raw_path: str, *, env_name: str) -> tuple[dict[str, Any], Path]:
-    path = Path(raw_path).expanduser().resolve()
+    path = Path(raw_path).expanduser()
+    if not path.is_absolute():
+        path = (BACKEND_ROOT / path).resolve()
+    else:
+        path = path.resolve()
     if not path.exists():
         raise LLMRegistryError(f"{env_name} path does not exist: {path}")
     try:

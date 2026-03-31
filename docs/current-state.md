@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-03-31T00:16:07Z`
+Last verified: `2026-03-31T01:09:07Z`
 
 ## Current Objective
 - Keep Phase 9 of the new reading mechanism project recoverable and decision-ready:
@@ -249,6 +249,41 @@ Last verified: `2026-03-31T00:16:07Z`
     - the mixed packet outcome was not a clean builder regression signal:
       - unchanged callback cases drifted during audit/adjudication even when the callback builder inputs themselves did not materially change
       - the next blocker is bounded audit/review reproducibility on those unchanged callback cases before broader unattended widening
+- A bounded callback audit-reproducibility hardening wave is now landed in code:
+  - code:
+    - `reading-companion-backend/eval/attentional_v2/run_case_design_audit.py`
+    - `reading-companion-backend/tests/test_case_design_audit.py`
+    - `reading-companion-backend/tests/test_case_design_audit_reproducibility.py`
+  - bounded changes:
+    - the audit prompt contract is now `case_design_audit_v4`
+    - callback audit prompts now carry `target_profile_id`, `selection_role`, and any carried `prior_context_text` instead of only the narrower case fields
+    - primary/adversarial audit guidance now explicitly allows inline callback antecedents when the bridge remains sharply traceable, instead of treating inline placement as automatically defective
+    - inline-target callback cases now trigger a bounded primary-review replica escalation (`3` base replicas plus `2` extra replicas) before consensus is frozen
+  - local validation:
+    - `reading-companion-backend/tests/test_case_design_audit.py`
+    - `reading-companion-backend/tests/test_case_design_audit_reproducibility.py`
+    - focused result: `26 passed`
+- A bounded mechanism evidence-control mode is now landed in code:
+  - code:
+    - `reading-companion-backend/eval/attentional_v2/run_chapter_comparison.py`
+    - `reading-companion-backend/tests/test_run_chapter_comparison.py`
+  - bounded changes:
+    - chapter comparison now supports `--judge-evidence-mode standard|substantive`
+    - `substantive` mode filters lifecycle / operational attention events such as `parse`, `waiting`, `error`, `transition`, `segment_complete`, and `chapter_complete` out of the judge-facing bundle summary only
+    - full mechanism bundles and persisted run-local bundle artifacts remain unchanged; only the judge input is filtered
+  - local validation:
+    - `reading-companion-backend/tests/test_run_chapter_comparison.py`
+    - focused result: `5 passed`
+- Root-launched local LLM config resolution is now hardened:
+  - code:
+    - `reading-companion-backend/src/reading_runtime/llm_registry.py`
+    - `reading-companion-backend/tests/test_llm_gateway.py`
+  - bounded change:
+    - relative `LLM_TARGETS_PATH`, `LLM_PROFILE_BINDINGS_PATH`, and the older registry-path surface now resolve from the backend root instead of the caller's current working directory
+    - this closes the validation hole where root-launched backend CLIs could miss `config/llm_targets.local.json` even though the same config worked from the backend directory
+  - local validation:
+    - `reading-companion-backend/tests/test_llm_gateway.py::test_relative_target_binding_paths_resolve_from_backend_root`
+    - result: `passed`
 - The focused English round-3 narrative/reference rerun is no longer running:
   - job id:
     - `bgjob_en_chapter_core_rerun_round3_parallel_20260329`
@@ -976,9 +1011,9 @@ Last verified: `2026-03-31T00:16:07Z`
 - Use the task registry plus the execution tracker as the route back into detailed mechanism work.
 
 ## Next
-- Convert the completed judged rerun into one bounded mechanism-evidence control pass:
+- Inspect the bounded mechanism-evidence control rerun after the new substantive judge-evidence mode finishes:
   - preserve the `walden_205_en__10` single-axis threading behavior as a protected strength
-  - rerun the same two judged cases with judge-facing bundles filtered down to substantive reading events so we can separate real reading-quality gain from judge penalties on parse/wait/error clutter
+  - check whether the `up_from_slavery_public_en__10` loss narrows once parse/wait/error clutter is removed from the judge-facing bundle
 - Use the cleanup follow-up summaries as the new benchmark-hardening truth:
   - the extra cleanup pass did not produce any `keep` decisions
   - the English `9` and Chinese `3` open cases were reaffirmed as `revise` / `drop` rather than promoted into `reviewed_active`
@@ -1002,15 +1037,10 @@ Last verified: `2026-03-31T00:16:07Z`
   - keep `callbackfocusfix` as the strongest current four-source bilingual callback checkpoint (`en: 7 keep / 1 revise`, `zh: 1 keep`)
   - keep the new tension-specific window/focus patch, because it turned `on_liberty_public_en__5__tension_reversal__seed_v1` into a real `keep`
   - treat the mixed `tensionfocusfix` bilingual packet as audit/adjudication drift on unchanged callback cases until the reproducibility tooling says otherwise
-- Keep the bounded controller as the active automation surface, but move the next automatic work from narrow audit hardening back into broader validation and unattended-loop boundary work:
+- Keep the bounded controller as the active automation surface, but use the new callback-audit hardening before the next broader validation wave:
   - the completed v4 frozen-input pair is already the clean proof that final-action instability is no longer the primary blocker
-  - the completed `auditconsensusv3` pair is now the clean proof that live English audit drift is narrow enough to resume broader validation
-  - the broader bilingual whitespace-fix rerun is now completed evidence, not an in-flight lane
-  - its result says the next bounded automation move should be one callback-bridge-specific repair pass, because the remaining regressions are narrow (`education_of_henry_adams_public_en__29__callback_bridge__seed_v1`, `on_liberty_public_en__5__callback_bridge__seed_v1`, and the still-revise `chenlun_public_zh__4__callback_bridge__seed_v1`) rather than global
-- Before widening unattended automation again, run one bounded reproducibility repair wave on the unchanged callback cases:
-  - compare the completed callbackfocusfix and tensionfocusfix audit/adjudication artifacts directly
-  - harden whichever stage is still drifting on same-input callback rows
-  - only then relaunch a broader bilingual controller validation
+  - the new live blocker is callback-case audit variance on structurally borderline rows, not missing controller plumbing
+  - the next bounded automation move should rerun the narrow same-input callback slice under the new audit contract, then widen back out only if the callback rows stop wobbling
 - Keep the dataset-platform route phased rather than monolithic:
   - source-book intake and intermediate-artifact governance is now landed
   - the first Question-Aligned Case Construction landing on top of the current corpus/review schema is now landed

@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-03-31T00:16:07Z`
+Last updated: `2026-03-31T01:09:07Z`
 
 ## Status Values
 - `active`
@@ -33,7 +33,7 @@ Last updated: `2026-03-31T00:16:07Z`
 - Lane: `mechanism_eval`
 - Priority: `high`
 - Detail: `docs/implementation/new-reading-mechanism/execution-tracker.md`
-- Next: use the completed judged follow-up rerun as the new mechanism-evidence baseline, then run one bounded evidence-control rerun on the same two cases with judge-facing bundles filtered to substantive reading events only so we can separate real reading-quality gain from judge penalties on parse/wait/error clutter
+- Next: use the completed judged follow-up rerun as the mechanism-evidence baseline, then inspect the new bounded substantive-evidence rerun so we can separate real reading-quality gain from judge penalties on parse/wait/error clutter
 - Jobs:
   - `bgjob_en_chapter_core_rerun_round3_caseiso_judged_followup_20260330` (`completed`)
 
@@ -42,7 +42,7 @@ Last updated: `2026-03-31T00:16:07Z`
 - Lane: `dataset_platform`
 - Priority: `high`
 - Detail: `docs/implementation/new-reading-mechanism/execution-tracker.md`
-- Next: keep `callbackfocusfix` as the strongest current narrow callback-quality checkpoint, keep the new tension-turn patch because it turned `on_liberty_public_en__5__tension_reversal__seed_v1` into a real `keep`, and now harden audit/adjudication reproducibility on the unchanged callback cases that drifted during `tensionfocusfix`
+- Next: keep `callbackfocusfix` as the strongest current narrow callback-quality checkpoint, keep the new tension-turn patch because it turned `on_liberty_public_en__5__tension_reversal__seed_v1` into a real `keep`, and now rerun the narrow callback slice under the new callback-aware audit contract before widening again
 - Jobs:
   - `bgjob_closed_loop_zh_callbacklookback_20260330` (`completed`)
   - `bgjob_closed_loop_zh_callbackpriorcontext_20260330` (`completed`)
@@ -58,7 +58,7 @@ Last updated: `2026-03-31T00:16:07Z`
 - Lane: `dataset_platform`
 - Priority: `high`
 - Detail: `docs/implementation/new-reading-mechanism/execution-tracker.md`
-- Next: keep the bounded controller as the active automation surface, but do one bounded reproducibility repair wave on the unchanged callback cases exposed by `tensionfocusfix` before we widen unattended automation again
+- Next: keep the bounded controller as the active automation surface, but use the landed callback-audit reproducibility hardening on the same narrow callback slice before widening unattended automation again
 - Jobs:
   - `bgjob_closed_loop_bilingual_broader_callbackfocusfix_20260331` (`completed`)
   - `bgjob_closed_loop_bilingual_broader_tensionfocusfix_20260331` (`completed`)

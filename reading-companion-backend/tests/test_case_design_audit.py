@@ -16,6 +16,15 @@ def test_primary_prompt_defines_score_scale() -> None:
     assert "`keep` means no axis is `weak` and at most one axis is `adequate`" in PRIMARY_PROMPT
 
 
+def test_primary_prompt_allows_inline_callback_antecedent_when_traceable() -> None:
+    assert "it is acceptable for the earlier bridge target to appear inside the excerpt" in PRIMARY_PROMPT
+    assert "if the supposed callback is only broad thematic continuation" in PRIMARY_PROMPT
+
+
+def test_adversarial_prompt_does_not_auto_reject_inline_callback_targets() -> None:
+    assert "do not treat an inline earlier bridge target as a defect by itself" in audit.ADVERSARIAL_PROMPT
+
+
 def test_normalize_primary_repairs_keep_score_inconsistency() -> None:
     normalized = normalize_primary(
         {
@@ -379,6 +388,61 @@ def test_run_primary_uses_zero_temperature_scope_override(monkeypatch: pytest.Mo
     assert overrides.temperature == 0.0
 
 
+def test_run_primary_escalates_inline_callback_cases(monkeypatch: pytest.MonkeyPatch) -> None:
+    call_count = {"count": 0}
+
+    def fake_invoke_json(*args, **kwargs):
+        call_count["count"] += 1
+        return {
+            "decision": "keep",
+            "confidence": "high",
+            "bucket_fit_band": "strong",
+            "focus_clarity_band": "strong",
+            "excerpt_strength_band": "strong",
+            "problem_types": [],
+            "revised_bucket": "",
+            "revised_selection_reason": "",
+            "revised_judge_focus": "",
+            "notes": "Traceable inline callback.",
+        }
+
+    monkeypatch.setattr(audit, "invoke_json", fake_invoke_json)
+    monkeypatch.setattr(audit, "llm_invocation_scope", lambda **kwargs: nullcontext())
+
+    primary, metadata = audit.run_primary(
+        {
+            "case_id": "demo_case",
+            "case_title": "Demo / callback_bridge",
+            "target_profile_id": "callback_bridge",
+            "selection_role": "argumentative",
+            "question_ids": ["q1"],
+            "phenomena": ["callback", "cross_span_link"],
+            "selection_reason": (
+                "Selected because the passage invites a backward bridge or callback that should remain "
+                "source-grounded rather than associative. Earlier bridge target: Earlier premise. "
+                "Anchor line: From this the later claim follows."
+            ),
+            "judge_focus": "Can the reader trace the backward bridge honestly?",
+            "excerpt_text": "Earlier premise.\nFrom this the later claim follows.",
+            "prior_context_sentence_ids": [],
+        },
+        {
+            "lookback_sentences": ["Setup."],
+            "excerpt_sentences": ["Earlier premise.", "From this the later claim follows."],
+            "lookahead_sentences": ["Implication."],
+        },
+    )
+
+    assert primary["decision"] == "keep"
+    assert metadata["callback_replica_escalation_applied"] is True
+    assert metadata["base_replica_count"] == audit.PRIMARY_REVIEW_REPLICA_COUNT
+    assert metadata["replica_count"] == (
+        audit.PRIMARY_REVIEW_REPLICA_COUNT + audit.PRIMARY_REVIEW_CALLBACK_ESCALATION_REPLICA_COUNT
+    )
+    assert metadata["selection_policy"] == audit.PRIMARY_REVIEW_CALLBACK_ESCALATION_POLICY
+    assert call_count["count"] == metadata["replica_count"]
+
+
 def test_run_adversarial_uses_zero_temperature_scope_override(monkeypatch: pytest.MonkeyPatch) -> None:
     captured: dict[str, object] = {}
 
@@ -480,10 +544,13 @@ def test_build_audit_prompt_input_payload_records_contract_and_hashes() -> None:
         {
             "case_id": "demo_case",
             "case_title": "Demo / callback_bridge",
+            "target_profile_id": "callback_bridge",
+            "selection_role": "argumentative",
             "question_ids": ["EQ-CM-004"],
             "phenomena": ["callback"],
             "selection_reason": "Selected because the line returns to earlier material.",
             "judge_focus": "Does the mechanism connect the callback honestly?",
+            "prior_context_excerpt_text": "Earlier promise.",
             "excerpt_text": "Earlier promise.\nNow the callback arrives.",
         },
         {
@@ -495,6 +562,9 @@ def test_build_audit_prompt_input_payload_records_contract_and_hashes() -> None:
 
     assert payload["audit_prompt_contract_version"] == audit.AUDIT_PROMPT_CONTRACT_VERSION
     assert payload["case"]["case_id"] == "demo_case"
+    assert payload["case"]["target_profile_id"] == "callback_bridge"
+    assert payload["case"]["selection_role"] == "argumentative"
+    assert payload["case"]["prior_context_text"] == "Earlier promise."
     assert payload["context"]["lookback_sentences"] == ["Earlier promise."]
     assert payload["prompt_hashes"]["primary_system_prompt_hash"]
     assert payload["prompt_hashes"]["primary_user_prompt_hash"]

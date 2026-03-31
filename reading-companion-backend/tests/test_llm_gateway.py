@@ -17,6 +17,7 @@ import pytest
 
 from src.iterator_reader import llm_utils
 from src.reading_runtime import artifacts as runtime_artifacts
+from src.reading_runtime import llm_registry as llm_registry_module
 from src.reading_runtime.llm_gateway import (
     CONTRACT_ADAPTERS,
     JsonlTraceSink,
@@ -838,6 +839,31 @@ def test_target_binding_path_loader_smoke_invokes_gateway(tmp_path: Path, monkey
     assert str(targets_path) in registry.source
     assert str(bindings_path) in registry.source
     assert adapter.calls[0]["model"] == "MiniMax-M2.5-highspeed"
+
+
+def test_relative_target_binding_paths_resolve_from_backend_root(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    config_dir = tmp_path / "config"
+    config_dir.mkdir(parents=True, exist_ok=True)
+    targets_path = config_dir / "llm_targets.local.json"
+    bindings_path = config_dir / "llm_profile_bindings.local.json"
+    targets_path.write_text(json.dumps(_two_minimax_targets()), encoding="utf-8")
+    bindings_path.write_text(
+        json.dumps(_required_bindings("MiniMax-M2.7-highspeed")),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(llm_registry_module, "BACKEND_ROOT", tmp_path)
+    monkeypatch.setenv("LLM_TARGETS_PATH", "config/llm_targets.local.json")
+    monkeypatch.setenv("LLM_PROFILE_BINDINGS_PATH", "config/llm_profile_bindings.local.json")
+    monkeypatch.chdir(tmp_path.parent)
+    clear_llm_registry_cache()
+
+    registry = get_llm_registry()
+
+    assert str(targets_path) in registry.source
+    assert str(bindings_path) in registry.source
 
 
 def test_registry_path_backward_compatibility_still_loads(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):

@@ -135,6 +135,49 @@ def test_build_audit_prompt_input_payload_ignores_non_prompt_case_fields() -> No
     assert audit._fingerprint(payload_a) == audit._fingerprint(payload_b)
 
 
+def test_build_audit_prompt_input_payload_tracks_callback_identity_fields() -> None:
+    base_case = {
+        "case_id": "demo_case",
+        "case_title": "Demo / callback_bridge",
+        "question_ids": ["q1"],
+        "phenomena": ["callback"],
+        "selection_reason": "Track the callback.",
+        "judge_focus": "Check whether the bridge stays grounded.",
+        "excerpt_text": "Anchor.\nFollow-up.",
+    }
+    context = {
+        "lookback_sentences": ["Earlier setup."],
+        "excerpt_sentences": ["Anchor.", "Follow-up."],
+        "lookahead_sentences": ["Later consequence."],
+    }
+
+    payload_a = audit.build_audit_prompt_input_payload(
+        {
+            **base_case,
+            "target_profile_id": "callback_bridge",
+            "selection_role": "argumentative",
+            "prior_context_excerpt_text": "Earlier setup.",
+        },
+        context,
+    )
+    payload_b = audit.build_audit_prompt_input_payload(
+        {
+            **base_case,
+            "target_profile_id": "tension_reversal",
+            "selection_role": "narrative_reflective",
+            "prior_context_excerpt_text": "",
+        },
+        context,
+    )
+
+    assert payload_a["case"]["target_profile_id"] == "callback_bridge"
+    assert payload_a["case"]["selection_role"] == "argumentative"
+    assert payload_a["case"]["prior_context_text"] == "Earlier setup."
+    assert payload_b["case"]["target_profile_id"] == "tension_reversal"
+    assert payload_b["case"]["selection_role"] == "narrative_reflective"
+    assert audit._fingerprint(payload_a) != audit._fingerprint(payload_b)
+
+
 def test_compare_case_audit_runs_counts_same_input_output_drift(tmp_path: Path) -> None:
     run_dir_a = tmp_path / "run_a"
     run_dir_b = tmp_path / "run_b"
