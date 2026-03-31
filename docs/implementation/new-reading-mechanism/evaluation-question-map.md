@@ -27,15 +27,15 @@ Update when: a new evaluation question is added, a question changes owner, or a 
 ## Question Map
 | ID | Family | Exact question | Why this belongs in the current `attentional_v2` job | Stable owner | Likely evidence shape | Dataset / corpus need | Current status |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| EQ-CM-001 | `cross_mechanism_product_comparison` | Under realistic constraints, does `attentional_v2` preserve the product's intended co-reading mind better than `iterator_v1` overall? | This is the actual product-level promotion question for the new mechanism. | `docs/backend-reader-evaluation.md` | pairwise + rubric end-to-end comparison | chapter corpus | `not started` |
+| EQ-CM-001 | `cross_mechanism_product_comparison` | Under realistic constraints, does `attentional_v2` preserve the product's intended co-reading mind better than `iterator_v1` overall? | This is the actual product-level promotion question for the new mechanism. | `docs/backend-reader-evaluation.md` | pairwise + rubric end-to-end comparison | chapter corpus | `initial chapter evidence exists` |
 | EQ-CM-002 | `cross_mechanism_product_comparison` | On local passages, does `attentional_v2` take better reading steps than `iterator_v1`? | We need local comparison evidence, not only whole-run impressions. | `docs/backend-reader-evaluation.md` | excerpt-case pairwise + rubric | excerpt dataset | `not started` |
-| EQ-CM-003 | `cross_mechanism_product_comparison` | Across larger spans, does `attentional_v2` accumulate understanding more coherently than `iterator_v1`? | Coherent accumulation is one of the mechanism's main promised wins. | `docs/backend-reader-evaluation.md` | chapter trajectory comparison | chapter corpus | `not started` |
+| EQ-CM-003 | `cross_mechanism_product_comparison` | Across larger spans, does `attentional_v2` accumulate understanding more coherently than `iterator_v1`? | Coherent accumulation is one of the mechanism's main promised wins. | `docs/backend-reader-evaluation.md` | chapter trajectory comparison | chapter corpus | `initial chapter evidence exists` |
 | EQ-CM-004 | `cross_mechanism_product_comparison` | Does `attentional_v2` leave behind a more useful durable reading trail than `iterator_v1`? | The product includes marks, return, and later recall, not only first-pass reading. | `docs/backend-reader-evaluation.md` | durable-trace audit + re-entry judging | excerpt cases + persisted trace fixtures | `not started` |
 | EQ-CM-005 | `cross_mechanism_product_comparison` | Is `attentional_v2` operationally viable enough relative to `iterator_v1` for controlled product use? | A mechanism does not win if quality appears only at unrealistic reliability, latency, or cost. | `docs/backend-reader-evaluation.md` | deterministic runtime metrics + gate checks | runtime fixtures + chapter runs | `partially scaffolded` |
 | EQ-AV2-001 | `attentional_specific_attribution` | Does `attentional_v2` preserve sentence-order intake honesty and avoid future-text leakage? | This is a core design promise, not a generic reader question. | `docs/backend-reading-mechanisms/attentional_v2.md` | deterministic integrity checks + targeted rubric cases | excerpt dataset | `partially scaffolded` |
-| EQ-AV2-002 | `attentional_specific_attribution` | Does `attentional_v2` produce strong meaning-unit closure instead of shallow sentence sparks or vague paragraph blur? | Meaning-unit reasoning is the mechanism's main interpretive unit. | `docs/backend-reading-mechanisms/attentional_v2.md` | local rubric judging | excerpt dataset | `not started` |
-| EQ-AV2-003 | `attentional_specific_attribution` | Does `attentional_v2` choose `advance`, `dwell`, `bridge`, and `reframe` well? | Controller-move quality is central to whether the mechanism feels alive rather than procedural. | `docs/backend-reading-mechanisms/attentional_v2.md` | attributed local-case judging | excerpt dataset | `not started` |
-| EQ-AV2-004 | `attentional_specific_attribution` | When `attentional_v2` bridges backward, are the links honest, source-grounded, and worth making? | Bridge resolution is a signature mechanism behavior and a likely failure mode. | `docs/backend-reading-mechanisms/attentional_v2.md` | targeted bridge-case judging | excerpt dataset | `not started` |
+| EQ-AV2-002 | `attentional_specific_attribution` | Does `attentional_v2` produce strong meaning-unit closure instead of shallow sentence sparks or vague paragraph blur? | Meaning-unit reasoning is the mechanism's main interpretive unit. | `docs/backend-reading-mechanisms/attentional_v2.md` | local rubric judging | excerpt dataset | `initial judged evidence exists` |
+| EQ-AV2-003 | `attentional_specific_attribution` | Does `attentional_v2` choose `advance`, `dwell`, `bridge`, and `reframe` well? | Controller-move quality is central to whether the mechanism feels alive rather than procedural. | `docs/backend-reading-mechanisms/attentional_v2.md` | attributed local-case judging | excerpt dataset | `initial judged evidence exists` |
+| EQ-AV2-004 | `attentional_specific_attribution` | When `attentional_v2` bridges backward, are the links honest, source-grounded, and worth making? | Bridge resolution is a signature mechanism behavior and a likely failure mode. | `docs/backend-reading-mechanisms/attentional_v2.md` | targeted bridge-case judging | excerpt dataset | `initial judged evidence exists` |
 | EQ-AV2-005 | `attentional_specific_attribution` | Are emitted visible reactions selective, worthwhile, and faithfully anchored? | Good runtime does not help if visible thoughts become noisy or weakly anchored. | `docs/backend-reading-mechanisms/attentional_v2.md` | local rubric judging + structural anchor checks | excerpt dataset | `partially scaffolded` |
 | EQ-AV2-006 | `attentional_specific_attribution` | Does reconsolidation preserve historical integrity through append-and-link rather than silent overwrite? | This is one of the clearest places where the mechanism must prove it is not regressing into convenience. | `docs/backend-reading-mechanisms/attentional_v2.md` | structural checks + judged later-interpretation cases | excerpt dataset + persisted history fixtures | `partially scaffolded` |
 | EQ-AV2-007 | `attentional_specific_attribution` | Is resume and reconstitution honest enough to feel like the same reading mind without hidden oversized rereads? | Resume quality is part of the mechanism's identity, not just an ops feature. | `docs/backend-reading-mechanisms/attentional_v2.md` | runtime fixtures + judged re-entry cases | resume fixtures + chapter excerpts | `partially scaffolded` |
@@ -57,6 +57,9 @@ Update when: a new evaluation question is added, a question changes owner, or a 
   - the tracked curated `v2` excerpt family is viable as a real benchmark input set
   - the local harness can evaluate all `32` cases without structural failure
   - `attentional_v2` is not yet at the planned local acceptance bar
+- `2026-03-28` to `2026-03-31`: chapter-core cross-mechanism reruns produced real but still limited evidence for `EQ-CM-001` and `EQ-CM-003`.
+  - the English retry-2 broader rerun and the later focused two-case judged rerun now show that broader semantic comparison is active rather than hypothetical
+  - current evidence is still mixed and too narrow to close the overall product-level promotion question
 - Main first-pass weaknesses:
   - Chinese local-case quality trails English sharply
   - `callback_bridge` and `reconsolidation_later_reinterpretation` are the weakest buckets
@@ -74,13 +77,14 @@ Update when: a new evaluation question is added, a question changes owner, or a 
   - attentional-specific attribution work
 - Cross-mechanism work is not "someone else's later project."
   - It is part of deciding whether `attentional_v2` is actually good enough.
-- The practical next preparation step is:
-  - map each question to the right input source type:
-    - excerpt-case dataset
-    - chapter corpus
-    - runtime/resume fixture set
-    - persisted compatibility fixture set
-- Only after that should we design the actual datasets and corpora.
+- The source-type mapping is now explicit enough to use as a routing rule rather than as an unfinished prep task:
+  - excerpt-case dataset
+  - chapter corpus
+  - runtime/resume fixture set
+  - persisted compatibility fixture set
+- The practical next control step is:
+  - keep excerpt hardening bounded to the cases that still block trusted comparison
+  - return the main cadence to chapter-corpus and runtime/resume questions once that blocker is either accepted or cleared
 - After the first corrected local run, there is now one more explicit rule:
   - broader semantic comparison work should not be treated as authoritative until the weak local excerpt buckets have gone through dataset-quality hardening
   - see [dataset-quality-hardening.md](/Users/baiweijiang/Documents/Projects/reading-companion/docs/implementation/new-reading-mechanism/dataset-quality-hardening.md)

@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-03-31T13:18:00Z`
+Last verified: `2026-03-31T15:25:45Z`
 
 ## Current Objective
 - Keep Phase 9 of the new reading mechanism project recoverable and decision-ready:
@@ -1253,6 +1253,9 @@ Last verified: `2026-03-31T13:18:00Z`
   - the `auditpair`, `auditcontractv2`, `auditcontractv3`, and `auditconsensusv3` waves all completed cleanly and their compare artifacts now form the durable audit-hardening evidence ladder
   - the review queue remains empty (`active_packet_count = 0`), and the later callback/tension follow-ups also finished with no active packet left open after import/archive
 - Prepare a human-owned post-cleanup gate review from the recovered counts, the callbackslice variance evidence, the recent follow-up packet summaries, and the still-open benchmark statuses.
+- After that gate review, keep the next fork narrow rather than reopening general dataset-platform expansion:
+  - if the current bounded variance is acceptable, hand the frozen slice back to mechanism-comparison cadence and start durable-trace / re-entry / runtime-viability work before any new general builder or automation wave
+  - if the current bounded variance is not acceptable, run one later audit-stage-only reproducibility pass, then return to the same decisive mechanism-eval lanes
 - Keep benchmark promotion, reviewed-slice freezing, durable-trace, re-entry, runtime-viability, and any default-cutover decision paused until the relevant gate and bounded-variance decisions are made explicitly.
 
 ## Blocked

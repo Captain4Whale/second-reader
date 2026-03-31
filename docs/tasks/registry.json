@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-03-31T13:18:00Z",
+  "updated_at": "2026-03-31T15:25:45Z",
   "tasks": [
     {
       "id": "TASK-MECH-EN-RERUN",
@@ -448,7 +448,7 @@
       "title": "Run durable-trace, re-entry, and runtime-viability evaluation after the current chapter-core follow-up",
       "status": "queued",
       "lane": "mechanism_eval",
-      "priority": "medium",
+      "priority": "high",
       "detail_ref": "docs/implementation/new-reading-mechanism/execution-tracker.md",
       "truth_refs": [
         "docs/backend-reader-evaluation.md",
@@ -462,14 +462,14 @@
       ],
       "job_refs": [],
       "acceptance_ref": "docs/implementation/new-reading-mechanism/execution-tracker.md",
-      "next_action": "Treat this as the next required decisive mechanism-eval lane once a frozen comparison slice is intentionally accepted and the post-recovery benchmark gate decision is explicit; do not let unresolved callbackslice variance or general dataset-platform work postpone durable-trace, re-entry, and runtime viability indefinitely.",
+      "next_action": "Treat this as the default next decisive mechanism-eval lane immediately after the post-recovery benchmark gate and callbackslice bounded-variance decision are made explicitly; do not open new general builder or automation waves ahead of durable-trace, re-entry, and runtime viability.",
       "blocked_by": [
         "TASK-BENCH-BACKLOG-RESCUE"
       ],
       "evidence_refs": [
         "docs/implementation/new-reading-mechanism/execution-tracker.md"
       ],
-      "last_updated": "2026-03-31T13:18:00Z",
+      "last_updated": "2026-03-31T15:25:45Z",
       "last_updated_by": "codex"
     },
     {

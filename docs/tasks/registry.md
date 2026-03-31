@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-03-31T13:18:00Z`
+Last updated: `2026-03-31T15:25:45Z`
 
 ## Status Values
 - `active`
@@ -94,10 +94,10 @@ Last updated: `2026-03-31T13:18:00Z`
 ### `TASK-RUNTIME-VIABILITY-GATES` — Run durable-trace, re-entry, and runtime-viability evaluation
 - Status: `queued`
 - Lane: `mechanism_eval`
-- Priority: `medium`
+- Priority: `high`
 - Detail: `docs/implementation/new-reading-mechanism/execution-tracker.md`
 - Blocked by: `TASK-BENCH-BACKLOG-RESCUE`
-- Next: treat this as the next required decisive mechanism-eval lane once a frozen comparison slice is intentionally accepted and the post-recovery benchmark gate decision is explicit; do not let unresolved callbackslice variance or general dataset-platform work postpone durable-trace, re-entry, and runtime viability indefinitely
+- Next: treat this as the default next decisive mechanism-eval lane immediately after the post-recovery benchmark gate and callbackslice bounded-variance decision are made explicitly; do not open new general builder or automation waves ahead of durable-trace, re-entry, and runtime viability
 
 ### `TASK-DOC-Q10` — Decide when to promote `attentional_v2` working design into stable docs
 - Status: `queued`
