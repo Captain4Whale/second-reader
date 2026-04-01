@@ -7,27 +7,27 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-03-31T23:23:47Z`
+Last verified: `2026-04-01T00:01:22Z`
 
 ## Current Objective
-- Keep Phase 9 of the new reading mechanism project recoverable and decision-ready:
-  - inspect the completed English two-case evidence rerun without converting it into an automatic mechanism or promotion decision
-  - work from the recovered private-library local-only datasets rather than the stale seed-reset narrative
-  - preserve the remaining benchmark-hardening backlog and human-owned gate decisions in repo-local state
-- In parallel, keep the dataset-platform route moving from landing to evidence-driven refinement:
-  - use the recovered managed source catalog on this checkout instead of treating missing-catalog recovery as the active blocker
-  - use the real scratch builder/controller evidence to improve case quality and bilingual reproducibility before widening automation further
+- Keep Phase 9 on the mainline after the completed post-recovery gate review:
+  - preserve the recorded `Path A` gate outcome in repo-local state
+  - return the active cadence to durable-trace / re-entry / runtime-viability evaluation
+  - keep benchmark promotion closed unless genuinely new benchmark-strengthening evidence lands
+- Keep the dataset-platform route available as support infrastructure rather than as the current primary workstream:
+  - retain the landed question-aligned builder and bounded controller as reusable support lanes
+  - do not open new general builder waves or widen unattended automation unless later decisive eval work exposes a specific blocker
 
 ## Current Strategy
-- The project is no longer trying to perfect the dataset builder before resuming comparison work.
-- Dataset quality work, builder work, and automation work remain necessary, but they are support systems for cross-mechanism evaluation rather than replacement goals.
-- Current builder/controller work is in bounded-hardening mode only.
-  - the active builder-side reasons to continue are:
-    - callback-bridge excerpt shaping
-    - audit/adjudication reproducibility on same-input frozen cases
-- After each bounded repair wave, freeze the affected slice and return to mechanism comparison cadence before opening another builder wave.
-- Unattended automation should not widen further until it demonstrably shortens the loop back to trusted frozen-slice comparison.
-- Durable-trace / re-entry and runtime-viability lanes remain decisive pending evaluation work and must stay visible instead of disappearing behind dataset-platform activity.
+- The post-recovery gate review is now closed on `Path A`.
+- Recorded gate outcomes:
+  - `OD-PRIVATE-LIBRARY-POST-RESCUE-GATE = keep_hold_for_backlog_rescue`
+  - `OD-CALLBACKSLICE-BOUNDED-VARIANCE = accept_bounded_variance_for_frozen_slice`
+  - `OD-BENCHMARK-SIZE = adequate_for_next_decisive_lane_only + expand_before_default_cutover_only`
+- Dataset quality work, builder work, and automation work remain support systems for cross-mechanism evaluation rather than replacement goals.
+- The current callback slice is accepted for frozen-slice comparison cadence.
+- Do not open new general builder or automation waves ahead of durable-trace / re-entry / runtime-viability.
+- Benchmark expansion remains a later requirement before any default-cutover decision, not a blocker for the current decisive lane.
 
 ## Now
 - Treat `attentional_v2` as experimental and `iterator_v1` as the current default mechanism.
@@ -1205,74 +1205,43 @@ Last verified: `2026-03-31T23:23:47Z`
 - Use the task registry plus the execution tracker as the route back into detailed mechanism work.
 
 ## Next
-- Use the completed backup-tier substantive rerun as the parked focused mechanism-evidence checkpoint:
-  - preserve the `walden_205_en__10` chapter-spanning threading behavior as a protected strength
-  - keep `up_from_slavery_public_en__10` as the bounded chapter-arc weakness instead of reopening mechanism-eval fanout automatically
-- Use the cleanup follow-up summaries as the new benchmark-hardening truth:
-  - the extra cleanup pass did not produce any `keep` decisions
-  - the English `9` and Chinese `3` open cases were reaffirmed as `revise` / `drop` rather than promoted into `reviewed_active`
-- Use the new managed intake layer for any future book additions instead of external `/BOOK` or `Downloads` roots:
+- Use the completed gate review as the durable route-back-to-mainline decision:
+  - keep promotion on `hold_for_backlog_rescue`
+  - accept the callback slice for frozen-slice comparison cadence
+  - treat current benchmark size as adequate for the next decisive lane only
+  - record the chosen route as `Path A`
+- Launch `TASK-RUNTIME-VIABILITY-GATES` now:
+  - run durable-trace / re-entry evaluation
+  - run runtime-viability evaluation
+  - keep the current chapter-scale and callbackslice evidence as the accepted comparison baseline for this lane
+- Keep the completed backup-tier substantive rerun as the current focused mechanism-evidence checkpoint:
+  - preserve `walden_205_en__10` as a protected chapter-spanning strength
+  - preserve `up_from_slavery_public_en__10` as the bounded chapter-arc weakness that still needs to be visible in later comparison interpretation
+- Keep dataset-platform work in support mode only:
+  - do not open another general builder repair wave
+  - do not widen unattended automation
+  - reopen only if runtime-viability or later comparison work exposes a specific blocker
+- Keep benchmark expansion as a later requirement before any default-cutover decision:
+  - the current family is not yet large enough for final default-cutover confidence
+  - do not use that later expansion need to postpone the current decisive lane
+- Keep the managed intake layer as the only route for future book additions:
   - drop books into `reading-companion-backend/state/library_inbox/`
-  - use nested folders only for optional batch organization
   - run `make library-source-intake`
-- Use the latest scratch evidence to stabilize case quality and reproducibility rather than adding new platform plumbing:
-  - keep the broader English adjudication-v4 result (`keep = 6`, `revise = 2`) as the strongest current English scratch result
-  - keep the broader bilingual adjudication-v4 result (`en: keep = 5 / revise = 3`, `zh: keep = 1 / revise = 1`) as the current cross-language baseline
-  - keep the completed Chinese callback-priorcontext rerun as proof that `chenlun` bridge evidence now survives into packet review
-  - shift the Chinese follow-up from “add prior context” to “tighten callback excerpt boundaries so the bridge is more legible as a benchmark case”
-  - keep replayed frozen-input `auto_review_packet.py --probe-only` runs as the clean adjudication-only measurement path, because the latest callbackslice probe held packet inputs fixed and still exposed bounded same-input adjudication variance (`action_drift = 1`) without any `audit_input_drift`
-  - keep the completed callbackslice same-input audit rerun as the narrow live-stability checkpoint, because it held packet, case, context, prompt, and audit-input fingerprints fixed while still showing bounded audit-stage variance (`primary_decision_drift = 1`, `primary_score_drift = 2`)
-  - use the completed `auditpair` compare artifact as the narrow live-stability baseline, because it shows `audit_input_drift = 0` with only `primary_decision_drift = 2` on the shared English cases
-  - treat the completed `auditcontractv2` compare result as proof that the stricter all-strong keep gate did not solve the blocker and in fact widened `primary_decision_drift` to `5`
-  - treat the completed `auditcontractv3` compare result as a partial improvement rather than a finish line, because it reduced `primary_score_drift` to `5` and `primary_decision_drift` to `4` but still left the audit too unstable for unattended widening
-  - treat the completed `auditconsensusv3` compare result as the new live reproducibility baseline, because it brought `primary_decision_drift` back down to `2`, reduced `primary_problem_type_drift` to `2`, and aligned English final action counts across the English-only and bilingual runs
-  - keep the new builder-side invisible-whitespace normalization as the current English case-quality repair, because it removed the zero-width / non-breaking whitespace corruption that was still leaking into the Henry Adams anchored-reaction case
-  - keep the completed Henry Adams and broader-English whitespace-fix follow-ups as proof that the same anchored-reaction case now reviews as `keep` on the cleaned path and that the remaining English issue is a bounded callback-breadth outlier, not text corruption
-- Use the completed callback-focus and tension-focus follow-ups as the new narrow builder-quality truth:
-  - keep `callbackfocusfix` as the strongest current four-source bilingual callback checkpoint (`en: 7 keep / 1 revise`, `zh: 1 keep`)
-  - keep the new tension-specific window/focus patch, because it turned `on_liberty_public_en__5__tension_reversal__seed_v1` into a real `keep`
-  - treat the mixed `tensionfocusfix` bilingual packet as audit/adjudication drift on unchanged callback cases until the reproducibility tooling says otherwise
-- Keep the bounded controller as the active automation surface without opening another broader validation wave yet:
-  - the callback retry plus the one-source and broader-English callback-prompt follow-ups remain valid builder-quality gains
-  - the finished callbackslice probe/rerun now separates those builder gains from the remaining same-input adjudication / audit variance on unchanged callback rows
-  - do not open another builder repair wave from this evidence
-  - do not widen unattended automation again until it demonstrably shortens the loop back to trusted frozen-slice comparison
-  - the callback slice is not auto-freeze-ready:
-    - either a human explicitly accepts the current bounded variance and returns the slice to frozen-slice comparison cadence
-    - or one later audit-stage-only reproducibility pass is scheduled before any widening or new builder wave
-- Keep the dataset-platform route phased rather than monolithic:
-  - source-book intake and intermediate-artifact governance is now landed
-  - the first Question-Aligned Case Construction landing on top of the current corpus/review schema is now landed
-  - the first bounded closed-loop controller is now landed and has completed one real scratch smoke plus one repair wave
-  - the multi-iteration unattended scheduler still remains after a broader set of real scratch validations above
-- Keep the prior failed `bgjob_en_chapter_core_rerun_round3_parallel_20260329` artifacts as debugging evidence:
-  - treat `up_from_slavery_public_en__10` as packaging-corrupted because the `attentional_v2` case entry points at `walden` outputs
-  - treat `walden_205_en__10` as incomplete because no case artifact or summary artifacts were written
-- Work from the recovered live local-only excerpt datasets:
-  - the current follow-up cleanup pass has now dispositioned those cases mechanically, but it did not clear the open benchmark-status backlog
-  - the `auditpair`, `auditcontractv2`, `auditcontractv3`, and `auditconsensusv3` waves all completed cleanly and their compare artifacts now form the durable audit-hardening evidence ladder
-  - the review queue remains empty (`active_packet_count = 0`), and the later callback/tension follow-ups also finished with no active packet left open after import/archive
-- Prepare a human-owned post-cleanup gate review from the recovered counts, the callbackslice variance evidence, the recent follow-up packet summaries, and the still-open benchmark statuses.
-  - use [post-recovery-gate-review-checklist.md](/Users/baiweijiang/Documents/Projects/reading-companion/docs/implementation/new-reading-mechanism/post-recovery-gate-review-checklist.md) as the required operating procedure
-- After that gate review, keep the next fork narrow rather than reopening general dataset-platform expansion:
-  - if the current bounded variance is acceptable, hand the frozen slice back to mechanism-comparison cadence and start durable-trace / re-entry / runtime-viability work before any new general builder or automation wave
-  - if the current bounded variance is not acceptable, run one later audit-stage-only reproducibility pass, then return to the same decisive mechanism-eval lanes
-- Keep benchmark promotion, reviewed-slice freezing, durable-trace, re-entry, runtime-viability, and any default-cutover decision paused until the relevant gate and bounded-variance decisions are made explicitly.
 
 ## Blocked
-- Formal curated promotion from the modern private-library supplement remains paused until the remaining open cases are dispositioned and a human explicitly reopens the post-recovery gate discussion.
-- Reviewed-slice freezing remains paused until a human explicitly chooses to freeze a slice; the current callback slice is not auto-freeze-ready because same-input adjudication / audit variance is still bounded but nonzero.
-- Durable-trace, re-entry, and runtime-viability remain intentionally queued until the post-recovery benchmark gate becomes an explicit human-owned decision and a frozen comparison slice is intentionally accepted.
+- No gate-review blocker remains ahead of durable-trace / re-entry / runtime-viability.
+- Formal curated promotion from the modern private-library supplement remains intentionally paused under the recorded `hold_for_backlog_rescue` outcome and requires genuinely new benchmark-strengthening evidence before reopening.
 - The later frontend/API retirement of section-first chapter/detail and marks surfaces remains blocked on benchmark stabilization plus stable doc promotion timing.
-- `Q10` remains open: when the detailed `attentional_v2` working design should be promoted from temp docs into stable mechanism docs.
+
+## Resolved Gate Review Outcomes
+- `reviewed_at`: `2026-04-01`
+- `OD-PRIVATE-LIBRARY-POST-RESCUE-GATE = keep_hold_for_backlog_rescue`
+- `OD-CALLBACKSLICE-BOUNDED-VARIANCE = accept_bounded_variance_for_frozen_slice`
+- `OD-BENCHMARK-SIZE = adequate_for_next_decisive_lane_only + expand_before_default_cutover_only`
+- `chosen_path = Path A`
+- `next_task = TASK-RUNTIME-VIABILITY-GATES`
 
 ## Open Decisions
-- `OD-PRIVATE-LIBRARY-POST-RESCUE-GATE`
-  - The live reviewed state has been restored, and the extra cleanup/review pass is now complete. The new follow-up packet summaries did not add any `keep` decisions, so the remaining human-owned question is whether promotion should stay closed until a more substantive backlog-clearing move is chosen.
-- `OD-CALLBACKSLICE-BOUNDED-VARIANCE`
-  - The callbackslice same-input probe/rerun shows no builder/input drift but still leaves bounded adjudication / audit variance (`action_drift = 1`, `primary_decision_drift = 1`). The remaining human-owned question is whether that slice is already good enough to freeze for comparison cadence, or whether one later audit-stage-only reproducibility pass should run first.
-- `OD-BENCHMARK-SIZE`
-  - Is the current benchmark family already large enough for high-confidence cross-mechanism judgment, or should the benchmark expand before any default-cutover decision?
 - `Q10`
   - When should the detailed `attentional_v2` working design be promoted from temporary implementation docs into stable mechanism docs?
 
@@ -1286,7 +1255,7 @@ Last verified: `2026-03-31T23:23:47Z`
 - The managed source catalog now drives both intake and the current private-library supplement build on this checkout, but the first real scratch evidence says the next bottleneck is case quality rather than source-input plumbing.
 - The first real scratch builder/controller runs were intentionally narrow: the earliest English baseline still yielded no `keep` outcomes, but the later quality-fix runs improved that materially; the remaining narrowness is now bilingual stability rather than the mere absence of `keep` results.
 - The last bilingual English pair held source rows constant but still regenerated materially different audit judgments, so current bilingual widening is constrained by audit/adjudication reproducibility as well as by builder quality.
-- The latest callbackslice same-packet adjudication probe held packet inputs fixed and still showed `action_drift = 1`, while the same-packet audit rerun held audit inputs fixed and still showed `primary_decision_drift = 1`, so frozen-slice readiness still depends on an explicit human variance threshold.
+- The accepted callbackslice variance is still audit-stage model variance, not builder/input drift, and should not be used to reopen a new general builder wave without new evidence.
 - Probe-only adjudication compares can over-report `source_input_drift` because `auto_review_packet.py` currently reuses `source_row_fingerprint` for different payload shapes in live vs replayed runs; the callbackslice `source_input_drift = 2` is bookkeeping noise unless packet-input or audit-row fingerprints also move.
 - The broader English-only versus broader bilingual v4 runs still show `source_input_drift = 0`, `audit_input_drift = 5`, and `action_drift = 3` on the shared English case set.
 - The fresh audit-pair compare artifact now shows `audit_input_drift = 0` but `primary_score_drift = 8`, so the remaining live instability is audit-stage model variance rather than builder/input drift.
@@ -1300,9 +1269,7 @@ Last verified: `2026-03-31T23:23:47Z`
 - Benchmark confidence can look stronger than it really is if corpus growth, promotion, and reviewed-slice confidence gates drift apart.
 
 ## Active Task IDs
-- `TASK-BENCH-BACKLOG-RESCUE`
-- `TASK-DATASET-QUESTION-ALIGNED-CASE-CONSTRUCTION`
-- `TASK-DATASET-FULL-AUTOMATION`
+- `TASK-RUNTIME-VIABILITY-GATES`
 
 ## Active Job IDs
 - none
@@ -1313,36 +1280,28 @@ Last verified: `2026-03-31T23:23:47Z`
 3. `docs/current-state.md`
 4. relevant child `AGENTS.md`
 5. `docs/tasks/registry.md`
-6. `docs/implementation/new-reading-mechanism/post-recovery-gate-review-checklist.md`
-7. `docs/implementation/new-reading-mechanism/question-aligned-case-construction.md`
-8. `reading-companion-backend/eval/review_packets/review_queue_summary.json`
-9. `reading-companion-backend/state/job_registry/jobs/bgjob_callbackslice_probeonly_20260331.json`
-10. `reading-companion-backend/eval/review_packets/archive/attentional_v2_private_library_excerpt_en_question_aligned_v1__scratch__callbackslice_auditv4_20260331/llm_review_runs/llm_review__20260331-020939__1e09365bb0cb/summary.json`
-11. `reading-companion-backend/eval/review_packets/archive/attentional_v2_private_library_excerpt_en_question_aligned_v1__scratch__callbackslice_auditv4_20260331/llm_review_runs/llm_review__20260331-122614__1e09365bb0cb/summary.json`
-12. `reading-companion-backend/state/job_registry/jobs/bgjob_callbackslice_auditrerun_20260331.json`
-13. `reading-companion-backend/eval/runs/attentional_v2/case_audits/attentional_v2_private_library_excerpt_en_question_aligned_v1__scratch__callbackslice_auditv4_20260331__20260331-020431/run_state.json`
-14. `reading-companion-backend/eval/runs/attentional_v2/case_audits/attentional_v2_private_library_excerpt_en_question_aligned_v1__scratch__callbackslice_auditv4_20260331__20260331-122848/run_state.json`
-15. `reading-companion-backend/state/job_registry/jobs/bgjob_closed_loop_bilingual_broader_callbackfocusfix_20260331.json`
-16. `reading-companion-backend/state/dataset_build/build_runs/closed_loop_full_smoke_bilingual_broader_callbackfocusfix_20260331/closed_loop_benchmark_curation_summary.json`
-17. `reading-companion-backend/state/job_registry/jobs/bgjob_en_chapter_core_rerun_round3_caseiso_judged_substantive_backup_20260331.json`
-18. `docs/implementation/new-reading-mechanism/private-library-promotion-round2.md`
+6. `docs/implementation/new-reading-mechanism/execution-tracker.md`
+7. `docs/implementation/new-reading-mechanism/post-recovery-gate-review-checklist.md`
+8. `docs/implementation/new-reading-mechanism/private-library-promotion-round2.md`
+9. `docs/backend-reader-evaluation.md`
+10. `docs/implementation/new-reading-mechanism/evaluation-question-map.md`
+11. `docs/backend-sequential-lifecycle.md`
+12. `docs/runtime-modes.md`
+13. `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_vs_iterator_v1_chapter_core_en_round3_caseiso_judged_substantive_backup_20260331/summary/aggregate.json`
+14. `reading-companion-backend/state/job_registry/jobs/bgjob_callbackslice_probeonly_20260331.json`
+15. `reading-companion-backend/state/job_registry/jobs/bgjob_callbackslice_auditrerun_20260331.json`
 
 ## Machine-Readable Appendix
 ```json
 {
-  "updated_at": "2026-03-31T23:23:47Z",
+  "updated_at": "2026-04-01T00:01:22Z",
   "last_updated_by": "codex",
   "active_task_ids": [
-    "TASK-BENCH-BACKLOG-RESCUE",
-    "TASK-DATASET-QUESTION-ALIGNED-CASE-CONSTRUCTION",
-    "TASK-DATASET-FULL-AUTOMATION"
+    "TASK-RUNTIME-VIABILITY-GATES"
   ],
   "blocked_task_ids": [],
   "active_job_ids": [],
   "open_decision_ids": [
-    "OD-PRIVATE-LIBRARY-POST-RESCUE-GATE",
-    "OD-CALLBACKSLICE-BOUNDED-VARIANCE",
-    "OD-BENCHMARK-SIZE",
     "Q10"
   ],
   "detail_refs": [

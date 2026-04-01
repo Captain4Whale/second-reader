@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-03-31T23:23:47Z`
+Last updated: `2026-04-01T00:01:22Z`
 
 ## Status Values
 - `active`
@@ -20,20 +20,22 @@ Last updated: `2026-03-31T23:23:47Z`
 
 ## Active
 
-### `TASK-BENCH-BACKLOG-RESCUE` — Apply the round-2 backlog-rescue decision from the modern supplement
+### `TASK-RUNTIME-VIABILITY-GATES` — Run durable-trace, re-entry, and runtime-viability evaluation
 - Status: `active`
-- Lane: `dataset_growth`
+- Lane: `mechanism_eval`
 - Priority: `high`
-- Detail: `docs/implementation/new-reading-mechanism/private-library-promotion-round2.md`
-- Next: run the post-recovery gate review with [post-recovery-gate-review-checklist.md](/Users/baiweijiang/Documents/Projects/reading-companion/docs/implementation/new-reading-mechanism/post-recovery-gate-review-checklist.md), keep the gate on `hold` unless that review records an explicit reopen decision, and use the outcome to either hand the main cadence back to durable-trace / re-entry / runtime-viability or schedule one last audit-stage-only reproducibility pass
+- Detail: `docs/implementation/new-reading-mechanism/execution-tracker.md`
+- Next: register and run the durable-trace / re-entry and runtime-viability lanes now that the post-recovery gate review is closed on `Path A`; use the accepted frozen callback slice and current chapter-scale evidence as the baseline, keep promotion on `hold`, and do not reopen new general builder or automation waves first
 - Jobs: none
 
+## Waiting
+
 ### `TASK-DATASET-QUESTION-ALIGNED-CASE-CONSTRUCTION` — Build question-aligned case construction for evaluation datasets
-- Status: `active`
+- Status: `waiting`
 - Lane: `dataset_platform`
 - Priority: `high`
 - Detail: `docs/implementation/new-reading-mechanism/execution-tracker.md`
-- Next: keep builder work in bounded-hardening mode only for callback-bridge shaping and same-input audit/adjudication reproducibility, but do not open another builder repair wave from the completed callbackslice probe/rerun because it showed no builder/input drift and still left bounded same-input variance (`action_drift = 1`, `primary_decision_drift = 1`); only hand the slice back to frozen-slice comparison if that variance is explicitly accepted, otherwise schedule one later audit-stage-only reproducibility pass
+- Next: keep the landed builder available as support infrastructure, but do not open a new general builder wave while `TASK-RUNTIME-VIABILITY-GATES` is active; only resume if later decisive eval work exposes a specific blocker or if one explicitly scoped audit-stage-only reproducibility pass is requested
 - Jobs:
   - `bgjob_closed_loop_en_broader_callbackpromptfix_20260331` (`completed`)
   - `bgjob_closed_loop_zh_callbacklookback_20260330` (`completed`)
@@ -50,11 +52,11 @@ Last updated: `2026-03-31T23:23:47Z`
   - `bgjob_callbackslice_auditrerun_20260331` (`completed`)
 
 ### `TASK-DATASET-FULL-AUTOMATION` — Make dataset building fully automated as one closed build-review-refine loop
-- Status: `active`
+- Status: `waiting`
 - Lane: `dataset_platform`
 - Priority: `high`
 - Detail: `docs/implementation/new-reading-mechanism/execution-tracker.md`
-- Next: keep the controller bounded and scratch-safe, but do not authorize another automatic widening step from the completed callbackslice probe/rerun because it separated builder quality from same-input audit/adjudication variance without clearing that variance; only return to frozen-slice comparison if bounded variance is explicitly accepted, otherwise keep widening closed until one later audit-stage-only reproducibility pass is requested
+- Next: keep the bounded controller scratch-safe and reusable, but do not widen automation while decisive mechanism-eval work is active; resume only if later work needs one explicitly scoped audit-stage-only reproducibility pass or another concrete support-lane unblocker
 - Jobs:
   - `bgjob_closed_loop_en_broader_callbackpromptfix_20260331` (`completed`)
   - `bgjob_closed_loop_bilingual_broader_callbackpromptfix_20260331` (`failed`)
@@ -91,20 +93,12 @@ Last updated: `2026-03-31T23:23:47Z`
 
 ## Queued
 
-### `TASK-RUNTIME-VIABILITY-GATES` — Run durable-trace, re-entry, and runtime-viability evaluation
-- Status: `queued`
-- Lane: `mechanism_eval`
-- Priority: `high`
-- Detail: `docs/implementation/new-reading-mechanism/execution-tracker.md`
-- Blocked by: `TASK-BENCH-BACKLOG-RESCUE`
-- Next: treat this as the default next decisive mechanism-eval lane immediately after the post-recovery benchmark gate and callbackslice bounded-variance decision are made explicitly; do not open new general builder or automation waves ahead of durable-trace, re-entry, and runtime viability
-
 ### `TASK-DOC-Q10` — Decide when to promote `attentional_v2` working design into stable docs
 - Status: `queued`
 - Lane: `documentation`
 - Priority: `medium`
 - Detail: `docs/implementation/new-reading-mechanism/open-questions.md`
-- Blocked by: `TASK-BENCH-BACKLOG-RESCUE`
+- Blocked by: `TASK-RUNTIME-VIABILITY-GATES`
 - Next: resolve `Q10` once benchmark stabilization has settled enough to freeze stable mechanism behavior intentionally
 
 ### `TASK-FE-SECTION-RETIREMENT` — Retire section-first chapter/detail and marks surfaces
@@ -116,6 +110,14 @@ Last updated: `2026-03-31T23:23:47Z`
 - Next: start only after benchmark direction, runtime viability work, and stable-doc promotion timing are intentionally fixed
 
 ## Done
+
+### `TASK-BENCH-BACKLOG-RESCUE` — Apply the round-2 backlog-rescue decision from the modern supplement
+- Status: `done`
+- Lane: `dataset_growth`
+- Priority: `high`
+- Detail: `docs/implementation/new-reading-mechanism/private-library-promotion-round2.md`
+- Next: keep the recorded `hold_for_backlog_rescue` outcome in force, do not reopen promotion without genuinely new benchmark-strengthening evidence, and treat the completed gate review as the route-back-to-mainline checkpoint
+- Jobs: none
 
 ### `TASK-BENCH-ROUND3-CLEANUP` — Finish private-library cleanup and write the round-2 promotion draft
 - Status: `done`

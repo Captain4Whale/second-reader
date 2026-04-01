@@ -18,17 +18,19 @@ Update when: status changes, blockers appear, or phases complete.
   - `Phase 9: Migration, Stabilization, And Default-Cutover Readiness`
 - Current side branch:
   - none
-  - the universal shared LLM invocation and traceability layer is landed, and the route has returned to active benchmark hardening
+  - the universal shared LLM invocation and traceability layer is landed, and the post-recovery gate review has now returned the route to decisive mechanism-eval work
 - Current strategy discipline:
   - dataset-builder and controller work are now bounded enabling lanes for evaluation rather than independent finish lines
-  - current builder/controller work stays in bounded-hardening mode, not open-ended capability expansion
-  - the only active builder-side reasons to continue are:
-    - callback-bridge excerpt shaping
-    - audit/adjudication reproducibility on same-input frozen cases
-  - after each bounded repair wave, freeze the affected slice and hand comparison cadence back to the mechanism-eval lane before opening another builder wave
-  - unattended automation should not widen further until it demonstrably shortens the loop back to trusted comparison
-  - durable-trace / re-entry and runtime-viability work remain decisive pending mechanism-eval lanes rather than optional later cleanup
+  - the post-recovery gate review is now closed on `Path A`:
+    - benchmark promotion stays `hold_for_backlog_rescue`
+    - callbackslice bounded variance is accepted for frozen-slice comparison cadence
+    - current benchmark size is treated as adequate for the next decisive lane only, not for default-cutover confidence
+  - current builder/controller work stays available as a bounded support lane, not as the active mainline
+  - unattended automation should not widen further while durable-trace / re-entry / runtime-viability are the active lane
+  - durable-trace / re-entry and runtime-viability are now the active decisive mechanism-eval lane rather than a later optional cleanup
 - Current blockers:
+  - the post-recovery gate review no longer blocks the next decisive lane:
+    - the next mainline move is to run durable-trace / re-entry and runtime-viability evaluation
   - final end-to-end comparison still waits on:
     - follow-up after the first broader semantic comparison pass:
       - `local_reading_behavior` is now clearly weaker than `iterator_v1` on the English chapter pack
@@ -48,11 +50,11 @@ Update when: status changes, blockers appear, or phases complete.
         - full bundles remain preserved on disk for later inspection
     - balanced benchmark promotion from the modern private-library `v2` supplement remains mid-hardening rather than ready for formal benchmark promotion:
       - the cleanup orchestrator is now completed, the round-2 promotion draft is landed, and the English and Chinese follow-up cleanup packets are archived
-      - the explicit decision remains `hold_for_backlog_rescue`
+      - the explicit `2026-04-01` gate-review outcome keeps `hold_for_backlog_rescue` in force
       - the follow-up cleanup pass produced no new `keep` decisions:
         - English remains at `7` `reviewed_active`
         - Chinese remains healthy at `13` `reviewed_active`
-      - formal bilingual promotion is still paused until a human decides whether to reopen the gate or wait for a more substantive backlog-clearing move
+      - formal bilingual promotion is still paused unless genuinely new benchmark-strengthening evidence lands
     - Question-Aligned Case Construction is now in first live landing rather than pure design:
       - helper module landed at `reading-companion-backend/eval/attentional_v2/question_aligned_case_construction.py`
       - the private-library supplement builder now emits target profiles, opportunity maps, candidate cases, reserve cases, and adequacy reports under `state/dataset_build/`
@@ -108,12 +110,12 @@ Update when: status changes, blockers appear, or phases complete.
           - the archived-packet adjudication probe held packet inputs fixed with `same_packet_input_fingerprint = true` and `audit_input_drift = 0`, but still showed `action_drift = 1`
           - the same-packet audit rerun held packet, case, context, prompt, and audit inputs fixed with `audit_input_drift = 0`, but still showed `primary_decision_drift = 1` and `primary_score_drift = 2`
           - the compare-layer `source_input_drift = 2` on the adjudication probe is bookkeeping noise from mixed `source_row_fingerprint` semantics between live and replayed probe payloads, not real builder/input drift
-          - current disposition: do not open another builder repair wave from this evidence, do not widen automation, and treat frozen-slice comparison as a human-owned bounded-variance decision rather than an automatic next step
+          - current disposition after the gate review: do not open another builder repair wave from this evidence, do not widen automation, accept the current bounded variance for frozen-slice comparison cadence, and return the main cadence to durable-trace / re-entry / runtime-viability
     - fresh live gate counts on the recovered local-only `v2` datasets remain:
       - English: `7` `reviewed_active`, `3` `needs_revision`, `6` `needs_replacement`, `154` `unset`
       - Chinese: `13` `reviewed_active`, `1` `needs_revision`, `2` `needs_replacement`, `40` `unset`
       - review queue: `active_packet_count = 0`
-      - current gate posture: benchmark gate stays on `hold`; no promotion reopening, reviewed-slice freeze, or runtime-viability launch is authorized from this checkpoint alone
+      - current gate posture after the `2026-04-01` review: benchmark promotion stays on `hold`; runtime-viability is now authorized as the active next lane, while promotion reopening and default-cutover remain closed
     - later frontend/API retirement of section-first chapter/detail and marks surfaces
     - later stable-doc promotion timing under `Q10`
 

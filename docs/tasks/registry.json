@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-03-31T23:23:47Z",
+  "updated_at": "2026-04-01T00:01:22Z",
   "tasks": [
     {
       "id": "TASK-MECH-EN-RERUN",
@@ -59,7 +59,7 @@
     {
       "id": "TASK-BENCH-BACKLOG-RESCUE",
       "title": "Apply the round-2 backlog-rescue decision from the modern supplement",
-      "status": "active",
+      "status": "done",
       "lane": "dataset_growth",
       "priority": "high",
       "detail_ref": "docs/implementation/new-reading-mechanism/private-library-promotion-round2.md",
@@ -74,7 +74,7 @@
       ],
       "job_refs": [],
       "acceptance_ref": "docs/implementation/new-reading-mechanism/private-library-promotion-round2.md",
-      "next_action": "Run the post-recovery gate review with docs/implementation/new-reading-mechanism/post-recovery-gate-review-checklist.md, keep the gate on hold unless that review records an explicit reopen decision, and use the outcome to either hand the main cadence back to durable-trace / re-entry / runtime-viability or schedule one last audit-stage-only reproducibility pass.",
+      "next_action": "Keep the recorded hold_for_backlog_rescue outcome in force, do not reopen promotion without genuinely new benchmark-strengthening evidence, and treat the completed gate review as the route-back-to-mainline checkpoint.",
       "blocked_by": [],
       "evidence_refs": [
         "docs/implementation/new-reading-mechanism/private-library-promotion-round2.md",
@@ -88,7 +88,7 @@
         "reading-companion-backend/state/eval_local_datasets/excerpt_cases/attentional_v2_private_library_excerpt_en_v2/cases.jsonl",
         "reading-companion-backend/state/eval_local_datasets/excerpt_cases/attentional_v2_private_library_excerpt_zh_v2/cases.jsonl"
       ],
-      "last_updated": "2026-03-31T23:23:47Z",
+      "last_updated": "2026-04-01T00:01:22Z",
       "last_updated_by": "codex"
     },
     {
@@ -153,7 +153,7 @@
     {
       "id": "TASK-DATASET-QUESTION-ALIGNED-CASE-CONSTRUCTION",
       "title": "Build question-aligned case construction for evaluation datasets",
-      "status": "active",
+      "status": "waiting",
       "lane": "dataset_platform",
       "priority": "high",
       "detail_ref": "docs/implementation/new-reading-mechanism/execution-tracker.md",
@@ -263,13 +263,14 @@
         "reading-companion-backend/eval/runs/attentional_v2/case_audits/attentional_v2_private_library_excerpt_en_question_aligned_v1__scratch__callbackslice_auditv4_20260331__20260331-020431/run_state.json",
         "reading-companion-backend/eval/runs/attentional_v2/case_audits/attentional_v2_private_library_excerpt_en_question_aligned_v1__scratch__callbackslice_auditv4_20260331__20260331-122848/run_state.json"
       ],
-      "last_updated": "2026-03-31T13:18:00Z",
+      "next_action": "Keep the landed builder available as support infrastructure, but do not open a new general builder wave while TASK-RUNTIME-VIABILITY-GATES is active; only resume if later decisive eval work exposes a specific blocker or if one explicitly scoped audit-stage-only reproducibility pass is requested.",
+      "last_updated": "2026-04-01T00:01:22Z",
       "last_updated_by": "codex"
     },
     {
       "id": "TASK-DATASET-FULL-AUTOMATION",
       "title": "Make dataset building fully automated as one closed build-review-refine loop",
-      "status": "active",
+      "status": "waiting",
       "lane": "dataset_platform",
       "priority": "high",
       "detail_ref": "docs/implementation/new-reading-mechanism/execution-tracker.md",
@@ -441,13 +442,14 @@
         "reading-companion-backend/eval/runs/attentional_v2/case_audits/attentional_v2_private_library_excerpt_en_question_aligned_v1__scratch__callbackslice_auditv4_20260331__20260331-020431/run_state.json",
         "reading-companion-backend/eval/runs/attentional_v2/case_audits/attentional_v2_private_library_excerpt_en_question_aligned_v1__scratch__callbackslice_auditv4_20260331__20260331-122848/run_state.json"
       ],
-      "last_updated": "2026-03-31T13:18:00Z",
+      "next_action": "Keep the bounded controller scratch-safe and reusable, but do not widen automation while decisive mechanism-eval work is active; resume only if later work needs one explicitly scoped audit-stage-only reproducibility pass or another concrete support-lane unblocker.",
+      "last_updated": "2026-04-01T00:01:22Z",
       "last_updated_by": "codex"
     },
     {
       "id": "TASK-RUNTIME-VIABILITY-GATES",
       "title": "Run durable-trace, re-entry, and runtime-viability evaluation after the current chapter-core follow-up",
-      "status": "queued",
+      "status": "active",
       "lane": "mechanism_eval",
       "priority": "high",
       "detail_ref": "docs/implementation/new-reading-mechanism/execution-tracker.md",
@@ -463,14 +465,14 @@
       ],
       "job_refs": [],
       "acceptance_ref": "docs/implementation/new-reading-mechanism/execution-tracker.md",
-      "next_action": "Treat this as the default next decisive mechanism-eval lane immediately after the post-recovery benchmark gate and callbackslice bounded-variance decision are made explicitly; do not open new general builder or automation waves ahead of durable-trace, re-entry, and runtime viability.",
-      "blocked_by": [
-        "TASK-BENCH-BACKLOG-RESCUE"
-      ],
+      "next_action": "Register and run the durable-trace / re-entry and runtime-viability lanes now that the post-recovery gate review is closed on Path A; use the accepted frozen callback slice and current chapter-scale evidence as the baseline, keep promotion on hold, and do not reopen new general builder or automation waves first.",
+      "blocked_by": [],
       "evidence_refs": [
-        "docs/implementation/new-reading-mechanism/execution-tracker.md"
+        "docs/implementation/new-reading-mechanism/execution-tracker.md",
+        "docs/implementation/new-reading-mechanism/private-library-promotion-round2.md",
+        "docs/implementation/new-reading-mechanism/post-recovery-gate-review-checklist.md"
       ],
-      "last_updated": "2026-03-31T15:25:45Z",
+      "last_updated": "2026-04-01T00:01:22Z",
       "last_updated_by": "codex"
     },
     {
@@ -492,7 +494,7 @@
       "acceptance_ref": "docs/implementation/new-reading-mechanism/open-questions.md",
       "next_action": "Resolve Q10 after benchmark stabilization is strong enough that stable mechanism behavior can be frozen intentionally.",
       "blocked_by": [
-        "TASK-BENCH-BACKLOG-RESCUE"
+        "TASK-RUNTIME-VIABILITY-GATES"
       ],
       "evidence_refs": [
         "docs/implementation/new-reading-mechanism/open-questions.md",

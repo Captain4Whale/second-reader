@@ -53,10 +53,7 @@
 - Chinese is healthier, but the gate is bilingual, so English still limits confidence.
 - `needs_revision` and `needs_replacement` remain benchmark-hardening statuses, not promotion-ready statuses.
 - the raw `unset` volume is not benchmark-ready size; it is only remaining mining headroom.
-- the human-owned decisions still open are:
-  - `OD-PRIVATE-LIBRARY-POST-RESCUE-GATE`
-  - `OD-BENCHMARK-SIZE`
-- the operational review procedure for resolving the current gate now lives in:
+- the operational review procedure that resolved this gate lives in:
   - [post-recovery-gate-review-checklist.md](/Users/baiweijiang/Documents/Projects/reading-companion/docs/implementation/new-reading-mechanism/post-recovery-gate-review-checklist.md)
 - safe mechanical work may continue:
   - build better replacement candidates
@@ -68,6 +65,18 @@
   - reviewed-slice freezing
   - durable-trace / re-entry / runtime-viability
   - default-cutover decisions
+
+## `2026-04-01` Gate Review Closeout
+- `reviewed_at`: `2026-04-01`
+- `OD-PRIVATE-LIBRARY-POST-RESCUE-GATE = keep_hold_for_backlog_rescue`
+- `OD-CALLBACKSLICE-BOUNDED-VARIANCE = accept_bounded_variance_for_frozen_slice`
+- `OD-BENCHMARK-SIZE = adequate_for_next_decisive_lane_only + expand_before_default_cutover_only`
+- `chosen_path = Path A`
+- practical consequence:
+  - promotion stays closed
+  - the callback slice is accepted for frozen-slice comparison cadence
+  - the next active mainline task is durable-trace / re-entry / runtime-viability
+  - no new general builder wave or broader automation widening should open ahead of that lane
 
 ## Policy
 - mode: `hold_if_thin`
