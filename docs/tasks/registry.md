@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-04-01T13:06:11Z`
+Last updated: `2026-04-01T15:25:03Z`
 
 ## Status Values
 - `active`
@@ -25,7 +25,7 @@ Last updated: `2026-04-01T13:06:11Z`
 - Lane: `mechanism_eval`
 - Priority: `high`
 - Detail: `docs/implementation/new-reading-mechanism/execution-tracker.md`
-- Next: keep the active eval scope compressed to only three north-star dimensions: `selective_legibility`, `coherent_accumulation`, and `insight_and_clarification`; use the existing chapter-scale comparison checkpoints as the current accumulation baseline, treat honesty / integrity / compatibility as cheap sanity guards rather than primary success targets, and keep runtime-viability together with durable-trace / re-entry and broader local pairwise comparison paused unless one of the three kept dimensions later requires them
+- Next: keep the active eval scope compressed to only three north-star dimensions; freeze the new formal benchmark-v1 quota without any source-origin strata (`24` excerpt cases, `16` chapter cases, `40` total), use target pressure + language + reading role + genre/book type + chapter-vs-excerpt scale as the benchmark design axes, freeze explicit case-id lists instead of relying on auto-selected cores, and fill only the remaining excerpt-side quota gaps before the next formal rerun
 - Jobs:
   - `bgjob_durable_trace_reentry_gate_20260401` (`failed`)
   - `bgjob_durable_trace_reentry_gate_parallel3_20260401` (`completed`)

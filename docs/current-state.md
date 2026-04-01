@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-04-01T15:10:50Z`
+Last verified: `2026-04-01T15:25:03Z`
 
 ## Current Objective
 - Keep Phase 9 on the mainline after the completed post-recovery gate review:
@@ -41,6 +41,12 @@ Last verified: `2026-04-01T15:10:50Z`
 - Treat book source origin as operational provenance only:
   - do not design benchmark strata around `public`, `private`, `manual download`, `agent-downloaded`, or similar source-channel labels
   - when choosing or freezing benchmark cases, stratify by target pressure, language, reading role, genre/book type, and chapter-vs-excerpt scale instead
+- The current formal benchmark-v1 quota target is now:
+  - `40` unique cases total
+  - `24` excerpt cases for `selective_legibility` plus the clarification subset
+  - `16` chapter cases for `coherent_accumulation`
+  - current ready estimate: `30`
+  - current gap estimate: `10`, concentrated on the excerpt side rather than the chapter side
 - Treat cheap honesty / integrity / compatibility checks as sanity guards rather than as primary eval success targets.
 - Treat runtime viability, broader local pairwise comparison, durable-trace / re-entry comparison, and most mechanism-specific judged attribution families as paused unless one of the three kept dimensions later requires them.
 

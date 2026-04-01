@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-04-01T13:06:11Z",
+  "updated_at": "2026-04-01T15:25:03Z",
   "tasks": [
     {
       "id": "TASK-MECH-EN-RERUN",
@@ -474,10 +474,11 @@
         "bgjob_runtime_viability_gate_serialfix_20260401"
       ],
       "acceptance_ref": "docs/implementation/new-reading-mechanism/execution-tracker.md",
-      "next_action": "Keep the active eval scope compressed to only three north-star dimensions: selective_legibility, coherent_accumulation, and insight_and_clarification; use the existing chapter-scale comparison checkpoints as the current accumulation baseline, treat honesty / integrity / compatibility as cheap sanity guards rather than primary success targets, and keep runtime-viability together with durable-trace / re-entry and broader local pairwise comparison paused unless one of the three kept dimensions later requires them.",
+      "next_action": "Keep the active eval scope compressed to only three north-star dimensions; freeze the new formal benchmark-v1 quota without any source-origin strata (24 excerpt cases, 16 chapter cases, 40 total), use target pressure plus language plus reading role plus genre/book type plus chapter-vs-excerpt scale as the benchmark design axes, freeze explicit case-id lists instead of relying on auto-selected cores, and fill only the remaining excerpt-side quota gaps before the next formal rerun.",
       "blocked_by": [],
       "evidence_refs": [
         "docs/implementation/new-reading-mechanism/execution-tracker.md",
+        "docs/implementation/new-reading-mechanism/evaluation-dataset-layout.md",
         "docs/implementation/new-reading-mechanism/private-library-promotion-round2.md",
         "docs/implementation/new-reading-mechanism/post-recovery-gate-review-checklist.md",
         "reading-companion-backend/eval/attentional_v2/run_durable_trace_reentry.py",
@@ -499,7 +500,7 @@
         "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_runtime_viability_gate_serialfix_20260401/summary/report.md",
         "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_runtime_viability_gate_serialfix_20260401/summary/aggregate.json"
       ],
-      "last_updated": "2026-04-01T13:06:11Z",
+      "last_updated": "2026-04-01T15:25:03Z",
       "last_updated_by": "codex"
     },
     {

@@ -294,15 +294,91 @@ If the current tracked curated + seed `v2` pool is insufficient:
 - keep the added bilingual coverage balanced instead of growing one language track alone
 
 ## Immediate Next Step
-- Treat the tracked `v2` benchmark family as ready for real evaluation work.
-- Use the local-only supplement only to fill any remaining uncovered phenomenon bucket, not as the main acquisition path.
+- Treat the tracked `v2` benchmark family plus the aligned local-only mirror as one sourcing pool under two storage modes, not as two benchmark concepts.
+- Freeze the first formal benchmark against the reduced three-target scope only:
+  - `reader_character.selective_legibility`
+  - `reader_character.coherent_accumulation`
+  - `reader_value.insight_and_clarification`
+- Do not stratify the formal benchmark by source origin.
 - Stop expanding the corpus by default.
-- Start the first serious evaluation runs:
-  - mechanism-integrity
-  - local reading comparison
-  - span trajectory
-  - durable trace / re-entry
-  - runtime viability
+- Next benchmark work should be:
+  - freeze explicit case-id lists instead of relying on automatic core-case selection
+  - fill only the remaining quota gaps that block the formal benchmark shape
+  - rerun only the three retained targets once those frozen lists are ready
+
+## Formal Benchmark V1 Quota
+This is the first formal benchmark shape for the reduced evaluation scope.
+
+Working rule:
+- count one formal benchmark family with two storage modes, not separate "tracked" and "local" benchmarks
+- treat source origin as provenance only
+- stratify by target pressure, language, reading role, genre/book type, and chapter-vs-excerpt scale
+
+### Unique-case budget
+| Slice | Primary targets | Unique cases | EN | ZH | Ready now | Gap |
+| --- | --- | ---: | ---: | ---: | ---: | ---: |
+| `excerpt_core` | `selective_legibility`, `insight_and_clarification` | 24 | 12 | 12 | 14 | 10 |
+| `chapter_core` | `coherent_accumulation` | 16 | 8 | 8 | 16 | 0 |
+| `total` | formal benchmark v1 | 40 | 20 | 20 | 30 | 10 |
+
+Interpretation:
+- the chapter side is already large enough to freeze a serious first formal slice
+- the excerpt side is the real remaining bottleneck for a formal benchmark, not chapter supply
+- the current excerpt gap should be filled selectively rather than by opening another broad builder wave
+
+### Scored-target quotas
+| Target | Official scored slice | Scored cases | EN | ZH | Rule |
+| --- | --- | ---: | ---: | ---: | --- |
+| `reader_character.selective_legibility` | `excerpt_core` | 24 | 12 | 12 | every excerpt case must make it possible to judge whether the mechanism noticed something worth surfacing and expressed it legibly |
+| `reader_character.coherent_accumulation` | `chapter_core` | 16 | 8 | 8 | every chapter case must support chapter-scale pairwise judgment about continuity, callback quality, and accumulating understanding |
+| `reader_value.insight_and_clarification` | clarification-tagged subset of `excerpt_core` | 16 | 8 | 8 | only cases with real clarifying pressure count here; generic pleasantness or verbosity does not |
+
+### Excerpt-core quota by target pressure
+| Excerpt pressure | Total | EN | ZH | Ready now | Gap |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| `distinction_definition` | 6 | 3 | 3 | 3 | 3 |
+| `tension_reversal` | 6 | 3 | 3 | 4 | 2 |
+| `anchored_reaction_selectivity` | 6 | 3 | 3 | 3 | 3 |
+| `callback_bridge_or_modest_cross_span_link` | 4 | 2 | 2 | 5 | 0 |
+| clarification wildcard / under-covered pressure | 2 | 1 | 1 | 0 | 2 |
+
+Interpretation:
+- the current reviewed excerpt slice is already strong enough on modest cross-span-link pressure
+- the real excerpt gap is concentrated in:
+  - more `distinction_definition`
+  - more `anchored_reaction_selectivity`
+  - two clarification-bearing wildcard cases that improve benchmark realism rather than repeating the same literary/classic pressure
+
+### Chapter-core quota by reading role
+| Reading role | Total | EN | ZH | Ready now | Gap |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| `expository` | 4 | 2 | 2 | 4 | 0 |
+| `argumentative` | 4 | 2 | 2 | 4 | 0 |
+| `narrative_reflective` | 4 | 2 | 2 | 4 | 0 |
+| `reference_heavy` | 4 | 2 | 2 | 4 | 0 |
+
+Rule:
+- the formal chapter benchmark should freeze explicit case ids against this `4 x 4` role matrix
+- do not treat the auto-selected current core pass as the final formal benchmark definition
+
+### Book-Type Diversity Floor
+Apply these minimum diversity constraints across the full `40`-case matrix regardless of storage mode:
+- at least `10` distinct books overall
+- at least `5` distinct books per language
+- at least `8` cases from modern applied nonfiction / biography / management / science / history clusters
+- at least `8` cases from literary / memoir / reflective narrative clusters
+- at least `8` cases from argumentative / social-thought / philosophical / critical-writing clusters
+
+Interpretation:
+- these are benchmark-shape constraints, not extra axes that replace the target quotas
+- they exist so the benchmark reflects real reading-product value instead of drifting toward one overrepresented shelf
+- the modern applied nonfiction floor is the main reason to reuse the prepared local supplement books during benchmark freezing
+
+### Formal Freeze Order
+1. Freeze `chapter_core` first because it already meets quota and is the clearest serious lane for `coherent_accumulation`.
+2. Freeze as much of `excerpt_core` as the current reviewed slice already supports.
+3. Fill only the `10` excerpt-case gap against the pressure table above.
+4. Tag the `16` clarification-bearing excerpt cases explicitly before the next formal rerun.
 
 ## Expansion Reminder For Later Confidence
 - The current `v2` benchmark family is intended to be:
