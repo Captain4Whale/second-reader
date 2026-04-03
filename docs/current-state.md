@@ -7,11 +7,12 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-04-02T06:16:49Z`
+Last verified: `2026-04-03T06:33:38Z`
 
 ## Current Objective
 - Keep Phase 9 on the mainline after the completed post-recovery gate review:
   - preserve the recorded `Path A` gate outcome in repo-local state
+  - use the now-closed `40 / 40` formal benchmark-v1 draft as the bounded evidence base for the next minimum reader-character proof
   - keep the active cadence on the minimum reader-character proof plus cheap trust gates, with durable-trace / re-entry and runtime viability now paused for cost
   - keep benchmark promotion closed unless genuinely new benchmark-strengthening evidence lands
 - Keep the dataset-platform route available as support infrastructure rather than as the current primary workstream:
@@ -41,37 +42,51 @@ Last verified: `2026-04-02T06:16:49Z`
 - Treat book source origin as operational provenance only:
   - do not design benchmark strata around `public`, `private`, `manual download`, `agent-downloaded`, or similar source-channel labels
   - when choosing or freezing benchmark cases, stratify by target pressure, language, reading role, genre/book type, and chapter-vs-excerpt scale instead
-- The current formal benchmark-v1 quota target is now:
+- The current formal benchmark-v1 freeze is now:
   - `40` unique cases total
   - `24` excerpt cases for `selective_legibility` plus the clarification subset
   - `16` chapter cases for `coherent_accumulation`
-  - current ready estimate: `34`
-  - current gap estimate: `6`, concentrated on the excerpt side rather than the chapter side
+  - current ready estimate: `40`
+  - current gap estimate: `0`
   - explicit freeze artifacts now exist at:
     - `reading-companion-backend/eval/manifests/splits/attentional_v2_formal_benchmark_v1_draft.json`
     - `docs/implementation/new-reading-mechanism/formal-benchmark-v1-freeze-draft.md`
-  - the chapter lane is now concretely drafted as a `16`-case explicit freeze
-  - the first tracked `5`-case builder-active excerpt wave plus the bounded reruns are now completed:
-    - EN packet `attentional_v2_formal_benchmark_v1_excerpt_wave1_en_20260402`: `0 keep`, `2 revise`
-    - ZH packet `attentional_v2_formal_benchmark_v1_excerpt_wave1_zh_20260402`: `2 keep`, `1 revise`
-    - direct wave-1 reviewed-active additions:
-      - `ouyou_zaji_public_zh__4__distinction_definition__v2`
-      - `ershinian_mudu_public_zh__37__anchored_reaction_selectivity__v2`
-    - bounded rerun additions after the excerpt-normalization repair:
-      - `women_and_economics_public_en__9__distinction_definition__v2`
-      - `rulin_waishi_24032_zh__6__tension_reversal__v2`
+  - the chapter lane remains the same explicit `16`-case freeze
+  - the excerpt lane is now explicitly frozen at:
+    - `distinction_definition = 6`
+    - `tension_reversal = 6`
+    - `anchored_reaction_selectivity = 6`
+    - `callback_bridge_or_modest_cross_span_link = 4`
+    - `clarification_wildcard_or_undercovered_pressure = 2`
   - the bounded factual-audit repair is now landed:
     - excerpt comparison now strips harmless `Cf` formatting characters and collapses whitespace / newline differences before judging `excerpt_text_mismatch`
-    - the two formatting-blocked reruns now clear factual audit and import cleanly as `reviewed_active`
-  - the next dataset move is now bounded and concrete:
-    - freeze those two rerun keeps into the formal benchmark draft
-    - do not spend another immediate builder-active rerun on `portrait_of_a_lady_public_en__10__anchored_reaction_selectivity__v2`
-    - use the planned Henry Adams local promotions as the next clean EN tension / anchored support lane
+    - the earlier formatting-blocked reruns now clear factual audit and import cleanly as `reviewed_active`
+  - the `2026-04-03` formal gap-fill closeout is now complete:
+    - EN local reviewed rerun accepted:
+      - `steve_jobs_private_en__43__seed_1`
+      - `evicted_private_en__29__seed_1`
+    - ZH local reviewed rerun accepted:
+      - `zouchu_weiyi_zhenliguan_private_zh__14__seed_1`
+      - `meiguoren_de_xingge_private_zh__19__seed_2`
+    - Henry source-scoped rerun accepted:
+      - `education_of_henry_adams_public_en__8__tension_reversal__seed_v1`
+    - Henry explicit anchored rerun accepted:
+      - `education_of_henry_adams_public_en__16__anchored_reaction_selectivity__seed_v1`
+    - no fallback jobs were needed
+    - review queue is now `active_packet_count = 0`
+    - active background jobs are now `0`
+  - the next dataset move is now intentionally small:
+    - treat benchmark gap-fill as complete for formal benchmark-v1
+    - do not reopen a general builder wave or benchmark-promotion review from this closeout alone
+    - spend next on the cheapest decisive mechanism-eval lane over the frozen `40 / 40` benchmark
 - Treat cheap honesty / integrity / compatibility checks as sanity guards rather than as primary eval success targets.
 - Treat runtime viability, broader local pairwise comparison, durable-trace / re-entry comparison, and most mechanism-specific judged attribution families as paused unless one of the three kept dimensions later requires them.
 
 ## Now
 - Treat `attentional_v2` as experimental and `iterator_v1` as the current default mechanism.
+- The formal benchmark gap-fill closeout is finished:
+  - no active background jobs are currently registered
+  - `reading-companion-backend/eval/review_packets/review_queue_summary.json` is back to `active_packet_count = 0`
 - The English chapter-core retry-2 closeout remains the last broader multi-case comparison baseline, and the completed backup-tier substantive rerun is now the latest focused two-case mechanism-evidence checkpoint:
   - run:
     - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_vs_iterator_v1_chapter_core_en_round2_microselectivity_retry2_20260328/`

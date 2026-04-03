@@ -1,0 +1,112 @@
+{
+  "case_id": "education_of_henry_adams_public_en__16__anchored_reaction_selectivity__seed_v1",
+  "raw_model_payload": {
+    "benchmark_readiness": "ready",
+    "bucket_fit": "correct",
+    "focus_clarity": "clear",
+    "excerpt_integrity": "strong",
+    "review__action": "keep",
+    "review__confidence": "high",
+    "review__problem_types": [],
+    "review__revised_bucket": "",
+    "review__revised_selection_reason": "",
+    "review__revised_judge_focus": "",
+    "review__notes": "Case exemplifies anchored_reaction_selectivity cleanly: the self-aware anchor line ('I weakly supposed … I really, though most strangely, believed that it was an act of friendliness') captures visible thought through metacognitive reaction to Gladstone's action, while the selective interpretation—distinguishing what Gladstone vs. Russell supposed—maintains source-grounding. Factual audit is clean, all three bands are strong, and adversarial review shows no high risk. The excerpt is short, coherent, and internally complete with no parsing issues. No revision needed; case is benchmark-ready."
+  },
+  "normalized_review": {
+    "benchmark_readiness": "ready",
+    "bucket_fit": "correct",
+    "focus_clarity": "clear",
+    "excerpt_integrity": "strong",
+    "review__action": "keep",
+    "review__confidence": "high",
+    "review__problem_types": [
+      "other"
+    ],
+    "review__revised_bucket": "",
+    "review__revised_selection_reason": "",
+    "review__revised_judge_focus": "",
+    "review__notes": "Case exemplifies anchored_reaction_selectivity cleanly: the self-aware anchor line ('I weakly supposed … I really, though most strangely, believed that it was an act of friendliness') captures visible thought through metacognitive reaction to Gladstone's action, while the selective interpretation—distinguishing what Gladstone vs. Russell supposed—maintains source-grounding. Factual audit is clean, all three bands are strong, and adversarial review shows no high risk. The excerpt is short, coherent, and internally complete with no parsing issues. No revision needed; case is benchmark-ready."
+  },
+  "adjudication_input_fingerprint": "46145ef8940730f9b811ef4f27911775731f03d6eebb1ccbe4c629fcdad45a37",
+  "source_row_fingerprint": "6749d98245116c3c09b487f38c742e311b6e838268a431693ab878a87e655775",
+  "packet_source_row_fingerprint": "6749d98245116c3c09b487f38c742e311b6e838268a431693ab878a87e655775",
+  "prompt_case_fingerprint": "bedb2289a3fd6e3a9ca1ae1f6c7c9773acc8c8b4abcc3f27adb7701aecda63fb",
+  "audit_row_fingerprint": "9e7e747b0546ac6e0f6f66f97bdf694db496ba5f9558adf9dac8f7f1c6dbb286",
+  "prompt_hashes": {
+    "system_prompt_hash": "d90ebeea244aa4cca1ffb4e4ccdcbe25e7b65fb64948d5f08eea530992595b06",
+    "user_prompt_hash": "31b0569b1cb109643005989037d3cf5f35f8a106918218104f7e43e528b98c6b"
+  },
+  "selected_target_id": "MiniMax-M2.7-personal",
+  "selected_tier_id": "primary",
+  "provider_id": "MiniMax-M2.7-personal",
+  "contract": "anthropic",
+  "model": "MiniMax-M2.7",
+  "key_slot_id": "primary",
+  "selection_reason": "healthy_tier_selection",
+  "selection_override_source": "",
+  "trace_call_id": "54cd5f734f674117a5b0e7c387d2c974",
+  "trace_status": "ok",
+  "attempt_count": 1,
+  "source_case_audit_run_id": "attentional_v2_formal_benchmark_v1_gapfill_henry16_anchor_20260403__20260403-062632",
+  "input_payload": {
+    "review_policy": "llm_multi_prompt_adjudication_v2",
+    "adjudication_contract_version": "packet_adjudication_rubric_v4",
+    "case": {
+      "case_id": "education_of_henry_adams_public_en__16__anchored_reaction_selectivity__seed_v1",
+      "case_title": "The Education of Henry Adams / XI: The Battle of the Rams (1863) / anchored_reaction_selectivity",
+      "book_title": "The Education of Henry Adams",
+      "author": "Henry Adams",
+      "chapter_id": "16",
+      "chapter_title": "XI: The Battle of the Rams (1863)",
+      "target_profile_id": "anchored_reaction_selectivity",
+      "selection_role": "narrative_reflective",
+      "question_ids": [
+        "EQ-CM-002",
+        "EQ-AV2-005"
+      ],
+      "phenomena": [
+        "reaction_anchor",
+        "selective_legibility",
+        "visible_thought"
+      ],
+      "role_tags": [
+        "narrative_reflective",
+        "historical_reflection",
+        "memoir"
+      ],
+      "type_tags": [
+        "narrative_reflective",
+        "memoir",
+        "historical_reflection"
+      ],
+      "selection_reason": "Selected because the passage contains a line that seems reaction-worthy but still demands selective, anchored reading. Anchor line: “I weakly supposed … I really, though most strangely, believed that it was an act of friendliness.”",
+      "judge_focus": "Is the visible reaction anchored to the actual line and genuinely worth preserving?",
+      "excerpt_text": "Gladstone’s offence, “singular and palpable,” was not the speech alone, but its cause—the policy that inspired the speech.\n“I weakly supposed … I really, though most strangely, believed that it was an act of friendliness.”\nWhatever absurdity Gladstone supposed, Russell supposed nothing of the sort."
+    },
+    "audit_prompt_inputs": {
+      "factual_audit": {
+        "ok": true,
+        "issues": []
+      },
+      "primary_review": {
+        "decision": "keep",
+        "problem_types": [],
+        "bucket_fit_band": "strong",
+        "focus_clarity_band": "strong",
+        "excerpt_strength_band": "strong"
+      },
+      "adversarial_review": {
+        "has_high_risk": false,
+        "suspected_problem_types": []
+      }
+    },
+    "system_prompt_hash": "d90ebeea244aa4cca1ffb4e4ccdcbe25e7b65fb64948d5f08eea530992595b06",
+    "user_prompt_hash": "31b0569b1cb109643005989037d3cf5f35f8a106918218104f7e43e528b98c6b"
+  },
+  "error": {
+    "status": "ok",
+    "error_type": "",
+    "error_message": ""
+  }
+}

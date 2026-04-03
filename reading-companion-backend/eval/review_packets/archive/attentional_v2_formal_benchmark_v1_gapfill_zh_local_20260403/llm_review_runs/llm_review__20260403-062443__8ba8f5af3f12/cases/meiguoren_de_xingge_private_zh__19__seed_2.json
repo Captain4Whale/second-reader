@@ -1,0 +1,107 @@
+{
+  "case_id": "meiguoren_de_xingge_private_zh__19__seed_2",
+  "raw_model_payload": {
+    "benchmark_readiness": "ready",
+    "bucket_fit": "correct",
+    "focus_clarity": "clear",
+    "excerpt_integrity": "strong",
+    "review__action": "keep",
+    "review__confidence": "high",
+    "review__problem_types": [],
+    "review__revised_bucket": "",
+    "review__revised_selection_reason": "",
+    "review__revised_judge_focus": "",
+    "review__notes": "The excerpt presents a focused demonstration of American psychological ambivalence toward European cultural authority, explicitly showing the tension between reverence (心服) and competitive aspiration (争这口气, 报复). The five-sentence passage is internally coherent and directly illustrates the phenomenon of inferiority complex, competitive motivation, and drive for cultural independence as described. All audit gates pass cleanly with no adversarial risk flagged."
+  },
+  "normalized_review": {
+    "benchmark_readiness": "ready",
+    "bucket_fit": "correct",
+    "focus_clarity": "clear",
+    "excerpt_integrity": "strong",
+    "review__action": "keep",
+    "review__confidence": "high",
+    "review__problem_types": [
+      "other"
+    ],
+    "review__revised_bucket": "",
+    "review__revised_selection_reason": "",
+    "review__revised_judge_focus": "",
+    "review__notes": "The excerpt presents a focused demonstration of American psychological ambivalence toward European cultural authority, explicitly showing the tension between reverence (心服) and competitive aspiration (争这口气, 报复). The five-sentence passage is internally coherent and directly illustrates the phenomenon of inferiority complex, competitive motivation, and drive for cultural independence as described. All audit gates pass cleanly with no adversarial risk flagged."
+  },
+  "adjudication_input_fingerprint": "e576a91335aa55a3a782b4a04944b78020978ac82440cf984c963ac564249871",
+  "source_row_fingerprint": "9fff94b6a7e8e69f59998bd8f31e3a631b7b2b644608dbddb82d44790e02099c",
+  "packet_source_row_fingerprint": "9fff94b6a7e8e69f59998bd8f31e3a631b7b2b644608dbddb82d44790e02099c",
+  "prompt_case_fingerprint": "7d1b21f5d337533df9472c0dfdae7edf70be977adc4084bb53485eba86fff288",
+  "audit_row_fingerprint": "9e7e747b0546ac6e0f6f66f97bdf694db496ba5f9558adf9dac8f7f1c6dbb286",
+  "prompt_hashes": {
+    "system_prompt_hash": "d90ebeea244aa4cca1ffb4e4ccdcbe25e7b65fb64948d5f08eea530992595b06",
+    "user_prompt_hash": "d7515955cc79f3560108ae1430018bf0e17dcd3417221a7546a51589b8564031"
+  },
+  "selected_target_id": "MiniMax-M2.7-personal",
+  "selected_tier_id": "primary",
+  "provider_id": "MiniMax-M2.7-personal",
+  "contract": "anthropic",
+  "model": "MiniMax-M2.7",
+  "key_slot_id": "primary",
+  "selection_reason": "healthy_tier_selection",
+  "selection_override_source": "",
+  "trace_call_id": "6387f0b50c3b48e487cfdac3dfcce578",
+  "trace_status": "ok",
+  "attempt_count": 1,
+  "source_case_audit_run_id": "attentional_v2_formal_benchmark_v1_gapfill_zh_local_20260403__20260403-062054",
+  "input_payload": {
+    "review_policy": "llm_multi_prompt_adjudication_v2",
+    "adjudication_contract_version": "packet_adjudication_rubric_v4",
+    "case": {
+      "case_id": "meiguoren_de_xingge_private_zh__19__seed_2",
+      "case_title": "",
+      "book_title": "美国人的性格",
+      "author": "费孝通",
+      "chapter_id": "19",
+      "chapter_title": "5 幸福单车的脱节",
+      "target_profile_id": "",
+      "selection_role": "expository",
+      "question_ids": [],
+      "phenomena": [],
+      "role_tags": [
+        "expository",
+        "argumentative",
+        "history",
+        "modern_nonfiction",
+        "social_reportage"
+      ],
+      "type_tags": [
+        "social_reportage",
+        "history",
+        "modern_nonfiction"
+      ],
+      "selection_reason": "This excerpt presents a nuanced analysis of American psychological attitude toward European culture - specifically the contradictory stance of both revering and seeking to surpass European standards. It demonstrates how national identity formation involves complex emotional negotiations between deference and competition.",
+      "judge_focus": "Evaluate whether the model can accurately identify and analyze the described cultural/psychological phenomenon of American ambivalence toward European cultural authority, including the concepts of inferiority complex, competitive motivation, and the drive for cultural independence.",
+      "excerpt_text": "肯这样虚心那是因为他们要强爷娘，胜祖宗，他们知道现在在文化上究竟还落后一点，还得争这口气。\n美国人对于欧洲因之有着很矛盾的态度。\n他们对于欧洲的标准是心服的，但是他们负了气。\n他们对欧洲想报复，想使他们说一声：“好孩子。”\n他们决没有丝毫要回乡的念头，他们有决心要在新大陆创立个更好的世界给大西洋那边的人看看。"
+    },
+    "audit_prompt_inputs": {
+      "factual_audit": {
+        "ok": true,
+        "issues": []
+      },
+      "primary_review": {
+        "decision": "keep",
+        "problem_types": [],
+        "bucket_fit_band": "strong",
+        "focus_clarity_band": "strong",
+        "excerpt_strength_band": "strong"
+      },
+      "adversarial_review": {
+        "has_high_risk": false,
+        "suspected_problem_types": []
+      }
+    },
+    "system_prompt_hash": "d90ebeea244aa4cca1ffb4e4ccdcbe25e7b65fb64948d5f08eea530992595b06",
+    "user_prompt_hash": "d7515955cc79f3560108ae1430018bf0e17dcd3417221a7546a51589b8564031"
+  },
+  "error": {
+    "status": "ok",
+    "error_type": "",
+    "error_message": ""
+  }
+}

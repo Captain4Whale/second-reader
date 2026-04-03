@@ -44,13 +44,13 @@
     },
     "excerpt_core": {
       "target_total": 24,
-      "ready_now": 18,
-      "gap": 6
+      "ready_now": 24,
+      "gap": 0
     },
     "total": {
       "target_total": 40,
-      "ready_now": 34,
-      "gap": 6
+      "ready_now": 40,
+      "gap": 0
     }
   },
   "splits": {
@@ -123,20 +123,24 @@
           "women_and_economics_public_en__9__distinction_definition__v2",
           "varieties_of_religious_experience_public_en__6__distinction_definition__v2",
           "gushi_xinbian_public_zh__4__distinction_definition__v2",
-          "ouyou_zaji_public_zh__4__distinction_definition__v2"
+          "ouyou_zaji_public_zh__4__distinction_definition__v2",
+          "zouchu_weiyi_zhenliguan_private_zh__14__seed_1"
         ],
         "tension_reversal": [
           "darkwater_public_en__9__tension_reversal__v2",
           "darkwater_public_en__12__tension_reversal__v2",
           "rulin_waishi_24032_zh__6__tension_reversal__v2",
           "rulin_waishi_24032_zh__14__tension_reversal__v2",
-          "ershinian_mudu_public_zh__17__tension_reversal__v2"
+          "ershinian_mudu_public_zh__17__tension_reversal__v2",
+          "education_of_henry_adams_public_en__8__tension_reversal__seed_v1"
         ],
         "anchored_reaction_selectivity": [
           "up_from_slavery_public_en__5__anchored_reaction_selectivity__v2",
           "nahan_27166_zh__5__anchored_reaction_selectivity__v2",
           "zhaohua_xishi_25271_zh__5__anchored_reaction_selectivity__v2",
-          "ershinian_mudu_public_zh__37__anchored_reaction_selectivity__v2"
+          "ershinian_mudu_public_zh__37__anchored_reaction_selectivity__v2",
+          "steve_jobs_private_en__43__seed_1",
+          "education_of_henry_adams_public_en__16__anchored_reaction_selectivity__seed_v1"
         ],
         "callback_bridge_or_modest_cross_span_link": [
           "walden_205_en__6__callback_bridge__v2",
@@ -144,7 +148,10 @@
           "jinghua_yuan_25377_zh__34__callback_bridge__v2",
           "nahan_27166_zh__2__callback_bridge__v2"
         ],
-        "clarification_wildcard_or_undercovered_pressure": []
+        "clarification_wildcard_or_undercovered_pressure": [
+          "evicted_private_en__29__seed_1",
+          "meiguoren_de_xingge_private_zh__19__seed_2"
+        ]
       },
       "all": [
         "women_and_economics_public_en__6__distinction_definition__v2",
@@ -152,19 +159,25 @@
         "varieties_of_religious_experience_public_en__6__distinction_definition__v2",
         "gushi_xinbian_public_zh__4__distinction_definition__v2",
         "ouyou_zaji_public_zh__4__distinction_definition__v2",
+        "zouchu_weiyi_zhenliguan_private_zh__14__seed_1",
         "darkwater_public_en__9__tension_reversal__v2",
         "darkwater_public_en__12__tension_reversal__v2",
         "rulin_waishi_24032_zh__6__tension_reversal__v2",
         "rulin_waishi_24032_zh__14__tension_reversal__v2",
         "ershinian_mudu_public_zh__17__tension_reversal__v2",
+        "education_of_henry_adams_public_en__8__tension_reversal__seed_v1",
         "up_from_slavery_public_en__5__anchored_reaction_selectivity__v2",
         "nahan_27166_zh__5__anchored_reaction_selectivity__v2",
         "zhaohua_xishi_25271_zh__5__anchored_reaction_selectivity__v2",
         "ershinian_mudu_public_zh__37__anchored_reaction_selectivity__v2",
+        "steve_jobs_private_en__43__seed_1",
+        "education_of_henry_adams_public_en__16__anchored_reaction_selectivity__seed_v1",
         "walden_205_en__6__callback_bridge__v2",
         "on_liberty_public_en__10__callback_bridge__v2",
         "jinghua_yuan_25377_zh__34__callback_bridge__v2",
-        "nahan_27166_zh__2__callback_bridge__v2"
+        "nahan_27166_zh__2__callback_bridge__v2",
+        "evicted_private_en__29__seed_1",
+        "meiguoren_de_xingge_private_zh__19__seed_2"
       ]
     },
     "excerpt_overflow_or_holdout_reviewed": {
@@ -178,7 +191,8 @@
       ],
       "not_recommended_for_current_freeze": [
         "chenlun_public_zh__4__callback_bridge__seed_v1",
-        "portrait_of_a_lady_public_en__10__anchored_reaction_selectivity__v2"
+        "portrait_of_a_lady_public_en__10__anchored_reaction_selectivity__v2",
+        "education_of_henry_adams_public_en__16__callback_bridge__seed_v1"
       ]
     },
     "excerpt_gap_fill_priority": {
@@ -194,25 +208,48 @@
             "portrait_of_a_lady_public_en__10__anchored_reaction_selectivity__v2"
           ]
         },
-        "local_question_aligned_promotion_next": {
-          "tension_reversal": [
-            "education_of_henry_adams_public_en__8__tension_reversal__seed_v1"
+        "formal_gapfill_closeout_20260403": {
+          "accepted_primary_cases": {
+            "distinction_definition": [
+              "zouchu_weiyi_zhenliguan_private_zh__14__seed_1"
+            ],
+            "tension_reversal": [
+              "education_of_henry_adams_public_en__8__tension_reversal__seed_v1"
+            ],
+            "anchored_reaction_selectivity": [
+              "steve_jobs_private_en__43__seed_1",
+              "education_of_henry_adams_public_en__16__anchored_reaction_selectivity__seed_v1"
+            ],
+            "clarification_wildcard_or_undercovered_pressure": [
+              "evicted_private_en__29__seed_1",
+              "meiguoren_de_xingge_private_zh__19__seed_2"
+            ]
+          },
+          "job_refs": [
+            "bgjob_formal_benchmark_v1_gapfill_en_local_20260403",
+            "bgjob_formal_benchmark_v1_gapfill_zh_local_20260403",
+            "bgjob_formal_benchmark_v1_gapfill_henry_20260403",
+            "bgjob_formal_benchmark_v1_gapfill_henry16_anchor_20260403"
           ],
-          "anchored_reaction_selectivity": [
-            "education_of_henry_adams_public_en__16__anchored_reaction_selectivity__seed_v1"
-          ]
+          "evidence_refs": [
+            "reading-companion-backend/eval/review_packets/archive/attentional_v2_formal_benchmark_v1_gapfill_en_local_20260403/dataset_review_pipeline_summary.json",
+            "reading-companion-backend/eval/review_packets/archive/attentional_v2_formal_benchmark_v1_gapfill_zh_local_20260403/dataset_review_pipeline_summary.json",
+            "reading-companion-backend/eval/review_packets/archive/attentional_v2_formal_benchmark_v1_gapfill_henry16_anchor_20260403/dataset_review_pipeline_summary.json",
+            "reading-companion-backend/state/dataset_build/build_runs/formal_benchmark_v1_gapfill_henry_20260403/closed_loop_benchmark_curation_summary.json"
+          ],
+          "result": "completed_without_fallbacks"
         },
-        "current_remaining_after_bounded_reruns": {
+        "current_remaining_after_gapfill": {
           "distinction_definition": {
             "en": 0,
-            "zh": 1
+            "zh": 0
           },
           "tension_reversal": {
-            "en": 1,
+            "en": 0,
             "zh": 0
           },
           "anchored_reaction_selectivity": {
-            "en": 2,
+            "en": 0,
             "zh": 0
           },
           "callback_bridge_or_modest_cross_span_link": {
@@ -220,46 +257,33 @@
             "zh": 0
           },
           "clarification_wildcard_or_undercovered_pressure": {
-            "en": 1,
-            "zh": 1
+            "en": 0,
+            "zh": 0
           }
         }
       },
       "reserves_and_alternates": {
-        "anchored_reaction_selectivity": [
-          "portrait_of_a_lady_public_en__10__anchored_reaction_selectivity__v2"
-        ],
-        "distinction_definition": [
-          "on_liberty_public_en__13__distinction_definition__seed_v1"
-        ],
-        "tension_reversal": [
+        "unused_fallbacks_after_closeout": {
+          "distinction_definition": [
+            "biji_de_fangfa_private_zh__13__seed_1"
+          ],
+          "tension_reversal": [
+            "on_liberty_public_en__5__tension_reversal__seed_v1"
+          ],
+          "anchored_reaction_selectivity": [
+            "portrait_of_a_lady_public_en__10__anchored_reaction_selectivity__v2"
+          ],
+          "clarification_wildcard_or_undercovered_pressure": [
+            "good_strategy_bad_strategy_private_en__22__seed_1",
+            "meiguoren_de_xingge_private_zh__8__seed_1"
+          ]
+        },
+        "additional_reserves_not_used": [
+          "on_liberty_public_en__13__distinction_definition__seed_v1",
           "beiying_public_zh__2__tension_reversal__seed_v1",
-          "on_liberty_public_en__5__tension_reversal__seed_v1"
-        ],
-        "callback_bridge_or_modest_cross_span_link": [
           "on_liberty_public_en__4__callback_bridge__seed_v1",
           "on_liberty_public_en__5__callback_bridge__seed_v1",
           "education_of_henry_adams_public_en__29__callback_bridge__seed_v1"
-        ]
-      },
-      "next_stage_targets_for_final_four_gaps": {
-        "en_anchored_reaction_selectivity_tracked_fallback": [
-          "portrait_of_a_lady_public_en__10__anchored_reaction_selectivity__v2"
-        ],
-        "zh_distinction_definition_or_clarifying_distinction": [
-          "zouchu_weiyi_zhenliguan_private_zh__14__seed_1",
-          "biji_de_fangfa_private_zh__13__seed_1",
-          "meiguoren_de_xingge_private_zh__8__seed_1"
-        ],
-        "en_clarification_wildcard": [
-          "evicted_private_en__29__seed_1",
-          "good_strategy_bad_strategy_private_en__22__seed_1",
-          "steve_jobs_private_en__43__seed_1"
-        ],
-        "zh_clarification_wildcard": [
-          "kangxi_hongpiao_private_zh__12__seed_1",
-          "meiguoren_de_xingge_private_zh__19__seed_2",
-          "zhangzhongmou_zizhuan_private_zh__4__seed_1"
         ]
       }
     }

@@ -1,0 +1,107 @@
+{
+  "case_id": "evicted_private_en__29__seed_1",
+  "raw_model_payload": {
+    "benchmark_readiness": "ready",
+    "bucket_fit": "correct",
+    "focus_clarity": "clear",
+    "excerpt_integrity": "strong",
+    "review__action": "keep",
+    "review__confidence": "high",
+    "review__problem_types": [],
+    "review__revised_bucket": "",
+    "review__revised_selection_reason": "",
+    "review__revised_judge_focus": "",
+    "review__notes": "All gates pass: clean factual audit, strong bands across primary review, no adversarial high-risk flags. The excerpt provides textbook social reportage material with clear textual anchors for the nuanced interpretation—Larraine's stated resignation to being 'poor and rent-strapped forever' alongside her aspirational desires ('we deserve, too, something brand-new') gives models concrete material for the dignity-versus-fiscal-rationality distinction. The expository bucket correctly captures the illustrative, analytical purpose. No grounds for revision or rejection."
+  },
+  "normalized_review": {
+    "benchmark_readiness": "ready",
+    "bucket_fit": "correct",
+    "focus_clarity": "clear",
+    "excerpt_integrity": "strong",
+    "review__action": "keep",
+    "review__confidence": "high",
+    "review__problem_types": [
+      "other"
+    ],
+    "review__revised_bucket": "",
+    "review__revised_selection_reason": "",
+    "review__revised_judge_focus": "",
+    "review__notes": "All gates pass: clean factual audit, strong bands across primary review, no adversarial high-risk flags. The excerpt provides textbook social reportage material with clear textual anchors for the nuanced interpretation—Larraine's stated resignation to being 'poor and rent-strapped forever' alongside her aspirational desires ('we deserve, too, something brand-new') gives models concrete material for the dignity-versus-fiscal-rationality distinction. The expository bucket correctly captures the illustrative, analytical purpose. No grounds for revision or rejection."
+  },
+  "adjudication_input_fingerprint": "a90c40b53349602d7640511873ee6e9cacbad3d94c00940aec6a5a3e9d4fc373",
+  "source_row_fingerprint": "5481f4a92a85fc45bcde901d872381402d48b6799f75b945687f04357711e1c0",
+  "packet_source_row_fingerprint": "5481f4a92a85fc45bcde901d872381402d48b6799f75b945687f04357711e1c0",
+  "prompt_case_fingerprint": "28a9b130c097031c92569e1e1d1f35034de104d13868796580bef121e4b0ae29",
+  "audit_row_fingerprint": "9e7e747b0546ac6e0f6f66f97bdf694db496ba5f9558adf9dac8f7f1c6dbb286",
+  "prompt_hashes": {
+    "system_prompt_hash": "d90ebeea244aa4cca1ffb4e4ccdcbe25e7b65fb64948d5f08eea530992595b06",
+    "user_prompt_hash": "8ff5ad6e3989286837fab1e0bf2b08c6af0a76dca3b079cc7e8263b281df95dc"
+  },
+  "selected_target_id": "MiniMax-M2.7-personal",
+  "selected_tier_id": "primary",
+  "provider_id": "MiniMax-M2.7-personal",
+  "contract": "anthropic",
+  "model": "MiniMax-M2.7",
+  "key_slot_id": "primary",
+  "selection_reason": "healthy_tier_selection",
+  "selection_override_source": "",
+  "trace_call_id": "ef944258e387457abe9111948aa7f93d",
+  "trace_status": "ok",
+  "attempt_count": 1,
+  "source_case_audit_run_id": "attentional_v2_formal_benchmark_v1_gapfill_en_local_20260403__20260403-061445",
+  "input_payload": {
+    "review_policy": "llm_multi_prompt_adjudication_v2",
+    "adjudication_contract_version": "packet_adjudication_rubric_v4",
+    "case": {
+      "case_id": "evicted_private_en__29__seed_1",
+      "case_title": "",
+      "book_title": "Evicted",
+      "author": "Matthew Desmond",
+      "chapter_id": "29",
+      "chapter_title": "Chapter 18: Lobster on Food Stamps",
+      "target_profile_id": "",
+      "selection_role": "expository",
+      "question_ids": [],
+      "phenomena": [],
+      "role_tags": [
+        "expository",
+        "narrative_reflective",
+        "history",
+        "modern_nonfiction",
+        "social_reportage"
+      ],
+      "type_tags": [
+        "social_reportage",
+        "history",
+        "modern_nonfiction"
+      ],
+      "selection_reason": "This excerpt illustrates how individuals facing chronic poverty and housing instability maintain dignity and aspirational identity through material desires—wanting new furniture, perfume, and brand-new items as a form of self-respect despite financial constraints.",
+      "judge_focus": "Assess whether the model correctly identifies Larraine's economic desperation ('rent-strapped forever') while recognizing her refusal to sacrifice personal possessions as dignity preservation rather than pure fiscal irrationality. The model should distinguish between surface-level 'poor person making irrational choices' and the deeper psychological need to maintain aspirational self-concept.",
+      "excerpt_text": "It wasn’t like she had just stumbled into a pit and would soon climb out.\nLarraine imagined she would be poor and rent-strapped forever.\nAnd if that was to be her lot in life, she might as well have a little jewelry to show for it.\nShe wanted a new television, not some worn and boxy thing inherited from Lane and Susan.\nShe wanted a bed no one else had slept in.\nShe loved perfume and could tell you what a woman was wearing after passing her on the sidewalk.\n“Even people like myself,” Larraine said, “we deserve, too, something brand-new.”4"
+    },
+    "audit_prompt_inputs": {
+      "factual_audit": {
+        "ok": true,
+        "issues": []
+      },
+      "primary_review": {
+        "decision": "keep",
+        "problem_types": [],
+        "bucket_fit_band": "strong",
+        "focus_clarity_band": "strong",
+        "excerpt_strength_band": "strong"
+      },
+      "adversarial_review": {
+        "has_high_risk": false,
+        "suspected_problem_types": []
+      }
+    },
+    "system_prompt_hash": "d90ebeea244aa4cca1ffb4e4ccdcbe25e7b65fb64948d5f08eea530992595b06",
+    "user_prompt_hash": "8ff5ad6e3989286837fab1e0bf2b08c6af0a76dca3b079cc7e8263b281df95dc"
+  },
+  "error": {
+    "status": "ok",
+    "error_type": "",
+    "error_message": ""
+  }
+}

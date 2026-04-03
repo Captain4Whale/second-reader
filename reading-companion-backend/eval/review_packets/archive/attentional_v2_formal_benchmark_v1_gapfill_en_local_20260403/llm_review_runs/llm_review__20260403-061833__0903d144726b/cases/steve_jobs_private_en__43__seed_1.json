@@ -1,0 +1,109 @@
+{
+  "case_id": "steve_jobs_private_en__43__seed_1",
+  "raw_model_payload": {
+    "benchmark_readiness": "ready",
+    "bucket_fit": "correct",
+    "focus_clarity": "clear",
+    "excerpt_integrity": "strong",
+    "review__action": "keep",
+    "review__confidence": "high",
+    "review__problem_types": [],
+    "review__revised_bucket": "",
+    "review__revised_selection_reason": "",
+    "review__revised_judge_focus": "",
+    "review__notes": "This case passes all gates cleanly. The factual audit is clean, all primary review bands rate strong, and adversarial review shows no high risk. The excerpt is a focused, well-contained example of Jobs' design philosophy with explicit language ('purity', 'glom all this stuff', 'each element be true to itself') that directly serves the judge focus. The selection reason accurately captures the case's purpose. No workflow-stage issues are present that would warrant revision or dropping. The case is benchmark-ready."
+  },
+  "normalized_review": {
+    "benchmark_readiness": "ready",
+    "bucket_fit": "correct",
+    "focus_clarity": "clear",
+    "excerpt_integrity": "strong",
+    "review__action": "keep",
+    "review__confidence": "high",
+    "review__problem_types": [
+      "other"
+    ],
+    "review__revised_bucket": "",
+    "review__revised_selection_reason": "",
+    "review__revised_judge_focus": "",
+    "review__notes": "This case passes all gates cleanly. The factual audit is clean, all primary review bands rate strong, and adversarial review shows no high risk. The excerpt is a focused, well-contained example of Jobs' design philosophy with explicit language ('purity', 'glom all this stuff', 'each element be true to itself') that directly serves the judge focus. The selection reason accurately captures the case's purpose. No workflow-stage issues are present that would warrant revision or dropping. The case is benchmark-ready."
+  },
+  "adjudication_input_fingerprint": "6c3b30f30139c56750df62d012ceb9b89eddfbd0733fa2380dd8ba9d5ee4d534",
+  "source_row_fingerprint": "623b654789306a095af3415424a6c4e9946d8d728fce6d3567e254106ccc611a",
+  "packet_source_row_fingerprint": "623b654789306a095af3415424a6c4e9946d8d728fce6d3567e254106ccc611a",
+  "prompt_case_fingerprint": "29b7ed81f22dfeb5153bbd68d68e21d3179324a4b7571990f3599598632c0c0a",
+  "audit_row_fingerprint": "9e7e747b0546ac6e0f6f66f97bdf694db496ba5f9558adf9dac8f7f1c6dbb286",
+  "prompt_hashes": {
+    "system_prompt_hash": "d90ebeea244aa4cca1ffb4e4ccdcbe25e7b65fb64948d5f08eea530992595b06",
+    "user_prompt_hash": "462361429f72b32b33058d337d52d52e6c751006a23a0cc6dd2e30e4523dadda"
+  },
+  "selected_target_id": "MiniMax-M2.7-personal",
+  "selected_tier_id": "primary",
+  "provider_id": "MiniMax-M2.7-personal",
+  "contract": "anthropic",
+  "model": "MiniMax-M2.7",
+  "key_slot_id": "primary",
+  "selection_reason": "healthy_tier_selection",
+  "selection_override_source": "",
+  "trace_call_id": "0df32c4b2f554af88ad215430eea0c30",
+  "trace_status": "ok",
+  "attempt_count": 1,
+  "source_case_audit_run_id": "attentional_v2_formal_benchmark_v1_gapfill_en_local_20260403__20260403-061445",
+  "input_payload": {
+    "review_policy": "llm_multi_prompt_adjudication_v2",
+    "adjudication_contract_version": "packet_adjudication_rubric_v4",
+    "case": {
+      "case_id": "steve_jobs_private_en__43__seed_1",
+      "case_title": "",
+      "book_title": "Steve Jobs",
+      "author": "Walter Isaacson",
+      "chapter_id": "43",
+      "chapter_title": "Chapter Thirty-Four: Twenty-first-century Macs: Setting Apple Apart",
+      "target_profile_id": "",
+      "selection_role": "narrative_reflective",
+      "question_ids": [],
+      "phenomena": [],
+      "role_tags": [
+        "narrative_reflective",
+        "reference_heavy",
+        "biography",
+        "business",
+        "modern_nonfiction",
+        "science_technology"
+      ],
+      "type_tags": [
+        "biography",
+        "business",
+        "science_technology",
+        "modern_nonfiction"
+      ],
+      "selection_reason": "Excerpt captures Jobs criticizing a design for lacking 'purity' and advocating that 'each element be true to itself' - exemplifies his perfectionist approach to product design and aesthetic philosophy.",
+      "judge_focus": "Evaluate whether the model can identify Jobs' design philosophy emphasizing purity and holistic integrity in product engineering.",
+      "excerpt_text": "Jobs didn’t like it.\nAs he often did, both at Pixar and at Apple, he slammed on the brakes to rethink things.\nThere was something about the design that lacked purity, he felt.\n“Why have this flat display if you’re going to glom all this stuff on its back?”\nhe asked Ive.\n“We should let each element be true to itself.”\nJobs went home early that day to mull over the problem, then called Ive to come by."
+    },
+    "audit_prompt_inputs": {
+      "factual_audit": {
+        "ok": true,
+        "issues": []
+      },
+      "primary_review": {
+        "decision": "keep",
+        "problem_types": [],
+        "bucket_fit_band": "strong",
+        "focus_clarity_band": "strong",
+        "excerpt_strength_band": "strong"
+      },
+      "adversarial_review": {
+        "has_high_risk": false,
+        "suspected_problem_types": []
+      }
+    },
+    "system_prompt_hash": "d90ebeea244aa4cca1ffb4e4ccdcbe25e7b65fb64948d5f08eea530992595b06",
+    "user_prompt_hash": "462361429f72b32b33058d337d52d52e6c751006a23a0cc6dd2e30e4523dadda"
+  },
+  "error": {
+    "status": "ok",
+    "error_type": "",
+    "error_message": ""
+  }
+}

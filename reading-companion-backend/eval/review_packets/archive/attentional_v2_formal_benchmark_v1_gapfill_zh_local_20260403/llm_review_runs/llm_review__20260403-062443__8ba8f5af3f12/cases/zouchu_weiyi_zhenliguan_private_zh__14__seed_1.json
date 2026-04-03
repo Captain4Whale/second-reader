@@ -1,0 +1,107 @@
+{
+  "case_id": "zouchu_weiyi_zhenliguan_private_zh__14__seed_1",
+  "raw_model_payload": {
+    "benchmark_readiness": "ready",
+    "bucket_fit": "correct",
+    "focus_clarity": "clear",
+    "excerpt_integrity": "strong",
+    "review__action": "keep",
+    "review__confidence": "high",
+    "review__problem_types": [],
+    "review__revised_bucket": "",
+    "review__revised_selection_reason": "",
+    "review__revised_judge_focus": "",
+    "review__notes": "Clean factual audit, strong primary review with all bands at strong, and no adversarial high-risk flags. The excerpt presents a clear philosophical distinction (caring about principles vs. skill in articulating them) with specific, testable examples (Tolstoy's theoretical writing weakness, Hegel's inability to write fiction). The dialogue format naturally exposes reasoning about skill differentiation. No concrete defects in the excerpt itself warrant revision or removal."
+  },
+  "normalized_review": {
+    "benchmark_readiness": "ready",
+    "bucket_fit": "correct",
+    "focus_clarity": "clear",
+    "excerpt_integrity": "strong",
+    "review__action": "keep",
+    "review__confidence": "high",
+    "review__problem_types": [
+      "other"
+    ],
+    "review__revised_bucket": "",
+    "review__revised_selection_reason": "",
+    "review__revised_judge_focus": "",
+    "review__notes": "Clean factual audit, strong primary review with all bands at strong, and no adversarial high-risk flags. The excerpt presents a clear philosophical distinction (caring about principles vs. skill in articulating them) with specific, testable examples (Tolstoy's theoretical writing weakness, Hegel's inability to write fiction). The dialogue format naturally exposes reasoning about skill differentiation. No concrete defects in the excerpt itself warrant revision or removal."
+  },
+  "adjudication_input_fingerprint": "6dde07e24178d9db3696d97d8f44aae4e4d0fecdbbf8646ca48b064b4ac53a04",
+  "source_row_fingerprint": "2867cc56858934206a83cf0b5f72ec0591c6fa974c97c1c0270be0e84d49c228",
+  "packet_source_row_fingerprint": "2867cc56858934206a83cf0b5f72ec0591c6fa974c97c1c0270be0e84d49c228",
+  "prompt_case_fingerprint": "8f4cfff99018eee9df7904dfaf0d53986e55bd15a8ea0e30ab04293f6907e537",
+  "audit_row_fingerprint": "9e7e747b0546ac6e0f6f66f97bdf694db496ba5f9558adf9dac8f7f1c6dbb286",
+  "prompt_hashes": {
+    "system_prompt_hash": "d90ebeea244aa4cca1ffb4e4ccdcbe25e7b65fb64948d5f08eea530992595b06",
+    "user_prompt_hash": "515a7bb83228b09fee5cd7cc2bc6b69d4d77b5b962cada8ba79100259a778aba"
+  },
+  "selected_target_id": "MiniMax-M2.7-personal",
+  "selected_tier_id": "primary",
+  "provider_id": "MiniMax-M2.7-personal",
+  "contract": "anthropic",
+  "model": "MiniMax-M2.7",
+  "key_slot_id": "primary",
+  "selection_reason": "healthy_tier_selection",
+  "selection_override_source": "",
+  "trace_call_id": "ef500c1d5a9e467abbb1b87102b4160c",
+  "trace_status": "ok",
+  "attempt_count": 1,
+  "source_case_audit_run_id": "attentional_v2_formal_benchmark_v1_gapfill_zh_local_20260403__20260403-062054",
+  "input_payload": {
+    "review_policy": "llm_multi_prompt_adjudication_v2",
+    "adjudication_contract_version": "packet_adjudication_rubric_v4",
+    "case": {
+      "case_id": "zouchu_weiyi_zhenliguan_private_zh__14__seed_1",
+      "case_title": "",
+      "book_title": "走出唯一真理观",
+      "author": "陈嘉映",
+      "chapter_id": "14",
+      "chapter_title": "说理与对话",
+      "target_profile_id": "",
+      "selection_role": "expository",
+      "question_ids": [],
+      "phenomena": [],
+      "role_tags": [
+        "expository",
+        "argumentative",
+        "modern_nonfiction",
+        "philosophical",
+        "psychology_decision"
+      ],
+      "type_tags": [
+        "psychology_decision",
+        "philosophical",
+        "modern_nonfiction"
+      ],
+      "selection_reason": "This dialogue discusses the distinction between caring about principles (关心道理) and the ability to articulate/explain them (讲道理), using Tolstoy and Hegel as examples. It explores how reasoning is a distinct skill that requires special cultivation.",
+      "judge_focus": "Does the model understand that the ability to reason well is distinct from simply caring about truth or having good judgment? Can it recognize the examples used (Tolstoy's weakness in theoretical writing, Hegel's inability to write fiction) and the distinction being drawn about skill differentiation in reasoning vs. storytelling?",
+      "excerpt_text": "刘：并不是每个关心道理的人都会讲道理。\n且不说我们身边的人，伟大如托尔斯泰，具有非凡的智力，一旦讲道理，立刻僵化，《我们该怎么办》一书，第一部分描述莫斯科的贫民生活，几乎没有比他对那些破败房屋、肮脏街道和丧失希望者的描述更加出色的了，但是第二部讲道理写得很一般，很多人都只读这部书的第一部分。\n陈：的确，托尔斯泰是一个挺好的例子，不少批评家说《战争与和平》后几章不写会更好。\n说理是一种特殊的能力，和讲故事的能力一样，和所有能力一样，多多少少需要特殊的锻炼。\n反过来也一样，黑格尔会说理，但不会写小说。"
+    },
+    "audit_prompt_inputs": {
+      "factual_audit": {
+        "ok": true,
+        "issues": []
+      },
+      "primary_review": {
+        "decision": "keep",
+        "problem_types": [],
+        "bucket_fit_band": "strong",
+        "focus_clarity_band": "strong",
+        "excerpt_strength_band": "strong"
+      },
+      "adversarial_review": {
+        "has_high_risk": false,
+        "suspected_problem_types": []
+      }
+    },
+    "system_prompt_hash": "d90ebeea244aa4cca1ffb4e4ccdcbe25e7b65fb64948d5f08eea530992595b06",
+    "user_prompt_hash": "515a7bb83228b09fee5cd7cc2bc6b69d4d77b5b962cada8ba79100259a778aba"
+  },
+  "error": {
+    "status": "ok",
+    "error_type": "",
+    "error_message": ""
+  }
+}

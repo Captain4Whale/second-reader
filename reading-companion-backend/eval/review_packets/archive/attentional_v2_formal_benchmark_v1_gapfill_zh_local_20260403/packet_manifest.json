@@ -1,0 +1,35 @@
+{
+  "packet_id": "attentional_v2_formal_benchmark_v1_gapfill_zh_local_20260403",
+  "packet_kind": "revision_replacement",
+  "created_at": "2026-04-03T06:20:54.011807Z",
+  "dataset_id": "attentional_v2_private_library_excerpt_zh_v2",
+  "family": "excerpt_cases",
+  "storage_mode": "local-only",
+  "dataset_manifest_path": "state/eval_local_datasets/excerpt_cases/attentional_v2_private_library_excerpt_zh_v2/manifest.json",
+  "dataset_primary_file_path": "state/eval_local_datasets/excerpt_cases/attentional_v2_private_library_excerpt_zh_v2/cases.jsonl",
+  "selection_filters": {
+    "statuses": [
+      "needs_revision",
+      "needs_replacement",
+      "reviewed_active"
+    ],
+    "limit": 0,
+    "case_ids": [
+      "zouchu_weiyi_zhenliguan_private_zh__14__seed_1",
+      "meiguoren_de_xingge_private_zh__19__seed_2"
+    ]
+  },
+  "case_count": 2,
+  "status_counts": {
+    "reviewed_active": 2
+  },
+  "import_contract_version": "1",
+  "review_origin": "llm",
+  "review_policy": "llm_multi_prompt_adjudication_v2",
+  "llm_review_run_id": "llm_review__20260403-062443__8ba8f5af3f12",
+  "llm_review_run_dir": "/Users/baiweijiang/Documents/Projects/reading-companion/reading-companion-backend/eval/review_packets/pending/attentional_v2_formal_benchmark_v1_gapfill_zh_local_20260403/llm_review_runs/llm_review__20260403-062443__8ba8f5af3f12",
+  "llm_review_generated_at": "2026-04-03T06:25:33.084398Z",
+  "source_case_audit_run_id": "attentional_v2_formal_benchmark_v1_gapfill_zh_local_20260403__20260403-062054",
+  "adjudication_contract_version": "packet_adjudication_rubric_v4",
+  "adjudication_input_fingerprint": "71b0644789b0e20f48e43a771ddbf54a44606340b68581201ba19348fe953da4"
+}

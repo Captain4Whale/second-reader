@@ -1,0 +1,26 @@
+{
+  "packet_id": "attentional_v2_formal_benchmark_v1_gapfill_zh_local_20260403",
+  "run_id": "llm_review__20260403-062443__8ba8f5af3f12",
+  "run_dir": "/Users/baiweijiang/Documents/Projects/reading-companion/reading-companion-backend/eval/review_packets/pending/attentional_v2_formal_benchmark_v1_gapfill_zh_local_20260403/llm_review_runs/llm_review__20260403-062443__8ba8f5af3f12",
+  "generated_at": "2026-04-03T06:25:33.084398Z",
+  "review_origin": "llm",
+  "review_policy": "llm_multi_prompt_adjudication_v2",
+  "adjudication_contract_version": "packet_adjudication_rubric_v4",
+  "case_count": 2,
+  "action_counts": {
+    "keep": 2
+  },
+  "source_case_audit_run_id": "attentional_v2_formal_benchmark_v1_gapfill_zh_local_20260403__20260403-062054",
+  "adjudication_input_fingerprint": "71b0644789b0e20f48e43a771ddbf54a44606340b68581201ba19348fe953da4",
+  "case_input_fingerprints": {
+    "meiguoren_de_xingge_private_zh__19__seed_2": "e576a91335aa55a3a782b4a04944b78020978ac82440cf984c963ac564249871",
+    "zouchu_weiyi_zhenliguan_private_zh__14__seed_1": "6dde07e24178d9db3696d97d8f44aae4e4d0fecdbbf8646ca48b064b4ac53a04"
+  },
+  "probe_only": false,
+  "input_payload_source": "live_audit_rows",
+  "reused_input_run_id": "",
+  "quota_recovery_attempted_count": 0,
+  "quota_recovery_succeeded_count": 0,
+  "quota_failure_remaining_count": 0,
+  "quota_recovery_passes_used": 0
+}

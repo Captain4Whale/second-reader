@@ -44,9 +44,9 @@ Update when: status changes, blockers appear, or phases complete.
     - implementation draft:
       - `docs/implementation/new-reading-mechanism/formal-benchmark-v1-freeze-draft.md`
     - practical consequence:
-      - `chapter_core` is now concrete enough to treat as frozen in draft form
-      - excerpt work should proceed only as quota-filling review waves, not as open-ended builder exploration
-    - first tracked builder-active excerpt wave plus the bounded reruns are now completed:
+      - `chapter_core` remains frozen in draft form at `16 / 16`
+      - excerpt work stayed bounded to quota-filling review waves instead of reopening builder exploration
+    - first tracked builder-active excerpt wave plus the bounded reruns are completed:
       - EN packet `attentional_v2_formal_benchmark_v1_excerpt_wave1_en_20260402`: `0 keep`, `2 revise`
       - ZH packet `attentional_v2_formal_benchmark_v1_excerpt_wave1_zh_20260402`: `2 keep`, `1 revise`
       - direct wave-1 frozen-now excerpt additions:
@@ -55,17 +55,36 @@ Update when: status changes, blockers appear, or phases complete.
       - bounded rerun additions after the excerpt-normalization repair:
         - `women_and_economics_public_en__9__distinction_definition__v2`
         - `rulin_waishi_24032_zh__6__tension_reversal__v2`
-      - excerpt freeze status is now:
-        - `chapter_core = 16 / 16`
-        - `excerpt_core = 18 / 24`
-        - `formal benchmark total = 34 / 40`
       - the bounded factual-audit repair is now landed in code:
         - excerpt comparison strips harmless `Cf` formatting characters and collapses whitespace / newline differences before judging `excerpt_text_mismatch`
         - targeted validation now passes in `reading-companion-backend/tests/test_case_design_audit.py` and `reading-companion-backend/tests/test_dataset_review_pipeline.py`
+    - the `2026-04-03` formal benchmark gap-fill closeout is now completed:
+      - EN local reviewed packet `attentional_v2_formal_benchmark_v1_gapfill_en_local_20260403`: `keep = 2`
+        - accepted:
+          - `steve_jobs_private_en__43__seed_1`
+          - `evicted_private_en__29__seed_1`
+      - ZH local reviewed packet `attentional_v2_formal_benchmark_v1_gapfill_zh_local_20260403`: `keep = 2`
+        - accepted:
+          - `zouchu_weiyi_zhenliguan_private_zh__14__seed_1`
+          - `meiguoren_de_xingge_private_zh__19__seed_2`
+      - Henry source-scoped rerun `formal_benchmark_v1_gapfill_henry_20260403`: `keep = 3`, `revise = 1`
+        - accepted for freeze:
+          - `education_of_henry_adams_public_en__8__tension_reversal__seed_v1`
+        - non-selected outcomes:
+          - `education_of_henry_adams_public_en__29__anchored_reaction_selectivity__seed_v1` stayed `keep` but was surplus to quota
+          - `education_of_henry_adams_public_en__16__callback_bridge__seed_v1` was `revise` with `ambiguous_focus`
+      - Henry single-case rerun `attentional_v2_formal_benchmark_v1_gapfill_henry16_anchor_20260403`: `keep = 1`
+        - accepted:
+          - `education_of_henry_adams_public_en__16__anchored_reaction_selectivity__seed_v1`
+      - no fallback jobs were needed
+      - excerpt freeze status is now:
+        - `chapter_core = 16 / 16`
+        - `excerpt_core = 24 / 24`
+        - `formal benchmark total = 40 / 40`
       - immediate next support move:
-        - freeze those two rerun keeps into the formal benchmark draft
-        - do not spend another immediate builder-active rerun on `portrait_of_a_lady_public_en__10__anchored_reaction_selectivity__v2`
-        - use the planned Henry Adams local promotions as the next clean EN tension / anchored support lane
+        - treat the formal benchmark-v1 dataset gap-fill as complete
+        - do not reopen a general builder wave or promotion review from this closeout alone
+        - spend next on the cheapest decisive mechanism-eval lane over the frozen benchmark
   - cheap honesty / integrity / compatibility checks remain useful sanity guards, but they are no longer treated as primary eval success targets
 - Current blockers:
   - the post-recovery gate review no longer blocks the next decisive lane:
@@ -918,6 +937,18 @@ Update when: status changes, blockers appear, or phases complete.
 - [ ] Make explicit default-cutover decision
 
 ## Notes Log
+- `2026-04-03`
+  - Closed the formal benchmark-v1 gap-fill wave to `40 / 40` without fallback reruns.
+  - Archived fresh accepted evidence for:
+    - `steve_jobs_private_en__43__seed_1`
+    - `evicted_private_en__29__seed_1`
+    - `zouchu_weiyi_zhenliguan_private_zh__14__seed_1`
+    - `meiguoren_de_xingge_private_zh__19__seed_2`
+    - `education_of_henry_adams_public_en__8__tension_reversal__seed_v1`
+    - `education_of_henry_adams_public_en__16__anchored_reaction_selectivity__seed_v1`
+  - Recorded the Henry callback non-selection explicitly:
+    - `education_of_henry_adams_public_en__16__callback_bridge__seed_v1` stayed `revise` with `ambiguous_focus`
+  - Synced the freeze draft, machine-readable manifest, current-state file, and task registry to the new `40 / 40` freeze.
 - `2026-03-23`
   - Created the temporary implementation workspace and seeded the plan, tracker, and question log from the current Notion design plus the stable repo rules.
   - Added omission-control docs, a source-block inventory, and seed coverage rows so untracked design areas stay visible.
