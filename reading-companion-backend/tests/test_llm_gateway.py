@@ -19,6 +19,7 @@ from src import config as config_module
 from src.iterator_reader import llm_utils
 from src.reading_runtime import artifacts as runtime_artifacts
 from src.reading_runtime import llm_registry as llm_registry_module
+from src.reading_runtime.job_concurrency import resolve_worker_policy
 from src.reading_runtime.llm_gateway import (
     CONTRACT_ADAPTERS,
     JsonlTraceSink,
@@ -325,6 +326,42 @@ def _two_minimax_targets(
                 "initial_max_concurrency": backup_initial_max_concurrency,
                 "probe_max_concurrency": backup_probe_max_concurrency,
                 "min_stable_concurrency": 1,
+            },
+        ]
+    }
+
+
+def _pooled_primary_bindings(
+    primary_target_ids: list[str],
+    *,
+    min_required_stable_concurrency: int = 1,
+    max_concurrency: int = 2,
+    default_burst_concurrency: int = 2,
+) -> dict[str, Any]:
+    primary_tier = {
+        "tier_id": "primary",
+        "target_ids": list(primary_target_ids),
+        "min_required_stable_concurrency": min_required_stable_concurrency,
+    }
+    return {
+        "profiles": [
+            {
+                "profile_id": DEFAULT_RUNTIME_PROFILE_ID,
+                "target_tiers": [primary_tier],
+                "max_concurrency": max_concurrency,
+                "default_burst_concurrency": default_burst_concurrency,
+            },
+            {
+                "profile_id": DEFAULT_DATASET_REVIEW_PROFILE_ID,
+                "target_tiers": [primary_tier],
+                "max_concurrency": max_concurrency,
+                "default_burst_concurrency": default_burst_concurrency,
+            },
+            {
+                "profile_id": DEFAULT_EVAL_JUDGE_PROFILE_ID,
+                "target_tiers": [primary_tier],
+                "max_concurrency": max_concurrency,
+                "default_burst_concurrency": default_burst_concurrency,
             },
         ]
     }
@@ -1653,6 +1690,202 @@ def test_same_key_parallelism_allows_multiple_inflight_calls(monkeypatch: pytest
 
     assert len(results) == 2
     assert adapter.max_active_calls >= 2
+
+
+def test_same_tier_parallel_scopes_distribute_across_targets(monkeypatch: pytest.MonkeyPatch):
+    _set_targets_and_bindings(
+        monkeypatch,
+        targets=_two_minimax_targets(
+            primary_max_concurrency=1,
+            primary_initial_max_concurrency=1,
+            primary_probe_max_concurrency=1,
+            backup_max_concurrency=1,
+            backup_initial_max_concurrency=1,
+            backup_probe_max_concurrency=1,
+        ),
+        bindings=_pooled_primary_bindings(
+            ["MiniMax-M2.7-highspeed", "MiniMax-M2.7"],
+            max_concurrency=2,
+            default_burst_concurrency=2,
+        ),
+    )
+    adapter = _SleepingRecordingAdapter(delay_seconds=0.1)
+    monkeypatch.setitem(CONTRACT_ADAPTERS, "anthropic", adapter)
+
+    results: list[dict[str, Any]] = []
+
+    def _invoke() -> None:
+        with llm_invocation_scope(profile_id=DEFAULT_RUNTIME_PROFILE_ID):
+            results.append(invoke_json("system", "user", {}))
+
+    first = threading.Thread(target=_invoke)
+    second = threading.Thread(target=_invoke)
+    first.start()
+    second.start()
+    first.join()
+    second.join()
+
+    assert len(results) == 2
+    assert {call["provider_id"] for call in adapter.calls} == {
+        "MiniMax-M2.7-highspeed",
+        "MiniMax-M2.7",
+    }
+    assert adapter.max_active_calls >= 2
+
+
+def test_same_tier_third_scope_waits_until_a_target_reservation_releases(monkeypatch: pytest.MonkeyPatch):
+    _set_targets_and_bindings(
+        monkeypatch,
+        targets=_two_minimax_targets(
+            primary_max_concurrency=1,
+            primary_initial_max_concurrency=1,
+            primary_probe_max_concurrency=1,
+            backup_max_concurrency=1,
+            backup_initial_max_concurrency=1,
+            backup_probe_max_concurrency=1,
+        ),
+        bindings=_pooled_primary_bindings(
+            ["MiniMax-M2.7-highspeed", "MiniMax-M2.7"],
+            max_concurrency=2,
+            default_burst_concurrency=2,
+        ),
+    )
+    adapter = _RecordingAdapter()
+    monkeypatch.setitem(CONTRACT_ADAPTERS, "anthropic", adapter)
+
+    release_holders = threading.Event()
+    ready_targets: list[str] = []
+    ready_lock = threading.Lock()
+    third_wait_seconds: dict[str, float] = {}
+    third_entered = threading.Event()
+
+    def _holder() -> None:
+        with llm_invocation_scope(profile_id=DEFAULT_RUNTIME_PROFILE_ID):
+            assert current_llm_scope() is not None
+            with ready_lock:
+                ready_targets.append(str(current_llm_scope().pinned_target_id))
+            release_holders.wait(timeout=2)
+            invoke_json("system", "user", {})
+
+    def _third() -> None:
+        started = time.monotonic()
+        with llm_invocation_scope(profile_id=DEFAULT_RUNTIME_PROFILE_ID):
+            third_wait_seconds["value"] = time.monotonic() - started
+            third_entered.set()
+            invoke_json("system", "user", {})
+
+    first = threading.Thread(target=_holder)
+    second = threading.Thread(target=_holder)
+    first.start()
+    second.start()
+
+    deadline = time.monotonic() + 2
+    while time.monotonic() < deadline:
+        with ready_lock:
+            if len(ready_targets) == 2:
+                break
+        time.sleep(0.01)
+
+    assert set(ready_targets) == {"MiniMax-M2.7-highspeed", "MiniMax-M2.7"}
+
+    third = threading.Thread(target=_third)
+    third.start()
+    time.sleep(0.15)
+    assert not third_entered.is_set()
+
+    release_holders.set()
+    first.join()
+    second.join()
+    third.join()
+
+    assert third_entered.is_set()
+    assert third_wait_seconds["value"] >= 0.1
+    assert len(adapter.calls) == 3
+
+
+def test_same_tier_skips_quota_blocked_target(monkeypatch: pytest.MonkeyPatch):
+    from src.reading_runtime import llm_gateway as llm_gateway_module
+
+    _set_targets_and_bindings(
+        monkeypatch,
+        targets=_two_minimax_targets(
+            primary_max_concurrency=1,
+            primary_initial_max_concurrency=1,
+            primary_probe_max_concurrency=1,
+            backup_max_concurrency=1,
+            backup_initial_max_concurrency=1,
+            backup_probe_max_concurrency=1,
+        ),
+        bindings=_pooled_primary_bindings(
+            ["MiniMax-M2.7-highspeed", "MiniMax-M2.7"],
+            max_concurrency=2,
+            default_burst_concurrency=2,
+        ),
+    )
+    primary_provider = get_llm_registry().get_provider("MiniMax-M2.7-highspeed")
+    llm_gateway_module._record_quota_pressure(primary_provider)
+    adapter = _RecordingAdapter(response_content='{"ok": true, "provider": "__API_KEY__"}')
+    monkeypatch.setitem(CONTRACT_ADAPTERS, "anthropic", adapter)
+
+    with llm_invocation_scope(profile_id=DEFAULT_RUNTIME_PROFILE_ID):
+        assert current_llm_scope() is not None
+        assert current_llm_scope().pinned_target_id == "MiniMax-M2.7"
+        payload = invoke_json("system", "user", {})
+
+    assert payload["ok"] is True
+    assert adapter.calls[0]["provider_id"] == "MiniMax-M2.7"
+
+
+def test_pooled_primary_tier_contributes_combined_worker_budget(monkeypatch: pytest.MonkeyPatch):
+    _set_targets_and_bindings(
+        monkeypatch,
+        targets=_two_minimax_targets(
+            primary_max_concurrency=1,
+            primary_initial_max_concurrency=1,
+            primary_probe_max_concurrency=1,
+            backup_max_concurrency=1,
+            backup_initial_max_concurrency=1,
+            backup_probe_max_concurrency=1,
+        ),
+        bindings=_pooled_primary_bindings(
+            ["MiniMax-M2.7-highspeed", "MiniMax-M2.7"],
+            max_concurrency=2,
+            default_burst_concurrency=2,
+        ),
+    )
+
+    for profile_id in (
+        DEFAULT_RUNTIME_PROFILE_ID,
+        DEFAULT_DATASET_REVIEW_PROFILE_ID,
+        DEFAULT_EVAL_JUDGE_PROFILE_ID,
+    ):
+        policy = resolve_worker_policy(
+            job_kind="dual-target-budget-test",
+            profile_id=profile_id,
+            task_count=6,
+            per_worker_parallelism=1,
+        )
+        assert policy.llm_budget == 2
+        assert policy.worker_count == 2
+
+
+def test_pooled_primary_target_bindings_compile_into_dual_target_pool(monkeypatch: pytest.MonkeyPatch):
+    _set_targets_and_bindings(
+        monkeypatch,
+        targets=_two_minimax_targets(),
+        bindings=_pooled_primary_bindings(["MiniMax-M2.7-highspeed", "MiniMax-M2.7"]),
+    )
+
+    for profile_id in (
+        DEFAULT_RUNTIME_PROFILE_ID,
+        DEFAULT_DATASET_REVIEW_PROFILE_ID,
+        DEFAULT_EVAL_JUDGE_PROFILE_ID,
+    ):
+        profile = get_llm_profile(profile_id)
+        assert [tier.tier_id for tier in profile.target_tiers] == ["primary"]
+        assert profile.target_tiers[0].target_ids == ("MiniMax-M2.7-highspeed", "MiniMax-M2.7")
+        assert profile.max_concurrency == 2
+        assert profile.default_burst_concurrency == 2
 
 
 def test_scope_pins_one_target_and_nested_scopes_inherit_it(monkeypatch: pytest.MonkeyPatch):

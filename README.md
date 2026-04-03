@@ -70,6 +70,8 @@ Recommended local LLM setup:
     - put the preferred high-throughput target in the `primary` tier
     - put backup targets in later tiers
     - each scope chooses one concrete target up front and stays pinned to it for the full runtime, dataset-review, or evaluation scope
+    - when one tier lists multiple `target_ids`, that tier acts as a same-priority dispatch pool rather than a strict first-success fallback chain
+    - within one pooled tier, new sibling scopes may fan out across different targets, but each scope still pins one concrete target for its full lifetime
   - this is the file where you choose which target tier policy each profile uses and any profile-level overrides such as `temperature`, `max_output_tokens`, `retry_attempts`, `max_concurrency`, `quota_retry_attempts`, and `quota_wait_budget_seconds`
 
 Recommended tiered binding shape:
@@ -101,6 +103,28 @@ Recommended tiered binding shape:
   ]
 }
 ```
+
+Pooled primary-tier shape for dual-target parallelism:
+```json
+{
+  "profiles": [
+    {
+      "profile_id": "runtime_reader_default",
+      "target_tiers": [
+        {
+          "tier_id": "primary",
+          "target_ids": ["MiniMax-M2.7-highspeed", "MiniMax-M2.7-personal"],
+          "min_required_stable_concurrency": 1
+        }
+      ],
+      "max_concurrency": 2,
+      "default_burst_concurrency": 2
+    }
+  ]
+}
+```
+- in this pooled shape, the tier's total budget comes from the combined stable capacity of its targets
+- if you want a true backup target instead of same-priority fanout, keep it in a later tier such as `backup`
 
 Tracked templates for the new local setup:
 - `reading-companion-backend/config/llm_targets.local.example.json`
@@ -135,7 +159,9 @@ The shared LLM layer still supports:
 - multiple credentials inside one named target for same-model failover
 - ordered target tiers for profile routing
   - primary and backup routing is no longer hardcoded to one provider family
-  - new scopes pick the first healthy target that meets the tier policy, then stay pinned to that target for the whole scope
+  - one tier may represent a same-priority target pool or a single preferred target
+  - when a tier lists multiple targets, new scopes fan out across targets that still have available stable capacity, then stay pinned to the selected target for the whole scope
+  - when you want true fallback semantics, put the backup target in a later tier instead of appending it to the same tier
 - adaptive same-key concurrency policy:
   - `initial_max_concurrency`
   - `probe_max_concurrency`

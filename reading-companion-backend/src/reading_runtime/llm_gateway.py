@@ -17,7 +17,7 @@ from collections import deque
 from dataclasses import dataclass, field, replace
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Mapping, Protocol
+from typing import Any, Callable, Mapping, Protocol
 
 from langchain_core.messages import HumanMessage, SystemMessage
 
@@ -125,6 +125,7 @@ class LLMInvocationScopeState:
     pinned_tier_id: str | None = None
     selection_reason: str | None = None
     selection_override_source: str | None = None
+    dispatch_reservation: "_TierDispatchReservation | None" = None
 
 
 _CURRENT_SCOPE: contextvars.ContextVar[LLMInvocationScopeState | None] = contextvars.ContextVar(
@@ -134,6 +135,7 @@ _CURRENT_SCOPE: contextvars.ContextVar[LLMInvocationScopeState | None] = context
 _SEMAPHORES_LOCK = threading.Lock()
 _PROFILE_GATES: dict[tuple[str, str, int], "_DynamicProfileGate"] = {}
 _PROVIDER_CONTROLLERS: dict[str, "_AdaptiveProviderController"] = {}
+_TIER_DISPATCHERS: dict[tuple[str, str], "_TierDispatchController"] = {}
 _QUOTA_STATE_VERSION = 1
 
 
@@ -148,6 +150,13 @@ class _QuotaCooldownState:
     @property
     def remaining_seconds(self) -> float:
         return max(0.0, self.cooldown_until_epoch - time.time())
+
+
+@dataclass(frozen=True)
+class _TierDispatchReservation:
+    profile_id: str
+    tier_id: str
+    target_id: str
 
 
 def _utc_now() -> str:
@@ -786,6 +795,55 @@ class _DynamicProfileGate:
             self._condition.notify_all()
 
 
+class _TierDispatchController:
+    """Coordinate reservations across same-tier targets for one profile."""
+
+    def __init__(self) -> None:
+        self._condition = threading.Condition()
+        self._reservations: dict[str, int] = {}
+        self._next_index = 0
+
+    def ordered_target_ids(self, target_ids: tuple[str, ...]) -> tuple[str, ...]:
+        if len(target_ids) <= 1:
+            return target_ids
+        with self._condition:
+            start = self._next_index % len(target_ids)
+        return target_ids[start:] + target_ids[:start]
+
+    def reserve_target(
+        self,
+        target_ids: tuple[str, ...],
+        *,
+        stable_limit_for: Callable[[str], int],
+        should_wait: Callable[[], bool],
+    ) -> str | None:
+        if not target_ids:
+            return None
+        with self._condition:
+            while True:
+                start = self._next_index % len(target_ids)
+                for offset in range(len(target_ids)):
+                    target_id = target_ids[(start + offset) % len(target_ids)]
+                    stable_limit = max(0, int(stable_limit_for(target_id)))
+                    reserved_count = self._reservations.get(target_id, 0)
+                    if stable_limit > reserved_count:
+                        self._reservations[target_id] = reserved_count + 1
+                        self._next_index = (start + offset + 1) % len(target_ids)
+                        return target_id
+                if not should_wait():
+                    return None
+                self._condition.wait(timeout=0.25)
+
+    def release_target(self, target_id: str) -> None:
+        with self._condition:
+            current = self._reservations.get(target_id, 0)
+            if current <= 1:
+                self._reservations.pop(target_id, None)
+            else:
+                self._reservations[target_id] = current - 1
+            self._condition.notify_all()
+
+
 def _merge_trace_context(base: LLMTraceContext | None, overlay: LLMTraceContext | None) -> LLMTraceContext | None:
     if base is None:
         return overlay
@@ -881,6 +939,46 @@ def _target_is_reachable(provider: LLMProviderConfig) -> bool:
     return bool(provider.resolved_key_pool())
 
 
+def _tier_dispatch_controller_for(profile_id: str, tier_id: str) -> _TierDispatchController:
+    key = (profile_id, tier_id)
+    with _SEMAPHORES_LOCK:
+        controller = _TIER_DISPATCHERS.get(key)
+        if controller is None:
+            controller = _TierDispatchController()
+            _TIER_DISPATCHERS[key] = controller
+        return controller
+
+
+def _target_stable_capacity(provider: LLMProviderConfig, *, include_quota_blocked: bool = False) -> int:
+    if not _target_is_reachable(provider):
+        return 0
+    if not include_quota_blocked and _quota_wait_seconds(provider) > 0:
+        return 0
+    return _provider_controller_for(provider).current_limit
+
+
+def _tier_target_ids_in_order(profile: LLMProfileConfig, tier: LLMTargetTierConfig) -> tuple[str, ...]:
+    if len(tier.target_ids) <= 1:
+        return tier.target_ids
+    return _tier_dispatch_controller_for(profile.profile_id, tier.tier_id).ordered_target_ids(tier.target_ids)
+
+
+def _tier_stable_capacity(
+    profile: LLMProfileConfig,
+    tier: LLMTargetTierConfig,
+    *,
+    include_quota_blocked: bool = False,
+) -> int:
+    registry = get_llm_registry()
+    return sum(
+        _target_stable_capacity(
+            registry.get_provider(target_id),
+            include_quota_blocked=include_quota_blocked,
+        )
+        for target_id in tier.target_ids
+    )
+
+
 def _target_meets_threshold(provider: LLMProviderConfig, *, required_stable_concurrency: int) -> bool:
     if _quota_wait_seconds(provider) > 0:
         return False
@@ -897,8 +995,10 @@ def _select_target_within_tier(
     allow_threshold_relaxation: bool = False,
 ) -> LLMProfileConfig | None:
     registry = get_llm_registry()
+    tier_target_ids = _tier_target_ids_in_order(profile, tier)
+    tier_capacity = _tier_stable_capacity(profile, tier)
     reachable_profile: LLMProfileConfig | None = None
-    for target_id in tier.target_ids:
+    for target_id in tier_target_ids:
         provider = registry.get_provider(target_id)
         if not _target_is_reachable(provider):
             continue
@@ -909,11 +1009,57 @@ def _select_target_within_tier(
             selection_reason=selection_reason,
             selection_override_source=selection_override_source,
         )
-        if _target_meets_threshold(provider, required_stable_concurrency=required_stable_concurrency):
+        if tier_capacity >= required_stable_concurrency and _target_stable_capacity(provider) > 0:
             return pinned
         if allow_threshold_relaxation and reachable_profile is None:
             reachable_profile = pinned
     return reachable_profile
+
+
+def _reserve_target_within_tier(
+    profile: LLMProfileConfig,
+    tier: LLMTargetTierConfig,
+    *,
+    required_stable_concurrency: int,
+    selection_reason: str,
+    selection_override_source: str | None = None,
+) -> tuple[LLMProfileConfig, _TierDispatchReservation] | None:
+    if len(tier.target_ids) <= 1:
+        return None
+
+    controller = _tier_dispatch_controller_for(profile.profile_id, tier.tier_id)
+    registry = get_llm_registry()
+
+    def _stable_limit_for(target_id: str) -> int:
+        provider = registry.get_provider(target_id)
+        return _target_stable_capacity(provider)
+
+    def _should_wait() -> bool:
+        return _tier_stable_capacity(profile, tier) >= required_stable_concurrency
+
+    selected_target_id = controller.reserve_target(
+        tier.target_ids,
+        stable_limit_for=_stable_limit_for,
+        should_wait=_should_wait,
+    )
+    if selected_target_id is None:
+        return None
+
+    provider = registry.get_provider(selected_target_id)
+    return (
+        _pinned_profile_for_target(
+            profile,
+            provider,
+            tier,
+            selection_reason=selection_reason,
+            selection_override_source=selection_override_source,
+        ),
+        _TierDispatchReservation(
+            profile_id=profile.profile_id,
+            tier_id=tier.tier_id,
+            target_id=selected_target_id,
+        ),
+    )
 
 
 def _select_profile_target(
@@ -998,6 +1144,111 @@ def _select_profile_target(
     raise LLMRegistryError(f"Profile {profile.profile_id} has no reachable targets with resolved credentials.")
 
 
+def _select_scope_profile_target(
+    profile: LLMProfileConfig,
+    *,
+    required_stable_concurrency: int | None = None,
+    pinned_target_id: str | None = None,
+    pinned_tier_id: str | None = None,
+) -> tuple[LLMProfileConfig, _TierDispatchReservation | None]:
+    target_override = _clean_text(pinned_target_id)
+    tier_override = _clean_text(pinned_tier_id)
+    if not target_override and not tier_override:
+        target_override = _clean_text(get_llm_force_target_id())
+        tier_override = _clean_text(get_llm_force_tier_id())
+        override_source = "env" if target_override or tier_override else None
+    else:
+        override_source = "scope"
+
+    if target_override or tier_override:
+        if target_override:
+            tier, _ = _resolve_target_membership(profile, target_override)
+            if tier_override and tier.tier_id != tier_override:
+                raise LLMRegistryError(
+                    f"Profile {profile.profile_id} target {target_override} is not in tier {tier_override}."
+                )
+        else:
+            tier = _resolve_tier(profile, tier_override)
+            effective_threshold = _effective_required_stable_concurrency(
+                required_stable_concurrency,
+                tier.min_required_stable_concurrency,
+            )
+            reserved = _reserve_target_within_tier(
+                profile,
+                tier,
+                required_stable_concurrency=effective_threshold,
+                selection_reason="manual_override",
+                selection_override_source=override_source,
+            )
+            if reserved is not None:
+                return reserved
+            target_override = tier.target_ids[0]
+
+        effective_threshold = _effective_required_stable_concurrency(
+            required_stable_concurrency,
+            tier.min_required_stable_concurrency,
+        )
+        selected = _select_target_within_tier(
+            profile,
+            tier,
+            required_stable_concurrency=effective_threshold,
+            selection_reason="manual_override",
+            selection_override_source=override_source,
+            allow_threshold_relaxation=True,
+        )
+        if selected is None or selected.selected_target_id != target_override:
+            registry = get_llm_registry()
+            provider = registry.get_provider(target_override)
+            if not _target_is_reachable(provider):
+                raise LLMRegistryError(
+                    f"Profile {profile.profile_id} forced target {target_override} has no resolved credentials."
+                )
+            selected = _pinned_profile_for_target(
+                profile,
+                provider,
+                tier,
+                selection_reason="manual_override",
+                selection_override_source=override_source,
+            )
+        return selected, None
+
+    reachable_profile: LLMProfileConfig | None = None
+    for tier in profile.target_tiers:
+        effective_threshold = _effective_required_stable_concurrency(
+            required_stable_concurrency,
+            tier.min_required_stable_concurrency,
+        )
+        reserved = _reserve_target_within_tier(
+            profile,
+            tier,
+            required_stable_concurrency=effective_threshold,
+            selection_reason="healthy_tier_selection",
+        )
+        if reserved is not None:
+            return reserved
+        if len(tier.target_ids) <= 1:
+            selected = _select_target_within_tier(
+                profile,
+                tier,
+                required_stable_concurrency=effective_threshold,
+                selection_reason="healthy_tier_selection",
+            )
+            if selected is not None:
+                return selected, None
+        if reachable_profile is None:
+            reachable_profile = _select_target_within_tier(
+                profile,
+                tier,
+                required_stable_concurrency=effective_threshold,
+                selection_reason="reachable_fallback_selection",
+                allow_threshold_relaxation=True,
+            )
+
+    if reachable_profile is not None:
+        return reachable_profile, None
+    raise LLMRegistryError(f"Profile {profile.profile_id} has no reachable targets with resolved credentials.")
+
+
 def _apply_profile_overrides(
     profile: LLMProfileConfig,
     overrides: LLMInvocationOverrides | None,
@@ -1052,7 +1303,7 @@ def llm_invocation_scope(
         selection_override_source=current.selection_override_source if inherited_selection else None,
     )
     if next_scope.profile_id and not inherited_selection:
-        selected_profile = _select_profile_target(
+        selected_profile, reservation = _select_scope_profile_target(
             get_llm_profile(next_scope.profile_id),
             required_stable_concurrency=next_required_stable_concurrency,
             pinned_target_id=pinned_target_id,
@@ -1064,12 +1315,18 @@ def llm_invocation_scope(
             pinned_tier_id=selected_profile.selected_tier_id,
             selection_reason=selected_profile.selection_reason,
             selection_override_source=selected_profile.selection_override_source,
+            dispatch_reservation=reservation,
         )
     token = _CURRENT_SCOPE.set(next_scope)
     try:
         yield next_scope
     finally:
         _CURRENT_SCOPE.reset(token)
+        reservation = next_scope.dispatch_reservation
+        if reservation is not None:
+            _tier_dispatch_controller_for(reservation.profile_id, reservation.tier_id).release_target(
+                reservation.target_id
+            )
 
 
 def current_llm_scope() -> LLMInvocationScopeState | None:
@@ -1209,9 +1466,21 @@ def get_llm_provider_stable_concurrency(provider_id: str) -> int:
 def get_llm_profile_stable_concurrency(profile_id: str = DEFAULT_RUNTIME_PROFILE_ID) -> int:
     """Return the current effective stable concurrency for one profile."""
 
-    profile, provider = _selected_provider_for_profile(profile_id)
-    controller = _provider_controller_for(provider)
-    return max(1, min(profile.max_concurrency, controller.current_limit))
+    profile = get_llm_profile(profile_id)
+    reachable_capacity = 0
+    for tier in profile.target_tiers:
+        effective_threshold = _effective_required_stable_concurrency(
+            None,
+            tier.min_required_stable_concurrency,
+        )
+        tier_capacity = _tier_stable_capacity(profile, tier)
+        if tier_capacity >= effective_threshold and tier_capacity > 0:
+            return max(1, min(profile.max_concurrency, tier_capacity))
+        if reachable_capacity == 0:
+            reachable_capacity = _tier_stable_capacity(profile, tier, include_quota_blocked=True)
+    if reachable_capacity > 0:
+        return max(1, min(profile.max_concurrency, reachable_capacity))
+    return 1
 
 
 def clear_llm_gateway_runtime_state() -> None:
@@ -1220,6 +1489,7 @@ def clear_llm_gateway_runtime_state() -> None:
     with _SEMAPHORES_LOCK:
         _PROFILE_GATES.clear()
         _PROVIDER_CONTROLLERS.clear()
+        _TIER_DISPATCHERS.clear()
     quota_dir = _quota_state_dir()
     if quota_dir.exists():
         for path in quota_dir.glob("*"):
