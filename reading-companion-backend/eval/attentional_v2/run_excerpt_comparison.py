@@ -20,6 +20,7 @@ from statistics import mean
 from typing import Any
 
 from eval.common.taxonomy import DETERMINISTIC_METRICS, PAIRWISE_JUDGE, RUBRIC_JUDGE, normalize_methods, validate_target_slug
+from eval.attentional_v2.runtime_progress import runtime_progress_heartbeat
 from src.iterator_reader.llm_utils import ReaderLLMError, eval_trace_context, invoke_json, llm_invocation_scope
 from src.reading_core import BookDocument
 from src.reading_core.runtime_contracts import ReadRequest
@@ -669,22 +670,28 @@ def _run_mechanism_for_unit(
 
     book_path = ROOT / str(source["relative_local_path"])
     isolated_output_dir = run_root / "outputs" / _chapter_unit_key(unit.source_id, unit.chapter_id) / mechanism_key
+    runtime_dir = isolated_output_dir / "_runtime"
     _log_unit_progress(unit, f"[mechanism-start] {mechanism_key}")
     shutil.rmtree(isolated_output_dir, ignore_errors=True)
     isolated_output_dir.parent.mkdir(parents=True, exist_ok=True)
-    with _isolated_output_dir(isolated_output_dir):
-        result = mechanism.read_book(
-            ReadRequest(
-                book_path=book_path,
-                chapter_number=int(unit.chapter_id),
-                continue_mode=False,
-                user_intent=DEFAULT_USER_INTENT,
-                language_mode=unit.output_language,
-                task_mode="sequential",
-                mechanism_key=mechanism_key,
-                mechanism_config={"persist_normalized_eval_bundle": True},
+    with runtime_progress_heartbeat(
+        runtime_dir=runtime_dir,
+        mechanism_key=mechanism_key,
+        emit=lambda message: _log_unit_progress(unit, message),
+    ):
+        with _isolated_output_dir(isolated_output_dir):
+            result = mechanism.read_book(
+                ReadRequest(
+                    book_path=book_path,
+                    chapter_number=int(unit.chapter_id),
+                    continue_mode=False,
+                    user_intent=DEFAULT_USER_INTENT,
+                    language_mode=unit.output_language,
+                    task_mode="sequential",
+                    mechanism_key=mechanism_key,
+                    mechanism_config={"persist_normalized_eval_bundle": True},
+                )
             )
-        )
     bundle = dict(result.normalized_eval_bundle or {})
     _json_dump(run_root / "bundles" / mechanism_key / f"{_chapter_unit_key(unit.source_id, unit.chapter_id)}.json", bundle)
     _log_unit_progress(unit, f"[mechanism-completed] {mechanism_key}")

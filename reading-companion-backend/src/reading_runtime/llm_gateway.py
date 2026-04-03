@@ -630,6 +630,7 @@ class AnthropicContractAdapter:
             temperature=profile.temperature,
             max_tokens=profile.max_output_tokens,
             timeout=timeout_seconds,
+            max_retries=0,
         )
         return client.invoke(messages)
 
@@ -657,6 +658,7 @@ class OpenAICompatibleContractAdapter:
             temperature=profile.temperature,
             max_tokens=profile.max_output_tokens,
             timeout=timeout_seconds,
+            max_retries=0,
         )
         return client.invoke(messages)
 

@@ -21,8 +21,10 @@ from src.reading_runtime import artifacts as runtime_artifacts
 from src.reading_runtime import llm_registry as llm_registry_module
 from src.reading_runtime.job_concurrency import resolve_worker_policy
 from src.reading_runtime.llm_gateway import (
+    AnthropicContractAdapter,
     CONTRACT_ADAPTERS,
     JsonlTraceSink,
+    OpenAICompatibleContractAdapter,
     ReaderLLMError,
     clear_llm_gateway_runtime_state,
     current_llm_scope,
@@ -2302,6 +2304,66 @@ def test_non_quota_retries_do_not_expand_after_quota_recovery_round(
             invoke_json("system", "user", {})
 
     assert len(adapter.calls) == 2
+
+
+def test_anthropic_contract_adapter_disables_sdk_retries(monkeypatch: pytest.MonkeyPatch) -> None:
+    captured: dict[str, Any] = {}
+
+    class FakeChatAnthropic:
+        def __init__(self, **kwargs: Any) -> None:
+            captured.update(kwargs)
+
+        def invoke(self, messages: list[Any]) -> Any:
+            captured["message_count"] = len(messages)
+            return _FakeResponse('{"ok": true}')
+
+    monkeypatch.setitem(sys.modules, "langchain_anthropic", type("FakeModule", (), {"ChatAnthropic": FakeChatAnthropic}))
+
+    adapter = AnthropicContractAdapter()
+    response = adapter.invoke(
+        ["demo"],
+        provider=type("Provider", (), {"base_url": "https://example.invalid"})(),
+        profile=type(
+            "Profile",
+            (),
+            {"model": "MiniMax-M2.7-highspeed", "temperature": 0.2, "max_output_tokens": 512},
+        )(),
+        api_key="secret",
+        timeout_seconds=37,
+    )
+
+    assert response.content == '{"ok": true}'
+    assert captured["timeout"] == 37
+    assert captured["max_retries"] == 0
+    assert captured["message_count"] == 1
+
+
+def test_openai_compatible_contract_adapter_disables_sdk_retries(monkeypatch: pytest.MonkeyPatch) -> None:
+    captured: dict[str, Any] = {}
+
+    class FakeChatOpenAI:
+        def __init__(self, **kwargs: Any) -> None:
+            captured.update(kwargs)
+
+        def invoke(self, messages: list[Any]) -> Any:
+            captured["message_count"] = len(messages)
+            return _FakeResponse('{"ok": true}')
+
+    monkeypatch.setitem(sys.modules, "langchain_openai", type("FakeModule", (), {"ChatOpenAI": FakeChatOpenAI}))
+
+    adapter = OpenAICompatibleContractAdapter()
+    response = adapter.invoke(
+        ["demo"],
+        provider=type("Provider", (), {"base_url": "https://example.invalid"})(),
+        profile=type("Profile", (), {"model": "gpt-test", "temperature": 0.0, "max_output_tokens": 256})(),
+        api_key="secret",
+        timeout_seconds=21,
+    )
+
+    assert response.content == '{"ok": true}'
+    assert captured["timeout"] == 21
+    assert captured["max_retries"] == 0
+    assert captured["message_count"] == 1
 
 
 def test_quota_cooldown_state_is_shared_across_processes(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
