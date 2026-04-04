@@ -223,6 +223,46 @@ This file is a living working ledger. Stable rules still belong in `docs/backend
 - Next action:
   - require each meaningful evaluation closeout to include result, causal interpretation, and selective implementation disposition rather than winner/loser prose alone
 
+### 8. A full judged lane can finish cleanly yet still be unusable if every case falls back to `mechanism_unavailable`
+- Pattern kind: `anti_pattern`
+- Source mechanism: evaluation harness / provider posture
+- Potential destination: all future judged eval launches
+- Why it matters:
+  - A run can emit `summary/aggregate.json` and `summary/report.md` while still containing no valid product evidence.
+  - If that output is misread as a giant tie, the project can draw false mechanism conclusions from pure provider failure.
+- Contributing causes:
+  - the full human-notes-guided excerpt judged lane used one forced `MiniMax-M2.7-highspeed` target
+  - the run's quota wait budget was shorter than the provider cooldown windows that appeared during full-chapter reading
+  - once each shared chapter unit failed at the mechanism stage, downstream judge surfaces emitted zero-score `mechanism_unavailable` ties
+- Evidence:
+  - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_human_notes_guided_excerpt_eval_v1_judged_20260404/summary/aggregate.json`
+  - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_human_notes_guided_excerpt_eval_v1_judged_20260404/summary/report.md`
+  - `reading-companion-backend/state/job_registry/logs/bgjob_human_notes_guided_excerpt_eval_v1_judged_20260404.log`
+- Status: `avoid`
+- Next action:
+  - rerun the judged local excerpt lane only under a quota-safe target / wait-budget posture
+  - do not convert this failed lane into mechanism findings
+
+### 9. Long-span probes that share a theme but lack explicit carryforward are false positives for `coherent_accumulation`
+- Pattern kind: `anti_pattern`
+- Source mechanism: accumulation benchmark v1 probe construction
+- Potential destination: all future long-span benchmark building
+- Why it matters:
+  - The benchmark starts measuring general thematic resemblance instead of bounded carryover from earlier reading.
+  - This wastes long reads while still failing to answer the real north-star question.
+- Contributing causes:
+  - later anchors often remain philosophically related to earlier anchors without explicitly depending on them
+  - judge focus becomes too broad, so the case tries to test several things at once
+  - chapter/span metadata defects further weaken judge trust even when the source window itself is better chosen
+- Evidence:
+  - `reading-companion-backend/eval/review_packets/archive/accumulation_benchmark_v1_rejudged_first_review_20260404/dataset_review_pipeline_summary.json`
+  - `reading-companion-backend/eval/review_packets/archive/accumulation_benchmark_v1_rejudged_first_review_20260404/llm_review_report.md`
+- Status: `avoid`
+- Next action:
+  - tighten the long-span probe contract so later anchors must show explicit callback, continuation, consequence, or distinction carryforward
+  - fix chapter/span metadata before rerunning review
+  - allow `1-2` strong probes per window instead of forcing weak thirds
+
 ## Current Selective Implementation Queue
 
 ### Priority 1. Extend the landed micro-selectivity repair into narrative / reference-heavy English local cases

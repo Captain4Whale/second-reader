@@ -137,7 +137,8 @@ Update when: status changes, blockers appear, or phases complete.
       - future review/eval launches may therefore distribute work across both targets for throughput
       - only force one concrete target when one run intentionally needs a single uniform reviewer surface
     - current live launch posture:
-      - keep exactly one heavy `MiniMax-M2.7-highspeed` excerpt eval process alive at a time
+      - keep at most one heavy process per key
+      - the first full notes-guided judged excerpt run also showed that a single heavy `MiniMax-M2.7-highspeed` process can still outrun the current quota wait budget, so one-process-per-key alone is not enough to guarantee a valid full eval
       - completed retained highspeed smoke:
         - `bgjob_human_notes_excerpt_smoke_light_20260404`
           - run id:
@@ -159,8 +160,16 @@ Update when: status changes, blockers appear, or phases complete.
             - full `human-notes-guided` excerpt eval manifest
             - `target-slice both`
             - `judge-mode llm`
+          - result:
+            - `selective_legibility`: `55 / 55` cases ended `judge_unavailable`
+            - `insight_and_clarification`: `38 / 38` cases ended `judge_unavailable`
+            - all `8` shared chapter units failed for both mechanisms before usable judge evidence was produced
+            - dominant failure surface:
+              - provider cooldown exceeded the configured wait budget on `MiniMax-M2.7-highspeed`
+          - interpretation:
+            - treat the lane as a quota/harness failure rather than as usable mechanism evidence
           - current next gate:
-            - interpret the completed aggregate/report with `selective_legibility` first
+            - rerun the judged local excerpt lane under a quota-safe target / wait-budget posture before drawing mechanism conclusions
       - duplicate highspeed excerpt smoke attempts were explicitly retired after they created unnecessary same-key contention:
         - `bgjob_human_notes_guided_excerpt_eval_v1_smoke_20260404`
           - current status:
@@ -184,7 +193,7 @@ Update when: status changes, blockers appear, or phases complete.
             - `drop = 8`
           - interpretation:
             - treat the old packet as evidence that the previous long-span window set was wrong, not as mechanism evidence
-      - current retained personal-key long-span review lane:
+      - completed retained personal-key long-span review lane:
         - `bgjob_accumulation_benchmark_v1_rejudged_first_review_20260404`
           - packet id:
             - `accumulation_benchmark_v1_rejudged_first_review_20260404`
@@ -205,8 +214,22 @@ Update when: status changes, blockers appear, or phases complete.
             - `zouchu_weiyi_zhenliguan_private_zh__14`
           - reserve next-add direction:
             - `shoe_dog_private_en`
+          - result:
+            - `keep = 0`
+            - `revise = 11`
+            - `drop = 6`
+            - `unclear = 1`
+          - dominant review problems:
+            - `ambiguous_focus = 16`
+            - `source_parse_problem = 10`
+            - `weak_excerpt = 9`
+          - interpretation:
+            - source-fit improved relative to the old draft, but the remaining blocker is still probe materialization rather than mechanism behavior
+            - the rebuilt final window set is usable as the retained source set, but the current probes are not freeze-ready
           - current next gate:
-            - wait for the rebuilt packet summary, then rerun `freeze_accumulation_benchmark_v1.py` so the frozen probe dataset and tracked manifest switch to reviewed rows from the new final window set
+            - repair long-span probe framing and chapter/span metadata
+            - rerun first review after repair
+            - do not freeze probes or launch judged accumulation comparison yet
   - current model-call cost is high enough that new comparison work outside the mechanism mainline should stay paused for now:
     - keep broader comparison checkpoints as baseline references, not active rerun targets
     - keep active spend on decisive mechanism-eval runs plus the minimum support diagnostics they still require
@@ -285,10 +308,9 @@ Update when: status changes, blockers appear, or phases complete.
       - `bgjob_formal_benchmark_v1_chapter_core_decisive_targetsplit_retry1_20260403`
       - `bgjob_formal_benchmark_v1_excerpt_smoke_targetsplit_20260403`
     - immediate next mainline move is now split:
-      - interpret the completed judged notes-guided local excerpt lane on `MiniMax-M2.7-highspeed`
-      - keep the rebuilt accumulation probe first-review lane running on `MiniMax-M2.7-personal`
-      - when that rebuilt packet summary lands, rerun `freeze_accumulation_benchmark_v1.py` and confirm the tracked manifest points at the frozen reviewed probe dataset
-      - then launch the judged accumulation comparison on that long-span lane
+      - rerun the judged notes-guided local excerpt lane under a quota-safe target / wait-budget posture
+      - keep the rebuilt long-span window set but repair probe framing before any freeze
+      - rerun long-span first review after the probe/materialization repair rather than launching judged accumulation comparison immediately
       - keep the `reserve = 7 / 8` shortfall and the pressure imbalance explicit in any clustered-benchmark interpretation rather than reopening builder widening first
   - cheap honesty / integrity / compatibility checks remain useful sanity guards, but they are no longer treated as primary eval success targets
 - Current blockers:

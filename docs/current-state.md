@@ -7,12 +7,12 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-04-04T13:57:00Z`
+Last verified: `2026-04-04T15:20:52Z`
 
 ## Current Objective
 - Keep Phase 9 on the mainline under the new split-surface evaluation strategy:
-  - interpret the completed formal judged local excerpt evaluation on the human-notes-guided excerpt freeze
-  - build a bounded long-span accumulation benchmark in parallel instead of forcing the current chapter benchmark to answer every remaining question
+  - rerun the formal judged local excerpt evaluation on the human-notes-guided excerpt freeze under a quota-safe provider posture because the first full judged run ended as a harness failure rather than usable mechanism evidence
+  - repair the bounded long-span accumulation benchmark instead of launching judged accumulation comparison prematurely, because the rebuilt first-review pass still found `0` benchmark-ready keeps
   - preserve the recorded `Path A` gate outcome and the completed clustered benchmark freeze as still-useful evidence
   - keep durable-trace / re-entry and runtime viability paused on cost grounds
 - Keep dataset work tightly scoped to the new long-span need:
@@ -43,8 +43,20 @@ Last verified: `2026-04-04T13:57:00Z`
           - `target-slice both`
           - `judge-mode llm`
           - `case-workers 1`
+        - result:
+          - `selective_legibility`: `55 / 55` cases ended `judge_unavailable`
+          - `insight_and_clarification`: `38 / 38` cases ended `judge_unavailable`
+          - all `8` unique chapter units failed at the mechanism stage for both mechanisms, so the aggregate surfaced only `mechanism_unavailable` zero-score ties
+          - failure surface:
+            - provider cooldown exceeded the run's configured quota wait budget on `MiniMax-M2.7-highspeed`
+        - interpretation:
+          - treat this as a quota/harness failure, not as mechanism evidence for either `attentional_v2` or `iterator_v1`
+          - the judged local excerpt lane still needs one valid rerun before it can support selective mechanism decisions
         - current next gate:
-          - interpret the completed aggregate/report with `selective_legibility` first, then `insight_and_clarification`
+          - relaunch the judged excerpt lane under a quota-safe posture:
+            - keep one heavy process per key
+            - avoid a full notes-guided judged run on the current highspeed wait budget alone
+            - use a safer target / wait-budget policy before drawing mechanism conclusions
   - `long-span / window`
     - primary target:
       - `reader_character.coherent_accumulation`
@@ -89,23 +101,43 @@ Last verified: `2026-04-04T13:57:00Z`
           - `drop = 8`
         - interpretation:
           - treat this as a source-fit and probe-framing failure on the old window set, not as product evidence against the mechanism
-    - current live job:
+    - completed rebuilt first review:
       - `bgjob_accumulation_benchmark_v1_rejudged_first_review_20260404`
         - purpose:
           - run first review on the rebuilt final long-span v1 window set under `MiniMax-M2.7-personal`
         - packet:
           - `accumulation_benchmark_v1_rejudged_first_review_20260404`
+        - result:
+          - `keep = 0`
+          - `revise = 11`
+          - `drop = 6`
+          - `unclear = 1`
+        - dominant review problems:
+          - `ambiguous_focus = 16`
+          - `source_parse_problem = 10`
+          - `weak_excerpt = 9`
+        - interpretation:
+          - the source-fit rejudgment helped compared with the old draft, but it did not produce benchmark-ready long-span probes
+          - the remaining blocker is mainly probe materialization and metadata quality, not just book choice
+          - later anchors are still too often thematic or inferential rather than explicit text-grounded carryforward
         - current next gate:
-          - wait for the rebuilt packet summary, then freeze the reviewed probes and only after that launch the judged accumulation comparison
+          - repair the probe contract and chapter/span metadata first
+          - do not freeze the reviewed probes yet
+          - do not launch judged accumulation comparison yet
 - `coherent_accumulation` is now interpreted operationally as bounded long-span continuity and carryover rather than generic whole-book memory.
 - `insight_and_clarification` is treated as an orthogonal output-value axis that can score both local excerpt cases and long-span window cases.
 - Excerpt and long-span datasets may intentionally use different books or chapters when that improves fit and runtime efficiency.
 - Current immediate eval gate:
   - the local excerpt smoke has already passed its harness gate
-  - the judged notes-guided local excerpt comparison has completed on `MiniMax-M2.7-highspeed` and now needs interpretation
+  - the first full judged notes-guided local excerpt comparison has now been interpreted as invalid due to provider quota cooldown / wait-budget exhaustion
+  - the next local excerpt move is a quota-safe rerun, not mechanism interpretation
 - Current long-span construction gate:
-  - keep the rejudged accumulation first-review job as the only heavy personal-key job for now
-  - once that rebuilt review summary exists, rerun the freeze helper, confirm the tracked manifest points at the frozen reviewed probe dataset, and only then launch the accumulation comparison lane
+  - keep the rebuilt final window set
+  - repair the probe selection/materialization contract and span metadata on that window set
+  - only rerun long-span first review after those repairs; judged accumulation comparison stays blocked until at least some probes become benchmark-ready keeps
+- Background-job registry state:
+  - `reading-companion-backend/state/job_registry/active_jobs.md` is now empty again
+  - there are no currently registered active background jobs
 - The post-recovery gate review is now closed on `Path A`.
 - Recorded gate outcomes:
   - `OD-PRIVATE-LIBRARY-POST-RESCUE-GATE = keep_hold_for_backlog_rescue`

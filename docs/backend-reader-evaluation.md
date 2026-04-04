@@ -130,6 +130,17 @@ Use `docs/backend-reading-mechanism.md` for shared mechanism-platform boundaries
   - later distinctions depend on earlier reading
 - Books or chapters whose sections are largely independent are poor default accumulation surfaces even if they remain strong local excerpt surfaces.
 
+## Long-Span Probe Grounding Rule
+- A long-span accumulation probe is benchmark-ready only when the later anchor explicitly carries forward earlier material.
+- Shared theme alone is not enough.
+- Strong long-span probes usually show at least one of:
+  - a callback or textual echo
+  - a consequence or resolution of an earlier tension
+  - a later distinction that depends on earlier setup
+  - a concrete continuation of one narrative or argumentative state
+- If the reader would have to supply most of the connection by outside inference, the probe should be treated as weak or ambiguous rather than as true accumulation evidence.
+- When a window only yields `1-2` such probes, freeze honestly short instead of forcing a third weaker probe.
+
 ## Active Benchmark Pointer Rule
 - Stable docs may name one active benchmark pointer while keeping earlier benchmark packages as historical evidence.
 - An active benchmark does not need to maximize breadth if the current project constraint is iteration speed under real token and time pressure.
@@ -202,6 +213,9 @@ Use `docs/backend-reading-mechanism.md` for shared mechanism-platform boundaries
 - The shared gateway now owns adaptive same-key concurrency for new processes.
   - the provider-wide gate starts from a configured initial limit, backs off on sustained timeout/rate-limit or malformed-response pressure, and recovers slowly after clean windows
   - profile-level default worker sizing should follow the current stable shared budget rather than guessing a fixed number like `1` or `2`
+- If a judged lane completes with aggregate/report files but every case is `mechanism_unavailable` because provider cooldown or quota wait-budget exhaustion, treat the run as harness failure rather than mechanism evidence.
+  - zero-score ties from `mechanism_unavailable` fallback payloads are not valid comparison results
+  - the correct next move is a quota-safe rerun, not product interpretation
 
 ## Why Reader Evaluation Exists
 - Reader evaluation exists to guide optimization first and preserve evidence second.
