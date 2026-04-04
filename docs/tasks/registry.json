@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-04-04T03:54:58Z",
+  "updated_at": "2026-04-04T05:59:13Z",
   "tasks": [
     {
       "id": "TASK-MECH-EN-RERUN",
@@ -715,10 +715,12 @@
         "bgjob_human_notes_guided_dataset_v1_scratch_retry2_20260404",
         "bgjob_human_notes_guided_dataset_v1_scratch_retry3_20260404",
         "bgjob_human_notes_guided_dataset_v1_first_review_en_20260404",
-        "bgjob_human_notes_guided_dataset_v1_first_review_zh_20260404"
+        "bgjob_human_notes_guided_dataset_v1_first_review_zh_20260404",
+        "bgjob_human_notes_guided_dataset_v1_first_review_en_retry1_20260404",
+        "bgjob_human_notes_guided_dataset_v1_first_review_en_retry2_20260404"
       ],
       "acceptance_ref": "docs/implementation/new-reading-mechanism/question-aligned-case-construction.md",
-      "next_action": "Monitor the running first review wave over the scratch primaries, interpret keep/revise/drop by cluster, and then decide honest short freeze vs reserve top-up vs a narrow builder repair before any merge / replace decision.",
+      "next_action": "Interpret the completed EN first-review packet by cluster, relaunch the failed ZH packet through the new audit_packet-to-final_summary resume path, and then decide honest short freeze vs reserve top-up vs a narrow builder repair before any merge/replace decision.",
       "blocked_by": [],
       "evidence_refs": [
         "docs/implementation/new-reading-mechanism/question-aligned-case-construction.md",
@@ -732,15 +734,23 @@
         "reading-companion-backend/tests/test_library_notes.py",
         "reading-companion-backend/tests/test_human_notes_guided_dataset.py",
         "reading-companion-backend/tests/test_private_library_supplement.py",
+        "reading-companion-backend/tests/test_case_design_audit.py",
+        "reading-companion-backend/tests/test_dataset_review_pipeline.py",
         "reading-companion-backend/tests/test_question_aligned_case_construction.py",
+        "reading-companion-backend/eval/attentional_v2/run_case_design_audit.py",
+        "reading-companion-backend/eval/attentional_v2/run_dataset_review_pipeline.py",
         "reading-companion-backend/state/dataset_build/library_notes_catalog.json",
         "reading-companion-backend/state/dataset_build/library_notes_catalog.md",
         "reading-companion-backend/state/dataset_build/build_runs/human_notes_guided_dataset_v1_20260404/build_summary.json",
         "reading-companion-backend/state/dataset_build/build_runs/human_notes_guided_dataset_v1_20260404/cluster_proposals/attentional_v2_human_notes_guided_dataset_v1_excerpt_scope__scratch__human_notes_guided_dataset_v1_20260404.json",
         "reading-companion-backend/state/dataset_build/build_runs/human_notes_guided_dataset_v1_20260404/cluster_resolutions/attentional_v2_human_notes_guided_dataset_v1_excerpt_scope__scratch__human_notes_guided_dataset_v1_20260404.json",
-        "reading-companion-backend/state/dataset_build/build_runs/human_notes_guided_dataset_v1_20260404/selection_group_maps/attentional_v2_human_notes_guided_dataset_v1_excerpt_scope__scratch__human_notes_guided_dataset_v1_20260404.json"
+        "reading-companion-backend/state/dataset_build/build_runs/human_notes_guided_dataset_v1_20260404/selection_group_maps/attentional_v2_human_notes_guided_dataset_v1_excerpt_scope__scratch__human_notes_guided_dataset_v1_20260404.json",
+        "reading-companion-backend/eval/review_packets/archive/human_notes_guided_dataset_v1_excerpt_en_first_review_20260404/dataset_review_pipeline_summary.json",
+        "reading-companion-backend/eval/review_packets/archive/human_notes_guided_dataset_v1_excerpt_en_first_review_20260404/llm_review_summary.json",
+        "reading-companion-backend/state/job_registry/jobs/bgjob_human_notes_guided_dataset_v1_first_review_en_retry2_20260404.json",
+        "reading-companion-backend/state/job_registry/logs/bgjob_human_notes_guided_dataset_v1_first_review_en_retry2_20260404.log"
       ],
-      "last_updated": "2026-04-04T03:54:58Z",
+      "last_updated": "2026-04-04T05:59:13Z",
       "last_updated_by": "codex"
     }
   ]

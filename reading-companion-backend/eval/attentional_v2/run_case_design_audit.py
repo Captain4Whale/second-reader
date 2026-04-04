@@ -46,6 +46,7 @@ from .case_audit_runs import (
     REPORT_FILE,
     RUN_STATE_FILE,
     SUMMARY_DIR,
+    latest_case_audit_run,
 )
 from .question_aligned_case_construction import render_excerpt_sentences
 
@@ -1088,6 +1089,66 @@ def ordered_rows(results_by_case_id: dict[str, dict[str, Any]], case_order: list
     return [results_by_case_id[case_id] for case_id in case_order if case_id in results_by_case_id]
 
 
+def _fallback_completed_case_state(
+    packet_id: str,
+    case_id: str,
+    row: dict[str, Any],
+) -> dict[str, Any]:
+    audit_metadata = row.get("audit_metadata") or {}
+    if not isinstance(audit_metadata, dict):
+        audit_metadata = {}
+    timing_ms = audit_metadata.get("timing_ms") or {}
+    if not isinstance(timing_ms, dict):
+        timing_ms = {}
+    llm_calls = audit_metadata.get("llm_calls") or {}
+    if not isinstance(llm_calls, dict):
+        llm_calls = {}
+    state = make_case_state(packet_id, case_id)
+    state["status"] = "completed"
+    state["current_stage"] = "completed"
+    state["factual_ok"] = bool(((row.get("factual_audit") or {}).get("ok")))
+    state["timing_ms"] = dict(timing_ms)
+    state["llm_calls"] = dict(llm_calls)
+    state["stage_statuses"] = {
+        "factual_audit": "completed",
+        "primary_review": "completed",
+        "adversarial_review": "completed",
+    }
+    state["updated_at"] = utc_now()
+    state["completed_at"] = state["updated_at"]
+    return state
+
+
+def resumable_completed_case_rows(
+    packet_id: str,
+    *,
+    case_order: list[str],
+    runs_root: Path = RUNS_ROOT,
+) -> tuple[dict[str, Any] | None, dict[str, dict[str, Any]]]:
+    latest_run = latest_case_audit_run(packet_id, runs_root, require_completed=False)
+    if latest_run is None:
+        return None, {}
+    latest_status = str(latest_run.get("status", "")).strip().lower()
+    if latest_status not in {"failed", "incomplete"}:
+        return latest_run, {}
+    run_dir_value = str(latest_run.get("run_dir", "")).strip()
+    if not run_dir_value:
+        return latest_run, {}
+    run_dir = Path(run_dir_value)
+    reusable: dict[str, dict[str, Any]] = {}
+    for case_id in case_order:
+        case_path = run_dir / "cases" / f"{case_id}.json"
+        if not case_path.exists():
+            continue
+        row = load_json(case_path)
+        if str(row.get("case_id", "")).strip() != case_id:
+            continue
+        if str(row.get("status", "")).strip().lower() != "completed":
+            continue
+        reusable[case_id] = row
+    return latest_run, reusable
+
+
 def _is_retryable_quota_case_result(row: dict[str, Any]) -> bool:
     if str(row.get("status", "")).strip() != "failed":
         return False
@@ -1306,6 +1367,10 @@ def main() -> int:
         explicit_max_workers=args.max_workers if args.max_workers > 0 else None,
     )
     max_workers = worker_policy.worker_count
+    latest_run, resumed_results = resumable_completed_case_rows(packet_id, case_order=case_order)
+    resumed_case_ids = [case_id for case_id in case_order if case_id in resumed_results]
+    resumed_from_run_id = str((latest_run or {}).get("run_id", "")).strip()
+    resumed_from_run_dir = Path(str((latest_run or {}).get("run_dir", "")).strip()) if latest_run else None
     run_id = f"{packet_id}__{datetime.now(timezone.utc).strftime('%Y%m%d-%H%M%S')}"
     run_dir = RUNS_ROOT / run_id
     run_dir.mkdir(parents=True, exist_ok=False)
@@ -1314,6 +1379,18 @@ def main() -> int:
     (run_dir / SUMMARY_DIR).mkdir(parents=True, exist_ok=True)
 
     for case_id in case_order:
+        if case_id in resumed_results and resumed_from_run_dir is not None:
+            prior_case_state_path = resumed_from_run_dir / "case_states" / f"{case_id}.json"
+            if prior_case_state_path.exists():
+                write_case_state(run_dir, case_id, load_json(prior_case_state_path))
+            else:
+                write_case_state(
+                    run_dir,
+                    case_id,
+                    _fallback_completed_case_state(packet_id, case_id, resumed_results[case_id]),
+                )
+            write_json(run_dir / "cases" / f"{case_id}.json", resumed_results[case_id])
+            continue
         write_case_state(run_dir, case_id, make_case_state(packet_id, case_id))
 
     run_state = {
@@ -1326,31 +1403,40 @@ def main() -> int:
         "completed_at": "",
         "case_count": len(cases),
         "max_workers": max_workers,
-        "queued_case_count": len(cases),
+        "queued_case_count": len(cases) - len(resumed_case_ids),
         "running_case_count": 0,
-        "completed_case_count": 0,
+        "completed_case_count": len(resumed_case_ids),
         "failed_case_count": 0,
-        "queued_case_ids": list(case_order),
+        "queued_case_ids": [case_id for case_id in case_order if case_id not in resumed_results],
         "running_case_ids": [],
-        "completed_case_ids": [],
+        "completed_case_ids": list(resumed_case_ids),
         "failed_case_ids": [],
+        "resumed_from_run_id": resumed_from_run_id,
+        "reused_completed_case_count": len(resumed_case_ids),
     }
     write_run_state(run_dir, run_state)
+    results_by_case_id: dict[str, dict[str, Any]] = dict(resumed_results)
     write_summary_outputs(
         run_dir,
-        [],
-        aggregate([], total_case_count=len(cases), status="running"),
+        ordered_rows(results_by_case_id, case_order),
+        aggregate(ordered_rows(results_by_case_id, case_order), total_case_count=len(cases), status="running"),
         packet_id=packet_id,
         partial=True,
     )
+    if resumed_case_ids and resumed_from_run_id:
+        print(
+            f"[resume] reusing {len(resumed_case_ids)} completed cases from {resumed_from_run_id}",
+            flush=True,
+        )
     trace_context = eval_trace_context(
         run_dir,
         eval_target=f"dataset_case_design_audit:{packet_id}",
     )
 
-    results_by_case_id: dict[str, dict[str, Any]] = {}
     submitted: dict[Future[dict[str, Any]], str] = {}
-    pending_cases = iter(cases)
+    pending_cases = iter(
+        case for case in cases if str(case.get("case_id", "")).strip() not in resumed_results
+    )
 
     def submit_next(executor: ThreadPoolExecutor) -> bool:
         try:

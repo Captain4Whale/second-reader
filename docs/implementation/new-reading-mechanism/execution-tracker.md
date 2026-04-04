@@ -58,25 +58,42 @@ Update when: status changes, blockers appear, or phases complete.
         - Chinese reserves: `10`
     - current honest shortfall:
       - `nawaer_baodian_private_zh__wealth` currently tops out at `7` candidate cases with no reserve rows
-    - first review wave is now launched over the scratch primaries:
+    - first review wave is now partially completed:
       - EN packet:
         - `human_notes_guided_dataset_v1_excerpt_en_first_review_20260404`
-        - job:
+        - original job:
           - `bgjob_human_notes_guided_dataset_v1_first_review_en_20260404`
-        - forced target:
-          - `MiniMax-M2.7-personal`
+          - failed on one transient `network_blocked` audit case
+        - resume attempts:
+          - `bgjob_human_notes_guided_dataset_v1_first_review_en_retry1_20260404`
+            - failed immediately because the pipeline still enforced `--case-id` for `first_review` even when resuming an existing packet
+          - `bgjob_human_notes_guided_dataset_v1_first_review_en_retry2_20260404`
+            - completed
+        - completed packet summary:
+          - `reading-companion-backend/eval/review_packets/archive/human_notes_guided_dataset_v1_excerpt_en_first_review_20260404/dataset_review_pipeline_summary.json`
+          - result:
+            - `keep = 14`
+            - `revise = 2`
+            - post-import `reviewed_active = 14`, `needs_revision = 2`
       - ZH packet:
         - `human_notes_guided_dataset_v1_excerpt_zh_first_review_20260404`
-        - job:
+        - original job:
           - `bgjob_human_notes_guided_dataset_v1_first_review_zh_20260404`
-        - forced target:
-          - `MiniMax-M2.7-highspeed`
+          - failed on `3` transient `network_blocked` audit cases
+        - current status:
+          - no retry launched yet
+          - the existing pending packet can now resume directly from `audit_packet`
+      - landed recovery support:
+        - `run_case_design_audit.py` now auto-reuses completed case outputs from the latest failed/incomplete audit run and only re-runs the missing remainder
+        - `run_dataset_review_pipeline.py` now allows `first_review` packets to resume from `audit_packet` or later without re-supplying `--case-id`
       - worker posture:
-        - both jobs use `run_dataset_review_pipeline`
+        - both language packets use `run_dataset_review_pipeline`
         - `selection_mode = first_review`
         - `--audit-max-workers 1 --review-max-workers 1`
       - next review interpretation target:
-        - decide whether the line should freeze honestly short, pull reserves, or take one narrow builder repair pass based on cluster-level keep/revise/drop results
+        - interpret the completed EN packet by cluster
+        - relaunch the ZH packet through the same resume path
+        - then decide whether the line should freeze honestly short, pull reserves, or take one narrow builder repair pass
     - the active benchmark pointer is still the clustered benchmark v1 draft:
       - do not merge, replace, or repoint based on the notes-guided line until its isolated outputs are reviewed intentionally
   - unattended automation should not widen further while the remaining minimum reader-character proof and trust-gate lane stay active

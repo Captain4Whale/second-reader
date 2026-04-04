@@ -197,7 +197,9 @@ def normalize_case_ids(raw_case_ids: list[str]) -> list[str]:
     return [case_id.strip() for case_id in raw_case_ids if case_id.strip()]
 
 
-def validate_selection_args(args: argparse.Namespace) -> None:
+def validate_selection_args(args: argparse.Namespace, *, stages: list[str]) -> None:
+    if "generate_packet" not in stages:
+        return
     if args.selection_mode != "first_review":
         return
     statuses = [status.strip() for status in (args.statuses or []) if status.strip()]
@@ -592,7 +594,7 @@ def run_pipeline(
 ) -> dict[str, Any]:
     paths = paths or PipelinePaths.from_root(ROOT)
     stages = requested_stages(args.from_stage, args.through_stage)
-    validate_selection_args(args)
+    validate_selection_args(args, stages=stages)
     state = PipelineState(
         dataset_id=args.dataset_id,
         family=args.family,

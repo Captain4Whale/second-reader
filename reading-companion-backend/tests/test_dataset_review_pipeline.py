@@ -521,6 +521,45 @@ def test_resume_from_existing_pending_packet(tmp_path: Path) -> None:
     ]
 
 
+def test_first_review_resume_from_existing_packet_does_not_require_case_ids(tmp_path: Path) -> None:
+    _bootstrap_dataset(tmp_path, benchmark_status="builder_active")
+    _write_pending_packet(
+        tmp_path,
+        dataset_id="demo_dataset",
+        packet_id="packet_first_review_resume",
+        packet_kind="first_review",
+    )
+    args = build_parser().parse_args(
+        [
+            "--dataset-id",
+            "demo_dataset",
+            "--family",
+            "excerpt_cases",
+            "--storage-mode",
+            "tracked",
+            "--selection-mode",
+            "first_review",
+            "--packet-id",
+            "packet_first_review_resume",
+            "--from-stage",
+            "audit_packet",
+            "--through-stage",
+            "final_summary",
+        ]
+    )
+    runner = FakePipelineRunner(tmp_path, dataset_id="demo_dataset")
+
+    payload = run_pipeline(args, paths=PipelinePaths.from_root(tmp_path), command_runner=runner)
+
+    assert payload["status"] == "ok"
+    assert [_command_module(command) for command in runner.calls] == [
+        "eval.attentional_v2.run_case_design_audit",
+        "eval.attentional_v2.auto_review_packet",
+        "eval.attentional_v2.import_dataset_review_packet",
+        "eval.attentional_v2.build_review_queue_summary",
+    ]
+
+
 def test_adjudication_fails_without_completed_audit(tmp_path: Path) -> None:
     _bootstrap_dataset(tmp_path)
     _write_pending_packet(tmp_path, dataset_id="demo_dataset", packet_id="packet_needs_audit")

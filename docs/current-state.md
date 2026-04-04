@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-04-04T03:54:58Z`
+Last verified: `2026-04-04T05:59:13Z`
 
 ## Current Objective
 - Keep Phase 9 on the mainline after the completed post-recovery gate review and the completed clustered benchmark freeze:
@@ -60,25 +60,46 @@ Last verified: `2026-04-04T03:54:58Z`
   - active benchmark pointer remains unchanged:
     - do not repoint away from clustered benchmark v1 based on this notes-guided line alone
     - decide merge / replace / lesson-borrowing only after explicit review of the isolated notes-guided outputs
-  - first review wave is now running over the scratch primaries:
+  - first review wave has now split into one completed EN packet and one pending ZH retry:
     - EN packet:
       - `human_notes_guided_dataset_v1_excerpt_en_first_review_20260404`
-      - job:
+      - original job:
         - `bgjob_human_notes_guided_dataset_v1_first_review_en_20260404`
-      - target routing:
-        - `MiniMax-M2.7-personal`
+        - failed during audit on one transient `network_blocked` / `Connection error.` case
+      - recovery jobs:
+        - `bgjob_human_notes_guided_dataset_v1_first_review_en_retry1_20260404`
+          - failed immediately because `run_dataset_review_pipeline` still required `--case-id` for `first_review` even when resuming from an existing packet
+        - `bgjob_human_notes_guided_dataset_v1_first_review_en_retry2_20260404`
+          - completed
+      - landed recovery support:
+        - `reading-companion-backend/eval/attentional_v2/run_case_design_audit.py` now auto-reuses completed case results from the latest failed/incomplete audit run and only re-runs the failed remainder
+        - `reading-companion-backend/eval/attentional_v2/run_dataset_review_pipeline.py` now allows `first_review` packets to resume from `audit_packet` or later without re-specifying `--case-id`
+      - completed audit summary:
+        - `12 keep`, `3 revise`, `1 drop`
+        - archived audit run:
+          - `reading-companion-backend/eval/runs/attentional_v2/case_audits/human_notes_guided_dataset_v1_excerpt_en_first_review_20260404__20260404-054311/summary/aggregate.json`
+      - completed adjudication/import summary:
+        - `14 keep`, `2 revise`, `0 drop`, `0 unclear`
+        - archived packet summary:
+          - `reading-companion-backend/eval/review_packets/archive/human_notes_guided_dataset_v1_excerpt_en_first_review_20260404/dataset_review_pipeline_summary.json`
+        - post-import dataset counts:
+          - `reviewed_active = 14`
+          - `needs_revision = 2`
     - ZH packet:
       - `human_notes_guided_dataset_v1_excerpt_zh_first_review_20260404`
-      - job:
+      - original job:
         - `bgjob_human_notes_guided_dataset_v1_first_review_zh_20260404`
-      - target routing:
-        - `MiniMax-M2.7-highspeed`
+        - failed during audit after `3` transient `network_blocked` / `Connection error.` cases
+      - current state:
+        - no new retry launched yet
+        - the pending packet can now resume through the same `audit_packet -> final_summary` path without rebuilding the packet
     - current operational posture:
-      - both jobs use `run_dataset_review_pipeline`
+      - both language packets use `run_dataset_review_pipeline`
       - selection mode is `first_review`
       - packet workers stay serial with `--audit-max-workers 1 --review-max-workers 1`
-    - next decision after the wave:
-      - interpret `keep/revise/drop` by cluster
+    - next decision after the completed EN packet:
+      - interpret EN `keep/revise/drop` by cluster
+      - relaunch the ZH packet through the new resume path
       - then decide honest short freeze vs reserve top-up vs narrow builder repair
 - Because current model-call cost is too high, pause new comparison work that sits outside the mechanism mainline for now:
   - keep the existing broader comparison checkpoints as reference baselines only
@@ -194,10 +215,7 @@ Last verified: `2026-04-04T03:54:58Z`
       - treat `MiniMax-M2.7-personal` and `MiniMax-M2.7-highspeed` as equivalent `M2.7` targets whose main difference is speed
       - future review/eval launches may therefore use both together for throughput
       - only keep a single forced target when we deliberately want one fully uniform reviewer surface
-- There are currently active background jobs in the registry.
-  - the active notes-guided review jobs are:
-    - `bgjob_human_notes_guided_dataset_v1_first_review_en_20260404`
-    - `bgjob_human_notes_guided_dataset_v1_first_review_zh_20260404`
+- There are currently no active background jobs in the registry.
   - the most recent completed clustered benchmark jobs are:
     - `bgjob_clustered_benchmark_v1_first_review_en_20260403`
     - `bgjob_clustered_benchmark_v1_first_review_zh_20260403`
@@ -207,6 +225,11 @@ Last verified: `2026-04-04T03:54:58Z`
     - `bgjob_human_notes_guided_dataset_v1_scratch_retry1_20260404`
     - `bgjob_human_notes_guided_dataset_v1_scratch_retry2_20260404`
     - `bgjob_human_notes_guided_dataset_v1_scratch_retry3_20260404`
+    - `bgjob_human_notes_guided_dataset_v1_first_review_en_retry2_20260404`
+  - the latest failed notes-guided support jobs are:
+    - `bgjob_human_notes_guided_dataset_v1_first_review_en_20260404`
+    - `bgjob_human_notes_guided_dataset_v1_first_review_zh_20260404`
+    - `bgjob_human_notes_guided_dataset_v1_first_review_en_retry1_20260404`
 - The English chapter-core retry-2 closeout remains the last broader multi-case comparison baseline, and the completed backup-tier substantive rerun is now the latest focused two-case mechanism-evidence checkpoint:
   - run:
     - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_vs_iterator_v1_chapter_core_en_round2_microselectivity_retry2_20260328/`
@@ -1474,17 +1497,14 @@ Last verified: `2026-04-04T03:54:58Z`
 ## Machine-Readable Appendix
 ```json
 {
-  "updated_at": "2026-04-04T03:54:58Z",
+  "updated_at": "2026-04-04T05:59:13Z",
   "last_updated_by": "codex",
   "active_task_ids": [
     "TASK-PHASE9-DECISIVE-EVAL",
     "TASK-DATASET-HUMAN-NOTES-GUIDED-V1"
   ],
   "blocked_task_ids": [],
-  "active_job_ids": [
-    "bgjob_human_notes_guided_dataset_v1_first_review_en_20260404",
-    "bgjob_human_notes_guided_dataset_v1_first_review_zh_20260404"
-  ],
+  "active_job_ids": [],
   "open_decision_ids": [
     "Q10"
   ],

@@ -11,6 +11,11 @@ from eval.attentional_v2.compare_case_audit_runs import compare_case_audit_runs
 from eval.attentional_v2.run_case_design_audit import PRIMARY_PROMPT, normalize_primary
 
 
+def _write_json(path: Path, payload: object) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+
 def test_primary_prompt_defines_score_scale() -> None:
     assert "use `strong|adequate|weak`" in PRIMARY_PROMPT
     assert "`keep` means no axis is `weak` and at most one axis is `adequate`" in PRIMARY_PROMPT
@@ -279,6 +284,102 @@ def test_invoke_review_with_meta_retries_on_placeholder_payload(monkeypatch: pyt
     assert metadata["semantic_attempt_count"] == 2
     assert metadata["semantic_retry_count"] == 1
     assert metadata["validation_issue"] == ""
+
+
+def test_resumable_completed_case_rows_reuses_only_completed_cases_from_latest_failed_run(
+    tmp_path: Path,
+) -> None:
+    runs_root = tmp_path / "case_audits"
+    run_dir = runs_root / "demo_packet__20260404-000000"
+    (run_dir / "summary").mkdir(parents=True, exist_ok=True)
+    (run_dir / "cases").mkdir(parents=True, exist_ok=True)
+    _write_json(
+        run_dir / "run_state.json",
+        {
+            "packet_id": "demo_packet",
+            "run_id": run_dir.name,
+            "status": "failed",
+            "case_count": 2,
+            "completed_case_count": 1,
+            "failed_case_count": 1,
+        },
+    )
+    _write_json(
+        run_dir / "summary" / "aggregate.json",
+        {
+            "status": "failed",
+            "case_count": 2,
+            "completed_case_count": 1,
+            "failed_case_count": 1,
+        },
+    )
+    _write_json(
+        run_dir / "cases" / "case_keep.json",
+        {
+            "case_id": "case_keep",
+            "packet_id": "demo_packet",
+            "status": "completed",
+            "factual_audit": {"ok": True},
+            "primary_review": {"decision": "keep"},
+            "adversarial_review": {"risk_level": "low"},
+        },
+    )
+    _write_json(
+        run_dir / "cases" / "case_fail.json",
+        {
+            "case_id": "case_fail",
+            "packet_id": "demo_packet",
+            "status": "failed",
+            "error": {"error_type": "ReaderLLMError", "error_message": "Connection error."},
+        },
+    )
+
+    latest_run, reusable = audit.resumable_completed_case_rows(
+        "demo_packet",
+        case_order=["case_keep", "case_fail"],
+        runs_root=runs_root,
+    )
+
+    assert latest_run is not None
+    assert latest_run["status"] == "failed"
+    assert list(reusable) == ["case_keep"]
+    assert reusable["case_keep"]["status"] == "completed"
+
+
+def test_resumable_completed_case_rows_skips_latest_completed_run(tmp_path: Path) -> None:
+    runs_root = tmp_path / "case_audits"
+    run_dir = runs_root / "demo_packet__20260404-000001"
+    (run_dir / "summary").mkdir(parents=True, exist_ok=True)
+    _write_json(
+        run_dir / "run_state.json",
+        {
+            "packet_id": "demo_packet",
+            "run_id": run_dir.name,
+            "status": "completed",
+            "case_count": 1,
+            "completed_case_count": 1,
+            "failed_case_count": 0,
+        },
+    )
+    _write_json(
+        run_dir / "summary" / "aggregate.json",
+        {
+            "status": "completed",
+            "case_count": 1,
+            "completed_case_count": 1,
+            "failed_case_count": 0,
+        },
+    )
+
+    latest_run, reusable = audit.resumable_completed_case_rows(
+        "demo_packet",
+        case_order=["case_keep"],
+        runs_root=runs_root,
+    )
+
+    assert latest_run is not None
+    assert latest_run["status"] == "completed"
+    assert reusable == {}
 
 
 def test_invoke_review_with_meta_accepts_legitimate_unclear_without_retry(

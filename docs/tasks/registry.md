@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-04-04T03:54:58Z`
+Last updated: `2026-04-04T05:59:13Z`
 
 ## Status Values
 - `active`
@@ -33,14 +33,16 @@ Last updated: `2026-04-04T03:54:58Z`
 - Lane: `dataset_platform`
 - Priority: `high`
 - Detail: `docs/implementation/new-reading-mechanism/question-aligned-case-construction.md`
-- Next: monitor the running first review wave over the scratch primaries, interpret `keep/revise/drop` by cluster, and then decide honest short freeze vs reserve top-up vs a narrow builder repair before any merge / replace decision
+- Next: interpret the completed EN first-review packet by cluster, relaunch the failed ZH packet through the new `audit_packet -> final_summary` resume path, and then decide honest short freeze vs reserve top-up vs a narrow builder repair before any merge / replace decision
 - Jobs:
   - `bgjob_human_notes_guided_dataset_v1_scratch_20260404` (`failed`)
   - `bgjob_human_notes_guided_dataset_v1_scratch_retry1_20260404` (`completed`)
   - `bgjob_human_notes_guided_dataset_v1_scratch_retry2_20260404` (`completed`)
   - `bgjob_human_notes_guided_dataset_v1_scratch_retry3_20260404` (`completed`)
-  - `bgjob_human_notes_guided_dataset_v1_first_review_en_20260404` (`running`)
-  - `bgjob_human_notes_guided_dataset_v1_first_review_zh_20260404` (`running`)
+  - `bgjob_human_notes_guided_dataset_v1_first_review_en_20260404` (`failed`)
+  - `bgjob_human_notes_guided_dataset_v1_first_review_zh_20260404` (`failed`)
+  - `bgjob_human_notes_guided_dataset_v1_first_review_en_retry1_20260404` (`failed`)
+  - `bgjob_human_notes_guided_dataset_v1_first_review_en_retry2_20260404` (`completed`)
 
 ## Parked
 
