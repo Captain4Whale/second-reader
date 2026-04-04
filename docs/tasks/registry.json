@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-04-04T00:19:20Z",
+  "updated_at": "2026-04-04T01:13:40Z",
   "tasks": [
     {
       "id": "TASK-MECH-EN-RERUN",
@@ -188,7 +188,7 @@
         "bgjob_callbackslice_auditrerun_20260331"
       ],
       "acceptance_ref": "docs/implementation/new-reading-mechanism/execution-tracker.md",
-      "next_action": "Keep builder work in bounded-hardening mode only for callback-bridge shaping and same-input audit/adjudication reproducibility, but do not open another builder repair wave from the completed callbackslice probe/rerun because it showed no builder/input drift and still left bounded same-input variance (action_drift = 1, primary_decision_drift = 1); only hand the slice back to frozen-slice comparison if that variance is explicitly accepted, otherwise schedule one later audit-stage-only reproducibility pass.",
+      "next_action": "Keep the landed builder available as support infrastructure, but do not open a new general builder wave while TASK-PHASE9-DECISIVE-EVAL is active; the clustered benchmark is already frozen, so broader construction work should resume only if later decisive eval results expose a specific blocker or if one explicitly scoped audit-stage-only reproducibility pass is requested.",
       "blocked_by": [],
       "evidence_refs": [
         "docs/implementation/new-reading-mechanism/evaluation-question-map.md",
@@ -266,8 +266,7 @@
         "reading-companion-backend/eval/runs/attentional_v2/case_audits/attentional_v2_private_library_excerpt_en_question_aligned_v1__scratch__callbackslice_auditv4_20260331__20260331-020431/run_state.json",
         "reading-companion-backend/eval/runs/attentional_v2/case_audits/attentional_v2_private_library_excerpt_en_question_aligned_v1__scratch__callbackslice_auditv4_20260331__20260331-122848/run_state.json"
       ],
-      "next_action": "Keep the landed builder available as support infrastructure, but do not open a new general builder wave while TASK-PHASE9-CLUSTERED-BENCHMARK is active; the current builder output is already being consumed by the clustered first-review/freeze path; only resume broader construction work if later decisive eval results expose a specific blocker or if one explicitly scoped audit-stage-only reproducibility pass is requested.",
-      "last_updated": "2026-04-01T11:50:52Z",
+      "last_updated": "2026-04-04T01:13:40Z",
       "last_updated_by": "codex"
     },
     {
@@ -323,7 +322,7 @@
         "bgjob_closed_loop_bilingual_broader_auditcoherencefix_20260330"
       ],
       "acceptance_ref": "docs/implementation/new-reading-mechanism/execution-tracker.md",
-      "next_action": "Keep the controller bounded and scratch-safe, but do not authorize another automatic widening step from the completed callbackslice probe/rerun because it separated builder quality from same-input audit/adjudication variance without clearing that variance; only return to frozen-slice comparison if bounded variance is explicitly accepted, otherwise keep widening closed until one later audit-stage-only reproducibility pass is requested.",
+      "next_action": "Keep the bounded controller scratch-safe and reusable, but do not widen automation while decisive mechanism-eval work is active; with current model cost pressure, do not spend on non-mainline comparison support loops; resume only if later work needs one explicitly scoped audit-stage-only reproducibility pass or another concrete support-lane unblocker.",
       "blocked_by": [],
       "evidence_refs": [
         "docs/implementation/new-reading-mechanism/question-aligned-case-construction.md",
@@ -445,14 +444,13 @@
         "reading-companion-backend/eval/runs/attentional_v2/case_audits/attentional_v2_private_library_excerpt_en_question_aligned_v1__scratch__callbackslice_auditv4_20260331__20260331-020431/run_state.json",
         "reading-companion-backend/eval/runs/attentional_v2/case_audits/attentional_v2_private_library_excerpt_en_question_aligned_v1__scratch__callbackslice_auditv4_20260331__20260331-122848/run_state.json"
       ],
-      "next_action": "Keep the bounded controller scratch-safe and reusable, but do not widen automation while decisive mechanism-eval work is active; with current model cost pressure, do not spend on non-mainline comparison support loops; resume only if later work needs one explicitly scoped audit-stage-only reproducibility pass or another concrete support-lane unblocker.",
-      "last_updated": "2026-04-01T11:50:52Z",
+      "last_updated": "2026-04-04T01:13:40Z",
       "last_updated_by": "codex"
     },
     {
       "id": "TASK-PHASE9-CLUSTERED-BENCHMARK",
       "title": "Freeze clustered benchmark v1 as the active Phase 9 evaluation surface",
-      "status": "active",
+      "status": "done",
       "lane": "dataset_platform",
       "priority": "high",
       "detail_ref": "docs/implementation/new-reading-mechanism/clustered-benchmark-v1-draft.md",
@@ -467,10 +465,12 @@
       ],
       "job_refs": [
         "bgjob_clustered_benchmark_v1_first_review_en_20260403",
-        "bgjob_clustered_benchmark_v1_first_review_zh_20260403"
+        "bgjob_clustered_benchmark_v1_first_review_zh_20260403",
+        "bgjob_clustered_benchmark_v1_reserve_review_en_20260404",
+        "bgjob_clustered_benchmark_v1_reserve_review_zh_20260404"
       ],
       "acceptance_ref": "docs/implementation/new-reading-mechanism/clustered-benchmark-v1-draft.md",
-      "next_action": "Use the completed English and Chinese smoke2 first-review job records plus imported dataset state as the freeze input, accept only keep cases without blocking problem types, top up deficit chapters from reserves only, freeze toward 10 primaries plus 2 reserves per chapter, and then relaunch decisive chapter/excerpt evaluation against the clustered active benchmark rather than the historical broad formal freeze.",
+      "next_action": "Keep the frozen clustered benchmark as the active Phase 9 evaluation surface, preserve the honest reserve = 7 / 8 shortfall, and move back to decisive mechanism-eval rather than reopening builder widening by default.",
       "blocked_by": [],
       "evidence_refs": [
         "docs/implementation/new-reading-mechanism/clustered-benchmark-v1-draft.md",
@@ -488,9 +488,14 @@
         "reading-companion-backend/tests/test_private_library_supplement.py",
         "reading-companion-backend/tests/test_run_excerpt_comparison.py",
         "reading-companion-backend/state/job_registry/jobs/bgjob_clustered_benchmark_v1_first_review_en_20260403.json",
-        "reading-companion-backend/state/job_registry/jobs/bgjob_clustered_benchmark_v1_first_review_zh_20260403.json"
+        "reading-companion-backend/state/job_registry/jobs/bgjob_clustered_benchmark_v1_first_review_zh_20260403.json",
+        "reading-companion-backend/state/dataset_build/build_runs/clustered_benchmark_v1_freeze_20260404/clustered_benchmark_v1_freeze_summary.json",
+        "reading-companion-backend/eval/attentional_v2/freeze_clustered_benchmark_v1.py",
+        "reading-companion-backend/tests/test_freeze_clustered_benchmark_v1.py",
+        "reading-companion-backend/state/job_registry/jobs/bgjob_clustered_benchmark_v1_reserve_review_en_20260404.json",
+        "reading-companion-backend/state/job_registry/jobs/bgjob_clustered_benchmark_v1_reserve_review_zh_20260404.json"
       ],
-      "last_updated": "2026-04-04T00:19:20Z",
+      "last_updated": "2026-04-04T01:13:40Z",
       "last_updated_by": "codex"
     },
     {
@@ -559,13 +564,13 @@
       "acceptance_ref": "docs/implementation/new-reading-mechanism/open-questions.md",
       "next_action": "Resolve Q10 after benchmark stabilization is strong enough that stable mechanism behavior can be frozen intentionally.",
       "blocked_by": [
-        "TASK-PHASE9-CLUSTERED-BENCHMARK"
+        "TASK-PHASE9-DECISIVE-EVAL"
       ],
       "evidence_refs": [
         "docs/implementation/new-reading-mechanism/open-questions.md",
         "docs/implementation/new-reading-mechanism/execution-tracker.md"
       ],
-      "last_updated": "2026-03-28T08:18:41Z",
+      "last_updated": "2026-04-04T01:13:40Z",
       "last_updated_by": "codex"
     },
     {
@@ -590,7 +595,7 @@
       "acceptance_ref": "docs/implementation/new-reading-mechanism/execution-tracker.md",
       "next_action": "Begin only after the benchmark direction, runtime viability work, and stable-doc promotion timing are intentionally settled.",
       "blocked_by": [
-        "TASK-PHASE9-CLUSTERED-BENCHMARK",
+        "TASK-PHASE9-DECISIVE-EVAL",
         "TASK-DOC-Q10"
       ],
       "evidence_refs": [
@@ -598,7 +603,7 @@
         "docs/api-contract.md",
         "docs/api-integration.md"
       ],
-      "last_updated": "2026-03-28T07:33:36Z",
+      "last_updated": "2026-04-04T01:13:40Z",
       "last_updated_by": "codex"
     },
     {
@@ -655,6 +660,40 @@
         "scripts/print-agent-context.py"
       ],
       "last_updated": "2026-03-28T07:33:36Z",
+      "last_updated_by": "codex"
+    },
+    {
+      "id": "TASK-PHASE9-DECISIVE-EVAL",
+      "title": "Run the next decisive chapter/excerpt comparison on the frozen clustered benchmark",
+      "status": "active",
+      "lane": "mechanism_eval",
+      "priority": "high",
+      "detail_ref": "docs/implementation/new-reading-mechanism/execution-tracker.md",
+      "truth_refs": [
+        "docs/backend-reader-evaluation.md",
+        "docs/backend-reading-mechanism.md",
+        "docs/workspace-overview.md"
+      ],
+      "decision_refs": [
+        "DEC-045",
+        "DEC-047",
+        "DEC-048"
+      ],
+      "job_refs": [],
+      "acceptance_ref": "docs/implementation/new-reading-mechanism/execution-tracker.md",
+      "next_action": "Launch the judged chapter_core comparison on the frozen 4 clustered chapters, then launch the judged excerpt comparison against excerpt_core_primary_frozen_draft; keep the known reserve = 7 / 8 shortfall and the current pressure imbalance explicit in result interpretation instead of reopening builder widening first.",
+      "blocked_by": [],
+      "evidence_refs": [
+        "docs/implementation/new-reading-mechanism/clustered-benchmark-v1-draft.md",
+        "docs/implementation/new-reading-mechanism/execution-tracker.md",
+        "reading-companion-backend/eval/manifests/splits/attentional_v2_clustered_benchmark_v1_draft.json",
+        "reading-companion-backend/state/dataset_build/build_runs/clustered_benchmark_v1_freeze_20260404/clustered_benchmark_v1_freeze_summary.json",
+        "reading-companion-backend/state/eval_local_datasets/excerpt_cases/attentional_v2_clustered_benchmark_v1_excerpt_en/manifest.json",
+        "reading-companion-backend/state/eval_local_datasets/excerpt_cases/attentional_v2_clustered_benchmark_v1_excerpt_zh/manifest.json",
+        "reading-companion-backend/eval/attentional_v2/run_chapter_comparison.py",
+        "reading-companion-backend/eval/attentional_v2/run_excerpt_comparison.py"
+      ],
+      "last_updated": "2026-04-04T01:13:40Z",
       "last_updated_by": "codex"
     }
   ]

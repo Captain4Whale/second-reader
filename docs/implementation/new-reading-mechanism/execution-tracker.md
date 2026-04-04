@@ -52,7 +52,7 @@ Update when: status changes, blockers appear, or phases complete.
     - `reader_character.selective_legibility`
     - `reader_character.coherent_accumulation`
     - `reader_value.insight_and_clarification`
-  - the active benchmark pointer has now shifted from the older broad formal freeze to the clustered benchmark v1 draft:
+  - the active benchmark pointer has now shifted from the older broad formal freeze to the clustered benchmark v1 draft, and that clustered benchmark is now frozen for real local use:
     - active split manifest:
       - `reading-companion-backend/eval/manifests/splits/attentional_v2_clustered_benchmark_v1_draft.json`
     - active implementation draft:
@@ -72,7 +72,7 @@ Update when: status changes, blockers appear, or phases complete.
       - stronger same-chapter duplicate control
       - ranked clustered case ids such as `__seed_1` and `__reserve_1`
       - active excerpt runner default now points at the clustered benchmark manifest and manifest-driven dataset/source refs
-    - real scratch smoke is now completed:
+    - real scratch smoke remains the construction source of truth:
       - run id:
         - `clustered_benchmark_v1_smoke2_20260403`
       - result:
@@ -83,33 +83,48 @@ Update when: status changes, blockers appear, or phases complete.
       - interpretation:
         - the builder now truly limits construction to the four selected chapters
         - widening the per-profile opportunity search was necessary to reach the intended `12 + 4` scratch output per chapter
-        - candidate pressure balance is still uneven, so benchmark quality now depends on review plus freeze rather than raw builder counts alone
+        - candidate pressure balance stayed uneven, so final benchmark quality depends on reviewed freeze results rather than on raw builder counts alone
     - the earlier `40 / 40` formal benchmark remains historical evidence only:
       - historical split manifest:
         - `reading-companion-backend/eval/manifests/splits/attentional_v2_formal_benchmark_v1_draft.json`
       - historical note:
         - `docs/implementation/new-reading-mechanism/formal-benchmark-v1-freeze-draft.md`
-    - first review wave is now live:
-      - English:
-        - job id:
-          - `bgjob_clustered_benchmark_v1_first_review_en_20260403`
-        - packet id:
-          - `attentional_v2_clustered_benchmark_v1_smoke2_first_review_en_20260403`
-      - Chinese:
-        - job id:
-          - `bgjob_clustered_benchmark_v1_first_review_zh_20260403`
-        - packet id:
-          - `attentional_v2_clustered_benchmark_v1_smoke2_first_review_zh_20260403`
-      - these already launched jobs both force `MiniMax-M2.7-personal` with `--audit-max-workers 1 --review-max-workers 1`
-      - later reserve top-up or follow-up review jobs may distribute across both `M2.7` targets instead of pinning both lanes to personal
+    - freeze closeout is now completed:
+      - freeze summary:
+        - `reading-companion-backend/state/dataset_build/build_runs/clustered_benchmark_v1_freeze_20260404/clustered_benchmark_v1_freeze_summary.json`
+      - final local package ids:
+        - `attentional_v2_clustered_benchmark_v1_chapters_en`
+        - `attentional_v2_clustered_benchmark_v1_chapters_zh`
+        - `attentional_v2_clustered_benchmark_v1_excerpt_en`
+        - `attentional_v2_clustered_benchmark_v1_excerpt_zh`
+        - `attentional_v2_clustered_benchmark_v1_runtime_en`
+        - `attentional_v2_clustered_benchmark_v1_runtime_zh`
+        - `attentional_v2_clustered_benchmark_v1_compat_shared`
+      - reserve/primary review jobs now completed:
+        - `bgjob_clustered_benchmark_v1_first_review_en_20260403`
+        - `bgjob_clustered_benchmark_v1_first_review_zh_20260403`
+        - `bgjob_clustered_benchmark_v1_reserve_review_en_20260404`
+        - `bgjob_clustered_benchmark_v1_reserve_review_zh_20260404`
+      - quota status:
+        - `chapter_core = 4 / 4`
+        - `excerpt_primary = 40 / 40`
+        - `reserve = 7 / 8`
+      - known limitation:
+        - `steve_jobs_private_en__17` needed two reserve promotions to reach `10` primaries and retained only one additional reserve, so the clustered benchmark now freezes honestly short by one reserve instead of widening to a fifth chapter
+      - current frozen primary pressure mix:
+        - `distinction_definition = 1`
+        - `tension_reversal = 28`
+        - `callback_bridge = 6`
+        - `anchored_reaction_selectivity = 5`
+      - landed freeze helper:
+        - `reading-companion-backend/eval/attentional_v2/freeze_clustered_benchmark_v1.py`
+        - `reading-companion-backend/tests/test_freeze_clustered_benchmark_v1.py`
     - the older formal decisive chapter/excerpt jobs were deliberately abandoned after the benchmark-pointer swap:
       - `bgjob_formal_benchmark_v1_chapter_core_decisive_targetsplit_retry1_20260403`
       - `bgjob_formal_benchmark_v1_excerpt_smoke_targetsplit_20260403`
-    - immediate next support move:
-      - wait for the clustered first-review archive summaries
-      - freeze toward `10` primaries plus `2` reserves per chapter
-      - pull reserve rows only where a chapter still falls short after primary review
-      - only then relaunch the next decisive judged eval lane on the new active benchmark
+    - immediate next mainline move:
+      - launch the next decisive judged chapter/excerpt lane on the frozen clustered benchmark
+      - keep the `reserve = 7 / 8` shortfall and the pressure imbalance explicit in result interpretation rather than reopening builder widening first
   - cheap honesty / integrity / compatibility checks remain useful sanity guards, but they are no longer treated as primary eval success targets
 - Current blockers:
   - the post-recovery gate review no longer blocks the next decisive lane:

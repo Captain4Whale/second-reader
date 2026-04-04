@@ -37,13 +37,13 @@
     },
     "excerpt_primary": {
       "target_total": 40,
-      "ready_now": 0,
-      "gap": 40
+      "ready_now": 40,
+      "gap": 0
     },
     "reserve": {
       "target_total": 8,
-      "ready_now": 0,
-      "gap": 8
+      "ready_now": 7,
+      "gap": 1
     }
   },
   "selected_chapter_clusters": [
@@ -81,18 +81,268 @@
     }
   ],
   "splits": {
-    "chapter_core_frozen_draft": {
-      "by_cluster": {
+    "excerpt_core_primary_frozen_draft": {
+      "by_chapter": {
         "supremacy_private_en__13": [
-          "supremacy_private_en__13"
+          "supremacy_private_en__13__callback_bridge__seed_1",
+          "supremacy_private_en__13__callback_bridge__seed_2",
+          "supremacy_private_en__13__callback_bridge__seed_3",
+          "supremacy_private_en__13__callback_bridge__seed_4",
+          "supremacy_private_en__13__callback_bridge__seed_5",
+          "supremacy_private_en__13__tension_reversal__seed_1",
+          "supremacy_private_en__13__anchored_reaction_selectivity__seed_1",
+          "supremacy_private_en__13__anchored_reaction_selectivity__seed_3",
+          "supremacy_private_en__13__tension_reversal__seed_2",
+          "supremacy_private_en__13__anchored_reaction_selectivity__seed_4"
         ],
         "steve_jobs_private_en__17": [
-          "steve_jobs_private_en__17"
+          "steve_jobs_private_en__17__callback_bridge__seed_1",
+          "steve_jobs_private_en__17__tension_reversal__seed_1",
+          "steve_jobs_private_en__17__tension_reversal__seed_3",
+          "steve_jobs_private_en__17__tension_reversal__seed_5",
+          "steve_jobs_private_en__17__tension_reversal__seed_6",
+          "steve_jobs_private_en__17__tension_reversal__seed_7",
+          "steve_jobs_private_en__17__tension_reversal__seed_8",
+          "steve_jobs_private_en__17__tension_reversal__seed_9",
+          "steve_jobs_private_en__17__tension_reversal__reserve_1",
+          "steve_jobs_private_en__17__tension_reversal__reserve_2"
         ],
         "zouchu_weiyi_zhenliguan_private_zh__14": [
-          "zouchu_weiyi_zhenliguan_private_zh__14"
+          "zouchu_weiyi_zhenliguan_private_zh__14__tension_reversal__seed_1",
+          "zouchu_weiyi_zhenliguan_private_zh__14__tension_reversal__seed_2",
+          "zouchu_weiyi_zhenliguan_private_zh__14__tension_reversal__seed_3",
+          "zouchu_weiyi_zhenliguan_private_zh__14__tension_reversal__seed_4",
+          "zouchu_weiyi_zhenliguan_private_zh__14__tension_reversal__seed_5",
+          "zouchu_weiyi_zhenliguan_private_zh__14__tension_reversal__seed_6",
+          "zouchu_weiyi_zhenliguan_private_zh__14__tension_reversal__seed_7",
+          "zouchu_weiyi_zhenliguan_private_zh__14__tension_reversal__seed_8",
+          "zouchu_weiyi_zhenliguan_private_zh__14__anchored_reaction_selectivity__seed_3",
+          "zouchu_weiyi_zhenliguan_private_zh__14__anchored_reaction_selectivity__seed_4"
         ],
         "meiguoren_de_xingge_private_zh__19": [
+          "meiguoren_de_xingge_private_zh__19__tension_reversal__seed_1",
+          "meiguoren_de_xingge_private_zh__19__tension_reversal__seed_2",
+          "meiguoren_de_xingge_private_zh__19__tension_reversal__seed_3",
+          "meiguoren_de_xingge_private_zh__19__tension_reversal__seed_4",
+          "meiguoren_de_xingge_private_zh__19__tension_reversal__seed_5",
+          "meiguoren_de_xingge_private_zh__19__tension_reversal__seed_6",
+          "meiguoren_de_xingge_private_zh__19__tension_reversal__seed_7",
+          "meiguoren_de_xingge_private_zh__19__distinction_definition__seed_1",
+          "meiguoren_de_xingge_private_zh__19__tension_reversal__seed_8",
+          "meiguoren_de_xingge_private_zh__19__tension_reversal__seed_9"
+        ]
+      },
+      "by_pressure": {
+        "distinction_definition": [
+          "meiguoren_de_xingge_private_zh__19__distinction_definition__seed_1"
+        ],
+        "tension_reversal": [
+          "supremacy_private_en__13__tension_reversal__seed_1",
+          "supremacy_private_en__13__tension_reversal__seed_2",
+          "steve_jobs_private_en__17__tension_reversal__seed_1",
+          "steve_jobs_private_en__17__tension_reversal__seed_3",
+          "steve_jobs_private_en__17__tension_reversal__seed_5",
+          "steve_jobs_private_en__17__tension_reversal__seed_6",
+          "steve_jobs_private_en__17__tension_reversal__seed_7",
+          "steve_jobs_private_en__17__tension_reversal__seed_8",
+          "steve_jobs_private_en__17__tension_reversal__seed_9",
+          "steve_jobs_private_en__17__tension_reversal__reserve_1",
+          "steve_jobs_private_en__17__tension_reversal__reserve_2",
+          "zouchu_weiyi_zhenliguan_private_zh__14__tension_reversal__seed_1",
+          "zouchu_weiyi_zhenliguan_private_zh__14__tension_reversal__seed_2",
+          "zouchu_weiyi_zhenliguan_private_zh__14__tension_reversal__seed_3",
+          "zouchu_weiyi_zhenliguan_private_zh__14__tension_reversal__seed_4",
+          "zouchu_weiyi_zhenliguan_private_zh__14__tension_reversal__seed_5",
+          "zouchu_weiyi_zhenliguan_private_zh__14__tension_reversal__seed_6",
+          "zouchu_weiyi_zhenliguan_private_zh__14__tension_reversal__seed_7",
+          "zouchu_weiyi_zhenliguan_private_zh__14__tension_reversal__seed_8",
+          "meiguoren_de_xingge_private_zh__19__tension_reversal__seed_1",
+          "meiguoren_de_xingge_private_zh__19__tension_reversal__seed_2",
+          "meiguoren_de_xingge_private_zh__19__tension_reversal__seed_3",
+          "meiguoren_de_xingge_private_zh__19__tension_reversal__seed_4",
+          "meiguoren_de_xingge_private_zh__19__tension_reversal__seed_5",
+          "meiguoren_de_xingge_private_zh__19__tension_reversal__seed_6",
+          "meiguoren_de_xingge_private_zh__19__tension_reversal__seed_7",
+          "meiguoren_de_xingge_private_zh__19__tension_reversal__seed_8",
+          "meiguoren_de_xingge_private_zh__19__tension_reversal__seed_9"
+        ],
+        "callback_bridge": [
+          "supremacy_private_en__13__callback_bridge__seed_1",
+          "supremacy_private_en__13__callback_bridge__seed_2",
+          "supremacy_private_en__13__callback_bridge__seed_3",
+          "supremacy_private_en__13__callback_bridge__seed_4",
+          "supremacy_private_en__13__callback_bridge__seed_5",
+          "steve_jobs_private_en__17__callback_bridge__seed_1"
+        ],
+        "anchored_reaction_selectivity": [
+          "supremacy_private_en__13__anchored_reaction_selectivity__seed_1",
+          "supremacy_private_en__13__anchored_reaction_selectivity__seed_3",
+          "supremacy_private_en__13__anchored_reaction_selectivity__seed_4",
+          "zouchu_weiyi_zhenliguan_private_zh__14__anchored_reaction_selectivity__seed_3",
+          "zouchu_weiyi_zhenliguan_private_zh__14__anchored_reaction_selectivity__seed_4"
+        ]
+      },
+      "all": [
+        "supremacy_private_en__13__callback_bridge__seed_1",
+        "supremacy_private_en__13__callback_bridge__seed_2",
+        "supremacy_private_en__13__callback_bridge__seed_3",
+        "supremacy_private_en__13__callback_bridge__seed_4",
+        "supremacy_private_en__13__callback_bridge__seed_5",
+        "supremacy_private_en__13__tension_reversal__seed_1",
+        "supremacy_private_en__13__anchored_reaction_selectivity__seed_1",
+        "supremacy_private_en__13__anchored_reaction_selectivity__seed_3",
+        "supremacy_private_en__13__tension_reversal__seed_2",
+        "supremacy_private_en__13__anchored_reaction_selectivity__seed_4",
+        "steve_jobs_private_en__17__callback_bridge__seed_1",
+        "steve_jobs_private_en__17__tension_reversal__seed_1",
+        "steve_jobs_private_en__17__tension_reversal__seed_3",
+        "steve_jobs_private_en__17__tension_reversal__seed_5",
+        "steve_jobs_private_en__17__tension_reversal__seed_6",
+        "steve_jobs_private_en__17__tension_reversal__seed_7",
+        "steve_jobs_private_en__17__tension_reversal__seed_8",
+        "steve_jobs_private_en__17__tension_reversal__seed_9",
+        "steve_jobs_private_en__17__tension_reversal__reserve_1",
+        "steve_jobs_private_en__17__tension_reversal__reserve_2",
+        "zouchu_weiyi_zhenliguan_private_zh__14__tension_reversal__seed_1",
+        "zouchu_weiyi_zhenliguan_private_zh__14__tension_reversal__seed_2",
+        "zouchu_weiyi_zhenliguan_private_zh__14__tension_reversal__seed_3",
+        "zouchu_weiyi_zhenliguan_private_zh__14__tension_reversal__seed_4",
+        "zouchu_weiyi_zhenliguan_private_zh__14__tension_reversal__seed_5",
+        "zouchu_weiyi_zhenliguan_private_zh__14__tension_reversal__seed_6",
+        "zouchu_weiyi_zhenliguan_private_zh__14__tension_reversal__seed_7",
+        "zouchu_weiyi_zhenliguan_private_zh__14__tension_reversal__seed_8",
+        "zouchu_weiyi_zhenliguan_private_zh__14__anchored_reaction_selectivity__seed_3",
+        "zouchu_weiyi_zhenliguan_private_zh__14__anchored_reaction_selectivity__seed_4",
+        "meiguoren_de_xingge_private_zh__19__tension_reversal__seed_1",
+        "meiguoren_de_xingge_private_zh__19__tension_reversal__seed_2",
+        "meiguoren_de_xingge_private_zh__19__tension_reversal__seed_3",
+        "meiguoren_de_xingge_private_zh__19__tension_reversal__seed_4",
+        "meiguoren_de_xingge_private_zh__19__tension_reversal__seed_5",
+        "meiguoren_de_xingge_private_zh__19__tension_reversal__seed_6",
+        "meiguoren_de_xingge_private_zh__19__tension_reversal__seed_7",
+        "meiguoren_de_xingge_private_zh__19__distinction_definition__seed_1",
+        "meiguoren_de_xingge_private_zh__19__tension_reversal__seed_8",
+        "meiguoren_de_xingge_private_zh__19__tension_reversal__seed_9"
+      ]
+    },
+    "insight_and_clarification_subset_frozen_draft": {
+      "by_pressure": {
+        "distinction_definition": [
+          "meiguoren_de_xingge_private_zh__19__distinction_definition__seed_1"
+        ],
+        "tension_reversal": [
+          "supremacy_private_en__13__tension_reversal__seed_1",
+          "supremacy_private_en__13__tension_reversal__seed_2",
+          "steve_jobs_private_en__17__tension_reversal__seed_1",
+          "steve_jobs_private_en__17__tension_reversal__seed_3",
+          "steve_jobs_private_en__17__tension_reversal__seed_5",
+          "steve_jobs_private_en__17__tension_reversal__seed_6",
+          "steve_jobs_private_en__17__tension_reversal__seed_7",
+          "steve_jobs_private_en__17__tension_reversal__seed_8",
+          "steve_jobs_private_en__17__tension_reversal__seed_9",
+          "steve_jobs_private_en__17__tension_reversal__reserve_1",
+          "steve_jobs_private_en__17__tension_reversal__reserve_2",
+          "zouchu_weiyi_zhenliguan_private_zh__14__tension_reversal__seed_1",
+          "zouchu_weiyi_zhenliguan_private_zh__14__tension_reversal__seed_2",
+          "zouchu_weiyi_zhenliguan_private_zh__14__tension_reversal__seed_3",
+          "zouchu_weiyi_zhenliguan_private_zh__14__tension_reversal__seed_4",
+          "zouchu_weiyi_zhenliguan_private_zh__14__tension_reversal__seed_5",
+          "zouchu_weiyi_zhenliguan_private_zh__14__tension_reversal__seed_6",
+          "zouchu_weiyi_zhenliguan_private_zh__14__tension_reversal__seed_7",
+          "zouchu_weiyi_zhenliguan_private_zh__14__tension_reversal__seed_8",
+          "meiguoren_de_xingge_private_zh__19__tension_reversal__seed_1",
+          "meiguoren_de_xingge_private_zh__19__tension_reversal__seed_2",
+          "meiguoren_de_xingge_private_zh__19__tension_reversal__seed_3",
+          "meiguoren_de_xingge_private_zh__19__tension_reversal__seed_4",
+          "meiguoren_de_xingge_private_zh__19__tension_reversal__seed_5",
+          "meiguoren_de_xingge_private_zh__19__tension_reversal__seed_6",
+          "meiguoren_de_xingge_private_zh__19__tension_reversal__seed_7",
+          "meiguoren_de_xingge_private_zh__19__tension_reversal__seed_8",
+          "meiguoren_de_xingge_private_zh__19__tension_reversal__seed_9"
+        ],
+        "callback_bridge": [
+          "supremacy_private_en__13__callback_bridge__seed_1",
+          "supremacy_private_en__13__callback_bridge__seed_2",
+          "supremacy_private_en__13__callback_bridge__seed_3",
+          "supremacy_private_en__13__callback_bridge__seed_4",
+          "supremacy_private_en__13__callback_bridge__seed_5",
+          "steve_jobs_private_en__17__callback_bridge__seed_1"
+        ]
+      },
+      "all": [
+        "supremacy_private_en__13__callback_bridge__seed_1",
+        "supremacy_private_en__13__callback_bridge__seed_2",
+        "supremacy_private_en__13__callback_bridge__seed_3",
+        "supremacy_private_en__13__callback_bridge__seed_4",
+        "supremacy_private_en__13__callback_bridge__seed_5",
+        "supremacy_private_en__13__tension_reversal__seed_1",
+        "supremacy_private_en__13__tension_reversal__seed_2",
+        "steve_jobs_private_en__17__callback_bridge__seed_1",
+        "steve_jobs_private_en__17__tension_reversal__seed_1",
+        "steve_jobs_private_en__17__tension_reversal__seed_3",
+        "steve_jobs_private_en__17__tension_reversal__seed_5",
+        "steve_jobs_private_en__17__tension_reversal__seed_6",
+        "steve_jobs_private_en__17__tension_reversal__seed_7",
+        "steve_jobs_private_en__17__tension_reversal__seed_8",
+        "steve_jobs_private_en__17__tension_reversal__seed_9",
+        "steve_jobs_private_en__17__tension_reversal__reserve_1",
+        "steve_jobs_private_en__17__tension_reversal__reserve_2",
+        "zouchu_weiyi_zhenliguan_private_zh__14__tension_reversal__seed_1",
+        "zouchu_weiyi_zhenliguan_private_zh__14__tension_reversal__seed_2",
+        "zouchu_weiyi_zhenliguan_private_zh__14__tension_reversal__seed_3",
+        "zouchu_weiyi_zhenliguan_private_zh__14__tension_reversal__seed_4",
+        "zouchu_weiyi_zhenliguan_private_zh__14__tension_reversal__seed_5",
+        "zouchu_weiyi_zhenliguan_private_zh__14__tension_reversal__seed_6",
+        "zouchu_weiyi_zhenliguan_private_zh__14__tension_reversal__seed_7",
+        "zouchu_weiyi_zhenliguan_private_zh__14__tension_reversal__seed_8",
+        "meiguoren_de_xingge_private_zh__19__tension_reversal__seed_1",
+        "meiguoren_de_xingge_private_zh__19__tension_reversal__seed_2",
+        "meiguoren_de_xingge_private_zh__19__tension_reversal__seed_3",
+        "meiguoren_de_xingge_private_zh__19__tension_reversal__seed_4",
+        "meiguoren_de_xingge_private_zh__19__tension_reversal__seed_5",
+        "meiguoren_de_xingge_private_zh__19__tension_reversal__seed_6",
+        "meiguoren_de_xingge_private_zh__19__tension_reversal__seed_7",
+        "meiguoren_de_xingge_private_zh__19__distinction_definition__seed_1",
+        "meiguoren_de_xingge_private_zh__19__tension_reversal__seed_8",
+        "meiguoren_de_xingge_private_zh__19__tension_reversal__seed_9"
+      ]
+    },
+    "reserve_target_draft": {
+      "by_chapter": {
+        "supremacy_private_en__13": [
+          "supremacy_private_en__13__anchored_reaction_selectivity__reserve_1",
+          "supremacy_private_en__13__distinction_definition__reserve_1"
+        ],
+        "steve_jobs_private_en__17": [
+          "steve_jobs_private_en__17__tension_reversal__reserve_3"
+        ],
+        "zouchu_weiyi_zhenliguan_private_zh__14": [
+          "zouchu_weiyi_zhenliguan_private_zh__14__distinction_definition__reserve_1",
+          "zouchu_weiyi_zhenliguan_private_zh__14__distinction_definition__reserve_2"
+        ],
+        "meiguoren_de_xingge_private_zh__19": [
+          "meiguoren_de_xingge_private_zh__19__tension_reversal__seed_10",
+          "meiguoren_de_xingge_private_zh__19__distinction_definition__reserve_1"
+        ]
+      },
+      "all": [
+        "supremacy_private_en__13__anchored_reaction_selectivity__reserve_1",
+        "supremacy_private_en__13__distinction_definition__reserve_1",
+        "steve_jobs_private_en__17__tension_reversal__reserve_3",
+        "zouchu_weiyi_zhenliguan_private_zh__14__distinction_definition__reserve_1",
+        "zouchu_weiyi_zhenliguan_private_zh__14__distinction_definition__reserve_2",
+        "meiguoren_de_xingge_private_zh__19__tension_reversal__seed_10",
+        "meiguoren_de_xingge_private_zh__19__distinction_definition__reserve_1"
+      ]
+    },
+    "chapter_core_frozen_draft": {
+      "by_language": {
+        "en": [
+          "supremacy_private_en__13",
+          "steve_jobs_private_en__17"
+        ],
+        "zh": [
+          "zouchu_weiyi_zhenliguan_private_zh__14",
           "meiguoren_de_xingge_private_zh__19"
         ]
       },
@@ -102,38 +352,7 @@
         "zouchu_weiyi_zhenliguan_private_zh__14",
         "meiguoren_de_xingge_private_zh__19"
       ]
-    },
-    "excerpt_core_primary_frozen_draft": {
-      "by_chapter": {
-        "supremacy_private_en__13": [],
-        "steve_jobs_private_en__17": [],
-        "zouchu_weiyi_zhenliguan_private_zh__14": [],
-        "meiguoren_de_xingge_private_zh__19": []
-      },
-      "by_pressure": {
-        "distinction_definition": [],
-        "tension_reversal": [],
-        "callback_bridge": [],
-        "anchored_reaction_selectivity": []
-      },
-      "all": []
-    },
-    "insight_and_clarification_subset_frozen_draft": {
-      "by_pressure": {
-        "distinction_definition": [],
-        "tension_reversal": [],
-        "callback_bridge": []
-      },
-      "all": []
-    },
-    "reserve_target_draft": {
-      "by_chapter": {
-        "supremacy_private_en__13": [],
-        "steve_jobs_private_en__17": [],
-        "zouchu_weiyi_zhenliguan_private_zh__14": [],
-        "meiguoren_de_xingge_private_zh__19": []
-      },
-      "all": []
     }
-  }
+  },
+  "freeze_summary_ref": "state/dataset_build/build_runs/clustered_benchmark_v1_freeze_20260404/clustered_benchmark_v1_freeze_summary.json"
 }

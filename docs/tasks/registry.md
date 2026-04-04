@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-04-04T00:19:20Z`
+Last updated: `2026-04-04T01:13:40Z`
 
 ## Status Values
 - `active`
@@ -20,15 +20,13 @@ Last updated: `2026-04-04T00:19:20Z`
 
 ## Active
 
-### `TASK-PHASE9-CLUSTERED-BENCHMARK` — Freeze clustered benchmark v1 as the active Phase 9 evaluation surface
+### `TASK-PHASE9-DECISIVE-EVAL` — Run the next decisive chapter/excerpt comparison on the frozen clustered benchmark
 - Status: `active`
-- Lane: `dataset_platform`
+- Lane: `mechanism_eval`
 - Priority: `high`
-- Detail: `docs/implementation/new-reading-mechanism/clustered-benchmark-v1-draft.md`
-- Next: use the completed English and Chinese smoke2 first-review job records plus imported dataset state as the freeze input, accept only `keep` cases without blocking problem types, top up deficit chapters from reserves only, freeze toward `10` primaries plus `2` reserves per chapter, and then relaunch decisive chapter/excerpt evaluation against the clustered active benchmark rather than the historical broad formal freeze
-- Jobs:
-  - `bgjob_clustered_benchmark_v1_first_review_en_20260403` (`completed`)
-  - `bgjob_clustered_benchmark_v1_first_review_zh_20260403` (`completed`)
+- Detail: `docs/implementation/new-reading-mechanism/execution-tracker.md`
+- Next: launch the judged `chapter_core` comparison on the frozen `4` clustered chapters, then launch the judged excerpt comparison against `excerpt_core_primary_frozen_draft`; keep the known `reserve = 7 / 8` shortfall and the current pressure imbalance explicit in result interpretation instead of reopening builder widening first
+- Jobs: none
 
 ## Parked
 
@@ -52,7 +50,7 @@ Last updated: `2026-04-04T00:19:20Z`
 - Lane: `dataset_platform`
 - Priority: `high`
 - Detail: `docs/implementation/new-reading-mechanism/execution-tracker.md`
-- Next: keep the landed builder available as support infrastructure, but do not open a new general builder wave while `TASK-PHASE9-CLUSTERED-BENCHMARK` is active; the current builder output is already being consumed by the clustered first-review/freeze path; only resume broader construction work if later decisive eval results expose a specific blocker or if one explicitly scoped audit-stage-only reproducibility pass is requested
+- Next: keep the landed builder available as support infrastructure, but do not open a new general builder wave while `TASK-PHASE9-DECISIVE-EVAL` is active; the clustered benchmark is already frozen, so broader construction work should resume only if later decisive eval results expose a specific blocker or if one explicitly scoped audit-stage-only reproducibility pass is requested
 - Jobs:
   - `bgjob_closed_loop_en_broader_callbackpromptfix_20260331` (`completed`)
   - `bgjob_closed_loop_zh_callbacklookback_20260330` (`completed`)
@@ -115,7 +113,7 @@ Last updated: `2026-04-04T00:19:20Z`
 - Lane: `documentation`
 - Priority: `medium`
 - Detail: `docs/implementation/new-reading-mechanism/open-questions.md`
-- Blocked by: `TASK-PHASE9-CLUSTERED-BENCHMARK`
+- Blocked by: `TASK-PHASE9-DECISIVE-EVAL`
 - Next: resolve `Q10` once benchmark stabilization has settled enough to freeze stable mechanism behavior intentionally
 
 ### `TASK-FE-SECTION-RETIREMENT` — Retire section-first chapter/detail and marks surfaces
@@ -123,10 +121,22 @@ Last updated: `2026-04-04T00:19:20Z`
 - Lane: `migration`
 - Priority: `medium`
 - Detail: `docs/implementation/new-reading-mechanism/execution-tracker.md`
-- Blocked by: `TASK-PHASE9-CLUSTERED-BENCHMARK`, `TASK-DOC-Q10`
+- Blocked by: `TASK-PHASE9-DECISIVE-EVAL`, `TASK-DOC-Q10`
 - Next: start only after benchmark direction, runtime viability work, and stable-doc promotion timing are intentionally fixed
 
 ## Done
+
+### `TASK-PHASE9-CLUSTERED-BENCHMARK` — Freeze clustered benchmark v1 as the active Phase 9 evaluation surface
+- Status: `done`
+- Lane: `dataset_platform`
+- Priority: `high`
+- Detail: `docs/implementation/new-reading-mechanism/clustered-benchmark-v1-draft.md`
+- Next: keep the frozen clustered benchmark as the active Phase 9 evaluation surface, preserve the honest `reserve = 7 / 8` shortfall, and move back to decisive mechanism-eval rather than reopening builder widening by default
+- Jobs:
+  - `bgjob_clustered_benchmark_v1_first_review_en_20260403` (`completed`)
+  - `bgjob_clustered_benchmark_v1_first_review_zh_20260403` (`completed`)
+  - `bgjob_clustered_benchmark_v1_reserve_review_en_20260404` (`completed`)
+  - `bgjob_clustered_benchmark_v1_reserve_review_zh_20260404` (`completed`)
 
 ### `TASK-BENCH-BACKLOG-RESCUE` — Apply the round-2 backlog-rescue decision from the modern supplement
 - Status: `done`
