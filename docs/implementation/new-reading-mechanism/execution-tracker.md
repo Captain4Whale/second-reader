@@ -34,6 +34,23 @@ Update when: status changes, blockers appear, or phases complete.
     - `coherent_accumulation` is now interpreted operationally as bounded long-span continuity and carryover, not generic whole-book memory
     - excerpt and long-span surfaces may intentionally use different source texts when that improves fit and runtime efficiency
   - current builder/controller work stays available as a bounded support lane, not as the active mainline
+  - the completed retry3 notes-guided excerpt lane also established a new operational constraint:
+    - the current blocker is no longer only quota posture or shard architecture
+    - `attentional_v2` now has a measured throughput problem on excerpt-scale chapter reads
+    - the latest decisive excerpt lane finished with:
+      - `55` total cases
+      - `7` cases where both mechanisms completed
+      - `34` cases where only `iterator_v1` completed
+      - `14` cases where both mechanisms failed
+    - comparable completed units showed large call-shape asymmetry rather than slower single-call latency:
+      - `nawaer_baodian_private_zh__chapter_22`: `220` vs `28` reader calls, about `5.25x` wall-clock
+      - `nawaer_baodian_private_zh__chapter_23`: `126` vs `26` reader calls, about `3.2x` wall-clock
+    - heavier long chapters widened that gap further before failure:
+      - `huochu_shengming_de_yiyi_private_zh__chapter_8`: `922` vs `71` reader calls
+      - `value_of_others_private_en__chapter_8`: `1105` vs `123` reader calls
+    - immediate working rule:
+      - do not launch another broad excerpt judged rerun first
+      - first define one ROI-first judged excerpt micro-slice, then use it as the validation harness for a bounded `attentional_v2` throughput repair
   - a new isolated human-notes-guided dataset v1 support lane is now landed on top of the question-aligned builder:
     - managed notes assets now live under:
       - `reading-companion-backend/state/library_notes/`
@@ -273,6 +290,13 @@ Update when: status changes, blockers appear, or phases complete.
           - interpretation:
             - only the `nawaer_baodian_private_zh__22` and `nawaer_baodian_private_zh__23` cases currently carry non-placeholder judged results
             - the remaining chapters still contribute placeholder `mechanism_unavailable` outcomes, so this run is usable as partial evidence but not as full-surface mechanism proof
+          - operational completion split:
+            - `7 / 55` cases finished with both mechanisms completed
+            - `34 / 55` finished with only `iterator_v1` completed
+            - `14 / 55` finished with both mechanisms failed
+          - throughput reading:
+            - `iterator_v1` was not simply luckier in judge order; it completed far more chapter units because the current `attentional_v2` local cycle consumed substantially more reader calls per comparable unit
+            - the next decisive excerpt move should therefore combine ROI-first slice selection with bounded `attentional_v2` throughput repair instead of another immediate full-surface rerun
         - persistence mismatch:
           - the explicit merge command returned the updated aggregate, but the persisted `summary/aggregate.json` and `summary/report.md` under the shared run root still reflect the older all-placeholder output
           - do not treat those persisted summary files as authoritative until that merge-write mismatch is repaired or regenerated

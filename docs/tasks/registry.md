@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-04-05T11:47:42Z`
+Last updated: `2026-04-05T12:16:52Z`
 
 ## Status Values
 - `active`
@@ -25,7 +25,7 @@ Last updated: `2026-04-05T11:47:42Z`
 - Lane: `mechanism_eval`
 - Priority: `high`
 - Detail: `docs/implementation/new-reading-mechanism/execution-tracker.md`
-- Next: treat the completed dual-pool recovery retry3 plus explicit merge as partial evidence only, repair or regenerate the stale persisted retry1 summary if we still need durable run-level artifacts, then decide whether `excerpt surface v1.1` needs one narrow chapter-22 fill repair or an explicit honest-short defer before its own smoke and judged promotion
+- Next: treat the completed dual-pool recovery retry3 plus explicit merge as partial evidence only, keep the result primarily as throughput evidence, define one ROI-first judged excerpt micro-slice, and use that slice as the validation harness for a bounded `attentional_v2` throughput repair before any new broad excerpt judged rerun or `excerpt surface v1.1` promotion decision
 - Jobs:
   - `bgjob_human_notes_excerpt_smoke_light_20260404` (`completed`)
   - `bgjob_human_notes_guided_excerpt_eval_v1_judged_20260404` (`completed`)
@@ -76,7 +76,7 @@ Last updated: `2026-04-05T11:47:42Z`
 - Priority: `high`
 - Detail: `docs/implementation/new-reading-mechanism/excerpt-surface-v1-1-draft.md`
 - Blocked by: `TASK-PHASE9-DECISIVE-EVAL`
-- Next: keep the completed retry3 judged notes-guided result archived as evidence only, then either repair `nawaer_baodian_private_zh__22` to reach floor `6` with one narrow fill pass or defer that shortfall explicitly before running the v1.1 smoke and judged lane
+- Next: keep the completed retry3 judged notes-guided result archived as evidence only, let the next ROI-first excerpt micro-slice plus bounded `attentional_v2` throughput repair settle first, then either repair `nawaer_baodian_private_zh__22` to reach floor `6` with one narrow fill pass or defer that shortfall explicitly before running the v1.1 smoke and judged lane
 - Jobs: none
 
 ### `TASK-DATASET-QUESTION-ALIGNED-CASE-CONSTRUCTION` — Build question-aligned case construction for evaluation datasets

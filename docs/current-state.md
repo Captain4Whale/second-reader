@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-04-05T11:42:34Z`
+Last verified: `2026-04-05T12:16:52Z`
 
 ## Current Objective
 - Keep Phase 9 on the mainline under the new split-surface evaluation strategy:
@@ -582,6 +582,28 @@ Last verified: `2026-04-05T11:42:34Z`
     - `reading-companion-backend/eval/manifests/splits/attentional_v2_human_notes_guided_excerpt_eval_v1_draft.json`
   - immediate purpose:
     - run judged local excerpt comparison now for `selective_legibility` plus local `insight_and_clarification`
+  - latest operational lesson from the completed retry3 judged lane:
+    - `55` case payloads were emitted, but only `7` cases finished with both mechanisms completed
+    - `34` cases finished with only `iterator_v1` completed
+    - `14` cases finished with both mechanisms failed
+    - this run therefore gave us more throughput evidence than full-surface quality evidence
+  - measured throughput asymmetry from the same run:
+    - `nawaer_baodian_private_zh__chapter_22`
+      - `attentional_v2`: `220` reader calls, about `67.0` minutes
+      - `iterator_v1`: `28` reader calls, about `12.8` minutes
+    - `nawaer_baodian_private_zh__chapter_23`
+      - `attentional_v2`: `126` reader calls, about `35.6` minutes
+      - `iterator_v1`: `26` reader calls, about `11.1` minutes
+    - heavier failed units widened the same pattern further:
+      - `huochu_shengming_de_yiyi_private_zh__chapter_8`: `922` vs `71` calls
+      - `value_of_others_private_en__chapter_8`: `1105` vs `123` calls
+  - immediate interpretation:
+    - provider quota pressure was the terminal trigger
+    - but the stronger explanatory cause is now the current `attentional_v2` call shape, not merely slower single-call latency or a bad launch posture
+  - current recommended next move:
+    - do not spend on another broad excerpt judged rerun first
+    - first freeze one explicit ROI-first judged excerpt micro-slice
+    - then use that slice as the validation harness for a bounded `attentional_v2` throughput repair
 - The prepared next local excerpt surface is `excerpt surface v1.1`:
   - tracked manifest:
     - `reading-companion-backend/eval/manifests/splits/attentional_v2_excerpt_surface_v1_1_draft.json`
@@ -1882,6 +1904,8 @@ Last verified: `2026-04-05T11:42:34Z`
   - When should the detailed `attentional_v2` working design be promoted from temporary implementation docs into stable mechanism docs?
 - `Q-EXCERPT-SURFACE-V1.1-CH22`
   - After the completed notes-guided retry3 judged rerun, should `nawaer_baodian_private_zh__22` receive one narrow chapter-wide fill repair to reach the honest-short floor `6`, or should the shortfall be deferred explicitly and kept honest in the v1.1 draft?
+- `Q-EXCERPT-MICRO-SLICE`
+  - Which `2-3` high-ROI excerpt chapters should become the default judged micro-slice while `attentional_v2` throughput repair is underway?
 
 ## Active Risks
 - The new question-aligned private-library builder now keeps the live `v2` review-truth datasets as feedback input instead of overwriting them, but the new question-aligned outputs are still seed candidates rather than reviewed benchmark truth.
@@ -1896,6 +1920,8 @@ Last verified: `2026-04-05T11:42:34Z`
 - When one future run needs a deliberately uniform reviewer surface, keep forcing one concrete target for that run.
 - Judged rerun parent logs can look sparse while case workers are still making progress, so future health checks should look at per-case runtime files and local LLM traces rather than only the top-level job log.
 - The completed retry3 merge exposed a summary-persistence mismatch: the merge command returned updated partial winner counts, but the persisted shared-run `summary/aggregate.json` and `summary/report.md` still show the older all-placeholder output.
+- The latest retry3 lane showed that `attentional_v2` can consume several times more reader calls than `iterator_v1` on the same chapter unit; if we ignore that and only treat the result as a quota incident, we will keep rerunning the wrong problem.
+- The latest notes-guided full-surface run also showed that low-ROI heavy chapters can occupy worker slots early enough to starve later higher-value units before they even begin, so default manifest order is no longer a safe judged-launch policy.
 - The completed detached two-case rerun used `--judge-mode none`, so its `tie: 2` aggregate can be mistaken for a real comparison result unless we keep the placeholder nature explicit.
 - The managed source catalog now drives both intake and the current private-library supplement build on this checkout, but the first real scratch evidence says the next bottleneck is case quality rather than source-input plumbing.
 - The first real scratch builder/controller runs were intentionally narrow: the earliest English baseline still yielded no `keep` outcomes, but the later quality-fix runs improved that materially; the remaining narrowness is now bilingual stability rather than the mere absence of `keep` results.
@@ -1941,7 +1967,7 @@ Last verified: `2026-04-05T11:42:34Z`
 ## Machine-Readable Appendix
 ```json
 {
-  "updated_at": "2026-04-05T11:42:34Z",
+  "updated_at": "2026-04-05T12:16:52Z",
   "last_updated_by": "codex",
   "active_task_ids": [
     "TASK-PHASE9-DECISIVE-EVAL",
@@ -1951,7 +1977,8 @@ Last verified: `2026-04-05T11:42:34Z`
   "active_job_ids": [],
   "open_decision_ids": [
     "Q10",
-    "Q-EXCERPT-SURFACE-V1.1-CH22"
+    "Q-EXCERPT-SURFACE-V1.1-CH22",
+    "Q-EXCERPT-MICRO-SLICE"
   ],
   "detail_refs": [
     "docs/implementation/new-reading-mechanism/execution-tracker.md",

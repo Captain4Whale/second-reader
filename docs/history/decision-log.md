@@ -1357,3 +1357,35 @@ The old active windows `nawaer_baodian_private_zh__wealth`, `nawaer_baodian_priv
 - `docs/tasks/registry.md`
 - `docs/tasks/registry.json`
 - `docs/implementation/new-reading-mechanism/execution-tracker.md`
+
+## Entry 49
+**ID**: DEC-052
+**Status**: active
+
+**Decision / Inflection**: Treat excerpt-lane throughput as a first-class Phase 9 gate, and stop defaulting to broad excerpt-surface judged reruns before `attentional_v2` has both a bounded throughput repair and one ROI-first micro-slice harness.
+
+**Period**: April 5, 2026, after the completed dual-pool retry3 judged excerpt lane finally produced reusable operational evidence but still failed to produce broad two-mechanism overlap.
+
+**Problem**: The project now has a staged/sharded runner, pooled targets, and explicit usage summaries, so "the harness is monolithic" is no longer the main explanation for slow excerpt evaluation. The completed retry3 lane showed a different bottleneck clearly: `attentional_v2` can require several times more reader calls than `iterator_v1` on the same chapter, which then interacts with real quota cooldown and causes most of the surface to degrade into `iterator-only` or `mechanism_unavailable` outcomes. At the same time, the full notes-guided surface still includes low-ROI heavy chapters that can occupy early worker slots for hours before later evidence-rich units even begin. If the project kept rerunning full surfaces under that posture, it would keep paying for throughput diagnosis without actually accelerating iteration.
+
+**Alternatives considered**: Keep rerunning the full notes-guided or `excerpt surface v1.1` judged lanes more patiently, focus only on throughput repair without changing excerpt iteration posture, or postpone mechanism repair and only redesign the dataset.
+
+**Why this path won**: A smaller judged micro-slice and a bounded throughput repair solve different parts of the same problem. The micro-slice gives the project a fast, repeatable attribution harness; the throughput repair makes that harness meaningfully runnable for `attentional_v2`. Doing only one side would leave the project either optimizing blindly on a slow surface or measuring a better surface with a still-too-expensive mechanism. The right immediate posture is therefore combined but ordered: define the ROI-first slice, use it as the default judged harness, and repair throughput before spending on another broad excerpt rerun.
+
+**What changed in the system**: Stable evaluation guidance now records throughput diagnosis and ROI-first excerpt iteration as explicit rules. The working ledger now treats `attentional_v2` local-cycle call amplification as a high-priority failure mode and full-surface low-ROI launch order as an evaluation anti-pattern. Living state now records the retry3 completion split (`7` both-complete, `34` iterator-only, `14` both-failed), the measured call-count asymmetry, and the new recommendation not to launch another broad excerpt judged rerun first. `TASK-PHASE9-DECISIVE-EVAL` now points to one ROI-first judged excerpt micro-slice plus bounded `attentional_v2` throughput repair as the next move.
+
+**Why it matters later**: Future contributors will otherwise see the dual-pool retry3 lane as "another quota failure" and miss the more important lesson: by this point the project had enough runner and gateway machinery to expose a real mechanism-throughput bottleneck. This is the moment where throughput stopped being an operator complaint and became part of mechanism fitness and benchmark-launch design.
+
+**Primary evidence**:
+- `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_human_notes_guided_excerpt_eval_v1_judged_parallel_retry1_20260405/summary/llm_usage.json`
+- `reading-companion-backend/state/job_registry/logs/bgjob_human_notes_excerpt_parallel_judged_shard_a_dualpool_recovery_retry3_20260405.log`
+- `reading-companion-backend/state/job_registry/logs/bgjob_human_notes_excerpt_parallel_judged_shard_b_dualpool_recovery_retry3_20260405.log`
+- `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_human_notes_guided_excerpt_eval_v1_judged_parallel_retry1_20260405/shards/shard_a/units/nawaer_baodian_private_zh__chapter_22.json`
+- `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_human_notes_guided_excerpt_eval_v1_judged_parallel_retry1_20260405/shards/shard_a/units/value_of_others_private_en__chapter_8.json`
+- `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_human_notes_guided_excerpt_eval_v1_judged_parallel_retry1_20260405/shards/shard_b/units/huochu_shengming_de_yiyi_private_zh__chapter_8.json`
+- `docs/backend-reader-evaluation.md`
+- `docs/implementation/new-reading-mechanism/mechanism-pattern-ledger.md`
+- `docs/current-state.md`
+- `docs/tasks/registry.md`
+- `docs/tasks/registry.json`
+- `docs/implementation/new-reading-mechanism/execution-tracker.md`

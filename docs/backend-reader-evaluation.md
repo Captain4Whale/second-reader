@@ -231,6 +231,38 @@ Use `docs/backend-reading-mechanism.md` for shared mechanism-platform boundaries
   - zero-score ties from `mechanism_unavailable` fallback payloads are not valid comparison results
   - the correct next move is a quota-safe rerun, not product interpretation
 
+## Throughput Diagnosis Rule
+- Cross-mechanism evaluation should treat runtime throughput as first-class evidence, not only as operator inconvenience.
+- When a partial or failed judged run leaves materially asymmetric completion between mechanisms, diagnose two separate questions:
+  - are provider cooldown or quota limits the immediate trigger
+  - is one mechanism amplifying call volume enough to create that trigger much earlier than the other
+- Stable diagnosis should distinguish:
+  - per-call latency
+  - call-count amplification
+  - wall-clock time to finish one comparable unit
+- If one mechanism's single-call latency is not worse, but it still requires several times more reader calls per chapter or window, that is mechanism evidence rather than a pure provider accident.
+- A mechanism is not ready for broad decisive evaluation if its runtime shape makes normal judged comparison impractically slow or brittle under the project's real budget posture.
+- Useful minimum artifacts for this diagnosis include:
+  - both-mechanisms-completed case counts
+  - single-mechanism-only case counts
+  - per-unit wall-clock spans by mechanism
+  - per-unit call counts by mechanism
+  - when available, dominant node-family call counts
+
+## ROI-First Excerpt Iteration Rule
+- When the excerpt surface is still being tuned or one mechanism still has unresolved throughput instability, the default judged cadence should be a small high-ROI slice rather than a full excerpt-surface rerun.
+- High-ROI excerpt units are chapters that combine:
+  - dense non-duplicative case coverage
+  - clear target pressure
+  - acceptable read cost
+- Low-ROI heavy chapters should not occupy the first worker slots by default if they mainly delay later evidence without adding proportionate discriminative value.
+- A small judged excerpt slice is not a replacement for the fuller benchmark surface.
+  - it is the preferred fast-iteration harness for:
+    - throughput repair
+    - rubric checks
+    - early mechanism attribution
+- Full excerpt-surface judged reruns should resume only after the current mechanism and launch posture can complete the smaller slice within an iteration budget the project is actually willing to repeat.
+
 ## Why Reader Evaluation Exists
 - Reader evaluation exists to guide optimization first and preserve evidence second.
 - Its first job is to make mechanism work legible:

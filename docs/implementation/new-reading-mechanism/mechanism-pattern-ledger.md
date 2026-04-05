@@ -263,7 +263,83 @@ This file is a living working ledger. Stable rules still belong in `docs/backend
   - fix chapter/span metadata before rerunning review
   - allow `1-2` strong probes per window instead of forcing weak thirds
 
+### 10. Attentional V2 local-cycle call amplification can make a semantically promising run operationally unusable
+- Pattern kind: `failure_mode`
+- Source mechanism: `attentional_v2`
+- Potential destination: immediate `attentional_v2` throughput repair
+- Why it matters:
+  - The mechanism can preserve a plausible reading shape while still demanding too many LLM calls per chapter to support fast judged iteration.
+  - Under real quota pressure, this turns one judged excerpt lane into hours of work with very little two-mechanism overlap.
+- Contributing causes:
+  - the active local cycle repeatedly calls `meaning_unit_closure` and `controller_decision` at very high frequency
+  - `reaction_emission` is still triggered often enough to add another large layer of calls
+  - long chapters and low-ROI speech-like chapters magnify this loop dramatically
+- Evidence:
+  - completed retry3 excerpt lane:
+    - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_human_notes_guided_excerpt_eval_v1_judged_parallel_retry1_20260405/summary/llm_usage.json`
+    - `reading-companion-backend/state/job_registry/logs/bgjob_human_notes_excerpt_parallel_judged_shard_a_dualpool_recovery_retry3_20260405.log`
+    - `reading-companion-backend/state/job_registry/logs/bgjob_human_notes_excerpt_parallel_judged_shard_b_dualpool_recovery_retry3_20260405.log`
+  - concrete per-unit comparisons from the same run:
+    - `nawaer_baodian_private_zh__chapter_22`: `220` vs `28` reader calls, about `5.25x` wall-clock
+    - `nawaer_baodian_private_zh__chapter_23`: `126` vs `26` reader calls, about `3.2x` wall-clock
+    - `huochu_shengming_de_yiyi_private_zh__chapter_8`: `922` vs `71` reader calls, about `6.78x` wall-clock before failure
+    - `value_of_others_private_en__chapter_8`: `1105` vs `123` reader calls, about `2.65x` wall-clock before failure
+  - dominant node families in the same traces:
+    - `meaning_unit_closure`
+    - `controller_decision`
+    - `reaction_emission`
+- Status: `observed`
+- Next action:
+  - make throughput repair the next bounded mechanism move before another broad excerpt judged rerun
+  - test a narrow repair that:
+    - merges or fast-paths `meaning_unit_closure` plus `controller_decision`
+    - raises the gate for `reaction_emission`
+    - introduces a coarser long-chapter / low-ROI reading mode before call counts explode
+
+### 11. Full-surface judged excerpt runs can waste most of their budget on early heavy low-ROI chapters
+- Pattern kind: `anti_pattern`
+- Source mechanism: evaluation launch posture
+- Potential destination: all future excerpt judged launches
+- Why it matters:
+  - A run can spend hours on a few heavy chapters before later units even begin, which means the project learns almost nothing new while still paying near-full cost.
+  - This is especially damaging when one mechanism is much more expensive than the other.
+- Contributing causes:
+  - shard worker slots are occupied by the first submitted heavy units
+  - low-ROI speech / anthology chapters can still consume a large share of wall-clock and quota budget
+  - later higher-value units may start only after the provider posture is already degraded
+- Evidence:
+  - completed retry3 excerpt lane:
+    - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_human_notes_guided_excerpt_eval_v1_judged_parallel_retry1_20260405`
+  - observed completion split from the run:
+    - `7 / 55` cases finished with both mechanisms
+    - `34 / 55` finished with only `iterator_v1`
+    - `14 / 55` finished with both mechanisms failed
+  - late-start examples from the same run:
+    - `nawaer_baodian_private_zh__chapter_13` and `xidaduo_private_zh__chapter_15` only began issuing `attentional_v2` calls near the very end of the run window
+- Status: `avoid`
+- Next action:
+  - stop treating full-surface judged excerpt reruns as the default fast-iteration path
+  - define one explicit ROI-first judged micro-slice and use it as the default harness for:
+    - mechanism throughput repair
+    - rubric checks
+    - quick cross-mechanism attribution
+  - keep the fuller excerpt surface for later confirmation once the mechanism and launch posture are healthier
+
 ## Current Selective Implementation Queue
+
+### Priority 0. Reduce `attentional_v2` call amplification before the next broad excerpt judged rerun
+- Why now:
+  - the latest judged retry3 produced useful operational evidence, but it also showed that the current local cycle can demand `~5x-13x` more reader calls than `iterator_v1` on comparable completed chapters
+  - without a bounded throughput repair, even a better excerpt surface will still feel too slow for normal iteration
+- Boundaries:
+  - keep `attentional_v2`'s chapter-scale thematic threading and bounded visible reactions as design invariants
+  - do not "solve" throughput by flattening the mechanism into `iterator_v1`-style free reaction emission
+- Concrete implementation direction:
+  - first target node-count reduction inside the active local cycle:
+    - merge or fast-path `meaning_unit_closure` and `controller_decision`
+    - tighten `reaction_emission` eligibility
+    - add a cheaper long-chapter / low-ROI fallback mode
+  - validate each bounded repair on a small judged ROI-first slice before spending on a broader rerun
 
 ### Priority 1. Extend the landed micro-selectivity repair into narrative / reference-heavy English local cases
 - Why now:
