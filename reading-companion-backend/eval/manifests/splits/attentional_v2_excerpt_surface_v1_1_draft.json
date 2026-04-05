@@ -1,0 +1,436 @@
+{
+  "manifest_id": "attentional_v2_excerpt_surface_v1_1_draft",
+  "description": "Excerpt surface v1.1 draft composed incrementally from reviewed notes-guided and clustered freezes.",
+  "targets": [
+    "reader_character.selective_legibility",
+    "reader_value.insight_and_clarification"
+  ],
+  "benchmark_shape": {
+    "kind": "excerpt_surface_v1_1",
+    "surface_role": "excerpt_surface_eval",
+    "chapter_unit_target_total": 7,
+    "excerpt_primary_target_range": {
+      "min": 56,
+      "max": 70
+    },
+    "chapter_primary_target_band": {
+      "min": 8,
+      "max": 10
+    },
+    "chapter_hard_cap": 12,
+    "chapter_honest_short_floor": 6
+  },
+  "storage_note": "`state/eval_local_datasets/` remains a storage term only; excerpt-surface semantics live in this manifest and the evaluation docs.",
+  "source_origin_rule": "Do not use public/private/manual/agent-downloaded provenance as benchmark strata.",
+  "source_refs": {
+    "source_manifests": [
+      "state/dataset_build/build_runs/human_notes_guided_dataset_v1_20260404/manifests/source_books/attentional_v2_human_notes_guided_dataset_v1_source_books__scratch__human_notes_guided_dataset_v1_20260404.json",
+      "state/dataset_build/build_runs/human_notes_guided_dataset_v1_20260404/manifests/local_refs/attentional_v2_human_notes_guided_dataset_v1_local_refs__scratch__human_notes_guided_dataset_v1_20260404.json",
+      "state/dataset_build/build_runs/human_notes_guided_dataset_v1_20260404/manifests/corpora/attentional_v2_human_notes_guided_dataset_v1_corpus__scratch__human_notes_guided_dataset_v1_20260404.json",
+      "eval/manifests/source_books/attentional_v2_clustered_benchmark_v1_source_books.json",
+      "eval/manifests/local_refs/attentional_v2_clustered_benchmark_v1_local_refs.json",
+      "eval/manifests/corpora/attentional_v2_clustered_benchmark_v1_corpus.json"
+    ],
+    "excerpt_case_datasets": [
+      "state/eval_local_datasets/excerpt_cases/attentional_v2_excerpt_surface_v1_1_excerpt_en",
+      "state/eval_local_datasets/excerpt_cases/attentional_v2_excerpt_surface_v1_1_excerpt_zh"
+    ]
+  },
+  "selected_chapter_units": [
+    {
+      "chapter_case_id": "value_of_others_private_en__8",
+      "selection_role": "keep",
+      "origin_lines": [
+        "human_notes_guided_dataset_v1"
+      ]
+    },
+    {
+      "chapter_case_id": "huochu_shengming_de_yiyi_private_zh__8",
+      "selection_role": "keep",
+      "origin_lines": [
+        "human_notes_guided_dataset_v1"
+      ]
+    },
+    {
+      "chapter_case_id": "xidaduo_private_zh__15",
+      "selection_role": "keep",
+      "origin_lines": [
+        "human_notes_guided_dataset_v1"
+      ]
+    },
+    {
+      "chapter_case_id": "nawaer_baodian_private_zh__13",
+      "selection_role": "keep",
+      "origin_lines": [
+        "human_notes_guided_dataset_v1"
+      ]
+    },
+    {
+      "chapter_case_id": "nawaer_baodian_private_zh__22",
+      "selection_role": "keep",
+      "origin_lines": [
+        "human_notes_guided_dataset_v1"
+      ]
+    },
+    {
+      "chapter_case_id": "supremacy_private_en__13",
+      "selection_role": "import",
+      "origin_lines": [
+        "clustered_benchmark_v1"
+      ]
+    },
+    {
+      "chapter_case_id": "meiguoren_de_xingge_private_zh__19",
+      "selection_role": "import",
+      "origin_lines": [
+        "clustered_benchmark_v1"
+      ]
+    }
+  ],
+  "dropped_chapter_units": [
+    "mangge_zhi_dao_private_zh__18",
+    "mangge_zhi_dao_private_zh__26",
+    "nawaer_baodian_private_zh__23"
+  ],
+  "fallback_donor_chapter_units": [
+    "steve_jobs_private_en__17",
+    "zouchu_weiyi_zhenliguan_private_zh__14"
+  ],
+  "quota_status": {
+    "chapter_units": {
+      "target_total": 7,
+      "ready_now": 7,
+      "gap": 0
+    },
+    "excerpt_primary": {
+      "target_range": {
+        "min": 56,
+        "max": 70
+      },
+      "ready_now": 59,
+      "gap_to_floor": 0
+    },
+    "insight_and_clarification_subset": {
+      "derived_from_profiles": [
+        "callback_bridge",
+        "distinction_definition",
+        "tension_reversal"
+      ],
+      "ready_now": 43,
+      "gap": 0
+    },
+    "chapter_floor": {
+      "target_min_per_chapter": 6,
+      "chapters_below_floor": [
+        "nawaer_baodian_private_zh__22"
+      ]
+    }
+  },
+  "splits": {
+    "excerpt_core_primary_frozen_draft": {
+      "by_chapter": {
+        "value_of_others_private_en__8": [
+          "value_of_others_private_en__8__distinction_definition__seed_2",
+          "value_of_others_private_en__8__distinction_definition__seed_3",
+          "value_of_others_private_en__8__anchored_reaction_selectivity__seed_1",
+          "value_of_others_private_en__8__tension_reversal__seed_1",
+          "value_of_others_private_en__8__tension_reversal__seed_2",
+          "value_of_others_private_en__8__anchored_reaction_selectivity__seed_5",
+          "value_of_others_private_en__8__anchored_reaction_selectivity__seed_3",
+          "value_of_others_private_en__8__distinction_definition__seed_1"
+        ],
+        "huochu_shengming_de_yiyi_private_zh__8": [
+          "huochu_shengming_de_yiyi_private_zh__8__distinction_definition__seed_2",
+          "huochu_shengming_de_yiyi_private_zh__8__distinction_definition__seed_1",
+          "huochu_shengming_de_yiyi_private_zh__8__anchored_reaction_selectivity__seed_1",
+          "huochu_shengming_de_yiyi_private_zh__8__tension_reversal__seed_5",
+          "huochu_shengming_de_yiyi_private_zh__8__tension_reversal__seed_4",
+          "huochu_shengming_de_yiyi_private_zh__8__tension_reversal__seed_3",
+          "huochu_shengming_de_yiyi_private_zh__8__tension_reversal__seed_2",
+          "huochu_shengming_de_yiyi_private_zh__8__tension_reversal__seed_1"
+        ],
+        "xidaduo_private_zh__15": [
+          "xidaduo_private_zh__15__anchored_reaction_selectivity__seed_3",
+          "xidaduo_private_zh__15__anchored_reaction_selectivity__seed_4",
+          "xidaduo_private_zh__15__anchored_reaction_selectivity__seed_1",
+          "xidaduo_private_zh__15__anchored_reaction_selectivity__seed_2",
+          "xidaduo_private_zh__15__tension_reversal__seed_2",
+          "xidaduo_private_zh__15__tension_reversal__seed_1",
+          "xidaduo_private_zh__15__anchored_reaction_selectivity__seed_5",
+          "xidaduo_private_zh__15__tension_reversal__seed_3"
+        ],
+        "nawaer_baodian_private_zh__13": [
+          "nawaer_baodian_private_zh__13__distinction_definition__seed_1",
+          "nawaer_baodian_private_zh__13__anchored_reaction_selectivity__seed_2",
+          "nawaer_baodian_private_zh__13__anchored_reaction_selectivity__seed_1",
+          "nawaer_baodian_private_zh__13__tension_reversal__seed_2",
+          "nawaer_baodian_private_zh__13__tension_reversal__seed_3",
+          "nawaer_baodian_private_zh__13__anchored_reaction_selectivity__seed_3"
+        ],
+        "nawaer_baodian_private_zh__22": [
+          "nawaer_baodian_private_zh__22__distinction_definition__seed_1",
+          "nawaer_baodian_private_zh__22__callback_bridge__seed_1",
+          "nawaer_baodian_private_zh__22__tension_reversal__seed_1",
+          "nawaer_baodian_private_zh__22__tension_reversal__seed_2",
+          "nawaer_baodian_private_zh__22__tension_reversal__seed_3"
+        ],
+        "supremacy_private_en__13": [
+          "supremacy_private_en__13__distinction_definition__reserve_1",
+          "supremacy_private_en__13__anchored_reaction_selectivity__seed_4",
+          "supremacy_private_en__13__callback_bridge__seed_5",
+          "supremacy_private_en__13__tension_reversal__seed_2",
+          "supremacy_private_en__13__anchored_reaction_selectivity__seed_1",
+          "supremacy_private_en__13__callback_bridge__seed_1",
+          "supremacy_private_en__13__callback_bridge__seed_2",
+          "supremacy_private_en__13__callback_bridge__seed_3",
+          "supremacy_private_en__13__callback_bridge__seed_4",
+          "supremacy_private_en__13__tension_reversal__seed_1",
+          "supremacy_private_en__13__anchored_reaction_selectivity__reserve_1",
+          "supremacy_private_en__13__anchored_reaction_selectivity__seed_3"
+        ],
+        "meiguoren_de_xingge_private_zh__19": [
+          "meiguoren_de_xingge_private_zh__19__tension_reversal__seed_9",
+          "meiguoren_de_xingge_private_zh__19__tension_reversal__seed_4",
+          "meiguoren_de_xingge_private_zh__19__distinction_definition__seed_1",
+          "meiguoren_de_xingge_private_zh__19__tension_reversal__seed_5",
+          "meiguoren_de_xingge_private_zh__19__tension_reversal__seed_10",
+          "meiguoren_de_xingge_private_zh__19__tension_reversal__seed_6",
+          "meiguoren_de_xingge_private_zh__19__tension_reversal__seed_7",
+          "meiguoren_de_xingge_private_zh__19__distinction_definition__reserve_1",
+          "meiguoren_de_xingge_private_zh__19__tension_reversal__seed_8",
+          "meiguoren_de_xingge_private_zh__19__tension_reversal__seed_3",
+          "meiguoren_de_xingge_private_zh__19__tension_reversal__seed_2",
+          "meiguoren_de_xingge_private_zh__19__tension_reversal__seed_1"
+        ]
+      },
+      "by_pressure": {
+        "distinction_definition": [
+          "supremacy_private_en__13__distinction_definition__reserve_1",
+          "value_of_others_private_en__8__distinction_definition__seed_2",
+          "value_of_others_private_en__8__distinction_definition__seed_3",
+          "value_of_others_private_en__8__distinction_definition__seed_1",
+          "huochu_shengming_de_yiyi_private_zh__8__distinction_definition__seed_2",
+          "huochu_shengming_de_yiyi_private_zh__8__distinction_definition__seed_1",
+          "meiguoren_de_xingge_private_zh__19__distinction_definition__seed_1",
+          "meiguoren_de_xingge_private_zh__19__distinction_definition__reserve_1",
+          "nawaer_baodian_private_zh__13__distinction_definition__seed_1",
+          "nawaer_baodian_private_zh__22__distinction_definition__seed_1"
+        ],
+        "tension_reversal": [
+          "supremacy_private_en__13__tension_reversal__seed_2",
+          "supremacy_private_en__13__tension_reversal__seed_1",
+          "value_of_others_private_en__8__tension_reversal__seed_1",
+          "value_of_others_private_en__8__tension_reversal__seed_2",
+          "huochu_shengming_de_yiyi_private_zh__8__tension_reversal__seed_5",
+          "huochu_shengming_de_yiyi_private_zh__8__tension_reversal__seed_4",
+          "huochu_shengming_de_yiyi_private_zh__8__tension_reversal__seed_3",
+          "huochu_shengming_de_yiyi_private_zh__8__tension_reversal__seed_2",
+          "huochu_shengming_de_yiyi_private_zh__8__tension_reversal__seed_1",
+          "meiguoren_de_xingge_private_zh__19__tension_reversal__seed_9",
+          "meiguoren_de_xingge_private_zh__19__tension_reversal__seed_4",
+          "meiguoren_de_xingge_private_zh__19__tension_reversal__seed_5",
+          "meiguoren_de_xingge_private_zh__19__tension_reversal__seed_10",
+          "meiguoren_de_xingge_private_zh__19__tension_reversal__seed_6",
+          "meiguoren_de_xingge_private_zh__19__tension_reversal__seed_7",
+          "meiguoren_de_xingge_private_zh__19__tension_reversal__seed_8",
+          "meiguoren_de_xingge_private_zh__19__tension_reversal__seed_3",
+          "meiguoren_de_xingge_private_zh__19__tension_reversal__seed_2",
+          "meiguoren_de_xingge_private_zh__19__tension_reversal__seed_1",
+          "nawaer_baodian_private_zh__22__tension_reversal__seed_1",
+          "nawaer_baodian_private_zh__22__tension_reversal__seed_2",
+          "nawaer_baodian_private_zh__22__tension_reversal__seed_3",
+          "nawaer_baodian_private_zh__13__tension_reversal__seed_2",
+          "nawaer_baodian_private_zh__13__tension_reversal__seed_3",
+          "xidaduo_private_zh__15__tension_reversal__seed_2",
+          "xidaduo_private_zh__15__tension_reversal__seed_1",
+          "xidaduo_private_zh__15__tension_reversal__seed_3"
+        ],
+        "callback_bridge": [
+          "supremacy_private_en__13__callback_bridge__seed_5",
+          "supremacy_private_en__13__callback_bridge__seed_1",
+          "supremacy_private_en__13__callback_bridge__seed_2",
+          "supremacy_private_en__13__callback_bridge__seed_3",
+          "supremacy_private_en__13__callback_bridge__seed_4",
+          "nawaer_baodian_private_zh__22__callback_bridge__seed_1"
+        ],
+        "anchored_reaction_selectivity": [
+          "supremacy_private_en__13__anchored_reaction_selectivity__seed_4",
+          "supremacy_private_en__13__anchored_reaction_selectivity__seed_1",
+          "supremacy_private_en__13__anchored_reaction_selectivity__reserve_1",
+          "supremacy_private_en__13__anchored_reaction_selectivity__seed_3",
+          "value_of_others_private_en__8__anchored_reaction_selectivity__seed_1",
+          "value_of_others_private_en__8__anchored_reaction_selectivity__seed_5",
+          "value_of_others_private_en__8__anchored_reaction_selectivity__seed_3",
+          "huochu_shengming_de_yiyi_private_zh__8__anchored_reaction_selectivity__seed_1",
+          "nawaer_baodian_private_zh__13__anchored_reaction_selectivity__seed_2",
+          "nawaer_baodian_private_zh__13__anchored_reaction_selectivity__seed_1",
+          "nawaer_baodian_private_zh__13__anchored_reaction_selectivity__seed_3",
+          "xidaduo_private_zh__15__anchored_reaction_selectivity__seed_3",
+          "xidaduo_private_zh__15__anchored_reaction_selectivity__seed_4",
+          "xidaduo_private_zh__15__anchored_reaction_selectivity__seed_1",
+          "xidaduo_private_zh__15__anchored_reaction_selectivity__seed_2",
+          "xidaduo_private_zh__15__anchored_reaction_selectivity__seed_5"
+        ]
+      },
+      "all": [
+        "supremacy_private_en__13__distinction_definition__reserve_1",
+        "supremacy_private_en__13__anchored_reaction_selectivity__seed_4",
+        "supremacy_private_en__13__callback_bridge__seed_5",
+        "supremacy_private_en__13__tension_reversal__seed_2",
+        "supremacy_private_en__13__anchored_reaction_selectivity__seed_1",
+        "supremacy_private_en__13__callback_bridge__seed_1",
+        "supremacy_private_en__13__callback_bridge__seed_2",
+        "supremacy_private_en__13__callback_bridge__seed_3",
+        "supremacy_private_en__13__callback_bridge__seed_4",
+        "supremacy_private_en__13__tension_reversal__seed_1",
+        "supremacy_private_en__13__anchored_reaction_selectivity__reserve_1",
+        "supremacy_private_en__13__anchored_reaction_selectivity__seed_3",
+        "value_of_others_private_en__8__distinction_definition__seed_2",
+        "value_of_others_private_en__8__distinction_definition__seed_3",
+        "value_of_others_private_en__8__anchored_reaction_selectivity__seed_1",
+        "value_of_others_private_en__8__tension_reversal__seed_1",
+        "value_of_others_private_en__8__tension_reversal__seed_2",
+        "value_of_others_private_en__8__anchored_reaction_selectivity__seed_5",
+        "value_of_others_private_en__8__anchored_reaction_selectivity__seed_3",
+        "value_of_others_private_en__8__distinction_definition__seed_1",
+        "huochu_shengming_de_yiyi_private_zh__8__distinction_definition__seed_2",
+        "huochu_shengming_de_yiyi_private_zh__8__distinction_definition__seed_1",
+        "huochu_shengming_de_yiyi_private_zh__8__anchored_reaction_selectivity__seed_1",
+        "huochu_shengming_de_yiyi_private_zh__8__tension_reversal__seed_5",
+        "huochu_shengming_de_yiyi_private_zh__8__tension_reversal__seed_4",
+        "huochu_shengming_de_yiyi_private_zh__8__tension_reversal__seed_3",
+        "huochu_shengming_de_yiyi_private_zh__8__tension_reversal__seed_2",
+        "huochu_shengming_de_yiyi_private_zh__8__tension_reversal__seed_1",
+        "meiguoren_de_xingge_private_zh__19__tension_reversal__seed_9",
+        "meiguoren_de_xingge_private_zh__19__tension_reversal__seed_4",
+        "meiguoren_de_xingge_private_zh__19__distinction_definition__seed_1",
+        "meiguoren_de_xingge_private_zh__19__tension_reversal__seed_5",
+        "meiguoren_de_xingge_private_zh__19__tension_reversal__seed_10",
+        "meiguoren_de_xingge_private_zh__19__tension_reversal__seed_6",
+        "meiguoren_de_xingge_private_zh__19__tension_reversal__seed_7",
+        "meiguoren_de_xingge_private_zh__19__distinction_definition__reserve_1",
+        "meiguoren_de_xingge_private_zh__19__tension_reversal__seed_8",
+        "meiguoren_de_xingge_private_zh__19__tension_reversal__seed_3",
+        "meiguoren_de_xingge_private_zh__19__tension_reversal__seed_2",
+        "meiguoren_de_xingge_private_zh__19__tension_reversal__seed_1",
+        "nawaer_baodian_private_zh__13__distinction_definition__seed_1",
+        "nawaer_baodian_private_zh__13__anchored_reaction_selectivity__seed_2",
+        "nawaer_baodian_private_zh__22__distinction_definition__seed_1",
+        "nawaer_baodian_private_zh__22__callback_bridge__seed_1",
+        "nawaer_baodian_private_zh__22__tension_reversal__seed_1",
+        "nawaer_baodian_private_zh__22__tension_reversal__seed_2",
+        "nawaer_baodian_private_zh__22__tension_reversal__seed_3",
+        "nawaer_baodian_private_zh__13__anchored_reaction_selectivity__seed_1",
+        "nawaer_baodian_private_zh__13__tension_reversal__seed_2",
+        "nawaer_baodian_private_zh__13__tension_reversal__seed_3",
+        "nawaer_baodian_private_zh__13__anchored_reaction_selectivity__seed_3",
+        "xidaduo_private_zh__15__anchored_reaction_selectivity__seed_3",
+        "xidaduo_private_zh__15__anchored_reaction_selectivity__seed_4",
+        "xidaduo_private_zh__15__anchored_reaction_selectivity__seed_1",
+        "xidaduo_private_zh__15__anchored_reaction_selectivity__seed_2",
+        "xidaduo_private_zh__15__tension_reversal__seed_2",
+        "xidaduo_private_zh__15__tension_reversal__seed_1",
+        "xidaduo_private_zh__15__anchored_reaction_selectivity__seed_5",
+        "xidaduo_private_zh__15__tension_reversal__seed_3"
+      ]
+    },
+    "insight_and_clarification_subset_frozen_draft": {
+      "by_pressure": {
+        "distinction_definition": [
+          "supremacy_private_en__13__distinction_definition__reserve_1",
+          "value_of_others_private_en__8__distinction_definition__seed_2",
+          "value_of_others_private_en__8__distinction_definition__seed_3",
+          "value_of_others_private_en__8__distinction_definition__seed_1",
+          "huochu_shengming_de_yiyi_private_zh__8__distinction_definition__seed_2",
+          "huochu_shengming_de_yiyi_private_zh__8__distinction_definition__seed_1",
+          "meiguoren_de_xingge_private_zh__19__distinction_definition__seed_1",
+          "meiguoren_de_xingge_private_zh__19__distinction_definition__reserve_1",
+          "nawaer_baodian_private_zh__13__distinction_definition__seed_1",
+          "nawaer_baodian_private_zh__22__distinction_definition__seed_1"
+        ],
+        "tension_reversal": [
+          "supremacy_private_en__13__tension_reversal__seed_2",
+          "supremacy_private_en__13__tension_reversal__seed_1",
+          "value_of_others_private_en__8__tension_reversal__seed_1",
+          "value_of_others_private_en__8__tension_reversal__seed_2",
+          "huochu_shengming_de_yiyi_private_zh__8__tension_reversal__seed_5",
+          "huochu_shengming_de_yiyi_private_zh__8__tension_reversal__seed_4",
+          "huochu_shengming_de_yiyi_private_zh__8__tension_reversal__seed_3",
+          "huochu_shengming_de_yiyi_private_zh__8__tension_reversal__seed_2",
+          "huochu_shengming_de_yiyi_private_zh__8__tension_reversal__seed_1",
+          "meiguoren_de_xingge_private_zh__19__tension_reversal__seed_9",
+          "meiguoren_de_xingge_private_zh__19__tension_reversal__seed_4",
+          "meiguoren_de_xingge_private_zh__19__tension_reversal__seed_5",
+          "meiguoren_de_xingge_private_zh__19__tension_reversal__seed_10",
+          "meiguoren_de_xingge_private_zh__19__tension_reversal__seed_6",
+          "meiguoren_de_xingge_private_zh__19__tension_reversal__seed_7",
+          "meiguoren_de_xingge_private_zh__19__tension_reversal__seed_8",
+          "meiguoren_de_xingge_private_zh__19__tension_reversal__seed_3",
+          "meiguoren_de_xingge_private_zh__19__tension_reversal__seed_2",
+          "meiguoren_de_xingge_private_zh__19__tension_reversal__seed_1",
+          "nawaer_baodian_private_zh__22__tension_reversal__seed_1",
+          "nawaer_baodian_private_zh__22__tension_reversal__seed_2",
+          "nawaer_baodian_private_zh__22__tension_reversal__seed_3",
+          "nawaer_baodian_private_zh__13__tension_reversal__seed_2",
+          "nawaer_baodian_private_zh__13__tension_reversal__seed_3",
+          "xidaduo_private_zh__15__tension_reversal__seed_2",
+          "xidaduo_private_zh__15__tension_reversal__seed_1",
+          "xidaduo_private_zh__15__tension_reversal__seed_3"
+        ],
+        "callback_bridge": [
+          "supremacy_private_en__13__callback_bridge__seed_5",
+          "supremacy_private_en__13__callback_bridge__seed_1",
+          "supremacy_private_en__13__callback_bridge__seed_2",
+          "supremacy_private_en__13__callback_bridge__seed_3",
+          "supremacy_private_en__13__callback_bridge__seed_4",
+          "nawaer_baodian_private_zh__22__callback_bridge__seed_1"
+        ]
+      },
+      "all": [
+        "supremacy_private_en__13__distinction_definition__reserve_1",
+        "supremacy_private_en__13__callback_bridge__seed_5",
+        "supremacy_private_en__13__tension_reversal__seed_2",
+        "supremacy_private_en__13__callback_bridge__seed_1",
+        "supremacy_private_en__13__callback_bridge__seed_2",
+        "supremacy_private_en__13__callback_bridge__seed_3",
+        "supremacy_private_en__13__callback_bridge__seed_4",
+        "supremacy_private_en__13__tension_reversal__seed_1",
+        "value_of_others_private_en__8__distinction_definition__seed_2",
+        "value_of_others_private_en__8__distinction_definition__seed_3",
+        "value_of_others_private_en__8__tension_reversal__seed_1",
+        "value_of_others_private_en__8__tension_reversal__seed_2",
+        "value_of_others_private_en__8__distinction_definition__seed_1",
+        "huochu_shengming_de_yiyi_private_zh__8__distinction_definition__seed_2",
+        "huochu_shengming_de_yiyi_private_zh__8__distinction_definition__seed_1",
+        "huochu_shengming_de_yiyi_private_zh__8__tension_reversal__seed_5",
+        "huochu_shengming_de_yiyi_private_zh__8__tension_reversal__seed_4",
+        "huochu_shengming_de_yiyi_private_zh__8__tension_reversal__seed_3",
+        "huochu_shengming_de_yiyi_private_zh__8__tension_reversal__seed_2",
+        "huochu_shengming_de_yiyi_private_zh__8__tension_reversal__seed_1",
+        "meiguoren_de_xingge_private_zh__19__tension_reversal__seed_9",
+        "meiguoren_de_xingge_private_zh__19__tension_reversal__seed_4",
+        "meiguoren_de_xingge_private_zh__19__distinction_definition__seed_1",
+        "meiguoren_de_xingge_private_zh__19__tension_reversal__seed_5",
+        "meiguoren_de_xingge_private_zh__19__tension_reversal__seed_10",
+        "meiguoren_de_xingge_private_zh__19__tension_reversal__seed_6",
+        "meiguoren_de_xingge_private_zh__19__tension_reversal__seed_7",
+        "meiguoren_de_xingge_private_zh__19__distinction_definition__reserve_1",
+        "meiguoren_de_xingge_private_zh__19__tension_reversal__seed_8",
+        "meiguoren_de_xingge_private_zh__19__tension_reversal__seed_3",
+        "meiguoren_de_xingge_private_zh__19__tension_reversal__seed_2",
+        "meiguoren_de_xingge_private_zh__19__tension_reversal__seed_1",
+        "nawaer_baodian_private_zh__13__distinction_definition__seed_1",
+        "nawaer_baodian_private_zh__22__distinction_definition__seed_1",
+        "nawaer_baodian_private_zh__22__callback_bridge__seed_1",
+        "nawaer_baodian_private_zh__22__tension_reversal__seed_1",
+        "nawaer_baodian_private_zh__22__tension_reversal__seed_2",
+        "nawaer_baodian_private_zh__22__tension_reversal__seed_3",
+        "nawaer_baodian_private_zh__13__tension_reversal__seed_2",
+        "nawaer_baodian_private_zh__13__tension_reversal__seed_3",
+        "xidaduo_private_zh__15__tension_reversal__seed_2",
+        "xidaduo_private_zh__15__tension_reversal__seed_1",
+        "xidaduo_private_zh__15__tension_reversal__seed_3"
+      ]
+    }
+  }
+}

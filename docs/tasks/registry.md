@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-04-05T07:07:00Z`
+Last updated: `2026-04-05T09:25:35Z`
 
 ## Status Values
 - `active`
@@ -25,7 +25,7 @@ Last updated: `2026-04-05T07:07:00Z`
 - Lane: `mechanism_eval`
 - Priority: `high`
 - Detail: `docs/implementation/new-reading-mechanism/execution-tracker.md`
-- Next: let the active dual-pool recovery retry3 shards finish on the shared retry1 run root, then run one explicit merge pass and interpret `selective_legibility` first; preserve the in-place recovery posture unless retry3 exposes a new non-quota blocker
+- Next: let the active dual-pool recovery retry3 shards finish on the shared retry1 run root, run one explicit merge pass, archive that notes-guided judged result as evidence only, then decide whether `excerpt surface v1.1` needs one narrow chapter-22 fill repair before its own smoke and judged promotion
 - Jobs:
   - `bgjob_human_notes_excerpt_smoke_light_20260404` (`completed`)
   - `bgjob_human_notes_guided_excerpt_eval_v1_judged_20260404` (`completed`)
@@ -69,6 +69,15 @@ Last updated: `2026-04-05T07:07:00Z`
   - `bgjob_runtime_viability_gate_serialfix_20260401` (`completed`)
 
 ## Waiting
+
+### `TASK-EXCERPT-SURFACE-V1.1` — Retune the next excerpt surface incrementally from the notes-guided freeze
+- Status: `waiting`
+- Lane: `dataset_platform`
+- Priority: `high`
+- Detail: `docs/implementation/new-reading-mechanism/excerpt-surface-v1-1-draft.md`
+- Blocked by: `TASK-PHASE9-DECISIVE-EVAL`
+- Next: keep the active judged rerun on the old notes-guided surface until retry3 finishes and merges, then either repair `nawaer_baodian_private_zh__22` to reach floor `6` with one narrow fill pass or defer that shortfall explicitly before running the v1.1 smoke and judged lane
+- Jobs: none
 
 ### `TASK-DATASET-QUESTION-ALIGNED-CASE-CONSTRUCTION` — Build question-aligned case construction for evaluation datasets
 - Status: `waiting`
@@ -156,7 +165,7 @@ Last updated: `2026-04-05T07:07:00Z`
 - Lane: `dataset_platform`
 - Priority: `high`
 - Detail: `docs/implementation/new-reading-mechanism/human-notes-guided-dataset-v1-freeze-draft.md`
-- Next: keep the completed `55`-row reviewed freeze stable, do not repoint the active benchmark automatically, and decide later whether to use this isolated line as a secondary eval surface or only as support evidence
+- Next: keep the completed `55`-row reviewed freeze stable as the current judged excerpt surface and as base material for `excerpt surface v1.1`; do not repoint the active benchmark automatically from this line alone
 - Jobs:
   - `bgjob_human_notes_guided_dataset_v1_scratch_20260404` (`failed`)
   - `bgjob_human_notes_guided_dataset_v1_scratch_retry1_20260404` (`completed`)

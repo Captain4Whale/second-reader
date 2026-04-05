@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-04-05T07:07:00Z",
+  "updated_at": "2026-04-05T09:25:35Z",
   "tasks": [
     {
       "id": "TASK-MECH-EN-RERUN",
@@ -267,6 +267,40 @@
         "reading-companion-backend/eval/runs/attentional_v2/case_audits/attentional_v2_private_library_excerpt_en_question_aligned_v1__scratch__callbackslice_auditv4_20260331__20260331-122848/run_state.json"
       ],
       "last_updated": "2026-04-04T01:13:40Z",
+      "last_updated_by": "codex"
+    },
+    {
+      "id": "TASK-EXCERPT-SURFACE-V1.1",
+      "title": "Retune the next excerpt surface incrementally from the notes-guided freeze",
+      "status": "waiting",
+      "lane": "dataset_platform",
+      "priority": "high",
+      "detail_ref": "docs/implementation/new-reading-mechanism/excerpt-surface-v1-1-draft.md",
+      "truth_refs": [
+        "docs/backend-reader-evaluation.md",
+        "docs/current-state.md",
+        "docs/implementation/new-reading-mechanism/execution-tracker.md"
+      ],
+      "decision_refs": [],
+      "job_refs": [],
+      "acceptance_ref": "docs/implementation/new-reading-mechanism/excerpt-surface-v1-1-draft.md",
+      "next_action": "Keep the active judged rerun on the old notes-guided surface until retry3 finishes and merges, then either repair nawaer_baodian_private_zh__22 to reach floor 6 with one narrow fill pass or defer that shortfall explicitly before running the v1.1 smoke and judged lane.",
+      "blocked_by": [
+        "TASK-PHASE9-DECISIVE-EVAL"
+      ],
+      "evidence_refs": [
+        "docs/implementation/new-reading-mechanism/excerpt-surface-v1-1-draft.md",
+        "reading-companion-backend/eval/attentional_v2/excerpt_surface_v1_1.py",
+        "reading-companion-backend/eval/attentional_v2/build_excerpt_surface_v1_1.py",
+        "reading-companion-backend/eval/manifests/splits/attentional_v2_excerpt_surface_v1_1_draft.json",
+        "reading-companion-backend/state/dataset_build/build_runs/excerpt_surface_v1_1_20260405/excerpt_surface_v1_1_summary.json",
+        "reading-companion-backend/state/dataset_build/build_runs/excerpt_surface_v1_1_20260405/excerpt_surface_v1_1_summary.md",
+        "reading-companion-backend/state/eval_local_datasets/excerpt_cases/attentional_v2_excerpt_surface_v1_1_excerpt_en/manifest.json",
+        "reading-companion-backend/state/eval_local_datasets/excerpt_cases/attentional_v2_excerpt_surface_v1_1_excerpt_zh/manifest.json",
+        "reading-companion-backend/tests/test_excerpt_surface_v1_1_manifest.py",
+        "reading-companion-backend/tests/test_question_aligned_case_construction.py"
+      ],
+      "last_updated": "2026-04-05T09:25:35Z",
       "last_updated_by": "codex"
     },
     {
@@ -698,13 +732,16 @@
         "bgjob_human_notes_excerpt_parallel_judged_shard_b_dualpool_recovery_retry3_20260405"
       ],
       "acceptance_ref": "docs/implementation/new-reading-mechanism/execution-tracker.md",
-      "next_action": "Let the active dual-pool recovery retry3 shards finish on the shared retry1 run root, then run one explicit merge pass and interpret selective_legibility first; preserve the in-place recovery posture unless retry3 exposes a new non-quota blocker.",
+      "next_action": "Let the active dual-pool recovery retry3 shards finish on the shared retry1 run root, run one explicit merge pass, archive that notes-guided judged result as evidence only, then decide whether excerpt surface v1.1 needs one narrow chapter-22 fill repair before its own smoke and judged promotion.",
       "blocked_by": [],
       "evidence_refs": [
         "docs/implementation/new-reading-mechanism/clustered-benchmark-v1-draft.md",
+        "docs/implementation/new-reading-mechanism/excerpt-surface-v1-1-draft.md",
         "docs/implementation/new-reading-mechanism/execution-tracker.md",
         "reading-companion-backend/eval/manifests/splits/attentional_v2_clustered_benchmark_v1_draft.json",
+        "reading-companion-backend/eval/manifests/splits/attentional_v2_excerpt_surface_v1_1_draft.json",
         "reading-companion-backend/state/dataset_build/build_runs/clustered_benchmark_v1_freeze_20260404/clustered_benchmark_v1_freeze_summary.json",
+        "reading-companion-backend/state/dataset_build/build_runs/excerpt_surface_v1_1_20260405/excerpt_surface_v1_1_summary.md",
         "reading-companion-backend/state/eval_local_datasets/excerpt_cases/attentional_v2_clustered_benchmark_v1_excerpt_en/manifest.json",
         "reading-companion-backend/state/eval_local_datasets/excerpt_cases/attentional_v2_clustered_benchmark_v1_excerpt_zh/manifest.json",
         "reading-companion-backend/state/job_registry/jobs/bgjob_human_notes_excerpt_smoke_light_20260404.json",
@@ -745,7 +782,7 @@
         "reading-companion-backend/eval/attentional_v2/run_chapter_comparison.py",
         "reading-companion-backend/eval/attentional_v2/run_excerpt_comparison.py"
       ],
-      "last_updated": "2026-04-05T07:07:00Z",
+      "last_updated": "2026-04-05T09:25:35Z",
       "last_updated_by": "codex"
     },
     {
@@ -823,7 +860,7 @@
         "bgjob_human_notes_guided_dataset_v1_first_review_zh_retry1_20260404"
       ],
       "acceptance_ref": "docs/implementation/new-reading-mechanism/human-notes-guided-dataset-v1-freeze-draft.md",
-      "next_action": "Keep the completed 55-row reviewed freeze stable, do not repoint the active benchmark automatically, and decide later whether to use this isolated line as a secondary eval surface or only as support evidence.",
+      "next_action": "Keep the completed 55-row reviewed freeze stable as the current judged excerpt surface and as base material for excerpt surface v1.1; do not repoint the active benchmark automatically from this line alone.",
       "blocked_by": [],
       "evidence_refs": [
         "docs/implementation/new-reading-mechanism/question-aligned-case-construction.md",
@@ -865,7 +902,7 @@
         "reading-companion-backend/eval/review_packets/archive/human_notes_guided_dataset_v1_excerpt_zh_wealth_repair_review_retry1_20260404/dataset_review_pipeline_summary.json",
         "reading-companion-backend/state/eval_local_datasets/excerpt_cases/attentional_v2_human_notes_guided_dataset_v1_excerpt_zh_reviewed_cluster_freeze_complete_20260404/manifest.json"
       ],
-      "last_updated": "2026-04-04T07:53:08Z",
+      "last_updated": "2026-04-05T09:25:35Z",
       "last_updated_by": "codex"
     }
   ]

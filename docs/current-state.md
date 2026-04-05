@@ -7,28 +7,47 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-04-05T07:18:25Z`
+Last verified: `2026-04-05T09:25:35Z`
 
 ## Current Objective
 - Keep Phase 9 on the mainline under the new split-surface evaluation strategy:
   - keep the judged local excerpt rerun active on the human-notes-guided excerpt freeze under the new dual-personal pooled-target posture, because the first full judged run and the first sharded rerun both ended as harness failures rather than usable mechanism evidence
   - use the newly landed staged/sharded comparison runners as the active local excerpt rerun architecture now that fresh evidence showed the old monolithic rerun had produced very little reusable progress
+  - keep `excerpt surface v1.1` as the prepared next local excerpt surface, but do not promote it until the active judged rerun finishes, the explicit merge lands, and the remaining chapter-22 shortfall is either repaired narrowly or deferred explicitly
   - treat the repaired long-span first review as completed support evidence, then decide whether to do one narrow repair on the `2` revise probes or freeze the long-span v1 set honestly short before any judged accumulation comparison
   - preserve the recorded `Path A` gate outcome and the completed clustered benchmark freeze as still-useful evidence
   - keep durable-trace / re-entry and runtime viability paused on cost grounds
 - Keep dataset work tightly scoped to the new long-span need:
   - do not reopen a broad builder-widening wave
   - do not treat the notes-guided line as an automatic benchmark-pointer replacement
-  - do use the completed notes-guided excerpt freeze immediately as a real local eval surface
+  - do keep the completed notes-guided excerpt freeze as the current judged excerpt surface while reusing it as base material for the fresh `excerpt surface v1.1` draft
 
 ## Current Strategy
 - Evaluation now uses two intentionally different semantic surfaces:
-  - `local / excerpt`
+  - `excerpt surface`
     - primary targets:
       - `reader_character.selective_legibility`
       - local `reader_value.insight_and_clarification`
-    - immediate runnable surface:
+    - current judged surface:
       - the completed human-notes-guided excerpt reviewed freeze
+    - prepared next surface draft:
+      - `attentional_v2_excerpt_surface_v1_1_draft`
+      - fixed roster:
+        - `value_of_others_private_en__8`
+        - `huochu_shengming_de_yiyi_private_zh__8`
+        - `xidaduo_private_zh__15`
+        - `nawaer_baodian_private_zh__13`
+        - `nawaer_baodian_private_zh__22`
+        - `supremacy_private_en__13`
+        - `meiguoren_de_xingge_private_zh__19`
+      - current reuse-only draft result:
+        - `59` primary cases
+        - `43` derived `insight_and_clarification` cases
+      - current blocker:
+        - `nawaer_baodian_private_zh__22` is still at `5`, below the honest-short floor `6`
+      - promotion gate:
+        - do not repoint the excerpt surface until the active retry3 judged rerun finishes and merges
+        - then decide one narrow chapter-22 fill repair or an explicit honest-short defer
     - smoke gate status:
       - `bgjob_human_notes_excerpt_smoke_light_20260404`
         - now `completed`
@@ -532,7 +551,8 @@ Last verified: `2026-04-05T07:18:25Z`
 ## Now
 - Treat `attentional_v2` as experimental and `iterator_v1` as the current default mechanism.
 - The active Phase 9 move is now split across two coordinated surfaces:
-  - local eval can run immediately on the notes-guided excerpt freeze
+  - the current judged local eval keeps running on the notes-guided excerpt freeze
+  - the next excerpt surface is already drafted as `excerpt surface v1.1` in a fresh namespace and is waiting on merge plus one shortfall decision
   - long-span accumulation benchmark construction is the next bounded dataset lane
 - The clustered benchmark v1 freeze remains completed locally and still matters as readable mainline evidence:
   - benchmark-prep code support remains landed:
@@ -546,7 +566,7 @@ Last verified: `2026-04-05T07:18:25Z`
     - keep using the clustered benchmark as preserved evidence and seed material
     - stop treating it as the sole design center for the next `coherent_accumulation` dataset
     - keep the `reserve 7 / 8` shortfall and the uneven pressure mix explicit in later interpretation
-- The immediate local-eval surface is the completed notes-guided excerpt reviewed freeze:
+- The current judged local-eval surface is the completed notes-guided excerpt reviewed freeze:
   - runnable datasets:
     - `reading-companion-backend/state/eval_local_datasets/excerpt_cases/attentional_v2_human_notes_guided_dataset_v1_excerpt_en_reviewed_cluster_freeze_20260404`
     - `reading-companion-backend/state/eval_local_datasets/excerpt_cases/attentional_v2_human_notes_guided_dataset_v1_excerpt_zh_reviewed_cluster_freeze_complete_20260404`
@@ -554,6 +574,25 @@ Last verified: `2026-04-05T07:18:25Z`
     - `reading-companion-backend/eval/manifests/splits/attentional_v2_human_notes_guided_excerpt_eval_v1_draft.json`
   - immediate purpose:
     - run judged local excerpt comparison now for `selective_legibility` plus local `insight_and_clarification`
+- The prepared next local excerpt surface is `excerpt surface v1.1`:
+  - tracked manifest:
+    - `reading-companion-backend/eval/manifests/splits/attentional_v2_excerpt_surface_v1_1_draft.json`
+  - local dataset packages:
+    - `reading-companion-backend/state/eval_local_datasets/excerpt_cases/attentional_v2_excerpt_surface_v1_1_excerpt_en`
+    - `reading-companion-backend/state/eval_local_datasets/excerpt_cases/attentional_v2_excerpt_surface_v1_1_excerpt_zh`
+  - draft summary:
+    - `reading-companion-backend/state/dataset_build/build_runs/excerpt_surface_v1_1_20260405/excerpt_surface_v1_1_summary.md`
+  - current quantified result:
+    - fixed `7` chapter units
+    - `59` primary cases
+    - `43` derived `insight_and_clarification` cases
+    - `value_of_others_private_en__8` dedupes from an apparent `14` reviewed rows down to `8` real unique-span cases under the active duplicate controls
+  - current blocker:
+    - `nawaer_baodian_private_zh__22` remains below floor at `5`
+  - rollout rule:
+    - `excerpt surface` is the evaluation meaning
+    - `state/eval_local_datasets/` remains storage terminology only
+    - do not run the v1.1 smoke or judged lane until the active notes-guided retry3 rerun is merged and archived as evidence
 - The next bounded dataset lane is the long-span accumulation benchmark v1:
   - namespace:
     - `attentional_v2_accumulation_benchmark_v1`
@@ -1829,11 +1868,13 @@ Last verified: `2026-04-05T07:18:25Z`
 - `OD-CALLBACKSLICE-BOUNDED-VARIANCE = accept_bounded_variance_for_frozen_slice`
 - `OD-BENCHMARK-SIZE = adequate_for_next_decisive_lane_only + expand_before_default_cutover_only`
 - `chosen_path = Path A`
-- `next_task = TASK-PHASE9-CLUSTERED-BENCHMARK`
+- `historical_next_task_at_gate = TASK-PHASE9-CLUSTERED-BENCHMARK`
 
 ## Open Decisions
 - `Q10`
   - When should the detailed `attentional_v2` working design be promoted from temporary implementation docs into stable mechanism docs?
+- `Q-EXCERPT-SURFACE-V1.1-CH22`
+  - After the active notes-guided judged rerun merges, should `nawaer_baodian_private_zh__22` receive one narrow chapter-wide fill repair to reach the honest-short floor `6`, or should the shortfall be deferred explicitly and kept honest in the v1.1 draft?
 
 ## Active Risks
 - The new question-aligned private-library builder now keeps the live `v2` review-truth datasets as feedback input instead of overwriting them, but the new question-aligned outputs are still seed candidates rather than reviewed benchmark truth.
@@ -1841,6 +1882,8 @@ Last verified: `2026-04-05T07:18:25Z`
 - Malformed-JSON handling in the reading path can still terminate a bounded rerun after substantial partial output has already been written.
 - Launching `run_registered_job.py` from a transient agent shell without the detached launcher can leave long-running jobs looking `abandoned` even when the wrapped command itself never raised a Python traceback.
 - The current live local posture is intentionally a pooled primary tier of `MiniMax-M2.7-personal` plus `MiniMax-M2.7-personal-2`.
+- `excerpt surface v1.1` is not yet promotion-ready because `nawaer_baodian_private_zh__22` remains at `5` selected cases, below the floor `6`.
+- The new v1.1 reuse pass showed that `value_of_others_private_en__8` only supports `8` real unique-span cases after duplicate-control pruning, so older apparent `14`-row density numbers should no longer be used for ROI estimates.
 - The frozen clustered benchmark no longer depends on unresolved review work, but it remains pressure-imbalanced (`distinction_definition = 1`, `tension_reversal = 28`, `callback_bridge = 6`, `anchored_reaction_selectivity = 5`) and short by one reserve.
 - Current heavy-job policy is: at most two concurrent heavy processes total, both intentionally routed through the pooled dual-personal tier without `LLM_FORCE_TARGET_ID`.
 - When one future run needs a deliberately uniform reviewer surface, keep forcing one concrete target for that run.
@@ -1865,9 +1908,11 @@ Last verified: `2026-04-05T07:18:25Z`
 
 ## Active Task IDs
 - `TASK-PHASE9-DECISIVE-EVAL`
+- `TASK-ACCUMULATION-BENCHMARK-V1`
 
 ## Active Job IDs
-- none
+- `bgjob_human_notes_excerpt_parallel_judged_shard_a_dualpool_recovery_retry3_20260405`
+- `bgjob_human_notes_excerpt_parallel_judged_shard_b_dualpool_recovery_retry3_20260405`
 
 ## Recommended Reading Path
 1. `AGENTS.md`
@@ -1875,33 +1920,40 @@ Last verified: `2026-04-05T07:18:25Z`
 3. `docs/current-state.md`
 4. relevant child `AGENTS.md`
 5. `docs/tasks/registry.md`
-6. `docs/implementation/new-reading-mechanism/clustered-benchmark-v1-draft.md`
-7. `docs/implementation/new-reading-mechanism/execution-tracker.md`
+6. `docs/implementation/new-reading-mechanism/execution-tracker.md`
+7. `docs/implementation/new-reading-mechanism/excerpt-surface-v1-1-draft.md`
 8. `docs/backend-reader-evaluation.md`
-9. `reading-companion-backend/eval/manifests/splits/attentional_v2_clustered_benchmark_v1_draft.json`
-10. `reading-companion-backend/state/dataset_build/build_runs/clustered_benchmark_v1_freeze_20260404/clustered_benchmark_v1_freeze_summary.json`
-11. `reading-companion-backend/state/job_registry/jobs/bgjob_clustered_benchmark_v1_reserve_review_en_20260404.json`
-12. `reading-companion-backend/state/job_registry/jobs/bgjob_clustered_benchmark_v1_reserve_review_zh_20260404.json`
-13. `docs/implementation/new-reading-mechanism/formal-benchmark-v1-freeze-draft.md`
-14. `docs/implementation/new-reading-mechanism/question-aligned-case-construction.md`
-15. `docs/implementation/new-reading-mechanism/human-notes-guided-dataset-v1-freeze-draft.md`
+9. `reading-companion-backend/eval/manifests/splits/attentional_v2_excerpt_surface_v1_1_draft.json`
+10. `reading-companion-backend/state/dataset_build/build_runs/excerpt_surface_v1_1_20260405/excerpt_surface_v1_1_summary.md`
+11. `docs/implementation/new-reading-mechanism/human-notes-guided-dataset-v1-freeze-draft.md`
+12. `reading-companion-backend/eval/manifests/splits/attentional_v2_human_notes_guided_excerpt_eval_v1_draft.json`
+13. `docs/implementation/new-reading-mechanism/clustered-benchmark-v1-draft.md`
+14. `reading-companion-backend/eval/manifests/splits/attentional_v2_clustered_benchmark_v1_draft.json`
+15. `docs/implementation/new-reading-mechanism/question-aligned-case-construction.md`
 
 ## Machine-Readable Appendix
 ```json
 {
-  "updated_at": "2026-04-04T07:53:08Z",
+  "updated_at": "2026-04-05T09:25:35Z",
   "last_updated_by": "codex",
   "active_task_ids": [
-    "TASK-PHASE9-DECISIVE-EVAL"
+    "TASK-PHASE9-DECISIVE-EVAL",
+    "TASK-ACCUMULATION-BENCHMARK-V1"
   ],
   "blocked_task_ids": [],
-  "active_job_ids": [],
+  "active_job_ids": [
+    "bgjob_human_notes_excerpt_parallel_judged_shard_a_dualpool_recovery_retry3_20260405",
+    "bgjob_human_notes_excerpt_parallel_judged_shard_b_dualpool_recovery_retry3_20260405"
+  ],
   "open_decision_ids": [
-    "Q10"
+    "Q10",
+    "Q-EXCERPT-SURFACE-V1.1-CH22"
   ],
   "detail_refs": [
-    "docs/implementation/new-reading-mechanism/clustered-benchmark-v1-draft.md",
     "docs/implementation/new-reading-mechanism/execution-tracker.md",
+    "docs/implementation/new-reading-mechanism/excerpt-surface-v1-1-draft.md",
+    "docs/implementation/new-reading-mechanism/human-notes-guided-dataset-v1-freeze-draft.md",
+    "docs/implementation/new-reading-mechanism/clustered-benchmark-v1-draft.md",
     "docs/implementation/new-reading-mechanism/private-library-promotion-round2.md",
     "docs/implementation/new-reading-mechanism/post-recovery-gate-review-checklist.md",
     "docs/implementation/new-reading-mechanism/evaluation-question-map.md",

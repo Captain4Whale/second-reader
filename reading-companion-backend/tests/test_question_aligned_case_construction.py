@@ -7,6 +7,9 @@ from pathlib import Path
 from eval.attentional_v2.question_aligned_case_construction import (
     CLUSTERED_SELECTION_MODE,
     CLUSTERED_TARGET_PROFILE_ORDER,
+    EXCERPT_SURFACE_RETUNE_SELECTION_MODE,
+    EXCERPT_SURFACE_ROLE_CHAPTER_WIDE_FILL,
+    EXCERPT_SURFACE_ROLE_NOTE_PRESERVE,
     NOTES_GUIDED_SELECTION_MODE,
     TARGET_PROFILE_ORDER,
     MIN_PROFILE_ORDER_SELECTION_PRIORITY,
@@ -1779,3 +1782,169 @@ def test_resolve_callback_antecedent_rejects_marker_only_chinese_overlap() -> No
     )
 
     assert result["resolved"] is False
+
+
+def test_excerpt_surface_retune_prefers_note_preserve_before_chapter_fill() -> None:
+    note_preserve = _clustered_opportunity(
+        profile_id="distinction_definition",
+        opportunity_id="note_preserve",
+        anchor_index=0,
+        excerpt_start_index=0,
+        excerpt_end_index=2,
+        construction_priority=5.0,
+        selection_note_provenance=[
+            {
+                "note_id": "note_1",
+                "matched_sentence_ids": ["c17-s1"],
+            }
+        ],
+    )
+    note_preserve["excerpt_surface_role"] = EXCERPT_SURFACE_ROLE_NOTE_PRESERVE
+    chapter_fill = _clustered_opportunity(
+        profile_id="tension_reversal",
+        opportunity_id="chapter_fill",
+        anchor_index=4,
+        excerpt_start_index=3,
+        excerpt_end_index=5,
+        construction_priority=8.5,
+    )
+    chapter_fill["excerpt_surface_role"] = EXCERPT_SURFACE_ROLE_CHAPTER_WIDE_FILL
+
+    cases, reserves = _select_cases_and_reserves(
+        [chapter_fill, note_preserve],
+        cases_per_chapter=1,
+        reserves_per_chapter=1,
+        target_profile_ids=("distinction_definition", "tension_reversal"),
+        selection_mode=EXCERPT_SURFACE_RETUNE_SELECTION_MODE,
+    )
+
+    assert [case["case_id"] for case in cases] == ["clustered_source__17__distinction_definition__seed_1"]
+    assert cases[0]["excerpt_surface_role"] == EXCERPT_SURFACE_ROLE_NOTE_PRESERVE
+    assert [reserve["case_id"] for reserve in reserves] == ["clustered_source__17__tension_reversal__reserve_1"]
+    assert reserves[0]["excerpt_surface_role"] == EXCERPT_SURFACE_ROLE_CHAPTER_WIDE_FILL
+
+
+def test_excerpt_surface_retune_scope_marks_note_overlap_as_note_preserve(tmp_path: Path) -> None:
+    chapter_row = _chapter_row(
+        source_id="book_en_notes",
+        language="en",
+        output_dir="outputs/book_en_notes",
+        chapter_id="1",
+        chapter_title="Chapter 1",
+        role="argumentative",
+    )
+    chapter_row["selection_group_id"] = "book_en_notes__cluster"
+    chapter_row["selection_group_kind"] = "notes_guided_cluster"
+    chapter_row["selection_note_provenance"] = [
+        {
+            "note_id": "note_keep",
+            "matched_sentence_ids": ["c1-s1"],
+            "matched_sentence_span": {"start_index": "0", "end_index": "0"},
+            "quote": _sentences_en()[0]["text"],
+        }
+    ]
+    chapter_rows_by_language = {"en": [chapter_row]}
+    source_index = {
+        "book_en_notes": {
+            "source_id": "book_en_notes",
+            "type_tags": ["essay"],
+            "role_tags": ["argumentative"],
+        }
+    }
+    documents = {
+        str(tmp_path / "outputs" / "book_en_notes"): {
+            "chapters": [{"id": "1", "sentences": _sentences_en()}]
+        }
+    }
+
+    def document_loader(path: Path) -> dict[str, object]:
+        return documents[str(path)]
+
+    scope = build_question_aligned_excerpt_scope(
+        chapter_rows_by_language=chapter_rows_by_language,
+        source_index=source_index,
+        root=tmp_path,
+        document_loader=document_loader,
+        scope_id="excerpt_surface_overlap",
+        cases_per_chapter=1,
+        reserves_per_chapter=0,
+        target_profile_ids=("distinction_definition",),
+        selection_mode=EXCERPT_SURFACE_RETUNE_SELECTION_MODE,
+    )
+
+    case = scope["cases_by_language"]["en"][0]
+    assert case["excerpt_surface_role"] == EXCERPT_SURFACE_ROLE_NOTE_PRESERVE
+    assert case["selection_note_provenance"]
+    assert case["selection_note_ids"] == ["note_keep"]
+
+
+def test_excerpt_surface_retune_scope_marks_nonoverlap_as_chapter_fill(tmp_path: Path) -> None:
+    sentences = [
+        {
+            "sentence_id": "c1-s1",
+            "text": "Freedom is not permission but the discipline to refuse borrowed certainty when the crowd offers easier comfort.",
+        },
+        {
+            "sentence_id": "c1-s2",
+            "text": "The paragraph sharpens that distinction by insisting that obedience and conviction can look similar while meaning opposite things.",
+        },
+        {
+            "sentence_id": "c1-s3",
+            "text": "That contrast makes the chapter's definition pressure concrete rather than abstract.",
+        },
+        {
+            "sentence_id": "c1-s4",
+            "text": "Later the writer pauses by the window and says almost nothing new.",
+        },
+    ]
+    chapter_row = _chapter_row(
+        source_id="book_en_fill",
+        language="en",
+        output_dir="outputs/book_en_fill",
+        chapter_id="1",
+        chapter_title="Chapter 1",
+        role="argumentative",
+    )
+    chapter_row["selection_group_id"] = "book_en_fill__cluster"
+    chapter_row["selection_group_kind"] = "notes_guided_cluster"
+    chapter_row["selection_note_provenance"] = [
+        {
+            "note_id": "note_far",
+            "matched_sentence_ids": ["c1-s99"],
+            "matched_sentence_span": {"start_index": "98", "end_index": "98"},
+            "quote": "A note from a different passage entirely.",
+        }
+    ]
+    chapter_rows_by_language = {"en": [chapter_row]}
+    source_index = {
+        "book_en_fill": {
+            "source_id": "book_en_fill",
+            "type_tags": ["essay"],
+            "role_tags": ["argumentative"],
+        }
+    }
+    documents = {
+        str(tmp_path / "outputs" / "book_en_fill"): {
+            "chapters": [{"id": "1", "sentences": sentences}]
+        }
+    }
+
+    def document_loader(path: Path) -> dict[str, object]:
+        return documents[str(path)]
+
+    scope = build_question_aligned_excerpt_scope(
+        chapter_rows_by_language=chapter_rows_by_language,
+        source_index=source_index,
+        root=tmp_path,
+        document_loader=document_loader,
+        scope_id="excerpt_surface_fill",
+        cases_per_chapter=1,
+        reserves_per_chapter=0,
+        target_profile_ids=("distinction_definition",),
+        selection_mode=EXCERPT_SURFACE_RETUNE_SELECTION_MODE,
+    )
+
+    case = scope["cases_by_language"]["en"][0]
+    assert case["excerpt_surface_role"] == EXCERPT_SURFACE_ROLE_CHAPTER_WIDE_FILL
+    assert case["selection_note_provenance"] == []
+    assert case["selection_note_ids"] == []

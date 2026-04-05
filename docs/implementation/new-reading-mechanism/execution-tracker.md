@@ -20,7 +20,7 @@ Update when: status changes, blockers appear, or phases complete.
   - none
   - the universal shared LLM invocation and traceability layer is landed, and the post-recovery gate review has now returned the route to decisive mechanism-eval work
   - Phase 9 is now realigned into a split-surface evaluation cadence:
-    - `local / excerpt` surface for `reader_character.selective_legibility` plus local `reader_value.insight_and_clarification`
+    - `excerpt surface` for `reader_character.selective_legibility` plus local `reader_value.insight_and_clarification`
     - `long-span / window` surface for `reader_character.coherent_accumulation` plus long-span `reader_value.insight_and_clarification`
 - Current strategy discipline:
   - dataset-builder and controller work are now bounded enabling lanes for evaluation rather than independent finish lines
@@ -116,8 +116,28 @@ Update when: status changes, blockers appear, or phases complete.
       - next notes-guided move:
         - keep the completed reviewed freeze stable as an isolated support lane
         - do not reopen a broad bilingual builder / review wave first
-      - this line's reviewed excerpt freeze can now be used immediately as the local eval surface
+      - this line's reviewed excerpt freeze can now be used immediately as the current judged excerpt surface
       - the longer-span benchmark still needs its own bounded window/probe freeze instead of reusing the excerpt reviewed freeze directly
+    - a fresh `excerpt surface v1.1` retune draft is now landed as the prepared next excerpt surface:
+      - draft doc:
+        - `docs/implementation/new-reading-mechanism/excerpt-surface-v1-1-draft.md`
+      - tracked manifest:
+        - `reading-companion-backend/eval/manifests/splits/attentional_v2_excerpt_surface_v1_1_draft.json`
+      - local dataset packages:
+        - `reading-companion-backend/state/eval_local_datasets/excerpt_cases/attentional_v2_excerpt_surface_v1_1_excerpt_en`
+        - `reading-companion-backend/state/eval_local_datasets/excerpt_cases/attentional_v2_excerpt_surface_v1_1_excerpt_zh`
+      - current reuse-only result:
+        - fixed roster of `7` chapter units
+        - `59` primary cases
+        - `43` derived `insight_and_clarification` cases
+      - important ROI correction:
+        - `value_of_others_private_en__8` dedupes from an apparent `14` reviewed rows down to `8` real unique-span cases under the active duplicate controls
+      - current blocker:
+        - `nawaer_baodian_private_zh__22` remains at `5`, below the honest-short floor `6`
+      - rollout gate:
+        - do not repoint the judged excerpt lane yet
+        - wait for the active retry3 notes-guided rerun to finish and merge
+        - then decide one narrow chapter-22 fill repair or an explicit honest-short defer
     - the active benchmark pointer is still the clustered benchmark v1 draft:
       - do not merge, replace, or repoint based on the notes-guided line until its isolated outputs are reviewed intentionally
   - unattended automation should not widen further while the remaining minimum reader-character proof and trust-gate lane stay active

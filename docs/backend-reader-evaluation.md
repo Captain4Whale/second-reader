@@ -101,8 +101,9 @@ Use `docs/backend-reading-mechanism.md` for shared mechanism-platform boundaries
 
 ## Split-Surface Evaluation Rule
 - The evaluation system may intentionally use different text surfaces for different north-star questions.
-- `reader_character.selective_legibility` should usually prefer a local excerpt surface:
+- `reader_character.selective_legibility` should usually prefer an excerpt surface:
   - dense local pressure
+  - chapter-scoped comparison units
   - many reusable cases per read
   - efficient comparison cadence
 - `reader_character.coherent_accumulation` should usually prefer a bounded long-span surface:
@@ -110,8 +111,11 @@ Use `docs/backend-reading-mechanism.md` for shared mechanism-platform boundaries
   - visible continuity, carryover, and callback pressure
   - enough span to test whether understanding compounds rather than resets
 - `reader_value.insight_and_clarification` is an orthogonal output-value axis.
-  - it may be scored on local excerpt cases
+  - it may be scored on excerpt-surface cases
   - it may also be scored on long-span window cases
+- `excerpt surface` is the semantic term for the chapter-scoped local-text evaluation surface.
+  - `local-only` and `state/eval_local_datasets/` are storage/distribution terms only
+  - source-origin labels such as `public`, `private`, `manual download`, or `agent-downloaded` remain provenance only
 - Stable evaluation practice should therefore avoid forcing excerpt and long-span datasets to share the same books or chapters when that coupling weakens fit or runtime efficiency.
 
 ## Coherent-Accumulation Interpretation Rule
@@ -651,6 +655,9 @@ Use `docs/backend-reading-mechanism.md` for shared mechanism-platform boundaries
 - Tracked benchmark datasets belong in `reading-companion-backend/eval/datasets/`.
 - Tracked corpus manifests and local-source reference files belong in `reading-companion-backend/eval/manifests/`.
 - Local-only evaluation packages derived from private or copyrighted books belong in `reading-companion-backend/state/eval_local_datasets/`.
+- Packages under `reading-companion-backend/state/eval_local_datasets/` should not be described as a different evaluation meaning just because of that storage root.
+  - `excerpt surface` versus `long-span surface` is a benchmark-design distinction
+  - `tracked` versus `local-only` is a packaging/compliance distinction
 - Machine-generated benchmark runs belong in `reading-companion-backend/eval/runs/` and should stay out of normal runtime `state/` / `output/` paths.
 - Runtime-first per-run markdown summaries may live under `reading-companion-backend/eval/runs/<benchmark>/<run_id>/summary/` until they are reviewed and promoted into `reading-companion-backend/docs/evaluation/`.
 - Temporary experiment logs belong in `reading-companion-backend/docs/research/` only when they are not yet stable reports.

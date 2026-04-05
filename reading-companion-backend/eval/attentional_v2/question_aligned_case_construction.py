@@ -34,7 +34,12 @@ TARGET_PROFILE_ORDER = (
 DEFAULT_SELECTION_MODE = "default"
 CLUSTERED_SELECTION_MODE = "clustered"
 NOTES_GUIDED_SELECTION_MODE = "notes_guided"
-GROUPED_SELECTION_MODES = (CLUSTERED_SELECTION_MODE, NOTES_GUIDED_SELECTION_MODE)
+EXCERPT_SURFACE_RETUNE_SELECTION_MODE = "excerpt_surface_retune"
+GROUPED_SELECTION_MODES = (
+    CLUSTERED_SELECTION_MODE,
+    NOTES_GUIDED_SELECTION_MODE,
+    EXCERPT_SURFACE_RETUNE_SELECTION_MODE,
+)
 SELECTION_MODE_VALUES = (DEFAULT_SELECTION_MODE, *GROUPED_SELECTION_MODES)
 CLUSTERED_TARGET_PROFILE_ORDER = (
     "distinction_definition",
@@ -43,6 +48,8 @@ CLUSTERED_TARGET_PROFILE_ORDER = (
     "anchored_reaction_selectivity",
 )
 DEFAULT_CLUSTERED_MIN_ANCHOR_DISTANCE = 3
+EXCERPT_SURFACE_ROLE_NOTE_PRESERVE = "note_preserve"
+EXCERPT_SURFACE_ROLE_CHAPTER_WIDE_FILL = "chapter_wide_fill"
 
 EXCERPT_TARGET_PROFILES = {
     "distinction_definition": {
@@ -764,14 +771,23 @@ def _build_opportunity_cards_for_chapter(
                     "selection_note_ids": _selection_note_ids_for_window(
                         sentence_ids=[item["sentence_id"] for item in window],
                         selection_metadata=selection_metadata,
+                        selection_mode=selection_mode,
                     ),
                     "selection_notes": _selection_note_texts_for_window(
                         sentence_ids=[item["sentence_id"] for item in window],
                         selection_metadata=selection_metadata,
+                        selection_mode=selection_mode,
                     ),
                     "selection_note_provenance": _selection_note_provenance_for_window(
                         sentence_ids=[item["sentence_id"] for item in window],
                         selection_metadata=selection_metadata,
+                        selection_mode=selection_mode,
+                    ),
+                    "excerpt_surface_role": _excerpt_surface_role_for_window(
+                        sentence_ids=[item["sentence_id"] for item in window],
+                        window_text=rendered_excerpt_text,
+                        selection_metadata=selection_metadata,
+                        selection_mode=selection_mode,
                     ),
                 }
             )
@@ -950,6 +966,7 @@ def _selection_note_provenance_for_window(
     *,
     sentence_ids: list[str],
     selection_metadata: dict[str, Any],
+    selection_mode: str = DEFAULT_SELECTION_MODE,
 ) -> list[dict[str, Any]]:
     normalized_sentence_ids = {_normalize_sentence_text(sentence_id) for sentence_id in sentence_ids if _normalize_sentence_text(sentence_id)}
     if not normalized_sentence_ids:
@@ -961,10 +978,12 @@ def _selection_note_provenance_for_window(
         if matched_sentence_ids and matched_sentence_ids.intersection(normalized_sentence_ids):
             matched.append(entry)
             continue
-        if quote_text:
+        if quote_text and selection_mode != EXCERPT_SURFACE_RETUNE_SELECTION_MODE:
             matched.append(entry)
     if matched:
         return deepcopy(matched)
+    if selection_mode == EXCERPT_SURFACE_RETUNE_SELECTION_MODE:
+        return []
     return deepcopy(selection_metadata.get("selection_note_provenance") or [])
 
 
@@ -972,11 +991,15 @@ def _selection_note_ids_for_window(
     *,
     sentence_ids: list[str],
     selection_metadata: dict[str, Any],
+    selection_mode: str = DEFAULT_SELECTION_MODE,
 ) -> list[str]:
     provenance = _selection_note_provenance_for_window(
         sentence_ids=sentence_ids,
         selection_metadata=selection_metadata,
+        selection_mode=selection_mode,
     )
+    if selection_mode == EXCERPT_SURFACE_RETUNE_SELECTION_MODE and not provenance:
+        return []
     note_ids = list(selection_metadata.get("selection_note_ids") or [])
     for entry in provenance:
         note_id = _normalize_sentence_text(entry.get("note_id"))
@@ -989,11 +1012,15 @@ def _selection_note_texts_for_window(
     *,
     sentence_ids: list[str],
     selection_metadata: dict[str, Any],
+    selection_mode: str = DEFAULT_SELECTION_MODE,
 ) -> list[str]:
     provenance = _selection_note_provenance_for_window(
         sentence_ids=sentence_ids,
         selection_metadata=selection_metadata,
+        selection_mode=selection_mode,
     )
+    if selection_mode == EXCERPT_SURFACE_RETUNE_SELECTION_MODE and not provenance:
+        return []
     note_texts = list(selection_metadata.get("selection_notes") or [])
     for entry in provenance:
         for raw_value in (entry.get("quote"), entry.get("text"), entry.get("note")):
@@ -1001,6 +1028,76 @@ def _selection_note_texts_for_window(
             if text and text not in note_texts:
                 note_texts.append(text)
     return note_texts
+
+
+def _sentence_index_from_id(sentence_id: Any) -> int | None:
+    cleaned = _normalize_sentence_text(sentence_id)
+    if not cleaned:
+        return None
+    match = re.search(r"-s(\d+)$", cleaned)
+    if match is None:
+        return None
+    return int(match.group(1)) - 1
+
+
+def _window_matches_selection_note(
+    *,
+    sentence_ids: list[str],
+    window_text: str,
+    selection_metadata: dict[str, Any],
+) -> bool:
+    normalized_sentence_ids = {
+        _normalize_sentence_text(sentence_id)
+        for sentence_id in sentence_ids
+        if _normalize_sentence_text(sentence_id)
+    }
+    normalized_sentence_indexes = {
+        sentence_index
+        for sentence_index in (_sentence_index_from_id(sentence_id) for sentence_id in normalized_sentence_ids)
+        if sentence_index is not None
+    }
+    normalized_window_text = _normalize_sentence_text(window_text)
+    for entry in selection_metadata.get("selection_note_provenance") or []:
+        matched_sentence_ids = set(_normalized_string_list(entry.get("matched_sentence_ids")))
+        if matched_sentence_ids and matched_sentence_ids.intersection(normalized_sentence_ids):
+            return True
+        span = entry.get("matched_sentence_span")
+        if isinstance(span, dict):
+            start_index = int(span.get("start_index", -1) or -1)
+            end_index = int(span.get("end_index", -1) or -1)
+            if start_index >= 0 and end_index >= 0 and any(
+                start_index <= sentence_index <= end_index for sentence_index in normalized_sentence_indexes
+            ):
+                return True
+        quote_text = _normalize_sentence_text(entry.get("quote") or entry.get("text"))
+        if quote_text and normalized_window_text and (
+            quote_text in normalized_window_text or normalized_window_text in quote_text
+        ):
+            return True
+    for note_text in _normalized_string_list(selection_metadata.get("selection_notes")):
+        if note_text and normalized_window_text and (
+            note_text in normalized_window_text or normalized_window_text in note_text
+        ):
+            return True
+    return False
+
+
+def _excerpt_surface_role_for_window(
+    *,
+    sentence_ids: list[str],
+    window_text: str,
+    selection_metadata: dict[str, Any],
+    selection_mode: str,
+) -> str:
+    if selection_mode != EXCERPT_SURFACE_RETUNE_SELECTION_MODE:
+        return ""
+    if _window_matches_selection_note(
+        sentence_ids=sentence_ids,
+        window_text=window_text,
+        selection_metadata=selection_metadata,
+    ):
+        return EXCERPT_SURFACE_ROLE_NOTE_PRESERVE
+    return EXCERPT_SURFACE_ROLE_CHAPTER_WIDE_FILL
 
 
 def _score_sentence_for_profile(
@@ -1244,7 +1341,13 @@ def _select_cases_and_reserves_clustered(
     family_reserve_ranks: dict[str, int] = defaultdict(int)
 
     for chapter_key in sorted(grouped):
-        chapter_items = sorted(grouped[chapter_key], key=_clustered_selection_sort_key)
+        chapter_items = sorted(
+            grouped[chapter_key],
+            key=lambda candidate: _clustered_selection_sort_key(
+                candidate,
+                selection_mode=selection_mode,
+            ),
+        )
         selected_opportunities: list[dict[str, Any]] = []
         reserve_opportunities: list[dict[str, Any]] = []
 
@@ -1313,8 +1416,20 @@ def _select_cases_and_reserves_clustered(
     return cases, reserves
 
 
-def _clustered_selection_sort_key(candidate: dict[str, Any]) -> tuple[Any, ...]:
+def _clustered_selection_sort_key(
+    candidate: dict[str, Any],
+    *,
+    selection_mode: str = DEFAULT_SELECTION_MODE,
+) -> tuple[Any, ...]:
+    excerpt_surface_role = _normalize_sentence_text(candidate.get("excerpt_surface_role"))
+    role_priority = (
+        0
+        if selection_mode == EXCERPT_SURFACE_RETUNE_SELECTION_MODE
+        and excerpt_surface_role == EXCERPT_SURFACE_ROLE_NOTE_PRESERVE
+        else 1
+    )
     return (
+        role_priority,
         -float(candidate.get("construction_priority", 0.0)),
         -float(candidate.get("judgeability_score", 0.0)),
         str(candidate.get("chapter_case_id", "")),
@@ -1455,6 +1570,7 @@ def _assembled_case(
         "role_tags": list(opportunity.get("role_tags") or []),
         "candidate_position_bucket": opportunity.get("candidate_position_bucket"),
         "selection_mode": selection_mode,
+        "excerpt_surface_role": _normalize_sentence_text(opportunity.get("excerpt_surface_role")),
         "selection_group_id": _selection_group_id_for_opportunity(opportunity),
         "selection_group_kind": _normalize_sentence_text(opportunity.get("selection_group_kind")) or "chapter",
         "selection_group_label": _normalize_sentence_text(opportunity.get("selection_group_label")),
@@ -1522,6 +1638,7 @@ def _assembled_reserve_case(
         "role_tags": list(opportunity.get("role_tags") or []),
         "candidate_position_bucket": opportunity.get("candidate_position_bucket"),
         "selection_mode": selection_mode,
+        "excerpt_surface_role": _normalize_sentence_text(opportunity.get("excerpt_surface_role")),
         "selection_group_id": _selection_group_id_for_opportunity(opportunity),
         "selection_group_kind": _normalize_sentence_text(opportunity.get("selection_group_kind")) or "chapter",
         "selection_group_label": _normalize_sentence_text(opportunity.get("selection_group_label")),
