@@ -63,6 +63,18 @@ Use `docs/backend-sequential-lifecycle.md` for the job-level workflow over time.
   - referring to a current compatibility surface
   - describing a specific mechanism by name
   - contrasting shared vs mechanism-private ownership
+- Shared and mechanism docs should treat `Phase N` labels as implementation-stage labels first.
+  - The authoritative `Phase 0-9` sequence lives in the implementation workspace and tracker.
+  - Mechanism runtime behavior should normally be described with runtime terms such as:
+    - `intake`
+    - `trigger / gate`
+    - `zoom_read`
+    - `meaning_unit_closure`
+    - `controller_decision`
+    - `reaction_emission`
+    - `bridge_resolution`
+    - `chapter-end slow cycle`
+  - If a mechanism doc mentions `Phase 4`, `Phase 5`, or `Phase 6`, it should make clear that these are historical implementation labels reused for module families, not the canonical public description of the live reading flow.
 
 ## Mechanism Status Model
 - `default`

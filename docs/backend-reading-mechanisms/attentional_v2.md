@@ -16,7 +16,11 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
 ## Purpose And Status
 - `attentional_v2` is the experimental non-default mechanism for a more self-propelled reading mind.
 - It is now wired end to end through the shared runtime, CLI `--mechanism attentional_v2`, and the existing async analysis job lifecycle.
-- It now has a live Phase 1-8.5 implementation under the shared runtime boundary:
+- It now has a live Phase 1-8.5 implementation under the shared runtime boundary.
+  - These phase labels are implementation-history labels from the rollout plan, not the canonical runtime-flow vocabulary for how the mechanism reads.
+  - They still appear in code and docs because some landed module families kept their rollout-era names.
+  - When describing live reading behavior, prefer the runtime loop and node names below over the `Phase N` shorthand.
+  - The landed implementation includes:
   - shared sentence substrate
   - shared canonical parse/provisioning and shared manifest/run-state shells
   - orientation-only survey artifacts
@@ -35,6 +39,21 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
 - It is still not the default mechanism.
 - It is still intentionally unsupported for legacy `book_analysis` mode in this slice.
 - Its goal is to preserve sentence-level fidelity while shifting the main reasoning unit from fixed sections toward dynamic meaning units and an explicit attention frontier.
+
+## Naming Note
+- `Phase 3`, `Phase 4`, `Phase 5`, and `Phase 6` in this document refer to historical implementation-stage groupings, not to a user-facing or mechanism-intrinsic sequence of named runtime phases.
+- The live runtime should be explained as a reading loop:
+  - sentence intake
+  - trigger and gate update
+  - optional `zoom_read`
+  - `meaning_unit_closure`
+  - `controller_decision`
+  - optional `reaction_emission`
+  - optional `bridge_resolution`
+  - chapter-end slow-cycle work such as `chapter_consolidation`, `reflective_promotion`, and `reconsolidation`
+- Internal helper names such as `run_phase4_local_cycle` are retained historical engineering labels for now.
+  - They package the local interpretive loop.
+  - They should not be read as proof that the mechanism itself defines a first-class runtime concept called `Phase 4`.
 
 ## Core Primitives / Ontology
 - `sentence stream`
@@ -72,20 +91,20 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - consolidate into a meaning unit when enough text has accumulated
   - update the attention frontier
   - choose the next move
-- The current scaffold already has the Phase 4 node boundary and handoff shape:
+- The current local interpretive loop has this node boundary and handoff shape:
   - `zoom_read -> meaning_unit_closure -> controller_decision`
   - optional `reaction_emission` gate after closure when the moment earns a visible anchored thought
-- The live Phase 4 boundary context now carries:
+- The live local-cycle boundary context now carries:
   - trigger output
   - gate state
   - trigger-signal evidence
   - callback-anchor ids
   so closure/controller decisions can stay answerable to the same trigger evidence that opened the local cycle.
-- The current Phase 4 controller candidate pool now merges three sources before choosing the next move:
+- The current local controller candidate pool merges three sources before choosing the next move:
   - one optional zoom-level bridge hint
   - closure-level bridge candidates
   - deterministic bridge candidates generated from the already-read source
-- Phase 5 now adds the bridge-judgment layer after deterministic candidate generation:
+- The bridge layer then adds bridge judgment after deterministic candidate generation:
   - `candidate_generation -> bridge_resolution -> durable anchor / move updates`
 - The next move is one of:
   - `advance`
@@ -213,7 +232,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - explanatory patterns
   - actor intention, social pressure, or concrete causal stakes when those hinges are locally explicit
   rather than flattening these moments into generic scene summary.
-- The current Phase 4 synthetic-reaction path is still bounded:
+- The current local synthetic-reaction path is still bounded:
   - short spans may synthesize one local candidate from the deterministic cue packet when zoom or the cue stack shows a real motive/pressure/stakes hinge
   - pressure cues alone must not force visible output when the local gate stays closed
   - this keeps narrative/reference-heavy local cases from disappearing into retrospective summary without converting `attentional_v2` into a dense iterator-style stream

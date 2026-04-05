@@ -16,6 +16,18 @@ Update when: status changes, blockers appear, or phases complete.
   - `in_progress`
 - Current phase:
   - `Phase 9: Migration, Stabilization, And Default-Cutover Readiness`
+- Naming discipline:
+  - the `Phase 0-9` labels in this file are implementation-plan stages
+  - they are not the preferred vocabulary for explaining the mechanism's live reading loop
+  - when describing runtime behavior, prefer node and loop terms such as:
+    - `sentence intake`
+    - `trigger / gate`
+    - `zoom_read`
+    - `meaning_unit_closure`
+    - `controller_decision`
+    - `reaction_emission`
+    - `bridge_resolution`
+    - `chapter-end slow cycle`
 - Current side branch:
   - none
   - the universal shared LLM invocation and traceability layer is landed, and the post-recovery gate review has now returned the route to decisive mechanism-eval work

@@ -800,7 +800,12 @@ def run_phase4_local_cycle(
     chapter_title: str = "",
     boundary_context: dict[str, object] | None = None,
 ) -> dict[str, object]:
-    """Run the Phase 4 node handoff for one local reading moment."""
+    """Run one local interpretive cycle for one reading moment.
+
+    `phase4` in the helper name is a historical implementation-stage label.
+    The live runtime concept here is the local interpretive loop:
+    `zoom_read -> meaning_unit_closure -> controller_decision -> optional reaction_emission`.
+    """
 
     local_context = current_span_sentences[:-1] if len(current_span_sentences) > 1 else []
     zoom_result: ZoomReadResult | None = None
