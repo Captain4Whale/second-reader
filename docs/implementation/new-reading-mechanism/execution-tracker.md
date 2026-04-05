@@ -50,7 +50,10 @@ Update when: status changes, blockers appear, or phases complete.
       - `value_of_others_private_en__chapter_8`: `1105` vs `123` reader calls
     - immediate working rule:
       - do not launch another broad excerpt judged rerun first
-      - first define one ROI-first judged excerpt micro-slice, then use it as the validation harness for a bounded `attentional_v2` throughput repair
+      - first use the explicit ROI-first judged excerpt micro-slice, then use it as the validation harness for a bounded `attentional_v2` throughput repair
+      - only after that bounded repair loop should excerpt work return to the broader surface lane:
+        - `excerpt surface v1.1` promotion or honest-short defer
+        - then the larger excerpt-surface / dataset adjustment
   - a new isolated human-notes-guided dataset v1 support lane is now landed on top of the question-aligned builder:
     - managed notes assets now live under:
       - `reading-companion-backend/state/library_notes/`
@@ -156,6 +159,21 @@ Update when: status changes, blockers appear, or phases complete.
         - keep the completed retry3 notes-guided judged rerun archived as evidence only
         - repair or regenerate the stale persisted retry1 summary if durable run-level artifacts are still needed
         - then decide one narrow chapter-22 fill repair or an explicit honest-short defer
+    - the explicit ROI-first excerpt micro-slice draft is now landed as the default fast-iteration harness:
+      - draft doc:
+        - `docs/implementation/new-reading-mechanism/excerpt-micro-slice-v1-draft.md`
+      - tracked manifest:
+        - `reading-companion-backend/eval/manifests/splits/attentional_v2_excerpt_micro_slice_v1_draft.json`
+      - fixed roster:
+        - `nawaer_baodian_private_zh__22`
+        - `xidaduo_private_zh__15`
+      - current quantified shape:
+        - `13` primary excerpt cases
+        - `8` derived `insight_and_clarification` cases
+      - optional later expansion candidate:
+        - `supremacy_private_en__13`
+      - next use:
+        - smoke and judged repair loops should target this slice before any broader excerpt-surface rerun
     - the active benchmark pointer is still the clustered benchmark v1 draft:
       - do not merge, replace, or repoint based on the notes-guided line until its isolated outputs are reviewed intentionally
   - unattended automation should not widen further while the remaining minimum reader-character proof and trust-gate lane stay active

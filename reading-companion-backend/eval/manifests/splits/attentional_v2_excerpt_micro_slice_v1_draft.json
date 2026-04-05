@@ -1,0 +1,163 @@
+{
+  "manifest_id": "attentional_v2_excerpt_micro_slice_v1_draft",
+  "description": "ROI-first excerpt micro-slice v1 draft reused from the reviewed human-notes-guided excerpt freeze for fast judged iteration and bounded attentional_v2 throughput repair.",
+  "targets": [
+    "reader_character.selective_legibility",
+    "reader_value.insight_and_clarification"
+  ],
+  "benchmark_shape": {
+    "kind": "excerpt_micro_slice_v1",
+    "surface_role": "excerpt_surface_micro_harness",
+    "chapter_unit_target_total": 2,
+    "excerpt_primary_target_total": 13,
+    "insight_and_clarification_target_total": 8,
+    "intended_use": [
+      "roi_first_judged_excerpt_iteration",
+      "attentional_v2_throughput_repair_validation"
+    ]
+  },
+  "selection_policy": {
+    "base_surface_manifest": "eval/manifests/splits/attentional_v2_human_notes_guided_excerpt_eval_v1_draft.json",
+    "selection_rule": "Prefer already reviewed chapter units with dense, non-duplicative case coverage, clear local pressure, and acceptable read cost.",
+    "expansion_rule": "Keep the first slice at two chapters; add supremacy_private_en__13 only after the initial throughput repair loop if another cross-language check is needed."
+  },
+  "source_origin_rule": "Do not use public/private/manual/agent-downloaded provenance as benchmark strata.",
+  "source_refs": {
+    "source_manifests": [
+      "state/dataset_build/build_runs/human_notes_guided_dataset_v1_20260404/manifests/source_books/attentional_v2_human_notes_guided_dataset_v1_source_books__scratch__human_notes_guided_dataset_v1_20260404.json",
+      "state/dataset_build/build_runs/human_notes_guided_dataset_v1_20260404/manifests/local_refs/attentional_v2_human_notes_guided_dataset_v1_local_refs__scratch__human_notes_guided_dataset_v1_20260404.json"
+    ],
+    "excerpt_case_datasets": [
+      "state/eval_local_datasets/excerpt_cases/attentional_v2_human_notes_guided_dataset_v1_excerpt_en_reviewed_cluster_freeze_20260404",
+      "state/eval_local_datasets/excerpt_cases/attentional_v2_human_notes_guided_dataset_v1_excerpt_zh_reviewed_cluster_freeze_complete_20260404"
+    ]
+  },
+  "selected_chapter_units": [
+    {
+      "chapter_case_id": "nawaer_baodian_private_zh__22",
+      "selection_role": "micro_slice_keep",
+      "origin_line": "human_notes_guided_dataset_v1",
+      "selection_reason": "High-ROI chapter with only five cases but unusually strong mixed pressure: one callback bridge, one distinction definition, and three tension reversals. It already produced the clearest non-placeholder judged evidence in the partial rerun."
+    },
+    {
+      "chapter_case_id": "xidaduo_private_zh__15",
+      "selection_role": "micro_slice_keep",
+      "origin_line": "human_notes_guided_dataset_v1",
+      "selection_reason": "Dense, non-duplicative chapter with eight reviewed cases and low enough read cost to serve as the second fast-iteration anchor while throughput repair is underway."
+    }
+  ],
+  "expansion_candidate_chapter_units": [
+    "supremacy_private_en__13"
+  ],
+  "quota_status": {
+    "chapter_units": {
+      "target_total": 2,
+      "ready_now": 2,
+      "gap": 0
+    },
+    "excerpt_primary": {
+      "target_total": 13,
+      "ready_now": 13,
+      "gap": 0
+    },
+    "insight_and_clarification_subset": {
+      "derived_from_profiles": [
+        "callback_bridge",
+        "distinction_definition",
+        "tension_reversal"
+      ],
+      "target_total": 8,
+      "ready_now": 8,
+      "gap": 0
+    }
+  },
+  "splits": {
+    "excerpt_core_primary_frozen_draft": {
+      "by_chapter": {
+        "nawaer_baodian_private_zh__22": [
+          "nawaer_baodian_private_zh__22__callback_bridge__seed_1",
+          "nawaer_baodian_private_zh__22__distinction_definition__seed_1",
+          "nawaer_baodian_private_zh__22__tension_reversal__seed_1",
+          "nawaer_baodian_private_zh__22__tension_reversal__seed_2",
+          "nawaer_baodian_private_zh__22__tension_reversal__seed_3"
+        ],
+        "xidaduo_private_zh__15": [
+          "xidaduo_private_zh__15__anchored_reaction_selectivity__seed_1",
+          "xidaduo_private_zh__15__anchored_reaction_selectivity__seed_2",
+          "xidaduo_private_zh__15__anchored_reaction_selectivity__seed_3",
+          "xidaduo_private_zh__15__anchored_reaction_selectivity__seed_4",
+          "xidaduo_private_zh__15__anchored_reaction_selectivity__seed_5",
+          "xidaduo_private_zh__15__tension_reversal__seed_1",
+          "xidaduo_private_zh__15__tension_reversal__seed_2",
+          "xidaduo_private_zh__15__tension_reversal__seed_3"
+        ]
+      },
+      "by_pressure": {
+        "distinction_definition": [
+          "nawaer_baodian_private_zh__22__distinction_definition__seed_1"
+        ],
+        "tension_reversal": [
+          "nawaer_baodian_private_zh__22__tension_reversal__seed_1",
+          "nawaer_baodian_private_zh__22__tension_reversal__seed_2",
+          "nawaer_baodian_private_zh__22__tension_reversal__seed_3",
+          "xidaduo_private_zh__15__tension_reversal__seed_1",
+          "xidaduo_private_zh__15__tension_reversal__seed_2",
+          "xidaduo_private_zh__15__tension_reversal__seed_3"
+        ],
+        "callback_bridge": [
+          "nawaer_baodian_private_zh__22__callback_bridge__seed_1"
+        ],
+        "anchored_reaction_selectivity": [
+          "xidaduo_private_zh__15__anchored_reaction_selectivity__seed_1",
+          "xidaduo_private_zh__15__anchored_reaction_selectivity__seed_2",
+          "xidaduo_private_zh__15__anchored_reaction_selectivity__seed_3",
+          "xidaduo_private_zh__15__anchored_reaction_selectivity__seed_4",
+          "xidaduo_private_zh__15__anchored_reaction_selectivity__seed_5"
+        ]
+      },
+      "all": [
+        "nawaer_baodian_private_zh__22__callback_bridge__seed_1",
+        "nawaer_baodian_private_zh__22__distinction_definition__seed_1",
+        "nawaer_baodian_private_zh__22__tension_reversal__seed_1",
+        "nawaer_baodian_private_zh__22__tension_reversal__seed_2",
+        "nawaer_baodian_private_zh__22__tension_reversal__seed_3",
+        "xidaduo_private_zh__15__anchored_reaction_selectivity__seed_1",
+        "xidaduo_private_zh__15__anchored_reaction_selectivity__seed_2",
+        "xidaduo_private_zh__15__anchored_reaction_selectivity__seed_3",
+        "xidaduo_private_zh__15__anchored_reaction_selectivity__seed_4",
+        "xidaduo_private_zh__15__anchored_reaction_selectivity__seed_5",
+        "xidaduo_private_zh__15__tension_reversal__seed_1",
+        "xidaduo_private_zh__15__tension_reversal__seed_2",
+        "xidaduo_private_zh__15__tension_reversal__seed_3"
+      ]
+    },
+    "insight_and_clarification_subset_frozen_draft": {
+      "by_pressure": {
+        "distinction_definition": [
+          "nawaer_baodian_private_zh__22__distinction_definition__seed_1"
+        ],
+        "tension_reversal": [
+          "nawaer_baodian_private_zh__22__tension_reversal__seed_1",
+          "nawaer_baodian_private_zh__22__tension_reversal__seed_2",
+          "nawaer_baodian_private_zh__22__tension_reversal__seed_3",
+          "xidaduo_private_zh__15__tension_reversal__seed_1",
+          "xidaduo_private_zh__15__tension_reversal__seed_2",
+          "xidaduo_private_zh__15__tension_reversal__seed_3"
+        ],
+        "callback_bridge": [
+          "nawaer_baodian_private_zh__22__callback_bridge__seed_1"
+        ]
+      },
+      "all": [
+        "nawaer_baodian_private_zh__22__callback_bridge__seed_1",
+        "nawaer_baodian_private_zh__22__distinction_definition__seed_1",
+        "nawaer_baodian_private_zh__22__tension_reversal__seed_1",
+        "nawaer_baodian_private_zh__22__tension_reversal__seed_2",
+        "nawaer_baodian_private_zh__22__tension_reversal__seed_3",
+        "xidaduo_private_zh__15__tension_reversal__seed_1",
+        "xidaduo_private_zh__15__tension_reversal__seed_2",
+        "xidaduo_private_zh__15__tension_reversal__seed_3"
+      ]
+    }
+  }
+}

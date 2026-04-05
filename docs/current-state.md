@@ -7,12 +7,13 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-04-05T12:16:52Z`
+Last verified: `2026-04-05T13:12:44Z`
 
 ## Current Objective
 - Keep Phase 9 on the mainline under the new split-surface evaluation strategy:
   - treat the completed judged local excerpt retry3 on the human-notes-guided excerpt freeze as partial evidence only, because the first full judged run and the first sharded rerun both ended as harness failures and the merged retry3 result still remains dominated by placeholder `mechanism_unavailable` rows
   - use the landed staged/sharded comparison runners as the default local excerpt rerun architecture, but stop treating slow full-surface runs as the default iteration loop
+  - use the new ROI-first excerpt micro-slice as the next default judged repair harness, then do bounded `attentional_v2` throughput repair on that slice before returning to the broader excerpt-surface retune and later larger dataset adjustment
   - keep `excerpt surface v1.1` as the prepared next local excerpt surface, but do not promote it until the completed retry3 result is dispositioned as evidence and the remaining chapter-22 shortfall is either repaired narrowly or deferred explicitly
   - treat the repaired long-span first review as completed support evidence, then decide whether to do one narrow repair on the `2` revise probes or freeze the long-span v1 set honestly short before any judged accumulation comparison
   - preserve the recorded `Path A` gate outcome and the completed clustered benchmark freeze as still-useful evidence
@@ -30,6 +31,19 @@ Last verified: `2026-04-05T12:16:52Z`
       - local `reader_value.insight_and_clarification`
     - current judged surface:
       - the completed human-notes-guided excerpt reviewed freeze
+    - default ROI-first micro-slice draft:
+      - `attentional_v2_excerpt_micro_slice_v1_draft`
+      - fixed roster:
+        - `nawaer_baodian_private_zh__22`
+        - `xidaduo_private_zh__15`
+      - quantified shape:
+        - `13` primary excerpt cases
+        - `8` derived `insight_and_clarification` cases
+      - use rule:
+        - use this slice first for bounded `attentional_v2` throughput repair and fast judged iteration
+        - only after that return to `excerpt surface v1.1` promotion work and the later larger excerpt-surface adjustment
+      - optional later expansion candidate:
+        - `supremacy_private_en__13`
     - prepared next surface draft:
       - `attentional_v2_excerpt_surface_v1_1_draft`
       - fixed roster:
@@ -560,7 +574,7 @@ Last verified: `2026-04-05T12:16:52Z`
 - Treat `attentional_v2` as experimental and `iterator_v1` as the current default mechanism.
 - The active Phase 9 move is now split across two coordinated surfaces:
   - the completed notes-guided retry3 judged lane is now available as partial evidence only
-  - the next excerpt surface is already drafted as `excerpt surface v1.1` in a fresh namespace and is waiting on one shortfall decision plus an explicit choice about whether to pivot to smaller high-ROI judged slices
+  - the next excerpt surface is already drafted as `excerpt surface v1.1` in a fresh namespace and is now intentionally sequenced after the ROI-first micro-slice plus bounded `attentional_v2` throughput repair
   - long-span accumulation benchmark construction is the next bounded dataset lane
 - The clustered benchmark v1 freeze remains completed locally and still matters as readable mainline evidence:
   - benchmark-prep code support remains landed:
@@ -602,8 +616,32 @@ Last verified: `2026-04-05T12:16:52Z`
     - but the stronger explanatory cause is now the current `attentional_v2` call shape, not merely slower single-call latency or a bad launch posture
   - current recommended next move:
     - do not spend on another broad excerpt judged rerun first
-    - first freeze one explicit ROI-first judged excerpt micro-slice
+    - first use the explicit ROI-first judged excerpt micro-slice:
+      - `reading-companion-backend/eval/manifests/splits/attentional_v2_excerpt_micro_slice_v1_draft.json`
+      - `nawaer_baodian_private_zh__22`
+      - `xidaduo_private_zh__15`
     - then use that slice as the validation harness for a bounded `attentional_v2` throughput repair
+    - after that bounded repair loop, return to the broader excerpt-surface retune:
+      - decide the `excerpt surface v1.1` chapter-22 shortfall disposition
+      - then proceed to the later larger excerpt-surface / dataset adjustment
+- The prepared ROI-first excerpt micro-slice is `excerpt micro-slice v1`:
+  - draft doc:
+    - `docs/implementation/new-reading-mechanism/excerpt-micro-slice-v1-draft.md`
+  - tracked manifest:
+    - `reading-companion-backend/eval/manifests/splits/attentional_v2_excerpt_micro_slice_v1_draft.json`
+  - source surface:
+    - the reviewed human-notes-guided excerpt freeze
+  - current quantified result:
+    - `2` chapter units
+    - `13` primary excerpt cases
+    - `8` derived `insight_and_clarification` cases
+  - selected chapter units:
+    - `nawaer_baodian_private_zh__22`
+    - `xidaduo_private_zh__15`
+  - optional later expansion candidate:
+    - `supremacy_private_en__13`
+  - current role:
+    - default judged fast-iteration harness while bounded `attentional_v2` throughput repair is underway
 - The prepared next local excerpt surface is `excerpt surface v1.1`:
   - tracked manifest:
     - `reading-companion-backend/eval/manifests/splits/attentional_v2_excerpt_surface_v1_1_draft.json`
@@ -1904,8 +1942,6 @@ Last verified: `2026-04-05T12:16:52Z`
   - When should the detailed `attentional_v2` working design be promoted from temporary implementation docs into stable mechanism docs?
 - `Q-EXCERPT-SURFACE-V1.1-CH22`
   - After the completed notes-guided retry3 judged rerun, should `nawaer_baodian_private_zh__22` receive one narrow chapter-wide fill repair to reach the honest-short floor `6`, or should the shortfall be deferred explicitly and kept honest in the v1.1 draft?
-- `Q-EXCERPT-MICRO-SLICE`
-  - Which `2-3` high-ROI excerpt chapters should become the default judged micro-slice while `attentional_v2` throughput repair is underway?
 
 ## Active Risks
 - The new question-aligned private-library builder now keeps the live `v2` review-truth datasets as feedback input instead of overwriting them, but the new question-aligned outputs are still seed candidates rather than reviewed benchmark truth.
@@ -1954,20 +1990,22 @@ Last verified: `2026-04-05T12:16:52Z`
 4. relevant child `AGENTS.md`
 5. `docs/tasks/registry.md`
 6. `docs/implementation/new-reading-mechanism/execution-tracker.md`
-7. `docs/implementation/new-reading-mechanism/excerpt-surface-v1-1-draft.md`
-8. `docs/backend-reader-evaluation.md`
-9. `reading-companion-backend/eval/manifests/splits/attentional_v2_excerpt_surface_v1_1_draft.json`
-10. `reading-companion-backend/state/dataset_build/build_runs/excerpt_surface_v1_1_20260405/excerpt_surface_v1_1_summary.md`
-11. `docs/implementation/new-reading-mechanism/human-notes-guided-dataset-v1-freeze-draft.md`
-12. `reading-companion-backend/eval/manifests/splits/attentional_v2_human_notes_guided_excerpt_eval_v1_draft.json`
-13. `docs/implementation/new-reading-mechanism/clustered-benchmark-v1-draft.md`
-14. `reading-companion-backend/eval/manifests/splits/attentional_v2_clustered_benchmark_v1_draft.json`
-15. `docs/implementation/new-reading-mechanism/question-aligned-case-construction.md`
+7. `docs/implementation/new-reading-mechanism/excerpt-micro-slice-v1-draft.md`
+8. `reading-companion-backend/eval/manifests/splits/attentional_v2_excerpt_micro_slice_v1_draft.json`
+9. `docs/implementation/new-reading-mechanism/excerpt-surface-v1-1-draft.md`
+10. `docs/backend-reader-evaluation.md`
+11. `reading-companion-backend/eval/manifests/splits/attentional_v2_excerpt_surface_v1_1_draft.json`
+12. `reading-companion-backend/state/dataset_build/build_runs/excerpt_surface_v1_1_20260405/excerpt_surface_v1_1_summary.md`
+13. `docs/implementation/new-reading-mechanism/human-notes-guided-dataset-v1-freeze-draft.md`
+14. `reading-companion-backend/eval/manifests/splits/attentional_v2_human_notes_guided_excerpt_eval_v1_draft.json`
+15. `docs/implementation/new-reading-mechanism/clustered-benchmark-v1-draft.md`
+16. `reading-companion-backend/eval/manifests/splits/attentional_v2_clustered_benchmark_v1_draft.json`
+17. `docs/implementation/new-reading-mechanism/question-aligned-case-construction.md`
 
 ## Machine-Readable Appendix
 ```json
 {
-  "updated_at": "2026-04-05T12:16:52Z",
+  "updated_at": "2026-04-05T13:12:44Z",
   "last_updated_by": "codex",
   "active_task_ids": [
     "TASK-PHASE9-DECISIVE-EVAL",
@@ -1977,11 +2015,11 @@ Last verified: `2026-04-05T12:16:52Z`
   "active_job_ids": [],
   "open_decision_ids": [
     "Q10",
-    "Q-EXCERPT-SURFACE-V1.1-CH22",
-    "Q-EXCERPT-MICRO-SLICE"
+    "Q-EXCERPT-SURFACE-V1.1-CH22"
   ],
   "detail_refs": [
     "docs/implementation/new-reading-mechanism/execution-tracker.md",
+    "docs/implementation/new-reading-mechanism/excerpt-micro-slice-v1-draft.md",
     "docs/implementation/new-reading-mechanism/excerpt-surface-v1-1-draft.md",
     "docs/implementation/new-reading-mechanism/human-notes-guided-dataset-v1-freeze-draft.md",
     "docs/implementation/new-reading-mechanism/clustered-benchmark-v1-draft.md",
@@ -1992,6 +2030,7 @@ Last verified: `2026-04-05T12:16:52Z`
     "docs/implementation/new-reading-mechanism/dataset-platform-closed-loop.md",
     "docs/implementation/new-reading-mechanism/question-aligned-case-construction.md",
     "docs/implementation/new-reading-mechanism/human-notes-guided-dataset-v1-freeze-draft.md",
+    "reading-companion-backend/eval/manifests/splits/attentional_v2_excerpt_micro_slice_v1_draft.json",
     "reading-companion-backend/eval/attentional_v2/ingest_library_sources.py",
     "reading-companion-backend/tests/test_source_intake.py",
     "reading-companion-backend/state/dataset_build/source_intake_runs/bootstrap_existing_sources_20260330.json",

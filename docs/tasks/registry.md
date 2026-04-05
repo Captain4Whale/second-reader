@@ -25,7 +25,7 @@ Last updated: `2026-04-05T12:16:52Z`
 - Lane: `mechanism_eval`
 - Priority: `high`
 - Detail: `docs/implementation/new-reading-mechanism/execution-tracker.md`
-- Next: treat the completed dual-pool recovery retry3 plus explicit merge as partial evidence only, keep the result primarily as throughput evidence, define one ROI-first judged excerpt micro-slice, and use that slice as the validation harness for a bounded `attentional_v2` throughput repair before any new broad excerpt judged rerun or `excerpt surface v1.1` promotion decision
+- Next: treat the completed dual-pool recovery retry3 plus explicit merge as partial evidence only, use the landed `attentional_v2_excerpt_micro_slice_v1_draft` (`nawaer_baodian_private_zh__22` + `xidaduo_private_zh__15`, `13 / 8` cases) as the default judged harness, run bounded `attentional_v2` throughput repair on that slice, and only then return to broader excerpt-surface work before any new full-surface rerun
 - Jobs:
   - `bgjob_human_notes_excerpt_smoke_light_20260404` (`completed`)
   - `bgjob_human_notes_guided_excerpt_eval_v1_judged_20260404` (`completed`)
@@ -76,7 +76,7 @@ Last updated: `2026-04-05T12:16:52Z`
 - Priority: `high`
 - Detail: `docs/implementation/new-reading-mechanism/excerpt-surface-v1-1-draft.md`
 - Blocked by: `TASK-PHASE9-DECISIVE-EVAL`
-- Next: keep the completed retry3 judged notes-guided result archived as evidence only, let the next ROI-first excerpt micro-slice plus bounded `attentional_v2` throughput repair settle first, then either repair `nawaer_baodian_private_zh__22` to reach floor `6` with one narrow fill pass or defer that shortfall explicitly before running the v1.1 smoke and judged lane
+- Next: keep the completed retry3 judged notes-guided result archived as evidence only, let the new micro-slice and bounded `attentional_v2` throughput repair settle first, then either repair `nawaer_baodian_private_zh__22` to reach floor `6` with one narrow fill pass or defer that shortfall explicitly before running the v1.1 smoke and judged lane; broader excerpt-surface adjustment remains the third step after the mechanism repair loop
 - Jobs: none
 
 ### `TASK-DATASET-QUESTION-ALIGNED-CASE-CONSTRUCTION` — Build question-aligned case construction for evaluation datasets

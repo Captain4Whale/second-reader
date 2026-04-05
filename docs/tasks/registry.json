@@ -284,12 +284,14 @@
       "decision_refs": [],
       "job_refs": [],
       "acceptance_ref": "docs/implementation/new-reading-mechanism/excerpt-surface-v1-1-draft.md",
-      "next_action": "Keep the completed retry3 judged notes-guided result archived as evidence only, let the next ROI-first excerpt micro-slice plus bounded attentional_v2 throughput repair settle first, then either repair nawaer_baodian_private_zh__22 to reach floor 6 with one narrow fill pass or defer that shortfall explicitly before running the v1.1 smoke and judged lane.",
+      "next_action": "Keep the completed retry3 judged notes-guided result archived as evidence only, let the new micro-slice and bounded attentional_v2 throughput repair settle first, then either repair nawaer_baodian_private_zh__22 to reach floor 6 with one narrow fill pass or defer that shortfall explicitly before running the v1.1 smoke and judged lane; broader excerpt-surface adjustment remains the third step after the mechanism repair loop.",
       "blocked_by": [
         "TASK-PHASE9-DECISIVE-EVAL"
       ],
       "evidence_refs": [
+        "docs/implementation/new-reading-mechanism/excerpt-micro-slice-v1-draft.md",
         "docs/implementation/new-reading-mechanism/excerpt-surface-v1-1-draft.md",
+        "reading-companion-backend/eval/manifests/splits/attentional_v2_excerpt_micro_slice_v1_draft.json",
         "reading-companion-backend/eval/attentional_v2/excerpt_surface_v1_1.py",
         "reading-companion-backend/eval/attentional_v2/build_excerpt_surface_v1_1.py",
         "reading-companion-backend/eval/manifests/splits/attentional_v2_excerpt_surface_v1_1_draft.json",
@@ -733,12 +735,16 @@
         "bgjob_human_notes_excerpt_parallel_judged_shard_b_dualpool_recovery_retry3_20260405"
       ],
       "acceptance_ref": "docs/implementation/new-reading-mechanism/execution-tracker.md",
-      "next_action": "Treat the completed dual-pool recovery retry3 plus explicit merge as partial evidence only, keep the result primarily as throughput evidence, define one ROI-first judged excerpt micro-slice, and use that slice as the validation harness for a bounded attentional_v2 throughput repair before any new broad excerpt judged rerun or excerpt surface v1.1 promotion decision.",
+      "next_action": "Treat the completed dual-pool recovery retry3 plus explicit merge as partial evidence only, use the landed attentional_v2_excerpt_micro_slice_v1_draft (nawaer_baodian_private_zh__22 plus xidaduo_private_zh__15, 13 primary cases and 8 insight cases) as the default judged harness, run bounded attentional_v2 throughput repair on that slice, and only then return to broader excerpt-surface work before any new full-surface rerun.",
       "blocked_by": [],
       "evidence_refs": [
+        "docs/implementation/new-reading-mechanism/excerpt-micro-slice-v1-draft.md",
         "docs/implementation/new-reading-mechanism/clustered-benchmark-v1-draft.md",
         "docs/implementation/new-reading-mechanism/excerpt-surface-v1-1-draft.md",
         "docs/implementation/new-reading-mechanism/execution-tracker.md",
+        "reading-companion-backend/eval/manifests/splits/attentional_v2_excerpt_micro_slice_v1_draft.json",
+        "reading-companion-backend/eval/attentional_v2/excerpt_micro_slice_v1.py",
+        "reading-companion-backend/eval/attentional_v2/build_excerpt_micro_slice_v1.py",
         "reading-companion-backend/eval/manifests/splits/attentional_v2_clustered_benchmark_v1_draft.json",
         "reading-companion-backend/eval/manifests/splits/attentional_v2_excerpt_surface_v1_1_draft.json",
         "reading-companion-backend/state/dataset_build/build_runs/clustered_benchmark_v1_freeze_20260404/clustered_benchmark_v1_freeze_summary.json",
@@ -778,6 +784,7 @@
         "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_human_notes_guided_excerpt_eval_v1_judged_20260404/summary/report.md",
         "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_excerpt_parallel_smoke_20260405/shards/smoke_dual_heavy/summary/llm_usage.json",
         "reading-companion-backend/eval/runs/attentional_v2/llm_capacity_probe_personal_20260405/summary/llm_usage.json",
+        "reading-companion-backend/tests/test_excerpt_micro_slice_v1_manifest.py",
         "reading-companion-backend/eval/runs/attentional_v2/llm_capacity_probe_dualpool_20260405/summary/llm_usage.json",
         "reading-companion-backend/eval/attentional_v2/run_llm_capacity_probe.py",
         "reading-companion-backend/eval/attentional_v2/run_chapter_comparison.py",
