@@ -243,7 +243,7 @@ Update when: status changes, blockers appear, or phases complete.
         - `accumulation_benchmark_v1.py` now rebuilds the draft around `6` windows and `9` repaired probes instead of the previous `18`-probe overreach
         - `run_case_design_audit.py` now resolves source refs and note-backed anchor spans more faithfully during factual audit
         - targeted backend tests now pass on the repaired probe/audit contract
-      - active repaired first-review lane:
+      - completed repaired first-review lane:
         - `bgjob_accumulation_benchmark_v1_repair_first_review_20260405`
           - packet id:
             - `accumulation_benchmark_v1_repair_first_review_20260405`
@@ -259,8 +259,20 @@ Update when: status changes, blockers appear, or phases complete.
             - `huochu_shengming_de_yiyi_private_zh__8__probe_2`
             - `huochu_shengming_de_yiyi_private_zh__13_16__probe_1`
             - `huochu_shengming_de_yiyi_private_zh__13_16__probe_2`
-          - status:
-            - `running`
+          - result:
+            - `keep = 7`
+            - `revise = 2`
+            - `drop = 0`
+            - post-import `reviewed_active = 7`, `needs_revision = 2`
+          - remaining revise probes:
+            - `huochu_shengming_de_yiyi_private_zh__8__probe_1`
+            - `huochu_shengming_de_yiyi_private_zh__8__probe_2`
+          - interpretation:
+            - the repaired contract is now strong enough to yield nonzero benchmark-ready keeps
+            - long-span v1 no longer needs another broad repair wave before the next decision
+            - the next decision is narrow and explicit:
+              - either repair the two chapter-8 revise probes
+              - or freeze the current v1 set honestly short before any judged accumulation run
   - current model-call cost is high enough that new comparison work outside the mechanism mainline should stay paused for now:
     - keep broader comparison checkpoints as baseline references, not active rerun targets
     - keep active spend on decisive mechanism-eval runs plus the minimum support diagnostics they still require
@@ -340,8 +352,8 @@ Update when: status changes, blockers appear, or phases complete.
       - `bgjob_formal_benchmark_v1_excerpt_smoke_targetsplit_20260403`
     - immediate next mainline move is now split:
       - rerun the judged notes-guided local excerpt lane under a quota-safe target / wait-budget posture
-      - keep the rebuilt long-span window set but repair probe framing before any freeze
-      - rerun long-span first review after the probe/materialization repair rather than launching judged accumulation comparison immediately
+      - keep the rebuilt long-span window set and use the repaired first-review result as the new freeze gate
+      - decide between one narrow chapter-8 probe repair and an honest-short long-span freeze before launching judged accumulation comparison
       - keep the `reserve = 7 / 8` shortfall and the pressure imbalance explicit in any clustered-benchmark interpretation rather than reopening builder widening first
   - cheap honesty / integrity / compatibility checks remain useful sanity guards, but they are no longer treated as primary eval success targets
 - Current blockers:

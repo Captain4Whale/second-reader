@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-04-05T00:21:30Z`
+Last updated: `2026-04-05T01:48:52Z`
 
 ## Status Values
 - `active`
@@ -36,11 +36,11 @@ Last updated: `2026-04-05T00:21:30Z`
 - Lane: `dataset_platform`
 - Priority: `high`
 - Detail: `docs/implementation/new-reading-mechanism/execution-tracker.md`
-- Next: keep the repaired long-span first-review lane running on the rebuilt `9`-probe draft; do not freeze reviewed probes or launch judged accumulation comparison yet unless this rerun finally yields nonzero keeps
+- Next: use the completed repaired first review as the new freeze gate, then choose between one narrow repair on the two chapter-8 revise probes or an honest-short v1 freeze before any judged accumulation comparison
 - Jobs:
   - `bgjob_accumulation_benchmark_v1_first_review_20260404` (`completed`)
   - `bgjob_accumulation_benchmark_v1_rejudged_first_review_20260404` (`completed`)
-  - `bgjob_accumulation_benchmark_v1_repair_first_review_20260405` (`running`)
+  - `bgjob_accumulation_benchmark_v1_repair_first_review_20260405` (`completed`)
 
 ## Parked
 

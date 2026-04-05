@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-04-05T00:21:30Z",
+  "updated_at": "2026-04-05T01:48:52Z",
   "tasks": [
     {
       "id": "TASK-MECH-EN-RERUN",
@@ -731,7 +731,7 @@
         "bgjob_accumulation_benchmark_v1_repair_first_review_20260405"
       ],
       "acceptance_ref": "docs/implementation/new-reading-mechanism/execution-tracker.md",
-      "next_action": "Keep the repaired long-span first-review lane running on the rebuilt 9-probe draft; do not freeze reviewed probes or launch judged accumulation comparison yet unless this rerun finally yields nonzero keeps.",
+      "next_action": "Use the completed repaired first review as the new freeze gate, then choose between one narrow repair on the two chapter-8 revise probes or an honest-short v1 freeze before any judged accumulation comparison.",
       "blocked_by": [],
       "evidence_refs": [
         "docs/implementation/new-reading-mechanism/human-notes-guided-dataset-v1-freeze-draft.md",
@@ -752,9 +752,11 @@
         "reading-companion-backend/eval/review_packets/archive/accumulation_benchmark_v1_rejudged_first_review_20260404/dataset_review_pipeline_summary.json",
         "reading-companion-backend/eval/review_packets/archive/accumulation_benchmark_v1_rejudged_first_review_20260404/llm_review_report.md",
         "reading-companion-backend/state/job_registry/jobs/bgjob_accumulation_benchmark_v1_repair_first_review_20260405.json",
-        "reading-companion-backend/state/job_registry/logs/bgjob_accumulation_benchmark_v1_repair_first_review_20260405.log"
+        "reading-companion-backend/state/job_registry/logs/bgjob_accumulation_benchmark_v1_repair_first_review_20260405.log",
+        "reading-companion-backend/eval/review_packets/archive/accumulation_benchmark_v1_repair_first_review_20260405/dataset_review_pipeline_summary.json",
+        "reading-companion-backend/eval/review_packets/archive/accumulation_benchmark_v1_repair_first_review_20260405/llm_review_report.md"
       ],
-      "last_updated": "2026-04-05T00:21:30Z",
+      "last_updated": "2026-04-05T01:48:52Z",
       "last_updated_by": "codex"
     },
     {

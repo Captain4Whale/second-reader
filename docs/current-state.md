@@ -7,12 +7,12 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-04-05T00:21:30Z`
+Last verified: `2026-04-05T01:48:52Z`
 
 ## Current Objective
 - Keep Phase 9 on the mainline under the new split-surface evaluation strategy:
   - keep the judged local excerpt rerun active on the human-notes-guided excerpt freeze under the new personal-only live target posture, because the first full judged run ended as a harness failure rather than usable mechanism evidence
-  - keep the bounded long-span repair lane active and rerun first review on the repaired `9`-probe draft instead of launching judged accumulation comparison prematurely
+  - treat the repaired long-span first review as completed support evidence, then decide whether to do one narrow repair on the `2` revise probes or freeze the long-span v1 set honestly short before any judged accumulation comparison
   - preserve the recorded `Path A` gate outcome and the completed clustered benchmark freeze as still-useful evidence
   - keep durable-trace / re-entry and runtime viability paused on cost grounds
 - Keep dataset work tightly scoped to the new long-span need:
@@ -131,15 +131,28 @@ Last verified: `2026-04-05T00:21:30Z`
           - repair the probe contract and chapter/span metadata first
           - do not freeze the reviewed probes yet
           - do not launch judged accumulation comparison yet
-    - active repaired first review:
+    - completed repaired first review:
       - `bgjob_accumulation_benchmark_v1_repair_first_review_20260405`
         - purpose:
           - rerun first review on the repaired `9`-probe long-span draft under `MiniMax-M2.7-personal`
-        - live shape:
+        - execution shape:
           - `selection_mode = first_review`
           - `--audit-max-workers 2 --review-max-workers 1`
-        - current interpretation:
-          - this lane is testing whether the repaired probe contract can finally produce nonzero benchmark-ready keeps; judged accumulation comparison remains blocked until that answer is known
+        - result:
+          - `keep = 7`
+          - `revise = 2`
+          - `drop = 0`
+          - post-import:
+            - `reviewed_active = 7`
+            - `needs_revision = 2`
+        - remaining revise probes:
+          - `huochu_shengming_de_yiyi_private_zh__8__probe_1`
+          - `huochu_shengming_de_yiyi_private_zh__8__probe_2`
+        - interpretation:
+          - the repaired probe/materialization contract finally produced nonzero benchmark-ready keeps
+          - long-span judged comparison is no longer blocked by total review failure, but it is still blocked on one explicit freeze decision:
+            - either run one narrow repair on the two chapter-8 revise probes
+            - or freeze the v1 set honestly short and defer those two probes
 - `coherent_accumulation` is now interpreted operationally as bounded long-span continuity and carryover rather than generic whole-book memory.
 - `insight_and_clarification` is treated as an orthogonal output-value axis that can score both local excerpt cases and long-span window cases.
 - Excerpt and long-span datasets may intentionally use different books or chapters when that improves fit and runtime efficiency.
@@ -149,12 +162,12 @@ Last verified: `2026-04-05T00:21:30Z`
   - the current local excerpt move is the active personal-key judged rerun, not mechanism interpretation yet
 - Current long-span construction gate:
   - keep the rebuilt final window set
-  - use the repaired `9`-probe draft on that window set
-  - keep long-span first review running on the repaired draft; judged accumulation comparison stays blocked until at least some probes become benchmark-ready keeps
+  - retain the repaired `9`-probe review result on that window set
+  - freeze / repair decision now sits on `7 reviewed_active + 2 needs_revision`
+  - do not launch judged accumulation comparison until that freeze decision is made explicitly
 - Background-job registry state:
-  - `reading-companion-backend/state/job_registry/active_jobs.md` currently lists two active background jobs:
+  - `reading-companion-backend/state/job_registry/active_jobs.md` currently lists one active background job:
     - `bgjob_human_notes_guided_excerpt_eval_v1_judged_personal_rerun_20260405`
-    - `bgjob_accumulation_benchmark_v1_repair_first_review_20260405`
 - The post-recovery gate review is now closed on `Path A`.
 - Recorded gate outcomes:
   - `OD-PRIVATE-LIBRARY-POST-RESCUE-GATE = keep_hold_for_backlog_rescue`
@@ -407,9 +420,14 @@ Last verified: `2026-04-05T00:21:30Z`
     - target-level concurrency is `4 / 4 / 4 / 1`
     - `reading-companion-backend/config/llm_profile_bindings.local.json` binds `runtime_reader_default`, `dataset_review_high_trust`, and `eval_judge_high_trust` only to `MiniMax-M2.7-personal`
     - current operator policy is to allow exactly two heavy processes on that one personal key during this phase, while keeping intra-process execution conservative
-- There are currently two active background jobs in the registry:
+- There is currently one active background job in the registry:
   - `bgjob_human_notes_guided_excerpt_eval_v1_judged_personal_rerun_20260405`
+- the latest completed long-span support job is:
   - `bgjob_accumulation_benchmark_v1_repair_first_review_20260405`
+    - result:
+      - `keep = 7`
+      - `revise = 2`
+      - `drop = 0`
 - the most recent completed clustered benchmark jobs are:
     - `bgjob_clustered_benchmark_v1_first_review_en_20260403`
     - `bgjob_clustered_benchmark_v1_first_review_zh_20260403`
