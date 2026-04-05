@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-04-05T14:35:01Z`
+Last verified: `2026-04-05T15:09:05Z`
 
 ## Current Objective
 - Keep Phase 9 on the mainline under the new split-surface evaluation strategy:
@@ -16,8 +16,8 @@ Last verified: `2026-04-05T14:35:01Z`
   - use the new ROI-first excerpt micro-slice as the default repair harness:
     - the bounded `attentional_v2` throughput repair is now landed
     - the `judge-mode none` smoke on that slice completed cleanly with material call reduction
-    - the active next step is the judged micro-slice rerun on the same two-unit slice before returning to the broader excerpt-surface retune and later larger dataset adjustment
-  - keep `excerpt surface v1.1` as the prepared next local excerpt surface, but do not promote it until the completed retry3 result is dispositioned as evidence and the remaining chapter-22 shortfall is either repaired narrowly or deferred explicitly
+    - the judged micro-slice rerun on the same two-unit slice is now also completed and serves as the first clean bounded proof that the repair lowered call volume without an obvious judged-quality collapse
+  - keep `excerpt surface v1.1` as the prepared next local excerpt surface, and make it the next excerpt lane after the completed micro-slice gate while keeping one narrow mechanism follow-up on exact target-anchor coverage in `xidaduo`-style local cases
   - treat the repaired long-span first review as completed support evidence, then decide whether to do one narrow repair on the `2` revise probes or freeze the long-span v1 set honestly short before any judged accumulation comparison
   - preserve the recorded `Path A` gate outcome and the completed clustered benchmark freeze as still-useful evidence
   - keep durable-trace / re-entry and runtime viability paused on cost grounds
@@ -77,13 +77,13 @@ Last verified: `2026-04-05T14:35:01Z`
           - all four mechanism payloads completed with `fallback_count = 0`
         - interpretation:
           - the bounded runtime-schedule repair cleared the smoke gate
-          - the active next step is the judged micro-slice rerun, not another broad excerpt-surface rerun
-      - active judged micro-slice rerun:
+          - the next gate was the judged micro-slice rerun on the same fixed slice
+      - completed judged micro-slice rerun:
         - job id:
           - `bgjob_attentional_v2_excerpt_micro_slice_judged_20260405`
         - run id:
           - `attentional_v2_excerpt_micro_slice_v1_judged_throughput_repair_20260405`
-        - live shape:
+        - completed shape:
           - `stage = all -> merge`
           - `judge-mode = llm`
           - `mechanism-filter = both`
@@ -94,9 +94,43 @@ Last verified: `2026-04-05T14:35:01Z`
           - `judge_workers = 2`
           - `LLM_PROCESS_RUNTIME_PROFILE_MAX_CONCURRENCY = 8`
           - `LLM_PROCESS_EVAL_JUDGE_PROFILE_MAX_CONCURRENCY = 4`
-        - working rule:
-          - keep this run as the default judged repair harness
-          - do not reopen a broader excerpt-surface judged rerun until this bounded judged pass is interpreted
+        - result:
+          - `selective_legibility`: `13 / 13` cases completed with:
+            - winner counts:
+              - `attentional_v2 = 8`
+              - `iterator_v1 = 4`
+              - `tie = 1`
+            - average scores:
+              - `attentional_v2 = 2.277`
+              - `iterator_v1 = 0.938`
+          - `insight_and_clarification`: `8 / 8` cases completed with:
+            - winner counts:
+              - `attentional_v2 = 6`
+              - `iterator_v1 = 1`
+              - `tie = 1`
+            - average scores:
+              - `attentional_v2 = 2.25`
+              - `iterator_v1 = 0.6`
+          - `judge_unavailable_count = 0`
+          - `mechanism_failure_count = 0`
+          - run-level usage:
+            - `request_count = 158`
+            - `success_count = 158`
+            - `error_count = 0`
+            - `retry_count = 0`
+            - `runtime_reader_default = 137`
+            - `eval_judge_high_trust = 21`
+            - `attentional_v2 = 91`
+            - `iterator_v1 = 46`
+            - `MiniMax-M2.7-personal = 148`
+            - `MiniMax-M2.7-personal-2 = 10`
+        - interpretation:
+          - the bounded throughput repair cleared the judged gate as well as the smoke gate
+          - there is no sign here of a quality collapse caused by the schedule pruning
+          - the next excerpt move should return to `excerpt surface v1.1` and the larger excerpt-surface retune, not another immediate broad throughput pass
+          - one narrow mechanism follow-up remains worth keeping explicit:
+            - some `xidaduo` local cases still show strong chapter-local interpretation but miss the exact designated anchor line
+            - treat that as a later narrow mechanism repair target rather than a blocker on excerpt-surface optimization
     - prepared next surface draft:
       - `attentional_v2_excerpt_surface_v1_1_draft`
       - fixed roster:
@@ -2034,7 +2068,7 @@ Last verified: `2026-04-05T14:35:01Z`
 - `TASK-ACCUMULATION-BENCHMARK-V1`
 
 ## Active Job IDs
-- `bgjob_attentional_v2_excerpt_micro_slice_judged_20260405`
+- none
 
 ## Recommended Reading Path
 1. `AGENTS.md`
@@ -2058,16 +2092,14 @@ Last verified: `2026-04-05T14:35:01Z`
 ## Machine-Readable Appendix
 ```json
 {
-  "updated_at": "2026-04-05T14:35:01Z",
+  "updated_at": "2026-04-05T15:09:05Z",
   "last_updated_by": "codex",
   "active_task_ids": [
     "TASK-PHASE9-DECISIVE-EVAL",
     "TASK-ACCUMULATION-BENCHMARK-V1"
   ],
   "blocked_task_ids": [],
-  "active_job_ids": [
-    "bgjob_attentional_v2_excerpt_micro_slice_judged_20260405"
-  ],
+  "active_job_ids": [],
   "open_decision_ids": [
     "Q10",
     "Q-EXCERPT-SURFACE-V1.1-CH22"

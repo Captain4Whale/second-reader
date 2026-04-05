@@ -86,10 +86,40 @@ Update when: status changes, blockers appear, or phases complete.
             - `retry_count = 0`
             - `attentional_v2 = 85`
             - `iterator_v1 = 58`
-      - the active next gate is now the judged micro-slice rerun on the same fixed slice, not another broad excerpt-surface rerun
-      - only after that bounded repair loop should excerpt work return to the broader surface lane:
-        - `excerpt surface v1.1` promotion or honest-short defer
-        - then the larger excerpt-surface / dataset adjustment
+      - that judged micro-slice rerun on the same fixed slice is now completed and clears the bounded repair gate:
+        - `selective_legibility`:
+          - `13` cases
+          - winner counts:
+            - `attentional_v2 = 8`
+            - `iterator_v1 = 4`
+            - `tie = 1`
+          - average scores:
+            - `attentional_v2 = 2.277`
+            - `iterator_v1 = 0.938`
+        - `insight_and_clarification`:
+          - `8` cases
+          - winner counts:
+            - `attentional_v2 = 6`
+            - `iterator_v1 = 1`
+            - `tie = 1`
+          - average scores:
+            - `attentional_v2 = 2.25`
+            - `iterator_v1 = 0.6`
+        - `judge_unavailable_count = 0`
+        - `mechanism_failure_count = 0`
+        - run-level usage:
+          - `request_count = 158`
+          - `success_count = 158`
+          - `error_count = 0`
+          - `retry_count = 0`
+      - interpretation:
+        - the bounded runtime-schedule repair now has judged as well as smoke-level proof
+        - there is no sign of an obvious quality collapse from the throughput reduction
+        - excerpt work should now return to the broader surface lane:
+          - `excerpt surface v1.1` promotion or honest-short defer
+          - then the larger excerpt-surface / dataset adjustment
+        - keep one narrow later mechanism follow-up explicit:
+          - some `xidaduo` local cases still miss the exact designated anchor line even when chapter-local interpretation is strong
   - a new isolated human-notes-guided dataset v1 support lane is now landed on top of the question-aligned builder:
     - managed notes assets now live under:
       - `reading-companion-backend/state/library_notes/`
@@ -220,7 +250,7 @@ Update when: status changes, blockers appear, or phases complete.
           - bundle sidecars, per-case outputs, aggregate, report, and usage summary all emitted
           - `attentional_v2` request volume on the slice dropped from `733` baseline calls to `85`
           - no errors, retries, or mechanism payload fallbacks were recorded
-      - active judged rerun:
+      - completed judged rerun:
         - job id:
           - `bgjob_attentional_v2_excerpt_micro_slice_judged_20260405`
         - run id:
@@ -234,6 +264,11 @@ Update when: status changes, blockers appear, or phases complete.
           - `judge_workers = 2`
           - `LLM_PROCESS_RUNTIME_PROFILE_MAX_CONCURRENCY = 8`
           - `LLM_PROCESS_EVAL_JUDGE_PROFILE_MAX_CONCURRENCY = 4`
+        - outcome:
+          - `selective_legibility`: `13` cases, `attentional_v2 = 8`, `iterator_v1 = 4`, `tie = 1`
+          - `insight_and_clarification`: `8` cases, `attentional_v2 = 6`, `iterator_v1 = 1`, `tie = 1`
+          - no `judge_unavailable`
+          - no `mechanism_failure`
     - the active benchmark pointer is still the clustered benchmark v1 draft:
       - do not merge, replace, or repoint based on the notes-guided line until its isolated outputs are reviewed intentionally
   - unattended automation should not widen further while the remaining minimum reader-character proof and trust-gate lane stay active

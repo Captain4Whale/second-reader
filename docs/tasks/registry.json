@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-04-05T14:35:01Z",
+  "updated_at": "2026-04-05T15:09:05Z",
   "tasks": [
     {
       "id": "TASK-MECH-EN-RERUN",
@@ -272,7 +272,7 @@
     {
       "id": "TASK-EXCERPT-SURFACE-V1.1",
       "title": "Retune the next excerpt surface incrementally from the notes-guided freeze",
-      "status": "waiting",
+      "status": "queued",
       "lane": "dataset_platform",
       "priority": "high",
       "detail_ref": "docs/implementation/new-reading-mechanism/excerpt-surface-v1-1-draft.md",
@@ -284,10 +284,8 @@
       "decision_refs": [],
       "job_refs": [],
       "acceptance_ref": "docs/implementation/new-reading-mechanism/excerpt-surface-v1-1-draft.md",
-      "next_action": "Keep the completed retry3 judged notes-guided result archived as evidence only, let the new micro-slice and bounded attentional_v2 throughput repair settle first, then either repair nawaer_baodian_private_zh__22 to reach floor 6 with one narrow fill pass or defer that shortfall explicitly before running the v1.1 smoke and judged lane; broader excerpt-surface adjustment remains the third step after the mechanism repair loop.",
-      "blocked_by": [
-        "TASK-PHASE9-DECISIVE-EVAL"
-      ],
+      "next_action": "The micro-slice throughput-repair gate is now cleared, so the next excerpt lane is to repair nawaer_baodian_private_zh__22 up to floor 6 with one narrow fill pass or defer that shortfall explicitly, then run the v1.1 smoke and judged lane; broader excerpt-surface adjustment should follow immediately after.",
+      "blocked_by": [],
       "evidence_refs": [
         "docs/implementation/new-reading-mechanism/excerpt-micro-slice-v1-draft.md",
         "docs/implementation/new-reading-mechanism/excerpt-surface-v1-1-draft.md",
@@ -302,7 +300,7 @@
         "reading-companion-backend/tests/test_excerpt_surface_v1_1_manifest.py",
         "reading-companion-backend/tests/test_question_aligned_case_construction.py"
       ],
-      "last_updated": "2026-04-05T12:16:52Z",
+      "last_updated": "2026-04-05T15:09:05Z",
       "last_updated_by": "codex"
     },
     {
@@ -737,7 +735,7 @@
         "bgjob_attentional_v2_excerpt_micro_slice_judged_20260405"
       ],
       "acceptance_ref": "docs/implementation/new-reading-mechanism/execution-tracker.md",
-      "next_action": "Treat the completed dual-pool recovery retry3 plus explicit merge as partial evidence only; the bounded attentional_v2 throughput repair is now landed, the ROI-first micro-slice smoke completed cleanly with 13 selective cases, 8 insight cases, and attentional_v2 reader calls reduced from 733 to 85 on the same two-unit slice, and the active next step is the judged micro-slice rerun on that same harness before any broader excerpt-surface work.",
+      "next_action": "Treat the completed dual-pool recovery retry3 plus explicit merge as partial evidence only; the bounded attentional_v2 throughput repair is now landed and the judged ROI-first micro-slice also completed cleanly, with attentional_v2 still winning the slice after reader calls dropped from 733 to 85, so the next step is to resume excerpt surface v1.1 and the broader excerpt-surface optimization while keeping one narrow mechanism follow-up on exact anchor coverage.",
       "blocked_by": [],
       "evidence_refs": [
         "docs/implementation/new-reading-mechanism/excerpt-micro-slice-v1-draft.md",
@@ -788,6 +786,9 @@
         "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_excerpt_micro_slice_v1_smoke_throughput_repair_20260405/summary/llm_usage.json",
         "reading-companion-backend/state/job_registry/jobs/bgjob_attentional_v2_excerpt_micro_slice_judged_20260405.json",
         "reading-companion-backend/state/job_registry/logs/bgjob_attentional_v2_excerpt_micro_slice_judged_20260405.log",
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_excerpt_micro_slice_v1_judged_throughput_repair_20260405/summary/aggregate.json",
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_excerpt_micro_slice_v1_judged_throughput_repair_20260405/summary/report.md",
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_excerpt_micro_slice_v1_judged_throughput_repair_20260405/summary/llm_usage.json",
         "docs/backend-reading-mechanisms/attentional_v2.md",
         "reading-companion-backend/src/attentional_v2/nodes.py",
         "reading-companion-backend/src/attentional_v2/runner.py",
@@ -804,7 +805,7 @@
         "reading-companion-backend/eval/attentional_v2/run_chapter_comparison.py",
         "reading-companion-backend/eval/attentional_v2/run_excerpt_comparison.py"
       ],
-      "last_updated": "2026-04-05T14:35:01Z",
+      "last_updated": "2026-04-05T15:09:05Z",
       "last_updated_by": "codex"
     },
     {

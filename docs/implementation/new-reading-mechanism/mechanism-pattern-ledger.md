@@ -293,6 +293,10 @@ This file is a living working ledger. Stable rules still belong in `docs/backend
     - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_excerpt_micro_slice_v1_smoke_throughput_repair_20260405/summary/aggregate.json`
     - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_excerpt_micro_slice_v1_smoke_throughput_repair_20260405/summary/llm_usage.json`
     - `reading-companion-backend/state/job_registry/logs/bgjob_attentional_v2_excerpt_micro_slice_smoke_20260405.log`
+  - judged proof on the same bounded slice:
+    - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_excerpt_micro_slice_v1_judged_throughput_repair_20260405/summary/aggregate.json`
+    - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_excerpt_micro_slice_v1_judged_throughput_repair_20260405/summary/report.md`
+    - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_excerpt_micro_slice_v1_judged_throughput_repair_20260405/summary/llm_usage.json`
   - landed code and tests:
     - `reading-companion-backend/src/attentional_v2/nodes.py`
     - `reading-companion-backend/src/attentional_v2/runner.py`
@@ -302,17 +306,36 @@ This file is a living working ledger. Stable rules still belong in `docs/backend
     - `nawaer_baodian_private_zh__chapter_22`: `220 -> 21`
     - `xidaduo_private_zh__chapter_15`: `513 -> 64`
     - combined two-unit baseline: `733 -> 85` reader calls (`-88.4%`)
-- Status: `partially_adopted`
+- judged bounded-slice outcome after the repair:
+  - `selective_legibility`:
+    - `13` cases
+    - winner counts:
+      - `attentional_v2 = 8`
+      - `iterator_v1 = 4`
+      - `tie = 1`
+    - average scores:
+      - `attentional_v2 = 2.277`
+      - `iterator_v1 = 0.938`
+  - `insight_and_clarification`:
+    - `8` cases
+    - winner counts:
+      - `attentional_v2 = 6`
+      - `iterator_v1 = 1`
+      - `tie = 1`
+    - average scores:
+      - `attentional_v2 = 2.25`
+      - `iterator_v1 = 0.6`
+  - no `judge_unavailable`
+  - no `mechanism_failure`
+- Status: `adopted`
 - Next action:
   - keep the landed bounded schedule repair as the new baseline:
     - no-LLM watch path for `no_zoom` and `monitor`
     - deterministic controller fast path for straightforward `advance`
     - lazy deterministic bridge retrieval
     - tighter `reaction_emission` eligibility
-  - use the active judged micro-slice rerun to decide whether a second bounded repair is still needed at:
-    - chapter-end slow-cycle behavior
-    - prompt density inside the remaining `zoom_now` path
-    - any later long-chapter / low-ROI fallback mode
+  - do not open a second broad throughput pass immediately
+  - keep the next narrow mechanism follow-up focused on exact target-anchor coverage in the remaining `xidaduo` local misses before revisiting deeper schedule changes
 
 ### 11. Full-surface judged excerpt runs can waste most of their budget on early heavy low-ROI chapters
 - Pattern kind: `anti_pattern`
@@ -337,17 +360,41 @@ This file is a living working ledger. Stable rules still belong in `docs/backend
 - Status: `adopted`
 - Next action:
   - keep treating the explicit ROI-first micro-slice as the default judged repair harness
-  - the active judged run is:
+  - the completed bounded judged proof run is:
     - `bgjob_attentional_v2_excerpt_micro_slice_judged_20260405`
     - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_excerpt_micro_slice_v1_judged_throughput_repair_20260405`
-  - keep the fuller excerpt surface for later confirmation once the mechanism and launch posture are healthier
+  - with that gate now cleared, move next to the fuller excerpt surface rather than rerunning another large judged lane immediately
+
+### 12. Attentional V2 can stay chapter-locally coherent yet still miss the exact designated anchor line
+- Pattern kind: `failure_mode`
+- Source mechanism: `attentional_v2`
+- Potential destination: narrow `zoom_now` / closure anchor-carrythrough refinement
+- Why it matters:
+  - On excerpt cases, nearby strong reading is not enough when the case is testing whether the mechanism really noticed one designated local reversal or statement.
+  - A chapter-local thematic thread can therefore still underperform if the matched reactions land near the target instead of on it.
+- Contributing causes:
+  - the repaired schedule is now much more selective, which is good for throughput, but that selectivity can stay attached to the dominant nearby thread instead of the exact anchor line
+  - compressed philosophical lines late in a chapter can be especially easy to under-cover if earlier nearby pressure already captured the mechanism's local loop
+- Evidence:
+  - bounded judged micro-slice:
+    - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_excerpt_micro_slice_v1_judged_throughput_repair_20260405/summary/report.md`
+    - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_excerpt_micro_slice_v1_judged_throughput_repair_20260405/shards/default/cases/xidaduo_private_zh__15__anchored_reaction_selectivity__seed_3.json`
+    - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_excerpt_micro_slice_v1_judged_throughput_repair_20260405/shards/default/cases/xidaduo_private_zh__15__anchored_reaction_selectivity__seed_4.json`
+    - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_excerpt_micro_slice_v1_judged_throughput_repair_20260405/shards/default/cases/xidaduo_private_zh__15__tension_reversal__seed_1.json`
+  - judge pattern:
+    - V2 often remained text-grounded and chapter-relevant
+    - but some matched reactions centered on `15.25`, `15.6`, or `15.45` rather than the designated anchors at `15.19` or `15.34`
+- Status: `observed`
+- Next action:
+  - inspect these exact `xidaduo` misses before the next broad judged rerun
+  - prefer a narrow anchor-carrythrough repair inside the existing `zoom_now` / closure flow rather than reopening generic reaction density
 
 ## Current Selective Implementation Queue
 
 ### Priority 0. Reduce `attentional_v2` call amplification before the next broad excerpt judged rerun
 - Why now:
-  - the first bounded throughput repair already proved it can remove most of the extra call volume on the ROI-first micro-slice without introducing smoke-level integrity regressions
-  - the immediate question is no longer "is there a plausible repair?" but "does the judged micro-slice keep enough reading quality after the schedule pruning?"
+  - the first bounded throughput repair already proved it can remove most of the extra call volume on the ROI-first micro-slice
+  - the judged micro-slice then showed that this repair does not obviously collapse quality on the same bounded harness
 - Boundaries:
   - keep `attentional_v2`'s chapter-scale thematic threading and bounded visible reactions as design invariants
   - do not "solve" throughput by flattening the mechanism into `iterator_v1`-style free reaction emission
@@ -357,11 +404,9 @@ This file is a living working ledger. Stable rules still belong in `docs/backend
     - controller fast path for straightforward `advance`
     - lazy bridge retrieval
     - tighter `reaction_emission` gate
-  - use the active judged micro-slice rerun as the discriminator for any second repair
-  - only if that judged pass still leaves `attentional_v2` too slow or too degraded should the next bounded repair target:
-    - chapter-end slow-cycle behavior
-    - remaining `zoom_now` prompt density
-    - a later coarser long-chapter / low-ROI mode
+  - do not spend the next loop on another broad throughput pass
+  - the next narrow mechanism repair, if any, should target exact target-anchor carrythrough on the remaining `xidaduo`-style misses
+  - revisit chapter-end slow-cycle behavior or `zoom_now` prompt density only if a later broader rerun shows renewed throughput pressure
 
 ### Priority 1. Extend the landed micro-selectivity repair into narrative / reference-heavy English local cases
 - Why now:

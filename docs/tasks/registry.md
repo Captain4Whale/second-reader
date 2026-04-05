@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-04-05T14:35:01Z`
+Last updated: `2026-04-05T15:09:05Z`
 
 ## Status Values
 - `active`
@@ -25,7 +25,7 @@ Last updated: `2026-04-05T14:35:01Z`
 - Lane: `mechanism_eval`
 - Priority: `high`
 - Detail: `docs/implementation/new-reading-mechanism/execution-tracker.md`
-- Next: treat the completed dual-pool recovery retry3 plus explicit merge as partial evidence only; the bounded `attentional_v2` throughput repair is now landed, the ROI-first micro-slice smoke completed cleanly with `13 / 8` emitted cases and `attentional_v2` reader calls reduced from `733` to `85` on the same two-unit slice, and the active next step is the judged micro-slice rerun on that same harness before any broader excerpt-surface work
+- Next: treat the completed dual-pool recovery retry3 plus explicit merge as partial evidence only; the bounded `attentional_v2` throughput repair is now landed and the judged ROI-first micro-slice also completed cleanly, with `attentional_v2` still winning the slice after reader calls dropped from `733` to `85`, so the next step is to resume `excerpt surface v1.1` and the broader excerpt-surface optimization while keeping one narrow mechanism follow-up on exact anchor coverage
 - Jobs:
   - `bgjob_human_notes_excerpt_smoke_light_20260404` (`completed`)
   - `bgjob_human_notes_guided_excerpt_eval_v1_judged_20260404` (`completed`)
@@ -42,7 +42,7 @@ Last updated: `2026-04-05T14:35:01Z`
   - `bgjob_human_notes_excerpt_parallel_judged_shard_a_dualpool_recovery_retry3_20260405` (`completed`)
   - `bgjob_human_notes_excerpt_parallel_judged_shard_b_dualpool_recovery_retry3_20260405` (`completed`)
   - `bgjob_attentional_v2_excerpt_micro_slice_smoke_20260405` (`completed`)
-  - `bgjob_attentional_v2_excerpt_micro_slice_judged_20260405` (`running`)
+  - `bgjob_attentional_v2_excerpt_micro_slice_judged_20260405` (`completed`)
 
 ### `TASK-ACCUMULATION-BENCHMARK-V1` — Build the bounded long-span window benchmark for `coherent_accumulation`
 - Status: `active`
@@ -71,15 +71,6 @@ Last updated: `2026-04-05T14:35:01Z`
   - `bgjob_runtime_viability_gate_serialfix_20260401` (`completed`)
 
 ## Waiting
-
-### `TASK-EXCERPT-SURFACE-V1.1` — Retune the next excerpt surface incrementally from the notes-guided freeze
-- Status: `waiting`
-- Lane: `dataset_platform`
-- Priority: `high`
-- Detail: `docs/implementation/new-reading-mechanism/excerpt-surface-v1-1-draft.md`
-- Blocked by: `TASK-PHASE9-DECISIVE-EVAL`
-- Next: keep the completed retry3 judged notes-guided result archived as evidence only, let the new micro-slice and bounded `attentional_v2` throughput repair settle first, then either repair `nawaer_baodian_private_zh__22` to reach floor `6` with one narrow fill pass or defer that shortfall explicitly before running the v1.1 smoke and judged lane; broader excerpt-surface adjustment remains the third step after the mechanism repair loop
-- Jobs: none
 
 ### `TASK-DATASET-QUESTION-ALIGNED-CASE-CONSTRUCTION` — Build question-aligned case construction for evaluation datasets
 - Status: `waiting`
@@ -143,6 +134,14 @@ Last updated: `2026-04-05T14:35:01Z`
   - `bgjob_closed_loop_bilingual_broader_auditcoherencefix_20260330` (`completed`)
 
 ## Queued
+
+### `TASK-EXCERPT-SURFACE-V1.1` — Retune the next excerpt surface incrementally from the notes-guided freeze
+- Status: `queued`
+- Lane: `dataset_platform`
+- Priority: `high`
+- Detail: `docs/implementation/new-reading-mechanism/excerpt-surface-v1-1-draft.md`
+- Next: the micro-slice throughput-repair gate is now cleared, so the next excerpt lane is to repair `nawaer_baodian_private_zh__22` up to floor `6` with one narrow fill pass or defer that shortfall explicitly, then run the v1.1 smoke and judged lane; broader excerpt-surface adjustment should follow immediately after
+- Jobs: none
 
 ### `TASK-DOC-Q10` — Decide when to promote `attentional_v2` working design into stable docs
 - Status: `queued`
