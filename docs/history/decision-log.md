@@ -1323,3 +1323,37 @@ The old active windows `nawaer_baodian_private_zh__wealth`, `nawaer_baodian_priv
 - `docs/tasks/registry.md`
 - `docs/tasks/registry.json`
 - `docs/implementation/new-reading-mechanism/execution-tracker.md`
+
+## Entry 48
+**ID**: DEC-051
+**Status**: active
+
+**Decision / Inflection**: Supersede the in-flight monolithic personal-key local excerpt rerun and restart the decisive local lane under the staged/sharded runner, using one shared run root with disjoint shard ownership.
+
+**Period**: April 5, 2026, immediately after the first restart gate had temporarily favored preserving the old rerun, but before that rerun had produced reusable judged evidence.
+
+**Problem**: The initial ETA-gate call assumed the old personal-key rerun had already banked enough progress that restarting would waste too much time. Later inspection showed that assumption was wrong. The old run had only started `attentional_v2`, had touched only `2` units, and had not yet produced reusable staged bundles, case payloads, or summary outputs. At the same time, the staged smoke plus raw traces had already shown that the remaining bottleneck was heavy mechanism workload rather than provider/profile/quota waits. Keeping the old run would therefore preserve the slowest possible execution shape while protecting very little sunk value.
+
+**Alternatives considered**: Continue letting the monolithic rerun crawl forward, buy a faster key before changing the launch posture, or restart under the new runner but still keep work inside one large shard.
+
+**Why this path won**: The project's real objective was time-first decisive evidence, not loyalty to sunk progress. Once the old run was shown to have almost no reusable outputs, the earlier gate no longer reflected reality. The staged runner already had explicit shard ownership, resumable shard-local outputs, process-level budget caps, and healthy no-wait gateway evidence. Restarting into two disjoint shards therefore created meaningful unit-level and mechanism-level parallelism immediately without needing a new provider posture first.
+
+**What changed in the system**: The old job `bgjob_human_notes_guided_excerpt_eval_v1_judged_personal_rerun_20260405` was deliberately abandoned. The decisive local excerpt lane now runs as two active shard jobs on the same personal key under shared run id `attentional_v2_human_notes_guided_excerpt_eval_v1_judged_parallel_retry1_20260405`. Each shard owns a disjoint `--unit-key` slice, runs `stage=all`, uses `mechanism_execution_mode=parallel`, and clamps per-process budgets with `LLM_PROCESS_RUNTIME_PROFILE_MAX_CONCURRENCY=8` plus `LLM_PROCESS_EVAL_JUDGE_PROFILE_MAX_CONCURRENCY=4`. The first shard-launch attempt failed immediately because the wrong `--unit-key` separator form was used; retry1 corrected that launch-only mistake and became the real active lane.
+
+**Why it matters later**: Future contributors could otherwise see the earlier ETA-gate note, the abandoned monolithic rerun, and the active shard jobs and conclude the project changed direction impulsively. This entry records the actual rule: preserve in-flight work only when it has already materialized meaningful reusable evidence. If inspection shows the old run is still pre-bundle, pre-case, and effectively single-mechanism, restart under the sharded architecture instead of protecting sunk cost.
+
+**Primary evidence**:
+- `reading-companion-backend/state/job_registry/logs/bgjob_human_notes_guided_excerpt_eval_v1_judged_personal_rerun_20260405.log`
+- `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_human_notes_guided_excerpt_eval_v1_judged_personal_rerun_20260405`
+- `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_excerpt_parallel_smoke_20260405/shards/smoke_dual_heavy/summary/llm_usage.json`
+- `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_excerpt_parallel_smoke_20260405/shards/smoke_dual_heavy/summary/llm_usage_recomputed.json`
+- `reading-companion-backend/eval/runs/attentional_v2/llm_capacity_probe_personal_20260405/summary/llm_usage.json`
+- `reading-companion-backend/state/job_registry/jobs/bgjob_human_notes_excerpt_parallel_judged_shard_a_retry1_20260405.json`
+- `reading-companion-backend/state/job_registry/jobs/bgjob_human_notes_excerpt_parallel_judged_shard_b_retry1_20260405.json`
+- `reading-companion-backend/state/job_registry/logs/bgjob_human_notes_excerpt_parallel_judged_shard_a_retry1_20260405.log`
+- `reading-companion-backend/state/job_registry/logs/bgjob_human_notes_excerpt_parallel_judged_shard_b_retry1_20260405.log`
+- `reading-companion-backend/eval/attentional_v2/run_excerpt_comparison.py`
+- `docs/current-state.md`
+- `docs/tasks/registry.md`
+- `docs/tasks/registry.json`
+- `docs/implementation/new-reading-mechanism/execution-tracker.md`

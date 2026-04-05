@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-04-05T03:03:35Z",
+  "updated_at": "2026-04-05T03:53:50Z",
   "tasks": [
     {
       "id": "TASK-MECH-EN-RERUN",
@@ -678,16 +678,21 @@
         "DEC-045",
         "DEC-047",
         "DEC-048",
-        "DEC-050"
+        "DEC-050",
+        "DEC-051"
       ],
       "job_refs": [
         "bgjob_human_notes_excerpt_smoke_light_20260404",
         "bgjob_human_notes_guided_excerpt_eval_v1_judged_20260404",
         "bgjob_human_notes_guided_excerpt_eval_v1_judged_personal_rerun_20260405",
-        "bgjob_human_notes_excerpt_parallel_smoke_20260405"
+        "bgjob_human_notes_excerpt_parallel_smoke_20260405",
+        "bgjob_human_notes_excerpt_parallel_judged_shard_a_20260405",
+        "bgjob_human_notes_excerpt_parallel_judged_shard_b_20260405",
+        "bgjob_human_notes_excerpt_parallel_judged_shard_a_retry1_20260405",
+        "bgjob_human_notes_excerpt_parallel_judged_shard_b_retry1_20260405"
       ],
       "acceptance_ref": "docs/implementation/new-reading-mechanism/execution-tracker.md",
-      "next_action": "Keep the old personal-key judged rerun running because the completed staged/sharded dual-heavy smoke did not clear the 90 minute restart gate; use the new staged runner as the next formal rerun path and interpret selective_legibility first if the current rerun finishes with real judged cases.",
+      "next_action": "Let the active sharded personal-key judged rerun finish on the shared retry1 run root, then run one explicit merge pass and interpret selective_legibility first; do not revive the superseded monolithic rerun.",
       "blocked_by": [],
       "evidence_refs": [
         "docs/implementation/new-reading-mechanism/clustered-benchmark-v1-draft.md",
@@ -704,6 +709,14 @@
         "reading-companion-backend/state/job_registry/logs/bgjob_human_notes_guided_excerpt_eval_v1_judged_personal_rerun_20260405.log",
         "reading-companion-backend/state/job_registry/jobs/bgjob_human_notes_excerpt_parallel_smoke_20260405.json",
         "reading-companion-backend/state/job_registry/logs/bgjob_human_notes_excerpt_parallel_smoke_20260405.log",
+        "reading-companion-backend/state/job_registry/jobs/bgjob_human_notes_excerpt_parallel_judged_shard_a_20260405.json",
+        "reading-companion-backend/state/job_registry/logs/bgjob_human_notes_excerpt_parallel_judged_shard_a_20260405.log",
+        "reading-companion-backend/state/job_registry/jobs/bgjob_human_notes_excerpt_parallel_judged_shard_b_20260405.json",
+        "reading-companion-backend/state/job_registry/logs/bgjob_human_notes_excerpt_parallel_judged_shard_b_20260405.log",
+        "reading-companion-backend/state/job_registry/jobs/bgjob_human_notes_excerpt_parallel_judged_shard_a_retry1_20260405.json",
+        "reading-companion-backend/state/job_registry/logs/bgjob_human_notes_excerpt_parallel_judged_shard_a_retry1_20260405.log",
+        "reading-companion-backend/state/job_registry/jobs/bgjob_human_notes_excerpt_parallel_judged_shard_b_retry1_20260405.json",
+        "reading-companion-backend/state/job_registry/logs/bgjob_human_notes_excerpt_parallel_judged_shard_b_retry1_20260405.log",
         "reading-companion-backend/eval/manifests/splits/attentional_v2_human_notes_guided_excerpt_eval_v1_draft.json",
         "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_human_notes_guided_excerpt_eval_v1_judged_20260404/summary/aggregate.json",
         "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_human_notes_guided_excerpt_eval_v1_judged_20260404/summary/report.md",
@@ -713,7 +726,7 @@
         "reading-companion-backend/eval/attentional_v2/run_chapter_comparison.py",
         "reading-companion-backend/eval/attentional_v2/run_excerpt_comparison.py"
       ],
-      "last_updated": "2026-04-05T03:03:35Z",
+      "last_updated": "2026-04-05T03:53:50Z",
       "last_updated_by": "codex"
     },
     {

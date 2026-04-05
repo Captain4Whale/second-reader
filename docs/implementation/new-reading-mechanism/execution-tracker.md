@@ -178,19 +178,50 @@ Update when: status changes, blockers appear, or phases complete.
             - treat the lane as a quota/harness failure rather than as usable mechanism evidence
           - current next gate:
             - rerun the judged local excerpt lane under a quota-safe target / wait-budget posture before drawing mechanism conclusions
-      - active personal-key excerpt rerun:
+      - superseded monolithic personal-key excerpt rerun:
         - `bgjob_human_notes_guided_excerpt_eval_v1_judged_personal_rerun_20260405`
           - run id:
             - `attentional_v2_human_notes_guided_excerpt_eval_v1_judged_personal_rerun_20260405`
           - purpose:
             - rerun the full human-notes-guided local excerpt judged comparison on `MiniMax-M2.7-personal`
-          - scope:
-            - full `human-notes-guided` excerpt eval manifest
-            - `target-slice both`
-            - `judge-mode llm`
-            - `case-workers 2`
-          - status:
-            - `running`
+          - terminal status:
+            - `abandoned`
+          - supersede reason:
+            - later inspection showed the in-flight run had only started `attentional_v2`, had touched only `2` units, and had not yet emitted reusable staged bundle/case/summary artifacts
+            - heavy-call slowness was confirmed to be workload-driven rather than provider/profile/quota gate waiting
+      - active sharded personal-key excerpt rerun:
+        - shared run id:
+          - `attentional_v2_human_notes_guided_excerpt_eval_v1_judged_parallel_retry1_20260405`
+        - live shard jobs:
+          - `bgjob_human_notes_excerpt_parallel_judged_shard_a_retry1_20260405`
+          - `bgjob_human_notes_excerpt_parallel_judged_shard_b_retry1_20260405`
+        - purpose:
+          - rerun the full human-notes-guided local excerpt judged comparison under the staged/sharded runner on `MiniMax-M2.7-personal`
+        - scope:
+          - full `human-notes-guided` excerpt eval manifest
+          - `target-slice both`
+          - `judge-mode llm`
+          - `stage = all`
+          - `mechanism_execution_mode = parallel`
+          - `judge_execution_mode = parallel`
+          - `unit_workers = 2`
+          - `judge_workers = 2`
+          - process budgets:
+            - `LLM_PROCESS_RUNTIME_PROFILE_MAX_CONCURRENCY = 8`
+            - `LLM_PROCESS_EVAL_JUDGE_PROFILE_MAX_CONCURRENCY = 4`
+        - shard ownership:
+          - shard A:
+            - `value_of_others_private_en__chapter_8`
+            - `nawaer_baodian_private_zh__chapter_22`
+            - `nawaer_baodian_private_zh__chapter_23`
+            - `mangge_zhi_dao_private_zh__chapter_26`
+          - shard B:
+            - `huochu_shengming_de_yiyi_private_zh__chapter_8`
+            - `mangge_zhi_dao_private_zh__chapter_18`
+            - `nawaer_baodian_private_zh__chapter_13`
+            - `xidaduo_private_zh__chapter_15`
+        - note:
+          - the first shard launch pair `bgjob_human_notes_excerpt_parallel_judged_shard_a_20260405` / `bgjob_human_notes_excerpt_parallel_judged_shard_b_20260405` failed immediately because the initial `--unit-key` values used the wrong separator form; retry1 is the real active lane
       - completed staged/sharded dual-heavy excerpt smoke:
         - `bgjob_human_notes_excerpt_parallel_smoke_20260405`
           - run id:
@@ -215,14 +246,16 @@ Update when: status changes, blockers appear, or phases complete.
             - `provider_gate_wait_ms = 0`
             - `profile_gate_wait_ms = 0`
             - `quota_wait_ms = 0`
-          - ETA-gate result:
-            - keep the old judged rerun running
+          - first ETA-gate result:
+            - keep the old judged rerun running temporarily
             - do not restart under the new runner yet
-            - reasoning:
+            - reasoning at the time:
               - redoing the old rerun's already-completed `1290` attentional calls at the smoke's observed rate would itself cost about `136.5` minutes
               - that misses the explicit restart rule requiring the new mode to finish at least `90` minutes sooner than letting the old run continue
+          - later override:
+            - subsequent inspection showed the old rerun had produced almost no reusable progress, so the project explicitly reversed that temporary call and relaunched under the sharded runner
           - retained meaning:
-            - the staged/sharded runner is still the right architecture for the next full rerun and for later accumulation judged work
+            - the staged/sharded runner is the active local excerpt path now and remains the right architecture for later accumulation judged work
       - completed short capacity probe:
         - run id:
           - `llm_capacity_probe_personal_20260405`

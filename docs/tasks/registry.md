@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-04-05T03:03:35Z`
+Last updated: `2026-04-05T03:53:50Z`
 
 ## Status Values
 - `active`
@@ -25,12 +25,16 @@ Last updated: `2026-04-05T03:03:35Z`
 - Lane: `mechanism_eval`
 - Priority: `high`
 - Detail: `docs/implementation/new-reading-mechanism/execution-tracker.md`
-- Next: keep the old personal-key judged rerun running, because the completed dual-heavy staged/sharded smoke did not clear the `90` minute restart gate; use the new staged runner as the next full rerun path and interpret `selective_legibility` first if the current rerun finishes with real judged cases
+- Next: let the active sharded personal-key judged rerun finish on the shared retry1 run root, then run one explicit merge pass and interpret `selective_legibility` first; do not revive the superseded monolithic rerun
 - Jobs:
   - `bgjob_human_notes_excerpt_smoke_light_20260404` (`completed`)
   - `bgjob_human_notes_guided_excerpt_eval_v1_judged_20260404` (`completed`)
-  - `bgjob_human_notes_guided_excerpt_eval_v1_judged_personal_rerun_20260405` (`running`)
+  - `bgjob_human_notes_guided_excerpt_eval_v1_judged_personal_rerun_20260405` (`abandoned`)
   - `bgjob_human_notes_excerpt_parallel_smoke_20260405` (`abandoned`)
+  - `bgjob_human_notes_excerpt_parallel_judged_shard_a_20260405` (`failed`)
+  - `bgjob_human_notes_excerpt_parallel_judged_shard_b_20260405` (`failed`)
+  - `bgjob_human_notes_excerpt_parallel_judged_shard_a_retry1_20260405` (`running`)
+  - `bgjob_human_notes_excerpt_parallel_judged_shard_b_retry1_20260405` (`running`)
 
 ### `TASK-ACCUMULATION-BENCHMARK-V1` — Build the bounded long-span window benchmark for `coherent_accumulation`
 - Status: `active`

@@ -7,12 +7,12 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-04-05T03:03:35Z`
+Last verified: `2026-04-05T03:53:50Z`
 
 ## Current Objective
 - Keep Phase 9 on the mainline under the new split-surface evaluation strategy:
   - keep the judged local excerpt rerun active on the human-notes-guided excerpt freeze under the new personal-only live target posture, because the first full judged run ended as a harness failure rather than usable mechanism evidence
-  - keep the newly landed staged/sharded comparison runners as the next formal rerun architecture, but let the current old-format judged rerun continue because the completed dual-heavy smoke did not clear the `90` minute restart gate
+  - use the newly landed staged/sharded comparison runners as the active local excerpt rerun architecture now that fresh evidence showed the old monolithic rerun had produced very little reusable progress
   - treat the repaired long-span first review as completed support evidence, then decide whether to do one narrow repair on the `2` revise probes or freeze the long-span v1 set honestly short before any judged accumulation comparison
   - preserve the recorded `Path A` gate outcome and the completed clustered benchmark freeze as still-useful evidence
   - keep durable-trace / re-entry and runtime viability paused on cost grounds
@@ -55,16 +55,49 @@ Last verified: `2026-04-05T03:03:35Z`
           - the judged local excerpt lane still needs one valid rerun before it can support selective mechanism decisions
         - current next gate:
           - relaunch the judged excerpt lane under a quota-safe posture on the retained personal key only
-    - active judged rerun:
+    - superseded monolithic rerun:
       - `bgjob_human_notes_guided_excerpt_eval_v1_judged_personal_rerun_20260405`
         - purpose:
           - rerun the formal judged local excerpt comparison on the full human-notes-guided excerpt surface under `MiniMax-M2.7-personal`
-        - live shape:
-          - `target-slice both`
-          - `judge-mode llm`
-          - `case-workers 2`
-        - current interpretation:
-          - this is the decisive local rerun; do not draw mechanism conclusions until this lane finishes with real judged cases or an explicit harness failure
+        - terminal status:
+          - `abandoned`
+        - supersede reason:
+          - later inspection showed the run had touched only `2` units, had started only `attentional_v2`, and had not yet emitted reusable staged bundle/case/summary artifacts
+          - the heavy-call bottleneck was confirmed to be mechanism workload, not provider/profile/quota gate waiting
+        - interpretation:
+          - keeping the old-format rerun no longer made sense once time-first execution became the priority and the new staged runner was already landed
+    - active sharded judged rerun:
+      - shared run id:
+        - `attentional_v2_human_notes_guided_excerpt_eval_v1_judged_parallel_retry1_20260405`
+      - active shard jobs:
+        - `bgjob_human_notes_excerpt_parallel_judged_shard_a_retry1_20260405`
+        - `bgjob_human_notes_excerpt_parallel_judged_shard_b_retry1_20260405`
+      - live shape:
+        - `target-slice both`
+        - `judge-mode llm`
+        - `stage = all`
+        - `mechanism_execution_mode = parallel`
+        - `judge_execution_mode = parallel`
+        - `unit_workers = 2`
+        - `judge_workers = 2`
+        - process budgets:
+          - `LLM_PROCESS_RUNTIME_PROFILE_MAX_CONCURRENCY = 8`
+          - `LLM_PROCESS_EVAL_JUDGE_PROFILE_MAX_CONCURRENCY = 4`
+      - ownership:
+        - shard A:
+          - `value_of_others_private_en__chapter_8`
+          - `nawaer_baodian_private_zh__chapter_22`
+          - `nawaer_baodian_private_zh__chapter_23`
+          - `mangge_zhi_dao_private_zh__chapter_26`
+        - shard B:
+          - `huochu_shengming_de_yiyi_private_zh__chapter_8`
+          - `mangge_zhi_dao_private_zh__chapter_18`
+          - `nawaer_baodian_private_zh__chapter_13`
+          - `xidaduo_private_zh__chapter_15`
+      - immediate next gate:
+        - let both shards finish, then run one explicit `stage = merge` pass on the shared run root
+      - note on failed first launch:
+        - `bgjob_human_notes_excerpt_parallel_judged_shard_a_20260405` and `bgjob_human_notes_excerpt_parallel_judged_shard_b_20260405` failed immediately because the first launch used the wrong `--unit-key` separator form (`::chapter_N` instead of the runner's canonical `__chapter_N`)
     - completed ETA-gate smoke:
       - `bgjob_human_notes_excerpt_parallel_smoke_20260405`
         - purpose:
@@ -92,10 +125,13 @@ Last verified: `2026-04-05T03:03:35Z`
           - `quota_wait_ms = 0`
         - gate interpretation:
           - the staged runner is healthy and materially more usable than the old monolithic shape
-          - but the smoke did not show enough acceleration to justify killing the older rerun:
+          - the first ETA reading by itself did not justify killing the older rerun:
             - redoing the old rerun's already-completed `1290` attentional calls at the smoke's observed rate would itself cost about `136.5` minutes
             - that misses the recorded restart rule requiring the new mode to finish at least `90` minutes sooner than letting the old job continue
-          - keep the old judged rerun running; use the staged/sharded runner for the next full rerun and for the future accumulation judged lane
+          - later evidence overturned that temporary keep-running call:
+            - the old rerun had actually materialized almost no reusable progress
+            - the local heavy-call bottleneck remained mechanism-dominated rather than gate-dominated
+            - the project therefore switched to the sharded rerun immediately
     - completed short capacity probe:
       - run id:
         - `llm_capacity_probe_personal_20260405`
@@ -214,17 +250,18 @@ Last verified: `2026-04-05T03:03:35Z`
 - Current immediate eval gate:
   - the local excerpt smoke has already passed its harness gate
   - the first full judged notes-guided local excerpt comparison has now been interpreted as invalid due to provider quota cooldown / wait-budget exhaustion
-  - the restart-vs-continue ETA gate is now resolved:
-    - keep the active personal-key judged rerun running
-    - keep the staged/sharded runner as the next formal rerun path rather than killing the in-flight old run
+  - the local excerpt decisive lane is now the active two-shard personal-key rerun:
+    - the old monolithic personal rerun has been superseded and archived from the active registry
+    - the current next step is a single merge pass once both shard jobs finish
 - Current long-span construction gate:
   - keep the rebuilt final window set
   - retain the repaired `9`-probe review result on that window set
   - freeze / repair decision now sits on `7 reviewed_active + 2 needs_revision`
   - do not launch judged accumulation comparison until that freeze decision is made explicitly
 - Background-job registry state:
-  - `reading-companion-backend/state/job_registry/active_jobs.md` currently lists one active background job:
-    - `bgjob_human_notes_guided_excerpt_eval_v1_judged_personal_rerun_20260405`
+  - `reading-companion-backend/state/job_registry/active_jobs.md` currently lists two active background jobs:
+    - `bgjob_human_notes_excerpt_parallel_judged_shard_a_retry1_20260405`
+    - `bgjob_human_notes_excerpt_parallel_judged_shard_b_retry1_20260405`
 - The post-recovery gate review is now closed on `Path A`.
 - Recorded gate outcomes:
   - `OD-PRIVATE-LIBRARY-POST-RESCUE-GATE = keep_hold_for_backlog_rescue`

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import shutil
 import subprocess
 import sys
@@ -234,7 +235,10 @@ def _timestamp() -> str:
 
 def _json_dump(path: Path, payload: Any) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    with tempfile.NamedTemporaryFile("w", encoding="utf-8", dir=path.parent, delete=False) as handle:
+        handle.write(json.dumps(payload, ensure_ascii=False, indent=2) + "\n")
+        temp_path = Path(handle.name)
+    os.replace(temp_path, path)
 
 
 def _jsonl_dump(path: Path, rows: list[dict[str, Any]]) -> None:
