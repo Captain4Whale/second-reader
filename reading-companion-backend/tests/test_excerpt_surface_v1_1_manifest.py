@@ -86,6 +86,40 @@ def test_selected_rows_by_chapter_dedupes_same_span_reuse(monkeypatch) -> None:
     ]
 
 
+def test_read_source_dataset_skips_non_reviewed_fill_rows(tmp_path: Path) -> None:
+    dataset_dir = tmp_path / "fill_dataset"
+    module.write_json(
+        dataset_dir / "manifest.json",
+        {
+            "dataset_id": "fill_dataset",
+            "primary_file": "cases.jsonl",
+            "source_manifest_refs": [],
+        },
+    )
+    module.write_jsonl(
+        dataset_dir / "cases.jsonl",
+        [
+            {
+                "case_id": "nawaer_baodian_private_zh__22__anchored_reaction_selectivity__fill_1",
+                "source_id": "nawaer_baodian_private_zh",
+                "chapter_id": "22",
+                "output_language": "zh",
+                "target_profile_id": "anchored_reaction_selectivity",
+                "benchmark_status": "needs_revision",
+                "review_status": "llm_reviewed",
+            }
+        ],
+    )
+
+    _manifest, rows = module._read_source_dataset(
+        dataset_dir,
+        origin_line="excerpt_surface_v1_1_fill",
+        dataset_family="excerpt_surface_fill_reviewed",
+    )
+
+    assert rows == []
+
+
 def test_excerpt_surface_v1_1_manifest_matches_composed_dataset_counts() -> None:
     payload = json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
     dataset_dirs = [

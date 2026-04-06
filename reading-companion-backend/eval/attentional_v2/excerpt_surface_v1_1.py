@@ -4,8 +4,9 @@ This module intentionally does not mutate the currently running notes-guided
 judged rerun inputs. It builds a fresh local-only excerpt-surface namespace by:
 
 1. reusing reviewed frozen rows from the human-notes-guided and clustered lines
-2. applying the current grouped duplicate controls chapter-by-chapter
-3. writing fresh local dataset packages plus a tracked draft split manifest
+2. optionally layering in a reviewed narrow-fill dataset for chapter 22
+3. applying the current grouped duplicate controls chapter-by-chapter
+4. writing fresh local dataset packages plus a tracked draft split manifest
 
 The resulting surface is draft evidence for the next excerpt retune lane. It is
 safe to build while the earlier judged rerun is still active because it only
@@ -80,6 +81,17 @@ SOURCE_DATASET_SPECS: tuple[dict[str, Any], ...] = (
         / "attentional_v2_clustered_benchmark_v1_excerpt_zh",
         "origin_line": "clustered_benchmark_v1",
         "dataset_family": "clustered_frozen_excerpt",
+    },
+)
+OPTIONAL_SOURCE_DATASET_SPECS: tuple[dict[str, Any], ...] = (
+    {
+        "dataset_dir": ROOT
+        / "state"
+        / "eval_local_datasets"
+        / "excerpt_cases"
+        / "attentional_v2_excerpt_surface_v1_1_fill_zh_chapter22_20260406",
+        "origin_line": "excerpt_surface_v1_1_fill",
+        "dataset_family": "excerpt_surface_fill_reviewed",
     },
 )
 
@@ -189,6 +201,13 @@ def _row_freeze_role_priority(row: dict[str, Any]) -> int:
     return 0
 
 
+def _row_reusable_for_excerpt_surface(row: dict[str, Any]) -> bool:
+    benchmark_status = str(row.get("benchmark_status", "")).strip()
+    if benchmark_status == "reviewed_active":
+        return True
+    return str(row.get("benchmark_freeze_role", "")).strip() == "primary"
+
+
 def _row_priority_key(row: dict[str, Any]) -> tuple[int, int, int, float, float, str]:
     benchmark_status = str(row.get("benchmark_status", "")).strip()
     reviewed_priority = 0 if benchmark_status == "reviewed_active" else 1
@@ -227,6 +246,15 @@ def _source_spec_for_chapter_case_id(chapter_case_id: str) -> str:
     return "other"
 
 
+def _iter_source_dataset_specs() -> list[dict[str, Any]]:
+    specs = list(SOURCE_DATASET_SPECS)
+    for spec in OPTIONAL_SOURCE_DATASET_SPECS:
+        dataset_dir = Path(spec["dataset_dir"])
+        if dataset_dir.exists():
+            specs.append(spec)
+    return specs
+
+
 def _read_source_dataset(dataset_dir: Path, *, origin_line: str, dataset_family: str) -> tuple[dict[str, Any], list[dict[str, Any]]]:
     manifest = _load_json(dataset_dir / "manifest.json")
     primary_file = str(manifest.get("primary_file", "")).strip()
@@ -236,6 +264,8 @@ def _read_source_dataset(dataset_dir: Path, *, origin_line: str, dataset_family:
     annotated_rows: list[dict[str, Any]] = []
     for row in rows:
         copied = dict(row)
+        if not _row_reusable_for_excerpt_surface(copied):
+            continue
         copied["_source_dataset_id"] = str(manifest.get("dataset_id", "")).strip()
         copied["_source_dataset_dir"] = _relative_to_root(dataset_dir)
         copied["_origin_line"] = origin_line
@@ -361,7 +391,7 @@ def _markdown_summary(summary: dict[str, Any]) -> str:
                 "",
                 "## Honest Shortfalls",
                 *[
-                    f"- `{chapter_case_id}`: still below floor `{CHAPTER_HONEST_SHORT_FLOOR}` after reuse-only composition"
+                    f"- `{chapter_case_id}`: still below floor `{CHAPTER_HONEST_SHORT_FLOOR}` after the final v1.1 composition pass"
                     for chapter_case_id in summary["chapters_below_floor"]
                 ],
             ]
@@ -370,10 +400,31 @@ def _markdown_summary(summary: dict[str, Any]) -> str:
         [
             "",
             "## Notes",
-            "- This draft reuses reviewed frozen rows only and does not mutate the currently running notes-guided judged rerun inputs.",
+            "- This draft reuses reviewed rows plus any explicitly approved narrow-fill rows and does not mutate the currently running notes-guided judged rerun inputs.",
             "- `value_of_others_private_en__8` is deduped back down to unique spans before reuse.",
         ]
     )
+    if summary.get("chapter_fill_case_ids"):
+        lines.extend(
+            [
+                "- Approved narrow fill cases were layered in only where they had already cleared review.",
+                *[
+                    f"- `{chapter_case_id}` fill cases: `{', '.join(case_ids)}`"
+                    for chapter_case_id, case_ids in sorted(summary["chapter_fill_case_ids"].items())
+                    if case_ids
+                ],
+            ]
+        )
+    if summary.get("chapter_floor_exceptions"):
+        lines.extend(
+            [
+                "- Explicit floor exceptions remain honest; the roster stays fixed even when one chapter remains short.",
+                *[
+                    f"- `{chapter_case_id}` exception: `{reason}`"
+                    for chapter_case_id, reason in sorted(summary["chapter_floor_exceptions"].items())
+                ],
+            ]
+        )
     return "\n".join(lines) + "\n"
 
 
@@ -382,7 +433,7 @@ def build_draft_payloads(*, run_id: str = DEFAULT_RUN_ID) -> dict[str, Any]:
     source_rows: list[dict[str, Any]] = []
     source_manifest_refs: list[str] = []
     split_refs: list[str] = [_relative_to_root(MANIFEST_PATH)]
-    for spec in SOURCE_DATASET_SPECS:
+    for spec in _iter_source_dataset_specs():
         manifest, rows = _read_source_dataset(
             spec["dataset_dir"],
             origin_line=str(spec["origin_line"]),
@@ -421,11 +472,25 @@ def build_draft_payloads(*, run_id: str = DEFAULT_RUN_ID) -> dict[str, Any]:
     insight_rows = [
         row for row in all_rows if str(row.get("target_profile_id", "")).strip() in INSIGHT_TARGET_PROFILE_IDS
     ]
+    chapter_fill_case_ids = {
+        chapter_case_id: [
+            str(row["case_id"])
+            for row in all_rows
+            if _chapter_case_id_for_row(row) == chapter_case_id
+            and str(row.get("excerpt_surface_origin_line", row.get("_origin_line", ""))).strip() == "excerpt_surface_v1_1_fill"
+        ]
+        for chapter_case_id in FIXED_CHAPTER_CASE_IDS
+    }
     chapters_below_floor = [
         chapter_case_id
         for chapter_case_id, payload in chapter_summary.items()
         if bool(payload.get("below_floor"))
     ]
+    chapter_floor_exceptions = {
+        chapter_case_id: "explicit_5_case_exception"
+        for chapter_case_id in chapters_below_floor
+        if chapter_case_id == "nawaer_baodian_private_zh__22"
+    }
 
     selected_chapter_units = [
         {
@@ -519,6 +584,12 @@ def build_draft_payloads(*, run_id: str = DEFAULT_RUN_ID) -> dict[str, Any]:
         "dataset_ids": dict(EXCERPT_DATASET_IDS),
         "selected_chapter_units": selected_chapter_units,
         "chapter_summary": chapter_summary,
+        "chapter_fill_case_ids": {
+            chapter_case_id: case_ids
+            for chapter_case_id, case_ids in chapter_fill_case_ids.items()
+            if case_ids
+        },
+        "chapter_floor_exceptions": chapter_floor_exceptions,
         "chapters_below_floor": chapters_below_floor,
         "selected_case_count": len(all_rows),
         "insight_case_count": len(insight_rows),

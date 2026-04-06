@@ -204,7 +204,7 @@ Update when: status changes, blockers appear, or phases complete.
         - do not reopen a broad bilingual builder / review wave first
       - this line's reviewed excerpt freeze can now be used immediately as the current judged excerpt surface
       - the longer-span benchmark still needs its own bounded window/probe freeze instead of reusing the excerpt reviewed freeze directly
-    - a fresh `excerpt surface v1.1` retune draft is now landed as the prepared next excerpt surface:
+    - `excerpt surface v1.1` is now finalized as the next excerpt surface:
       - draft doc:
         - `docs/implementation/new-reading-mechanism/excerpt-surface-v1-1-draft.md`
       - tracked manifest:
@@ -212,19 +212,38 @@ Update when: status changes, blockers appear, or phases complete.
       - local dataset packages:
         - `reading-companion-backend/state/eval_local_datasets/excerpt_cases/attentional_v2_excerpt_surface_v1_1_excerpt_en`
         - `reading-companion-backend/state/eval_local_datasets/excerpt_cases/attentional_v2_excerpt_surface_v1_1_excerpt_zh`
-      - current reuse-only result:
+      - finalized result:
         - fixed roster of `7` chapter units
         - `59` primary cases
         - `43` derived `insight_and_clarification` cases
       - important ROI correction:
         - `value_of_others_private_en__8` dedupes from an apparent `14` reviewed rows down to `8` real unique-span cases under the active duplicate controls
-      - current blocker:
-        - `nawaer_baodian_private_zh__22` remains at `5`, below the honest-short floor `6`
-      - rollout gate:
-        - do not repoint the judged excerpt lane yet
+      - chapter-22 narrow fill attempt:
+        - prepared one explicit repair candidate:
+          - `nawaer_baodian_private_zh__22__anchored_reaction_selectivity__fill_1`
+        - reviewed packet:
+          - `excerpt_surface_v1_1_fill_chapter22_first_review_20260406`
+        - result:
+          - stayed `revise` with `ambiguous_focus`
+      - rollout posture:
         - keep the completed retry3 notes-guided judged rerun archived as evidence only
-        - repair or regenerate the stale persisted retry1 summary if durable run-level artifacts are still needed
-        - then decide one narrow chapter-22 fill repair or an explicit honest-short defer
+        - keep `nawaer_baodian_private_zh__22` as the single explicit `5`-case exception
+        - do not widen the fill wave or replace the chapter
+        - the v1.1 smoke lane is now active in explicit ROI-first shard order:
+          - shard A:
+            - `supremacy_private_en__13`
+            - `meiguoren_de_xingge_private_zh__19`
+            - `nawaer_baodian_private_zh__13`
+            - `nawaer_baodian_private_zh__22`
+          - shard B:
+            - `xidaduo_private_zh__15`
+            - `value_of_others_private_en__8`
+            - `huochu_shengming_de_yiyi_private_zh__8`
+        - a follow-on orchestration job is now also active:
+          - wait for both smoke shards
+          - run the explicit smoke merge
+          - launch the judged v1.1 shards with `--skip-existing`
+          - finish with the explicit judged merge
     - the explicit ROI-first excerpt micro-slice draft is now landed as the default fast-iteration harness:
       - draft doc:
         - `docs/implementation/new-reading-mechanism/excerpt-micro-slice-v1-draft.md`

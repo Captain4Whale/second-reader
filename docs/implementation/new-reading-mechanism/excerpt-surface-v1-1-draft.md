@@ -1,17 +1,16 @@
 # Excerpt Surface V1.1 Draft
 
-Purpose: capture the incremental retune of the excerpt surface without mutating the currently running judged rerun inputs.
+Purpose: capture the incremental retune of the excerpt surface without mutating the older notes-guided evidence line in place.
 Use when: deciding the next chapter-scoped excerpt eval surface, understanding what was already reused versus newly needed, or resuming the v1.1 retune lane after the live rerun merges.
 Not for: long-span accumulation design, active live-run control, or stable evaluation constitution.
 Update when: the fixed roster changes, the reuse/fill policy changes, the shortfall is resolved, or the draft is promoted into the next judged excerpt surface.
 
-## Safety Rule
-- Do not mutate the currently running notes-guided judged rerun inputs in place until the active retry3 shards finish and the explicit merge completes:
+## Isolation Rule
+- V1.1 remains isolated from the older notes-guided excerpt evidence line:
   - `reading-companion-backend/eval/manifests/splits/attentional_v2_human_notes_guided_excerpt_eval_v1_draft.json`
   - `reading-companion-backend/state/eval_local_datasets/excerpt_cases/attentional_v2_human_notes_guided_dataset_v1_excerpt_en_reviewed_cluster_freeze_20260404`
   - `reading-companion-backend/state/eval_local_datasets/excerpt_cases/attentional_v2_human_notes_guided_dataset_v1_excerpt_zh_reviewed_cluster_freeze_complete_20260404`
-  - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_human_notes_guided_excerpt_eval_v1_judged_parallel_retry1_20260405`
-- V1.1 therefore writes only new draft outputs:
+- V1.1 therefore keeps its own manifest and local dataset outputs:
   - `reading-companion-backend/eval/manifests/splits/attentional_v2_excerpt_surface_v1_1_draft.json`
   - `reading-companion-backend/state/eval_local_datasets/excerpt_cases/attentional_v2_excerpt_surface_v1_1_excerpt_en`
   - `reading-companion-backend/state/eval_local_datasets/excerpt_cases/attentional_v2_excerpt_surface_v1_1_excerpt_zh`
@@ -47,13 +46,13 @@ Update when: the fixed roster changes, the reuse/fill policy changes, the shortf
   - `state/eval_local_datasets/` remains a storage term only
   - `public/private` remains explicitly non-semantic for benchmark meaning
 
-## Current Draft Result
+## Finalized V1.1 Result
 - Fresh draft manifest:
   - `reading-companion-backend/eval/manifests/splits/attentional_v2_excerpt_surface_v1_1_draft.json`
 - Fresh draft summary:
-  - `reading-companion-backend/state/dataset_build/build_runs/excerpt_surface_v1_1_20260405/excerpt_surface_v1_1_summary.json`
-  - `reading-companion-backend/state/dataset_build/build_runs/excerpt_surface_v1_1_20260405/excerpt_surface_v1_1_summary.md`
-- Current reuse-only draft counts:
+  - `reading-companion-backend/state/dataset_build/build_runs/excerpt_surface_v1_1_20260406/excerpt_surface_v1_1_summary.json`
+  - `reading-companion-backend/state/dataset_build/build_runs/excerpt_surface_v1_1_20260406/excerpt_surface_v1_1_summary.md`
+- Finalized counts:
   - total primary excerpt cases: `59`
   - `insight_and_clarification` derived subset: `43`
 - Per-chapter reused counts after duplicate-control pruning:
@@ -67,16 +66,56 @@ Update when: the fixed roster changes, the reuse/fill policy changes, the shortf
 - Important reuse finding:
   - `value_of_others_private_en__8` looked like `14` reviewed rows on the old notes-guided surface, but V1.1 dedupes it back down to `8` real unique-span cases because both dense-note bands had produced repeated same-span cases after resolving to the same chapter
 
-## Known Shortfall
-- `nawaer_baodian_private_zh__22` is still below the v1.1 honest-short floor:
-  - current reused count: `5`
+## Narrow Fill Attempt
+- Prepared one explicit chapter-22 fill dataset:
+  - `reading-companion-backend/state/eval_local_datasets/excerpt_cases/attentional_v2_excerpt_surface_v1_1_fill_zh_chapter22_20260406`
+- Fill prep summary:
+  - `reading-companion-backend/state/dataset_build/build_runs/excerpt_surface_v1_1_fill_chapter22_20260406/excerpt_surface_v1_1_fill_chapter22_summary.md`
+- Reviewed packet:
+  - `reading-companion-backend/eval/review_packets/archive/excerpt_surface_v1_1_fill_chapter22_first_review_20260406/dataset_review_pipeline_summary.json`
+- Candidate reviewed:
+  - `nawaer_baodian_private_zh__22__anchored_reaction_selectivity__fill_1`
+- Result:
+  - stayed `revise`
+  - problem type remained `ambiguous_focus`
+  - the adjudicator sharpened the focus again, but it still did not clear into `reviewed_active`
+
+## Explicit Exception
+- `nawaer_baodian_private_zh__22` remains below the v1.1 honest-short floor:
+  - current selected count: `5`
   - floor: `6`
-- This means the draft is already good enough to quantify the next excerpt surface and its ROI, but it should not become the next judged default excerpt surface until one targeted fill repair/review finishes or an explicit defer decision records why the chapter remains short.
+- The approved fallback is now in force:
+  - keep the fixed 7-chapter roster unchanged
+  - keep `nawaer_baodian_private_zh__22` as the single explicit `5`-case exception
+  - do not reopen a broader fill wave or replace the chapter
+
+## Active Eval Order
+- Active smoke run id:
+  - `attentional_v2_excerpt_surface_v1_1_smoke_20260406`
+- Active smoke shard jobs:
+  - `bgjob_excerpt_surface_v1_1_smoke_shard_a_20260406`
+  - `bgjob_excerpt_surface_v1_1_smoke_shard_b_20260406`
+- Active follow-on orchestrator:
+  - `bgjob_excerpt_surface_v1_1_eval_orchestrator_20260406`
+  - role:
+    - wait for both smoke shards
+    - run the explicit smoke merge
+    - launch both judged shards with `--skip-existing`
+    - run the explicit judged merge
+- Fixed chapter order:
+  - shard A:
+    - `supremacy_private_en__13`
+    - `meiguoren_de_xingge_private_zh__19`
+    - `nawaer_baodian_private_zh__13`
+    - `nawaer_baodian_private_zh__22`
+  - shard B:
+    - `xidaduo_private_zh__15`
+    - `value_of_others_private_en__8`
+    - `huochu_shengming_de_yiyi_private_zh__8`
 
 ## Next Move
-- Let the active notes-guided judged rerun finish and merge.
-- Archive that run as evidence only.
-- Then decide one narrow v1.1 follow-up for `nawaer_baodian_private_zh__22`:
-  - targeted fill repair/review inside the same chapter
-  - or explicit defer with the shortfall kept honest in the draft
-- After that, run the new-surface smoke and then the next judged local excerpt comparison on the v1.1 manifest rather than on the old 8-unit notes-guided surface.
+- Let both smoke shards finish and run the explicit merge on the shared smoke run root.
+- If smoke stays clean:
+  - launch the judged shards in the same order
+  - use `--skip-existing` so judged reuses the smoke bundles
+- Keep long-span out of the execution path until excerpt v1.1 smoke and judged work are both fully settled.

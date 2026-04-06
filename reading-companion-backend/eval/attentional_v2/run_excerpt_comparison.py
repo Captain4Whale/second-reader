@@ -1723,8 +1723,14 @@ def _prepare_selection(
 def _filtered_units(selection: ExcerptRunSelection, *, unit_keys: list[str] | None) -> list[ChapterUnit]:
     if not unit_keys:
         return list(selection.units)
-    wanted = {key for key in unit_keys if key}
-    units = [unit for unit in selection.units if _chapter_unit_key(unit.source_id, unit.chapter_id) in wanted]
+    wanted_order = [key for key in unit_keys if key]
+    wanted = set(wanted_order)
+    by_unit_key = {
+        _chapter_unit_key(unit.source_id, unit.chapter_id): unit
+        for unit in selection.units
+        if _chapter_unit_key(unit.source_id, unit.chapter_id) in wanted
+    }
+    units = [by_unit_key[key] for key in wanted_order if key in by_unit_key]
     if not units:
         raise ValueError("no units selected after --unit-key filtering")
     return units

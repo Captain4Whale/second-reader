@@ -260,6 +260,32 @@ def test_default_active_benchmark_manifest_tracks_four_selected_chapters() -> No
     assert payload["quota_status"]["excerpt_primary"]["target_total"] == 40
 
 
+def test_filtered_units_respects_requested_unit_order() -> None:
+    selection = SimpleNamespace(
+        units=[
+            SimpleNamespace(source_id="source_a", chapter_id=1),
+            SimpleNamespace(source_id="source_b", chapter_id=2),
+            SimpleNamespace(source_id="source_c", chapter_id=3),
+        ]
+    )
+
+    units = excerpt_comparison._filtered_units(
+        selection,
+        unit_keys=[
+            "source_c__chapter_3",
+            "source_a__chapter_1",
+        ],
+    )
+
+    assert [
+        excerpt_comparison._chapter_unit_key(unit.source_id, unit.chapter_id)
+        for unit in units
+    ] == [
+        "source_c__chapter_3",
+        "source_a__chapter_1",
+    ]
+
+
 def test_run_benchmark_reuses_one_unit_run_for_cases_in_same_chapter(monkeypatch, tmp_path: Path) -> None:
     dataset_dir = _bootstrap_dataset(
         tmp_path,

@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-04-05T15:09:05Z`
+Last verified: `2026-04-06T00:50:42Z`
 
 ## Current Objective
 - Keep Phase 9 on the mainline under the new split-surface evaluation strategy:
@@ -17,7 +17,8 @@ Last verified: `2026-04-05T15:09:05Z`
     - the bounded `attentional_v2` throughput repair is now landed
     - the `judge-mode none` smoke on that slice completed cleanly with material call reduction
     - the judged micro-slice rerun on the same two-unit slice is now also completed and serves as the first clean bounded proof that the repair lowered call volume without an obvious judged-quality collapse
-  - keep `excerpt surface v1.1` as the prepared next local excerpt surface, and make it the next excerpt lane after the completed micro-slice gate while keeping one narrow mechanism follow-up on exact target-anchor coverage in `xidaduo`-style local cases
+  - keep `excerpt surface v1.1` as the now-finalized next excerpt surface, with a documented `5`-case exception on `nawaer_baodian_private_zh__22` after the approved narrow-fill repair stayed `revise`
+  - use `excerpt surface v1.1` as the active next excerpt lane after the completed micro-slice gate while keeping one narrow mechanism follow-up on exact target-anchor coverage in `xidaduo`-style local cases
   - treat the repaired long-span first review as completed support evidence, then decide whether to do one narrow repair on the `2` revise probes or freeze the long-span v1 set honestly short before any judged accumulation comparison
   - preserve the recorded `Path A` gate outcome and the completed clustered benchmark freeze as still-useful evidence
   - keep durable-trace / re-entry and runtime viability paused on cost grounds
@@ -131,7 +132,7 @@ Last verified: `2026-04-05T15:09:05Z`
           - one narrow mechanism follow-up remains worth keeping explicit:
             - some `xidaduo` local cases still show strong chapter-local interpretation but miss the exact designated anchor line
             - treat that as a later narrow mechanism repair target rather than a blocker on excerpt-surface optimization
-    - prepared next surface draft:
+    - finalized next surface:
       - `attentional_v2_excerpt_surface_v1_1_draft`
       - fixed roster:
         - `value_of_others_private_en__8`
@@ -141,14 +142,25 @@ Last verified: `2026-04-05T15:09:05Z`
         - `nawaer_baodian_private_zh__22`
         - `supremacy_private_en__13`
         - `meiguoren_de_xingge_private_zh__19`
-      - current reuse-only draft result:
+      - finalized result:
         - `59` primary cases
         - `43` derived `insight_and_clarification` cases
-      - current blocker:
-        - `nawaer_baodian_private_zh__22` is still at `5`, below the honest-short floor `6`
-      - promotion gate:
-        - do not repoint the excerpt surface until the completed retry3 judged rerun is explicitly dispositioned as evidence
-        - then decide one narrow chapter-22 fill repair or an explicit honest-short defer
+      - narrow chapter-22 repair outcome:
+        - prepared one explicit fill candidate:
+          - `nawaer_baodian_private_zh__22__anchored_reaction_selectivity__fill_1`
+        - reviewed packet:
+          - `excerpt_surface_v1_1_fill_chapter22_first_review_20260406`
+        - result:
+          - stayed `revise` for `ambiguous_focus`
+      - frozen shortfall posture:
+        - `nawaer_baodian_private_zh__22` remains at `5`
+        - keep the chapter anyway as the single explicit `5`-case exception
+        - do not widen beyond the approved narrow repair
+      - current active jobs:
+        - `bgjob_excerpt_surface_v1_1_smoke_shard_a_20260406`
+        - `bgjob_excerpt_surface_v1_1_smoke_shard_b_20260406`
+      - next gate:
+        - if both smoke shards complete cleanly, run the explicit merge and then launch the judged v1.1 shards with `--skip-existing`
     - smoke gate status:
       - `bgjob_human_notes_excerpt_smoke_light_20260404`
         - now `completed`
@@ -729,26 +741,49 @@ Last verified: `2026-04-05T15:09:05Z`
     - `supremacy_private_en__13`
   - current role:
     - default judged fast-iteration harness while bounded `attentional_v2` throughput repair is underway
-- The prepared next local excerpt surface is `excerpt surface v1.1`:
+- The prepared next excerpt surface is `excerpt surface v1.1`:
+  - current active jobs:
+    - `bgjob_excerpt_surface_v1_1_smoke_shard_a_20260406`
+    - `bgjob_excerpt_surface_v1_1_smoke_shard_b_20260406`
+    - `bgjob_excerpt_surface_v1_1_eval_orchestrator_20260406`
   - tracked manifest:
     - `reading-companion-backend/eval/manifests/splits/attentional_v2_excerpt_surface_v1_1_draft.json`
   - local dataset packages:
     - `reading-companion-backend/state/eval_local_datasets/excerpt_cases/attentional_v2_excerpt_surface_v1_1_excerpt_en`
     - `reading-companion-backend/state/eval_local_datasets/excerpt_cases/attentional_v2_excerpt_surface_v1_1_excerpt_zh`
   - draft summary:
-    - `reading-companion-backend/state/dataset_build/build_runs/excerpt_surface_v1_1_20260405/excerpt_surface_v1_1_summary.md`
+    - `reading-companion-backend/state/dataset_build/build_runs/excerpt_surface_v1_1_20260406/excerpt_surface_v1_1_summary.md`
   - current quantified result:
     - fixed `7` chapter units
     - `59` primary cases
     - `43` derived `insight_and_clarification` cases
     - `value_of_others_private_en__8` dedupes from an apparent `14` reviewed rows down to `8` real unique-span cases under the active duplicate controls
-  - current blocker:
-    - `nawaer_baodian_private_zh__22` remains below floor at `5`
+  - narrow chapter-22 repair:
+    - prepared fill dataset:
+      - `reading-companion-backend/state/eval_local_datasets/excerpt_cases/attentional_v2_excerpt_surface_v1_1_fill_zh_chapter22_20260406`
+    - prepared fill summary:
+      - `reading-companion-backend/state/dataset_build/build_runs/excerpt_surface_v1_1_fill_chapter22_20260406/excerpt_surface_v1_1_fill_chapter22_summary.md`
+    - review packet:
+      - `reading-companion-backend/eval/review_packets/archive/excerpt_surface_v1_1_fill_chapter22_first_review_20260406/dataset_review_pipeline_summary.json`
+    - result:
+      - `nawaer_baodian_private_zh__22__anchored_reaction_selectivity__fill_1` stayed `needs_revision`
+      - the shortfall remains an explicit `5`-case exception rather than a blocker
   - rollout rule:
     - `excerpt surface` is the evaluation meaning
     - `state/eval_local_datasets/` remains storage terminology only
-    - the notes-guided retry3 rerun is now completed and merged at command level
-    - before running the v1.1 smoke or judged lane, decide whether to archive that notes-guided run as partial evidence only and whether chapter 22 should receive one narrow fill repair
+    - the notes-guided retry3 rerun is now partial evidence only
+    - the v1.1 roster is fixed even with the chapter-22 exception
+    - smoke is now running in explicit ROI-first shard order:
+      - shard A:
+        - `supremacy_private_en__13`
+        - `meiguoren_de_xingge_private_zh__19`
+        - `nawaer_baodian_private_zh__13`
+        - `nawaer_baodian_private_zh__22`
+      - shard B:
+        - `xidaduo_private_zh__15`
+        - `value_of_others_private_en__8`
+        - `huochu_shengming_de_yiyi_private_zh__8`
+    - judged v1.1 should start only after both smoke shards merge cleanly and can reuse smoke bundles with `--skip-existing`
 - The next bounded dataset lane is the long-span accumulation benchmark v1:
   - namespace:
     - `attentional_v2_accumulation_benchmark_v1`
@@ -2027,8 +2062,6 @@ Last verified: `2026-04-05T15:09:05Z`
 ## Open Decisions
 - `Q10`
   - When should the detailed `attentional_v2` working design be promoted from temporary implementation docs into stable mechanism docs?
-- `Q-EXCERPT-SURFACE-V1.1-CH22`
-  - After the completed notes-guided retry3 judged rerun, should `nawaer_baodian_private_zh__22` receive one narrow chapter-wide fill repair to reach the honest-short floor `6`, or should the shortfall be deferred explicitly and kept honest in the v1.1 draft?
 
 ## Active Risks
 - The new question-aligned private-library builder now keeps the live `v2` review-truth datasets as feedback input instead of overwriting them, but the new question-aligned outputs are still seed candidates rather than reviewed benchmark truth.
@@ -2066,9 +2099,12 @@ Last verified: `2026-04-05T15:09:05Z`
 ## Active Task IDs
 - `TASK-PHASE9-DECISIVE-EVAL`
 - `TASK-ACCUMULATION-BENCHMARK-V1`
+- `TASK-EXCERPT-SURFACE-V1.1`
 
 ## Active Job IDs
-- none
+- `bgjob_excerpt_surface_v1_1_smoke_shard_a_20260406`
+- `bgjob_excerpt_surface_v1_1_smoke_shard_b_20260406`
+- `bgjob_excerpt_surface_v1_1_eval_orchestrator_20260406`
 
 ## Recommended Reading Path
 1. `AGENTS.md`
@@ -2082,7 +2118,7 @@ Last verified: `2026-04-05T15:09:05Z`
 9. `docs/implementation/new-reading-mechanism/excerpt-surface-v1-1-draft.md`
 10. `docs/backend-reader-evaluation.md`
 11. `reading-companion-backend/eval/manifests/splits/attentional_v2_excerpt_surface_v1_1_draft.json`
-12. `reading-companion-backend/state/dataset_build/build_runs/excerpt_surface_v1_1_20260405/excerpt_surface_v1_1_summary.md`
+12. `reading-companion-backend/state/dataset_build/build_runs/excerpt_surface_v1_1_20260406/excerpt_surface_v1_1_summary.md`
 13. `docs/implementation/new-reading-mechanism/human-notes-guided-dataset-v1-freeze-draft.md`
 14. `reading-companion-backend/eval/manifests/splits/attentional_v2_human_notes_guided_excerpt_eval_v1_draft.json`
 15. `docs/implementation/new-reading-mechanism/clustered-benchmark-v1-draft.md`
@@ -2092,17 +2128,21 @@ Last verified: `2026-04-05T15:09:05Z`
 ## Machine-Readable Appendix
 ```json
 {
-  "updated_at": "2026-04-05T15:09:05Z",
+  "updated_at": "2026-04-06T00:50:42Z",
   "last_updated_by": "codex",
   "active_task_ids": [
     "TASK-PHASE9-DECISIVE-EVAL",
-    "TASK-ACCUMULATION-BENCHMARK-V1"
+    "TASK-ACCUMULATION-BENCHMARK-V1",
+    "TASK-EXCERPT-SURFACE-V1.1"
   ],
   "blocked_task_ids": [],
-  "active_job_ids": [],
+  "active_job_ids": [
+    "bgjob_excerpt_surface_v1_1_smoke_shard_a_20260406",
+    "bgjob_excerpt_surface_v1_1_smoke_shard_b_20260406",
+    "bgjob_excerpt_surface_v1_1_eval_orchestrator_20260406"
+  ],
   "open_decision_ids": [
-    "Q10",
-    "Q-EXCERPT-SURFACE-V1.1-CH22"
+    "Q10"
   ],
   "detail_refs": [
     "docs/implementation/new-reading-mechanism/execution-tracker.md",

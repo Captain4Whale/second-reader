@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-04-05T15:09:05Z`
+Last updated: `2026-04-06T00:50:42Z`
 
 ## Status Values
 - `active`
@@ -54,6 +54,17 @@ Last updated: `2026-04-05T15:09:05Z`
   - `bgjob_accumulation_benchmark_v1_first_review_20260404` (`completed`)
   - `bgjob_accumulation_benchmark_v1_rejudged_first_review_20260404` (`completed`)
   - `bgjob_accumulation_benchmark_v1_repair_first_review_20260405` (`completed`)
+
+### `TASK-EXCERPT-SURFACE-V1.1` — Retune the next excerpt surface incrementally from the notes-guided freeze
+- Status: `active`
+- Lane: `dataset_platform`
+- Priority: `high`
+- Detail: `docs/implementation/new-reading-mechanism/excerpt-surface-v1-1-draft.md`
+- Next: the approved narrow chapter-22 fill repair has now been tried and stayed `revise`, so v1.1 is fixed with an explicit `5`-case exception on `nawaer_baodian_private_zh__22`; the smoke shards are running and the follow-on orchestrator is now waiting to run smoke merge, launch the judged shards with `--skip-existing`, and finish the judged merge automatically
+- Jobs:
+  - `bgjob_excerpt_surface_v1_1_smoke_shard_a_20260406` (`running`)
+  - `bgjob_excerpt_surface_v1_1_smoke_shard_b_20260406` (`running`)
+  - `bgjob_excerpt_surface_v1_1_eval_orchestrator_20260406` (`running`)
 
 ## Parked
 
@@ -134,14 +145,6 @@ Last updated: `2026-04-05T15:09:05Z`
   - `bgjob_closed_loop_bilingual_broader_auditcoherencefix_20260330` (`completed`)
 
 ## Queued
-
-### `TASK-EXCERPT-SURFACE-V1.1` — Retune the next excerpt surface incrementally from the notes-guided freeze
-- Status: `queued`
-- Lane: `dataset_platform`
-- Priority: `high`
-- Detail: `docs/implementation/new-reading-mechanism/excerpt-surface-v1-1-draft.md`
-- Next: the micro-slice throughput-repair gate is now cleared, so the next excerpt lane is to repair `nawaer_baodian_private_zh__22` up to floor `6` with one narrow fill pass or defer that shortfall explicitly, then run the v1.1 smoke and judged lane; broader excerpt-surface adjustment should follow immediately after
-- Jobs: none
 
 ### `TASK-DOC-Q10` — Decide when to promote `attentional_v2` working design into stable docs
 - Status: `queued`
