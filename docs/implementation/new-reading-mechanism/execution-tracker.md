@@ -603,7 +603,22 @@ Update when: status changes, blockers appear, or phases complete.
           - the project chose the honest-short route instead of spending more time trying to rescue the weak camp-experience single-chapter window
           - the remaining long-span draft is now intentionally smaller but benchmark-cleaner
         - current next gate:
-          - keep judged accumulation comparison queued until the active excerpt-surface v1.1 smoke / judged chain settles
+          - the judged accumulation lane is now launched in parallel under pooled local targets:
+            - job id:
+              - `bgjob_accumulation_benchmark_v1_judged_20260406`
+            - run id:
+              - `attentional_v2_accumulation_benchmark_v1_judged_20260406`
+            - process caps:
+              - `LLM_PROCESS_RUNTIME_PROFILE_MAX_CONCURRENCY = 6`
+              - `LLM_PROCESS_EVAL_JUDGE_PROFILE_MAX_CONCURRENCY = 4`
+            - run shape:
+              - `stage = all -> merge`
+              - `target-slice = both`
+              - `judge-mode = llm`
+              - `mechanism_execution_mode = parallel`
+              - `judge_execution_mode = parallel`
+              - `unit_workers = 2`
+              - `judge_workers = 2`
           - do not reopen a broad long-span builder or repair wave unless later judged evidence exposes a concrete blocker
   - current model-call cost is high enough that new comparison work outside the mechanism mainline should stay paused for now:
     - keep broader comparison checkpoints as baseline references, not active rerun targets

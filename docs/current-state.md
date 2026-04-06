@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-04-06T01:36:47Z`
+Last verified: `2026-04-06T01:45:55Z`
 
 ## Current Objective
 - Keep Phase 9 on the mainline under the new split-surface evaluation strategy:
@@ -22,7 +22,7 @@ Last verified: `2026-04-06T01:36:47Z`
   - treat the repaired long-span first review as completed support evidence and keep the now-landed honest-short long-span freeze as the active accumulation benchmark draft:
     - `huochu_shengming_de_yiyi_private_zh__8` and its `2` revise probes are now removed from the active mainline
     - the remaining long-span v1 draft is intentionally shorter but cleaner
-    - judged accumulation comparison stays sequenced after the currently running `excerpt surface v1.1` smoke / judged chain rather than reopening another repair wave first
+    - judged accumulation comparison is now launched in parallel under pooled local targets and conservative process caps, rather than waiting for the excerpt chain to finish first
   - preserve the recorded `Path A` gate outcome and the completed clustered benchmark freeze as still-useful evidence
   - keep durable-trace / re-entry and runtime viability paused on cost grounds
 - Keep dataset work tightly scoped to the new long-span need:
@@ -454,12 +454,30 @@ Last verified: `2026-04-06T01:36:47Z`
   - keep the honest-short long-span v1 set as the active draft
   - active draft size is now `5` windows and `7` frozen probes
   - the `huochu_shengming_de_yiyi_private_zh__8` window and its `2` revise probes are removed from the mainline
-  - do not launch judged accumulation comparison until the active excerpt v1.1 smoke / judged chain settles
+  - the judged accumulation run is now active in parallel:
+    - job id:
+      - `bgjob_accumulation_benchmark_v1_judged_20260406`
+    - run id:
+      - `attentional_v2_accumulation_benchmark_v1_judged_20260406`
+    - launch shape:
+      - pooled targets, no `LLM_FORCE_TARGET_ID`
+      - `LLM_PROCESS_RUNTIME_PROFILE_MAX_CONCURRENCY = 6`
+      - `LLM_PROCESS_EVAL_JUDGE_PROFILE_MAX_CONCURRENCY = 4`
+      - `stage = all -> merge`
+      - `target-slice = both`
+      - `judge-mode = llm`
+      - `mechanism_execution_mode = parallel`
+      - `judge_execution_mode = parallel`
+      - `unit_workers = 2`
+      - `judge_workers = 2`
+  - current next gate:
+    - confirm the run completes all `5` windows, emits all `7` probe results, and writes `summary/aggregate.json` plus `summary/report.md`
 - Background-job registry state:
-  - `reading-companion-backend/state/job_registry/active_jobs.md` currently shows the active excerpt v1.1 jobs:
+  - `reading-companion-backend/state/job_registry/active_jobs.md` currently shows:
     - `bgjob_excerpt_surface_v1_1_smoke_shard_a_20260406`
     - `bgjob_excerpt_surface_v1_1_smoke_shard_b_20260406`
     - `bgjob_excerpt_surface_v1_1_eval_orchestrator_20260406`
+    - `bgjob_accumulation_benchmark_v1_judged_20260406`
 - The post-recovery gate review is now closed on `Path A`.
 - Recorded gate outcomes:
   - `OD-PRIVATE-LIBRARY-POST-RESCUE-GATE = keep_hold_for_backlog_rescue`
@@ -837,6 +855,7 @@ Last verified: `2026-04-06T01:36:47Z`
   - `bgjob_excerpt_surface_v1_1_smoke_shard_a_20260406`
   - `bgjob_excerpt_surface_v1_1_smoke_shard_b_20260406`
   - `bgjob_excerpt_surface_v1_1_eval_orchestrator_20260406`
+  - `bgjob_accumulation_benchmark_v1_judged_20260406`
 - the latest completed long-span support job is:
   - `bgjob_accumulation_benchmark_v1_repair_first_review_20260405`
     - result:
@@ -2123,6 +2142,7 @@ Last verified: `2026-04-06T01:36:47Z`
 - `bgjob_excerpt_surface_v1_1_smoke_shard_a_20260406`
 - `bgjob_excerpt_surface_v1_1_smoke_shard_b_20260406`
 - `bgjob_excerpt_surface_v1_1_eval_orchestrator_20260406`
+- `bgjob_accumulation_benchmark_v1_judged_20260406`
 
 ## Recommended Reading Path
 1. `AGENTS.md`
@@ -2146,7 +2166,7 @@ Last verified: `2026-04-06T01:36:47Z`
 ## Machine-Readable Appendix
 ```json
 {
-  "updated_at": "2026-04-06T01:36:47Z",
+  "updated_at": "2026-04-06T01:45:55Z",
   "last_updated_by": "codex",
   "active_task_ids": [
     "TASK-PHASE9-DECISIVE-EVAL",
@@ -2157,7 +2177,8 @@ Last verified: `2026-04-06T01:36:47Z`
   "active_job_ids": [
     "bgjob_excerpt_surface_v1_1_smoke_shard_a_20260406",
     "bgjob_excerpt_surface_v1_1_smoke_shard_b_20260406",
-    "bgjob_excerpt_surface_v1_1_eval_orchestrator_20260406"
+    "bgjob_excerpt_surface_v1_1_eval_orchestrator_20260406",
+    "bgjob_accumulation_benchmark_v1_judged_20260406"
   ],
   "open_decision_ids": [
     "Q10"

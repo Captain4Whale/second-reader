@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-04-06T01:36:47Z`
+Last updated: `2026-04-06T01:45:55Z`
 
 ## Status Values
 - `active`
@@ -49,11 +49,12 @@ Last updated: `2026-04-06T01:36:47Z`
 - Lane: `dataset_platform`
 - Priority: `high`
 - Detail: `docs/implementation/new-reading-mechanism/execution-tracker.md`
-- Next: keep the honest-short freeze as the active long-span draft: `huochu_shengming_de_yiyi_private_zh__8` and its `2` revise probes are now removed from the mainline, leaving `5` active windows and `7` frozen probes; do not reopen a broad repair wave, and queue judged accumulation comparison behind the currently running excerpt-surface v1.1 smoke/judged chain
+- Next: keep the honest-short freeze as the active long-span draft and use it now: `huochu_shengming_de_yiyi_private_zh__8` and its `2` revise probes are removed from the mainline, leaving `5` active windows and `7` frozen probes; the judged accumulation lane is now running in parallel under pooled local targets with conservative process caps, and the next check is to confirm that it emits the merged `aggregate/report` outputs cleanly
 - Jobs:
   - `bgjob_accumulation_benchmark_v1_first_review_20260404` (`completed`)
   - `bgjob_accumulation_benchmark_v1_rejudged_first_review_20260404` (`completed`)
   - `bgjob_accumulation_benchmark_v1_repair_first_review_20260405` (`completed`)
+  - `bgjob_accumulation_benchmark_v1_judged_20260406` (`running`)
 
 ### `TASK-EXCERPT-SURFACE-V1.1` — Retune the next excerpt surface incrementally from the notes-guided freeze
 - Status: `active`
