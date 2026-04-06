@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-04-06T00:50:42Z`
+Last verified: `2026-04-06T01:36:47Z`
 
 ## Current Objective
 - Keep Phase 9 on the mainline under the new split-surface evaluation strategy:
@@ -19,7 +19,10 @@ Last verified: `2026-04-06T00:50:42Z`
     - the judged micro-slice rerun on the same two-unit slice is now also completed and serves as the first clean bounded proof that the repair lowered call volume without an obvious judged-quality collapse
   - keep `excerpt surface v1.1` as the now-finalized next excerpt surface, with a documented `5`-case exception on `nawaer_baodian_private_zh__22` after the approved narrow-fill repair stayed `revise`
   - use `excerpt surface v1.1` as the active next excerpt lane after the completed micro-slice gate while keeping one narrow mechanism follow-up on exact target-anchor coverage in `xidaduo`-style local cases
-  - treat the repaired long-span first review as completed support evidence, then decide whether to do one narrow repair on the `2` revise probes or freeze the long-span v1 set honestly short before any judged accumulation comparison
+  - treat the repaired long-span first review as completed support evidence and keep the now-landed honest-short long-span freeze as the active accumulation benchmark draft:
+    - `huochu_shengming_de_yiyi_private_zh__8` and its `2` revise probes are now removed from the active mainline
+    - the remaining long-span v1 draft is intentionally shorter but cleaner
+    - judged accumulation comparison stays sequenced after the currently running `excerpt surface v1.1` smoke / judged chain rather than reopening another repair wave first
   - preserve the recorded `Path A` gate outcome and the completed clustered benchmark freeze as still-useful evidence
   - keep durable-trace / re-entry and runtime viability paused on cost grounds
 - Keep dataset work tightly scoped to the new long-span need:
@@ -159,8 +162,9 @@ Last verified: `2026-04-06T00:50:42Z`
       - current active jobs:
         - `bgjob_excerpt_surface_v1_1_smoke_shard_a_20260406`
         - `bgjob_excerpt_surface_v1_1_smoke_shard_b_20260406`
+        - `bgjob_excerpt_surface_v1_1_eval_orchestrator_20260406`
       - next gate:
-        - if both smoke shards complete cleanly, run the explicit merge and then launch the judged v1.1 shards with `--skip-existing`
+        - if both smoke shards complete cleanly, the orchestrator should run the smoke merge, launch the judged v1.1 shards with `--skip-existing`, and finish the judged merge automatically
     - smoke gate status:
       - `bgjob_human_notes_excerpt_smoke_light_20260404`
         - now `completed`
@@ -433,9 +437,8 @@ Last verified: `2026-04-06T00:50:42Z`
           - `huochu_shengming_de_yiyi_private_zh__8__probe_2`
         - interpretation:
           - the repaired probe/materialization contract finally produced nonzero benchmark-ready keeps
-          - long-span judged comparison is no longer blocked by total review failure, but it is still blocked on one explicit freeze decision:
-            - either run one narrow repair on the two chapter-8 revise probes
-            - or freeze the v1 set honestly short and defer those two probes
+          - long-span judged comparison is no longer blocked by total review failure
+          - the follow-up freeze decision has now been resolved in favor of the honest-short route
 - `coherent_accumulation` is now interpreted operationally as bounded long-span continuity and carryover rather than generic whole-book memory.
 - `insight_and_clarification` is treated as an orthogonal output-value axis that can score both local excerpt cases and long-span window cases.
 - Excerpt and long-span datasets may intentionally use different books or chapters when that improves fit and runtime efficiency.
@@ -448,12 +451,15 @@ Last verified: `2026-04-06T00:50:42Z`
     - the gateway now keeps quota-cooled targets out of threshold-relaxation fallback selection and lets scope selection fall back to bounded quota-wait handling only when no healthy target remains
     - the merged retry3 result is only partial evidence because most chapters still remain placeholder-dominated
 - Current long-span construction gate:
-  - keep the rebuilt final window set
-  - retain the repaired `9`-probe review result on that window set
-  - freeze / repair decision now sits on `7 reviewed_active + 2 needs_revision`
-  - do not launch judged accumulation comparison until that freeze decision is made explicitly
+  - keep the honest-short long-span v1 set as the active draft
+  - active draft size is now `5` windows and `7` frozen probes
+  - the `huochu_shengming_de_yiyi_private_zh__8` window and its `2` revise probes are removed from the mainline
+  - do not launch judged accumulation comparison until the active excerpt v1.1 smoke / judged chain settles
 - Background-job registry state:
-  - `reading-companion-backend/state/job_registry/active_jobs.md` currently shows no active background jobs
+  - `reading-companion-backend/state/job_registry/active_jobs.md` currently shows the active excerpt v1.1 jobs:
+    - `bgjob_excerpt_surface_v1_1_smoke_shard_a_20260406`
+    - `bgjob_excerpt_surface_v1_1_smoke_shard_b_20260406`
+    - `bgjob_excerpt_surface_v1_1_eval_orchestrator_20260406`
 - The post-recovery gate review is now closed on `Path A`.
 - Recorded gate outcomes:
   - `OD-PRIVATE-LIBRARY-POST-RESCUE-GATE = keep_hold_for_backlog_rescue`
@@ -790,19 +796,28 @@ Last verified: `2026-04-06T00:50:42Z`
   - artifacts:
     - `window_cases`
     - `accumulation_probes`
-  - fixed active v1 windows after the April 4 source-fit rejudgment:
+  - honest-short active v1 windows after the April 6 explicit freeze:
     - `supremacy_private_en__13`
     - `steve_jobs_private_en__17`
     - `value_of_others_private_en__8_10`
     - `xidaduo_private_zh__13_15`
-    - `huochu_shengming_de_yiyi_private_zh__8`
     - `huochu_shengming_de_yiyi_private_zh__13_16`
+  - current rebuilt artifact counts:
+    - `5` window rows
+    - `7` frozen probes
+  - removed from the active long-span v1 mainline at the freeze decision:
+    - `huochu_shengming_de_yiyi_private_zh__8`
+    - `huochu_shengming_de_yiyi_private_zh__8__probe_1`
+    - `huochu_shengming_de_yiyi_private_zh__8__probe_2`
   - demoted from the active long-span v1 surface:
     - `nawaer_baodian_private_zh__wealth`
     - `nawaer_baodian_private_zh__judgment`
     - `zouchu_weiyi_zhenliguan_private_zh__14`
   - reserve / next-add direction:
     - `shoe_dog_private_en` is the first preferred wider-book reserve if active v1 still needs a stronger extra English long-span source after the rebuilt review closes
+  - current next gate:
+    - do not reopen a broad repair wave
+    - keep judged accumulation comparison queued until the excerpt v1.1 smoke / judged chain settles
 - The older broad formal benchmark remains preserved as historical operator evidence:
   - the `40 / 40` gap-fill closeout itself is still recorded in repo artifacts
   - the later formal decisive chapter and excerpt reruns were deliberately abandoned on `2026-04-03T13:00:09Z` after the active benchmark pointer moved to clustered benchmark v1:
@@ -818,7 +833,10 @@ Last verified: `2026-04-06T00:50:42Z`
     - target-level concurrency is `32 / 12 / 32 / 2` on both targets
     - `reading-companion-backend/config/llm_profile_bindings.local.json` binds `runtime_reader_default`, `dataset_review_high_trust`, and `eval_judge_high_trust` to one pooled `primary` tier containing both targets
     - current operator policy is to allow at most two heavy processes total, both using the pooled tier without `LLM_FORCE_TARGET_ID`, while keeping intra-process execution conservative
-- There are currently no active background jobs in the registry.
+- There are currently active background jobs in the registry:
+  - `bgjob_excerpt_surface_v1_1_smoke_shard_a_20260406`
+  - `bgjob_excerpt_surface_v1_1_smoke_shard_b_20260406`
+  - `bgjob_excerpt_surface_v1_1_eval_orchestrator_20260406`
 - the latest completed long-span support job is:
   - `bgjob_accumulation_benchmark_v1_repair_first_review_20260405`
     - result:
@@ -2128,7 +2146,7 @@ Last verified: `2026-04-06T00:50:42Z`
 ## Machine-Readable Appendix
 ```json
 {
-  "updated_at": "2026-04-06T00:50:42Z",
+  "updated_at": "2026-04-06T01:36:47Z",
   "last_updated_by": "codex",
   "active_task_ids": [
     "TASK-PHASE9-DECISIVE-EVAL",

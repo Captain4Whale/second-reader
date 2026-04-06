@@ -27,7 +27,6 @@ def test_build_window_rows_matches_expected_v1_windows() -> None:
         "steve_jobs_private_en__17",
         "value_of_others_private_en__8_10",
         "xidaduo_private_zh__13_15",
-        "huochu_shengming_de_yiyi_private_zh__8",
         "huochu_shengming_de_yiyi_private_zh__13_16",
     ]
     assert all(bool(row["contiguous_chapters"]) for row in rows)
@@ -47,8 +46,6 @@ def test_build_probe_rows_is_bounded_and_grouped_per_window() -> None:
     assert [row["probe_id"] for row in probe_rows] == [
         "huochu_shengming_de_yiyi_private_zh__13_16__probe_1",
         "huochu_shengming_de_yiyi_private_zh__13_16__probe_2",
-        "huochu_shengming_de_yiyi_private_zh__8__probe_1",
-        "huochu_shengming_de_yiyi_private_zh__8__probe_2",
         "steve_jobs_private_en__17__probe_1",
         "supremacy_private_en__13__probe_1",
         "value_of_others_private_en__8_10__probe_1",
@@ -57,7 +54,6 @@ def test_build_probe_rows_is_bounded_and_grouped_per_window() -> None:
     ]
     assert counts == {
         "huochu_shengming_de_yiyi_private_zh__13_16": 2,
-        "huochu_shengming_de_yiyi_private_zh__8": 2,
         "steve_jobs_private_en__17": 1,
         "supremacy_private_en__13": 1,
         "value_of_others_private_en__8_10": 1,
@@ -77,9 +73,8 @@ def test_build_probe_rows_is_bounded_and_grouped_per_window() -> None:
 def test_freeze_probe_rows_keeps_repaired_short_budgets_without_review() -> None:
     frozen_rows, saturation = freeze_probe_rows(build_probe_rows())
 
-    assert len(frozen_rows) == 9
+    assert len(frozen_rows) == 7
     assert saturation["huochu_shengming_de_yiyi_private_zh__13_16"]["selected_count"] == 2
-    assert saturation["huochu_shengming_de_yiyi_private_zh__8"]["selected_count"] == 2
     assert saturation["steve_jobs_private_en__17"]["selected_count"] == 1
     assert saturation["supremacy_private_en__13"]["selected_count"] == 1
     assert saturation["value_of_others_private_en__8_10"]["selected_count"] == 1
@@ -94,8 +89,8 @@ def test_freeze_probe_rows_keeps_repaired_short_budgets_without_review() -> None
 def test_write_draft_artifacts_writes_local_datasets_and_manifest() -> None:
     summary = write_draft_artifacts()
 
-    assert summary["window_count"] == 6
-    assert summary["probe_count"] == 9
+    assert summary["window_count"] == 5
+    assert summary["probe_count"] == 7
     assert (WINDOW_DATASET_DIR / "manifest.json").exists()
     assert (WINDOW_DATASET_DIR / "windows.jsonl").exists()
     assert (PROBE_DRAFT_DATASET_DIR / "manifest.json").exists()
@@ -103,9 +98,9 @@ def test_write_draft_artifacts_writes_local_datasets_and_manifest() -> None:
     assert Path(summary["draft_manifest_path"]).exists()
 
     manifest = build_draft_manifest_payload()
-    assert manifest["quota_status"]["window_cases"]["ready_now"] == 6
-    assert manifest["quota_status"]["accumulation_probes"]["target_total"] == 9
-    assert manifest["quota_status"]["accumulation_probes"]["ready_now"] == 9
+    assert manifest["quota_status"]["window_cases"]["ready_now"] == 5
+    assert manifest["quota_status"]["accumulation_probes"]["target_total"] == 7
+    assert manifest["quota_status"]["accumulation_probes"]["ready_now"] == 7
     assert manifest["splits"]["accumulation_probes_frozen_draft"]["all"]
     assert manifest["splits"]["insight_and_clarification_subset_frozen_draft"]["all"]
 
@@ -115,15 +110,15 @@ def test_draft_manifest_resolves_probe_ids_for_runner_target_slices() -> None:
 
     selected = _target_probe_ids_from_manifest(manifest, target_slice="both")
 
-    assert len(selected["coherent_accumulation"]) == 9
-    assert len(selected["insight_and_clarification"]) == 9
+    assert len(selected["coherent_accumulation"]) == 7
+    assert len(selected["insight_and_clarification"]) == 7
 
 
 def test_write_frozen_probe_dataset_updates_manifest_to_frozen_probe_dataset() -> None:
     write_draft_artifacts()
     summary = write_frozen_probe_dataset()
 
-    assert summary["probe_count"] == 9
+    assert summary["probe_count"] == 7
     assert (PROBE_FROZEN_DATASET_DIR / "manifest.json").exists()
     assert (PROBE_FROZEN_DATASET_DIR / "probes.jsonl").exists()
 
@@ -131,5 +126,5 @@ def test_write_frozen_probe_dataset_updates_manifest_to_frozen_probe_dataset() -
     assert manifest["source_refs"]["accumulation_probe_datasets"] == [
         "state/eval_local_datasets/accumulation_probes/attentional_v2_accumulation_benchmark_v1_probes_frozen_draft"
     ]
-    assert len(manifest["splits"]["accumulation_probes_frozen_draft"]["all"]) == 9
+    assert len(manifest["splits"]["accumulation_probes_frozen_draft"]["all"]) == 7
     assert manifest["splits"]["insight_and_clarification_subset_frozen_draft"]["all"]

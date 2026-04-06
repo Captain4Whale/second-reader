@@ -587,6 +587,24 @@ Update when: status changes, blockers appear, or phases complete.
             - the next decision is narrow and explicit:
               - either repair the two chapter-8 revise probes
               - or freeze the current v1 set honestly short before any judged accumulation run
+      - landed honest-short freeze on `2026-04-06`:
+        - `accumulation_benchmark_v1.py` now rebuilds the active long-span draft around `5` windows and `7` frozen probes
+        - retained active windows:
+          - `supremacy_private_en__13`
+          - `steve_jobs_private_en__17`
+          - `value_of_others_private_en__8_10`
+          - `xidaduo_private_zh__13_15`
+          - `huochu_shengming_de_yiyi_private_zh__13_16`
+        - removed from the active mainline at the freeze decision:
+          - `huochu_shengming_de_yiyi_private_zh__8`
+          - `huochu_shengming_de_yiyi_private_zh__8__probe_1`
+          - `huochu_shengming_de_yiyi_private_zh__8__probe_2`
+        - interpretation:
+          - the project chose the honest-short route instead of spending more time trying to rescue the weak camp-experience single-chapter window
+          - the remaining long-span draft is now intentionally smaller but benchmark-cleaner
+        - current next gate:
+          - keep judged accumulation comparison queued until the active excerpt-surface v1.1 smoke / judged chain settles
+          - do not reopen a broad long-span builder or repair wave unless later judged evidence exposes a concrete blocker
   - current model-call cost is high enough that new comparison work outside the mechanism mainline should stay paused for now:
     - keep broader comparison checkpoints as baseline references, not active rerun targets
     - keep active spend on decisive mechanism-eval runs plus the minimum support diagnostics they still require

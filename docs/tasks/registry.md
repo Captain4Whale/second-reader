@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-04-06T00:50:42Z`
+Last updated: `2026-04-06T01:36:47Z`
 
 ## Status Values
 - `active`
@@ -49,7 +49,7 @@ Last updated: `2026-04-06T00:50:42Z`
 - Lane: `dataset_platform`
 - Priority: `high`
 - Detail: `docs/implementation/new-reading-mechanism/execution-tracker.md`
-- Next: keep the repaired first review as the freeze gate, decide the `2 revise` probe disposition explicitly, and use the now-landed staged/sharded accumulation runner only after that freeze decision is made
+- Next: keep the honest-short freeze as the active long-span draft: `huochu_shengming_de_yiyi_private_zh__8` and its `2` revise probes are now removed from the mainline, leaving `5` active windows and `7` frozen probes; do not reopen a broad repair wave, and queue judged accumulation comparison behind the currently running excerpt-surface v1.1 smoke/judged chain
 - Jobs:
   - `bgjob_accumulation_benchmark_v1_first_review_20260404` (`completed`)
   - `bgjob_accumulation_benchmark_v1_rejudged_first_review_20260404` (`completed`)

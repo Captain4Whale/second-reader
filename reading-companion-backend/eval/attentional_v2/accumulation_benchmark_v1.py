@@ -1,7 +1,7 @@
 """Deterministic long-span benchmark artifacts for split-surface evaluation.
 
 This module intentionally optimizes for a runnable, bounded v1:
-- exactly 6 windows
+- an honest-short window set chosen for real carryover density
 - deterministic probe generation from existing reviewed excerpt rows + notes anchors
 - draft/freeze-capable local datasets plus a tracked draft manifest
 
@@ -145,20 +145,6 @@ WINDOW_SPECS: tuple[dict[str, Any], ...] = (
             "Upgrade Siddhartha from a single late chapter to a true late-book arc because the "
             "opening, middle, and final chapters all have aligned notes and the source's spiritual "
             "continuity makes it the strongest current long-span fit."
-        ),
-    },
-    {
-        "window_case_id": "huochu_shengming_de_yiyi_private_zh__8",
-        "source_id": "huochu_shengming_de_yiyi_private_zh",
-        "language_track": "zh",
-        "chapter_ids": ["8"],
-        "chapter_case_ids": ["huochu_shengming_de_yiyi_private_zh__8"],
-        "origin_line": "human_notes_guided_dataset_v1",
-        "window_label": "第一部分 在集中营的经历",
-        "selection_reason": (
-            "Keep the camp-experience chapter as a heavy single-window memory surface because one read "
-            "covers many reviewed excerpt anchors and note-backed reactions, making it costly but very "
-            "efficient evidence once executed."
         ),
     },
     {
@@ -316,36 +302,6 @@ WINDOW_PROBE_PLANS: dict[str, tuple[dict[str, Any], ...]] = {
                 {"kind": "note_entry", "ref": "xidaduo_private_zh_personal_notes__e0012", "stage": "early"},
                 {"kind": "note_entry", "ref": "xidaduo_private_zh_personal_notes__e0016", "stage": "mid"},
                 {"kind": "note_entry", "ref": "xidaduo_private_zh_personal_notes__e0025", "stage": "late"},
-            ),
-        },
-    ),
-    "huochu_shengming_de_yiyi_private_zh__8": (
-        {
-            "selection_reason": (
-                "Use the strongest single-chapter carryover inside chapter 8: concrete bodily adaptation first, then the later claim "
-                "that suffering itself must be faced as meaningful work."
-            ),
-            "judge_focus": (
-                "Within chapter 8, does the reader carry forward the concrete evidence of human adaptation under camp suffering into the later "
-                "claim that enduring suffering itself becomes a meaningful task, instead of reading the later passage as generic stoicism?"
-            ),
-            "anchors": (
-                {"kind": "excerpt_case", "ref": "huochu_shengming_de_yiyi_private_zh__8__distinction_definition__seed_2", "stage": "early"},
-                {"kind": "excerpt_case", "ref": "huochu_shengming_de_yiyi_private_zh__8__tension_reversal__seed_1", "stage": "late"},
-            ),
-        },
-        {
-            "selection_reason": (
-                "Keep one second chapter-8 probe centered on the dying young woman's response and Frankl's later suffering frame. "
-                "This is narrower and more explicit than the older beauty-to-suffering pairing."
-            ),
-            "judge_focus": (
-                "Within chapter 8, does the reader connect the dying young woman's grateful acceptance of suffering to the later claim that "
-                "suffering must be faced as a task, rather than treating the later statement as a separate philosophical aside?"
-            ),
-            "anchors": (
-                {"kind": "excerpt_case", "ref": "huochu_shengming_de_yiyi_private_zh__8__tension_reversal__seed_4", "stage": "early"},
-                {"kind": "excerpt_case", "ref": "huochu_shengming_de_yiyi_private_zh__8__tension_reversal__seed_1", "stage": "late"},
             ),
         },
     ),

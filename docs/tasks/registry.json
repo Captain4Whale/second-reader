@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-04-06T00:50:42Z",
+  "updated_at": "2026-04-06T01:36:47Z",
   "tasks": [
     {
       "id": "TASK-MECH-EN-RERUN",
@@ -839,7 +839,7 @@
         "bgjob_accumulation_benchmark_v1_repair_first_review_20260405"
       ],
       "acceptance_ref": "docs/implementation/new-reading-mechanism/execution-tracker.md",
-      "next_action": "Use the completed repaired first review as the new freeze gate, then choose between one narrow repair on the two chapter-8 revise probes or an honest-short v1 freeze before any judged accumulation comparison.",
+      "next_action": "Keep the honest-short freeze as the active long-span draft: huochu_shengming_de_yiyi_private_zh__8 and its two revise probes are now removed from the mainline, leaving five active windows and seven frozen probes; do not reopen a broad repair wave, and queue judged accumulation comparison behind the currently running excerpt-surface v1.1 smoke/judged chain.",
       "blocked_by": [],
       "evidence_refs": [
         "docs/implementation/new-reading-mechanism/human-notes-guided-dataset-v1-freeze-draft.md",
@@ -864,7 +864,7 @@
         "reading-companion-backend/eval/review_packets/archive/accumulation_benchmark_v1_repair_first_review_20260405/dataset_review_pipeline_summary.json",
         "reading-companion-backend/eval/review_packets/archive/accumulation_benchmark_v1_repair_first_review_20260405/llm_review_report.md"
       ],
-      "last_updated": "2026-04-05T01:48:52Z",
+      "last_updated": "2026-04-06T01:36:47Z",
       "last_updated_by": "codex"
     },
     {

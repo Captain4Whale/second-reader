@@ -7,8 +7,8 @@
   ],
   "benchmark_shape": {
     "kind": "long_span_window",
-    "window_case_target_total": 6,
-    "accumulation_probe_target_total": 9
+    "window_case_target_total": 5,
+    "accumulation_probe_target_total": 7
   },
   "builder_limitations": [
     "Probe review automation is intentionally deferred in this minimal implementation.",
@@ -31,18 +31,18 @@
   },
   "quota_status": {
     "window_cases": {
-      "target_total": 6,
-      "ready_now": 6,
+      "target_total": 5,
+      "ready_now": 5,
       "gap": 0
     },
     "accumulation_probes": {
-      "target_total": 9,
-      "ready_now": 9,
+      "target_total": 7,
+      "ready_now": 7,
       "gap": 0
     },
     "insight_and_clarification_subset": {
-      "target_total": 9,
-      "ready_now": 9,
+      "target_total": 7,
+      "ready_now": 7,
       "gap": 0
     }
   },
@@ -53,7 +53,6 @@
         "steve_jobs_private_en__17",
         "value_of_others_private_en__8_10",
         "xidaduo_private_zh__13_15",
-        "huochu_shengming_de_yiyi_private_zh__8",
         "huochu_shengming_de_yiyi_private_zh__13_16"
       ]
     },
@@ -61,8 +60,6 @@
       "all": [
         "huochu_shengming_de_yiyi_private_zh__13_16__probe_1",
         "huochu_shengming_de_yiyi_private_zh__13_16__probe_2",
-        "huochu_shengming_de_yiyi_private_zh__8__probe_1",
-        "huochu_shengming_de_yiyi_private_zh__8__probe_2",
         "steve_jobs_private_en__17__probe_1",
         "supremacy_private_en__13__probe_1",
         "value_of_others_private_en__8_10__probe_1",
@@ -85,10 +82,6 @@
           "xidaduo_private_zh__13_15__probe_1",
           "xidaduo_private_zh__13_15__probe_2"
         ],
-        "huochu_shengming_de_yiyi_private_zh__8": [
-          "huochu_shengming_de_yiyi_private_zh__8__probe_1",
-          "huochu_shengming_de_yiyi_private_zh__8__probe_2"
-        ],
         "huochu_shengming_de_yiyi_private_zh__13_16": [
           "huochu_shengming_de_yiyi_private_zh__13_16__probe_1",
           "huochu_shengming_de_yiyi_private_zh__13_16__probe_2"
@@ -97,8 +90,6 @@
       "all": [
         "huochu_shengming_de_yiyi_private_zh__13_16__probe_1",
         "huochu_shengming_de_yiyi_private_zh__13_16__probe_2",
-        "huochu_shengming_de_yiyi_private_zh__8__probe_1",
-        "huochu_shengming_de_yiyi_private_zh__8__probe_2",
         "steve_jobs_private_en__17__probe_1",
         "supremacy_private_en__13__probe_1",
         "value_of_others_private_en__8_10__probe_1",
@@ -110,8 +101,6 @@
       "all": [
         "huochu_shengming_de_yiyi_private_zh__13_16__probe_1",
         "huochu_shengming_de_yiyi_private_zh__13_16__probe_2",
-        "huochu_shengming_de_yiyi_private_zh__8__probe_1",
-        "huochu_shengming_de_yiyi_private_zh__8__probe_2",
         "steve_jobs_private_en__17__probe_1",
         "supremacy_private_en__13__probe_1",
         "value_of_others_private_en__8_10__probe_1",
@@ -123,8 +112,6 @@
       "all": [
         "huochu_shengming_de_yiyi_private_zh__13_16__probe_1",
         "huochu_shengming_de_yiyi_private_zh__13_16__probe_2",
-        "huochu_shengming_de_yiyi_private_zh__8__probe_1",
-        "huochu_shengming_de_yiyi_private_zh__8__probe_2",
         "steve_jobs_private_en__17__probe_1",
         "supremacy_private_en__13__probe_1",
         "value_of_others_private_en__8_10__probe_1",
