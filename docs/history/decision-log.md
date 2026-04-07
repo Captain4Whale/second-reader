@@ -1420,3 +1420,34 @@ The old active windows `nawaer_baodian_private_zh__wealth`, `nawaer_baodian_priv
 - `docs/tasks/registry.md`
 - `docs/tasks/registry.json`
 - `docs/implementation/new-reading-mechanism/execution-tracker.md`
+
+## Entry 51
+**ID**: DEC-054
+**Status**: active
+
+**Decision / Inflection**: Reclassify `book_analysis` from a merely "secondary" capability to a retired legacy capability, while keeping current `/analysis/*` routes as compatibility names for the live deep-reading workflow.
+
+**Period**: April 7, 2026, after the product direction had already converged on sequential deep reading and the remaining ambiguity was now mostly naming debt in docs and backend helpers.
+
+**Problem**: The repo had already stopped treating `book_analysis` as an active product lane in practice, but several stable docs and backend function names still described it as a secondary capability. That wording made the live product boundary fuzzy and created a more concrete bug risk: the current deep-reading start path still ran through helpers named `book_analysis`, which made the active sequential flow look semantically tied to a capability the product no longer intends to pursue.
+
+**Alternatives considered**: Keep calling `book_analysis` a secondary capability, delete the legacy code immediately, or fully rename the public `/analysis/*` HTTP surface in one risky compatibility-breaking pass.
+
+**Why this path won**: The project needed a clearer truth without forcing unnecessary breakage. Marking `book_analysis` as retired legacy compatibility debt makes the product boundary explicit, while keeping `/analysis/*` as the public route prefix avoids churn in the active frontend/API contract. Internally, the active deep-reading launcher can be renamed and documented clearly without deleting the old legacy implementation before the team is ready.
+
+**What changed in the system**: Stable docs now describe `book_analysis` as a retired legacy capability preserved only for compatibility/debugging. Backend job/API wiring now uses a canonical existing-book deep-reading launcher for the live sequential flow, while `launch_book_analysis_job` remains only as a deprecated compatibility alias. API handler names and OpenAPI operation ids now describe deep reading instead of `book_analysis`, and the retained legacy code paths are marked as retired rather than silently current.
+
+**Why it matters later**: Future contributors could otherwise see `/analysis/*` routes, `book_analysis` helper names, and the preserved legacy implementation and mistakenly conclude that the product still supports two active reading modes. This entry records the intended boundary: one active deep-reading product lane, plus one retired legacy capability kept temporarily for compatibility debt management.
+
+**Primary evidence**:
+- `docs/product-interaction-model.md`
+- `docs/backend-sequential-lifecycle.md`
+- `docs/api-contract.md`
+- `docs/api-integration.md`
+- `docs/backend-state-aggregation.md`
+- `docs/runtime-modes.md`
+- `docs/backend-reading-mechanism.md`
+- `docs/backend-reading-mechanisms/attentional_v2.md`
+- `reading-companion-backend/AGENTS.md`
+- `reading-companion-backend/src/library/jobs.py`
+- `reading-companion-backend/src/api/app.py`

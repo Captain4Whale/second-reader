@@ -1,4 +1,4 @@
-"""Prompt bundle for the book-analysis capability."""
+"""Prompt bundle for the retired legacy book-analysis capability."""
 
 from __future__ import annotations
 
@@ -123,4 +123,3 @@ BOOK_ANALYSIS_QUERY_SYSTEM = BOOK_ANALYSIS_PROMPTS.query_system
 BOOK_ANALYSIS_QUERY_PROMPT = BOOK_ANALYSIS_PROMPTS.query_prompt
 BOOK_ANALYSIS_SYNTHESIS_SYSTEM = BOOK_ANALYSIS_PROMPTS.synthesis_system
 BOOK_ANALYSIS_SYNTHESIS_PROMPT = BOOK_ANALYSIS_PROMPTS.synthesis_prompt
-

@@ -16,7 +16,15 @@ from .catalog import (
     list_books_page,
     source_asset_path,
 )
-from .jobs import create_upload_job, launch_book_analysis_job, launch_parse_job, launch_sequential_job, load_job, refresh_job
+from .jobs import (
+    create_upload_job,
+    launch_book_analysis_job,
+    launch_existing_book_read_job,
+    launch_parse_job,
+    launch_sequential_job,
+    load_job,
+    refresh_job,
+)
 from .user_marks import delete_mark, list_book_marks, list_book_marks_grouped, list_marks, list_marks_page, put_mark
 
 __all__ = [
@@ -34,6 +42,7 @@ __all__ = [
     "get_chapter_reactions_page",
     "get_chapter_result",
     "launch_book_analysis_job",
+    "launch_existing_book_read_job",
     "launch_parse_job",
     "launch_sequential_job",
     "list_book_marks",

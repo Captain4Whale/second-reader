@@ -10,7 +10,7 @@ Use `docs/backend-reading-mechanism.md` when the question is about shared mechan
 
 ## Terminology Guard
 - In this document, `analysis` means the current sequential deep-reading workflow exposed through `POST /api/uploads/epub`, `POST /api/books/{book_id}/analysis/start`, `POST /api/books/{book_id}/analysis/resume`, and `GET /api/books/{book_id}/analysis-state`.
-- It does not mean the older `book_analysis` capability. That capability still exists in the codebase, but it is not the primary product path and should not drive default workflow decisions.
+- It does not mean the older `book_analysis` capability. That capability is now a retired legacy path kept temporarily for compatibility/debugging; it is not part of the current product workflow and should not drive default decisions.
 
 ## Entry Points
 - `POST /api/uploads/epub`
@@ -23,7 +23,8 @@ Use `docs/backend-reading-mechanism.md` when the question is about shared mechan
 - `POST /api/books/{book_id}/analysis/start`
   - Starts the main sequential workflow for an uploaded book that is currently `not_started`.
   - Reuses the copied source asset under the book output directory rather than requiring a new upload.
-  - `attentional_v2` is now a valid internal runtime choice for the main sequential workflow, but it still rejects the legacy `book_analysis` mode in this slice.
+  - `attentional_v2` is now a valid internal runtime choice for the main sequential workflow.
+  - The `/analysis/start` route name is a historical compatibility label; it always launches the current deep-reading workflow rather than the retired `book_analysis` capability.
 - `POST /api/books/{book_id}/analysis/resume`
   - Resumes the latest paused or interrupted sequential job from the newest compatible checkpoint.
   - In demo/prod mode, an incompatible checkpoint triggers a fresh rerun instead of an unsafe resume.

@@ -544,14 +544,51 @@ def test_launch_sequential_job_persists_non_default_mechanism_key(tmp_path, monk
     assert job_record_file(str(record["job_id"]), tmp_path).exists()
 
 
-def test_launch_book_analysis_job_rejects_attentional_v2(tmp_path):
-    """The legacy book-analysis launcher should fail fast for attentional_v2 in this slice."""
+def test_launch_existing_book_read_job_allows_attentional_v2(tmp_path, monkeypatch):
+    """The canonical existing-book deep-reading launcher should allow attentional_v2."""
 
     jobs_module = importlib.import_module("src.library.jobs")
     book_id = _bootstrap_book(tmp_path, stage="ready")
+    launched: list[list[str]] = []
 
-    with pytest.raises(RuntimeError, match="attentional_v2 does not support book_analysis mode yet"):
-        jobs_module.launch_book_analysis_job(book_id, root=tmp_path, mechanism_key="attentional_v2")
+    class _FakeProcess:
+        pid = 4444
+
+    monkeypatch.setattr(
+        jobs_module.subprocess,
+        "Popen",
+        lambda command, cwd, stdout, stderr: launched.append(command) or _FakeProcess(),
+    )
+
+    record = jobs_module.launch_existing_book_read_job(book_id, root=tmp_path, mechanism_key="attentional_v2")
+
+    assert record["status"] == "queued"
+    assert launched
+    assert "--mode" in launched[0]
+    assert "sequential" in launched[0]
+    assert "--mechanism" in launched[0]
+    assert "attentional_v2" in launched[0]
+
+
+def test_launch_book_analysis_job_aliases_existing_book_read_job(tmp_path, monkeypatch):
+    """The old launcher name should remain as a compatibility alias only."""
+
+    jobs_module = importlib.import_module("src.library.jobs")
+    book_id = _bootstrap_book(tmp_path, stage="ready")
+    observed: dict[str, object] = {}
+
+    monkeypatch.setattr(
+        jobs_module,
+        "launch_existing_book_read_job",
+        lambda internal_book_id, **kwargs: observed.update({"book_id": internal_book_id, **kwargs}) or {"job_id": "job-legacy", "status": "queued"},
+    )
+
+    record = jobs_module.launch_book_analysis_job(book_id, root=tmp_path, mechanism_key="attentional_v2", intent="legacy")
+
+    assert record["job_id"] == "job-legacy"
+    assert observed["book_id"] == book_id
+    assert observed["mechanism_key"] == "attentional_v2"
+    assert observed["intent"] == "legacy"
 
 
 def test_refresh_job_pauses_running_job_when_runtime_updates_go_stale(tmp_path, monkeypatch):
@@ -1415,7 +1452,7 @@ def test_api_start_analysis_for_uploaded_book(tmp_path, monkeypatch):
 
     monkeypatch.setattr(
         api_module,
-        "launch_book_analysis_job",
+        "launch_existing_book_read_job",
         lambda internal_book_id, root=None: {
             "job_id": "jobstart",
             "status": "queued",
@@ -1434,8 +1471,8 @@ def test_api_start_analysis_for_uploaded_book(tmp_path, monkeypatch):
     assert response.json()["book_id"] == public_book_id
 
 
-def test_api_start_analysis_rejects_internal_attentional_book_analysis_mode(tmp_path, monkeypatch):
-    """The start-analysis route should surface the unsupported attentional book-analysis path as a stable 409."""
+def test_api_start_analysis_allows_internal_attentional_v2(tmp_path, monkeypatch):
+    """The start-analysis route should launch the active attentional_v2 deep-reading path."""
 
     book_id = _bootstrap_book(tmp_path, stage="ready")
     public_book_id = to_api_book_id(book_id)
@@ -1445,17 +1482,25 @@ def test_api_start_analysis_rejects_internal_attentional_book_analysis_mode(tmp_
     monkeypatch.setattr(api_module, "get_backend_reading_mechanism_key", lambda: "attentional_v2")
     monkeypatch.setattr(
         api_module,
-        "launch_book_analysis_job",
-        lambda internal_book_id, root=None, mechanism_key=None: (_ for _ in ()).throw(
-            RuntimeError("attentional_v2 does not support book_analysis mode yet.")
-        ),
+        "launch_existing_book_read_job",
+        lambda internal_book_id, root=None, mechanism_key=None: {
+            "job_id": "job-attn-start",
+            "status": "queued",
+            "upload_path": str((tmp_path / "output" / internal_book_id / "_assets" / "source.epub")),
+            "book_id": internal_book_id,
+            "pid": 789,
+            "created_at": "2026-03-07T00:00:00Z",
+            "updated_at": "2026-03-07T00:00:00Z",
+            "error": None,
+            "mechanism_key": mechanism_key,
+        },
     )
 
     response = client.post(f"/api/books/{public_book_id}/analysis/start")
 
-    assert response.status_code == 409
-    assert response.json()["code"] == "ANALYSIS_NOT_STARTABLE"
-    assert "attentional_v2 does not support book_analysis mode yet." in response.json()["message"]
+    assert response.status_code == 202
+    assert response.json()["job_id"] == "job-attn-start"
+    assert response.json()["book_id"] == public_book_id
 
 
 def test_api_errors_use_stable_error_envelope(tmp_path):

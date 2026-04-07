@@ -77,6 +77,6 @@ Update when: the primary product path, page responsibilities, or interaction mod
 
 ## Product Defaults
 - `sequential` deep reading is the primary product mode and default optimization target.
-- `book_analysis` is a secondary capability and should not drive default product or architecture decisions.
+- `book_analysis` is a shelved legacy capability preserved only as compatibility debt; it should not drive default product or architecture decisions.
 - Do not reintroduce backend-owned landing or sample-browser flows unless that is an intentional product change.
 - Do not broaden the default experience into a generic book-summary product without an explicit product decision.

@@ -72,10 +72,10 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Book Analysis Log
-         * @description Return the latest technical log tail for one book analysis.
+         * Get deep-reading technical log
+         * @description Return the latest technical log tail for one book deep-reading run.
          */
-        get: operations["book_analysis_log_api_books__book_id__analysis_log_get"];
+        get: operations["get_book_deep_read_log"];
         put?: never;
         post?: never;
         delete?: never;
@@ -92,10 +92,10 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Book Analysis State
-         * @description Return the current progress-page snapshot for one book.
+         * Get deep-reading state
+         * @description Return the current deep-reading progress snapshot for one book.
          */
-        get: operations["book_analysis_state_api_books__book_id__analysis_state_get"];
+        get: operations["get_book_deep_read_state"];
         put?: never;
         post?: never;
         delete?: never;
@@ -114,10 +114,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Resume Book Analysis
-         * @description Resume a paused or interrupted analysis job from the latest checkpoint.
+         * Resume deep reading
+         * @description Resume a paused or interrupted deep-reading job from the latest checkpoint.
          */
-        post: operations["resume_book_analysis_api_books__book_id__analysis_resume_post"];
+        post: operations["resume_book_deep_read"];
         delete?: never;
         options?: never;
         head?: never;
@@ -134,10 +134,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Start Book Analysis
-         * @description Start sequential analysis for an uploaded book that has not begun deep reading yet.
+         * Start deep reading
+         * @description Start deep reading for an uploaded book that has not begun yet.
          */
-        post: operations["start_book_analysis_api_books__book_id__analysis_start_post"];
+        post: operations["start_book_deep_read"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2423,7 +2423,7 @@ export interface operations {
             };
         };
     };
-    book_analysis_log_api_books__book_id__analysis_log_get: {
+    get_book_deep_read_log: {
         parameters: {
             query?: {
                 line_limit?: number;
@@ -2501,7 +2501,7 @@ export interface operations {
             };
         };
     };
-    book_analysis_state_api_books__book_id__analysis_state_get: {
+    get_book_deep_read_state: {
         parameters: {
             query?: never;
             header?: never;
@@ -2577,7 +2577,7 @@ export interface operations {
             };
         };
     };
-    resume_book_analysis_api_books__book_id__analysis_resume_post: {
+    resume_book_deep_read: {
         parameters: {
             query?: never;
             header?: never;
@@ -2653,7 +2653,7 @@ export interface operations {
             };
         };
     };
-    start_book_analysis_api_books__book_id__analysis_start_post: {
+    start_book_deep_read: {
         parameters: {
             query?: never;
             header?: never;

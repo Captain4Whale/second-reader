@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-04-07T11:10:01Z",
+  "updated_at": "2026-04-07T11:42:29Z",
   "tasks": [
     {
       "id": "TASK-MECH-EN-RERUN",
@@ -267,6 +267,41 @@
         "reading-companion-backend/eval/runs/attentional_v2/case_audits/attentional_v2_private_library_excerpt_en_question_aligned_v1__scratch__callbackslice_auditv4_20260331__20260331-122848/run_state.json"
       ],
       "last_updated": "2026-04-04T01:13:40Z",
+      "last_updated_by": "codex"
+    },
+    {
+      "id": "TASK-BOOK-ANALYSIS-RETIREMENT-CLARITY",
+      "title": "Mark book_analysis as retired legacy capability and remove ambiguity from the live deep-reading path",
+      "status": "done",
+      "lane": "documentation",
+      "priority": "high",
+      "detail_ref": "docs/history/decision-log.md",
+      "truth_refs": [
+        "docs/product-interaction-model.md",
+        "docs/backend-sequential-lifecycle.md",
+        "docs/api-contract.md"
+      ],
+      "decision_refs": [
+        "DEC-054"
+      ],
+      "job_refs": [],
+      "acceptance_ref": "docs/history/decision-log.md",
+      "next_action": "Keep the public /analysis/* route prefix as compatibility naming for the live deep-reading workflow, keep the legacy book_analysis implementation only as marked compatibility debt, and do not expand it again as if it were an active product lane.",
+      "blocked_by": [],
+      "evidence_refs": [
+        "docs/api-integration.md",
+        "docs/backend-state-aggregation.md",
+        "docs/runtime-modes.md",
+        "docs/backend-reading-mechanism.md",
+        "docs/backend-reading-mechanisms/attentional_v2.md",
+        "reading-companion-backend/AGENTS.md",
+        "reading-companion-backend/src/library/jobs.py",
+        "reading-companion-backend/src/api/app.py",
+        "reading-companion-backend/tests/test_library_api.py",
+        "contract/openapi.public.snapshot.json",
+        "reading-companion-frontend/src/app/lib/generated/api-schema.d.ts"
+      ],
+      "last_updated": "2026-04-07T11:42:29Z",
       "last_updated_by": "codex"
     },
     {

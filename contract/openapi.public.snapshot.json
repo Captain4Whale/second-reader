@@ -3713,8 +3713,8 @@
     },
     "/api/books/{book_id}/analysis-log": {
       "get": {
-        "description": "Return the latest technical log tail for one book analysis.",
-        "operationId": "book_analysis_log_api_books__book_id__analysis_log_get",
+        "description": "Return the latest technical log tail for one book deep-reading run.",
+        "operationId": "get_book_deep_read_log",
         "parameters": [
           {
             "in": "path",
@@ -3810,13 +3810,13 @@
             "description": "Internal Server Error"
           }
         },
-        "summary": "Book Analysis Log"
+        "summary": "Get deep-reading technical log"
       }
     },
     "/api/books/{book_id}/analysis-state": {
       "get": {
-        "description": "Return the current progress-page snapshot for one book.",
-        "operationId": "book_analysis_state_api_books__book_id__analysis_state_get",
+        "description": "Return the current deep-reading progress snapshot for one book.",
+        "operationId": "get_book_deep_read_state",
         "parameters": [
           {
             "in": "path",
@@ -3900,13 +3900,13 @@
             "description": "Internal Server Error"
           }
         },
-        "summary": "Book Analysis State"
+        "summary": "Get deep-reading state"
       }
     },
     "/api/books/{book_id}/analysis/resume": {
       "post": {
-        "description": "Resume a paused or interrupted analysis job from the latest checkpoint.",
-        "operationId": "resume_book_analysis_api_books__book_id__analysis_resume_post",
+        "description": "Resume a paused or interrupted deep-reading job from the latest checkpoint.",
+        "operationId": "resume_book_deep_read",
         "parameters": [
           {
             "in": "path",
@@ -3990,13 +3990,13 @@
             "description": "Internal Server Error"
           }
         },
-        "summary": "Resume Book Analysis"
+        "summary": "Resume deep reading"
       }
     },
     "/api/books/{book_id}/analysis/start": {
       "post": {
-        "description": "Start sequential analysis for an uploaded book that has not begun deep reading yet.",
-        "operationId": "start_book_analysis_api_books__book_id__analysis_start_post",
+        "description": "Start deep reading for an uploaded book that has not begun yet.",
+        "operationId": "start_book_deep_read",
         "parameters": [
           {
             "in": "path",
@@ -4080,7 +4080,7 @@
             "description": "Internal Server Error"
           }
         },
-        "summary": "Start Book Analysis"
+        "summary": "Start deep reading"
       }
     },
     "/api/books/{book_id}/chapters/{chapter_id}": {

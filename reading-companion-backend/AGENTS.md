@@ -15,9 +15,9 @@ Update when: backend-local constraints, recurring pitfalls, or stable implementa
 
 ## Stable Defaults
 - Default to improving `sequential` deep-reading quality.
-- Treat `book_analysis` as a secondary capability unless the task explicitly prioritizes it.
+- Treat `book_analysis` as a retired legacy capability and compatibility debt, not as an active secondary product lane, unless the task explicitly prioritizes legacy cleanup or debugging.
 - Treat `iterator_reader` as the current default mechanism, not as the only permanent backend architecture.
-- Treat `attentional_v2` as the current experimental non-default mechanism: it now has a live parse/read path, but it must not silently become the default or inherit unsupported `book_analysis` behavior.
+- Treat `attentional_v2` as the current experimental non-default mechanism: it now has a live parse/read path, but it must not silently become the default or inherit the retired legacy `book_analysis` behavior.
 - If product intent is unclear, preserve the feeling of a thoughtful co-reader rather than drifting toward a generic summary product.
 - When working on benchmark or evaluation tasks, apply dual diagnosis:
   - inspect mechanism weakness
@@ -110,7 +110,7 @@ Update when: backend-local constraints, recurring pitfalls, or stable implementa
 - Normal product runs must not persist normalized comparison bundles; mechanism export files such as `_mechanisms/<mechanism_key>/exports/normalized_eval_bundle.json` are reserved for explicit eval runs.
 - Compatibility fallback for older output directories is required until an explicit cleanup or migration step removes it.
 - Keep public API naming and normalization concerns at the API layer when internal runtime artifacts still use older names or identifiers.
-- Be conservative about changes that mainly benefit `book_analysis` but add complexity to the main sequential path.
+- Be conservative about changes that mainly benefit retired `book_analysis` compatibility but add complexity to the main sequential path.
 - Keep one stable doc per mechanism under `../docs/backend-reading-mechanisms/`, named by mechanism key.
 - When one mechanism's internals change, update that mechanism doc in the same task.
 

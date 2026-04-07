@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-04-07T11:10:01Z`
+Last updated: `2026-04-07T11:42:29Z`
 
 ## Status Values
 - `active`
@@ -175,6 +175,14 @@ Last updated: `2026-04-07T11:10:01Z`
 - Next: start only after benchmark direction, runtime viability work, and stable-doc promotion timing are intentionally fixed
 
 ## Done
+
+### `TASK-BOOK-ANALYSIS-RETIREMENT-CLARITY` — Mark `book_analysis` as retired legacy capability and remove ambiguity from the live deep-reading path
+- Status: `done`
+- Lane: `documentation`
+- Priority: `high`
+- Detail: `docs/history/decision-log.md`
+- Next: keep the public `/analysis/*` route prefix as compatibility naming for the live deep-reading workflow, keep the legacy `book_analysis` implementation only as marked compatibility debt, and avoid expanding it as if it were an active product lane again.
+- Jobs: none
 
 ### `TASK-EXCERPT-SURFACE-V1.1` — Retune the next excerpt surface incrementally from the notes-guided freeze
 - Status: `done`

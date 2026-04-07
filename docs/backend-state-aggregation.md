@@ -9,7 +9,7 @@ Use `docs/api-contract.md` for exact fields and routes. Use this file to underst
 
 ## Terminology Guard
 - In this document, `analysis-state` and related `analysis/*` surfaces refer to the current sequential deep-reading workflow.
-- They do not refer to the older `book_analysis` capability, even though legacy files and helper names still exist in the repository.
+- They do not refer to the older `book_analysis` capability, which is now retired and retained only as legacy compatibility debt even though some old files and helper names still exist in the repository.
 
 ## Source Artifacts
 - `public/book_document.json`
@@ -54,7 +54,7 @@ Use `docs/api-contract.md` for exact fields and routes. Use this file to underst
 - `_mechanisms/iterator_v1/runtime/plan_state.json`
   - Iterator-private planner progress state.
 - `_mechanisms/iterator_v1/internal/analysis/*`
-  - Iterator-private secondary analysis artifacts such as `book_analysis` outputs.
+  - Iterator-private retired legacy analysis artifacts such as `book_analysis` outputs.
   - These are not part of the primary sequential public state surface.
 - `public/chapters/*_deep_read.json`
   - Completed chapter artifacts.

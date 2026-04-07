@@ -49,7 +49,7 @@ Use `docs/backend-sequential-lifecycle.md` for the job-level workflow over time.
   - mechanism-private artifacts
   - fallback and drift notes
 - Design-only mechanisms belong in the same stable mechanism-doc system as implemented mechanisms, but must be clearly labeled `design-only`.
-- Experimental mechanisms should document their live parse/read entrypoints, runtime artifact root, and any intentionally unsupported modes such as legacy `book_analysis`.
+- Experimental mechanisms should document their live parse/read entrypoints, runtime artifact root, and any intentionally unsupported retired legacy modes such as `book_analysis`.
 
 ## Terminology Discipline
 - Shared docs should prefer neutral terms such as:

@@ -12,6 +12,7 @@ from .book_document import BookDocument
 from .normalized_outputs import NormalizedEvalBundle, ReactionType
 
 
+# `book_analysis` is a retired legacy mode kept only for compatibility/debugging.
 ReadTaskMode = Literal["sequential", "book_analysis"]
 MarkType = Literal["resonance", "blindspot", "bookmark"]
 JobStatus = Literal["queued", "parsing_structure", "ready", "deep_reading", "chapter_note_generation", "paused", "completed", "error"]

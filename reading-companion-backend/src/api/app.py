@@ -72,7 +72,7 @@ from src.library.catalog import (
 from src.library.jobs import (
     analysis_log_payload,
     create_upload_job,
-    launch_book_analysis_job,
+    launch_existing_book_read_job,
     launch_parse_job,
     launch_sequential_job,
     load_job,
@@ -196,9 +196,16 @@ def book_detail(book_id: int) -> BookDetailResponse:
     return BookDetailResponse.model_validate(_book_detail_payload(internal_book_id))
 
 
-@app.get("/api/books/{book_id}/analysis-state", response_model=AnalysisStateResponse, responses=ERROR_MODELS)
-def book_analysis_state(book_id: int) -> AnalysisStateResponse:
-    """Return the current progress-page snapshot for one book."""
+# Historical `/analysis/*` route names still point at the active deep-reading workflow.
+@app.get(
+    "/api/books/{book_id}/analysis-state",
+    response_model=AnalysisStateResponse,
+    responses=ERROR_MODELS,
+    summary="Get deep-reading state",
+    operation_id="get_book_deep_read_state",
+)
+def book_deep_read_state(book_id: int) -> AnalysisStateResponse:
+    """Return the current deep-reading progress snapshot for one book."""
     internal_book_id = _resolve_book_id(book_id)
     _ensure_book_exists(internal_book_id)
     payload = get_analysis_state(internal_book_id, root=_root())
@@ -207,17 +214,30 @@ def book_analysis_state(book_id: int) -> AnalysisStateResponse:
     return AnalysisStateResponse.model_validate(payload)
 
 
-@app.get("/api/books/{book_id}/analysis-log", response_model=AnalysisLogResponse, responses=ERROR_MODELS)
-def book_analysis_log(book_id: int, line_limit: int = Query(default=120, ge=20, le=400)) -> AnalysisLogResponse:
-    """Return the latest technical log tail for one book analysis."""
+@app.get(
+    "/api/books/{book_id}/analysis-log",
+    response_model=AnalysisLogResponse,
+    responses=ERROR_MODELS,
+    summary="Get deep-reading technical log",
+    operation_id="get_book_deep_read_log",
+)
+def book_deep_read_log(book_id: int, line_limit: int = Query(default=120, ge=20, le=400)) -> AnalysisLogResponse:
+    """Return the latest technical log tail for one book deep-reading run."""
     internal_book_id = _resolve_book_id(book_id)
     _ensure_book_exists(internal_book_id)
     return AnalysisLogResponse.model_validate(analysis_log_payload(internal_book_id, root=_root(), line_limit=line_limit))
 
 
-@app.post("/api/books/{book_id}/analysis/start", response_model=AnalysisStartAcceptedResponse, status_code=202, responses=ERROR_MODELS)
-def start_book_analysis(book_id: int) -> AnalysisStartAcceptedResponse:
-    """Start sequential analysis for an uploaded book that has not begun deep reading yet."""
+@app.post(
+    "/api/books/{book_id}/analysis/start",
+    response_model=AnalysisStartAcceptedResponse,
+    status_code=202,
+    responses=ERROR_MODELS,
+    summary="Start deep reading",
+    operation_id="start_book_deep_read",
+)
+def start_book_deep_read(book_id: int) -> AnalysisStartAcceptedResponse:
+    """Start deep reading for an uploaded book that has not begun yet."""
     internal_book_id = _resolve_book_id(book_id)
     detail = _book_detail_payload(internal_book_id)
     status = str(detail.get("status", "not_started"))
@@ -236,7 +256,7 @@ def start_book_analysis(book_id: int) -> AnalysisStartAcceptedResponse:
             mechanism_key = get_backend_reading_mechanism_key()
             if mechanism_key:
                 analysis_kwargs["mechanism_key"] = mechanism_key
-            record = launch_book_analysis_job(internal_book_id, **analysis_kwargs)
+            record = launch_existing_book_read_job(internal_book_id, **analysis_kwargs)
         except FileNotFoundError as exc:
             raise ApiError(status=404, code="BOOK_NOT_FOUND", message=f"Book '{book_id}' was not found.") from exc
         except RuntimeError as exc:
@@ -244,9 +264,16 @@ def start_book_analysis(book_id: int) -> AnalysisStartAcceptedResponse:
     return AnalysisStartAcceptedResponse(**_job_accepted_payload(record))
 
 
-@app.post("/api/books/{book_id}/analysis/resume", response_model=AnalysisResumeAcceptedResponse, status_code=202, responses=ERROR_MODELS)
-def resume_book_analysis(book_id: int) -> AnalysisResumeAcceptedResponse:
-    """Resume a paused or interrupted analysis job from the latest checkpoint."""
+@app.post(
+    "/api/books/{book_id}/analysis/resume",
+    response_model=AnalysisResumeAcceptedResponse,
+    status_code=202,
+    responses=ERROR_MODELS,
+    summary="Resume deep reading",
+    operation_id="resume_book_deep_read",
+)
+def resume_book_deep_read(book_id: int) -> AnalysisResumeAcceptedResponse:
+    """Resume a paused or interrupted deep-reading job from the latest checkpoint."""
     internal_book_id = _resolve_book_id(book_id)
     _ensure_book_exists(internal_book_id)
     try:
@@ -442,8 +469,8 @@ async def ws_job(job_id: str, websocket: WebSocket) -> None:
 
 
 @app.websocket("/api/ws/books/{book_id}/analysis")
-async def ws_book_analysis(book_id: int, websocket: WebSocket) -> None:
-    """Stream live book-scoped analysis updates."""
+async def ws_book_deep_read(book_id: int, websocket: WebSocket) -> None:
+    """Stream live book-scoped deep-reading updates."""
     internal_book_id = _resolve_book_id(book_id)
     try:
         _ensure_book_exists(internal_book_id)

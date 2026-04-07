@@ -37,7 +37,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - job/resume mechanism-key propagation
   - compatibility chapter-result outputs without requiring `iterator_v1`-style `structure.json`
 - It is still not the default mechanism.
-- It is still intentionally unsupported for legacy `book_analysis` mode in this slice.
+- It is still intentionally unsupported for the retired legacy `book_analysis` mode in this slice.
 - Its goal is to preserve sentence-level fidelity while shifting the main reasoning unit from fixed sections toward dynamic meaning units and an explicit attention frontier.
 
 ## Naming Note
@@ -406,7 +406,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
 ## Known Limits / Drift Notes
 - `attentional_v2` is now a stable experimental mechanism doc, not just a future design sketch.
 - The mechanism now runs as a live parse/read path, but it remains non-default.
-- Legacy `book_analysis` mode is intentionally unsupported for `attentional_v2` in this slice.
+- The retired legacy `book_analysis` mode is intentionally unsupported for `attentional_v2` in this slice.
 - The current compatibility projector is still intentionally temporary and section-shaped, even though Phase 8 now exposes additive anchor/locus fields on shared public surfaces.
 - Shared public-surface adapter work is now partially landed, but the frontend and stable API are still section-first in chapter/detail and marks views.
 - Future migration still needed:

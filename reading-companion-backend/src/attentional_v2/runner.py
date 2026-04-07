@@ -506,7 +506,7 @@ def read_attentional_v2(request: ReadRequest, mechanism: MechanismInfo) -> ReadR
     """Run the live attentional_v2 sequential reading loop."""
 
     if request.task_mode == "book_analysis":
-        raise ValueError("attentional_v2 does not support book_analysis mode yet.")
+        raise ValueError("attentional_v2 does not support the retired legacy book_analysis mode.")
 
     provisioned = ensure_canonical_parse(request.book_path, language_mode=request.language_mode)
     if provisioned.book_document is None:

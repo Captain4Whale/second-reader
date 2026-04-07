@@ -230,7 +230,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--mode",
         choices=["sequential", "book_analysis"],
         default="sequential",
-        help="Reader orchestration mode (default: sequential)",
+        help="Reader orchestration mode (default: sequential; book_analysis is retired legacy mode)",
     )
     read_parser.add_argument(
         "--skill-profile",

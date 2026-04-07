@@ -567,7 +567,7 @@ def provision_uploaded_book(
         return None
 
 
-def launch_book_analysis_job(
+def launch_existing_book_read_job(
     book_id: str,
     *,
     mechanism_key: str | None = None,
@@ -575,12 +575,10 @@ def launch_book_analysis_job(
     intent: str | None = None,
     root: Path | None = None,
 ) -> dict:
-    """Start sequential analysis for an existing uploaded book."""
+    """Start the active sequential deep-reading workflow for an existing uploaded book."""
     source_path = source_asset_path(book_id, root=root)
     if not source_path.exists():
         raise FileNotFoundError(source_path)
-    if _normalized_mechanism_key(mechanism_key) == "attentional_v2":
-        raise RuntimeError("attentional_v2 does not support book_analysis mode yet.")
 
     command = [
         sys.executable,
@@ -608,6 +606,25 @@ def launch_book_analysis_job(
         job_id=uuid.uuid4().hex[:12],
         initial_status="queued",
         book_id=book_id,
+    )
+
+
+def launch_book_analysis_job(
+    book_id: str,
+    *,
+    mechanism_key: str | None = None,
+    language: str = "auto",
+    intent: str | None = None,
+    root: Path | None = None,
+) -> dict:
+    """Deprecated compatibility alias for the active existing-book deep-reading launcher."""
+
+    return launch_existing_book_read_job(
+        book_id,
+        mechanism_key=mechanism_key,
+        language=language,
+        intent=intent,
+        root=root,
     )
 
 

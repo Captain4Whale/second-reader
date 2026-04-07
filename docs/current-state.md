@@ -7,11 +7,15 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-04-07T11:10:01Z`
+Last verified: `2026-04-07T11:42:29Z`
 
 ## Current Objective
 - Hold further `excerpt` mechanism polishing for now and treat the completed `excerpt surface v1.1` formal judged run as the current good-enough evidence bundle for product/storytelling decisions.
 - Run one bounded `long-span` smoke on the repaired accumulation harness to verify that the April 6 `bundle_missing` failure is really fixed before any broader long-span decision.
+- Product-boundary clarification is now landed:
+  - `book_analysis` is treated as a retired legacy capability preserved only for compatibility/debugging rather than as a live secondary product lane
+  - public `/analysis/*` routes remain for compatibility, but the active backend launcher and OpenAPI operation ids now describe deep reading explicitly
+  - retained legacy code stays in place for now, marked as retired rather than silently current
 - `excerpt surface v1.1` remains the latest valid formal excerpt evidence lane:
   - formal run:
     - `attentional_v2_excerpt_surface_v1_1_judged_20260406`

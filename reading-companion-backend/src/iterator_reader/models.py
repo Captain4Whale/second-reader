@@ -12,6 +12,7 @@ if TYPE_CHECKING:
 
 
 ChapterStatus = Literal["pending", "in_progress", "done"]
+# `book_analysis` remains only as a retired legacy mode in the iterator runtime.
 ReadMode = Literal["sequential", "book_analysis"]
 ReaderDecision = Literal["pass", "revise", "skip"]
 SkillProfileName = Literal["balanced", "analytical", "curious", "quiet"]

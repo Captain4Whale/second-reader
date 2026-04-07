@@ -208,6 +208,8 @@ except as migration compatibility text where the underlying value remains in the
 ### Upload And Job Polling
 `POST /api/uploads/epub`, `POST /api/books/:id/analysis/start`, `POST /api/books/:id/analysis/resume`, `GET /api/books/:id/analysis-log`, and `GET /api/jobs/:job_id` are part of the active integration surface.
 
+The `/analysis/*` route prefix is historical compatibility naming for the live deep-reading workflow. It does not mean the retired legacy `book_analysis` capability remains part of the current product surface.
+
 Stable expectations:
 - `job_id` is a string
 - `status` is a stable machine-readable job stage and may be `ready` after a deferred upload completes the chapter-level structure parse

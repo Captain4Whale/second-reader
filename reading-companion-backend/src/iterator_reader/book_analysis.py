@@ -1,4 +1,4 @@
-"""Book-level analysis mode with plan-and-execute orchestration."""
+"""Retired legacy book-analysis capability preserved temporarily for compatibility/debugging."""
 
 from __future__ import annotations
 
