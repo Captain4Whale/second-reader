@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-04-07T07:35:00Z`
+Last updated: `2026-04-07T11:10:01Z`
 
 ## Status Values
 - `active`
@@ -18,6 +18,25 @@ Last updated: `2026-04-07T07:35:00Z`
 - `done`
 - `cancelled`
 
+## Active
+
+### `TASK-ACCUMULATION-BENCHMARK-V1` — Build the bounded long-span window benchmark for `coherent_accumulation`
+- Status: `active`
+- Lane: `dataset_platform`
+- Priority: `high`
+- Detail: `docs/implementation/new-reading-mechanism/execution-tracker.md`
+- Next: keep the honest-short freeze as the active long-span draft, but treat `attentional_v2_accumulation_benchmark_v1_judged_20260406` as a diagnosed invalid lane rather than generic mechanism failure. The current active move is the bounded repaired-harness smoke:
+  - job: `bgjob_accumulation_smoke_pair_recovery_20260407`
+  - run: `attentional_v2_accumulation_benchmark_v1_smoke_recovery_pair_20260407`
+  - windows: `supremacy_private_en__13`, `steve_jobs_private_en__17`
+  - goal: verify that completed window outputs can now feed probe generation without `bundle_missing`
+- Jobs:
+  - `bgjob_accumulation_benchmark_v1_first_review_20260404` (`completed`)
+  - `bgjob_accumulation_benchmark_v1_rejudged_first_review_20260404` (`completed`)
+  - `bgjob_accumulation_benchmark_v1_repair_first_review_20260405` (`completed`)
+  - `bgjob_accumulation_benchmark_v1_judged_20260406` (`completed`)
+  - `bgjob_accumulation_smoke_pair_recovery_20260407` (`running`)
+
 ## Blocked
 
 ### `TASK-PHASE9-DECISIVE-EVAL` — Run the split-surface Phase 9 evaluation lanes
@@ -25,7 +44,7 @@ Last updated: `2026-04-07T07:35:00Z`
 - Lane: `mechanism_eval`
 - Priority: `high`
 - Detail: `docs/implementation/new-reading-mechanism/execution-tracker.md`
-- Next: keep `excerpt surface v1.1` as the current valid formal excerpt evidence bundle. The April 7 micro-slice repair retry ran cleanly but regressed the judged gate, so no new full excerpt formal rerun was launched. Treat the April 6 long-span judged lane as completed but invalid: window-unit outputs completed, but probe cases still failed with `bundle_missing`, so the blocker is now one narrower excerpt repair round plus a later frozen-version long-span smoke decision, not waiting on running jobs.
+- Next: keep `excerpt surface v1.1` as the current valid formal excerpt evidence bundle and do not reopen excerpt reruns by default. The active blocker has shifted to long-span validation: the April 6 long-span judged lane is still invalid because probe cases failed with `bundle_missing`, and the bounded repaired-harness smoke `bgjob_accumulation_smoke_pair_recovery_20260407` is now the live recovery step.
 - Jobs:
   - `bgjob_human_notes_excerpt_smoke_light_20260404` (`completed`)
   - `bgjob_human_notes_guided_excerpt_eval_v1_judged_20260404` (`completed`)
@@ -51,27 +70,15 @@ Last updated: `2026-04-07T07:35:00Z`
   - `bgjob_excerpt_surface_v1_1_smoke_supremacy_recovery_20260406` (`completed`)
   - `bgjob_accumulation_benchmark_v1_judged_20260406` (`completed`)
 
+## Parked
+
 ### `TASK-ATTENTIONAL-V2-NARROW-REPAIR-V1` — Run the bounded local-anchor and callback-bridge repair loop on `attentional_v2`
-- Status: `blocked`
+- Status: `parked`
 - Lane: `mechanism_eval`
 - Priority: `high`
 - Detail: `docs/implementation/new-reading-mechanism/execution-tracker.md`
-- Next: the April 7 retry landed new `nodes.py` / `prompts.py` / `runner.py` behavior plus the long-span harness support in `run_accumulation_comparison.py`, and the targeted tests all passed. The repair gate run on `attentional_v2_excerpt_micro_slice_v1_smoke_excerpt_repair_laneA_retry1_20260407` finished cleanly, but its judged stage regressed against the April 5 micro-slice baseline. The live blocker is now specific: late-local anchor carrythrough still collapses into chapter-end retrospect on `xidaduo`, while `nawaer` callback bridge is improved but still too chapter-level. No `meiguoren` guard rerun and no new full excerpt formal rerun were launched.
+- Next: the April 7 retry landed new `nodes.py` / `prompts.py` / `runner.py` behavior plus the long-span harness support in `run_accumulation_comparison.py`, and the targeted tests all passed. The repair gate run on `attentional_v2_excerpt_micro_slice_v1_smoke_excerpt_repair_laneA_retry1_20260407` finished cleanly, but its judged stage regressed against the April 5 micro-slice baseline. Keep the known misses explicit, but do not reopen this repair lane by default while the product/demo decision is using the completed excerpt formal run as good-enough evidence and long-span smoke is the active priority.
 - Jobs: none
-
-### `TASK-ACCUMULATION-BENCHMARK-V1` — Build the bounded long-span window benchmark for `coherent_accumulation`
-- Status: `blocked`
-- Lane: `dataset_platform`
-- Priority: `high`
-- Detail: `docs/implementation/new-reading-mechanism/execution-tracker.md`
-- Next: keep the honest-short freeze as the active long-span draft, but treat `attentional_v2_accumulation_benchmark_v1_judged_20260406` as a diagnosed invalid lane rather than generic mechanism failure. All `5` window-unit files show both mechanisms `completed` with normalized bundles, while all `7` probe cases still fail with `bundle_missing`. The next long-span move is not another full judged run; it is `1-2` smoke windows on the repaired harness after the excerpt mechanism version freezes again.
-- Jobs:
-  - `bgjob_accumulation_benchmark_v1_first_review_20260404` (`completed`)
-  - `bgjob_accumulation_benchmark_v1_rejudged_first_review_20260404` (`completed`)
-  - `bgjob_accumulation_benchmark_v1_repair_first_review_20260405` (`completed`)
-  - `bgjob_accumulation_benchmark_v1_judged_20260406` (`completed`)
-
-## Parked
 
 ### `TASK-RUNTIME-VIABILITY-GATES` — Keep runtime viability and non-mainline comparison lanes paused under the reduced eval scope
 - Status: `parked`
