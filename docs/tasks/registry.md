@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-04-06T16:14:18Z`
+Last updated: `2026-04-07T07:35:00Z`
 
 ## Status Values
 - `active`
@@ -25,7 +25,7 @@ Last updated: `2026-04-06T16:14:18Z`
 - Lane: `mechanism_eval`
 - Priority: `high`
 - Detail: `docs/implementation/new-reading-mechanism/execution-tracker.md`
-- Next: treat `excerpt surface v1.1` as the current valid excerpt evidence bundle, and treat the long-span judged lane as completed but invalid because it ended in blanket `judge_unavailable` / `mechanism_failure`. The split-surface eval task is no longer waiting on running jobs; it is blocked on the paused `attentional_v2` narrow-repair loop and on a later explicit decision about how to reopen long-span evidence.
+- Next: keep `excerpt surface v1.1` as the current valid formal excerpt evidence bundle. The April 7 micro-slice repair retry ran cleanly but regressed the judged gate, so no new full excerpt formal rerun was launched. Treat the April 6 long-span judged lane as completed but invalid: window-unit outputs completed, but probe cases still failed with `bundle_missing`, so the blocker is now one narrower excerpt repair round plus a later frozen-version long-span smoke decision, not waiting on running jobs.
 - Jobs:
   - `bgjob_human_notes_excerpt_smoke_light_20260404` (`completed`)
   - `bgjob_human_notes_guided_excerpt_eval_v1_judged_20260404` (`completed`)
@@ -56,7 +56,7 @@ Last updated: `2026-04-06T16:14:18Z`
 - Lane: `mechanism_eval`
 - Priority: `high`
 - Detail: `docs/implementation/new-reading-mechanism/execution-tracker.md`
-- Next: the automatic loop is paused at its own stop rule. Round 1 improved the micro-slice but failed the `meiguoren` guard and only partially fixed `nawaer`; round 2 passed targeted `pytest` but the smoke exposed late-tail open-span drag in `xidaduo` and still no explicit earlier-target bridge in `nawaer`. No round-2 judged rerun or new full formal excerpt rerun was launched. Any further repair now needs an explicit new round outside V1's two-round cap.
+- Next: the April 7 retry landed new `nodes.py` / `prompts.py` / `runner.py` behavior plus the long-span harness support in `run_accumulation_comparison.py`, and the targeted tests all passed. The repair gate run on `attentional_v2_excerpt_micro_slice_v1_smoke_excerpt_repair_laneA_retry1_20260407` finished cleanly, but its judged stage regressed against the April 5 micro-slice baseline. The live blocker is now specific: late-local anchor carrythrough still collapses into chapter-end retrospect on `xidaduo`, while `nawaer` callback bridge is improved but still too chapter-level. No `meiguoren` guard rerun and no new full excerpt formal rerun were launched.
 - Jobs: none
 
 ### `TASK-ACCUMULATION-BENCHMARK-V1` — Build the bounded long-span window benchmark for `coherent_accumulation`
@@ -64,7 +64,7 @@ Last updated: `2026-04-06T16:14:18Z`
 - Lane: `dataset_platform`
 - Priority: `high`
 - Detail: `docs/implementation/new-reading-mechanism/execution-tracker.md`
-- Next: keep the honest-short freeze as the active long-span draft, but do not treat `attentional_v2_accumulation_benchmark_v1_judged_20260406` as usable evidence: the run completed and emitted `aggregate/report/llm_usage`, yet all `7` probes ended `judge_unavailable` with `mechanism_failure`. Diagnose the per-window failure surface before making any next long-span decision.
+- Next: keep the honest-short freeze as the active long-span draft, but treat `attentional_v2_accumulation_benchmark_v1_judged_20260406` as a diagnosed invalid lane rather than generic mechanism failure. All `5` window-unit files show both mechanisms `completed` with normalized bundles, while all `7` probe cases still fail with `bundle_missing`. The next long-span move is not another full judged run; it is `1-2` smoke windows on the repaired harness after the excerpt mechanism version freezes again.
 - Jobs:
   - `bgjob_accumulation_benchmark_v1_first_review_20260404` (`completed`)
   - `bgjob_accumulation_benchmark_v1_rejudged_first_review_20260404` (`completed`)

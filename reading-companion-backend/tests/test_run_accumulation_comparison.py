@@ -325,6 +325,25 @@ def test_stage_judge_and_merge_use_existing_bundles(monkeypatch, tmp_path: Path)
     assert (run_root / "summary" / "aggregate.json").exists()
 
 
+def test_existing_bundle_payload_recovers_from_completed_unit_payload(tmp_path: Path) -> None:
+    run_root = tmp_path / "runs" / "acc_recover_demo"
+    _write_json(
+        run_root / "shards" / "seed" / "units" / "window_a.json",
+        _window_result(),
+    )
+
+    recovered = accumulation_comparison._existing_bundle_payload(
+        run_root,
+        window_case_id="window_a",
+        mechanism_key="attentional_v2",
+    )
+
+    assert recovered is not None
+    assert (run_root / "shards" / "seed" / "bundles" / "attentional_v2" / "window_a.json").exists()
+    assert recovered[1]["status"] == "completed"
+    assert recovered[1]["normalized_eval_bundle"]["reactions"]
+
+
 def test_skip_existing_reuses_prior_probe_result(monkeypatch, tmp_path: Path) -> None:
     window_dataset = _bootstrap_window_dataset(tmp_path)
     probe_dataset = _bootstrap_probe_dataset(tmp_path)

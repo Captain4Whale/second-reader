@@ -845,6 +845,34 @@ def read_attentional_v2(request: ReadRequest, mechanism: MechanismInfo) -> ReadR
                     anchor_memory = phase5["anchor_memory"]  # type: ignore[assignment]
                     knowledge_activations = phase5["knowledge_activations"]  # type: ignore[assignment]
                     move_history = phase5["move_history"]  # type: ignore[assignment]
+                    bridge_result = dict(phase5.get("bridge_result") or {})
+                    primary_attribution = dict(bridge_result.get("primary_attribution") or {})
+                    if (
+                        _clean_text(bridge_result.get("decision")) == "bridge"
+                        and (
+                            _clean_text(primary_attribution.get("relation_explanation"))
+                            or _clean_text(bridge_result.get("reason"))
+                        )
+                    ):
+                        append_activity_event(
+                            output_dir,
+                            {
+                                "type": "bridge_resolved",
+                                "stream": "mindstream",
+                                "kind": "thought",
+                                "visibility": "default",
+                                "message": _clean_text(primary_attribution.get("relation_explanation"))
+                                or _clean_text(bridge_result.get("reason")),
+                                "chapter_id": chapter_id,
+                                "chapter_ref": chapter_ref,
+                                "segment_ref": _compatibility_section_ref(chapter_id, sentence),
+                                "anchor_quote": _clean_text(primary_attribution.get("target_quote")),
+                                "reading_locus": _reading_locus(chapter_id, chapter_ref, sentence, local_buffer),
+                                "move_type": "bridge",
+                                "current_excerpt": _clean_text(primary_attribution.get("current_quote"))
+                                or _clean_text(sentence.get("text"))[:220],
+                            },
+                        )
 
                 if _clean_text(closure_result.get("closure_decision")) == "close":
                     meaning_units_in_chapter.append(

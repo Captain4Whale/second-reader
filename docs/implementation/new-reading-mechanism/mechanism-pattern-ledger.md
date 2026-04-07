@@ -208,7 +208,27 @@ This file is a living working ledger. Stable rules still belong in `docs/backend
 - Next action:
   - prioritize a future narrow repair that teaches the mechanism to say "callback cue present but honest anchor unavailable" instead of forcing a weak bridge
 
-### 7. Benchmark winner/loser language alone is insufficient memory
+### 7. Cleaner runtime scheduling does not by itself repair late-local anchor carrythrough
+- Pattern kind: `failure_mode`
+- Source mechanism: `attentional_v2`
+- Potential destination: next excerpt narrow-repair round
+- Why it matters:
+  - A mechanism can stop overreading operationally, finish cleanly, and still lose judged quality if it cannot stay anchored to the exact late-arriving local hinge.
+  - This is now the main excerpt blocker after the throughput repair and the April 7 retry.
+- Contributing causes:
+  - the local loop is still willing to lift from the current sentence into broader same-chapter pressure before the exact local relation is made explicit
+  - late-local philosophical or paradox hinges can still be dragged into a larger open span and then resurfaced as a chapter-end retrospect
+  - callback restraint improved, but the same diffuse carrythrough also makes bridge cases sound chapter-level instead of earlier-targeted
+- Evidence:
+  - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_excerpt_micro_slice_v1_smoke_excerpt_repair_laneA_retry1_20260407/summary/report.md`
+  - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_excerpt_micro_slice_v1_smoke_excerpt_repair_laneA_retry1_20260407/shards/default/cases/xidaduo_private_zh__15__tension_reversal__seed_1.json`
+  - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_excerpt_micro_slice_v1_smoke_excerpt_repair_laneA_retry1_20260407/shards/default/cases/xidaduo_private_zh__15__tension_reversal__seed_3.json`
+  - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_excerpt_micro_slice_v1_smoke_excerpt_repair_laneA_retry1_20260407/shards/default/cases/nawaer_baodian_private_zh__22__callback_bridge__seed_1.json`
+- Status: `observed`
+- Next action:
+  - if the excerpt repair loop is reopened, keep the operational cleanliness wins and focus the next narrow round on exact current-sentence carrythrough plus explicit earlier-target bridge attribution
+
+### 8. Benchmark winner/loser language alone is insufficient memory
 - Pattern kind: `anti_pattern`
 - Source mechanism: evaluation process itself
 - Potential destination: all future comparison passes
@@ -223,7 +243,7 @@ This file is a living working ledger. Stable rules still belong in `docs/backend
 - Next action:
   - require each meaningful evaluation closeout to include result, causal interpretation, and selective implementation disposition rather than winner/loser prose alone
 
-### 8. A full judged lane can finish cleanly yet still be unusable if every case falls back to `mechanism_unavailable`
+### 9. A full judged lane can finish cleanly yet still be unusable if every case falls back to `mechanism_unavailable`
 - Pattern kind: `anti_pattern`
 - Source mechanism: evaluation harness / provider posture
 - Potential destination: all future judged eval launches
@@ -243,7 +263,7 @@ This file is a living working ledger. Stable rules still belong in `docs/backend
   - rerun the judged local excerpt lane only under a quota-safe target / wait-budget posture
   - do not convert this failed lane into mechanism findings
 
-### 9. Long-span probes that share a theme but lack explicit carryforward are false positives for `coherent_accumulation`
+### 10. Long-span probes that share a theme but lack explicit carryforward are false positives for `coherent_accumulation`
 - Pattern kind: `anti_pattern`
 - Source mechanism: accumulation benchmark v1 probe construction
 - Potential destination: all future long-span benchmark building
@@ -263,7 +283,7 @@ This file is a living working ledger. Stable rules still belong in `docs/backend
   - fix chapter/span metadata before rerunning review
   - allow `1-2` strong probes per window instead of forcing weak thirds
 
-### 10. Attentional V2 local-cycle call amplification can make a semantically promising run operationally unusable
+### 11. Attentional V2 local-cycle call amplification can make a semantically promising run operationally unusable
 - Pattern kind: `failure_mode`
 - Source mechanism: `attentional_v2`
 - Potential destination: immediate `attentional_v2` throughput repair
@@ -337,7 +357,7 @@ This file is a living working ledger. Stable rules still belong in `docs/backend
   - do not open a second broad throughput pass immediately
   - keep the next narrow mechanism follow-up focused on exact target-anchor coverage in the remaining `xidaduo` local misses before revisiting deeper schedule changes
 
-### 11. Full-surface judged excerpt runs can waste most of their budget on early heavy low-ROI chapters
+### 12. Full-surface judged excerpt runs can waste most of their budget on early heavy low-ROI chapters
 - Pattern kind: `anti_pattern`
 - Source mechanism: evaluation launch posture
 - Potential destination: all future excerpt judged launches
@@ -365,7 +385,7 @@ This file is a living working ledger. Stable rules still belong in `docs/backend
     - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_excerpt_micro_slice_v1_judged_throughput_repair_20260405`
   - with that gate now cleared, move next to the fuller excerpt surface rather than rerunning another large judged lane immediately
 
-### 12. Attentional V2 can stay chapter-locally coherent yet still miss the exact designated anchor line
+### 13. Attentional V2 can stay chapter-locally coherent yet still miss the exact designated anchor line
 - Pattern kind: `failure_mode`
 - Source mechanism: `attentional_v2`
 - Potential destination: narrow `zoom_now` / closure anchor-carrythrough refinement
@@ -389,7 +409,7 @@ This file is a living working ledger. Stable rules still belong in `docs/backend
   - inspect these exact `xidaduo` misses before the next broad judged rerun
   - prefer a narrow anchor-carrythrough repair inside the existing `zoom_now` / closure flow rather than reopening generic reaction density
 
-### 13. Attentional V2 excerpt-surface strength survives the throughput repair when the pressure is chapter-local and tension-heavy
+### 14. Attentional V2 excerpt-surface strength survives the throughput repair when the pressure is chapter-local and tension-heavy
 - Pattern kind: `strength`
 - Source mechanism: `attentional_v2`
 - Potential destination: preserve as the protected excerpt-reading baseline
@@ -414,7 +434,7 @@ This file is a living working ledger. Stable rules still belong in `docs/backend
   - preserve this chapter-local pressure tracking as a design invariant
   - do not trade it away for a brittle exact-anchor hack that only improves a narrow bucket
 
-### 14. Attentional V2 still loses when the benchmark demands exact late-local anchor carrythrough rather than nearby same-chapter pressure
+### 15. Attentional V2 still loses when the benchmark demands exact late-local anchor carrythrough rather than nearby same-chapter pressure
 - Pattern kind: `failure_mode`
 - Source mechanism: `attentional_v2`
 - Potential destination: narrow local-anchor refinement inside `zoom_now` / closure
@@ -435,7 +455,7 @@ This file is a living working ledger. Stable rules still belong in `docs/backend
     - improve exact anchor carrythrough on late-local reversals
     - do not reopen broad reaction-density or throughput work first
 
-### 15. Iterator V1 still retains a narrow local-anchor and small backward-bridge advantage worth selective reuse
+### 16. Iterator V1 still retains a narrow local-anchor and small backward-bridge advantage worth selective reuse
 - Pattern kind: `adoption_candidate`
 - Source mechanism: `iterator_v1`
 - Potential destination: `attentional_v2`
@@ -455,7 +475,7 @@ This file is a living working ledger. Stable rules still belong in `docs/backend
   - look for a selective way to preserve V1-style exact local placement and tiny backward-bridge honesty inside V2
   - do not import V1's external-theory drift or loose associative expansion
 
-### 16. Late low-pressure open meaning units can stay alive and turn a repaired local cycle back into overread
+### 17. Late low-pressure open meaning units can stay alive and turn a repaired local cycle back into overread
 - Pattern kind: `failure_mode`
 - Source mechanism: `attentional_v2`
 - Potential destination: next narrow stale-unit closure guard inside `zoom_now` / local-cycle control
@@ -480,7 +500,7 @@ This file is a living working ledger. Stable rules still belong in `docs/backend
 - Next action:
   - if the narrow repair loop is reopened later, prioritize a deterministic stale-unit close/reset rule before adding more prompt pressure or more local read depth
 
-### 17. Callback-cue widening alone still collapses into chapter-end retrospect unless an explicit earlier target is forced
+### 18. Callback-cue widening alone still collapses into chapter-end retrospect unless an explicit earlier target is forced
 - Pattern kind: `failure_mode`
 - Source mechanism: `attentional_v2`
 - Potential destination: next narrow bridge-specificity refinement

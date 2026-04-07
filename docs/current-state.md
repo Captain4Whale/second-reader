@@ -7,41 +7,80 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-04-06T16:14:18Z`
+Last verified: `2026-04-07T05:43:17Z`
 
 ## Current Objective
-- Close the `Attentional V2 窄修复自动闭环计划 V1` faithfully at its blocker gate instead of leaving the repo state looking like work is still running:
-  - `excerpt surface v1.1` remains the latest valid formal excerpt evidence lane:
-    - formal run:
-      - `attentional_v2_excerpt_surface_v1_1_judged_20260406`
-    - top-line result:
-      - `selective_legibility`: `attentional_v2 = 27`, `iterator_v1 = 21`, `tie = 11`, average `1.98` vs `1.427`
-      - `insight_and_clarification`: `attentional_v2 = 19`, `iterator_v1 = 16`, `tie = 8`, average `2.2` vs `1.688`
-    - machine outputs plus the interpretation report remain the durable excerpt evidence bundle
-  - the long-span judged lane is no longer running:
-    - judged run:
-      - `attentional_v2_accumulation_benchmark_v1_judged_20260406`
-    - outputs:
-      - `summary/aggregate.json`
-      - `summary/report.md`
-      - `summary/llm_usage.json`
-    - result:
-      - `coherent_accumulation`: `7` cases, `tie = 7`, `judge_unavailable = 7`, `mechanism_failure = 7`
-      - `insight_and_clarification`: `7` cases, `tie = 7`, `judge_unavailable = 7`, `mechanism_failure = 7`
-    - interpretation:
-      - treat this as a completed but invalid long-span evidence lane, not as a still-running job and not as usable mechanism proof
-  - the narrow excerpt repair auto-loop has used its allowed two focused rounds and is now paused on blocker:
-    - round 1 landed local-anchor / callback-honesty scaffolding and cleared the bounded micro-slice smoke plus judged gate, but still failed the `meiguoren` guard and only partially improved the `nawaer` callback case
-    - round 2 landed additional local-tail narrowing and explicit callback-cue routing, and the targeted `pytest` slice passed with `33` tests
-    - round-2 smoke `attentional_v2_excerpt_micro_slice_v1_smoke_narrow_repair_round2_20260406` exposed two blocking issues:
-      - `xidaduo_private_zh__chapter_15` dragged into a `91`-sentence open meaning-unit span by `c15-s248`
-      - `nawaer_baodian_private_zh__chapter_22` still emitted only `rx:Chapter_22:c22-s87:retrospect:1` instead of a concrete earlier-target callback bridge
-    - per the plan's two-round limit, no round-2 judged rerun, no second guard rerun, and no new full `excerpt surface v1.1` formal rerun were launched
+- Execute `Excerpt 修复优先、Long-Span 并行诊断执行计划 V1` with excerpt as the mainline and long-span as diagnosis-only support.
+- `excerpt surface v1.1` remains the latest valid formal excerpt evidence lane:
+  - formal run:
+    - `attentional_v2_excerpt_surface_v1_1_judged_20260406`
+  - top-line result:
+    - `selective_legibility`: `attentional_v2 = 27`, `iterator_v1 = 21`, `tie = 11`, average `1.98` vs `1.427`
+    - `insight_and_clarification`: `attentional_v2 = 19`, `iterator_v1 = 16`, `tie = 8`, average `2.2` vs `1.688`
+  - machine outputs plus the interpretation report remain the durable excerpt evidence bundle.
+- `Lane A` April 7 repair-first retry is now complete enough to evaluate and is currently the active blocker:
+  - landed code:
+    - `reading-companion-backend/src/attentional_v2/nodes.py`
+    - `reading-companion-backend/src/attentional_v2/prompts.py`
+    - `reading-companion-backend/src/attentional_v2/runner.py`
+    - `reading-companion-backend/eval/attentional_v2/run_accumulation_comparison.py`
+  - targeted test slices passed:
+    - `reading-companion-backend/tests/test_attentional_v2_nodes.py`
+    - `reading-companion-backend/tests/test_attentional_v2_bridge.py`
+    - `reading-companion-backend/tests/test_run_accumulation_comparison.py`
+    - `reading-companion-backend/tests/test_attentional_v2_scaffold.py`
+    - `reading-companion-backend/tests/test_run_excerpt_comparison.py`
+  - reuse-smoke repair gate run root:
+    - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_excerpt_micro_slice_v1_smoke_excerpt_repair_laneA_retry1_20260407`
+  - bundle-stage smoke outcome:
+    - `2` units completed cleanly
+    - `13` excerpt cases emitted
+    - `request_count = 125`, `error_count = 0`, `retry_count = 1`
+    - `by_target` traffic split was visible and roughly shared:
+      - `MiniMax-M2.7-personal = 78`
+      - `MiniMax-M2.7-personal-2 = 47`
+    - `mechanism_failure_count = 0`
+    - `judge_unavailable_count = 0`
+  - judged stage reused the same smoke bundles and finished cleanly, but it failed the baseline gate:
+    - `selective_legibility`: `attentional_v2 = 7`, `iterator_v1 = 4`, `tie = 2`, average `1.954` vs `1.692`
+    - `insight_and_clarification`: `attentional_v2 = 5`, `iterator_v1 = 2`, `tie = 1`, average `2.775` vs `1.425`
+    - baseline to beat from `attentional_v2_excerpt_micro_slice_v1_judged_throughput_repair_20260405`:
+      - `selective_legibility`: `8 / 4 / 1`, average `2.277` vs `0.938`
+      - `insight_and_clarification`: `6 / 1 / 1`, average `2.25` vs `0.6`
+  - interpretation:
+    - the new repair posture fixed the operational overread / unfinished-run problem enough to run cleanly
+    - `nawaer_baodian_private_zh__22__callback_bridge__seed_1` improved from a pure chapter-end retrospect to a selective-legibility win for `attentional_v2`, but still only tied on `insight_and_clarification` because the backward bridge remained chapter-level rather than explicitly earlier-targeted
+    - `xidaduo_private_zh__15` still regressed on the late-local hinge bucket because V2 collapsed to a chapter-end retrospect around `15.45` or nearby same-chapter material instead of carrying the exact local anchor through `15.19 / 15.34 / 15.40-15.41`
+    - because the micro-slice judged gate regressed, no new full `excerpt surface v1.1` formal rerun was launched
+    - `meiguoren_de_xingge_private_zh__19` was not rerun as a guard unit because the micro-slice itself already failed the promotion gate
+- `Lane B` long-span diagnosis is now clear enough to stop calling the April 6 lane a generic mechanism failure:
+  - invalid judged run:
+    - `attentional_v2_accumulation_benchmark_v1_judged_20260406`
+  - aggregate/report still show `7` probe ties with `judge_unavailable = 7` and `mechanism_failure = 7`
+  - but the real failure map is:
+    - all `5` window-unit payloads record both mechanisms as `status = completed`
+    - all `5` window outputs contain normalized export bundles for both mechanisms
+    - all `7` probe case payloads still say both mechanisms are `missing` with `error = bundle_missing`
+  - interpretation:
+    - treat the April 6 long-span lane as a completed but invalid harness/materialization failure, not as mechanism evidence
+    - the landed recovery support in `run_accumulation_comparison.py` is now the basis for the next long-span smoke, not a reason to reopen full judged work immediately
 - Current repo posture:
   - there are no active background jobs in `reading-companion-backend/state/job_registry/active_jobs.md`
-  - do not reopen dataset retune or long-span redesign inside this automatic chain
+  - do not launch a new full excerpt formal rerun or a new long-span formal judged rerun yet
+  - do not reopen dataset retune or long-span redesign inside this repair-first / diagnosis-only pass
 
 ## Current Strategy
+- Current mainline posture as of `2026-04-07`:
+  - `excerpt` remains the mainline lane
+  - `long-span` remains a diagnosis and small-sample preparation lane only
+  - the next excerpt move is not a full rerun:
+    - reopen one narrower mechanism repair round focused on late-local anchor carrythrough on `xidaduo`
+    - keep the gained `nawaer` callback honesty / restraint
+    - rerun the same micro-slice gate first
+    - only if that gate passes again, rerun the `meiguoren` guard unit and then consider a new full `excerpt surface v1.1` formal rerun
+  - the next long-span move is not a new judged plan:
+    - use the landed bundle-recovery support plus the failure map to run `1-2` long-span smoke windows only after the excerpt mechanism version is frozen again
+  - the detailed background below remains useful, but where it conflicts with the April 7 lane update above, the April 7 update wins
 - Evaluation now uses two intentionally different semantic surfaces:
   - `excerpt surface`
     - primary targets:

@@ -82,6 +82,7 @@ _SHARP_LOCAL_TRIGGER_SIGNAL_KINDS = {
     "discourse_turn",
     "sentence_role_shift",
 }
+_NARROW_TAIL_FORCE_CLOSE_CADENCE = 8
 _CALLBACK_MARKERS = (
     "as noted earlier",
     "as mentioned earlier",
@@ -430,6 +431,16 @@ def _find_sentence_for_anchor_quote(
     return None
 
 
+def _quotes_share_local_focus(left: str, right: str) -> bool:
+    """Return whether two compact quotes clearly point at the same local hinge."""
+
+    cleaned_left = _clean_text(left)
+    cleaned_right = _clean_text(right)
+    if not cleaned_left or not cleaned_right:
+        return False
+    return cleaned_left in cleaned_right or cleaned_right in cleaned_left
+
+
 def _build_anchor_focus(
     *,
     anchor_quote: str,
@@ -604,6 +615,30 @@ def _should_force_close_local_hinge(
     return bool(_clean_text(closure_result.get("meaning_unit_summary")) or closure_result.get("reaction_candidate"))
 
 
+def _should_force_close_overlong_narrow_tail(
+    *,
+    boundary_context: dict[str, object] | None,
+    anchor_relation: AnchorRelationAssessment | None,
+    closure_result: MeaningUnitClosureResult,
+    local_textual_cues: list[dict[str, str]],
+) -> bool:
+    """Return whether an overlong narrowed tail should close honestly instead of dragging on."""
+
+    if _clean_text((boundary_context or {}).get("local_cycle_scope")) != "narrow_focus_tail":
+        return False
+    try:
+        cadence_counter = int((boundary_context or {}).get("cadence_counter", 0) or 0)
+    except (TypeError, ValueError):
+        cadence_counter = 0
+    if cadence_counter < _NARROW_TAIL_FORCE_CLOSE_CADENCE:
+        return False
+    if _clean_text(closure_result.get("closure_decision")) == "close":
+        return False
+    if _anchor_relation_allows_visible_reaction(anchor_relation):
+        return False
+    return True
+
+
 def _micro_selective_reaction_candidate(
     *,
     zoom_result: ZoomReadResult | None,
@@ -643,6 +678,27 @@ def _micro_selective_reaction_candidate(
         "related_anchor_quotes": [],
         "search_query": "",
         "search_results": [],
+    }
+
+
+def _align_reaction_candidate_to_anchor_focus(
+    reaction_candidate: ReactionCandidate | None,
+    *,
+    anchor_focus: AnchorFocus | None,
+) -> ReactionCandidate | None:
+    """Keep a visible candidate answerable to the same local focus packet."""
+
+    if reaction_candidate is None:
+        return None
+    focus_quote = _clean_text((anchor_focus or {}).get("anchor_quote"))
+    if not focus_quote:
+        return reaction_candidate
+    candidate_anchor = _clean_text(reaction_candidate.get("anchor_quote"))
+    if candidate_anchor and _quotes_share_local_focus(candidate_anchor, focus_quote):
+        return reaction_candidate
+    return {
+        **reaction_candidate,
+        "anchor_quote": focus_quote,
     }
 
 
@@ -1196,7 +1252,20 @@ def run_phase4_local_cycle(
             "unresolved_pressure_note": "meaning_unit_closure_unavailable",
         }
     closure_local_cues = _local_textual_cues(current_span_sentences)
-    if _should_hold_local_closure(
+    if _should_force_close_overlong_narrow_tail(
+        boundary_context=boundary_context,
+        anchor_relation=closure_result.get("anchor_relation"),
+        closure_result=closure_result,
+        local_textual_cues=closure_local_cues,
+    ):
+        unresolved_note = _clean_text(closure_result.get("unresolved_pressure_note"))
+        closure_result = {
+            **closure_result,
+            "closure_decision": "close",
+            "reaction_candidate": None,
+            "unresolved_pressure_note": unresolved_note or "local_focus_did_not_close_before_tail_guardrail",
+        }
+    elif _should_hold_local_closure(
         anchor_relation=closure_result.get("anchor_relation"),
         closure_result=closure_result,
         current_span_sentences=current_span_sentences,
@@ -1264,6 +1333,10 @@ def run_phase4_local_cycle(
                 merged_bridge_candidates.append(candidate)
 
     reaction_result: ReactionEmissionResult | None = None
+    closure_anchor_focus = _normalize_anchor_focus(
+        closure_result.get("anchor_focus"),
+        fallback=_normalize_anchor_focus((zoom_result or {}).get("anchor_focus"), fallback=None),
+    )
     suggested_reaction = closure_result.get("reaction_candidate")
     compact_local_anchor = bool(
         zoom_result
@@ -1279,6 +1352,10 @@ def run_phase4_local_cycle(
         closure_result=closure_result,
         local_textual_cues=reaction_local_cues,
         focal_text=_clean_text(focal_sentence.get("text")),
+    )
+    effective_suggested_reaction = _align_reaction_candidate_to_anchor_focus(
+        effective_suggested_reaction,
+        anchor_focus=closure_anchor_focus,
     )
     should_consider_reaction = (
         _anchor_relation_allows_visible_reaction(closure_result.get("anchor_relation"))
@@ -1310,13 +1387,29 @@ def run_phase4_local_cycle(
                     "chosen_move": str(controller_result.get("chosen_move", "advance")),
                     "compact_local_anchor": compact_local_anchor,
                     "synthetic_local_candidate": bool(effective_suggested_reaction and not suggested_reaction),
+                    "anchor_focus_quote": _clean_text((closure_anchor_focus or {}).get("anchor_quote")),
                     "anchor_relation_status": _clean_text((closure_result.get("anchor_relation") or {}).get("relation_status")),
                     "anchor_relation_note": _clean_text((closure_result.get("anchor_relation") or {}).get("relation_to_focus")),
                     "same_chapter_pressure_only": bool((closure_result.get("anchor_relation") or {}).get("same_chapter_pressure_only")),
+                    "local_cycle_scope": _clean_text((boundary_context or {}).get("local_cycle_scope")),
                 },
                 output_language=output_language,
                 output_dir=output_dir,
             )
+            emitted_reaction = reaction_result.get("reaction") if isinstance(reaction_result.get("reaction"), dict) else None
+            focus_quote = _clean_text((closure_anchor_focus or {}).get("anchor_quote"))
+            emitted_anchor = _clean_text((emitted_reaction or {}).get("anchor_quote"))
+            if (
+                reaction_result.get("decision") == "emit"
+                and focus_quote
+                and emitted_anchor
+                and not _quotes_share_local_focus(emitted_anchor, focus_quote)
+            ):
+                reaction_result = {
+                    "decision": "withhold",
+                    "reason": "reaction_anchor_drifted_from_local_focus",
+                    "reaction": None,
+                }
         except ReaderLLMError as exc:
             llm_fallbacks.append({"node": "reaction_emission", "problem_code": exc.problem_code})
             reaction_result = {

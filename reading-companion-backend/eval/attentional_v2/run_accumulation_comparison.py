@@ -489,28 +489,86 @@ def _bundle_payload_is_structurally_complete(payload: dict[str, Any]) -> bool:
     return bool(payload.get("status")) and "normalized_eval_bundle" in payload and "bundle_summary" in payload
 
 
+def _path_shard_id(path: Path) -> str:
+    parts = list(path.parts)
+    try:
+        shard_index = parts.index("shards")
+    except ValueError:
+        return "default"
+    if shard_index + 1 >= len(parts):
+        return "default"
+    return parts[shard_index + 1]
+
+
+def _load_exported_bundle_payload(*, output_dir: Path, mechanism_key: str) -> dict[str, Any] | None:
+    export_path = output_dir / "_mechanisms" / mechanism_key / "exports" / "normalized_eval_bundle.json"
+    bundle = _load_json_if_exists(export_path)
+    if bundle is None:
+        return None
+    mechanism_label = _clean_text(bundle.get("mechanism_label")) or mechanism_key
+    payload = {
+        "status": "completed",
+        "mechanism_key": mechanism_key,
+        "mechanism_label": mechanism_label,
+        "output_dir": str(output_dir),
+        "normalized_eval_bundle": bundle,
+        "bundle_summary": _summarize_bundle(bundle),
+        "error": "",
+    }
+    return payload if payload.get("status") == "completed" and _bundle_payload_is_structurally_complete(payload) else None
+
+
+def _recover_bundle_payload(run_root: Path, *, window_case_id: str, mechanism_key: str) -> tuple[Path, dict[str, Any]] | None:
+    window_candidates = [path for path in run_root.glob(f"shards/*/units/{window_case_id}.json") if path.is_file()]
+    for window_path in sorted(window_candidates, key=lambda item: (item.stat().st_mtime_ns, str(item)), reverse=True):
+        window_payload = _load_json_if_exists(window_path)
+        if window_payload is None:
+            continue
+        mechanism_payload = dict((window_payload.get("mechanisms") or {}).get(mechanism_key) or {})
+        shard_id = _path_shard_id(window_path)
+        destination = _bundle_payload_path(run_root, shard_id, mechanism_key, window_case_id)
+        if mechanism_payload.get("status") == "completed" and _bundle_payload_is_structurally_complete(mechanism_payload):
+            _json_dump(destination, mechanism_payload)
+            return destination, mechanism_payload
+        output_dir_text = _clean_text(mechanism_payload.get("output_dir"))
+        if output_dir_text:
+            recovered = _load_exported_bundle_payload(output_dir=Path(output_dir_text), mechanism_key=mechanism_key)
+            if recovered is not None:
+                _json_dump(destination, recovered)
+                return destination, recovered
+    output_candidates = [path for path in run_root.glob(f"shards/*/outputs/{window_case_id}/{mechanism_key}") if path.is_dir()]
+    for output_dir in sorted(output_candidates, key=lambda item: (item.stat().st_mtime_ns, str(item)), reverse=True):
+        recovered = _load_exported_bundle_payload(output_dir=output_dir, mechanism_key=mechanism_key)
+        if recovered is None:
+            continue
+        shard_id = _path_shard_id(output_dir)
+        destination = _bundle_payload_path(run_root, shard_id, mechanism_key, window_case_id)
+        _json_dump(destination, recovered)
+        return destination, recovered
+    return None
+
+
 def _existing_bundle_payload(run_root: Path, *, window_case_id: str, mechanism_key: str) -> tuple[Path, dict[str, Any]] | None:
     candidates = [
         path
         for path in run_root.glob(f"shards/*/bundles/{mechanism_key}/{window_case_id}.json")
         if path.is_file()
     ]
-    if not candidates:
-        return None
     loaded: list[tuple[Path, dict[str, Any]]] = []
     for path in sorted(candidates, key=lambda item: (item.stat().st_mtime_ns, str(item))):
         payload = _load_json_if_exists(path)
         if payload is not None:
             loaded.append((path, payload))
-    if not loaded:
-        return None
     completed = [item for item in loaded if item[1].get("status") == "completed" and _bundle_payload_is_structurally_complete(item[1])]
     if completed:
         return completed[-1]
+    recovered = _recover_bundle_payload(run_root, window_case_id=window_case_id, mechanism_key=mechanism_key)
+    if recovered is not None:
+        return recovered
     complete = [item for item in loaded if _bundle_payload_is_structurally_complete(item[1])]
     if complete:
         return complete[-1]
-    return loaded[-1]
+    return loaded[-1] if loaded else None
 
 
 def _existing_probe_payload(run_root: Path, *, probe_id: str) -> tuple[Path, dict[str, Any]] | None:

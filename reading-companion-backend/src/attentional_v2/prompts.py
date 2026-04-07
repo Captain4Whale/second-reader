@@ -7,12 +7,12 @@ from dataclasses import dataclass
 from src.prompts.shared import LANGUAGE_OUTPUT_CONTRACT
 
 
-ATTENTIONAL_V2_PROMPTSET_VERSION = "attentional_v2-phase6-v7"
+ATTENTIONAL_V2_PROMPTSET_VERSION = "attentional_v2-phase6-v8"
 ZOOM_READ_PROMPT_VERSION = "attentional_v2.zoom_read.v5"
-MEANING_UNIT_CLOSURE_PROMPT_VERSION = "attentional_v2.meaning_unit_closure.v7"
+MEANING_UNIT_CLOSURE_PROMPT_VERSION = "attentional_v2.meaning_unit_closure.v8"
 CONTROLLER_DECISION_PROMPT_VERSION = "attentional_v2.controller_decision.v1"
-REACTION_EMISSION_PROMPT_VERSION = "attentional_v2.reaction_emission.v5"
-BRIDGE_RESOLUTION_PROMPT_VERSION = "attentional_v2.bridge_resolution.v3"
+REACTION_EMISSION_PROMPT_VERSION = "attentional_v2.reaction_emission.v6"
+BRIDGE_RESOLUTION_PROMPT_VERSION = "attentional_v2.bridge_resolution.v4"
 REFLECTIVE_PROMOTION_PROMPT_VERSION = "attentional_v2.reflective_promotion.v1"
 RECONSOLIDATION_PROMPT_VERSION = "attentional_v2.reconsolidation.v1"
 CHAPTER_CONSOLIDATION_PROMPT_VERSION = "attentional_v2.chapter_consolidation.v2"
@@ -133,8 +133,10 @@ Rules:
 - First decide how the current understanding relates to that local hinge before deciding whether the span is truly closed.
 - If `boundary_context.local_cycle_scope` says `narrow_focus_tail`, treat this as a bounded repair pass on one sharp late-local hinge inside a larger open meaning unit.
 - In that narrowed mode, either close the exact hinge or honestly keep it unresolved; do not dissolve it back into broad chapter paraphrase.
+- If `boundary_context.local_cycle_scope` is `narrow_focus_tail` and `cadence_counter` is already high, prefer an honest local close over leaving the hinge smeared inside an ever-growing open span.
 - Use the tiny `anchor_backcheck_window` only to re-check the local hinge; do not widen into chapter-level thematic summary.
 - Close around the sharpest live distinction, callback cue, or explanatory pattern in the current span instead of flattening the span into generic scene summary.
+- If the current span carries a callback cue but you cannot name a concrete earlier target yet, keep the local note honest and unresolved instead of turning it into a chapter-level callback claim.
 - When deterministic local cues show a callback, recognition gap, or durable pattern, address that cue directly in the summary or unresolved note.
 - When deterministic local cues show actor intention, social pressure, or concrete causal stakes, center the summary on that local motive/pressure/stakes hinge rather than broad retrospective framing.
 - When deterministic local cues show a compact analogy, marked phrase, or loaded wording, prefer a short locally earned reaction candidate over a broad paraphrase.
@@ -257,6 +259,7 @@ Rules:
 - Output must stay legible and source-grounded.
 - If `anchor_relation_status` is not `anchored`, withhold the reaction.
 - A pretty chapter-level theme is not enough; the reaction must explain why the current local hinge matters now.
+- Treat `anchor_focus_quote` as the same local hinge the earlier nodes were following. If the visible reaction no longer helps explain that exact hinge, withhold it.
 - When local cues show a compact analogy, marked phrase, loaded diction, or sharp distinction, prefer a short precise reaction that names the exact phrase instead of broad chapter summary.
 - When local cues show actor intention, social pressure, or concrete causal stakes, prefer one grounded local observation or question about that hinge instead of retrospective explanation.
 - If the reaction starts sounding like a callback or backward-looking bridge but cannot stay specific about the current hinge, withhold it and leave that work to bridge resolution.
@@ -312,6 +315,7 @@ Rules:
 - A real bridge must name one specific earlier target, one current quote, and the relation between them.
 - When the current span explicitly says `earlier`, `前面`, `前文`, or a comparable backward cue, resolve that cue against the candidate set directly instead of answering with generic structure talk.
 - Generic chapter-level callback talk does not count as a bridge.
+- If a backward cue is present but no supplied candidate can honestly support it, decline plainly instead of softening the miss into a thematic summary.
 - If you cannot point to a concrete earlier target from the supplied set with clear attribution, decline honestly.
 - Do not invent targets outside the supplied candidate set.
 - Search is rare and must stay separate from ordinary prior-knowledge use.

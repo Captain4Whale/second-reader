@@ -90,7 +90,7 @@ def test_zoom_read_writes_prompt_manifest_and_normalizes_payload(tmp_path, monke
     assert result["bridge_candidate"]["target_anchor_id"] == "a-1"
     assert result["consider_reaction_emission"] is True
     assert manifest["prompt_version"] == "attentional_v2.zoom_read.v5"
-    assert manifest["promptset_version"] == "attentional_v2-phase6-v7"
+    assert manifest["promptset_version"] == "attentional_v2-phase6-v8"
 
 
 def test_zoom_read_prompt_includes_micro_selectivity_cues(tmp_path, monkeypatch):
@@ -1148,6 +1148,87 @@ def test_run_phase4_local_cycle_force_closes_anchored_sharp_local_hinge(monkeypa
     assert result["closure_result"]["reaction_candidate"]["anchor_quote"] == "出外是个手段，不是目的"
 
 
+def test_run_phase4_local_cycle_force_closes_overlong_unresolved_narrow_tail(monkeypatch):
+    """An overlong narrowed tail should close honestly instead of staying trapped inside a giant open span."""
+
+    monkeypatch.setattr(
+        nodes_module,
+        "zoom_read",
+        lambda **_kwargs: {
+            "local_interpretation": "The text is still circling a bodily contradiction.",
+            "anchor_quote": "他的手脚,他的双眼、额头，他的微笑、问候和姿态却不同于他的思想。",
+            "anchor_focus": {
+                "anchor_quote": "他的手脚,他的双眼、额头，他的微笑、问候和姿态却不同于他的思想。",
+                "focus_sentence_id": "c15-s192",
+                "focus_kind": "sentence",
+                "source": "zoom_anchor",
+            },
+            "pressure_updates": [],
+            "activation_updates": [],
+            "bridge_candidate": None,
+            "consider_reaction_emission": True,
+            "uncertainty_note": "The precise relation is still not closing.",
+        },
+    )
+    monkeypatch.setattr(
+        nodes_module,
+        "meaning_unit_closure",
+        lambda **_kwargs: {
+            "closure_decision": "continue",
+            "meaning_unit_summary": "The chapter still feels charged, but the exact bodily hinge is not cleanly closed yet.",
+            "anchor_focus": {
+                "anchor_quote": "他的手脚,他的双眼、额头，他的微笑、问候和姿态却不同于他的思想。",
+                "focus_sentence_id": "c15-s192",
+                "focus_kind": "sentence",
+                "source": "zoom_anchor",
+            },
+            "anchor_relation": {
+                "relation_status": "related_but_unresolved",
+                "relation_to_focus": "The local aura pressure is still nearby, but it has not settled back onto the exact bodily contradiction.",
+                "current_focus_quote": "他的手脚,他的双眼、额头，他的微笑、问候和姿态却不同于他的思想。",
+                "same_chapter_pressure_only": True,
+                "local_backcheck_used": True,
+                "can_emit_visible_reaction": False,
+            },
+            "dominant_move": "dwell",
+            "proposed_state_operations": [],
+            "bridge_candidates": [],
+            "reaction_candidate": None,
+            "unresolved_pressure_note": "Still not locally closed.",
+        },
+    )
+    monkeypatch.setattr(
+        nodes_module,
+        "reaction_emission",
+        lambda **_kwargs: (_ for _ in ()).throw(AssertionError("reaction_emission should stay gated off")),
+    )
+
+    result = run_phase4_local_cycle(
+        focal_sentence=_sentence("c15-s193", "自世尊佛陀步入涅槃，悉达多是唯一一位我见过的圣人，他让我感受到他的神圣！", sentence_index=193),
+        current_span_sentences=[
+            _sentence("c15-s191", "世尊的精辟法义则明了、简洁、易懂，不含任何古怪疯狂或荒谬的内容。", sentence_index=191),
+            _sentence("c15-s192", "但悉达多的手脚,他的双眼、额头，他的微笑、问候和姿态却不同于他的思想。", sentence_index=192),
+            _sentence("c15-s193", "自世尊佛陀步入涅槃，悉达多是唯一一位我见过的圣人，他让我感受到他的神圣！", sentence_index=193),
+        ],
+        trigger_state={"output": "zoom_now", "gate_state": "hot", "signals": []},
+        working_pressure=build_empty_working_pressure(),
+        anchor_memory=build_empty_anchor_memory(),
+        knowledge_activations=build_empty_knowledge_activations(),
+        reader_policy=build_default_reader_policy(),
+        bridge_candidates=[],
+        output_language="zh",
+        output_dir=None,
+        book_title="悉达多",
+        author="赫尔曼·黑塞",
+        chapter_title="乔文达",
+        boundary_context={"gate_state": "hot", "local_cycle_scope": "narrow_focus_tail", "cadence_counter": 9},
+    )
+
+    assert result["closure_result"]["closure_decision"] == "close"
+    assert result["closure_result"]["reaction_candidate"] is None
+    assert result["reaction_result"] is None
+
+
 def test_zoom_read_prompt_receives_local_textual_cues(monkeypatch):
     """Zoom prompt should include deterministic cue packets for local callback/distinction pressure."""
 
@@ -1805,3 +1886,97 @@ def test_run_phase4_local_cycle_withholds_when_reaction_emission_llm_fails(monke
     assert result["reaction_result"]["decision"] == "withhold"
     assert result["reaction_result"]["reaction"] is None
     assert result["llm_fallbacks"] == [{"node": "reaction_emission", "problem_code": "network_blocked"}]
+
+
+def test_run_phase4_local_cycle_withholds_reaction_when_emitted_anchor_drifts_from_focus(monkeypatch):
+    """A visible reaction should be withheld if it drifts off the current local focus quote."""
+
+    def fake_invoke_json(system_prompt: str, _prompt: str, default: object) -> object:
+        if "sentence-level zoom node" in system_prompt:
+            return {
+                "local_interpretation": "The sentence turns the scene on the exact phrase itself.",
+                "anchor_quote": "single channel and a single choice",
+                "pressure_updates": [],
+                "activation_updates": [],
+                "bridge_candidate": {},
+                "consider_reaction_emission": True,
+                "uncertainty_note": "",
+            }
+        if "meaning-unit closure node" in system_prompt:
+            return {
+                "closure_decision": "close",
+                "meaning_unit_summary": "The line narrows many wishes into one forced route.",
+                "anchor_focus": {
+                    "anchor_quote": "single channel and a single choice",
+                    "focus_sentence_id": "c1-s1",
+                    "focus_kind": "phrase",
+                    "source": "zoom_anchor",
+                },
+                "anchor_relation": {
+                    "relation_status": "anchored",
+                    "relation_to_focus": "The narrowing phrase is the exact local hinge.",
+                    "current_focus_quote": "single channel and a single choice",
+                    "same_chapter_pressure_only": False,
+                    "local_backcheck_used": False,
+                    "can_emit_visible_reaction": True,
+                },
+                "dominant_move": "advance",
+                "proposed_state_operations": [],
+                "bridge_candidates": [],
+                "reaction_candidate": {
+                    "type": "discern",
+                    "anchor_quote": "single channel and a single choice",
+                    "content": "The line forces desire through one route.",
+                    "related_anchor_quotes": [],
+                    "search_query": "",
+                    "search_results": [],
+                },
+                "unresolved_pressure_note": "",
+            }
+        if "reaction-emission gate" in system_prompt:
+            return {
+                "decision": "emit",
+                "reason": "the moment seems readable",
+                "reaction": {
+                    "type": "discern",
+                    "anchor_quote": "the chapter generally turns inward",
+                    "content": "A broader chapter theme seems to settle here.",
+                    "related_anchor_quotes": [],
+                    "search_query": "",
+                    "search_results": [],
+                },
+            }
+        return default
+
+    monkeypatch.setattr(nodes_module, "invoke_json", fake_invoke_json)
+
+    result = run_phase4_local_cycle(
+        focal_sentence=_sentence(
+            "c1-s1",
+            "But all that she may wish to have, all that she may wish to do, must come through a single channel and a single choice.",
+            sentence_index=1,
+        ),
+        current_span_sentences=[
+            _sentence(
+                "c1-s1",
+                "But all that she may wish to have, all that she may wish to do, must come through a single channel and a single choice.",
+                sentence_index=1,
+            ),
+        ],
+        trigger_state={"output": "zoom_now", "gate_state": "hot"},
+        working_pressure=build_empty_working_pressure(),
+        anchor_memory=build_empty_anchor_memory(),
+        knowledge_activations=build_empty_knowledge_activations(),
+        reader_policy=build_default_reader_policy(),
+        bridge_candidates=[],
+        output_language="en",
+        output_dir=None,
+        book_title="Women and Economics",
+        author="Gilman",
+        chapter_title="Chapter 9",
+        boundary_context={"gate_state": "hot", "candidate_boundary": True},
+    )
+
+    assert result["reaction_result"]["decision"] == "withhold"
+    assert result["reaction_result"]["reason"] == "reaction_anchor_drifted_from_local_focus"
+    assert result["reaction_result"]["reaction"] is None
