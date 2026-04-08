@@ -822,7 +822,7 @@ Update when: a major product or engineering decision is made, reversed, or becom
 
 **Primary evidence**:
 - `docs/implementation/new-reading-mechanism/dataset-quality-hardening.md`
-- `docs/implementation/new-reading-mechanism/execution-tracker.md`
+- `docs/implementation/new-reading-mechanism/new-reading-mechanism-execution-tracker.md`
 - `docs/agent-handoff.md`
 - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_integrity_reviewed_slice_round3_repair_pass2_20260326/summary/report.md`
 - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_vs_iterator_v1_chapter_core_en_round1_20260326/summary/report.md`
@@ -850,7 +850,7 @@ Update when: a major product or engineering decision is made, reversed, or becom
 - `docs/implementation/new-reading-mechanism/modern-nonfiction-expansion-booklist.md`
 - `docs/implementation/new-reading-mechanism/private-library-promotion-round1.md`
 - `docs/implementation/new-reading-mechanism/private-library-promotion-round1-execution.md`
-- `docs/implementation/new-reading-mechanism/execution-tracker.md`
+- `docs/implementation/new-reading-mechanism/new-reading-mechanism-execution-tracker.md`
 - `reading-companion-backend/eval/manifests/source_books/attentional_v2_private_library_screen_v2.json`
 - `reading-companion-backend/eval/manifests/local_refs/attentional_v2_private_library_v2.json`
 
@@ -876,7 +876,7 @@ Update when: a major product or engineering decision is made, reversed, or becom
 - `docs/backend-reader-evaluation.md`
 - `reading-companion-backend/AGENTS.md`
 - `docs/implementation/new-reading-mechanism/mechanism-pattern-ledger.md`
-- `docs/implementation/new-reading-mechanism/execution-tracker.md`
+- `docs/implementation/new-reading-mechanism/new-reading-mechanism-execution-tracker.md`
 - `docs/agent-handoff.md`
 
 ## Entry 33
@@ -956,7 +956,7 @@ Update when: a major product or engineering decision is made, reversed, or becom
 - `docs/backend-reader-evaluation.md`
 - `docs/current-state.md`
 - `docs/tasks/registry.md`
-- `docs/implementation/new-reading-mechanism/execution-tracker.md`
+- `docs/implementation/new-reading-mechanism/new-reading-mechanism-execution-tracker.md`
 
 **Decision / Inflection**: Make new runtime and evaluation processes concurrency-adaptive by default instead of relying on fixed worker counts inside individual scripts.
 
@@ -1134,7 +1134,7 @@ Update when: a major product or engineering decision is made, reversed, or becom
 **Primary evidence**:
 - `docs/implementation/new-reading-mechanism/question-aligned-case-construction.md`
 - `docs/implementation/new-reading-mechanism/dataset-platform-closed-loop.md`
-- `docs/implementation/new-reading-mechanism/execution-tracker.md`
+- `docs/implementation/new-reading-mechanism/new-reading-mechanism-execution-tracker.md`
 - `docs/tasks/registry.md`
 - `docs/tasks/registry.json`
 
@@ -1196,7 +1196,7 @@ Update when: a major product or engineering decision is made, reversed, or becom
 - `docs/tasks/registry.json`
 - `docs/implementation/new-reading-mechanism/question-aligned-case-construction.md`
 - `docs/implementation/new-reading-mechanism/dataset-platform-closed-loop.md`
-- `docs/implementation/new-reading-mechanism/execution-tracker.md`
+- `docs/implementation/new-reading-mechanism/new-reading-mechanism-execution-tracker.md`
 
 ## Entry 44
 **ID**: DEC-047
@@ -1222,7 +1222,7 @@ Update when: a major product or engineering decision is made, reversed, or becom
 - `docs/tasks/registry.md`
 - `docs/tasks/registry.json`
 - `docs/implementation/new-reading-mechanism/dataset-platform-closed-loop.md`
-- `docs/implementation/new-reading-mechanism/execution-tracker.md`
+- `docs/implementation/new-reading-mechanism/new-reading-mechanism-execution-tracker.md`
 
 ## Entry 45
 **ID**: DEC-048
@@ -1287,7 +1287,7 @@ The old active windows `nawaer_baodian_private_zh__wealth`, `nawaer_baodian_priv
 - `docs/current-state.md`
 - `docs/tasks/registry.md`
 - `docs/tasks/registry.json`
-- `docs/implementation/new-reading-mechanism/execution-tracker.md`
+- `docs/implementation/new-reading-mechanism/new-reading-mechanism-execution-tracker.md`
 
 ## Entry 47
 **ID**: DEC-050
@@ -1322,7 +1322,7 @@ The old active windows `nawaer_baodian_private_zh__wealth`, `nawaer_baodian_priv
 - `docs/current-state.md`
 - `docs/tasks/registry.md`
 - `docs/tasks/registry.json`
-- `docs/implementation/new-reading-mechanism/execution-tracker.md`
+- `docs/implementation/new-reading-mechanism/new-reading-mechanism-execution-tracker.md`
 
 ## Entry 48
 **ID**: DEC-051
@@ -1356,7 +1356,7 @@ The old active windows `nawaer_baodian_private_zh__wealth`, `nawaer_baodian_priv
 - `docs/current-state.md`
 - `docs/tasks/registry.md`
 - `docs/tasks/registry.json`
-- `docs/implementation/new-reading-mechanism/execution-tracker.md`
+- `docs/implementation/new-reading-mechanism/new-reading-mechanism-execution-tracker.md`
 
 ## Entry 49
 **ID**: DEC-052
@@ -1388,7 +1388,7 @@ The old active windows `nawaer_baodian_private_zh__wealth`, `nawaer_baodian_priv
 - `docs/current-state.md`
 - `docs/tasks/registry.md`
 - `docs/tasks/registry.json`
-- `docs/implementation/new-reading-mechanism/execution-tracker.md`
+- `docs/implementation/new-reading-mechanism/new-reading-mechanism-execution-tracker.md`
 
 ## Entry 50
 **ID**: DEC-053
@@ -1419,7 +1419,7 @@ The old active windows `nawaer_baodian_private_zh__wealth`, `nawaer_baodian_priv
 - `docs/current-state.md`
 - `docs/tasks/registry.md`
 - `docs/tasks/registry.json`
-- `docs/implementation/new-reading-mechanism/execution-tracker.md`
+- `docs/implementation/new-reading-mechanism/new-reading-mechanism-execution-tracker.md`
 
 ## Entry 51
 **ID**: DEC-054

@@ -7,15 +7,22 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-04-08T11:31:24Z`
+Last verified: `2026-04-08T12:42:46Z`
 
 ## Current Objective
 - Hold further `excerpt` mechanism polishing for now and treat the completed `excerpt surface v1.1` formal judged run as the current good-enough evidence bundle for product/storytelling decisions.
 - Use the completed 2-window `long-span` smoke as recovery evidence that the April 6 `bundle_missing` failure is no longer blocking bundle/probe materialization, then repair the completed full formal rerun with targeted same-run recovery instead of paying for another whole-surface relaunch.
+- The explicit Phase 9 cutover roadmap is now landed:
+  - Phase 9 ends at compatibility cutover on the current routed frontend surfaces
+  - V2-native frontend presentation and section-first retirement are now explicitly post-Phase-9 initiatives
+  - long-span repair continues in parallel, but it is not the hard blocker on beginning the compatibility-cutover lane
 - Product-boundary clarification is now landed:
   - `book_analysis` is treated as a retired legacy capability preserved only for compatibility/debugging rather than as a live secondary product lane
   - public `/analysis/*` routes remain for compatibility, but the active backend launcher and OpenAPI operation ids now describe deep reading explicitly
   - retained legacy code stays in place for now, marked as retired rather than silently current
+- Implementation-plan note:
+  - stable `attentional_v2` doc promotion is now treated as resolved
+  - the unfinished implementation-program work is Phase 9 migration/default-cutover readiness rather than a still-open Phase 0 documentation-timing question
 - `excerpt surface v1.1` remains the latest valid formal excerpt evidence lane:
   - formal run:
     - `attentional_v2_excerpt_surface_v1_1_judged_20260406`
@@ -1038,7 +1045,7 @@ Last verified: `2026-04-08T11:31:24Z`
     - the remaining local gap is now concentrated on narrative / reference-heavy English cases rather than on the whole pack
   - live queue record:
     - `docs/implementation/new-reading-mechanism/mechanism-pattern-ledger.md`
-    - `docs/implementation/new-reading-mechanism/execution-tracker.md`
+    - `docs/implementation/new-reading-mechanism/new-reading-mechanism-execution-tracker.md`
   - focused two-case substantive rerun:
     - job id:
       - `bgjob_en_chapter_core_rerun_round3_caseiso_judged_substantive_backup_20260331`
@@ -2236,7 +2243,7 @@ Last verified: `2026-04-08T11:31:24Z`
 ## Blocked
 - No gate-review blocker remains ahead of the remaining decisive mechanism-eval lane.
 - Formal curated promotion from the modern private-library supplement remains intentionally paused under the recorded `hold_for_backlog_rescue` outcome and requires genuinely new benchmark-strengthening evidence before reopening.
-- The later frontend/API retirement of section-first chapter/detail and marks surfaces remains blocked on benchmark stabilization plus stable doc promotion timing.
+- The later frontend/API retirement of section-first chapter/detail and marks surfaces remains blocked on completion of the compatibility cutover, not on reopening Phase 9 scope.
 
 ## Resolved Gate Review Outcomes
 - `reviewed_at`: `2026-04-01`
@@ -2247,8 +2254,8 @@ Last verified: `2026-04-08T11:31:24Z`
 - `historical_next_task_at_gate = TASK-PHASE9-CLUSTERED-BENCHMARK`
 
 ## Open Decisions
-- `Q10`
-  - When should the detailed `attentional_v2` working design be promoted from temporary implementation docs into stable mechanism docs?
+- none at the implementation-doc timing layer
+- remaining open work is now Phase 9 cutover and long-span evidence completion, not stable-doc promotion timing
 
 ## Active Risks
 - The new question-aligned private-library builder now keeps the live `v2` review-truth datasets as feedback input instead of overwriting them, but the new question-aligned outputs are still seed candidates rather than reviewed benchmark truth.
@@ -2285,15 +2292,14 @@ Last verified: `2026-04-08T11:31:24Z`
 - Benchmark confidence can look stronger than it really is if corpus growth, promotion, and reviewed-slice confidence gates drift apart.
 
 ## Active Task IDs
-- none
+- `TASK-PHASE9-COMPAT-CUTOVER`
+- `TASK-ACCUMULATION-BENCHMARK-V1`
 
 ## Blocked Task IDs
 - `TASK-PHASE9-DECISIVE-EVAL`
-- `TASK-ACCUMULATION-BENCHMARK-V1`
-- `TASK-ATTENTIONAL-V2-NARROW-REPAIR-V1`
 
 ## Active Job IDs
-- none
+- `bgjob_accumulation_benchmark_v1_value_of_others_iterator_v1_recovery_20260408`
 
 ## Recommended Reading Path
 1. `AGENTS.md`
@@ -2301,41 +2307,44 @@ Last verified: `2026-04-08T11:31:24Z`
 3. `docs/current-state.md`
 4. relevant child `AGENTS.md`
 5. `docs/tasks/registry.md`
-6. `docs/implementation/new-reading-mechanism/execution-tracker.md`
-7. `docs/implementation/new-reading-mechanism/excerpt-micro-slice-v1-draft.md`
-8. `reading-companion-backend/eval/manifests/splits/attentional_v2_excerpt_micro_slice_v1_draft.json`
-9. `docs/implementation/new-reading-mechanism/excerpt-surface-v1-1-draft.md`
-10. `docs/backend-reader-evaluation.md`
-11. `reading-companion-backend/docs/evaluation/excerpt/README.md`
-12. `reading-companion-backend/docs/evaluation/excerpt/attentional_v2_excerpt_surface_v1_1_judged_20260406_interpretation.md`
-13. `docs/backend-reading-mechanisms/attentional_v2.md`
-14. `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_excerpt_micro_slice_v1_judged_narrow_repair_20260406/summary/report.md`
-15. `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_excerpt_guard_meiguoren_judged_narrow_repair_20260406/summary/report.md`
-16. `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_excerpt_micro_slice_v1_smoke_narrow_repair_round2_20260406/`
-17. `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_accumulation_benchmark_v1_judged_20260406/summary/report.md`
-18. `reading-companion-backend/eval/manifests/splits/attentional_v2_excerpt_surface_v1_1_draft.json`
-19. `reading-companion-backend/state/dataset_build/build_runs/excerpt_surface_v1_1_20260406/excerpt_surface_v1_1_summary.md`
-20. `docs/implementation/new-reading-mechanism/human-notes-guided-dataset-v1-freeze-draft.md`
-21. `docs/implementation/new-reading-mechanism/clustered-benchmark-v1-draft.md`
-22. `docs/implementation/new-reading-mechanism/question-aligned-case-construction.md`
+6. `docs/implementation/new-reading-mechanism/new-reading-mechanism-execution-tracker.md`
+7. `docs/implementation/new-reading-mechanism/phase9-compat-cutover-roadmap.md`
+8. `docs/implementation/new-reading-mechanism/excerpt-micro-slice-v1-draft.md`
+9. `reading-companion-backend/eval/manifests/splits/attentional_v2_excerpt_micro_slice_v1_draft.json`
+10. `docs/implementation/new-reading-mechanism/excerpt-surface-v1-1-draft.md`
+11. `docs/backend-reader-evaluation.md`
+12. `reading-companion-backend/docs/evaluation/excerpt/README.md`
+13. `reading-companion-backend/docs/evaluation/excerpt/attentional_v2_excerpt_surface_v1_1_judged_20260406_interpretation.md`
+14. `docs/backend-reading-mechanisms/attentional_v2.md`
+15. `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_excerpt_micro_slice_v1_judged_narrow_repair_20260406/summary/report.md`
+16. `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_excerpt_guard_meiguoren_judged_narrow_repair_20260406/summary/report.md`
+17. `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_excerpt_micro_slice_v1_smoke_narrow_repair_round2_20260406/`
+18. `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_accumulation_benchmark_v1_judged_20260406/summary/report.md`
+19. `reading-companion-backend/eval/manifests/splits/attentional_v2_excerpt_surface_v1_1_draft.json`
+20. `reading-companion-backend/state/dataset_build/build_runs/excerpt_surface_v1_1_20260406/excerpt_surface_v1_1_summary.md`
+21. `docs/implementation/new-reading-mechanism/human-notes-guided-dataset-v1-freeze-draft.md`
+22. `docs/implementation/new-reading-mechanism/clustered-benchmark-v1-draft.md`
+23. `docs/implementation/new-reading-mechanism/question-aligned-case-construction.md`
 
 ## Machine-Readable Appendix
 ```json
 {
-  "updated_at": "2026-04-06T16:14:18Z",
+  "updated_at": "2026-04-08T12:33:10Z",
   "last_updated_by": "codex",
-  "active_task_ids": [],
+  "active_task_ids": [
+    "TASK-PHASE9-COMPAT-CUTOVER",
+    "TASK-ACCUMULATION-BENCHMARK-V1"
+  ],
   "blocked_task_ids": [
-    "TASK-PHASE9-DECISIVE-EVAL",
-    "TASK-ACCUMULATION-BENCHMARK-V1",
-    "TASK-ATTENTIONAL-V2-NARROW-REPAIR-V1"
+    "TASK-PHASE9-DECISIVE-EVAL"
   ],
-  "active_job_ids": [],
-  "open_decision_ids": [
-    "Q10"
+  "active_job_ids": [
+    "bgjob_accumulation_benchmark_v1_value_of_others_iterator_v1_recovery_20260408"
   ],
+  "open_decision_ids": [],
   "detail_refs": [
-    "docs/implementation/new-reading-mechanism/execution-tracker.md",
+    "docs/implementation/new-reading-mechanism/new-reading-mechanism-execution-tracker.md",
+    "docs/implementation/new-reading-mechanism/phase9-compat-cutover-roadmap.md",
     "docs/implementation/new-reading-mechanism/excerpt-micro-slice-v1-draft.md",
     "docs/implementation/new-reading-mechanism/excerpt-surface-v1-1-draft.md",
     "reading-companion-backend/docs/evaluation/excerpt/README.md",

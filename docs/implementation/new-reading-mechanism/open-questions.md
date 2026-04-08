@@ -12,11 +12,26 @@ Update when: a question is added, resolved, deferred, or replaced by a stable do
 - The repo-local design capture mirrors the Notion design as of `2026-03-23` and should be kept current enough for implementation planning.
 
 ## Open Questions
-| ID | Question | Why it matters | Target phase | Current status |
-| --- | --- | --- | --- | --- |
-| Q10 | When should the detailed design be promoted from temporary docs into stable `docs/backend-reading-mechanisms/<mechanism>.md`? | Prevents stable docs from becoming a working notebook while also avoiding long-term drift. | Phase 0 / 9 | `open` |
+- none currently
 
 ## Resolved Questions
+- `Q10` resolved on `2026-04-08`
+  - Decision:
+    - stable-doc promotion is already sufficiently landed
+    - `docs/backend-reading-mechanisms/attentional_v2.md` is now the stable authority for live `attentional_v2` behavior
+    - the remaining unfinished work belongs to Phase 9 migration/default-cutover readiness rather than to a still-open Phase 0 doc-timing question
+  - Why:
+    - the stable mechanism doc already carries live authority for:
+      - purpose and status
+      - runtime loop vocabulary
+      - current LLM schedule
+      - memory/revisit behavior
+      - unsupported legacy-mode boundaries
+    - the remaining moving pieces are now cutover and evaluation-readiness questions, not whether stable documentation should still wait in temporary workspace notes
+  - Implementation effect:
+    - close `Q10`
+    - mark Phase 0 complete in the execution tracker
+    - keep future live-behavior updates in `docs/backend-reading-mechanisms/attentional_v2.md`, while keeping rollout-state and unfinished migration work in the implementation tracker
 - `Q1` resolved on `2026-03-23`
   - Decision:
     - the new Notion design should be implemented under the existing `attentional_v2` mechanism key
@@ -32,7 +47,7 @@ Update when: a question is added, resolved, deferred, or replaced by a stable do
     - the new design adds tiered state, explicit operations, richer contracts, reconsolidation, observability, and evaluation traceability, but those are best understood as a more complete design for the same mechanism, not a rename-worthy break
   - Implementation effect:
     - use `_mechanisms/attentional_v2/`
-    - keep `docs/backend-reading-mechanisms/attentional_v2.md` as the stable mechanism doc to be updated later under `Q10`
+    - keep `docs/backend-reading-mechanisms/attentional_v2.md` as the stable mechanism doc for live mechanism authority
     - do not create a second design-only mechanism key unless a later design fork becomes intentionally distinct
 - `Q2` resolved on `2026-03-23`
   - Audit basis:

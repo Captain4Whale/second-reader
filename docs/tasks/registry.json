@@ -1,14 +1,42 @@
 {
   "version": 1,
-  "updated_at": "2026-04-08T11:31:24Z",
+  "updated_at": "2026-04-08T12:33:10Z",
   "tasks": [
+    {
+      "id": "TASK-PHASE9-COMPAT-CUTOVER",
+      "title": "Finish Phase 9 through compatibility cutover and default-path readiness",
+      "status": "active",
+      "lane": "migration",
+      "priority": "high",
+      "detail_ref": "docs/implementation/new-reading-mechanism/phase9-compat-cutover-roadmap.md",
+      "truth_refs": [
+        "docs/product-interaction-model.md",
+        "docs/api-integration.md",
+        "docs/backend-state-aggregation.md",
+        "docs/backend-reading-mechanism.md"
+      ],
+      "decision_refs": [],
+      "job_refs": [],
+      "acceptance_ref": "docs/implementation/new-reading-mechanism/phase9-compat-cutover-roadmap.md",
+      "next_action": "Use the landed roadmap as the implementation route for the remaining Phase 9 work. Keep the scope at compatibility cutover: switch the normal product deep-reading path onto attentional_v2, validate the current routed frontend surfaces against compatibility outputs, keep iterator_v1 as an explicit fallback/override, and do not widen this task into V2-native frontend redesign or section-first retirement.",
+      "blocked_by": [],
+      "evidence_refs": [
+        "docs/implementation/new-reading-mechanism/phase9-compat-cutover-roadmap.md",
+        "docs/api-integration.md",
+        "docs/backend-state-aggregation.md",
+        "docs/backend-reading-mechanisms/attentional_v2.md",
+        "reading-companion-backend/docs/evaluation/excerpt/attentional_v2_excerpt_surface_v1_1_judged_20260406_interpretation.md"
+      ],
+      "last_updated": "2026-04-08T12:33:10Z",
+      "last_updated_by": "codex"
+    },
     {
       "id": "TASK-MECH-EN-RERUN",
       "title": "Run the focused English round-3 narrative/reference rerun",
       "status": "done",
       "lane": "mechanism_eval",
       "priority": "high",
-      "detail_ref": "docs/implementation/new-reading-mechanism/execution-tracker.md",
+      "detail_ref": "docs/implementation/new-reading-mechanism/new-reading-mechanism-execution-tracker.md",
       "truth_refs": [
         "docs/product-overview.md",
         "docs/backend-reading-mechanism.md",
@@ -23,7 +51,7 @@
         "bgjob_en_chapter_core_rerun_round3_caseiso_judged_followup_20260330",
         "bgjob_en_chapter_core_rerun_round3_caseiso_judged_substantive_backup_20260331"
       ],
-      "acceptance_ref": "docs/implementation/new-reading-mechanism/execution-tracker.md",
+      "acceptance_ref": "docs/implementation/new-reading-mechanism/new-reading-mechanism-execution-tracker.md",
       "next_action": "Treat the completed backup-tier substantive rerun as evidence only; preserve the walden strength, keep the up_from_slavery chapter-arc weakness explicit, and do not launch default-cutover or promotion work automatically.",
       "blocked_by": [],
       "evidence_refs": [
@@ -126,7 +154,7 @@
       "status": "done",
       "lane": "dataset_platform",
       "priority": "high",
-      "detail_ref": "docs/implementation/new-reading-mechanism/execution-tracker.md",
+      "detail_ref": "docs/implementation/new-reading-mechanism/new-reading-mechanism-execution-tracker.md",
       "truth_refs": [
         "docs/source-of-truth-map.md",
         "docs/workspace-overview.md",
@@ -138,7 +166,7 @@
         "DEC-045"
       ],
       "job_refs": [],
-      "acceptance_ref": "docs/implementation/new-reading-mechanism/execution-tracker.md",
+      "acceptance_ref": "docs/implementation/new-reading-mechanism/new-reading-mechanism-execution-tracker.md",
       "next_action": "Keep using the managed inbox plus source catalog as the source of truth for future book additions, and treat public/private only as compatibility metadata instead of a primary workflow branch.",
       "blocked_by": [],
       "evidence_refs": [
@@ -159,7 +187,7 @@
       "status": "waiting",
       "lane": "dataset_platform",
       "priority": "high",
-      "detail_ref": "docs/implementation/new-reading-mechanism/execution-tracker.md",
+      "detail_ref": "docs/implementation/new-reading-mechanism/new-reading-mechanism-execution-tracker.md",
       "truth_refs": [
         "docs/backend-reader-evaluation.md",
         "docs/implementation/new-reading-mechanism/evaluation-question-map.md",
@@ -187,7 +215,7 @@
         "bgjob_callbackslice_probeonly_20260331",
         "bgjob_callbackslice_auditrerun_20260331"
       ],
-      "acceptance_ref": "docs/implementation/new-reading-mechanism/execution-tracker.md",
+      "acceptance_ref": "docs/implementation/new-reading-mechanism/new-reading-mechanism-execution-tracker.md",
       "next_action": "Keep the landed builder available as support infrastructure, but do not open a new general builder wave while TASK-PHASE9-DECISIVE-EVAL and TASK-ACCUMULATION-BENCHMARK-V1 remain unresolved; broader construction should resume only if later decisive eval results expose a specific blocker or if one explicitly scoped audit-stage-only reproducibility pass is requested.",
       "blocked_by": [],
       "evidence_refs": [
@@ -314,7 +342,7 @@
       "truth_refs": [
         "docs/backend-reader-evaluation.md",
         "docs/current-state.md",
-        "docs/implementation/new-reading-mechanism/execution-tracker.md"
+        "docs/implementation/new-reading-mechanism/new-reading-mechanism-execution-tracker.md"
       ],
       "decision_refs": [
         "DEC-053"
@@ -370,7 +398,7 @@
       "status": "waiting",
       "lane": "dataset_platform",
       "priority": "high",
-      "detail_ref": "docs/implementation/new-reading-mechanism/execution-tracker.md",
+      "detail_ref": "docs/implementation/new-reading-mechanism/new-reading-mechanism-execution-tracker.md",
       "truth_refs": [
         "docs/backend-reader-evaluation.md",
         "docs/implementation/new-reading-mechanism/evaluation-question-map.md",
@@ -416,7 +444,7 @@
         "bgjob_closed_loop_en_broader_auditcoherencefix_repeat_20260330",
         "bgjob_closed_loop_bilingual_broader_auditcoherencefix_20260330"
       ],
-      "acceptance_ref": "docs/implementation/new-reading-mechanism/execution-tracker.md",
+      "acceptance_ref": "docs/implementation/new-reading-mechanism/new-reading-mechanism-execution-tracker.md",
       "next_action": "Keep the bounded controller scratch-safe and reusable, but do not widen automation while decisive mechanism-eval work remains unresolved; with current model cost pressure, do not spend on non-mainline comparison support loops; resume only if later work needs one explicitly scoped audit-stage-only reproducibility pass or another concrete support-lane unblocker.",
       "blocked_by": [],
       "evidence_refs": [
@@ -569,7 +597,7 @@
       "blocked_by": [],
       "evidence_refs": [
         "docs/implementation/new-reading-mechanism/clustered-benchmark-v1-draft.md",
-        "docs/implementation/new-reading-mechanism/execution-tracker.md",
+        "docs/implementation/new-reading-mechanism/new-reading-mechanism-execution-tracker.md",
         "reading-companion-backend/eval/manifests/splits/attentional_v2_clustered_benchmark_v1_draft.json",
         "reading-companion-backend/eval/manifests/source_books/attentional_v2_clustered_benchmark_v1_source_books.json",
         "reading-companion-backend/eval/manifests/local_refs/attentional_v2_clustered_benchmark_v1_local_refs.json",
@@ -599,7 +627,7 @@
       "status": "parked",
       "lane": "mechanism_eval",
       "priority": "medium",
-      "detail_ref": "docs/implementation/new-reading-mechanism/execution-tracker.md",
+      "detail_ref": "docs/implementation/new-reading-mechanism/new-reading-mechanism-execution-tracker.md",
       "truth_refs": [
         "docs/backend-reader-evaluation.md",
         "docs/runtime-modes.md",
@@ -617,12 +645,12 @@
         "bgjob_runtime_viability_gate_20260401",
         "bgjob_runtime_viability_gate_serialfix_20260401"
       ],
-      "acceptance_ref": "docs/implementation/new-reading-mechanism/execution-tracker.md",
+      "acceptance_ref": "docs/implementation/new-reading-mechanism/new-reading-mechanism-execution-tracker.md",
       "next_action": "Reuse the existing runtime-viability and durable-trace evidence; do not relaunch those lanes unless one of the three kept north-star dimensions later requires them or the cost posture changes explicitly.",
       "blocked_by": [],
       "evidence_refs": [
         "docs/backend-reader-evaluation.md",
-        "docs/implementation/new-reading-mechanism/execution-tracker.md",
+        "docs/implementation/new-reading-mechanism/new-reading-mechanism-execution-tracker.md",
         "reading-companion-backend/eval/attentional_v2/run_durable_trace_reentry.py",
         "reading-companion-backend/eval/attentional_v2/run_runtime_viability.py",
         "reading-companion-backend/tests/test_run_durable_trace_reentry.py",
@@ -643,7 +671,7 @@
     {
       "id": "TASK-DOC-Q10",
       "title": "Decide when the detailed attentional_v2 working design should be promoted into stable mechanism docs",
-      "status": "queued",
+      "status": "done",
       "lane": "documentation",
       "priority": "medium",
       "detail_ref": "docs/implementation/new-reading-mechanism/open-questions.md",
@@ -657,16 +685,14 @@
       ],
       "job_refs": [],
       "acceptance_ref": "docs/implementation/new-reading-mechanism/open-questions.md",
-      "next_action": "Resolve Q10 after benchmark stabilization is strong enough that stable mechanism behavior can be frozen intentionally.",
-      "blocked_by": [
-        "TASK-PHASE9-DECISIVE-EVAL",
-        "TASK-ATTENTIONAL-V2-NARROW-REPAIR-V1"
-      ],
+      "next_action": "Keep docs/backend-reading-mechanisms/attentional_v2.md as the stable live-mechanism authority, and keep future unfinished migration/cutover work in the Phase 9 tracker instead of reopening this timing question.",
+      "blocked_by": [],
       "evidence_refs": [
         "docs/implementation/new-reading-mechanism/open-questions.md",
-        "docs/implementation/new-reading-mechanism/execution-tracker.md"
+        "docs/implementation/new-reading-mechanism/new-reading-mechanism-execution-tracker.md",
+        "docs/backend-reading-mechanisms/attentional_v2.md"
       ],
-      "last_updated": "2026-04-04T01:13:40Z",
+      "last_updated": "2026-04-08T12:01:19Z",
       "last_updated_by": "codex"
     },
     {
@@ -675,7 +701,7 @@
       "status": "queued",
       "lane": "migration",
       "priority": "medium",
-      "detail_ref": "docs/implementation/new-reading-mechanism/execution-tracker.md",
+      "detail_ref": "docs/implementation/new-reading-mechanism/new-reading-mechanism-execution-tracker.md",
       "truth_refs": [
         "docs/product-interaction-model.md",
         "docs/api-contract.md",
@@ -688,18 +714,17 @@
         "DEC-020"
       ],
       "job_refs": [],
-      "acceptance_ref": "docs/implementation/new-reading-mechanism/execution-tracker.md",
-      "next_action": "Begin only after the benchmark direction, runtime viability work, and stable-doc promotion timing are intentionally settled.",
+      "acceptance_ref": "docs/implementation/new-reading-mechanism/new-reading-mechanism-execution-tracker.md",
+      "next_action": "Begin only after the compatibility cutover is complete and the project intentionally begins the post-Phase-9 V2-native frontend migration.",
       "blocked_by": [
-        "TASK-PHASE9-DECISIVE-EVAL",
-        "TASK-DOC-Q10"
+        "TASK-PHASE9-COMPAT-CUTOVER"
       ],
       "evidence_refs": [
-        "docs/implementation/new-reading-mechanism/execution-tracker.md",
+        "docs/implementation/new-reading-mechanism/new-reading-mechanism-execution-tracker.md",
         "docs/api-contract.md",
         "docs/api-integration.md"
       ],
-      "last_updated": "2026-04-04T01:13:40Z",
+      "last_updated": "2026-04-08T12:33:10Z",
       "last_updated_by": "codex"
     },
     {
@@ -708,7 +733,7 @@
       "status": "done",
       "lane": "dataset_growth",
       "priority": "high",
-      "detail_ref": "docs/implementation/new-reading-mechanism/execution-tracker.md",
+      "detail_ref": "docs/implementation/new-reading-mechanism/new-reading-mechanism-execution-tracker.md",
       "truth_refs": [
         "docs/backend-reader-evaluation.md",
         "docs/workspace-overview.md",
@@ -764,7 +789,7 @@
       "status": "blocked",
       "lane": "mechanism_eval",
       "priority": "high",
-      "detail_ref": "docs/implementation/new-reading-mechanism/execution-tracker.md",
+      "detail_ref": "docs/implementation/new-reading-mechanism/new-reading-mechanism-execution-tracker.md",
       "truth_refs": [
         "docs/backend-reader-evaluation.md",
         "docs/backend-reading-mechanism.md",
@@ -806,14 +831,14 @@
         "bgjob_accumulation_benchmark_v1_judged_rerun_20260407",
         "bgjob_accumulation_benchmark_v1_value_of_others_iterator_v1_recovery_20260408"
       ],
-      "acceptance_ref": "docs/implementation/new-reading-mechanism/execution-tracker.md",
-      "next_action": "Keep excerpt surface v1.1 as the current valid formal excerpt evidence bundle and do not reopen excerpt reruns by default. The active blocker is now narrowed to one question only: whether the repaired long-span harness can finish the targeted repair of value_of_others_private_en__8_10 and clear the last judge_unavailable / mechanism_failure pair from the completed formal rerun. The live step is bgjob_accumulation_benchmark_v1_value_of_others_iterator_v1_recovery_20260408.",
+      "acceptance_ref": "docs/implementation/new-reading-mechanism/new-reading-mechanism-execution-tracker.md",
+      "next_action": "Keep excerpt surface v1.1 as the current valid formal excerpt evidence bundle and do not reopen excerpt reruns by default. The active blocker is now narrowed to one question only: whether the repaired long-span harness can finish the targeted repair of value_of_others_private_en__8_10 and clear the last judge_unavailable / mechanism_failure pair from the completed formal rerun. This remains the parallel evidence-cleanup lane, not the blocker on beginning TASK-PHASE9-COMPAT-CUTOVER. The live step is bgjob_accumulation_benchmark_v1_value_of_others_iterator_v1_recovery_20260408.",
       "blocked_by": [],
       "evidence_refs": [
         "docs/implementation/new-reading-mechanism/excerpt-micro-slice-v1-draft.md",
         "docs/implementation/new-reading-mechanism/clustered-benchmark-v1-draft.md",
         "docs/implementation/new-reading-mechanism/excerpt-surface-v1-1-draft.md",
-        "docs/implementation/new-reading-mechanism/execution-tracker.md",
+        "docs/implementation/new-reading-mechanism/new-reading-mechanism-execution-tracker.md",
         "reading-companion-backend/eval/manifests/splits/attentional_v2_excerpt_micro_slice_v1_draft.json",
         "reading-companion-backend/eval/attentional_v2/excerpt_micro_slice_v1.py",
         "reading-companion-backend/eval/attentional_v2/build_excerpt_micro_slice_v1.py",
@@ -896,7 +921,7 @@
       "status": "parked",
       "lane": "mechanism_eval",
       "priority": "high",
-      "detail_ref": "docs/implementation/new-reading-mechanism/execution-tracker.md",
+      "detail_ref": "docs/implementation/new-reading-mechanism/new-reading-mechanism-execution-tracker.md",
       "truth_refs": [
         "docs/backend-reading-mechanisms/attentional_v2.md",
         "docs/backend-reader-evaluation.md",
@@ -904,7 +929,7 @@
       ],
       "decision_refs": [],
       "job_refs": [],
-      "acceptance_ref": "docs/implementation/new-reading-mechanism/execution-tracker.md",
+      "acceptance_ref": "docs/implementation/new-reading-mechanism/new-reading-mechanism-execution-tracker.md",
       "next_action": "The April 7 retry landed new nodes.py / prompts.py / runner.py behavior plus the long-span harness support in run_accumulation_comparison.py, and the targeted tests all passed. The repair gate run on attentional_v2_excerpt_micro_slice_v1_smoke_excerpt_repair_laneA_retry1_20260407 finished cleanly, but its judged stage regressed against the April 5 micro-slice baseline. Keep those misses explicit, but do not reopen this repair lane by default while the product/demo decision is using the completed excerpt formal run as good-enough evidence and long-span smoke is the active priority.",
       "blocked_by": [],
       "evidence_refs": [
@@ -928,7 +953,7 @@
         "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_excerpt_micro_slice_v1_smoke_excerpt_repair_laneA_retry1_20260407/shards/default/cases/xidaduo_private_zh__15__tension_reversal__seed_1.json",
         "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_excerpt_micro_slice_v1_smoke_excerpt_repair_laneA_retry1_20260407/shards/default/cases/nawaer_baodian_private_zh__22__callback_bridge__seed_1.json",
         "docs/backend-reading-mechanisms/attentional_v2.md",
-        "docs/implementation/new-reading-mechanism/execution-tracker.md",
+        "docs/implementation/new-reading-mechanism/new-reading-mechanism-execution-tracker.md",
         "docs/implementation/new-reading-mechanism/mechanism-pattern-ledger.md"
       ],
       "last_updated": "2026-04-08T11:31:24Z",
@@ -940,7 +965,7 @@
       "status": "active",
       "lane": "dataset_platform",
       "priority": "high",
-      "detail_ref": "docs/implementation/new-reading-mechanism/execution-tracker.md",
+      "detail_ref": "docs/implementation/new-reading-mechanism/new-reading-mechanism-execution-tracker.md",
       "truth_refs": [
         "docs/backend-reader-evaluation.md",
         "docs/implementation/new-reading-mechanism/question-aligned-case-construction.md",
@@ -960,7 +985,7 @@
         "bgjob_accumulation_value_of_others_iterator_v1_bundle_20260408",
         "bgjob_accumulation_benchmark_v1_value_of_others_iterator_v1_recovery_20260408"
       ],
-      "acceptance_ref": "docs/implementation/new-reading-mechanism/execution-tracker.md",
+      "acceptance_ref": "docs/implementation/new-reading-mechanism/new-reading-mechanism-execution-tracker.md",
       "next_action": "Keep the honest-short freeze as the active long-span draft, treat attentional_v2_accumulation_benchmark_v1_judged_20260406 as a diagnosed invalid lane rather than generic mechanism failure, and use the completed 2-window recovery smoke as proof that bundle/probe materialization is back. The full formal rerun attentional_v2_accumulation_benchmark_v1_judged_rerun_20260407 has already completed as a process, but one window still needs targeted same-run repair after a transient iterator_v1 failure on value_of_others_private_en__8_10. The active move is bgjob_accumulation_benchmark_v1_value_of_others_iterator_v1_recovery_20260408, and future relaunches can now reuse resumable failed output trees because run_accumulation_comparison.py has landed one bounded resume-aware recovery pass for recoverable transient failures.",
       "blocked_by": [],
       "evidence_refs": [
@@ -1029,7 +1054,7 @@
       "evidence_refs": [
         "docs/implementation/new-reading-mechanism/question-aligned-case-construction.md",
         "docs/implementation/new-reading-mechanism/human-notes-guided-dataset-v1-freeze-draft.md",
-        "docs/implementation/new-reading-mechanism/execution-tracker.md",
+        "docs/implementation/new-reading-mechanism/new-reading-mechanism-execution-tracker.md",
         "docs/implementation/new-reading-mechanism/decision-log.md",
         "reading-companion-backend/eval/attentional_v2/library_notes.py",
         "reading-companion-backend/eval/attentional_v2/register_library_notes.py",

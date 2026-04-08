@@ -64,7 +64,7 @@ PRE_CLEANUP_DRAFT_MD = COORDINATION_DIR / "private_library_promotion_round2_prec
 
 ROUND2_DRAFT_MD = WORKSPACE_ROOT / "docs" / "implementation" / "new-reading-mechanism" / "private-library-promotion-round2.md"
 ROUND2_DRAFT_JSON = WORKSPACE_ROOT / "docs" / "implementation" / "new-reading-mechanism" / "private-library-promotion-round2.json"
-EXECUTION_TRACKER = WORKSPACE_ROOT / "docs" / "implementation" / "new-reading-mechanism" / "execution-tracker.md"
+EXECUTION_TRACKER = WORKSPACE_ROOT / "docs" / "implementation" / "new-reading-mechanism" / "new-reading-mechanism-execution-tracker.md"
 AGENT_HANDOFF = WORKSPACE_ROOT / "docs" / "agent-handoff.md"
 ROUND1_EXECUTION_DOC = WORKSPACE_ROOT / "docs" / "implementation" / "new-reading-mechanism" / "private-library-promotion-round1-execution.md"
 CHAPTER_SANITY_RESULTS_JSON = (

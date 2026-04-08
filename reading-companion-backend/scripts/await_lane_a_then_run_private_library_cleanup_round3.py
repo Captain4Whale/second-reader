@@ -56,7 +56,7 @@ ZH_DATASET = "attentional_v2_private_library_excerpt_zh_v2"
 
 SELECTION_JSON = WORKSPACE_ROOT / "docs" / "implementation" / "new-reading-mechanism" / "private-library-promotion-round1-selection.json"
 CHAPTER_SANITY_JSON = WORKSPACE_ROOT / "docs" / "implementation" / "new-reading-mechanism" / "private-library-promotion-round1-chapter-sanity-results.json"
-EXECUTION_TRACKER_MD = WORKSPACE_ROOT / "docs" / "implementation" / "new-reading-mechanism" / "execution-tracker.md"
+EXECUTION_TRACKER_MD = WORKSPACE_ROOT / "docs" / "implementation" / "new-reading-mechanism" / "new-reading-mechanism-execution-tracker.md"
 AGENT_HANDOFF_MD = WORKSPACE_ROOT / "docs" / "agent-handoff.md"
 ROUND1_EXECUTION_MD = WORKSPACE_ROOT / "docs" / "implementation" / "new-reading-mechanism" / "private-library-promotion-round1-execution.md"
 ROUND2_PROMOTION_MD = WORKSPACE_ROOT / "docs" / "implementation" / "new-reading-mechanism" / "private-library-promotion-round2.md"

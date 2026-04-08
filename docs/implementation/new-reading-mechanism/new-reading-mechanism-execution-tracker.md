@@ -30,63 +30,27 @@ Update when: status changes, blockers appear, or phases complete.
     - `chapter-end slow cycle`
 - Current side branch:
   - none
-  - the universal shared LLM invocation and traceability layer is landed, and the post-recovery gate review has now returned the route to decisive mechanism-eval work
-  - Phase 9 is now realigned into a split-surface evaluation cadence:
+  - the universal shared LLM invocation and traceability layer is landed
+  - the stable `attentional_v2` mechanism doc is now promoted enough to serve as the live mechanism authority, so Phase 0 no longer stays open for doc-timing reasons
+  - Phase 9 remains the only unfinished implementation stage because migration/default-cutover work and the last long-span evidence repair are still open
+  - the Phase 9 boundary is now explicitly locked:
+    - compatibility cutover stays inside Phase 9
+    - V2-native frontend presentation and section-first retirement are post-Phase-9 work
+  - Phase 9 remains realigned into a split-surface evaluation cadence:
     - `excerpt surface` for `reader_character.selective_legibility` plus local `reader_value.insight_and_clarification`
     - `long-span / window` surface for `reader_character.coherent_accumulation` plus long-span `reader_value.insight_and_clarification`
-- April 7 execution-state override:
-  - `excerpt` is the active mainline and `long-span` is diagnosis-only support for now.
-  - the earlier April 5 throughput repair remains valid historical evidence, but it is no longer the live promotion state.
-  - the live excerpt blocker is the April 7 repair-first retry:
-    - landed code:
-      - `reading-companion-backend/src/attentional_v2/nodes.py`
-      - `reading-companion-backend/src/attentional_v2/prompts.py`
-      - `reading-companion-backend/src/attentional_v2/runner.py`
-      - `reading-companion-backend/eval/attentional_v2/run_accumulation_comparison.py`
-    - targeted validation passed:
-      - `reading-companion-backend/tests/test_attentional_v2_nodes.py`
-      - `reading-companion-backend/tests/test_attentional_v2_bridge.py`
-      - `reading-companion-backend/tests/test_run_accumulation_comparison.py`
-      - `reading-companion-backend/tests/test_attentional_v2_scaffold.py`
-      - `reading-companion-backend/tests/test_run_excerpt_comparison.py`
-    - repair-gate run root:
-      - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_excerpt_micro_slice_v1_smoke_excerpt_repair_laneA_retry1_20260407`
-    - important run-shape note:
-      - the same run root was first used for the clean smoke bundle stage and then reused for `stage = judge` and `stage = merge`
-      - the top-level `summary/aggregate.json` and `summary/report.md` under that root are therefore judged outputs, not smoke-only summaries
-    - smoke-stage outcome:
-      - `2` units completed cleanly
-      - `13` excerpt cases emitted
-      - `runtime_reader_default request_count = 125`
-      - `mechanism_failure_count = 0`
-      - `judge_unavailable_count = 0`
-      - smoke-stage `by_target` evidence showed real sharing across the pooled local targets:
-        - `MiniMax-M2.7-personal = 78`
-        - `MiniMax-M2.7-personal-2 = 47`
-    - judged-stage outcome:
-      - `selective_legibility`: `13` cases, `attentional_v2 = 7`, `iterator_v1 = 4`, `tie = 2`, averages `1.954` vs `1.692`
-      - `insight_and_clarification`: `8` cases, `attentional_v2 = 5`, `iterator_v1 = 2`, `tie = 1`, averages `2.775` vs `1.425`
-      - top-level combined usage under the reused run root:
-        - `request_count = 146`
-        - `success_count = 146`
-        - `error_count = 0`
-        - `retry_count = 1`
-    - current gate interpretation:
-      - the repair posture fixed the operational overread / unfinished-run failure well enough to run cleanly
-      - but the judged gate regressed against the April 5 micro-slice baseline, so no new full `excerpt surface v1.1` formal rerun was launched
-      - `nawaer_baodian_private_zh__22__callback_bridge__seed_1` improved from a pure chapter-end retrospect to a selective-legibility win for `attentional_v2`, but it still only tied on `insight_and_clarification` because the backward bridge remained chapter-level rather than explicitly earlier-targeted
-      - `xidaduo_private_zh__15` remains the live blocker: V2 still collapses toward a chapter-end retrospect around `15.45` or nearby same-chapter material instead of carrying the exact late-local hinge through `15.19 / 15.34 / 15.40-15.41`
-  - the live long-span blocker is now narrower and more concrete than the April 6 aggregate made it look:
-    - `attentional_v2_accumulation_benchmark_v1_judged_20260406` is a completed but invalid lane
-    - all `5` window-unit payloads record both mechanisms as `completed`
-    - the window-unit files also contain normalized export bundles for both mechanisms
-    - all `7` probe case files still say both mechanisms are `missing` with `error = bundle_missing`
-    - treat this as a harness / bundle-materialization mismatch, not as blanket mechanism failure evidence
-    - the next long-span move stays bounded:
-      - after the excerpt mechanism version freezes again, run `1-2` smoke windows on the repaired harness
-      - do not launch a new full long-span judged lane yet
+- April 8 execution-state summary:
+  - `excerpt`:
+    - keep `attentional_v2_excerpt_surface_v1_1_judged_20260406` as the current good-enough formal excerpt evidence bundle
+    - no new excerpt formal rerun is active
+    - the April 7 narrow repair retry remains parked evidence only because it ran cleanly but regressed against the April 5 micro-slice baseline
+  - `long-span`:
+    - treat `attentional_v2_accumulation_benchmark_v1_judged_20260406` as an invalid harness/materialization lane rather than as mechanism evidence
+    - the completed 2-window recovery smoke proved that bundle/probe materialization is repaired enough to support recovery work
+    - the completed formal rerun `attentional_v2_accumulation_benchmark_v1_judged_rerun_20260407` still needs one same-run targeted repair on `value_of_others_private_en__8_10`
   - current background-job posture:
-    - `reading-companion-backend/state/job_registry/active_jobs.md` shows no active background jobs
+    - `reading-companion-backend/state/job_registry/active_jobs.md` currently shows:
+      - `bgjob_accumulation_benchmark_v1_value_of_others_iterator_v1_recovery_20260408`
 - Current strategy discipline:
   - dataset-builder and controller work are now bounded enabling lanes for evaluation rather than independent finish lines
   - book source origin is now explicitly treated as operational provenance rather than as a benchmark-design axis:
@@ -888,12 +852,12 @@ Update when: status changes, blockers appear, or phases complete.
       - review queue: `active_packet_count = 0`
       - current gate posture after the `2026-04-01` review: benchmark promotion stays on `hold`; runtime-viability is now authorized as the active next lane, while promotion reopening and default-cutover remain closed
     - later frontend/API retirement of section-first chapter/detail and marks surfaces
-    - later stable-doc promotion timing under `Q10`
+    - stable `attentional_v2` doc promotion is now resolved and no longer a separate blocker
 
 ## Phase Tracker
 | Phase | Status | Exit gate |
 | --- | --- | --- |
-| Phase 0 - Planning and scope lock | `in_progress` | temp docs live, design coverage mapped, open questions recorded |
+| Phase 0 - Planning and scope lock | `done` | planning complete, scope locked, stable-doc promotion timing resolved |
 | Phase 1 - Runtime foundation and schemas | `done` | mechanism shell, core schemas, policy/version surfaces defined |
 | Phase 2 - Sentence substrate and survey orientation | `done` | sentence-order substrate verified, survey artifacts working |
 | Phase 3 - Deterministic intake, gates, and retrieval scaffolding | `done` | trigger pipeline, boundary nomination, candidate generation working |
@@ -922,7 +886,7 @@ Update when: status changes, blockers appear, or phases complete.
 - [x] Decide target mechanism key and naming path
 - [x] Audit current shared parsed-book substrate for sentence-level readiness
 - [x] Resolve the shared `_runtime/` vs `_mechanisms/<mechanism_key>/` boundary
-- [ ] Decide when stable `attentional_v2` doc should be updated from working design
+- [x] Decide when stable `attentional_v2` doc should be updated from working design
 
 ### Phase 1 - Runtime Foundation And Schemas
 - [x] Add new mechanism shell under shared runtime boundary
@@ -1628,7 +1592,10 @@ Update when: status changes, blockers appear, or phases complete.
     - grow from `36` shared toward `54`
 - [ ] Rerun mechanism-integrity on the expanded and diversified excerpt benchmark
 - [ ] Rerun chapter-scale comparison prep on the expanded chapter corpus
-- [ ] Migrate the frontend and stable API away from section-first chapter/detail and marks surfaces once the section model is intentionally retired
+- [x] Lock the Phase 9 cutover boundary explicitly:
+  - Phase 9 ends at compatibility cutover
+  - V2-native frontend presentation and section-first retirement move to post-Phase-9 work
+- [ ] Complete backend/frontend compatibility cutover for the current routed product path
 - [x] Curate the first excerpt-case dataset packs for local/behind-the-mechanism questions
 - [x] Curate the tracked `attentional_v2` benchmark datasets and the later chapter-level evaluation corpus before any real end-to-end comparison
 - [x] Curate the chapter corpus for cross-mechanism span/end-to-end comparison

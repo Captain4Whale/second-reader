@@ -37,8 +37,11 @@ Update when: the design capture, plan, tracker, or open-question set changes dur
   - atomic traceability ledger mapping design points to implementation, deferral, rejection, or stable-doc promotion
 - `implementation-plan.md`
   - the phased execution order, dependency chain, and exit criteria
-- `execution-tracker.md`
+- `new-reading-mechanism-execution-tracker.md`
   - the live checklist and progress tracker for the implementation effort
+- `phase9-compat-cutover-roadmap.md`
+  - the explicit roadmap for finishing Phase 9 through compatibility cutover
+  - separates Phase 9 default-cutover work from later V2-native frontend and section-retirement work
 - `open-questions.md`
   - unresolved design and integration questions, plus temporary working assumptions
 - `decision-log.md`
@@ -100,16 +103,17 @@ Update when: the design capture, plan, tracker, or open-question set changes dur
 2. `coverage-policy.md`
 3. `requirement-ledger.md`
 4. `implementation-plan.md`
-5. `execution-tracker.md`
-6. `open-questions.md`
-7. `evaluation-question-map.md`
-8. `evaluation-corpus-requirements.md`
-9. `modern-nonfiction-expansion-booklist.md`
-10. `evaluation-dataset-layout.md`
-11. `dataset-platform-closed-loop.md`
-12. `question-aligned-case-construction.md`
-13. `dataset-quality-hardening.md`
-14. `post-recovery-gate-review-checklist.md`
-15. `mechanism-pattern-ledger.md`
-16. `runtime-artifact-map.md`
-17. Stable docs listed above, as required by the task at hand
+5. `new-reading-mechanism-execution-tracker.md`
+6. `phase9-compat-cutover-roadmap.md`
+7. `open-questions.md`
+8. `evaluation-question-map.md`
+9. `evaluation-corpus-requirements.md`
+10. `modern-nonfiction-expansion-booklist.md`
+11. `evaluation-dataset-layout.md`
+12. `dataset-platform-closed-loop.md`
+13. `question-aligned-case-construction.md`
+14. `dataset-quality-hardening.md`
+15. `post-recovery-gate-review-checklist.md`
+16. `mechanism-pattern-ledger.md`
+17. `runtime-artifact-map.md`
+18. Stable docs listed above, as required by the task at hand
