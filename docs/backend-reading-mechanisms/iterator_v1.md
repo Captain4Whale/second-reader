@@ -1,22 +1,26 @@
 # Iterator V1 Mechanism
 
-Purpose: explain how the current default sequential reader selects its working unit, assembles prompt context, and projects live attention state.
+Purpose: explain how the supported legacy-compatible fallback sequential reader selects its working unit, assembles prompt context, and projects live attention state.
 Use when: changing `iterator_v1` reader-unit selection, prompt assembly, memory packing, search expansion, or live `current_reading_activity` semantics.
 Not for: shared mechanism-platform rules, upload/start/resume lifecycle rules, or endpoint-level aggregation responsibilities.
 Update when: `iterator_v1` section/subsegment boundaries, reader-loop stages, prompt inputs, memory-packet composition, or attention projection rules change.
 
-- Status: `default`
+- Status: `fallback`
 - Mechanism key: `iterator_v1`
-- Defaultness: `current default`
+- Defaultness: `explicit fallback / legacy-compatible resume path`
 - Artifact root: `_mechanisms/iterator_v1/`
-- Authority scope: current live `iterator_v1` ontology, execution loop, prompt assembly, memory packet, runtime artifacts, and live attention projection
+- Authority scope: supported `iterator_v1` fallback ontology, execution loop, prompt assembly, memory packet, runtime artifacts, and live attention projection
 
 Use `docs/backend-reading-mechanism.md` for shared mechanism-platform boundaries. Use `docs/backend-sequential-lifecycle.md` for the job-level workflow over time. Use `docs/backend-state-aggregation.md` for how runtime artifacts become public payloads.
 
 ## Purpose And Status
-- `iterator_v1` is the current live/default backend reader mechanism.
+- `iterator_v1` is no longer the default backend reader mechanism.
+- It remains a supported fallback for:
+  - explicit override launches
+  - legacy run resume continuity
+  - cross-mechanism comparison and debugging
 - It is a section-first sequential reader with a local subsegment planner inside each selected section.
-- It remains the shipped mechanism while the backend platform is being generalized for additional reader mechanisms.
+- It remains the shipped legacy-compatible mechanism while the product default has moved to `attentional_v2`.
 
 ## Core Primitives / Ontology
 - `chapter`

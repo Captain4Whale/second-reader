@@ -510,7 +510,7 @@ def test_launch_sequential_job_records_runtime_environment_error_when_python_is_
 
 
 def test_launch_sequential_job_persists_non_default_mechanism_key(tmp_path, monkeypatch):
-    """Launching a non-default mechanism should persist the mechanism key and pass the CLI flag."""
+    """Launching iterator_v1 as a fallback should persist the mechanism key and pass the CLI flag."""
 
     jobs_module = importlib.import_module("src.library.jobs")
     upload_path = upload_file("job-attn", tmp_path)
@@ -531,21 +531,21 @@ def test_launch_sequential_job_persists_non_default_mechanism_key(tmp_path, monk
     record = jobs_module.launch_sequential_job(
         upload_path,
         root=tmp_path,
-        mechanism_key="attentional_v2",
+        mechanism_key="iterator_v1",
         intent="focus on the book's interpretive pressure",
     )
     persisted = jobs_module.load_job(str(record["job_id"]), root=tmp_path)
 
     assert launched
     assert "--mechanism" in launched[0]
-    assert "attentional_v2" in launched[0]
-    assert persisted["mechanism_key"] == "attentional_v2"
+    assert "iterator_v1" in launched[0]
+    assert persisted["mechanism_key"] == "iterator_v1"
     assert persisted["job_kind"] == "read"
     assert job_record_file(str(record["job_id"]), tmp_path).exists()
 
 
-def test_launch_existing_book_read_job_allows_attentional_v2(tmp_path, monkeypatch):
-    """The canonical existing-book deep-reading launcher should allow attentional_v2."""
+def test_launch_existing_book_read_job_omits_default_mechanism_flag_for_attentional_v2(tmp_path, monkeypatch):
+    """The canonical existing-book launcher should rely on the new default without forcing a CLI flag."""
 
     jobs_module = importlib.import_module("src.library.jobs")
     book_id = _bootstrap_book(tmp_path, stage="ready")
@@ -566,8 +566,31 @@ def test_launch_existing_book_read_job_allows_attentional_v2(tmp_path, monkeypat
     assert launched
     assert "--mode" in launched[0]
     assert "sequential" in launched[0]
+    assert "--mechanism" not in launched[0]
+
+
+def test_launch_existing_book_read_job_allows_iterator_v1_fallback(tmp_path, monkeypatch):
+    """The canonical existing-book deep-reading launcher should still allow explicit iterator_v1 fallback."""
+
+    jobs_module = importlib.import_module("src.library.jobs")
+    book_id = _bootstrap_book(tmp_path, stage="ready")
+    launched: list[list[str]] = []
+
+    class _FakeProcess:
+        pid = 4445
+
+    monkeypatch.setattr(
+        jobs_module.subprocess,
+        "Popen",
+        lambda command, cwd, stdout, stderr: launched.append(command) or _FakeProcess(),
+    )
+
+    record = jobs_module.launch_existing_book_read_job(book_id, root=tmp_path, mechanism_key="iterator_v1")
+
+    assert record["status"] == "queued"
+    assert launched
     assert "--mechanism" in launched[0]
-    assert "attentional_v2" in launched[0]
+    assert "iterator_v1" in launched[0]
 
 
 def test_launch_book_analysis_job_aliases_existing_book_read_job(tmp_path, monkeypatch):
@@ -583,11 +606,11 @@ def test_launch_book_analysis_job_aliases_existing_book_read_job(tmp_path, monke
         lambda internal_book_id, **kwargs: observed.update({"book_id": internal_book_id, **kwargs}) or {"job_id": "job-legacy", "status": "queued"},
     )
 
-    record = jobs_module.launch_book_analysis_job(book_id, root=tmp_path, mechanism_key="attentional_v2", intent="legacy")
+    record = jobs_module.launch_book_analysis_job(book_id, root=tmp_path, mechanism_key="iterator_v1", intent="legacy")
 
     assert record["job_id"] == "job-legacy"
     assert observed["book_id"] == book_id
-    assert observed["mechanism_key"] == "attentional_v2"
+    assert observed["mechanism_key"] == "iterator_v1"
     assert observed["intent"] == "legacy"
 
 
@@ -800,8 +823,7 @@ def test_refresh_job_fresh_rerun_prefers_runtime_shell_mechanism_key(tmp_path, m
     refreshed = refresh_job("job-incompat-attn", root=tmp_path)
 
     assert launched and "--continue" not in launched[0]
-    assert "--mechanism" in launched[0]
-    assert "attentional_v2" in launched[0]
+    assert "--mechanism" not in launched[0]
     assert refreshed["mechanism_key"] == "attentional_v2"
 
 
@@ -927,9 +949,74 @@ def test_refresh_job_auto_resume_prefers_runtime_shell_mechanism_key(tmp_path, m
     refreshed = refresh_job("job-prod-stalled-attn", root=tmp_path)
 
     assert launched and "--continue" in launched[0]
-    assert "--mechanism" in launched[0]
-    assert "attentional_v2" in launched[0]
+    assert "--mechanism" not in launched[0]
     assert refreshed["mechanism_key"] == "attentional_v2"
+
+
+def test_resume_mechanism_key_falls_back_to_legacy_iterator_artifacts(tmp_path):
+    """Legacy iterator runs without shell or job metadata should still resume on iterator_v1 after the default flips."""
+
+    jobs_module = importlib.import_module("src.library.jobs")
+    book_id = _bootstrap_book(tmp_path, stage="deep_reading")
+
+    mechanism_key = jobs_module._resume_mechanism_key({"mechanism_key": None}, book_id=book_id, root=tmp_path)
+
+    assert mechanism_key == "iterator_v1"
+
+
+def test_refresh_job_auto_resume_preserves_legacy_iterator_when_metadata_is_missing(tmp_path, monkeypatch):
+    """Auto-resume should keep old iterator runs on iterator_v1 even when old records predate mechanism metadata."""
+
+    jobs_module = importlib.import_module("src.library.jobs")
+    compat_version = get_reader_resume_compat_version()
+    book_id = _bootstrap_book(tmp_path, stage="deep_reading")
+    output_dir = tmp_path / "output" / book_id
+    run_state_path = _run_state_path(output_dir)
+    run_state = json.loads(run_state_path.read_text(encoding="utf-8"))
+    run_state["resume_compat_version"] = compat_version
+    run_state["updated_at"] = "2026-03-07T00:00:00Z"
+    run_state_path.write_text(json.dumps(run_state, ensure_ascii=False, indent=2), encoding="utf-8")
+
+    upload_path = upload_file("job-prod-stalled-legacy-iterator", tmp_path)
+    upload_path.parent.mkdir(parents=True, exist_ok=True)
+    upload_path.write_bytes(b"epub")
+    save_job(
+        {
+            "job_id": "job-prod-stalled-legacy-iterator",
+            "status": "deep_reading",
+            "job_kind": "read",
+            "upload_path": str(upload_path),
+            "book_id": book_id,
+            "pid": 1234,
+            "resume_compat_version": compat_version,
+            "created_at": "2026-03-07T00:00:00Z",
+            "updated_at": "2026-03-07T00:00:00Z",
+            "error": None,
+        },
+        tmp_path,
+    )
+
+    launched: list[list[str]] = []
+
+    class _FakeProcess:
+        pid = 4446
+
+    monkeypatch.setattr(jobs_module, "_process_running", lambda _pid: True)
+    monkeypatch.setattr(jobs_module, "get_backend_run_mode", lambda: "prod")
+    monkeypatch.setattr(jobs_module, "ACTIVE_RUNTIME_STALE_SECONDS", 1)
+    monkeypatch.setattr(jobs_module, "_seconds_since", lambda _value: 120.0)
+    monkeypatch.setattr(
+        jobs_module.subprocess,
+        "Popen",
+        lambda command, cwd, stdout, stderr: launched.append(command) or _FakeProcess(),
+    )
+
+    refreshed = refresh_job("job-prod-stalled-legacy-iterator", root=tmp_path)
+
+    assert launched and "--continue" in launched[0]
+    assert "--mechanism" in launched[0]
+    assert "iterator_v1" in launched[0]
+    assert refreshed["mechanism_key"] == "iterator_v1"
 
 
 def test_api_reads_books_chapters_marks_and_docs(tmp_path):
@@ -1370,15 +1457,15 @@ def test_api_upload_and_job_polling(tmp_path, monkeypatch):
     assert job_response.json()["status"] == "deep_reading"
 
 
-def test_api_upload_propagates_internal_mechanism_override(tmp_path, monkeypatch):
-    """Immediate upload should pass the configured backend mechanism through the internal launch path."""
+def test_api_upload_propagates_internal_mechanism_fallback_override(tmp_path, monkeypatch):
+    """Immediate upload should pass an explicit iterator_v1 fallback through the internal launch path."""
 
     api_module.app.state.root = tmp_path
     client = TestClient(api_module.app)
     seen: dict[str, object] = {}
 
     monkeypatch.setattr(api_module, "create_upload_job", lambda root: ("jobattn", root / "state" / "uploads" / "jobattn.epub"))
-    monkeypatch.setattr(api_module, "get_backend_reading_mechanism_key", lambda: "attentional_v2")
+    monkeypatch.setattr(api_module, "get_backend_reading_mechanism_key", lambda: "iterator_v1")
 
     def _provision(upload_path, language="auto", root=None, mechanism_key=None):
         seen["provision_mechanism_key"] = mechanism_key
@@ -1407,8 +1494,8 @@ def test_api_upload_propagates_internal_mechanism_override(tmp_path, monkeypatch
     )
 
     assert response.status_code == 202
-    assert seen["provision_mechanism_key"] == "attentional_v2"
-    assert seen["launch_mechanism_key"] == "attentional_v2"
+    assert seen["provision_mechanism_key"] == "iterator_v1"
+    assert seen["launch_mechanism_key"] == "iterator_v1"
 
 
 def test_api_upload_deferred_returns_ready_job(tmp_path, monkeypatch):
@@ -1471,20 +1558,20 @@ def test_api_start_analysis_for_uploaded_book(tmp_path, monkeypatch):
     assert response.json()["book_id"] == public_book_id
 
 
-def test_api_start_analysis_allows_internal_attentional_v2(tmp_path, monkeypatch):
-    """The start-analysis route should launch the active attentional_v2 deep-reading path."""
+def test_api_start_analysis_allows_internal_iterator_v1_fallback(tmp_path, monkeypatch):
+    """The start-analysis route should still allow an explicit iterator_v1 fallback launch."""
 
     book_id = _bootstrap_book(tmp_path, stage="ready")
     public_book_id = to_api_book_id(book_id)
     api_module.app.state.root = tmp_path
     client = TestClient(api_module.app)
 
-    monkeypatch.setattr(api_module, "get_backend_reading_mechanism_key", lambda: "attentional_v2")
+    monkeypatch.setattr(api_module, "get_backend_reading_mechanism_key", lambda: "iterator_v1")
     monkeypatch.setattr(
         api_module,
         "launch_existing_book_read_job",
         lambda internal_book_id, root=None, mechanism_key=None: {
-            "job_id": "job-attn-start",
+            "job_id": "job-v1-start",
             "status": "queued",
             "upload_path": str((tmp_path / "output" / internal_book_id / "_assets" / "source.epub")),
             "book_id": internal_book_id,
@@ -1499,7 +1586,7 @@ def test_api_start_analysis_allows_internal_attentional_v2(tmp_path, monkeypatch
     response = client.post(f"/api/books/{public_book_id}/analysis/start")
 
     assert response.status_code == 202
-    assert response.json()["job_id"] == "job-attn-start"
+    assert response.json()["job_id"] == "job-v1-start"
     assert response.json()["book_id"] == public_book_id
 
 

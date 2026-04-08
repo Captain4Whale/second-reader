@@ -6,7 +6,7 @@ Not for: function-level implementation details, public schema authority, or the 
 Update when: upload flow, job kinds, status progression, runtime recovery rules, or frontend lifecycle dependencies change.
 
 Use `docs/api-contract.md` for route and field authority. Use this file to understand how the current long-running workflow behaves across uploads, jobs, checkpoints, and recovery.
-Use `docs/backend-reading-mechanism.md` when the question is about shared mechanism-platform boundaries. Use `docs/backend-reading-mechanisms/iterator_v1.md` when the question is how the current default mechanism processes one selected section inside its inner reader loop.
+Use `docs/backend-reading-mechanism.md` when the question is about shared mechanism-platform boundaries. Use `docs/backend-reading-mechanisms/attentional_v2.md` when the question is how the current default mechanism processes one selected sentence-order meaning unit inside its live loop.
 
 ## Terminology Guard
 - In this document, `analysis` means the current sequential deep-reading workflow exposed through `POST /api/uploads/epub`, `POST /api/books/{book_id}/analysis/start`, `POST /api/books/{book_id}/analysis/resume`, and `GET /api/books/{book_id}/analysis-state`.
@@ -17,13 +17,16 @@ Use `docs/backend-reading-mechanism.md` when the question is about shared mechan
   - Stores the EPUB under `state/uploads/<job_id>.epub`.
   - `state/uploads/` is transient intake territory rather than the durable source library or evaluation corpus.
   - Provisions a minimal book shell immediately so the frontend can resolve a book card and book route before deep reading starts.
-  - The public route does not expose a mechanism selector yet, but backend-internal rollout can still choose a non-default mechanism through shared `mechanism_key` plumbing.
+  - The public route does not expose a mechanism selector yet.
+  - New product-path launches now default to `attentional_v2`.
+  - Backend-internal override can still choose `iterator_v1` through shared `mechanism_key` plumbing.
   - `start_mode=immediate` launches a `read` job for the main sequential workflow.
   - `start_mode=deferred` launches a `parse` job that stops after structure parsing.
 - `POST /api/books/{book_id}/analysis/start`
   - Starts the main sequential workflow for an uploaded book that is currently `not_started`.
   - Reuses the copied source asset under the book output directory rather than requiring a new upload.
-  - `attentional_v2` is now a valid internal runtime choice for the main sequential workflow.
+  - This now launches the `attentional_v2` deep-reading path by default.
+  - `iterator_v1` remains a valid internal fallback override for debugging, recovery, or legacy continuity.
   - The `/analysis/start` route name is a historical compatibility label; it always launches the current deep-reading workflow rather than the retired `book_analysis` capability.
 - `POST /api/books/{book_id}/analysis/resume`
   - Resumes the latest paused or interrupted sequential job from the newest compatible checkpoint.
@@ -40,7 +43,7 @@ Use `docs/backend-reading-mechanism.md` when the question is about shared mechan
 ## Main Lifecycle
 1. Upload accepts an EPUB and writes a provisional manifest plus an initial run-state shell so the book exists immediately.
 2. A canonical background job record is created in `state/job_registry/jobs/<job_id>.json` with `job_kind=parse` or `job_kind=read`.
-  - When backend-internal rollout selected a non-default mechanism, the job record also carries `mechanism_key`.
+  - When backend-internal rollout selected the non-default fallback mechanism, the job record also carries `mechanism_key`.
   - `state/jobs/<job_id>.json` remains a compatibility shadow during the current migration window; it is no longer the primary store.
 3. The job enters `queued`, then begins structure preparation under `parsing_structure`.
 4. Parse preparation now has two layers:
@@ -84,10 +87,10 @@ Promotion from user upload into the durable source library or evaluation corpus 
 - Primary path: `queued -> parsing_structure -> deep_reading -> completed`.
 - The `parsing_structure` phase still appears here because canonical parse plus current-mechanism derivation happen before the reader settles into steady-state deep reading.
 - The current live mechanisms are:
-  - `iterator_v1`
-    - default section/subsegment reader
   - `attentional_v2`
-    - experimental sentence-order meaning-unit reader
+    - default sentence-order meaning-unit reader
+  - `iterator_v1`
+    - explicit fallback / legacy-compatible section/subsegment reader
 - Read-time mutable artifacts remain mechanism-private:
   - `iterator_v1` uses `_mechanisms/iterator_v1/runtime/`
   - `attentional_v2` uses `_mechanisms/attentional_v2/runtime/`
@@ -134,7 +137,8 @@ Promotion from user upload into the durable source library or evaluation corpus 
   - Source of truth order is:
     1. `_runtime/runtime_shell.json.mechanism_key`
     2. persisted job-record `mechanism_key`
-    3. current default mechanism only when neither earlier source exists
+    3. legacy iterator-artifact inference for old runs that predate shell/job mechanism metadata
+    4. current default mechanism only when neither earlier source exists
 - Stale runtime handling
   - If the process is still alive but live runtime updates stop arriving, the backend pauses the book, writes a human-facing stalled message, and appends `runtime_stalled` plus `job_paused_by_runtime_guard` into the system stream.
   - The default active-runtime stale threshold is 45 seconds.

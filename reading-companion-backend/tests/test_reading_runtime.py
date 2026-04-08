@@ -8,6 +8,7 @@ from pathlib import Path
 import pytest
 
 import main as main_module
+from src import config as config_module
 from src.iterator_reader.storage import activity_file, chapter_result_file, normalized_eval_bundle_file, reader_memory_file, run_state_file, save_json
 from src.reading_core.runtime_contracts import ReadRequest
 from src.reading_core.storage import save_book_document
@@ -16,13 +17,15 @@ from src.reading_mechanisms.iterator_v1 import IteratorV1Mechanism
 from src.reading_runtime import available_mechanism_keys, default_mechanism_key, get_mechanism
 
 
-def test_default_mechanism_registration_exposes_iterator_v1():
-    """The scaffold should register the current iterator reader as the default."""
+def test_default_mechanism_registration_exposes_attentional_v2():
+    """The scaffold should register attentional_v2 as the product default."""
 
+    assert "attentional_v2" in available_mechanism_keys()
     assert "iterator_v1" in available_mechanism_keys()
-    assert default_mechanism_key() == "iterator_v1"
-    assert get_mechanism().key == "iterator_v1"
+    assert default_mechanism_key() == "attentional_v2"
+    assert get_mechanism().key == "attentional_v2"
     assert get_mechanism("iterator_v1").label
+    assert get_mechanism("attentional_v2").label
 
 
 def test_cli_mechanism_defaults_to_registered_default():
@@ -32,6 +35,22 @@ def test_cli_mechanism_defaults_to_registered_default():
     args = parser.parse_args(["read", "demo.epub"])
 
     assert args.mechanism == default_mechanism_key()
+
+
+def test_backend_reading_mechanism_override_only_returns_explicit_fallback(monkeypatch):
+    """The product-path override should stay quiet for the default and only return iterator_v1 fallback."""
+
+    monkeypatch.delenv("BACKEND_READING_MECHANISM", raising=False)
+    assert config_module.get_backend_reading_mechanism_key() is None
+
+    monkeypatch.setenv("BACKEND_READING_MECHANISM", "attentional_v2")
+    assert config_module.get_backend_reading_mechanism_key() is None
+
+    monkeypatch.setenv("BACKEND_READING_MECHANISM", "iterator_v1")
+    assert config_module.get_backend_reading_mechanism_key() == "iterator_v1"
+
+    monkeypatch.setenv("BACKEND_READING_MECHANISM", "unknown_v9")
+    assert config_module.get_backend_reading_mechanism_key() is None
 
 
 def test_cli_rejects_unknown_mechanism(capsys):

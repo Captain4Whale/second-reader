@@ -7,22 +7,24 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-04-08T12:42:46Z`
+Last verified: `2026-04-08T13:50:14Z`
 
 ## Current Objective
 - Hold further `excerpt` mechanism polishing for now and treat the completed `excerpt surface v1.1` formal judged run as the current good-enough evidence bundle for product/storytelling decisions.
 - Use the completed 2-window `long-span` smoke as recovery evidence that the April 6 `bundle_missing` failure is no longer blocking bundle/probe materialization, then repair the completed full formal rerun with targeted same-run recovery instead of paying for another whole-surface relaunch.
-- The explicit Phase 9 cutover roadmap is now landed:
-  - Phase 9 ends at compatibility cutover on the current routed frontend surfaces
+- The compatibility-first default cutover is now landed:
+  - normal product deep-reading launches now default to `attentional_v2`
+  - `iterator_v1` remains available as an explicit fallback and a legacy-resume continuity path
+  - the current routed frontend surfaces were validated against `attentional_v2` compatibility outputs on overview, chapter, and marks-related flows
   - V2-native frontend presentation and section-first retirement are now explicitly post-Phase-9 initiatives
-  - long-span repair continues in parallel, but it is not the hard blocker on beginning the compatibility-cutover lane
+  - long-span repair continues in parallel, but it is not a blocker on using the new default path
 - Product-boundary clarification is now landed:
   - `book_analysis` is treated as a retired legacy capability preserved only for compatibility/debugging rather than as a live secondary product lane
   - public `/analysis/*` routes remain for compatibility, but the active backend launcher and OpenAPI operation ids now describe deep reading explicitly
   - retained legacy code stays in place for now, marked as retired rather than silently current
 - Implementation-plan note:
   - stable `attentional_v2` doc promotion is now treated as resolved
-  - the unfinished implementation-program work is Phase 9 migration/default-cutover readiness rather than a still-open Phase 0 documentation-timing question
+  - the remaining live work is no longer "should we cut over?"; it is post-cutover evidence cleanup plus later V2-native presentation planning
 - `excerpt surface v1.1` remains the latest valid formal excerpt evidence lane:
   - formal run:
     - `attentional_v2_excerpt_surface_v1_1_judged_20260406`
@@ -824,7 +826,7 @@ Last verified: `2026-04-08T12:42:46Z`
 - Treat runtime viability, broader local pairwise comparison, durable-trace / re-entry comparison, and most mechanism-specific judged attribution families as paused unless one of the three kept dimensions later requires them.
 
 ## Now
-- Treat `attentional_v2` as experimental and `iterator_v1` as the current default mechanism.
+- Treat `attentional_v2` as the current default mechanism and `iterator_v1` as the supported fallback / legacy-resume path.
 - The active Phase 9 move is now split across two coordinated surfaces:
   - the completed notes-guided retry3 judged lane is now available as partial evidence only
   - the next excerpt surface is already drafted as `excerpt surface v1.1` in a fresh namespace and is now intentionally sequenced after the ROI-first micro-slice plus bounded `attentional_v2` throughput repair
@@ -2292,7 +2294,6 @@ Last verified: `2026-04-08T12:42:46Z`
 - Benchmark confidence can look stronger than it really is if corpus growth, promotion, and reviewed-slice confidence gates drift apart.
 
 ## Active Task IDs
-- `TASK-PHASE9-COMPAT-CUTOVER`
 - `TASK-ACCUMULATION-BENCHMARK-V1`
 
 ## Blocked Task IDs
@@ -2329,10 +2330,9 @@ Last verified: `2026-04-08T12:42:46Z`
 ## Machine-Readable Appendix
 ```json
 {
-  "updated_at": "2026-04-08T12:33:10Z",
+  "updated_at": "2026-04-08T13:50:14Z",
   "last_updated_by": "codex",
   "active_task_ids": [
-    "TASK-PHASE9-COMPAT-CUTOVER",
     "TASK-ACCUMULATION-BENCHMARK-V1"
   ],
   "blocked_task_ids": [

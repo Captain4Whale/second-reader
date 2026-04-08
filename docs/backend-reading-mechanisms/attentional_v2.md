@@ -1,21 +1,23 @@
 # Attentional V2 Mechanism
 
-Purpose: define the experimental attention-frontier reading mechanism that reads every sentence, reasons mainly over meaning units, and moves forward through unresolved interpretive pressure rather than fixed section traversal.
+Purpose: define the current default attention-frontier reading mechanism that reads every sentence, reasons mainly over meaning units, and moves forward through unresolved interpretive pressure rather than fixed section traversal.
 Use when: changing the live `attentional_v2` parse/read path, clarifying its ontology, or updating its mechanism-private runtime behavior.
-Not for: shared mechanism-platform rules, default-mechanism claims, or the internals of `iterator_v1`.
+Not for: shared mechanism-platform rules or the internals of `iterator_v1`.
 Update when: the live ontology, progression logic, LLM schedule, memory model, unsupported modes, or artifact design for `attentional_v2` materially changes.
 
-- Status: `experimental`
+- Status: `default`
 - Mechanism key: `attentional_v2`
-- Defaultness: `not default`
+- Defaultness: `current default`
 - Artifact root: `_mechanisms/attentional_v2/`
 - Authority scope: live `attentional_v2` mechanism behavior, including ontology, control loop, sparse-LLM schedule, memory model, unsupported modes, and mechanism-private artifacts
 
 Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `docs/backend-state-aggregation.md` for shared public-state surfaces.
 
 ## Purpose And Status
-- `attentional_v2` is the experimental non-default mechanism for a more self-propelled reading mind.
-- It is now wired end to end through the shared runtime, CLI `--mechanism attentional_v2`, and the existing async analysis job lifecycle.
+- `attentional_v2` is the current live/default mechanism for the product's deep-reading path.
+- It is wired end to end through the shared runtime, CLI `--mechanism attentional_v2`, and the existing async analysis job lifecycle.
+- Omitting `--mechanism` now means `attentional_v2`.
+- The current routed frontend still consumes compatibility-first chapter and marks outputs, but those product surfaces now run on `attentional_v2` by default.
 - It now has a live Phase 1-8.5 implementation under the shared runtime boundary.
   - These phase labels are implementation-history labels from the rollout plan, not the canonical runtime-flow vocabulary for how the mechanism reads.
   - They still appear in code and docs because some landed module families kept their rollout-era names.
@@ -36,7 +38,6 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - shared runtime-shell and manifest updates during live execution
   - job/resume mechanism-key propagation
   - compatibility chapter-result outputs without requiring `iterator_v1`-style `structure.json`
-- It is still not the default mechanism.
 - It is still intentionally unsupported for the retired legacy `book_analysis` mode in this slice.
 - Its goal is to preserve sentence-level fidelity while shifting the main reasoning unit from fixed sections toward dynamic meaning units and an explicit attention frontier.
 
@@ -153,7 +154,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - `reflective_promotion`
   - `reconsolidation`
   - `chapter_consolidation`
-- These nodes are implemented, prompt-versioned, and now wired into the live experimental sentence-order runner.
+- These nodes are implemented, prompt-versioned, and now wired into the live default sentence-order runner.
 - The runtime schedule is intentionally sparser than the raw node list may suggest:
   - `no_zoom` and `monitor` now form a no-LLM watch path
     - they persist runtime state but skip the full local interpretive loop
@@ -404,20 +405,20 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - Do current public/API compatibility projections preserve the original attentional thought direction instead of forcing it back into old section ontology?
 
 ## Known Limits / Drift Notes
-- `attentional_v2` is now a stable experimental mechanism doc, not just a future design sketch.
-- The mechanism now runs as a live parse/read path, but it remains non-default.
+- `attentional_v2` is now the default deep-reading mechanism, but the product is still in a compatibility-first cutover posture rather than a fully V2-native presentation posture.
 - The retired legacy `book_analysis` mode is intentionally unsupported for `attentional_v2` in this slice.
 - The current compatibility projector is still intentionally temporary and section-shaped, even though Phase 8 now exposes additive anchor/locus fields on shared public surfaces.
 - Shared public-surface adapter work is now partially landed, but the frontend and stable API are still section-first in chapter/detail and marks views.
+- `iterator_v1` remains supported as an explicit fallback and as a legacy-resume continuity path for older runs that predate runtime-shell mechanism metadata.
 - Future migration still needed:
   - redesign chapter/detail around chapter text plus anchored reactions instead of semantic sections as the primary container
   - retire section-first requirements from the stable API/frontend contract once the frontend has switched to locus/anchor-native rendering
 - Future observability work still needed:
   - deepen standard/debug node-level traces now that the live parse/read path exists
   - keep debug mode optional rather than making deep diagnostics the baseline requirement for normal evaluation runs
-- Future evaluation work still needed:
-  - curate the tracked `attentional_v2` benchmark datasets and later chapter-level evaluation corpus before any real end-to-end comparison
-  - run the true `iterator_v1` comparison only after that dataset work is complete
+- Current evaluation note:
+  - the completed `excerpt surface v1.1` formal judged run is the main product-readiness evidence bundle for this default cutover
+  - the long-span formal lane is still under targeted recovery, so full split-surface interpretation remains slightly incomplete
 - Current narrow-repair drift note:
   - the bounded local-anchor / callback-bridge repair loop has already landed two focused code rounds in the working tree and both targeted test slices are green
   - however, the second repair-round smoke exposed a new late-tail failure:
@@ -426,4 +427,3 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - until that blocker is resolved, do not treat the current working-tree repair state as ready for another full formal excerpt rerun
 - The survey stage must stay coarse enough that it does not become hidden full-book cheating.
 - Retrieval pressure, rare-search gating, and revisit behavior will likely need careful budget control during implementation.
-- Stable doc-promotion timing under `Q10` still remains open.

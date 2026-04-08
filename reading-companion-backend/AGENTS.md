@@ -6,18 +6,19 @@ Not for: canonical product flow, public contract authority, or workspace-level d
 Update when: backend-local constraints, recurring pitfalls, or stable implementation boundaries change.
 
 ## Scope
-- This directory contains the FastAPI API, the shared reading runtime shell, the current default `iterator_reader` implementation, and runtime artifacts.
+- This directory contains the FastAPI API, the shared reading runtime shell, the current default `attentional_v2` implementation, the legacy-compatible `iterator_reader` fallback implementation, and runtime artifacts.
 - Use `../docs/product-overview.md` for product purpose and reader-quality target.
 - Use `../docs/product-interaction-model.md` for product flow and `../docs/api-contract.md` for the public contract.
 - Use `../docs/backend-reading-mechanism.md` for shared backend mechanism-platform boundaries and documentation routing.
-- Use `../docs/backend-reading-mechanisms/iterator_v1.md` for the current default mechanism's inner reader-unit selection, prompt assembly, and live attention-projection semantics.
+- Use `../docs/backend-reading-mechanisms/attentional_v2.md` for the current default mechanism's ontology, control loop, prompt assembly, and live attention-projection semantics.
+- Use `../docs/backend-reading-mechanisms/iterator_v1.md` for the supported fallback mechanism's section/subsegment internals.
 - Use `../docs/backend-reader-evaluation.md` for reader-quality goals, evaluation layers, and offline eval methodology.
 
 ## Stable Defaults
 - Default to improving `sequential` deep-reading quality.
 - Treat `book_analysis` as a retired legacy capability and compatibility debt, not as an active secondary product lane, unless the task explicitly prioritizes legacy cleanup or debugging.
-- Treat `iterator_reader` as the current default mechanism, not as the only permanent backend architecture.
-- Treat `attentional_v2` as the current experimental non-default mechanism: it now has a live parse/read path, but it must not silently become the default or inherit the retired legacy `book_analysis` behavior.
+- Treat `attentional_v2` as the current default mechanism for normal product deep-reading runs.
+- Treat `iterator_reader` as a supported fallback and legacy-resume path, not as the current default and not as the only permanent backend architecture.
 - If product intent is unclear, preserve the feeling of a thoughtful co-reader rather than drifting toward a generic summary product.
 - When working on benchmark or evaluation tasks, apply dual diagnosis:
   - inspect mechanism weakness
@@ -78,15 +79,20 @@ Update when: backend-local constraints, recurring pitfalls, or stable implementa
 
 ## Platform Direction
 - The backend is evolving toward one shared runtime shell plus multiple mechanism-specific reader implementations.
-- `iterator_reader` remains the current default mechanism until another mechanism is explicitly wired through the same shared boundary.
-- `attentional_v2` is now wired through that shared boundary as an experimental end-to-end runner, but remains non-default.
+- `attentional_v2` is now the current default mechanism through that shared boundary.
+- `iterator_reader` remains available through the same shared boundary as a supported fallback and legacy-resume path.
 - `docs/backend-reading-mechanism.md` is authoritative for shared mechanism-platform rules.
-- `docs/backend-reading-mechanisms/iterator_v1.md` is authoritative for current `iterator_reader` internals.
+- `docs/backend-reading-mechanisms/attentional_v2.md` is authoritative for current default-mechanism internals.
+- `docs/backend-reading-mechanisms/iterator_v1.md` is authoritative for fallback `iterator_reader` internals.
 
 ## Current Default Mechanism Path
 - `main.py`
 - `src/reading_core/`
 - `src/reading_runtime/`
+- `src/reading_mechanisms/attentional_v2.py`
+- `src/attentional_v2/`
+
+## Legacy Fallback Mechanism Path
 - `src/reading_mechanisms/iterator_v1.py`
 - `src/iterator_reader/parse.py`
 - `src/iterator_reader/iterator.py`

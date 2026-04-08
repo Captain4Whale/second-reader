@@ -652,6 +652,15 @@ def _load_book_runtime_shell(book_id: str, root: Path | None = None) -> dict | N
     return load_runtime_json(path) if path.exists() else None
 
 
+def _legacy_resume_mechanism_key(book_id: str, root: Path | None = None) -> str | None:
+    """Infer one legacy mechanism key for old resumable runs that predate shell metadata."""
+
+    output_dir = _book_output_dir(book_id, root)
+    if existing_structure_file(output_dir).exists():
+        return "iterator_v1"
+    return None
+
+
 def _resume_mechanism_key(record: dict, *, book_id: str | None, root: Path | None = None) -> str | None:
     """Resolve the mechanism key for resume/recovery with shell-first precedence."""
 
@@ -664,6 +673,10 @@ def _resume_mechanism_key(record: dict, *, book_id: str | None, root: Path | Non
     mechanism_key = _normalized_mechanism_key(record.get("mechanism_key"))
     if mechanism_key:
         return mechanism_key
+    if book_id:
+        legacy_mechanism_key = _legacy_resume_mechanism_key(book_id, root)
+        if legacy_mechanism_key:
+            return legacy_mechanism_key
     return default_mechanism_key()
 
 

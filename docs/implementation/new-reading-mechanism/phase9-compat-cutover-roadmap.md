@@ -5,6 +5,14 @@ Use when: planning or implementing the remaining default-cutover work for `atten
 Not for: stable mechanism authority, field-level API schemas, or the later post-cutover presentation initiative.
 Update when: the Phase 9 cutover boundary, workstreams, gates, or task routing change.
 
+## Status
+- Completed on `2026-04-08`.
+- Landed results:
+  - normal product deep-reading launches now default to `attentional_v2`
+  - `iterator_v1` remains callable as an explicit fallback and legacy-resume path
+  - the current routed frontend surfaces were validated on the compatibility-first overview/chapter/marks path
+  - stable docs, current-state, and task routing now all treat V2-native presentation as the next separate lane rather than as unfinished Phase 9 scope
+
 ## Summary
 - Phase 9 now ends at `compatibility cutover`, not at a full frontend-native redesign.
 - `attentional_v2` should become the product's main reading mechanism through the current compatibility layer first.
@@ -64,11 +72,13 @@ Update when: the Phase 9 cutover boundary, workstreams, gates, or task routing c
   - refine presentation, interaction polish, and portfolio/demo packaging after the main mechanism cutover is already done
 
 ## Task Routing
-- Main active implementation lane:
+- Completed implementation lane:
   - `TASK-PHASE9-COMPAT-CUTOVER`
 - Parallel evidence-cleanup lane:
   - `TASK-ACCUMULATION-BENCHMARK-V1`
 - Parallel but narrower blocked eval lane:
   - `TASK-PHASE9-DECISIVE-EVAL`
+- Post-Phase-9 queued presentation lane:
+  - `TASK-V2-NATIVE-READING-PRESENTATION`
 - Post-Phase-9 deferred UI retirement lane:
   - `TASK-FE-SECTION-RETIREMENT`

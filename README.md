@@ -42,6 +42,7 @@ Important backend variables:
 - optional `LLM_TARGETS_JSON`
 - optional `LLM_PROFILE_BINDINGS_JSON`
 - optional operator overrides: `LLM_FORCE_TARGET_ID`, `LLM_FORCE_TIER_ID`
+- optional product-path override: `BACKEND_READING_MECHANISM`
 - compatibility: `LLM_REGISTRY_PATH`, `LLM_REGISTRY_JSON`
 - `TAVILY_API_KEY`
 - `UPLOAD_MAX_BYTES`
@@ -133,6 +134,9 @@ Tracked templates for the new local setup:
 - `reading-companion-backend/config/llm_profile_bindings.local.example.json`
 
 Compatibility and fallback modes:
+- `BACKEND_READING_MECHANISM`
+  - unset or `attentional_v2`: use the normal default deep-reading path
+  - `iterator_v1`: force the legacy-compatible fallback reader for new launches
 - inline equivalents also work:
   - `LLM_TARGETS_JSON`
   - `LLM_PROFILE_BINDINGS_JSON`

@@ -209,12 +209,12 @@ def get_backend_version() -> str | None:
 
 
 def get_backend_reading_mechanism_key() -> str | None:
-    """Return the internally selected backend reading mechanism, if overridden."""
+    """Return an explicit product-path mechanism override when configured."""
 
     raw = os.getenv("BACKEND_READING_MECHANISM", "").strip().lower()
-    if not raw or raw == "iterator_v1":
+    if not raw or raw == "attentional_v2":
         return None
-    if raw == "attentional_v2":
+    if raw == "iterator_v1":
         return raw
     return None
 

@@ -79,6 +79,8 @@ Use `docs/backend-sequential-lifecycle.md` for the job-level workflow over time.
 ## Mechanism Status Model
 - `default`
   - the current live/default mechanism for normal product runs
+- `fallback`
+  - implemented and supported for explicit override, legacy resume continuity, or compatibility recovery, but not the default path
 - `experimental`
   - implemented but not the default mechanism
 - `design-only`
@@ -89,14 +91,14 @@ Use `docs/backend-sequential-lifecycle.md` for the job-level workflow over time.
 ## Current Catalog Snapshot
 - Current catalog authority lives in `docs/backend-reading-mechanisms/README.md`.
 - Current entries are:
-  - `iterator_v1`
-    - status: `default`
-    - doc: `docs/backend-reading-mechanisms/iterator_v1.md`
-    - artifact root: `_mechanisms/iterator_v1/`
   - `attentional_v2`
-    - status: `experimental`
+    - status: `default`
     - doc: `docs/backend-reading-mechanisms/attentional_v2.md`
     - artifact root: `_mechanisms/attentional_v2/`
+  - `iterator_v1`
+    - status: `fallback`
+    - doc: `docs/backend-reading-mechanisms/iterator_v1.md`
+    - artifact root: `_mechanisms/iterator_v1/`
 
 ## Routing Guide
 - Read this file when the question is:
@@ -106,14 +108,15 @@ Use `docs/backend-sequential-lifecycle.md` for the job-level workflow over time.
   - how do statuses and defaults work across mechanisms?
 - Read `docs/backend-reading-mechanisms/README.md` when the question is:
   - which mechanisms exist?
-  - which one is default, experimental, design-only, or archived?
+  - which one is default, fallback, experimental, design-only, or archived?
   - what structure must a new mechanism doc follow?
-- Read `docs/backend-reading-mechanisms/iterator_v1.md` when the question is:
-  - how does the current default mechanism actually read?
-  - what does `section` or `subsegment` mean in the live system?
-  - how does `iterator_v1` package prompts, memory, and progress?
 - Read `docs/backend-reading-mechanisms/attentional_v2.md` when the question is:
-  - how does the experimental non-default attention-frontier mechanism parse and read today?
+  - how does the current default attention-frontier mechanism parse and read today?
+  - how does the default deep-reading path package prompts, memory, and progress?
+- Read `docs/backend-reading-mechanisms/iterator_v1.md` when the question is:
+  - how does the legacy-compatible section-first fallback mechanism read?
+  - what do `section` or `subsegment` mean in the fallback system?
+  - how does `iterator_v1` package prompts, memory, and progress when explicitly selected or resumed from old runs?
   - what ontology or control loop does that mechanism own?
 
 ## Maintenance Rules

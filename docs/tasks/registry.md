@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-04-08T12:33:10Z`
+Last updated: `2026-04-08T13:50:14Z`
 
 ## Status Values
 - `active`
@@ -19,18 +19,6 @@ Last updated: `2026-04-08T12:33:10Z`
 - `cancelled`
 
 ## Active
-
-### `TASK-PHASE9-COMPAT-CUTOVER` — Finish Phase 9 through compatibility cutover and default-path readiness
-- Status: `active`
-- Lane: `migration`
-- Priority: `high`
-- Detail: `docs/implementation/new-reading-mechanism/phase9-compat-cutover-roadmap.md`
-- Next: use the landed roadmap as the implementation route for the remaining Phase 9 work. Keep the scope at compatibility cutover:
-  - switch the normal product deep-reading path onto `attentional_v2`
-  - validate the current routed frontend surfaces against compatibility outputs
-  - keep `iterator_v1` as an explicit fallback/override
-  - do not widen this task into V2-native frontend redesign or section-first retirement
-- Jobs: none
 
 ### `TASK-ACCUMULATION-BENCHMARK-V1` — Build the bounded long-span window benchmark for `coherent_accumulation`
 - Status: `active`
@@ -74,7 +62,7 @@ Last updated: `2026-04-08T12:33:10Z`
 - Lane: `mechanism_eval`
 - Priority: `high`
 - Detail: `docs/implementation/new-reading-mechanism/new-reading-mechanism-execution-tracker.md`
-- Next: keep `excerpt surface v1.1` as the current valid formal excerpt evidence bundle and do not reopen excerpt reruns by default. The active blocker is now narrowed to one question only: whether the repaired long-span harness can finish the targeted repair of `value_of_others_private_en__8_10` and clear the last `judge_unavailable / mechanism_failure` pair from the completed formal rerun. This remains the parallel evidence-cleanup lane, not the blocker on beginning `TASK-PHASE9-COMPAT-CUTOVER`. The live step is `bgjob_accumulation_benchmark_v1_value_of_others_iterator_v1_recovery_20260408`.
+- Next: keep `excerpt surface v1.1` as the current valid formal excerpt evidence bundle and do not reopen excerpt reruns by default. The active blocker is now narrowed to one question only: whether the repaired long-span harness can finish the targeted repair of `value_of_others_private_en__8_10` and clear the last `judge_unavailable / mechanism_failure` pair from the completed formal rerun. This remains the parallel evidence-cleanup lane, not the blocker on the already-landed compatibility cutover. The live step is `bgjob_accumulation_benchmark_v1_value_of_others_iterator_v1_recovery_20260408`.
 - Jobs:
   - `bgjob_human_notes_excerpt_smoke_light_20260404` (`completed`)
   - `bgjob_human_notes_guided_excerpt_eval_v1_judged_20260404` (`completed`)
@@ -188,15 +176,30 @@ Last updated: `2026-04-08T12:33:10Z`
 
 ## Queued
 
+### `TASK-V2-NATIVE-READING-PRESENTATION` — Redesign the routed reading surfaces around chapter text and anchored reactions
+- Status: `queued`
+- Lane: `migration`
+- Priority: `medium`
+- Detail: `docs/implementation/new-reading-mechanism/phase9-compat-cutover-roadmap.md`
+- Next: start only when the project intentionally begins post-Phase-9 frontend work. Promote `reading_locus`, `primary_anchor`, and related anchor-native fields from compatibility helpers into the primary UI model, while keeping section-era compatibility fields only as migration sidecars until retirement is safe.
+
 ### `TASK-FE-SECTION-RETIREMENT` — Retire section-first chapter/detail and marks surfaces
 - Status: `queued`
 - Lane: `migration`
 - Priority: `medium`
 - Detail: `docs/implementation/new-reading-mechanism/new-reading-mechanism-execution-tracker.md`
-- Blocked by: `TASK-PHASE9-COMPAT-CUTOVER`
-- Next: start only after the compatibility cutover is complete and the project intentionally begins the post-Phase-9 V2-native frontend migration
+- Blocked by: `TASK-V2-NATIVE-READING-PRESENTATION`
+- Next: start only after the V2-native routed reading presentation is stable enough that section-era compatibility containers can be intentionally removed
 
 ## Done
+
+### `TASK-PHASE9-COMPAT-CUTOVER` — Finish Phase 9 through compatibility cutover and default-path readiness
+- Status: `done`
+- Lane: `migration`
+- Priority: `high`
+- Detail: `docs/implementation/new-reading-mechanism/phase9-compat-cutover-roadmap.md`
+- Next: keep `attentional_v2` as the default product deep-reading path, keep `iterator_v1` as the explicit fallback/legacy-resume path, and treat later V2-native frontend presentation plus section-first retirement as post-Phase-9 initiatives rather than as unfinished cutover scope.
+- Jobs: none
 
 ### `TASK-DOC-Q10` — Decide when to promote `attentional_v2` working design into stable docs
 - Status: `done`

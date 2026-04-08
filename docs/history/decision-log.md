@@ -341,7 +341,7 @@ Update when: a major product or engineering decision is made, reversed, or becom
 
 ## Entry 15
 **ID**: DEC-015
-**Status**: active
+**Status**: superseded by `DEC-055`
 
 **Decision / Inflection**: Introduce a shared backend runtime shell for multiple reader mechanisms while freezing `iterator_reader` as the current default implementation.
 
@@ -917,7 +917,7 @@ Update when: a major product or engineering decision is made, reversed, or becom
 
 **Why this path won**: The project needed a lightweight but durable workflow boundary for agent-owned offline work. A separate background-job registry keeps product runtime jobs and offline evaluation jobs distinct while still giving future agents one source of truth for what is running, what should be checked next, and what decision the job belongs to. Pairing the machine-readable registry with a generated human summary preserves handoff readability without forcing agents to hand-edit dynamic state into docs.
 
-**What changed in the system**: Backend infrastructure now includes a shared background-job registry helper plus two scripts: one to create/update/archive job records and one to refresh and inspect them. The registry lives under `reading-companion-backend/state/job_registry/`. This entry's original `active_jobs.json` authority model was later superseded by `DEC-039`, which made per-job records under `jobs/<job_id>.json` canonical and left `active_jobs.json` / `active_jobs.md` as derived active-only mirrors. Workspace and backend agent rules now require jobs expected to run longer than roughly `10-15` minutes to be registered, and require later agents to refresh the registry before starting overlapping long-running work.
+**What changed in the system**: Backend infrastructure now includes a shared background-job registry helper plus two scripts: one to create/update/archive job records and one to refresh and inspect them. The registry lives under `reading-companion-backend/state/job_registry/`. This entry's original `active_jobs.json` authority model was later superseded by `DEC-056`, which made per-job records under `jobs/<job_id>.json` canonical and left `active_jobs.json` / `active_jobs.md` as derived active-only mirrors. Workspace and backend agent rules now require jobs expected to run longer than roughly `10-15` minutes to be registered, and require later agents to refresh the registry before starting overlapping long-running work.
 
 **Why it matters later**: Future contributors will otherwise see the registry files and helper scripts without understanding why the project chose a separate eval/agent job ledger instead of overloading product runtime jobs. This entry records that the registry exists to preserve task linkage, check commands, and decision context across agent changes, not simply to list processes.
 
@@ -935,7 +935,7 @@ Update when: a major product or engineering decision is made, reversed, or becom
 **Status**: active
 
 ## Entry 36
-**ID**: DEC-039
+**ID**: DEC-056
 **Status**: active
 
 **Decision / Inflection**: Realign Phase 9 evaluation into separate local excerpt and bounded long-span surfaces instead of forcing one benchmark family to answer every remaining reader-quality question.
@@ -1451,3 +1451,39 @@ The old active windows `nawaer_baodian_private_zh__wealth`, `nawaer_baodian_priv
 - `reading-companion-backend/AGENTS.md`
 - `reading-companion-backend/src/library/jobs.py`
 - `reading-companion-backend/src/api/app.py`
+
+## Entry 52
+**ID**: DEC-055
+**Status**: active
+
+**Decision / Inflection**: Complete the compatibility-first default cutover and make `attentional_v2` the normal product deep-reading mechanism, while preserving `iterator_v1` as an explicit fallback and legacy-resume path.
+
+**Period**: April 8, 2026, after the completed `excerpt surface v1.1` formal judged result had already provided the main local-reading evidence bundle and the remaining long-span work had narrowed to one targeted recovery job.
+
+**Problem**: The repo had already proved that `attentional_v2` was runnable end to end and had enough excerpt-level evidence to justify product use, but the actual default launch path, stable docs, and operator semantics still behaved as if `iterator_v1` were the normal reader. That mismatch made the product posture harder to explain, risked future agents re-centering work on the wrong mechanism, and left old iterator-era resume behavior vulnerable once the built-in default flipped.
+
+**Alternatives considered**: Keep `iterator_v1` as default until every long-span lane was perfectly clean, flip the default without explicit fallback/legacy-resume protection, or jump straight into a V2-native frontend rewrite before landing the compatibility cutover.
+
+**Why this path won**: The project needed a clean, truthful default first. Switching the product path to `attentional_v2` through the current compatibility surfaces lets the app use the new mechanism now, preserves a working frontend, and keeps `iterator_v1` callable where it is still useful. Adding legacy iterator resume inference at the same time avoids breaking older in-progress books just because the built-in default changed.
+
+**What changed in the system**: Built-in mechanism registration now makes `attentional_v2` the default and leaves `iterator_v1` non-default. `BACKEND_READING_MECHANISM` now acts as an explicit fallback override rather than as the normal path selector: unset means the default `attentional_v2` path, while `iterator_v1` forces the fallback. Job refresh/resume now preserves old iterator runs even when shell/job metadata is missing by inferring `iterator_v1` from legacy structure artifacts before falling back to the new default. Stable docs, current-state routing, and Phase 9 task tracking now all say explicitly that compatibility cutover is complete, `attentional_v2` is the default deep-reading mechanism, and V2-native frontend work is the next separate lane.
+
+**Why it matters later**: Future contributors will otherwise see a mixed repo shape: a default `attentional_v2` runtime in code, old section-first frontend surfaces, and lots of iterator-era artifacts on disk. This entry records the intended interpretation of that mixed state: the product has already cut over to `attentional_v2`, the current frontend is still a compatibility shell over that default, and `iterator_v1` survives as a supported fallback rather than as the center of the system.
+
+**Primary evidence**:
+- `reading-companion-backend/src/reading_mechanisms/__init__.py`
+- `reading-companion-backend/src/config.py`
+- `reading-companion-backend/src/library/jobs.py`
+- `reading-companion-backend/tests/test_reading_runtime.py`
+- `reading-companion-backend/tests/test_library_api.py`
+- `docs/backend-reading-mechanism.md`
+- `docs/backend-reading-mechanisms/README.md`
+- `docs/backend-reading-mechanisms/attentional_v2.md`
+- `docs/backend-reading-mechanisms/iterator_v1.md`
+- `docs/backend-sequential-lifecycle.md`
+- `docs/backend-state-aggregation.md`
+- `docs/api-integration.md`
+- `docs/product-interaction-model.md`
+- `docs/current-state.md`
+- `docs/tasks/registry.md`
+- `docs/tasks/registry.json`

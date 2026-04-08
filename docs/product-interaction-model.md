@@ -30,6 +30,8 @@ Update when: the primary product path, page responsibilities, or interaction mod
 - Deferred upload stops after chapter-level structure parsing.
 - The bookshelf flow presents the `start now / later` decision only after the book reaches `ready`.
 - `analysis/start` and `analysis/resume` perform semantic segmentation and continue the deep-reading workflow on the main long-task surface.
+- That long-task surface now defaults to `attentional_v2`.
+- `iterator_v1` remains a backend-level fallback and legacy-resume path rather than the primary product reader.
 
 ### 4. Book Overview
 - Canonical route: `/books/:id`

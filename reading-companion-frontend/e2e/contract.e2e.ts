@@ -41,7 +41,7 @@ test("landing upload flows into canonical overview and chapter reading", async (
   await expect(page.getByRole("heading", { name: "Fixture E2E Book" })).toBeVisible();
   await expectNoLegacyMetrics(page);
 
-  const completedCard = page.getByRole("link", { name: /Open (chapter|completed chapter)/i }).first();
+  const completedCard = page.getByRole("link", { name: /Open (result|chapter|completed chapter)/i }).first();
   await expect(completedCard).toBeVisible({ timeout: 15_000 });
   await expect(completedCard).not.toContainText(/high-signal/i);
   await completedCard.click();
@@ -98,12 +98,12 @@ test("landing upload flows into canonical overview and chapter reading", async (
 test("bookshelf upload supports defer-start and compat redirects", async ({ page }) => {
   await page.goto("/upload");
   await expect(page).toHaveURL(/\/books(?:\?.*)?$/);
-  await expect(page.getByTestId("bookshelf-upload-dialog")).toContainText("添加一本新书");
+  await expect(page.getByTestId("bookshelf-upload-dialog")).toContainText(/Add a new book|添加一本新书/);
 
   await page.getByTestId("bookshelf-upload-input").setInputFiles(uploadFixture);
 
-  await expect(page.getByRole("alertdialog")).toContainText("已添加到书架", { timeout: 15_000 });
-  await page.getByRole("button", { name: "只进入书架" }).click();
+  await expect(page.getByRole("alertdialog")).toContainText(/已添加到书架|is now on your shelf/, { timeout: 15_000 });
+  await page.getByRole("button", { name: /只进入书架|Return to shelf/ }).click();
   await expect(page).toHaveURL(/\/books$/);
   await expect(page.getByRole("alertdialog")).toBeHidden();
 

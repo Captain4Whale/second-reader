@@ -32,7 +32,8 @@ Update when: status changes, blockers appear, or phases complete.
   - none
   - the universal shared LLM invocation and traceability layer is landed
   - the stable `attentional_v2` mechanism doc is now promoted enough to serve as the live mechanism authority, so Phase 0 no longer stays open for doc-timing reasons
-  - Phase 9 remains the only unfinished implementation stage because migration/default-cutover work and the last long-span evidence repair are still open
+  - the compatibility-first Phase 9 cutover is now landed in code, docs, and routed-surface validation
+  - the remaining live work is now parallel evidence cleanup plus later post-Phase-9 frontend migration, not "whether to switch the default"
   - the Phase 9 boundary is now explicitly locked:
     - compatibility cutover stays inside Phase 9
     - V2-native frontend presentation and section-first retirement are post-Phase-9 work
@@ -40,6 +41,11 @@ Update when: status changes, blockers appear, or phases complete.
     - `excerpt surface` for `reader_character.selective_legibility` plus local `reader_value.insight_and_clarification`
     - `long-span / window` surface for `reader_character.coherent_accumulation` plus long-span `reader_value.insight_and_clarification`
 - April 8 execution-state summary:
+  - `default cutover`:
+    - built-in runtime registration now defaults to `attentional_v2`
+    - `BACKEND_READING_MECHANISM` now acts as an explicit fallback override surface for `iterator_v1`
+    - legacy iterator runs without shell/job mechanism metadata now still resume as `iterator_v1` by artifact inference instead of silently jumping to the new default
+    - current routed frontend compatibility surfaces have been validated against `attentional_v2` on overview, chapter, and marks-related flows
   - `excerpt`:
     - keep `attentional_v2_excerpt_surface_v1_1_judged_20260406` as the current good-enough formal excerpt evidence bundle
     - no new excerpt formal rerun is active
@@ -867,7 +873,7 @@ Update when: status changes, blockers appear, or phases complete.
 | Phase 7 - Persistence, checkpointing, and resume | `done` | warm/cold/reconstitution resume working |
 | Phase 8 - Observability, evaluation, and shared-surface integration | `done` | event/checkpoint contracts and public adapters working |
 | Phase 8.5 - Live runner integration | `done` | real parse/read path works through shared runtime, CLI, and async jobs |
-| Phase 9 - Migration, stabilization, and default-cutover readiness | `in_progress` | acceptance ladder reached and stable docs promoted |
+| Phase 9 - Migration, stabilization, and default-cutover readiness | `in_progress` | compatibility cutover landed; long-span evidence cleanup continues in parallel |
 
 ## Detailed Checklist
 
@@ -1595,21 +1601,21 @@ Update when: status changes, blockers appear, or phases complete.
 - [x] Lock the Phase 9 cutover boundary explicitly:
   - Phase 9 ends at compatibility cutover
   - V2-native frontend presentation and section-first retirement move to post-Phase-9 work
-- [ ] Complete backend/frontend compatibility cutover for the current routed product path
+- [x] Complete backend/frontend compatibility cutover for the current routed product path
 - [x] Curate the first excerpt-case dataset packs for local/behind-the-mechanism questions
 - [x] Curate the tracked `attentional_v2` benchmark datasets and the later chapter-level evaluation corpus before any real end-to-end comparison
 - [x] Curate the chapter corpus for cross-mechanism span/end-to-end comparison
 - [x] Curate runtime/resume and persisted compatibility fixture packs for gate and migration audits
-- [ ] Compare against `iterator_v1`
+- [x] Compare against `iterator_v1`
 - [x] Establish a reusable mechanism-pattern capture rule and living ledger for later mechanism synthesis
   - stable rule lives in:
     - `docs/backend-reader-evaluation.md`
     - `reading-companion-backend/AGENTS.md`
   - working ledger lives in:
     - `docs/implementation/new-reading-mechanism/mechanism-pattern-ledger.md`
-- [ ] Promote landed behavior into stable docs
-- [ ] Record decision-bearing changes in history doc when needed
-- [ ] Make explicit default-cutover decision
+- [x] Promote landed behavior into stable docs
+- [x] Record decision-bearing changes in history doc when needed
+- [x] Make explicit default-cutover decision
 
 ## Notes Log
 - `2026-04-03`

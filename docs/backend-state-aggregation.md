@@ -82,7 +82,7 @@ Use `docs/api-contract.md` for exact fields and routes. Use this file to underst
     - shared runtime-shell cursor
     - shared `book_document.json`
     before any iterator-era `segment_ref` structure lookup
-  - When older runtime snapshots contain a shortened `current_reading_activity.current_excerpt`, catalog backfills the full normalized section text from the current default mechanism's `_mechanisms/iterator_v1/derived/structure.json` by matching `segment_ref`.
+  - When older iterator-era runtime snapshots contain a shortened `current_reading_activity.current_excerpt`, catalog may backfill the full normalized section text from `_mechanisms/iterator_v1/derived/structure.json` by matching `segment_ref`.
   - Current public payloads may now additively expose `reading_locus`, `move_type`, `reconstructed_hot_state`, `last_resume_kind`, and `active_reaction_id` while keeping `segment_ref` as a compatibility sidecar.
 - `GET /api/books/{book_id}/activity`
   - Reads `activity.jsonl` and normalizes each event into the public event shape.
@@ -160,6 +160,7 @@ Use `docs/api-contract.md` for exact fields and routes. Use this file to underst
 ## Practical Reading Order
 - Read `docs/backend-sequential-lifecycle.md` first when the question is "how does the job behave over time?"
 - Read `docs/backend-reading-mechanism.md` when the question is "what is shared across mechanisms and which doc owns this concept?"
-- Read `docs/backend-reading-mechanisms/iterator_v1.md` when the question is "how does the current default mechanism turn one selected section into local reader work and live attention state?"
+- Read `docs/backend-reading-mechanisms/attentional_v2.md` when the question is "how does the current default mechanism turn sentence-order intake into meaning-unit reading and live attention state?"
+- Read `docs/backend-reading-mechanisms/iterator_v1.md` when the question is "how does the supported section-first fallback mechanism turn one selected section into local reader work and live attention state?"
 - Read this file when the question is "which artifacts feed this payload?" or "where does normalization happen?"
 - Only drop into `catalog.py`, `jobs.py`, or `user_marks.py` after the system-level source mapping in this document is no longer enough.
