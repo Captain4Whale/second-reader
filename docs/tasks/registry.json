@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-04-07T11:42:29Z",
+  "updated_at": "2026-04-08T04:31:10Z",
   "tasks": [
     {
       "id": "TASK-MECH-EN-RERUN",
@@ -802,10 +802,11 @@
         "bgjob_excerpt_surface_v1_1_judged_shard_d_20260406",
         "bgjob_excerpt_surface_v1_1_eval_orchestrator_unitready_retry1_20260406",
         "bgjob_excerpt_surface_v1_1_smoke_supremacy_recovery_20260406",
-        "bgjob_accumulation_benchmark_v1_judged_20260406"
+        "bgjob_accumulation_benchmark_v1_judged_20260406",
+        "bgjob_accumulation_benchmark_v1_judged_rerun_20260407"
       ],
       "acceptance_ref": "docs/implementation/new-reading-mechanism/execution-tracker.md",
-      "next_action": "Keep excerpt surface v1.1 as the current valid formal excerpt evidence bundle and do not reopen excerpt reruns by default. The active blocker has shifted to long-span validation: the April 6 long-span judged lane is still invalid because probe cases failed with bundle_missing, and the bounded repaired-harness smoke bgjob_accumulation_smoke_pair_recovery_20260407 is now the live recovery step.",
+      "next_action": "Keep excerpt surface v1.1 as the current valid formal excerpt evidence bundle and do not reopen excerpt reruns by default. The active blocker is now narrowed to one question only: whether the repaired long-span harness can complete one full formal judged rerun cleanly after the successful 2-window recovery smoke. The live step is bgjob_accumulation_benchmark_v1_judged_rerun_20260407.",
       "blocked_by": [],
       "evidence_refs": [
         "docs/implementation/new-reading-mechanism/excerpt-micro-slice-v1-draft.md",
@@ -953,10 +954,12 @@
         "bgjob_accumulation_benchmark_v1_rejudged_first_review_20260404",
         "bgjob_accumulation_benchmark_v1_repair_first_review_20260405",
         "bgjob_accumulation_benchmark_v1_judged_20260406",
-        "bgjob_accumulation_smoke_pair_recovery_20260407"
+        "bgjob_accumulation_smoke_pair_recovery_20260407",
+        "bgjob_accumulation_benchmark_v1_judged_rerun_20260407",
+        "bgjob_accumulation_value_of_others_iterator_v1_bundle_20260408"
       ],
       "acceptance_ref": "docs/implementation/new-reading-mechanism/execution-tracker.md",
-      "next_action": "Keep the honest-short freeze as the active long-span draft, but treat attentional_v2_accumulation_benchmark_v1_judged_20260406 as a diagnosed invalid lane rather than generic mechanism failure. The current active move is the bounded repaired-harness smoke bgjob_accumulation_smoke_pair_recovery_20260407 / attentional_v2_accumulation_benchmark_v1_smoke_recovery_pair_20260407 on supremacy_private_en__13 and steve_jobs_private_en__17. The immediate goal is to verify that completed window outputs can now feed probe generation without bundle_missing before deciding any broader long-span step.",
+      "next_action": "Keep the honest-short freeze as the active long-span draft, treat attentional_v2_accumulation_benchmark_v1_judged_20260406 as a diagnosed invalid lane rather than generic mechanism failure, and use the completed 2-window recovery smoke as proof that bundle/probe materialization is back. The current active move is the full formal judged rerun bgjob_accumulation_benchmark_v1_judged_rerun_20260407 / attentional_v2_accumulation_benchmark_v1_judged_rerun_20260407. In parallel, an auxiliary isolated V1-only read is running as bgjob_accumulation_value_of_others_iterator_v1_bundle_20260408 to harvest the iterator_v1 artifact for value_of_others_private_en__8_10 without writing into the in-flight formal run.",
       "blocked_by": [],
       "evidence_refs": [
         "docs/implementation/new-reading-mechanism/human-notes-guided-dataset-v1-freeze-draft.md",
@@ -991,7 +994,7 @@
         "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_accumulation_benchmark_v1_judged_20260406/shards/main/cases/supremacy_private_en__13__probe_1.json",
         "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_accumulation_benchmark_v1_smoke_recovery_pair_20260407/meta/selected_windows.json"
       ],
-      "last_updated": "2026-04-07T11:10:01Z",
+      "last_updated": "2026-04-08T04:31:10Z",
       "last_updated_by": "codex"
     },
     {

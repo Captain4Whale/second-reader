@@ -7,11 +7,11 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-04-07T11:42:29Z`
+Last verified: `2026-04-08T04:31:10Z`
 
 ## Current Objective
 - Hold further `excerpt` mechanism polishing for now and treat the completed `excerpt surface v1.1` formal judged run as the current good-enough evidence bundle for product/storytelling decisions.
-- Run one bounded `long-span` smoke on the repaired accumulation harness to verify that the April 6 `bundle_missing` failure is really fixed before any broader long-span decision.
+- Use the completed 2-window `long-span` smoke as recovery evidence that the April 6 `bundle_missing` failure is no longer blocking bundle/probe materialization, then keep one full formal judged rerun running overnight.
 - Product-boundary clarification is now landed:
   - `book_analysis` is treated as a retired legacy capability preserved only for compatibility/debugging rather than as a live secondary product lane
   - public `/analysis/*` routes remain for compatibility, but the active backend launcher and OpenAPI operation ids now describe deep reading explicitly
@@ -70,12 +70,12 @@ Last verified: `2026-04-07T11:42:29Z`
   - interpretation:
     - treat the April 6 long-span lane as a completed but invalid harness/materialization failure, not as mechanism evidence
     - the landed recovery support in `run_accumulation_comparison.py` is now the basis for the next long-span smoke, not a reason to reopen full judged work immediately
-  - current active smoke:
+  - completed recovery smoke:
     - job id:
       - `bgjob_accumulation_smoke_pair_recovery_20260407`
     - run id:
       - `attentional_v2_accumulation_benchmark_v1_smoke_recovery_pair_20260407`
-    - run shape:
+    - completed shape:
       - `stage = all`
       - `judge-mode = none`
       - `target-slice = both`
@@ -85,15 +85,54 @@ Last verified: `2026-04-07T11:42:29Z`
       - windows:
         - `supremacy_private_en__13`
         - `steve_jobs_private_en__17`
-    - latest live observation:
-      - the smoke is still running
-      - both windows entered normal parse + read flow for both mechanisms
-      - no immediate harness crash or blanket `bundle_missing` recurrence has surfaced yet
-      - no completed window bundle has landed yet as of the latest check, so the old failure is not cleared until at least one unit finishes and its probe payloads are inspected
+    - recovery evidence:
+      - both window bundles landed for both mechanisms
+      - both probe payloads landed and record both mechanisms as `status = completed`
+      - no `bundle_missing`, no `mechanism_failure`, and no `judge_unavailable` recurrence surfaced inside the probe payloads
+      - run-level usage stayed bounded:
+        - `request_count = 514`
+        - `error_count = 0`
+        - `retry_count = 18`
+        - `MiniMax-M2.7-personal = 360`
+        - `MiniMax-M2.7-personal-2 = 154`
+    - remaining caveat:
+      - this smoke did not materialize top-level `summary/aggregate.json` or `summary/report.md`, so treat it as harness-recovery evidence rather than the final long-span comparison artifact
+  - current next move:
+    - one full formal judged rerun on the full long-span draft is now running overnight:
+      - job id:
+        - `bgjob_accumulation_benchmark_v1_judged_rerun_20260407`
+      - run id:
+        - `attentional_v2_accumulation_benchmark_v1_judged_rerun_20260407`
+      - posture:
+        - `stage = all -> merge`
+        - `judge-mode = llm`
+        - `target-slice = both`
+        - `mechanism-filter = both`
+        - `mechanism_execution_mode = parallel`
+        - `judge_execution_mode = parallel`
+        - `unit_workers = 2`
+        - `judge_workers = 2`
+        - `LLM_PROCESS_RUNTIME_PROFILE_MAX_CONCURRENCY = 6`
+        - `LLM_PROCESS_EVAL_JUDGE_PROFILE_MAX_CONCURRENCY = 4`
+    - one auxiliary isolated `iterator_v1`-only read is also running on the still-unfinished heavy window so we can inspect V1's actual reading artifact without writing into the in-flight formal run root:
+      - job id:
+        - `bgjob_accumulation_value_of_others_iterator_v1_bundle_20260408`
+      - run id:
+        - `attentional_v2_accumulation_value_of_others_iterator_v1_bundle_20260408`
+      - posture:
+        - `stage = bundle`
+        - `judge-mode = none`
+        - `mechanism-filter = iterator_v1`
+        - `window-case-id = value_of_others_private_en__8_10`
+        - `unit_workers = 1`
+    - do not spend on a fresh excerpt full-surface rerun unless the long-span lane fails again
 - Current repo posture:
-  - `reading-companion-backend/state/job_registry/active_jobs.md` currently shows one active background job:
-    - `bgjob_accumulation_smoke_pair_recovery_20260407`
-  - do not launch a new full excerpt formal rerun or a new long-span formal judged rerun yet
+  - `reading-companion-backend/state/job_registry/active_jobs.md` currently shows two active background jobs:
+    - `bgjob_accumulation_benchmark_v1_judged_rerun_20260407`
+    - `bgjob_accumulation_value_of_others_iterator_v1_bundle_20260408`
+  - do not launch a new full excerpt formal rerun tonight
+  - the one approved overnight lane is the full long-span formal judged rerun
+  - the auxiliary isolated `iterator_v1` read is diagnosis-only evidence and does not replace or mutate the main formal long-span lane
   - do not reopen dataset retune or long-span redesign inside this repair-first / diagnosis-only pass
 
 ## Current Strategy
@@ -102,9 +141,9 @@ Last verified: `2026-04-07T11:42:29Z`
     - keep the completed formal excerpt run as the main product/demo evidence bundle
     - do not reopen another repair round unless later long-span or cutover discussion makes it necessary
   - `long-span` is the live active lane:
-    - finish the bounded `1-2` window smoke on the repaired harness
-    - inspect whether completed window outputs can now feed probe payload generation without `bundle_missing`
-    - only after that decide whether long-span needs another smoke, a narrow repair, or can stay parked
+    - treat the completed 2-window smoke as sufficient recovery evidence for bundle/probe materialization
+    - spend the next overnight slot on one full formal judged rerun of the full long-span draft
+    - only reopen narrow harness work if that judged rerun reintroduces materialization failure
   - the detailed background below remains useful, but where it conflicts with the April 7 lane update above, the April 7 update wins
 - Evaluation now uses two intentionally different semantic surfaces:
   - `excerpt surface`
