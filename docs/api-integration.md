@@ -41,6 +41,7 @@ Frontend defaults can be overridden with:
 - `iterator_v1` remains available for explicit backend fallback launches and legacy-resumed books, but it is no longer the normal product path.
 - Backend images and source assets are returned as relative API paths and must be prefixed with the configured API base in the frontend.
 - Backend `target_url`, `result_url`, and `open_target` values are frontend routes, not backend URLs.
+- `GET /api/books` now suppresses stale opaque upload/test stubs that never became real readable books, so the routed bookshelf is expected to show only meaningful shelf entries rather than old hash-like failed-upload leftovers.
 - Backend analysis state and the mindstream view of the activity feed are used by the adaptive `/books/:id` overview when a book is in progress; WebSocket messages trigger refreshes, while polling remains the fallback.
 - The top live line in `Reading mindstream` is driven by `analysis-state.current_reading_activity`, which is a realtime snapshot of the active reading phase rather than a persisted history item.
 - `analysis-state.current_reading_activity.current_excerpt` is the normalized live excerpt text for the active segment; compact UI positions such as breadcrumbs are expected to truncate locally instead of depending on backend shortening.
@@ -53,6 +54,7 @@ Frontend defaults can be overridden with:
   - activity-event `reading_locus`
   - reaction/mark `primary_anchor` and related lineage sidecars
 - Current routed frontend surfaces still mostly consume the section-era compatibility layer, so these additive fields are present for migration and future mechanism compatibility rather than for immediate UI dependence.
+- For `attentional_v2`, chapter/detail routes now also tolerate older compatibility manifests that are missing `result_file` by resolving the mechanism-owned compatibility payloads directly; this keeps routed chapter review working during live reads and manifest rewrites.
 - The historical mindstream list still comes from `GET /api/books/{book_id}/activity` with `stream=mindstream` and remains separate from the live activity snapshot.
 - For `attentional_v2`, standard-mode checkpoint and resume events may now also appear in the shared `stream=system` activity feed; deep controller diagnostics remain debug-only and do not belong to the routed frontend contract.
 - Runtime guard events such as stalled heartbeats, timeout detection, unsupported runtime launches, and forced pauses are still written into the same activity feed with `stream=system`, but they are now reserved for internal diagnostics rather than the main user-facing overview.

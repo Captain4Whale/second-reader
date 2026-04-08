@@ -29,6 +29,7 @@ Use `docs/api-contract.md` for exact fields and routes. Use this file to underst
   - Book identity, language metadata, chapter tree, source asset pointers, and chapter result file hints.
   - Legacy flat manifests are still readable through fallback resolution, but public aggregation prefers the canonical `public/` location.
   - For non-iterator mechanisms such as `attentional_v2`, the shared manifest can now be built from `book_document.json` plus mechanism-owned compatibility chapter results instead of from `iterator_v1` structure.
+  - Aggregation now preserves chapter-level compatibility hints such as `result_file`, `visible_reaction_count`, and `reaction_type_diversity` when the shared manifest is rebuilt from the shared substrate.
 - `_runtime/run_state.json`
   - The live runtime snapshot for the sequential workflow.
   - Carries top-level stage, chapter and segment pointers, `current_phase_step`, `current_reading_activity`, checkpoint metadata, errors, and ETA-like progress hints.
@@ -69,6 +70,7 @@ Use `docs/api-contract.md` for exact fields and routes. Use this file to underst
   - Uses the canonical product job records in `state/job_registry/jobs/*.json` as a guard so the shelf can still show `analyzing` while live runtime files are catching up.
   - `state/jobs/*.json` remains a compatibility shadow during the current migration window.
   - Adds per-book mark counts from `state/user_marks.json`.
+  - Hides stale opaque upload/test stub manifests that never became real books, so failed hash-like upload leftovers do not pollute the visible shelf.
 - `GET /api/books/{book_id}`
   - Uses `book_manifest` for metadata and chapter tree.
   - Uses `run_state` to decide the book's current overall status and in-progress chapter.
@@ -97,6 +99,7 @@ Use `docs/api-contract.md` for exact fields and routes. Use this file to underst
   - Uses the chapter result file for structured sections, featured reactions, and chapter-level summaries.
   - Uses `user_marks` to attach the current mark state to each returned reaction card.
   - This surface no longer hard-requires `iterator_v1` structure as long as the manifest points at a valid mechanism-owned chapter result file.
+  - When older compatibility manifests are missing `result_file`, aggregation now also falls back directly to `attentional_v2` chapter compatibility payloads under `_mechanisms/attentional_v2/derived/chapter_result_compatibility/`.
   - Reaction cards and featured reaction previews may now additively expose `primary_anchor`, `related_anchors`, and reconsolidation lineage sidecars while the page still remains section-shaped for compatibility.
 - `GET /api/books/{book_id}/chapters/{chapter_id}/outline`
   - Starts from the manifest chapter tree, then enriches the outline with section previews from the chapter result file when that result exists.

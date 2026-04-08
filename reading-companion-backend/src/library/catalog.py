@@ -19,6 +19,7 @@ from src.api.contract import (
     to_api_reaction_id,
     to_api_reaction_type,
 )
+from src.attentional_v2.storage import chapter_result_compatibility_file
 from src.iterator_reader.storage import (
     activity_file,
     book_manifest_file,
@@ -36,6 +37,9 @@ from src.iterator_reader.storage import (
 from src.iterator_reader.frontend_artifacts import normalize_activity_event
 from src.iterator_reader.language import runtime_label
 from src.reading_runtime.artifacts import existing_runtime_shell_file
+
+
+_OPAQUE_BOOK_ID_RE = re.compile(r"^[0-9a-f]{12,}$")
 
 
 def output_root(root: Path | None = None) -> Path:
@@ -231,6 +235,33 @@ def _manifest(book_id: str, root: Path | None = None) -> dict:
     return _load_json(path)
 
 
+def _is_bookshelf_stub_manifest(manifest: dict[str, object]) -> bool:
+    """Return whether one manifest is a stale opaque upload/test stub that should stay off the shelf."""
+
+    chapters = manifest.get("chapters", [])
+    if isinstance(chapters, list) and chapters:
+        return False
+
+    title = _clean_text(manifest.get("book"))
+    book_id = _clean_text(manifest.get("book_id")) or title
+    author = _clean_text(manifest.get("author"))
+    cover_image_url = _clean_text(manifest.get("cover_image_url"))
+    source_file = _clean_text(manifest.get("source_file"))
+
+    if author not in {"", "Unknown"}:
+        return False
+    if cover_image_url:
+        return False
+    if not title or title != book_id:
+        return False
+
+    looks_opaque = bool(_OPAQUE_BOOK_ID_RE.fullmatch(title)) or title.startswith("fixture-")
+    if not looks_opaque:
+        return False
+
+    return "/state/uploads/" in source_file or "/runtime/state/uploads/" in source_file
+
+
 def _run_state(book_id: str, root: Path | None = None) -> dict | None:
     """Load one persisted run state if present."""
     path = existing_run_state_file(_book_dir(book_id, root))
@@ -247,11 +278,25 @@ def _chapter_result_path(book_id: str, chapter: dict, root: Path | None = None) 
     """Resolve one chapter result path with manifest-relative and canonical fallbacks."""
     output_dir = _book_dir(book_id, root)
     relative_path = str(chapter.get("result_file", "") or "").strip() or None
-    return resolve_output_relative_file(
+    resolved = resolve_output_relative_file(
         output_dir,
         relative_path,
         fallback=existing_chapter_result_file(output_dir, chapter),
     )
+    if resolved.exists():
+        return resolved
+    chapter_id = int(chapter.get("id", 0) or 0)
+    if chapter_id > 0:
+        attentional_path = chapter_result_compatibility_file(output_dir, chapter_id)
+        if attentional_path.exists():
+            return attentional_path
+    return resolved
+
+
+def _chapter_result_ready(book_id: str, chapter: dict, root: Path | None = None) -> bool:
+    """Return whether one chapter currently has a readable result payload."""
+
+    return _chapter_result_path(book_id, chapter, root=root).exists()
 
 
 def _chapter_result_urls(book_id: str, manifest: dict, root: Path | None = None) -> dict[int, str]:
@@ -444,6 +489,8 @@ def list_books_page(
     books: list[dict] = []
     for manifest_path in _manifest_paths(root):
         manifest = _load_json(manifest_path)
+        if _is_bookshelf_stub_manifest(manifest):
+            continue
         manifest_parent = manifest_path.parent.parent if manifest_path.parent.name == "public" else manifest_path.parent
         book_id = str(manifest.get("book_id", manifest_parent.name))
         run_state = _run_state(book_id, root)
@@ -498,7 +545,7 @@ def get_book_detail(book_id: str, root: Path | None = None) -> dict:
                 "status": "error" if status == "error" else ("completed" if status == "completed" else "pending"),
                 "visible_reaction_count": int(chapter.get("visible_reaction_count", 0)),
                 "reaction_type_diversity": int(chapter.get("reaction_type_diversity", 0)),
-                "result_ready": str(chapter.get("status", "")) == "done",
+                "result_ready": _chapter_result_ready(book_id, chapter, root=root),
             }
         )
 
@@ -874,7 +921,7 @@ def get_chapter_outline(book_id: str, chapter_id: int, root: Path | None = None)
 
     status = _chapter_status_for_analysis(chapter_entry, current_chapter_id, run_state)
     public_status = "error" if status == "error" else ("completed" if str(chapter_entry.get("status", "")) == "done" else "pending")
-    result_ready = str(chapter_entry.get("status", "")) == "done"
+    result_ready = _chapter_result_ready(book_id, chapter_entry, root=root)
 
     sections: list[dict] = []
     chapter_ref = str(chapter_entry.get("reference", ""))
@@ -1451,7 +1498,7 @@ def get_analysis_state(book_id: str, root: Path | None = None) -> dict:
                 "segment_count": int(chapter.get("segment_count", 0)),
                 "status": status,
                 "is_current": current_chapter_id == int(chapter.get("id", 0)),
-                "result_ready": str(chapter.get("status", "")) == "done",
+                "result_ready": _chapter_result_ready(book_id, chapter, root=root),
             }
         )
 

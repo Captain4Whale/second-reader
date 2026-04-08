@@ -9,6 +9,7 @@ from pathlib import Path
 from fastapi.testclient import TestClient
 import pytest
 from src.api.contract import to_api_book_id, to_api_reaction_id
+from src.attentional_v2.storage import chapter_result_compatibility_file
 from src.config import get_reader_resume_compat_version
 from src.iterator_reader.storage import (
     activity_file,
@@ -388,6 +389,66 @@ def test_chapter_outline_endpoint_returns_pending_stub_for_unready_chapter(tmp_p
     assert payload["chapter_heading"] is None
     assert payload["section_count"] == 1
     assert payload["sections"] == []
+
+
+def test_chapter_endpoint_falls_back_to_attentional_v2_compatibility_result_when_manifest_hint_is_missing(tmp_path):
+    """Chapter detail should still load when attentional compatibility results exist but manifest result_file is absent."""
+
+    api_module.app.state.root = tmp_path
+    client = TestClient(api_module.app)
+    book_id = _bootstrap_book(tmp_path)
+    output_dir = tmp_path / "output" / book_id
+
+    manifest_path = _manifest_path(output_dir)
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest["chapters"][0].pop("result_file", None)
+    manifest_path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
+
+    public_result_path = _chapter_result_path(output_dir)
+    compatibility_result_path = chapter_result_compatibility_file(output_dir, 1)
+    compatibility_result_path.parent.mkdir(parents=True, exist_ok=True)
+    compatibility_result_path.write_text(public_result_path.read_text(encoding="utf-8"), encoding="utf-8")
+    public_result_path.unlink()
+
+    response = client.get(f"/api/books/{to_api_book_id(book_id)}/chapters/1")
+    assert response.status_code == 200
+    payload = response.json()
+
+    assert payload["chapter_id"] == 1
+    assert payload["visible_reaction_count"] == 1
+    assert payload["sections"][0]["section_ref"] == "1.1"
+
+
+def test_bookshelf_omits_stale_opaque_stub_uploads(tmp_path):
+    """The shelf should hide stale opaque upload/test stubs that never became real books."""
+
+    api_module.app.state.root = tmp_path
+    client = TestClient(api_module.app)
+    real_book_id = _bootstrap_book(tmp_path)
+
+    stub_output_dir = tmp_path / "output" / "0cfbde9bedca"
+    stub_output_dir.mkdir(parents=True, exist_ok=True)
+    _write_json(
+        _manifest_path(stub_output_dir),
+        {
+            "book_id": "0cfbde9bedca",
+            "book": "0cfbde9bedca",
+            "author": "Unknown",
+            "cover_image_url": None,
+            "book_language": "en",
+            "output_language": "en",
+            "source_file": str((tmp_path / "state" / "uploads" / "0cfbde9bedca.epub").resolve()),
+            "source_asset": {"format": "epub", "file": "_assets/source.epub"},
+            "updated_at": "2026-03-17T13:14:09.971535Z",
+            "chapters": [],
+        },
+    )
+
+    response = client.get("/api/books")
+    assert response.status_code == 200
+    items = response.json()["items"]
+
+    assert [item["title"] for item in items] == ["Demo Book"]
 
 
 def test_refresh_job_picks_up_book_id_from_generated_artifacts(tmp_path):

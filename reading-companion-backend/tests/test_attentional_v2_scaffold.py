@@ -372,6 +372,11 @@ def test_attentional_v2_read_book_runs_live_loop_and_persists_compatibility_resu
     assert shell["mechanism_key"] == ATTENTIONAL_V2_MECHANISM_KEY
     assert shell["status"] == "completed"
     assert shell["last_checkpoint_id"] == "chapter-001"
+    manifest = json.loads((result.output_dir / "public" / "book_manifest.json").read_text(encoding="utf-8"))
+    chapter_manifest = manifest["chapters"][0]
+    assert chapter_manifest["result_file"] == "_mechanisms/attentional_v2/derived/chapter_result_compatibility/chapter-001.json"
+    assert chapter_manifest["visible_reaction_count"] >= 1
+    assert chapter_manifest["reaction_type_diversity"] >= 1
 
 
 def test_attentional_v2_read_book_tolerates_missing_reaction_payload(tmp_path, monkeypatch):
@@ -564,7 +569,7 @@ def test_attentional_v2_rejects_book_analysis_mode(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     mechanism = AttentionalV2Mechanism()
 
-    with pytest.raises(ValueError, match="does not support book_analysis mode"):
+    with pytest.raises(ValueError, match=r"does not support .*book_analysis mode"):
         mechanism.read_book(
             ReadRequest(
                 book_path=_fixture_epub(),

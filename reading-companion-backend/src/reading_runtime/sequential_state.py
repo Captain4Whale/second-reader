@@ -127,6 +127,16 @@ def build_minimal_book_manifest(
         chapter_heading = chapter.get("chapter_heading")
         if isinstance(chapter_heading, dict):
             entry["chapter_heading"] = dict(chapter_heading)
+        result_file = _clean_text(chapter.get("result_file"))
+        if result_file:
+            entry["result_file"] = result_file
+        markdown_file = _clean_text(chapter.get("markdown_file"))
+        if markdown_file:
+            entry["markdown_file"] = markdown_file
+        if chapter.get("visible_reaction_count") is not None:
+            entry["visible_reaction_count"] = int(chapter.get("visible_reaction_count", 0) or 0)
+        if chapter.get("reaction_type_diversity") is not None:
+            entry["reaction_type_diversity"] = int(chapter.get("reaction_type_diversity", 0) or 0)
         chapter_entries.append(entry)
 
     return {
