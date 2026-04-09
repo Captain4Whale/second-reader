@@ -51,6 +51,30 @@ Important:
 - stopping `make run-demo` with `Ctrl+C` stops the supervisor and the frontend
 - this is a local convenience mode, not a production supervisor
 
+### Detached local stack mode
+Use when you want the local app to stay up even if you close the current shell or restart Codex.
+
+Commands:
+- `make start-local-stack`
+- `make status-local-stack`
+- `make stop-local-stack`
+
+Behavior:
+- backend starts through stable backend mode with `reload=False`
+- frontend starts as the normal Vite dev server
+- both processes are launched with detached pid/log tracking under `reading-companion-backend/state/local_stack/`
+- both services survive the parent shell exiting
+- this mode is detached, but not supervised
+- if a process exits, it stays down until you start it again
+
+Use this mode for:
+- local frontend iteration when you do not want Codex restarts to kill the app
+- product review sessions where hot reload is not the priority
+
+Do not use this mode as:
+- a production supervisor
+- a guarantee of automatic recovery after crashes
+
 ### Stable backend mode
 Use when a platform or external supervisor should own restarts.
 

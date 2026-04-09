@@ -107,12 +107,37 @@ function resolveStructuredCopy(
 }
 
 function resolveCurrentStep(analysis: AnalysisStateResponse | null) {
-  return (
-    resolveStructuredCopy(
-      analysis?.current_state_panel.current_phase_step_key ?? analysis?.current_phase_step_key,
-      analysis?.current_state_panel.current_phase_step_params ?? analysis?.current_phase_step_params,
-    ) ?? copy("overview.runtime.pending")
+  const structuredStep = resolveStructuredCopy(
+    analysis?.current_state_panel.current_phase_step_key ?? analysis?.current_phase_step_key,
+    analysis?.current_state_panel.current_phase_step_params ?? analysis?.current_phase_step_params,
   );
+  if (structuredStep) {
+    return structuredStep;
+  }
+
+  const pulseMessage = String(
+    analysis?.current_state_panel.pulse_message
+      ?? analysis?.pulse_message
+      ?? "",
+  ).trim();
+  if (pulseMessage) {
+    return pulseMessage;
+  }
+
+  const segmentRef = currentSegmentRef(analysis);
+  if (segmentRef) {
+    return copy("overview.runtime.readingSection", { value: segmentRef });
+  }
+
+  if (analysis?.status === "deep_reading") {
+    return copy("overview.runtime.currentStatus.reading");
+  }
+
+  if (analysis?.status === "parsing_structure") {
+    return copy("overview.runtime.currentStep.preparing");
+  }
+
+  return copy("overview.runtime.pending");
 }
 
 function hasWaitingStep(analysis: AnalysisStateResponse | null) {
@@ -148,6 +173,21 @@ function isAnalysisParsing(analysis: AnalysisStateResponse | null) {
   return analysis.status === "parsing_structure";
 }
 
+function currentReadingActivity(analysis: AnalysisStateResponse | null) {
+  return analysis?.current_state_panel.current_reading_activity ?? analysis?.current_reading_activity ?? null;
+}
+
+function currentSegmentRef(analysis: AnalysisStateResponse | null) {
+  const explicitSectionRef = String(analysis?.current_state_panel.current_section_ref ?? "").trim();
+  if (explicitSectionRef) {
+    return explicitSectionRef;
+  }
+
+  const liveActivity = currentReadingActivity(analysis);
+  const segmentRef = String(liveActivity?.segment_ref ?? "").trim();
+  return segmentRef || "";
+}
+
 function buildOverviewChapters(detail: BookDetailResponse, analysis: AnalysisStateResponse | null): OverviewChapter[] {
   const analysisById = new Map(analysis?.chapters.map((chapter) => [chapter.chapter_id, chapter]) ?? []);
 
@@ -173,7 +213,12 @@ function describeRuntimeState(
 ): RuntimeStateSummary {
   const phase = resolveCurrentStep(analysis).trim();
   const waiting = hasWaitingStep(analysis);
-  const hasReaderFocus = Boolean((analysis?.current_state_panel.current_section_ref ?? "").trim());
+  const liveActivity = currentReadingActivity(analysis);
+  const sectionRef = currentSegmentRef(analysis);
+  const liveExcerpt = normalizeInlineText(
+    liveActivity?.reading_locus?.excerpt ?? liveActivity?.current_excerpt ?? "",
+  );
+  const hasReaderFocus = Boolean(sectionRef || liveExcerpt);
   const completedChapters = analysis?.completed_chapters ?? detail.completed_chapter_count;
 
   if (detail.status === "paused") {
@@ -211,7 +256,7 @@ function describeRuntimeState(
   if (hasReaderFocus) {
     return {
       label: copy("overview.runtime.state.reading.label"),
-      detail: analysis?.current_state_panel.current_section_ref ?? copy("overview.runtime.state.reading.detail"),
+      detail: sectionRef || liveExcerpt || copy("overview.runtime.state.reading.detail"),
       toneClassName: "text-[var(--amber-accent)]",
     };
   }
@@ -255,13 +300,17 @@ function structureStatusLabel(
 }
 
 function chapterDisplayParts(chapter: OverviewChapter) {
-  const chapterRef = chapter.chapter_ref?.trim() ?? "";
-  const chapterTitle = chapter.title?.trim() ?? "";
-  const hasDistinctTitle = chapterTitle.length > 0 && chapterTitle !== chapterRef;
+  return chapterDisplayPartsFromRefs(chapter.chapter_ref, chapter.title);
+}
+
+function chapterDisplayPartsFromRefs(chapterRef?: string | null, chapterTitle?: string | null) {
+  const normalizedChapterRef = chapterRef?.trim() ?? "";
+  const normalizedChapterTitle = chapterTitle?.trim() ?? "";
+  const hasDistinctTitle = normalizedChapterTitle.length > 0 && normalizedChapterTitle !== normalizedChapterRef;
 
   return {
-    eyebrow: hasDistinctTitle ? chapterRef : null,
-    title: hasDistinctTitle ? chapterTitle : chapterRef || chapterTitle,
+    eyebrow: hasDistinctTitle ? normalizedChapterRef : null,
+    title: hasDistinctTitle ? normalizedChapterTitle : normalizedChapterRef || normalizedChapterTitle,
   };
 }
 
@@ -275,8 +324,10 @@ function currentChapterRuntimeLabel(
   }
 
   const panel = analysis.current_state_panel;
+  const currentChapterId = panel.current_chapter_id ?? analysis.current_chapter_id ?? null;
   const currentChapterRef = (panel.current_chapter_ref ?? analysis.current_chapter_ref ?? "").trim();
   const chapterMatches =
+    (currentChapterId != null && currentChapterId === chapter.chapter_id) ||
     !currentChapterRef ||
     currentChapterRef === chapter.chapter_ref ||
     currentChapterRef === chapter.title;
@@ -299,7 +350,7 @@ function currentChapterRuntimeLabel(
       : copy("overview.runtime.currentStep.preparing");
   }
 
-  const sectionRef = (panel.current_section_ref ?? "").trim();
+  const sectionRef = currentSegmentRef(analysis);
   if (sectionRef) {
     return copy("overview.runtime.readingSection", { value: sectionRef });
   }
@@ -882,7 +933,14 @@ function activityVisibility(event: ActivityEvent) {
   return event.visibility ?? "default";
 }
 
-type MindstreamReaction = ActivityEvent["visible_reactions"][number];
+type MindstreamReaction = {
+  reaction_id: number | string;
+  type: string;
+  content: string;
+  anchor_quote: string;
+  search_query?: string | null;
+  section_ref?: string | null;
+};
 
 type MindstreamMoment = {
   momentId: string;
@@ -911,8 +969,9 @@ type MindstreamTrailPreview = {
 };
 
 type ReadingLocus = {
-  chapterRef: string | null;
+  chapterLabel: string | null;
   sectionRef: string | null;
+  excerpt: string | null;
 };
 
 const LIVE_PHASE_SLOW_THRESHOLD_MS = 8_000;
@@ -965,12 +1024,54 @@ function reactionPriority(type?: string | null) {
   return REACTION_PRIORITY[String(type ?? "").toLowerCase()] ?? 99;
 }
 
+function buildMindstreamEventReactions(event: ActivityEvent): MindstreamReaction[] {
+  const visibleReactions = (event.visible_reactions ?? []).map((reaction) => ({
+    reaction_id: reaction.reaction_id,
+    type: reaction.type,
+    content: reaction.content,
+    anchor_quote: reaction.anchor_quote,
+    search_query: reaction.search_query ?? null,
+    section_ref: reaction.section_ref ?? null,
+  }));
+  if (visibleReactions.length > 0) {
+    return visibleReactions;
+  }
+
+  const featuredReactions = (event.featured_reactions ?? []).map((reaction) => ({
+    reaction_id: reaction.reaction_id,
+    type: reaction.type,
+    content: reaction.content,
+    anchor_quote: reaction.anchor_quote,
+    section_ref: reaction.section_ref ?? null,
+  }));
+  if (featuredReactions.length > 0) {
+    return featuredReactions;
+  }
+
+  const synthesizedContent = normalizeInlineText(event.message);
+  const synthesizedAnchor = normalizeInlineText(event.anchor_quote ?? event.highlight_quote ?? "");
+  if (event.type !== "reaction_emitted" || (!synthesizedContent && !synthesizedAnchor)) {
+    return [];
+  }
+
+  return [
+    {
+      reaction_id: event.active_reaction_id ?? event.event_id,
+      type: event.reaction_types[0] ?? "discern",
+      content: synthesizedContent || synthesizedAnchor,
+      anchor_quote: synthesizedAnchor,
+      search_query: event.search_query ?? null,
+      section_ref: event.section_ref ?? null,
+    },
+  ];
+}
+
 function buildMindstreamMoments(activity: ActivityEvent[]) {
   const rawEvents = activity.filter((event) => {
     if (activityStream(event) !== "mindstream" || activityVisibility(event) !== "default") {
       return false;
     }
-    return activityKind(event) === "segment_complete" && (event.visible_reactions?.length ?? 0) > 0;
+    return buildMindstreamEventReactions(event).length > 0;
   });
 
   const grouped = new Map<string, MindstreamMoment>();
@@ -978,10 +1079,10 @@ function buildMindstreamMoments(activity: ActivityEvent[]) {
 
   for (const event of rawEvents) {
     const anchorQuote = (event.anchor_quote ?? event.highlight_quote ?? "").trim();
+    const eventReactions = buildMindstreamEventReactions(event);
     const groupingKey = anchorQuote
       ? `${event.chapter_id ?? "chapter"}:${event.section_ref ?? "section"}:${anchorQuote}`
       : event.event_id;
-    const visibleReactions = event.visible_reactions ?? [];
 
     if (!grouped.has(groupingKey)) {
       grouped.set(groupingKey, {
@@ -1001,7 +1102,7 @@ function buildMindstreamMoments(activity: ActivityEvent[]) {
       continue;
     }
 
-    for (const reaction of visibleReactions) {
+    for (const reaction of eventReactions) {
       if (current.reactions.some((item) => item.reaction_id === reaction.reaction_id)) {
         continue;
       }
@@ -1350,22 +1451,28 @@ function buildCurrentMindstreamActivity(
   return null;
 }
 
-function buildReadingLocus(analysis: AnalysisStateResponse | null): ReadingLocus {
-  const chapterRef = String(
-    analysis?.current_state_panel.current_chapter_ref
-      ?? analysis?.current_chapter_ref
-      ?? "",
-  ).trim();
-  const sectionRef = String(
-    analysis?.current_state_panel.current_section_ref
-      ?? analysis?.current_reading_activity?.segment_ref
-      ?? analysis?.current_state_panel.current_reading_activity?.segment_ref
-      ?? "",
-  ).trim();
+function buildReadingLocus(detail: BookDetailResponse, analysis: AnalysisStateResponse | null): ReadingLocus {
+  const liveActivity = currentReadingActivity(analysis);
+  const liveLocus = liveActivity?.reading_locus ?? null;
+  const currentChapterId = liveLocus?.chapter_id ?? analysis?.current_state_panel.current_chapter_id ?? analysis?.current_chapter_id ?? null;
+  const currentChapter = currentChapterId != null
+    ? detail.chapters.find((chapter) => chapter.chapter_id === currentChapterId)
+    : null;
+  const chapterLabel = currentChapter
+    ? chapterDisplayPartsFromRefs(currentChapter.chapter_ref, currentChapter.title).title
+    : String(
+      liveLocus?.chapter_ref
+        ?? analysis?.current_state_panel.current_chapter_ref
+        ?? analysis?.current_chapter_ref
+        ?? "",
+    ).trim();
+  const sectionRef = currentSegmentRef(analysis);
+  const excerpt = normalizeInlineText(liveLocus?.excerpt ?? liveActivity?.current_excerpt ?? "");
 
   return {
-    chapterRef: chapterRef || null,
+    chapterLabel: chapterLabel || null,
     sectionRef: sectionRef || null,
+    excerpt: excerpt || null,
   };
 }
 
@@ -1423,17 +1530,19 @@ function formatMindstreamQuote(activity: CurrentMindstreamActivity) {
 }
 
 function MindstreamHeroBreadcrumb({
+  detail,
   analysis,
   currentActivity,
 }: {
+  detail: BookDetailResponse;
   analysis: AnalysisStateResponse | null;
   currentActivity: CurrentMindstreamActivity | null;
 }) {
-  const locus = buildReadingLocus(analysis);
-  const sectionToken = formatMindstreamSectionToken(locus.sectionRef, locus.chapterRef);
-  const tail = buildMindstreamBreadcrumbTail(currentActivity);
+  const locus = buildReadingLocus(detail, analysis);
+  const sectionToken = formatMindstreamSectionToken(locus.sectionRef, locus.chapterLabel);
+  const tail = buildMindstreamBreadcrumbTail(currentActivity) ?? (locus.excerpt ? excerptText(locus.excerpt, 56) : null);
 
-  if (!locus.chapterRef && !sectionToken && !tail) {
+  if (!locus.chapterLabel && !sectionToken && !tail) {
     return null;
   }
 
@@ -1441,12 +1550,12 @@ function MindstreamHeroBreadcrumb({
     <div className="min-w-0 md:ml-auto">
       <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1.5 md:justify-end">
         <MapPin className="h-[1rem] w-[1rem] shrink-0 text-[var(--warm-300)]" strokeWidth={2.1} />
-        {locus.chapterRef ? (
+        {locus.chapterLabel ? (
           <span
             className="text-[var(--warm-700)]"
             style={{ ...OVERVIEW_CARD_META_STYLE, fontWeight: 600 }}
           >
-            {locus.chapterRef}
+            {locus.chapterLabel}
           </span>
         ) : null}
         {sectionToken ? (
@@ -1899,7 +2008,7 @@ function MindstreamHeroCard({
         <p className="text-[var(--amber-accent)] uppercase tracking-[0.18em]" style={OVERVIEW_SECTION_EYEBROW_STYLE}>
           {copy("overview.mindstream.title")}
         </p>
-        <MindstreamHeroBreadcrumb analysis={analysis} currentActivity={currentActivity} />
+        <MindstreamHeroBreadcrumb detail={detail} analysis={analysis} currentActivity={currentActivity} />
       </div>
 
       <div className="mt-7 flex items-start gap-4 md:mt-9 md:gap-6">

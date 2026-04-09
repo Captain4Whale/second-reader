@@ -26,6 +26,10 @@ The project is maintained as one product with two sub-applications:
 5. Start the frontend with `make dev-frontend`
 6. Or run both together with `make dev`
 7. For a more stable local demo loop, use `make run-demo`
+8. If you want the stack to survive a Codex or terminal restart, use the detached commands:
+   - `make start-local-stack`
+   - `make status-local-stack`
+   - `make stop-local-stack`
 
 ## Default Local URLs
 - Frontend: `http://localhost:5173`
@@ -210,6 +214,11 @@ Important frontend variables:
 - `make dev-frontend`: run Vite with the shared API defaults
 - `make dev`: run both apps together
 - `make run-demo`: run frontend plus a supervised non-reload backend that auto-restarts if it exits
+- `make start-backend-detached`: start the stable backend in the background with logs and pid tracking under `reading-companion-backend/state/local_stack/`
+- `make start-frontend-detached`: start the frontend dev server in the background with logs and pid tracking under `reading-companion-backend/state/local_stack/`
+- `make start-local-stack`: start both detached services so they survive Codex or terminal restarts
+- `make status-local-stack`: show detached backend/frontend status
+- `make stop-local-stack`: stop the detached backend/frontend services
 - `make test`: run backend tests, frontend typecheck/build, and contract drift checks
 - `make contract-check`: verify docs appendix, backend OpenAPI snapshot, and frontend contract guards
 - `make e2e`: run the fixture-backed upload -> analysis -> book -> chapter -> marks Playwright flow
@@ -221,6 +230,21 @@ Important frontend variables:
 - `make library-source-intake LIBRARY_SOURCE_INTAKE_ARGS="..."`: ingest books from the managed library inbox into canonical local source storage and the source catalog
 - `make closed-loop-benchmark-curation CLOSED_LOOP_BENCHMARK_CURATION_ARGS="..."`: run the first scratch-safe closed-loop benchmark-curation pass for the managed local supplement
 - `cd reading-companion-frontend && npm run generate-api-types`: refresh generated frontend API types after the backend OpenAPI snapshot changes
+
+## Detached Local Stack
+Use this when you want the project to keep running after you close the current shell or restart Codex.
+
+Commands:
+- `make start-local-stack`
+- `make status-local-stack`
+- `make stop-local-stack`
+
+Behavior:
+- backend runs in stable mode, not hot-reload mode
+- frontend runs as the Vite dev server
+- both services write logs and pid files under `reading-companion-backend/state/local_stack/`
+- this mode is detached from the current shell, but it is not a full supervisor
+- if one service crashes, it stays down until you restart it
 
 ## Dataset Source Intake
 Use the managed library inbox for future private/public source additions.
