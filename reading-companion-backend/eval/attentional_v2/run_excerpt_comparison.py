@@ -61,6 +61,11 @@ MECHANISM_KEYS = ("attentional_v2", "iterator_v1")
 MECHANISM_FILTER_VALUES = ("attentional_v2", "iterator_v1", "both")
 TARGET_SLICE_VALUES = ("selective_legibility", "insight_and_clarification", "both")
 STAGE_VALUES = ("all", "bundle", "judge", "merge")
+JUDGE_SCHEMA_RETRY_INSTRUCTION = (
+    "\n\nReminder: return exactly one JSON object matching the requested schema. "
+    "Do not wrap it in markdown fences or nest it under another key. "
+    "Every rubric score must be an integer from 1 to 5."
+)
 TARGET_FIELD_BY_SLICE = {
     "selective_legibility": (
         "excerpt_core_primary_frozen_draft",
@@ -677,8 +682,52 @@ def _default_judgment(score_keys: tuple[str, ...], *, reason: str) -> dict[str, 
     }
 
 
+def _coerce_judgment_payload(payload: object) -> object:
+    current = payload
+    while True:
+        if isinstance(current, list) and len(current) == 1 and isinstance(current[0], (dict, list)):
+            current = current[0]
+            continue
+        if not isinstance(current, dict):
+            return current
+        if any(key in current for key in ("winner", "confidence", "scores", "reason")):
+            return current
+        for key in ("judgment", "result", "evaluation", "output"):
+            nested = current.get(key)
+            if isinstance(nested, (dict, list)):
+                current = nested
+                break
+        else:
+            return current
+
+
+def _judgment_has_nonzero_scores(judgment: dict[str, Any]) -> bool:
+    scores = judgment.get("scores")
+    if not isinstance(scores, dict):
+        return False
+    for side_scores in scores.values():
+        if not isinstance(side_scores, dict):
+            continue
+        if any(int(value or 0) > 0 for value in side_scores.values()):
+            return True
+    return False
+
+
+def _judgment_needs_retry(raw_payload: object, *, judgment: dict[str, Any], default_reason: str) -> bool:
+    if _clean_text(judgment.get("reason")) != default_reason:
+        return False
+    if _judgment_has_nonzero_scores(judgment):
+        return False
+    if isinstance(raw_payload, dict):
+        return bool(raw_payload)
+    if isinstance(raw_payload, list):
+        return bool(raw_payload)
+    return False
+
+
 def _normalize_judgment(payload: object, *, score_keys: tuple[str, ...], default_reason: str) -> dict[str, Any]:
     default = _default_judgment(score_keys, reason=default_reason)
+    payload = _coerce_judgment_payload(payload)
     if not isinstance(payload, dict):
         return default
     winner = _clean_text(payload.get("winner")).lower()
@@ -1322,49 +1371,58 @@ def _judge_target(
         return judgment
 
     _log_case_progress(case, f"[judge-start] {target_name}")
-    try:
-        with llm_invocation_scope(
-            profile_id=DEFAULT_EVAL_JUDGE_PROFILE_ID,
-            trace_context=eval_trace_context(
-                run_root,
-                eval_target=DEFAULT_TARGET,
-                stage="excerpt_comparison",
-                node=target_name,
-                extra={
-                    "shard_id": shard_id,
-                    "case_id": case.case_id,
-                    "unit_key": _chapter_unit_key(case.source_id, case.chapter_id),
-                },
-            ),
-        ):
-            payload = invoke_json(
-                str(config["system_prompt"]),
-                str(config["user_prompt"]).format(
-                    case_json=json.dumps(
-                        {
-                            "case_id": case.case_id,
-                            "case_title": case.case_title,
-                            "judge_focus": case.judge_focus,
-                            "selection_reason": case.selection_reason,
-                            "question_ids": case.question_ids,
-                            "phenomena": case.phenomena,
-                            "excerpt_text": case.excerpt_text,
-                            "book_title": case.book_title,
-                            "chapter_title": case.chapter_title,
-                        },
-                        ensure_ascii=False,
-                        indent=2,
-                    ),
-                    left_json=json.dumps(attentional["local_evidence"], ensure_ascii=False, indent=2),
-                    right_json=json.dumps(iterator["local_evidence"], ensure_ascii=False, indent=2),
+    base_user_prompt = str(config["user_prompt"]).format(
+        case_json=json.dumps(
+            {
+                "case_id": case.case_id,
+                "case_title": case.case_title,
+                "judge_focus": case.judge_focus,
+                "selection_reason": case.selection_reason,
+                "question_ids": case.question_ids,
+                "phenomena": case.phenomena,
+                "excerpt_text": case.excerpt_text,
+                "book_title": case.book_title,
+                "chapter_title": case.chapter_title,
+            },
+            ensure_ascii=False,
+            indent=2,
+        ),
+        left_json=json.dumps(attentional["local_evidence"], ensure_ascii=False, indent=2),
+        right_json=json.dumps(iterator["local_evidence"], ensure_ascii=False, indent=2),
+    )
+    retry_user_prompt = base_user_prompt + JUDGE_SCHEMA_RETRY_INSTRUCTION
+    payload: object = {}
+    judgment = _default_judgment(score_keys, reason="judge_unavailable")
+    for attempt_index, user_prompt in enumerate((base_user_prompt, retry_user_prompt), start=1):
+        try:
+            with llm_invocation_scope(
+                profile_id=DEFAULT_EVAL_JUDGE_PROFILE_ID,
+                trace_context=eval_trace_context(
+                    run_root,
+                    eval_target=DEFAULT_TARGET,
+                    stage="excerpt_comparison",
+                    node=target_name,
+                    extra={
+                        "shard_id": shard_id,
+                        "case_id": case.case_id,
+                        "unit_key": _chapter_unit_key(case.source_id, case.chapter_id),
+                    },
                 ),
-                _default_judgment(score_keys, reason="judge_unavailable"),
-            )
-    except ReaderLLMError:
-        payload = {}
-    except Exception:
-        payload = {}
-    judgment = _normalize_judgment(payload, score_keys=score_keys, default_reason="judge_unavailable")
+            ):
+                payload = invoke_json(
+                    str(config["system_prompt"]),
+                    user_prompt,
+                    _default_judgment(score_keys, reason="judge_unavailable"),
+                )
+        except ReaderLLMError:
+            payload = {}
+        except Exception:
+            payload = {}
+        judgment = _normalize_judgment(payload, score_keys=score_keys, default_reason="judge_unavailable")
+        if attempt_index == 1 and _judgment_needs_retry(payload, judgment=judgment, default_reason="judge_unavailable"):
+            _log_case_progress(case, f"[judge-retry] {target_name} reason=schema_invalid")
+            continue
+        break
     _log_case_progress(case, f"[judge-completed] {target_name} winner={judgment['winner']}")
     return judgment
 

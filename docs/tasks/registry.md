@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-04-09T00:31:07Z`
+Last updated: `2026-04-09T04:33:19Z`
 
 ## Status Values
 - `active`
@@ -19,45 +19,6 @@ Last updated: `2026-04-09T00:31:07Z`
 - `cancelled`
 
 ## Active
-
-### `TASK-ACCUMULATION-BENCHMARK-V1` — Build the bounded long-span window benchmark for `coherent_accumulation`
-- Status: `active`
-- Lane: `dataset_platform`
-- Priority: `high`
-- Detail: `docs/implementation/new-reading-mechanism/new-reading-mechanism-execution-tracker.md`
-- Next: keep the honest-short freeze as the active long-span draft, treat `attentional_v2_accumulation_benchmark_v1_judged_20260406` as a diagnosed invalid lane rather than generic mechanism failure, and treat the April 8 targeted same-run repair as completed. The merged rerun is now much cleaner, but one evaluation caveat still remains on `insight_and_clarification` for `value_of_others_private_en__8_10__probe_1`:
-  - prior recovery evidence:
-    - job: `bgjob_accumulation_smoke_pair_recovery_20260407` (`completed`)
-    - run: `attentional_v2_accumulation_benchmark_v1_smoke_recovery_pair_20260407`
-    - result: both windows and both probe payloads completed cleanly for both mechanisms without `bundle_missing`
-  - completed mainline rerun:
-    - job: `bgjob_accumulation_benchmark_v1_judged_rerun_20260407` (`completed`)
-    - run: `attentional_v2_accumulation_benchmark_v1_judged_rerun_20260407`
-    - result: merged outputs exist, but the summary still carries `judge_unavailable = 1` and `mechanism_failure = 1`
-  - isolated diagnosis launch:
-    - job: `bgjob_accumulation_value_of_others_iterator_v1_bundle_20260408` (`completed`)
-    - run: `attentional_v2_accumulation_value_of_others_iterator_v1_bundle_20260408`
-    - scope: isolated `iterator_v1`-only bundle read for `value_of_others_private_en__8_10`
-    - result: failed again with one checkpointable transient connection error; useful as diagnosis, not as recovery
-  - completed targeted repair:
-    - job: `bgjob_accumulation_benchmark_v1_value_of_others_iterator_v1_recovery_20260408` (`completed`)
-    - goal: rerun only the failed mechanism/window inside the completed formal run, then re-judge and re-merge
-    - current result:
-      - `mechanism_failure_count = 0` across the merged long-span rerun
-      - `coherent_accumulation` is fully clean with `judge_unavailable_count = 0`
-      - one remaining `judge_unavailable` survives only on `insight_and_clarification`
-  - landed orchestration hardening:
-    - `run_accumulation_comparison.py` now preserves resumable failed output trees and allows one bounded resume-aware recovery pass on recoverable transient failures
-    - future relaunches of the same failed mechanism/window no longer need to wipe progress before retrying
-- Jobs:
-  - `bgjob_accumulation_benchmark_v1_first_review_20260404` (`completed`)
-  - `bgjob_accumulation_benchmark_v1_rejudged_first_review_20260404` (`completed`)
-  - `bgjob_accumulation_benchmark_v1_repair_first_review_20260405` (`completed`)
-  - `bgjob_accumulation_benchmark_v1_judged_20260406` (`completed`)
-  - `bgjob_accumulation_smoke_pair_recovery_20260407` (`completed`)
-  - `bgjob_accumulation_benchmark_v1_judged_rerun_20260407` (`completed`)
-  - `bgjob_accumulation_value_of_others_iterator_v1_bundle_20260408` (`completed`)
-  - `bgjob_accumulation_benchmark_v1_value_of_others_iterator_v1_recovery_20260408` (`completed`)
 
 ### `TASK-V2-NATIVE-READING-PRESENTATION` — Redesign the routed reading surfaces around chapter text and anchored reactions
 - Status: `active`
@@ -76,39 +37,6 @@ Last updated: `2026-04-09T00:31:07Z`
   - then redesign chapter and marks surfaces around anchors and live thought lineage
   - do not open a separate cleanup-only wave for V1 display concepts before this lane
 - Jobs: none
-
-## Blocked
-
-### `TASK-PHASE9-DECISIVE-EVAL` — Run the split-surface Phase 9 evaluation lanes
-- Status: `blocked`
-- Lane: `mechanism_eval`
-- Priority: `high`
-- Detail: `docs/implementation/new-reading-mechanism/new-reading-mechanism-execution-tracker.md`
-- Next: keep `excerpt surface v1.1` as the current valid formal excerpt evidence bundle and do not reopen excerpt reruns by default. The long-span repair job is no longer running; it completed and removed the lingering `mechanism_failure`, but one `insight_and_clarification` `judge_unavailable` still remains on `value_of_others_private_en__8_10__probe_1`. This stays a parallel evidence-cleanup question, not a blocker on the already-landed compatibility cutover.
-- Jobs:
-  - `bgjob_human_notes_excerpt_smoke_light_20260404` (`completed`)
-  - `bgjob_human_notes_guided_excerpt_eval_v1_judged_20260404` (`completed`)
-  - `bgjob_human_notes_guided_excerpt_eval_v1_judged_personal_rerun_20260405` (`abandoned`)
-  - `bgjob_human_notes_excerpt_parallel_smoke_20260405` (`abandoned`)
-  - `bgjob_human_notes_excerpt_parallel_judged_shard_a_20260405` (`failed`)
-  - `bgjob_human_notes_excerpt_parallel_judged_shard_b_20260405` (`failed`)
-  - `bgjob_human_notes_excerpt_parallel_judged_shard_a_retry1_20260405` (`failed`)
-  - `bgjob_human_notes_excerpt_parallel_judged_shard_b_retry1_20260405` (`failed`)
-  - `bgjob_human_notes_excerpt_parallel_judged_shard_a_dualpool_recovery_20260405` (`failed`)
-  - `bgjob_human_notes_excerpt_parallel_judged_shard_b_dualpool_recovery_20260405` (`failed`)
-  - `bgjob_human_notes_excerpt_parallel_judged_shard_a_dualpool_recovery_retry2_20260405` (`abandoned`)
-  - `bgjob_human_notes_excerpt_parallel_judged_shard_b_dualpool_recovery_retry2_20260405` (`abandoned`)
-  - `bgjob_human_notes_excerpt_parallel_judged_shard_a_dualpool_recovery_retry3_20260405` (`completed`)
-  - `bgjob_human_notes_excerpt_parallel_judged_shard_b_dualpool_recovery_retry3_20260405` (`completed`)
-  - `bgjob_attentional_v2_excerpt_micro_slice_smoke_20260405` (`completed`)
-  - `bgjob_attentional_v2_excerpt_micro_slice_judged_20260405` (`completed`)
-  - `bgjob_excerpt_surface_v1_1_judged_shard_a_20260406` (`completed`)
-  - `bgjob_excerpt_surface_v1_1_judged_shard_b_20260406` (`completed`)
-  - `bgjob_excerpt_surface_v1_1_judged_shard_c_20260406` (`completed`)
-  - `bgjob_excerpt_surface_v1_1_judged_shard_d_20260406` (`completed`)
-  - `bgjob_excerpt_surface_v1_1_eval_orchestrator_unitready_retry1_20260406` (`completed`)
-  - `bgjob_excerpt_surface_v1_1_smoke_supremacy_recovery_20260406` (`completed`)
-  - `bgjob_accumulation_benchmark_v1_judged_20260406` (`completed`)
 
 ## Parked
 
@@ -140,7 +68,7 @@ Last updated: `2026-04-09T00:31:07Z`
 - Lane: `dataset_platform`
 - Priority: `high`
 - Detail: `docs/implementation/new-reading-mechanism/new-reading-mechanism-execution-tracker.md`
-- Next: keep the landed builder available as support infrastructure, but do not open a new general builder wave while `TASK-PHASE9-DECISIVE-EVAL` and `TASK-ACCUMULATION-BENCHMARK-V1` remain unresolved; broader construction should resume only if later decisive eval results expose a specific blocker or if one explicitly scoped audit-stage-only reproducibility pass is requested
+- Next: keep the landed builder available as support infrastructure, but do not open a new general builder wave by default now that the current decisive eval lanes are resolved; broader construction should resume only if later regression work exposes a concrete blocker or if one explicitly scoped audit-stage-only reproducibility pass is requested
 - Jobs:
   - `bgjob_closed_loop_en_broader_callbackpromptfix_20260331` (`completed`)
   - `bgjob_closed_loop_zh_callbacklookback_20260330` (`completed`)
@@ -161,7 +89,7 @@ Last updated: `2026-04-09T00:31:07Z`
 - Lane: `dataset_platform`
 - Priority: `high`
 - Detail: `docs/implementation/new-reading-mechanism/new-reading-mechanism-execution-tracker.md`
-- Next: keep the bounded controller scratch-safe and reusable, but do not widen automation while decisive mechanism-eval work remains unresolved; with current model cost pressure, do not spend on non-mainline comparison support loops; resume only if later work needs one explicitly scoped audit-stage-only reproducibility pass or another concrete support-lane unblocker
+- Next: keep the bounded controller scratch-safe and reusable, but do not widen automation by default now that the current decisive mechanism-eval lane is closed; with current model cost pressure, do not spend on non-mainline comparison support loops unless later work needs one explicitly scoped audit-stage-only reproducibility pass or another concrete support-lane unblocker
 - Jobs:
   - `bgjob_closed_loop_en_broader_callbackpromptfix_20260331` (`completed`)
   - `bgjob_closed_loop_bilingual_broader_callbackpromptfix_20260331` (`failed`)
@@ -207,6 +135,53 @@ Last updated: `2026-04-09T00:31:07Z`
 - Next: keep section-first compatibility fields and containers only as migration sidecars; start removal only after the V2-native overview, chapter, and marks surfaces are stable enough that the older presentation model is no longer needed for normal product use
 
 ## Done
+
+### `TASK-ACCUMULATION-BENCHMARK-V1` — Build the bounded long-span window benchmark for `coherent_accumulation`
+- Status: `done`
+- Lane: `dataset_platform`
+- Priority: `high`
+- Detail: `docs/implementation/new-reading-mechanism/new-reading-mechanism-execution-tracker.md`
+- Next: keep `attentional_v2_accumulation_benchmark_v1_judged_rerun_20260407` as the durable long-span evidence bundle, treat the April 6 lane as diagnosed invalid harness evidence rather than mechanism evidence, and reopen long-span repair only if a future rerun reproduces bundle/probe materialization failure or schema-invalid judge collapse.
+- Jobs:
+  - `bgjob_accumulation_benchmark_v1_first_review_20260404` (`completed`)
+  - `bgjob_accumulation_benchmark_v1_rejudged_first_review_20260404` (`completed`)
+  - `bgjob_accumulation_benchmark_v1_repair_first_review_20260405` (`completed`)
+  - `bgjob_accumulation_benchmark_v1_judged_20260406` (`completed`)
+  - `bgjob_accumulation_smoke_pair_recovery_20260407` (`completed`)
+  - `bgjob_accumulation_benchmark_v1_judged_rerun_20260407` (`completed`)
+  - `bgjob_accumulation_value_of_others_iterator_v1_bundle_20260408` (`completed`)
+  - `bgjob_accumulation_benchmark_v1_value_of_others_iterator_v1_recovery_20260408` (`completed`)
+
+### `TASK-PHASE9-DECISIVE-EVAL` — Run the split-surface Phase 9 evaluation lanes
+- Status: `done`
+- Lane: `mechanism_eval`
+- Priority: `high`
+- Detail: `docs/implementation/new-reading-mechanism/new-reading-mechanism-execution-tracker.md`
+- Next: keep `excerpt surface v1.1` as the current durable excerpt evidence bundle, keep the cleaned long-span rerun as the durable long-span evidence bundle, and do not reopen decisive eval reruns by default unless a later product question or regression reproduces a concrete blocker.
+- Jobs:
+  - `bgjob_human_notes_excerpt_smoke_light_20260404` (`completed`)
+  - `bgjob_human_notes_guided_excerpt_eval_v1_judged_20260404` (`completed`)
+  - `bgjob_human_notes_guided_excerpt_eval_v1_judged_personal_rerun_20260405` (`abandoned`)
+  - `bgjob_human_notes_excerpt_parallel_smoke_20260405` (`abandoned`)
+  - `bgjob_human_notes_excerpt_parallel_judged_shard_a_20260405` (`failed`)
+  - `bgjob_human_notes_excerpt_parallel_judged_shard_b_20260405` (`failed`)
+  - `bgjob_human_notes_excerpt_parallel_judged_shard_a_retry1_20260405` (`failed`)
+  - `bgjob_human_notes_excerpt_parallel_judged_shard_b_retry1_20260405` (`failed`)
+  - `bgjob_human_notes_excerpt_parallel_judged_shard_a_dualpool_recovery_20260405` (`failed`)
+  - `bgjob_human_notes_excerpt_parallel_judged_shard_b_dualpool_recovery_20260405` (`failed`)
+  - `bgjob_human_notes_excerpt_parallel_judged_shard_a_dualpool_recovery_retry2_20260405` (`abandoned`)
+  - `bgjob_human_notes_excerpt_parallel_judged_shard_b_dualpool_recovery_retry2_20260405` (`abandoned`)
+  - `bgjob_human_notes_excerpt_parallel_judged_shard_a_dualpool_recovery_retry3_20260405` (`completed`)
+  - `bgjob_human_notes_excerpt_parallel_judged_shard_b_dualpool_recovery_retry3_20260405` (`completed`)
+  - `bgjob_attentional_v2_excerpt_micro_slice_smoke_20260405` (`completed`)
+  - `bgjob_attentional_v2_excerpt_micro_slice_judged_20260405` (`completed`)
+  - `bgjob_excerpt_surface_v1_1_judged_shard_a_20260406` (`completed`)
+  - `bgjob_excerpt_surface_v1_1_judged_shard_b_20260406` (`completed`)
+  - `bgjob_excerpt_surface_v1_1_judged_shard_c_20260406` (`completed`)
+  - `bgjob_excerpt_surface_v1_1_judged_shard_d_20260406` (`completed`)
+  - `bgjob_excerpt_surface_v1_1_eval_orchestrator_unitready_retry1_20260406` (`completed`)
+  - `bgjob_excerpt_surface_v1_1_smoke_supremacy_recovery_20260406` (`completed`)
+  - `bgjob_accumulation_benchmark_v1_judged_20260406` (`completed`)
 
 ### `TASK-PHASE9-COMPAT-CUTOVER` — Finish Phase 9 through compatibility cutover and default-path readiness
 - Status: `done`

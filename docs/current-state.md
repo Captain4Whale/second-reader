@@ -7,17 +7,19 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-04-09T00:31:07Z`
+Last verified: `2026-04-09T04:42:45Z`
 
 ## Current Objective
 - Hold further `excerpt` mechanism polishing for now and treat the completed `excerpt surface v1.1` formal judged run as the current good-enough evidence bundle for product/storytelling decisions.
-- Use the completed 2-window `long-span` smoke as recovery evidence that the April 6 `bundle_missing` failure is no longer blocking bundle/probe materialization, then repair the completed full formal rerun with targeted same-run recovery instead of paying for another whole-surface relaunch.
+- Treat the cleaned `attentional_v2_accumulation_benchmark_v1_judged_rerun_20260407` full formal rerun as the current durable long-span evidence bundle.
+  - the April 8 same-run recovery removed the lingering `mechanism_failure`
+  - the April 9 targeted re-judge cleared the last surviving `insight_and_clarification` `judge_unavailable` on `value_of_others_private_en__8_10__probe_1` without relaunching the whole surface
 - The compatibility-first default cutover is now landed:
   - normal product deep-reading launches now default to `attentional_v2`
   - `iterator_v1` remains available as an explicit fallback and a legacy-resume continuity path
   - the current routed frontend surfaces were validated against `attentional_v2` compatibility outputs on overview, chapter, and marks-related flows
   - V2-native frontend presentation and section-first retirement are now explicitly post-Phase-9 initiatives
-  - long-span repair continues in parallel, but it is not a blocker on using the new default path
+  - long-span evidence cleanup is now complete, and it is not a blocker on using the new default path
 - Frontend direction is now fixed for the next product lane:
   - do not keep the old `iterator_v1` / section-first presentation as a co-equal product model
   - keep that older presentation shape only as a compatibility shell while V2-native surfaces are being built
@@ -28,7 +30,7 @@ Last verified: `2026-04-09T00:31:07Z`
   - retained legacy code stays in place for now, marked as retired rather than silently current
 - Implementation-plan note:
   - stable `attentional_v2` doc promotion is now treated as resolved
-  - the remaining live work is no longer "should we cut over?"; it is post-cutover evidence cleanup plus later V2-native presentation planning
+  - the remaining live work is no longer "should we cut over?"; the backend evidence cleanup is now resolved and the next mainline work is later V2-native presentation planning
 - `excerpt surface v1.1` remains the latest valid formal excerpt evidence lane:
   - formal run:
     - `attentional_v2_excerpt_surface_v1_1_judged_20260406`
@@ -110,15 +112,15 @@ Last verified: `2026-04-09T00:31:07Z`
         - `MiniMax-M2.7-personal-2 = 154`
     - remaining caveat:
       - this smoke did not materialize top-level `summary/aggregate.json` or `summary/report.md`, so treat it as harness-recovery evidence rather than the final long-span comparison artifact
-  - current next move:
+  - current resolved posture:
     - the full formal judged rerun has completed as a process:
       - job id:
         - `bgjob_accumulation_benchmark_v1_judged_rerun_20260407`
       - run id:
         - `attentional_v2_accumulation_benchmark_v1_judged_rerun_20260407`
       - current interpretation:
-        - treat it as near-complete but still not final evidence because one window remains degraded by a single `iterator_v1` transient failure on `value_of_others_private_en__8_10`
-        - the merged summary currently still contains `judge_unavailable = 1` and `mechanism_failure = 1`
+        - treat it as the clean durable long-span evidence lane rather than as a near-complete repair artifact
+        - current merged summary now carries `judge_unavailable = 0` and `mechanism_failure = 0`
     - the isolated diagnosis-only `iterator_v1` read has already failed once with a transient connection error and is no longer the main recovery path:
       - job id:
         - `bgjob_accumulation_value_of_others_iterator_v1_bundle_20260408`
@@ -136,32 +138,35 @@ Last verified: `2026-04-09T00:31:07Z`
         - re-merged the already-completed formal run
       - current merged posture:
         - `mechanism_failure_count = 0` on both long-span targets
-        - `coherent_accumulation` is now clean with `judge_unavailable_count = 0`
-        - one remaining caveat survives on `insight_and_clarification`:
-          - `judge_unavailable_count = 1`
-          - the affected probe is `value_of_others_private_en__8_10__probe_1`
-          - the persisted reason is still `judge_unavailable`
+        - `coherent_accumulation` is clean with `judge_unavailable_count = 0`
+        - `insight_and_clarification` is now also clean with `judge_unavailable_count = 0`
+        - the final April 9 targeted re-judge converted `value_of_others_private_en__8_10__probe_1` from the sentinel `judge_unavailable` placeholder into a real `iterator_v1` win
+        - current top-line long-span aggregate:
+          - `coherent_accumulation`: `iterator_v1 = 5`, `attentional_v2 = 2`, average `3.486` vs `2.457`
+          - `insight_and_clarification`: `iterator_v1 = 4`, `attentional_v2 = 2`, `tie = 1`, average `3.086` vs `2.457`
     - landed orchestration hardening:
       - `reading-companion-backend/eval/attentional_v2/run_accumulation_comparison.py` now supports one bounded resume-aware recovery pass for recoverable transient failures
       - if a recovery launch sees an existing resumable failed output tree, it now resumes from that checkpoint instead of wiping the mechanism output directory first
-      - the in-flight recovery job above started before this code landed, so it will not pick up the new behavior unless relaunched
-    - do not spend on a fresh excerpt full-surface rerun unless the long-span recovery still fails after the hardened runner is used
+      - `skip-existing` LLM judge reruns now refuse to reuse `judge_unavailable` / `mechanism_unavailable` placeholders as if they were valid probe evidence
+      - excerpt/accumulation judge targets now coerce nested schema-valid judge payloads and perform one bounded schema-reminder retry before finalizing a `judge_unavailable` sentinel
+    - do not spend on a fresh excerpt full-surface rerun or another full long-span relaunch unless a later run reproduces a real harness/runtime regression
 - Current repo posture:
   - `reading-companion-backend/state/job_registry/active_jobs.md` currently shows no active background jobs
   - do not launch a new full excerpt formal rerun tonight
-  - the full long-span formal judged rerun has already finished, and the targeted same-run repair has also completed
+  - the full long-span formal judged rerun, the targeted same-run repair, and the final single-probe re-judge are all complete
+  - the clean long-span formal rerun now has `judge_unavailable_count = 0` and `mechanism_failure_count = 0` on both targets
   - the earlier isolated `iterator_v1` read is diagnosis-only evidence and does not replace or mutate the main formal long-span lane
-  - do not reopen dataset retune or long-span redesign inside this repair-first / diagnosis-only pass
+  - do not reopen dataset retune or long-span redesign inside this now-completed repair-first / diagnosis-only pass
 
 ## Current Strategy
-- Current mainline posture as of `2026-04-07`:
+- Current mainline posture as of `2026-04-09`:
   - `excerpt` is currently in a hold posture:
     - keep the completed formal excerpt run as the main product/demo evidence bundle
     - do not reopen another repair round unless later long-span or cutover discussion makes it necessary
-  - `long-span` is the live active lane:
-    - treat the completed 2-window smoke as sufficient recovery evidence for bundle/probe materialization
-    - spend the next overnight slot on one full formal judged rerun of the full long-span draft
-    - only reopen narrow harness work if that judged rerun reintroduces materialization failure
+  - `long-span` formal evidence cleanup is now resolved:
+    - keep the cleaned full formal rerun as the durable long-span evidence bundle
+    - treat the April 6 lane as invalid harness evidence only, not as mechanism evidence
+    - only reopen narrow harness work if a future rerun reproduces schema-invalid judge payload collapse or bundle/probe materialization failure
   - `frontend` is now the next active product lane:
     - begin V2-native routed presentation work without waiting for a separate V1 display cleanup pass
     - first fix truth/visibility gaps on the in-progress overview surface

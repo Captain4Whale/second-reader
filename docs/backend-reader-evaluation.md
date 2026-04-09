@@ -202,6 +202,9 @@ Use `docs/backend-reading-mechanism.md` for shared mechanism-platform boundaries
     - `bundle -> judge -> merge`
   - the bundle stage should read each chapter/window once per mechanism and persist a normalized reusable bundle
   - the judge stage should consume only completed bundles, preserve per-case or per-probe failure isolation, and allow `skip-existing` resume behavior
+  - `skip-existing` should only reuse prior case/probe payloads when the requested targets already contain reusable non-sentinel judgments for the current judge mode
+    - `judge_unavailable`, `mechanism_unavailable`, and equivalent explicit placeholder outcomes should be treated as retryable gaps rather than as trustworthy reusable evidence
+  - if one LLM judge call returns JSON that parses structurally but still collapses into the runner's unavailable sentinel because the schema is incomplete or wrongly wrapped, the runner should make one bounded same-target retry with an explicit schema reminder before finalizing the unavailable payload
   - the merge stage should be the only stage that writes the final aggregate/report outputs
   - shard ownership should stay explicit so two processes never write the same `(unit, mechanism)` or final summary concurrently
 - On the excerpt surface, smoke health and judged promotion should now be separated.

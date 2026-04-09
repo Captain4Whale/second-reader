@@ -25,6 +25,7 @@ from eval.attentional_v2.runtime_progress import runtime_progress_heartbeat
 from eval.attentional_v2.run_excerpt_comparison import (
     _clean_text,
     _default_judgment,
+    _judgment_needs_retry,
     _load_source_index,
     _manifest_paths_from_entries,
     _match_entry,
@@ -57,6 +58,11 @@ MECHANISM_KEYS = ("attentional_v2", "iterator_v1")
 MECHANISM_FILTER_VALUES = ("attentional_v2", "iterator_v1", "both")
 TARGET_SLICE_VALUES = ("coherent_accumulation", "insight_and_clarification", "both")
 STAGE_VALUES = ("all", "bundle", "judge", "merge")
+JUDGE_SCHEMA_RETRY_INSTRUCTION = (
+    "\n\nReminder: return exactly one JSON object matching the requested schema. "
+    "Do not wrap it in markdown fences or nest it under another key. "
+    "Every rubric score must be an integer from 1 to 5."
+)
 RECOVERABLE_MECHANISM_PROBLEM_CODES = {
     "network_blocked",
     "llm_timeout",
@@ -578,16 +584,56 @@ def _existing_bundle_payload(run_root: Path, *, window_case_id: str, mechanism_k
     return loaded[-1] if loaded else None
 
 
-def _existing_probe_payload(run_root: Path, *, probe_id: str) -> tuple[Path, dict[str, Any]] | None:
+def _judgment_reason(payload: dict[str, Any], *, target_name: str) -> str:
+    target_payload = dict((payload.get("target_results") or {}).get(target_name) or {})
+    judgment = dict(target_payload.get("judgment") or {})
+    return _clean_text(judgment.get("reason"))
+
+
+def _probe_payload_has_reusable_targets(
+    payload: dict[str, Any],
+    *,
+    target_names: list[str],
+    judge_mode: str,
+) -> bool:
+    if not _probe_payload_covers_targets(payload, target_names=target_names):
+        return False
+    disallowed_reasons = {"mechanism_unavailable", "judge_unavailable", "probe_error"}
+    if judge_mode == "llm":
+        disallowed_reasons.add("judge_disabled")
+    for target_name in target_names:
+        if _judgment_reason(payload, target_name=target_name) in disallowed_reasons:
+            return False
+    return True
+
+
+def _existing_probe_payload(
+    run_root: Path,
+    *,
+    probe_id: str,
+    target_names: list[str] | None = None,
+    judge_mode: str = "llm",
+) -> tuple[Path, dict[str, Any]] | None:
     candidates = [path for path in run_root.glob(f"shards/*/cases/{probe_id}.json") if path.is_file()]
     if not candidates:
         return None
-    candidates.sort(key=lambda path: (path.stat().st_mtime_ns, str(path)))
-    path = candidates[-1]
-    payload = _load_json_if_exists(path)
-    if payload is None:
+    loaded: list[tuple[Path, dict[str, Any]]] = []
+    for path in sorted(candidates, key=lambda item: (item.stat().st_mtime_ns, str(item))):
+        payload = _load_json_if_exists(path)
+        if payload is not None:
+            loaded.append((path, payload))
+    if not loaded:
         return None
-    return path, payload
+    if target_names:
+        reusable = [
+            item for item in loaded if _probe_payload_has_reusable_targets(item[1], target_names=target_names, judge_mode=judge_mode)
+        ]
+        if reusable:
+            return reusable[-1]
+        complete = [item for item in loaded if _probe_payload_covers_targets(item[1], target_names=target_names)]
+        if complete:
+            return complete[-1]
+    return loaded[-1]
 
 
 def _probe_payload_covers_targets(payload: dict[str, Any], *, target_names: list[str]) -> bool:
@@ -1208,48 +1254,57 @@ def _judge_target(
         return judgment
 
     _log_probe_progress(probe, f"[judge-start] {target_name}")
-    try:
-        with llm_invocation_scope(
-            profile_id=DEFAULT_EVAL_JUDGE_PROFILE_ID,
-            trace_context=eval_trace_context(
-                run_root,
-                eval_target=DEFAULT_TARGET,
-                stage="accumulation_comparison",
-                node=target_name,
-                extra={
-                    "shard_id": shard_id,
-                    "probe_id": probe.probe_id,
-                    "window_case_id": window.window_case_id,
-                },
-            ),
-        ):
-            payload = invoke_json(
-                str(config["system_prompt"]),
-                str(config["user_prompt"]).format(
-                    probe_json=json.dumps(
-                        {
-                            "probe_id": probe.probe_id,
-                            "probe_type": probe.probe_type,
-                            "selection_reason": probe.selection_reason,
-                            "judge_focus": probe.judge_focus,
-                            "window_case_id": window.window_case_id,
-                            "window_kind": window.window_kind,
-                            "chapter_case_ids": window.chapter_case_ids,
-                            "anchor_refs": probe.anchor_refs,
-                        },
-                        ensure_ascii=False,
-                        indent=2,
-                    ),
-                    left_json=json.dumps(attentional["local_evidence"], ensure_ascii=False, indent=2),
-                    right_json=json.dumps(iterator["local_evidence"], ensure_ascii=False, indent=2),
+    base_user_prompt = str(config["user_prompt"]).format(
+        probe_json=json.dumps(
+            {
+                "probe_id": probe.probe_id,
+                "probe_type": probe.probe_type,
+                "selection_reason": probe.selection_reason,
+                "judge_focus": probe.judge_focus,
+                "window_case_id": window.window_case_id,
+                "window_kind": window.window_kind,
+                "chapter_case_ids": window.chapter_case_ids,
+                "anchor_refs": probe.anchor_refs,
+            },
+            ensure_ascii=False,
+            indent=2,
+        ),
+        left_json=json.dumps(attentional["local_evidence"], ensure_ascii=False, indent=2),
+        right_json=json.dumps(iterator["local_evidence"], ensure_ascii=False, indent=2),
+    )
+    retry_user_prompt = base_user_prompt + JUDGE_SCHEMA_RETRY_INSTRUCTION
+    payload: object = {}
+    judgment = _default_judgment(score_keys, reason="judge_unavailable")
+    for attempt_index, user_prompt in enumerate((base_user_prompt, retry_user_prompt), start=1):
+        try:
+            with llm_invocation_scope(
+                profile_id=DEFAULT_EVAL_JUDGE_PROFILE_ID,
+                trace_context=eval_trace_context(
+                    run_root,
+                    eval_target=DEFAULT_TARGET,
+                    stage="accumulation_comparison",
+                    node=target_name,
+                    extra={
+                        "shard_id": shard_id,
+                        "probe_id": probe.probe_id,
+                        "window_case_id": window.window_case_id,
+                    },
                 ),
-                _default_judgment(score_keys, reason="judge_unavailable"),
-            )
-    except ReaderLLMError:
-        payload = {}
-    except Exception:
-        payload = {}
-    judgment = _normalize_judgment(payload, score_keys=score_keys, default_reason="judge_unavailable")
+            ):
+                payload = invoke_json(
+                    str(config["system_prompt"]),
+                    user_prompt,
+                    _default_judgment(score_keys, reason="judge_unavailable"),
+                )
+        except ReaderLLMError:
+            payload = {}
+        except Exception:
+            payload = {}
+        judgment = _normalize_judgment(payload, score_keys=score_keys, default_reason="judge_unavailable")
+        if attempt_index == 1 and _judgment_needs_retry(payload, judgment=judgment, default_reason="judge_unavailable"):
+            _log_probe_progress(probe, f"[judge-retry] {target_name} reason=schema_invalid")
+            continue
+        break
     _log_probe_progress(probe, f"[judge-completed] {target_name} winner={judgment['winner']}")
     return judgment
 
@@ -1713,8 +1768,17 @@ def _judge_probes_for_window(
     for probe in probes:
         probe_targets = [target_name for target_name, ids in selection.target_probe_ids.items() if probe.probe_id in ids]
         if skip_existing:
-            existing = _existing_probe_payload(run_root, probe_id=probe.probe_id)
-            if existing is not None and _probe_payload_covers_targets(existing[1], target_names=probe_targets):
+            existing = _existing_probe_payload(
+                run_root,
+                probe_id=probe.probe_id,
+                target_names=probe_targets,
+                judge_mode=judge_mode,
+            )
+            if existing is not None and _probe_payload_has_reusable_targets(
+                existing[1],
+                target_names=probe_targets,
+                judge_mode=judge_mode,
+            ):
                 _log_probe_progress(probe, "[probe-skip-existing]")
                 results[probe.probe_id] = existing[1]
                 continue

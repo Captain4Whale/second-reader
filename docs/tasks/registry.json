@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-04-09T00:31:07Z",
+  "updated_at": "2026-04-09T04:33:19Z",
   "tasks": [
     {
       "id": "TASK-PHASE9-COMPAT-CUTOVER",
@@ -224,7 +224,7 @@
         "bgjob_callbackslice_auditrerun_20260331"
       ],
       "acceptance_ref": "docs/implementation/new-reading-mechanism/new-reading-mechanism-execution-tracker.md",
-      "next_action": "Keep the landed builder available as support infrastructure, but do not open a new general builder wave while TASK-PHASE9-DECISIVE-EVAL and TASK-ACCUMULATION-BENCHMARK-V1 remain unresolved; broader construction should resume only if later decisive eval results expose a specific blocker or if one explicitly scoped audit-stage-only reproducibility pass is requested.",
+      "next_action": "Keep the landed builder available as support infrastructure, but do not open a new general builder wave by default now that the current decisive eval lanes are resolved; broader construction should resume only if later regression work exposes a concrete blocker or if one explicitly scoped audit-stage-only reproducibility pass is requested.",
       "blocked_by": [],
       "evidence_refs": [
         "docs/implementation/new-reading-mechanism/evaluation-question-map.md",
@@ -453,7 +453,7 @@
         "bgjob_closed_loop_bilingual_broader_auditcoherencefix_20260330"
       ],
       "acceptance_ref": "docs/implementation/new-reading-mechanism/new-reading-mechanism-execution-tracker.md",
-      "next_action": "Keep the bounded controller scratch-safe and reusable, but do not widen automation while decisive mechanism-eval work remains unresolved; with current model cost pressure, do not spend on non-mainline comparison support loops; resume only if later work needs one explicitly scoped audit-stage-only reproducibility pass or another concrete support-lane unblocker.",
+      "next_action": "Keep the bounded controller scratch-safe and reusable, but do not widen automation by default now that the current decisive mechanism-eval lane is closed; with current model cost pressure, do not spend on non-mainline comparison support loops unless later work needs one explicitly scoped audit-stage-only reproducibility pass or another concrete support-lane unblocker.",
       "blocked_by": [],
       "evidence_refs": [
         "docs/implementation/new-reading-mechanism/question-aligned-case-construction.md",
@@ -825,7 +825,7 @@
     {
       "id": "TASK-PHASE9-DECISIVE-EVAL",
       "title": "Run the split-surface Phase 9 evaluation lanes",
-      "status": "blocked",
+      "status": "done",
       "lane": "mechanism_eval",
       "priority": "high",
       "detail_ref": "docs/implementation/new-reading-mechanism/new-reading-mechanism-execution-tracker.md",
@@ -871,7 +871,7 @@
         "bgjob_accumulation_benchmark_v1_value_of_others_iterator_v1_recovery_20260408"
       ],
       "acceptance_ref": "docs/implementation/new-reading-mechanism/new-reading-mechanism-execution-tracker.md",
-      "next_action": "Keep excerpt surface v1.1 as the current valid formal excerpt evidence bundle and do not reopen excerpt reruns by default. The long-span repair job is no longer running; it completed and removed the lingering mechanism_failure, but one insight_and_clarification judge_unavailable still remains on value_of_others_private_en__8_10__probe_1. This stays a parallel evidence-cleanup question rather than a blocker on the already-landed compatibility cutover.",
+      "next_action": "Keep excerpt surface v1.1 as the durable excerpt evidence bundle, keep the cleaned long-span rerun as the durable long-span evidence bundle, and do not reopen decisive eval reruns by default unless a later product question or regression reproduces a concrete blocker.",
       "blocked_by": [],
       "evidence_refs": [
         "docs/implementation/new-reading-mechanism/excerpt-micro-slice-v1-draft.md",
@@ -949,9 +949,11 @@
         "reading-companion-backend/docs/evaluation/excerpt/README.md",
         "reading-companion-backend/docs/evaluation/excerpt/attentional_v2_excerpt_surface_v1_1_judged_20260406_interpretation.md",
         "reading-companion-backend/src/reading_runtime/llm_gateway.py",
-        "reading-companion-backend/tests/test_llm_gateway.py"
+        "reading-companion-backend/tests/test_llm_gateway.py",
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_accumulation_benchmark_v1_judged_rerun_20260407/summary/aggregate.json",
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_accumulation_benchmark_v1_judged_rerun_20260407/summary/report.md"
       ],
-      "last_updated": "2026-04-09T00:31:07Z",
+      "last_updated": "2026-04-09T04:33:19Z",
       "last_updated_by": "codex"
     },
     {
@@ -1001,7 +1003,7 @@
     {
       "id": "TASK-ACCUMULATION-BENCHMARK-V1",
       "title": "Build the bounded long-span window benchmark for coherent_accumulation",
-      "status": "active",
+      "status": "done",
       "lane": "dataset_platform",
       "priority": "high",
       "detail_ref": "docs/implementation/new-reading-mechanism/new-reading-mechanism-execution-tracker.md",
@@ -1025,7 +1027,7 @@
         "bgjob_accumulation_benchmark_v1_value_of_others_iterator_v1_recovery_20260408"
       ],
       "acceptance_ref": "docs/implementation/new-reading-mechanism/new-reading-mechanism-execution-tracker.md",
-      "next_action": "Keep the honest-short freeze as the active long-span draft, treat attentional_v2_accumulation_benchmark_v1_judged_20260406 as a diagnosed invalid lane rather than generic mechanism failure, and treat the April 8 targeted same-run repair as completed. The merged rerun is now much cleaner, but one evaluation caveat still remains on insight_and_clarification for value_of_others_private_en__8_10__probe_1. The completed recovery removed the lingering mechanism_failure, coherent_accumulation is now clean with judge_unavailable_count = 0, and the remaining open question is whether to accept or later narrow-fix the last insight_and_clarification judge_unavailable. Future relaunches can now reuse resumable failed output trees because run_accumulation_comparison.py has landed one bounded resume-aware recovery pass for recoverable transient failures.",
+      "next_action": "Keep attentional_v2_accumulation_benchmark_v1_judged_rerun_20260407 as the durable long-span evidence bundle, treat attentional_v2_accumulation_benchmark_v1_judged_20260406 as diagnosed invalid harness evidence rather than mechanism evidence, and reopen long-span repair only if a future rerun reproduces bundle/probe materialization failure or schema-invalid judge collapse.",
       "blocked_by": [],
       "evidence_refs": [
         "docs/implementation/new-reading-mechanism/human-notes-guided-dataset-v1-freeze-draft.md",
@@ -1058,9 +1060,13 @@
         "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_accumulation_benchmark_v1_judged_20260406/summary/llm_usage.json",
         "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_accumulation_benchmark_v1_judged_20260406/shards/main/units/supremacy_private_en__13.json",
         "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_accumulation_benchmark_v1_judged_20260406/shards/main/cases/supremacy_private_en__13__probe_1.json",
-        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_accumulation_benchmark_v1_smoke_recovery_pair_20260407/meta/selected_windows.json"
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_accumulation_benchmark_v1_smoke_recovery_pair_20260407/meta/selected_windows.json",
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_accumulation_benchmark_v1_judged_rerun_20260407/summary/aggregate.json",
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_accumulation_benchmark_v1_judged_rerun_20260407/summary/report.md",
+        "reading-companion-backend/tests/test_run_accumulation_comparison.py",
+        "reading-companion-backend/tests/test_run_excerpt_comparison.py"
       ],
-      "last_updated": "2026-04-09T00:31:07Z",
+      "last_updated": "2026-04-09T04:33:19Z",
       "last_updated_by": "codex"
     },
     {

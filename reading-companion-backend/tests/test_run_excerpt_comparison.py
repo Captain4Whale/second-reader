@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from contextlib import nullcontext
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
@@ -946,3 +947,69 @@ def test_skip_existing_ignores_unavailable_case_placeholders_for_llm_judge(monke
     assert summary["case_count"] == 1
     assert evaluate_calls == ["case_a"]
     assert case_payload["target_results"]["selective_legibility"]["judgment"]["reason"] == "fresh_rejudge"
+
+
+def test_judge_target_retries_once_after_schema_invalid_payload(monkeypatch, tmp_path: Path) -> None:
+    case = excerpt_comparison.ExcerptCase(
+        case_id="case_a",
+        case_title="case_a",
+        split="benchmark",
+        source_id="source_a",
+        book_title="Book A",
+        author="Author A",
+        output_language="en",
+        chapter_id=1,
+        chapter_title="Chapter 1",
+        start_sentence_id="c1-s1",
+        end_sentence_id="c1-s2",
+        excerpt_text="Alpha hinge line.\nThen the argument turns.",
+        question_ids=["Q1"],
+        phenomena=["distinction"],
+        selection_reason="Test",
+        judge_focus="Test",
+        dataset_id="demo_dataset",
+        dataset_version="1",
+    )
+    mechanisms = {
+        "status": "completed",
+        "local_evidence": {"evidence": "demo"},
+    }
+    payloads = iter(
+        [
+            {"winner": "attentional_v2"},
+            {
+                "winner": "attentional_v2",
+                "confidence": "high",
+                "scores": {
+                    "attentional_v2": {key: 4 for key in excerpt_comparison.SELECTIVE_SCORE_KEYS},
+                    "iterator_v1": {key: 2 for key in excerpt_comparison.SELECTIVE_SCORE_KEYS},
+                },
+                "reason": "fresh_rejudge",
+            },
+        ]
+    )
+    user_prompts: list[str] = []
+
+    monkeypatch.setattr(excerpt_comparison, "llm_invocation_scope", lambda **_kwargs: nullcontext())
+    monkeypatch.setattr(excerpt_comparison, "eval_trace_context", lambda *_args, **_kwargs: None)
+
+    def fake_invoke_json(system_prompt: str, user_prompt: str, default: Any, *, profile_id: str | None = None) -> Any:
+        user_prompts.append(user_prompt)
+        return next(payloads)
+
+    monkeypatch.setattr(excerpt_comparison, "invoke_json", fake_invoke_json)
+
+    judgment = excerpt_comparison._judge_target(
+        target_name="selective_legibility",
+        case=case,
+        attentional=mechanisms,
+        iterator=mechanisms,
+        run_root=tmp_path / "run",
+        judge_mode="llm",
+        shard_id="main",
+    )
+
+    assert len(user_prompts) == 2
+    assert "Reminder: return exactly one JSON object matching the requested schema." in user_prompts[1]
+    assert judgment["winner"] == "attentional_v2"
+    assert judgment["reason"] == "fresh_rejudge"

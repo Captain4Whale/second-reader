@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from contextlib import nullcontext
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
@@ -191,6 +192,22 @@ def _window_case(window_case_id: str = "window_a") -> accumulation_comparison.Wi
         selection_group_id=window_case_id,
         selection_group_label="Window A",
         cross_chapter_window={},
+    )
+
+
+def _probe(probe_id: str = "probe_a", window_case_id: str = "window_a") -> accumulation_comparison.Probe:
+    return accumulation_comparison.Probe(
+        probe_id=probe_id,
+        window_case_id=window_case_id,
+        source_id="source_a",
+        book_title="Book A",
+        author="Author A",
+        output_language="en",
+        probe_type="carryforward",
+        anchor_refs=[],
+        selection_reason="Test",
+        judge_focus="Test",
+        note_provenance=[],
     )
 
 
@@ -411,6 +428,171 @@ def test_skip_existing_reuses_prior_probe_result(monkeypatch, tmp_path: Path) ->
     )
 
     assert judge_summary["probe_count"] == 1
+
+
+def test_skip_existing_ignores_unavailable_probe_placeholders_for_llm_judge(monkeypatch, tmp_path: Path) -> None:
+    window_dataset = _bootstrap_window_dataset(tmp_path)
+    probe_dataset = _bootstrap_probe_dataset(tmp_path)
+    source_manifest = _bootstrap_source_manifest(tmp_path)
+    formal_manifest = _bootstrap_formal_manifest(
+        tmp_path,
+        window_dataset=window_dataset,
+        probe_dataset=probe_dataset,
+        source_manifest=source_manifest,
+        probe_ids=["probe_a"],
+    )
+    run_root = tmp_path / "runs" / "acc_skip_invalid_probe_demo"
+    window_result = _window_result("window_a")
+    _write_json(
+        run_root / "shards" / "bundle_shard" / "bundles" / "attentional_v2" / "window_a.json",
+        window_result["mechanisms"]["attentional_v2"],
+    )
+    _write_json(
+        run_root / "shards" / "bundle_shard" / "bundles" / "iterator_v1" / "window_a.json",
+        window_result["mechanisms"]["iterator_v1"],
+    )
+    _write_json(
+        run_root / "shards" / "prior" / "cases" / "probe_a.json",
+        {
+            "probe_id": "probe_a",
+            "window_case_id": "window_a",
+            "probe_type": "carryforward",
+            "source_id": "source_a",
+            "book_title": "Book A",
+            "author": "Author A",
+            "output_language": "en",
+            "probe_targets": ["coherent_accumulation", "insight_and_clarification"],
+            "mechanisms": {"attentional_v2": {"status": "completed"}, "iterator_v1": {"status": "completed"}},
+            "target_results": {
+                "coherent_accumulation": {
+                    "judgment": {
+                        "winner": "tie",
+                        "confidence": "low",
+                        "reason": "mechanism_unavailable",
+                        "scores": {"attentional_v2": {}, "iterator_v1": {}},
+                    }
+                },
+                "insight_and_clarification": {
+                    "judgment": {
+                        "winner": "tie",
+                        "confidence": "low",
+                        "reason": "judge_unavailable",
+                        "scores": {"attentional_v2": {}, "iterator_v1": {}},
+                    }
+                },
+            },
+        },
+    )
+    monkeypatch.setattr(accumulation_comparison, "resolve_worker_policy", lambda **_kwargs: SimpleNamespace(worker_count=1))
+    monkeypatch.setattr(
+        accumulation_comparison,
+        "ensure_canonical_parse",
+        lambda _book_path, language_mode: SimpleNamespace(book_document=_book_document()),
+    )
+
+    evaluate_calls: list[str] = []
+
+    def fake_evaluate_probe(
+        probe: accumulation_comparison.Probe,
+        *,
+        probe_targets: list[str],
+        window: accumulation_comparison.WindowCase,
+        unit_result: dict[str, Any],
+        document: dict[str, Any],
+        run_root: Path,
+        judge_mode: str,
+        judge_execution_mode: str,
+        shard_id: str,
+    ) -> dict[str, Any]:
+        evaluate_calls.append(probe.probe_id)
+        return {
+            "probe_id": probe.probe_id,
+            "window_case_id": probe.window_case_id,
+            "probe_type": probe.probe_type,
+            "source_id": probe.source_id,
+            "book_title": probe.book_title,
+            "author": probe.author,
+            "output_language": probe.output_language,
+            "probe_targets": probe_targets,
+            "mechanisms": unit_result["mechanisms"],
+            "target_results": {
+                target_name: {
+                    "judgment": {
+                        "winner": "attentional_v2",
+                        "confidence": "medium",
+                        "reason": "fresh_rejudge",
+                        "scores": {"attentional_v2": {}, "iterator_v1": {}},
+                    }
+                }
+                for target_name in probe_targets
+            },
+        }
+
+    monkeypatch.setattr(accumulation_comparison, "_evaluate_probe", fake_evaluate_probe)
+
+    summary = accumulation_comparison.run_benchmark(
+        formal_manifest_path=formal_manifest,
+        runs_root=tmp_path / "runs",
+        run_id="acc_skip_invalid_probe_demo",
+        stage="judge",
+        target_slice="both",
+        judge_mode="llm",
+        skip_existing=True,
+    )
+
+    probe_payload = json.loads((run_root / "shards" / "default" / "cases" / "probe_a.json").read_text(encoding="utf-8"))
+    assert summary["probe_count"] == 1
+    assert evaluate_calls == ["probe_a"]
+    assert probe_payload["target_results"]["coherent_accumulation"]["judgment"]["reason"] == "fresh_rejudge"
+
+
+def test_judge_target_retries_once_after_schema_invalid_payload(monkeypatch, tmp_path: Path) -> None:
+    probe = _probe()
+    window = _window_case()
+    mechanisms = {
+        "status": "completed",
+        "local_evidence": {"evidence": "demo"},
+    }
+    payloads = iter(
+        [
+            {"winner": "attentional_v2"},
+            {
+                "winner": "attentional_v2",
+                "confidence": "high",
+                "scores": {
+                    "attentional_v2": {key: 4 for key in accumulation_comparison.INSIGHT_SCORE_KEYS},
+                    "iterator_v1": {key: 2 for key in accumulation_comparison.INSIGHT_SCORE_KEYS},
+                },
+                "reason": "fresh_rejudge",
+            },
+        ]
+    )
+    user_prompts: list[str] = []
+
+    monkeypatch.setattr(accumulation_comparison, "llm_invocation_scope", lambda **_kwargs: nullcontext())
+    monkeypatch.setattr(accumulation_comparison, "eval_trace_context", lambda *_args, **_kwargs: None)
+
+    def fake_invoke_json(system_prompt: str, user_prompt: str, default: Any, *, profile_id: str | None = None) -> Any:
+        user_prompts.append(user_prompt)
+        return next(payloads)
+
+    monkeypatch.setattr(accumulation_comparison, "invoke_json", fake_invoke_json)
+
+    judgment = accumulation_comparison._judge_target(
+        target_name="insight_and_clarification",
+        probe=probe,
+        window=window,
+        attentional=mechanisms,
+        iterator=mechanisms,
+        run_root=tmp_path / "run",
+        judge_mode="llm",
+        shard_id="main",
+    )
+
+    assert len(user_prompts) == 2
+    assert "Reminder: return exactly one JSON object matching the requested schema." in user_prompts[1]
+    assert judgment["winner"] == "attentional_v2"
+    assert judgment["reason"] == "fresh_rejudge"
 
 
 def test_mechanism_filter_single_mechanism_only_writes_one_bundle(monkeypatch, tmp_path: Path) -> None:
