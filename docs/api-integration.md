@@ -53,7 +53,10 @@ Frontend defaults can be overridden with:
   - `analysis-state.current_reading_activity.active_reaction_id`
   - activity-event `reading_locus`
   - reaction/mark `primary_anchor` and related lineage sidecars
-- Current routed frontend surfaces still mostly consume the section-era compatibility layer, so these additive fields are present for migration and future mechanism compatibility rather than for immediate UI dependence.
+- Current routed frontend surfaces still mostly consume the section-era compatibility layer, but the first frontend truth slice now depends on some of these additive fields directly:
+  - the overview breadcrumb and live quote now prefer `reading_locus.excerpt` over the older `current_excerpt` fallback when both exist
+  - the overview live chips now surface `move_type` and `active_reaction_id` when the active mechanism provides them
+  - the recent trail now falls back to `current_state_panel.recent_reactions` instead of falsely rendering empty when the historical mindstream feed is sparse
 - For `attentional_v2`, chapter/detail routes now also tolerate older compatibility manifests that are missing `result_file` by resolving the mechanism-owned compatibility payloads directly; this keeps routed chapter review working during live reads and manifest rewrites.
 - The historical mindstream list still comes from `GET /api/books/{book_id}/activity` with `stream=mindstream` and remains separate from the live activity snapshot.
 - For `attentional_v2`, standard-mode checkpoint and resume events may now also appear in the shared `stream=system` activity feed; deep controller diagnostics remain debug-only and do not belong to the routed frontend contract.
@@ -64,6 +67,10 @@ Frontend defaults can be overridden with:
 - Public `book_id`, `reaction_id`, and `mark_id` values are integer IDs even when backend runtime artifacts still use internal string identifiers.
 - `analysis-state.last_checkpoint_at` reflects deep-reading segment checkpoints as well as parse checkpoints, so the overview and runtime guards can point to the latest resumable point with one field.
 - Shared `_runtime/runtime_shell.json` may now contribute additive locus and active-artifact fields to analysis-state when the current mechanism is not section-first.
+- `GET /api/books/{book_id}/source` is now treated by the routed chapter reader as an honest runtime dependency rather than as an implicitly reliable asset:
+  - the source-reader pane distinguishes normal loading from slow loading
+  - a missing `source_asset.url` now renders an explicit unavailable state instead of a blank pane
+  - stalled or failed EPUB boot now times out into a controlled unavailable state instead of indefinite loading
 - `WS /api/ws/jobs/{job_id}` still exists in the backend API and older upload/status surfaces, but it is not part of the current routed frontend integration.
 - Future migration still planned:
   - redesign chapter/detail and marks surfaces around chapter text plus anchored reactions

@@ -99,6 +99,8 @@ const JUMP_SPINNER_DELAY_MS = 180;
 const CFI_DISPLAY_FAIL_LIMIT = 2;
 const CFI_DEGRADE_MIN_ATTEMPTS = 6;
 const CFI_DEGRADE_FAILURE_RATIO = 0.7;
+const SOURCE_READER_BOOT_TIMEOUT_MS = 15_000;
+const SOURCE_READER_SLOW_LOADING_MS = 5_000;
 const PAPER_CANVAS_HEX = "#FAF7F2";
 const PAPER_SHEET_HEX = "#FFFCF5";
 const PAPER_RAIL_BORDER_HEX = "rgba(183, 162, 124, 0.18)";
@@ -861,6 +863,26 @@ function waitForReaderFrame(frameCount = 1): Promise<void> {
   });
 }
 
+function withTimeout<T>(promise: Promise<T>, timeoutMs: number, errorCode: string): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<never>((_, reject) => {
+      window.setTimeout(() => reject(new Error(errorCode)), timeoutMs);
+    }),
+  ]);
+}
+
+function sourceReaderErrorMessage(errorCode: string): string {
+  switch (errorCode) {
+    case "reader-init-timeout":
+    case "reader-display-timeout":
+    case "reader-locations-timeout":
+      return copy("chapter.reader.unavailableTimeout");
+    default:
+      return copy("chapter.reader.unavailableGeneric");
+  }
+}
+
 type ReaderHighlightRect = {
   height: number;
   width: number;
@@ -1031,6 +1053,7 @@ export function SourceReaderPane({
   const [isLoading, setIsLoading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [readerReady, setReaderReady] = useState(false);
+  const [showSlowLoading, setShowSlowLoading] = useState(false);
   const [lastJumpFeedback, setLastJumpFeedback] = useState<ReaderJumpFeedback | null>(null);
   const [isJumping, setIsJumping] = useState(false);
   const [readerLocation, setReaderLocation] = useState<ReaderLocation>({
@@ -1070,6 +1093,21 @@ export function SourceReaderPane({
   useEffect(() => {
     onLocationChangeRef.current = onLocationChange;
   }, [onLocationChange]);
+
+  useEffect(() => {
+    if (!isLoading) {
+      setShowSlowLoading(false);
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      setShowSlowLoading(true);
+    }, SOURCE_READER_SLOW_LOADING_MS);
+
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [isLoading]);
 
   useEffect(() => {
     const host = hostRef.current;
@@ -1134,7 +1172,21 @@ export function SourceReaderPane({
     let cancelled = false;
 
     async function setupReader() {
-      if (!sourceUrl || !hostRef.current) {
+      if (!hostRef.current) {
+        return;
+      }
+
+      if (!sourceUrl) {
+        setIsLoading(false);
+        setReaderReady(false);
+        setLoadError(null);
+        setLastJumpFeedback(null);
+        setReaderLocation({
+          cfi: null,
+          href: null,
+          progress: null,
+          sectionRef: null,
+        });
         return;
       }
 
@@ -1290,12 +1342,12 @@ export function SourceReaderPane({
 
         rendition.on("relocated", onRelocated);
 
-        await book.ready;
+        await withTimeout(book.ready, SOURCE_READER_BOOT_TIMEOUT_MS, "reader-init-timeout");
         if (cancelled) {
           return;
         }
         if (book.locations?.generate) {
-          await book.locations.generate(1600);
+          await withTimeout(book.locations.generate(1600), SOURCE_READER_BOOT_TIMEOUT_MS, "reader-locations-timeout");
         }
 
         const initialDisplayTarget =
@@ -1304,9 +1356,17 @@ export function SourceReaderPane({
           undefined;
 
         try {
-          await rendition.display(initialDisplayTarget);
+          await withTimeout(
+            rendition.display(initialDisplayTarget),
+            SOURCE_READER_BOOT_TIMEOUT_MS,
+            "reader-display-timeout",
+          );
         } catch {
-          await rendition.display();
+          await withTimeout(
+            rendition.display(),
+            SOURCE_READER_BOOT_TIMEOUT_MS,
+            "reader-display-timeout",
+          );
         }
         if (cancelled) {
           return;
@@ -1341,7 +1401,7 @@ export function SourceReaderPane({
         if (cancelled) {
           return;
         }
-        const message = error instanceof Error ? error.message : "Failed to initialize EPUB reader.";
+        const message = error instanceof Error ? error.message : "reader-init-failed";
         setLoadError(message);
       } finally {
         if (!cancelled) {
@@ -1840,6 +1900,7 @@ async function locateMatchText(
   const loadingOverlayClass = "bg-[var(--warm-50)]/86";
   const loadingTextClass = "text-[var(--warm-700)]";
   const errorOverlayClass = "bg-[var(--warm-100)]";
+  const sourceUnavailable = !sourceUrl;
   const showReaderStatus = isJumping || Boolean(lastJumpFeedback?.approximate);
 
   return (
@@ -1870,21 +1931,41 @@ async function locateMatchText(
 
         {isLoading ? (
           <div className={`absolute inset-0 flex items-center justify-center ${loadingOverlayClass}`}>
-            <p className={`inline-flex items-center gap-2 ${loadingTextClass}`} style={uiTypography.control}>
-              <Loader2 className="w-4 h-4 animate-spin" />
-              {copy("chapter.reader.loadingSource")}
-            </p>
+            <div className="max-w-md px-6 text-center">
+              <p className={`inline-flex items-center gap-2 ${loadingTextClass}`} style={uiTypography.control}>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                {copy("chapter.reader.loadingSource")}
+              </p>
+              {showSlowLoading ? (
+                <p className="mt-3 text-[var(--warm-600)]" style={uiTypography.meta}>
+                  {copy("chapter.reader.loadingSourceSlow")}
+                </p>
+              ) : null}
+            </div>
+          </div>
+        ) : null}
+
+        {sourceUnavailable ? (
+          <div className={`absolute inset-0 flex items-center justify-center p-6 ${errorOverlayClass}`}>
+            <div className="max-w-md text-center">
+              <p className="text-[var(--warm-900)] mb-2" style={uiTypography.bodyStrong}>
+                {copy("chapter.reader.unavailableTitle")}
+              </p>
+              <p className="text-[var(--warm-700)]" style={uiTypography.body}>
+                {copy("chapter.reader.unavailableMissingSource")}
+              </p>
+            </div>
           </div>
         ) : null}
 
         {loadError ? (
           <div className={`absolute inset-0 flex items-center justify-center p-6 ${errorOverlayClass}`}>
             <div className="max-w-md text-center">
-              <p className="text-[var(--destructive)] mb-2" style={uiTypography.bodyStrong}>
-                Reader unavailable
+              <p className="text-[var(--warm-900)] mb-2" style={uiTypography.bodyStrong}>
+                {copy("chapter.reader.unavailableTitle")}
               </p>
               <p className="text-[var(--warm-700)]" style={uiTypography.body}>
-                {loadError}
+                {sourceReaderErrorMessage(loadError)}
               </p>
               <p className="mt-2 text-[var(--warm-500)]" style={uiTypography.caption}>
                 Capability: CFI jump {READER_CAPABILITY.cfiJump ? "on" : "off"} · Href jump {READER_CAPABILITY.hrefJump ? "on" : "off"} ·

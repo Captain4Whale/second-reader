@@ -1242,6 +1242,47 @@ function buildMindstreamTrailPreview(moment: MindstreamMoment, locale: ContentLo
   };
 }
 
+function buildRecentReactionMoments(
+  detail: BookDetailResponse,
+  analysis: AnalysisStateResponse | null,
+): MindstreamMoment[] {
+  const recentReactions = analysis?.current_state_panel.recent_reactions ?? [];
+  if (recentReactions.length === 0) {
+    return [];
+  }
+
+  const fallbackTimestamp =
+    currentReadingActivity(analysis)?.updated_at ??
+    currentReadingActivity(analysis)?.started_at ??
+    analysis?.last_checkpoint_at ??
+    new Date().toISOString();
+
+  return recentReactions.map((reaction) => {
+    const matchingChapter = detail.chapters.find((chapter) => chapter.chapter_id === reaction.chapter_id);
+    const chapterLabel = matchingChapter
+      ? chapterDisplayPartsFromRefs(matchingChapter.chapter_ref, matchingChapter.title).title
+      : reaction.chapter_ref;
+
+    return {
+      momentId: `recent:${reaction.reaction_id}`,
+      timestamp: fallbackTimestamp,
+      chapterRef: chapterLabel ?? null,
+      sectionRef: reaction.section_ref ?? null,
+      anchorQuote: reaction.anchor_quote ?? "",
+      reactions: [
+        {
+          reaction_id: reaction.reaction_id,
+          type: reaction.type,
+          content: reaction.content,
+          anchor_quote: reaction.anchor_quote,
+          section_ref: reaction.section_ref ?? null,
+        },
+      ],
+      resultUrl: canonicalChapterPath(detail.book_id, reaction.chapter_id),
+    };
+  });
+}
+
 const MINDSTREAM_LIVE_COPY_KEYS: Record<
   CurrentReadingActivitySnapshot["phase"],
   {
@@ -1368,7 +1409,7 @@ function liveProblemCopyKey(problemCode?: string | null): ControlledCopyKey {
 function buildCurrentMindstreamContext(
   activity: CurrentReadingActivitySnapshot,
 ): Pick<CurrentMindstreamActivity, "context" | "contextKind"> {
-  const excerpt = normalizeInlineText(activity.current_excerpt);
+  const excerpt = normalizeInlineText(activity.reading_locus?.excerpt ?? activity.current_excerpt);
   const query = normalizeInlineText(activity.search_query);
   const segmentRef = String(activity.segment_ref ?? "").trim();
 
@@ -1449,6 +1490,32 @@ function buildCurrentMindstreamActivity(
   }
 
   return null;
+}
+
+function currentChapterId(detail: BookDetailResponse, analysis: AnalysisStateResponse | null): number | null {
+  const liveActivity = currentReadingActivity(analysis);
+  return (
+    liveActivity?.reading_locus?.chapter_id ??
+    analysis?.current_state_panel.current_chapter_id ??
+    analysis?.current_chapter_id ??
+    detail.chapters.find((chapter) => chapter.status === "in_progress")?.chapter_id ??
+    null
+  );
+}
+
+function moveTypeLabel(moveType: string): string {
+  switch (moveType) {
+    case "advance":
+      return copy("overview.mindstream.meta.moveType.advance");
+    case "dwell":
+      return copy("overview.mindstream.meta.moveType.dwell");
+    case "bridge":
+      return copy("overview.mindstream.meta.moveType.bridge");
+    case "reframe":
+      return copy("overview.mindstream.meta.moveType.reframe");
+    default:
+      return moveType;
+  }
 }
 
 function buildReadingLocus(detail: BookDetailResponse, analysis: AnalysisStateResponse | null): ReadingLocus {
@@ -1830,6 +1897,7 @@ function MindstreamEventCard({
 }
 
 function MindstreamHistoryDisclosure({
+  detail,
   analysis,
   activity,
   contentLanguage,
@@ -1837,6 +1905,7 @@ function MindstreamHistoryDisclosure({
   error,
   onRetry,
 }: {
+  detail: BookDetailResponse;
   analysis: AnalysisStateResponse | null;
   activity: ActivityEvent[];
   contentLanguage: ContentLocale;
@@ -1846,8 +1915,11 @@ function MindstreamHistoryDisclosure({
 }) {
   const prefersReducedMotion = usePrefersReducedMotion();
   const [expanded, setExpanded] = useState(false);
-  const historyMoments = buildMindstreamMoments(activity).slice(0, 3);
-  const trailPreview = historyMoments.length > 0 ? buildMindstreamTrailPreview(historyMoments[0], contentLanguage) : null;
+  const historyMoments = buildMindstreamMoments(activity);
+  const fallbackMoments = historyMoments.length === 0 ? buildRecentReactionMoments(detail, analysis) : [];
+  const visibleMoments = (historyMoments.length > 0 ? historyMoments : fallbackMoments).slice(0, 3);
+  const emptyExpanded = expanded && visibleMoments.length === 0;
+  const trailPreview = visibleMoments.length > 0 ? buildMindstreamTrailPreview(visibleMoments[0], contentLanguage) : null;
 
   if (loading && !analysis) {
     return (
@@ -1899,11 +1971,11 @@ function MindstreamHistoryDisclosure({
                 </p>
               ) : null}
             </div>
-          ) : (
+          ) : !emptyExpanded ? (
             <p className="mt-0.5 text-[var(--warm-500)]" style={{ fontSize: "0.6875rem" }}>
               {copy("overview.mindstream.trailEmpty")}
             </p>
-          )}
+          ) : null}
         </div>
         <button
           type="button"
@@ -1916,10 +1988,10 @@ function MindstreamHistoryDisclosure({
       </div>
 
       {expanded ? (
-        historyMoments.length > 0 ? (
+        visibleMoments.length > 0 ? (
           <div className="mt-4 max-h-[16rem] overflow-y-auto overscroll-contain pr-2">
             <div className="space-y-4">
-              {historyMoments.map((moment) => (
+              {visibleMoments.map((moment) => (
                 <MindstreamEventCard
                   key={moment.momentId}
                   moment={moment}
@@ -2001,6 +2073,15 @@ function MindstreamHeroCard({
   const currentActivity = buildCurrentMindstreamActivity(analysis, contentLanguage, liveNowMs);
   const runtimeState = describeRuntimeState(detail, analysis, { isParsing: isAnalysisParsing(analysis) });
   const quoteText = currentActivity ? formatMindstreamQuote(currentActivity) : null;
+  const liveActivity = currentReadingActivity(analysis);
+  const currentMoveType = String(liveActivity?.move_type ?? "").trim();
+  const activeReactionId = liveActivity?.active_reaction_id ?? null;
+  const activeThoughtChapterId = currentChapterId(detail, analysis);
+  const activeThoughtUrl =
+    activeReactionId != null && activeThoughtChapterId != null
+      ? `${canonicalChapterPath(detail.book_id, activeThoughtChapterId)}?reaction=${activeReactionId}`
+      : null;
+  const showLiveMeta = Boolean(currentMoveType || activeReactionId != null);
 
   return (
     <section className="mb-8 rounded-3xl border border-[var(--warm-300)]/30 bg-white px-6 py-6 shadow-sm md:px-10 md:py-9">
@@ -2055,6 +2136,42 @@ function MindstreamHeroCard({
 
           <MindstreamHeroStatusRow runtimeState={runtimeState} />
 
+          {showLiveMeta ? (
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              {currentMoveType ? (
+                <span
+                  className="inline-flex items-center gap-1.5 rounded-full border border-[var(--warm-300)]/55 bg-[var(--warm-50)] px-3 py-1.5 text-[var(--warm-700)]"
+                  style={uiTypography.captionMedium}
+                >
+                  <span className="text-[var(--warm-500)]">{copy("overview.mindstream.meta.moveType.label")}</span>
+                  <span className="font-semibold text-[var(--warm-800)]">{moveTypeLabel(currentMoveType)}</span>
+                </span>
+              ) : null}
+              {activeReactionId != null ? (
+                activeThoughtUrl ? (
+                  <Link
+                    to={activeThoughtUrl}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-[var(--amber-accent)]/24 bg-[var(--amber-bg)]/82 px-3 py-1.5 text-[var(--amber-accent)] no-underline transition-colors hover:bg-[var(--amber-bg)]"
+                    style={uiTypography.captionMedium}
+                    title={copy("overview.mindstream.meta.activeThought.open")}
+                  >
+                    <span className="text-[var(--warm-600)]">{copy("overview.mindstream.meta.activeThought.label")}</span>
+                    <span className="font-semibold">{copy("overview.mindstream.meta.activeThought.value", { id: activeReactionId })}</span>
+                    <ArrowUpRight className="h-3.5 w-3.5" />
+                  </Link>
+                ) : (
+                  <span
+                    className="inline-flex items-center gap-1.5 rounded-full border border-[var(--amber-accent)]/24 bg-[var(--amber-bg)]/82 px-3 py-1.5 text-[var(--amber-accent)]"
+                    style={uiTypography.captionMedium}
+                  >
+                    <span className="text-[var(--warm-600)]">{copy("overview.mindstream.meta.activeThought.label")}</span>
+                    <span className="font-semibold">{copy("overview.mindstream.meta.activeThought.value", { id: activeReactionId })}</span>
+                  </span>
+                )
+              ) : null}
+            </div>
+          ) : null}
+
           {loading || error ? (
             <div className="mt-4 flex items-center gap-3 flex-wrap text-[var(--warm-500)]" style={{ fontSize: "0.75rem" }}>
               {loading ? (
@@ -2072,6 +2189,7 @@ function MindstreamHeroCard({
       </div>
 
       <MindstreamHistoryDisclosure
+        detail={detail}
         analysis={analysis}
         activity={activity}
         contentLanguage={contentLanguage}

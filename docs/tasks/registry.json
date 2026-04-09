@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-04-09T04:33:19Z",
+  "updated_at": "2026-04-09T12:49:52Z",
   "tasks": [
     {
       "id": "TASK-PHASE9-COMPAT-CUTOVER",
@@ -722,16 +722,20 @@
       ],
       "job_refs": [],
       "acceptance_ref": "docs/implementation/new-reading-mechanism/phase9-compat-cutover-roadmap.md",
-      "next_action": "Treat the old iterator_v1 / section-first presentation as compatibility-only rather than as a co-equal product target, and start the V2-native frontend lane now. First fix routed-surface truth/visibility bugs on the in-progress overview, then promote reading_locus / move_type / active_reaction_id into the live overview model, then redesign chapter and marks surfaces around anchor-native rendering and thought lineage. Do not open a separate cleanup-only wave for V1 display concepts before this lane.",
+      "next_action": "Keep the first bounded truth/visibility slice as the new compatibility baseline: overview truth fixes, recent-trail fallback, live overview chips for reading_locus / move_type / active_reaction_id, and honest source-reader loading/unavailable states are now landed and browser-validated. Next redesign chapter and marks surfaces around anchor-native rendering and thought lineage, without opening a separate cleanup-only wave for V1 display concepts first.",
       "blocked_by": [],
       "evidence_refs": [
         "docs/implementation/new-reading-mechanism/phase9-compat-cutover-roadmap.md",
+        "docs/current-state.md",
         "docs/product-interaction-model.md",
         "docs/api-integration.md",
         "docs/backend-state-aggregation.md",
-        "docs/history/decision-log.md"
+        "docs/history/decision-log.md",
+        "reading-companion-frontend/src/app/components/book-overview-page.tsx",
+        "reading-companion-frontend/src/app/components/source-reader-pane.tsx",
+        "reading-companion-frontend/src/app/config/controlled-copy.ts"
       ],
-      "last_updated": "2026-04-09T00:15:30Z",
+      "last_updated": "2026-04-09T12:49:52Z",
       "last_updated_by": "codex"
     },
     {

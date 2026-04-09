@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-04-09T04:42:45Z`
+Last verified: `2026-04-09T12:49:52Z`
 
 ## Current Objective
 - Hold further `excerpt` mechanism polishing for now and treat the completed `excerpt surface v1.1` formal judged run as the current good-enough evidence bundle for product/storytelling decisions.
@@ -24,6 +24,19 @@ Last verified: `2026-04-09T04:42:45Z`
   - do not keep the old `iterator_v1` / section-first presentation as a co-equal product model
   - keep that older presentation shape only as a compatibility shell while V2-native surfaces are being built
   - do not spend on a standalone V1-concept cleanup wave first; demote those concepts progressively as V2-native UI lands
+  - the first bounded frontend truth/visibility slice is now landed and browser-validated:
+    - `/books/:id` no longer falls back to obviously false live labels such as stale `Pending` when a book is actively reading
+    - the overview mindstream now consumes more V2 live truth:
+      - `reading_locus.excerpt`
+      - `move_type`
+      - `active_reaction_id`
+    - the recent trail no longer falsely renders as empty when the live activity stream is sparse but `current_state_panel.recent_reactions` is present
+    - the chapter source reader now distinguishes:
+      - normal loading
+      - slow loading
+      - missing source EPUB
+      - timed-out / failed EPUB initialization
+    - this slice is explicitly a compatibility-truth fix, not the V2-native chapter/marks redesign itself
 - Product-boundary clarification is now landed:
   - `book_analysis` is treated as a retired legacy capability preserved only for compatibility/debugging rather than as a live secondary product lane
   - public `/analysis/*` routes remain for compatibility, but the active backend launcher and OpenAPI operation ids now describe deep reading explicitly
@@ -169,8 +182,8 @@ Last verified: `2026-04-09T04:42:45Z`
     - only reopen narrow harness work if a future rerun reproduces schema-invalid judge payload collapse or bundle/probe materialization failure
   - `frontend` is now the next active product lane:
     - begin V2-native routed presentation work without waiting for a separate V1 display cleanup pass
-    - first fix truth/visibility gaps on the in-progress overview surface
-    - then promote anchor- and locus-native rendering on chapter and marks surfaces
+    - keep the new truth/visibility slice on overview and source-reader surfaces as the current baseline
+    - next promote anchor- and locus-native rendering on chapter and marks surfaces
     - only retire section-first compatibility containers after the V2-native surfaces are stable
   - the detailed background below remains useful, but where it conflicts with the April 7 lane update above, the April 7 update wins
 - Evaluation now uses two intentionally different semantic surfaces:

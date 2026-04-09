@@ -62,10 +62,29 @@ Update when: status changes, blockers appear, or phases complete.
     - do not keep the old `iterator_v1` / section-first presentation as a co-equal product path
     - keep that older presentation shape only as a compatibility shell while new UI lands
     - do not open a standalone cleanup-only pass for V1 display concepts first
+  - `first bounded truth slice`:
+    - the initial routed-surface truth/visibility pass is now landed and browser-validated
+    - landed UI behaviors:
+      - `/books/:id` no longer shows obviously false live status labels for active V2 reading
+      - the overview breadcrumb and live quote now prefer `reading_locus.excerpt`
+      - the overview mindstream now exposes `move_type` and `active_reaction_id` when present
+      - the recent trail now falls back to `current_state_panel.recent_reactions` instead of falsely rendering empty
+      - the chapter source-reader now distinguishes:
+        - normal loading
+        - slow loading
+        - missing source EPUB
+        - timed-out / failed EPUB initialization
+    - validation posture:
+      - production build passed on the updated frontend bundle
+      - real-browser validation passed for:
+        - live overview truth on `/books/631116759919764`
+        - desktop and mobile chapter-reader happy path on `/books/2488754074399462/chapters/14`
+        - forced stalled source request timeout
+        - forced missing-source chapter payload
+        - mocked overview V2 live-meta rendering
   - `next implementation order`:
-    - first fix truth/visibility bugs on the current routed overview and reader surfaces
-    - then promote V2 live-reading truth on `/books/:id` using `reading_locus`, `move_type`, and `active_reaction_id`
-    - then redesign chapter and marks surfaces around anchors and thought lineage
+    - keep this truth slice as the compatibility baseline
+    - next redesign chapter and marks surfaces around anchors and thought lineage
     - only after that begin intentional section-first retirement
 - Current strategy discipline:
   - dataset-builder and controller work are now bounded enabling lanes for evaluation rather than independent finish lines

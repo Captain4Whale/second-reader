@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-04-09T04:33:19Z`
+Last updated: `2026-04-09T12:49:52Z`
 
 ## Status Values
 - `active`
@@ -25,16 +25,19 @@ Last updated: `2026-04-09T04:33:19Z`
 - Lane: `migration`
 - Priority: `high`
 - Detail: `docs/implementation/new-reading-mechanism/phase9-compat-cutover-roadmap.md`
-- Next: treat `iterator_v1` section-first presentation as compatibility-only rather than as a co-equal product target, and start the V2-native frontend lane now. Implement in this order:
-  - fix truth/visibility bugs on the current routed surfaces:
-    - contradictory reading-status labels on `/books/:id`
-    - false-empty recent trail during live V2 reading
-    - unreliable source-reader loading state
-  - promote V2 live-reading truth on the in-progress overview surface:
-    - `reading_locus`
-    - `move_type`
-    - `active_reaction_id`
-  - then redesign chapter and marks surfaces around anchors and live thought lineage
+- Next: keep `iterator_v1` section-first presentation in compatibility-only posture and continue the V2-native frontend lane from the new truth baseline. The first bounded truth/visibility slice is now landed and browser-validated:
+  - overview fixes completed:
+    - contradictory live status labels on `/books/:id`
+    - false-empty recent trail when `recent_reactions` exists but mindstream history is sparse
+    - live V2 overview chips for:
+      - `reading_locus`
+      - `move_type`
+      - `active_reaction_id`
+  - source-reader fixes completed:
+    - honest slow-loading message
+    - explicit missing-source state
+    - explicit timeout/failure state instead of indefinite `Loading source EPUB...`
+  - next redesign chapter and marks surfaces around anchors and live thought lineage
   - do not open a separate cleanup-only wave for V1 display concepts before this lane
 - Jobs: none
 
