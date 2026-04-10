@@ -398,6 +398,25 @@
 
 这一节专门回答“题目原文到底在哪、机制原始反应到底在哪”。
 
+如果你要快速核对某一题，建议按下面的顺序走：
+
+1. 先去 [probes.jsonl](../../../state/eval_local_datasets/accumulation_probes/attentional_v2_accumulation_benchmark_v1_probes_frozen_draft/probes.jsonl) 找对应 `line` / `probe_id`，读 `excerpt_text`，确认完整 `EARLY / MID / LATE` 题面到底在问什么。
+2. 再回到本报告第 `5.x` 节，看这题的人类解读，先建立“这题真正考什么”的阅读框架。
+3. 然后去对应 case payload，读两个 target 的 `judgment.reason`，看正式判定为什么给出这个胜负。
+4. 最后再看 `matched_reactions`、`epub` 锚点和 `raw_export` / `source_case_id`，核对这份判定到底落在哪些本地证据上。
+
+### 9.0 逐题速查表
+
+| Probe ID | 对应正文 | 对应导航 | `probes.jsonl` 行号 | `coherent_accumulation` | `insight_and_clarification` | 最值得先核对什么 |
+| --- | --- | --- | --- | --- | --- | --- |
+| `huochu_shengming_de_yiyi_private_zh__13_16__probe_1` | `5.1` | `9.1` | `1` | `iterator_v1` | `iterator_v1` | `attentional_v2` 为何 `0/3 anchor hits` |
+| `huochu_shengming_de_yiyi_private_zh__13_16__probe_2` | `5.2` | `9.2` | `2` | `iterator_v1` | `iterator_v1` | V2 只有零散 attention event，没形成跨章轨迹 |
+| `steve_jobs_private_en__17__probe_1` | `5.3` | `9.3` | `3` | `attentional_v2` | `attentional_v2` | V2 如何抓住 GUI 愿景到 Lisa 冲突的局部主线 |
+| `supremacy_private_en__13__probe_1` | `5.4` | `9.4` | `4` | `attentional_v2` | `attentional_v2` | V2 如何稳定扣住自治权与治理妥协主线 |
+| `value_of_others_private_en__8_10__probe_1` | `5.5` | `9.5` | `5` | `iterator_v1` | `iterator_v1` | V2 为什么在 late anchor 缺席 |
+| `xidaduo_private_zh__13_15__probe_1` | `5.6` | `9.6` | `6` | `iterator_v1` | `tie` | 两机制怎样把前段痛苦线带到后段接纳 |
+| `xidaduo_private_zh__13_15__probe_2` | `5.7` | `9.7` | `7` | `iterator_v1` | `iterator_v1` | V1 如何把“犯错/受苦”闭合到“学会爱世界” |
+
 - 完整题面文本：
   - 统一去 [probes.jsonl](../../../state/eval_local_datasets/accumulation_probes/attentional_v2_accumulation_benchmark_v1_probes_frozen_draft/probes.jsonl)
   - 找对应 `line` / `probe_id`
