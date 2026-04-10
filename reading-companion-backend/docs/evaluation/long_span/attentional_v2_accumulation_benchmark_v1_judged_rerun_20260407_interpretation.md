@@ -1,4 +1,4 @@
-# Long-Span 正式 Judged Eval 详细解读报告
+# Long-Span 正式 Judged Eval 详细解读与证据导航报告
 
 - Run ID: `attentional_v2_accumulation_benchmark_v1_judged_rerun_20260407`
 - Surface: `bounded long-span accumulation comparison`
@@ -27,7 +27,12 @@
 
 这份文档就是补上这些解释层内容。它不是新的正式计分文件，而是正式 judged run 的人工可读 companion report。
 
-为了兼顾可读性与版权边界，文中书内原文只摘短句或短片段，用来标明题目锚点，不大段抄录原书。
+这里的“短引文”是有意为之，但它只适用于这份报告正文，不代表题目本身只有短句版本：
+
+- 每个 probe 在评测数据里都保留了完整的 `EARLY / MID / LATE` 题面原文。
+- 这些完整题面原文已经存在本地 [probes.jsonl](../../../state/eval_local_datasets/accumulation_probes/attentional_v2_accumulation_benchmark_v1_probes_frozen_draft/probes.jsonl) 的 `excerpt_text` 字段里。
+- 这次修订新增了第 `9` 节“逐题证据导航”，把每道题对应的完整题面入口、原书上下文入口、case payload 入口和更完整 raw reaction 摘录放在一起。
+- 为了兼顾可读性与版权边界，报告正文仍然不直接大段重复原书内容，而是给出精确的本地定位路径，方便对照核查。
 
 ## 2. 先说结论
 
@@ -388,3 +393,266 @@
   - 让 V2 在读到窗口后段时，显式回提窗口前段的核心问题
   - 让 V2 在最后一个 anchor 处稳定输出“这回答了前面什么”
   - 让 V2 的局部精读能力，最终转化成可见的跨章闭合能力
+
+## 9. 逐题证据导航
+
+这一节专门回答“题目原文到底在哪、机制原始反应到底在哪”。
+
+- 完整题面文本：
+  - 统一去 [probes.jsonl](../../../state/eval_local_datasets/accumulation_probes/attentional_v2_accumulation_benchmark_v1_probes_frozen_draft/probes.jsonl)
+  - 找对应 `line` / `probe_id`
+  - 读 `excerpt_text`
+- 正式判定理由：
+  - 统一去各自的 case payload
+  - 读 `target_results.coherent_accumulation.judgment.reason`
+  - 读 `target_results.insight_and_clarification.judgment.reason`
+- 机制原始反应：
+  - 统一去各自的 case payload
+  - 读 `mechanisms.attentional_v2.local_evidence.matched_reactions`
+  - 读 `mechanisms.iterator_v1.local_evidence.matched_reactions`
+
+### 9.1 `huochu_shengming_de_yiyi_private_zh__13_16__probe_1` 对照导航
+
+- 对应正文：`5.1`
+- 完整题面文本入口：
+  - [probes.jsonl](../../../state/eval_local_datasets/accumulation_probes/attentional_v2_accumulation_benchmark_v1_probes_frozen_draft/probes.jsonl)
+  - `line = 1`
+  - `probe_id = huochu_shengming_de_yiyi_private_zh__13_16__probe_1`
+  - 看 `excerpt_text`
+- 原书上下文入口：
+  - [huochu_shengming_de_yiyi.epub](../../../state/library_sources/zh/huochu_shengming_de_yiyi.epub)
+  - anchor sentence ids: `c13-s5`, `c15-s12`, `c16-s21`
+- 笔记锚点入口：
+  - [raw_export.md](../../../state/library_notes/raw_exports/huochu_shengming_de_yiyi_private_zh_personal_notes/raw_export.md)
+  - 搜索 `e0045`, `e0053`, `e0056`
+- 正式 case payload：
+  - [huochu probe 1](../../../eval/runs/attentional_v2/attentional_v2_accumulation_benchmark_v1_judged_rerun_20260407/shards/main/cases/huochu_shengming_de_yiyi_private_zh__13_16__probe_1.json)
+- 锚点定位：
+  - `early`: Chapter `13`《心理—动力》, `c13-s5`, `source_ref_id = huochu_shengming_de_yiyi_private_zh_personal_notes__e0045`
+  - `mid`: Chapter `15`《生命之意义》, `c15-s12`, `source_ref_id = huochu_shengming_de_yiyi_private_zh_personal_notes__e0053`
+  - `late`: Chapter `16`《存在之本质》, `c16-s21`, `source_ref_id = huochu_shengming_de_yiyi_private_zh_personal_notes__e0056`
+- `attentional_v2` 原始反应补充：
+  - `anchor_hit_count = 0/3`
+  - `matched_reaction_count = 0`
+  - 这题里没有可引用的 matched reaction，正式证据主要体现在它的缺席本身，以及 judge 对“没有形成可见跨章轨迹”的判定。
+- `iterator_v1` 更完整原始反应摘录：
+
+> “这个框架是全书从诊断进入处方的转折点。三种方式恰好回应了三种基本存在层次：行动、体验、态度选择。值得注意的是，顺序不是任意的——他先说最容易的，再说最难的。”
+
+> “为什么他要特意说第一种‘显而易见’？这几乎是一种轻描淡写，暗示真正的问题不在成就维度。”
+
+> “『面对某个人』这个表述很克制，没有直接说『爱』……体验中的『意义发现』和事业中的『意义创造』是同一种能力，还是两种不同的心理机制？”
+
+### 9.2 `huochu_shengming_de_yiyi_private_zh__13_16__probe_2` 对照导航
+
+- 对应正文：`5.2`
+- 完整题面文本入口：
+  - [probes.jsonl](../../../state/eval_local_datasets/accumulation_probes/attentional_v2_accumulation_benchmark_v1_probes_frozen_draft/probes.jsonl)
+  - `line = 2`
+  - `probe_id = huochu_shengming_de_yiyi_private_zh__13_16__probe_2`
+  - 看 `excerpt_text`
+- 原书上下文入口：
+  - [huochu_shengming_de_yiyi.epub](../../../state/library_sources/zh/huochu_shengming_de_yiyi.epub)
+  - anchor sentence ids: `c13-s13`, `c14-s1`, `c16-s14`
+- 笔记锚点入口：
+  - [raw_export.md](../../../state/library_notes/raw_exports/huochu_shengming_de_yiyi_private_zh_personal_notes/raw_export.md)
+  - 搜索 `e0046`, `e0049`, `e0054`
+- 正式 case payload：
+  - [huochu probe 2](../../../eval/runs/attentional_v2/attentional_v2_accumulation_benchmark_v1_judged_rerun_20260407/shards/main/cases/huochu_shengming_de_yiyi_private_zh__13_16__probe_2.json)
+- 锚点定位：
+  - `early`: Chapter `13`《心理—动力》, `c13-s13`, `source_ref_id = huochu_shengming_de_yiyi_private_zh_personal_notes__e0046`
+  - `mid`: Chapter `14`《存在之虚无》, `c14-s1`, `source_ref_id = huochu_shengming_de_yiyi_private_zh_personal_notes__e0049`
+  - `late`: Chapter `16`《存在之本质》, `c16-s14`, `source_ref_id = huochu_shengming_de_yiyi_private_zh_personal_notes__e0054`
+- `attentional_v2` 原始反应补充：
+  - `anchor_hit_count = 1/3`
+  - `matched_reaction_count = 0`
+  - 它只留下少量 attention event，没有形成足够可读的跨章反应。
+- `iterator_v1` 更完整原始反应摘录：
+
+> “意义治疗的终极目标不是消除这种张力，而恰恰是维护它——让人持续感到被召唤、被拉扯向某个尚未实现的可能性，而不是跌入虚无的厌倦。”
+
+> “这里的‘知道’暗示了一个隐含前提：人们缺乏的是‘方法’或‘技能’来填充时间。但问题可能更深层——不是不知道做什么，而是做任何事都感觉不到意义。”
+
+> “『因为它不是一个封闭系统』这个因果链隐含了一个前提……弗兰克尔的论证预设了『投入世界』是唯一的通道，但这个排他性可能值得商榷。”
+
+### 9.3 `steve_jobs_private_en__17__probe_1` 对照导航
+
+- 对应正文：`5.3`
+- 完整题面文本入口：
+  - [probes.jsonl](../../../state/eval_local_datasets/accumulation_probes/attentional_v2_accumulation_benchmark_v1_probes_frozen_draft/probes.jsonl)
+  - `line = 3`
+  - `probe_id = steve_jobs_private_en__17__probe_1`
+  - 看 `excerpt_text`
+- 原书上下文入口：
+  - [steve_jobs.epub](../../../state/library_sources/en/private/steve_jobs.epub)
+  - anchor sentence ids: `c17-s66..70`, `c17-s124..126`, `c17-s203..205`
+- excerpt seed 入口：
+  - 这题没有 personal notes export
+  - 直接在 case payload 里搜 `source_case_id = steve_jobs_private_en__17__callback_bridge__seed_1`
+  - 搜 `steve_jobs_private_en__17__tension_reversal__seed_9`
+  - 搜 `steve_jobs_private_en__17__tension_reversal__seed_3`
+- 正式 case payload：
+  - [steve_jobs probe 1](../../../eval/runs/attentional_v2/attentional_v2_accumulation_benchmark_v1_judged_rerun_20260407/shards/main/cases/steve_jobs_private_en__17__probe_1.json)
+- 锚点定位：
+  - `early`: Chapter `17`, `c17-s66..70`, `source_case_id = steve_jobs_private_en__17__callback_bridge__seed_1`
+  - `mid`: Chapter `17`, `c17-s124..126`, `source_case_id = steve_jobs_private_en__17__tension_reversal__seed_9`
+  - `late`: Chapter `17`, `c17-s203..205`, `source_case_id = steve_jobs_private_en__17__tension_reversal__seed_3`
+- `attentional_v2` 更完整原始反应摘录：
+
+> “‘Cheerful but affordable’—not cold, not luxury. Jobs names the exact aesthetic tension: warmth without exclusivity, democratized modernism for the home computer.”
+
+> “The direct demand for a timeline answer forces a bounded reckoning between feature ambition and practical feasibility — a compact local hinge that names a concrete constraint rather than inviting open-ended discussion.”
+
+> “Kay's second maxim is the sharpest local hinge in the span: it names the integrated philosophy that Jobs will carry into the Lisa and Mac projects, and it sets up the central irony of the chapter—Xerox invented the GUI but could not ‘make its own hardware’ to capitalize on it, while Apple will do exactly that.”
+
+- `iterator_v1` 更完整原始反应摘录：
+
+> “Did Jobs ask this same question after every demo he witnessed at PARC, or was this specific to the graphics/interface elements that Atkinson would work on? The phrasing suggests he was already mentally mapping demos to team capabilities.”
+
+> “The pivot is instant. Jobs is electrified by what he sees at PARC, but his next move is the implementation question—not ‘how does it work’ or ‘why is it designed this way,’ but ‘can we ship this.’”
+
+### 9.4 `supremacy_private_en__13__probe_1` 对照导航
+
+- 对应正文：`5.4`
+- 完整题面文本入口：
+  - [probes.jsonl](../../../state/eval_local_datasets/accumulation_probes/attentional_v2_accumulation_benchmark_v1_probes_frozen_draft/probes.jsonl)
+  - `line = 4`
+  - `probe_id = supremacy_private_en__13__probe_1`
+  - 看 `excerpt_text`
+- 原书上下文入口：
+  - [supremacy.epub](../../../state/library_sources/en/private/supremacy.epub)
+  - anchor sentence ids: `c13-s6..8`, `c13-s39..41`, `c13-s171..173`
+- excerpt seed 入口：
+  - 这题没有 personal notes export
+  - 直接在 case payload 里搜 `supremacy_private_en__13__distinction_definition__reserve_1`
+  - 搜 `supremacy_private_en__13__tension_reversal__seed_2`
+  - 搜 `supremacy_private_en__13__tension_reversal__seed_1`
+- 正式 case payload：
+  - [supremacy probe 1](../../../eval/runs/attentional_v2/attentional_v2_accumulation_benchmark_v1_judged_rerun_20260407/shards/main/cases/supremacy_private_en__13__probe_1.json)
+- 锚点定位：
+  - `early`: Chapter `13`《Chapter 7. Playing Games》, `c13-s6..8`
+  - `mid`: Chapter `13`《Chapter 7. Playing Games》, `c13-s39..41`
+  - `late`: Chapter `13`《Chapter 7. Playing Games》, `c13-s171..173`
+- `attentional_v2` 更完整原始反应摘录：
+
+> “The pivot ‘Instead of being…could become’ is the hinge: ‘autonomous unit’ was a research designation with soft autonomy, while ‘Alphabet company’ is a corporate subsidiary with hard accountability. Alphabet upgrades the label but tightens financial control.”
+
+> “The ‘Instead of’ construction performs a specific rhetorical inversion… This is not independence—it's dependency with different legal clothing.”
+
+> “Three named Alphabet executives versus three unnamed ‘independent directors’—the asymmetry in how the board is described tells the whole story of DeepMind's nominal versus actual independence.”
+
+- `iterator_v1` 更完整原始反应摘录：
+
+> “I was curious what specific topics made the range ‘off the charts,’ but the search results I found don't actually pull back the curtain on those early 2022 conversations…”
+
+> “Is there a pattern here—do effective corporate leaders in this era share a tolerance for and attraction to ‘crazy’ ambition…?”
+
+> “Somasegar is the narrator of this scene, and that matters… He's not a neutral observer—he has emotional and financial stakes in how this story gets told.”
+
+### 9.5 `value_of_others_private_en__8_10__probe_1` 对照导航
+
+- 对应正文：`5.5`
+- 完整题面文本入口：
+  - [probes.jsonl](../../../state/eval_local_datasets/accumulation_probes/attentional_v2_accumulation_benchmark_v1_probes_frozen_draft/probes.jsonl)
+  - `line = 5`
+  - `probe_id = value_of_others_private_en__8_10__probe_1`
+  - 看 `excerpt_text`
+- 原书上下文入口：
+  - [the_value_of_others.epub](../../../state/library_sources/en/private/the_value_of_others.epub)
+  - anchor sentence ids: `c8-s43..45`, `c9-s12..13`, `c10-s47..48`
+- 笔记锚点入口：
+  - [raw_export.md](../../../state/library_notes/raw_exports/value_of_others_private_en_personal_notes/raw_export.md)
+  - 搜索 `e0024`, `e0039`
+- 正式 case payload：
+  - [value_of_others probe 1](../../../eval/runs/attentional_v2/attentional_v2_accumulation_benchmark_v1_judged_rerun_20260407/shards/main/cases/value_of_others_private_en__8_10__probe_1.json)
+- 锚点定位：
+  - `early`: Chapter `8`《Chapter 2》, `c8-s43..45`, `source_case_id = value_of_others_private_en__8__distinction_definition__seed_2`
+  - `mid`: Chapter `9`《Chapter 3》, `c9-s12..13`, `source_ref_id = value_of_others_private_en_personal_notes__e0024`
+  - `late`: Chapter `10`《Chapter 4》, `c10-s47..48`, `source_ref_id = value_of_others_private_en_personal_notes__e0039`
+- `attentional_v2` 更完整原始反应摘录：
+
+> “The phrase is a compressed causal claim, not just metaphor: it treats the default preference for inaction as a given and derives a population-level market consequence from it.”
+
+> “The enforcement mechanism crystallizes into explicit deterministic form: the conditional consequence is now formally stated rather than implied. The binary is absolute—transformation or full market invisibility, with no graduated intermediate states.”
+
+> 这题最关键的证据不是某条漂亮反应，而是它在 Chapter `10` 的缺席：`anchor_hit_count = 2/3`，且 late anchor `0 matched reactions`、`0 matched attention events`。
+
+- `iterator_v1` 更完整原始反应摘录：
+
+> “The economic model is being extended here in a notable way—the drug becomes a rival ‘relationship partner’ with committed priority. This is clever framing, but it quietly sidesteps the question of whether the addict chose that rival partner or had their capacity for choice compromised.”
+
+> “This connects back to the ‘adjust your expectations’ advice from earlier chapters.”
+
+> “The deterministic language here is striking… if the road only goes where it goes, what exactly remains open to decision?”
+
+### 9.6 `xidaduo_private_zh__13_15__probe_1` 对照导航
+
+- 对应正文：`5.6`
+- 完整题面文本入口：
+  - [probes.jsonl](../../../state/eval_local_datasets/accumulation_probes/attentional_v2_accumulation_benchmark_v1_probes_frozen_draft/probes.jsonl)
+  - `line = 6`
+  - `probe_id = xidaduo_private_zh__13_15__probe_1`
+  - 看 `excerpt_text`
+- 原书上下文入口：
+  - [xidaduo.epub](../../../state/library_sources/zh/xidaduo.epub)
+  - anchor sentence ids: `c13-s1`, `c14-s62`, `c15-s109..111`
+- 笔记锚点入口：
+  - [raw_export.md](../../../state/library_notes/raw_exports/xidaduo_private_zh_personal_notes/raw_export.md)
+  - 搜索 `e0014`, `e0019`
+- 正式 case payload：
+  - [xidaduo probe 1](../../../eval/runs/attentional_v2/attentional_v2_accumulation_benchmark_v1_judged_rerun_20260407/shards/main/cases/xidaduo_private_zh__13_15__probe_1.json)
+- 锚点定位：
+  - `early`: Chapter `13`《儿子》, `c13-s1`, `source_ref_id = xidaduo_private_zh_personal_notes__e0014`
+  - `mid`: Chapter `14`《唵》, `c14-s62`, `source_ref_id = xidaduo_private_zh_personal_notes__e0019`
+  - `late`: Chapter `15`《乔文达》, `c15-s109..111`, `source_case_id = xidaduo_private_zh__15__tension_reversal__seed_2`
+- `attentional_v2` 更完整原始反应摘录：
+
+> “‘用爱束缚’——此四字点明悖论核心：不施强迫的爱，同样可以是一种无形的约束。”
+
+> “‘过失’一词将道德责任框架从‘不强制’切换到‘不作为’，直接质询非强制性教育的伦理边界。”
+
+> “从‘爱束缚’到‘善忍缺席’，指控完成了一次降格——由有形的羁绊指向无形的匮乏。”
+
+- `iterator_v1` 更完整原始反应摘录：
+
+> “这不是策略，是修行，只是修行的形式是每日受尽折磨。”
+
+> “重读这段反而更觉得……悉达多后来对儿子的爱，恰恰证明他能爱，但那种‘苦恋、在爱中迷失’的状态，也坐实了另一种更高代价的爱。”
+
+> “这里有一个微妙的自欺：悉达多说他在迦摩罗的话中‘听到责备’，却仍然‘赞同她的话’。责备被听见了，却没有进入他的自我认知。”
+
+### 9.7 `xidaduo_private_zh__13_15__probe_2` 对照导航
+
+- 对应正文：`5.7`
+- 完整题面文本入口：
+  - [probes.jsonl](../../../state/eval_local_datasets/accumulation_probes/attentional_v2_accumulation_benchmark_v1_probes_frozen_draft/probes.jsonl)
+  - `line = 7`
+  - `probe_id = xidaduo_private_zh__13_15__probe_2`
+  - 看 `excerpt_text`
+- 原书上下文入口：
+  - [xidaduo.epub](../../../state/library_sources/zh/xidaduo.epub)
+  - anchor sentence ids: `c13-s82`, `c14-s15`, `c15-s110`
+- 笔记锚点入口：
+  - [raw_export.md](../../../state/library_notes/raw_exports/xidaduo_private_zh_personal_notes/raw_export.md)
+  - 搜索 `e0012`, `e0016`, `e0025`
+- 正式 case payload：
+  - [xidaduo probe 2](../../../eval/runs/attentional_v2/attentional_v2_accumulation_benchmark_v1_judged_rerun_20260407/shards/main/cases/xidaduo_private_zh__13_15__probe_2.json)
+- 锚点定位：
+  - `early`: Chapter `13`《儿子》, `c13-s82`, `source_ref_id = xidaduo_private_zh_personal_notes__e0012`
+  - `mid`: Chapter `14`《唵》, `c14-s15`, `source_ref_id = xidaduo_private_zh_personal_notes__e0016`
+  - `late`: Chapter `15`《乔文达》, `c15-s110`, `source_ref_id = xidaduo_private_zh_personal_notes__e0025`
+- `attentional_v2` 更完整原始反应摘录：
+
+> “反问翻转：从‘如何管教儿子’到‘谁能免于人性弱点’——这是一个哲学性悬置，而非直接回答质问。”
+
+> “‘过失’一词将道德责任框架从‘不强制’切换到‘不作为’。”
+
+> “‘用爱束缚’——此四字点明悖论核心：不施强迫的爱，同样可以是一种无形的约束。”
+
+- `iterator_v1` 更完整原始反应摘录：
+
+> “这是悉达多道路的最终转向。不是‘我要走向圆满’，而是‘圆满已经在每一个瞬间’。关键在‘比照’二字——比较本身才是苦的根源。”
+
+> “这个‘或许’确实不像是在给真理下定义，更像是一种开放的态度——它松动了‘好路/坏路’的二元对立。”
+
+> “这里有个值得推敲的地方。悉达多说‘在我看来’——这是一个认识论上的退让，还是‘一切皆好’本身就需要一个观察者视角来确认？”
