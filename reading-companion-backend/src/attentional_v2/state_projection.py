@@ -8,6 +8,7 @@ from .schemas import (
     AnchorMemoryState,
     CarryForwardContext,
     CarryForwardRef,
+    ConceptDigestItem,
     LocalBufferState,
     MoveHistoryState,
     NavigationContext,
@@ -15,6 +16,7 @@ from .schemas import (
     ReflectiveFrameDigest,
     ReflectiveItem,
     ReflectiveSummariesState,
+    ThreadDigestItem,
     TriggerState,
     WorkingPressureState,
     WorkingStateDigest,
@@ -22,6 +24,9 @@ from .schemas import (
 
 
 STATE_PACKET_VERSION = "attentional_v2.state_packet.v1"
+_CONCEPT_DIGEST_LIMIT = 3
+_THREAD_DIGEST_LIMIT = 3
+_DIGEST_QUOTE_LIMIT = 2
 
 
 def clean_text(value: object) -> str:
@@ -50,6 +55,69 @@ def _append_ref(refs: list[CarryForwardRef], ref: CarryForwardRef) -> None:
     if not ref_id or any(clean_text(existing.get("ref_id")) == ref_id for existing in refs):
         return
     refs.append(ref)
+
+
+def _dedupe_ids(values: list[str]) -> list[str]:
+    """Return one order-preserving de-duplicated id list."""
+
+    seen: set[str] = set()
+    ordered: list[str] = []
+    for value in values:
+        clean_value = clean_text(value)
+        if not clean_value or clean_value in seen:
+            continue
+        seen.add(clean_value)
+        ordered.append(clean_value)
+    return ordered
+
+
+def _anchor_inventory(anchor_memory: AnchorMemoryState) -> tuple[dict[str, dict[str, object]], dict[str, int]]:
+    """Return an anchor lookup plus a simple recency index."""
+
+    anchor_lookup: dict[str, dict[str, object]] = {}
+    anchor_order: dict[str, int] = {}
+    for index, anchor in enumerate(anchor_memory.get("anchor_records", [])):
+        if not isinstance(anchor, dict):
+            continue
+        anchor_id = clean_text(anchor.get("anchor_id"))
+        if not anchor_id:
+            continue
+        anchor_lookup[anchor_id] = dict(anchor)
+        anchor_order[anchor_id] = index
+    return anchor_lookup, anchor_order
+
+
+def _anchor_recency(anchor_id: str, anchor_order: dict[str, int]) -> int:
+    """Return one comparable recency score for an anchor id."""
+
+    return int(anchor_order.get(clean_text(anchor_id), -1))
+
+
+def _sort_anchor_ids(anchor_ids: list[str], anchor_order: dict[str, int]) -> list[str]:
+    """Sort anchor ids by recency while keeping deterministic tie-breaks."""
+
+    return sorted(
+        _dedupe_ids(anchor_ids),
+        key=lambda anchor_id: (-_anchor_recency(anchor_id, anchor_order), anchor_id),
+    )
+
+
+def _sample_quotes(
+    anchor_ids: list[str],
+    *,
+    anchor_lookup: dict[str, dict[str, object]],
+    limit: int = _DIGEST_QUOTE_LIMIT,
+) -> list[str]:
+    """Collect a small quote sample for one digest entry."""
+
+    quotes: list[str] = []
+    for anchor_id in anchor_ids:
+        quote = clean_text(anchor_lookup.get(anchor_id, {}).get("quote"))
+        if quote and quote not in quotes:
+            quotes.append(quote)
+        if len(quotes) >= limit:
+            break
+    return quotes
 
 
 def _build_working_state_digest(
@@ -206,6 +274,148 @@ def _build_anchor_bank_digest(
     return {"active_anchors": active_anchors}
 
 
+def _build_concept_digest(
+    anchor_memory: AnchorMemoryState,
+    *,
+    refs: list[CarryForwardRef],
+) -> list[ConceptDigestItem]:
+    """Build a small concept digest from current motif and unresolved-reference indexes."""
+
+    anchor_lookup, anchor_order = _anchor_inventory(anchor_memory)
+    motif_index = {
+        clean_text(key).lower(): _sort_anchor_ids(list(value), anchor_order)
+        for key, value in anchor_memory.get("motif_index", {}).items()
+        if clean_text(key)
+    }
+    unresolved_index = {
+        clean_text(key).lower(): _sort_anchor_ids(list(value), anchor_order)
+        for key, value in anchor_memory.get("unresolved_reference_index", {}).items()
+        if clean_text(key)
+    }
+    keys = sorted(
+        {key for key in [*motif_index.keys(), *unresolved_index.keys()] if key},
+        key=lambda key: (
+            -(2 if key in motif_index and key in unresolved_index else 1 if key in motif_index else 0),
+            -max(
+                [_anchor_recency(anchor_id, anchor_order) for anchor_id in [*motif_index.get(key, []), *unresolved_index.get(key, [])]]
+                or [-1]
+            ),
+            key,
+        ),
+    )
+
+    digest: list[ConceptDigestItem] = []
+    for concept_key in keys[:_CONCEPT_DIGEST_LIMIT]:
+        linked_anchor_ids = _sort_anchor_ids(
+            [*motif_index.get(concept_key, []), *unresolved_index.get(concept_key, [])],
+            anchor_order,
+        )
+        if not linked_anchor_ids:
+            continue
+        in_motif = concept_key in motif_index
+        in_unresolved = concept_key in unresolved_index
+        if in_motif and in_unresolved:
+            concept_type = "motif_and_unresolved_reference"
+            rationale = "This concept recurs in retained anchors and still carries unresolved pressure."
+        elif in_unresolved:
+            concept_type = "unresolved_reference"
+            rationale = "This concept remains unresolved across retained anchors and may need renewed attention."
+        else:
+            concept_type = "motif"
+            rationale = "This concept recurs across retained anchors and remains part of the active local field."
+        ref_id = f"concept:{concept_key}"
+        item: ConceptDigestItem = {
+            "ref_id": ref_id,
+            "concept_key": concept_key,
+            "concept_type": concept_type,
+            "linked_anchor_ids": linked_anchor_ids[:4],
+            "sample_quotes": _sample_quotes(linked_anchor_ids, anchor_lookup=anchor_lookup),
+            "rationale": rationale,
+        }
+        digest.append(item)
+        _append_ref(
+            refs,
+            {
+                "ref_id": ref_id,
+                "kind": "concept",
+                "item_id": concept_key,
+                "summary": rationale,
+                "anchor_id": linked_anchor_ids[0],
+            },
+        )
+    return digest
+
+
+def _build_thread_digest(
+    anchor_memory: AnchorMemoryState,
+    *,
+    refs: list[CarryForwardRef],
+) -> list[ThreadDigestItem]:
+    """Build a small thread digest from current trace and unresolved-reference indexes."""
+
+    anchor_lookup, anchor_order = _anchor_inventory(anchor_memory)
+    candidates: list[tuple[int, str, ThreadDigestItem]] = []
+
+    for source_anchor_id, target_anchor_ids in anchor_memory.get("trace_links", {}).items():
+        clean_source = clean_text(source_anchor_id)
+        linked_anchor_ids = _sort_anchor_ids(list(target_anchor_ids), anchor_order)
+        if not clean_source or not linked_anchor_ids:
+            continue
+        recency = max([_anchor_recency(clean_source, anchor_order), *[_anchor_recency(anchor_id, anchor_order) for anchor_id in linked_anchor_ids]])
+        item: ThreadDigestItem = {
+            "ref_id": f"thread:trace:{clean_source}",
+            "thread_key": f"trace:{clean_source}",
+            "thread_type": "trace_link",
+            "source_anchor_id": clean_source,
+            "linked_anchor_ids": linked_anchor_ids[:4],
+            "sample_quotes": _sample_quotes([clean_source, *linked_anchor_ids], anchor_lookup=anchor_lookup, limit=3),
+            "rationale": "This thread already has retained trace links across earlier and later anchors.",
+        }
+        candidates.append((recency, clean_source, item))
+
+    for unresolved_key, anchor_ids in anchor_memory.get("unresolved_reference_index", {}).items():
+        clean_key = clean_text(unresolved_key).lower()
+        linked_anchor_ids = _sort_anchor_ids(list(anchor_ids), anchor_order)
+        if not clean_key or not linked_anchor_ids:
+            continue
+        source_anchor_id = linked_anchor_ids[0]
+        recency = max([_anchor_recency(anchor_id, anchor_order) for anchor_id in linked_anchor_ids] or [-1])
+        item = {
+            "ref_id": f"thread:open:{clean_key}",
+            "thread_key": clean_key,
+            "thread_type": "open_reference",
+            "source_anchor_id": source_anchor_id,
+            "linked_anchor_ids": linked_anchor_ids[:4],
+            "sample_quotes": _sample_quotes(linked_anchor_ids, anchor_lookup=anchor_lookup),
+            "rationale": "This unresolved line is still open across retained anchors and may need explicit follow-through.",
+        }
+        candidates.append((recency, clean_key, item))
+
+    candidates.sort(key=lambda item: (-item[0], item[1]))
+
+    digest: list[ThreadDigestItem] = []
+    seen_ref_ids: set[str] = set()
+    for _recency, _sort_key, item in candidates:
+        ref_id = clean_text(item.get("ref_id"))
+        if not ref_id or ref_id in seen_ref_ids:
+            continue
+        seen_ref_ids.add(ref_id)
+        digest.append(item)
+        _append_ref(
+            refs,
+            {
+                "ref_id": ref_id,
+                "kind": "thread",
+                "item_id": clean_text(item.get("thread_key")),
+                "summary": clean_text(item.get("rationale")),
+                "anchor_id": clean_text(item.get("source_anchor_id")),
+            },
+        )
+        if len(digest) >= _THREAD_DIGEST_LIMIT:
+            break
+    return digest
+
+
 def _build_recent_moves(
     move_history: MoveHistoryState,
     *,
@@ -350,6 +560,8 @@ def build_carry_forward_context(
     refs: list[CarryForwardRef] = []
     working_state_digest = _build_working_state_digest(working_pressure, refs=refs)
     chapter_reflective_frame = _build_reflective_frame_digest(reflective_summaries, chapter_ref=chapter_ref, refs=refs)
+    concept_digest = _build_concept_digest(anchor_memory, refs=refs)
+    thread_digest = _build_thread_digest(anchor_memory, refs=refs)
     anchor_bank_digest = _build_anchor_bank_digest(anchor_memory, refs=refs)
     recent_moves = _build_recent_moves(move_history, refs=refs)
     recent_reactions = _build_recent_reactions(reaction_records, refs=refs)
@@ -376,6 +588,8 @@ def build_carry_forward_context(
         "working_state_digest": working_state_digest,
         "chapter_reflective_frame": chapter_reflective_frame,
         "active_focus_digest": active_focus_digest,
+        "concept_digest": concept_digest,
+        "thread_digest": thread_digest,
         "anchor_bank_digest": anchor_bank_digest,
         "working_pressure_digest": {
             "gate_state": working_state_digest.get("gate_state", ""),
@@ -446,6 +660,8 @@ def build_navigation_context(
         "working_state_digest": dict(carry_forward_context.get("working_state_digest", {})),
         "chapter_reflective_frame": dict(carry_forward_context.get("chapter_reflective_frame", {})),
         "active_focus_digest": dict(carry_forward_context.get("active_focus_digest", {})),
+        "concept_digest": [dict(item) for item in carry_forward_context.get("concept_digest", []) if isinstance(item, dict)],
+        "thread_digest": [dict(item) for item in carry_forward_context.get("thread_digest", []) if isinstance(item, dict)],
         "anchor_bank_digest": dict(carry_forward_context.get("anchor_bank_digest", {})),
         "refs": [dict(ref) for ref in carry_forward_context.get("refs", []) if isinstance(ref, dict)],
     }

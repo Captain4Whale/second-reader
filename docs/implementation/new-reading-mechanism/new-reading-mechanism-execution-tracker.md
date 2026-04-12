@@ -49,8 +49,14 @@ Update when: status changes, blockers appear, or phases complete.
       - `active focus` digest
       - `anchor_bank` digest
     - persisted runtime files and public compatibility surfaces remain unchanged
+  - `Phase C.2` is now landed as the first state-territory slice under the existing `attentional_v2` mechanism key
+  - landed behavior:
+    - live state packets now derive a bounded `concept_digest` from the current `motif_index + unresolved_reference_index`
+    - live state packets now derive a bounded `thread_digest` from the current `trace_links + unresolved_reference_index`
+    - `navigate.unitize` and `read` now both receive those concept/thread digests through the packet layer
+    - persisted runtime files and public compatibility surfaces still remain unchanged
   - next active backend slice:
-    - `Phase C.2`
+    - `Phase C.3`
     - continue the deeper state-territory migration so long-distance continuity becomes easier to use
     - keep public/frontend compatibility surfaces stable while that deeper state work lands
 - Naming discipline:

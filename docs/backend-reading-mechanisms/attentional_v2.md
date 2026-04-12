@@ -56,6 +56,11 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - `navigate.unitize` now receives packetized `navigation_context`.
   - `read` now receives packetized read-context views that explicitly separate continuity, working-state, reflective, active-focus, and anchor-bank digests.
   - Persisted runtime files and public compatibility surfaces remain unchanged in this slice.
+- Phase C.2 of the post-eval structural rework is now also landed as the first state-territory slice.
+  - Live state packets now derive a bounded `concept_digest` from the current `motif_index + unresolved_reference_index`.
+  - Live state packets now derive a bounded `thread_digest` from the current `trace_links + unresolved_reference_index`.
+  - `navigate.unitize` and `read` now both receive those concept/thread digests through the packet layer.
+  - Persisted runtime files and public compatibility surfaces remain unchanged in this slice too.
 
 ## Naming Note
 - `Phase 3`, `Phase 4`, `Phase 5`, and `Phase 6` in this document refer to historical implementation-stage groupings, not to a user-facing or mechanism-intrinsic sequence of named runtime phases.
@@ -216,6 +221,8 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - `carry-forward context`
     - bounded `working_pressure` digest
     - bounded reflective digest
+    - bounded concept digest
+    - bounded thread digest
     - bounded recent anchor digest
     - recent continuity digest from `local_buffer + move_history + reaction_records`
     - declared reference ids so `read` can point back to the exact prior material it materially used

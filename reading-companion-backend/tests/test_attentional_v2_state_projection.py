@@ -63,8 +63,21 @@ def test_build_carry_forward_context_exposes_phase_c1_packet_shape_and_legacy_al
             "times_referenced": 0,
             "source_passage_id": "",
             "tags": [],
+        },
+        {
+            "anchor_id": "a-2",
+            "sentence_start_id": "c1-s2",
+            "sentence_end_id": "c1-s2",
+            "quote": "The earlier promise is still hanging open.",
+            "anchor_kind": "callback_target",
+            "why_it_mattered": "It keeps the earlier promise unresolved.",
+            "status": "active",
+            "locator": {},
         }
     ]
+    anchor_memory["motif_index"] = {"promise": ["a-1", "a-2"]}
+    anchor_memory["unresolved_reference_index"] = {"promise": ["a-2"], "missing name": ["a-2"]}
+    anchor_memory["trace_links"] = {"a-1": ["a-2"]}
 
     reflective_summaries = build_empty_reflective_summaries()
     reflective_summaries["chapter_understandings"] = [
@@ -117,6 +130,11 @@ def test_build_carry_forward_context_exposes_phase_c1_packet_shape_and_legacy_al
     assert packet["anchor_bank_digest"]["active_anchors"][0]["anchor_id"] == "a-1"
     assert packet["session_continuity_capsule"]["recent_sentence_ids"] == ["c1-s1"]
     assert packet["active_focus_digest"]["recent_moves"][0]["move_id"] == "move-1"
+    assert packet["concept_digest"][0]["concept_key"] == "promise"
+    assert packet["concept_digest"][0]["concept_type"] == "motif_and_unresolved_reference"
+    assert packet["thread_digest"][0]["thread_type"] in {"trace_link", "open_reference"}
+    assert any(ref["kind"] == "concept" for ref in packet["refs"])
+    assert any(ref["kind"] == "thread" for ref in packet["refs"])
 
     assert packet["working_pressure_digest"]["items"][0]["item_id"] == "question-1"
     assert packet["reflective_digest"][0]["item_id"] == "frame-1"
@@ -162,6 +180,8 @@ def test_build_navigation_context_wraps_watch_state_and_state_packet():
     assert packet["watch_state"]["callback_anchor_ids"] == ["a-1"]
     assert packet["watch_state"]["signals"][0]["signal_kind"] == "discourse_turn"
     assert "working_state_digest" in packet
+    assert "concept_digest" in packet
+    assert "thread_digest" in packet
     assert "anchor_bank_digest" in packet
 
 
@@ -186,6 +206,8 @@ def test_navigate_unitize_prompt_receives_navigation_context(monkeypatch):
             "working_state_digest": {"open_questions": []},
             "chapter_reflective_frame": {"chapter_frames": []},
             "active_focus_digest": {"recent_moves": []},
+            "concept_digest": [{"concept_key": "promise"}],
+            "thread_digest": [{"thread_key": "trace:a-1"}],
             "anchor_bank_digest": {"active_anchors": []},
             "refs": [],
         },
@@ -196,3 +218,4 @@ def test_navigate_unitize_prompt_receives_navigation_context(monkeypatch):
     assert "Navigation context" in captured["prompt"]
     assert STATE_PACKET_VERSION in captured["prompt"]
     assert "\"output\": \"monitor\"" in captured["prompt"]
+    assert "\"concept_key\": \"promise\"" in captured["prompt"]

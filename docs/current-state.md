@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-04-12T10:48:34Z`
+Last verified: `2026-04-12T10:59:34Z`
 
 ## Current Objective
 - Hold further `excerpt` mechanism polishing for now and treat the completed `excerpt surface v1.1` formal judged run as the current good-enough evidence bundle for product/storytelling decisions.
@@ -55,6 +55,11 @@ Last verified: `2026-04-12T10:48:34Z`
   - the next backend slice is `Phase C.2`:
     - migrate more of the current state territory toward the intended `working_state / concept_registry / thread_trace / reflective_frames / anchor_bank` ownership model
     - keep `knowledge_activations` narrowed to helper territory while that migration lands
+  - `Phase C.2` is now landed as the first state-territory slice:
+    - live state packets now derive a bounded `concept_digest` from the current `motif_index + unresolved_reference_index`
+    - live state packets now derive a bounded `thread_digest` from the current `trace_links + unresolved_reference_index`
+    - `navigate.unitize` and `read` now both receive those small concept/thread digests through the packet layer
+    - persisted runtime files and public compatibility surfaces still remain unchanged
 - Frontend direction is now fixed for the next product lane:
   - do not keep the old `iterator_v1` / section-first presentation as a co-equal product model
   - keep that older presentation shape only as a compatibility shell while V2-native surfaces are being built
@@ -226,7 +231,8 @@ Last verified: `2026-04-12T10:48:34Z`
     - keep `Phase A` as the landed control-skeleton baseline
     - keep `Phase B` as the landed read-context baseline under the existing `attentional_v2` key
     - keep `Phase C.1` as the landed packetization seam
-    - the next backend slice is `Phase C.2`, focused on deeper state-territory migration rather than on new public contracts
+    - keep `Phase C.2` as the landed first state-territory slice where concept/thread digests now enter the live packet path
+    - the next backend slice is `Phase C.3`, focused on continuing the deeper state-territory migration rather than on new public contracts
     - treat prior-material use as something that naturally happens inside `read`, not as a separate mechanism action
   - `excerpt` is currently in a hold posture:
     - keep the completed formal excerpt run as the main product/demo evidence bundle

@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-04-12T10:48:34Z`
+Last updated: `2026-04-12T10:59:34Z`
 
 ## Status Values
 - `active`
@@ -42,7 +42,11 @@ Last updated: `2026-04-12T10:48:34Z`
     - `navigate.unitize` now receives a small `navigation_context`
     - `read` now receives a packetized read context that explicitly separates continuity capsule, working-state digest, reflective frame, active focus, and anchor-bank digest
     - persisted runtime files and public/frontend compatibility surfaces remain unchanged
-  - next implement `Phase C.2`:
+  - `Phase C.2` is now landed as the first state-territory slice:
+    - live state packets now derive a bounded `concept_digest` from the current `motif_index + unresolved_reference_index`
+    - live state packets now derive a bounded `thread_digest` from the current `trace_links + unresolved_reference_index`
+    - `navigate.unitize` and `read` now both receive those small concept/thread digests without changing persisted runtime files or public surfaces
+  - next implement `Phase C.3`:
     - continue the deeper state-territory migration toward `working_state / concept_registry / thread_trace / reflective_frames / anchor_bank`
     - keep `knowledge_activations` narrowed to helper territory while that migration lands
 - Jobs: none

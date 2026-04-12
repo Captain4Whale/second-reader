@@ -243,6 +243,29 @@ class AnchorBankDigest(TypedDict, total=False):
     active_anchors: list[dict[str, object]]
 
 
+class ConceptDigestItem(TypedDict, total=False):
+    """One small concept-level digest entry derived from current state indexes."""
+
+    ref_id: str
+    concept_key: str
+    concept_type: str
+    linked_anchor_ids: list[str]
+    sample_quotes: list[str]
+    rationale: str
+
+
+class ThreadDigestItem(TypedDict, total=False):
+    """One small thread-level digest entry derived from current state indexes."""
+
+    ref_id: str
+    thread_key: str
+    thread_type: str
+    source_anchor_id: str
+    linked_anchor_ids: list[str]
+    sample_quotes: list[str]
+    rationale: str
+
+
 class CarryForwardContext(TypedDict, total=False):
     """Small stable continuity packet passed into every formal read."""
 
@@ -251,6 +274,8 @@ class CarryForwardContext(TypedDict, total=False):
     working_state_digest: WorkingStateDigest
     chapter_reflective_frame: ReflectiveFrameDigest
     active_focus_digest: ActiveFocusDigest
+    concept_digest: list[ConceptDigestItem]
+    thread_digest: list[ThreadDigestItem]
     anchor_bank_digest: AnchorBankDigest
     working_pressure_digest: dict[str, object]
     reflective_digest: list[dict[str, object]]
@@ -268,6 +293,8 @@ class NavigationContext(TypedDict, total=False):
     working_state_digest: WorkingStateDigest
     chapter_reflective_frame: ReflectiveFrameDigest
     active_focus_digest: ActiveFocusDigest
+    concept_digest: list[ConceptDigestItem]
+    thread_digest: list[ThreadDigestItem]
     anchor_bank_digest: AnchorBankDigest
     refs: list[CarryForwardRef]
 

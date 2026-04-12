@@ -27,7 +27,12 @@ Implementation checkpoint:
   - `navigate.unitize` now receives a packetized `navigation_context`
   - `read` now receives a packetized read-context view with explicit continuity / working-state / reflective / focus / anchor-bank separation
   - persisted runtime files and public compatibility surfaces remain unchanged
-- next backend slice: `Phase C.2`
+- `Phase C.2` is landed as the first state-territory slice:
+  - live state packets now derive a bounded `concept_digest` from the current `motif_index + unresolved_reference_index`
+  - live state packets now derive a bounded `thread_digest` from the current `trace_links + unresolved_reference_index`
+  - `navigate.unitize` and `read` now both receive those small concept/thread digests through the packet layer
+  - persisted runtime files and public compatibility surfaces remain unchanged
+- next backend slice: `Phase C.3`
 
 Primary upstream evidence:
 
@@ -517,7 +522,9 @@ This phase should implement the new state shape and the derived prompt-input lay
 Status:
 
 - `Phase C.1` landed on April 12, 2026 as the first packetization seam
-- the remaining open work for this phase is `Phase C.2+`, where deeper state-territory migration becomes real
+- `Phase C.2` also landed on April 12, 2026 as the first state-territory slice
+  - live packets now include bounded `concept_digest` and `thread_digest` views derived from the current persisted indexes
+- the remaining open work for this phase is `Phase C.3+`, where deeper state-territory migration becomes more explicit
 
 #### Concrete design target
 
@@ -637,8 +644,14 @@ The packetization layer should already assume an index-first loading policy.
   - `working_state_digest`
   - `chapter_reflective_frame`
   - `active_focus_digest`
+  - `concept_digest`
+  - `thread_digest`
   - `anchor_bank_digest`
 - the current implementation intentionally keeps legacy compatibility aliases alongside the new packet fields so existing helpers and audits do not break while the deeper state migration is still pending
+- the current Phase C.2 slice keeps persisted file names unchanged and derives the new concept/thread packet views from the existing:
+  - `motif_index`
+  - `unresolved_reference_index`
+  - `trace_links`
 
 #### Deterministic versus semantic boundary
 
