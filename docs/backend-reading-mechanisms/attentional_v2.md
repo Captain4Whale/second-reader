@@ -28,7 +28,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - orientation-only survey artifacts
   - deterministic intake/gate/retrieval helpers
   - Phase 4 interpretive nodes with prompt-version manifests
-  - Phase 5 knowledge, bridge, and anchor-memory state helpers
+  - Phase 5 knowledge, bridge, and retained-evidence state helpers
   - Phase 6 slow-cycle helpers for durable anchored reaction truth, reflective promotion, reconsolidation, chapter consolidation, and mechanism-private compatibility projection
   - Phase 7 checkpointing and resume helpers for compact local continuity, full checkpoints, shared checkpoint summaries, and bounded warm/cold/reconstitution resume reconstruction
   - Phase 8 normalized eval export and structural integrity checks over persisted artifacts
@@ -61,6 +61,14 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - Live state packets now derive a bounded `thread_digest` from the current `trace_links + unresolved_reference_index`.
   - `navigate.unitize` and `read` now both receive those concept/thread digests through the packet layer.
   - Persisted runtime files and public compatibility surfaces remain unchanged in this slice too.
+- Phase C.3 of the post-eval structural rework is now landed as the direct main-state cutover.
+  - New runs now treat `working_state / concept_registry / thread_trace / reflective_frames / anchor_bank` as the primary runtime and checkpoint truth.
+  - `active_recall` now exposes first-class `concepts` and `threads` from those new layers.
+  - Newly written checkpoints use only the new primary state keys.
+- Phase C.4 of the post-eval structural rework is now also landed as the helper-contract cutover.
+  - Sentence-intake, bridge, and chapter slow-cycle now execute directly on the new primary state layers.
+  - The live runner no longer projects into `working_pressure / anchor_memory / reflective_summaries` in order to execute helpers.
+  - Live runtime loading and resume now reject pre-`Phase C.3` runtime/checkpoint shapes instead of migrating them on the live path.
 
 ## Naming Note
 - `Phase 3`, `Phase 4`, `Phase 5`, and `Phase 6` in this document refer to historical implementation-stage groupings, not to a user-facing or mechanism-intrinsic sequence of named runtime phases.
@@ -110,7 +118,6 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - `no_zoom`, `monitor`, and `zoom_now` are still persisted as watch metadata.
   - They no longer decide whether正文 gets a formal read.
   - Their Phase A role is observability, cheap salience evidence, and later audit/debug support.
-- The live Phase A control loop is now:
 - The live Phase A/B control loop is now:
   - ingest the next unread sentence
   - persist watch-state / trigger metadata
@@ -234,7 +241,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
     - `concept_digest`
     - `thread_digest`
     - `anchor_bank_digest`
-    - legacy alias fields remain temporarily available so older helper code and audits do not break while deeper state migration is still pending
+    - legacy alias fields may still remain temporarily available for bounded audit/test compatibility, but live helper execution no longer depends on them
   - packetized navigation view
     - `watch_state`
     - `session_continuity_capsule`
@@ -284,7 +291,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - `anchor_bank` now holds the primary evidence-bearing anchor records and relations
   - `concept_registry` now holds the primary object-level semantic memory
   - `thread_trace` now holds the primary cross-unit line/trace memory
-  - `working_pressure`, `anchor_memory`, and `reflective_summaries` now survive only as legacy load/projection territory for still-unmigrated helper code
+  - `working_pressure`, `anchor_memory`, and `reflective_summaries` now survive only as historical/legacy territory in older artifacts and non-live helper tests
   - durable visible thought now persists as mechanism-authored anchored reaction records rather than only as projected current-contract cards
   - reconsolidation now uses append-and-link history instead of mutating earlier persisted reactions
 - Sentence-level trigger detection should happen continuously during intake.
@@ -348,7 +355,8 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - `_mechanisms/attentional_v2/runtime/working_pressure.json`
   - `_mechanisms/attentional_v2/runtime/anchor_memory.json`
   - `_mechanisms/attentional_v2/runtime/reflective_summaries.json`
-  - live `Phase C.3` code may still project into those shapes for intake/bridge/slow-cycle helper compatibility, but new runs no longer treat them as primary state truth
+  - these are no longer accepted by the live `attentional_v2` runtime/resume path after `Phase C.4`
+  - they remain historical evidence from older runs, not a supported live-state format
 - Current scaffolded shared runtime resume artifacts
   - `_runtime/runtime_shell.json`
     - shared cursor, last-checkpoint pointer, and observability mode

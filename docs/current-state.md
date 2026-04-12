@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-04-12T13:31:00Z`
+Last verified: `2026-04-12T14:25:00Z`
 
 ## Current Objective
 - Hold further `excerpt` mechanism polishing for now and treat the completed `excerpt surface v1.1` formal judged run as the current good-enough evidence bundle for product/storytelling decisions.
@@ -59,7 +59,7 @@ Last verified: `2026-04-12T13:31:00Z`
     - persisted runtime files and public compatibility surfaces still remain unchanged
   - `Phase C.3` is now landed as the direct main-state cutover:
     - new runs now treat `working_state / concept_registry / thread_trace / reflective_frames / anchor_bank` as the primary runtime and checkpoint truth
-    - `working_pressure / anchor_memory / reflective_summaries` are now legacy load-only inputs plus projection targets for still-unmigrated helper code
+    - `working_pressure / anchor_memory / reflective_summaries` were demoted to legacy load/projection territory during the cutover
     - `active_recall` now surfaces first-class `concepts` and `threads` from the new state layers
     - `read` may now write explicit `implicit_uptake` into:
       - `working_state`
@@ -67,11 +67,18 @@ Last verified: `2026-04-12T13:31:00Z`
       - `thread_trace`
       - `anchor_bank`
       - `knowledge_activations`
-    - checkpoint/resume now accept both old and new state territory, but newly written checkpoints use only the new primary keys
+    - checkpoint/resume temporarily accepted both old and new state territory during the cutover, while newly written checkpoints already used only the new primary keys
     - public/frontend compatibility surfaces remain unchanged
-  - the next backend slice is `Phase C.4`:
-    - retire the remaining legacy helper dependence inside sentence-intake / bridge / slow-cycle internals where it is no longer buying real compatibility value
-    - tighten the new state layers so packetization, recall, and slow-cycle promotion all operate on one clearer primary ownership map
+  - `Phase C.4` is now landed as the helper-contract cutover and legacy-state retirement slice:
+    - sentence-intake now consumes `working_state / concept_registry / thread_trace / anchor_bank` directly
+    - bridge retrieval and live bridge-cycle updates now consume and write new-state ownership directly
+    - chapter slow-cycle now consumes and writes `working_state / concept_registry / thread_trace / reflective_frames / anchor_bank` directly
+    - the live runner no longer projects new state into `working_pressure / anchor_memory / reflective_summaries` for helper execution
+    - live runtime loading and resume now reject pre-`Phase C.3` runtime directories and checkpoints with explicit unsupported-format errors
+    - public/frontend compatibility surfaces remain unchanged
+  - the next backend slice is `Phase D`:
+    - polish recall / persistence / resume around the now-complete new state ownership map
+    - decide what should be tightened next in compaction, continuity carry, and post-read slow-cycle refinement without reopening the old helper contracts
 - Frontend direction is now fixed for the next product lane:
   - do not keep the old `iterator_v1` / section-first presentation as a co-equal product model
   - keep that older presentation shape only as a compatibility shell while V2-native surfaces are being built
@@ -245,7 +252,8 @@ Last verified: `2026-04-12T13:31:00Z`
     - keep `Phase C.1` as the landed packetization seam
     - keep `Phase C.2` as the landed first state-territory slice where concept/thread digests now enter the live packet path
     - keep `Phase C.3` as the landed main-state cutover where the new semantic layers now own runtime/checkpoint truth
-    - the next backend slice is `Phase C.4`, focused on retiring remaining legacy helper dependence rather than on changing public contracts
+    - keep `Phase C.4` as the landed helper-contract cutover where sentence-intake / bridge / slow-cycle now execute directly on new-state ownership and live runtime/resume reject old-format state
+    - the next backend slice is `Phase D`, focused on recall / persistence / resume polish rather than on reopening old helper contracts
     - treat prior-material use as something that naturally happens inside `read`, not as a separate mechanism action
   - `excerpt` is currently in a hold posture:
     - keep the completed formal excerpt run as the main product/demo evidence bundle

@@ -45,7 +45,6 @@ from .schemas import (
     build_empty_working_state,
     build_default_reader_policy,
 )
-from .state_migration import migrate_legacy_runtime_state
 from .storage import (
     ATTENTIONAL_V2_MECHANISM_KEY,
     anchor_bank_file,
@@ -258,6 +257,11 @@ def _load_runtime_bundle(output_dir: Path) -> dict[str, dict[str, object]]:
         for name, path in _state_paths(output_dir).items()
         if name not in {"working_state", "concept_registry", "thread_trace", "reflective_frames", "anchor_bank"}
     }
+    legacy_paths = {
+        "working_pressure": runtime_dir(output_dir) / "working_pressure.json",
+        "anchor_memory": runtime_dir(output_dir) / "anchor_memory.json",
+        "reflective_summaries": runtime_dir(output_dir) / "reflective_summaries.json",
+    }
     new_paths = {
         "working_state": working_state_file(output_dir),
         "concept_registry": concept_registry_file(output_dir),
@@ -270,21 +274,12 @@ def _load_runtime_bundle(output_dir: Path) -> dict[str, dict[str, object]]:
         for name, path in new_paths.items()
         if path.exists()
     }
-    migrated = migrate_legacy_runtime_state(
-        working_pressure=load_json(runtime_dir(output_dir) / "working_pressure.json")
-        if (runtime_dir(output_dir) / "working_pressure.json").exists()
-        else None,
-        anchor_memory=load_json(runtime_dir(output_dir) / "anchor_memory.json")
-        if (runtime_dir(output_dir) / "anchor_memory.json").exists()
-        else None,
-        reflective_summaries=load_json(runtime_dir(output_dir) / "reflective_summaries.json")
-        if (runtime_dir(output_dir) / "reflective_summaries.json").exists()
-        else None,
-        existing_concept_registry=loaded_new.get("concept_registry"),  # type: ignore[arg-type]
-        existing_thread_trace=loaded_new.get("thread_trace"),  # type: ignore[arg-type]
-    )
+    if not loaded_new and any(path.exists() for path in legacy_paths.values()):
+        raise RuntimeError(
+            "Pre-Phase C.3 attentional_v2 runtime state is no longer supported; rerun from a new-format state directory."
+        )
     for name in ("working_state", "concept_registry", "thread_trace", "reflective_frames", "anchor_bank"):
-        bundle[name] = loaded_new.get(name) or migrated[name] or builders[name]()
+        bundle[name] = loaded_new.get(name) or builders[name]()
     return bundle
 
 
@@ -309,7 +304,15 @@ def load_full_checkpoint(output_dir: Path, checkpoint_id: str | None = None) -> 
     path = full_checkpoint_file(output_dir, selected)
     if not path.exists():
         return None
-    return load_json(path)  # type: ignore[return-value]
+    checkpoint = load_json(path)  # type: ignore[assignment]
+    if isinstance(checkpoint, dict) and not all(
+        key in checkpoint
+        for key in ("working_state", "concept_registry", "thread_trace", "reflective_frames", "anchor_bank")
+    ):
+        raise RuntimeError(
+            "Pre-Phase C.3 attentional_v2 checkpoints are no longer supported; create a new-format checkpoint before resuming."
+        )
+    return checkpoint  # type: ignore[return-value]
 
 
 def write_full_checkpoint(
@@ -697,21 +700,13 @@ def resume_from_checkpoint(
         "resume_metadata": live_bundle["resume_metadata"],
         "active_artifact_refs": shell.get("active_artifact_refs", {}),
     }
-    migrated_checkpoint_state = migrate_legacy_runtime_state(
-        working_pressure=checkpoint.get("working_pressure") if isinstance(checkpoint, dict) else None,  # type: ignore[arg-type]
-        anchor_memory=checkpoint.get("anchor_memory") if isinstance(checkpoint, dict) else None,  # type: ignore[arg-type]
-        reflective_summaries=checkpoint.get("reflective_summaries") if isinstance(checkpoint, dict) else None,  # type: ignore[arg-type]
-        existing_concept_registry=(checkpoint or {}).get("concept_registry", live_bundle["concept_registry"]),  # type: ignore[arg-type]
-        existing_thread_trace=(checkpoint or {}).get("thread_trace", live_bundle["thread_trace"]),  # type: ignore[arg-type]
-    )
     checkpoint_source = {
         **fallback_checkpoint_source,
-        **migrated_checkpoint_state,
-        "working_state": dict((checkpoint or {}).get("working_state", migrated_checkpoint_state["working_state"])),
-        "concept_registry": dict((checkpoint or {}).get("concept_registry", migrated_checkpoint_state["concept_registry"])),
-        "thread_trace": dict((checkpoint or {}).get("thread_trace", migrated_checkpoint_state["thread_trace"])),
-        "reflective_frames": dict((checkpoint or {}).get("reflective_frames", migrated_checkpoint_state["reflective_frames"])),
-        "anchor_bank": dict((checkpoint or {}).get("anchor_bank", migrated_checkpoint_state["anchor_bank"])),
+        "working_state": dict((checkpoint or {}).get("working_state", live_bundle["working_state"])),
+        "concept_registry": dict((checkpoint or {}).get("concept_registry", live_bundle["concept_registry"])),
+        "thread_trace": dict((checkpoint or {}).get("thread_trace", live_bundle["thread_trace"])),
+        "reflective_frames": dict((checkpoint or {}).get("reflective_frames", live_bundle["reflective_frames"])),
+        "anchor_bank": dict((checkpoint or {}).get("anchor_bank", live_bundle["anchor_bank"])),
     }
 
     continuity = dict(checkpoint_source.get("local_continuity", {})) or build_empty_local_continuity(

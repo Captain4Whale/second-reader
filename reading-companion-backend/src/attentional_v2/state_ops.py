@@ -132,13 +132,15 @@ def set_pressure_snapshot(
 def _apply_working_state_operations(
     state: WorkingPressureState | WorkingState,
     operations: list[StateOperation],
+    *,
+    allowed_target_stores: set[str],
 ) -> WorkingPressureState | WorkingState:
     """Apply explicit working-pressure mutations from node outputs."""
 
     next_state = dict(state)
     touched = False
     for operation in operations:
-        if str(operation.get("target_store", "") or "") not in {"working_pressure", "working_state"}:
+        if str(operation.get("target_store", "") or "") not in allowed_target_stores:
             continue
         payload = operation.get("payload")
         if not isinstance(payload, dict):
@@ -189,7 +191,11 @@ def apply_working_pressure_operations(
 ) -> WorkingPressureState:
     """Apply explicit working-pressure mutations from node outputs."""
 
-    return _apply_working_state_operations(state, operations)  # type: ignore[return-value]
+    return _apply_working_state_operations(
+        state,
+        operations,
+        allowed_target_stores={"working_pressure"},
+    )  # type: ignore[return-value]
 
 
 def apply_working_state_operations(
@@ -198,7 +204,11 @@ def apply_working_state_operations(
 ) -> WorkingState:
     """Apply explicit working-state mutations from read outputs."""
 
-    return _apply_working_state_operations(state, operations)  # type: ignore[return-value]
+    return _apply_working_state_operations(
+        state,
+        operations,
+        allowed_target_stores={"working_state"},
+    )  # type: ignore[return-value]
 
 
 def push_local_buffer_sentence(
@@ -297,12 +307,14 @@ def append_anchor_relation(
 def _apply_anchor_bank_operations(
     state: AnchorMemoryState | AnchorBankState,
     operations: list[StateOperation],
+    *,
+    allowed_target_stores: set[str],
 ) -> AnchorMemoryState | AnchorBankState:
     """Apply explicit anchor-memory mutations from read/bridge outputs."""
 
     next_state = state
     for operation in operations:
-        if str(operation.get("target_store", "") or "") not in {"anchor_memory", "anchor_bank"}:
+        if str(operation.get("target_store", "") or "") not in allowed_target_stores:
             continue
         payload = operation.get("payload")
         if not isinstance(payload, dict):
@@ -359,7 +371,11 @@ def apply_anchor_memory_operations(
 ) -> AnchorMemoryState:
     """Apply explicit anchor-memory mutations from read/bridge outputs."""
 
-    return _apply_anchor_bank_operations(state, operations)  # type: ignore[return-value]
+    return _apply_anchor_bank_operations(
+        state,
+        operations,
+        allowed_target_stores={"anchor_memory"},
+    )  # type: ignore[return-value]
 
 
 def apply_anchor_bank_operations(
@@ -368,7 +384,11 @@ def apply_anchor_bank_operations(
 ) -> AnchorBankState:
     """Apply explicit anchor-bank mutations from read outputs."""
 
-    return _apply_anchor_bank_operations(state, operations)  # type: ignore[return-value]
+    return _apply_anchor_bank_operations(
+        state,
+        operations,
+        allowed_target_stores={"anchor_bank"},
+    )  # type: ignore[return-value]
 
 
 def upsert_reflective_item(

@@ -22,10 +22,11 @@ from .nodes import (
 )
 from .prompts import ATTENTIONAL_V2_PROMPTS
 from .schemas import (
-    AnchorMemoryState,
+    AnchorBankState,
     AnchorRecord,
     AnchoredReactionRecord,
     ChapterConsolidationResult,
+    ConceptRegistryState,
     KnowledgeActivationsState,
     ReactionAnchor,
     ReactionCandidate,
@@ -37,14 +38,15 @@ from .schemas import (
     ReflectiveItem,
     ReflectivePromotionCandidate,
     ReflectivePromotionResult,
-    ReflectiveSummariesState,
+    ReflectiveFramesState,
+    ThreadTraceState,
     WorkingPressureItem,
-    WorkingPressureState,
+    WorkingState,
 )
 from .state_ops import (
     append_reaction_record,
     append_reconsolidation_record,
-    apply_working_pressure_operations,
+    apply_working_state_operations,
     replace_pressure_bucket,
     set_gate_state,
     supersede_reflective_item,
@@ -502,7 +504,7 @@ def _normalize_reflective_promotion_result(payload: object) -> ReflectivePromoti
 def reflective_promotion(
     *,
     candidate: ReflectivePromotionCandidate,
-    current_reflective_state: ReflectiveSummariesState,
+    current_reflective_state: ReflectiveFramesState,
     policy_snapshot: ReaderPolicy,
     output_language: str,
     chapter_ref: str,
@@ -548,9 +550,9 @@ def reflective_promotion(
 
 
 def apply_reflective_promotion(
-    state: ReflectiveSummariesState,
+    state: ReflectiveFramesState,
     result: ReflectivePromotionResult,
-) -> ReflectiveSummariesState:
+) -> ReflectiveFramesState:
     """Apply one normalized reflective-promotion result."""
 
     if str(result.get("decision", "") or "") != "promote":
@@ -844,9 +846,9 @@ def chapter_consolidation(
     *,
     chapter_ref: str,
     meaning_units_in_chapter: list[dict[str, object]],
-    working_pressure_snapshot: WorkingPressureState,
-    anchor_memory_chapter_slice: list[dict[str, object]],
-    reflective_summaries_snapshot: ReflectiveSummariesState,
+    working_state_snapshot: WorkingState,
+    anchor_bank_chapter_slice: list[dict[str, object]],
+    reflective_frames_snapshot: ReflectiveFramesState,
     knowledge_activations_snapshot: KnowledgeActivationsState,
     persisted_reactions_in_chapter: list[AnchoredReactionRecord],
     policy_snapshot: ReaderPolicy,
@@ -870,9 +872,9 @@ def chapter_consolidation(
         structural_frame=_json_block(structural_frame),
         chapter_ref=chapter_ref,
         meaning_units_in_chapter=_json_block(meaning_units_in_chapter),
-        working_pressure_snapshot=_json_block(working_pressure_snapshot),
-        anchor_memory_chapter_slice=_json_block(anchor_memory_chapter_slice),
-        reflective_summaries_snapshot=_json_block(reflective_summaries_snapshot),
+        working_state_snapshot=_json_block(working_state_snapshot),
+        anchor_bank_chapter_slice=_json_block(anchor_bank_chapter_slice),
+        reflective_frames_snapshot=_json_block(reflective_frames_snapshot),
         knowledge_activations_snapshot=_json_block(knowledge_activations_snapshot),
         persisted_reactions_in_chapter=_json_block(persisted_reactions_in_chapter),
         policy_snapshot=_json_block(policy_snapshot),
@@ -897,15 +899,15 @@ def chapter_consolidation(
 
 
 def apply_anchor_status_updates(
-    anchor_memory: AnchorMemoryState,
+    anchor_bank: AnchorBankState,
     updates: list[dict[str, object]],
-) -> AnchorMemoryState:
+) -> AnchorBankState:
     """Apply chapter-end status updates to retained anchors."""
 
-    next_state = anchor_memory
+    next_state = anchor_bank
     anchors_by_id = {
         _clean_text(anchor.get("anchor_id")): dict(anchor)
-        for anchor in anchor_memory.get("anchor_records", [])
+        for anchor in anchor_bank.get("anchor_records", [])
         if isinstance(anchor, dict) and _clean_text(anchor.get("anchor_id"))
     }
     for update in updates:
@@ -924,12 +926,12 @@ def apply_anchor_status_updates(
 
 
 def apply_cross_chapter_carry_forward(
-    working_pressure: WorkingPressureState,
+    working_state: WorkingState,
     carry_forward: list[WorkingPressureItem],
-) -> WorkingPressureState:
+) -> WorkingState:
     """Cool local pressure into a chapter-boundary carry-forward state."""
 
-    next_state = working_pressure
+    next_state = working_state
     for bucket in _PRESSURE_BUCKETS:
         next_state = replace_pressure_bucket(next_state, bucket=bucket, items=[])
     bucketed: dict[str, list[WorkingPressureItem]] = defaultdict(list)
@@ -949,9 +951,11 @@ def run_phase6_chapter_cycle(
     chapter: BookChapter | dict[str, object],
     meaning_units_in_chapter: list[dict[str, object]],
     chapter_end_anchor: AnchorRecord | dict[str, object],
-    working_pressure: WorkingPressureState,
-    anchor_memory: AnchorMemoryState,
-    reflective_summaries: ReflectiveSummariesState,
+    working_state: WorkingState,
+    concept_registry: ConceptRegistryState,
+    thread_trace: ThreadTraceState,
+    reflective_frames: ReflectiveFramesState,
+    anchor_bank: AnchorBankState,
     knowledge_activations: KnowledgeActivationsState,
     reaction_records: ReactionRecordsState,
     reader_policy: ReaderPolicy,
@@ -971,17 +975,17 @@ def run_phase6_chapter_cycle(
         for record in persisted_reactions
         if isinstance(record.get("primary_anchor"), dict)
     }
-    anchor_memory_chapter_slice = [
+    anchor_bank_chapter_slice = [
         dict(anchor)
-        for anchor in anchor_memory.get("anchor_records", [])
+        for anchor in anchor_bank.get("anchor_records", [])
         if isinstance(anchor, dict) and _clean_text(anchor.get("anchor_id")) in chapter_anchor_ids
     ]
     consolidation = chapter_consolidation(
         chapter_ref=chapter_ref,
         meaning_units_in_chapter=meaning_units_in_chapter,
-        working_pressure_snapshot=working_pressure,
-        anchor_memory_chapter_slice=anchor_memory_chapter_slice,
-        reflective_summaries_snapshot=reflective_summaries,
+        working_state_snapshot=working_state,
+        anchor_bank_chapter_slice=anchor_bank_chapter_slice,
+        reflective_frames_snapshot=reflective_frames,
         knowledge_activations_snapshot=knowledge_activations,
         persisted_reactions_in_chapter=persisted_reactions,
         policy_snapshot=reader_policy,
@@ -992,13 +996,13 @@ def run_phase6_chapter_cycle(
         chapter_title=chapter_title,
     )
 
-    next_working_pressure = apply_working_pressure_operations(working_pressure, consolidation.get("cooling_operations", []))
-    next_working_pressure = apply_cross_chapter_carry_forward(
-        next_working_pressure,
+    next_working_state = apply_working_state_operations(working_state, consolidation.get("cooling_operations", []))
+    next_working_state = apply_cross_chapter_carry_forward(
+        next_working_state,
         consolidation.get("cross_chapter_carry_forward", []),
     )
-    next_anchor_memory = apply_anchor_status_updates(
-        anchor_memory,
+    next_anchor_bank = apply_anchor_status_updates(
+        anchor_bank,
         consolidation.get("anchor_status_updates", []),
     )
     end_sentence_id = _clean_text(
@@ -1011,12 +1015,12 @@ def run_phase6_chapter_cycle(
         reader_policy=reader_policy,
     )
 
-    next_reflective_summaries = reflective_summaries
+    next_reflective_frames = reflective_frames
     promotion_results: list[ReflectivePromotionResult] = []
     for candidate in consolidation.get("promotion_candidates", []):
         promotion_result = reflective_promotion(
             candidate=candidate,
-            current_reflective_state=next_reflective_summaries,
+            current_reflective_state=next_reflective_frames,
             policy_snapshot=reader_policy,
             output_language=output_language,
             chapter_ref=chapter_ref,
@@ -1026,7 +1030,7 @@ def run_phase6_chapter_cycle(
             chapter_title=chapter_title,
         )
         promotion_results.append(promotion_result)
-        next_reflective_summaries = apply_reflective_promotion(next_reflective_summaries, promotion_result)
+        next_reflective_frames = apply_reflective_promotion(next_reflective_frames, promotion_result)
 
     next_reaction_records = reaction_records
     optional_reaction = consolidation.get("optional_chapter_reaction")
@@ -1059,9 +1063,11 @@ def run_phase6_chapter_cycle(
     return {
         "chapter_consolidation": consolidation,
         "promotion_results": promotion_results,
-        "working_pressure": next_working_pressure,
-        "anchor_memory": next_anchor_memory,
-        "reflective_summaries": next_reflective_summaries,
+        "working_state": next_working_state,
+        "concept_registry": concept_registry,
+        "thread_trace": thread_trace,
+        "anchor_bank": next_anchor_bank,
+        "reflective_frames": next_reflective_frames,
         "knowledge_activations": next_knowledge_activations,
         "reaction_records": next_reaction_records,
         "compatibility_payload": compatibility_payload,

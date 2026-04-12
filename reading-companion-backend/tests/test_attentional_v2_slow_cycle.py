@@ -7,11 +7,13 @@ import json
 from src.attentional_v2 import slow_cycle as slow_cycle_module
 from src.attentional_v2.schemas import (
     build_default_reader_policy,
-    build_empty_anchor_memory,
+    build_empty_anchor_bank,
+    build_empty_concept_registry,
     build_empty_knowledge_activations,
     build_empty_reaction_records,
-    build_empty_reflective_summaries,
-    build_empty_working_pressure,
+    build_empty_reflective_frames,
+    build_empty_thread_trace,
+    build_empty_working_state,
 )
 from src.attentional_v2.slow_cycle import (
     apply_reconsolidation,
@@ -221,7 +223,7 @@ def test_run_phase6_chapter_cycle_applies_cooling_promotion_and_optional_reactio
                 "cooling_operations": [
                     {
                         "operation_type": "drop",
-                        "target_store": "working_pressure",
+                        "target_store": "working_state",
                         "item_id": "h-1",
                         "reason": "local heat ends with the chapter",
                         "payload": {"bucket": "local_hypotheses"},
@@ -291,8 +293,8 @@ def test_run_phase6_chapter_cycle_applies_cooling_promotion_and_optional_reactio
             {"sentence_ids": ["c1-s2"], "summary": "narrowing turn"},
         ],
         chapter_end_anchor=_anchor("a-2", "c1-s2", "Later the author narrows what counts as value.", 2),
-        working_pressure={
-            **build_empty_working_pressure(),
+        working_state={
+            **build_empty_working_state(),
             "local_hypotheses": [
                 {
                     "item_id": "h-1",
@@ -304,8 +306,10 @@ def test_run_phase6_chapter_cycle_applies_cooling_promotion_and_optional_reactio
                 }
             ],
         },
-        anchor_memory={
-            **build_empty_anchor_memory(),
+        concept_registry=build_empty_concept_registry(),
+        thread_trace=build_empty_thread_trace(),
+        anchor_bank={
+            **build_empty_anchor_bank(),
             "anchor_records": [
                 {
                     **_anchor("a-1", "c1-s1", "Markets begin as relations among people.", 1),
@@ -315,7 +319,7 @@ def test_run_phase6_chapter_cycle_applies_cooling_promotion_and_optional_reactio
                 }
             ],
         },
-        reflective_summaries=build_empty_reflective_summaries(),
+        reflective_frames=build_empty_reflective_frames(),
         knowledge_activations=build_empty_knowledge_activations(),
         reaction_records=build_empty_reaction_records(),
         reader_policy=build_default_reader_policy(),
@@ -338,10 +342,10 @@ def test_run_phase6_chapter_cycle_applies_cooling_promotion_and_optional_reactio
     )
 
     assert result["chapter_consolidation"]["chapter_summary_note"] == "The chapter narrows its own opening frame."
-    assert result["working_pressure"]["local_hypotheses"] == []
-    assert result["working_pressure"]["local_questions"][0]["item_id"] == "q-1"
-    assert result["reflective_summaries"]["chapter_understandings"][0]["item_id"] == "ru-1"
+    assert result["working_state"]["local_hypotheses"] == []
+    assert result["working_state"]["local_questions"][0]["item_id"] == "q-1"
+    assert result["reflective_frames"]["chapter_understandings"][0]["item_id"] == "ru-1"
     assert result["reaction_records"]["records"][0]["type"] == "retrospect"
     assert result["compatibility_payload"]["visible_reaction_count"] == 1
-    assert chapter_manifest["prompt_version"] == "attentional_v2.chapter_consolidation.v2"
+    assert chapter_manifest["prompt_version"] == "attentional_v2.chapter_consolidation.v3"
     assert promotion_manifest["prompt_version"] == "attentional_v2.reflective_promotion.v1"

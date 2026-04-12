@@ -5,6 +5,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
+
 from src.attentional_v2.resume import persist_reading_position, resume_from_checkpoint, write_full_checkpoint
 from src.attentional_v2.schemas import (
     build_empty_anchor_memory,
@@ -272,8 +274,8 @@ def test_incompatible_checkpoint_falls_back_to_live_warm_resume(tmp_path: Path):
     assert resumed["local_buffer"]["is_reconstructed"] is False
 
 
-def test_resume_migrates_legacy_runtime_and_old_checkpoint_into_new_primary_state_files(tmp_path: Path):
-    """Old-format runtime/checkpoint state should resume cleanly into the new primary files."""
+def test_resume_rejects_legacy_runtime_and_old_checkpoint_shapes(tmp_path: Path):
+    """Old-format runtime/checkpoint state should fail fast after the Phase C.4 retirement."""
 
     output_dir = tmp_path / "output" / "demo-book"
     AttentionalV2Mechanism().initialize_artifacts(output_dir)
@@ -358,22 +360,11 @@ def test_resume_migrates_legacy_runtime_and_old_checkpoint_into_new_primary_stat
     shell["last_checkpoint_id"] = "legacy-cp"
     save_runtime_shell(runtime_shell_file(output_dir), shell)
 
-    resumed = resume_from_checkpoint(output_dir, book_document=book_document, requested_resume_kind="warm_resume")
-
-    assert resumed["effective_resume_kind"] == "warm_resume"
-    assert working_state_file(output_dir).exists()
-    assert concept_registry_file(output_dir).exists()
-    assert thread_trace_file(output_dir).exists()
-    assert reflective_frames_file(output_dir).exists()
-    assert anchor_bank_file(output_dir).exists()
-    assert load_json(working_state_file(output_dir))["local_questions"][0]["item_id"] == "q-1"
-    assert load_json(concept_registry_file(output_dir))["entries"][0]["concept_key"] == "sentence"
-    assert load_json(anchor_bank_file(output_dir))["anchor_records"][0]["anchor_id"] == "a-1"
-
-    checkpoint = write_full_checkpoint(output_dir, checkpoint_id="migrated-cp", checkpoint_reason="post_legacy_resume")
-    assert "working_state" in checkpoint
-    assert "anchor_bank" in checkpoint
-    assert "working_pressure" not in checkpoint
+    with pytest.raises(
+        RuntimeError,
+        match=r"Pre-Phase C\.3 attentional_v2 (runtime state is|checkpoints are) no longer supported",
+    ):
+        resume_from_checkpoint(output_dir, book_document=book_document, requested_resume_kind="warm_resume")
 
 
 def test_debug_observability_writes_internal_diagnostics_events(tmp_path: Path):

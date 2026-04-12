@@ -58,14 +58,20 @@ Update when: status changes, blockers appear, or phases complete.
   - `Phase C.3` is now landed as the direct main-state cutover under the existing `attentional_v2` mechanism key
   - landed behavior:
     - new runs now treat `working_state / concept_registry / thread_trace / reflective_frames / anchor_bank` as the primary runtime and checkpoint truth
-    - `working_pressure / anchor_memory / reflective_summaries` are now legacy load-only inputs plus projection targets for still-unmigrated helper code
+    - `working_pressure / anchor_memory / reflective_summaries` were demoted to legacy load/projection territory during the cutover
     - `active_recall` now exposes first-class `concepts` and `threads` from the new state layers
     - newly written checkpoints now use only the new primary state keys, while resume still accepts both old and new checkpoint/runtime shapes
     - public/frontend compatibility surfaces still remain unchanged
+  - `Phase C.4` is now landed as the helper-contract cutover under the existing `attentional_v2` mechanism key
+  - landed behavior:
+    - sentence-intake / bridge / slow-cycle now consume and write the new primary state layers directly
+    - the live runner no longer projects new state into `working_pressure / anchor_memory / reflective_summaries` in order to execute helpers
+    - live runtime loading and resume now reject pre-`Phase C.3` runtime/checkpoint shapes
+    - public/frontend compatibility surfaces still remain unchanged
   - next active backend slice:
-    - `Phase C.4`
-    - retire remaining legacy helper dependence so sentence-intake / bridge / slow-cycle internals no longer need old-state projections by default
-    - keep public/frontend compatibility surfaces stable while that cleanup lands
+    - `Phase D`
+    - polish recall / persistence / resume now that helper execution and primary ownership are fully aligned
+    - keep public/frontend compatibility surfaces stable while that polish lands
 - Naming discipline:
   - the `Phase 0-9` labels in this file are implementation-plan stages
   - they are not the preferred vocabulary for explaining the mechanism's live reading loop

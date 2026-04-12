@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-04-12T13:31:00Z`
+Last updated: `2026-04-12T14:25:00Z`
 
 ## Status Values
 - `active`
@@ -48,12 +48,17 @@ Last updated: `2026-04-12T13:31:00Z`
     - `navigate.unitize` and `read` now both receive those small concept/thread digests without changing persisted runtime files or public surfaces
   - `Phase C.3` is now landed:
     - new runs now treat `working_state / concept_registry / thread_trace / reflective_frames / anchor_bank` as the primary runtime and checkpoint truth
-    - old `working_pressure / anchor_memory / reflective_summaries` are now legacy load-only inputs plus projection targets for still-unmigrated helper code
+    - old `working_pressure / anchor_memory / reflective_summaries` were demoted to legacy load/projection territory during the cutover
     - `active_recall` now exposes first-class `concepts` and `threads` from the new state layers
-    - checkpoint/resume now accept both old and new state territory, but newly written checkpoints use only the new primary keys
-  - next implement `Phase C.4`:
-    - retire remaining legacy helper dependence inside sentence-intake / bridge / slow-cycle internals where it no longer buys real compatibility value
-    - keep `knowledge_activations` narrowed to helper territory while the new primary state ownership is tightened further
+    - checkpoint/resume temporarily accepted both old and new state territory during the cutover, while newly written checkpoints already used only the new primary keys
+  - `Phase C.4` is now landed:
+    - sentence-intake / bridge / slow-cycle now consume and write the new primary state layers directly
+    - the live runner no longer projects new state back into `working_pressure / anchor_memory / reflective_summaries` to execute helpers
+    - live runtime loading and resume now reject pre-`Phase C.3` runtime directories and checkpoints
+    - public/frontend compatibility surfaces remain unchanged
+  - next implement `Phase D`:
+    - polish recall / persistence / resume now that helper execution and primary ownership are fully aligned
+    - keep `knowledge_activations` narrowed to helper territory while the post-C state model is tightened further
 - Jobs: none
 
 ### `TASK-V2-NATIVE-READING-PRESENTATION` — Redesign the routed reading surfaces around chapter text and anchored reactions

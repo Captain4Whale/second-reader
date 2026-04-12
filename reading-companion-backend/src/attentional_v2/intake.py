@@ -5,13 +5,15 @@ from __future__ import annotations
 import re
 
 from .schemas import (
-    AnchorMemoryState,
+    AnchorBankState,
+    ConceptRegistryState,
     GateState,
     LocalBufferSentence,
     LocalBufferState,
+    ThreadTraceState,
     TriggerSignal,
     TriggerState,
-    WorkingPressureState,
+    WorkingState,
 )
 from .state_ops import push_local_buffer_sentence, set_trigger_result
 
@@ -63,8 +65,10 @@ def detect_trigger_signals(
     sentence: LocalBufferSentence | dict[str, object],
     *,
     local_buffer: LocalBufferState,
-    working_pressure: WorkingPressureState,
-    anchor_memory: AnchorMemoryState,
+    working_state: WorkingState,
+    concept_registry: ConceptRegistryState,
+    thread_trace: ThreadTraceState,
+    anchor_bank: AnchorBankState,
     cadence_limit: int = 4,
 ) -> tuple[list[TriggerSignal], list[str]]:
     """Emit cheap candidate-boundary and trigger signals for one ingested sentence."""
@@ -134,31 +138,43 @@ def detect_trigger_signals(
             )
         )
 
-    motif_keys = {
-        key.lower()
-        for key in anchor_memory.get("motif_index", {}).keys()
-        if str(key or "").strip()
-    }
-    unresolved_keys = {
-        key.lower()
-        for key in anchor_memory.get("unresolved_reference_index", {}).keys()
-        if str(key or "").strip()
-    }
-    callback_keys = [key for key in motif_keys | unresolved_keys if key and key in lowered]
-    if callback_keys:
-        callback_anchor_ids = sorted(
-            {
+    callback_anchor_ids = sorted(
+        {
+            *[
                 anchor_id
-                for key in callback_keys
-                for anchor_id in anchor_memory.get("motif_index", {}).get(key, []) + anchor_memory.get("unresolved_reference_index", {}).get(key, [])
-            }
-        )
+                for entry in concept_registry.get("entries", [])
+                if isinstance(entry, dict)
+                and str(entry.get("concept_key", "") or "").strip()
+                and str(entry.get("concept_key", "") or "").lower() in lowered
+                for anchor_id in entry.get("support_anchor_ids", [])
+                if str(anchor_id or "").strip()
+            ],
+            *[
+                anchor_id
+                for entry in thread_trace.get("entries", [])
+                if isinstance(entry, dict)
+                and str(entry.get("thread_key", "") or "").strip()
+                and str(entry.get("thread_key", "") or "").lower() in lowered
+                for anchor_id in entry.get("support_anchor_ids", [])
+                if str(anchor_id or "").strip()
+            ],
+            *[
+                str(anchor.get("anchor_id", "") or "")
+                for anchor in anchor_bank.get("anchor_records", [])
+                if isinstance(anchor, dict)
+                and str(anchor.get("anchor_id", "") or "").strip()
+                and str(anchor.get("quote", "") or "").strip()
+                and str(anchor.get("quote", "") or "").lower() in lowered
+            ],
+        }
+    )
+    if callback_anchor_ids:
         signals.append(
             _signal(
                 sentence_id=sentence_id,
                 signal_kind="callback_activation",
                 family="salience",
-                evidence="sentence overlaps an existing motif or unresolved reference key",
+                evidence="sentence overlaps an existing concept, thread, or retained anchor",
                 strength="strong",
             )
         )
@@ -186,7 +202,7 @@ def detect_trigger_signals(
             )
         )
 
-    if working_pressure.get("gate_state") in {"hot", "must_evaluate"} and current_tokens:
+    if working_state.get("gate_state") in {"hot", "must_evaluate"} and current_tokens:
         signals.append(
             _signal(
                 sentence_id=sentence_id,
@@ -232,8 +248,10 @@ def process_sentence_intake(
     sentence: LocalBufferSentence | dict[str, object],
     *,
     local_buffer: LocalBufferState,
-    working_pressure: WorkingPressureState,
-    anchor_memory: AnchorMemoryState,
+    working_state: WorkingState,
+    concept_registry: ConceptRegistryState,
+    thread_trace: ThreadTraceState,
+    anchor_bank: AnchorBankState,
     window_size: int = 6,
     cadence_limit: int = 4,
 ) -> tuple[LocalBufferState, TriggerState]:
@@ -247,12 +265,14 @@ def process_sentence_intake(
     signals, callback_anchor_ids = detect_trigger_signals(
         sentence,
         local_buffer=local_buffer,
-        working_pressure=working_pressure,
-        anchor_memory=anchor_memory,
+        working_state=working_state,
+        concept_registry=concept_registry,
+        thread_trace=thread_trace,
+        anchor_bank=anchor_bank,
         cadence_limit=cadence_limit,
     )
     gate_state = _next_gate_state(
-        working_pressure.get("gate_state", "quiet"),  # type: ignore[arg-type]
+        working_state.get("gate_state", "quiet"),  # type: ignore[arg-type]
         signals,
     )
     trigger_state = set_trigger_result(

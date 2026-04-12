@@ -6,7 +6,7 @@ import re
 
 from src.reading_core import BookDocument, SentenceRecord
 
-from .schemas import AnchorMemoryState
+from .schemas import AnchorBankState, ConceptRegistryState, ThreadTraceState
 
 
 _CALLBACK_MARKERS = (
@@ -149,28 +149,65 @@ def generate_candidate_set(
     *,
     current_sentence_id: str,
     current_text: str,
-    anchor_memory: AnchorMemoryState,
+    anchor_bank: AnchorBankState,
+    concept_registry: ConceptRegistryState | None = None,
+    thread_trace: ThreadTraceState | None = None,
     max_memory_candidates: int = 3,
     max_lookback_candidates: int = 12,
 ) -> dict[str, object]:
     """Generate deterministic bridge candidates without performing bridge judgment."""
 
     current_tokens = _token_set(current_text)
+    concept_registry = concept_registry or {}
+    thread_trace = thread_trace or {}
+    concept_hits = {
+        str(entry.get("concept_key", "") or "").lower(): {
+            str(anchor_id or "")
+            for anchor_id in entry.get("support_anchor_ids", [])
+            if str(anchor_id or "").strip()
+        }
+        for entry in concept_registry.get("entries", [])
+        if isinstance(entry, dict)
+        and str(entry.get("concept_key", "") or "").strip()
+        and str(entry.get("concept_key", "") or "").lower() in (current_text or "").lower()
+    }
+    thread_hits = {
+        str(entry.get("thread_key", "") or "").lower(): {
+            *[
+                str(anchor_id or "")
+                for anchor_id in entry.get("support_anchor_ids", [])
+                if str(anchor_id or "").strip()
+            ],
+            *[
+                str(anchor_id or "")
+                for anchor_id in entry.get("target_anchor_ids", [])
+                if str(anchor_id or "").strip()
+            ],
+            str(entry.get("source_anchor_id", "") or ""),
+        }
+        for entry in thread_trace.get("entries", [])
+        if isinstance(entry, dict)
+        and str(entry.get("thread_key", "") or "").strip()
+        and str(entry.get("thread_key", "") or "").lower() in (current_text or "").lower()
+    }
     memory_candidates: list[dict[str, object]] = []
-    for anchor in anchor_memory.get("anchor_records", []):
+    for anchor in anchor_bank.get("anchor_records", []):
         if not isinstance(anchor, dict):
             continue
+        anchor_id = str(anchor.get("anchor_id", "") or "")
         overlap = len(current_tokens & _token_set(str(anchor.get("quote", "") or "")))
+        support_bonus = sum(1 for anchor_ids in concept_hits.values() if anchor_id in anchor_ids)
+        support_bonus += sum(1 for anchor_ids in thread_hits.values() if anchor_id in anchor_ids)
         if overlap <= 0:
             continue
         memory_candidates.append(
             {
-                "candidate_kind": "anchor_memory",
-                "anchor_id": str(anchor.get("anchor_id", "") or ""),
+                "candidate_kind": "anchor_bank",
+                "anchor_id": anchor_id,
                 "sentence_start_id": str(anchor.get("sentence_start_id", "") or ""),
                 "sentence_end_id": str(anchor.get("sentence_end_id", "") or ""),
                 "quote": str(anchor.get("quote", "") or ""),
-                "overlap_score": overlap,
+                "overlap_score": overlap + support_bonus,
             }
         )
     memory_candidates.sort(key=lambda candidate: (-int(candidate.get("overlap_score", 0) or 0), str(candidate.get("anchor_id", "") or "")))

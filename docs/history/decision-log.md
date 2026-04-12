@@ -1600,3 +1600,38 @@ The old active windows `nawaer_baodian_private_zh__wealth`, `nawaer_baodian_priv
 - `reading-companion-backend/src/attentional_v2/state_projection.py`
 - `reading-companion-backend/tests/test_attentional_v2_resume.py`
 - `reading-companion-backend/tests/test_attentional_v2_state_migration.py`
+
+## Entry 57
+**ID**: DEC-060
+**Status**: active
+
+**Decision / Inflection**: Finish the live `attentional_v2` state migration by cutting sentence-intake, bridge, and chapter slow-cycle over to the new primary state layers directly, and stop accepting pre-`Phase C.3` runtime/checkpoint shapes on the live path.
+
+**Period**: April 12, 2026, immediately after `Phase C.3` had already made the new layered state model canonical but while live helper execution still relied on legacy projections to finish its work.
+
+**Problem**: After `Phase C.3`, the mechanism had one honest primary state model on paper, but the live implementation still had a split personality. Core helper territories such as sentence-intake, bridge execution, and chapter slow-cycle were still being fed by `project_legacy_*` adapters or migrate-back round trips, and resume/runtime loading still tolerated old-format state. That kept the code harder to explain, preserved unnecessary translation seams on the live path, and left the system one refactor away from reintroducing ambiguity about which state layer really owned behavior.
+
+**Alternatives considered**: Keep the legacy projections in place as a long-term compatibility cushion, rewrite helper behavior and state ownership in one larger semantic redesign pass, or continue accepting old runtime/checkpoint shapes indefinitely while the new state model gradually spread.
+
+**Why this path won**: The project had already decided on the new primary state model. At that point, the highest-value move was not another theoretical redesign, but an ownership cleanup: make helpers execute directly on the chosen state layers, retire the old projection round trips from the live runner, and make runtime/resume honesty match the implementation reality. Doing that now improves code consistency and debugging clarity without forcing another change to public compatibility outputs or to the top-level mechanism loop.
+
+**What changed in the system**: `process_sentence_intake` now consumes `working_state / concept_registry / thread_trace / anchor_bank` directly. Bridge candidate generation and the live Phase 5 bridge cycle now use `anchor_bank` as the evidence source plus new-layer semantic support, and they write `working_state / concept_registry / thread_trace / anchor_bank` directly instead of round-tripping through legacy `anchor_memory` territory. The chapter slow cycle now consumes and updates `working_state / concept_registry / thread_trace / reflective_frames / anchor_bank` directly. The live runner no longer calls `project_legacy_*` or migrates helper outputs back from old shapes, and live runtime loading / resume now fail fast on pre-`Phase C.3` runtime directories and checkpoints instead of silently migrating them.
+
+**Why it matters later**: Future contributors will otherwise see old state names preserved in historical code/tests and assume the live mechanism still depends on them. This entry records the sharper post-`Phase C.4` interpretation: the old V2 stores may remain visible in older artifacts and historical helpers, but they are no longer part of the supported live execution contract of `attentional_v2`.
+
+**Primary evidence**:
+- `docs/backend-reading-mechanisms/attentional_v2.md`
+- `docs/current-state.md`
+- `docs/tasks/registry.md`
+- `docs/tasks/registry.json`
+- `docs/implementation/new-reading-mechanism/attentional_v2_structural_rework_plan.md`
+- `reading-companion-backend/src/attentional_v2/intake.py`
+- `reading-companion-backend/src/attentional_v2/retrieval.py`
+- `reading-companion-backend/src/attentional_v2/bridge.py`
+- `reading-companion-backend/src/attentional_v2/slow_cycle.py`
+- `reading-companion-backend/src/attentional_v2/runner.py`
+- `reading-companion-backend/src/attentional_v2/resume.py`
+- `reading-companion-backend/tests/test_attentional_v2_intake_and_retrieval.py`
+- `reading-companion-backend/tests/test_attentional_v2_bridge.py`
+- `reading-companion-backend/tests/test_attentional_v2_slow_cycle.py`
+- `reading-companion-backend/tests/test_attentional_v2_resume.py`

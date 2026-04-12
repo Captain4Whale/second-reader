@@ -13,6 +13,7 @@ from src.iterator_reader.llm_utils import LLMTraceContext, ReaderLLMError, invok
 
 from .prompts import ATTENTIONAL_V2_PROMPTS
 from .schemas import (
+    AnchorBankState,
     AnchorMemoryState,
     CarryForwardContext,
     AnchorFocus,
@@ -41,6 +42,7 @@ from .schemas import (
     UnitizeBoundaryType,
     UnitizeDecision,
     WorkingPressureState,
+    WorkingState,
     ZoomReadResult,
 )
 from .storage import append_jsonl, prompt_manifest_file, save_json, unitization_audit_file
@@ -285,7 +287,7 @@ def _structural_frame(
     }
 
 
-def _anchor_context(anchor_memory: AnchorMemoryState, *, limit: int = 4) -> list[dict[str, object]]:
+def _anchor_context(anchor_memory: AnchorMemoryState | AnchorBankState, *, limit: int = 4) -> list[dict[str, object]]:
     """Build a compact anchor context packet."""
 
     context: list[dict[str, object]] = []
@@ -1194,7 +1196,7 @@ def _fallback_read_unit_result(
     }
 
 
-def _has_reframe_pressure(working_pressure: WorkingPressureState) -> bool:
+def _has_reframe_pressure(working_pressure: WorkingPressureState | WorkingState) -> bool:
     """Return whether the current pressure snapshot is explicitly asking for a reframe."""
 
     return bool(working_pressure.get("pressure_snapshot", {}).get("reframe_pressure_present"))

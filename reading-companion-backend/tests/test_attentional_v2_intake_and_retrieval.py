@@ -4,7 +4,13 @@ from __future__ import annotations
 
 from src.attentional_v2.intake import process_sentence_intake
 from src.attentional_v2.retrieval import bounded_lookback_source_space, generate_candidate_set
-from src.attentional_v2.schemas import build_empty_anchor_memory, build_empty_local_buffer, build_empty_working_pressure
+from src.attentional_v2.schemas import (
+    build_empty_anchor_bank,
+    build_empty_concept_registry,
+    build_empty_local_buffer,
+    build_empty_thread_trace,
+    build_empty_working_state,
+)
 
 
 def _sentence(sentence_id: str, index: int, text: str, *, text_role: str = "body", paragraph_index: int = 1) -> dict[str, object]:
@@ -45,14 +51,18 @@ def test_process_sentence_intake_updates_local_buffer_and_emits_monitor_signal()
     """Cheap intake should update the rolling buffer and emit trigger output without an LLM step."""
 
     local_buffer = build_empty_local_buffer()
-    working_pressure = build_empty_working_pressure()
-    anchor_memory = build_empty_anchor_memory()
+    working_state = build_empty_working_state()
+    concept_registry = build_empty_concept_registry()
+    thread_trace = build_empty_thread_trace()
+    anchor_bank = build_empty_anchor_bank()
 
     next_buffer, trigger = process_sentence_intake(
         _sentence("c1-s3", 3, "Value should matter here."),
         local_buffer=local_buffer,
-        working_pressure=working_pressure,
-        anchor_memory=anchor_memory,
+        working_state=working_state,
+        concept_registry=concept_registry,
+        thread_trace=thread_trace,
+        anchor_bank=anchor_bank,
         cadence_limit=4,
     )
 
@@ -64,18 +74,30 @@ def test_process_sentence_intake_updates_local_buffer_and_emits_monitor_signal()
 
 
 def test_process_sentence_intake_raises_to_zoom_now_for_knowledge_risk_and_callbacks():
-    """Explicit uncertainty plus anchor-memory callback pressure should escalate the trigger output."""
+    """Explicit uncertainty plus concept-registry callback pressure should escalate the trigger output."""
 
     local_buffer = build_empty_local_buffer()
-    working_pressure = build_empty_working_pressure()
-    anchor_memory = build_empty_anchor_memory()
-    anchor_memory["motif_index"] = {"value": ["a-1"]}
+    working_state = build_empty_working_state()
+    concept_registry = build_empty_concept_registry()
+    concept_registry["entries"] = [
+        {
+            "concept_key": "value",
+            "concept_type": "motif",
+            "status": "active",
+            "summary": "Value remains a live concept.",
+            "support_anchor_ids": ["a-1"],
+            "linked_thread_ids": [],
+            "last_touched_sentence_id": "c1-s1",
+        }
+    ]
 
     next_buffer, trigger = process_sentence_intake(
         _sentence("c1-s4", 4, "Why does value return here?", paragraph_index=2),
         local_buffer=local_buffer,
-        working_pressure=working_pressure,
-        anchor_memory=anchor_memory,
+        working_state=working_state,
+        concept_registry=concept_registry,
+        thread_trace=build_empty_thread_trace(),
+        anchor_bank=build_empty_anchor_bank(),
         cadence_limit=1,
     )
 
@@ -90,10 +112,10 @@ def test_process_sentence_intake_raises_to_zoom_now_for_knowledge_risk_and_callb
 
 
 def test_generate_candidate_set_is_memory_first_then_bounded_lookback():
-    """Candidate generation should separate anchor-memory candidates from source look-back candidates."""
+    """Candidate generation should separate anchor-bank candidates from source look-back candidates."""
 
-    anchor_memory = build_empty_anchor_memory()
-    anchor_memory["anchor_records"] = [
+    anchor_bank = build_empty_anchor_bank()
+    anchor_bank["anchor_records"] = [
         {
             "anchor_id": "a-1",
             "sentence_start_id": "c1-s1",
@@ -114,7 +136,7 @@ def test_generate_candidate_set_is_memory_first_then_bounded_lookback():
         _book_document(),  # type: ignore[arg-type]
         current_sentence_id="c1-s4",
         current_text="Value in relationships creates friction.",
-        anchor_memory=anchor_memory,
+        anchor_bank=anchor_bank,
         max_memory_candidates=2,
         max_lookback_candidates=2,
     )
@@ -161,7 +183,7 @@ def test_generate_candidate_set_can_surface_nonlocal_callback_candidates():
         document,  # type: ignore[arg-type]
         current_sentence_id="c1-s6",
         current_text="唐敖自從那日同多九公尋訪林之洋下落，訪來訪去，絕無消息。",
-        anchor_memory=build_empty_anchor_memory(),
+        anchor_bank=build_empty_anchor_bank(),
         max_memory_candidates=0,
         max_lookback_candidates=2,
     )

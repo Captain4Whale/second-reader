@@ -7,17 +7,17 @@ from dataclasses import dataclass
 from src.prompts.shared import LANGUAGE_OUTPUT_CONTRACT
 
 
-ATTENTIONAL_V2_PROMPTSET_VERSION = "attentional_v2-phase6-v10"
+ATTENTIONAL_V2_PROMPTSET_VERSION = "attentional_v2-phase6-v11"
 NAVIGATE_UNITIZE_PROMPT_VERSION = "attentional_v2.navigate_unitize.v2"
 READ_UNIT_PROMPT_VERSION = "attentional_v2.read.v3"
 ZOOM_READ_PROMPT_VERSION = "attentional_v2.zoom_read.v5"
 MEANING_UNIT_CLOSURE_PROMPT_VERSION = "attentional_v2.meaning_unit_closure.v8"
 CONTROLLER_DECISION_PROMPT_VERSION = "attentional_v2.controller_decision.v1"
 REACTION_EMISSION_PROMPT_VERSION = "attentional_v2.reaction_emission.v6"
-BRIDGE_RESOLUTION_PROMPT_VERSION = "attentional_v2.bridge_resolution.v4"
+BRIDGE_RESOLUTION_PROMPT_VERSION = "attentional_v2.bridge_resolution.v5"
 REFLECTIVE_PROMOTION_PROMPT_VERSION = "attentional_v2.reflective_promotion.v1"
 RECONSOLIDATION_PROMPT_VERSION = "attentional_v2.reconsolidation.v1"
-CHAPTER_CONSOLIDATION_PROMPT_VERSION = "attentional_v2.chapter_consolidation.v2"
+CHAPTER_CONSOLIDATION_PROMPT_VERSION = "attentional_v2.chapter_consolidation.v3"
 
 
 @dataclass(frozen=True)
@@ -198,11 +198,11 @@ Focal sentence:
 Nearby already-read local context:
 {local_context}
 
-Working pressure:
-{working_pressure}
+Working state:
+{working_state}
 
-Relevant anchors:
-{anchor_context}
+Anchor-bank context:
+{anchor_bank_context}
 
 Live activations:
 {activation_context}
@@ -612,14 +612,14 @@ Chapter reference:
 Meaning units in chapter:
 {meaning_units_in_chapter}
 
-Working pressure snapshot:
-{working_pressure_snapshot}
+Working state snapshot:
+{working_state_snapshot}
 
-Anchor-memory chapter slice:
-{anchor_memory_chapter_slice}
+Anchor-bank chapter slice:
+{anchor_bank_chapter_slice}
 
-Reflective summaries snapshot:
-{reflective_summaries_snapshot}
+Reflective frames snapshot:
+{reflective_frames_snapshot}
 
 Knowledge activations snapshot:
 {knowledge_activations_snapshot}

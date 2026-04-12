@@ -289,15 +289,17 @@ def test_attentional_v2_read_book_runs_live_loop_and_persists_compatibility_resu
         return {
             "chapter_consolidation": {"chapter_ref": kwargs["chapter"].get("reference", "")},
             "promotion_results": [],
-            "working_pressure": kwargs["working_pressure"],
-            "anchor_memory": kwargs["anchor_memory"],
-            "reflective_summaries": kwargs["reflective_summaries"],
+            "working_state": kwargs["working_state"],
+            "concept_registry": kwargs["concept_registry"],
+            "thread_trace": kwargs["thread_trace"],
+            "anchor_bank": kwargs["anchor_bank"],
+            "reflective_frames": kwargs["reflective_frames"],
             "knowledge_activations": kwargs["knowledge_activations"],
             "reaction_records": kwargs["reaction_records"],
             "compatibility_payload": compatibility_payload,
         }
 
-    def fake_process_sentence_intake(sentence, *, local_buffer, working_pressure, anchor_memory, window_size=6, cadence_limit=4):
+    def fake_process_sentence_intake(sentence, *, local_buffer, working_state, concept_registry, thread_trace, anchor_bank, window_size=6, cadence_limit=4):
         next_buffer = {
             **local_buffer,
             "current_sentence_id": sentence["sentence_id"],
@@ -415,15 +417,17 @@ def test_attentional_v2_read_book_tolerates_missing_reaction_payload(tmp_path, m
         return {
             "chapter_consolidation": {"chapter_ref": kwargs["chapter"].get("reference", "")},
             "promotion_results": [],
-            "working_pressure": kwargs["working_pressure"],
-            "anchor_memory": kwargs["anchor_memory"],
-            "reflective_summaries": kwargs["reflective_summaries"],
+            "working_state": kwargs["working_state"],
+            "concept_registry": kwargs["concept_registry"],
+            "thread_trace": kwargs["thread_trace"],
+            "anchor_bank": kwargs["anchor_bank"],
+            "reflective_frames": kwargs["reflective_frames"],
             "knowledge_activations": kwargs["knowledge_activations"],
             "reaction_records": kwargs["reaction_records"],
             "compatibility_payload": compatibility_payload,
         }
 
-    def fake_process_sentence_intake(sentence, *, local_buffer, working_pressure, anchor_memory, window_size=6, cadence_limit=4):
+    def fake_process_sentence_intake(sentence, *, local_buffer, working_state, concept_registry, thread_trace, anchor_bank, window_size=6, cadence_limit=4):
         next_buffer = {
             **local_buffer,
             "current_sentence_id": sentence["sentence_id"],
@@ -499,15 +503,17 @@ def test_attentional_v2_read_book_still_runs_formal_read_for_monitor_path(tmp_pa
         return {
             "chapter_consolidation": {"chapter_ref": kwargs["chapter"].get("reference", "")},
             "promotion_results": [],
-            "working_pressure": kwargs["working_pressure"],
-            "anchor_memory": kwargs["anchor_memory"],
-            "reflective_summaries": kwargs["reflective_summaries"],
+            "working_state": kwargs["working_state"],
+            "concept_registry": kwargs["concept_registry"],
+            "thread_trace": kwargs["thread_trace"],
+            "anchor_bank": kwargs["anchor_bank"],
+            "reflective_frames": kwargs["reflective_frames"],
             "knowledge_activations": kwargs["knowledge_activations"],
             "reaction_records": kwargs["reaction_records"],
             "compatibility_payload": compatibility_payload,
         }
 
-    def fake_process_sentence_intake(sentence, *, local_buffer, working_pressure, anchor_memory, window_size=6, cadence_limit=4):
+    def fake_process_sentence_intake(sentence, *, local_buffer, working_state, concept_registry, thread_trace, anchor_bank, window_size=6, cadence_limit=4):
         next_buffer = {
             **local_buffer,
             "current_sentence_id": sentence["sentence_id"],
