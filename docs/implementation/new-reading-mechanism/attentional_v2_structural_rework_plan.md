@@ -1,21 +1,22 @@
 # Attentional_v2 Structural Rework Plan
 
-Purpose: turn the completed Phase 9 evaluation findings into an executable post-Phase-9 implementation plan for `attentional_v2`.
-Use when: deciding implementation order, coordinating backend/frontend work, or checking what belongs in the rework versus in later polish.
-Not for: stable mechanism authority, per-probe evidence, or final project history.
-Update when: the implementation sequence, track boundaries, success criteria, or rollout posture materially changes.
+Purpose: turn the completed Phase 9 evaluation findings into an executable backend implementation plan for structurally reworking `attentional_v2`.
+Use when: deciding backend implementation order, checking which mechanism changes belong in the rework, or converting eval findings into concrete code slices.
+Not for: stable mechanism authority, frontend redesign planning, per-probe evidence, or final project history.
+Update when: the backend implementation sequence, code-slice boundaries, success criteria, or rollout posture materially changes.
 
-Status: `planning`
+Status: `in_progress`
 
 Mechanism key: `attentional_v2`
 
-Scope: `post-Phase-9 structural rework under the existing attentional_v2 mechanism key`
+Scope: `post-Phase-9 backend structural rework under the existing attentional_v2 mechanism key`
 
 Primary upstream evidence:
 
 - [long-span after-eval follow-up memo](../../../reading-companion-backend/docs/evaluation/long_span/attentional_v2_accumulation_benchmark_v1_judged_rerun_20260407_followup_reflection_and_decisions.md)
 - [excerpt interpretation report](../../../reading-companion-backend/docs/evaluation/excerpt/attentional_v2_excerpt_surface_v1_1_judged_20260406_interpretation.md)
 - [Claude Code context-management research note](../../../reading-companion-backend/docs/research/claude_code_context_management_research_20260412.md)
+- [stable live mechanism doc](../../backend-reading-mechanisms/attentional_v2.md)
 
 ## 1. Why This Plan Exists
 
@@ -29,15 +30,13 @@ It is:
 
 It is not:
 
-- a phased build plan
-- a code-facing task breakdown
-- a clean guide for coordinating backend mechanism work with frontend follow-through
+- a code-facing build plan
+- a phased backend slice map
+- a clean statement of what to preserve, what to replace, and what to defer
 
 This document exists to provide that missing implementation layer.
 
-## 2. Core Working Decisions
-
-These decisions are now treated as execution baselines for the rework.
+## 2. Working Position
 
 ### 2.1 Evolve `attentional_v2` in place
 
@@ -53,7 +52,7 @@ Why:
 - the failures exposed by formal eval are structural failures inside that direction, not proof that the direction itself should be discarded
 - introducing `attentional_v3` now would create unnecessary mechanism-catalog, runtime, resume, and documentation churn before we know that a separate long-lived mechanism family is warranted
 
-### 2.2 Treat this as a new post-Phase-9 implementation line
+### 2.2 Treat this as a new post-Phase-9 backend line
 
 This work should not be forced back into the old `Phase 0-9` checklist.
 
@@ -68,17 +67,23 @@ So the right framing is:
 
 - `Post-Phase-9`
 - `attentional_v2 structural rework`
+- backend-only
 
-### 2.3 Run one initiative with two coordinated tracks
+### 2.3 This plan is backend-only
 
-We should implement this as one initiative with two tracks:
+This plan should not absorb the current frontend lane.
 
-- `Track A: mechanism rework`
-- `Track B: frontend / integration follow-through`
+Why:
 
-The mechanism track is primary.
+- the current frontend direction and page-responsibility work already live in their own documents and tasks
+- the long-span after-eval memo is about mechanism behavior, not frontend presentation
+- mixing frontend implementation details into this plan would blur ownership and make the backend rework harder to execute cleanly
 
-The frontend track should follow the mechanism, but it should still be planned now so that backend changes do not drift away from product presentation needs.
+Implication:
+
+- frontend work may continue in parallel
+- but frontend planning remains outside this document
+- this plan only owns backend mechanism rework and the backend-facing compatibility discipline needed while that rework lands
 
 ### 2.4 Do not treat the after-eval memo as the execution plan
 
@@ -91,7 +96,7 @@ This plan is the execution source.
 The first implementation focus should be:
 
 - control-shape repair
-- continuity reuse
+- continuity-carrying read behavior
 - state usability
 
 Not:
@@ -167,18 +172,48 @@ The current split across trigger, zoom, closure, controller, and reaction gate m
 
 The mechanism can form local understanding that later becomes harder to see because reaction truth is not cleanly owned by the core reading step.
 
-## 5. Workstream Overview
+## 5. Rework Scope And Explicit Non-Goals
 
-| Track | Goal | Priority | Notes |
-| --- | --- | --- | --- |
-| `A. mechanism rework` | Repair the control loop and continuity model while preserving V2's local-reading strengths | `primary` | backend-owned, but may require additive integration fields later |
-| `B. frontend / integration follow-through` | Keep product surfaces honest as the mechanism changes, then progressively expose the new reading shape | `secondary` | should follow mechanism checkpoints rather than front-running them |
+### 5.1 In scope
 
-## 6. Track A: Mechanism Rework
+- replace heuristic semantic permission gating
+- replace the current fragmented local control shape with `navigate.unitize + read + navigate.route`
+- align span visibility and span authority
+- make `read` carry forward prior context and expose prior-material use as an observational result rather than a separate mechanism action
+- restructure state and prompt packetization so long-distance continuity becomes more reliable
+- move raw reaction truth back to `read`
+- preserve existing compatibility behavior where practical while the backend shape changes
 
-Track A should be executed in bounded phases.
+### 5.2 Explicitly out of scope for this plan
 
-### 6.1 Phase A — Replace permission gating with a new control skeleton
+- frontend route, component, or page-redesign planning
+- reopening excerpt surface composition work
+- reopening dataset retuning by default
+- making compaction a first-class subsystem in the first implementation wave
+- introducing multi-sub-agent reading orchestration
+- minting a new `attentional_v3` mechanism key
+
+## 6. Current V2 To New Shape Mapping
+
+The rework should be understood as a controlled remap of current V2 responsibilities, not as an unstructured rewrite.
+
+| Current V2 element | Problem now | New home / treatment |
+| --- | --- | --- |
+| heuristic `trigger` | wrongly acts as permission gate over whether text deserves real LLM reading | remove its authority over正文 reading; replace with mandatory coverage read plus `navigate.unitize` boundary choice |
+| `zoom_read` | currently carries too much of the real reading responsibility but only opens on gated cases | absorb its reading semantics into `read` |
+| `meaning_unit_closure` | closure authority is entangled with partial visibility windows | split into `read` boundary evidence plus `navigate.route` close / continue judgment |
+| `controller_decision` | one more control surface in an already over-fragmented chain | absorb into `navigate.route` |
+| `reaction_emission` | thins out already-formed reading truth | demote to persistence / formatting sidecar if still needed; raw reaction truth belongs to `read` |
+| lazy bridge retrieval / `bridge_resolution` | useful in principle, but too downstream to carry continuity by itself | keep only as optional execution path beneath `carry-forward context` and `active recall / look-back` |
+| `working_pressure` | useful hot-state concept, but currently mixed with older local-cycle shape | evolve into `working_state` |
+| `anchor_memory` | useful evidence territory, but too easy to over-expand conceptually | evolve into `anchor_bank` only |
+| `knowledge_activations` | currently too easy to treat as a durable memory layer | keep only as in-read immediate external-knowledge activation, not as a main state layer |
+
+## 7. Backend Implementation Phases
+
+The mechanism rework should be executed in bounded phases.
+
+### 7.1 Phase A — Replace permission gating with a new control skeleton
 
 Goal:
 
@@ -189,6 +224,97 @@ Goal:
   - `navigate.route`
 
 This phase should land the minimum viable structural change that fixes the long-span "important text never truly got read" failure.
+
+#### Concrete design target
+
+The minimum viable loop after Phase A should be:
+
+1. canonical sentence stream defines position
+2. `navigate.unitize` looks ahead within bounded forward text
+3. one coverage unit is chosen
+4. `read` runs once on that coverage unit
+5. `navigate.route` decides:
+   - `commit`
+   - `continue / extend`
+   - `bridge_back`
+   - `reframe`
+   - `persist_raw_reaction`
+
+This phase is not yet trying to perfect long-distance memory. It is trying to eliminate the class of failure where important text never becomes a real reading event.
+
+#### Unitization policy that should already be respected in Phase A
+
+`navigate.unitize` should not degrade into "fixed sentence count" or "always stop at paragraph end."
+
+The first viable unitization policy should already preserve the boundary discipline established in the after-eval review:
+
+- author structure remains the first skeleton
+- semantic judgment only refines inside that skeleton
+- deterministic code may expose structure and budget, but must not replace semantic boundary judgment
+
+The boundary hierarchy should be:
+
+1. hard boundaries
+   - chapter
+   - section / subsection
+   - sentence
+2. strong boundaries
+   - paragraph
+   - speaker switch
+   - list-item switch
+   - obvious scene switch
+3. semantic close signals
+   - a definition has completed
+   - a local contrast has landed
+   - a question-answer move has locally closed
+   - one narrative or argumentative move has relatively completed
+4. continuation signals
+   - unresolved reference
+   - unfinished enumeration
+   - concession / turn that has only opened
+   - the same local move is still being completed
+
+The preview policy should be:
+
+- never cross chapter
+- by default do not cross section / subsection
+- use paragraph as the default semantic shell
+- default preview baseline:
+  - current paragraph remainder
+  - plus the next paragraph in the same section
+- only widen further when:
+  - the current paragraph is very short
+  - the current paragraph is obviously unfinished
+  - there is strong continuation pressure into the next paragraph
+
+The coverage-unit policy should be:
+
+- target one paragraph by default
+- allow two short adjacent paragraphs only when they clearly belong to one local move
+- keep a soft cap around `6-8` sentences
+- keep a hard cap around `10-12` sentences
+- if a long paragraph must be split, split only on sentence boundaries and prefer a natural semantic close
+- if a unit is capped rather than naturally closed, preserve explicit continuation pressure instead of pretending closure
+
+#### Minimum unitization audit contract
+
+Phase A does not need a full final artifact suite yet, but `navigate.unitize` should already emit enough information that later debugging can answer why it stopped where it stopped.
+
+The minimum audit payload should include:
+
+- `start_sentence_id`
+- `preview_range`
+- `end_sentence_id`
+- `boundary_type`
+  - for example:
+    - `paragraph_end`
+    - `intra_paragraph_semantic_close`
+    - `cross_paragraph_continuation`
+    - `section_end`
+    - `budget_cap`
+- `evidence_sentence_ids`
+- one short reason
+- whether continuation pressure remains
 
 #### Expected outputs
 
@@ -206,40 +332,137 @@ This phase should land the minimum viable structural change that fixes the long-
 - `reading-companion-backend/src/attentional_v2/nodes.py`
 - `reading-companion-backend/src/attentional_v2/prompts.py`
 - `reading-companion-backend/src/attentional_v2/schemas.py`
+- `reading-companion-backend/src/attentional_v2/state_ops.py`
 - `reading-companion-backend/src/reading_mechanisms/attentional_v2.py`
+
+#### Suggested code slices
+
+- `A1. skeleton and naming`
+  - introduce explicit `navigate_unitize`, `read_unit`, and `navigate_route` boundaries in code
+  - do not yet fully delete legacy helpers if adapters keep migration safer
+- `A2. mandatory coverage read`
+  - remove heuristic trigger authority over whether正文 text gets real LLM reading
+  - preserve deterministic watch / substrate logic only where it does not replace reading
+- `A3. bounded unitization`
+  - implement the first bounded forward semantic unitization policy
+  - keep preview bounded by author structure
+- `A4. span authority alignment`
+  - ensure the span being judged is the span actually being read / closed / extended
+- `A5. compatibility guard`
+  - keep enough runtime/public compatibility that current frontend surfaces do not break while internals change
 
 #### Validation target
 
 - the mechanism should no longer depend on heuristic trigger approval for正文 text to enter LLM reading
 - the new loop should preserve sentence-order honesty
 - no regression to section-first traversal
+- no reintroduction of large hidden spans closed by smaller tail windows
 
-### 6.2 Phase B — Rebuild continuity and read-contract behavior
+### 7.2 Phase B — Rebuild read-context integration and continuity behavior
 
 Goal:
 
-- make `read` explicitly responsible for how the current unit uses earlier material
-- separate default carry-forward continuity from exceptional look-back behavior
+- make `read` explicitly responsible for reading the current unit together with carried-forward context
+- separate default carry-forward continuity from exceptional recall / look-back behavior
 
-This phase should make long-distance reuse a first-class reading responsibility instead of a late side effect.
+This phase should make long-distance continuity part of the normal `read` act instead of a late side effect.
+
+It should not introduce a standalone `reuse` node or a separately executed "reuse action."
+
+If the current unit draws on earlier material, that should show up as a natural consequence of the `read` result, not as an extra mechanism step.
+
+#### Concrete design target
+
+`read` should stop being merely "local interpretation of current text" and become:
+
+- the one place that formally reads the current unit
+- the one place that produces `implicit uptake`
+- the one place that can report whether prior material materially informed the current understanding
+- the one place from which a genuine `raw reaction` can emerge
+
+`read` should also be allowed to request more help when the default carried-forward packet is insufficient:
+
+- `active recall`
+- `look-back`
+
+The mechanism does not need a hard-coded runtime taxonomy for how prior material was used.
+
+If later auditing benefits from lightweight labels such as:
+
+- `continuation`
+- `clarification`
+- `answer`
+- `contrast`
+- `callback`
+- `reframe`
+- `escalation`
+
+those labels should stay optional observational aids only.
+
+They should not become execution authority or a fixed branching logic.
 
 #### Expected outputs
 
 - `carry-forward context`
-- `active recall / look-back`
-- `continuity / reuse result`
+- optional `active recall / look-back`
 - `read` packet that clearly reports:
-  - what the current unit did
-  - how it used prior material
+  - what the current unit did locally
   - what implicit uptake it produced
+  - whether prior material materially informed the current understanding, and if so, a short explanation of how
+  - whether more recall / look-back is needed
   - whether a raw reaction genuinely emerged
+
+`carry-forward context` should be treated as the default continuity path.
+
+`active recall / look-back` should remain the narrower path for cases where the carried-forward packet is insufficient.
+
+The intended default is:
+
+- carry forward a small, usable packet
+- let `read` naturally connect current text with that packet
+- escalate only when the current unit genuinely needs more than the default packet provides
+
+If `read` genuinely produces a raw reaction, that reaction should be preserved and surfaced as-is rather than rewritten into a separate presentation voice.
+
+#### Suggested code slices
+
+- `B1. read packet contract`
+  - define a structured packet returned from `read`
+  - include:
+    - `implicit_uptake`
+    - `prior_material_use`
+    - optional `raw_reaction`
+    - unresolved pressure
+    - focal text / anchor evidence
+    - optional `needs_active_recall`
+    - optional `needs_look_back`
+- `B2. carry-forward first`
+  - default continuity should come from a small carried-forward packet, not from repeated heavy retrieval
+- `B3. active recall / look-back`
+  - add a narrower explicit path for cases where carry-forward context is insufficient
+- `B4. route integration`
+  - make `navigate.route` consume the new read packet instead of older closure/controller fragments
+
+#### Runtime discipline
+
+Phase B should keep semantic freedom in the model and keep hard-coded logic narrow.
+
+Deterministic code may still own:
+
+- recall / look-back budget limits
+- safety rails
+- persistence
+- audit serialization
+
+Deterministic code should not hard-code a semantic taxonomy of "allowed reuse types" and branch on it as if that were the reading process itself.
 
 #### Validation target
 
-- earlier material reuse should become visible in the core reading packet rather than only in occasional bridge or retrospect moments
+- earlier material use should become visible in the core reading packet without adding a standalone `reuse` action
 - the mechanism should behave more like "carry forward by default, recall specifically only when needed"
+- no automatic collapse back into a giant memory blob
 
-### 6.3 Phase C — Restructure state and prompt packetization
+### 7.3 Phase C — Restructure state and prompt packetization
 
 Goal:
 
@@ -247,6 +470,10 @@ Goal:
 - recover V1's stronger memory usability
 
 This phase should implement the new state shape and the derived prompt-input layer.
+
+#### Concrete design target
+
+Keep V2's typed-state base, but stop exposing it to the model as an unstructured pile of stores.
 
 #### State target
 
@@ -256,18 +483,130 @@ This phase should implement the new state shape and the derived prompt-input lay
 - `reflective_frames`
 - `anchor_bank`
 
+#### State semantics that should be explicit in Phase C
+
+- `working_state`
+  - hot state needed by the next immediate reading step
+  - current focus, open questions, active tensions, bridge pull, local unresolved items
+- `concept_registry`
+  - object memory
+  - people, places, institutions, terms, abstract concepts, key objects
+  - answers what this thing is, why it matters in this book, and which threads it touches
+- `thread_trace`
+  - plot / argument / relationship / question trace
+  - answers where this line currently stands and whether the present unit continues, turns, answers, counters, or closes it
+- `reflective_frames`
+  - slower chapter-level and book-level understanding
+  - durable chapter understandings, book frames, and stable definitions
+- `anchor_bank`
+  - source-grounded evidence base only
+  - retained anchors, typed relations, revisit / bridge support
+  - not a generic semantic memory bucket
+
+#### Current V2 state disposition that should guide migration
+
+Keep and rename or tighten:
+
+- `working_pressure` -> `working_state`
+- `anchor_memory` -> `anchor_bank`
+- `reflective_summaries` -> `reflective_frames`
+
+Merge or absorb:
+
+- `motif_index`
+  - absorb into `concept_registry` plus `anchor_bank` link structure
+- `trace_links`
+  - absorb into `thread_trace`
+- `unresolved_reference_index`
+  - hot unresolved items into `working_state`
+  - cross-unit unresolved items into `thread_trace`
+
+Keep only as helper territory, not as a competing main memory layer:
+
+- retrieval helpers
+- index-like lookup structures
+
+Do not preserve as future main semantic entry points:
+
+- `trigger_state`
+- `gate_state`
+- `local_buffer`
+- semantics tied to `no_zoom / monitor / zoom_now`
+- semantics tied to the older closure/controller chain
+
 #### Packetization target
 
 - bottom-layer state remains typed
 - model-facing packet becomes query-aware and task-aware
 - detailed state should not be blindly injected in full
+- prompt input should be a derived view, not raw state dumped verbatim
+- `navigate.unitize`, `read`, and `navigate.route` should use distinct prompt families even if they share the same model target
+
+#### Load strategy target
+
+The packetization layer should already assume an index-first loading policy.
+
+`always reload` should stay very small and should carry only:
+
+- the current `session continuity capsule`
+- the current `working_state`
+- the current chapter's short `reflective frame`
+- a very small active `concept / thread digest`
+
+`on-demand retrieval` should carry the heavier layers:
+
+- detailed `concept_registry` entries
+- detailed `thread_trace` milestones
+- source evidence from `anchor_bank`
+- historical raw reactions / evidence bundles
+- long original excerpts
+
+#### Suggested code slices
+
+- `C1. state territory migration`
+  - map current state helpers into:
+    - `working_state`
+    - `concept_registry`
+    - `thread_trace`
+    - `reflective_frames`
+    - `anchor_bank`
+- `C2. prompt packet derivation`
+  - derive a small query-aware packet from those state layers for `navigate.unitize`, `read`, and `navigate.route`
+- `C3. knowledge activation narrowing`
+  - restrict `knowledge_activations` to immediate in-read use
+- `C4. anchor-bank tightening`
+  - keep `anchor_bank` as evidence territory only, not generic memory
+- `C5. continuity-focused memory usability`
+  - recover V1's practical memory-packet strength without regressing to V1's looser ontology
+
+#### Deterministic versus semantic boundary
+
+Phase C should also make the execution boundary explicit.
+
+Deterministic code should continue to own:
+
+- sentence substrate
+- locator and persistence work
+- budget tracking
+- observability
+- resume / recovery
+- safety guardrails
+
+Deterministic code should not continue to own:
+
+- semantic trigger worthiness
+- semantic closure judgment
+- semantic bridge worthiness
+
+`navigate.unitize`, `read`, and `navigate.route` may decide what the mechanism believes, but durable state application should still happen through deterministic executors rather than turning one LLM call into an all-powerful state machine.
 
 #### Validation target
 
 - the mechanism should become better at long-distance continuity without turning back into one giant memory blob
 - source-grounded evidence should stay intact
+- excerpt-local pressure fidelity must still remain strong
 
-### 6.4 Phase D — Recall, persistence, resume, and compaction polish
+### 7.4 Phase D — Recall, persistence, resume, and compaction polish
 
 Goal:
 
@@ -285,55 +624,41 @@ It should only happen after the earlier phases prove stable enough to justify ad
 - compaction / rehydration boundary work
 - resume alignment against the new state model
 
+Compaction should remain later because the first-order problem is still state shape and continuity usability, not the absence of a central compactor.
+
+If explicit compaction enters scope later, its first acceptable triggers should be:
+
+- chapter boundary
+- pause / resume
+- hard budget breach
+
+Its job should be to produce a continuation capsule plus rehydration entrypoints, not to flatten all durable state and source evidence into one replacement summary.
+
 #### Validation target
 
 - polish should clarify and strengthen the new mechanism
 - it must not become a substitute for landing the earlier structural work
 
-## 7. Track B: Frontend / Integration Follow-Through
+## 8. Backend Compatibility Guardrails During Rework
 
-This track should move with Track A, but not at the same depth or speed.
+This plan is backend-only, but it must not ignore existing frontend dependence.
 
-### 7.1 Phase B0 — Protect compatibility while Track A changes
+The rule is:
 
-Goal:
+- do not move frontend planning into this document
+- but do keep backend changes compatibility-aware enough that parallel frontend work is not broken by surprise
 
-- keep existing product surfaces honest during the rework
-- avoid accidental frontend breakage while backend internals are in motion
+Current guardrails:
 
-Expected posture:
+- preserve current compatibility envelopes unless a later explicit contract change is intentionally staged
+- avoid backend-only ontology changes that silently invalidate current public/state adapters
+- prefer additive backend truth and adapter updates over abrupt surface breakage during the rework
 
-- preserve current compatibility envelopes where needed
-- prefer additive fields over premature surface rewrites
-- keep the chapter scene and marks surfaces usable even while mechanism internals evolve
-
-### 7.2 Phase B1 — Expose the new reading truth incrementally
-
-Goal:
-
-- once Track A produces stable reading packets, expose the most valuable additive truth first
-
-Likely targets:
-
-- clearer current reading locus
-- continuity / move-type visibility where product-helpful
-- better anchor-native reaction truth
-
-### 7.3 Phase B2 — Resume the V2-native presentation lane on top of the new mechanism
-
-Goal:
-
-- once the reworked mechanism stabilizes, resume the deeper chapter / marks redesign using the improved reading shape rather than the old compatibility shell
-
-Important boundary:
-
-- frontend work should not invent a second conceptual model of reading that contradicts the reworked mechanism
-
-## 8. Documentation Routing During This Initiative
+## 9. Documentation Routing During This Initiative
 
 To avoid document sprawl, each doc should keep one job.
 
-### 8.1 Evaluation follow-up memo
+### 9.1 Evaluation follow-up memo
 
 File:
 
@@ -343,13 +668,13 @@ Role:
 
 - mechanism evidence and design reasoning source
 
-### 8.2 This plan document
+### 9.2 This plan document
 
 Role:
 
-- implementation blueprint for the structural rework
+- implementation blueprint for the backend structural rework
 
-### 8.3 Execution tracker
+### 9.3 Execution tracker
 
 File:
 
@@ -361,7 +686,7 @@ Role:
 - current phase / checkpoint summary
 - links to the current implementation plan
 
-### 8.4 Stable docs
+### 9.4 Stable docs
 
 Examples:
 
@@ -374,7 +699,7 @@ Role:
 
 - only update when real behavior lands
 
-### 8.5 History decision log
+### 9.5 History decision log
 
 File:
 
@@ -384,20 +709,20 @@ Role:
 
 - record later inflection points once the rework becomes a real project-direction change in implemented behavior, not just a planning intention
 
-## 9. Immediate Next Steps
+## 10. Immediate Next Steps
 
 The next concrete move should be:
 
-1. define the code-facing contract for `Phase A`
-2. identify the smallest backend slice that can land:
-   - `navigate.unitize`
-   - `read`
-   - `navigate.route`
-   without yet forcing the whole new state model to exist
-3. preserve current compatibility surfaces while that slice lands
-4. only after `Phase A` is real, open the first frontend/integration follow-through work item that depends on it
+1. treat `Phase A` as the landed control-skeleton baseline rather than as the next open design question
+2. define the code-facing contract for `Phase B`:
+   - `carry-forward context`
+   - `read` packet
+   - optional `active recall / look-back`
+3. make the `read` contract own prior-context use as a natural reading result rather than introducing a standalone `reuse` step
+4. preserve current compatibility surfaces while Phase B lands
+5. keep existing frontend work tracked in its own documents and tasks rather than under this plan
 
-## 10. Success Criteria For This Plan
+## 11. Success Criteria For This Plan
 
 We should consider this rework direction on track only if all of the following remain true:
 
@@ -407,4 +732,4 @@ We should consider this rework direction on track only if all of the following r
   - anchored local reading
   - source-groundedness
 - continuity improves without turning the system into one giant memory prompt
-- backend and frontend remain coordinated under one initiative without becoming one tangled implementation block
+- backend changes stay compatible enough that parallel frontend work is not destabilized by surprise

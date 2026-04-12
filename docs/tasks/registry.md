@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-04-12T06:57:53Z`
+Last updated: `2026-04-12T08:36:36Z`
 
 ## Status Values
 - `active`
@@ -25,14 +25,18 @@ Last updated: `2026-04-12T06:57:53Z`
 - Lane: `mechanism_runtime`
 - Priority: `high`
 - Detail: `docs/implementation/new-reading-mechanism/attentional_v2_structural_rework_plan.md`
-- Next: begin implementation from the new post-Phase-9 structural rework plan:
+- Next: continue implementation from the new post-Phase-9 structural rework plan:
   - keep the work under the existing `attentional_v2` mechanism key rather than minting `attentional_v3`
-  - treat backend mechanism rework as the primary track
-  - keep frontend / integration follow-through in the same initiative as a secondary coordinated track
-  - start with `Phase A`:
-    - replace heuristic permission gating with the new `navigate.unitize + read + navigate.route` control skeleton
-    - preserve sentence-order fidelity, local pressure discipline, typed-state structure, and source-grounded evidence
-    - do not start with compaction or multi-sub-agent orchestration
+  - treat this plan as backend-only
+  - keep the existing frontend lane active in parallel under `TASK-V2-NATIVE-READING-PRESENTATION`
+  - `Phase A` is now landed:
+    - trigger output no longer suppresses formal正文 reading
+    - the live control skeleton is now `navigate.unitize + read + navigate.route`
+    - span authority now matches the exact chosen unit
+  - next implement `Phase B`:
+    - make `read` carry forward prior context while reading the current unit
+    - let `read` own `implicit uptake`, optional raw reaction, and optional requests for `active recall / look-back`
+    - do not introduce a standalone `reuse` action; prior-material use should remain an observational result of `read`
 - Jobs: none
 
 ### `TASK-V2-NATIVE-READING-PRESENTATION` — Redesign the routed reading surfaces around chapter text and anchored reactions

@@ -15,12 +15,26 @@ Update when: status changes, blockers appear, or phases complete.
 - Overall status:
   - `in_progress`
 - Current phase:
-  - `Post-Phase-9: Attentional_v2 Structural Rework And V2-Native Follow-Through`
+  - `Post-Phase-9: Attentional_v2 Backend Structural Rework`
 - Current executable plan:
   - `docs/implementation/new-reading-mechanism/attentional_v2_structural_rework_plan.md`
-  - mechanism rework is now the primary track
-  - frontend / integration follow-through remains in scope, but follows the mechanism checkpoints rather than replacing them
+  - this plan now owns backend mechanism rework only
+  - frontend work remains active in parallel, but stays outside this plan and continues under its own task/doc set
   - do not treat the long-span after-eval memo as the implementation plan
+- Backend structural rework checkpoint:
+  - `Phase A` is now landed in code under the existing `attentional_v2` mechanism key
+  - landed behavior:
+    - trigger output no longer decides whether正文 text receives a formal read
+    - the live control skeleton is now:
+      - `sentence intake`
+      - `navigate.unitize`
+      - `read`
+      - `navigate.route`
+    - span authority is now tied to the exact chosen unit rather than hidden tail-window reconstruction
+  - next active backend slice:
+    - `Phase B`
+    - make `read` carry forward prior context, produce `implicit uptake`, and optionally request `active recall / look-back`
+    - do not introduce a standalone `reuse` action; any use of prior material should appear as a natural reading result inside the `read` packet
 - Naming discipline:
   - the `Phase 0-9` labels in this file are implementation-plan stages
   - they are not the preferred vocabulary for explaining the mechanism's live reading loop

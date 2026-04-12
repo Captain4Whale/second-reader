@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-04-12T06:57:53Z`
+Last verified: `2026-04-12T08:36:36Z`
 
 ## Current Objective
 - Hold further `excerpt` mechanism polishing for now and treat the completed `excerpt surface v1.1` formal judged run as the current good-enough evidence bundle for product/storytelling decisions.
@@ -23,9 +23,21 @@ Last verified: `2026-04-12T06:57:53Z`
 - A new post-Phase-9 implementation line is now opening for `attentional_v2`:
   - evolve `attentional_v2` in place rather than minting `attentional_v3`
   - use `docs/implementation/new-reading-mechanism/attentional_v2_structural_rework_plan.md` as the execution blueprint
-  - treat backend mechanism rework as the primary track
-  - treat frontend/integration follow-through as a coordinated secondary track under the same initiative
+  - treat it as a backend structural rework plan, not a frontend work plan
+  - keep the existing frontend lane active in parallel under its own docs and tasks
   - keep the long-span after-eval memo as mechanism-evidence input rather than as the execution plan
+  - `Phase A` is now landed as the control-skeleton baseline:
+    - trigger output no longer decides whether正文 text receives a formal LLM reading turn
+    - the live backend loop now runs:
+      - `sentence intake`
+      - `navigate.unitize`
+      - `read`
+      - `navigate.route`
+    - span authority is now tied to the exact chosen unit
+  - the next backend slice is `Phase B`:
+    - make `read` carry forward prior context while reading the current unit
+    - let `read` own `implicit uptake`, optional raw reaction, and optional requests for `active recall / look-back`
+    - do not introduce a standalone `reuse` action; prior-material use should remain an observational result of `read`
 - Frontend direction is now fixed for the next product lane:
   - do not keep the old `iterator_v1` / section-first presentation as a co-equal product model
   - keep that older presentation shape only as a compatibility shell while V2-native surfaces are being built
@@ -193,6 +205,10 @@ Last verified: `2026-04-12T06:57:53Z`
 
 ## Current Strategy
 - Current mainline posture as of `2026-04-09`:
+  - `backend structural rework` is now an active mainline in parallel:
+    - keep `Phase A` as the landed baseline
+    - next implement `Phase B` read-context integration under the existing `attentional_v2` key
+    - treat prior-material use as something that naturally happens inside `read`, not as a separate mechanism action
   - `excerpt` is currently in a hold posture:
     - keep the completed formal excerpt run as the main product/demo evidence bundle
     - do not reopen another repair round unless later long-span or cutover discussion makes it necessary
