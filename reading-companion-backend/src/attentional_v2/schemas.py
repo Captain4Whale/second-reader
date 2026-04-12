@@ -198,13 +198,77 @@ class CarryForwardRef(TypedDict, total=False):
     move_id: str
 
 
+class SessionContinuityCapsule(TypedDict, total=False):
+    """Small session-continuity capsule that should stay cheap to reload every unit."""
+
+    recent_sentence_ids: list[str]
+    recent_meaning_units: list[list[str]]
+    recent_moves: list[dict[str, object]]
+    recent_reactions: list[dict[str, object]]
+
+
+class WorkingStateDigest(TypedDict, total=False):
+    """Prompt-facing digest of the current hot working state."""
+
+    gate_state: str
+    pressure_snapshot: dict[str, object]
+    hot_items: list[dict[str, object]]
+    open_questions: list[dict[str, object]]
+    live_tensions: list[dict[str, object]]
+    live_hypotheses: list[dict[str, object]]
+    live_motifs: list[dict[str, object]]
+
+
+class ReflectiveFrameDigest(TypedDict, total=False):
+    """Bounded reflective frame packet for the current chapter/book."""
+
+    chapter_frames: list[dict[str, object]]
+    book_frames: list[dict[str, object]]
+    durable_definitions: list[dict[str, object]]
+
+
+class ActiveFocusDigest(TypedDict, total=False):
+    """Small digest of what is currently active across local questions, moves, and reactions."""
+
+    open_questions: list[dict[str, object]]
+    live_tensions: list[dict[str, object]]
+    live_hypotheses: list[dict[str, object]]
+    recent_moves: list[dict[str, object]]
+    recent_reactions: list[dict[str, object]]
+
+
+class AnchorBankDigest(TypedDict, total=False):
+    """Prompt-facing digest of currently useful source-grounded anchors."""
+
+    active_anchors: list[dict[str, object]]
+
+
 class CarryForwardContext(TypedDict, total=False):
     """Small stable continuity packet passed into every formal read."""
 
+    packet_version: str
+    session_continuity_capsule: SessionContinuityCapsule
+    working_state_digest: WorkingStateDigest
+    chapter_reflective_frame: ReflectiveFrameDigest
+    active_focus_digest: ActiveFocusDigest
+    anchor_bank_digest: AnchorBankDigest
     working_pressure_digest: dict[str, object]
     reflective_digest: list[dict[str, object]]
     anchor_digest: list[dict[str, object]]
     continuity_digest: dict[str, object]
+    refs: list[CarryForwardRef]
+
+
+class NavigationContext(TypedDict, total=False):
+    """Small navigation packet used by navigate.unitize before the unit is chosen."""
+
+    packet_version: str
+    watch_state: dict[str, object]
+    session_continuity_capsule: SessionContinuityCapsule
+    working_state_digest: WorkingStateDigest
+    chapter_reflective_frame: ReflectiveFrameDigest
+    active_focus_digest: ActiveFocusDigest
+    anchor_bank_digest: AnchorBankDigest
     refs: list[CarryForwardRef]
 
 

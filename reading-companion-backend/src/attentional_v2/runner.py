@@ -81,6 +81,7 @@ from .state_ops import (
     apply_working_pressure_operations,
     upsert_anchor_record,
 )
+from .state_projection import build_navigation_context
 from .storage import (
     ATTENTIONAL_V2_MECHANISM_KEY,
     anchor_memory_file,
@@ -828,9 +829,21 @@ def read_attentional_v2(request: ReadRequest, mechanism: MechanismInfo) -> ReadR
                     chapter_sentences=sentences,
                     current_sentence_id=sentence_id,
                 )
+                navigation_context = build_navigation_context(
+                    chapter_ref=chapter_ref,
+                    current_sentence_id=sentence_id,
+                    local_buffer=local_buffer,
+                    trigger_state=trigger_state,
+                    working_pressure=working_pressure,
+                    anchor_memory=anchor_memory,
+                    reflective_summaries=reflective_summaries,
+                    move_history=move_history,
+                    reaction_records=reaction_records,
+                )
                 unitize_decision = navigate_unitize(
                     current_sentence=sentence,
                     preview_sentences=preview_sentences,
+                    navigation_context=navigation_context,
                     reader_policy=reader_policy,
                     output_language=provisioned.output_language,
                     output_dir=output_dir,

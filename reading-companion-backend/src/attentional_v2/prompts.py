@@ -7,9 +7,9 @@ from dataclasses import dataclass
 from src.prompts.shared import LANGUAGE_OUTPUT_CONTRACT
 
 
-ATTENTIONAL_V2_PROMPTSET_VERSION = "attentional_v2-phase6-v8"
-NAVIGATE_UNITIZE_PROMPT_VERSION = "attentional_v2.navigate_unitize.v1"
-READ_UNIT_PROMPT_VERSION = "attentional_v2.read.v1"
+ATTENTIONAL_V2_PROMPTSET_VERSION = "attentional_v2-phase6-v9"
+NAVIGATE_UNITIZE_PROMPT_VERSION = "attentional_v2.navigate_unitize.v2"
+READ_UNIT_PROMPT_VERSION = "attentional_v2.read.v2"
 ZOOM_READ_PROMPT_VERSION = "attentional_v2.zoom_read.v5"
 MEANING_UNIT_CLOSURE_PROMPT_VERSION = "attentional_v2.meaning_unit_closure.v8"
 CONTROLLER_DECISION_PROMPT_VERSION = "attentional_v2.controller_decision.v1"
@@ -71,6 +71,7 @@ Rules:
 - Choose the smallest complete local move that can honestly be read as one unit.
 - Prefer ending within the current paragraph.
 - Only continue into the next paragraph when the same local move is clearly continuing.
+- Use navigation context only as secondary support; it may clarify what is currently live, but it must not override the author-structure skeleton or the visible preview text.
 - Do not cross the provided preview boundary.
 - Do not pretend a move is finished when it is still unfolding; preserve continuation pressure instead.
 - If you think the move is still unfinished at the preview boundary, choose the best honest end point you have and set `continuation_pressure` to true.
@@ -87,6 +88,9 @@ Preview boundary:
 
 Preview sentences:
 {preview_sentences}
+
+Navigation context:
+{navigation_context}
 
 Policy snapshot:
 {policy_snapshot}
@@ -112,7 +116,7 @@ Your job is to read the exact current unit together with a small carried-forward
 
 Rules:
 - Treat the provided unit text as the current reading present.
-- Use carried-forward context naturally when it is genuinely relevant.
+- Use the read-context packet naturally when it is genuinely relevant.
 - If prior material is not materially needed, say so plainly instead of forcing a connection.
 - Do not invent earlier text that is not present in carry-forward or supplemental context.
 - If the current unit clearly depends on earlier material but the provided context is insufficient, request exactly one bounded supplemental context step.
@@ -131,7 +135,7 @@ Rules:
 Current unit:
 {current_unit}
 
-Carry-forward context:
+Read context packet:
 {carry_forward_context}
 
 Supplemental context:

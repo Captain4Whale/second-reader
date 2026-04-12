@@ -346,6 +346,8 @@ def test_attentional_v2_read_book_runs_live_loop_and_persists_compatibility_resu
     read_audits = [json.loads(line) for line in read_audit_lines]
     assert chapter_payload["visible_reaction_count"] >= 1
     assert captured_unit_reads == [["c1-s1"], ["c1-s2"]]
+    assert captured_carry_forward_contexts[0]["packet_version"] == "attentional_v2.state_packet.v1"
+    assert "working_state_digest" in captured_carry_forward_contexts[0]
     assert captured_carry_forward_contexts[0]["continuity_digest"]["recent_reactions"] == []
     assert captured_carry_forward_contexts[1]["continuity_digest"]["recent_reactions"]
     assert len(unitize_lines) == 2

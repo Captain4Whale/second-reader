@@ -51,6 +51,11 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - Each formal unit read now receives a small `carry-forward context` built from persisted state.
   - `read` may request at most one bounded supplemental step through `active_recall` or `look_back`.
   - `raw reaction` truth now comes directly from `read`, and private `read_audit` records capture context use.
+- Phase C.1 of the post-eval structural rework is now landed.
+  - Live prompt inputs now flow through a bounded internal `state_packet.v1` seam.
+  - `navigate.unitize` now receives packetized `navigation_context`.
+  - `read` now receives packetized read-context views that explicitly separate continuity, working-state, reflective, active-focus, and anchor-bank digests.
+  - Persisted runtime files and public compatibility surfaces remain unchanged in this slice.
 
 ## Naming Note
 - `Phase 3`, `Phase 4`, `Phase 5`, and `Phase 6` in this document refer to historical implementation-stage groupings, not to a user-facing or mechanism-intrinsic sequence of named runtime phases.
@@ -112,6 +117,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
 - `navigate.unitize` is now the sole selector of the next coverage unit.
   - Boundary choice is prompt-led and semantic.
   - Runtime guardrails only keep the unit from running away.
+  - It now also receives a bounded `navigation_context` packet built from current watch-state and state digests.
   - The fixed Phase A preview window is:
     - current paragraph remainder
     - plus the next paragraph in the same section
@@ -197,6 +203,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
 
 ## Context Packaging
 - Each LLM call should receive a structured packet rather than arbitrary raw chunks.
+- Phase C.1 now makes that packetization seam explicit through `state_packet.v1`.
 - The current scaffold persists node-level prompt manifests under `_mechanisms/attentional_v2/internal/prompt_manifests/*.json`.
 - The packet contains:
   - `structural frame`
@@ -212,6 +219,20 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
     - bounded recent anchor digest
     - recent continuity digest from `local_buffer + move_history + reaction_records`
     - declared reference ids so `read` can point back to the exact prior material it materially used
+  - packetized read-context view
+    - `session_continuity_capsule`
+    - `working_state_digest`
+    - `chapter_reflective_frame`
+    - `active_focus_digest`
+    - `anchor_bank_digest`
+    - legacy alias fields remain temporarily available so older helper code and audits do not break while deeper state migration is still pending
+  - packetized navigation view
+    - `watch_state`
+    - `session_continuity_capsule`
+    - `working_state_digest`
+    - `chapter_reflective_frame`
+    - `active_focus_digest`
+    - `anchor_bank_digest`
   - optional `supplemental_context`
     - one bounded `active_recall` packet from persisted state
     - or one exact `look_back` packet with earlier source text by explicit refs

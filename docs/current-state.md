@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-04-12T09:03:53Z`
+Last verified: `2026-04-12T10:48:34Z`
 
 ## Current Objective
 - Hold further `excerpt` mechanism polishing for now and treat the completed `excerpt surface v1.1` formal judged run as the current good-enough evidence bundle for product/storytelling decisions.
@@ -42,6 +42,19 @@ Last verified: `2026-04-12T09:03:53Z`
   - the next backend slice is `Phase C`:
     - restructure state and prompt packetization so long-distance continuity is easier to use, without collapsing back into one large memory blob
     - keep public/frontend compatibility surfaces stable while that deeper state work lands
+  - `Phase C.1` is now landed as the first packetization seam:
+    - live prompt inputs are now built through a bounded internal state packet layer instead of ad hoc per-node context assembly
+    - `navigate.unitize` now receives a small `navigation_context`
+    - `read` now receives a `state_packet.v1` read-context packet that explicitly separates:
+      - `session continuity capsule`
+      - `working_state` digest
+      - `chapter reflective frame`
+      - `active focus` digest
+      - `anchor bank` digest
+    - persisted runtime files and public compatibility surfaces remain unchanged
+  - the next backend slice is `Phase C.2`:
+    - migrate more of the current state territory toward the intended `working_state / concept_registry / thread_trace / reflective_frames / anchor_bank` ownership model
+    - keep `knowledge_activations` narrowed to helper territory while that migration lands
 - Frontend direction is now fixed for the next product lane:
   - do not keep the old `iterator_v1` / section-first presentation as a co-equal product model
   - keep that older presentation shape only as a compatibility shell while V2-native surfaces are being built
@@ -212,7 +225,8 @@ Last verified: `2026-04-12T09:03:53Z`
   - `backend structural rework` is now an active mainline in parallel:
     - keep `Phase A` as the landed control-skeleton baseline
     - keep `Phase B` as the landed read-context baseline under the existing `attentional_v2` key
-    - the next backend slice is `Phase C`, focused on state usability and packetization rather than on new public contracts
+    - keep `Phase C.1` as the landed packetization seam
+    - the next backend slice is `Phase C.2`, focused on deeper state-territory migration rather than on new public contracts
     - treat prior-material use as something that naturally happens inside `read`, not as a separate mechanism action
   - `excerpt` is currently in a hold posture:
     - keep the completed formal excerpt run as the main product/demo evidence bundle

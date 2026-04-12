@@ -25,6 +25,7 @@ from .schemas import (
     KnowledgeActivationsState,
     MeaningUnitClosureResult,
     MoveType,
+    NavigationContext,
     NavigateRouteDecision,
     PriorMaterialUse,
     PreviewRange,
@@ -1245,6 +1246,7 @@ def navigate_unitize(
     *,
     current_sentence: dict[str, object],
     preview_sentences: list[dict[str, object]],
+    navigation_context: NavigationContext | None = None,
     reader_policy: ReaderPolicy,
     output_language: str,
     output_dir: Path | None = None,
@@ -1289,6 +1291,7 @@ def navigate_unitize(
                 for sentence in preview_sentences
             ]
         ),
+        navigation_context=_json_block(dict(navigation_context or {})),
         policy_snapshot=_json_block(reader_policy),
         output_language_name=language_name(output_language),
     )

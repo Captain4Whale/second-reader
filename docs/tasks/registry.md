@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-04-12T09:03:53Z`
+Last updated: `2026-04-12T10:48:34Z`
 
 ## Status Values
 - `active`
@@ -37,9 +37,14 @@ Last updated: `2026-04-12T09:03:53Z`
     - `read` now owns the authoritative current-unit packet on the live path
     - the live runner now builds bounded carry-forward context and allows one bounded `active recall / look-back` supplement
     - raw reaction truth now comes directly from `read`, with mechanism-private `read_audit` records for context use
-  - next implement `Phase C`:
-    - restructure state and prompt packetization so long-distance continuity becomes easier to use without collapsing into one large memory blob
-    - keep public/frontend compatibility surfaces unchanged while that deeper state work lands
+  - `Phase C.1` is now landed:
+    - live prompt inputs now flow through a bounded internal `state_packet.v1` layer
+    - `navigate.unitize` now receives a small `navigation_context`
+    - `read` now receives a packetized read context that explicitly separates continuity capsule, working-state digest, reflective frame, active focus, and anchor-bank digest
+    - persisted runtime files and public/frontend compatibility surfaces remain unchanged
+  - next implement `Phase C.2`:
+    - continue the deeper state-territory migration toward `working_state / concept_registry / thread_trace / reflective_frames / anchor_bank`
+    - keep `knowledge_activations` narrowed to helper territory while that migration lands
 - Jobs: none
 
 ### `TASK-V2-NATIVE-READING-PRESENTATION` — Redesign the routed reading surfaces around chapter text and anchored reactions

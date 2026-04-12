@@ -207,7 +207,7 @@ def test_read_unit_includes_carry_forward_and_supplemental_context_in_prompt(tmp
     assert "\"sentence_id\": \"c1-s2\"" in captured["prompt"]
     assert "anchor:a-1" in captured["prompt"]
     assert "lookback:sentence:c1-s1" in captured["prompt"]
-    assert manifest["prompt_version"] == "attentional_v2.read.v1"
+    assert manifest["prompt_version"] == "attentional_v2.read.v2"
     assert result["move_hint"] == "bridge"
     assert result["continuation_pressure"] is True
     assert result["prior_material_use"]["supporting_ref_ids"] == ["anchor:a-1", "lookback:sentence:c1-s1"]

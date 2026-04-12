@@ -38,9 +38,20 @@ Update when: status changes, blockers appear, or phases complete.
     - `read` may request one bounded supplemental step through `active recall` or `look-back`
     - `raw reaction` truth now comes directly from `read`
     - mechanism-private `read_audit` records now capture carry-forward refs, supplemental-context satisfaction, and prior-material use
+  - `Phase C.1` is now landed in code under the existing `attentional_v2` mechanism key
+  - landed behavior:
+    - live prompt inputs now flow through a bounded internal `state_packet.v1` seam
+    - `navigate.unitize` now receives a packetized `navigation_context`
+    - `read` now receives a packetized read-context view that explicitly separates:
+      - `session continuity capsule`
+      - `working_state` digest
+      - `chapter reflective frame`
+      - `active focus` digest
+      - `anchor_bank` digest
+    - persisted runtime files and public compatibility surfaces remain unchanged
   - next active backend slice:
-    - `Phase C`
-    - restructure state and prompt packetization so long-distance continuity becomes easier to use
+    - `Phase C.2`
+    - continue the deeper state-territory migration so long-distance continuity becomes easier to use
     - keep public/frontend compatibility surfaces stable while that deeper state work lands
 - Naming discipline:
   - the `Phase 0-9` labels in this file are implementation-plan stages

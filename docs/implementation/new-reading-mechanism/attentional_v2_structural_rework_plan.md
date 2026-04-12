@@ -22,7 +22,12 @@ Implementation checkpoint:
   - bounded `carry-forward context` is now the default continuity path into `read`
   - `read` may request one bounded `active recall` or `look-back` supplement
   - raw reaction truth now comes directly from `read`
-- next backend slice: `Phase C`
+- `Phase C.1` is landed:
+  - live prompt inputs now flow through a bounded internal `state_packet.v1` seam
+  - `navigate.unitize` now receives a packetized `navigation_context`
+  - `read` now receives a packetized read-context view with explicit continuity / working-state / reflective / focus / anchor-bank separation
+  - persisted runtime files and public compatibility surfaces remain unchanged
+- next backend slice: `Phase C.2`
 
 Primary upstream evidence:
 
@@ -509,6 +514,11 @@ Goal:
 
 This phase should implement the new state shape and the derived prompt-input layer.
 
+Status:
+
+- `Phase C.1` landed on April 12, 2026 as the first packetization seam
+- the remaining open work for this phase is `Phase C.2+`, where deeper state-territory migration becomes real
+
 #### Concrete design target
 
 Keep V2's typed-state base, but stop exposing it to the model as an unstructured pile of stores.
@@ -616,6 +626,19 @@ The packetization layer should already assume an index-first loading policy.
   - keep `anchor_bank` as evidence territory only, not generic memory
 - `C5. continuity-focused memory usability`
   - recover V1's practical memory-packet strength without regressing to V1's looser ontology
+
+#### Landed packetization seam
+
+- live prompt inputs no longer need to assemble context ad hoc inside each caller
+- an internal `state_packet.v1` layer now derives bounded prompt inputs from current persisted stores
+- `navigate.unitize` now receives a packetized `navigation_context`
+- `read` now receives a packetized read-context view that explicitly separates:
+  - `session_continuity_capsule`
+  - `working_state_digest`
+  - `chapter_reflective_frame`
+  - `active_focus_digest`
+  - `anchor_bank_digest`
+- the current implementation intentionally keeps legacy compatibility aliases alongside the new packet fields so existing helpers and audits do not break while the deeper state migration is still pending
 
 #### Deterministic versus semantic boundary
 

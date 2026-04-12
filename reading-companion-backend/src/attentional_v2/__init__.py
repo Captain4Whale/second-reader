@@ -120,6 +120,7 @@ from .state_ops import (
     upsert_knowledge_activation,
     upsert_reflective_item,
 )
+from .state_projection import STATE_PACKET_VERSION, build_navigation_context, context_ref_ids
 from .survey import build_book_survey, build_revisit_index, write_book_survey_artifacts
 from .storage import ATTENTIONAL_V2_MECHANISM_KEY, artifact_map, initialize_artifact_tree
 
@@ -157,6 +158,7 @@ __all__ = [
     "build_default_reader_policy",
     "build_anchor_record",
     "build_book_survey",
+    "build_navigation_context",
     "build_unitize_preview",
     "build_normalized_eval_bundle",
     "build_shared_cursor",
@@ -195,6 +197,7 @@ __all__ = [
     "meaning_unit_closure",
     "load_full_checkpoint",
     "capture_local_continuity",
+    "context_ref_ids",
     "NavigateRouteDecision",
     "navigate_route",
     "navigate_unitize",
@@ -224,6 +227,7 @@ __all__ = [
     "set_knowledge_use_mode",
     "set_pressure_snapshot",
     "set_search_policy_mode",
+    "STATE_PACKET_VERSION",
     "set_trigger_result",
     "supersede_reflective_item",
     "upsert_anchor_record",
