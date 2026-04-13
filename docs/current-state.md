@@ -96,7 +96,7 @@ Last verified: `2026-04-13T12:59:13Z`
       - launcher:
         - `reading-companion-backend/scripts/orchestrate_post_phase_d_parallel_eval.py`
       - parent job id:
-        - `bgjob_post_phase_d_parallel_judged_eval_20260413`
+        - `bgjob_post_phase_d_parallel_judged_eval_retry1_20260413`
       - long-span run id:
         - `attentional_v2_post_phase_d_longspan_judged_20260413`
       - excerpt run id:

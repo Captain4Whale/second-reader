@@ -77,7 +77,7 @@ Last updated: `2026-04-13T12:59:13Z`
       - `attentional_v2_post_phase_d_longspan_judged_20260413`
       - `attentional_v2_post_phase_d_excerpt_regression_20260413`
     - parent job id:
-      - `bgjob_post_phase_d_parallel_judged_eval_20260413`
+      - `bgjob_post_phase_d_parallel_judged_eval_retry1_20260413`
     - execution posture:
       - reuse V1 baseline bundles, avoid V1 reruns
       - split independent windows/chapters into shard jobs
