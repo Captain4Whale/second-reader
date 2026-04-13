@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run the Post-Phase-D judged validation with a two-target shard scheduler."""
+"""Run the Post-Phase-D judged validation with full shard fan-out per stage."""
 
 from __future__ import annotations
 
@@ -552,40 +552,20 @@ def _wait_for_jobs(job_ids: list[str], *, poll_seconds: int, label: str) -> None
         time.sleep(poll_seconds)
 
 
-def run_target_queues(queues: dict[str, list[ShardTask]], *, poll_seconds: int, label: str) -> None:
-    active_by_target: dict[str, ShardTask | None] = {target_id: None for target_id in queues}
-    completed_ids: set[str] = set()
+def flatten_assigned_queues(queues: dict[str, list[ShardTask]], *, target_ids: tuple[str, ...] = TARGET_IDS) -> list[ShardTask]:
+    ordered: list[ShardTask] = []
+    for target_id in target_ids:
+        ordered.extend(queues.get(target_id, []))
+    return ordered
 
-    while True:
-        made_progress = False
-        for target_id, active in list(active_by_target.items()):
-            if active is None:
-                if queues[target_id]:
-                    task = queues[target_id].pop(0)
-                    launch_registered_job(task)
-                    active_by_target[target_id] = task
-                    made_progress = True
-                continue
 
-            status = _status_for(active.job_id)
-            log(f"{label} target={target_id} job={active.job_id} status={status}")
-            if status in TERMINAL_JOB_STATUSES and status not in SUCCESS_TERMINAL_STATUSES:
-                raise RuntimeError(f"{label} job failed: {active.job_id} status={status}")
-            if status in SUCCESS_TERMINAL_STATUSES:
-                completed_ids.add(active.job_id)
-                active_by_target[target_id] = None
-                made_progress = True
-                if queues[target_id]:
-                    task = queues[target_id].pop(0)
-                    launch_registered_job(task)
-                    active_by_target[target_id] = task
-                    made_progress = True
-
-        if all(active is None for active in active_by_target.values()) and all(not queue for queue in queues.values()):
-            log(f"{label} completed: {sorted(completed_ids)}")
-            return
-        if not made_progress:
-            time.sleep(poll_seconds)
+def launch_all_tasks(tasks: list[ShardTask], *, poll_seconds: int, label: str) -> None:
+    if not tasks:
+        return
+    for task in tasks:
+        launch_registered_job(task)
+    _wait_for_jobs([task.job_id for task in tasks], poll_seconds=poll_seconds, label=label)
+    log(f"{label} completed: {[task.job_id for task in tasks]}")
 
 
 def run_merge_jobs(*, poll_seconds: int) -> None:
@@ -635,17 +615,17 @@ def orchestrate(*, poll_seconds: int) -> int:
 
     runtime_queues = balanced_assign([*long_runtime_tasks(), *excerpt_runtime_tasks()])
     log(
-        "Runtime target queues: "
+        "Runtime target assignments: "
         + json.dumps({target: [task.item_id for task in tasks] for target, tasks in runtime_queues.items()}, ensure_ascii=False)
     )
-    run_target_queues(runtime_queues, poll_seconds=poll_seconds, label="runtime")
+    launch_all_tasks(flatten_assigned_queues(runtime_queues), poll_seconds=poll_seconds, label="runtime")
 
     judge_queues = balanced_assign([*long_judge_tasks(), *excerpt_judge_tasks()])
     log(
-        "Judge target queues: "
+        "Judge target assignments: "
         + json.dumps({target: [task.item_id for task in tasks] for target, tasks in judge_queues.items()}, ensure_ascii=False)
     )
-    run_target_queues(judge_queues, poll_seconds=poll_seconds, label="judge")
+    launch_all_tasks(flatten_assigned_queues(judge_queues), poll_seconds=poll_seconds, label="judge")
 
     run_merge_jobs(poll_seconds=poll_seconds)
     final_summary_ok()

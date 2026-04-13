@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-04-13T12:59:13Z`
+Last updated: `2026-04-13T14:16:45Z`
 
 ## Status Values
 - `active`
@@ -77,11 +77,13 @@ Last updated: `2026-04-13T12:59:13Z`
       - `attentional_v2_post_phase_d_longspan_judged_20260413`
       - `attentional_v2_post_phase_d_excerpt_regression_20260413`
     - parent job id:
-      - `bgjob_post_phase_d_parallel_judged_eval_retry1_20260413`
+      - `bgjob_post_phase_d_parallel_judged_eval_retry2_20260413`
     - execution posture:
       - reuse V1 baseline bundles, avoid V1 reruns
       - split independent windows/chapters into shard jobs
-      - keep two pinned LLM target slots for balanced calls
+      - pin every shard to one of the two shared MiniMax targets
+      - launch all independent runtime shards immediately instead of queueing one active shard per target
+      - keep each shard's internal reading loop serial
 - Archived diagnostic attempts:
   - `bgjob_value_of_others_ch8_debug_trace_20260413` (`failed`, archived after fixing registry-isolation bug in the launcher)
   - `bgjob_value_of_others_ch8_debug_trace_retry1_20260413` (`failed`, archived after verifying isolated registry load but hitting separate-key `MiniMax-M2.7` plan rejection)

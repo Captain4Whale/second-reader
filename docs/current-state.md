@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-04-13T12:59:13Z`
+Last verified: `2026-04-13T14:16:45Z`
 
 ## Current Objective
 - Hold further `excerpt` mechanism polishing for now and treat the completed `excerpt surface v1.1` formal judged run as the current good-enough evidence bundle for product/storytelling decisions.
@@ -96,7 +96,7 @@ Last verified: `2026-04-13T12:59:13Z`
       - launcher:
         - `reading-companion-backend/scripts/orchestrate_post_phase_d_parallel_eval.py`
       - parent job id:
-        - `bgjob_post_phase_d_parallel_judged_eval_retry1_20260413`
+        - `bgjob_post_phase_d_parallel_judged_eval_retry2_20260413`
       - long-span run id:
         - `attentional_v2_post_phase_d_longspan_judged_20260413`
       - excerpt run id:
@@ -105,7 +105,12 @@ Last verified: `2026-04-13T12:59:13Z`
         - reuse existing `iterator_v1` baseline bundles instead of rerunning V1
         - reuse the three completed smoke V2 long-span bundles and only newly read the two missing V2 long-span windows
         - run current V2 excerpt units against the reusable `excerpt surface v1.1` V1 baseline
-        - keep exactly two runtime/judge target slots pinned to `MiniMax-M2.7-personal` and `MiniMax-M2.7-personal-2`
+        - pin every runtime/judge shard to one of the two shared targets:
+          - `MiniMax-M2.7-personal`
+          - `MiniMax-M2.7-personal-2`
+        - launch all independent runtime shards immediately rather than queueing one active shard per target
+        - keep shard-internal reading serial, but allow full all-case fan-out across independent chapters/windows
+        - `retry1` was archived after the startup-race repair because the two-slot parent remained too conservative once we confirmed resumable checkpoints and wanted immediate full-case parallelism
     - the isolated debug-replay lane is now diagnosed but not currently active:
       - first attempt:
         - `bgjob_value_of_others_ch8_debug_trace_20260413`
