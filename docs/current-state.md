@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-04-12T16:40:00Z`
+Last verified: `2026-04-13T00:58:00Z`
 
 ## Current Objective
 - Hold further `excerpt` mechanism polishing for now and treat the completed `excerpt surface v1.1` formal judged run as the current good-enough evidence bundle for product/storytelling decisions.
@@ -79,6 +79,26 @@ Last verified: `2026-04-12T16:40:00Z`
     - warm resume now restores new-format state together with the latest usable continuation capsule instead of relying only on raw runtime/checkpoint state
     - `look_back` now returns one bounded earlier source span, and `read_audit` now records per-step supplemental activity, stop reason, and budget exhaustion
     - public/frontend compatibility surfaces remain unchanged
+  - active diagnostic follow-up is now also running against the post-Phase-D smoke:
+    - `value_of_others_private_en__8_10` produced repeated anomalous long-tail calls during the April 12 smoke
+    - a static size/content snapshot now lives at:
+      - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_post_phase_d_longspan_smoke_20260412/diagnostics/value_of_others_abnormal_call_snapshot_20260413.md`
+    - the current diagnosis is:
+      - the slowest `read_unit` and `navigate_unitize` calls were not driven by abnormally large local正文 spans
+      - full prompt baselines remain heavy because of carried context
+      - the most extreme wall-clock outliers still look primarily like provider long-tail plus timeout/retry accumulation rather than simple local-span inflation
+    - the isolated debug-replay lane is now diagnosed but not currently active:
+      - first attempt:
+        - `bgjob_value_of_others_ch8_debug_trace_20260413`
+        - archived after discovering that clearing target-catalog env vars with `pop()` was insufficient because backend `.env` loading repopulated them during import
+      - corrected retry:
+        - `bgjob_value_of_others_ch8_debug_trace_retry1_20260413`
+        - registry isolation was verified through:
+          - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_value_of_others_ch8_debug_legacykey_20260413/analysis/registry_snapshot.json`
+        - but the separate legacy key failed fast with `MiniMax-M2.7` plan/entitlement rejection rather than reproducing the slow-call path
+      - current consequence:
+        - no active isolated replay is running now
+        - a full prompt/response replay without touching the active eval pool requires another spare key with `MiniMax-M2.7` access, or must wait until using the main eval pool is acceptable
   - the next backend slice is not yet opened as code:
     - review the now-landed Phase D behavior and define the next bounded follow-up around slower continuity compaction, reflective promotion, or other post-read polish
     - do not reopen trigger authority, helper-contract retirement, or old-state compatibility in that next slice

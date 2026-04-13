@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-04-12T16:40:00Z`
+Last updated: `2026-04-13T00:58:00Z`
 
 ## Status Values
 - `active`
@@ -64,7 +64,15 @@ Last updated: `2026-04-12T16:40:00Z`
   - next define the post-Phase-D follow-up:
     - review whether slower compaction, reflective promotion, or other continuity polish should become the next bounded slice
     - keep `knowledge_activations` narrowed to helper territory unless a later explicit design pass changes that rule
-- Jobs: none
+- Active diagnosis/eval jobs:
+  - `bgjob_post_phase_d_longspan_smoke_20260412` (`running`)
+  - `bgjob_post_phase_d_followup_launcher_retry1_20260412` (`running`)
+- Archived diagnostic attempts:
+  - `bgjob_value_of_others_ch8_debug_trace_20260413` (`failed`, archived after fixing registry-isolation bug in the launcher)
+  - `bgjob_value_of_others_ch8_debug_trace_retry1_20260413` (`failed`, archived after verifying isolated registry load but hitting separate-key `MiniMax-M2.7` plan rejection)
+- Evidence addendum:
+  - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_post_phase_d_longspan_smoke_20260412/diagnostics/value_of_others_abnormal_call_snapshot_20260413.md`
+  - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_value_of_others_ch8_debug_legacykey_20260413/analysis/registry_snapshot.json`
 
 ### `TASK-V2-NATIVE-READING-PRESENTATION` — Redesign the routed reading surfaces around chapter text and anchored reactions
 - Status: `active`
