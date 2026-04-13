@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-04-13T00:58:00Z",
+  "updated_at": "2026-04-13T04:31:00Z",
   "tasks": [
     {
       "id": "TASK-ATTENTIONAL-V2-STRUCTURAL-REWORK",
@@ -38,9 +38,10 @@
         "reading-companion-backend/docs/research/claude_code_context_management_research_20260412.md",
         "docs/backend-reading-mechanisms/attentional_v2.md",
         "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_post_phase_d_longspan_smoke_20260412/diagnostics/value_of_others_abnormal_call_snapshot_20260413.md",
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_post_phase_d_longspan_smoke_20260412/diagnostics/value_of_others_progress_and_latency_check_20260413.md",
         "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_value_of_others_ch8_debug_legacykey_20260413/analysis/registry_snapshot.json"
       ],
-      "last_updated": "2026-04-13T00:58:00Z",
+      "last_updated": "2026-04-13T04:31:00Z",
       "last_updated_by": "codex"
     },
     {
