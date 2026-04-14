@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-04-14T12:40:00Z`
+Last updated: `2026-04-14T14:26:00Z`
 
 ## Status Values
 - `active`
@@ -44,11 +44,12 @@ Last updated: `2026-04-14T12:40:00Z`
     - keep `incidental_cover` supporting-only
   - next evaluation move:
     - the first judged run on this new surface is now launching under:
-      - `bgjob_user_level_selective_v1_judged_20260414`
+      - `bgjob_user_level_selective_v1_judged_parallel_20260414`
+    - execution is now split by `segment x mechanism`, so `attentional_v2` and `iterator_v1` run as independent shards instead of serializing inside one per-book shard
     - use the new parallel orchestrator:
       - `reading-companion-backend/scripts/orchestrate_user_level_selective_eval.py`
 - Jobs:
-  - `bgjob_user_level_selective_v1_judged_20260414`
+  - `bgjob_user_level_selective_v1_judged_parallel_20260414`
 
 ### `TASK-ATTENTIONAL-V2-STRUCTURAL-REWORK` — Execute the post-Phase-9 structural rework of `attentional_v2`
 - Status: `active`

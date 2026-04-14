@@ -25,6 +25,7 @@ from eval.attentional_v2.run_user_level_selective_comparison import (  # noqa: E
     _aggregate_results,
     _json_dump,
     _jsonl_load,
+    _mechanism_keys_for_filter,
     _render_report,
 )
 
@@ -36,11 +37,12 @@ DEFAULT_TARGET_IDS = ("MiniMax-M2.7-personal", "MiniMax-M2.7-personal-2")
 
 
 @dataclass(frozen=True)
-class SegmentPlan:
+class ShardPlan:
     segment_id: str
     source_id: str
     book_title: str
     covered_note_count: int
+    mechanism_key: str
     target_id: str
     shard_run_id: str
 
@@ -70,19 +72,32 @@ def _load_segment_note_ids(dataset_dir: Path) -> dict[str, list[str]]:
 def _assign_targets(
     *,
     selected_segments: list[dict[str, Any]],
+    mechanism_keys: tuple[str, ...],
     target_ids: tuple[str, ...],
     run_id: str,
-) -> list[SegmentPlan]:
+) -> list[ShardPlan]:
     if not target_ids:
         raise ValueError("at least one target id is required")
+    shard_rows = [
+        {
+            **row,
+            "mechanism_key": mechanism_key,
+        }
+        for row in selected_segments
+        for mechanism_key in mechanism_keys
+    ]
     ordered = sorted(
-        selected_segments,
-        key=lambda item: (-int(item.get("covered_note_count", 0) or 0), str(item.get("segment_id"))),
+        shard_rows,
+        key=lambda item: (
+            -int(item.get("covered_note_count", 0) or 0),
+            str(item.get("mechanism_key") or ""),
+            str(item.get("segment_id")),
+        ),
     )
     target_loads = {target_id: 0 for target_id in target_ids}
     target_counts = {target_id: 0 for target_id in target_ids}
     max_jobs_per_target = (len(ordered) + len(target_ids) - 1) // len(target_ids)
-    plans: list[SegmentPlan] = []
+    plans: list[ShardPlan] = []
     for row in ordered:
         available_targets = [
             target_id for target_id in target_ids if target_counts[target_id] < max_jobs_per_target
@@ -93,30 +108,31 @@ def _assign_targets(
         target_counts[target_id] += 1
         source_id = str(row["source_id"])
         segment_id = str(row["segment_id"])
+        mechanism_key = str(row["mechanism_key"])
         plans.append(
-            SegmentPlan(
+            ShardPlan(
                 segment_id=segment_id,
                 source_id=source_id,
                 book_title=str(row["book_title"]),
                 covered_note_count=note_weight,
+                mechanism_key=mechanism_key,
                 target_id=target_id,
-                shard_run_id=f"{run_id}/shards/{source_id}",
+                shard_run_id=f"{run_id}/shards/{source_id}__{mechanism_key}",
             )
         )
-    return sorted(plans, key=lambda item: item.segment_id)
+    return sorted(plans, key=lambda item: (item.segment_id, item.mechanism_key))
 
 
 def _launch_shard(
     *,
-    plan: SegmentPlan,
+    plan: ShardPlan,
     manifest_path: Path,
-    mechanism_filter: str,
     judge_mode: str,
     run_root: Path,
 ) -> subprocess.Popen[bytes]:
     shard_root = RUNS_ROOT / plan.shard_run_id
     shard_root.mkdir(parents=True, exist_ok=True)
-    log_path = run_root / "logs" / f"{plan.source_id}.log"
+    log_path = run_root / "logs" / f"{plan.source_id}__{plan.mechanism_key}.log"
     log_path.parent.mkdir(parents=True, exist_ok=True)
     command = [
         str(PYTHON),
@@ -126,7 +142,7 @@ def _launch_shard(
         "--manifest-path",
         str(manifest_path),
         "--mechanism-filter",
-        mechanism_filter,
+        plan.mechanism_key,
         "--judge-mode",
         judge_mode,
         "--segment-id",
@@ -177,7 +193,7 @@ def _merge_shards(
     *,
     run_id: str,
     manifest_path: Path,
-    plans: list[SegmentPlan],
+    plans: list[ShardPlan],
     mechanism_keys: tuple[str, ...],
 ) -> dict[str, Any]:
     run_root = RUNS_ROOT / run_id
@@ -186,7 +202,7 @@ def _merge_shards(
     dataset_dir = (BACKEND_ROOT / dataset_roots[0]).resolve() if dataset_roots else (BACKEND_ROOT / "state").resolve()
     note_case_ids_by_segment = _load_segment_note_ids(dataset_dir)
 
-    merged_note_cases: list[dict[str, Any]] = []
+    merged_note_cases_by_id: dict[str, dict[str, Any]] = {}
     shard_summaries: list[dict[str, Any]] = []
     for plan in plans:
         shard_root = RUNS_ROOT / plan.shard_run_id
@@ -198,6 +214,7 @@ def _merge_shards(
             {
                 "source_id": plan.source_id,
                 "segment_id": plan.segment_id,
+                "mechanism_key": plan.mechanism_key,
                 "target_id": plan.target_id,
                 "shard_run_id": plan.shard_run_id,
                 "note_case_count": shard_summary.get("note_case_count"),
@@ -207,7 +224,16 @@ def _merge_shards(
             note_case_path = shard_root / "note_cases" / f"{note_case_id}.json"
             if not note_case_path.exists():
                 raise FileNotFoundError(f"missing note-case payload: {note_case_path}")
-            merged_note_cases.append(json.loads(note_case_path.read_text(encoding="utf-8")))
+            payload = json.loads(note_case_path.read_text(encoding="utf-8"))
+            existing = merged_note_cases_by_id.get(note_case_id)
+            if existing is None:
+                merged_note_cases_by_id[note_case_id] = payload
+                continue
+            existing_mechanisms = dict(existing.get("mechanism_results") or {})
+            existing_mechanisms.update(dict(payload.get("mechanism_results") or {}))
+            existing["mechanism_results"] = existing_mechanisms
+
+    merged_note_cases = list(merged_note_cases_by_id.values())
 
     aggregate = _aggregate_results(note_case_payloads=merged_note_cases, mechanism_keys=mechanism_keys)
     aggregate.update(
@@ -238,7 +264,7 @@ def parse_args() -> argparse.Namespace:
         default=f"attentional_v2_user_level_selective_v1_judged_{datetime.now(timezone.utc).strftime('%Y%m%d')}",
     )
     parser.add_argument("--manifest-path", type=Path, default=MANIFEST_PATH)
-    parser.add_argument("--mechanism-filter", choices=("both",), default="both")
+    parser.add_argument("--mechanism-filter", choices=("both", "attentional_v2", "iterator_v1"), default="both")
     parser.add_argument("--judge-mode", choices=("llm",), default="llm")
     parser.add_argument("--target-id", action="append", dest="target_ids", default=[])
     parser.add_argument("--segment-id", action="append", dest="segment_ids", default=[])
@@ -258,7 +284,13 @@ def main() -> int:
         raise SystemExit("no selected segments available")
 
     target_ids = tuple(str(item) for item in (args.target_ids or list(DEFAULT_TARGET_IDS)))
-    plans = _assign_targets(selected_segments=selected_segments, target_ids=target_ids, run_id=str(args.run_id))
+    mechanism_keys = _mechanism_keys_for_filter(str(args.mechanism_filter))
+    plans = _assign_targets(
+        selected_segments=selected_segments,
+        mechanism_keys=mechanism_keys,
+        target_ids=target_ids,
+        run_id=str(args.run_id),
+    )
     run_root = RUNS_ROOT / str(args.run_id)
     run_root.mkdir(parents=True, exist_ok=True)
     _json_dump(
@@ -274,6 +306,7 @@ def main() -> int:
                     "source_id": plan.source_id,
                     "book_title": plan.book_title,
                     "covered_note_count": plan.covered_note_count,
+                    "mechanism_key": plan.mechanism_key,
                     "target_id": plan.target_id,
                     "shard_run_id": plan.shard_run_id,
                 }
@@ -288,10 +321,9 @@ def main() -> int:
 
     log(f"Launching {len(plans)} user-level selective shard(s) under run {args.run_id}")
     processes = {
-        plan.source_id: _launch_shard(
+        f"{plan.source_id}::{plan.mechanism_key}": _launch_shard(
             plan=plan,
             manifest_path=manifest_path,
-            mechanism_filter=str(args.mechanism_filter),
             judge_mode=str(args.judge_mode),
             run_root=run_root,
         )
@@ -308,7 +340,7 @@ def main() -> int:
         run_id=str(args.run_id),
         manifest_path=manifest_path,
         plans=plans,
-        mechanism_keys=("attentional_v2", "iterator_v1"),
+        mechanism_keys=mechanism_keys,
     )
     log(
         "Completed user-level selective run "
