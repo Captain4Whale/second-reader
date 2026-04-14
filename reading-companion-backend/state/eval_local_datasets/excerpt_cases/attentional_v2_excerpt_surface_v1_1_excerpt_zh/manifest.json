@@ -1,0 +1,65 @@
+{
+  "dataset_id": "attentional_v2_excerpt_surface_v1_1_excerpt_zh",
+  "family": "excerpt_cases",
+  "status": "historical_superseded",
+  "superseded_by": [
+    "state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1",
+    "eval/manifests/splits/attentional_v2_user_level_selective_v1_draft.json"
+  ],
+  "language_track": "zh",
+  "version": "2",
+  "description": "Excerpt surface v1.1 draft excerpt cases (zh).",
+  "primary_file": "cases.jsonl",
+  "question_ids": [
+    "EQ-CM-002",
+    "EQ-AV2-001",
+    "EQ-AV2-002",
+    "EQ-AV2-003",
+    "EQ-AV2-004",
+    "EQ-AV2-005",
+    "EQ-AV2-006"
+  ],
+  "source_manifest_refs": [
+    "state/dataset_build/build_runs/human_notes_guided_dataset_v1_20260404/manifests/source_books/attentional_v2_human_notes_guided_dataset_v1_source_books__scratch__human_notes_guided_dataset_v1_20260404.json",
+    "state/dataset_build/build_runs/human_notes_guided_dataset_v1_20260404/manifests/local_refs/attentional_v2_human_notes_guided_dataset_v1_local_refs__scratch__human_notes_guided_dataset_v1_20260404.json",
+    "state/dataset_build/build_runs/human_notes_guided_dataset_v1_20260404/manifests/corpora/attentional_v2_human_notes_guided_dataset_v1_corpus__scratch__human_notes_guided_dataset_v1_20260404.json",
+    "eval/manifests/source_books/attentional_v2_clustered_benchmark_v1_source_books.json",
+    "eval/manifests/local_refs/attentional_v2_clustered_benchmark_v1_local_refs.json",
+    "eval/manifests/corpora/attentional_v2_clustered_benchmark_v1_corpus.json"
+  ],
+  "split_refs": [
+    "eval/manifests/splits/attentional_v2_excerpt_surface_v1_1_draft.json"
+  ],
+  "storage_mode": "local-only",
+  "dataset_build_artifact_refs": [
+    "state/dataset_build/build_runs/excerpt_surface_v1_1_20260406/excerpt_surface_v1_1_summary.json"
+  ],
+  "freeze_criteria": {
+    "selection_mode": "excerpt_surface_retune",
+    "chapter_case_ids": [
+      "value_of_others_private_en__8",
+      "huochu_shengming_de_yiyi_private_zh__8",
+      "xidaduo_private_zh__15",
+      "nawaer_baodian_private_zh__13",
+      "nawaer_baodian_private_zh__22",
+      "supremacy_private_en__13",
+      "meiguoren_de_xingge_private_zh__19"
+    ],
+    "chapter_primary_target_band": {
+      "min": 8,
+      "max": 10
+    },
+    "chapter_hard_cap": 12,
+    "chapter_honest_short_floor": 6,
+    "duplicate_controls": [
+      "same_span_rejection",
+      "same_anchor_rejection",
+      "same_profile_overlap_rejection",
+      "same_profile_anchor_distance_guard"
+    ]
+  },
+  "freeze_counts": {
+    "row_count": 39,
+    "primary_count": 39
+  }
+}

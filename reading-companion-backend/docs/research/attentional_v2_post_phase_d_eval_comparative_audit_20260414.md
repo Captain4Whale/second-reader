@@ -1,5 +1,8 @@
 # Post-Phase-D 评测对照审计报告
 
+> Historical / superseded note:
+> this audit remains useful evidence for the older excerpt-surface line, but it should not be mistaken for the active local/user-level benchmark after the switch to the note-aligned `user-level selective v1` package.
+
 - 生成日期: `2026-04-14`
 - 对照 run: `attentional_v2_excerpt_surface_v1_1_judged_20260406` vs `attentional_v2_post_phase_d_excerpt_regression_20260413`；`attentional_v2_accumulation_benchmark_v1_judged_rerun_20260407` vs `attentional_v2_post_phase_d_longspan_judged_20260413`
 - 比较机制: `attentional_v2` 与 `iterator_v1`

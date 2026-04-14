@@ -1669,3 +1669,34 @@ The old active windows `nawaer_baodian_private_zh__wealth`, `nawaer_baodian_priv
 - `reading-companion-backend/src/attentional_v2/schemas.py`
 - `reading-companion-backend/tests/test_attentional_v2_phase_b.py`
 - `reading-companion-backend/tests/test_attentional_v2_resume.py`
+
+## Entry 59
+**ID**: DEC-062
+**Status**: active
+
+**Decision / Inflection**: Replace the old profile-driven `excerpt surface v1.1` active local benchmark with a note-aligned `user-level selective v1` benchmark built directly from aligned human notes and continuous reading segments.
+
+**Period**: April 14, 2026, after the post-Phase-D audit exposed the provenance ambiguity of the older excerpt-surface line and after direct review of the note-linked books showed that “human-notes-guided” chapter selection was still allowing machine-expanded same-chapter synthetic cases to masquerade as user-meaningful local targets.
+
+**Problem**: The older active local benchmark no longer matched the product question closely enough. It had become useful evidence about one chapter-scoped local-reading surface, but it was still built through profile-driven chapter mining after note-guided chapter selection. That meant many active excerpt cases were not the user's real highlights, even when the surface name and provenance fields made them look like they were. Once the project's local/user-level question was restated clearly as “did the reader visibly notice the things the real user highlighted?”, keeping a mined excerpt surface as the active pointer would have kept the benchmark semantically misaligned.
+
+**Alternatives considered**: Keep using `excerpt surface v1.1` as the active local benchmark and only fix its case provenance labels, continue the older notes-guided builder but forbid the most obvious same-chapter expansions, or postpone any local benchmark replacement until a later full benchmark-family redesign.
+
+**Why this path won**: The project needed to stop confusing “chapter-local interesting text” with “the user's real note targets.” A note-aligned benchmark restores the right object of evaluation directly: the mechanism reads one continuous segment that starts at book body start, and the benchmark then checks whether user-visible reactions cover the aligned human notes inside that segment. This keeps the reading setup honest, restores provenance clarity, removes synthetic same-chapter expansion from the active path, and makes `Selective Legibility` legible again as note recall rather than as success on builder-generated excerpt cases.
+
+**What changed in the system**: The active local/user-level split manifest is now `attentional_v2_user_level_selective_v1_draft.json`. The active package now lives under `state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1/` with one `reading_segment` per eligible note-linked book and one `note_case` per aligned note span. Segment construction now starts at body start and ends only after the segment covers at least the target note count at an honest structural boundary. The active runner is now `run_user_level_selective_comparison.py`, which evaluates `reader_character.selective_legibility` through note recall: `exact_match` auto-counts, non-exact cases go to judge, and only `focused_hit` also counts while `incidental_cover` stays supporting-only. The older `excerpt surface v1.1` split, dataset manifests, interpretation report, and related comparative audit remain preserved, but they are now labeled historical / superseded rather than active.
+
+**Why it matters later**: Future contributors will otherwise see both the older excerpt-surface reports and the new note-aligned package in the repo and may assume they are co-equal active local benchmarks. This entry records the intended interpretation: the old excerpt surface is still useful historical evidence, but the active local/user-level benchmark has been redefined around aligned human notes and continuous reading segments. It also records one current implementation constraint that matters for reruns: only `4` of the originally registered `5` note-linked books are eligible right now because `nawaer_baodian_private_zh` currently has `aligned_entry_count = 0` in the notes catalog.
+
+**Primary evidence**:
+- `docs/backend-reader-evaluation.md`
+- `docs/current-state.md`
+- `docs/tasks/registry.md`
+- `docs/tasks/registry.json`
+- `reading-companion-backend/eval/attentional_v2/user_level_selective_v1.py`
+- `reading-companion-backend/eval/attentional_v2/run_user_level_selective_comparison.py`
+- `reading-companion-backend/eval/manifests/splits/attentional_v2_user_level_selective_v1_draft.json`
+- `reading-companion-backend/state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1/manifest.json`
+- `reading-companion-backend/docs/evaluation/user_level/README.md`
+- `reading-companion-backend/docs/evaluation/excerpt/README.md`
+- `reading-companion-backend/docs/research/attentional_v2_post_phase_d_eval_comparative_audit_20260414.md`

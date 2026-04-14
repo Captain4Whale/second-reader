@@ -1,5 +1,8 @@
 # Post-Phase-D Excerpt 对照审计附录
 
+> Historical / superseded note:
+> this appendix audits the older excerpt-surface line and stays useful as historical evidence only. It is no longer the active local/user-level benchmark appendix after the move to the note-aligned `user-level selective v1` package.
+
 - 对照 run: `attentional_v2_excerpt_surface_v1_1_judged_20260406` vs `attentional_v2_post_phase_d_excerpt_regression_20260413`
 - 说明: 每个 case 都按同一模板列出 formal 原文、旧 V2、当前 V2、V1、judge 结果与审计解释。
 

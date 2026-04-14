@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-04-14T00:47:03Z`
+Last updated: `2026-04-14T12:40:00Z`
 
 ## Status Values
 - `active`
@@ -19,6 +19,32 @@ Last updated: `2026-04-14T00:47:03Z`
 - `cancelled`
 
 ## Active
+
+### `TASK-USER-LEVEL-SELECTIVE-V1` — Replace the active local/user-level benchmark with the note-aligned selective package
+- Status: `active`
+- Lane: `dataset_platform`
+- Priority: `high`
+- Detail: `docs/backend-reader-evaluation.md`
+- Next: keep the new active local/user-level pointer on `user-level selective v1` and treat the older `excerpt surface v1.1` line as historical / superseded evidence only.
+  - landed builder:
+    - `reading-companion-backend/eval/attentional_v2/user_level_selective_v1.py`
+  - landed runner:
+    - `reading-companion-backend/eval/attentional_v2/run_user_level_selective_comparison.py`
+  - active split manifest:
+    - `reading-companion-backend/eval/manifests/splits/attentional_v2_user_level_selective_v1_draft.json`
+  - active dataset package:
+    - `reading-companion-backend/state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1`
+  - current package truth:
+    - `4` reading segments
+    - `179` note cases
+    - `nawaer_baodian_private_zh` is currently skipped because the notes catalog reports `aligned_entry_count = 0`
+  - active metric:
+    - `Selective Legibility` only
+    - count `exact_match + focused_hit` as note recall
+    - keep `incidental_cover` supporting-only
+  - next evaluation move:
+    - launch the first judged run on this new surface instead of reopening the old chapter-scoped excerpt surface
+- Jobs: none
 
 ### `TASK-ATTENTIONAL-V2-STRUCTURAL-REWORK` — Execute the post-Phase-9 structural rework of `attentional_v2`
 - Status: `active`
@@ -310,7 +336,7 @@ Last updated: `2026-04-14T00:47:03Z`
 - Lane: `dataset_platform`
 - Priority: `high`
 - Detail: `docs/implementation/new-reading-mechanism/excerpt-surface-v1-1-draft.md`
-- Next: keep `excerpt surface v1.1` frozen with its explicit `5`-case exception on `nawaer_baodian_private_zh__22`; treat the completed formal judged run plus the new interpretation report as the durable excerpt evidence bundle, and start the next excerpt work from narrow `attentional_v2` local-anchor repair plus later ROI retune rather than rerunning this lane.
+- Next: keep `excerpt surface v1.1` frozen as historical / superseded evidence with its explicit `5`-case exception on `nawaer_baodian_private_zh__22`; do not use it as the active local/user-level benchmark pointer now that `user-level selective v1` has replaced that role.
 - Jobs:
   - `bgjob_excerpt_surface_v1_1_smoke_shard_a_20260406` (`completed`)
   - `bgjob_excerpt_surface_v1_1_smoke_shard_b_20260406` (`completed`)
@@ -329,7 +355,7 @@ Last updated: `2026-04-14T00:47:03Z`
 - Lane: `dataset_platform`
 - Priority: `high`
 - Detail: `docs/implementation/new-reading-mechanism/human-notes-guided-dataset-v1-freeze-draft.md`
-- Next: keep the completed `55`-row reviewed freeze stable as the current judged excerpt surface and as base material for `excerpt surface v1.1`; do not repoint the active benchmark automatically from this line alone
+- Next: keep the completed reviewed freeze as historical source material that fed the later excerpt-surface and note-aligned user-level lines; do not treat this task's output as the active benchmark pointer by itself.
 - Jobs:
   - `bgjob_human_notes_guided_dataset_v1_scratch_20260404` (`failed`)
   - `bgjob_human_notes_guided_dataset_v1_scratch_retry1_20260404` (`completed`)

@@ -1,6 +1,10 @@
 {
   "manifest_id": "attentional_v2_excerpt_surface_v1_1_draft",
   "description": "Excerpt surface v1.1 draft composed incrementally from reviewed notes-guided and clustered freezes.",
+  "status": "superseded",
+  "superseded_by": [
+    "attentional_v2_user_level_selective_v1_draft"
+  ],
   "targets": [
     "reader_character.selective_legibility",
     "reader_value.insight_and_clarification"

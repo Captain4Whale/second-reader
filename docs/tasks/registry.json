@@ -1,7 +1,43 @@
 {
   "version": 1,
-  "updated_at": "2026-04-14T00:47:03Z",
+  "updated_at": "2026-04-14T12:40:00Z",
   "tasks": [
+    {
+      "id": "TASK-USER-LEVEL-SELECTIVE-V1",
+      "title": "Replace the active local/user-level benchmark with the note-aligned selective package",
+      "status": "active",
+      "lane": "dataset_platform",
+      "priority": "high",
+      "detail_ref": "docs/backend-reader-evaluation.md",
+      "truth_refs": [
+        "docs/backend-reader-evaluation.md",
+        "docs/current-state.md",
+        "reading-companion-backend/docs/evaluation/README.md",
+        "reading-companion-backend/docs/evaluation/user_level/README.md"
+      ],
+      "decision_refs": [
+        "DEC-062"
+      ],
+      "job_refs": [],
+      "acceptance_ref": "docs/backend-reader-evaluation.md",
+      "next_action": "Keep the new active local/user-level pointer on user-level selective v1 and treat the older excerpt surface v1.1 line as historical / superseded evidence only. The landed builder and runner now live at reading-companion-backend/eval/attentional_v2/user_level_selective_v1.py and run_user_level_selective_comparison.py. The current package truth is 4 reading segments, 179 note cases, and one currently skipped source (nawaer_baodian_private_zh) because the notes catalog reports aligned_entry_count = 0. The next evaluation move is the first judged run on this new surface, not another rerun of the older chapter-scoped excerpt surface.",
+      "blocked_by": [],
+      "evidence_refs": [
+        "docs/backend-reader-evaluation.md",
+        "docs/current-state.md",
+        "reading-companion-backend/eval/attentional_v2/user_level_selective_v1.py",
+        "reading-companion-backend/eval/attentional_v2/run_user_level_selective_comparison.py",
+        "reading-companion-backend/eval/manifests/splits/attentional_v2_user_level_selective_v1_draft.json",
+        "reading-companion-backend/state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1/manifest.json",
+        "reading-companion-backend/state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1/segments.jsonl",
+        "reading-companion-backend/state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1/note_cases.jsonl",
+        "reading-companion-backend/docs/evaluation/user_level/README.md",
+        "reading-companion-backend/docs/evaluation/excerpt/README.md",
+        "docs/history/decision-log.md"
+      ],
+      "last_updated": "2026-04-14T12:40:00Z",
+      "last_updated_by": "codex"
+    },
     {
       "id": "TASK-ATTENTIONAL-V2-STRUCTURAL-REWORK",
       "title": "Execute the post-Phase-9 structural rework of attentional_v2",
@@ -456,7 +492,7 @@
         "bgjob_excerpt_surface_v1_1_smoke_supremacy_recovery_20260406"
       ],
       "acceptance_ref": "docs/implementation/new-reading-mechanism/excerpt-surface-v1-1-draft.md",
-      "next_action": "Keep excerpt surface v1.1 frozen with its explicit 5-case exception on nawaer_baodian_private_zh__22; treat the completed formal judged run plus the new interpretation report as the durable excerpt evidence bundle, and start the next excerpt work from narrow attentional_v2 local-anchor repair plus later ROI retune rather than rerunning this lane.",
+      "next_action": "Keep excerpt surface v1.1 frozen as historical / superseded evidence with its explicit 5-case exception on nawaer_baodian_private_zh__22; do not use it as the active local/user-level benchmark pointer now that user-level selective v1 has replaced that role.",
       "blocked_by": [],
       "evidence_refs": [
         "docs/implementation/new-reading-mechanism/excerpt-micro-slice-v1-draft.md",
@@ -484,7 +520,7 @@
         "reading-companion-backend/tests/test_question_aligned_case_construction.py",
         "reading-companion-backend/tests/test_run_excerpt_comparison.py"
       ],
-      "last_updated": "2026-04-06T11:41:52Z",
+      "last_updated": "2026-04-14T12:40:00Z",
       "last_updated_by": "codex"
     },
     {
@@ -1185,7 +1221,7 @@
         "bgjob_human_notes_guided_dataset_v1_first_review_zh_retry1_20260404"
       ],
       "acceptance_ref": "docs/implementation/new-reading-mechanism/human-notes-guided-dataset-v1-freeze-draft.md",
-      "next_action": "Keep the completed 55-row reviewed freeze stable as the current judged excerpt surface and as base material for excerpt surface v1.1; do not repoint the active benchmark automatically from this line alone.",
+      "next_action": "Keep the completed reviewed freeze as historical source material that fed the later excerpt-surface and note-aligned user-level lines; do not treat this task output as the active benchmark pointer by itself.",
       "blocked_by": [],
       "evidence_refs": [
         "docs/implementation/new-reading-mechanism/question-aligned-case-construction.md",
@@ -1227,7 +1263,7 @@
         "reading-companion-backend/eval/review_packets/archive/human_notes_guided_dataset_v1_excerpt_zh_wealth_repair_review_retry1_20260404/dataset_review_pipeline_summary.json",
         "reading-companion-backend/state/eval_local_datasets/excerpt_cases/attentional_v2_human_notes_guided_dataset_v1_excerpt_zh_reviewed_cluster_freeze_complete_20260404/manifest.json"
       ],
-      "last_updated": "2026-04-05T09:25:35Z",
+      "last_updated": "2026-04-14T12:40:00Z",
       "last_updated_by": "codex"
     }
   ]

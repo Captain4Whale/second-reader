@@ -1,5 +1,8 @@
 # Excerpt Surface v1.1 正式 Judged Eval 解读报告
 
+> Historical / superseded note:
+> this report remains durable evidence for the older `excerpt surface v1.1` line, but that surface is no longer the active local/user-level benchmark pointer after the switch to `user-level selective v1`.
+
 - Run ID: `attentional_v2_excerpt_surface_v1_1_judged_20260406`
 - Surface: `excerpt surface v1.1`
 - Compared mechanisms: `attentional_v2` vs `iterator_v1`

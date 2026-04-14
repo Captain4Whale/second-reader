@@ -7,10 +7,23 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-04-14T00:47:03Z`
+Last verified: `2026-04-14T12:40:00Z`
 
 ## Current Objective
-- Hold further `excerpt` mechanism polishing for now and treat the completed `excerpt surface v1.1` formal judged run as the current good-enough evidence bundle for product/storytelling decisions.
+- Replace the old active `excerpt` benchmark pointer with the new note-aligned `user-level selective v1` package.
+  - active split manifest:
+    - `reading-companion-backend/eval/manifests/splits/attentional_v2_user_level_selective_v1_draft.json`
+  - active dataset package:
+    - `reading-companion-backend/state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1`
+  - active runner:
+    - `reading-companion-backend/eval/attentional_v2/run_user_level_selective_comparison.py`
+  - active scope:
+    - `reader_character.selective_legibility` only
+    - score by note recall over aligned human notes
+  - current dataset truth:
+    - `4 / 5` registered note-linked books are currently eligible
+    - `nawaer_baodian_private_zh` is excluded because the current notes catalog reports `aligned_entry_count = 0`
+  - `excerpt surface v1.1` remains preserved as historical / superseded evidence, not as the active local/user-level benchmark pointer
 - Treat the cleaned `attentional_v2_accumulation_benchmark_v1_judged_rerun_20260407` full formal rerun as the current durable long-span evidence bundle.
   - the April 8 same-run recovery removed the lingering `mechanism_failure`
   - the April 9 targeted re-judge cleared the last surviving `insight_and_clarification` `judge_unavailable` on `value_of_others_private_en__8_10__probe_1` without relaunching the whole surface
@@ -197,7 +210,7 @@ Last verified: `2026-04-14T00:47:03Z`
 - Implementation-plan note:
   - stable `attentional_v2` doc promotion is now treated as resolved
   - the remaining live work is no longer "should we cut over?"; the backend evidence cleanup is now resolved and the next mainline work is later V2-native presentation planning
-- `excerpt surface v1.1` remains the latest valid formal excerpt evidence lane:
+- `excerpt surface v1.1` remains preserved as the latest completed formal chapter-scoped excerpt evidence lane, but it is now historical / superseded rather than the active local benchmark pointer:
   - formal run:
     - `attentional_v2_excerpt_surface_v1_1_judged_20260406`
   - top-line result:

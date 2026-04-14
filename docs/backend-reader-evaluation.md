@@ -101,22 +101,67 @@ Use `docs/backend-reading-mechanism.md` for shared mechanism-platform boundaries
 
 ## Split-Surface Evaluation Rule
 - The evaluation system may intentionally use different text surfaces for different north-star questions.
-- `reader_character.selective_legibility` should usually prefer an excerpt surface:
-  - dense local pressure
-  - chapter-scoped comparison units
-  - many reusable cases per read
-  - efficient comparison cadence
+- `reader_character.selective_legibility` should usually prefer a note-aligned user-level surface:
+  - one continuous reading segment per book
+  - the segment must begin at body start rather than dropping into a later chapter cold
+  - the judged targets should be real aligned human notes rather than machine-expanded synthetic excerpt cases
+  - the main metric should be note recall over user-visible reactions
 - `reader_character.coherent_accumulation` should usually prefer a bounded long-span surface:
   - one long chapter or one contiguous multi-chapter window
   - visible continuity, carryover, and callback pressure
   - enough span to test whether understanding compounds rather than resets
 - `reader_value.insight_and_clarification` is an orthogonal output-value axis.
-  - it may be scored on excerpt-surface cases
+  - it may be scored on local/user-level cases
   - it may also be scored on long-span window cases
-- `excerpt surface` is the semantic term for the chapter-scoped local-text evaluation surface.
+- `excerpt surface` is now a historical chapter-scoped local-text surface name used by older formal runs.
+- the current active local benchmark meaning is `user-level selective`.
   - `local-only` and `state/eval_local_datasets/` are storage/distribution terms only
   - source-origin labels such as `public`, `private`, `manual download`, or `agent-downloaded` remain provenance only
 - Stable evaluation practice should therefore avoid forcing excerpt and long-span datasets to share the same books or chapters when that coupling weakens fit or runtime efficiency.
+
+## Active User-Level Selective Benchmark Rule
+- The active local benchmark should now be built directly from aligned human notes.
+- Builder semantics should be:
+  - one `reading_segment` per eligible book
+  - one `note_case` per aligned human note that falls inside that segment
+  - no synthetic same-chapter expansion beyond directly aligned notes
+- `reading_segment` construction should follow these fixed boundaries:
+  - start at the first body sentence of the book
+  - keep reading until the segment covers at least `20` aligned notes by default
+  - after that threshold, prefer to stop at chapter end
+  - if chapter end would exceed the builder hard cap, fall back to the nearest section end
+  - if no section boundary is available inside that cap, fall back to the nearest paragraph end
+  - never cut inside a sentence
+- The current builder hard cap is an implementation detail, not a product truth.
+  - stable docs should preserve the boundary priority
+  - exact numeric defaults may stay in benchmark code and manifests
+- If a previously registered note-linked book no longer has aligned note spans, the active user-level package should exclude it honestly instead of synthesizing replacement cases.
+
+## Selective-Legibility Matching Rule
+- The active user-level selective benchmark currently scores only `reader_character.selective_legibility`.
+- The mechanism should first read the full `reading_segment`, then the benchmark should compare user-visible reactions against the aligned note cases.
+- Exact match should be narrow and automatic:
+  - only when the visible reaction quote and the note's aligned source span normalize to the same text
+- Non-exact matching should be judge-mediated:
+  - larger-span coverage
+  - partial overlap
+  - nearby but not exact coverage
+- The active judge labels are:
+  - `focused_hit`
+  - `incidental_cover`
+  - `miss`
+- The active note-recall metric counts only:
+  - `exact_match`
+  - `focused_hit`
+- `incidental_cover` is supporting evidence only and must not count toward note recall.
+- The active per-run summary should report:
+  - per-book note recall
+  - aggregate note recall
+  - exact-match count
+  - focused-hit count
+  - incidental-cover count
+  - miss count
+- `reader_value.insight_and_clarification` is intentionally deferred for this new active local benchmark until its own note-aligned scoring contract is designed explicitly.
 
 ## Coherent-Accumulation Interpretation Rule
 - `reader_character.coherent_accumulation` is not the same thing as generic whole-book memory.
@@ -182,6 +227,8 @@ Use `docs/backend-reading-mechanism.md` for shared mechanism-platform boundaries
 ## Active Benchmark Pointer Rule
 - Stable docs may name one active benchmark pointer while keeping earlier benchmark packages as historical evidence.
 - An active benchmark does not need to maximize breadth if the current project constraint is iteration speed under real token and time pressure.
+- The active local/user-level benchmark pointer now belongs to the note-aligned `user-level selective v1` package rather than to `excerpt surface v1.1`.
+- Older excerpt-surface freezes and their judged reports should remain readable as historical evidence, but they should be labeled `historical` / `superseded` once the active pointer moves.
 - A chapter-clustered benchmark is acceptable when it improves time-to-next-comparison by letting one chapter read support multiple excerpt judgments.
 - The clustered shape should still be explicit and reviewable:
   - selected chapters must be named directly
@@ -776,6 +823,7 @@ Use `docs/backend-reading-mechanism.md` for shared mechanism-platform boundaries
   - benchmark stratification must not use source-origin labels such as `public`, `private`, `manual download`, or `agent-downloaded` as if they were product-meaningful categories
 - The primary tracked dataset families under `reading-companion-backend/eval/datasets/` are:
   - `excerpt_cases/`
+  - `user_level_benchmarks/`
   - `chapter_corpora/`
   - `runtime_fixtures/`
   - `compatibility_fixtures/`
