@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import shutil
 import subprocess
 import sys
 import time
@@ -34,6 +35,15 @@ PYTHON = BACKEND_ROOT / ".venv" / "bin" / "python"
 RUNNER = BACKEND_ROOT / "eval" / "attentional_v2" / "run_user_level_selective_comparison.py"
 RUNS_ROOT = BACKEND_ROOT / "eval" / "runs" / "attentional_v2"
 DEFAULT_TARGET_IDS = ("MiniMax-M2.7-personal", "MiniMax-M2.7-personal-2")
+RETRYABLE_ERROR_MARKERS = (
+    "ReaderLLMError",
+    "timed out or interrupted",
+    "quota cooldown remains active",
+    "overloaded_error",
+    "unknown error, 520",
+    "Error code: 529",
+    "network_blocked",
+)
 
 
 @dataclass(frozen=True)
@@ -45,6 +55,10 @@ class ShardPlan:
     mechanism_key: str
     target_id: str
     shard_run_id: str
+
+    @property
+    def shard_key(self) -> str:
+        return f"{self.source_id}::{self.mechanism_key}"
 
 
 def utc_now() -> str:
@@ -123,6 +137,12 @@ def _assign_targets(
     return sorted(plans, key=lambda item: (item.segment_id, item.mechanism_key))
 
 
+def _filter_plans_by_shard_keys(plans: list[ShardPlan], shard_keys: set[str]) -> list[ShardPlan]:
+    if not shard_keys:
+        return plans
+    return [plan for plan in plans if plan.shard_key in shard_keys]
+
+
 def _launch_shard(
     *,
     plan: ShardPlan,
@@ -164,11 +184,45 @@ def _launch_shard(
     return process
 
 
-def _wait_for_shards(processes: dict[str, subprocess.Popen[bytes]]) -> dict[str, int]:
+def _log_path_for_plan(*, run_root: Path, plan: ShardPlan) -> Path:
+    return run_root / "logs" / f"{plan.source_id}__{plan.mechanism_key}.log"
+
+
+def _shard_root_for_plan(plan: ShardPlan) -> Path:
+    return RUNS_ROOT / plan.shard_run_id
+
+
+def _reset_failed_shard_outputs(plan: ShardPlan) -> None:
+    shard_root = _shard_root_for_plan(plan)
+    if shard_root.exists():
+        shutil.rmtree(shard_root)
+
+
+def _is_retryable_failure(*, log_path: Path) -> bool:
+    if not log_path.exists():
+        return False
+    try:
+        tail = "\n".join(log_path.read_text(errors="ignore").strip().splitlines()[-40:]).lower()
+    except Exception:
+        return False
+    return any(marker.lower() in tail for marker in RETRYABLE_ERROR_MARKERS)
+
+
+def _wait_for_shards(
+    *,
+    processes: dict[str, subprocess.Popen[bytes]],
+    plan_by_key: dict[str, ShardPlan],
+    manifest_path: Path,
+    judge_mode: str,
+    run_root: Path,
+    max_attempts: int,
+    retry_backoff_seconds: int,
+) -> dict[str, int]:
     exit_codes: dict[str, int] = {}
+    attempts = {key: 1 for key in processes}
     while processes:
         completed: list[str] = []
-        for source_id, process in processes.items():
+        for shard_key, process in processes.items():
             exit_code = process.poll()
             if exit_code is None:
                 continue
@@ -180,10 +234,37 @@ def _wait_for_shards(processes: dict[str, subprocess.Popen[bytes]]) -> dict[str,
                     log_handle.close()
                 except Exception:
                     pass
-            exit_codes[source_id] = int(exit_code)
-            completed.append(source_id)
-        for source_id in completed:
-            processes.pop(source_id, None)
+            plan = plan_by_key[shard_key]
+            log_path = _log_path_for_plan(run_root=run_root, plan=plan)
+            attempt = attempts[shard_key]
+            if (
+                int(exit_code) != 0
+                and attempt < max_attempts
+                and _is_retryable_failure(log_path=log_path)
+            ):
+                with log_path.open("ab") as handle:
+                    handle.write(
+                        (
+                            f"[{utc_now()}] retrying shard after recoverable failure "
+                            f"(attempt {attempt + 1}/{max_attempts}) in {retry_backoff_seconds}s\n"
+                        ).encode("utf-8")
+                    )
+                    handle.flush()
+                if retry_backoff_seconds > 0:
+                    time.sleep(retry_backoff_seconds)
+                _reset_failed_shard_outputs(plan)
+                processes[shard_key] = _launch_shard(
+                    plan=plan,
+                    manifest_path=manifest_path,
+                    judge_mode=judge_mode,
+                    run_root=run_root,
+                )
+                attempts[shard_key] = attempt + 1
+                continue
+            exit_codes[shard_key] = int(exit_code)
+            completed.append(shard_key)
+        for shard_key in completed:
+            processes.pop(shard_key, None)
         if processes:
             time.sleep(5)
     return exit_codes
@@ -195,6 +276,7 @@ def _merge_shards(
     manifest_path: Path,
     plans: list[ShardPlan],
     mechanism_keys: tuple[str, ...],
+    seed_run_ids: tuple[str, ...] = (),
 ) -> dict[str, Any]:
     run_root = RUNS_ROOT / run_id
     manifest = _load_manifest(manifest_path)
@@ -204,11 +286,25 @@ def _merge_shards(
 
     merged_note_cases_by_id: dict[str, dict[str, Any]] = {}
     shard_summaries: list[dict[str, Any]] = []
+    def _candidate_roots(plan: ShardPlan) -> list[Path]:
+        roots = [_shard_root_for_plan(plan)]
+        shard_dir_name = Path(plan.shard_run_id).name
+        roots.extend(RUNS_ROOT / seed_run_id / "shards" / shard_dir_name for seed_run_id in seed_run_ids)
+        return roots
+
     for plan in plans:
-        shard_root = RUNS_ROOT / plan.shard_run_id
+        shard_root = next(
+            (
+                candidate
+                for candidate in _candidate_roots(plan)
+                if (candidate / "summary" / "aggregate.json").exists()
+            ),
+            None,
+        )
+        if shard_root is None:
+            expected = [_shard_root_for_plan(plan), *(RUNS_ROOT / seed_run_id / "shards" / Path(plan.shard_run_id).name for seed_run_id in seed_run_ids)]
+            raise FileNotFoundError(f"missing shard summary for {plan.shard_key}: {expected}")
         shard_summary_path = shard_root / "summary" / "aggregate.json"
-        if not shard_summary_path.exists():
-            raise FileNotFoundError(f"missing shard summary: {shard_summary_path}")
         shard_summary = json.loads(shard_summary_path.read_text(encoding="utf-8"))
         shard_summaries.append(
             {
@@ -268,6 +364,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--judge-mode", choices=("llm",), default="llm")
     parser.add_argument("--target-id", action="append", dest="target_ids", default=[])
     parser.add_argument("--segment-id", action="append", dest="segment_ids", default=[])
+    parser.add_argument("--shard-key", action="append", dest="shard_keys", default=[])
+    parser.add_argument("--seed-run-id", action="append", dest="seed_run_ids", default=[])
+    parser.add_argument("--max-shard-attempts", type=int, default=3)
+    parser.add_argument("--retry-backoff-seconds", type=int, default=20)
     parser.add_argument("--dry-run", action="store_true")
     return parser.parse_args()
 
@@ -291,6 +391,9 @@ def main() -> int:
         target_ids=target_ids,
         run_id=str(args.run_id),
     )
+    plans = _filter_plans_by_shard_keys(plans, {str(item) for item in args.shard_keys})
+    if not plans:
+        raise SystemExit("no shard plans selected")
     run_root = RUNS_ROOT / str(args.run_id)
     run_root.mkdir(parents=True, exist_ok=True)
     _json_dump(
@@ -300,6 +403,9 @@ def main() -> int:
             "run_id": str(args.run_id),
             "manifest_path": str(manifest_path),
             "target_ids": list(target_ids),
+            "seed_run_ids": [str(item) for item in args.seed_run_ids],
+            "max_shard_attempts": int(args.max_shard_attempts),
+            "retry_backoff_seconds": int(args.retry_backoff_seconds),
             "plans": [
                 {
                     "segment_id": plan.segment_id,
@@ -321,7 +427,7 @@ def main() -> int:
 
     log(f"Launching {len(plans)} user-level selective shard(s) under run {args.run_id}")
     processes = {
-        f"{plan.source_id}::{plan.mechanism_key}": _launch_shard(
+        plan.shard_key: _launch_shard(
             plan=plan,
             manifest_path=manifest_path,
             judge_mode=str(args.judge_mode),
@@ -329,7 +435,16 @@ def main() -> int:
         )
         for plan in plans
     }
-    exit_codes = _wait_for_shards(processes)
+    plan_by_key = {plan.shard_key: plan for plan in plans}
+    exit_codes = _wait_for_shards(
+        processes=processes,
+        plan_by_key=plan_by_key,
+        manifest_path=manifest_path,
+        judge_mode=str(args.judge_mode),
+        run_root=run_root,
+        max_attempts=max(1, int(args.max_shard_attempts)),
+        retry_backoff_seconds=max(0, int(args.retry_backoff_seconds)),
+    )
     _json_dump(run_root / "meta" / "shard_exit_codes.json", exit_codes)
     failures = {source_id: code for source_id, code in exit_codes.items() if int(code) != 0}
     if failures:
@@ -341,6 +456,7 @@ def main() -> int:
         manifest_path=manifest_path,
         plans=plans,
         mechanism_keys=mechanism_keys,
+        seed_run_ids=tuple(str(item) for item in args.seed_run_ids),
     )
     log(
         "Completed user-level selective run "

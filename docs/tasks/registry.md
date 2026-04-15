@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-04-15T00:23:00Z`
+Last updated: `2026-04-15T11:34:00Z`
 
 ## Status Values
 - `active`
@@ -44,15 +44,26 @@ Last updated: `2026-04-15T00:23:00Z`
     - keep `incidental_cover` supporting-only
   - next evaluation move:
     - the first judged run on this new surface is now launching under:
-      - `bgjob_user_level_selective_v1_judged_parallel_retry1_20260415`
+      - `bgjob_user_level_selective_v1_failed_shards_retry2_20260415`
     - execution is now split by `segment x mechanism`, so `attentional_v2` and `iterator_v1` run as independent shards instead of serializing inside one per-book shard
     - the first mechanism-parallel attempt is preserved as failed evidence rather than overwritten:
       - `bgjob_user_level_selective_v1_judged_parallel_20260414`
       - failed because shard-scoped runs were still evaluating note cases from other segments, causing `KeyError` during merge-stage note-case evaluation
+    - the first retry is also preserved as failed evidence rather than overwritten:
+      - `bgjob_user_level_selective_v1_judged_parallel_retry1_20260415`
+      - failed after the code bug was fixed because `7 / 10` shards still died on provider-side timeout / quota-cooldown / `520` / `529` instability
+    - current rerun strategy:
+      - rerun only the `7` failed shards under `retry2`
+      - reuse the `3` successful shard outputs from `retry1` during final merge
+    - orchestrator behavior is now more automatic:
+      - failed shards with recoverable provider signatures are retried inside the orchestrator
+      - current defaults:
+        - `max_shard_attempts = 3`
+        - `retry_backoff_seconds = 30`
     - use the new parallel orchestrator:
       - `reading-companion-backend/scripts/orchestrate_user_level_selective_eval.py`
 - Jobs:
-  - `bgjob_user_level_selective_v1_judged_parallel_retry1_20260415`
+  - `bgjob_user_level_selective_v1_failed_shards_retry2_20260415`
 
 ### `TASK-ATTENTIONAL-V2-STRUCTURAL-REWORK` — Execute the post-Phase-9 structural rework of `attentional_v2`
 - Status: `active`

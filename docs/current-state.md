@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-04-15T00:23:00Z`
+Last verified: `2026-04-15T11:34:00Z`
 
 ## Current Objective
 - Replace the old active `excerpt` benchmark pointer with the new note-aligned `user-level selective v1` package.
@@ -31,11 +31,20 @@ Last verified: `2026-04-15T00:23:00Z`
     - launch the first judged `user-level selective v1` run with both `attentional_v2` and `iterator_v1`
     - execution is now split by `segment x mechanism`, so V1 and V2 run as independent shards instead of serializing inside one per-book shard
     - active background job:
-      - `bgjob_user_level_selective_v1_judged_parallel_retry1_20260415`
+      - `bgjob_user_level_selective_v1_failed_shards_retry2_20260415`
+      - this run reruns only the `7` failed shards from `retry1` and reuses the `3` successful shard outputs from `attentional_v2_user_level_selective_v1_judged_parallel_retry1_20260415` during final merge
+      - automatic recoverable-shard retry is now enabled inside the user-level orchestrator
+        - current defaults:
+          - `max_shard_attempts = 3`
+          - `retry_backoff_seconds = 30`
     - failed first mechanism-parallel attempt retained as failed evidence:
       - `bgjob_user_level_selective_v1_judged_parallel_20260414`
       - failure cause:
         - shard-scoped runs did not filter `note_cases` down to the selected `segment_id`, which caused `KeyError` during note-case evaluation/merge
+    - failed retry1 retained as failed evidence:
+      - `bgjob_user_level_selective_v1_judged_parallel_retry1_20260415`
+      - failure cause:
+        - the segment-filtering bug was fixed, but `7 / 10` shards still failed due to provider-side timeout / quota-cooldown / `520` / `529` instability
 - Treat the cleaned `attentional_v2_accumulation_benchmark_v1_judged_rerun_20260407` full formal rerun as the current durable long-span evidence bundle.
   - the April 8 same-run recovery removed the lingering `mechanism_failure`
   - the April 9 targeted re-judge cleared the last surviving `insight_and_clarification` `judge_unavailable` on `value_of_others_private_en__8_10__probe_1` without relaunching the whole surface

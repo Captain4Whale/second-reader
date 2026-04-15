@@ -36,7 +36,7 @@ The current active benchmark is `user-level selective v1`:
 The first judged run for this surface is now being launched:
 
 - background job:
-  - `bgjob_user_level_selective_v1_judged_parallel_retry1_20260415`
+  - `bgjob_user_level_selective_v1_failed_shards_retry2_20260415`
 - orchestrator:
   - [orchestrate_user_level_selective_eval.py](../../../scripts/orchestrate_user_level_selective_eval.py)
 - execution shape:
@@ -45,6 +45,15 @@ The first judged run for this surface is now being launched:
 - preserved failed attempt:
   - `bgjob_user_level_selective_v1_judged_parallel_20260414`
   - retained as failed evidence because shard-scoped runs were still evaluating note cases from other segments, which produced `KeyError` during note-case evaluation
+- preserved retry1 partial-failure attempt:
+  - `bgjob_user_level_selective_v1_judged_parallel_retry1_20260415`
+  - retained as failed evidence because the code bug was fixed but `7 / 10` shards still died on provider-side timeout / quota-cooldown / `520` / `529` instability
+- current retry2 posture:
+  - rerun only the failed `7` shards
+  - reuse the `3` successful retry1 shard outputs during final merge
+  - enable automatic shard retry inside the orchestrator for recoverable provider failures
+    - `max_shard_attempts = 3`
+    - `retry_backoff_seconds = 30`
 
 When the first judged run lands, add it here with:
 
