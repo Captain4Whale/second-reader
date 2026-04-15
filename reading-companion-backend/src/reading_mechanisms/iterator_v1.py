@@ -209,6 +209,9 @@ def _normalized_reactions(output_dir: Path, structure: dict[str, object]) -> lis
                         "content": str(reaction.get("content", "") or ""),
                         "search_query": str(reaction.get("search_query", "") or ""),
                         "search_results": list(reaction.get("search_results", [])),
+                        "target_locator": dict(reaction.get("target_locator") or {})
+                        if isinstance(reaction.get("target_locator"), dict)
+                        else None,
                     }
                 )
     return reactions

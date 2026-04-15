@@ -62,6 +62,7 @@ class NormalizedReaction(TypedDict, total=False):
     content: str
     search_query: str
     search_results: list[SearchHit]
+    target_locator: dict[str, object] | None
     primary_anchor: dict[str, object] | None
     related_anchors: list[dict[str, object]]
     supersedes_reaction_id: str

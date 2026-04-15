@@ -140,12 +140,22 @@ Use `docs/backend-reading-mechanism.md` for shared mechanism-platform boundaries
 ## Selective-Legibility Matching Rule
 - The active user-level selective benchmark currently scores only `reader_character.selective_legibility`.
 - The mechanism should first read the full `reading_segment`, then the benchmark should compare user-visible reactions against the aligned note cases.
+- Candidate retrieval must be source-location grounded, not text-similarity grounded.
+  - the first question is whether the visible reaction's quoted source span intersects the note case's canonical source span
+  - textual similarity, shared words, nearby ideas, or semantic relatedness must not admit a candidate when the source spans do not overlap
+  - the active coordinate system is the rendered reading segment substrate (`segment_source_v1`) because that is what mechanisms read during this benchmark
+  - original parsed-book sentence ids and note provenance remain audit metadata, not the primary matching coordinate
 - Exact match should be narrow and automatic:
-  - only when the visible reaction quote and the note's aligned source span normalize to the same text
-- Non-exact matching should be judge-mediated:
+  - only when the visible reaction source span and the note case source span are the same canonical char span
+- Non-exact matching should be judge-mediated only after real source-span overlap exists:
   - larger-span coverage
   - partial overlap
-  - nearby but not exact coverage
+  - candidate span contained by the note span
+- A user-visible reaction without a usable source locator is a benchmark contract failure for this surface.
+  - the runner should fail rather than silently falling back to quote/content string matching
+- Repeated reactions on the same source span do not strengthen the main note-recall score.
+  - deduplicate candidate spans before judging
+  - keep duplicate reaction counts only as a diagnostic signal
 - The active judge labels are:
   - `focused_hit`
   - `incidental_cover`

@@ -17,6 +17,13 @@ def _sentence(sentence_id: str, paragraph_index: int, text: str) -> dict[str, ob
         "paragraph_index": paragraph_index,
         "text": text,
         "text_role": "body",
+        "locator": {
+            "paragraph_index": paragraph_index,
+            "paragraph_start": paragraph_index,
+            "paragraph_end": paragraph_index,
+            "char_start": 0,
+            "char_end": len(text),
+        },
     }
 
 
@@ -65,7 +72,7 @@ def test_build_user_level_selective_v1_emits_real_note_cases_only(tmp_path: Path
             note_id="note_1",
             notes_id="notes_a",
             source_id="source_a",
-            note_text="Highlight one.",
+            note_text="Chapter 1 line 4.",
             note_comment="",
             raw_locator="1",
             section_label="Section 1",
@@ -74,6 +81,7 @@ def test_build_user_level_selective_v1_emits_real_note_cases_only(tmp_path: Path
             start_sentence_id="c2-s4",
             end_sentence_id="c2-s4",
             sentence_ids=("c2-s4",),
+            aligned_text="Chapter 1 line 4.",
             alignment_match_type="exact",
             alignment_score=1.0,
         ),
@@ -81,7 +89,7 @@ def test_build_user_level_selective_v1_emits_real_note_cases_only(tmp_path: Path
             note_id="note_2",
             notes_id="notes_a",
             source_id="source_a",
-            note_text="Highlight two.",
+            note_text="Chapter 1 line 8.",
             note_comment="",
             raw_locator="2",
             section_label="Section 1",
@@ -90,6 +98,7 @@ def test_build_user_level_selective_v1_emits_real_note_cases_only(tmp_path: Path
             start_sentence_id="c2-s8",
             end_sentence_id="c2-s8",
             sentence_ids=("c2-s8",),
+            aligned_text="Chapter 1 line 8.",
             alignment_match_type="exact",
             alignment_score=1.0,
         ),
@@ -97,7 +106,7 @@ def test_build_user_level_selective_v1_emits_real_note_cases_only(tmp_path: Path
             note_id="note_3",
             notes_id="notes_a",
             source_id="source_a",
-            note_text="Highlight three.",
+            note_text="Chapter 1 line 12.",
             note_comment="",
             raw_locator="3",
             section_label="Section 1",
@@ -106,6 +115,7 @@ def test_build_user_level_selective_v1_emits_real_note_cases_only(tmp_path: Path
             start_sentence_id="c2-s12",
             end_sentence_id="c2-s12",
             sentence_ids=("c2-s12",),
+            aligned_text="Chapter 1 line 12.",
             alignment_match_type="exact",
             alignment_score=1.0,
         ),
@@ -159,6 +169,9 @@ def test_build_user_level_selective_v1_emits_real_note_cases_only(tmp_path: Path
     assert segments[0]["termination_reason"] == "chapter_end_after_target_notes"
     assert len(note_cases) == 3
     assert [row["note_id"] for row in note_cases] == ["note_1", "note_2", "note_3"]
+    assert all(row["source_span_coordinate_system"] == "segment_source_v1" for row in note_cases)
+    assert all(row["source_span_slices"] for row in note_cases)
+    assert note_cases[0]["source_span_text"] == "Chapter 1 line 4."
     assert all(row["provenance"]["notes_id"] == "notes_a" for row in note_cases)
     assert (dataset_dir / "segment_sources" / "source_a__segment_1.txt").exists()
 
@@ -211,6 +224,7 @@ def test_choose_segment_end_falls_back_to_paragraph_when_chapter_tail_exceeds_ca
         start_sentence_id="c2-s2",
         end_sentence_id="c2-s2",
         sentence_ids=("c2-s2",),
+        aligned_text="Highlight one.",
         alignment_match_type="exact",
         alignment_score=1.0,
     )

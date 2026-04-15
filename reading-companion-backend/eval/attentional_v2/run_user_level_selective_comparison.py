@@ -7,13 +7,10 @@ from collections import Counter, defaultdict
 from contextlib import contextmanager
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
-from difflib import SequenceMatcher
 import json
 from pathlib import Path
-import re
 import shutil
 from typing import Any
-import unicodedata
 
 from eval.attentional_v2.llm_usage_summary import write_llm_usage_summary
 from eval.attentional_v2.user_level_selective_v1 import DATASET_DIR, MANIFEST_PATH
@@ -82,6 +79,8 @@ class NoteCase:
     note_comment: str
     source_span_text: str
     source_sentence_ids: list[str]
+    source_span_coordinate_system: str
+    source_span_slices: list[dict[str, Any]]
     chapter_id: int
     chapter_title: str
     section_label: str
@@ -95,64 +94,6 @@ def _timestamp() -> str:
 
 def _clean_text(value: object) -> str:
     return str(value or "").strip()
-
-
-def _normalize_compare_text(value: object) -> str:
-    text = unicodedata.normalize("NFKC", str(value or ""))
-    text = "".join(character for character in text if unicodedata.category(character) != "Cf")
-    text = re.sub(r"\s+", " ", text).strip().lower()
-    return text
-
-
-def _compact_text(value: object) -> str:
-    return re.sub(r"\s+", "", _normalize_compare_text(value))
-
-
-def _char_ngrams(text: str, *, size: int = 4) -> set[str]:
-    compact = _compact_text(text)
-    if not compact:
-        return set()
-    if len(compact) <= size:
-        return {compact}
-    return {compact[index : index + size] for index in range(0, len(compact) - size + 1)}
-
-
-def _overlap_ratio(left: str, right: str) -> float:
-    left_ngrams = _char_ngrams(left)
-    right_ngrams = _char_ngrams(right)
-    if not left_ngrams or not right_ngrams:
-        return 0.0
-    return len(left_ngrams & right_ngrams) / float(min(len(left_ngrams), len(right_ngrams)))
-
-
-def _candidate_overlap_score(*, note_case: NoteCase, candidate_text: str) -> tuple[float, list[str]]:
-    methods: list[str] = []
-    source_norm = _normalize_compare_text(note_case.source_span_text)
-    candidate_norm = _normalize_compare_text(candidate_text)
-    if not source_norm or not candidate_norm:
-        return 0.0, methods
-    if candidate_norm == source_norm:
-        methods.append("exact")
-        return 1.0, methods
-    if candidate_norm in source_norm or source_norm in candidate_norm:
-        methods.append("containment")
-    note_norm = _normalize_compare_text(note_case.note_text)
-    if note_norm and (candidate_norm in note_norm or note_norm in candidate_norm):
-        methods.append("note_text_containment")
-    overlap = _overlap_ratio(note_case.source_span_text, candidate_text)
-    if overlap >= 0.2:
-        methods.append("char_ngram_overlap")
-    similarity = SequenceMatcher(a=_compact_text(note_case.source_span_text), b=_compact_text(candidate_text)).ratio()
-    if similarity >= 0.35:
-        methods.append("sequence_similarity")
-    score = max(
-        0.0,
-        0.95 if "containment" in methods else 0.0,
-        0.8 if "note_text_containment" in methods else 0.0,
-        overlap,
-        similarity,
-    )
-    return score, methods
 
 
 def _json_dump(path: Path, payload: Any) -> None:
@@ -218,6 +159,12 @@ def _load_note_cases(dataset_dir: Path) -> list[NoteCase]:
             note_comment=str(row.get("note_comment", "")),
             source_span_text=str(row["source_span_text"]),
             source_sentence_ids=[str(item) for item in row.get("source_sentence_ids", [])],
+            source_span_coordinate_system=str(row.get("source_span_coordinate_system") or "segment_source_v1"),
+            source_span_slices=[
+                dict(item)
+                for item in row.get("source_span_slices", [])
+                if isinstance(item, dict)
+            ],
             chapter_id=int(row["chapter_id"]),
             chapter_title=str(row.get("chapter_title", "")),
             section_label=str(row.get("section_label", "")),
@@ -309,25 +256,164 @@ def _visible_reaction_text(reaction: dict[str, Any]) -> str:
     return _clean_text(reaction.get("anchor_quote")) or _clean_text(reaction.get("content"))
 
 
-def _reaction_candidates(bundle: dict[str, Any]) -> list[dict[str, Any]]:
-    reactions: list[dict[str, Any]] = []
+def _int_or_none(value: object) -> int | None:
+    try:
+        return int(value)  # type: ignore[arg-type]
+    except (TypeError, ValueError):
+        return None
+
+
+def _locator_to_slice(
+    locator: dict[str, Any],
+    *,
+    segment_id: str,
+    source_id: str,
+    text: str = "",
+) -> dict[str, Any] | None:
+    paragraph_index = _int_or_none(locator.get("paragraph_index") or locator.get("paragraph_start"))
+    char_start = _int_or_none(locator.get("char_start"))
+    char_end = _int_or_none(locator.get("char_end"))
+    if paragraph_index is None or char_start is None or char_end is None:
+        return None
+    if paragraph_index <= 0 or char_start < 0 or char_end <= char_start:
+        return None
+    return {
+        "coordinate_system": "segment_source_v1",
+        "segment_id": segment_id,
+        "source_id": source_id,
+        "paragraph_index": paragraph_index,
+        "char_start": char_start,
+        "char_end": char_end,
+        "text": text,
+    }
+
+
+def _reaction_source_slices(
+    reaction: dict[str, Any],
+    *,
+    segment_id: str,
+    source_id: str,
+) -> list[dict[str, Any]]:
+    visible_text = _visible_reaction_text(reaction)
+    direct_locator = reaction.get("target_locator")
+    if isinstance(direct_locator, dict):
+        direct_slice = _locator_to_slice(
+            direct_locator,
+            segment_id=segment_id,
+            source_id=source_id,
+            text=visible_text,
+        )
+        if direct_slice is not None:
+            return [direct_slice]
+    primary_anchor = reaction.get("primary_anchor")
+    if isinstance(primary_anchor, dict):
+        anchor_locator = primary_anchor.get("locator")
+        if isinstance(anchor_locator, dict):
+            anchor_slice = _locator_to_slice(
+                anchor_locator,
+                segment_id=segment_id,
+                source_id=source_id,
+                text=_clean_text(primary_anchor.get("quote")) or visible_text,
+            )
+            if anchor_slice is not None:
+                return [anchor_slice]
+    return []
+
+
+def _slice_key(slice_payload: dict[str, Any]) -> tuple[str, int, int, int]:
+    return (
+        _clean_text(slice_payload.get("segment_id")),
+        int(slice_payload.get("paragraph_index", 0) or 0),
+        int(slice_payload.get("char_start", 0) or 0),
+        int(slice_payload.get("char_end", 0) or 0),
+    )
+
+
+def _reaction_candidates(bundle: dict[str, Any], *, note_case: NoteCase) -> list[dict[str, Any]]:
+    reactions_by_span: dict[tuple[tuple[str, int, int, int], ...], dict[str, Any]] = {}
     for index, item in enumerate(bundle.get("reactions") or []):
         if not isinstance(item, dict):
             continue
         visible_text = _visible_reaction_text(item)
         if not visible_text:
             continue
-        reactions.append(
-            {
-                "reaction_id": _clean_text(item.get("reaction_id")) or f"reaction_{index + 1}",
+        source_slices = _reaction_source_slices(
+            item,
+            segment_id=note_case.segment_id,
+            source_id=note_case.source_id,
+        )
+        reaction_id = _clean_text(item.get("reaction_id")) or f"reaction_{index + 1}"
+        if not source_slices:
+            raise ValueError(
+                f"Visible reaction {reaction_id} in segment {note_case.segment_id} has no usable source locator; "
+                "user-level selective matching requires source-span locators."
+            )
+        span_key = tuple(sorted(_slice_key(source_slice) for source_slice in source_slices))
+        candidate = reactions_by_span.get(span_key)
+        if candidate is None:
+            reactions_by_span[span_key] = {
+                "reaction_id": reaction_id,
                 "type": _clean_text(item.get("type")),
                 "section_ref": _clean_text(item.get("section_ref")),
                 "anchor_quote": _clean_text(item.get("anchor_quote")),
                 "content": _clean_text(item.get("content")),
                 "visible_text": visible_text,
+                "source_span_slices": source_slices,
+                "duplicate_reaction_ids": [reaction_id],
+                "duplicate_reaction_count": 1,
             }
-        )
-    return reactions
+            continue
+        candidate["duplicate_reaction_ids"].append(reaction_id)
+        candidate["duplicate_reaction_count"] = int(candidate.get("duplicate_reaction_count", 1) or 1) + 1
+    return sorted(reactions_by_span.values(), key=lambda item: item["reaction_id"])
+
+
+def _slices_equal(left: list[dict[str, Any]], right: list[dict[str, Any]]) -> bool:
+    return sorted(_slice_key(item) for item in left) == sorted(_slice_key(item) for item in right)
+
+
+def _slice_contains(container: dict[str, Any], contained: dict[str, Any]) -> bool:
+    if _clean_text(container.get("segment_id")) != _clean_text(contained.get("segment_id")):
+        return False
+    if int(container.get("paragraph_index", 0) or 0) != int(contained.get("paragraph_index", 0) or 0):
+        return False
+    return int(container.get("char_start", 0) or 0) <= int(contained.get("char_start", 0) or 0) and int(
+        container.get("char_end", 0) or 0
+    ) >= int(contained.get("char_end", 0) or 0)
+
+
+def _slice_overlap_chars(left: dict[str, Any], right: dict[str, Any]) -> int:
+    if _clean_text(left.get("segment_id")) != _clean_text(right.get("segment_id")):
+        return 0
+    if int(left.get("paragraph_index", 0) or 0) != int(right.get("paragraph_index", 0) or 0):
+        return 0
+    start = max(int(left.get("char_start", 0) or 0), int(right.get("char_start", 0) or 0))
+    end = min(int(left.get("char_end", 0) or 0), int(right.get("char_end", 0) or 0))
+    return max(0, end - start)
+
+
+def _all_slices_contained(containers: list[dict[str, Any]], contained_items: list[dict[str, Any]]) -> bool:
+    return all(any(_slice_contains(container, item) for container in containers) for item in contained_items)
+
+
+def _source_span_relation(
+    *,
+    note_slices: list[dict[str, Any]],
+    candidate_slices: list[dict[str, Any]],
+) -> tuple[str, int, float]:
+    if _slices_equal(note_slices, candidate_slices):
+        note_chars = sum(int(item.get("char_end", 0) or 0) - int(item.get("char_start", 0) or 0) for item in note_slices)
+        return "exact_same_span", note_chars, 1.0
+    overlap_chars = sum(_slice_overlap_chars(note_slice, candidate_slice) for note_slice in note_slices for candidate_slice in candidate_slices)
+    if overlap_chars <= 0:
+        return "no_overlap", 0, 0.0
+    note_chars = sum(max(0, int(item.get("char_end", 0) or 0) - int(item.get("char_start", 0) or 0)) for item in note_slices)
+    coverage = overlap_chars / float(note_chars or 1)
+    if _all_slices_contained(candidate_slices, note_slices):
+        return "candidate_contains_note", overlap_chars, coverage
+    if _all_slices_contained(note_slices, candidate_slices):
+        return "note_contains_candidate", overlap_chars, coverage
+    return "partial_overlap", overlap_chars, coverage
 
 
 def _default_judgment(*, label: str, reason: str) -> dict[str, Any]:
@@ -371,15 +457,18 @@ def _judge_candidate_reaction(
 
 Return JSON only.
 
+The candidate was already selected by exact source-location overlap. Do not reward semantic similarity outside the overlapped source span.
+
 Use:
-- focused_hit: the reaction clearly puts its attention on the note's source span or its exact idea
-- incidental_cover: the reaction's quoted text happens to include or brush against the note, but the note is not the clear focus
-- miss: the reaction does not genuinely cover the note
+- focused_hit: the overlapping source span covers the note's important content and the reaction is focused enough on that span
+- incidental_cover: the reaction's quoted span intersects or contains the note, but the note is only incidental or the quote is too broad
+- miss: the source overlap is too weak, too tangential, or does not genuinely cover the note's important content
 """
     note_payload = {
         "note_case_id": note_case.note_case_id,
         "note_text": note_case.note_text,
         "source_span_text": note_case.source_span_text,
+        "source_span_slices": note_case.source_span_slices,
         "chapter_title": note_case.chapter_title,
         "section_label": note_case.section_label,
         "raw_locator": note_case.raw_locator,
@@ -390,6 +479,10 @@ Use:
         "section_ref": reaction["section_ref"],
         "anchor_quote": reaction["anchor_quote"],
         "content": reaction["content"],
+        "source_span_slices": reaction.get("source_span_slices", []),
+        "overlap_relation": reaction.get("overlap_relation", ""),
+        "overlap_coverage": reaction.get("overlap_coverage", 0.0),
+        "duplicate_reaction_count": reaction.get("duplicate_reaction_count", 1),
     }
     base_user_prompt = (
         f"Highlighted note:\n{json.dumps(note_payload, ensure_ascii=False, indent=2)}\n\n"
@@ -428,7 +521,7 @@ def _ranked_result_key(result: dict[str, Any]) -> tuple[int, int, float]:
     return (
         LABEL_PRIORITY.get(str(result.get("label")), 0),
         CONFIDENCE_PRIORITY.get(str(result.get("confidence")), 0),
-        float(result.get("candidate_score", 0.0) or 0.0),
+        float(result.get("overlap_coverage", 0.0) or 0.0),
     )
 
 
@@ -448,19 +541,21 @@ def evaluate_note_case_for_mechanism(
             "best_reaction": None,
             "judgment": _default_judgment(label="miss", reason="mechanism_unavailable"),
             "candidate_reactions": [],
+            "span_candidate_count": 0,
+            "duplicate_reaction_count": 0,
         }
 
     bundle = dict(mechanism_payload.get("normalized_eval_bundle") or {})
-    reactions = _reaction_candidates(bundle)
-    source_span_norm = _normalize_compare_text(note_case.source_span_text)
+    if note_case.source_span_coordinate_system != "segment_source_v1" or not note_case.source_span_slices:
+        raise ValueError(f"Note case {note_case.note_case_id} is missing segment-source span slices")
+    reactions = _reaction_candidates(bundle, note_case=note_case)
 
-    exact_hits = [
-        reaction
-        for reaction in reactions
-        if _normalize_compare_text(reaction["visible_text"]) == source_span_norm
-    ]
+    exact_hits = [reaction for reaction in reactions if _slices_equal(note_case.source_span_slices, reaction["source_span_slices"])]
     if exact_hits:
-        exact_reaction = min(exact_hits, key=lambda item: len(item["visible_text"]))
+        exact_reaction = min(exact_hits, key=lambda item: (int(item.get("duplicate_reaction_count", 1) or 1), item["reaction_id"]))
+        exact_reaction = dict(exact_reaction)
+        exact_reaction["overlap_relation"] = "exact_same_span"
+        exact_reaction["overlap_coverage"] = 1.0
         return {
             "status": "completed",
             "label": "exact_match",
@@ -469,21 +564,27 @@ def evaluate_note_case_for_mechanism(
             "judgment": {
                 "label": "exact_match",
                 "confidence": "high",
-                "reason": "Visible reaction quote exactly matched the aligned note span.",
+                "reason": "Visible reaction source span exactly matched the aligned note span.",
             },
             "candidate_reactions": [exact_reaction],
+            "span_candidate_count": len(exact_hits),
+            "duplicate_reaction_count": sum(int(item.get("duplicate_reaction_count", 1) or 1) for item in exact_hits),
         }
 
     shortlisted: list[dict[str, Any]] = []
     for reaction in reactions:
-        candidate_score, methods = _candidate_overlap_score(note_case=note_case, candidate_text=reaction["visible_text"])
-        if candidate_score <= 0.0:
+        relation, overlap_chars, overlap_coverage = _source_span_relation(
+            note_slices=note_case.source_span_slices,
+            candidate_slices=reaction["source_span_slices"],
+        )
+        if relation == "no_overlap":
             continue
         candidate = dict(reaction)
-        candidate["candidate_score"] = round(candidate_score, 3)
-        candidate["candidate_methods"] = methods
+        candidate["overlap_relation"] = relation
+        candidate["overlap_chars"] = overlap_chars
+        candidate["overlap_coverage"] = round(overlap_coverage, 4)
         shortlisted.append(candidate)
-    shortlisted.sort(key=lambda item: (-float(item["candidate_score"]), item["reaction_id"]))
+    shortlisted.sort(key=lambda item: (-float(item["overlap_coverage"]), item["reaction_id"]))
 
     if not shortlisted:
         return {
@@ -491,8 +592,10 @@ def evaluate_note_case_for_mechanism(
             "label": "miss",
             "counts_for_recall": False,
             "best_reaction": None,
-            "judgment": _default_judgment(label="miss", reason="no_candidate_overlap"),
+            "judgment": _default_judgment(label="miss", reason="no_candidate_source_span_overlap"),
             "candidate_reactions": [],
+            "span_candidate_count": 0,
+            "duplicate_reaction_count": 0,
         }
 
     evaluated_candidates: list[dict[str, Any]] = []
@@ -519,6 +622,10 @@ def evaluate_note_case_for_mechanism(
             "section_ref": best["section_ref"],
             "anchor_quote": best["anchor_quote"],
             "content": best["content"],
+            "source_span_slices": best["source_span_slices"],
+            "overlap_relation": best["overlap_relation"],
+            "overlap_coverage": best["overlap_coverage"],
+            "duplicate_reaction_count": best.get("duplicate_reaction_count", 1),
         },
         "judgment": {
             "label": best["label"],
@@ -526,6 +633,8 @@ def evaluate_note_case_for_mechanism(
             "reason": best["reason"],
         },
         "candidate_reactions": evaluated_candidates[:6],
+        "span_candidate_count": len(shortlisted),
+        "duplicate_reaction_count": sum(int(item.get("duplicate_reaction_count", 1) or 1) for item in shortlisted),
     }
 
 
@@ -557,6 +666,14 @@ def _aggregate_results(
             "focused_hit_count": label_counts.get("focused_hit", 0),
             "incidental_cover_count": label_counts.get("incidental_cover", 0),
             "miss_count": label_counts.get("miss", 0),
+            "span_candidate_count": sum(
+                int(payload["mechanism_results"][mechanism_key].get("span_candidate_count", 0) or 0)
+                for payload in scoped
+            ),
+            "duplicate_reaction_count": sum(
+                int(payload["mechanism_results"][mechanism_key].get("duplicate_reaction_count", 0) or 0)
+                for payload in scoped
+            ),
             "note_recall": round(
                 (
                     label_counts.get("exact_match", 0) + label_counts.get("focused_hit", 0)
@@ -576,6 +693,14 @@ def _aggregate_results(
                     4,
                 ),
                 "label_counts": dict(source_counts),
+                "span_candidate_count": sum(
+                    int(item["mechanism_results"][mechanism_key].get("span_candidate_count", 0) or 0)
+                    for item in items
+                ),
+                "duplicate_reaction_count": sum(
+                    int(item["mechanism_results"][mechanism_key].get("duplicate_reaction_count", 0) or 0)
+                    for item in items
+                ),
             }
         for language_track, items in sorted(by_language.items()):
             language_counts = Counter(str(item["mechanism_results"][mechanism_key]["label"]) for item in items)
@@ -587,6 +712,14 @@ def _aggregate_results(
                     4,
                 ),
                 "label_counts": dict(language_counts),
+                "span_candidate_count": sum(
+                    int(item["mechanism_results"][mechanism_key].get("span_candidate_count", 0) or 0)
+                    for item in items
+                ),
+                "duplicate_reaction_count": sum(
+                    int(item["mechanism_results"][mechanism_key].get("duplicate_reaction_count", 0) or 0)
+                    for item in items
+                ),
             }
         summary["mechanisms"][mechanism_key] = mechanism_summary
 
@@ -614,6 +747,8 @@ def _render_report(*, aggregate: dict[str, Any], run_id: str) -> str:
                 f"- focused hit: {payload['focused_hit_count']}",
                 f"- incidental cover: {payload['incidental_cover_count']}",
                 f"- miss: {payload['miss_count']}",
+                f"- source-span candidates: {payload['span_candidate_count']}",
+                f"- duplicate reactions across candidate spans: {payload['duplicate_reaction_count']}",
                 "",
             ]
         )

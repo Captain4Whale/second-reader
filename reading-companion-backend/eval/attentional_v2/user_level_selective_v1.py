@@ -16,6 +16,7 @@ from pathlib import Path
 import re
 import shutil
 from typing import Any
+import unicodedata
 
 from eval.attentional_v2.corpus_builder import ROOT, chapter_title, is_front_matter, write_json, write_jsonl
 from src.reading_runtime.provisioning import ensure_canonical_parse
@@ -28,7 +29,7 @@ DATASET_DIR = ROOT / "state" / "eval_local_datasets" / "user_level_benchmarks" /
 SEGMENTS_FILE = "segments.jsonl"
 NOTE_CASES_FILE = "note_cases.jsonl"
 SEGMENT_SOURCE_DIRNAME = "segment_sources"
-DEFAULT_VERSION = "2026-04-14"
+DEFAULT_VERSION = "2026-04-15"
 DEFAULT_TARGET_NOTE_COUNT = 20
 DEFAULT_HARD_SENTENCE_CAP = 350
 
@@ -91,6 +92,7 @@ class AlignedNote:
     start_sentence_id: str
     end_sentence_id: str
     sentence_ids: tuple[str, ...]
+    aligned_text: str
     alignment_match_type: str
     alignment_score: float
 
@@ -125,6 +127,18 @@ def _join_sentence_texts(sentences: list[dict[str, Any]], *, language_track: str
         return ""
     separator = " " if language_track == "en" else ""
     return separator.join(_clean_text(sentence.get("text")) for sentence in sentences if _clean_text(sentence.get("text")))
+
+
+def _normalized_join_separator(left: str, right: str) -> str:
+    if not left or not right:
+        return ""
+    if re.match(r"[\w\u4e00-\u9fff]", left[-1], flags=re.UNICODE) and re.match(
+        r"[\w\u4e00-\u9fff]",
+        right[0],
+        flags=re.UNICODE,
+    ):
+        return " "
+    return ""
 
 
 def _load_json(path: Path) -> dict[str, Any]:
@@ -189,6 +203,7 @@ def _load_aligned_notes(*, notes_id: str, source_id: str) -> list[AlignedNote]:
                     start_sentence_id=start_sentence_id,
                     end_sentence_id=end_sentence_id,
                     sentence_ids=tuple(str(item) for item in (row.get("matched_sentence_ids") or []) if _clean_text(item)),
+                    aligned_text=_clean_text((row.get("alignment") or {}).get("aligned_text")),
                     alignment_match_type=_clean_text((row.get("alignment") or {}).get("match_type")),
                     alignment_score=float((row.get("alignment") or {}).get("score") or 0.0),
                 )
@@ -249,6 +264,7 @@ def _flatten_document(
                     "text": _clean_text(sentence.get("text")),
                     "text_role": _clean_text(sentence.get("text_role")),
                     "language_track": language_track,
+                    "locator": dict(sentence.get("locator") or {}) if isinstance(sentence.get("locator"), dict) else {},
                 }
             )
             sentence_index[sentence_id] = position
@@ -263,25 +279,217 @@ def _flatten_document(
     return flat_sentences, sentence_index, paragraph_end_positions, chapter_end_positions
 
 
-def _note_source_span_text(
+def _normalize_with_offsets(value: str, offsets: list[Any] | None = None) -> tuple[str, list[Any]]:
+    raw_offsets = offsets if offsets is not None else [None] * len(value)
+    chars: list[tuple[str, Any]] = []
+    for character, offset in zip(value, raw_offsets, strict=False):
+        normalized = unicodedata.normalize("NFKC", character)
+        normalized = normalized.replace("“", '"').replace("”", '"')
+        normalized = normalized.replace("’", "'").replace("–", "-").replace("—", "-")
+        normalized = normalized.replace("…", "...")
+        normalized = normalized.lower()
+        for item in normalized:
+            chars.append((" " if item.isspace() else item, offset))
+
+    collapsed: list[tuple[str, Any]] = []
+    for character, offset in chars:
+        if character == " " and (not collapsed or collapsed[-1][0] == " "):
+            continue
+        collapsed.append((character, offset))
+    while collapsed and collapsed[0][0] == " ":
+        collapsed.pop(0)
+    while collapsed and collapsed[-1][0] == " ":
+        collapsed.pop()
+
+    punctuation = set(",.;:!?()\"'")
+    filtered: list[tuple[str, Any]] = []
+    for index, (character, offset) in enumerate(collapsed):
+        if character == " ":
+            previous_character = collapsed[index - 1][0] if index > 0 else ""
+            next_character = collapsed[index + 1][0] if index + 1 < len(collapsed) else ""
+            if previous_character in punctuation or next_character in punctuation:
+                continue
+        filtered.append((character, offset))
+    return "".join(character for character, _offset in filtered), [offset for _character, offset in filtered]
+
+
+def _render_segment_source(
+    *,
+    flat_sentences: list[dict[str, Any]],
+    start_position: int,
+    end_position: int,
+    language_track: str,
+) -> tuple[str, dict[str, dict[str, Any]], dict[int, str]]:
+    lines: list[str] = []
+    current_chapter_id: int | None = None
+    current_paragraph_key: tuple[int, int] | None = None
+    current_paragraph_sentences: list[dict[str, Any]] = []
+    segment_paragraph_index = 0
+    sentence_spans: dict[str, dict[str, Any]] = {}
+    paragraph_texts: dict[int, str] = {}
+
+    def append_blank_line() -> None:
+        if lines and lines[-1] != "":
+            lines.append("")
+
+    def emit_source_paragraph(sentences: list[dict[str, Any]]) -> None:
+        nonlocal segment_paragraph_index
+        if not sentences:
+            return
+        paragraph_text = _join_sentence_texts(sentences, language_track=language_track)
+        if not paragraph_text:
+            return
+        segment_paragraph_index += 1
+        paragraph_texts[segment_paragraph_index] = paragraph_text
+        search_from = 0
+        for sentence in sentences:
+            sentence_text = _clean_text(sentence.get("text"))
+            if not sentence_text:
+                continue
+            char_start = paragraph_text.find(sentence_text, search_from)
+            if char_start < 0:
+                char_start = search_from
+            char_end = char_start + len(sentence_text)
+            search_from = char_end
+            sentence_spans[str(sentence["sentence_id"])] = {
+                "paragraph_index": segment_paragraph_index,
+                "char_start": char_start,
+                "char_end": char_end,
+                "source_chapter_id": int(sentence["chapter_id"]),
+                "source_paragraph_index": int(sentence["paragraph_index"]),
+                "source_locator": dict(sentence.get("locator") or {}),
+            }
+        lines.append(paragraph_text)
+
+    for sentence in flat_sentences[start_position : end_position + 1]:
+        chapter_id = int(sentence["chapter_id"])
+        paragraph_key = (chapter_id, int(sentence["paragraph_index"]))
+        if current_chapter_id != chapter_id:
+            if current_paragraph_sentences:
+                emit_source_paragraph(current_paragraph_sentences)
+                append_blank_line()
+                current_paragraph_sentences = []
+            append_blank_line()
+            segment_paragraph_index += 1
+            chapter_title_text = str(sentence["chapter_title"])
+            paragraph_texts[segment_paragraph_index] = chapter_title_text
+            lines.append(chapter_title_text)
+            append_blank_line()
+            current_chapter_id = chapter_id
+            current_paragraph_key = None
+        if current_paragraph_key is not None and paragraph_key != current_paragraph_key:
+            emit_source_paragraph(current_paragraph_sentences)
+            append_blank_line()
+            current_paragraph_sentences = []
+        current_paragraph_key = paragraph_key
+        current_paragraph_sentences.append(sentence)
+    if current_paragraph_sentences:
+        emit_source_paragraph(current_paragraph_sentences)
+    return "\n".join(line.rstrip() for line in lines).strip() + "\n", sentence_spans, paragraph_texts
+
+
+def _note_source_span(
     *,
     note: AlignedNote,
     flat_sentences: list[dict[str, Any]],
     sentence_index: dict[str, int],
     language_track: str,
-) -> tuple[str, list[str]]:
+    segment_sentence_spans: dict[str, dict[str, Any]],
+    segment_paragraph_texts: dict[int, str],
+    segment_id: str,
+) -> tuple[str, list[str], list[dict[str, Any]]]:
     start_index = sentence_index[note.start_sentence_id]
     end_index = sentence_index[note.end_sentence_id]
     span_sentences = flat_sentences[start_index : end_index + 1]
-    grouped: dict[tuple[int, int], list[dict[str, Any]]] = defaultdict(list)
-    ordered_keys: list[tuple[int, int]] = []
+    normalized_parts: list[str] = []
+    normalized_offsets: list[tuple[int, int] | None] = []
+    previous_normalized = ""
     for sentence in span_sentences:
-        key = (int(sentence["chapter_id"]), int(sentence["paragraph_index"]))
-        if key not in grouped:
-            ordered_keys.append(key)
-        grouped[key].append(sentence)
-    paragraphs = [_join_sentence_texts(grouped[key], language_track=language_track) for key in ordered_keys]
-    return "\n\n".join(paragraph for paragraph in paragraphs if paragraph), [str(sentence["sentence_id"]) for sentence in span_sentences]
+        sentence_id = str(sentence["sentence_id"])
+        segment_span = segment_sentence_spans.get(sentence_id)
+        if not segment_span:
+            raise ValueError(f"Missing segment-source locator for note {note.note_id} sentence {sentence_id}")
+        sentence_text = _clean_text(sentence.get("text"))
+        char_start = int(segment_span["char_start"])
+        source_offsets = [
+            (int(segment_span["paragraph_index"]), char_start + offset)
+            for offset in range(len(sentence_text))
+        ]
+        normalized_sentence, sentence_offsets = _normalize_with_offsets(sentence_text, source_offsets)
+        joiner = _normalized_join_separator(previous_normalized, normalized_sentence)
+        if joiner:
+            normalized_parts.append(joiner)
+            normalized_offsets.extend([None] * len(joiner))
+        normalized_parts.append(normalized_sentence)
+        normalized_offsets.extend(sentence_offsets)
+        previous_normalized = normalized_sentence
+
+    normalized_source = "".join(normalized_parts)
+    match_text_candidates = [note.note_text]
+    if note.aligned_text and note.aligned_text not in match_text_candidates:
+        match_text_candidates.append(note.aligned_text)
+    match_start = -1
+    normalized_note = ""
+    matched_source_text_kind = ""
+    for match_text in match_text_candidates:
+        normalized_candidate, _note_offsets = _normalize_with_offsets(match_text)
+        candidate_start = normalized_source.find(normalized_candidate)
+        if candidate_start >= 0:
+            match_start = candidate_start
+            normalized_note = normalized_candidate
+            matched_source_text_kind = "note_text" if match_text == note.note_text else "aligned_text"
+            break
+    if match_start < 0:
+        raise ValueError(
+            f"Aligned note {note.note_id} cannot be mapped to a segment-source char span; "
+            f"neither note_text nor aligned_text is an exact normalized substring of the aligned source sentences."
+        )
+    match_end = match_start + len(normalized_note)
+    matched_offsets = [offset for offset in normalized_offsets[match_start:match_end] if offset is not None]
+    if not matched_offsets:
+        raise ValueError(f"Aligned note {note.note_id} mapped only to separator characters")
+
+    slices: list[dict[str, Any]] = []
+    by_paragraph: dict[int, list[int]] = defaultdict(list)
+    for paragraph_index, char_offset in matched_offsets:
+        by_paragraph[int(paragraph_index)].append(int(char_offset))
+    source_sentence_ids = [str(sentence["sentence_id"]) for sentence in span_sentences]
+    for paragraph_index in sorted(by_paragraph):
+        offsets = by_paragraph[paragraph_index]
+        char_start = min(offsets)
+        char_end = max(offsets) + 1
+        paragraph_text = segment_paragraph_texts.get(paragraph_index, "")
+        slices.append(
+            {
+                "coordinate_system": "segment_source_v1",
+                "segment_id": segment_id,
+                "source_id": note.source_id,
+                "paragraph_index": paragraph_index,
+                "char_start": char_start,
+                "char_end": char_end,
+                "text": paragraph_text[char_start:char_end],
+                "source_sentence_ids": source_sentence_ids,
+                "matched_source_text_kind": matched_source_text_kind,
+            }
+        )
+    source_span_text = "\n\n".join(slice_payload["text"] for slice_payload in slices if slice_payload["text"])
+    return source_span_text, source_sentence_ids, slices
+
+
+def _render_segment_text(
+    *,
+    flat_sentences: list[dict[str, Any]],
+    start_position: int,
+    end_position: int,
+    language_track: str,
+) -> str:
+    rendered, _sentence_spans, _paragraph_texts = _render_segment_source(
+        flat_sentences=flat_sentences,
+        start_position=start_position,
+        end_position=end_position,
+        language_track=language_track,
+    )
+    return rendered
 
 
 def _section_end_position(
@@ -335,42 +543,6 @@ def _choose_segment_end(
     if paragraph_end < target_note_end_position:
         paragraph_end = limit_position
     return min(paragraph_end, limit_position), "paragraph_end_after_hard_cap"
-
-
-def _render_segment_text(
-    *,
-    flat_sentences: list[dict[str, Any]],
-    start_position: int,
-    end_position: int,
-    language_track: str,
-) -> str:
-    lines: list[str] = []
-    current_chapter_id: int | None = None
-    current_paragraph_key: tuple[int, int] | None = None
-    current_paragraph_sentences: list[dict[str, Any]] = []
-    for sentence in flat_sentences[start_position : end_position + 1]:
-        chapter_id = int(sentence["chapter_id"])
-        paragraph_key = (chapter_id, int(sentence["paragraph_index"]))
-        if current_chapter_id != chapter_id:
-            if current_paragraph_sentences:
-                lines.append(_join_sentence_texts(current_paragraph_sentences, language_track=language_track))
-                lines.append("")
-                current_paragraph_sentences = []
-            if lines and lines[-1] != "":
-                lines.append("")
-            lines.append(str(sentence["chapter_title"]))
-            lines.append("")
-            current_chapter_id = chapter_id
-            current_paragraph_key = None
-        if current_paragraph_key is not None and paragraph_key != current_paragraph_key:
-            lines.append(_join_sentence_texts(current_paragraph_sentences, language_track=language_track))
-            lines.append("")
-            current_paragraph_sentences = []
-        current_paragraph_key = paragraph_key
-        current_paragraph_sentences.append(sentence)
-    if current_paragraph_sentences:
-        lines.append(_join_sentence_texts(current_paragraph_sentences, language_track=language_track))
-    return "\n".join(line.rstrip() for line in lines).strip() + "\n"
 
 
 def _catalog_asset_by_source_id(catalog: dict[str, Any]) -> dict[str, dict[str, Any]]:
@@ -474,15 +646,13 @@ def build_user_level_selective_v1(
 
         segment_id = f"{source_id}__segment_1"
         segment_source_path = segment_sources_dir / f"{segment_id}.txt"
-        segment_source_path.write_text(
-            _render_segment_text(
-                flat_sentences=flat_sentences,
-                start_position=0,
-                end_position=segment_end_position,
-                language_track=provisioned.output_language,
-            ),
-            encoding="utf-8",
+        segment_source_text, segment_sentence_spans, segment_paragraph_texts = _render_segment_source(
+            flat_sentences=flat_sentences,
+            start_position=0,
+            end_position=segment_end_position,
+            language_track=provisioned.output_language,
         )
+        segment_source_path.write_text(segment_source_text, encoding="utf-8")
 
         segments_rows.append(
             {
@@ -499,15 +669,19 @@ def build_user_level_selective_v1(
                 "covered_note_count": len(segment_notes),
                 "termination_reason": termination_reason,
                 "segment_source_path": f"{SEGMENT_SOURCE_DIRNAME}/{segment_id}.txt",
+                "source_span_coordinate_system": "segment_source_v1",
             }
         )
 
         for note in segment_notes:
-            source_span_text, source_sentence_ids = _note_source_span_text(
+            source_span_text, source_sentence_ids, source_span_slices = _note_source_span(
                 note=note,
                 flat_sentences=flat_sentences,
                 sentence_index=sentence_index,
                 language_track=provisioned.output_language,
+                segment_sentence_spans=segment_sentence_spans,
+                segment_paragraph_texts=segment_paragraph_texts,
+                segment_id=segment_id,
             )
             note_case_rows.append(
                 {
@@ -522,6 +696,8 @@ def build_user_level_selective_v1(
                     "note_comment": note.note_comment,
                     "source_span_text": source_span_text,
                     "source_sentence_ids": source_sentence_ids,
+                    "source_span_coordinate_system": "segment_source_v1",
+                    "source_span_slices": source_span_slices,
                     "chapter_id": note.chapter_id,
                     "chapter_title": note.chapter_title,
                     "section_label": note.section_label,
@@ -533,6 +709,7 @@ def build_user_level_selective_v1(
                         "alignment_score": note.alignment_score,
                         "start_sentence_id": note.start_sentence_id,
                         "end_sentence_id": note.end_sentence_id,
+                        "source_coordinate_note": "source_span_slices are in the rendered reading segment coordinate system; source_sentence_ids preserve original parsed-book provenance.",
                     },
                 }
             )

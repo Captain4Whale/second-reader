@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-04-15T11:50:00Z`
+Last verified: `2026-04-15T14:35:00Z`
 
 ## Current Objective
 - Replace the old active `excerpt` benchmark pointer with the new note-aligned `user-level selective v1` package.
@@ -26,29 +26,13 @@ Last verified: `2026-04-15T11:50:00Z`
     - active package now contains:
       - `5` reading segments
       - `203` note cases
+    - every active note case now carries a strict `segment_source_v1` char-span under `source_span_slices`
+      - this is the source-coordinate system used for `Selective Legibility` candidate retrieval, because the mechanisms read the rendered `segment_sources/*.txt` substrate
+      - original parsed-book sentence ids remain as provenance for audit, not as the primary matching coordinate
   - `excerpt surface v1.1` remains preserved as historical / superseded evidence, not as the active local/user-level benchmark pointer
   - current evaluation move:
-    - launch the first judged `user-level selective v1` run with both `attentional_v2` and `iterator_v1`
-    - execution is now split by `segment x mechanism`, so V1 and V2 run as independent shards instead of serializing inside one per-book shard
-    - active background job:
-      - `bgjob_user_level_selective_v1_failed_shards_retry2_20260415`
-      - this run reruns only the `7` failed shards from `retry1` and reuses the `3` successful shard outputs from `attentional_v2_user_level_selective_v1_judged_parallel_retry1_20260415` during final merge
-      - automatic recoverable-shard retry is now enabled inside the user-level orchestrator
-        - current defaults:
-          - `max_shard_attempts = 3`
-          - `retry_backoff_seconds = 30`
-      - registry-level long-horizon auto-recovery is now also enabled for this job
-        - current policy:
-          - `auto_recovery_mode = recoverable`
-          - `auto_recovery_interval_seconds = 300`
-          - `auto_recovery_max_relaunches = 0` (`0` means unlimited)
-        - the checker script now supports watchdog mode:
-          - `reading-companion-backend/scripts/check_background_jobs.py --watch --auto-recover`
-        - the currently running watchdog writes:
-          - pid file:
-            - `reading-companion-backend/state/job_registry/background_job_watchdog.pid`
-          - log:
-            - `reading-companion-backend/state/job_registry/logs/background_job_watchdog.log`
+    - the first judged `user-level selective v1` run must be relaunched only after the strict source-span retrieval contract is in place
+    - no active background eval job is currently valid
     - failed first mechanism-parallel attempt retained as failed evidence:
       - `bgjob_user_level_selective_v1_judged_parallel_20260414`
       - failure cause:
@@ -57,6 +41,10 @@ Last verified: `2026-04-15T11:50:00Z`
       - `bgjob_user_level_selective_v1_judged_parallel_retry1_20260415`
       - failure cause:
         - the segment-filtering bug was fixed, but `7 / 10` shards still failed due to provider-side timeout / quota-cooldown / `520` / `529` instability
+    - invalidated retry2 retained as bug-diagnostic evidence:
+      - `bgjob_user_level_selective_v1_failed_shards_retry2_20260415`
+      - stopped on April 15 after discovering the runner was using string-similarity candidate retrieval instead of strict source-span overlap
+      - this run must not be used as V1/V2 mechanism evidence
 - Treat the cleaned `attentional_v2_accumulation_benchmark_v1_judged_rerun_20260407` full formal rerun as the current durable long-span evidence bundle.
   - the April 8 same-run recovery removed the lingering `mechanism_failure`
   - the April 9 targeted re-judge cleared the last surviving `insight_and_clarification` `judge_unavailable` on `value_of_others_private_en__8_10__probe_1` without relaunching the whole surface

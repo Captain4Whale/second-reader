@@ -1730,3 +1730,33 @@ The old active windows `nawaer_baodian_private_zh__wealth`, `nawaer_baodian_priv
 - `docs/tasks/registry.md`
 - `docs/tasks/registry.json`
 - `reading-companion-backend/docs/evaluation/user_level/README.md`
+
+## Entry 61
+**ID**: DEC-064
+**Status**: active
+
+**Decision / Inflection**: Make `user-level selective v1` candidate retrieval strictly source-span grounded and invalidate the April 15 retry2 run that admitted candidates by string similarity.
+
+**Period**: April 15, 2026, during inspection of the first judged `user-level selective v1` execution after several shards showed extreme note-case judge expansion.
+
+**Problem**: The active user-level runner was supposed to test whether the reader visibly noticed the user's aligned note spans. Instead, its candidate retrieval admitted reactions when their quote/content text was merely similar to the note span. That made unrelated same-theme reactions enter LLM judging, caused huge candidate explosions, and, more importantly, changed the benchmark question from “did the reader quote the source location?” into “did the reader say something textually similar?” This was a benchmark-contract bug, not a mechanism result.
+
+**Alternatives considered**: Keep broad text-similarity retrieval and batch judge candidates more efficiently, add a higher string-similarity threshold, or move the eligibility gate to exact source-position overlap before any LLM judge call.
+
+**Why this path won**: `Selective Legibility` is a source-location question. LLM-as-judge is useful only after a real location overlap exists, to decide whether the overlap is focused or merely incidental. It must not be used to recover candidates that have no source-position overlap. The active benchmark therefore needs strict source-span eligibility, fail-fast locator requirements, and duplicate-span diagnostics rather than repeated judging of same-span reactions.
+
+**What changed in the system**: The active note-case package now carries `segment_source_v1` char-span slices for every note case. Both mechanism-normalized reaction exports expose source locators for visible reactions. `run_user_level_selective_comparison.py` now deduplicates by canonical span and admits only candidates whose source spans intersect the note case span. Exact same-span matches auto-count; non-exact overlap candidates go to the existing `focused_hit / incidental_cover / miss` judge; visible reactions without usable locators fail the benchmark run instead of falling back to string matching. The invalid `bgjob_user_level_selective_v1_failed_shards_retry2_20260415` run was stopped and retained only as bug-diagnostic evidence.
+
+**Why it matters later**: Without this entry, future contributors could mistake the retry2 slowdown and partial results for evidence about `attentional_v2` or `iterator_v1`. This records that those results are invalid because the harness tested the wrong eligibility condition. It also preserves the stable rule that user-level note recall is grounded in source-position overlap, not semantic or textual resemblance.
+
+**Primary evidence**:
+- `docs/backend-reader-evaluation.md`
+- `docs/current-state.md`
+- `docs/tasks/registry.md`
+- `docs/tasks/registry.json`
+- `reading-companion-backend/docs/evaluation/user_level/README.md`
+- `reading-companion-backend/eval/attentional_v2/user_level_selective_v1.py`
+- `reading-companion-backend/eval/attentional_v2/run_user_level_selective_comparison.py`
+- `reading-companion-backend/src/reading_mechanisms/iterator_v1.py`
+- `reading-companion-backend/src/attentional_v2/evaluation.py`
+- `reading-companion-backend/state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1/note_cases.jsonl`

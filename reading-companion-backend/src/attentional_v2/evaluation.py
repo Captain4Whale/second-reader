@@ -259,6 +259,7 @@ def _normalized_reactions(output_dir: Path) -> list[NormalizedReaction]:
             continue
         chapter_id = int(raw.get("chapter_id", 0) or 0)
         primary_anchor = raw.get("primary_anchor")
+        target_locator = primary_anchor.get("locator") if isinstance(primary_anchor, Mapping) else None
         reactions.append(
             {
                 "reaction_id": _clean_text(raw.get("reaction_id")),
@@ -275,6 +276,7 @@ def _normalized_reactions(output_dir: Path) -> list[NormalizedReaction]:
                 ]
                 if isinstance(raw.get("search_results"), list)
                 else [],
+                "target_locator": dict(target_locator) if isinstance(target_locator, Mapping) else None,
                 "primary_anchor": dict(primary_anchor) if isinstance(primary_anchor, Mapping) else None,
                 "related_anchors": [
                     dict(anchor)

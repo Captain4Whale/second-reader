@@ -7,7 +7,19 @@ from pathlib import Path
 from eval.attentional_v2 import run_user_level_selective_comparison as module
 
 
-def _note_case(*, source_span_text: str, note_text: str = "note") -> module.NoteCase:
+def _slice(*, start: int = 0, end: int = 17, paragraph_index: int = 1, text: str = "Alpha hinge line.") -> dict[str, object]:
+    return {
+        "coordinate_system": "segment_source_v1",
+        "segment_id": "source_a__segment_1",
+        "source_id": "source_a",
+        "paragraph_index": paragraph_index,
+        "char_start": start,
+        "char_end": end,
+        "text": text,
+    }
+
+
+def _note_case(*, source_span_text: str, note_text: str = "note", span: dict[str, object] | None = None) -> module.NoteCase:
     return module.NoteCase(
         note_case_id="source_a__note_1",
         segment_id="source_a__segment_1",
@@ -20,6 +32,8 @@ def _note_case(*, source_span_text: str, note_text: str = "note") -> module.Note
         note_comment="",
         source_span_text=source_span_text,
         source_sentence_ids=["c1-s1"],
+        source_span_coordinate_system="segment_source_v1",
+        source_span_slices=[dict(span or _slice(text=source_span_text, end=len(source_span_text)))],
         chapter_id=1,
         chapter_title="Chapter 1",
         section_label="Section 1",
@@ -28,7 +42,13 @@ def _note_case(*, source_span_text: str, note_text: str = "note") -> module.Note
     )
 
 
-def _mechanism_payload(anchor_quote: str, *, content: str = "reaction") -> dict[str, object]:
+def _mechanism_payload(
+    anchor_quote: str,
+    *,
+    content: str = "reaction",
+    locator: dict[str, object] | None = None,
+) -> dict[str, object]:
+    target_locator = locator if locator is not None else {"paragraph_index": 1, "char_start": 0, "char_end": len(anchor_quote)}
     return {
         "status": "completed",
         "normalized_eval_bundle": {
@@ -39,6 +59,7 @@ def _mechanism_payload(anchor_quote: str, *, content: str = "reaction") -> dict[
                     "section_ref": "1.1",
                     "anchor_quote": anchor_quote,
                     "content": content,
+                    "target_locator": target_locator,
                 }
             ]
         },
@@ -64,7 +85,10 @@ def test_non_exact_cover_does_not_auto_count_for_recall(tmp_path: Path) -> None:
     note_case = _note_case(source_span_text="Alpha hinge line.")
     result = module.evaluate_note_case_for_mechanism(
         note_case=note_case,
-        mechanism_payload=_mechanism_payload("Alpha hinge line. Beta elaboration."),
+        mechanism_payload=_mechanism_payload(
+            "Alpha hinge line. Beta elaboration.",
+            locator={"paragraph_index": 1, "char_start": 0, "char_end": 35},
+        ),
         mechanism_key="attentional_v2",
         run_root=tmp_path,
         judge_mode="none",
@@ -89,7 +113,10 @@ def test_focused_hit_counts_for_recall_when_judge_says_yes(tmp_path: Path, monke
 
     result = module.evaluate_note_case_for_mechanism(
         note_case=note_case,
-        mechanism_payload=_mechanism_payload("Alpha hinge line. Beta elaboration."),
+        mechanism_payload=_mechanism_payload(
+            "Alpha hinge line. Beta elaboration.",
+            locator={"paragraph_index": 1, "char_start": 0, "char_end": 35},
+        ),
         mechanism_key="attentional_v2",
         run_root=tmp_path,
         judge_mode="llm",
@@ -98,6 +125,89 @@ def test_focused_hit_counts_for_recall_when_judge_says_yes(tmp_path: Path, monke
     assert result["label"] == "focused_hit"
     assert result["counts_for_recall"] is True
     assert result["best_reaction"]["reaction_id"] == "r1"
+
+
+def test_textually_similar_reaction_without_source_overlap_is_not_a_candidate(tmp_path: Path) -> None:
+    note_case = _note_case(source_span_text="Alpha hinge line.")
+    result = module.evaluate_note_case_for_mechanism(
+        note_case=note_case,
+        mechanism_payload=_mechanism_payload(
+            "Alpha hinge line.",
+            locator={"paragraph_index": 9, "char_start": 0, "char_end": 17},
+        ),
+        mechanism_key="attentional_v2",
+        run_root=tmp_path,
+        judge_mode="none",
+    )
+
+    assert result["label"] == "miss"
+    assert result["judgment"]["reason"] == "no_candidate_source_span_overlap"
+    assert result["candidate_reactions"] == []
+
+
+def test_visible_reaction_without_locator_fails_contract(tmp_path: Path) -> None:
+    note_case = _note_case(source_span_text="Alpha hinge line.")
+    try:
+        module.evaluate_note_case_for_mechanism(
+            note_case=note_case,
+            mechanism_payload=_mechanism_payload("Alpha hinge line.", locator={}),
+            mechanism_key="attentional_v2",
+            run_root=tmp_path,
+            judge_mode="none",
+        )
+    except ValueError as exc:
+        assert "has no usable source locator" in str(exc)
+    else:
+        raise AssertionError("missing locator should fail user-level selective matching")
+
+
+def test_duplicate_reactions_on_same_span_are_deduped_before_judge(tmp_path: Path, monkeypatch) -> None:
+    note_case = _note_case(source_span_text="Alpha hinge line.")
+    judge_calls = []
+
+    def fake_judge(**kwargs):
+        judge_calls.append(kwargs["reaction"]["reaction_id"])
+        return {
+            "label": "focused_hit",
+            "confidence": "high",
+            "reason": "The one source span is focused enough.",
+        }
+
+    monkeypatch.setattr(module, "_judge_candidate_reaction", fake_judge)
+    result = module.evaluate_note_case_for_mechanism(
+        note_case=note_case,
+        mechanism_payload={
+            "status": "completed",
+            "normalized_eval_bundle": {
+                "reactions": [
+                    {
+                        "reaction_id": "r1",
+                        "type": "discern",
+                        "section_ref": "1.1",
+                        "anchor_quote": "Alpha hinge line. Beta.",
+                        "content": "reaction",
+                        "target_locator": {"paragraph_index": 1, "char_start": 0, "char_end": 24},
+                    },
+                    {
+                        "reaction_id": "r2",
+                        "type": "curious",
+                        "section_ref": "1.1",
+                        "anchor_quote": "Alpha hinge line. Beta.",
+                        "content": "another reaction",
+                        "target_locator": {"paragraph_index": 1, "char_start": 0, "char_end": 24},
+                    },
+                ]
+            },
+        },
+        mechanism_key="attentional_v2",
+        run_root=tmp_path,
+        judge_mode="llm",
+    )
+
+    assert judge_calls == ["r1"]
+    assert result["span_candidate_count"] == 1
+    assert result["duplicate_reaction_count"] == 2
+    assert result["candidate_reactions"][0]["duplicate_reaction_ids"] == ["r1", "r2"]
 
 
 def test_aggregate_results_counts_exact_and_focused_hits() -> None:
@@ -176,6 +286,18 @@ def test_run_user_level_selective_comparison_filters_note_cases_to_selected_segm
         note_comment="",
         source_span_text="Alpha",
         source_sentence_ids=["a1"],
+        source_span_coordinate_system="segment_source_v1",
+        source_span_slices=[
+            {
+                "coordinate_system": "segment_source_v1",
+                "segment_id": "source_a__segment_1",
+                "source_id": "source_a",
+                "paragraph_index": 1,
+                "char_start": 0,
+                "char_end": 5,
+                "text": "Alpha",
+            }
+        ],
         chapter_id=1,
         chapter_title="Chapter 1",
         section_label="Section",
@@ -194,6 +316,18 @@ def test_run_user_level_selective_comparison_filters_note_cases_to_selected_segm
         note_comment="",
         source_span_text="Beta",
         source_sentence_ids=["b1"],
+        source_span_coordinate_system="segment_source_v1",
+        source_span_slices=[
+            {
+                "coordinate_system": "segment_source_v1",
+                "segment_id": "source_b__segment_1",
+                "source_id": "source_b",
+                "paragraph_index": 1,
+                "char_start": 0,
+                "char_end": 4,
+                "text": "Beta",
+            }
+        ],
         chapter_id=1,
         chapter_title="Chapter 1",
         section_label="Section",

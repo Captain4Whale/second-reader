@@ -20,23 +20,25 @@ The current active benchmark is `user-level selective v1`:
 - active metric:
   - note recall over aligned human notes
 - active matching contract:
-  - `exact_match` auto-counts
-  - non-exact candidates go to judge
+  - candidate retrieval is strict `segment_source_v1` source-span overlap
+  - text similarity and semantic similarity do not admit candidates
+  - `exact_match` auto-counts only when canonical char spans are identical
+  - non-exact source-overlap candidates go to judge
   - only `focused_hit` also counts toward recall
   - `incidental_cover` stays supporting-only
+  - visible reactions without usable source locators fail the run instead of falling back to string matching
 - current eligible source count:
   - `5 / 5`
   - `nawaer_baodian_private_zh` is now included after repairing the library-notes alignment fallback and re-registering its managed notes asset
   - current package size:
     - `5` reading segments
     - `203` note cases
+  - every note case includes `source_span_slices` in the rendered segment coordinate system used by the reader runtime
 
 ## Formal Runs
 
-The first judged run for this surface is now being launched:
+The first judged run for this surface must be relaunched after the strict source-span retrieval fix:
 
-- background job:
-  - `bgjob_user_level_selective_v1_failed_shards_retry2_20260415`
 - orchestrator:
   - [orchestrate_user_level_selective_eval.py](../../../scripts/orchestrate_user_level_selective_eval.py)
 - execution shape:
@@ -48,23 +50,10 @@ The first judged run for this surface is now being launched:
 - preserved retry1 partial-failure attempt:
   - `bgjob_user_level_selective_v1_judged_parallel_retry1_20260415`
   - retained as failed evidence because the code bug was fixed but `7 / 10` shards still died on provider-side timeout / quota-cooldown / `520` / `529` instability
-- current retry2 posture:
-  - rerun only the failed `7` shards
-  - reuse the `3` successful retry1 shard outputs during final merge
-  - enable automatic shard retry inside the orchestrator for recoverable provider failures
-    - `max_shard_attempts = 3`
-    - `retry_backoff_seconds = 30`
-  - enable registry-level long-horizon auto-recovery for the parent job itself
-    - `auto_recovery_mode = recoverable`
-    - `auto_recovery_interval_seconds = 300`
-    - `auto_recovery_max_relaunches = 0` (`0` means unlimited)
-  - live watchdog entrypoint:
-    - [check_background_jobs.py](../../../scripts/check_background_jobs.py)
-    - run shape:
-      - `--watch --auto-recover --interval-seconds 300`
-    - live artifacts:
-      - `state/job_registry/background_job_watchdog.pid`
-      - `state/job_registry/logs/background_job_watchdog.log`
+- invalidated retry2 attempt:
+  - `bgjob_user_level_selective_v1_failed_shards_retry2_20260415`
+  - stopped on April 15 after discovering that the runner admitted candidates by string similarity rather than strict source-span overlap
+  - retained only as bug-diagnostic evidence and must not be used as V1/V2 mechanism evidence
 
 When the first judged run lands, add it here with:
 

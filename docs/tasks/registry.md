@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-04-15T11:50:00Z`
+Last updated: `2026-04-15T14:35:00Z`
 
 ## Status Values
 - `active`
@@ -38,13 +38,14 @@ Last updated: `2026-04-15T11:50:00Z`
     - `5` reading segments
     - `203` note cases
     - `nawaer_baodian_private_zh` is now included after repairing the library-notes alignment fallback and re-registering its managed notes asset
+    - every note case now has `segment_source_v1` char-span slices; this is the strict matching coordinate for `Selective Legibility`
   - active metric:
     - `Selective Legibility` only
     - count `exact_match + focused_hit` as note recall
     - keep `incidental_cover` supporting-only
+    - candidate retrieval must use source-span overlap, not string similarity or semantic similarity
   - next evaluation move:
-    - the first judged run on this new surface is now launching under:
-      - `bgjob_user_level_selective_v1_failed_shards_retry2_20260415`
+    - relaunch the first judged run only after the strict source-span retrieval fix lands
     - execution is now split by `segment x mechanism`, so `attentional_v2` and `iterator_v1` run as independent shards instead of serializing inside one per-book shard
     - the first mechanism-parallel attempt is preserved as failed evidence rather than overwritten:
       - `bgjob_user_level_selective_v1_judged_parallel_20260414`
@@ -52,31 +53,13 @@ Last updated: `2026-04-15T11:50:00Z`
     - the first retry is also preserved as failed evidence rather than overwritten:
       - `bgjob_user_level_selective_v1_judged_parallel_retry1_20260415`
       - failed after the code bug was fixed because `7 / 10` shards still died on provider-side timeout / quota-cooldown / `520` / `529` instability
-    - current rerun strategy:
-      - rerun only the `7` failed shards under `retry2`
-      - reuse the `3` successful shard outputs from `retry1` during final merge
-    - orchestrator behavior is now more automatic:
-      - failed shards with recoverable provider signatures are retried inside the orchestrator
-      - current defaults:
-        - `max_shard_attempts = 3`
-        - `retry_backoff_seconds = 30`
-    - registry behavior is now also more automatic:
-      - `bgjob_user_level_selective_v1_failed_shards_retry2_20260415` now has long-horizon auto-recovery enabled at the registry layer
-      - current policy:
-        - `auto_recovery_mode = recoverable`
-        - `auto_recovery_interval_seconds = 300`
-        - `auto_recovery_max_relaunches = 0` (`0` means unlimited)
-      - checker/watchdog entrypoint:
-        - `reading-companion-backend/scripts/check_background_jobs.py --watch --auto-recover`
-      - live watchdog artifacts:
-        - pid file:
-          - `reading-companion-backend/state/job_registry/background_job_watchdog.pid`
-        - log:
-          - `reading-companion-backend/state/job_registry/logs/background_job_watchdog.log`
+    - invalidated retry2 is preserved only as bug-diagnostic evidence:
+      - `bgjob_user_level_selective_v1_failed_shards_retry2_20260415`
+      - stopped after discovering that the runner admitted candidates by text similarity rather than strict source-span overlap
+      - do not use retry2 results as mechanism evidence
     - use the new parallel orchestrator:
       - `reading-companion-backend/scripts/orchestrate_user_level_selective_eval.py`
-- Jobs:
-  - `bgjob_user_level_selective_v1_failed_shards_retry2_20260415`
+- Jobs: none
 
 ### `TASK-ATTENTIONAL-V2-STRUCTURAL-REWORK` — Execute the post-Phase-9 structural rework of `attentional_v2`
 - Status: `active`
