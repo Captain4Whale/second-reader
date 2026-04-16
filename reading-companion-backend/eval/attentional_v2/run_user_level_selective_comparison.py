@@ -167,7 +167,11 @@ def _load_note_cases(dataset_dir: Path) -> list[NoteCase]:
                 for item in row.get("source_span_slices", [])
                 if isinstance(item, dict)
             ],
-            chapter_id=int(row.get("source_chapter_id", row["chapter_id"])),
+            chapter_id=int(
+                row.get("source_chapter_id")
+                or row.get("chapter_id")
+                or 0
+            ),
             chapter_title=str(row.get("chapter_title", "")),
             section_label=str(row.get("section_label", "")),
             raw_locator=str(row.get("raw_locator", "")),

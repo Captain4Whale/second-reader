@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-04-16T10:38:00Z`
+Last verified: `2026-04-16T11:32:00Z`
 
 ## Current Objective
 - Replace the old active `excerpt` benchmark pointer with the new note-aligned `user-level selective v1` package.
@@ -35,7 +35,7 @@ Last verified: `2026-04-16T10:38:00Z`
       - repaired audit index:
         - `reading-companion-backend/state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260416/audit_human_readable/index.md`
       - current purpose:
-        - validate and audit repaired note-to-source spans before any clean strict-rejudge relaunch
+        - validate and audit repaired note-to-source spans and serve as the source package for the clean strict rejudge relaunch
       - current caution:
         - do not overwrite the active package in place until the next strict rejudge is explicitly relaunched on the repaired package or on a freshly rebuilt active package
       - verified example:
@@ -44,7 +44,7 @@ Last verified: `2026-04-16T10:38:00Z`
   - current evaluation move:
     - strict source-span retrieval, V1 locator reconstruction, and rejudge-only reuse tooling are now in place
     - broad semantic-segment fallback spans are judge-only candidates and never auto-count as exact note recall
-    - the most recent strict source-span judged run is preserved as failed evidence:
+    - the previous strict source-span judged run is preserved as failed evidence:
       - job id:
         - `bgjob_user_level_selective_v1_rejudge_reuse_20260416`
       - run id:
@@ -63,6 +63,27 @@ Last verified: `2026-04-16T10:38:00Z`
         - rerun only the two incomplete `attentional_v2` reading shards:
           - `mangge_zhi_dao_private_zh`
           - `xidaduo_private_zh`
+    - the clean repaired strict source-span rerun is now active:
+      - job id:
+        - `bgjob_user_level_selective_v1_repaired_rejudge_20260416`
+      - run id:
+        - `attentional_v2_user_level_selective_v1_repaired_rejudge_20260416`
+      - manifest path:
+        - `reading-companion-backend/state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260416/attentional_v2_user_level_selective_v1_repaired_20260416_draft.json`
+      - auto-recovery watchdog:
+        - `bgjob_job_registry_auto_recovery_watchdog_20260416_excerpt_repaired`
+      - execution posture:
+        - run `iterator_v1` and `attentional_v2` in parallel shard lanes
+        - pin runtime/judge work across:
+          - `MiniMax-M2.7-personal`
+          - `MiniMax-M2.7-personal-2`
+        - reuse completed reading outputs from:
+          - `attentional_v2_user_level_selective_v1_repaired_rejudge_20260416`
+          - `attentional_v2_user_level_selective_v1_rejudge_reuse_20260416`
+          - `attentional_v2_user_level_selective_v1_failed_shards_retry2_20260415`
+          - `attentional_v2_user_level_selective_v1_judged_parallel_retry1_20260415`
+          - `attentional_v2_user_level_selective_v1_judged_parallel_20260414`
+        - rerun only shards without reusable completed outputs
     - failed first mechanism-parallel attempt retained as failed evidence:
       - `bgjob_user_level_selective_v1_judged_parallel_20260414`
       - failure cause:

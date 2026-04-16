@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 from eval.attentional_v2 import run_user_level_selective_comparison as module
@@ -252,6 +253,47 @@ def test_duplicate_reactions_on_same_span_are_deduped_before_judge(tmp_path: Pat
     assert result["span_candidate_count"] == 1
     assert result["duplicate_reaction_count"] == 2
     assert result["candidate_reactions"][0]["duplicate_reaction_ids"] == ["r1", "r2"]
+
+
+def test_load_note_cases_accepts_source_chapter_id_only(tmp_path: Path) -> None:
+    dataset_dir = tmp_path / "dataset"
+    dataset_dir.mkdir()
+    (dataset_dir / "manifest.json").write_text(
+        json.dumps({"note_cases_file": "note_cases.jsonl"}, ensure_ascii=False) + "\n",
+        encoding="utf-8",
+    )
+    (dataset_dir / "note_cases.jsonl").write_text(
+        json.dumps(
+            {
+                "note_case_id": "source_a__note_1",
+                "segment_id": "source_a__segment_1",
+                "source_id": "source_a",
+                "book_title": "Book",
+                "author": "Author",
+                "language_track": "en",
+                "note_id": "note_1",
+                "note_text": "Alpha hinge line.",
+                "note_comment": "",
+                "source_span_text": "Alpha hinge line.",
+                "source_sentence_ids": ["c1-s1"],
+                "source_span_coordinate_system": "segment_source_v1",
+                "source_span_slices": [_slice(text="Alpha hinge line.", end=len("Alpha hinge line."))],
+                "source_chapter_id": 8,
+                "chapter_title": "Chapter 1",
+                "section_label": "Section 1",
+                "raw_locator": "1",
+                "provenance": {},
+            },
+            ensure_ascii=False,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    note_cases = module._load_note_cases(dataset_dir)
+
+    assert len(note_cases) == 1
+    assert note_cases[0].chapter_id == 8
 
 
 def test_aggregate_results_counts_exact_and_focused_hits() -> None:
