@@ -36,6 +36,28 @@ The current active benchmark is `user-level selective v1`:
     - `203` note cases
   - every note case includes `source_span_slices` in the rendered segment coordinate system used by the reader runtime
 
+## Dataset Form
+
+The active user-level dataset is stored as local JSON/JSONL plus rendered source text:
+
+- `manifest.json`
+- `segments.jsonl`
+- `note_cases.jsonl`
+- `segment_sources/*.txt`
+
+For human auditing, a local-only Markdown export is now available:
+
+- renderer:
+  - [render_user_level_selective_audit.py](../../../eval/attentional_v2/render_user_level_selective_audit.py)
+- default command:
+  - `cd reading-companion-backend && .venv/bin/python eval/attentional_v2/render_user_level_selective_audit.py`
+- default output directory:
+  - `state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1/audit_human_readable/`
+- output shape:
+  - `index.md`
+  - `windows/<segment_id>.md`
+- audit export is local-only and should not be treated as checked-in benchmark evidence
+
 ## Formal Runs
 
 The first judged run for this surface should now use the strict source-span rejudge/reuse path:
