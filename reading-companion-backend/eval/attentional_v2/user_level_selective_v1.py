@@ -8,6 +8,7 @@ human notes, preserving a complete structural boundary where possible.
 
 from __future__ import annotations
 
+import argparse
 from collections import defaultdict
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -558,16 +559,26 @@ def _catalog_asset_by_source_id(catalog: dict[str, Any]) -> dict[str, dict[str, 
 
 def build_user_level_selective_v1(
     *,
+    dataset_dir: Path | None = None,
+    dataset_id: str | None = None,
+    dataset_version: str | None = None,
+    split_manifest_path: Path | None = None,
     target_note_count: int = DEFAULT_TARGET_NOTE_COUNT,
     hard_sentence_cap: int = DEFAULT_HARD_SENTENCE_CAP,
 ) -> dict[str, Any]:
     catalog = _load_notes_catalog()
     asset_index = _catalog_asset_by_source_id(catalog)
     source_index = _load_source_index()
+    dataset_root = Path(dataset_dir if dataset_dir is not None else DATASET_DIR).resolve()
+    resolved_dataset_id = str(dataset_id if dataset_id is not None else DATASET_ID)
+    resolved_dataset_version = str(dataset_version if dataset_version is not None else DEFAULT_VERSION)
+    resolved_split_manifest_path = (
+        Path(split_manifest_path).resolve() if split_manifest_path is not None else MANIFEST_PATH.resolve()
+    )
 
-    shutil.rmtree(DATASET_DIR, ignore_errors=True)
-    DATASET_DIR.mkdir(parents=True, exist_ok=True)
-    segment_sources_dir = DATASET_DIR / SEGMENT_SOURCE_DIRNAME
+    shutil.rmtree(dataset_root, ignore_errors=True)
+    dataset_root.mkdir(parents=True, exist_ok=True)
+    segment_sources_dir = dataset_root / SEGMENT_SOURCE_DIRNAME
     segment_sources_dir.mkdir(parents=True, exist_ok=True)
 
     segments_rows: list[dict[str, Any]] = []
@@ -716,10 +727,10 @@ def build_user_level_selective_v1(
         selected_source_ids.append(source_id)
 
     manifest_payload = {
-        "dataset_id": DATASET_ID,
+        "dataset_id": resolved_dataset_id,
         "family": "user_level_note_aligned_benchmark",
         "status": "active",
-        "version": DEFAULT_VERSION,
+        "version": resolved_dataset_version,
         "generated_at": utc_now(),
         "description": "Active user-level selective benchmark built directly from aligned human note spans and continuous reading segments.",
         "segments_file": SEGMENTS_FILE,
@@ -741,9 +752,9 @@ def build_user_level_selective_v1(
             "state/eval_local_datasets/excerpt_cases/attentional_v2_excerpt_surface_v1_1_excerpt_zh",
         ],
     }
-    write_json(DATASET_DIR / "manifest.json", manifest_payload)
-    write_jsonl(DATASET_DIR / SEGMENTS_FILE, segments_rows)
-    write_jsonl(DATASET_DIR / NOTE_CASES_FILE, note_case_rows)
+    write_json(dataset_root / "manifest.json", manifest_payload)
+    write_jsonl(dataset_root / SEGMENTS_FILE, segments_rows)
+    write_jsonl(dataset_root / NOTE_CASES_FILE, note_case_rows)
 
     split_payload = {
         "manifest_id": MANIFEST_ID,
@@ -769,7 +780,7 @@ def build_user_level_selective_v1(
             ],
             "notes_catalog": _relative_to_root(DEFAULT_NOTES_CATALOG_PATH),
             "user_level_dataset_roots": [
-                _relative_to_root(DATASET_DIR),
+                _relative_to_root(dataset_root),
             ],
         },
         "selected_segments": [
@@ -808,12 +819,33 @@ def build_user_level_selective_v1(
             }
         },
     }
-    write_json(MANIFEST_PATH, split_payload)
+    if split_manifest_path is not None:
+        write_json(resolved_split_manifest_path, split_payload)
     return split_payload
 
 
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--dataset-dir", type=Path, default=DATASET_DIR)
+    parser.add_argument("--dataset-id", default=DATASET_ID)
+    parser.add_argument("--dataset-version", default=DEFAULT_VERSION)
+    parser.add_argument("--split-manifest-path", type=Path, default=MANIFEST_PATH)
+    parser.add_argument("--skip-split-manifest", action="store_true")
+    parser.add_argument("--target-note-count", type=int, default=DEFAULT_TARGET_NOTE_COUNT)
+    parser.add_argument("--hard-sentence-cap", type=int, default=DEFAULT_HARD_SENTENCE_CAP)
+    return parser.parse_args()
+
+
 def main() -> int:
-    build_user_level_selective_v1()
+    args = parse_args()
+    build_user_level_selective_v1(
+        dataset_dir=Path(args.dataset_dir),
+        dataset_id=str(args.dataset_id),
+        dataset_version=str(args.dataset_version),
+        split_manifest_path=None if args.skip_split_manifest else Path(args.split_manifest_path),
+        target_note_count=int(args.target_note_count),
+        hard_sentence_cap=int(args.hard_sentence_cap),
+    )
     return 0
 
 

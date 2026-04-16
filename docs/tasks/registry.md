@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-04-16T00:22:45Z`
+Last updated: `2026-04-16T10:38:00Z`
 
 ## Status Values
 - `active`
@@ -45,16 +45,29 @@ Last updated: `2026-04-16T00:22:45Z`
     - keep `incidental_cover` supporting-only
     - candidate retrieval must use source-span overlap, not string similarity or semantic similarity
     - broad semantic-segment fallback spans are judge-only candidates and never auto-count as exact note recall
+  - repaired sibling package now staged for audit-safe verification while the active strict rejudge run is still in flight:
+    - repaired dataset package:
+      - `reading-companion-backend/state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260416`
+    - repaired audit index:
+      - `reading-companion-backend/state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260416/audit_human_readable/index.md`
+    - verified repair example:
+      - `huochu_shengming_de_yiyi_private_zh_personal_notes__e0002` now maps to the full two-sentence source span
+    - switch posture:
+      - keep the active benchmark pointer unchanged until a clean strict rejudge is relaunched, then decide whether to promote the repaired package into the active path
   - next evaluation move:
-    - the first valid strict source-span judged run is now active:
+    - the latest strict source-span judged run is now preserved as failed evidence:
       - job id:
         - `bgjob_user_level_selective_v1_rejudge_reuse_20260416`
       - run id:
         - `attentional_v2_user_level_selective_v1_rejudge_reuse_20260416`
-      - auto-recovery watchdog:
-        - `bgjob_job_registry_auto_recovery_watchdog_20260416`
-      - execution posture:
-        - reuse completed reading outputs from the current run on relaunch, then from `retry2` and `retry1`
+      - failure cause:
+        - a local test regression wrote a temporary `source_a` fixture into the active split manifest, so the watchdog relaunched the failed job against the wrong shard set until its relaunch budget was exhausted
+      - repair status:
+        - the default-argument bug in `build_user_level_selective_v1(...)` is now fixed
+        - the active split manifest has been restored from `HEAD`
+        - the watchdog has been stopped because no auto-recoverable eval jobs remain active
+      - intended relaunch posture:
+        - reuse completed reading outputs from the current run on a clean relaunch, then from `retry2` and `retry1`
         - re-score all reusable shards under the strict source-span contract
         - rerun only the incomplete `attentional_v2` reading shards for `mangge_zhi_dao_private_zh` and `xidaduo_private_zh`
     - execution is now split by `segment x mechanism`, so `attentional_v2` and `iterator_v1` run as independent shards instead of serializing inside one per-book shard
@@ -71,8 +84,8 @@ Last updated: `2026-04-16T00:22:45Z`
     - use the new parallel orchestrator:
       - `reading-companion-backend/scripts/orchestrate_user_level_selective_eval.py`
 - Jobs:
-  - `bgjob_user_level_selective_v1_rejudge_reuse_20260416` (`running`)
-  - `bgjob_job_registry_auto_recovery_watchdog_20260416` (`running`)
+  - `bgjob_user_level_selective_v1_rejudge_reuse_20260416` (`failed`)
+  - `bgjob_job_registry_auto_recovery_watchdog_20260416` (`stopped`)
 
 ### `TASK-ATTENTIONAL-V2-STRUCTURAL-REWORK` — Execute the post-Phase-9 structural rework of `attentional_v2`
 - Status: `active`

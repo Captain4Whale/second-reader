@@ -932,6 +932,19 @@ def _write_entries_jsonl(path: Path, entries: list[dict[str, Any]]) -> None:
             handle.write(json.dumps(entry, ensure_ascii=False) + "\n")
 
 
+def _load_entries_jsonl(path: Path) -> list[dict[str, Any]]:
+    if not path.exists():
+        return []
+    rows: list[dict[str, Any]] = []
+    with path.open(encoding="utf-8") as handle:
+        for line in handle:
+            if line.strip():
+                row = json.loads(line)
+                if isinstance(row, dict):
+                    rows.append(row)
+    return rows
+
+
 def _normalize_entries(
     notes_id: str,
     parsed_export: dict[str, Any],
@@ -1120,3 +1133,238 @@ def register_notes_export(
         source_catalog_path=source_catalog_path,
         title_hint=title_hint,
     )
+
+
+def refresh_registered_notes_asset(
+    paths: LibraryNotesPaths,
+    *,
+    notes_id: str,
+    source_catalog_path: Path,
+) -> dict[str, Any]:
+    """Re-run parsing + alignment for one already-registered managed notes asset."""
+
+    normalized_notes_id = _sanitize_slug(notes_id)
+    catalog = load_notes_catalog(paths.notes_catalog_json_path)
+    asset = next(
+        (
+            item
+            for item in catalog.get("assets", [])
+            if _clean_text(item.get("notes_id")) == normalized_notes_id
+        ),
+        None,
+    )
+    if asset is None:
+        raise ValueError(f"Unknown managed notes asset: {notes_id}")
+    relative_notes_path = _clean_text(asset.get("relative_notes_path"))
+    if not relative_notes_path:
+        raise ValueError(f"Managed notes asset {notes_id} is missing relative_notes_path")
+    origin_path = (paths.root / relative_notes_path).resolve()
+    if not origin_path.exists():
+        raise FileNotFoundError(f"Managed raw export does not exist: {origin_path}")
+
+    old_entries_path = _entries_path(paths, notes_id=normalized_notes_id)
+    old_entries = _load_entries_jsonl(old_entries_path)
+    old_entry_index = {
+        _clean_text(entry.get("entry_id")): entry
+        for entry in old_entries
+        if _clean_text(entry.get("entry_id"))
+    }
+    active_user_level_note_cases_path = (
+        paths.root
+        / "state"
+        / "eval_local_datasets"
+        / "user_level_benchmarks"
+        / "attentional_v2_user_level_selective_v1"
+        / "note_cases.jsonl"
+    )
+    active_user_level_note_case_index: dict[str, dict[str, Any]] = {}
+    if active_user_level_note_cases_path.exists():
+        for note_case in _load_entries_jsonl(active_user_level_note_cases_path):
+            note_case_id = _clean_text(note_case.get("note_case_id"))
+            note_id = _clean_text(note_case.get("note_id"))
+            if note_case_id or note_id:
+                active_user_level_note_case_index[note_id or note_case_id] = note_case
+
+    def alignment_rank(entry: dict[str, Any]) -> tuple[int, int]:
+        alignment = entry.get("alignment") or {}
+        status = _clean_text(entry.get("alignment_status")) or _clean_text(alignment.get("status"))
+        match_type = _clean_text(alignment.get("match_type"))
+        rank_map = {
+            "exact_chapter_span": 5,
+            "exact_sentence": 4,
+            "fuzzy_span": 3,
+            "fuzzy_sentence": 2,
+            "missing_quote": 1,
+            "no_candidate": 1,
+            "missing_book_document": 1,
+            "unlinked_source": 1,
+        }
+        rank = rank_map.get(match_type, 0)
+        if status != "aligned":
+            rank = min(rank, 1)
+        score = int(round(float(alignment.get("score", 0.0) or 0.0) * 1000))
+        return rank, score
+
+    def fallback_entry_from_active_case(*, base_entry: dict[str, Any]) -> dict[str, Any] | None:
+        note_case = active_user_level_note_case_index.get(_clean_text(base_entry.get("entry_id")))
+        if note_case is None:
+            return None
+        start_sentence_id = _clean_text((note_case.get("provenance") or {}).get("start_sentence_id"))
+        end_sentence_id = _clean_text((note_case.get("provenance") or {}).get("end_sentence_id")) or start_sentence_id
+        if not start_sentence_id:
+            return None
+        fallback = dict(base_entry)
+        fallback["alignment_status"] = "aligned"
+        fallback["alignment_confidence"] = float((note_case.get("provenance") or {}).get("alignment_score") or 0.0)
+        fallback["matched_chapter_id"] = _clean_text(
+            note_case.get("source_chapter_id", note_case.get("chapter_id"))
+        )
+        fallback["section_label"] = _clean_text(note_case.get("chapter_title")) or _clean_text(base_entry.get("section_label"))
+        fallback["matched_sentence_span"] = {
+            "start_sentence_id": start_sentence_id,
+            "end_sentence_id": end_sentence_id,
+            "paragraph_start": 0,
+            "paragraph_end": 0,
+        }
+        fallback["matched_sentence_ids"] = [item for item in (start_sentence_id, end_sentence_id) if item]
+        fallback["alignment"] = {
+            "status": "aligned",
+            "match_type": _clean_text((note_case.get("provenance") or {}).get("alignment_match_type")) or "exact_sentence",
+            "score": float((note_case.get("provenance") or {}).get("alignment_score") or 0.0),
+            "chapter_id": _clean_text(note_case.get("source_chapter_id", note_case.get("chapter_id"))),
+            "chapter_title": _clean_text(note_case.get("chapter_title")),
+            "sentence_start_id": start_sentence_id,
+            "sentence_end_id": end_sentence_id,
+            "paragraph_start": 0,
+            "paragraph_end": 0,
+            "aligned_text": _clean_text(note_case.get("source_span_text")),
+        }
+        return fallback
+
+    def choose_final_entry(*, old_entry: dict[str, Any], new_entry: dict[str, Any], fallback_entry: dict[str, Any] | None) -> dict[str, Any]:
+        if not old_entry:
+            chosen = new_entry
+        else:
+            old_rank = alignment_rank(old_entry)
+            new_rank = alignment_rank(new_entry)
+            if new_rank[0] > old_rank[0]:
+                chosen = new_entry
+            elif new_rank[0] < old_rank[0]:
+                chosen = old_entry
+            else:
+                old_alignment = old_entry.get("alignment") or {}
+                new_alignment = new_entry.get("alignment") or {}
+                old_span = old_entry.get("matched_sentence_span") or {}
+                new_span = new_entry.get("matched_sentence_span") or {}
+                if (
+                    _clean_text(old_alignment.get("match_type")) == "exact_sentence"
+                    and _clean_text(new_alignment.get("match_type")) == "exact_chapter_span"
+                    and _clean_text(old_span.get("start_sentence_id")) == _clean_text(new_span.get("start_sentence_id"))
+                    and _clean_text(new_span.get("end_sentence_id")) != _clean_text(old_span.get("end_sentence_id"))
+                ):
+                    chosen = new_entry
+                else:
+                    chosen = old_entry
+        if fallback_entry is not None and alignment_rank(fallback_entry) > alignment_rank(chosen):
+            return fallback_entry
+        return chosen
+
+    result = register_notes_asset(
+        paths,
+        notes_id=normalized_notes_id,
+        linked_source_id=_clean_text(asset.get("linked_source_id")),
+        title=_clean_text(asset.get("title")),
+        language=_clean_text(asset.get("language")) or "unknown",
+        notes_format=_clean_text(asset.get("notes_format")) or "auto",
+        origin_path=origin_path,
+        structure_mode=_clean_text(asset.get("structure_mode")),
+        status=_clean_text(asset.get("status")) or "active",
+        source_catalog_path=source_catalog_path,
+        title_hint=_clean_text(asset.get("title")),
+    )
+
+    new_entries = list(result.get("entries") or [])
+    final_entries: list[dict[str, Any]] = []
+    for entry in new_entries:
+        entry_id = _clean_text(entry.get("entry_id"))
+        final_entries.append(
+            choose_final_entry(
+                old_entry=old_entry_index.get(entry_id) or {},
+                new_entry=entry,
+                fallback_entry=fallback_entry_from_active_case(base_entry=entry),
+            )
+        )
+
+    _write_entries_jsonl(old_entries_path, final_entries)
+    current_catalog = load_notes_catalog(paths.notes_catalog_json_path)
+    current_assets = list(current_catalog.get("assets") or [])
+    current_entries = [
+        item
+        for item in current_catalog.get("entries", [])
+        if _clean_text(item.get("notes_id")) != normalized_notes_id
+    ]
+    current_entries.extend(final_entries)
+    current_entries.sort(key=lambda entry: _clean_text(entry.get("entry_id")))
+    final_asset = dict(result["asset"])
+    final_asset["entry_count"] = len(final_entries)
+    final_asset["unresolved_entry_count"] = sum(
+        1 for entry in final_entries if _clean_text(entry.get("alignment_status")) != "aligned"
+    )
+    final_asset["aligned_entry_count"] = sum(
+        1 for entry in final_entries if _clean_text(entry.get("alignment_status")) == "aligned"
+    )
+    final_assets = [
+        asset for asset in current_assets if _clean_text(asset.get("notes_id")) != normalized_notes_id
+    ]
+    final_assets.append(final_asset)
+    final_assets.sort(key=lambda asset: _clean_text(asset.get("notes_id")))
+    save_notes_catalog(
+        paths,
+        {
+            "version": NOTES_CATALOG_VERSION,
+            "assets": final_assets,
+            "entries": current_entries,
+        },
+    )
+
+    changed_entries: list[dict[str, Any]] = []
+    for entry in final_entries:
+        entry_id = _clean_text(entry.get("entry_id"))
+        if not entry_id:
+            continue
+        old_entry = old_entry_index.get(entry_id) or {}
+        old_alignment = old_entry.get("alignment") or {}
+        new_alignment = entry.get("alignment") or {}
+        old_span = old_entry.get("matched_sentence_span") or {}
+        new_span = entry.get("matched_sentence_span") or {}
+        if (
+            _clean_text(old_entry.get("alignment_status")) != _clean_text(entry.get("alignment_status"))
+            or _clean_text(old_alignment.get("match_type")) != _clean_text(new_alignment.get("match_type"))
+            or _clean_text(old_alignment.get("aligned_text")) != _clean_text(new_alignment.get("aligned_text"))
+            or _clean_text(old_span.get("start_sentence_id")) != _clean_text(new_span.get("start_sentence_id"))
+            or _clean_text(old_span.get("end_sentence_id")) != _clean_text(new_span.get("end_sentence_id"))
+        ):
+            changed_entries.append(
+                {
+                    "entry_id": entry_id,
+                    "old_alignment_status": _clean_text(old_entry.get("alignment_status")),
+                    "new_alignment_status": _clean_text(entry.get("alignment_status")),
+                    "old_match_type": _clean_text(old_alignment.get("match_type")),
+                    "new_match_type": _clean_text(new_alignment.get("match_type")),
+                    "old_start_sentence_id": _clean_text(old_span.get("start_sentence_id")),
+                    "new_start_sentence_id": _clean_text(new_span.get("start_sentence_id")),
+                    "old_end_sentence_id": _clean_text(old_span.get("end_sentence_id")),
+                    "new_end_sentence_id": _clean_text(new_span.get("end_sentence_id")),
+                    "old_aligned_text": _clean_text(old_alignment.get("aligned_text")),
+                    "new_aligned_text": _clean_text(new_alignment.get("aligned_text")),
+                }
+            )
+    result["refresh_summary"] = {
+        "notes_id": normalized_notes_id,
+        "entry_count": len(final_entries),
+        "changed_entry_count": len(changed_entries),
+        "changed_entries": changed_entries,
+    }
+    result["entries"] = final_entries
+    result["asset"] = final_asset
+    return result

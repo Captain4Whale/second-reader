@@ -13,6 +13,7 @@ from eval.attentional_v2.library_notes import (
     load_notes_catalog,
     parse_google_books_markdown,
     parse_wechat_markdown,
+    refresh_registered_notes_asset,
     register_notes_export,
 )
 
@@ -306,3 +307,242 @@ def test_register_library_notes_cli_writes_catalog(tmp_path: Path) -> None:
     assert payload["registered_asset_count"] == 1
     catalog = load_notes_catalog(tmp_path / "state" / "dataset_build" / "library_notes_catalog.json")
     assert catalog["asset_count"] == 1
+
+
+def test_refresh_registered_notes_asset_realigns_with_current_aligner(tmp_path: Path) -> None:
+    paths = LibraryNotesPaths.from_root(tmp_path)
+    source_catalog_path = tmp_path / "state" / "dataset_build" / "source_catalog.json"
+    _write_json(
+        source_catalog_path,
+        {
+            "records": [
+                {
+                    "source_id": "book_a",
+                    "title": "Book A",
+                    "output_dir": "output/book_a",
+                }
+            ]
+        },
+    )
+    _write_json(
+        tmp_path / "output" / "book_a" / "public" / "book_document.json",
+        {
+            "chapters": [
+                {
+                    "id": 8,
+                    "chapter_number": 1,
+                    "title": "第一部分",
+                    "sentences": [
+                        {
+                            "sentence_id": "c8-s77",
+                            "paragraph_index": 1,
+                            "text": "每当看到狱友吸烟时，我们就知道他已失去了生活下去的勇气。",
+                            "locator": {"paragraph_index": 1},
+                        },
+                        {
+                            "sentence_id": "c8-s78",
+                            "paragraph_index": 1,
+                            "text": "勇气一旦失去，几乎就不可能再挽回。",
+                            "locator": {"paragraph_index": 1},
+                        },
+                    ],
+                }
+            ]
+        },
+    )
+    raw_export = tmp_path / "book_a_notes.md"
+    _write(
+        raw_export,
+        """# Book A
+
+## 第一部分
+> 每当看到狱友吸烟时，我们就知道他已失去了生活下去的勇气。勇气一旦失去，几乎就不可能再挽回。
+""",
+    )
+
+    register_notes_export(
+        paths,
+        raw_export_path=raw_export,
+        source_catalog_path=source_catalog_path,
+        source_format="wechat_markdown",
+        explicit_source_id="book_a",
+    )
+
+    entries_path = tmp_path / "state" / "library_notes" / "entries" / "book_a.jsonl"
+    rows = [json.loads(line) for line in entries_path.read_text(encoding="utf-8").splitlines() if line.strip()]
+    rows[0]["alignment_status"] = "aligned"
+    rows[0]["matched_chapter_id"] = "8"
+    rows[0]["matched_sentence_span"] = {
+        "start_sentence_id": "c8-s77",
+        "end_sentence_id": "c8-s77",
+        "paragraph_start": 1,
+        "paragraph_end": 1,
+    }
+    rows[0]["matched_sentence_ids"] = ["c8-s77"]
+    rows[0]["alignment"] = {
+        "status": "aligned",
+        "match_type": "fuzzy_sentence",
+        "score": 77.0,
+        "chapter_id": "8",
+        "chapter_title": "第一部分",
+        "sentence_start_id": "c8-s77",
+        "sentence_end_id": "c8-s77",
+        "paragraph_start": 1,
+        "paragraph_end": 1,
+        "aligned_text": "每当看到狱友吸烟时，我们就知道他已失去了生活下去的勇气。",
+    }
+    entries_path.write_text(
+        "".join(json.dumps(row, ensure_ascii=False) + "\n" for row in rows),
+        encoding="utf-8",
+    )
+
+    refreshed = refresh_registered_notes_asset(
+        paths,
+        notes_id="book_a",
+        source_catalog_path=source_catalog_path,
+    )
+
+    refresh_summary = refreshed["refresh_summary"]
+    assert refresh_summary["changed_entry_count"] == 1
+    assert refresh_summary["changed_entries"][0]["old_match_type"] == "fuzzy_sentence"
+    assert refresh_summary["changed_entries"][0]["new_match_type"] == "exact_chapter_span"
+    assert refresh_summary["changed_entries"][0]["new_end_sentence_id"] == "c8-s78"
+
+    updated_rows = [json.loads(line) for line in entries_path.read_text(encoding="utf-8").splitlines() if line.strip()]
+    updated_alignment = updated_rows[0]["alignment"]
+    assert updated_alignment["match_type"] == "exact_chapter_span"
+    assert updated_rows[0]["matched_sentence_span"]["end_sentence_id"] == "c8-s78"
+
+
+def test_refresh_registered_notes_asset_uses_active_benchmark_fallback_when_refresh_worsens_alignment(
+    tmp_path: Path,
+) -> None:
+    paths = LibraryNotesPaths.from_root(tmp_path)
+    source_catalog_path = tmp_path / "state" / "dataset_build" / "source_catalog.json"
+    _write_json(
+        source_catalog_path,
+        {
+            "records": [
+                {
+                    "source_id": "book_a",
+                    "title": "Book A",
+                    "output_dir": "output/book_a",
+                }
+            ]
+        },
+    )
+    _write_json(
+        tmp_path / "output" / "book_a" / "public" / "book_document.json",
+        {
+            "chapters": [
+                {
+                    "id": 8,
+                    "chapter_number": 1,
+                    "title": "第一部分",
+                    "sentences": [
+                        {
+                            "sentence_id": "c8-s77",
+                            "paragraph_index": 1,
+                            "text": "每当看到狱友吸烟时，我们就知道他已失去了生活下去的勇气。",
+                            "locator": {"paragraph_index": 1},
+                        },
+                        {
+                            "sentence_id": "c29-s195",
+                            "paragraph_index": 40,
+                            "text": "[1] 译者注：犬儒主义，古希腊四大学派之一，主张清心寡欲，鄙视荣华富贵，力倡回归自然。",
+                            "locator": {"paragraph_index": 40},
+                        },
+                    ],
+                }
+            ]
+        },
+    )
+    raw_export = tmp_path / "book_a_notes.md"
+    _write(
+        raw_export,
+        """# Book A
+
+## 第一部分
+> 斯宾诺莎在《伦理学》中谈到 “作为痛苦的激情，一旦我们对它有了清晰而明确的认识，就不再感到痛苦了”。
+""",
+    )
+
+    register_notes_export(
+        paths,
+        raw_export_path=raw_export,
+        source_catalog_path=source_catalog_path,
+        source_format="wechat_markdown",
+        explicit_source_id="book_a",
+    )
+
+    active_dataset_dir = (
+        tmp_path
+        / "state"
+        / "eval_local_datasets"
+        / "user_level_benchmarks"
+        / "attentional_v2_user_level_selective_v1"
+    )
+    active_dataset_dir.mkdir(parents=True, exist_ok=True)
+    (active_dataset_dir / "note_cases.jsonl").write_text(
+        json.dumps(
+            {
+                "note_case_id": "book_a__book_a__e0001",
+                "note_id": "book_a__e0001",
+                "source_chapter_id": 8,
+                "chapter_title": "第一部分",
+                "source_span_text": "斯宾诺莎在 《伦理学》中谈到 “作为痛苦的激情，一旦我们对它有了清晰而明确的认识，就不再感到痛苦了”。",
+                "provenance": {
+                    "alignment_match_type": "fuzzy_sentence",
+                    "alignment_score": 98.99,
+                    "start_sentence_id": "c8-s77",
+                    "end_sentence_id": "c8-s77",
+                },
+            },
+            ensure_ascii=False,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    entries_path = tmp_path / "state" / "library_notes" / "entries" / "book_a.jsonl"
+    rows = [json.loads(line) for line in entries_path.read_text(encoding="utf-8").splitlines() if line.strip()]
+    rows[0]["alignment_status"] = "unresolved"
+    rows[0]["matched_chapter_id"] = "29"
+    rows[0]["matched_sentence_span"] = {
+        "start_sentence_id": "c29-s195",
+        "end_sentence_id": "c29-s195",
+        "paragraph_start": 40,
+        "paragraph_end": 40,
+    }
+    rows[0]["matched_sentence_ids"] = ["c29-s195"]
+    rows[0]["alignment"] = {
+        "status": "unresolved",
+        "match_type": "fuzzy_sentence",
+        "score": 10.753,
+        "chapter_id": "29",
+        "chapter_title": "第一部分",
+        "sentence_start_id": "c29-s195",
+        "sentence_end_id": "c29-s195",
+        "paragraph_start": 40,
+        "paragraph_end": 40,
+        "aligned_text": "[1] 译者注：犬儒主义，古希腊四大学派之一，主张清心寡欲，鄙视荣华富贵，力倡回归自然。",
+    }
+    entries_path.write_text(
+        "".join(json.dumps(row, ensure_ascii=False) + "\n" for row in rows),
+        encoding="utf-8",
+    )
+
+    refreshed = refresh_registered_notes_asset(
+        paths,
+        notes_id="book_a",
+        source_catalog_path=source_catalog_path,
+    )
+
+    refresh_summary = refreshed["refresh_summary"]
+    assert refresh_summary["changed_entry_count"] == 1
+    assert refresh_summary["changed_entries"][0]["new_start_sentence_id"] == "c8-s77"
+    assert refresh_summary["changed_entries"][0]["new_match_type"] == "fuzzy_sentence"
+
+    updated_rows = [json.loads(line) for line in entries_path.read_text(encoding="utf-8").splitlines() if line.strip()]
+    assert updated_rows[0]["alignment_status"] == "aligned"
+    assert updated_rows[0]["matched_sentence_span"]["start_sentence_id"] == "c8-s77"

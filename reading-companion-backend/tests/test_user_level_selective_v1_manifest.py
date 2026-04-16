@@ -242,3 +242,106 @@ def test_choose_segment_end_falls_back_to_paragraph_when_chapter_tail_exceeds_ca
 
     assert end_position == 3
     assert termination_reason == "paragraph_end_after_hard_cap"
+
+
+def test_build_user_level_selective_v1_supports_custom_dataset_dir_without_writing_split_manifest(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    dataset_dir = tmp_path / "dataset_alt"
+    manifest_path = tmp_path / "should_not_exist.json"
+
+    monkeypatch.setattr(module, "REGISTERED_NOTES_SOURCE_IDS", ("source_a",))
+    monkeypatch.setattr(
+        module,
+        "_load_notes_catalog",
+        lambda: {
+            "assets": [
+                {"linked_source_id": "source_a", "notes_id": "notes_a", "aligned_entry_count": 2},
+            ]
+        },
+    )
+    monkeypatch.setattr(
+        module,
+        "_load_source_index",
+        lambda: {
+            "source_a": {"source_id": "source_a", "relative_local_path": "state/library_sources/source_a.epub"},
+        },
+    )
+    aligned_notes = [
+        module.AlignedNote(
+            note_id="note_1",
+            notes_id="notes_a",
+            source_id="source_a",
+            note_text="Chapter 1 line 4.",
+            note_comment="",
+            raw_locator="1",
+            section_label="Section 1",
+            source_chapter_id=2,
+            chapter_title="Chapter 1",
+            start_sentence_id="c2-s4",
+            end_sentence_id="c2-s4",
+            sentence_ids=("c2-s4",),
+            aligned_text="Chapter 1 line 4.",
+            alignment_match_type="exact",
+            alignment_score=1.0,
+        ),
+        module.AlignedNote(
+            note_id="note_2",
+            notes_id="notes_a",
+            source_id="source_a",
+            note_text="Chapter 1 line 8.",
+            note_comment="",
+            raw_locator="2",
+            section_label="Section 1",
+            source_chapter_id=2,
+            chapter_title="Chapter 1",
+            start_sentence_id="c2-s8",
+            end_sentence_id="c2-s8",
+            sentence_ids=("c2-s8",),
+            aligned_text="Chapter 1 line 8.",
+            alignment_match_type="exact",
+            alignment_score=1.0,
+        ),
+    ]
+    monkeypatch.setattr(
+        module,
+        "_load_aligned_notes",
+        lambda *, notes_id, source_id: aligned_notes,
+    )
+    document = {
+        "metadata": {
+            "book": "Book A",
+            "author": "Author A",
+            "book_language": "en",
+            "output_language": "en",
+        },
+        "chapters": [
+            _chapter(1, "Contents", 5),
+            _chapter(2, "Chapter 1", 24),
+        ],
+    }
+    monkeypatch.setattr(
+        module,
+        "ensure_canonical_parse",
+        lambda _path: SimpleNamespace(
+            book_document=document,
+            title="Book A",
+            author="Author A",
+            output_language="en",
+        ),
+    )
+
+    module.build_user_level_selective_v1(
+        dataset_dir=dataset_dir,
+        dataset_id="custom_dataset",
+        dataset_version="custom-version",
+        split_manifest_path=None,
+        target_note_count=2,
+        hard_sentence_cap=50,
+    )
+
+    dataset_manifest = json.loads((dataset_dir / "manifest.json").read_text(encoding="utf-8"))
+    assert dataset_manifest["dataset_id"] == "custom_dataset"
+    assert dataset_manifest["version"] == "custom-version"
+    assert not manifest_path.exists()

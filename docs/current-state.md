@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-04-16T00:22:45Z`
+Last verified: `2026-04-16T10:38:00Z`
 
 ## Current Objective
 - Replace the old active `excerpt` benchmark pointer with the new note-aligned `user-level selective v1` package.
@@ -29,19 +29,35 @@ Last verified: `2026-04-16T00:22:45Z`
     - every active note case now carries a strict `segment_source_v1` char-span under `source_span_slices`
       - this is the source-coordinate system used for `Selective Legibility` candidate retrieval, because the mechanisms read the rendered `segment_sources/*.txt` substrate
       - original parsed-book sentence ids remain as provenance for audit, not as the primary matching coordinate
+    - a repaired sibling package is now staged after refreshing stale managed-note alignments:
+      - repaired dataset package:
+        - `reading-companion-backend/state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260416`
+      - repaired audit index:
+        - `reading-companion-backend/state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260416/audit_human_readable/index.md`
+      - current purpose:
+        - validate and audit repaired note-to-source spans before any clean strict-rejudge relaunch
+      - current caution:
+        - do not overwrite the active package in place until the next strict rejudge is explicitly relaunched on the repaired package or on a freshly rebuilt active package
+      - verified example:
+        - `huochu_shengming_de_yiyi_private_zh_personal_notes__e0002` now maps to the full two-sentence source span rather than truncating after the first sentence
   - `excerpt surface v1.1` remains preserved as historical / superseded evidence, not as the active local/user-level benchmark pointer
   - current evaluation move:
     - strict source-span retrieval, V1 locator reconstruction, and rejudge-only reuse tooling are now in place
     - broad semantic-segment fallback spans are judge-only candidates and never auto-count as exact note recall
-    - the first valid strict source-span judged run is now active:
+    - the most recent strict source-span judged run is preserved as failed evidence:
       - job id:
         - `bgjob_user_level_selective_v1_rejudge_reuse_20260416`
       - run id:
         - `attentional_v2_user_level_selective_v1_rejudge_reuse_20260416`
-      - auto-recovery watchdog:
-        - `bgjob_job_registry_auto_recovery_watchdog_20260416`
-      - execution posture:
-        - reuse completed reading outputs from the current run if a watchdog relaunch occurs
+      - failure cause:
+        - a local test regression captured the real active split-manifest path in `build_user_level_selective_v1(...)` defaults, which let a monkeypatched test overwrite `attentional_v2_user_level_selective_v1_draft.json` with a temporary `source_a` fixture
+        - the watchdog then relaunched the failed job against that contaminated manifest until its relaunch budget was exhausted
+      - repair status:
+        - the default-argument bug is now fixed
+        - the active split manifest has been restored from `HEAD`
+        - the watchdog has been stopped because no auto-recoverable eval jobs remain active
+      - intended relaunch posture:
+        - reuse completed reading outputs from the current run on a clean relaunch
         - then reuse completed seed outputs from `retry2` and `retry1`
         - re-score all reusable shards under the strict source-span contract
         - rerun only the two incomplete `attentional_v2` reading shards:

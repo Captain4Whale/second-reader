@@ -63,6 +63,24 @@ For human auditing, a local-only Markdown export is now available:
   - these source ids are parse coordinates, not visible chapter numbers
 - audit export is local-only and should not be treated as checked-in benchmark evidence
 
+## Repair Workflow For Stale Note Alignment
+
+If a note's `note_text` is clearly longer than its `source_span_text`, the first thing to suspect is stale managed-note alignment rather than missing source text.
+
+- refresh managed notes assets in place:
+  - `cd reading-companion-backend && .venv/bin/python eval/attentional_v2/refresh_library_notes_assets.py --linked-source-id huochu_shengming_de_yiyi_private_zh`
+  - repeat `--linked-source-id` for multiple books, or use `--all`
+- build a repaired dataset package without disturbing the active split manifest:
+  - `cd reading-companion-backend && .venv/bin/python eval/attentional_v2/user_level_selective_v1.py --dataset-dir state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_YYYYMMDD --dataset-id attentional_v2_user_level_selective_v1_repaired_YYYYMMDD --dataset-version YYYY-MM-DD --skip-split-manifest`
+- render human-readable audit docs for that repaired package:
+  - `cd reading-companion-backend && .venv/bin/python eval/attentional_v2/render_user_level_selective_audit.py --dataset-dir state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_YYYYMMDD`
+
+This repair path is intentionally split in two:
+
+- managed `library_notes` entries are the durable alignment truth
+- benchmark packages should be rebuilt from that truth
+- if a judged run is currently using the active dataset package, prefer rebuilding into a versioned sibling path first instead of rewriting the active package in place
+
 ## Chapter Identity In This Benchmark
 
 - public/product chapter identity still follows the global contract:
