@@ -147,7 +147,14 @@ class ReadingLocus(ApiModel):
     """Current reading locus projected from mechanism truth into a shared public shape."""
 
     kind: Literal["chapter", "sentence", "span"] = Field(description="Granularity of the current reading locus.")
-    chapter_id: Optional[int] = Field(default=None, description="Current chapter identifier when known.")
+    chapter_id: Optional[int] = Field(
+        default=None,
+        description="Stable parsed-book chapter key for the current locus when known.",
+    )
+    chapter_number: Optional[int] = Field(
+        default=None,
+        description="Visible numeric chapter number when the source text exposes one reliably.",
+    )
     chapter_ref: Optional[str] = Field(default=None, description="Human-readable chapter reference when known.")
     sentence_start_id: Optional[str] = Field(default=None, description="Shared sentence id where the current focus begins when known.")
     sentence_end_id: Optional[str] = Field(default=None, description="Shared sentence id where the current focus ends when known.")
@@ -188,8 +195,12 @@ class FeaturedReactionPreview(ApiModel):
     anchor_quote: str = Field(description="Quoted anchor text from the source book.")
     content: str = Field(description="AI-authored reaction text shown to the user.")
     book_id: int = Field(description="Stable public integer identifier of the book that owns this reaction.")
-    chapter_id: int = Field(description="Chapter identifier that owns this reaction.")
-    chapter_ref: str = Field(description="Human-readable chapter reference, such as Chapter 3.")
+    chapter_id: int = Field(description="Stable parsed-book chapter key that owns this reaction.")
+    chapter_number: Optional[int] = Field(
+        default=None,
+        description="Visible numeric chapter number when the source text exposes one reliably.",
+    )
+    chapter_ref: str = Field(description="Human-readable chapter reference, such as Chapter 3 or 第一部分.")
     section_ref: str = Field(description="Human-readable section reference, such as 3.2.")
     target_locator: Optional[ReactionTargetLocator] = Field(
         default=None,
@@ -302,7 +313,14 @@ class JobStatusResponse(ApiModel):
     progress_percent: Optional[float] = Field(default=None, description="Overall progress percentage from 0 to 100 when known.")
     completed_chapters: Optional[int] = Field(default=None, description="Number of completed chapters when known.")
     total_chapters: Optional[int] = Field(default=None, description="Total number of chapters when known.")
-    current_chapter_id: Optional[int] = Field(default=None, description="Identifier of the chapter currently being processed.")
+    current_chapter_id: Optional[int] = Field(
+        default=None,
+        description="Stable parsed-book chapter key of the chapter currently being processed.",
+    )
+    current_chapter_number: Optional[int] = Field(
+        default=None,
+        description="Visible numeric chapter number for the current chapter when the source text exposes one reliably.",
+    )
     current_chapter_ref: Optional[str] = Field(default=None, description="Human-readable reference of the current chapter.")
     current_section_ref: Optional[str] = Field(default=None, description="Human-readable reference of the current section.")
     stage_label_key: Optional[str] = Field(default=None, description="Stable UI copy key for the current stage label when available.")
@@ -326,7 +344,11 @@ class JobStatusResponse(ApiModel):
 class ChapterTreeItem(ApiModel):
     """Structure tree node used on the analysis progress page."""
 
-    chapter_id: int = Field(description="Chapter identifier.")
+    chapter_id: int = Field(description="Stable parsed-book chapter key.")
+    chapter_number: Optional[int] = Field(
+        default=None,
+        description="Visible numeric chapter number when the source text exposes one reliably.",
+    )
     chapter_ref: str = Field(description="Human-readable chapter reference.")
     title: str = Field(description="Chapter title.")
     segment_count: int = Field(description="Number of semantic sections in this chapter.")
@@ -389,7 +411,14 @@ class CurrentReadingActivity(ApiModel):
 class CurrentStatePanel(ApiModel):
     """Focused realtime status block for the analysis page."""
 
-    current_chapter_id: Optional[int] = Field(default=None, description="Identifier of the chapter currently being processed.")
+    current_chapter_id: Optional[int] = Field(
+        default=None,
+        description="Stable parsed-book chapter key of the chapter currently being processed.",
+    )
+    current_chapter_number: Optional[int] = Field(
+        default=None,
+        description="Visible numeric chapter number for the current chapter when the source text exposes one reliably.",
+    )
     current_chapter_ref: Optional[str] = Field(default=None, description="Human-readable reference of the chapter currently being processed.")
     current_section_ref: Optional[str] = Field(default=None, description="Human-readable reference of the current section.")
     current_phase_step_key: Optional[str] = Field(default=None, description="Stable UI copy key for the current parse or read step when available.")
@@ -407,7 +436,11 @@ class CurrentStatePanel(ApiModel):
 class ChapterCompletionCard(ApiModel):
     """Completion micro-ritual card for one finished chapter."""
 
-    chapter_id: int = Field(description="Completed chapter identifier.")
+    chapter_id: int = Field(description="Stable parsed-book key of the completed chapter.")
+    chapter_number: Optional[int] = Field(
+        default=None,
+        description="Visible numeric chapter number when the source text exposes one reliably.",
+    )
     chapter_ref: str = Field(description="Human-readable reference for the completed chapter.")
     title: str = Field(description="Title of the completed chapter.")
     visible_reaction_count: int = Field(description="Number of visible reactions in the chapter.")
@@ -433,7 +466,14 @@ class AnalysisStateResponse(ApiModel):
     progress_percent: Optional[float] = Field(default=None, description="Overall progress percentage from 0 to 100 when known.")
     completed_chapters: int = Field(description="Number of completed chapters.")
     total_chapters: int = Field(description="Total number of chapters.")
-    current_chapter_id: Optional[int] = Field(default=None, description="Identifier of the chapter currently being processed.")
+    current_chapter_id: Optional[int] = Field(
+        default=None,
+        description="Stable parsed-book chapter key of the chapter currently being processed.",
+    )
+    current_chapter_number: Optional[int] = Field(
+        default=None,
+        description="Visible numeric chapter number for the current chapter when the source text exposes one reliably.",
+    )
     current_chapter_ref: Optional[str] = Field(default=None, description="Human-readable reference of the current chapter.")
     eta_seconds: Optional[int] = Field(default=None, description="Estimated remaining time in seconds.")
     current_phase_step_key: Optional[str] = Field(default=None, description="Stable UI copy key for the current parse or read step when available.")
@@ -475,7 +515,11 @@ class ActivityEvent(ApiModel):
         description="Default UI visibility hint for this event."
     )
     message: str = Field(description="User-facing message shown in the activity stream.")
-    chapter_id: Optional[int] = Field(default=None, description="Related chapter identifier when applicable.")
+    chapter_id: Optional[int] = Field(default=None, description="Related stable parsed-book chapter key when applicable.")
+    chapter_number: Optional[int] = Field(
+        default=None,
+        description="Visible numeric chapter number for the related chapter when the source text exposes one reliably.",
+    )
     chapter_ref: Optional[str] = Field(default=None, description="Related chapter reference when applicable.")
     section_ref: Optional[str] = Field(default=None, description="Related section reference when applicable.")
     reading_locus: Optional[ReadingLocus] = Field(
@@ -519,7 +563,11 @@ class AnalysisLogResponse(ApiModel):
 class ChapterListItem(ApiModel):
     """Chapter overview item used on the book result page."""
 
-    chapter_id: int = Field(description="Chapter identifier.")
+    chapter_id: int = Field(description="Stable parsed-book chapter key.")
+    chapter_number: Optional[int] = Field(
+        default=None,
+        description="Visible numeric chapter number when the source text exposes one reliably.",
+    )
     chapter_ref: str = Field(description="Human-readable chapter reference.")
     title: str = Field(description="Chapter title.")
     segment_count: int = Field(description="Number of semantic sections in the chapter.")
@@ -595,7 +643,11 @@ class ChapterDetailResponse(ApiModel):
     """Chapter result page payload."""
 
     book_id: int = Field(description="Stable public integer identifier of the book.")
-    chapter_id: int = Field(description="Chapter identifier.")
+    chapter_id: int = Field(description="Stable parsed-book chapter key.")
+    chapter_number: Optional[int] = Field(
+        default=None,
+        description="Visible numeric chapter number when the source text exposes one reliably.",
+    )
     chapter_ref: str = Field(description="Human-readable chapter reference.")
     title: str = Field(description="Chapter title.")
     status: Literal["completed", "error"] = Field(description="User-facing chapter result status.")
@@ -630,7 +682,11 @@ class ChapterOutlineResponse(ApiModel):
     """Lightweight chapter outline payload used by the chapter drawer preview."""
 
     book_id: int = Field(description="Stable public integer identifier of the book.")
-    chapter_id: int = Field(description="Chapter identifier.")
+    chapter_id: int = Field(description="Stable parsed-book chapter key.")
+    chapter_number: Optional[int] = Field(
+        default=None,
+        description="Visible numeric chapter number when the source text exposes one reliably.",
+    )
     chapter_ref: str = Field(description="Human-readable chapter reference.")
     title: str = Field(description="Chapter title.")
     result_ready: bool = Field(description="Whether the chapter result is ready to open.")
@@ -658,7 +714,11 @@ class MarkRecord(ApiModel):
     reaction_id: int = Field(description="Public integer reaction identifier that owns this mark.")
     book_id: int = Field(description="Public integer book identifier for the marked reaction.")
     book_title: str = Field(description="Book title for the marked reaction.")
-    chapter_id: int = Field(description="Chapter identifier for the marked reaction.")
+    chapter_id: int = Field(description="Stable parsed-book chapter key for the marked reaction.")
+    chapter_number: Optional[int] = Field(
+        default=None,
+        description="Visible numeric chapter number for the marked reaction when the source text exposes one reliably.",
+    )
     chapter_ref: str = Field(description="Human-readable chapter reference for the marked reaction.")
     section_ref: str = Field(description="Human-readable section reference for the marked reaction.")
     reaction_type: ReactionType = Field(description="Reaction type key for the marked reaction.")
@@ -687,7 +747,11 @@ class MarksPageResponse(ApiModel):
 class BookMarksGroup(ApiModel):
     """Marks grouped under a single chapter."""
 
-    chapter_id: int = Field(description="Chapter identifier for this mark group.")
+    chapter_id: int = Field(description="Stable parsed-book chapter key for this mark group.")
+    chapter_number: Optional[int] = Field(
+        default=None,
+        description="Visible numeric chapter number for this mark group when the source text exposes one reliably.",
+    )
     chapter_ref: str = Field(description="Human-readable chapter reference for this mark group.")
     items: list[MarkRecord] = Field(description="Marks that belong to the chapter.")
 
@@ -737,7 +801,14 @@ class JobSnapshotPayload(ApiModel):
     progress_percent: Optional[float] = Field(default=None, description="Overall progress percentage when known.")
     completed_chapters: Optional[int] = Field(default=None, description="Completed chapter count when known.")
     total_chapters: Optional[int] = Field(default=None, description="Total chapter count when known.")
-    current_chapter_id: Optional[int] = Field(default=None, description="Current chapter identifier when known.")
+    current_chapter_id: Optional[int] = Field(
+        default=None,
+        description="Stable parsed-book chapter key for the current chapter when known.",
+    )
+    current_chapter_number: Optional[int] = Field(
+        default=None,
+        description="Visible numeric chapter number for the current chapter when the source text exposes one reliably.",
+    )
     current_chapter_ref: Optional[str] = Field(default=None, description="Current chapter reference when known.")
     current_section_ref: Optional[str] = Field(default=None, description="Current section reference when known.")
     current_phase_step_key: Optional[str] = Field(default=None, description="Stable UI copy key for the current parse or read step when available.")
@@ -773,7 +844,11 @@ class StructureReadyPayload(ApiModel):
 class ChapterStartedPayload(ApiModel):
     """WebSocket payload emitted when a chapter begins processing."""
 
-    chapter_id: int = Field(description="Chapter identifier.")
+    chapter_id: int = Field(description="Stable parsed-book chapter key.")
+    chapter_number: Optional[int] = Field(
+        default=None,
+        description="Visible numeric chapter number when the source text exposes one reliably.",
+    )
     chapter_ref: str = Field(description="Human-readable chapter reference.")
     title: str = Field(description="Chapter title.")
     segment_count: int = Field(description="Number of sections in the chapter.")
@@ -788,7 +863,11 @@ class ActivityCreatedPayload(ApiModel):
 class ChapterCompletedPayload(ApiModel):
     """WebSocket payload emitted when one chapter finishes."""
 
-    chapter_id: int = Field(description="Completed chapter identifier.")
+    chapter_id: int = Field(description="Stable parsed-book key of the completed chapter.")
+    chapter_number: Optional[int] = Field(
+        default=None,
+        description="Visible numeric chapter number when the source text exposes one reliably.",
+    )
     chapter_ref: str = Field(description="Human-readable reference of the completed chapter.")
     title: str = Field(description="Title of the completed chapter.")
     visible_reaction_count: int = Field(description="Number of visible reactions in the completed chapter.")
@@ -810,7 +889,14 @@ class JobErrorPayload(ApiModel):
     code: str = Field(description="Stable machine-readable error code.")
     message: str = Field(description="Human-readable error message.")
     retryable: bool = Field(description="Whether retrying may succeed.")
-    chapter_id: Optional[int] = Field(default=None, description="Related chapter identifier when the error is chapter-scoped.")
+    chapter_id: Optional[int] = Field(
+        default=None,
+        description="Related stable parsed-book chapter key when the error is chapter-scoped.",
+    )
+    chapter_number: Optional[int] = Field(
+        default=None,
+        description="Visible numeric chapter number for the related chapter when the source text exposes one reliably.",
+    )
     chapter_ref: Optional[str] = Field(default=None, description="Related chapter reference when applicable.")
     section_ref: Optional[str] = Field(default=None, description="Related section reference when applicable.")
 

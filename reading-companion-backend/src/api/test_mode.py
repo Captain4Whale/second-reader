@@ -48,6 +48,16 @@ def _append_jsonl(path: Path, payload: dict) -> None:
         handle.write("\n")
 
 
+def _visible_chapter_number(value: object) -> int | None:
+    """Return one explicit visible chapter number without falling back to chapter id."""
+
+    try:
+        numeric = int(value)
+    except (TypeError, ValueError):
+        return None
+    return numeric if numeric > 0 else None
+
+
 def _bootstrap_fixture_book(upload_path: Path, *, root: Path) -> tuple[dict, dict, Path, int, str, str]:
     """Create the deterministic book tree shared by fixture upload modes."""
     payload = _fixture_payload()
@@ -59,12 +69,13 @@ def _bootstrap_fixture_book(upload_path: Path, *, root: Path) -> tuple[dict, dic
     now = timestamp()
     chapter = dict(payload.get("chapter", {}))
     chapter_id = int(chapter.get("id", 1))
+    chapter_number = _visible_chapter_number(chapter.get("chapter_number"))
     chapter_ref = str(chapter.get("reference", f"Chapter {chapter_id}"))
     chapter_title = str(chapter.get("title", chapter_ref))
     chapter_stub = {
         "id": chapter_id,
         "title": chapter_title,
-        "chapter_number": int(chapter.get("chapter_number", chapter_id)),
+        "chapter_number": chapter_number,
     }
     result_file = relative_output_path(book_dir, chapter_result_file(book_dir, chapter_stub))
 
@@ -86,7 +97,7 @@ def _bootstrap_fixture_book(upload_path: Path, *, root: Path) -> tuple[dict, dic
             {
                 "id": chapter_id,
                 "title": chapter_title,
-                "chapter_number": int(chapter.get("chapter_number", chapter_id)),
+                "chapter_number": chapter_number,
                 "reference": chapter_ref,
                 "status": "pending",
                 "segment_count": int(chapter.get("segment_count", 1)),
@@ -124,7 +135,7 @@ def _complete_fixture_analysis(
         {
             "id": chapter_id,
             "title": chapter_title,
-            "chapter_number": int(manifest["chapters"][0].get("chapter_number", chapter_id)),
+            "chapter_number": _visible_chapter_number(manifest["chapters"][0].get("chapter_number")),
             "reference": chapter_ref,
             "status": "done",
         },

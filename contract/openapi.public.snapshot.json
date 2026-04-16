@@ -38,8 +38,20 @@
                 "type": "null"
               }
             ],
-            "description": "Related chapter identifier when applicable.",
+            "description": "Related stable parsed-book chapter key when applicable.",
             "title": "Chapter Id"
+          },
+          "chapter_number": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Visible numeric chapter number for the related chapter when the source text exposes one reliably.",
+            "title": "Chapter Number"
           },
           "chapter_ref": {
             "anyOf": [
@@ -548,8 +560,20 @@
                 "type": "null"
               }
             ],
-            "description": "Identifier of the chapter currently being processed.",
+            "description": "Stable parsed-book chapter key of the chapter currently being processed.",
             "title": "Current Chapter Id"
+          },
+          "current_chapter_number": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Visible numeric chapter number for the current chapter when the source text exposes one reliably.",
+            "title": "Current Chapter Number"
           },
           "current_chapter_ref": {
             "anyOf": [
@@ -942,9 +966,21 @@
         "description": "Marks grouped under a single chapter.",
         "properties": {
           "chapter_id": {
-            "description": "Chapter identifier for this mark group.",
+            "description": "Stable parsed-book chapter key for this mark group.",
             "title": "Chapter Id",
             "type": "integer"
+          },
+          "chapter_number": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Visible numeric chapter number for this mark group when the source text exposes one reliably.",
+            "title": "Chapter Number"
           },
           "chapter_ref": {
             "description": "Human-readable chapter reference for this mark group.",
@@ -1141,9 +1177,21 @@
         "description": "Completion micro-ritual card for one finished chapter.",
         "properties": {
           "chapter_id": {
-            "description": "Completed chapter identifier.",
+            "description": "Stable parsed-book key of the completed chapter.",
             "title": "Chapter Id",
             "type": "integer"
+          },
+          "chapter_number": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Visible numeric chapter number when the source text exposes one reliably.",
+            "title": "Chapter Number"
           },
           "chapter_ref": {
             "description": "Human-readable reference for the completed chapter.",
@@ -1222,9 +1270,21 @@
             "description": "Optional structured chapter-heading block kept separate from body semantic sections."
           },
           "chapter_id": {
-            "description": "Chapter identifier.",
+            "description": "Stable parsed-book chapter key.",
             "title": "Chapter Id",
             "type": "integer"
+          },
+          "chapter_number": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Visible numeric chapter number when the source text exposes one reliably.",
+            "title": "Chapter Number"
           },
           "chapter_ref": {
             "description": "Human-readable chapter reference.",
@@ -1374,9 +1434,21 @@
         "description": "Chapter overview item used on the book result page.",
         "properties": {
           "chapter_id": {
-            "description": "Chapter identifier.",
+            "description": "Stable parsed-book chapter key.",
             "title": "Chapter Id",
             "type": "integer"
+          },
+          "chapter_number": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Visible numeric chapter number when the source text exposes one reliably.",
+            "title": "Chapter Number"
           },
           "chapter_ref": {
             "description": "Human-readable chapter reference.",
@@ -1453,9 +1525,21 @@
             "description": "Optional structured chapter-heading block shown as a non-numbered outline item."
           },
           "chapter_id": {
-            "description": "Chapter identifier.",
+            "description": "Stable parsed-book chapter key.",
             "title": "Chapter Id",
             "type": "integer"
+          },
+          "chapter_number": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Visible numeric chapter number when the source text exposes one reliably.",
+            "title": "Chapter Number"
           },
           "chapter_ref": {
             "description": "Human-readable chapter reference.",
@@ -1559,9 +1643,21 @@
         "description": "Structure tree node used on the analysis progress page.",
         "properties": {
           "chapter_id": {
-            "description": "Chapter identifier.",
+            "description": "Stable parsed-book chapter key.",
             "title": "Chapter Id",
             "type": "integer"
+          },
+          "chapter_number": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Visible numeric chapter number when the source text exposes one reliably.",
+            "title": "Chapter Number"
           },
           "chapter_ref": {
             "description": "Human-readable chapter reference.",
@@ -1808,8 +1904,20 @@
                 "type": "null"
               }
             ],
-            "description": "Identifier of the chapter currently being processed.",
+            "description": "Stable parsed-book chapter key of the chapter currently being processed.",
             "title": "Current Chapter Id"
+          },
+          "current_chapter_number": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Visible numeric chapter number for the current chapter when the source text exposes one reliably.",
+            "title": "Current Chapter Number"
           },
           "current_chapter_ref": {
             "anyOf": [
@@ -2012,12 +2120,24 @@
             "type": "integer"
           },
           "chapter_id": {
-            "description": "Chapter identifier that owns this reaction.",
+            "description": "Stable parsed-book chapter key that owns this reaction.",
             "title": "Chapter Id",
             "type": "integer"
           },
+          "chapter_number": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Visible numeric chapter number when the source text exposes one reliably.",
+            "title": "Chapter Number"
+          },
           "chapter_ref": {
-            "description": "Human-readable chapter reference, such as Chapter 3.",
+            "description": "Human-readable chapter reference, such as Chapter 3 or 第一部分.",
             "title": "Chapter Ref",
             "type": "string"
           },
@@ -2218,8 +2338,20 @@
                 "type": "null"
               }
             ],
-            "description": "Identifier of the chapter currently being processed.",
+            "description": "Stable parsed-book chapter key of the chapter currently being processed.",
             "title": "Current Chapter Id"
+          },
+          "current_chapter_number": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Visible numeric chapter number for the current chapter when the source text exposes one reliably.",
+            "title": "Current Chapter Number"
           },
           "current_chapter_ref": {
             "anyOf": [
@@ -2462,9 +2594,21 @@
             "type": "string"
           },
           "chapter_id": {
-            "description": "Chapter identifier for the marked reaction.",
+            "description": "Stable parsed-book chapter key for the marked reaction.",
             "title": "Chapter Id",
             "type": "integer"
+          },
+          "chapter_number": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Visible numeric chapter number for the marked reaction when the source text exposes one reliably.",
+            "title": "Chapter Number"
           },
           "chapter_ref": {
             "description": "Human-readable chapter reference for the marked reaction.",
@@ -2908,8 +3052,20 @@
                 "type": "null"
               }
             ],
-            "description": "Current chapter identifier when known.",
+            "description": "Stable parsed-book chapter key for the current locus when known.",
             "title": "Chapter Id"
+          },
+          "chapter_number": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Visible numeric chapter number when the source text exposes one reliably.",
+            "title": "Chapter Number"
           },
           "chapter_ref": {
             "anyOf": [

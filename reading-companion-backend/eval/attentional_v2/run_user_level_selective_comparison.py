@@ -134,7 +134,7 @@ def _load_segments(dataset_dir: Path) -> list[ReadingSegment]:
             language_track=str(row["language_track"]),
             start_sentence_id=str(row["start_sentence_id"]),
             end_sentence_id=str(row["end_sentence_id"]),
-            chapter_ids=[int(item) for item in row.get("chapter_ids", [])],
+            chapter_ids=[int(item) for item in row.get("source_chapter_ids", row.get("chapter_ids", []))],
             chapter_titles=[str(item) for item in row.get("chapter_titles", [])],
             target_note_count=int(row["target_note_count"]),
             covered_note_count=int(row["covered_note_count"]),
@@ -167,7 +167,7 @@ def _load_note_cases(dataset_dir: Path) -> list[NoteCase]:
                 for item in row.get("source_span_slices", [])
                 if isinstance(item, dict)
             ],
-            chapter_id=int(row["chapter_id"]),
+            chapter_id=int(row.get("source_chapter_id", row["chapter_id"])),
             chapter_title=str(row.get("chapter_title", "")),
             section_label=str(row.get("section_label", "")),
             raw_locator=str(row.get("raw_locator", "")),

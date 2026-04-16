@@ -87,7 +87,7 @@ class AlignedNote:
     note_comment: str
     raw_locator: str
     section_label: str
-    chapter_id: int
+    source_chapter_id: int
     chapter_title: str
     start_sentence_id: str
     end_sentence_id: str
@@ -182,8 +182,8 @@ def _load_aligned_notes(*, notes_id: str, source_id: str) -> list[AlignedNote]:
             if _clean_text(row.get("linked_source_id")) != source_id:
                 continue
             matched_span = dict(row.get("matched_sentence_span") or {})
-            chapter_id = int(_clean_text(row.get("matched_chapter_id")) or matched_span.get("chapter_id") or 0)
-            if chapter_id <= 0:
+            source_chapter_id = int(_clean_text(row.get("matched_chapter_id")) or matched_span.get("chapter_id") or 0)
+            if source_chapter_id <= 0:
                 continue
             start_sentence_id = _clean_text(matched_span.get("start_sentence_id"))
             end_sentence_id = _clean_text(matched_span.get("end_sentence_id")) or start_sentence_id
@@ -198,7 +198,7 @@ def _load_aligned_notes(*, notes_id: str, source_id: str) -> list[AlignedNote]:
                     note_comment=_clean_text(row.get("note")),
                     raw_locator=_clean_text(row.get("raw_locator")),
                     section_label=_clean_text(row.get("section_label")),
-                    chapter_id=chapter_id,
+                    source_chapter_id=source_chapter_id,
                     chapter_title=_clean_text((row.get("alignment") or {}).get("chapter_title")) or _clean_text(row.get("section_label")),
                     start_sentence_id=start_sentence_id,
                     end_sentence_id=end_sentence_id,
@@ -208,7 +208,7 @@ def _load_aligned_notes(*, notes_id: str, source_id: str) -> list[AlignedNote]:
                     alignment_score=float((row.get("alignment") or {}).get("score") or 0.0),
                 )
             )
-    notes.sort(key=lambda item: (item.chapter_id, _sentence_number(item.start_sentence_id), item.note_id))
+    notes.sort(key=lambda item: (item.source_chapter_id, _sentence_number(item.start_sentence_id), item.note_id))
     return notes
 
 
@@ -522,7 +522,7 @@ def _choose_segment_end(
     paragraph_end_positions: dict[tuple[int, int], int],
     hard_sentence_cap: int,
 ) -> tuple[int, str]:
-    chapter_end = chapter_end_positions[target_note.chapter_id]
+    chapter_end = chapter_end_positions[target_note.source_chapter_id]
     additional_sentences = chapter_end - target_note_end_position
     if additional_sentences <= hard_sentence_cap:
         return chapter_end, "chapter_end_after_target_notes"
@@ -635,13 +635,13 @@ def build_user_level_selective_v1(
         ]
         segment_start_sentence_id = str(flat_sentences[0]["sentence_id"])
         segment_end_sentence_id = str(flat_sentences[segment_end_position]["sentence_id"])
-        covered_chapter_ids: list[int] = []
+        covered_source_chapter_ids: list[int] = []
         covered_chapter_titles: list[str] = []
         for sentence in flat_sentences[: segment_end_position + 1]:
             chapter_id = int(sentence["chapter_id"])
-            if chapter_id in covered_chapter_ids:
+            if chapter_id in covered_source_chapter_ids:
                 continue
-            covered_chapter_ids.append(chapter_id)
+            covered_source_chapter_ids.append(chapter_id)
             covered_chapter_titles.append(str(sentence["chapter_title"]))
 
         segment_id = f"{source_id}__segment_1"
@@ -663,7 +663,7 @@ def build_user_level_selective_v1(
                 "language_track": provisioned.output_language,
                 "start_sentence_id": segment_start_sentence_id,
                 "end_sentence_id": segment_end_sentence_id,
-                "chapter_ids": covered_chapter_ids,
+                "source_chapter_ids": covered_source_chapter_ids,
                 "chapter_titles": covered_chapter_titles,
                 "target_note_count": target_note_count,
                 "covered_note_count": len(segment_notes),
@@ -698,7 +698,7 @@ def build_user_level_selective_v1(
                     "source_sentence_ids": source_sentence_ids,
                     "source_span_coordinate_system": "segment_source_v1",
                     "source_span_slices": source_span_slices,
-                    "chapter_id": note.chapter_id,
+                    "source_chapter_id": note.source_chapter_id,
                     "chapter_title": note.chapter_title,
                     "section_label": note.section_label,
                     "raw_locator": note.raw_locator,

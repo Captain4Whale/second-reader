@@ -67,6 +67,15 @@ def _optional_int(value: object) -> int | None:
         return None
 
 
+def _public_chapter_number(value: object) -> int | None:
+    """Return one visible numeric chapter number when it is explicitly available."""
+
+    numeric = _optional_int(value)
+    if numeric is None or numeric <= 0:
+        return None
+    return numeric
+
+
 def _normalize_text_span_locator(payload: object) -> dict[str, object] | None:
     """Normalize one shared text-span locator payload for marks persistence."""
 
@@ -173,16 +182,18 @@ def list_book_marks(book_id: str, root: Path | None = None) -> list[UserMark]:
 
 def list_book_marks_grouped(book_id: str, root: Path | None = None) -> list[dict]:
     """Return one book's marks grouped by chapter."""
-    grouped: dict[tuple[int, str], list[UserMark]] = {}
+    grouped: dict[tuple[int, int | None, str], list[UserMark]] = {}
     for mark in list_book_marks(book_id, root):
         chapter_id = int(mark.get("chapter_id", 0) or 0)
+        chapter_number = _public_chapter_number(mark.get("chapter_number"))
         chapter_ref = str(mark.get("chapter_ref", ""))
-        grouped.setdefault((chapter_id, chapter_ref), []).append(mark)
+        grouped.setdefault((chapter_id, chapter_number, chapter_ref), []).append(mark)
 
     groups = []
-    for (chapter_id, chapter_ref), items in sorted(grouped.items(), key=lambda item: item[0][0]):
+    for (chapter_id, chapter_number, chapter_ref), items in sorted(grouped.items(), key=lambda item: item[0][0]):
         groups.append({
             "chapter_id": chapter_id,
+            "chapter_number": chapter_number,
             "chapter_ref": chapter_ref,
             "items": items,
         })
@@ -215,6 +226,7 @@ def find_reaction(book_id: str, reaction_id: str, root: Path | None = None) -> d
                 "book_id": book_id,
                 "book_title": str(payload.get("book_title", "")) or "",
                 "chapter_id": int(chapter.get("id", 0)),
+                "chapter_number": _public_chapter_number(chapter.get("chapter_number")),
                 "chapter_ref": str(chapter.get("reference", "")),
                 "segment_ref": section_ref,
                 "reaction": reaction,
@@ -249,6 +261,7 @@ def put_mark(*, book_id: str, reaction_id: str, mark_type: str, root: Path | Non
         "book_id": book_id,
         "book_title": book_title,
         "chapter_id": int(reaction_record["chapter_id"]),
+        "chapter_number": _public_chapter_number(reaction_record.get("chapter_number")),
         "chapter_ref": str(reaction_record["chapter_ref"]),
         "segment_ref": str(reaction_record["segment_ref"]),
         "reaction_type": reaction.get("type", "association"),

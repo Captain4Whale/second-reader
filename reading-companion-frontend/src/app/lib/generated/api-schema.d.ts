@@ -389,9 +389,14 @@ export interface components {
             anchor_quote?: string | null;
             /**
              * Chapter Id
-             * @description Related chapter identifier when applicable.
+             * @description Related stable parsed-book chapter key when applicable.
              */
             chapter_id?: number | null;
+            /**
+             * Chapter Number
+             * @description Visible numeric chapter number for the related chapter when the source text exposes one reliably.
+             */
+            chapter_number?: number | null;
             /**
              * Chapter Ref
              * @description Related chapter reference when applicable.
@@ -657,9 +662,14 @@ export interface components {
             completed_chapters: number;
             /**
              * Current Chapter Id
-             * @description Identifier of the chapter currently being processed.
+             * @description Stable parsed-book chapter key of the chapter currently being processed.
              */
             current_chapter_id?: number | null;
+            /**
+             * Current Chapter Number
+             * @description Visible numeric chapter number for the current chapter when the source text exposes one reliably.
+             */
+            current_chapter_number?: number | null;
             /**
              * Current Chapter Ref
              * @description Human-readable reference of the current chapter.
@@ -854,9 +864,14 @@ export interface components {
         BookMarksGroup: {
             /**
              * Chapter Id
-             * @description Chapter identifier for this mark group.
+             * @description Stable parsed-book chapter key for this mark group.
              */
             chapter_id: number;
+            /**
+             * Chapter Number
+             * @description Visible numeric chapter number for this mark group when the source text exposes one reliably.
+             */
+            chapter_number?: number | null;
             /**
              * Chapter Ref
              * @description Human-readable chapter reference for this mark group.
@@ -981,9 +996,14 @@ export interface components {
         ChapterCompletionCard: {
             /**
              * Chapter Id
-             * @description Completed chapter identifier.
+             * @description Stable parsed-book key of the completed chapter.
              */
             chapter_id: number;
+            /**
+             * Chapter Number
+             * @description Visible numeric chapter number when the source text exposes one reliably.
+             */
+            chapter_number?: number | null;
             /**
              * Chapter Ref
              * @description Human-readable reference for the completed chapter.
@@ -1029,9 +1049,14 @@ export interface components {
             chapter_heading?: components["schemas"]["ChapterHeadingBlock"] | null;
             /**
              * Chapter Id
-             * @description Chapter identifier.
+             * @description Stable parsed-book chapter key.
              */
             chapter_id: number;
+            /**
+             * Chapter Number
+             * @description Visible numeric chapter number when the source text exposes one reliably.
+             */
+            chapter_number?: number | null;
             /**
              * Chapter Ref
              * @description Human-readable chapter reference.
@@ -1118,9 +1143,14 @@ export interface components {
         ChapterListItem: {
             /**
              * Chapter Id
-             * @description Chapter identifier.
+             * @description Stable parsed-book chapter key.
              */
             chapter_id: number;
+            /**
+             * Chapter Number
+             * @description Visible numeric chapter number when the source text exposes one reliably.
+             */
+            chapter_number?: number | null;
             /**
              * Chapter Ref
              * @description Human-readable chapter reference.
@@ -1172,9 +1202,14 @@ export interface components {
             chapter_heading?: components["schemas"]["ChapterHeadingBlock"] | null;
             /**
              * Chapter Id
-             * @description Chapter identifier.
+             * @description Stable parsed-book chapter key.
              */
             chapter_id: number;
+            /**
+             * Chapter Number
+             * @description Visible numeric chapter number when the source text exposes one reliably.
+             */
+            chapter_number?: number | null;
             /**
              * Chapter Ref
              * @description Human-readable chapter reference.
@@ -1242,9 +1277,14 @@ export interface components {
         ChapterTreeItem: {
             /**
              * Chapter Id
-             * @description Chapter identifier.
+             * @description Stable parsed-book chapter key.
              */
             chapter_id: number;
+            /**
+             * Chapter Number
+             * @description Visible numeric chapter number when the source text exposes one reliably.
+             */
+            chapter_number?: number | null;
             /**
              * Chapter Ref
              * @description Human-readable chapter reference.
@@ -1353,9 +1393,14 @@ export interface components {
         CurrentStatePanel: {
             /**
              * Current Chapter Id
-             * @description Identifier of the chapter currently being processed.
+             * @description Stable parsed-book chapter key of the chapter currently being processed.
              */
             current_chapter_id?: number | null;
+            /**
+             * Current Chapter Number
+             * @description Visible numeric chapter number for the current chapter when the source text exposes one reliably.
+             */
+            current_chapter_number?: number | null;
             /**
              * Current Chapter Ref
              * @description Human-readable reference of the chapter currently being processed.
@@ -1474,12 +1519,17 @@ export interface components {
             book_id: number;
             /**
              * Chapter Id
-             * @description Chapter identifier that owns this reaction.
+             * @description Stable parsed-book chapter key that owns this reaction.
              */
             chapter_id: number;
             /**
+             * Chapter Number
+             * @description Visible numeric chapter number when the source text exposes one reliably.
+             */
+            chapter_number?: number | null;
+            /**
              * Chapter Ref
-             * @description Human-readable chapter reference, such as Chapter 3.
+             * @description Human-readable chapter reference, such as Chapter 3 or 第一部分.
              */
             chapter_ref: string;
             /**
@@ -1588,9 +1638,14 @@ export interface components {
             created_at: string;
             /**
              * Current Chapter Id
-             * @description Identifier of the chapter currently being processed.
+             * @description Stable parsed-book chapter key of the chapter currently being processed.
              */
             current_chapter_id?: number | null;
+            /**
+             * Current Chapter Number
+             * @description Visible numeric chapter number for the current chapter when the source text exposes one reliably.
+             */
+            current_chapter_number?: number | null;
             /**
              * Current Chapter Ref
              * @description Human-readable reference of the current chapter.
@@ -1709,9 +1764,14 @@ export interface components {
             book_title: string;
             /**
              * Chapter Id
-             * @description Chapter identifier for the marked reaction.
+             * @description Stable parsed-book chapter key for the marked reaction.
              */
             chapter_id: number;
+            /**
+             * Chapter Number
+             * @description Visible numeric chapter number for the marked reaction when the source text exposes one reliably.
+             */
+            chapter_number?: number | null;
             /**
              * Chapter Ref
              * @description Human-readable chapter reference for the marked reaction.
@@ -1949,9 +2009,14 @@ export interface components {
         ReadingLocus: {
             /**
              * Chapter Id
-             * @description Current chapter identifier when known.
+             * @description Stable parsed-book chapter key for the current locus when known.
              */
             chapter_id?: number | null;
+            /**
+             * Chapter Number
+             * @description Visible numeric chapter number when the source text exposes one reliably.
+             */
+            chapter_number?: number | null;
             /**
              * Chapter Ref
              * @description Human-readable chapter reference when known.

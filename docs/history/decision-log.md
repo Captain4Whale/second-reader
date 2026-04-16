@@ -1760,3 +1760,34 @@ The old active windows `nawaer_baodian_private_zh__wealth`, `nawaer_baodian_priv
 - `reading-companion-backend/src/reading_mechanisms/iterator_v1.py`
 - `reading-companion-backend/src/attentional_v2/evaluation.py`
 - `reading-companion-backend/state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1/note_cases.jsonl`
+
+## Entry 62
+**ID**: DEC-065
+**Status**: active
+
+**Decision / Inflection**: Converge chapter identity semantics globally around three distinct concepts: stable `chapter_id`, optional visible `chapter_number`, and human-facing `chapter_ref`, while renaming dataset/eval parse-coordinate fields to `source_chapter_id` / `source_chapter_ids`.
+
+**Period**: April 16, 2026, after the new user-level audit export made it obvious that a visible first body unit such as `第一部分` in *活出生命的意义* could still carry an internal parse coordinate like `8`, which was technically correct but humanly misleading when surfaced without semantic separation.
+
+**Problem**: The codebase had already partially distinguished chapter key vs visible numbering since the V1 era, but that distinction was not globally explicit. Public API consumers could easily read `chapter_id` as if it were the book's visible chapter number, while dataset/audit artifacts were also reusing bare `chapter_id` for internal parse coordinates. That made front matter offsets, prefatory units, and non-numeric headings look like bugs when they were really a naming/semantics mismatch.
+
+**Alternatives considered**: Break the public contract and rename `chapter_id` to a new key name everywhere, keep the old mixed semantics and only patch the audit export text, or formalize the existing separation without breaking routes and cache keys.
+
+**Why this path won**: The system already depends on a stable integer chapter key for routes, caches, and compatibility payloads. Breaking that key would create wide churn for little product value. The better path is additive clarification: keep `chapter_id` as the stable parsed-book key, expose `chapter_number` additively when the source heading yields a reliable visible numeric ordinal, make `chapter_ref` the default human-facing label, and stop reusing bare `chapter_id` inside benchmark provenance where the meaning is really “source parse coordinate.”
+
+**What changed in the system**: Stable docs now define `chapter_id` as the canonical parsed-book chapter key rather than as visible chapter numbering. Public backend payloads additively expose `chapter_number` on chapter-shaped responses, current-state payloads, activity/realtime chapter events, and marks metadata whenever the manifest/runtime truth can support it. Human-facing displays are expected to prefer `chapter_ref` and then `title`, not `chapter_id`. The active user-level benchmark package and its audit renderer now use `source_chapter_id` / `source_chapter_ids` for parse-coordinate provenance, and the audit export labels those values explicitly as internal/source ids instead of “chapter numbers.”
+
+**Why it matters later**: Future contributors will otherwise rediscover the same confusion whenever a book begins with front matter, uses non-numeric units such as `Preface` or `第一部分`, or when an eval package needs to show parse provenance. This entry records the project-wide rule: stable key, optional visible number, human-facing reference, and separate source-coordinate naming in dataset/eval territory.
+
+**Primary evidence**:
+- `docs/api-contract.md`
+- `docs/backend-state-aggregation.md`
+- `docs/backend-reader-evaluation.md`
+- `docs/history/decision-log.md`
+- `reading-companion-backend/docs/evaluation/user_level/README.md`
+- `reading-companion-backend/src/api/schemas.py`
+- `reading-companion-backend/src/library/catalog.py`
+- `reading-companion-backend/src/library/user_marks.py`
+- `reading-companion-backend/src/api/realtime.py`
+- `reading-companion-backend/eval/attentional_v2/user_level_selective_v1.py`
+- `reading-companion-backend/eval/attentional_v2/render_user_level_selective_audit.py`

@@ -61,14 +61,18 @@ def _termination_reason_label(value: str) -> str:
     return mapping.get(value, value or "unknown")
 
 
-def _chapter_summary(segment: dict[str, Any]) -> str:
-    chapter_ids = [str(item) for item in segment.get("chapter_ids") or []]
+def _chapter_titles_summary(segment: dict[str, Any]) -> str:
     chapter_titles = [str(item) for item in segment.get("chapter_titles") or []]
-    pairs = [
-        f"{chapter_id} — {chapter_title}"
-        for chapter_id, chapter_title in zip(chapter_ids, chapter_titles, strict=False)
-    ]
-    return "; ".join(pairs)
+    return "; ".join(title for title in chapter_titles if title) or "(none)"
+
+
+def _source_chapter_ids_summary(segment: dict[str, Any]) -> str:
+    chapter_ids = [str(item) for item in (segment.get("source_chapter_ids") or segment.get("chapter_ids") or [])]
+    return ", ".join(chapter_ids) or "(none)"
+
+
+def _note_case_source_chapter_id(note_case: dict[str, Any]) -> object:
+    return note_case.get("source_chapter_id", note_case.get("chapter_id"))
 
 
 def _first_slice_sort_key(note_case: dict[str, Any]) -> tuple[int, int, str]:
@@ -174,7 +178,8 @@ def _render_index(
                 f"- language_track: `{segment.get('language_track')}`",
                 f"- 阅读窗口从: `{segment.get('start_sentence_id')}`",
                 f"- 阅读窗口到: `{segment.get('end_sentence_id')}`",
-                f"- 覆盖章节: {_chapter_summary(segment)}",
+                f"- 覆盖正文单元: {_chapter_titles_summary(segment)}",
+                f"- internal/source chapter ids: `{_source_chapter_ids_summary(segment)}`",
                 f"- termination_reason: `{segment.get('termination_reason')}` ({_termination_reason_label(str(segment.get('termination_reason') or ''))})",
                 f"- covered_note_count: `{len(note_cases_by_segment.get(segment_id, []))}`",
                 f"- 窗口审计文档: [{window_doc.name}]({_relative_link(index_path, window_doc)})",
@@ -215,7 +220,8 @@ def _render_window_doc(
         f"- language_track: `{segment.get('language_track')}`",
         f"- 阅读窗口从: `{segment.get('start_sentence_id')}`",
         f"- 阅读窗口到: `{segment.get('end_sentence_id')}`",
-        f"- 覆盖章节: {_chapter_summary(segment)}",
+        f"- 覆盖正文单元: {_chapter_titles_summary(segment)}",
+        f"- internal/source chapter ids: `{_source_chapter_ids_summary(segment)}`",
         f"- termination_reason: `{segment.get('termination_reason')}` ({_termination_reason_label(str(segment.get('termination_reason') or ''))})",
         f"- case_count: `{len(sorted_cases)}`",
         f"- 原始窗口文本: [{source_path.name}]({_relative_link(window_path, source_path)})",
@@ -233,7 +239,8 @@ def _render_window_doc(
                 f"### {index}. `{note_case.get('note_case_id')}`",
                 "",
                 f"- note_id: `{note_case.get('note_id')}`",
-                f"- chapter: `{note_case.get('chapter_id')}` / `{note_case.get('chapter_title')}`",
+                f"- 正文单元标题: `{note_case.get('chapter_title')}`",
+                f"- internal/source chapter id: `{_note_case_source_chapter_id(note_case)}`",
                 f"- raw_locator: `{note_case.get('raw_locator')}`",
                 f"- section_label: `{note_case.get('section_label')}`",
             ]

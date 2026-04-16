@@ -15,6 +15,11 @@ Use `docs/api-contract.md` for exact fields and routes. Use this file to underst
 - `public/book_document.json`
   - Canonical parsed-book substrate shared across backend reading mechanisms.
   - Contains chapter order, paragraph records, sentence records, and locators.
+  - Chapter records may carry:
+    - stable canonical internal key `id`
+    - optional visible numeric ordinal `chapter_number`
+    - human-facing reference text such as `chapter_ref` or `title`
+  - The canonical key and the visible ordinal are intentionally different concepts; front matter can make the first visible body unit land on an internal key such as `8`.
   - Sentence records are parse-time, source-order, mechanism-neutral substrate entries grounded back to paragraph locators with character offsets.
   - Load/build helpers may backfill missing sentence inventories into older paragraph-only `book_document.json` payloads when the canonical document is reloaded.
   - Current public API surfaces do not expose it directly, but runtime and future eval tooling can rely on it as the mechanism-neutral text source.
@@ -30,6 +35,7 @@ Use `docs/api-contract.md` for exact fields and routes. Use this file to underst
   - Legacy flat manifests are still readable through fallback resolution, but public aggregation prefers the canonical `public/` location.
   - For non-iterator mechanisms such as `attentional_v2`, the shared manifest can now be built from `book_document.json` plus mechanism-owned compatibility chapter results instead of from `iterator_v1` structure.
   - Aggregation now preserves chapter-level compatibility hints such as `result_file`, `visible_reaction_count`, and `reaction_type_diversity` when the shared manifest is rebuilt from the shared substrate.
+  - Aggregation also preserves optional visible chapter numbering so public chapter-shaped payloads can expose `chapter_number` without changing the stable `chapter_id` key.
 - `_runtime/run_state.json`
   - The live runtime snapshot for the sequential workflow.
   - Carries top-level stage, chapter and segment pointers, `current_phase_step`, `current_reading_activity`, checkpoint metadata, errors, and ETA-like progress hints.
@@ -81,6 +87,7 @@ Use `docs/api-contract.md` for exact fields and routes. Use this file to underst
 - `GET /api/books/{book_id}/analysis-state`
   - Uses `book_manifest`, `run_state`, `runtime_shell`, `parse_state`, canonical product job truth, `activity.jsonl`, and chapter result files together.
   - Builds progress metrics, chapter tree statuses, `status_reason`, `current_reading_activity`, `resume_available`, `last_checkpoint_at`, recent completed chapters, recent reactions, and the `current_state_panel`.
+  - Keeps `chapter_id` as the stable chapter key while additively projecting `chapter_number` and `current_chapter_number` wherever manifest/runtime truth can support a reliable visible numeric ordinal.
   - `resume_available` is now projected from usable resume truth, not just from whatever older runtime files last claimed. A stale runtime shell or leftover checkpoint artifact is not enough on its own.
   - When the current public state is `paused` because of `runtime_stale` or `runtime_interrupted`, aggregation preserves the last-known chapter/section/activity pointers but treats them as last-known runtime snapshots rather than live reading claims.
   - For non-iterator mechanisms, additive locus projection now prefers:
@@ -94,7 +101,7 @@ Use `docs/api-contract.md` for exact fields and routes. Use this file to underst
   - Reads `activity.jsonl` and normalizes each event into the public event shape.
   - The routed frontend overview now consumes the `stream=mindstream` view; `stream=system` remains available for diagnostics.
   - Adds canonical chapter result routes where the completed result is ready.
-  - Event payloads may now also carry additive `reading_locus`, `move_type`, and anchor-native reaction fields without changing the current compatibility route model.
+  - Event payloads may now also carry additive `chapter_number`, `reading_locus`, `move_type`, and anchor-native reaction fields without changing the current compatibility route model.
 - `GET /api/books/{book_id}/analysis-log`
   - Is the main exception to the catalog-driven view model.
   - It remains an internal diagnostic endpoint and is no longer part of the user-facing overview.
@@ -105,13 +112,14 @@ Use `docs/api-contract.md` for exact fields and routes. Use this file to underst
   - This surface no longer hard-requires `iterator_v1` structure as long as the manifest points at a valid mechanism-owned chapter result file.
   - When older compatibility manifests are missing `result_file`, aggregation now also falls back directly to `attentional_v2` chapter compatibility payloads under `_mechanisms/attentional_v2/derived/chapter_result_compatibility/`.
   - Reaction cards and featured reaction previews may now additively expose `primary_anchor`, `related_anchors`, and reconsolidation lineage sidecars while the page still remains section-shaped for compatibility.
+  - Chapter detail and outline payloads may now additively expose `chapter_number`, but their route key remains the stable `chapter_id`.
 - `GET /api/books/{book_id}/chapters/{chapter_id}/outline`
   - Starts from the manifest chapter tree, then enriches the outline with section previews from the chapter result file when that result exists.
   - It does not hard-require `iterator_v1` structure; non-iterator runs can now serve outline sections from compatibility chapter payloads alone.
 - `GET /api/marks` and `GET /api/books/{book_id}/marks`
   - Read from `state/user_marks.json`.
   - Rely on previously persisted book/chapter metadata and reaction lookup against chapter results to keep marks anchored to real reading artifacts.
-  - Marks may now persist additive `primary_anchor` data even while they still expose `section_ref` for the current routed frontend.
+  - Marks may now persist additive `chapter_number` and `primary_anchor` data even while they still expose `section_ref` for the current routed frontend.
 
 ## Aggregation Responsibilities
 - `reading-companion-backend/src/library/catalog.py`
@@ -139,6 +147,11 @@ Use `docs/api-contract.md` for exact fields and routes. Use this file to underst
   - Runtime artifacts use internal string ids for books and reactions.
   - Public REST and WebSocket surfaces expose integer `book_id`, `reaction_id`, and `mark_id`.
   - `src/api/contract.py` performs the stable namespace-based mapping between the two.
+- Stable chapter key vs visible chapter numbering
+  - Public `chapter_id` remains the stable parsed-book chapter key.
+  - Public `chapter_number` is additive and optional.
+  - Aggregation must not infer `chapter_number` from `chapter_id`.
+  - Human-facing displays should prefer `chapter_ref` or `title`; numeric labels are a sidecar when the source heading truly provides them.
 - Legacy taxonomy vs canonical taxonomy
   - Internal artifacts may still contain legacy values such as `connect_back`, `critique`, `curiosity`, or `known`.
   - Public surfaces normalize them to the canonical taxonomy:

@@ -358,6 +358,7 @@ def book_marks(book_id: int) -> BookMarksResponse:
     for group in list_book_marks_grouped(internal_book_id, root=_root()):
         groups.append({
             "chapter_id": int(group.get("chapter_id", 0)),
+            "chapter_number": group.get("chapter_number"),
             "chapter_ref": str(group.get("chapter_ref", "")),
             "items": [_mark_record(item) for item in group.get("items", [])],
         })

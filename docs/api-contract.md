@@ -106,6 +106,32 @@ Additive substrate and locator fields are allowed to carry shared sentence ids a
 
 These are not public entity ids in the book/chapter/reaction/mark namespace. They are shared parsed-book substrate references.
 
+## Chapter Identity Semantics
+- `chapter_id`
+  - is the stable public chapter key used by routes, caches, and response payloads
+  - maps to the canonical parsed-book chapter unit
+  - is not a promise about the book's visible chapter numbering
+- `chapter_number`
+  - is an additive optional display field
+  - represents the visible numeric chapter ordinal only when that ordinal can be recovered reliably from the source heading
+  - may be `null`
+  - must not be inferred from `chapter_id`
+- `chapter_ref`
+  - is the default human-facing chapter reference string
+  - may be numeric, textual, or structural, for example `Chapter 3`, `第一部分`, or `Preface`
+  - does not carry stable-key semantics
+- `title`
+  - is the raw chapter/unit heading text
+
+Practical implications:
+- the canonical chapter route remains `/books/:id/chapters/:chapterId`
+- frontend code should continue using `chapter_id` as the routing and caching key
+- user-visible displays should prefer:
+  - `chapter_ref`
+  - then `title`
+  - then `chapter_number` only when a numeric label is explicitly needed
+- books with front matter may legitimately expose a visible first body unit whose `chapter_id` is greater than `1`
+
 ## Landing Strategy
 Landing is a frontend-owned experience in the current implementation.
 
@@ -161,6 +187,7 @@ Every returned mark must include at least:
 - `reaction_id`
 - `book_id`
 - `chapter_id`
+- optional additive `chapter_number`
 - `mark_type`
 - `reaction_type`
 - `anchor_quote`
@@ -184,6 +211,7 @@ except as migration compatibility text where the underlying value remains in the
 
 - public integer `book_id`
 - chapter tree items with integer `chapter_id`
+- optional additive `chapter_number` on chapter-shaped entries when the source heading yields a reliable visible numeric ordinal
 - parse-stage and deep-reading-stage progress in the same payload
 - optional additive `status_reason` when the current paused/error-like state needs a concrete explanation:
   - `runtime_stale`
@@ -206,6 +234,7 @@ except as migration compatibility text where the underlying value remains in the
   - optional `active_reaction_id`
   - optional `problem_code`
 - `current_state_panel.reaction_counts` keyed only by the five canonical reaction types
+- optional additive `current_chapter_number`
 - `recent_completed_chapters[].result_url` pointing to canonical frontend routes
 
 Snapshot semantics:
@@ -226,7 +255,8 @@ Stable expectations:
 - optional additive `status_reason` may explain why a paused/error-like job reached that state without changing the top-level status enum
 - `book_id`, when known, is a public integer book id
 - `job_url` and `ws_url` remain backend API URLs
-- chapter progress fields such as `current_chapter_id` remain integers
+- chapter progress fields such as `current_chapter_id` remain stable integer chapter keys
+- optional additive `current_chapter_number` may appear when the current chapter has a reliable visible numeric ordinal
 - long-running parse/read payloads may expose `current_phase_step`, `resume_available`, and `last_checkpoint_at`
 - deferred upload is chapter-outline only; semantic segmentation begins inside `analysis/start` or `analysis/resume` as part of deep-reading preparation
 

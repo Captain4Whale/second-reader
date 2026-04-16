@@ -56,7 +56,28 @@ For human auditing, a local-only Markdown export is now available:
 - output shape:
   - `index.md`
   - `windows/<segment_id>.md`
+- display note:
+  - audit Markdown renders chapter titles as the human-facing “正文单元” label
+  - raw `source_chapter_ids` are still shown separately as internal canonical-parse ids
+  - those internal ids may include front matter offsets, so a book's visible first part/chapter can legitimately carry an internal id like `8`
+  - these source ids are parse coordinates, not visible chapter numbers
 - audit export is local-only and should not be treated as checked-in benchmark evidence
+
+## Chapter Identity In This Benchmark
+
+- public/product chapter identity still follows the global contract:
+  - `chapter_id` = stable parsed-book chapter key
+  - `chapter_number` = optional visible numeric ordinal
+  - `chapter_ref` = human-facing reference label
+- this benchmark package uses `source_chapter_id` / `source_chapter_ids` instead of bare `chapter_id` because its job is provenance and auditability, not public routing
+- human audit exports should therefore show:
+  - 正文单元标题
+  - internal/source chapter id
+  - never treat the internal/source id as the book's visible chapter number
+- compatibility note:
+  - the active runner and audit renderer currently accept both legacy `chapter_id` / `chapter_ids` and the converged `source_chapter_id` / `source_chapter_ids`
+  - this keeps in-flight judged runs stable during the naming migration window
+  - the next dataset rebuild should write only the `source_*` form
 
 ## Formal Runs
 

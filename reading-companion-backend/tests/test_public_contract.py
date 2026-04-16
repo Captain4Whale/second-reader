@@ -271,12 +271,17 @@ def test_openapi_public_snapshot_and_key_contracts(tmp_path):
     chapter_outline = schemas["ChapterOutlineResponse"]
     assert chapter_outline["properties"]["status"]["enum"] == ["pending", "completed", "error"]
     assert chapter_outline["properties"]["chapter_heading"]["anyOf"][0]["$ref"] == "#/components/schemas/ChapterHeadingBlock"
+    assert chapter_outline["properties"]["chapter_number"]["anyOf"][0]["type"] == "integer"
     outline_section = schemas["ChapterOutlineSectionItem"]
     assert outline_section["properties"]["visible_reaction_count"]["type"] == "integer"
 
     current_activity = schemas["CurrentReadingActivity"]
     assert current_activity["properties"]["reading_locus"]["anyOf"][0]["$ref"] == "#/components/schemas/ReadingLocus"
     assert current_activity["properties"]["move_type"]["anyOf"][0]["enum"] == ["advance", "dwell", "bridge", "reframe"]
+    assert schemas["ReadingLocus"]["properties"]["chapter_number"]["anyOf"][0]["type"] == "integer"
+    assert schemas["FeaturedReactionPreview"]["properties"]["chapter_number"]["anyOf"][0]["type"] == "integer"
+    assert schemas["MarkRecord"]["properties"]["chapter_number"]["anyOf"][0]["type"] == "integer"
+    assert schemas["AnalysisStateResponse"]["properties"]["current_chapter_number"]["anyOf"][0]["type"] == "integer"
 
     expected_status_reason_enum = [
         "runtime_stale",
@@ -321,10 +326,13 @@ def test_rest_payloads_scrub_legacy_names_and_routes(tmp_path):
     }
 
     assert payloads["book"]["reaction_counts"] == {reaction_type: (1 if reaction_type == "retrospect" else 0) for reaction_type in REACTION_TYPES}
+    assert payloads["book"]["chapters"][0]["chapter_number"] == 1
     assert payloads["analysis"]["current_state_panel"]["reaction_counts"] == {
         reaction_type: (1 if reaction_type == "retrospect" else 0)
         for reaction_type in REACTION_TYPES
     }
+    assert payloads["analysis"]["chapters"][0]["chapter_number"] == 1
+    assert payloads["chapter"]["chapter_number"] == 1
     assert payloads["chapter"]["available_filters"] == REACTION_FILTERS
 
     mark_item = payloads["marks"]["items"][0]
@@ -341,6 +349,8 @@ def test_rest_payloads_scrub_legacy_names_and_routes(tmp_path):
         }
     )
     assert mark_item["primary_anchor"]["quote"] == "Legacy retrospect quote"
+    assert mark_item["chapter_number"] == 1
+    assert payloads["book_marks"]["groups"][0]["chapter_number"] == 1
 
     error_payload = client.get("/api/books/999999999").json()
     assert set(error_payload) == {"error_id", "code", "message", "status", "retryable", "details"}

@@ -125,6 +125,10 @@ Use `docs/backend-reading-mechanism.md` for shared mechanism-platform boundaries
   - one `reading_segment` per eligible book
   - one `note_case` per aligned human note that falls inside that segment
   - no synthetic same-chapter expansion beyond directly aligned notes
+- Dataset coordinate naming should distinguish public-facing chapter identity from parse-coordinate bookkeeping:
+  - benchmark package fields that carry canonical source-book parse coordinates should use `source_chapter_id` / `source_chapter_ids`
+  - they should not reuse bare `chapter_id` when the meaning is “internal parsed-book unit coordinate”
+  - audit exports should label these values as internal/source chapter ids, not as visible chapter numbers
 - `reading_segment` construction should follow these fixed boundaries:
   - start at the first body sentence of the book
   - keep reading until the segment covers at least `20` aligned notes by default
@@ -145,6 +149,7 @@ Use `docs/backend-reading-mechanism.md` for shared mechanism-platform boundaries
   - textual similarity, shared words, nearby ideas, or semantic relatedness must not admit a candidate when the source spans do not overlap
   - the active coordinate system is the rendered reading segment substrate (`segment_source_v1`) because that is what mechanisms read during this benchmark
   - original parsed-book sentence ids and note provenance remain audit metadata, not the primary matching coordinate
+  - original parsed-book chapter coordinates remain audit metadata through `source_chapter_id` / `source_chapter_ids`; they are not user-visible chapter numbering
 - Exact match should be narrow and automatic:
   - only when the visible reaction source span and the note case source span are the same canonical char span
 - Non-exact matching should be judge-mediated only after real source-span overlap exists:

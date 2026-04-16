@@ -85,6 +85,15 @@ def _optional_int(value: object) -> int | None:
         return None
 
 
+def _public_chapter_number(value: object) -> int | None:
+    """Return one visible numeric chapter number when it is explicitly available."""
+
+    numeric = _optional_int(value)
+    if numeric is None or numeric <= 0:
+        return None
+    return numeric
+
+
 def _normalize_text_span_locator(payload: object) -> dict[str, object] | None:
     """Normalize one shared text-span locator payload."""
 
@@ -572,6 +581,7 @@ def get_book_detail(book_id: str, root: Path | None = None) -> dict:
         chapters.append(
             {
                 "chapter_id": int(chapter.get("id", 0)),
+                "chapter_number": _public_chapter_number(chapter.get("chapter_number")),
                 "chapter_ref": str(chapter.get("reference", "")),
                 "title": str(chapter.get("title", "")),
                 "segment_count": int(chapter.get("segment_count", 0)),
@@ -625,7 +635,13 @@ def _event_id(event: dict) -> str:
     return hashlib.sha1(raw.encode("utf-8")).hexdigest()[:16]
 
 
-def _featured_reaction_preview(book_id: str, chapter_id: int, chapter_ref: str, item: dict) -> dict:
+def _featured_reaction_preview(
+    book_id: str,
+    chapter_id: int,
+    chapter_number: int | None,
+    chapter_ref: str,
+    item: dict,
+) -> dict:
     """Normalize one compact featured reaction payload."""
     internal_reaction_id = str(item.get("reaction_id", ""))
     primary_anchor = _reaction_primary_anchor(item)
@@ -636,6 +652,7 @@ def _featured_reaction_preview(book_id: str, chapter_id: int, chapter_ref: str, 
         "content": str(item.get("content", "")),
         "book_id": to_api_book_id(book_id),
         "chapter_id": chapter_id,
+        "chapter_number": chapter_number,
         "chapter_ref": chapter_ref,
         "section_ref": str(item.get("segment_ref", item.get("section_ref", ""))),
         "target_locator": _normalize_target_locator(item.get("target_locator")),
@@ -671,12 +688,16 @@ def _decorate_activity_event(
     event: dict,
     *,
     chapter_result_urls: dict[int, str] | None = None,
+    chapter_lookup: dict[int, dict[str, object]] | None = None,
     root: Path | None = None,
 ) -> dict:
     """Decorate one persisted activity event into the public API shape."""
     event = normalize_activity_event(event)
     chapter_id = int(event.get("chapter_id", 0) or 0) or None
     chapter_ref = str(event.get("chapter_ref", "") or "") or None
+    chapter_number = _public_chapter_number(event.get("chapter_number"))
+    if chapter_number is None and chapter_id is not None and chapter_lookup is not None:
+        chapter_number = _public_chapter_number((chapter_lookup.get(chapter_id) or {}).get("chapter_number"))
     section_ref = str(event.get("segment_ref", event.get("section_ref", "")) or "") or None
     visible_reactions = []
     for index, item in enumerate(event.get("visible_reactions", []), start=1):
@@ -699,6 +720,7 @@ def _decorate_activity_event(
             _featured_reaction_preview(
                 book_id,
                 chapter_id or 0,
+                chapter_number,
                 chapter_ref or "",
                 item,
             )
@@ -707,6 +729,7 @@ def _decorate_activity_event(
     explicit_locus = _normalize_reading_locus(
         event.get("reading_locus"),
         fallback_chapter_id=chapter_id,
+        fallback_chapter_number=chapter_number,
         fallback_chapter_ref=chapter_ref,
         fallback_excerpt=_clean_text(event.get("highlight_quote") or event.get("anchor_quote")),
         fallback_locator=(
@@ -724,6 +747,7 @@ def _decorate_activity_event(
         book_id,
         segment_ref=section_ref,
         chapter_id=chapter_id,
+        chapter_number=chapter_number,
         chapter_ref=chapter_ref,
         excerpt=_clean_text(event.get("highlight_quote") or event.get("anchor_quote")),
         root=root,
@@ -739,6 +763,7 @@ def _decorate_activity_event(
         "visibility": str(event.get("visibility", "")),
         "message": str(event.get("message", "")),
         "chapter_id": chapter_id,
+        "chapter_number": chapter_number,
         "chapter_ref": chapter_ref,
         "section_ref": section_ref,
         "reading_locus": reading_locus,
@@ -761,8 +786,23 @@ def get_activity(book_id: str, root: Path | None = None) -> list[dict]:
     """Load the user-facing activity stream for one book."""
     manifest = _manifest(book_id, root)
     chapter_result_urls = _chapter_result_urls(book_id, manifest, root=root)
+    chapter_lookup = {
+        int(chapter.get("id", 0) or 0): {
+            "chapter_number": _public_chapter_number(chapter.get("chapter_number")),
+            "chapter_ref": str(chapter.get("reference", "")),
+            "title": str(chapter.get("title", "")),
+        }
+        for chapter in manifest.get("chapters", [])
+        if int(chapter.get("id", 0) or 0) > 0
+    }
     return [
-        _decorate_activity_event(book_id, item, chapter_result_urls=chapter_result_urls, root=root)
+        _decorate_activity_event(
+            book_id,
+            item,
+            chapter_result_urls=chapter_result_urls,
+            chapter_lookup=chapter_lookup,
+            root=root,
+        )
         for item in _load_jsonl(existing_activity_file(_book_dir(book_id, root)))
     ]
 
@@ -919,9 +959,11 @@ def get_chapter_detail(
     chapter_info = chapter_payload.get("chapter", {})
     chapter_ref = str(chapter_info.get("reference", ""))
     chapter_id_value = int(chapter_info.get("id", chapter_id))
+    chapter_number = _public_chapter_number(chapter_info.get("chapter_number"))
     return {
         "book_id": to_api_book_id(book_id),
         "chapter_id": chapter_id_value,
+        "chapter_number": chapter_number,
         "chapter_ref": chapter_ref,
         "title": str(chapter_info.get("title", "")),
         "status": "completed",
@@ -929,7 +971,7 @@ def get_chapter_detail(
         "visible_reaction_count": int(chapter_payload.get("visible_reaction_count", 0)),
         "reaction_type_diversity": int(chapter_payload.get("reaction_type_diversity", 0)),
         "featured_reactions": [
-            _featured_reaction_preview(book_id, chapter_id_value, chapter_ref, item)
+            _featured_reaction_preview(book_id, chapter_id_value, chapter_number, chapter_ref, item)
             for item in chapter_payload.get("featured_reactions", [])
             if isinstance(item, dict)
         ],
@@ -962,6 +1004,7 @@ def get_chapter_outline(book_id: str, chapter_id: int, root: Path | None = None)
     result_ready = _chapter_result_ready(book_id, chapter_entry, root=root)
 
     sections: list[dict] = []
+    chapter_number = _public_chapter_number(chapter_entry.get("chapter_number"))
     chapter_ref = str(chapter_entry.get("reference", ""))
     chapter_title = str(chapter_entry.get("title", ""))
     chapter_heading = _chapter_heading_payload(chapter_entry.get("chapter_heading"))
@@ -972,6 +1015,7 @@ def get_chapter_outline(book_id: str, chapter_id: int, root: Path | None = None)
             result_ready = False
         else:
             chapter_info = chapter_payload.get("chapter", {})
+            chapter_number = _public_chapter_number(chapter_info.get("chapter_number"))
             chapter_ref = str(chapter_info.get("reference", chapter_ref))
             chapter_title = str(chapter_info.get("title", chapter_title))
             chapter_heading = _chapter_heading_payload(chapter_payload.get("chapter_heading")) or chapter_heading
@@ -987,6 +1031,7 @@ def get_chapter_outline(book_id: str, chapter_id: int, root: Path | None = None)
     return {
         "book_id": to_api_book_id(book_id),
         "chapter_id": int(chapter_entry.get("id", chapter_id)),
+        "chapter_number": chapter_number,
         "chapter_ref": chapter_ref,
         "title": chapter_title,
         "result_ready": result_ready,
@@ -1196,6 +1241,7 @@ def _analysis_current_reading_activity(
     status_reason: str | None,
     current_phase_step_key: str | None,
     current_chapter_id: int | None = None,
+    current_chapter_number: int | None = None,
     root: Path | None = None,
     runtime_shell: dict[str, object] | None = None,
 ) -> dict[str, Any] | None:
@@ -1263,6 +1309,7 @@ def _analysis_current_reading_activity(
         _normalize_reading_locus(
             current_payload.get("reading_locus"),
             fallback_chapter_id=current_chapter_id,
+            fallback_chapter_number=current_chapter_number,
             fallback_chapter_ref=chapter_ref,
             fallback_excerpt=current_excerpt,
             fallback_locator=(
@@ -1283,6 +1330,7 @@ def _analysis_current_reading_activity(
         reading_locus = _normalize_reading_locus(
             runtime_shell.get("cursor"),
             fallback_chapter_id=current_chapter_id,
+            fallback_chapter_number=current_chapter_number,
             fallback_chapter_ref=chapter_ref,
             fallback_excerpt=current_excerpt,
         )
@@ -1291,6 +1339,7 @@ def _analysis_current_reading_activity(
             book_id,
             segment_ref=segment_ref,
             chapter_id=current_chapter_id,
+            chapter_number=current_chapter_number,
             chapter_ref=chapter_ref,
             excerpt=current_excerpt,
             root=root,
@@ -1400,6 +1449,7 @@ def _normalize_reading_locus(
     payload: object,
     *,
     fallback_chapter_id: int | None = None,
+    fallback_chapter_number: int | None = None,
     fallback_chapter_ref: str | None = None,
     fallback_excerpt: str | None = None,
     fallback_locator: object = None,
@@ -1429,13 +1479,18 @@ def _normalize_reading_locus(
 
     normalized: dict[str, object] = {"kind": kind}
     chapter_id = _optional_int(locus.get("chapter_id"))
+    chapter_number = _public_chapter_number(locus.get("chapter_number"))
     chapter_ref = _clean_text(locus.get("chapter_ref"))
     if chapter_id is None:
         chapter_id = fallback_chapter_id
+    if chapter_number is None:
+        chapter_number = fallback_chapter_number
     if not chapter_ref:
         chapter_ref = _clean_text(fallback_chapter_ref)
     if chapter_id is not None:
         normalized["chapter_id"] = chapter_id
+    if chapter_number is not None:
+        normalized["chapter_number"] = chapter_number
     if chapter_ref:
         normalized["chapter_ref"] = chapter_ref
     if sentence_start_id:
@@ -1462,6 +1517,7 @@ def _reading_locus_from_segment_ref(
     *,
     segment_ref: str | None,
     chapter_id: int | None,
+    chapter_number: int | None,
     chapter_ref: str | None,
     excerpt: str | None,
     root: Path | None = None,
@@ -1474,6 +1530,7 @@ def _reading_locus_from_segment_ref(
     return _normalize_reading_locus(
         {"kind": "span" if cleaned_segment_ref else "chapter"},
         fallback_chapter_id=chapter_id,
+        fallback_chapter_number=chapter_number,
         fallback_chapter_ref=chapter_ref,
         fallback_excerpt=excerpt,
         fallback_locator=(
@@ -1545,12 +1602,23 @@ def get_analysis_state(book_id: str, root: Path | None = None) -> dict:
     projection = project_runtime_truth(book_id, run_state, root=root)
 
     current_chapter_id = int(run_state.get("current_chapter_id", 0) or 0) or None
+    manifest_chapter_map = {
+        int(chapter.get("id", 0) or 0): chapter
+        for chapter in manifest.get("chapters", [])
+        if int(chapter.get("id", 0) or 0) > 0
+    }
+    current_chapter_number = (
+        _public_chapter_number((manifest_chapter_map.get(current_chapter_id) or {}).get("chapter_number"))
+        if current_chapter_id is not None
+        else None
+    )
     chapters = []
     for chapter in manifest.get("chapters", []):
         status = _chapter_status_for_analysis(chapter, current_chapter_id, run_state)
         chapters.append(
             {
                 "chapter_id": int(chapter.get("id", 0)),
+                "chapter_number": _public_chapter_number(chapter.get("chapter_number")),
                 "chapter_ref": str(chapter.get("reference", "")),
                 "title": str(chapter.get("title", "")),
                 "segment_count": int(chapter.get("segment_count", 0)),
@@ -1590,6 +1658,7 @@ def get_analysis_state(book_id: str, root: Path | None = None) -> dict:
         completed_cards.append(
             {
                 "chapter_id": chapter_id,
+                "chapter_number": _public_chapter_number((manifest_chapter_map.get(chapter_id) or {}).get("chapter_number")),
                 "chapter_ref": chapter_ref,
                 "title": title,
                 "visible_reaction_count": int(item.get("visible_reaction_count", 0) or 0),
@@ -1622,6 +1691,10 @@ def get_analysis_state(book_id: str, root: Path | None = None) -> dict:
             current_chapter_id = int(parse_state.get("current_chapter_id", 0) or 0) or None
         if not run_state.get("current_chapter_ref") and parse_state.get("current_chapter_ref"):
             run_state["current_chapter_ref"] = parse_state.get("current_chapter_ref")
+        if current_chapter_id is not None:
+            current_chapter_number = _public_chapter_number(
+                (manifest_chapter_map.get(current_chapter_id) or {}).get("chapter_number")
+            )
     if status == "paused" and _should_preserve_last_known_snapshot(status, status_reason):
         current_phase_step = "等待继续执行"
     status, stage_label_key, stage_label_params = _analysis_status(
@@ -1651,6 +1724,7 @@ def get_analysis_state(book_id: str, root: Path | None = None) -> dict:
         status_reason=status_reason,
         current_phase_step_key=current_phase_step_key,
         current_chapter_id=current_chapter_id,
+        current_chapter_number=current_chapter_number,
         root=root,
         runtime_shell=runtime_shell,
     )
@@ -1685,6 +1759,7 @@ def get_analysis_state(book_id: str, root: Path | None = None) -> dict:
         "completed_chapters": completed_chapters,
         "total_chapters": total_chapters,
         "current_chapter_id": current_chapter_id,
+        "current_chapter_number": current_chapter_number,
         "current_chapter_ref": run_state.get("current_chapter_ref"),
         "eta_seconds": run_state.get("eta_seconds"),
         "current_phase_step_key": current_phase_step_key,
@@ -1697,6 +1772,7 @@ def get_analysis_state(book_id: str, root: Path | None = None) -> dict:
         "chapters": chapters,
         "current_state_panel": {
             "current_chapter_id": current_chapter_id,
+            "current_chapter_number": current_chapter_number,
             "current_chapter_ref": run_state.get("current_chapter_ref"),
             "current_section_ref": current_section_ref,
             "current_phase_step_key": current_phase_step_key,
@@ -1740,6 +1816,7 @@ def get_book_featured_reactions(book_id: str, root: Path | None = None, *, limit
                 _featured_reaction_preview(
                     book_id,
                     chapter_id,
+                    _public_chapter_number(chapter.get("chapter_number")),
                     str(chapter.get("reference", "")),
                     item,
                 )

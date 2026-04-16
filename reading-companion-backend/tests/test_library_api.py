@@ -333,6 +333,7 @@ def test_chapter_outline_endpoint_returns_sections_and_preview_text(tmp_path):
 
     assert payload["book_id"] == to_api_book_id(book_id)
     assert payload["chapter_id"] == 1
+    assert payload["chapter_number"] == 1
     assert payload["chapter_ref"] == "Chapter 1"
     assert payload["title"] == "Chapter 1"
     assert payload["result_ready"] is True
@@ -778,6 +779,7 @@ def test_orphan_stale_runtime_projects_to_paused_truth_and_last_known_snapshot(t
     assert analysis_payload["current_reading_activity"]["reading_locus"] == {
         "kind": "span",
         "chapter_id": 1,
+        "chapter_number": 1,
         "chapter_ref": "Chapter 1",
         "excerpt": "1.1",
         "locator": None,
@@ -1408,6 +1410,7 @@ def test_analysis_state_prefers_parse_checkpoint_during_structure_stage(tmp_path
     assert payload["completed_chapters"] == 1
     assert payload["total_chapters"] == 3
     assert payload["current_chapter_id"] == 2
+    assert payload["current_chapter_number"] is None
     assert payload["current_chapter_ref"] == "Chapter 2"
     assert payload["current_phase_step_key"] == "system.step.prefetchFutureChapters"
     assert payload["current_phase_step_params"] is None
@@ -1456,6 +1459,7 @@ def test_analysis_state_exposes_current_reading_activity_snapshot(tmp_path):
     assert activity["reading_locus"] == {
         "kind": "span",
         "chapter_id": 1,
+        "chapter_number": 1,
         "chapter_ref": "Chapter 1",
         "excerpt": "Hormesis lost some scientific respect.",
         "locator": None,
@@ -1512,6 +1516,7 @@ def test_analysis_state_uses_runtime_shell_cursor_for_additive_locus_fields(tmp_
     assert payload["reading_locus"] == {
         "kind": "span",
         "chapter_id": 1,
+        "chapter_number": 1,
         "chapter_ref": "Chapter 1",
         "sentence_start_id": "c1-s8",
         "sentence_end_id": "c1-s9",

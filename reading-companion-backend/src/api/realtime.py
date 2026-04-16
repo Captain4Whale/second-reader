@@ -85,6 +85,7 @@ def build_job_status_response(job_id: str, root: Path) -> JobStatusResponse:
     completed_chapters = None
     total_chapters = None
     current_chapter_id = None
+    current_chapter_number = None
     current_chapter_ref = None
     current_section_ref = None
     eta_seconds = None
@@ -113,6 +114,7 @@ def build_job_status_response(job_id: str, root: Path) -> JobStatusResponse:
             completed_chapters = int(analysis.get("completed_chapters", 0))
             total_chapters = int(analysis.get("total_chapters", 0))
             current_chapter_id = analysis.get("current_chapter_id")
+            current_chapter_number = analysis.get("current_chapter_number")
             current_chapter_ref = analysis.get("current_chapter_ref")
             current_section_ref = analysis.get("current_state_panel", {}).get("current_section_ref")
             current_phase_step_key = analysis.get("current_phase_step_key")
@@ -132,6 +134,12 @@ def build_job_status_response(job_id: str, root: Path) -> JobStatusResponse:
             total_chapters = len(manifest.get("chapters", []))
             book_title = str(manifest.get("book", "") or "") or None
             progress_percent = round((completed_chapters / total_chapters) * 100, 2) if total_chapters > 0 else None
+            if current_chapter_id is not None:
+                for chapter in manifest.get("chapters", []):
+                    if int(chapter.get("id", 0) or 0) == int(current_chapter_id):
+                        numeric = chapter.get("chapter_number")
+                        current_chapter_number = int(numeric) if isinstance(numeric, int) and numeric > 0 else None
+                        break
 
     if status == "error" and last_error is None:
         last_error = {
@@ -153,6 +161,7 @@ def build_job_status_response(job_id: str, root: Path) -> JobStatusResponse:
         completed_chapters=completed_chapters,
         total_chapters=total_chapters,
         current_chapter_id=current_chapter_id,
+        current_chapter_number=current_chapter_number,
         current_chapter_ref=current_chapter_ref,
         current_section_ref=current_section_ref,
         stage_label_key=stage_label_key,
@@ -182,6 +191,7 @@ def build_job_snapshot_payload(job_status: JobStatusResponse) -> JobSnapshotPayl
         completed_chapters=job_status.completed_chapters,
         total_chapters=job_status.total_chapters,
         current_chapter_id=job_status.current_chapter_id,
+        current_chapter_number=job_status.current_chapter_number,
         current_chapter_ref=job_status.current_chapter_ref,
         current_section_ref=job_status.current_section_ref,
         current_phase_step_key=job_status.current_phase_step_key,
@@ -206,6 +216,7 @@ def build_book_snapshot_payload(book_id: str, root: Path) -> JobSnapshotPayload:
         completed_chapters=int(analysis.get("completed_chapters", 0)),
         total_chapters=int(analysis.get("total_chapters", 0)),
         current_chapter_id=analysis.get("current_chapter_id"),
+        current_chapter_number=analysis.get("current_chapter_number"),
         current_chapter_ref=analysis.get("current_chapter_ref"),
         current_section_ref=analysis.get("current_state_panel", {}).get("current_section_ref"),
         current_phase_step_key=analysis.get("current_phase_step_key"),
@@ -364,6 +375,7 @@ async def stream_job_events(
                         event_type="chapter.started",
                         payload=ChapterStartedPayload(
                             chapter_id=int(event.get("chapter_id", 0) or 0),
+                            chapter_number=event.get("chapter_number"),
                             chapter_ref=str(event.get("chapter_ref", "")),
                             title=str(event.get("message", "")),
                             segment_count=0,
@@ -377,6 +389,7 @@ async def stream_job_events(
                         event_type="chapter.completed",
                         payload=ChapterCompletedPayload(
                             chapter_id=int(event.get("chapter_id", 0) or 0),
+                            chapter_number=event.get("chapter_number"),
                             chapter_ref=str(event.get("chapter_ref", "")),
                             title=str(event.get("chapter_ref", "")),
                             visible_reaction_count=int(event.get("visible_reaction_count", 0) or 0),
@@ -417,6 +430,7 @@ async def stream_job_events(
                     ),
                     retryable=False,
                     chapter_id=snapshot.current_chapter_id,
+                    chapter_number=snapshot.current_chapter_number,
                     chapter_ref=snapshot.current_chapter_ref,
                     section_ref=snapshot.current_section_ref,
                 ).model_dump(mode="json"),

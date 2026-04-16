@@ -42,7 +42,7 @@ def test_render_user_level_selective_audit_outputs_index_and_window_docs(tmp_pat
                 "language_track": "en",
                 "start_sentence_id": "c1-s1",
                 "end_sentence_id": "c1-s20",
-                "chapter_ids": [1],
+                "source_chapter_ids": [1],
                 "chapter_titles": ["Chapter 1"],
                 "termination_reason": "chapter_end_after_target_notes",
                 "segment_source_path": "segment_sources/source_a__segment_1.txt",
@@ -55,7 +55,7 @@ def test_render_user_level_selective_audit_outputs_index_and_window_docs(tmp_pat
                 "language_track": "zh",
                 "start_sentence_id": "c2-s1",
                 "end_sentence_id": "c2-s10",
-                "chapter_ids": [2],
+                "source_chapter_ids": [2],
                 "chapter_titles": ["第二章"],
                 "termination_reason": "paragraph_end_after_hard_cap",
                 "segment_source_path": "segment_sources/source_b__segment_1.txt",
@@ -81,7 +81,7 @@ def test_render_user_level_selective_audit_outputs_index_and_window_docs(tmp_pat
                         "text": "Shared text",
                     }
                 ],
-                "chapter_id": 1,
+                "source_chapter_id": 1,
                 "chapter_title": "Chapter 1",
                 "raw_locator": "p.1",
                 "section_label": "Section 1",
@@ -102,7 +102,7 @@ def test_render_user_level_selective_audit_outputs_index_and_window_docs(tmp_pat
                         "text": "Shared text",
                     }
                 ],
-                "chapter_id": 1,
+                "source_chapter_id": 1,
                 "chapter_title": "Chapter 1",
                 "raw_locator": "p.1",
                 "section_label": "Section 1",
@@ -129,7 +129,7 @@ def test_render_user_level_selective_audit_outputs_index_and_window_docs(tmp_pat
                         "text": "Part two",
                     },
                 ],
-                "chapter_id": 1,
+                "source_chapter_id": 1,
                 "chapter_title": "Chapter 1",
                 "raw_locator": "p.2",
                 "section_label": "Section 2",
@@ -150,7 +150,7 @@ def test_render_user_level_selective_audit_outputs_index_and_window_docs(tmp_pat
                         "text": "Window B text",
                     }
                 ],
-                "chapter_id": 2,
+                "source_chapter_id": 2,
                 "chapter_title": "第二章",
                 "raw_locator": "二",
                 "section_label": "第二章",
@@ -174,11 +174,17 @@ def test_render_user_level_selective_audit_outputs_index_and_window_docs(tmp_pat
     assert "source_b__segment_1" in index_text
     assert "windows/source_a__segment_1.md" in index_text
     assert "../segment_sources/source_a__segment_1.txt" in index_text
+    assert "- 覆盖正文单元: Chapter 1" in index_text
+    assert "- internal/source chapter ids: `1`" in index_text
 
     window_text = (output_dir / "windows" / "source_a__segment_1.md").read_text(encoding="utf-8")
     assert window_text.index("`source_a__note_1`") < window_text.index("`source_a__note_2`")
     assert window_text.index("`source_a__note_2`") < window_text.index("`source_a__note_3`")
     assert "duplicate_source_span_group: `group_01` (`2` cases share this span)" in window_text
+    assert "- 覆盖正文单元: Chapter 1" in window_text
+    assert "- internal/source chapter ids: `1`" in window_text
+    assert "- 正文单元标题: `Chapter 1`" in window_text
+    assert "- internal/source chapter id: `1`" in window_text
     assert "#### canonical_case_text (`source_span_text`)" in window_text
     assert "```text\nShared text\n```" in window_text
     assert "#### note_comment" in window_text

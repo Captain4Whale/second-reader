@@ -76,7 +76,7 @@ def test_build_user_level_selective_v1_emits_real_note_cases_only(tmp_path: Path
             note_comment="",
             raw_locator="1",
             section_label="Section 1",
-            chapter_id=2,
+            source_chapter_id=2,
             chapter_title="Chapter 1",
             start_sentence_id="c2-s4",
             end_sentence_id="c2-s4",
@@ -93,7 +93,7 @@ def test_build_user_level_selective_v1_emits_real_note_cases_only(tmp_path: Path
             note_comment="",
             raw_locator="2",
             section_label="Section 1",
-            chapter_id=2,
+            source_chapter_id=2,
             chapter_title="Chapter 1",
             start_sentence_id="c2-s8",
             end_sentence_id="c2-s8",
@@ -110,7 +110,7 @@ def test_build_user_level_selective_v1_emits_real_note_cases_only(tmp_path: Path
             note_comment="",
             raw_locator="3",
             section_label="Section 1",
-            chapter_id=2,
+            source_chapter_id=2,
             chapter_title="Chapter 1",
             start_sentence_id="c2-s12",
             end_sentence_id="c2-s12",
@@ -167,11 +167,13 @@ def test_build_user_level_selective_v1_emits_real_note_cases_only(tmp_path: Path
     assert dataset_manifest["skipped_sources"] == [{"source_id": "source_b", "reason": "no_aligned_notes"}]
     assert len(segments) == 1
     assert segments[0]["termination_reason"] == "chapter_end_after_target_notes"
+    assert segments[0]["source_chapter_ids"] == [2]
     assert len(note_cases) == 3
     assert [row["note_id"] for row in note_cases] == ["note_1", "note_2", "note_3"]
     assert all(row["source_span_coordinate_system"] == "segment_source_v1" for row in note_cases)
     assert all(row["source_span_slices"] for row in note_cases)
     assert note_cases[0]["source_span_text"] == "Chapter 1 line 4."
+    assert all(row["source_chapter_id"] == 2 for row in note_cases)
     assert all(row["provenance"]["notes_id"] == "notes_a" for row in note_cases)
     assert (dataset_dir / "segment_sources" / "source_a__segment_1.txt").exists()
 
@@ -219,7 +221,7 @@ def test_choose_segment_end_falls_back_to_paragraph_when_chapter_tail_exceeds_ca
         note_comment="",
         raw_locator="1",
         section_label="Section 1",
-        chapter_id=2,
+        source_chapter_id=2,
         chapter_title="Chapter 1",
         start_sentence_id="c2-s2",
         end_sentence_id="c2-s2",
