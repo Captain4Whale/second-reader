@@ -30,11 +30,27 @@ The current active benchmark is `user-level selective v1`:
   - visible reactions without usable source locators fail the run instead of falling back to string matching
 - current eligible source count:
   - `5 / 5`
-  - `nawaer_baodian_private_zh` is now included after repairing the library-notes alignment fallback and re-registering its managed notes asset
+  - `nawaer_baodian_private_zh` remains included after repairing the library-notes alignment fallback and then rebuilding the active package with a stricter body-start rule
   - current package size:
     - `5` reading segments
-    - `203` note cases
+    - `202` note cases
   - every note case includes `source_span_slices` in the rendered segment coordinate system used by the reader runtime
+
+## Body-Start Rule
+
+- active `reading_segment`s start at the first real body unit, not at the absolute beginning of the source file
+- the builder should skip front matter such as:
+  - disclaimers
+  - recommendation / preface / foreword / prologue material
+  - editor or author notes about the book
+  - timeline pages
+  - part / chapter title stubs that do not yet begin the actual body reading
+- a benchmark-local explicit body-start override is allowed when one known source still defeats the stable heuristic
+- current active exception:
+  - `nawaer_baodian_private_zh`
+  - active body start is pinned to `c13` (`认识财富创造的原理`)
+  - the old preface-side note at `c6` no longer participates in the active package
+  - retained `nawaer` note cases still preserve their original aligned source spans; they were rebuilt, not trimmed
 
 ## Dataset Form
 

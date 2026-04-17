@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-04-16T11:32:00Z`
+Last verified: `2026-04-16T13:18:16Z`
 
 ## Current Objective
 - Replace the old active `excerpt` benchmark pointer with the new note-aligned `user-level selective v1` package.
@@ -22,10 +22,15 @@ Last verified: `2026-04-16T11:32:00Z`
     - score by note recall over aligned human notes
   - current dataset truth:
     - `5 / 5` registered note-linked books are currently eligible
-    - `nawaer_baodian_private_zh` was repaired on April 14 after fixing the note-alignment fallback so title-page chapter hints no longer block later exact正文 matches
+    - `nawaer_baodian_private_zh` was first repaired on April 14 after fixing the note-alignment fallback so title-page chapter hints no longer block later exact正文 matches
+    - the active package was rebuilt on April 16 with a stricter body-start rule:
+      - reading segments now begin at the first real body unit rather than at the absolute start of the source file
+      - front matter such as disclaimers, recommendation / preface material, book-about-book notes, timeline pages, and part/chapter stubs is skipped
+      - `nawaer_baodian_private_zh` now uses a benchmark-local body-start override at `c13` (`认识财富创造的原理`)
+      - its old preface-side note at `c6` is no longer part of the active package
     - active package now contains:
       - `5` reading segments
-      - `203` note cases
+      - `202` note cases
     - every active note case now carries a strict `segment_source_v1` char-span under `source_span_slices`
       - this is the source-coordinate system used for `Selective Legibility` candidate retrieval, because the mechanisms read the rendered `segment_sources/*.txt` substrate
       - original parsed-book sentence ids remain as provenance for audit, not as the primary matching coordinate
@@ -36,8 +41,6 @@ Last verified: `2026-04-16T11:32:00Z`
         - `reading-companion-backend/state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260416/audit_human_readable/index.md`
       - current purpose:
         - validate and audit repaired note-to-source spans and serve as the source package for the clean strict rejudge relaunch
-      - current caution:
-        - do not overwrite the active package in place until the next strict rejudge is explicitly relaunched on the repaired package or on a freshly rebuilt active package
       - verified example:
         - `huochu_shengming_de_yiyi_private_zh_personal_notes__e0002` now maps to the full two-sentence source span rather than truncating after the first sentence
   - `excerpt surface v1.1` remains preserved as historical / superseded evidence, not as the active local/user-level benchmark pointer

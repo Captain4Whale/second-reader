@@ -40,6 +40,49 @@ def _chapter(chapter_id: int, title: str, sentence_count: int) -> dict[str, obje
     }
 
 
+def test_find_body_start_index_skips_preface_like_material() -> None:
+    chapters = [
+        _chapter(4, "关于本书的重要说明 DISCLAIMER", 40),
+        _chapter(5, "推荐序一 财富与幸福源自选择", 37),
+        _chapter(6, "序 PROLOGUE", 48),
+        _chapter(7, "埃里克的笔记（关于这本书）", 39),
+        _chapter(8, "纳瓦尔·拉维坎特经历表", 15),
+        _chapter(10, "纳瓦尔亲述", 50),
+    ]
+
+    body_start_index = module._find_body_start_index(
+        chapters=chapters,
+        language_track="zh",
+        book_title_value="纳瓦尔宝典",
+    )
+
+    assert body_start_index == 5
+
+
+def test_find_body_start_index_respects_source_override() -> None:
+    chapters = [
+        _chapter(4, "关于本书的重要说明 DISCLAIMER", 40),
+        _chapter(5, "推荐序一 财富与幸福源自选择", 37),
+        _chapter(6, "推荐序二 一场反直觉的精神瑜伽", 60),
+        _chapter(7, "序 PROLOGUE", 48),
+        _chapter(8, "埃里克的笔记（关于这本书）", 39),
+        _chapter(9, "纳瓦尔·拉维坎特经历表", 15),
+        _chapter(10, "纳瓦尔亲述", 50),
+        _chapter(11, "第一部分 财富 PART ONE WEALTH", 3),
+        _chapter(12, "第一章 积累财富", 2),
+        _chapter(13, "认识财富创造的原理", 168),
+    ]
+
+    body_start_index = module._find_body_start_index(
+        chapters=chapters,
+        language_track="zh",
+        book_title_value="纳瓦尔宝典",
+        source_id="nawaer_baodian_private_zh",
+    )
+
+    assert body_start_index == 9
+
+
 def test_build_user_level_selective_v1_emits_real_note_cases_only(tmp_path: Path, monkeypatch) -> None:
     dataset_dir = tmp_path / "dataset"
     manifest_path = tmp_path / "manifest.json"
@@ -176,6 +219,127 @@ def test_build_user_level_selective_v1_emits_real_note_cases_only(tmp_path: Path
     assert all(row["source_chapter_id"] == 2 for row in note_cases)
     assert all(row["provenance"]["notes_id"] == "notes_a" for row in note_cases)
     assert (dataset_dir / "segment_sources" / "source_a__segment_1.txt").exists()
+
+
+def test_build_user_level_selective_v1_applies_nawaer_body_start_override(tmp_path: Path, monkeypatch) -> None:
+    dataset_dir = tmp_path / "dataset"
+    manifest_path = tmp_path / "manifest.json"
+
+    monkeypatch.setattr(module, "DATASET_DIR", dataset_dir)
+    monkeypatch.setattr(module, "MANIFEST_PATH", manifest_path)
+    monkeypatch.setattr(module, "REGISTERED_NOTES_SOURCE_IDS", ("nawaer_baodian_private_zh",))
+    monkeypatch.setattr(
+        module,
+        "_load_notes_catalog",
+        lambda: {
+            "assets": [
+                {
+                    "linked_source_id": "nawaer_baodian_private_zh",
+                    "notes_id": "notes_nawaer",
+                    "aligned_entry_count": 2,
+                }
+            ]
+        },
+    )
+    monkeypatch.setattr(
+        module,
+        "_load_source_index",
+        lambda: {
+            "nawaer_baodian_private_zh": {
+                "source_id": "nawaer_baodian_private_zh",
+                "relative_local_path": "state/library_sources/nawaer.epub",
+            }
+        },
+    )
+
+    aligned_notes = [
+        module.AlignedNote(
+            note_id="preface_note",
+            notes_id="notes_nawaer",
+            source_id="nawaer_baodian_private_zh",
+            note_text="Preface line 4.",
+            note_comment="",
+            raw_locator="preface",
+            section_label="推荐序二",
+            source_chapter_id=6,
+            chapter_title="推荐序二 一场反直觉的精神瑜伽",
+            start_sentence_id="c6-s4",
+            end_sentence_id="c6-s4",
+            sentence_ids=("c6-s4",),
+            aligned_text="Preface line 4.",
+            alignment_match_type="exact",
+            alignment_score=1.0,
+        ),
+        module.AlignedNote(
+            note_id="body_note",
+            notes_id="notes_nawaer",
+            source_id="nawaer_baodian_private_zh",
+            note_text="认识财富创造的原理 line 4.",
+            note_comment="",
+            raw_locator="body",
+            section_label="认识财富创造的原理",
+            source_chapter_id=13,
+            chapter_title="认识财富创造的原理",
+            start_sentence_id="c13-s4",
+            end_sentence_id="c13-s4",
+            sentence_ids=("c13-s4",),
+            aligned_text="认识财富创造的原理 line 4.",
+            alignment_match_type="exact",
+            alignment_score=1.0,
+        ),
+    ]
+    monkeypatch.setattr(module, "_load_aligned_notes", lambda *, notes_id, source_id: aligned_notes)
+
+    document = {
+        "metadata": {
+            "book": "纳瓦尔宝典",
+            "author": "作者",
+            "book_language": "zh",
+            "output_language": "zh",
+        },
+        "chapters": [
+            _chapter(4, "关于本书的重要说明 DISCLAIMER", 40),
+            _chapter(5, "推荐序一 财富与幸福源自选择", 37),
+            _chapter(6, "推荐序二 一场反直觉的精神瑜伽", 60),
+            _chapter(7, "序 PROLOGUE", 48),
+            _chapter(8, "埃里克的笔记（关于这本书）", 39),
+            _chapter(9, "纳瓦尔·拉维坎特经历表", 15),
+            _chapter(10, "纳瓦尔亲述", 50),
+            _chapter(11, "第一部分 财富 PART ONE WEALTH", 3),
+            _chapter(12, "第一章 积累财富", 2),
+            _chapter(13, "认识财富创造的原理", 24),
+        ],
+    }
+    monkeypatch.setattr(
+        module,
+        "ensure_canonical_parse",
+        lambda _path: SimpleNamespace(
+            book_document=document,
+            title="纳瓦尔宝典",
+            author="作者",
+            output_language="zh",
+        ),
+    )
+
+    module.build_user_level_selective_v1(target_note_count=1, hard_sentence_cap=50)
+
+    segments = [json.loads(line) for line in (dataset_dir / "segments.jsonl").read_text(encoding="utf-8").splitlines() if line.strip()]
+    note_cases = [
+        json.loads(line)
+        for line in (dataset_dir / "note_cases.jsonl").read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    ]
+    segment_source_text = (dataset_dir / "segment_sources" / "nawaer_baodian_private_zh__segment_1.txt").read_text(
+        encoding="utf-8"
+    )
+
+    assert len(segments) == 1
+    assert segments[0]["start_sentence_id"] == "c13-s1"
+    assert len(note_cases) == 1
+    assert note_cases[0]["note_id"] == "body_note"
+    assert note_cases[0]["source_span_text"] == "认识财富创造的原理 line 4."
+    assert note_cases[0]["source_span_slices"]
+    assert segment_source_text.startswith("认识财富创造的原理")
 
 
 def test_choose_segment_end_falls_back_to_paragraph_when_chapter_tail_exceeds_cap() -> None:

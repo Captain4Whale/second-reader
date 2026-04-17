@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-04-16T11:32:00Z`
+Last updated: `2026-04-16T13:18:16Z`
 
 ## Status Values
 - `active`
@@ -36,8 +36,12 @@ Last updated: `2026-04-16T11:32:00Z`
     - `reading-companion-backend/state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1`
   - current package truth:
     - `5` reading segments
-    - `203` note cases
-    - `nawaer_baodian_private_zh` is now included after repairing the library-notes alignment fallback and re-registering its managed notes asset
+    - `202` note cases
+    - `nawaer_baodian_private_zh` remains included after repairing the library-notes alignment fallback and then rebuilding the active package with a stricter body-start rule
+    - reading segments now start at the first real body unit rather than the absolute beginning of the source file
+    - front matter such as disclaimers, recommendation / preface material, book-about-book notes, timeline pages, and part/chapter stubs is skipped before segment construction
+    - `nawaer_baodian_private_zh` now uses a benchmark-local body-start override at `c13` (`认识财富创造的原理`)
+    - its old preface-side note at `c6` no longer participates in the active package
     - every note case now has `segment_source_v1` char-span slices; this is the strict matching coordinate for `Selective Legibility`
   - active metric:
     - `Selective Legibility` only

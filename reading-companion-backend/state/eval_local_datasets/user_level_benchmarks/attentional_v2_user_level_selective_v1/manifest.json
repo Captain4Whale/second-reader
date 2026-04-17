@@ -2,8 +2,8 @@
   "dataset_id": "attentional_v2_user_level_selective_v1",
   "family": "user_level_note_aligned_benchmark",
   "status": "active",
-  "version": "2026-04-15",
-  "generated_at": "2026-04-15T14:33:44.664483Z",
+  "version": "2026-04-16",
+  "generated_at": "2026-04-16T13:17:10.141044Z",
   "description": "Active user-level selective benchmark built directly from aligned human note spans and continuous reading segments.",
   "segments_file": "segments.jsonl",
   "note_cases_file": "note_cases.jsonl",
@@ -25,7 +25,7 @@
   "target_note_count": 20,
   "hard_sentence_cap": 350,
   "segment_count": 5,
-  "note_case_count": 203,
+  "note_case_count": 202,
   "source_manifest_refs": [
     "state/dataset_build/build_runs/human_notes_guided_dataset_v1_20260404/manifests/local_refs/attentional_v2_human_notes_guided_dataset_v1_local_refs__scratch__human_notes_guided_dataset_v1_20260404.json"
   ],

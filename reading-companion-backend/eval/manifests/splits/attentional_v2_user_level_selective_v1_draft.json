@@ -14,7 +14,7 @@
     "reading_segments": 5,
     "target_note_count": 20,
     "hard_sentence_cap": 350,
-    "note_case_count": 203
+    "note_case_count": 202
   },
   "source_refs": {
     "source_manifests": [
@@ -47,7 +47,7 @@
       "source_id": "nawaer_baodian_private_zh",
       "book_title": "纳瓦尔宝典（硅谷投资人纳瓦尔十年人生智慧，教你如何获得财富与幸福。新时代创业者的《穷查理宝典》）",
       "language_track": "zh",
-      "covered_note_count": 24,
+      "covered_note_count": 23,
       "termination_reason": "chapter_end_after_target_notes"
     },
     {
@@ -75,7 +75,7 @@
       "skipped": 0
     },
     "note_cases": {
-      "ready_now": 203
+      "ready_now": 202
     }
   },
   "splits": {
@@ -151,7 +151,6 @@
           "mangge_zhi_dao_private_zh__mangge_zhi_dao_private_zh_personal_notes__e0025"
         ],
         "nawaer_baodian_private_zh__segment_1": [
-          "nawaer_baodian_private_zh__nawaer_baodian_private_zh_personal_notes__e0056",
           "nawaer_baodian_private_zh__nawaer_baodian_private_zh_personal_notes__e0001",
           "nawaer_baodian_private_zh__nawaer_baodian_private_zh_personal_notes__e0002",
           "nawaer_baodian_private_zh__nawaer_baodian_private_zh_personal_notes__e0003",
@@ -273,8 +272,8 @@
           "value_of_others_private_en__value_of_others_private_en_personal_notes__e0485"
         ],
         "xidaduo_private_zh__segment_1": [
-          "xidaduo_private_zh__xidaduo_private_zh_personal_notes__e0002",
           "xidaduo_private_zh__xidaduo_private_zh_personal_notes__e0001",
+          "xidaduo_private_zh__xidaduo_private_zh_personal_notes__e0002",
           "xidaduo_private_zh__xidaduo_private_zh_personal_notes__e0003",
           "xidaduo_private_zh__xidaduo_private_zh_personal_notes__e0004",
           "xidaduo_private_zh__xidaduo_private_zh_personal_notes__e0005",
@@ -283,10 +282,10 @@
           "xidaduo_private_zh__xidaduo_private_zh_personal_notes__e0008",
           "xidaduo_private_zh__xidaduo_private_zh_personal_notes__e0009",
           "xidaduo_private_zh__xidaduo_private_zh_personal_notes__e0010",
-          "xidaduo_private_zh__xidaduo_private_zh_personal_notes__e0014",
           "xidaduo_private_zh__xidaduo_private_zh_personal_notes__e0011",
           "xidaduo_private_zh__xidaduo_private_zh_personal_notes__e0012",
           "xidaduo_private_zh__xidaduo_private_zh_personal_notes__e0013",
+          "xidaduo_private_zh__xidaduo_private_zh_personal_notes__e0014",
           "xidaduo_private_zh__xidaduo_private_zh_personal_notes__e0015",
           "xidaduo_private_zh__xidaduo_private_zh_personal_notes__e0016",
           "xidaduo_private_zh__xidaduo_private_zh_personal_notes__e0017",
@@ -361,7 +360,6 @@
         "mangge_zhi_dao_private_zh__mangge_zhi_dao_private_zh_personal_notes__e0023",
         "mangge_zhi_dao_private_zh__mangge_zhi_dao_private_zh_personal_notes__e0024",
         "mangge_zhi_dao_private_zh__mangge_zhi_dao_private_zh_personal_notes__e0025",
-        "nawaer_baodian_private_zh__nawaer_baodian_private_zh_personal_notes__e0056",
         "nawaer_baodian_private_zh__nawaer_baodian_private_zh_personal_notes__e0001",
         "nawaer_baodian_private_zh__nawaer_baodian_private_zh_personal_notes__e0002",
         "nawaer_baodian_private_zh__nawaer_baodian_private_zh_personal_notes__e0003",
@@ -479,8 +477,8 @@
         "value_of_others_private_en__value_of_others_private_en_personal_notes__e0484",
         "value_of_others_private_en__value_of_others_private_en_personal_notes__e0171",
         "value_of_others_private_en__value_of_others_private_en_personal_notes__e0485",
-        "xidaduo_private_zh__xidaduo_private_zh_personal_notes__e0002",
         "xidaduo_private_zh__xidaduo_private_zh_personal_notes__e0001",
+        "xidaduo_private_zh__xidaduo_private_zh_personal_notes__e0002",
         "xidaduo_private_zh__xidaduo_private_zh_personal_notes__e0003",
         "xidaduo_private_zh__xidaduo_private_zh_personal_notes__e0004",
         "xidaduo_private_zh__xidaduo_private_zh_personal_notes__e0005",
@@ -489,10 +487,10 @@
         "xidaduo_private_zh__xidaduo_private_zh_personal_notes__e0008",
         "xidaduo_private_zh__xidaduo_private_zh_personal_notes__e0009",
         "xidaduo_private_zh__xidaduo_private_zh_personal_notes__e0010",
-        "xidaduo_private_zh__xidaduo_private_zh_personal_notes__e0014",
         "xidaduo_private_zh__xidaduo_private_zh_personal_notes__e0011",
         "xidaduo_private_zh__xidaduo_private_zh_personal_notes__e0012",
         "xidaduo_private_zh__xidaduo_private_zh_personal_notes__e0013",
+        "xidaduo_private_zh__xidaduo_private_zh_personal_notes__e0014",
         "xidaduo_private_zh__xidaduo_private_zh_personal_notes__e0015",
         "xidaduo_private_zh__xidaduo_private_zh_personal_notes__e0016",
         "xidaduo_private_zh__xidaduo_private_zh_personal_notes__e0017",

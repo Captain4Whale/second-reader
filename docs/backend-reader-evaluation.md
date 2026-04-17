@@ -130,12 +130,14 @@ Use `docs/backend-reading-mechanism.md` for shared mechanism-platform boundaries
   - they should not reuse bare `chapter_id` when the meaning is “internal parsed-book unit coordinate”
   - audit exports should label these values as internal/source chapter ids, not as visible chapter numbers
 - `reading_segment` construction should follow these fixed boundaries:
-  - start at the first body sentence of the book
+  - start at the first body sentence of the book, not at the absolute beginning of the file
+  - skip front matter such as disclaimers, recommendation / preface material, editor or author notes about the book, timeline-style pages, and part/chapter title stubs that do not yet begin the actual body reading
   - keep reading until the segment covers at least `20` aligned notes by default
   - after that threshold, prefer to stop at chapter end
   - if chapter end would exceed the builder hard cap, fall back to the nearest section end
   - if no section boundary is available inside that cap, fall back to the nearest paragraph end
   - never cut inside a sentence
+- benchmark-local source overrides are acceptable when one known book still defeats the stable heuristic, but they must stay local to the benchmark builder rather than redefining product-wide chapter semantics
 - The current builder hard cap is an implementation detail, not a product truth.
   - stable docs should preserve the boundary priority
   - exact numeric defaults may stay in benchmark code and manifests

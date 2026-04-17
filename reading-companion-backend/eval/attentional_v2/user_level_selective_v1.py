@@ -30,7 +30,7 @@ DATASET_DIR = ROOT / "state" / "eval_local_datasets" / "user_level_benchmarks" /
 SEGMENTS_FILE = "segments.jsonl"
 NOTE_CASES_FILE = "note_cases.jsonl"
 SEGMENT_SOURCE_DIRNAME = "segment_sources"
-DEFAULT_VERSION = "2026-04-15"
+DEFAULT_VERSION = "2026-04-16"
 DEFAULT_TARGET_NOTE_COUNT = 20
 DEFAULT_HARD_SENTENCE_CAP = 350
 
@@ -52,17 +52,32 @@ REGISTERED_NOTES_SOURCE_IDS = (
     "value_of_others_private_en",
     "xidaduo_private_zh",
 )
+BODY_START_CHAPTER_OVERRIDES = {
+    "nawaer_baodian_private_zh": 13,
+}
 FRONT_MATTER_EXTRA_TITLE_PATTERNS_ZH = tuple(
     re.compile(pattern)
     for pattern in (
         r"^书名页$",
         r"^版权页$",
         r"^版权$",
+        r"^关于本书的重要说明(?:disclaimer)?$",
         r"^出版说明$",
         r"^出版前言$",
+        r"^推荐序.*$",
         r"^前言$",
+        r"^导言$",
+        r"^导读$",
+        r"^编者按$",
+        r"^编者说明$",
+        r"^编辑说明$",
+        r"^作者说明$",
+        r"^译者说明$",
         r"^序言$",
+        r"^序(?:prologue)?$",
         r"^自序$",
+        r"^.*关于这本书.*$",
+        r"^.*(?:年表|经历表)$",
         r"^目录$",
     )
 )
@@ -73,8 +88,15 @@ FRONT_MATTER_EXTRA_TITLE_PATTERNS_EN = tuple(
         r"^copyright$",
         r"^contents$",
         r"^table of contents$",
+        r"^disclaimer$",
         r"^foreword$",
         r"^preface$",
+        r"^prologue$",
+        r"^introduction$",
+        r"^editor'?s note$",
+        r"^author'?s note$",
+        r"^about this book$",
+        r"^timeline$",
     )
 )
 
@@ -219,7 +241,28 @@ def _title_matches_extra_front_matter(title: str, *, language_track: str) -> boo
     return any(pattern.search(normalized) for pattern in patterns)
 
 
-def _find_body_start_index(*, chapters: list[dict[str, Any]], language_track: str, book_title_value: str) -> int:
+def _body_start_override_index(*, chapters: list[dict[str, Any]], source_id: str) -> int | None:
+    override_chapter_id = BODY_START_CHAPTER_OVERRIDES.get(source_id)
+    if override_chapter_id is None:
+        return None
+    for chapter_index, chapter in enumerate(chapters):
+        chapter_id = int(chapter.get("id", 0) or 0)
+        if chapter_id == override_chapter_id:
+            return chapter_index
+    raise ValueError(f"body-start override chapter {override_chapter_id} not found for source {source_id}")
+
+
+def _find_body_start_index(
+    *,
+    chapters: list[dict[str, Any]],
+    language_track: str,
+    book_title_value: str,
+    source_id: str | None = None,
+) -> int:
+    if source_id:
+        override_index = _body_start_override_index(chapters=chapters, source_id=source_id)
+        if override_index is not None:
+            return override_index
     for chapter_index, chapter in enumerate(chapters):
         front_matter, _reason = is_front_matter(
             chapter,
@@ -614,6 +657,7 @@ def build_user_level_selective_v1(
             chapters=chapters,
             language_track=provisioned.output_language,
             book_title_value=provisioned.title,
+            source_id=source_id,
         )
         flat_sentences, sentence_index, paragraph_end_positions, chapter_end_positions = _flatten_document(
             chapters=chapters,
