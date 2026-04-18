@@ -50,7 +50,8 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - `read` is now the canonical owner of the current-unit read packet on the live path.
   - Each formal unit read now receives a small `carry-forward context` built from persisted state.
   - `read` may request bounded supplemental context through `active_recall` or `look_back`.
-  - `raw reaction` truth now comes directly from `read`, and private `read_audit` records capture context use.
+  - the current live baseline still persists `raw reaction` directly from `read`, and private `read_audit` records capture context use.
+  - the approved post-Phase-D next shape now freezes a separate `Express` node so visible reaction voice no longer has to share one prompt with reading/control responsibilities.
 - Phase C.1 of the post-eval structural rework is now landed.
   - Live prompt inputs now flow through a bounded internal `state_packet.v1` seam.
   - `navigate.unitize` now receives packetized `navigation_context`.
@@ -140,11 +141,25 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
     - plus the next paragraph in the same section
   - Because the current canonical substrate does not expose stable section ids, "same section" is implemented conservatively by refusing to cross into heading paragraphs during preview construction.
 - `read` is now the authoritative formal unit-read node.
-  - It owns current-unit understanding, carried-forward-context use, `implicit_uptake`, `prior_material_use`, optional `raw_reaction`, and optional `context_request`.
+  - On the current live baseline, it owns current-unit understanding, carried-forward-context use, `implicit_uptake`, optional `raw_reaction`, and optional `context_request`.
   - It no longer depends on the old `zoom_read -> meaning_unit_closure -> controller_decision -> reaction_emission` chain on the live path.
+- The approved next-shape `read` contract is narrower than the current live baseline.
+  - It should read the exact unit, form one temporary `unit_delta`, produce `implicit_uptake`, emit local `pressure_signals`, decide `should_express`, and optionally request more context.
+  - It should not remain the long-term owner of visible reaction wording.
+  - It should not remain the place that explains prior-material use as a central semantic task.
+  - It should not remain the node that hands route an already-decided move label.
+- `unit_delta` is a temporary internal read result, not a new durable memory layer.
+  - It exists only as the local read-after state of one unit.
+  - Durable memory still changes only through `implicit_uptake` into the existing primary state layers.
+  - Visible reaction is only the surfaced tip of that temporary read result, not the whole thing.
+- `Express` is now the approved visible-reaction node for the next shape.
+  - It should surface one bounded visible reaction only when `read` has already formed enough local pressure to justify expression.
+  - It does not own memory update, route choice, or supplemental recall.
+  - It should operate on the exact current unit plus a narrow `express_signal`, not on the full carry-forward packet.
 - `navigate.route` is now the sole next-step decision layer for that same chosen unit.
   - In Phase B it deterministically consumes `ReadUnitResult`.
   - Its main job is to keep close/continue/bridge decisions answerable to the exact unit that was just read.
+  - In the approved next shape it should consume `pressure_signals` from `read`, not a semantic `move_hint`.
 - Span visibility and authority are now aligned.
   - The span being read is the span being judged.
   - The span being judged is the only span that can be closed or extended.
@@ -196,10 +211,81 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - sentence-level intake still runs without LLM
   - `navigate_unitize` decides the next coverage unit before formal reading begins
   - trigger/watch outputs still exist, but they no longer suppress formal reading
-  - `read_unit` owns local understanding, prior-material use, `implicit_uptake`, optional `raw_reaction`, and optional `context_request`
+  - `read_unit` currently owns local understanding, `implicit_uptake`, optional `raw_reaction`, and optional `context_request`
   - supplemental context now runs as a budget-bounded loop rather than a single extra pass
   - `navigate.route` is deterministic in Phase B and does not make another LLM call
   - deterministic bridge retrieval is only paid when `navigate.route` actually chooses `bridge_back`
+- The approved next-shape node bundle after the current follow-up implementation is:
+  - `navigate_unitize`
+  - `read_unit`
+  - optional budget-bounded supplemental `active_recall` / `look_back` looping inside `read`
+  - `express` only when `read` says expression is warranted
+  - deterministic `navigate.route`
+  - optional `bridge_resolution`
+  - slow-cycle work
+- Under that approved next shape:
+  - `read` owns internal uptake and expression worthiness
+  - `express` owns visible reaction wording
+  - `navigate.route` owns next-move choice
+
+## Approved Read / Express Contract
+- This section freezes the approved next-shape contract for the post-Phase-D follow-up.
+- It does not claim that the current runtime has already landed that split in code.
+- `ReadResult vNext` should minimally expose:
+  - `unit_delta`
+    - the temporary internal read-after change for the current unit
+  - `implicit_uptake`
+    - explicit writes into the current durable state layers
+  - `pressure_signals`
+    - descriptive local pressure such as continuation, backward pull, or frame-shift pressure
+  - `express_signal`
+    - whether a visible reaction should surface now, plus the focal quote / why-now seed needed by `Express`
+  - optional `context_request`
+  - `anchor_evidence`
+- `Express` should consume:
+  - the exact current unit
+  - one `express_signal`
+  - only the narrow supporting refs already named by `read`
+- The approved first implementation slice should keep `Express` narrow:
+  - one unified prompt family
+  - no family-specific prompt branching
+  - at most one visible reaction per unit
+- `ExpressResult` should minimally expose:
+  - `decision`
+    - `emit` or `withhold`
+  - `anchor_quote`
+  - `content`
+  - optional `prior_link`
+    - only for surfaced earlier-text links; not for generic carry-forward influence
+  - optional `outside_link`
+    - only for surfaced outside references; not for generic model knowledge
+  - optional `search_intent`
+    - only when the surfaced reaction naturally opens a worthwhile next question
+- `silent` is therefore no longer an approved primary reaction type in the new contract.
+  - It becomes the `withhold` branch of `Express`.
+- `Highlight` remains visible-thought territory in the new contract.
+  - It is still something the user can see.
+  - It should be emitted by `Express`, not directly by `Read`.
+
+## Visible-Reaction Compatibility Vocabulary
+- The old `highlight / association / curious / discern / retrospect / silent` family remains available only as a compatibility adapter vocabulary.
+- It is no longer the approved prompt-first ontology for the next-shape mechanism.
+- The compatibility posture is:
+  - `silent`
+    - no longer a primary reaction type
+    - compatibility adapter maps `Express decision = withhold` into old `silent` territory when older surfaces still expect it
+  - `retrospect`
+    - no longer a primary reaction type
+    - compatibility adapter uses it only when a surfaced `prior_link` must be rendered into older family-based outputs
+  - `association`
+    - compatibility adapter uses it when a surfaced `outside_link` must be rendered into older family-based outputs
+  - `curious`
+    - compatibility adapter uses it when surfaced `search_intent` must be rendered into older family-based outputs
+  - `highlight / discern`
+    - compatibility adapter may still use these for bounded local anchored reactions that remain fully inside the current unit
+- This mapping is transitional.
+  - It exists for slow-cycle aggregation, eval normalization, and UI adapter continuity.
+  - It must not become the governing shape of the new `Express` prompt.
 - Default call types are:
   - `chapter opening`
     - set initial expectations and open questions using title, chapter heading, and opening span
@@ -269,6 +355,10 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - It requires resolvable `anchor_id` and/or `sentence_id` refs.
   - It now returns at most one bounded earlier span per request.
   - If the earlier source text cannot be resolved, the runner keeps the current `read` result rather than recursing further.
+- Under the approved next shape, `Express` should not receive the full carried-forward packet.
+  - `Express` should see the exact current unit and the narrow `express_signal` derived from `read`.
+  - Any prior/supporting references passed into `Express` should be explicit, sparse, and already chosen by `read`.
+  - `Express` should not reopen supplemental recall on its own.
 - Phase A unitization preview is intentionally narrow and deterministic.
   - It previews only the current paragraph remainder and the next paragraph in the same section.
   - The semantic choice of where to stop inside that preview is prompt-led.

@@ -21,7 +21,8 @@ Implementation checkpoint:
   - `read` now owns the authoritative unit packet on the live path
   - bounded `carry-forward context` is now the default continuity path into `read`
   - `read` may request one bounded `active recall` or `look-back` supplement
-  - raw reaction truth now comes directly from `read`
+  - the current live baseline still lets raw reaction truth come directly from `read`
+  - this is now treated as an intermediate baseline rather than the final contract
 - `Phase C.1` is landed:
   - live prompt inputs now flow through a bounded internal `state_packet.v1` seam
   - `navigate.unitize` now receives a packetized `navigation_context`
@@ -49,7 +50,13 @@ Implementation checkpoint:
   - warm resume now restores the latest usable continuation capsule together with new-format runtime/checkpoint state
   - `look_back` now resolves one bounded earlier source span, and `read_audit` now records per-step supplemental activity plus stop reasons
   - public compatibility surfaces remain unchanged
-- next backend slice: `post-Phase-D follow-up` to be defined from observed continuity / slow-cycle needs
+- next backend slice is now defined as the `Phase E` Read/Express follow-up:
+  - `Phase E1`
+    - freeze the new `Read -> Express` contract in docs before code mutation
+  - `Phase E2`
+    - switch the live runner from `read.raw_reaction -> route` to `read -> express(if needed) -> route`
+  - `Phase E3`
+    - keep old reaction family handling only in slow-cycle / eval / UI compatibility adapters while validating the new visible-reaction contract
 
 Primary upstream evidence:
 
@@ -466,20 +473,25 @@ The intended default is:
 - let `read` naturally connect current text with that packet
 - escalate only when the current unit genuinely needs more than the default packet provides
 
-If `read` genuinely produces a raw reaction, that reaction should be preserved and surfaced as-is rather than rewritten into a separate presentation voice.
+That landed baseline solved one class of thinning-out failure, but it also exposed a new voice problem:
+
+- when `read` carries too much control and continuity responsibility, the surfaced output tends to sound like mechanism-authored summary rather than reading-time reaction
+
+The approved next step is therefore not to make `read` rewrite better visible prose.
+
+It is to split visible reaction back out into a dedicated `Express` node while keeping `read` responsible for the underlying uptake and expression-worthiness judgment.
 
 #### Suggested code slices
 
 - `B1. read packet contract`
   - define a structured packet returned from `read`
   - include:
+    - `unit_delta`
     - `implicit_uptake`
-    - `prior_material_use`
-    - optional `raw_reaction`
-    - unresolved pressure
+    - `pressure_signals`
+    - `express_signal`
     - focal text / anchor evidence
-    - optional `needs_active_recall`
-    - optional `needs_look_back`
+    - optional `context_request`
 - `B2. carry-forward first`
   - default continuity should come from a small carried-forward packet, not from repeated heavy retrieval
 - `B3. active recall / look-back`
@@ -502,7 +514,7 @@ Deterministic code should not hard-code a semantic taxonomy of "allowed reuse ty
 
 #### Validation target
 
-- earlier material use should become visible in the core reading packet without adding a standalone `reuse` action
+- earlier material should remain available through carry-forward and bounded recall without adding a standalone `reuse` action
 - the mechanism should behave more like "carry forward by default, recall specifically only when needed"
 - no automatic collapse back into a giant memory blob
 
@@ -518,14 +530,27 @@ Deterministic code should not hard-code a semantic taxonomy of "allowed reuse ty
 - `read` now owns:
   - current-unit reading
   - `implicit_uptake`
-  - `prior_material_use`
-  - optional `raw_reaction`
   - optional `context_request`
 - private `read_audit` records now capture:
   - carry-forward refs used
   - whether supplemental context was requested and satisfied
-  - final prior-material use
   - final raw-reaction presence
+
+#### Follow-up interpretation
+
+The current Phase B baseline is still valuable, but it is no longer the intended end state for visible reaction ownership.
+
+The approved next-shape interpretation is:
+
+- `read` should keep:
+  - current-unit reading
+  - `unit_delta`
+  - `implicit_uptake`
+  - `pressure_signals`
+  - `should_express` / `express_signal`
+  - optional `context_request`
+- `read` should stop being the final owner of visible reaction wording
+- visible reaction wording should move into a dedicated `Express` node
 
 ### 7.3 Phase C — Restructure state and prompt packetization
 
@@ -729,7 +754,89 @@ It should only happen after the earlier phases prove stable enough to justify ad
 
 - Phase D strengthened continuity and resume without reopening the main control skeleton
 - compaction still remains intentionally lighter than a full central compactor
-- the next follow-up should be chosen from observed post-Phase-D behavior rather than assumed in advance
+- the next follow-up is now concretized as the `Read -> Express` split and compatibility migration rather than left implicit
+
+### 7.5 Phase E — Read / Express split and visible-reaction contract cleanup
+
+Goal:
+
+- keep `Read` centered on actual reading and implicit uptake
+- move user-visible reaction wording into a dedicated `Express` node
+- keep old reaction-family expectations only as compatibility adapters while the runtime and evaluation chain catch up
+
+This phase is intentionally split. It should not be implemented as one giant sweep.
+
+Why:
+
+- the current live path, slow-cycle aggregation, eval exports, and compatibility projections still assume old-family reaction records in several places
+- a one-shot rewrite would simultaneously change:
+  - runtime packet shape
+  - visible-reaction ownership
+  - slow-cycle aggregation inputs
+  - normalized eval exports
+  - compatibility/UI adapters
+- high-quality landing therefore depends on freezing the contract first, then cutting the live path, then cleaning the compatibility chain
+
+#### Phase E1 — Contract freeze
+
+Freeze the approved next-shape contract before code mutation.
+
+- `Read vNext` should expose:
+  - `unit_delta`
+  - `implicit_uptake`
+  - `pressure_signals`
+  - `express_signal`
+  - optional `context_request`
+  - `anchor_evidence`
+- `Express` should:
+  - use one unified prompt rather than family-specific prompt branching
+  - receive the exact current unit plus one narrow `express_signal`
+  - emit at most one visible reaction in the first implementation slice
+  - return:
+    - `decision`
+    - `anchor_quote`
+    - `content`
+    - optional `prior_link`
+    - optional `outside_link`
+    - optional `search_intent`
+- old `highlight / association / curious / discern / retrospect / silent` family labels should be demoted to compatibility vocabulary only
+  - `silent` becomes the `withhold` outcome of `Express`
+  - `retrospect` becomes one adapter interpretation of surfaced `prior_link`
+
+#### Phase E2 — Live-path cutover
+
+Cut the live runner over to the new ownership split.
+
+- change the live path from:
+  - `read.raw_reaction -> navigate.route`
+- to:
+  - `read -> express(if needed) -> navigate.route`
+- `Read` should stop returning the final visible reaction payload on the live path
+- `Navigate.route` should consume `pressure_signals` rather than a semantically over-decided `move_hint`
+- `Express` should not own:
+  - memory update
+  - route choice
+  - supplemental recall
+
+#### Phase E3 — Compatibility adapters and evaluation repair
+
+Keep the old family only where the rest of the system still needs it.
+
+- slow-cycle aggregation may continue to use compatibility-mapped family labels temporarily
+- eval / normalized bundles may continue to emit legacy family labels temporarily
+- UI/current-activity compatibility surfaces may continue to project old-family vocabulary temporarily
+- those adapters should be thin mappings from the new `ExpressResult`
+- the adapter layer must not re-enter the prompt contract and redefine how `Express` thinks
+
+#### Validation target
+
+- visible reactions should sound like reading-time reactions again rather than mechanism-authored summaries
+- `Read` should become easier to explain as reading plus implicit uptake rather than as a control super-node
+- old-family compatibility should continue working long enough to avoid breaking slow-cycle/eval/public adapters during the transition
+- implementation should land in the required order:
+  1. freeze contract
+  2. cut live path
+  3. clean compatibility / evaluation chain
 
 ## 8. Backend Compatibility Guardrails During Rework
 
