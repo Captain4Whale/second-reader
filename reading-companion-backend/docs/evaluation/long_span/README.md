@@ -51,3 +51,4 @@ Do not use the older April 6 lane as current mechanism evidence; it remains hist
 
 - [Long-Span substrate candidate memo](./long_span_substrate_candidate_memo.md): rolling pure-original-window mining memo across the current five excerpt/user-level reading windows. This is a pre-curation working document, not formal judged-run evidence.
 - [Target-centered candidate review](./target_centered_candidate_review.md): current review-gated v2 main batch over `悉达多` and `活出生命的意义`, with `The Value of Others` explicitly deferred to a later architecture-first pass. These are draft candidates only and must be reviewed before any freeze promotion.
+- [Target-centered 芒格 experimental review](./target_centered_mangge_experimental_review.md): separate new-method experimental review for `芒格之道`. Use this file, not the older substrate memo, when reviewing Munger under the v2 target-centered method.

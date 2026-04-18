@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-04-18T16:53:50+08:00`
+Last updated: `2026-04-18T17:16:00+08:00`
 
 ## Status Values
 - `active`
@@ -58,6 +58,10 @@ Last updated: `2026-04-18T16:53:50+08:00`
       - deferred line:
         - `The Value of Others` current four local-detail draft cases have been removed from the active main batch
         - if this book re-enters long-span curation later, it should do so only after a separate theory-architecture pass
+      - separate experimental review:
+        - `芒格之道` now has a dedicated target-centered experimental review:
+          - `reading-companion-backend/docs/evaluation/long_span/target_centered_mangge_experimental_review.md`
+        - use this file instead of the older substrate memo when reviewing `芒格之道` under the v2 method
     - next gate:
       - show these candidates for user review before any freeze or formal judged run
 - Jobs: none

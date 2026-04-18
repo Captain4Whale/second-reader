@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-04-18T16:53:50+08:00`
+Last verified: `2026-04-18T17:16:00+08:00`
 
 ## Current Objective
 - Land `target-centered long-span accumulation v2` as the active long-span methodology while preserving bounded long-span v1 as historical evidence.
@@ -44,6 +44,10 @@ Last verified: `2026-04-18T16:53:50+08:00`
       - deferred long-span line:
         - `The Value of Others` current four local-detail cases have been removed from the active v2 batch
         - if it re-enters long-span curation later, it should do so only after a separate theory-architecture pass
+      - separate experimental review:
+        - `芒格之道` now has a new-method experimental review at:
+          - `reading-companion-backend/docs/evaluation/long_span/target_centered_mangge_experimental_review.md`
+        - use that file, not the older substrate memo, when reviewing `芒格之道` under the v2 target-centered method
       - current review gate:
         - keep every case at `draft_candidate`
         - wait for user review before any freeze promotion or judged run
