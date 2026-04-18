@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-04-16T13:18:16Z`
+Last updated: `2026-04-18T11:40:00Z`
 
 ## Status Values
 - `active`
@@ -19,6 +19,36 @@ Last updated: `2026-04-16T13:18:16Z`
 - `cancelled`
 
 ## Active
+
+### `TASK-ACCUMULATION-BENCHMARK-V2` — Land the target-centered long-span accumulation v2 framework
+- Status: `active`
+- Lane: `dataset_platform`
+- Priority: `high`
+- Detail: `docs/backend-reader-evaluation.md`
+- Next: keep bounded long-span v1 as historical mechanism evidence, but treat `target-centered long-span accumulation v2` as the active long-span methodology.
+  - landed design doc:
+    - `reading-companion-backend/docs/evaluation/long_span/target_centered_accumulation_v2_design.md`
+  - landed builder / schema:
+    - `reading-companion-backend/eval/attentional_v2/accumulation_benchmark_v2.py`
+  - landed runner:
+    - `reading-companion-backend/eval/attentional_v2/run_accumulation_evaluation_v2.py`
+  - draft scaffold manifest:
+    - `reading-companion-backend/eval/manifests/splits/attentional_v2_accumulation_benchmark_v2_draft.json`
+  - draft scaffold dataset:
+    - `reading-companion-backend/state/eval_local_datasets/accumulation_target_cases/attentional_v2_accumulation_benchmark_v2_cases_draft`
+  - active v2 evaluation contract:
+    - one `target_span / target_zone`
+    - `2+` upstream nodes plus explicit `required_relations`
+    - absolute per-mechanism `quality_score` as the main output
+    - `callback_score` as a secondary bonus score
+    - no direct judging of raw mechanism-specific memory/state structures
+    - no pairwise LLM judge prompt
+  - active substrate:
+    - reuse the current `user-level selective v1` reading windows
+  - next dataset move:
+    - author draft target cases only
+    - show those candidates for review before any freeze or formal judged run
+- Jobs: none
 
 ### `TASK-USER-LEVEL-SELECTIVE-V1` — Replace the active local/user-level benchmark with the note-aligned selective package
 - Status: `active`

@@ -1791,3 +1791,33 @@ The old active windows `nawaer_baodian_private_zh__wealth`, `nawaer_baodian_priv
 - `reading-companion-backend/src/api/realtime.py`
 - `reading-companion-backend/eval/attentional_v2/user_level_selective_v1.py`
 - `reading-companion-backend/eval/attentional_v2/render_user_level_selective_audit.py`
+
+## Entry 63
+**ID**: DEC-066
+**Status**: active
+
+**Decision / Inflection**: Replace the old bounded `EARLY / MID / LATE` long-span evaluation method as the active methodology with a target-centered long-span accumulation v2 framework.
+
+**Period**: April 18, 2026, after the long-span probe-mining reflection made it clear that the project no longer wanted to score whether a mechanism separately reacted at three fixed anchors, but instead wanted to score whether the mechanism reconstructed a prepared long-range thread at one final target point.
+
+**Problem**: The old long-span v1 method was useful for the first bounded judged comparisons, but it tied the active methodology to one particular authoring shape: three anchors, bounded probe text, and pairwise LLM comparison between mechanisms. That shape was making dataset curation and evaluation logic drift apart from the actual research question. The project wanted to prepare arbitrary long-range threads with variable numbers of upstream nodes and then ask a simpler target-point question: when the mechanism reaches the prepared late point, does it actually build the earlier thread there? The old method also over-exposed mechanism-specific bundle details and pairwise prompt framing instead of centering on absolute quality at the target point.
+
+**Alternatives considered**: Keep bounded v1 as the active method and only retune the probe dataset, continue writing three-anchor probes but reinterpret them more loosely, or treat long-span case mining as a purely manual memo exercise without changing the runner or schema.
+
+**Why this path won**: The project needed the schema, judge contract, and mining workflow to align around the same real question. A target-centered case keeps the late target point explicit, lets the long-range thread use `2+` upstream nodes, and separates the active scoring logic from the old probe-writing convention. It also supports a cleaner evidence contract: judge only target-local reactions, explicit callback actions, and short-horizon followups, rather than rewarding private internal memory structures that never affect observable reading behavior. Absolute per-mechanism scoring keeps the method closer to the product question, while report-layer comparison still preserves cross-mechanism usefulness.
+
+**What changed in the system**: The stable evaluation methodology now treats bounded long-span v1 as historical evidence rather than active authority. The new v2 framework defines `TargetCase`, `UpstreamNode`, `RequiredRelation`, `TargetEvidenceBundle`, and `AbsoluteAccumulationJudgeResult` as the core internal types. V2 reuses the active `user-level selective v1` reading windows as its substrate, uses `segment_source_v1` spans for target and upstream node grounding, and first ships only `reader_character.coherent_accumulation`. The new builder and runner live at `accumulation_benchmark_v2.py` and `run_accumulation_evaluation_v2.py`. Draft cases remain review-gated, and the project now records a dedicated long-span v2 design doc plus an empty draft dataset scaffold instead of prematurely freezing candidate cases.
+
+**Why it matters later**: Future contributors will otherwise see both v1 historical long-span judged reports and the newer mining memo and assume they are variations on the same active method. This entry records a real methodological change: v1 is preserved as historical mechanism evidence, while v2 is the active target-centered long-span design that future dataset curation and judged runs should follow.
+
+**Primary evidence**:
+- `docs/backend-reader-evaluation.md`
+- `docs/current-state.md`
+- `docs/tasks/registry.md`
+- `docs/tasks/registry.json`
+- `reading-companion-backend/docs/evaluation/README.md`
+- `reading-companion-backend/docs/evaluation/long_span/README.md`
+- `reading-companion-backend/docs/evaluation/long_span/target_centered_accumulation_v2_design.md`
+- `reading-companion-backend/eval/attentional_v2/accumulation_benchmark_v2.py`
+- `reading-companion-backend/eval/attentional_v2/run_accumulation_evaluation_v2.py`
+- `reading-companion-backend/eval/manifests/splits/attentional_v2_accumulation_benchmark_v2_draft.json`

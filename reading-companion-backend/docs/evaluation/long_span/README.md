@@ -1,6 +1,9 @@
 # Long-Span Evaluation Reports
 
-This directory archives human interpretation reports for formal bounded long-span evaluations.
+This directory now has two layers:
+
+- historical bounded long-span judged reports from `accumulation benchmark v1`
+- active design and working materials for `target-centered long-span accumulation v2`
 
 ## Conventions
 
@@ -10,7 +13,7 @@ This directory archives human interpretation reports for formal bounded long-spa
 - Machine outputs remain under `reading-companion-backend/eval/runs/.../summary/`.
 - Use [../README.md](../README.md) as the cross-surface entry point.
 
-## Current Durable Evidence
+## Historical Durable Evidence
 
 The current durable long-span evidence bundle is the cleaned April 7 rerun:
 
@@ -22,6 +25,20 @@ The current durable long-span evidence bundle is the cleaned April 7 rerun:
   - `attentional_v2` still shows stronger main-thread fidelity on some single-chapter probes.
 
 Do not use the older April 6 lane as current mechanism evidence; it remains historical machine output, but it was diagnosed as an invalid harness/materialization lane rather than a clean long-span comparison artifact.
+
+## Active V2 Design
+
+- Active methodology pointer:
+  - `target-centered long-span accumulation v2`
+- Stable design document:
+  - [target_centered_accumulation_v2_design.md](./target_centered_accumulation_v2_design.md)
+- Current implementation scaffolding:
+  - [accumulation_benchmark_v2.py](../../../eval/attentional_v2/accumulation_benchmark_v2.py)
+  - [run_accumulation_evaluation_v2.py](../../../eval/attentional_v2/run_accumulation_evaluation_v2.py)
+- Draft split manifest scaffold:
+  - [attentional_v2_accumulation_benchmark_v2_draft.json](../../../eval/manifests/splits/attentional_v2_accumulation_benchmark_v2_draft.json)
+
+`v2` is now the active long-span method definition, but it does not yet have a frozen reviewed case set or a formal judged run. Candidate cases must be reviewed before freeze promotion.
 
 ## Reports
 

@@ -7,9 +7,34 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-04-18T02:14:14Z`
+Last verified: `2026-04-18T11:40:00Z`
 
 ## Current Objective
+- Land `target-centered long-span accumulation v2` as the active long-span methodology while preserving bounded long-span v1 as historical evidence.
+  - active design doc:
+    - `reading-companion-backend/docs/evaluation/long_span/target_centered_accumulation_v2_design.md`
+  - landed builder / schema:
+    - `reading-companion-backend/eval/attentional_v2/accumulation_benchmark_v2.py`
+  - landed runner:
+    - `reading-companion-backend/eval/attentional_v2/run_accumulation_evaluation_v2.py`
+  - draft scaffold manifest:
+    - `reading-companion-backend/eval/manifests/splits/attentional_v2_accumulation_benchmark_v2_draft.json`
+  - draft scaffold dataset:
+    - `reading-companion-backend/state/eval_local_datasets/accumulation_target_cases/attentional_v2_accumulation_benchmark_v2_cases_draft`
+  - active v2 method shape:
+    - evaluate one mechanism at a time with absolute scoring
+    - center each case on one `target_span / target_zone` plus a prepared long-range thread
+    - use `target_local_reactions`, `explicit_callback_actions`, and `short_horizon_followups` as the judge evidence bundle
+    - do not directly score raw mechanism-specific memory/state structures
+    - first release only covers `reader_character.coherent_accumulation`
+  - current dataset posture:
+    - no reviewed/frozen v2 target-case set exists yet
+    - candidate authoring must stay review-gated before freeze
+    - current window substrate is reused from:
+      - `reading-companion-backend/state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1`
+  - historical boundary:
+    - keep `attentional_v2_accumulation_benchmark_v1_judged_rerun_20260407` as durable historical mechanism evidence
+    - do not treat the old bounded `EARLY / MID / LATE` probe method as the active long-span methodology anymore
 - Replace the old active `excerpt` benchmark pointer with the new note-aligned `user-level selective v1` package.
   - active split manifest:
     - `reading-companion-backend/eval/manifests/splits/attentional_v2_user_level_selective_v1_draft.json`

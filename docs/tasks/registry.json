@@ -1,7 +1,44 @@
 {
   "version": 1,
-  "updated_at": "2026-04-16T13:18:16Z",
+  "updated_at": "2026-04-18T11:40:00Z",
   "tasks": [
+    {
+      "id": "TASK-ACCUMULATION-BENCHMARK-V2",
+      "title": "Land the target-centered long-span accumulation v2 framework",
+      "status": "active",
+      "lane": "dataset_platform",
+      "priority": "high",
+      "detail_ref": "docs/backend-reader-evaluation.md",
+      "truth_refs": [
+        "docs/backend-reader-evaluation.md",
+        "docs/current-state.md",
+        "reading-companion-backend/docs/evaluation/README.md",
+        "reading-companion-backend/docs/evaluation/long_span/README.md",
+        "reading-companion-backend/docs/evaluation/long_span/target_centered_accumulation_v2_design.md"
+      ],
+      "decision_refs": [
+        "DEC-066"
+      ],
+      "job_refs": [],
+      "acceptance_ref": "reading-companion-backend/docs/evaluation/long_span/target_centered_accumulation_v2_design.md",
+      "next_action": "Keep bounded long-span v1 as historical mechanism evidence, but treat target-centered long-span accumulation v2 as the active long-span methodology. The landed builder/schema now live at reading-companion-backend/eval/attentional_v2/accumulation_benchmark_v2.py and the landed runner lives at reading-companion-backend/eval/attentional_v2/run_accumulation_evaluation_v2.py. The draft scaffold manifest now lives at reading-companion-backend/eval/manifests/splits/attentional_v2_accumulation_benchmark_v2_draft.json and the draft scaffold dataset lives at reading-companion-backend/state/eval_local_datasets/accumulation_target_cases/attentional_v2_accumulation_benchmark_v2_cases_draft. V2 now centers each case on one target_span/target_zone plus a prepared long-range thread with 2+ upstream nodes and explicit required_relations, scores each mechanism absolutely through quality_score with callback_score as a secondary bonus, reuses the active user-level selective v1 reading windows as substrate, and does not directly judge raw mechanism-specific memory/state structures. The next dataset move is still candidate-authoring only: show draft target cases for review before any freeze or formal judged run.",
+      "blocked_by": [],
+      "evidence_refs": [
+        "docs/backend-reader-evaluation.md",
+        "docs/current-state.md",
+        "docs/tasks/registry.md",
+        "docs/history/decision-log.md",
+        "reading-companion-backend/docs/evaluation/README.md",
+        "reading-companion-backend/docs/evaluation/long_span/README.md",
+        "reading-companion-backend/docs/evaluation/long_span/target_centered_accumulation_v2_design.md",
+        "reading-companion-backend/eval/attentional_v2/accumulation_benchmark_v2.py",
+        "reading-companion-backend/eval/attentional_v2/run_accumulation_evaluation_v2.py",
+        "reading-companion-backend/eval/manifests/splits/attentional_v2_accumulation_benchmark_v2_draft.json",
+        "reading-companion-backend/state/eval_local_datasets/accumulation_target_cases/attentional_v2_accumulation_benchmark_v2_cases_draft/manifest.json"
+      ],
+      "last_updated": "2026-04-18T11:40:00Z",
+      "last_updated_by": "codex"
+    },
     {
       "id": "TASK-USER-LEVEL-SELECTIVE-V1",
       "title": "Replace the active local/user-level benchmark with the note-aligned selective package",

@@ -106,17 +106,18 @@ Use `docs/backend-reading-mechanism.md` for shared mechanism-platform boundaries
   - the segment must begin at body start rather than dropping into a later chapter cold
   - the judged targets should be real aligned human notes rather than machine-expanded synthetic excerpt cases
   - the main metric should be note recall over user-visible reactions
-- `reader_character.coherent_accumulation` should usually prefer a bounded long-span surface:
-  - one long chapter or one contiguous multi-chapter window
-  - visible continuity, carryover, and callback pressure
-  - enough span to test whether understanding compounds rather than resets
-- `reader_value.insight_and_clarification` is an orthogonal output-value axis.
-  - it may be scored on local/user-level cases
-  - it may also be scored on long-span window cases
+- `reader_character.coherent_accumulation` should now prefer a target-centered long-span surface:
+  - reuse one continuous reading window as substrate
+  - define one `target_span / target_zone`
+  - prepare one explicit long-range thread that should be reconstructed at that target point
+  - evaluate whether understanding compounds into that target-point integration instead of resetting locally
+- `reader_value.insight_and_clarification` remains an orthogonal output-value axis, but it is not part of long-span accumulation v2 first release.
 - `excerpt surface` is now a historical chapter-scoped local-text surface name used by older formal runs.
 - the current active local benchmark meaning is `user-level selective`.
   - `local-only` and `state/eval_local_datasets/` are storage/distribution terms only
   - source-origin labels such as `public`, `private`, `manual download`, or `agent-downloaded` remain provenance only
+- the current active long-span methodology meaning is `target-centered long-span accumulation v2`.
+  - the older bounded probe surface remains historical evidence rather than the active method definition
 - Stable evaluation practice should therefore avoid forcing excerpt and long-span datasets to share the same books or chapters when that coupling weakens fit or runtime efficiency.
 
 ## Active User-Level Selective Benchmark Rule
@@ -189,59 +190,72 @@ Use `docs/backend-reading-mechanism.md` for shared mechanism-platform boundaries
 
 ## Coherent-Accumulation Interpretation Rule
 - `reader_character.coherent_accumulation` is not the same thing as generic whole-book memory.
-- The current operational target is bounded long-span continuity and carryover:
-  - does the reader keep earlier material alive across a meaningful span
-  - does it connect later developments back to earlier pressure honestly
-  - does understanding accumulate instead of restarting locally
-- A valid accumulation case may therefore be:
-  - one long chapter
-  - one contiguous two-to-four chapter window
-- Accumulation benchmark design should optimize for spans where:
-  - arguments deepen
-  - narrative consequences settle
-  - callbacks matter
-  - later distinctions depend on earlier reading
+- The active operational target is now target-centered long-span integration:
+  - the benchmark prepares one `target_span / target_zone`
+  - the case also prepares one long-range thread made of `upstream_nodes[]`, `required_relations[]`, and `expected_integration`
+  - the evaluation question becomes:
+    - when the mechanism reaches the target point, does it actually build the prepared long-range thread there?
+- The target of evaluation is therefore not "did the mechanism react separately at early / middle / late points?"
+  - the target is whether the final target-point behavior shows that earlier material has been carried forward and used correctly
+- A valid accumulation case usually reuses one continuous reading window and prepares:
+  - one `target_span`
+  - `2+` upstream nodes
+  - one or more required relations between those nodes
+  - one expected integration statement that says what should be reconstructed at the target point
+- The benchmark may still use `EARLY / MID / LATE` as an authoring shorthand when that helps humans read the case, but those labels are no longer the active evaluation contract.
 - Books or chapters whose sections are largely independent are poor default accumulation surfaces even if they remain strong local excerpt surfaces.
 
-## Long-Span Probe Grounding Rule
-- A long-span accumulation probe is benchmark-ready only when the later anchor explicitly carries forward earlier material.
+## Long-Span Target-Case Grounding Rule
+- A target-centered long-span case is benchmark-ready only when the target point genuinely depends on earlier material.
 - Shared theme alone is not enough.
-- Strong long-span probes usually show at least one of:
-  - a callback or textual echo
-  - a consequence or resolution of an earlier tension
-  - a later distinction that depends on earlier setup
-  - a concrete continuation of one narrative or argumentative state
-- If the reader would have to supply most of the connection by outside inference, the probe should be treated as weak or ambiguous rather than as true accumulation evidence.
-- When a window only yields `1-2` such probes, freeze honestly short instead of forcing a third weaker probe.
+- The prepared long-range thread may be:
+  - a narrative storyline
+  - an argumentative line
+  - a concept-building or distinction-building line
+- The benchmark-ready question is not "can a judge infer a connection after the fact?"
+  - it is "does the text itself justify expecting the target point to bring earlier material back into play?"
+- Strong target-centered cases therefore require:
+  - one clearly specified `target_span`
+  - one prepared long-range thread that already exists in the source window
+  - explicit `required_relations[]` so the judge is not forced to invent the thread
+  - `non_goal_but_tempting_points[]` when nearby but wrong callbacks are likely
+- If the reader would have to supply most of the thread by outside inference, the case should be treated as weak or ambiguous rather than as true long-span accumulation evidence.
+- Distance does not need to be imposed as a separate synthetic rule once the prepared thread is already genuinely long-range in the source text.
+  - distance may still be recorded as metadata
+  - but the primary gate is whether the source-prepared thread itself is materially long-range
+- Candidate authoring should stay review-gated:
+  - first produce candidate memos or draft target cases
+  - then review them
+  - only then freeze them into the formal dataset
 
 ## Evidence-Grounded Report Writing Rule
 - Judged interpretation reports must separate at least four things explicitly:
   - the formal benchmark target
-    - for example the formal `EARLY / MID / LATE` probe text or the formal chapter/question anchor
+    - for example the formal `target_span`, prepared long-range thread, and expected integration
   - direct scored evidence
-    - reactions or attention events that actually align to that formal target
+    - target-local reactions and nearby observable behavior that actually bear on the target-centered question
   - supporting evidence
-    - same-section, same-chapter, or nearby material that helps explain the judgment but is not itself the formal hit
+    - nearby material that helps explain the judgment but is not itself the decisive target-point evidence
   - negative evidence
-    - the missing hit, dropped late anchor, absent chapter presence, or other failure condition that materially shaped the judgment
+    - the missing integration, absent callback evidence, distorted relation, or other failure condition that materially shaped the judgment
 - Reports must not present supporting evidence as though it were the formal hit.
-  - same-chapter or same-section matches may still matter
-  - they must be labeled as supporting evidence rather than written as exact probe-anchor alignment
+  - nearby echoes or same-window support may still matter
+  - they must be labeled as supporting evidence rather than written as successful target-point integration
 - Reports must not let summary counts stand in for interpretation.
-  - `anchor_hit = n/3`, `matched_reactions = n`, chapter coverage, or similar totals are evidence summaries only
-  - they do not by themselves prove that the mechanism completed the probe's required carryforward or closure
-  - when counts are cited, the report should also say whether the relevant support is exact, supporting-only, weak, or absent
+  - callback counts, nearby evidence counts, or similar totals are evidence summaries only
+  - they do not by themselves prove that the mechanism built the required thread at the target point
+  - when counts are cited, the report should also say whether the target-point integration itself is strong, partial, distorted, or absent
 - Reports should show the decisive evidence before leaning on it in explanation.
-  - if the prose says a result turned on one retrospective move, one late closure, or one specific clarifying reaction, that reaction should already be quoted or linked in the evidence section
+  - if the prose says a result turned on one target-zone reaction, one explicit callback, or one short-horizon downstream effect, that evidence should already be quoted or linked in the evidence section
   - do not force the reader to infer which hidden reaction the later explanation is pointing at
 - Reports should include negative evidence symmetrically.
-  - when a key late anchor has `0 matched reactions` or `0 matched attention events`, record that absence directly
+  - when the target zone fails to reconstruct the prepared thread, record that absence directly
   - do not let a few attractive local reactions obscure that the judged requirement was still missed
 - Reports must distinguish `reading value` from `probe fit`.
   - a reaction may still be globally useful for actor orientation, scene understanding, or general reading value
-  - if it does not serve the probe's actual `judge_focus`, it should not be written as the decisive positive evidence for that probe
+  - if it does not serve the case's actual `expected_integration`, it should not be written as the decisive positive evidence for that case
 - Raw evidence should not enter the report without provenance checks.
-  - verify the `probe_id`, `window_case_id`, source chapter/window, section ref, and quoted excerpt before treating a raw artifact as report-ready evidence
+  - verify the `case_id`, `window_id`, target or callback refs, source span provenance, and quoted excerpt before treating a raw artifact as report-ready evidence
   - if provenance is uncertain or mismatched, record the uncertainty instead of upgrading it into interpretation
 - The stable report shape should stay layered:
   - the main interpretation report should carry the minimum sufficient evidence chain that lets a reader understand the judgment in one pass
@@ -253,11 +267,20 @@ Use `docs/backend-reading-mechanism.md` for shared mechanism-platform boundaries
 - An active benchmark does not need to maximize breadth if the current project constraint is iteration speed under real token and time pressure.
 - The active local/user-level benchmark pointer now belongs to the note-aligned `user-level selective v1` package rather than to `excerpt surface v1.1`.
 - Older excerpt-surface freezes and their judged reports should remain readable as historical evidence, but they should be labeled `historical` / `superseded` once the active pointer moves.
-- A chapter-clustered benchmark is acceptable when it improves time-to-next-comparison by letting one chapter read support multiple excerpt judgments.
-- The clustered shape should still be explicit and reviewable:
-  - selected chapters must be named directly
-  - excerpt and reserve quotas must be documented
-  - the active benchmark doc must say clearly whether excerpt membership is still draft, partial, or frozen
+- The durable long-span run evidence from bounded accumulation benchmark v1 remains historical mechanism evidence rather than active methodology authority.
+  - preserve:
+    - `attentional_v2_accumulation_benchmark_v1_judged_rerun_20260407`
+  - interpret it as historical evidence produced by the older bounded `EARLY / MID / LATE` / pairwise-probe method
+- The active long-span methodology pointer now belongs to `target-centered long-span accumulation v2`.
+  - v2 reuses the active user-level reading windows as its substrate
+  - v2 evaluates one mechanism at a time with absolute scoring
+  - v2 compares mechanisms only as a derived report-layer operation after absolute scoring
+  - v2 first ships only `reader_character.coherent_accumulation`
+- The active long-span draft workflow is:
+  - define or revise the v2 case schema and judge rubric
+  - author candidate cases in draft only
+  - review those candidates explicitly
+  - freeze only the approved target cases
 - Historical broad freezes should remain readable, but they should not keep acting as the active benchmark pointer once a deliberate replacement has been recorded.
 
 ## Bounded Dataset-Platform Strategy Rule

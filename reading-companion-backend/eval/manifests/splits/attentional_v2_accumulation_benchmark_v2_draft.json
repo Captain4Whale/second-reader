@@ -1,0 +1,48 @@
+{
+  "manifest_id": "attentional_v2_accumulation_benchmark_v2_draft",
+  "benchmark_family": "target_centered_long_span_accumulation_v2",
+  "status": "draft",
+  "version": "2026-04-18",
+  "question_families": [
+    "reader_character.coherent_accumulation"
+  ],
+  "active_design": "target_centered_long_span_accumulation_v2",
+  "source_refs": {
+    "user_level_dataset_roots": [
+      "state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1"
+    ],
+    "accumulation_target_case_datasets": [
+      "state/eval_local_datasets/accumulation_target_cases/attentional_v2_accumulation_benchmark_v2_cases_draft"
+    ],
+    "source_manifests": [
+      "state/dataset_build/build_runs/human_notes_guided_dataset_v1_20260404/manifests/local_refs/attentional_v2_human_notes_guided_dataset_v1_local_refs__scratch__human_notes_guided_dataset_v1_20260404.json"
+    ]
+  },
+  "quota_status": {
+    "window_substrate": {
+      "dataset_id": "attentional_v2_user_level_selective_v1",
+      "ready_now": 5
+    },
+    "accumulation_target_cases": {
+      "target_total": 0,
+      "ready_now": 0,
+      "freeze_ready": 0,
+      "review_pending": 0
+    }
+  },
+  "splits": {
+    "accumulation_target_cases_draft": {
+      "all": [],
+      "by_thread_type": {}
+    },
+    "accumulation_target_cases_frozen": {
+      "all": [],
+      "by_thread_type": {}
+    }
+  },
+  "notes": [
+    "V2 reuses the active user-level reading windows as its substrate.",
+    "Draft target cases remain review-gated and must be approved before freeze promotion.",
+    "The historical bounded EARLY/MID/LATE accumulation benchmark v1 remains preserved as historical evidence only."
+  ]
+}
