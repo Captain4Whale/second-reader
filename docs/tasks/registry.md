@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-04-18T17:46:40+08:00`
+Last updated: `2026-04-18T21:35:00+08:00`
 
 ## Status Values
 - `active`
@@ -195,8 +195,15 @@ Last updated: `2026-04-18T17:46:40+08:00`
     - runtime state and full checkpoints now persist a lightweight `continuation capsule` with rehydration entrypoints
     - warm resume now restores the latest usable continuation capsule together with new-format runtime/checkpoint state
     - `look_back` now resolves one bounded earlier source span, and `read_audit` now records per-step supplemental activity plus stop reasons
-  - next define the post-Phase-D follow-up:
-    - review whether slower compaction, reflective promotion, or other continuity polish should become the next bounded slice
+  - `Phase E1` is now landed:
+    - the new `Read -> Express` contract is frozen in the stable mechanism doc and the structural rework plan
+  - the first compatibility-first `Phase E2` slice is now landed:
+    - the live runner now routes `navigate.unitize -> read -> express(if needed) -> navigate.route`
+    - `read` now emits `unit_delta`, `pressure_signals`, and `express_signal`
+    - visible-reaction wording now comes from `Express`
+    - legacy family-shaped reaction records are still generated through a thin adapter for slow-cycle / eval / UI compatibility
+  - next keep `Phase E3` as the bounded follow-up:
+    - continue shrinking the compatibility layer in slow-cycle / eval / UI adapters
     - keep `knowledge_activations` narrowed to helper territory unless a later explicit design pass changes that rule
 - Post-Phase-D evaluation posture:
   - the April 12 post-Phase-D smoke is finished and the April 13 targeted judged validation is also finished

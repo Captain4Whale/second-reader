@@ -7,9 +7,10 @@ from dataclasses import dataclass
 from src.prompts.shared import LANGUAGE_OUTPUT_CONTRACT
 
 
-ATTENTIONAL_V2_PROMPTSET_VERSION = "attentional_v2-phase6-v12"
+ATTENTIONAL_V2_PROMPTSET_VERSION = "attentional_v2-phase6-v13"
 NAVIGATE_UNITIZE_PROMPT_VERSION = "attentional_v2.navigate_unitize.v2"
-READ_UNIT_PROMPT_VERSION = "attentional_v2.read.v4"
+READ_UNIT_PROMPT_VERSION = "attentional_v2.read.v5"
+EXPRESS_UNIT_PROMPT_VERSION = "attentional_v2.express.v1"
 ZOOM_READ_PROMPT_VERSION = "attentional_v2.zoom_read.v5"
 MEANING_UNIT_CLOSURE_PROMPT_VERSION = "attentional_v2.meaning_unit_closure.v8"
 CONTROLLER_DECISION_PROMPT_VERSION = "attentional_v2.controller_decision.v1"
@@ -32,6 +33,9 @@ class AttentionalV2PromptSet:
     read_unit_version: str
     read_unit_system: str
     read_unit_prompt: str
+    express_unit_version: str
+    express_unit_system: str
+    express_unit_prompt: str
     zoom_read_version: str
     zoom_read_system: str
     zoom_read_prompt: str
@@ -116,12 +120,13 @@ Your job is to read the exact current unit together with a small carried-forward
 
 Rules:
 - Treat the provided unit text as the current reading present.
-- Use the read-context packet naturally when it is genuinely relevant.
-- If prior material is not materially needed, say so plainly instead of forcing a connection.
+- Use the carried-forward memory naturally when it is genuinely relevant, but do not collapse the unit into a chapter summary.
 - Do not invent earlier text that is not present in carry-forward or supplemental context.
 - If the current unit clearly depends on earlier material but the provided context is insufficient, request one bounded supplemental context step at a time.
 - Use `active_recall` when you need more structured prior state.
 - Use `look_back` only when exact earlier source wording is needed, and point to explicit anchor ids and/or sentence ids when you can.
+- `unit_delta` should state what shifted in the reader's understanding or pressure after this exact unit, not what the whole chapter means.
+- `pressure_signals` are local post-read signals, not route decisions.
 - `implicit_uptake` must stay explicit. Only target:
   - `working_state`
   - `concept_registry`
@@ -130,7 +135,9 @@ Rules:
   - `knowledge_activations`
 - `reflective_frames` stays slow-cycle only and must not be written here.
 - `anchor_evidence` must cite exact sentence ids from the current unit.
-- `raw_reaction` is optional. Emit it only when a bounded visible reaction genuinely emerges from the current unit now.
+- `express_signal` should only turn on when one bounded visible reaction genuinely deserves surfacing now.
+- If there is no such visible reaction, set `should_express` to false and leave the other express fields empty.
+- `prior_material_use` is optional audit metadata only. Use it sparingly and only when specific prior refs materially shaped this read.
 - Return JSON only.""",
     read_unit_prompt="""Structural frame:
 {structural_frame}
@@ -154,9 +161,12 @@ Output language contract:
 
 Return JSON:
 {
-  "local_understanding": "<brief unit understanding>",
-  "move_hint": "advance",
-  "continuation_pressure": false,
+  "unit_delta": "<brief local read delta>",
+  "pressure_signals": {
+    "continuation_pressure": false,
+    "backward_pull": false,
+    "frame_shift_pressure": false
+  },
   "implicit_uptake": [],
   "anchor_evidence": [
     {
@@ -165,13 +175,63 @@ Return JSON:
       "why_it_matters": "<brief reason>"
     }
   ],
+  "express_signal": {
+    "should_express": false,
+    "focal_quote": "",
+    "why_now": "",
+    "supporting_ref_ids": []
+  },
   "prior_material_use": {
     "materially_used": false,
     "explanation": "",
     "supporting_ref_ids": []
   },
-  "raw_reaction": null,
   "context_request": null
+}""",
+    express_unit_version=EXPRESS_UNIT_PROMPT_VERSION,
+    express_unit_system="""You are the express node for a text-grounded reading mechanism.
+
+Your job is to surface at most one bounded visible reaction from a unit that has already been read.
+
+Rules:
+- Treat the current unit as already read. Do not re-interpret the whole chapter.
+- Stay anchored to the supplied focal quote and current unit text.
+- Emit at most one visible reaction.
+- If nothing deserves surfacing cleanly now, withhold.
+- Do not request more context, do not update memory, and do not decide the next route.
+- Do not write broad chapter summary or evaluator-style explanation.
+- `prior_link` is only for an explicitly surfaced connection to one of the supplied prior refs.
+- `outside_link` is only for an explicitly surfaced book-external reference that truly matters to the reaction.
+- `search_intent` is only for a naturally opened follow-up question worth pursuing.
+- Return JSON only.""",
+    express_unit_prompt="""Structural frame:
+{structural_frame}
+
+Current unit:
+{current_unit}
+
+Express signal:
+{express_signal}
+
+Supporting refs:
+{supporting_refs}
+
+Policy snapshot:
+{policy_snapshot}
+
+Output language contract:
+"""
+    + LANGUAGE_OUTPUT_CONTRACT
+    + """
+
+Return JSON:
+{
+  "decision": "withhold",
+  "anchor_quote": "",
+  "content": "",
+  "prior_link": null,
+  "outside_link": null,
+  "search_intent": null
 }""",
     zoom_read_version=ZOOM_READ_PROMPT_VERSION,
     zoom_read_system="""You are the sentence-level zoom node for a text-grounded reading mechanism.

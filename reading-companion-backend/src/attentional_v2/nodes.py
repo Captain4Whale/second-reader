@@ -22,13 +22,18 @@ from .schemas import (
     ClosureDecision,
     ContextRequest,
     ControllerDecisionResult,
+    ExpressResult,
+    ExpressSignal,
     GateState,
     KnowledgeActivationsState,
     MeaningUnitClosureResult,
     MoveType,
     NavigationContext,
     NavigateRouteDecision,
+    OutsideLink,
+    PressureSignals,
     PriorMaterialUse,
+    PriorLink,
     PreviewRange,
     ReactionCandidate,
     ReactionEmissionDecision,
@@ -37,6 +42,7 @@ from .schemas import (
     ReadAnchorEvidence,
     ReadUnitResult,
     ReaderPolicy,
+    SearchIntent,
     StateOperation,
     TriggerState,
     UnitizeBoundaryType,
@@ -59,6 +65,7 @@ _REACTION_TYPES: set[ReactionType] = {
 _MOVE_TYPES: set[MoveType] = {"advance", "dwell", "bridge", "reframe"}
 _ROUTE_ACTIONS = {"commit", "continue", "bridge_back", "reframe"}
 _CONTEXT_REQUEST_KINDS = {"active_recall", "look_back"}
+_OUTSIDE_LINK_KINDS = {"work", "person", "concept", "history", "analogy", "other"}
 _UNITIZE_BOUNDARY_TYPES: set[UnitizeBoundaryType] = {
     "paragraph_end",
     "intra_paragraph_semantic_close",
@@ -1072,6 +1079,193 @@ def _normalize_reaction_candidate(value: object) -> ReactionCandidate | None:
     }
 
 
+def _normalize_pressure_signals(value: object) -> PressureSignals:
+    """Normalize one local post-read pressure packet."""
+
+    if not isinstance(value, dict):
+        return {
+            "continuation_pressure": False,
+            "backward_pull": False,
+            "frame_shift_pressure": False,
+        }
+    return {
+        "continuation_pressure": bool(value.get("continuation_pressure")),
+        "backward_pull": bool(value.get("backward_pull")),
+        "frame_shift_pressure": bool(value.get("frame_shift_pressure")),
+    }
+
+
+def _derive_pressure_signals_from_legacy_fields(
+    *,
+    move_hint: str,
+    continuation_pressure: bool,
+) -> PressureSignals:
+    """Derive pressure signals from the legacy route-oriented read fields."""
+
+    normalized_move = _clean_text(move_hint).lower().replace("-", "_")
+    return {
+        "continuation_pressure": bool(continuation_pressure),
+        "backward_pull": normalized_move == "bridge",
+        "frame_shift_pressure": normalized_move == "reframe",
+    }
+
+
+def _normalize_express_signal(
+    value: object,
+    *,
+    allowed_ref_ids: set[str],
+) -> ExpressSignal:
+    """Normalize one surfaced-expression signal emitted by the read step."""
+
+    if not isinstance(value, dict):
+        return {
+            "should_express": False,
+            "focal_quote": "",
+            "why_now": "",
+            "supporting_ref_ids": [],
+        }
+    should_express = bool(value.get("should_express"))
+    focal_quote = _clean_text(value.get("focal_quote"))
+    why_now = _clean_text(value.get("why_now"))
+    supporting_ref_ids = [
+        ref_id
+        for ref_id in (
+            _clean_text(item)
+            for item in value.get("supporting_ref_ids", [])
+            if isinstance(value.get("supporting_ref_ids"), list)
+        )
+        if ref_id and (not allowed_ref_ids or ref_id in allowed_ref_ids)
+    ]
+    if not should_express:
+        return {
+            "should_express": False,
+            "focal_quote": "",
+            "why_now": "",
+            "supporting_ref_ids": [],
+        }
+    return {
+        "should_express": True,
+        "focal_quote": focal_quote,
+        "why_now": why_now,
+        "supporting_ref_ids": supporting_ref_ids[:4],
+    }
+
+
+def _normalize_prior_link(
+    value: object,
+    *,
+    allowed_ref_ids: set[str],
+) -> PriorLink | None:
+    """Normalize one explicit surfaced prior-link packet."""
+
+    if not isinstance(value, dict):
+        return None
+    ref_ids = [
+        ref_id
+        for ref_id in (
+            _clean_text(item)
+            for item in value.get("ref_ids", [])
+            if isinstance(value.get("ref_ids"), list)
+        )
+        if ref_id and (not allowed_ref_ids or ref_id in allowed_ref_ids)
+    ]
+    relation = _clean_text(value.get("relation"))
+    note = _clean_text(value.get("note"))
+    if not ref_ids:
+        return None
+    return {
+        "ref_ids": ref_ids[:4],
+        "relation": relation,
+        "note": note,
+    }
+
+
+def _normalize_outside_link(value: object) -> OutsideLink | None:
+    """Normalize one explicit surfaced outside-reference packet."""
+
+    if not isinstance(value, dict):
+        return None
+    kind = _clean_text(value.get("kind")).lower()
+    label = _clean_text(value.get("label"))
+    note = _clean_text(value.get("note"))
+    if not label:
+        return None
+    if kind not in _OUTSIDE_LINK_KINDS:
+        kind = "other"
+    return {
+        "kind": kind,
+        "label": label,
+        "note": note,
+    }
+
+
+def _normalize_search_intent(value: object) -> SearchIntent | None:
+    """Normalize one explicit surfaced search-intent packet."""
+
+    if not isinstance(value, dict):
+        return None
+    query = _clean_text(value.get("query"))
+    rationale = _clean_text(value.get("rationale"))
+    if not query:
+        return None
+    return {
+        "query": query,
+        "rationale": rationale,
+    }
+
+
+def _normalize_express_result(
+    value: object,
+    *,
+    allowed_ref_ids: set[str],
+) -> ExpressResult:
+    """Normalize one visible-reaction result emitted by the express node."""
+
+    if not isinstance(value, dict):
+        return {
+            "decision": "withhold",
+            "anchor_quote": "",
+            "content": "",
+            "prior_link": None,
+            "outside_link": None,
+            "search_intent": None,
+        }
+    decision = _clean_text(value.get("decision")).lower()
+    if decision not in _EMISSION_DECISIONS:
+        decision = "withhold"
+    anchor_quote = _clean_text(value.get("anchor_quote"))
+    content = _clean_text(value.get("content"))
+    prior_link = _normalize_prior_link(value.get("prior_link"), allowed_ref_ids=allowed_ref_ids)
+    outside_link = _normalize_outside_link(value.get("outside_link"))
+    search_intent = _normalize_search_intent(value.get("search_intent"))
+    if decision != "emit":
+        return {
+            "decision": "withhold",
+            "anchor_quote": "",
+            "content": "",
+            "prior_link": None,
+            "outside_link": None,
+            "search_intent": None,
+        }
+    if not anchor_quote or not content:
+        return {
+            "decision": "withhold",
+            "anchor_quote": "",
+            "content": "",
+            "prior_link": None,
+            "outside_link": None,
+            "search_intent": None,
+        }
+    return {
+        "decision": "emit",
+        "anchor_quote": anchor_quote,
+        "content": content,
+        "prior_link": prior_link,
+        "outside_link": outside_link,
+        "search_intent": search_intent,
+    }
+
+
 def _normalize_read_anchor_evidence(
     value: object,
     *,
@@ -1181,6 +1375,18 @@ def _fallback_read_unit_result(
         else []
     )
     return {
+        "unit_delta": "",
+        "pressure_signals": {
+            "continuation_pressure": bool(continuation_pressure),
+            "backward_pull": False,
+            "frame_shift_pressure": False,
+        },
+        "express_signal": {
+            "should_express": False,
+            "focal_quote": "",
+            "why_now": "",
+            "supporting_ref_ids": [],
+        },
         "local_understanding": "",
         "move_hint": "advance",
         "continuation_pressure": bool(continuation_pressure),
@@ -1194,6 +1400,18 @@ def _fallback_read_unit_result(
         "raw_reaction": None,
         "context_request": None,
     }
+
+
+def _derive_move_hint_from_pressure_signals(pressure_signals: PressureSignals) -> MoveType:
+    """Project local pressure signals back into the legacy move-hint vocabulary."""
+
+    if bool(pressure_signals.get("backward_pull")):
+        return "bridge"
+    if bool(pressure_signals.get("frame_shift_pressure")):
+        return "reframe"
+    if bool(pressure_signals.get("continuation_pressure")):
+        return "dwell"
+    return "advance"
 
 
 def _has_reframe_pressure(working_pressure: WorkingPressureState | WorkingState) -> bool:
@@ -1413,6 +1631,11 @@ def read_unit(
         for sentence in current_unit_sentences
         if _clean_text(sentence.get("sentence_id"))
     }
+    current_unit_texts = [
+        _clean_text(sentence.get("text"))
+        for sentence in current_unit_sentences
+        if _clean_text(sentence.get("text"))
+    ]
     allowed_ref_ids = {
         _clean_text(ref.get("ref_id"))
         for ref in carry_forward_context.get("refs", [])
@@ -1430,9 +1653,10 @@ def read_unit(
             if isinstance(excerpt, dict) and _clean_text(excerpt.get("ref_id"))
         )
 
-    move_hint = _clean_text(payload.get("move_hint") if isinstance(payload, dict) else "").lower().replace("-", "_")
-    if move_hint not in _MOVE_TYPES:
-        move_hint = "advance"
+    legacy_move_hint = _clean_text(payload.get("move_hint") if isinstance(payload, dict) else "").lower().replace("-", "_")
+    if legacy_move_hint not in _MOVE_TYPES:
+        legacy_move_hint = "advance"
+    legacy_continuation_pressure = bool(payload.get("continuation_pressure")) if isinstance(payload, dict) else False
     anchor_evidence = _normalize_read_anchor_evidence(
         payload.get("anchor_evidence") if isinstance(payload, dict) else None,
         allowed_sentence_ids=allowed_sentence_ids,
@@ -1452,10 +1676,52 @@ def read_unit(
                     }
                 ]
                 break
+    pressure_signals = _normalize_pressure_signals(payload.get("pressure_signals")) if isinstance(payload, dict) else {}
+    if not any(pressure_signals.values()):
+        pressure_signals = _derive_pressure_signals_from_legacy_fields(
+            move_hint=legacy_move_hint,
+            continuation_pressure=legacy_continuation_pressure,
+        )
+    move_hint = _derive_move_hint_from_pressure_signals(pressure_signals)
+    express_signal = _normalize_express_signal(
+        payload.get("express_signal") if isinstance(payload, dict) else None,
+        allowed_ref_ids=allowed_ref_ids,
+    )
+    if not express_signal.get("focal_quote") and anchor_evidence:
+        express_signal = {
+            **express_signal,
+            "focal_quote": _clean_text(anchor_evidence[0].get("quote")),
+        }
+    focal_quote = _clean_text(express_signal.get("focal_quote"))
+    if focal_quote and current_unit_texts and not any(focal_quote in text for text in current_unit_texts):
+        express_signal = {
+            **express_signal,
+            "focal_quote": _clean_text(anchor_evidence[0].get("quote")) if anchor_evidence else "",
+        }
+    if raw_reaction is not None and not bool(express_signal.get("should_express")):
+        express_signal = {
+            "should_express": True,
+            "focal_quote": _clean_text(raw_reaction.get("anchor_quote")) or _clean_text(express_signal.get("focal_quote")),
+            "why_now": _clean_text(raw_reaction.get("content"))[:280],
+            "supporting_ref_ids": list(express_signal.get("supporting_ref_ids", [])),
+        }
+    if bool(express_signal.get("should_express")) and not _clean_text(express_signal.get("focal_quote")):
+        express_signal = {
+            "should_express": False,
+            "focal_quote": "",
+            "why_now": "",
+            "supporting_ref_ids": [],
+        }
+    unit_delta = _clean_text(payload.get("unit_delta")) if isinstance(payload, dict) else ""
+    if not unit_delta:
+        unit_delta = _clean_text(payload.get("local_understanding")) if isinstance(payload, dict) else ""
     result: ReadUnitResult = {
-        "local_understanding": _clean_text(payload.get("local_understanding")) if isinstance(payload, dict) else "",
+        "unit_delta": unit_delta,
+        "pressure_signals": pressure_signals,
+        "express_signal": express_signal,
+        "local_understanding": _clean_text(payload.get("local_understanding")) if isinstance(payload, dict) else unit_delta,
         "move_hint": move_hint,  # type: ignore[typeddict-item]
-        "continuation_pressure": bool(payload.get("continuation_pressure")) if isinstance(payload, dict) else False,
+        "continuation_pressure": bool(pressure_signals.get("continuation_pressure")),
         "implicit_uptake": _normalize_state_operations(payload.get("implicit_uptake")) if isinstance(payload, dict) else [],
         "anchor_evidence": anchor_evidence,
         "prior_material_use": _normalize_prior_material_use(
@@ -1468,37 +1734,105 @@ def read_unit(
     return result
 
 
+def express_unit(
+    *,
+    current_unit_sentences: list[dict[str, object]],
+    express_signal: ExpressSignal,
+    supporting_refs: list[dict[str, object]],
+    reader_policy: ReaderPolicy,
+    output_language: str,
+    output_dir: Path | None = None,
+    book_title: str = "",
+    author: str = "",
+    chapter_title: str = "",
+) -> ExpressResult:
+    """Surface at most one visible reaction after the read step has already settled the unit."""
+
+    prompts = ATTENTIONAL_V2_PROMPTS
+    structural_frame = _structural_frame(
+        book_title=book_title,
+        author=author,
+        chapter_title=chapter_title,
+        output_language=output_language,
+    )
+    user_prompt = _render_prompt(
+        prompts.express_unit_prompt,
+        structural_frame=_json_block(structural_frame),
+        current_unit=_json_block(
+            [
+                {
+                    "sentence_id": _clean_text(sentence.get("sentence_id")),
+                    "text": _clean_text(sentence.get("text")),
+                    "text_role": _clean_text(sentence.get("text_role")),
+                }
+                for sentence in current_unit_sentences
+            ]
+        ),
+        express_signal=_json_block(dict(express_signal)),
+        supporting_refs=_json_block([dict(item) for item in supporting_refs if isinstance(item, dict)]),
+        policy_snapshot=_json_block(reader_policy),
+        output_language_name=language_name(output_language),
+    )
+    _write_prompt_manifest(
+        output_dir,
+        node_name="express_unit",
+        prompt_version=prompts.express_unit_version,
+        system_prompt=prompts.express_unit_system,
+        user_prompt=user_prompt,
+        promptset_version=prompts.promptset_version,
+    )
+    with llm_invocation_scope(trace_context=LLMTraceContext(stage="phase4", node="express_unit")):
+        payload = invoke_json(prompts.express_unit_system, user_prompt, default={})
+
+    allowed_ref_ids = {
+        _clean_text(item.get("ref_id"))
+        for item in supporting_refs
+        if isinstance(item, dict) and _clean_text(item.get("ref_id"))
+    }
+    return _normalize_express_result(payload, allowed_ref_ids=allowed_ref_ids)
+
+
 def navigate_route(
     *,
     read_result: ReadUnitResult,
 ) -> NavigateRouteDecision:
     """Normalize the next-step route from the authoritative read packet."""
 
-    move_hint = _clean_text(read_result.get("move_hint")).lower().replace("-", "_")
     action = "commit"
-    if move_hint == "bridge":
+    pressure_signals = dict(read_result.get("pressure_signals") or {})
+    if bool(pressure_signals.get("backward_pull")):
         action = "bridge_back"
-    elif move_hint == "reframe":
+    elif bool(pressure_signals.get("frame_shift_pressure")):
         action = "reframe"
-    elif bool(read_result.get("continuation_pressure")):
+    elif bool(pressure_signals.get("continuation_pressure")):
         action = "continue"
     if action not in _ROUTE_ACTIONS:
         action = "commit"
+    express_signal = dict(read_result.get("express_signal") or {})
     prior_material_use = dict(read_result.get("prior_material_use") or {})
     target_anchor_id, target_sentence_id = _route_targets_from_ref_ids(
         [
-            _clean_text(ref_id)
-            for ref_id in prior_material_use.get("supporting_ref_ids", [])
-            if isinstance(prior_material_use.get("supporting_ref_ids"), list) and _clean_text(ref_id)
+            *[
+                _clean_text(ref_id)
+                for ref_id in express_signal.get("supporting_ref_ids", [])
+                if isinstance(express_signal.get("supporting_ref_ids"), list) and _clean_text(ref_id)
+            ],
+            *[
+                _clean_text(ref_id)
+                for ref_id in prior_material_use.get("supporting_ref_ids", [])
+                if isinstance(prior_material_use.get("supporting_ref_ids"), list) and _clean_text(ref_id)
+            ],
         ]
     )
     return {
         "action": action,  # type: ignore[typeddict-item]
-        "reason": _clean_text(prior_material_use.get("explanation")) or _clean_text(read_result.get("local_understanding")),
+        "reason": _clean_text(read_result.get("unit_delta"))
+        or _clean_text(read_result.get("local_understanding"))
+        or _clean_text(prior_material_use.get("explanation")),
         "close_current_unit": True,
         "target_anchor_id": target_anchor_id,
         "target_sentence_id": target_sentence_id,
-        "persist_raw_reaction": bool(read_result.get("raw_reaction")),
+        "persist_raw_reaction": bool(express_signal.get("should_express")) or bool(read_result.get("raw_reaction")),
     }
 
 

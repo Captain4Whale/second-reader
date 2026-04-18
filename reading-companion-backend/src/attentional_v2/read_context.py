@@ -672,6 +672,11 @@ def persist_read_audit(
             "supplemental_steps": [dict(step) for step in (supplemental_steps or []) if isinstance(step, dict)],
             "stop_reason": clean_text(stop_reason),
             "budget_exhausted": bool(budget_exhausted),
+            "unit_delta": clean_text(read_result.get("unit_delta")),
+            "pressure_signals": dict(read_result.get("pressure_signals") or {}),
+            "should_express": bool(read_result.get("express_signal", {}).get("should_express"))
+            if isinstance(read_result.get("express_signal"), dict)
+            else False,
             "prior_material_use": dict(read_result.get("prior_material_use") or {}),
             "raw_reaction_present": bool(read_result.get("raw_reaction")),
             "move_hint": clean_text(read_result.get("move_hint")),

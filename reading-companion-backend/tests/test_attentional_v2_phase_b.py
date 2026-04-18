@@ -6,7 +6,7 @@ import json
 
 from src.attentional_v2 import nodes as nodes_module
 from src.attentional_v2 import runner as runner_module
-from src.attentional_v2.nodes import navigate_route, read_unit
+from src.attentional_v2.nodes import express_unit, navigate_route, read_unit
 from src.attentional_v2.read_context import build_carry_forward_context, resolve_context_request
 from src.attentional_v2.schemas import (
     build_default_reader_policy,
@@ -212,7 +212,15 @@ def test_read_unit_includes_carry_forward_and_supplemental_context_in_prompt(tmp
     assert "\"sentence_id\": \"c1-s2\"" in captured["prompt"]
     assert "anchor:a-1" in captured["prompt"]
     assert "lookback:sentence:c1-s1" in captured["prompt"]
-    assert manifest["prompt_version"] == "attentional_v2.read.v4"
+    assert manifest["prompt_version"] == "attentional_v2.read.v5"
+    assert result["unit_delta"] == "The second sentence sharpens the first one."
+    assert result["pressure_signals"] == {
+        "continuation_pressure": True,
+        "backward_pull": True,
+        "frame_shift_pressure": False,
+    }
+    assert result["express_signal"]["should_express"] is True
+    assert result["express_signal"]["focal_quote"] == "Beta sentence."
     assert result["move_hint"] == "bridge"
     assert result["continuation_pressure"] is True
     assert result["prior_material_use"]["supporting_ref_ids"] == ["anchor:a-1", "lookback:sentence:c1-s1"]
@@ -411,7 +419,7 @@ def test_run_read_with_context_loop_replays_one_active_recall_pass_and_persists_
 
     monkeypatch.setattr(runner_module, "read_unit", fake_read_unit)
 
-    read_result, llm_fallbacks = runner_module._run_read_with_context_loop(
+    read_result, supplemental_context, llm_fallbacks = runner_module._run_read_with_context_loop(
         chapter=chapter,
         book_document=book_document,
         chosen_unit_sentences=[chapter["sentences"][1]],
@@ -446,6 +454,8 @@ def test_run_read_with_context_loop_replays_one_active_recall_pass_and_persists_
     audit_line = json.loads(read_audit_file(output_dir).read_text(encoding="utf-8").strip())
 
     assert llm_fallbacks == []
+    assert supplemental_context is not None
+    assert supplemental_context["kind"] == "active_recall"
     assert len(calls) == 2
     assert calls[0]["supplemental_context"] is None
     assert calls[1]["supplemental_context"]["kind"] == "active_recall"
@@ -499,7 +509,7 @@ def test_run_read_with_context_loop_keeps_first_read_when_look_back_is_unsatisfi
 
     monkeypatch.setattr(runner_module, "read_unit", fake_read_unit)
 
-    read_result, llm_fallbacks = runner_module._run_read_with_context_loop(
+    read_result, supplemental_context, llm_fallbacks = runner_module._run_read_with_context_loop(
         chapter=chapter,
         book_document=book_document,
         chosen_unit_sentences=[chapter["sentences"][1]],
@@ -534,6 +544,7 @@ def test_run_read_with_context_loop_keeps_first_read_when_look_back_is_unsatisfi
     audit_line = json.loads(read_audit_file(output_dir).read_text(encoding="utf-8").strip())
 
     assert llm_fallbacks == []
+    assert supplemental_context is None
     assert len(calls) == 1
     assert read_result is first_read
     assert audit_line["supplemental_satisfied"] is False
@@ -619,7 +630,7 @@ def test_run_read_with_context_loop_supports_multiple_supplemental_rounds(tmp_pa
 
     monkeypatch.setattr(runner_module, "read_unit", fake_read_unit)
 
-    read_result, llm_fallbacks = runner_module._run_read_with_context_loop(
+    read_result, supplemental_context, llm_fallbacks = runner_module._run_read_with_context_loop(
         chapter=chapter,
         book_document=book_document,
         chosen_unit_sentences=[chapter["sentences"][1]],
@@ -654,8 +665,82 @@ def test_run_read_with_context_loop_supports_multiple_supplemental_rounds(tmp_pa
     audit_line = json.loads(read_audit_file(output_dir).read_text(encoding="utf-8").strip())
 
     assert llm_fallbacks == []
+    assert supplemental_context is not None
+    assert supplemental_context["kind"] == "supplemental_bundle"
+    assert {item["ref_id"] for item in supplemental_context["refs"]} == {"anchor:a-1", "lookback:anchor:a-1"}
+    assert {item["ref_id"] for item in supplemental_context["excerpts"]} == {"lookback:anchor:a-1"}
     assert len(calls) == 3
     assert read_result["prior_material_use"]["materially_used"] is True
     assert audit_line["supplemental_satisfied"] is True
     assert audit_line["stop_reason"] == "read_complete"
     assert [step["kind"] for step in audit_line["supplemental_steps"]] == ["active_recall", "look_back"]
+
+
+def test_express_unit_emits_one_visible_reaction_with_optional_links(tmp_path, monkeypatch):
+    """express_unit should surface one bounded visible reaction with narrow optional side links."""
+
+    output_dir = tmp_path / "output" / "demo-book"
+    AttentionalV2Mechanism().initialize_artifacts(output_dir)
+    captured: dict[str, str] = {}
+
+    def fake_invoke_json(_system: str, prompt: str, default: object) -> object:
+        captured["prompt"] = prompt
+        return {
+            "decision": "emit",
+            "anchor_quote": "Beta sentence.",
+            "content": "This is the line where the earlier contrast finally shows itself.",
+            "prior_link": {
+                "ref_ids": ["anchor:a-1"],
+                "relation": "callback",
+                "note": "The earlier sentence quietly set up this turn.",
+            },
+            "outside_link": None,
+            "search_intent": None,
+        }
+
+    monkeypatch.setattr(nodes_module, "invoke_json", fake_invoke_json)
+
+    result = express_unit(
+        current_unit_sentences=[
+            {
+                "sentence_id": "c1-s2",
+                "sentence_index": 2,
+                "paragraph_index": 1,
+                "text": "Beta sentence.",
+                "text_role": "body",
+            }
+        ],
+        express_signal={
+            "should_express": True,
+            "focal_quote": "Beta sentence.",
+            "why_now": "The local contrast finally becomes legible here.",
+            "supporting_ref_ids": ["anchor:a-1"],
+        },
+        supporting_refs=[
+            {
+                "ref_id": "anchor:a-1",
+                "kind": "anchor",
+                "summary": "Alpha sentence.",
+                "quote": "Alpha sentence.",
+            }
+        ],
+        reader_policy=build_default_reader_policy(),
+        output_language="en",
+        output_dir=output_dir,
+        book_title="Demo Book",
+        author="Tester",
+        chapter_title="Chapter 1",
+    )
+
+    manifest = json.loads(
+        (output_dir / "_mechanisms" / "attentional_v2" / "internal" / "prompt_manifests" / "express_unit.json").read_text(
+            encoding="utf-8"
+        )
+    )
+
+    assert "Beta sentence." in captured["prompt"]
+    assert "anchor:a-1" in captured["prompt"]
+    assert manifest["prompt_version"] == "attentional_v2.express.v1"
+    assert result["decision"] == "emit"
+    assert result["anchor_quote"] == "Beta sentence."
+    assert result["prior_link"]["ref_ids"] == ["anchor:a-1"]

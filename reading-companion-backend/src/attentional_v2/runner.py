@@ -32,6 +32,7 @@ from .intake import process_sentence_intake
 from .knowledge import apply_activation_operations
 from .nodes import (
     build_unitize_preview,
+    express_unit,
     navigate_route,
     navigate_unitize,
     persist_unitization_audit,
@@ -50,6 +51,7 @@ from .schemas import (
     AnchorBankState,
     AnchoredReactionRecord,
     ConceptRegistryState,
+    ExpressResult,
     KnowledgeActivationsState,
     LocalBufferState,
     MoveHistoryState,
@@ -517,6 +519,7 @@ def _resolve_unit_sentences(
 def _build_current_anchor_from_read_result(
     *,
     read_result: ReadUnitResult,
+    express_result: ExpressResult | None,
     chosen_unit_sentences: list[dict[str, object]],
     focal_sentence: dict[str, object],
 ) -> dict[str, object]:
@@ -537,6 +540,16 @@ def _build_current_anchor_from_read_result(
         anchor_quote = _clean_text(first_evidence.get("quote"))
         anchor_sentence = sentence_lookup.get(_clean_text(first_evidence.get("sentence_id")))
         why_it_mattered = _clean_text(first_evidence.get("why_it_matters"))
+
+    if anchor_sentence is None and isinstance(express_result, dict):
+        express_anchor_quote = _clean_text(express_result.get("anchor_quote"))
+        if express_anchor_quote:
+            for sentence in chosen_unit_sentences:
+                sentence_text = _clean_text(sentence.get("text"))
+                if express_anchor_quote in sentence_text:
+                    anchor_sentence = sentence
+                    anchor_quote = express_anchor_quote
+                    break
 
     if anchor_sentence is None:
         raw_reaction = dict(read_result.get("raw_reaction", {})) if isinstance(read_result.get("raw_reaction"), dict) else {}
@@ -560,8 +573,129 @@ def _build_current_anchor_from_read_result(
         quote=anchor_quote or _clean_text(anchor_sentence.get("text")),
         locator=dict(anchor_sentence.get("locator", {})) if isinstance(anchor_sentence.get("locator"), dict) else {},
         anchor_kind="unit_evidence",
-        why_it_mattered=why_it_mattered or _clean_text(read_result.get("local_understanding")),
+        why_it_mattered=why_it_mattered or _clean_text(read_result.get("unit_delta")) or _clean_text(read_result.get("local_understanding")),
     )
+
+
+def _supporting_refs_for_express(
+    *,
+    ref_ids: list[str],
+    carry_forward_context: dict[str, object],
+    supplemental_context: dict[str, object] | None,
+) -> list[dict[str, object]]:
+    """Collect a narrow express-supporting ref packet from carry-forward and supplemental context."""
+
+    requested_ref_ids = [_clean_text(ref_id) for ref_id in ref_ids if _clean_text(ref_id)]
+    if not requested_ref_ids:
+        return []
+
+    refs_by_id: dict[str, dict[str, object]] = {}
+    excerpt_by_id: dict[str, dict[str, object]] = {}
+    for source in (carry_forward_context, supplemental_context or {}):
+        if not isinstance(source, dict):
+            continue
+        for ref in source.get("refs", []):
+            if not isinstance(ref, dict):
+                continue
+            ref_id = _clean_text(ref.get("ref_id"))
+            if ref_id and ref_id not in refs_by_id:
+                refs_by_id[ref_id] = dict(ref)
+        for key in ("excerpts", "anchors", "concepts", "threads", "reactions", "moves", "reflective_items"):
+            items = source.get(key, [])
+            if not isinstance(items, list):
+                continue
+            for item in items:
+                if not isinstance(item, dict):
+                    continue
+                ref_id = _clean_text(item.get("ref_id"))
+                if ref_id and ref_id not in excerpt_by_id:
+                    excerpt_by_id[ref_id] = dict(item)
+
+    supporting_refs: list[dict[str, object]] = []
+    for ref_id in requested_ref_ids:
+        ref_payload = dict(refs_by_id.get(ref_id) or {})
+        if ref_payload:
+            detail = excerpt_by_id.get(ref_id)
+            if isinstance(detail, dict):
+                for field in ("excerpt_text", "sentence_ids", "chapter_ref", "anchor_id", "label", "kind", "summary"):
+                    if field in detail and field not in ref_payload:
+                        ref_payload[field] = detail.get(field)
+            supporting_refs.append(ref_payload)
+            continue
+        detail = excerpt_by_id.get(ref_id)
+        if isinstance(detail, dict):
+            supporting_refs.append(dict(detail))
+    return supporting_refs[:4]
+
+
+def _legacy_reaction_type_from_express_result(express_result: ExpressResult) -> str:
+    """Map the new express contract back into the temporary legacy family vocabulary."""
+
+    if _clean_text(express_result.get("decision")) != "emit":
+        return "silent"
+    if isinstance(express_result.get("search_intent"), dict):
+        return "curious"
+    if isinstance(express_result.get("prior_link"), dict):
+        return "retrospect"
+    if isinstance(express_result.get("outside_link"), dict):
+        return "association"
+    content = _clean_text(express_result.get("content"))
+    anchor_quote = _clean_text(express_result.get("anchor_quote"))
+    if content and len(content) <= max(120, len(anchor_quote) + 60):
+        return "highlight"
+    return "discern"
+
+
+def _legacy_reaction_candidate_from_express_result(
+    express_result: ExpressResult,
+    *,
+    supporting_refs: list[dict[str, object]],
+) -> dict[str, object] | None:
+    """Project one new express result into the current legacy reaction payload shape."""
+
+    if _clean_text(express_result.get("decision")) != "emit":
+        return None
+    prior_link = dict(express_result.get("prior_link") or {})
+    ref_lookup = {
+        _clean_text(ref.get("ref_id")): ref
+        for ref in supporting_refs
+        if isinstance(ref, dict) and _clean_text(ref.get("ref_id"))
+    }
+    related_anchor_quotes: list[str] = []
+    for ref_id in prior_link.get("ref_ids", []) if isinstance(prior_link.get("ref_ids"), list) else []:
+        ref = ref_lookup.get(_clean_text(ref_id))
+        if not isinstance(ref, dict):
+            continue
+        quote = _clean_text(ref.get("quote")) or _clean_text(ref.get("excerpt_text")) or _clean_text(ref.get("summary"))
+        if quote:
+            related_anchor_quotes.append(quote)
+    search_intent = dict(express_result.get("search_intent") or {})
+    return {
+        "type": _legacy_reaction_type_from_express_result(express_result),
+        "anchor_quote": _clean_text(express_result.get("anchor_quote")),
+        "content": _clean_text(express_result.get("content")),
+        "related_anchor_quotes": related_anchor_quotes[:3],
+        "search_query": _clean_text(search_intent.get("query")),
+        "search_results": [],
+    }
+
+
+def _move_type_from_route_decision(
+    route_decision: NavigateRouteDecision,
+    *,
+    fallback_move_hint: str,
+) -> str:
+    """Project a route action back into the current move-history vocabulary."""
+
+    action = _clean_text(route_decision.get("action"))
+    if action == "bridge_back":
+        return "bridge"
+    if action == "reframe":
+        return "reframe"
+    if action == "continue":
+        return "dwell"
+    fallback = _clean_text(fallback_move_hint)
+    return fallback or "advance"
 
 
 def _build_runtime_continuation_capsule(
@@ -617,7 +751,7 @@ def _run_read_with_context_loop(
     author: str,
     chapter_id: int,
     chapter_ref: str,
-) -> tuple[ReadUnitResult, list[dict[str, str]]]:
+) -> tuple[ReadUnitResult, dict[str, object] | None, list[dict[str, str]]]:
     """Run the authoritative read with budget-bounded supplemental-context looping."""
 
     carry_forward_context = build_carry_forward_context(
@@ -661,6 +795,18 @@ def _run_read_with_context_loop(
     except ReaderLLMError as exc:
         llm_fallbacks.append({"node": "read_unit", "problem_code": exc.problem_code})
         first_read = {
+            "unit_delta": "",
+            "pressure_signals": {
+                "continuation_pressure": bool(unitize_decision.get("continuation_pressure")),
+                "backward_pull": False,
+                "frame_shift_pressure": False,
+            },
+            "express_signal": {
+                "should_express": False,
+                "focal_quote": "",
+                "why_now": "",
+                "supporting_ref_ids": [],
+            },
             "local_understanding": "",
             "move_hint": "advance",
             "continuation_pressure": bool(unitize_decision.get("continuation_pressure")),
@@ -771,7 +917,7 @@ def _run_read_with_context_loop(
         read_result=final_read,
         llm_fallbacks=llm_fallbacks,
     )
-    return final_read, llm_fallbacks
+    return final_read, accumulated_supplemental_context, llm_fallbacks
 
 
 def parse_attentional_v2(request: ParseRequest, mechanism: MechanismInfo) -> ParseResult:
@@ -1057,7 +1203,7 @@ def read_attentional_v2(request: ReadRequest, mechanism: MechanismInfo) -> ReadR
                     ),
                 )
 
-                read_result, read_fallbacks = _run_read_with_context_loop(
+                read_result, supplemental_context, read_fallbacks = _run_read_with_context_loop(
                     chapter=chapter,
                     book_document=provisioned.book_document,
                     chosen_unit_sentences=chosen_unit_sentences,
@@ -1080,6 +1226,72 @@ def read_attentional_v2(request: ReadRequest, mechanism: MechanismInfo) -> ReadR
                     chapter_id=chapter_id,
                     chapter_ref=chapter_ref,
                 )
+                carry_forward_context = build_carry_forward_context(
+                    chapter_ref=chapter_ref,
+                    current_unit_sentence_ids=[
+                        _clean_text(sentence.get("sentence_id"))
+                        for sentence in chosen_unit_sentences
+                        if _clean_text(sentence.get("sentence_id"))
+                    ],
+                    local_buffer=local_buffer,
+                    working_state=working_state,
+                    concept_registry=concept_registry,
+                    thread_trace=thread_trace,
+                    reflective_frames=reflective_frames,
+                    anchor_bank=anchor_bank,
+                    move_history=move_history,
+                    reaction_records=reaction_records,
+                    continuation_capsule=dict(bundle.get("continuation_capsule", {})),
+                )
+                express_signal = dict(read_result.get("express_signal") or {})
+                supporting_refs = _supporting_refs_for_express(
+                    ref_ids=[
+                        _clean_text(ref_id)
+                        for ref_id in express_signal.get("supporting_ref_ids", [])
+                        if isinstance(express_signal.get("supporting_ref_ids"), list) and _clean_text(ref_id)
+                    ],
+                    carry_forward_context=carry_forward_context,
+                    supplemental_context=supplemental_context,
+                )
+                express_result: ExpressResult | None = None
+                if bool(express_signal.get("should_express")):
+                    try:
+                        express_result = express_unit(
+                            current_unit_sentences=chosen_unit_sentences,
+                            express_signal=express_signal,
+                            supporting_refs=supporting_refs,
+                            reader_policy=reader_policy,
+                            output_language=provisioned.output_language,
+                            output_dir=output_dir,
+                            book_title=provisioned.title,
+                            author=provisioned.author,
+                            chapter_title=_clean_text(chapter.get("title")),
+                        )
+                    except ReaderLLMError as exc:
+                        express_result = {
+                            "decision": "withhold",
+                            "anchor_quote": "",
+                            "content": "",
+                            "prior_link": None,
+                            "outside_link": None,
+                            "search_intent": None,
+                        }
+                        append_activity_event(
+                            output_dir,
+                            {
+                                "type": "llm_fallback",
+                                "stream": "mindstream",
+                                "kind": "transition",
+                                "visibility": "hidden",
+                                "message": "Express fallback for express_unit.",
+                                "chapter_id": chapter_id,
+                                "chapter_ref": chapter_ref,
+                                "segment_ref": _compatibility_section_ref(chapter_id, focal_sentence),
+                                "reading_locus": _reading_locus(chapter_id, chapter_ref, focal_sentence, local_buffer),
+                                "current_excerpt": _clean_text(focal_sentence.get("text"))[:220],
+                                "problem_code": exc.problem_code,
+                            },
+                        )
                 route_decision: NavigateRouteDecision = navigate_route(read_result=read_result)
                 for fallback in read_fallbacks:
                     if not isinstance(fallback, dict):
@@ -1120,7 +1332,10 @@ def read_attentional_v2(request: ReadRequest, mechanism: MechanismInfo) -> ReadR
                     reader_policy=reader_policy,
                 )
 
-                chosen_move = _clean_text(read_result.get("move_hint"))
+                chosen_move = _move_type_from_route_decision(
+                    route_decision,
+                    fallback_move_hint=_clean_text(read_result.get("move_hint")),
+                )
                 if chosen_move in {"advance", "dwell", "bridge", "reframe"}:
                     move_history = append_move(
                         move_history,
@@ -1136,9 +1351,13 @@ def read_attentional_v2(request: ReadRequest, mechanism: MechanismInfo) -> ReadR
                     )
 
                 emitted_reaction: AnchoredReactionRecord | None = None
-                reaction_payload = dict(read_result.get("raw_reaction", {})) if isinstance(read_result.get("raw_reaction"), dict) else {}
+                reaction_payload = _legacy_reaction_candidate_from_express_result(
+                    express_result or {},
+                    supporting_refs=supporting_refs,
+                ) or (dict(read_result.get("raw_reaction", {})) if isinstance(read_result.get("raw_reaction"), dict) else {})
                 current_anchor = _build_current_anchor_from_read_result(
                     read_result=read_result,
+                    express_result=express_result,
                     chosen_unit_sentences=chosen_unit_sentences,
                     focal_sentence=focal_sentence,
                 )

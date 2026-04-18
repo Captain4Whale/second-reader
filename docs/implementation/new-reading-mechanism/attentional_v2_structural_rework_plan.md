@@ -21,8 +21,8 @@ Implementation checkpoint:
   - `read` now owns the authoritative unit packet on the live path
   - bounded `carry-forward context` is now the default continuity path into `read`
   - `read` may request one bounded `active recall` or `look-back` supplement
-  - the current live baseline still lets raw reaction truth come directly from `read`
-  - this is now treated as an intermediate baseline rather than the final contract
+  - legacy `raw_reaction` fields still exist on the read packet as a compatibility shell
+  - this is now treated as an intermediate baseline rather than the final ownership contract
 - `Phase C.1` is landed:
   - live prompt inputs now flow through a bounded internal `state_packet.v1` seam
   - `navigate.unitize` now receives a packetized `navigation_context`
@@ -50,13 +50,15 @@ Implementation checkpoint:
   - warm resume now restores the latest usable continuation capsule together with new-format runtime/checkpoint state
   - `look_back` now resolves one bounded earlier source span, and `read_audit` now records per-step supplemental activity plus stop reasons
   - public compatibility surfaces remain unchanged
-- next backend slice is now defined as the `Phase E` Read/Express follow-up:
-  - `Phase E1`
-    - freeze the new `Read -> Express` contract in docs before code mutation
-  - `Phase E2`
-    - switch the live runner from `read.raw_reaction -> route` to `read -> express(if needed) -> route`
-  - `Phase E3`
-    - keep old reaction family handling only in slow-cycle / eval / UI compatibility adapters while validating the new visible-reaction contract
+- `Phase E1` is now landed:
+  - the new `Read -> Express` contract is frozen in the stable mechanism doc and this implementation plan
+- the first compatibility-first `Phase E2` slice is now also landed:
+  - the live runner now routes `read -> express(if needed) -> navigate.route`
+  - `read` now emits `unit_delta`, `pressure_signals`, and `express_signal`
+  - `Express` now owns visible-reaction wording on the live path
+  - old family handling now survives only through a thin compatibility adapter on persisted reaction records
+- `Phase E3` remains next:
+  - keep old reaction family handling only in slow-cycle / eval / UI compatibility adapters while validating the new visible-reaction contract
 
 Primary upstream evidence:
 
@@ -228,7 +230,7 @@ The mechanism can form local understanding that later becomes harder to see beca
 - align span visibility and span authority
 - make `read` carry forward prior context and expose prior-material use as an observational result rather than a separate mechanism action
 - restructure state and prompt packetization so long-distance continuity becomes more reliable
-- move raw reaction truth back to `read`
+- move visible-reaction wording out of `read` and into `Express` while keeping `read` responsible for expression-worthiness judgment
 - preserve existing compatibility behavior where practical while the backend shape changes
 
 ### 5.2 Explicitly out of scope for this plan
@@ -250,7 +252,7 @@ The rework should be understood as a controlled remap of current V2 responsibili
 | `zoom_read` | currently carries too much of the real reading responsibility but only opens on gated cases | absorb its reading semantics into `read` |
 | `meaning_unit_closure` | closure authority is entangled with partial visibility windows | split into `read` boundary evidence plus `navigate.route` close / continue judgment |
 | `controller_decision` | one more control surface in an already over-fragmented chain | absorb into `navigate.route` |
-| `reaction_emission` | thins out already-formed reading truth | demote to persistence / formatting sidecar if still needed; raw reaction truth belongs to `read` |
+| `reaction_emission` | thins out already-formed reading truth | replace it with a narrow `Express` node that owns surfaced wording while `read` keeps the underlying uptake and expression-worthiness judgment |
 | lazy bridge retrieval / `bridge_resolution` | useful in principle, but too downstream to carry continuity by itself | keep only as optional execution path beneath `carry-forward context` and `active recall / look-back` |
 | `working_pressure` | useful hot-state concept, but currently mixed with older local-cycle shape | evolve into `working_state` |
 | `anchor_memory` | useful evidence territory, but too easy to over-expand conceptually | evolve into `anchor_bank` only |
@@ -758,6 +760,12 @@ It should only happen after the earlier phases prove stable enough to justify ad
 
 ### 7.5 Phase E — Read / Express split and visible-reaction contract cleanup
 
+Landed status so far:
+
+- `Phase E1` is landed.
+- the first compatibility-first `Phase E2` slice is landed.
+- `Phase E3` remains open.
+
 Goal:
 
 - keep `Read` centered on actual reading and implicit uptake
@@ -778,6 +786,8 @@ Why:
 - high-quality landing therefore depends on freezing the contract first, then cutting the live path, then cleaning the compatibility chain
 
 #### Phase E1 — Contract freeze
+
+Status: `landed`
 
 Freeze the approved next-shape contract before code mutation.
 
@@ -805,6 +815,8 @@ Freeze the approved next-shape contract before code mutation.
 
 #### Phase E2 — Live-path cutover
 
+Status: `first compatibility-first slice landed`
+
 Cut the live runner over to the new ownership split.
 
 - change the live path from:
@@ -817,8 +829,14 @@ Cut the live runner over to the new ownership split.
   - memory update
   - route choice
   - supplemental recall
+- landed first-slice posture:
+  - `Read` still carries legacy compatibility fields such as `raw_reaction`, `move_hint`, and `prior_material_use`
+  - live visible-reaction persistence now comes from `ExpressResult`, not from `read.raw_reaction`
+  - thin adapter mapping still projects `ExpressResult` back into old family-shaped reaction records for downstream compatibility
 
 #### Phase E3 — Compatibility adapters and evaluation repair
+
+Status: `next`
 
 Keep the old family only where the rest of the system still needs it.
 

@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-04-18T17:46:40+08:00`
+Last verified: `2026-04-18T21:35:00+08:00`
 
 ## Current Objective
 - Land `target-centered long-span accumulation v2` as the active long-span methodology while preserving bounded long-span v1 as historical evidence.
@@ -213,6 +213,13 @@ Last verified: `2026-04-18T17:46:40+08:00`
     - warm resume now restores new-format state together with the latest usable continuation capsule instead of relying only on raw runtime/checkpoint state
     - `look_back` now returns one bounded earlier source span, and `read_audit` now records per-step supplemental activity, stop reason, and budget exhaustion
     - public/frontend compatibility surfaces remain unchanged
+  - `Phase E1` is now landed:
+    - the new `Read -> Express` contract is frozen in the stable mechanism doc and the structural rework plan
+  - the first compatibility-first `Phase E2` slice is now landed:
+    - the live runner now routes `navigate.unitize -> read -> express(if needed) -> navigate.route`
+    - `read` now emits `unit_delta`, `pressure_signals`, and `express_signal`
+    - visible-reaction wording now comes from `Express`
+    - legacy family-shaped reaction records are still generated through a thin adapter for slow-cycle / eval / UI compatibility
   - the April 12 post-Phase-D smoke has now finished and is interpreted as follows:
     - `value_of_others_private_en__8_10` produced repeated anomalous long-tail calls during the April 12 smoke
     - a static size/content snapshot now lives at:
@@ -290,8 +297,8 @@ Last verified: `2026-04-18T17:46:40+08:00`
         - no active isolated replay is running now
         - no active background eval jobs remain in the registry
         - a full prompt/response replay without touching the active eval pool requires another spare key with `MiniMax-M2.7` access, or must wait until using the main eval pool is acceptable
-  - the next backend code slice is not yet opened:
-    - review the now-landed Phase D behavior and define the next bounded follow-up around slower continuity compaction, reflective promotion, or other post-read polish
+  - the next backend code slice is now narrowed to `Phase E3`:
+    - continue shrinking the compatibility layer in slow-cycle / eval / UI adapters now that the first `Read -> Express` live-path slice is landed
     - do not reopen trigger authority, helper-contract retirement, or old-state compatibility in that next slice
 - Frontend direction is now fixed for the next product lane:
   - do not keep the old `iterator_v1` / section-first presentation as a co-equal product model
