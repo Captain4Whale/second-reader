@@ -35,10 +35,19 @@ Do not use the older April 6 lane as current mechanism evidence; it remains hist
 - Current implementation scaffolding:
   - [accumulation_benchmark_v2.py](../../../eval/attentional_v2/accumulation_benchmark_v2.py)
   - [run_accumulation_evaluation_v2.py](../../../eval/attentional_v2/run_accumulation_evaluation_v2.py)
-- Draft split manifest scaffold:
+- Split manifests:
   - [attentional_v2_accumulation_benchmark_v2_draft.json](../../../eval/manifests/splits/attentional_v2_accumulation_benchmark_v2_draft.json)
+  - [attentional_v2_accumulation_benchmark_v2_frozen.json](../../../eval/manifests/splits/attentional_v2_accumulation_benchmark_v2_frozen.json)
 
-`v2` is now the active long-span method definition, but it does not yet have a frozen reviewed case set or a formal judged run. Candidate cases must be reviewed before freeze promotion.
+`v2` is now the active long-span method definition and it now has a first frozen reviewed seed set, but it still does not have a formal judged run.
+
+Current frozen seed-set truth:
+- `12` frozen cases total
+- `悉达多`: `6`
+- `活出生命的意义`: `4`
+- `芒格之道`: `2`
+- `The Value of Others`: deferred to a later architecture-first pass
+- one additional `芒格之道` line remains held back as experimental only
 
 ## Reports
 
@@ -50,5 +59,5 @@ Do not use the older April 6 lane as current mechanism evidence; it remains hist
 ## Working Memos
 
 - [Long-Span substrate candidate memo](./long_span_substrate_candidate_memo.md): rolling pure-original-window mining memo across the current five excerpt/user-level reading windows. This is a pre-curation working document, not formal judged-run evidence.
-- [Target-centered candidate review](./target_centered_candidate_review.md): current unified v2 review entry. It contains the main review-gated batch over `悉达多` and `活出生命的意义`, a deferred note for `The Value of Others`, and an `Experimental Appendix` for `芒格之道`. These are draft or experimental candidates only and must be reviewed before any freeze promotion.
+- [Target-centered candidate review](./target_centered_candidate_review.md): current unified v2 review and freeze record. It now captures the `12`-case frozen seed set across `悉达多`, `活出生命的意义`, and the first two `芒格之道` lines, while keeping `The Value of Others` deferred and one weaker `芒格` line held back.
 - [Target-centered 芒格 experimental review](./target_centered_mangge_experimental_review.md): source-specific companion for `芒格之道`. Keep it only as a per-book supplement; use the unified candidate review above as the main review entry.

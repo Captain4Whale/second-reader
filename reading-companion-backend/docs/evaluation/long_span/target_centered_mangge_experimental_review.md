@@ -2,7 +2,11 @@
 
 Note: this file is now a source-specific companion. For the current unified review pass, prefer:
 - `reading-companion-backend/docs/evaluation/long_span/target_centered_candidate_review.md`
-- see the `Experimental Appendix` section there for the live combined review entry.
+- see the `Held-Back Appendix` section there for the live combined review entry.
+
+Promotion note:
+- `mangge_seg1_exp_tc01_competence_circle_to_safety_margin` and `mangge_seg1_exp_tc02_self_interest_distorts_advice` were promoted into the first frozen v2 seed set on `2026-04-19`.
+- `mangge_seg1_exp_tc03_waiting_against_dealmaking` remains held back as an experimental-only line.
 
 Status: `experimental_review` only. This document is outside the active v2 main batch and does not change the active draft case dataset or manifest.
 

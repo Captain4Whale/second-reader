@@ -134,6 +134,14 @@ Workflow:
 3. review candidate cases explicitly
 4. freeze only approved rows
 
+The first frozen reviewed seed set was approved on `2026-04-19`:
+
+- `12` frozen cases total
+- `悉达多`: `6`
+- `活出生命的意义`: `4`
+- `芒格之道`: `2`
+- `The Value of Others`: still deferred to a separate theory-architecture pass
+
 The first mining order remains:
 
 1. `悉达多`
@@ -149,13 +157,15 @@ Implementation:
 - `reading-companion-backend/eval/attentional_v2/accumulation_benchmark_v2.py`
 - `reading-companion-backend/eval/attentional_v2/run_accumulation_evaluation_v2.py`
 
-Draft split scaffold:
+Split manifests:
 
 - `reading-companion-backend/eval/manifests/splits/attentional_v2_accumulation_benchmark_v2_draft.json`
+- `reading-companion-backend/eval/manifests/splits/attentional_v2_accumulation_benchmark_v2_frozen.json`
 
-Draft case dataset scaffold:
+Case datasets:
 
 - `reading-companion-backend/state/eval_local_datasets/accumulation_target_cases/attentional_v2_accumulation_benchmark_v2_cases_draft`
+- `reading-companion-backend/state/eval_local_datasets/accumulation_target_cases/attentional_v2_accumulation_benchmark_v2_cases_frozen`
 
 Working mining memo:
 

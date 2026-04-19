@@ -1,0 +1,13 @@
+{
+  "dataset_id": "attentional_v2_accumulation_benchmark_v2_cases_frozen",
+  "family": "accumulation_target_cases",
+  "status": "frozen",
+  "version": "2026-04-19",
+  "primary_file": "cases.jsonl",
+  "case_count": 12,
+  "question_families": [
+    "reader_character.coherent_accumulation"
+  ],
+  "window_substrate_dataset_id": "attentional_v2_user_level_selective_v1",
+  "description": "First frozen reviewed target-centered long-span accumulation v2 seed set."
+}

@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-04-19T17:19:23+08:00`
+Last updated: `2026-04-19T22:35:02+08:00`
 
 ## Status Values
 - `active`
@@ -46,26 +46,35 @@ Last updated: `2026-04-19T17:19:23+08:00`
   - active substrate:
     - reuse the current `user-level selective v1` reading windows
   - next dataset move:
-    - first review-gated draft target-case batch is now authored:
+    - first frozen reviewed target-case seed set is now landed:
       - review doc:
         - `reading-companion-backend/docs/evaluation/long_span/target_centered_candidate_review.md`
-      - draft dataset:
+      - draft mirror dataset:
         - `reading-companion-backend/state/eval_local_datasets/accumulation_target_cases/attentional_v2_accumulation_benchmark_v2_cases_draft`
-      - current batch truth:
-        - `10` active draft cases
+      - frozen dataset:
+        - `reading-companion-backend/state/eval_local_datasets/accumulation_target_cases/attentional_v2_accumulation_benchmark_v2_cases_frozen`
+      - split manifests:
+        - `reading-companion-backend/eval/manifests/splits/attentional_v2_accumulation_benchmark_v2_draft.json`
+        - `reading-companion-backend/eval/manifests/splits/attentional_v2_accumulation_benchmark_v2_frozen.json`
+      - current frozen-set truth:
+        - `12` frozen cases
         - `悉达多`: `6`
         - `活出生命的意义`: `4`
+        - `芒格之道`: `2`
       - deferred line:
         - `The Value of Others` current four local-detail draft cases have been removed from the active main batch
         - if this book re-enters long-span curation later, it should do so only after a separate theory-architecture pass
-      - separate experimental review:
+      - held-back experimental line:
         - `芒格之道` now has a dedicated target-centered experimental review:
           - `reading-companion-backend/docs/evaluation/long_span/target_centered_mangge_experimental_review.md`
         - the unified current review entry is:
           - `reading-companion-backend/docs/evaluation/long_span/target_centered_candidate_review.md`
+        - `mangge tc01` and `tc02` are now inside the frozen seed set
+        - `mangge tc03` remains held back as experimental-only
         - use that unified review doc for the current pass; keep the separate `芒格` file only as a per-book companion instead of falling back to the older substrate memo
     - next gate:
-      - show these candidates for user review before any freeze or formal judged run
+      - keep this frozen seed set stable unless explicit re-curation is requested
+      - do not start a formal judged run until the user explicitly asks to evaluate the frozen set
 - Jobs: none
 
 ### `TASK-USER-LEVEL-SELECTIVE-V1` — Replace the active local/user-level benchmark with the note-aligned selective package

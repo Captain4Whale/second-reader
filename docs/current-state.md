@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-04-19T17:19:23+08:00`
+Last verified: `2026-04-19T22:35:02+08:00`
 
 ## Current Objective
 - Land `target-centered long-span accumulation v2` as the active long-span methodology while preserving bounded long-span v1 as historical evidence.
@@ -28,31 +28,38 @@ Last verified: `2026-04-19T17:19:23+08:00`
     - do not directly score raw mechanism-specific memory/state structures
     - first release only covers `reader_character.coherent_accumulation`
   - current dataset posture:
-    - no reviewed/frozen v2 target-case set exists yet
-    - candidate authoring must stay review-gated before freeze
+    - the first reviewed/frozen v2 target-case set now exists
     - current window substrate is reused from:
       - `reading-companion-backend/state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1`
-      - first draft candidate batch is now authored for review:
-        - review doc:
-          - `reading-companion-backend/docs/evaluation/long_span/target_centered_candidate_review.md`
-      - draft candidate dataset:
+    - first frozen reviewed seed set is now landed:
+      - review doc:
+        - `reading-companion-backend/docs/evaluation/long_span/target_centered_candidate_review.md`
+      - draft mirror dataset:
         - `reading-companion-backend/state/eval_local_datasets/accumulation_target_cases/attentional_v2_accumulation_benchmark_v2_cases_draft`
-      - current batch truth:
-        - `10` active draft target cases total
+      - frozen case dataset:
+        - `reading-companion-backend/state/eval_local_datasets/accumulation_target_cases/attentional_v2_accumulation_benchmark_v2_cases_frozen`
+      - split manifests:
+        - `reading-companion-backend/eval/manifests/splits/attentional_v2_accumulation_benchmark_v2_draft.json`
+        - `reading-companion-backend/eval/manifests/splits/attentional_v2_accumulation_benchmark_v2_frozen.json`
+      - current frozen-set truth:
+        - `12` frozen target cases total
         - `悉达多`: `6`
         - `活出生命的意义`: `4`
+        - `芒格之道`: `2`
       - deferred long-span line:
         - `The Value of Others` current four local-detail cases have been removed from the active v2 batch
         - if it re-enters long-span curation later, it should do so only after a separate theory-architecture pass
-      - separate experimental review:
+      - held-back experimental line:
         - `芒格之道` now has a new-method experimental review at:
           - `reading-companion-backend/docs/evaluation/long_span/target_centered_mangge_experimental_review.md`
         - the unified review entry now lives in:
           - `reading-companion-backend/docs/evaluation/long_span/target_centered_candidate_review.md`
-        - use that unified review doc for the current pass; keep the separate `芒格` file only as a per-book companion and never fall back to the older substrate memo
-      - current review gate:
-        - keep every case at `draft_candidate`
-        - wait for user review before any freeze promotion or judged run
+        - `mangge_seg1_exp_tc01` and `tc02` are now part of the frozen official set
+        - `mangge_seg1_exp_tc03` remains held back as experimental-only
+        - use the unified review doc as the main review/freeze record, and never fall back to the older substrate memo
+      - current gate:
+        - keep the frozen seed set stable unless explicit re-curation is requested
+        - do not rerun v2 eval until the user explicitly asks for a formal judged run on the frozen set
   - historical boundary:
     - keep `attentional_v2_accumulation_benchmark_v1_judged_rerun_20260407` as durable historical mechanism evidence
     - do not treat the old bounded `EARLY / MID / LATE` probe method as the active long-span methodology anymore

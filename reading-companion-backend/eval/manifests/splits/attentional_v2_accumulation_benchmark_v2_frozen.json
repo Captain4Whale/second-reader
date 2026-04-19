@@ -1,7 +1,7 @@
 {
-  "manifest_id": "attentional_v2_accumulation_benchmark_v2_draft",
+  "manifest_id": "attentional_v2_accumulation_benchmark_v2_frozen",
   "benchmark_family": "target_centered_long_span_accumulation_v2",
-  "status": "draft",
+  "status": "frozen",
   "version": "2026-04-19",
   "question_families": [
     "reader_character.coherent_accumulation"
@@ -12,7 +12,6 @@
       "state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1"
     ],
     "accumulation_target_case_datasets": [
-      "state/eval_local_datasets/accumulation_target_cases/attentional_v2_accumulation_benchmark_v2_cases_draft",
       "state/eval_local_datasets/accumulation_target_cases/attentional_v2_accumulation_benchmark_v2_cases_frozen"
     ],
     "source_manifests": [
@@ -33,39 +32,11 @@
   },
   "splits": {
     "accumulation_target_cases_draft": {
-      "all": [
-        "xidaduo_seg1_tc01_no_teaching_can_deliver",
-        "xidaduo_seg1_tc02_world_not_behind_appearances",
-        "xidaduo_seg1_tc03_samana_skills_redeployed",
-        "xidaduo_seg1_tc04_become_child_again",
-        "xidaduo_seg1_tc05_kamala_death_instant_eternal",
-        "xidaduo_seg1_tc06_father_son_voices_to_om",
-        "huochu_seg1_tc01_love_beyond_presence",
-        "huochu_seg1_tc02_humor_art_weapon",
-        "huochu_seg1_tc03_future_goal_responsibility",
-        "huochu_seg1_tc06_noble_vs_base_across_roles",
-        "mangge_seg1_exp_tc01_competence_circle_to_safety_margin",
-        "mangge_seg1_exp_tc02_self_interest_distorts_advice"
-      ],
+      "all": [],
       "by_thread_type": {
-        "概念/区分澄清线": [
-          "xidaduo_seg1_tc01_no_teaching_can_deliver",
-          "xidaduo_seg1_tc02_world_not_behind_appearances",
-          "xidaduo_seg1_tc03_samana_skills_redeployed",
-          "xidaduo_seg1_tc04_become_child_again",
-          "huochu_seg1_tc06_noble_vs_base_across_roles",
-          "mangge_seg1_exp_tc01_competence_circle_to_safety_margin",
-          "mangge_seg1_exp_tc02_self_interest_distorts_advice"
-        ],
-        "叙事型故事脉络": [
-          "xidaduo_seg1_tc05_kamala_death_instant_eternal",
-          "xidaduo_seg1_tc06_father_son_voices_to_om"
-        ],
-        "论证型论证线": [
-          "huochu_seg1_tc01_love_beyond_presence",
-          "huochu_seg1_tc02_humor_art_weapon",
-          "huochu_seg1_tc03_future_goal_responsibility"
-        ]
+        "概念/区分澄清线": [],
+        "叙事型故事脉络": [],
+        "论证型论证线": []
       }
     },
     "accumulation_target_cases_frozen": {
@@ -107,7 +78,7 @@
   },
   "notes": [
     "V2 reuses the active user-level reading windows as its substrate.",
-    "The first frozen reviewed seed set was approved on 2026-04-19 after user review.",
+    "This is the first frozen reviewed seed set approved on 2026-04-19 after user review.",
     "The historical bounded EARLY/MID/LATE accumulation benchmark v1 remains preserved as historical evidence only."
   ]
 }
