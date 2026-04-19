@@ -6,10 +6,7 @@ from src.attentional_v2.intake import process_sentence_intake
 from src.attentional_v2.retrieval import bounded_lookback_source_space, generate_candidate_set
 from src.attentional_v2.schemas import (
     build_empty_anchor_bank,
-    build_empty_concept_registry,
     build_empty_local_buffer,
-    build_empty_thread_trace,
-    build_empty_working_state,
 )
 
 
@@ -47,68 +44,45 @@ def _book_document() -> dict[str, object]:
     }
 
 
-def test_process_sentence_intake_updates_local_buffer_and_emits_monitor_signal():
-    """Cheap intake should update the rolling buffer and emit trigger output without an LLM step."""
+def test_process_sentence_intake_updates_local_buffer_only():
+    """Sentence intake should maintain the rolling buffer without producing a trigger packet."""
 
-    local_buffer = build_empty_local_buffer()
-    working_state = build_empty_working_state()
-    concept_registry = build_empty_concept_registry()
-    thread_trace = build_empty_thread_trace()
-    anchor_bank = build_empty_anchor_bank()
-
-    next_buffer, trigger = process_sentence_intake(
+    next_buffer = process_sentence_intake(
         _sentence("c1-s3", 3, "Value should matter here."),
-        local_buffer=local_buffer,
-        working_state=working_state,
-        concept_registry=concept_registry,
-        thread_trace=thread_trace,
-        anchor_bank=anchor_bank,
-        cadence_limit=4,
+        local_buffer=build_empty_local_buffer(),
     )
 
     assert next_buffer["current_sentence_id"] == "c1-s3"
     assert next_buffer["seen_sentence_ids"] == ["c1-s3"]
     assert next_buffer["open_meaning_unit_sentence_ids"] == ["c1-s3"]
-    assert trigger["output"] == "monitor"
-    assert {signal["signal_kind"] for signal in trigger["signals"]} == {"claim_pressure"}
 
 
-def test_process_sentence_intake_raises_to_zoom_now_for_knowledge_risk_and_callbacks():
-    """Explicit uncertainty plus concept-registry callback pressure should escalate the trigger output."""
+def test_process_sentence_intake_slides_recent_window_and_accumulates_open_unit():
+    """Repeated intake should stay a pure buffer ingest while preserving bounded local continuity."""
 
     local_buffer = build_empty_local_buffer()
-    working_state = build_empty_working_state()
-    concept_registry = build_empty_concept_registry()
-    concept_registry["entries"] = [
-        {
-            "concept_key": "value",
-            "concept_type": "motif",
-            "status": "active",
-            "summary": "Value remains a live concept.",
-            "support_anchor_ids": ["a-1"],
-            "linked_thread_ids": [],
-            "last_touched_sentence_id": "c1-s1",
-        }
+    for sentence_index in range(1, 9):
+        local_buffer = process_sentence_intake(
+            _sentence(
+                f"c1-s{sentence_index}",
+                sentence_index,
+                f"Sentence {sentence_index}.",
+                paragraph_index=1 if sentence_index <= 4 else 2,
+            ),
+            local_buffer=local_buffer,
+            window_size=6,
+        )
+
+    assert local_buffer["current_sentence_id"] == "c1-s8"
+    assert [sentence["sentence_id"] for sentence in local_buffer["recent_sentences"]] == [
+        "c1-s3",
+        "c1-s4",
+        "c1-s5",
+        "c1-s6",
+        "c1-s7",
+        "c1-s8",
     ]
-
-    next_buffer, trigger = process_sentence_intake(
-        _sentence("c1-s4", 4, "Why does value return here?", paragraph_index=2),
-        local_buffer=local_buffer,
-        working_state=working_state,
-        concept_registry=concept_registry,
-        thread_trace=build_empty_thread_trace(),
-        anchor_bank=build_empty_anchor_bank(),
-        cadence_limit=1,
-    )
-
-    assert next_buffer["current_sentence_id"] == "c1-s4"
-    assert trigger["output"] == "zoom_now"
-    assert trigger["gate_state"] == "must_evaluate"
-    assert "a-1" in trigger["callback_anchor_ids"]
-    assert {signal["signal_kind"] for signal in trigger["signals"]} >= {
-        "callback_activation",
-        "pressure_update_proxy",
-    }
+    assert local_buffer["open_meaning_unit_sentence_ids"] == [f"c1-s{sentence_index}" for sentence_index in range(1, 9)]
 
 
 def test_generate_candidate_set_is_memory_first_then_bounded_lookback():

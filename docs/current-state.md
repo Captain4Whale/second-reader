@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-04-19T22:35:02+08:00`
+Last verified: `2026-04-19T22:39:17+08:00`
 
 ## Current Objective
 - Land `target-centered long-span accumulation v2` as the active long-span methodology while preserving bounded long-span v1 as historical evidence.
@@ -168,9 +168,9 @@ Last verified: `2026-04-19T22:35:02+08:00`
   - keep the existing frontend lane active in parallel under its own docs and tasks
   - keep the long-span after-eval memo as mechanism-evidence input rather than as the execution plan
   - `Phase A` is now landed as the control-skeleton baseline:
-    - trigger output no longer decides whether正文 text receives a formal LLM reading turn
+    - heuristic trigger output no longer decides whether正文 text receives a formal LLM reading turn
     - the live backend loop now runs:
-      - `sentence intake`
+      - `sentence intake` as pure `local_buffer` maintenance
       - `navigate.unitize`
       - `read`
       - `navigate.route`
@@ -294,8 +294,15 @@ Last verified: `2026-04-19T22:35:02+08:00`
     - small post-run visibility fix already landed:
       - future `read_audit.jsonl` rows now persist full `surfaced_reactions`, not only the count
       - the F4A summary/report harness now records explicit compat / normalized artifact availability
+  - the trigger/watch cleanup slice is now also landed on top of the F4A baseline:
+    - sentence intake is now pure `local_buffer` maintenance
+    - live runtime bundle, checkpoint, resume, and artifact-map paths no longer carry `trigger_state`
+    - `Navigate.unitize` no longer receives heuristic `watch_state`
+    - the dead `trigger -> zoom_read -> meaning_unit_closure -> controller_decision -> reaction_emission` path has been removed from live code and replaced in tests with the current live-node set
+    - `text_role` is now explicitly documented as an inherited block-level weak cue rather than sentence-level truth
   - the active next implementation slice is now:
-    - one small post-F4A repair pass, then rerun the same six-case pack before opening `Phase F4B`
+    - use this cleaned Runner/Navigate baseline to design the special-content handling policy for headings / appendix-like material
+    - then do one small post-F4A repair pass and rerun the same six-case pack before opening `Phase F4B`
   - the April 12 post-Phase-D smoke has now finished and is interpreted as follows:
     - `value_of_others_private_en__8_10` produced repeated anomalous long-tail calls during the April 12 smoke
     - a static size/content snapshot now lives at:
@@ -375,10 +382,10 @@ Last verified: `2026-04-19T22:35:02+08:00`
           - `bgjob_attentional_v2_f4a_quality_audit_20260419`
         - no active background eval jobs remain in the registry
         - a full prompt/response replay without touching the active eval pool requires another spare key with `MiniMax-M2.7` access, or must wait until using the main eval pool is acceptable
-  - the next backend code slice should build on the landed `Phase E3` baseline:
-    - validate reading quality and eval behavior on the new surfaced-reaction persistence path
-    - only after that decide whether later slices should expose surfaced-reaction structure more natively above today's compatibility envelopes
-    - do not reopen trigger authority, helper-contract retirement, or old-state compatibility while doing that
+  - the next backend code slice should build on the cleaned F4A baseline:
+    - keep the new surfaced-reaction persistence path as the only internal truth
+    - do not reopen trigger/watch ownership or the retired local-cycle chain
+    - use the cleaned Runner/Navigate contract as the base for the next special-content unitization policy
 - Frontend direction is now fixed for the next product lane:
   - do not keep the old `iterator_v1` / section-first presentation as a co-equal product model
   - keep that older presentation shape only as a compatibility shell while V2-native surfaces are being built

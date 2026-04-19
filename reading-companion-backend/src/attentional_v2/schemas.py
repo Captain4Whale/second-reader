@@ -11,7 +11,6 @@ from src.reading_core.runtime_contracts import ObservabilityMode, ResumeKind, Ru
 
 
 GateState = Literal["quiet", "watch", "hot", "must_evaluate"]
-TriggerDecision = Literal["no_zoom", "monitor", "zoom_now"]
 MoveType = Literal["advance", "dwell", "bridge", "reframe"]
 UnitizeBoundaryType = Literal[
     "paragraph_end",
@@ -39,8 +38,6 @@ StateOperationType = Literal[
     "reactivate",
     "resolve",
 ]
-ClosureDecision = Literal["continue", "close"]
-ReactionEmissionDecision = Literal["emit", "withhold"]
 BridgeResolutionDecision = Literal["bridge", "decline"]
 ReflectivePromotionDecision = Literal["promote", "withhold"]
 ReconsolidationDecision = Literal["reconsolidate", "keep_prior"]
@@ -49,20 +46,6 @@ SearchPolicyMode = Literal["no_search", "defer_search", "search_now"]
 SearchTrigger = Literal["none", "identity_critical_reference", "blocking_allusion", "genuine_curiosity", "ornamental_curiosity"]
 ActivationStatus = Literal["weak", "plausible", "strong", "rejected", "dropped"]
 AnchorRelationType = Literal["echo", "contrast", "cause", "support", "question_opened_by", "question_resolved_by", "callback"]
-AnchorFocusKind = Literal["phrase", "sentence", "span"]
-AnchorRelationStatus = Literal["anchored", "related_but_unresolved", "unclear"]
-TriggerFamily = Literal["integrity", "salience", "knowledge_risk"]
-TriggerSignalKind = Literal[
-    "discourse_turn",
-    "definition_or_distinction",
-    "claim_pressure",
-    "sentence_role_shift",
-    "local_cohesion_drop",
-    "callback_activation",
-    "pressure_update_proxy",
-    "cadence_guardrail",
-]
-
 ATTENTIONAL_V2_SCHEMA_VERSION = 1
 ATTENTIONAL_V2_MECHANISM_VERSION = "attentional_v2-phase8"
 ATTENTIONAL_V2_POLICY_VERSION = "attentional_v2-policy-phase8"
@@ -168,31 +151,6 @@ class LocalContinuityState(TypedDict, total=False):
     is_reconstructed: bool
     reconstructed_from_checkpoint_id: str | None
     last_resume_kind: ResumeKind | None
-
-
-class TriggerSignal(TypedDict, total=False):
-    """One cheap trigger signal emitted by the always-on ensemble."""
-
-    signal_id: str
-    signal_kind: TriggerSignalKind
-    family: TriggerFamily
-    sentence_id: str
-    evidence: str
-    strength: str
-
-
-class TriggerState(TypedDict, total=False):
-    """Current trigger ensemble output and supporting cheap evidence."""
-
-    schema_version: int
-    mechanism_version: str
-    updated_at: str
-    current_sentence_id: str
-    output: TriggerDecision
-    gate_state: GateState
-    signals: list[TriggerSignal]
-    cadence_counter: int
-    callback_anchor_ids: list[str]
 
 
 class PreviewRange(TypedDict, total=False):
@@ -351,7 +309,6 @@ class NavigationContext(TypedDict, total=False):
 
     packet_version: str
     continuation_capsule: ContinuationCapsule
-    watch_state: dict[str, object]
     session_continuity_capsule: SessionContinuityCapsule
     working_state_digest: WorkingStateDigest
     chapter_reflective_frame: ReflectiveFrameDigest
@@ -501,26 +458,6 @@ class SearchIntent(TypedDict, total=False):
     rationale: str
 
 
-class AnchorFocus(TypedDict, total=False):
-    """One compact local-focus packet carried across the local interpretive loop."""
-
-    anchor_quote: str
-    focus_sentence_id: str
-    focus_kind: AnchorFocusKind | str
-    source: str
-
-
-class AnchorRelationAssessment(TypedDict, total=False):
-    """How the current interpretation relates back to the original local focus."""
-
-    relation_status: AnchorRelationStatus | str
-    relation_to_focus: str
-    current_focus_quote: str
-    same_chapter_pressure_only: bool
-    local_backcheck_used: bool
-    can_emit_visible_reaction: bool
-
-
 class BridgeAttribution(TypedDict, total=False):
     """Explicit source-grounded explanation for one accepted bridge."""
 
@@ -563,42 +500,6 @@ class AnchoredReactionRecord(TypedDict, total=False):
     created_at: str
 
 
-class ZoomReadResult(TypedDict, total=False):
-    """Structured result from the sentence-level zoom node."""
-
-    local_interpretation: str
-    anchor_quote: str
-    anchor_focus: AnchorFocus | None
-    pressure_updates: list[StateOperation]
-    activation_updates: list[StateOperation]
-    bridge_candidate: BridgeCandidate | None
-    consider_reaction_emission: bool
-    uncertainty_note: str
-
-
-class MeaningUnitClosureResult(TypedDict, total=False):
-    """Structured result from meaning-unit closure."""
-
-    closure_decision: ClosureDecision
-    meaning_unit_summary: str
-    anchor_focus: AnchorFocus | None
-    anchor_relation: AnchorRelationAssessment | None
-    dominant_move: MoveType
-    proposed_state_operations: list[StateOperation]
-    bridge_candidates: list[BridgeCandidate]
-    reaction_candidate: ReactionCandidate | None
-    unresolved_pressure_note: str
-
-
-class ControllerDecisionResult(TypedDict, total=False):
-    """Structured controller routing decision."""
-
-    chosen_move: MoveType
-    reason: str
-    target_anchor_id: str
-    target_sentence_id: str
-
-
 class NavigateRouteDecision(TypedDict, total=False):
     """Normalized next-step routing result for one exact chosen coverage unit."""
 
@@ -623,14 +524,6 @@ class BridgeResolutionResult(TypedDict, total=False):
     search_policy_mode: SearchPolicyMode
     search_trigger: SearchTrigger
     search_query: str
-
-
-class ReactionEmissionResult(TypedDict, total=False):
-    """Anchored visible-reaction emission decision."""
-
-    decision: ReactionEmissionDecision
-    reason: str
-    reaction: ReactionCandidate | None
 
 
 class AnchorRecord(TypedDict, total=False):
@@ -948,7 +841,6 @@ class FullCheckpointState(TypedDict, total=False):
     local_buffer: LocalBufferState
     local_continuity: LocalContinuityState
     continuation_capsule: ContinuationCapsule
-    trigger_state: TriggerState
     working_state: WorkingState
     concept_registry: ConceptRegistryState
     thread_trace: ThreadTraceState
@@ -1093,22 +985,6 @@ def build_empty_continuation_capsule(
         "anchor_bank_digest": {"active_anchors": []},
         "refs": [],
         "rehydration_entrypoints": [],
-    }
-
-
-def build_empty_trigger_state(*, mechanism_version: str = ATTENTIONAL_V2_MECHANISM_VERSION) -> TriggerState:
-    """Return the default trigger state."""
-
-    return {
-        "schema_version": ATTENTIONAL_V2_SCHEMA_VERSION,
-        "mechanism_version": mechanism_version,
-        "updated_at": _timestamp(),
-        "current_sentence_id": "",
-        "output": "no_zoom",
-        "gate_state": "quiet",
-        "signals": [],
-        "cadence_counter": 0,
-        "callback_anchor_ids": [],
     }
 
 

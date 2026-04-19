@@ -60,7 +60,6 @@ from .schemas import (
     ReaderPolicy,
     ReflectiveFramesState,
     ThreadTraceState,
-    TriggerState,
     UnitizeDecision,
     ReadUnitResult,
     WorkingState,
@@ -77,7 +76,6 @@ from .schemas import (
     build_empty_reflective_frames,
     build_empty_resume_metadata,
     build_empty_thread_trace,
-    build_empty_trigger_state,
     build_empty_working_state,
 )
 from .slow_cycle import (
@@ -123,7 +121,6 @@ from .storage import (
     save_json,
     survey_map_file,
     thread_trace_file,
-    trigger_state_file,
     read_audit_file,
     unitization_audit_file,
     working_state_file,
@@ -411,7 +408,6 @@ def _default_builder(name: str) -> Callable[[], dict[str, object]]:
     builders: dict[str, Callable[[], dict[str, object]]] = {
         "local_buffer": lambda: build_empty_local_buffer(mechanism_version=ATTENTIONAL_V2_MECHANISM_VERSION),
         "local_continuity": lambda: build_empty_local_continuity(mechanism_version=ATTENTIONAL_V2_MECHANISM_VERSION),
-        "trigger_state": lambda: build_empty_trigger_state(mechanism_version=ATTENTIONAL_V2_MECHANISM_VERSION),
         "continuation_capsule": lambda: build_empty_continuation_capsule(
             mechanism_version=ATTENTIONAL_V2_MECHANISM_VERSION,
         ),
@@ -450,7 +446,6 @@ def _load_runtime_bundle(output_dir: Path) -> dict[str, dict[str, object]]:
     bundle = {
         "local_buffer": _load_or_default(local_buffer_file(output_dir), _default_builder("local_buffer")),
         "local_continuity": _load_or_default(local_continuity_file(output_dir), _default_builder("local_continuity")),
-        "trigger_state": _load_or_default(trigger_state_file(output_dir), _default_builder("trigger_state")),
         "continuation_capsule": _load_or_default(continuation_capsule_file(output_dir), _default_builder("continuation_capsule")),
         "knowledge_activations": _load_or_default(
             knowledge_activations_file(output_dir),
@@ -492,7 +487,6 @@ def _save_runtime_bundle(output_dir: Path, bundle: dict[str, dict[str, object]])
 
     save_json(local_buffer_file(output_dir), bundle["local_buffer"])
     save_json(local_continuity_file(output_dir), bundle["local_continuity"])
-    save_json(trigger_state_file(output_dir), bundle["trigger_state"])
     save_json(continuation_capsule_file(output_dir), bundle["continuation_capsule"])
     save_json(working_state_file(output_dir), bundle["working_state"])
     save_json(concept_registry_file(output_dir), bundle["concept_registry"])
@@ -595,7 +589,7 @@ def _reset_live_runtime(output_dir: Path) -> None:
         thread_trace_file(output_dir),
         local_buffer_file(output_dir),
         local_continuity_file(output_dir),
-        trigger_state_file(output_dir),
+        runtime_dir(output_dir) / "trigger_state.json",
         continuation_capsule_file(output_dir),
         anchor_bank_file(output_dir),
         reflective_frames_file(output_dir),
@@ -1162,7 +1156,6 @@ def _run_detour_episode(
     local_continuity: LocalContinuityState,
     chapter_ref: str,
     local_buffer: LocalBufferState,
-    trigger_state: TriggerState,
     continuation_capsule: dict[str, object],
     working_state: WorkingState,
     concept_registry: ConceptRegistryState,
@@ -1188,7 +1181,6 @@ def _run_detour_episode(
         return {
             "local_buffer": local_buffer,
             "local_continuity": local_continuity,
-            "trigger_state": trigger_state,
             "working_state": working_state,
             "concept_registry": concept_registry,
             "thread_trace": thread_trace,
@@ -1244,7 +1236,6 @@ def _run_detour_episode(
         return {
             "local_buffer": local_buffer,
             "local_continuity": local_continuity,
-            "trigger_state": trigger_state,
             "working_state": working_state,
             "concept_registry": concept_registry,
             "thread_trace": thread_trace,
@@ -1278,7 +1269,6 @@ def _run_detour_episode(
         return {
             "local_buffer": local_buffer,
             "local_continuity": local_continuity,
-            "trigger_state": trigger_state,
             "working_state": working_state,
             "concept_registry": concept_registry,
             "thread_trace": thread_trace,
@@ -1301,7 +1291,6 @@ def _run_detour_episode(
         chapter_ref=detour_chapter_ref,
         current_sentence_id=_sentence_id(detour_region_sentences[0]),
         local_buffer=local_buffer,
-        trigger_state=trigger_state,
         working_state=working_state,
         concept_registry=concept_registry,
         thread_trace=thread_trace,
@@ -1340,13 +1329,9 @@ def _run_detour_episode(
         }
 
     for detour_sentence in chosen_unit_sentences:
-        local_buffer, trigger_state = process_sentence_intake(
+        local_buffer = process_sentence_intake(
             detour_sentence,
             local_buffer=local_buffer,
-            working_state=working_state,
-            concept_registry=concept_registry,
-            thread_trace=thread_trace,
-            anchor_bank=anchor_bank,
         )
     focal_sentence = chosen_unit_sentences[-1]
     persist_unitization_audit(
@@ -1510,7 +1495,6 @@ def _run_detour_episode(
         {
             "local_buffer": local_buffer,
             "local_continuity": local_continuity,
-            "trigger_state": trigger_state,
             "continuation_capsule": _build_runtime_continuation_capsule(
                 chapter_ref=detour_chapter_ref,
                 local_buffer=local_buffer,
@@ -1548,7 +1532,6 @@ def _run_detour_episode(
     return {
         "local_buffer": local_buffer,
         "local_continuity": local_continuity,
-        "trigger_state": trigger_state,
         "working_state": working_state,
         "concept_registry": concept_registry,
         "thread_trace": thread_trace,
@@ -1915,7 +1898,6 @@ def read_attentional_v2(request: ReadRequest, mechanism: MechanismInfo) -> ReadR
         touched_chapter_ids: set[int] = set()
         local_buffer: LocalBufferState = bundle["local_buffer"]  # type: ignore[assignment]
         local_continuity: LocalContinuityState = bundle["local_continuity"]  # type: ignore[assignment]
-        trigger_state: TriggerState = bundle["trigger_state"]  # type: ignore[assignment]
         working_state: WorkingState = bundle["working_state"]  # type: ignore[assignment]
         concept_registry: ConceptRegistryState = bundle["concept_registry"]  # type: ignore[assignment]
         thread_trace: ThreadTraceState = bundle["thread_trace"]  # type: ignore[assignment]
@@ -1998,7 +1980,6 @@ def read_attentional_v2(request: ReadRequest, mechanism: MechanismInfo) -> ReadR
                         local_continuity=local_continuity,
                         chapter_ref=chapter_ref,
                         local_buffer=local_buffer,
-                        trigger_state=trigger_state,
                         continuation_capsule=dict(bundle.get("continuation_capsule", {})),
                         working_state=working_state,
                         concept_registry=concept_registry,
@@ -2019,7 +2000,6 @@ def read_attentional_v2(request: ReadRequest, mechanism: MechanismInfo) -> ReadR
                     )
                     local_buffer = detour_result["local_buffer"]  # type: ignore[assignment]
                     local_continuity = detour_result["local_continuity"]  # type: ignore[assignment]
-                    trigger_state = detour_result["trigger_state"]  # type: ignore[assignment]
                     working_state = detour_result["working_state"]  # type: ignore[assignment]
                     concept_registry = detour_result["concept_registry"]  # type: ignore[assignment]
                     thread_trace = detour_result["thread_trace"]  # type: ignore[assignment]
@@ -2040,15 +2020,10 @@ def read_attentional_v2(request: ReadRequest, mechanism: MechanismInfo) -> ReadR
 
                 sentence = sentences[cursor]
                 sentence_id = _clean_text(sentence.get("sentence_id"))
-                local_buffer, trigger_state = process_sentence_intake(
+                local_buffer = process_sentence_intake(
                     sentence,
                     local_buffer=local_buffer,
-                    working_state=working_state,
-                    concept_registry=concept_registry,
-                    thread_trace=thread_trace,
-                    anchor_bank=anchor_bank,
                 )
-                save_json(trigger_state_file(output_dir), trigger_state)
                 preview_sentences, preview_range = build_unitize_preview(
                     chapter_sentences=sentences,
                     current_sentence_id=sentence_id,
@@ -2057,7 +2032,6 @@ def read_attentional_v2(request: ReadRequest, mechanism: MechanismInfo) -> ReadR
                     chapter_ref=chapter_ref,
                     current_sentence_id=sentence_id,
                     local_buffer=local_buffer,
-                    trigger_state=trigger_state,
                     working_state=working_state,
                     concept_registry=concept_registry,
                     thread_trace=thread_trace,
@@ -2091,15 +2065,10 @@ def read_attentional_v2(request: ReadRequest, mechanism: MechanismInfo) -> ReadR
                     }
 
                 for later_sentence in chosen_unit_sentences[1:]:
-                    local_buffer, trigger_state = process_sentence_intake(
+                    local_buffer = process_sentence_intake(
                         later_sentence,
                         local_buffer=local_buffer,
-                        working_state=working_state,
-                        concept_registry=concept_registry,
-                        thread_trace=thread_trace,
-                        anchor_bank=anchor_bank,
                     )
-                    save_json(trigger_state_file(output_dir), trigger_state)
 
                 persist_unitization_audit(
                     output_dir,
@@ -2311,7 +2280,6 @@ def read_attentional_v2(request: ReadRequest, mechanism: MechanismInfo) -> ReadR
                     {
                         "local_buffer": local_buffer,
                         "local_continuity": local_continuity,
-                        "trigger_state": trigger_state,
                         "continuation_capsule": _build_runtime_continuation_capsule(
                             chapter_ref=chapter_ref,
                             local_buffer=local_buffer,
@@ -2371,7 +2339,6 @@ def read_attentional_v2(request: ReadRequest, mechanism: MechanismInfo) -> ReadR
                     local_continuity=local_continuity,
                     chapter_ref=chapter_ref,
                     local_buffer=local_buffer,
-                    trigger_state=trigger_state,
                     continuation_capsule=dict(bundle.get("continuation_capsule", {})),
                     working_state=working_state,
                     concept_registry=concept_registry,
@@ -2392,7 +2359,6 @@ def read_attentional_v2(request: ReadRequest, mechanism: MechanismInfo) -> ReadR
                 )
                 local_buffer = detour_result["local_buffer"]  # type: ignore[assignment]
                 local_continuity = detour_result["local_continuity"]  # type: ignore[assignment]
-                trigger_state = detour_result["trigger_state"]  # type: ignore[assignment]
                 working_state = detour_result["working_state"]  # type: ignore[assignment]
                 concept_registry = detour_result["concept_registry"]  # type: ignore[assignment]
                 thread_trace = detour_result["thread_trace"]  # type: ignore[assignment]
@@ -2452,7 +2418,6 @@ def read_attentional_v2(request: ReadRequest, mechanism: MechanismInfo) -> ReadR
                 {
                     "local_buffer": local_buffer,
                     "local_continuity": local_continuity,
-                    "trigger_state": trigger_state,
                     "continuation_capsule": _build_runtime_continuation_capsule(
                         chapter_ref=chapter_ref,
                         local_buffer=local_buffer,

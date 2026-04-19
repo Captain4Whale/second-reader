@@ -1973,3 +1973,44 @@ The old active windows `nawaer_baodian_private_zh__wealth`, `nawaer_baodian_priv
 - `reading-companion-backend/tests/test_attentional_v2_nodes.py`
 - `reading-companion-backend/tests/test_attentional_v2_slow_cycle.py`
 - `reading-companion-backend/tests/test_attentional_v2_evaluation.py`
+
+## Entry 69
+**ID**: DEC-072
+**Status**: active
+
+**Decision / Inflection**: Remove `trigger/watch` from the live `attentional_v2` runtime entirely, shrink sentence intake back to pure local-buffer ingest, and delete the dead local-cycle ownership chain instead of preserving it as “legacy helper territory.”
+
+**Period**: April 19, 2026, immediately after the first F4A quality audit had already validated the new `navigate.unitize -> read -> navigate.route` shape.
+
+**Problem**: Even after F1 through F3 had landed, the repo still contained a misleading second story about how `attentional_v2` worked. The live runner no longer depended on heuristic trigger permission or the old `zoom_read -> meaning_unit_closure -> controller_decision -> reaction_emission` chain, but several internal types, exports, tests, and docs still acted as if that machinery remained a supported runtime entity. That created exactly the drift risk the project had been worried about: future contributors could mistake dead scaffolding for live design and continue optimizing or working around systems that no longer owned anything real.
+
+**Alternatives considered**: Leave the old trigger/watch objects in place as dormant compatibility shells, keep the old local-cycle nodes as internal-only helper territory, or defer cleanup until after the next special-content or F4B quality slice.
+
+**Why this path won**: The project already had enough evidence to know the old control path was dead. Keeping it around would not improve compatibility, because current runtime/checkpoint/resume behavior had already moved elsewhere; it would only preserve confusion. The clean move was to make the new ownership model mechanically true all the way down: sentence intake is just buffer maintenance, `Navigate.unitize` reasons from bounded state/context packets without heuristic watch packets, and the old local-cycle chain now belongs only to historical records and archived artifacts.
+
+**What changed in the system**: `process_sentence_intake(...)` now updates only `local_buffer`. `TriggerState`, `watch_state`, `trigger_state.json`, and the related runtime/checkpoint/resume/artifact-map paths are gone from the live mechanism. The dead `trigger -> zoom_read -> meaning_unit_closure -> controller_decision -> reaction_emission` chain was removed from `attentional_v2` live code and replaced in tests with the actual live node set (`build_unitize_preview`, `navigate_unitize`, `navigate_detour_search`, `read_unit`, `navigate_route`). Prompt bundles and exports no longer carry old local-cycle prompt constants. The stable docs now also define `text_role` as an inherited block-level weak cue rather than a sentence-level truth packet.
+
+**Why it matters later**: This is the cleanup that turns the current Runner/Navigate contract from a design preference into the only credible implementation story. Future work on special-content unitization, detour quality, and F4B validation can now build on a simpler baseline without accidentally reanimating trigger/watch semantics or the dead local-cycle chain.
+
+**Primary evidence**:
+- `docs/backend-reading-mechanisms/attentional_v2.md`
+- `docs/backend-reading-mechanism.md`
+- `docs/implementation/new-reading-mechanism/attentional_v2_structural_rework_plan.md`
+- `docs/implementation/new-reading-mechanism/runtime-artifact-map.md`
+- `docs/current-state.md`
+- `docs/tasks/registry.md`
+- `docs/tasks/registry.json`
+- `reading-companion-backend/src/attentional_v2/intake.py`
+- `reading-companion-backend/src/attentional_v2/state_projection.py`
+- `reading-companion-backend/src/attentional_v2/storage.py`
+- `reading-companion-backend/src/attentional_v2/resume.py`
+- `reading-companion-backend/src/attentional_v2/runner.py`
+- `reading-companion-backend/src/attentional_v2/state_ops.py`
+- `reading-companion-backend/src/attentional_v2/schemas.py`
+- `reading-companion-backend/src/attentional_v2/prompts.py`
+- `reading-companion-backend/src/attentional_v2/__init__.py`
+- `reading-companion-backend/tests/test_attentional_v2_intake_and_retrieval.py`
+- `reading-companion-backend/tests/test_attentional_v2_state_projection.py`
+- `reading-companion-backend/tests/test_attentional_v2_nodes.py`
+- `reading-companion-backend/tests/test_attentional_v2_resume.py`
+- `reading-companion-backend/tests/test_attentional_v2_scaffold.py`

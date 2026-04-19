@@ -46,11 +46,15 @@ Update when: the artifact layout, ownership boundary, or shell-envelope rule cha
 
 ### Runtime State
 - `_mechanisms/attentional_v2/runtime/local_buffer.json`
+  - rolling intake buffer only
 - `_mechanisms/attentional_v2/runtime/local_continuity.json`
-- `_mechanisms/attentional_v2/runtime/trigger_state.json`
-- `_mechanisms/attentional_v2/runtime/working_pressure.json`
-- `_mechanisms/attentional_v2/runtime/anchor_memory.json`
-- `_mechanisms/attentional_v2/runtime/reflective_summaries.json`
+  - compact continuity plus detour ownership state
+- `_mechanisms/attentional_v2/runtime/continuation_capsule.json`
+- `_mechanisms/attentional_v2/runtime/working_state.json`
+- `_mechanisms/attentional_v2/runtime/concept_registry.json`
+- `_mechanisms/attentional_v2/runtime/thread_trace.json`
+- `_mechanisms/attentional_v2/runtime/reflective_frames.json`
+- `_mechanisms/attentional_v2/runtime/anchor_bank.json`
 - `_mechanisms/attentional_v2/runtime/knowledge_activations.json`
 - `_mechanisms/attentional_v2/runtime/move_history.json`
 - `_mechanisms/attentional_v2/runtime/reaction_records.json`
@@ -59,6 +63,12 @@ Update when: the artifact layout, ownership boundary, or shell-envelope rule cha
 - `_mechanisms/attentional_v2/runtime/resume_metadata.json`
 - `_mechanisms/attentional_v2/runtime/checkpoints/*.json`
   - full mechanism-owned checkpoints
+
+### Legacy Runtime State In Older Output Trees
+- `_mechanisms/attentional_v2/runtime/working_pressure.json`
+- `_mechanisms/attentional_v2/runtime/anchor_memory.json`
+- `_mechanisms/attentional_v2/runtime/reflective_summaries.json`
+  - historical evidence only after the primary-state cutover
 
 ### Internal
 - `_mechanisms/attentional_v2/internal/diagnostics/events.jsonl`
@@ -73,7 +83,7 @@ Update when: the artifact layout, ownership boundary, or shell-envelope rule cha
 
 ## Ownership Rule
 - Shared `_runtime/` may own a field only if it can be described in mechanism-neutral terms.
-- If a field needs `attentional_v2` ontology such as trigger, gate, pressure, bridge, reframe, promotion, or anchor-memory semantics, it belongs under `_mechanisms/attentional_v2/`.
+- If a field needs `attentional_v2` ontology such as working-state pressure, detour, bridge, reframe, promotion, or anchor-bank semantics, it belongs under `_mechanisms/attentional_v2/`.
 - Product-core reading artifacts should remain mechanism-authored truth even when shared `_runtime/` points to them.
 
 ## Phase Notes

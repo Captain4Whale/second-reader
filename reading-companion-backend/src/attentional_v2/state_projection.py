@@ -24,7 +24,6 @@ from .schemas import (
     RehydrationEntry,
     ThreadTraceState,
     ThreadDigestItem,
-    TriggerState,
     WorkingState,
     WorkingPressureState,
     WorkingStateDigest,
@@ -885,7 +884,6 @@ def build_navigation_context(
     chapter_ref: str,
     current_sentence_id: str,
     local_buffer: LocalBufferState,
-    trigger_state: TriggerState,
     working_state: WorkingState | None = None,
     concept_registry: ConceptRegistryState | None = None,
     thread_trace: ThreadTraceState | None = None,
@@ -916,36 +914,9 @@ def build_navigation_context(
         reaction_records=reaction_records,
         continuation_capsule=continuation_capsule,
     )
-    watch_state = {
-        "current_sentence_id": clean_text(trigger_state.get("current_sentence_id")),
-        "output": clean_text(trigger_state.get("output")),
-        "gate_state": clean_text(trigger_state.get("gate_state")),
-        "cadence_counter": int(trigger_state.get("cadence_counter", 0) or 0),
-        "callback_anchor_ids": [
-            clean_text(item)
-            for item in trigger_state.get("callback_anchor_ids", [])
-            if clean_text(item)
-        ][:4]
-        if isinstance(trigger_state.get("callback_anchor_ids"), list)
-        else [],
-        "signals": [
-            {
-                "signal_kind": clean_text(signal.get("signal_kind")),
-                "family": clean_text(signal.get("family")),
-                "sentence_id": clean_text(signal.get("sentence_id")),
-                "evidence": clean_text(signal.get("evidence")),
-                "strength": clean_text(signal.get("strength")),
-            }
-            for signal in trigger_state.get("signals", [])
-            if isinstance(signal, dict)
-        ][:4]
-        if isinstance(trigger_state.get("signals"), list)
-        else [],
-    }
     return {
         "packet_version": STATE_PACKET_VERSION,
         "continuation_capsule": dict(carry_forward_context.get("continuation_capsule", {})),
-        "watch_state": watch_state,
         "session_continuity_capsule": dict(carry_forward_context.get("session_continuity_capsule", {})),
         "working_state_digest": dict(carry_forward_context.get("working_state_digest", {})),
         "chapter_reflective_frame": dict(carry_forward_context.get("chapter_reflective_frame", {})),

@@ -26,7 +26,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - shared sentence substrate
   - shared canonical parse/provisioning and shared manifest/run-state shells
   - orientation-only survey artifacts
-  - deterministic intake/gate/retrieval helpers
+  - deterministic intake/retrieval helpers
   - Phase 4 interpretive nodes with prompt-version manifests
   - Phase 5 knowledge, bridge, and retained-evidence state helpers
   - Phase 6 slow-cycle helpers for durable anchored reaction truth, reflective promotion, reconsolidation, chapter consolidation, and mechanism-private compatibility projection
@@ -116,7 +116,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
 ## Naming Note
 - `Phase 3`, `Phase 4`, `Phase 5`, and `Phase 6` in this document refer to historical implementation-stage groupings, not to a user-facing or mechanism-intrinsic sequence of named runtime phases.
 - The live runtime should be explained as a reading loop:
-  - sentence intake and watch-state update
+  - sentence intake as pure local-buffer maintenance
   - `navigate.unitize`
   - mandatory formal unit read with bounded carry-forward context
   - `read` directly surfaces zero-to-many reading-time reactions and emits bounded state ops
@@ -124,9 +124,9 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - `navigate.route`
   - optional `bridge_resolution`
   - chapter-end slow-cycle work such as `chapter_consolidation`, `reflective_promotion`, and `reconsolidation`
-- Internal helper names such as `run_phase4_local_cycle` are retained historical engineering labels for now.
-  - They remain available as legacy helper territory and test coverage for historical node behavior.
-  - They are no longer the live formal read path and should not be read as proof that the mechanism itself defines a first-class runtime concept called `Phase 4`.
+- The old `trigger -> zoom_read -> meaning_unit_closure -> controller_decision -> reaction_emission` chain is now historical implementation vocabulary, not live runtime behavior.
+  - Those names may still appear in historical docs, old artifacts, or decision entries.
+  - They should not be read as active helper territory inside the current runner.
 
 ## Core Primitives / Ontology
 - `sentence stream`
@@ -163,13 +163,11 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
 - It then reads through the text in sentence order.
   - Sentence order is the intake discipline.
   - Coverage-unit selection is now the reasoning-entry discipline.
-- Sentence-level trigger detection still happens continuously during intake.
-  - `no_zoom`, `monitor`, and `zoom_now` are still persisted as watch metadata.
-  - They no longer decide whether正文 gets a formal read.
-  - Their Phase A role is observability, cheap salience evidence, and later audit/debug support.
+- Sentence intake is now a pure rolling-buffer ingest step.
+  - It maintains `local_buffer` only.
+  - It does not emit `trigger_state`, `watch_state`, or any `no_zoom / monitor / zoom_now` gate packet.
 - The current live Phase F3 baseline now runs:
   - ingest the next unread sentence
-  - persist watch-state / trigger metadata
   - if an open detour exists, let `Navigate` run bounded detour search and choose the next detour region
   - `navigate.unitize` over a fixed preview window
   - build a small `carry-forward context` from persisted state
@@ -184,11 +182,12 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
 - `navigate.unitize` is now the sole selector of the next coverage unit.
   - Boundary choice is prompt-led and semantic.
   - Runtime guardrails only keep the unit from running away.
-  - It now also receives a bounded `navigation_context` packet built from current watch-state and state digests.
+  - It now receives a bounded `navigation_context` packet built from continuity and state digests only.
   - The fixed Phase A preview window is:
     - current paragraph remainder
     - plus the next paragraph in the same section
   - Because the current canonical substrate does not expose stable section ids, "same section" is implemented conservatively by refusing to cross into heading paragraphs during preview construction.
+  - Parse-time `text_role` is still available during this step, but only as an inherited block-level weak cue rather than a sentence-level truth packet.
 - `read` remains the authoritative formal unit-read node.
   - On the current live baseline, it now directly produces `unit_delta`, `surfaced_reactions`, `implicit_uptake_ops`, `pressure_signals`, and optional `detour_need`.
   - It should not remain a control super-node.
@@ -246,7 +245,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - Survey context may include coarse chapter structure, but live interpretive calls must not use future paragraphs as if they were already read.
 
 ## LLM Call Schedule
-- The main LLM is now called for every formal coverage unit, not for every sentence and not only for old `zoom_now` moments.
+- The main LLM is now called for every formal coverage unit, not for every sentence.
 - The current live node bundle is:
   - `navigate_unitize`
   - `read_unit`
@@ -262,11 +261,9 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - `reflective_promotion`
   - `reconsolidation`
   - `chapter_consolidation`
-- Historical helper nodes such as `zoom_read`, `meaning_unit_closure`, `controller_decision`, and `reaction_emission` still exist as legacy helper/test territory, but they are no longer on the live runner critical path.
 - The runtime schedule is intentionally narrower than the old node inventory:
   - sentence-level intake still runs without LLM
   - `navigate_unitize` decides the next coverage unit before formal reading begins
-  - trigger/watch outputs still exist, but they no longer suppress formal reading
   - `read_unit` is now the only steady-state per-unit interpretation call
   - surfaced reactions now come from that same read call rather than from a follow-on wording node
   - `navigate.route` remains deterministic and does not make another LLM call
@@ -333,22 +330,14 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - It is now derived from persisted surfaced reaction records through one compat helper rather than treated as the persisted reaction truth.
   - It must not become the governing shape of the new `Read` prompt.
 - Default call types are:
-  - `chapter opening`
-    - set initial expectations and open questions using title, chapter heading, and opening span
-  - `meaning-unit consolidation`
-    - interpret a completed paragraph or short span after enough text has accumulated
-  - `trigger call`
-    - fire early when one sentence becomes unusually important
+  - `unitize call`
+    - choose the next exact coverage unit from the current bounded preview
+  - `formal read`
+    - interpret the chosen unit with compact carry-forward context
+  - `detour-search call`
+    - localize an earlier already-read region when a live detour need remains open
   - `chapter consolidation`
     - update broader hypotheses and unresolved tensions at a local milestone
-- Sentence-level trigger calls happen only when a sentence earns that attention through signals such as:
-  - reversal
-  - unusually compressed claim
-  - contradiction
-  - metaphorical charge
-  - recurrence of an active motif
-  - reference instability
-  - downstream consequence for the current hypothesis
 
 ## Context Packaging
 - Each node should receive a role-specific projection rather than the full persisted state bundle.
@@ -445,8 +434,8 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - `Read` should not privately complete a detour on its own.
   - It should only surface a `detour_need`.
   - `Navigate` is the node that decides how to search, where to land, whether to continue detouring, and when to return to the mainline cursor.
-- Sentence-level trigger detection should still happen continuously during intake.
-  - This protects against missing a crucial single sentence even when the main reasoning unit is larger.
+- Sentence intake no longer runs a parallel heuristic trigger layer.
+  - Protection against missing a crucial single sentence now comes from bounded preview construction plus semantic unitization, not from a separate `zoom_now` gate.
 - The Phase 5 bridge helper still enforces source honesty.
   - bridge targets must come from deterministic source candidates
   - if no honest source target exists, bridge resolution declines instead of inventing one
@@ -485,6 +474,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
 - Shared substrate dependency
   - `public/book_document.json`
   - The shared substrate now includes parse-time sentence records with stable ids and sentence-span locators.
+  - `text_role` on those sentence records is an inherited block/paragraph cue and should be treated as weak structure guidance, not sentence-level truth.
 - Current scaffolded mechanism-private derived artifacts
   - `_mechanisms/attentional_v2/derived/survey_map.json`
 - `_mechanisms/attentional_v2/derived/revisit_index.json`
@@ -494,9 +484,10 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - live compatibility chapter results used by current chapter/detail and marks surfaces when `attentional_v2` is the active mechanism
 - Current scaffolded mechanism-private runtime artifacts
   - `_mechanisms/attentional_v2/runtime/local_buffer.json`
+    - rolling intake buffer only
   - `_mechanisms/attentional_v2/runtime/local_continuity.json`
+    - compact continuity plus detour ownership state
   - `_mechanisms/attentional_v2/runtime/continuation_capsule.json`
-  - `_mechanisms/attentional_v2/runtime/trigger_state.json`
   - `_mechanisms/attentional_v2/runtime/unitization_audit.jsonl`
   - `_mechanisms/attentional_v2/runtime/read_audit.jsonl`
   - `_mechanisms/attentional_v2/runtime/working_state.json`
@@ -535,6 +526,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - `_mechanisms/attentional_v2/internal/prompt_manifests/*.json`
 - Current scaffolded prompt manifests now include:
   - `navigate_unitize`
+  - `navigate_detour_search`
   - `read_unit`
   - `bridge_resolution`
   - `reflective_promotion`
@@ -596,8 +588,8 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
 - They state what this mechanism must prove as a mechanism.
 - `sentence_order_intake_honesty`
   - Does the mechanism preserve source-order intake and avoid future-text leakage while still remaining selective at the reasoning layer?
-- `meaning_unit_closure_quality`
-  - Does the mechanism form strong meaning-unit interpretations instead of producing sentence-by-sentence sparks or vague paragraph blur?
+- `coverage_unit_interpretation_quality`
+  - Does the mechanism form strong coverage-unit interpretations instead of producing sentence-by-sentence sparks or vague paragraph blur?
 - `move_choice_quality`
   - Does the mechanism choose `advance`, `dwell`, `bridge`, and `reframe` in a way that feels text-earned rather than procedural or arbitrary?
 - `bridge_resolution_honesty`

@@ -11,7 +11,6 @@ from src.attentional_v2.schemas import (
     build_empty_move_history,
     build_empty_reaction_records,
     build_empty_reflective_summaries,
-    build_empty_trigger_state,
     build_empty_working_pressure,
 )
 from src.attentional_v2.state_projection import (
@@ -148,31 +147,13 @@ def test_build_carry_forward_context_exposes_phase_c1_packet_shape_and_legacy_al
     assert packet["refs"]
 
 
-def test_build_navigation_context_wraps_watch_state_and_state_packet():
-    """Navigation packetization should combine watch metadata with the bounded state packet."""
-
-    trigger_state = build_empty_trigger_state()
-    trigger_state["current_sentence_id"] = "c1-s2"
-    trigger_state["output"] = "monitor"
-    trigger_state["gate_state"] = "watch"
-    trigger_state["cadence_counter"] = 2
-    trigger_state["callback_anchor_ids"] = ["a-1"]
-    trigger_state["signals"] = [
-        {
-            "signal_id": "signal-1",
-            "signal_kind": "discourse_turn",
-            "family": "salience",
-            "sentence_id": "c1-s2",
-            "evidence": "However",
-            "strength": "medium",
-        }
-    ]
+def test_build_navigation_context_exposes_state_packet_without_watch_metadata():
+    """Navigation packetization should stay bounded without reviving watch-state heuristics."""
 
     packet = build_navigation_context(
         chapter_ref="Chapter 1",
         current_sentence_id="c1-s2",
         local_buffer=build_empty_local_buffer(),
-        trigger_state=trigger_state,
         working_pressure=build_empty_working_pressure(),
         anchor_memory=build_empty_anchor_memory(),
         reflective_summaries=build_empty_reflective_summaries(),
@@ -181,13 +162,11 @@ def test_build_navigation_context_wraps_watch_state_and_state_packet():
     )
 
     assert packet["packet_version"] == STATE_PACKET_VERSION
-    assert packet["watch_state"]["output"] == "monitor"
-    assert packet["watch_state"]["callback_anchor_ids"] == ["a-1"]
-    assert packet["watch_state"]["signals"][0]["signal_kind"] == "discourse_turn"
     assert "working_state_digest" in packet
     assert "concept_digest" in packet
     assert "thread_digest" in packet
     assert "anchor_bank_digest" in packet
+    assert "watch_state" not in packet
 
 
 def test_build_read_prompt_packet_projects_compact_always_carry_and_selective_carry():
@@ -314,7 +293,7 @@ def test_navigate_unitize_prompt_receives_navigation_context(monkeypatch):
         preview_sentences=[_sentence("c1-s1", "Alpha sentence.")],
         navigation_context={
             "packet_version": STATE_PACKET_VERSION,
-            "watch_state": {"output": "monitor", "gate_state": "watch", "signals": []},
+            "continuation_capsule": {"chapter_ref": "Chapter 1"},
             "session_continuity_capsule": {"recent_sentence_ids": ["c1-s0"]},
             "working_state_digest": {"open_questions": []},
             "chapter_reflective_frame": {"chapter_frames": []},
@@ -330,5 +309,5 @@ def test_navigate_unitize_prompt_receives_navigation_context(monkeypatch):
 
     assert "Navigation context" in captured["prompt"]
     assert STATE_PACKET_VERSION in captured["prompt"]
-    assert "\"output\": \"monitor\"" in captured["prompt"]
+    assert "\"continuation_capsule\"" in captured["prompt"]
     assert "\"concept_key\": \"promise\"" in captured["prompt"]

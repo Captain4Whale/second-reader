@@ -30,9 +30,6 @@ from .schemas import (
     ReflectiveSummariesState,
     ThreadTraceEntry,
     ThreadTraceState,
-    TriggerDecision,
-    TriggerSignal,
-    TriggerState,
     WorkingPressureItem,
     WorkingPressureState,
     WorkingState,
@@ -394,28 +391,6 @@ def close_local_meaning_unit(state: LocalBufferState) -> LocalBufferState:
     next_state["last_meaning_unit_closed_at_sentence_id"] = str(state.get("current_sentence_id", "") or "")
     next_state["recent_meaning_units"] = recent_meaning_units
     next_state["open_meaning_unit_sentence_ids"] = []
-    return next_state  # type: ignore[return-value]
-
-
-def set_trigger_result(
-    state: TriggerState,
-    *,
-    sentence_id: str,
-    output: TriggerDecision,
-    gate_state: GateState,
-    signals: list[TriggerSignal],
-    cadence_counter: int,
-    callback_anchor_ids: list[str] | None = None,
-) -> TriggerState:
-    """Replace the current trigger result."""
-
-    next_state = _touch_state(state)
-    next_state["current_sentence_id"] = sentence_id
-    next_state["output"] = output
-    next_state["gate_state"] = gate_state
-    next_state["signals"] = [dict(signal) for signal in signals]
-    next_state["cadence_counter"] = cadence_counter
-    next_state["callback_anchor_ids"] = list(callback_anchor_ids or [])
     return next_state  # type: ignore[return-value]
 
 

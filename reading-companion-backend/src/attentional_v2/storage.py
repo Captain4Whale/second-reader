@@ -27,7 +27,6 @@ from .schemas import (
     build_empty_reflective_summaries,
     build_empty_resume_metadata,
     build_empty_thread_trace,
-    build_empty_trigger_state,
     build_empty_working_state,
     build_empty_working_pressure,
 )
@@ -100,12 +99,6 @@ def local_buffer_file(output_dir: Path) -> Path:
     """Return the rolling local-buffer path."""
 
     return runtime_dir(output_dir) / "local_buffer.json"
-
-
-def trigger_state_file(output_dir: Path) -> Path:
-    """Return the cheap trigger-state path."""
-
-    return runtime_dir(output_dir) / "trigger_state.json"
 
 
 def local_continuity_file(output_dir: Path) -> Path:
@@ -245,7 +238,6 @@ def artifact_map(output_dir: Path) -> dict[str, str]:
         "survey_map": str(survey_map_file(output_dir).relative_to(output_dir)),
         "revisit_index": str(revisit_index_file(output_dir).relative_to(output_dir)),
         "local_buffer": str(local_buffer_file(output_dir).relative_to(output_dir)),
-        "trigger_state": str(trigger_state_file(output_dir).relative_to(output_dir)),
         "local_continuity": str(local_continuity_file(output_dir).relative_to(output_dir)),
         "continuation_capsule": str(continuation_capsule_file(output_dir).relative_to(output_dir)),
         "working_state": str(working_state_file(output_dir).relative_to(output_dir)),
@@ -351,7 +343,6 @@ def initialize_artifact_tree(
         },
     )
     ensure_json(local_buffer_file(output_dir), build_empty_local_buffer(mechanism_version=mechanism_version))
-    ensure_json(trigger_state_file(output_dir), build_empty_trigger_state(mechanism_version=mechanism_version))
     ensure_json(local_continuity_file(output_dir), build_empty_local_continuity(mechanism_version=mechanism_version))
     ensure_json(
         continuation_capsule_file(output_dir),

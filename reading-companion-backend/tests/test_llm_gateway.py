@@ -1568,12 +1568,9 @@ def test_invoke_json_retries_after_unrecoverable_malformed_payload(
 
 
 def test_attentional_node_uses_shared_runtime_trace(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
-    from src.attentional_v2.nodes import zoom_read
+    from src.attentional_v2.nodes import read_unit
     from src.attentional_v2.schemas import (
         build_default_reader_policy,
-        build_empty_anchor_memory,
-        build_empty_knowledge_activations,
-        build_empty_working_pressure,
     )
 
     monkeypatch.setenv("PRIMARY_KEY", "runtime-key")
@@ -1607,7 +1604,7 @@ def test_attentional_node_uses_shared_runtime_trace(tmp_path: Path, monkeypatch:
             ],
         },
     )
-    adapter = _RecordingAdapter(response_content='{"local_interpretation": "Focused on the hinge."}')
+    adapter = _RecordingAdapter(response_content='{"unit_delta": "Focused on the hinge.", "surfaced_reactions": []}')
     monkeypatch.setitem(CONTRACT_ADAPTERS, "anthropic", adapter)
 
     output_dir = tmp_path / "output" / "attn-demo"
@@ -1615,22 +1612,19 @@ def test_attentional_node_uses_shared_runtime_trace(tmp_path: Path, monkeypatch:
         profile_id=DEFAULT_RUNTIME_PROFILE_ID,
         trace_context=runtime_trace_context(output_dir, mechanism_key="attentional_v2"),
     ):
-        result = zoom_read(
-            focal_sentence={"sentence_id": "s1", "text": "Alpha hinge line.", "text_role": "body"},
-            local_context_sentences=[],
-            working_pressure=build_empty_working_pressure(),
-            anchor_memory=build_empty_anchor_memory(),
-            knowledge_activations=build_empty_knowledge_activations(),
+        result = read_unit(
+            current_unit_sentences=[{"sentence_id": "s1", "text": "Alpha hinge line.", "text_role": "body"}],
+            carry_forward_context={"packet_version": "attentional_v2.state_packet.v1", "refs": []},
             reader_policy=build_default_reader_policy(),
             output_language="en",
             output_dir=output_dir,
         )
 
     standard_rows = _read_jsonl(runtime_artifacts.llm_standard_trace_file(output_dir))
-    assert result["local_interpretation"] == "Focused on the hinge."
+    assert result["unit_delta"] == "Focused on the hinge."
     assert standard_rows[-1]["mechanism_key"] == "attentional_v2"
     assert standard_rows[-1]["stage"] == "phase4"
-    assert standard_rows[-1]["node"] == "zoom_read"
+    assert standard_rows[-1]["node"] == "read_unit"
 
 
 def test_iterator_parse_node_uses_shared_runtime_trace(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):

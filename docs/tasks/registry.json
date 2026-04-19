@@ -115,7 +115,8 @@
         "DEC-068",
         "DEC-069",
         "DEC-070",
-        "DEC-071"
+        "DEC-071",
+        "DEC-072"
       ],
       "job_refs": [
         "bgjob_post_phase_d_longspan_smoke_20260412",
@@ -128,7 +129,7 @@
         "bgjob_attentional_v2_f4a_quality_audit_20260419"
       ],
       "acceptance_ref": "docs/implementation/new-reading-mechanism/attentional_v2_structural_rework_plan.md",
-      "next_action": "Continue from the post-Phase-9 structural rework plan under the existing attentional_v2 mechanism key. Phase A through Phase D are landed, and Phase E1 through Phase E3 remain preserved as a landed intermediate compatibility-first branch. Phase F1 is now landed: the live per-unit loop is back to navigate.unitize -> read -> navigate.route, Read now owns surfaced reactions / implicit uptake ops / pressure signals / optional detour_need, the dedicated live Express node is off the runner path, and read prompt packaging now follows compact always-carry / selective-carry / not-carry projections. Phase F2 is also landed: Navigate owns bounded detour search over structure cards, long-distance-memory digests, and source-grounded anchor handles; local_continuity now persists mainline_cursor / active_detour_id / active_detour_need / detour_trace; detour search uses one bounded prompt family with narrow_scope / land_region / defer_detour; and landed detour regions now flow back through the same normal navigate.unitize -> read -> navigate.route loop, including chapter-tail detour draining before slow-cycle close. Phase F3 is also landed: persisted visible reactions enter the system only through Read.surfaced_reactions[], mainline and detour reading share one surfaced-native reaction-record builder, chapter-result compatibility projection and normalized eval export now derive legacy family labels only through the compat helper, and dead live ownership paths for the old Express persistence flow and raw_reaction fallback are removed. Phase F4A is now complete as a first six-case focused audit: reaction density recovered and compat exports stayed intact, but no shard emitted a real detour and none of the optional surfaced semantics (prior_link / outside_link / search_intent) appeared. The next move is one small post-F4A repair pass and then a rerun of the same six-case pack before opening Phase F4B.",
+      "next_action": "Continue from the post-Phase-9 structural rework plan under the existing attentional_v2 mechanism key. Phase A through Phase D are landed, and Phase E1 through Phase E3 remain preserved as a landed intermediate compatibility-first branch. Phase F1 is now landed: the live per-unit loop is back to navigate.unitize -> read -> navigate.route, Read now owns surfaced reactions / implicit uptake ops / pressure signals / optional detour_need, the dedicated live Express node is off the runner path, and read prompt packaging now follows compact always-carry / selective-carry / not-carry projections. Phase F2 is also landed: Navigate owns bounded detour search over structure cards, long-distance-memory digests, and source-grounded anchor handles; local_continuity now persists mainline_cursor / active_detour_id / active_detour_need / detour_trace; detour search uses one bounded prompt family with narrow_scope / land_region / defer_detour; and landed detour regions now flow back through the same normal navigate.unitize -> read -> navigate.route loop, including chapter-tail detour draining before slow-cycle close. Phase F3 is also landed: persisted visible reactions enter the system only through Read.surfaced_reactions[], mainline and detour reading share one surfaced-native reaction-record builder, chapter-result compatibility projection and normalized eval export now derive legacy family labels only through the compat helper, and dead live ownership paths for the old Express persistence flow and raw_reaction fallback are removed. Phase F4A is complete as a first six-case focused audit, and the trigger/watch cleanup slice is now also landed on top of that baseline: sentence intake is pure local_buffer ingest, live runtime/checkpoint/resume no longer carry trigger_state, Navigate.unitize no longer receives watch_state, and the dead trigger -> zoom_read -> meaning_unit_closure -> controller_decision -> reaction_emission path is gone from live code. The next move is to use this cleaned Runner/Navigate baseline to design special-content handling for headings and appendix-like material, then do one small post-F4A repair pass and rerun the same six-case pack before opening Phase F4B.",
       "blocked_by": [],
       "evidence_refs": [
         "docs/implementation/new-reading-mechanism/attentional_v2_structural_rework_plan.md",
@@ -143,6 +144,7 @@
         "reading-companion-backend/src/attentional_v2/prompts.py",
         "reading-companion-backend/src/attentional_v2/nodes.py",
         "reading-companion-backend/src/attentional_v2/state_projection.py",
+        "reading-companion-backend/src/attentional_v2/state_ops.py",
         "reading-companion-backend/src/attentional_v2/resume.py",
         "reading-companion-backend/src/attentional_v2/read_context.py",
         "reading-companion-backend/src/attentional_v2/runner.py",
@@ -160,9 +162,10 @@
         "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_value_of_others_ch8_debug_legacykey_20260413/analysis/registry_snapshot.json",
         "reading-companion-backend/docs/research/attentional_v2_f4a_focused_quality_audit_20260419.md",
         "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_f4a_quality_audit_20260419/summary/report.md",
-        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_f4a_quality_audit_20260419/summary/aggregate.json"
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_f4a_quality_audit_20260419/summary/aggregate.json",
+        "docs/implementation/new-reading-mechanism/runtime-artifact-map.md"
       ],
-      "last_updated": "2026-04-19T17:19:23+08:00",
+      "last_updated": "2026-04-19T22:39:17+08:00",
       "last_updated_by": "codex"
     },
     {

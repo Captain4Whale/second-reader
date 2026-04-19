@@ -1102,7 +1102,14 @@ Status: `in_progress`
 - audit-visibility follow-up already landed after the first F4A run:
   - future `read_audit.jsonl` rows now persist full `surfaced_reactions`, not only the count
   - the F4A summary/report harness now records explicit compat / normalized artifact availability instead of leaving those fields null
+- trigger/watch cleanup now also landed on top of the F4A baseline:
+  - sentence intake is now pure `local_buffer` ingest
+  - live runtime / checkpoint / resume no longer carry `trigger_state`
+  - `Navigate.unitize` no longer receives heuristic `watch_state`
+  - the dead `trigger -> zoom_read -> meaning_unit_closure -> controller_decision -> reaction_emission` path has been removed from live code
+  - `text_role` is now explicitly treated as an inherited block-level weak cue rather than sentence-level truth
 - next move before `Phase F4B`:
+  - use the cleaned Runner/Navigate baseline to design the special-content handling policy for headings / appendix-like material
   - make one small repair pass focused on:
     - detour trigger willingness
     - explicit surfaced semantic honesty

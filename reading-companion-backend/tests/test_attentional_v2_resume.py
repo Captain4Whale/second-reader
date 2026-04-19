@@ -30,7 +30,6 @@ from src.attentional_v2.storage import (
     runtime_dir,
     save_json,
     thread_trace_file,
-    trigger_state_file,
     working_state_file,
 )
 from src.reading_mechanisms.attentional_v2 import AttentionalV2Mechanism
@@ -265,7 +264,6 @@ def test_cold_resume_expands_to_open_meaning_unit_start(tmp_path: Path):
     assert resumed["resume_window_sentence_ids"] == [f"c1-s{sentence_index}" for sentence_index in range(7, 17)]
     assert resumed["local_buffer"]["is_reconstructed"] is True
     assert resumed["local_continuity"]["last_resume_kind"] == "cold_resume"
-    assert resumed["trigger_state"]["output"] == "no_zoom"
 
 
 def test_reconstitution_resume_uses_recent_meaning_units_with_cap(tmp_path: Path):
@@ -396,7 +394,6 @@ def test_resume_rejects_legacy_runtime_and_old_checkpoint_shapes(tmp_path: Path)
         "visible_reaction_ids": [],
         "local_buffer": load_json(local_buffer_file(output_dir)),
         "local_continuity": load_json(runtime_dir(output_dir) / "local_continuity.json"),
-        "trigger_state": load_json(trigger_state_file(output_dir)),
         "working_pressure": legacy_working_pressure,
         "anchor_memory": legacy_anchor_memory,
         "reflective_summaries": legacy_reflective,

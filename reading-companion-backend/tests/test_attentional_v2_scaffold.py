@@ -29,7 +29,6 @@ from src.attentional_v2.storage import (
     resume_metadata_file,
     survey_map_file,
     thread_trace_file,
-    trigger_state_file,
     unitization_audit_file,
     working_state_file,
 )
@@ -251,9 +250,6 @@ def test_attentional_v2_initialization_writes_phase8_artifacts(tmp_path):
     assert local_buffer["recent_sentences"] == []
     assert local_buffer["recent_meaning_units"] == []
 
-    trigger_state = json.loads(trigger_state_file(output_dir).read_text(encoding="utf-8"))
-    assert trigger_state["output"] == "no_zoom"
-
     local_continuity = json.loads(local_continuity_file(output_dir).read_text(encoding="utf-8"))
     assert local_continuity["recent_sentence_ids"] == []
     assert local_continuity["active_detour_id"] == ""
@@ -389,7 +385,7 @@ def test_attentional_v2_read_book_runs_live_loop_and_persists_compatibility_resu
             "compatibility_payload": compatibility_payload,
         }
 
-    def fake_process_sentence_intake(sentence, *, local_buffer, working_state, concept_registry, thread_trace, anchor_bank, window_size=6, cadence_limit=4):
+    def fake_process_sentence_intake(sentence, *, local_buffer, window_size=6):
         next_buffer = {
             **local_buffer,
             "current_sentence_id": sentence["sentence_id"],
@@ -398,16 +394,7 @@ def test_attentional_v2_read_book_runs_live_loop_and_persists_compatibility_resu
             "open_meaning_unit_sentence_ids": [sentence["sentence_id"]],
             "seen_sentence_ids": [*local_buffer.get("seen_sentence_ids", []), sentence["sentence_id"]],
         }
-        return next_buffer, {
-            "schema_version": ATTENTIONAL_V2_SCHEMA_VERSION,
-            "mechanism_version": ATTENTIONAL_V2_MECHANISM_VERSION,
-            "current_sentence_id": sentence["sentence_id"],
-            "output": "zoom_now",
-            "gate_state": "hot",
-            "signals": [],
-            "cadence_counter": 1,
-            "callback_anchor_ids": [],
-        }
+        return next_buffer
 
     monkeypatch.setattr(
         runner_module,
@@ -503,7 +490,7 @@ def test_attentional_v2_runner_persists_multiple_read_surface_reactions(tmp_path
             "detour_need": None,
         }
 
-    def fake_process_sentence_intake(sentence, *, local_buffer, working_state, concept_registry, thread_trace, anchor_bank, window_size=6, cadence_limit=4):
+    def fake_process_sentence_intake(sentence, *, local_buffer, window_size=6):
         next_buffer = {
             **local_buffer,
             "current_sentence_id": sentence["sentence_id"],
@@ -512,16 +499,7 @@ def test_attentional_v2_runner_persists_multiple_read_surface_reactions(tmp_path
             "open_meaning_unit_sentence_ids": [sentence["sentence_id"]],
             "seen_sentence_ids": [*local_buffer.get("seen_sentence_ids", []), sentence["sentence_id"]],
         }
-        return next_buffer, {
-            "schema_version": ATTENTIONAL_V2_SCHEMA_VERSION,
-            "mechanism_version": ATTENTIONAL_V2_MECHANISM_VERSION,
-            "current_sentence_id": sentence["sentence_id"],
-            "output": "zoom_now",
-            "gate_state": "hot",
-            "signals": [],
-            "cadence_counter": 1,
-            "callback_anchor_ids": [],
-        }
+        return next_buffer
 
     def fake_phase6_chapter_cycle(**kwargs):
         compatibility_payload = project_chapter_result_compatibility(
@@ -624,7 +602,7 @@ def test_attentional_v2_read_book_tolerates_missing_reaction_payload(tmp_path, m
             "compatibility_payload": compatibility_payload,
         }
 
-    def fake_process_sentence_intake(sentence, *, local_buffer, working_state, concept_registry, thread_trace, anchor_bank, window_size=6, cadence_limit=4):
+    def fake_process_sentence_intake(sentence, *, local_buffer, window_size=6):
         next_buffer = {
             **local_buffer,
             "current_sentence_id": sentence["sentence_id"],
@@ -633,16 +611,7 @@ def test_attentional_v2_read_book_tolerates_missing_reaction_payload(tmp_path, m
             "open_meaning_unit_sentence_ids": [sentence["sentence_id"]],
             "seen_sentence_ids": [*local_buffer.get("seen_sentence_ids", []), sentence["sentence_id"]],
         }
-        return next_buffer, {
-            "schema_version": ATTENTIONAL_V2_SCHEMA_VERSION,
-            "mechanism_version": ATTENTIONAL_V2_MECHANISM_VERSION,
-            "current_sentence_id": sentence["sentence_id"],
-            "output": "zoom_now",
-            "gate_state": "hot",
-            "signals": [],
-            "cadence_counter": 1,
-            "callback_anchor_ids": [],
-        }
+        return next_buffer
 
     monkeypatch.setattr(
         runner_module,
@@ -710,7 +679,7 @@ def test_attentional_v2_read_book_still_runs_formal_read_for_monitor_path(tmp_pa
             "compatibility_payload": compatibility_payload,
         }
 
-    def fake_process_sentence_intake(sentence, *, local_buffer, working_state, concept_registry, thread_trace, anchor_bank, window_size=6, cadence_limit=4):
+    def fake_process_sentence_intake(sentence, *, local_buffer, window_size=6):
         next_buffer = {
             **local_buffer,
             "current_sentence_id": sentence["sentence_id"],
@@ -719,16 +688,7 @@ def test_attentional_v2_read_book_still_runs_formal_read_for_monitor_path(tmp_pa
             "open_meaning_unit_sentence_ids": [sentence["sentence_id"]],
             "seen_sentence_ids": [*local_buffer.get("seen_sentence_ids", []), sentence["sentence_id"]],
         }
-        return next_buffer, {
-            "schema_version": ATTENTIONAL_V2_SCHEMA_VERSION,
-            "mechanism_version": ATTENTIONAL_V2_MECHANISM_VERSION,
-            "current_sentence_id": sentence["sentence_id"],
-            "output": "monitor",
-            "gate_state": "watch",
-            "signals": [],
-            "cadence_counter": 1,
-            "callback_anchor_ids": [],
-        }
+        return next_buffer
 
     read_calls: list[list[str]] = []
 
@@ -781,12 +741,10 @@ def test_attentional_v2_read_book_still_runs_formal_read_for_monitor_path(tmp_pa
     )
 
     local_buffer = json.loads(local_buffer_file(result.output_dir).read_text(encoding="utf-8"))
-    trigger_state = json.loads(trigger_state_file(result.output_dir).read_text(encoding="utf-8"))
     chapter_payload = json.loads(chapter_result_compatibility_file(result.output_dir, 1).read_text(encoding="utf-8"))
     shell = load_runtime_shell(runtime_shell_file(result.output_dir))
 
     assert local_buffer["current_sentence_id"] == "c1-s2"
-    assert trigger_state["output"] == "monitor"
     assert chapter_payload["visible_reaction_count"] == 0
     assert shell["status"] == "completed"
     assert read_calls == [["c1-s1"], ["c1-s2"]]
@@ -843,7 +801,7 @@ def test_attentional_v2_runner_executes_detour_search_and_returns_to_mainline(tm
             "detour_need": None,
         }
 
-    def fake_process_sentence_intake(sentence, *, local_buffer, working_state, concept_registry, thread_trace, anchor_bank, window_size=6, cadence_limit=4):
+    def fake_process_sentence_intake(sentence, *, local_buffer, window_size=6):
         next_buffer = {
             **local_buffer,
             "current_sentence_id": sentence["sentence_id"],
@@ -852,16 +810,7 @@ def test_attentional_v2_runner_executes_detour_search_and_returns_to_mainline(tm
             "open_meaning_unit_sentence_ids": [sentence["sentence_id"]],
             "seen_sentence_ids": [*local_buffer.get("seen_sentence_ids", []), sentence["sentence_id"]],
         }
-        return next_buffer, {
-            "schema_version": ATTENTIONAL_V2_SCHEMA_VERSION,
-            "mechanism_version": ATTENTIONAL_V2_MECHANISM_VERSION,
-            "current_sentence_id": sentence["sentence_id"],
-            "output": "zoom_now",
-            "gate_state": "hot",
-            "signals": [],
-            "cadence_counter": 1,
-            "callback_anchor_ids": [],
-        }
+        return next_buffer
 
     def fake_detour_search(**kwargs):
         detour_search_calls.append(
@@ -1001,7 +950,7 @@ def test_attentional_v2_runner_drains_last_unit_detour_before_chapter_close(tmp_
             "detour_need": None,
         }
 
-    def fake_process_sentence_intake(sentence, *, local_buffer, working_state, concept_registry, thread_trace, anchor_bank, window_size=6, cadence_limit=4):
+    def fake_process_sentence_intake(sentence, *, local_buffer, window_size=6):
         next_buffer = {
             **local_buffer,
             "current_sentence_id": sentence["sentence_id"],
@@ -1010,16 +959,7 @@ def test_attentional_v2_runner_drains_last_unit_detour_before_chapter_close(tmp_
             "open_meaning_unit_sentence_ids": [sentence["sentence_id"]],
             "seen_sentence_ids": [*local_buffer.get("seen_sentence_ids", []), sentence["sentence_id"]],
         }
-        return next_buffer, {
-            "schema_version": ATTENTIONAL_V2_SCHEMA_VERSION,
-            "mechanism_version": ATTENTIONAL_V2_MECHANISM_VERSION,
-            "current_sentence_id": sentence["sentence_id"],
-            "output": "zoom_now",
-            "gate_state": "hot",
-            "signals": [],
-            "cadence_counter": 1,
-            "callback_anchor_ids": [],
-        }
+        return next_buffer
 
     def fake_detour_search(**kwargs):
         detour_search_calls.append(
@@ -1129,7 +1069,7 @@ def test_attentional_v2_runner_stops_at_audit_window_cap_and_persists_partial_ou
             "detour_need": None,
         }
 
-    def fake_process_sentence_intake(sentence, *, local_buffer, working_state, concept_registry, thread_trace, anchor_bank, window_size=6, cadence_limit=4):
+    def fake_process_sentence_intake(sentence, *, local_buffer, window_size=6):
         next_buffer = {
             **local_buffer,
             "current_sentence_id": sentence["sentence_id"],
@@ -1138,16 +1078,7 @@ def test_attentional_v2_runner_stops_at_audit_window_cap_and_persists_partial_ou
             "open_meaning_unit_sentence_ids": [sentence["sentence_id"]],
             "seen_sentence_ids": [*local_buffer.get("seen_sentence_ids", []), sentence["sentence_id"]],
         }
-        return next_buffer, {
-            "schema_version": ATTENTIONAL_V2_SCHEMA_VERSION,
-            "mechanism_version": ATTENTIONAL_V2_MECHANISM_VERSION,
-            "current_sentence_id": sentence["sentence_id"],
-            "output": "zoom_now",
-            "gate_state": "hot",
-            "signals": [],
-            "cadence_counter": 1,
-            "callback_anchor_ids": [],
-        }
+        return next_buffer
 
     monkeypatch.setattr(
         runner_module,

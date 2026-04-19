@@ -173,7 +173,7 @@ Last updated: `2026-04-19T22:35:02+08:00`
   - treat this plan as backend-only
   - keep the existing frontend lane active in parallel under `TASK-V2-NATIVE-READING-PRESENTATION`
   - `Phase A` is now landed:
-    - trigger output no longer suppresses formal正文 reading
+    - heuristic trigger output no longer suppresses formal正文 reading
     - the live control skeleton is now `navigate.unitize + read + navigate.route`
     - span authority now matches the exact chosen unit
   - `Phase B` is now landed:
@@ -252,8 +252,15 @@ Last updated: `2026-04-19T22:35:02+08:00`
     - follow-up visibility fix already landed:
       - future `read_audit.jsonl` rows now persist full `surfaced_reactions`
       - the F4A summary/report harness now records explicit compat / normalized artifact availability
+  - trigger/watch cleanup now also landed on top of the F4A baseline:
+    - sentence intake is now pure `local_buffer` ingest
+    - live runtime / checkpoint / resume no longer carry `trigger_state`
+    - `Navigate.unitize` no longer receives heuristic `watch_state`
+    - the dead `trigger -> zoom_read -> meaning_unit_closure -> controller_decision -> reaction_emission` path has been removed from live code
+    - `text_role` is now explicitly documented as an inherited block-level weak cue
   - next implementation line:
-    - one small post-F4A repair pass, then rerun the same six-case pack before opening `Phase F4B`
+    - use the cleaned Runner/Navigate baseline to design the special-content handling policy for headings / appendix-like material
+    - then do one small post-F4A repair pass and rerun the same six-case pack before opening `Phase F4B`
 - Post-Phase-D evaluation posture:
   - the April 12 post-Phase-D smoke is finished and the April 13 targeted judged validation is also finished
   - completed judged runs:

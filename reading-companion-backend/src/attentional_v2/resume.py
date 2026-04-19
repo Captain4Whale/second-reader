@@ -30,7 +30,6 @@ from .schemas import (
     LocalContinuityState,
     ReaderPolicy,
     ResumeMetadataState,
-    TriggerState,
     build_empty_anchor_bank,
     build_empty_concept_registry,
     build_empty_continuation_capsule,
@@ -43,7 +42,6 @@ from .schemas import (
     build_empty_reflective_frames,
     build_empty_resume_metadata,
     build_empty_thread_trace,
-    build_empty_trigger_state,
     build_empty_working_state,
     build_default_reader_policy,
 )
@@ -66,7 +64,6 @@ from .storage import (
     resume_metadata_file,
     save_json,
     thread_trace_file,
-    trigger_state_file,
     runtime_dir,
     working_state_file,
 )
@@ -99,7 +96,6 @@ def _state_builders() -> dict[str, Callable[[], dict[str, object]]]:
         "local_buffer": lambda: build_empty_local_buffer(mechanism_version=ATTENTIONAL_V2_MECHANISM_VERSION),
         "local_continuity": lambda: build_empty_local_continuity(mechanism_version=ATTENTIONAL_V2_MECHANISM_VERSION),
         "continuation_capsule": lambda: build_empty_continuation_capsule(mechanism_version=ATTENTIONAL_V2_MECHANISM_VERSION),
-        "trigger_state": lambda: build_empty_trigger_state(mechanism_version=ATTENTIONAL_V2_MECHANISM_VERSION),
         "working_state": lambda: build_empty_working_state(mechanism_version=ATTENTIONAL_V2_MECHANISM_VERSION),
         "concept_registry": lambda: build_empty_concept_registry(mechanism_version=ATTENTIONAL_V2_MECHANISM_VERSION),
         "thread_trace": lambda: build_empty_thread_trace(mechanism_version=ATTENTIONAL_V2_MECHANISM_VERSION),
@@ -127,7 +123,6 @@ def _state_paths(output_dir: Path) -> dict[str, Path]:
         "local_buffer": local_buffer_file(output_dir),
         "local_continuity": local_continuity_file(output_dir),
         "continuation_capsule": continuation_capsule_file(output_dir),
-        "trigger_state": trigger_state_file(output_dir),
         "working_state": working_state_file(output_dir),
         "concept_registry": concept_registry_file(output_dir),
         "thread_trace": thread_trace_file(output_dir),
@@ -457,7 +452,6 @@ def write_full_checkpoint(
             move_history=bundle["move_history"],
             reaction_records=bundle["reaction_records"],
         ),  # type: ignore[typeddict-item]
-        "trigger_state": bundle["trigger_state"],  # type: ignore[typeddict-item]
         "working_state": bundle["working_state"],  # type: ignore[typeddict-item]
         "concept_registry": bundle["concept_registry"],  # type: ignore[typeddict-item]
         "thread_trace": bundle["thread_trace"],  # type: ignore[typeddict-item]
@@ -723,22 +717,6 @@ def _mark_local_continuity(
     next_continuity["reconstructed_from_checkpoint_id"] = checkpoint_id
     next_continuity["last_resume_kind"] = resume_kind
     return next_continuity  # type: ignore[return-value]
-
-
-def _rebuild_trigger_state(trigger_state: TriggerState, *, current_sentence_id: str) -> TriggerState:
-    """Reset the cheap trigger state after a non-warm reconstruction."""
-
-    return {
-        **dict(trigger_state),
-        "updated_at": _timestamp(),
-        "current_sentence_id": current_sentence_id,
-        "output": "no_zoom",
-        "signals": [],
-        "cadence_counter": 0,
-        "callback_anchor_ids": [],
-    }
-
-
 def resume_from_checkpoint(
     output_dir: Path,
     *,
@@ -779,7 +757,6 @@ def resume_from_checkpoint(
         "local_buffer": live_bundle["local_buffer"],
         "local_continuity": live_bundle["local_continuity"],
         "continuation_capsule": live_bundle["continuation_capsule"],
-        "trigger_state": live_bundle["trigger_state"],
         "working_state": live_bundle["working_state"],
         "concept_registry": live_bundle["concept_registry"],
         "thread_trace": live_bundle["thread_trace"],
@@ -807,9 +784,6 @@ def resume_from_checkpoint(
         mechanism_version=str(policy.get("mechanism_version", "") or ATTENTIONAL_V2_MECHANISM_VERSION)
     )
     local_buffer = dict(checkpoint_source.get("local_buffer", {})) or build_empty_local_buffer(
-        mechanism_version=str(policy.get("mechanism_version", "") or ATTENTIONAL_V2_MECHANISM_VERSION)
-    )
-    trigger_state = dict(checkpoint_source.get("trigger_state", {})) or build_empty_trigger_state(
         mechanism_version=str(policy.get("mechanism_version", "") or ATTENTIONAL_V2_MECHANISM_VERSION)
     )
     continuation_capsule, continuation_capsule_status = _usable_continuation_capsule(
@@ -872,10 +846,6 @@ def resume_from_checkpoint(
             reconstructed=True,
             window_sentence_ids=resume_window_sentence_ids,
         )
-        trigger_state = _rebuild_trigger_state(
-            trigger_state,  # type: ignore[arg-type]
-            current_sentence_id=_clean_text(local_buffer.get("current_sentence_id")),
-        )
 
     if reconstructed or continuation_capsule_status != "available":
         continuation_capsule = _build_runtime_continuation_capsule(
@@ -894,7 +864,6 @@ def resume_from_checkpoint(
         "local_buffer": local_buffer,
         "local_continuity": continuity,
         "continuation_capsule": continuation_capsule,
-        "trigger_state": trigger_state,
         "working_state": dict(checkpoint_source.get("working_state", live_bundle["working_state"])),
         "concept_registry": dict(checkpoint_source.get("concept_registry", live_bundle["concept_registry"])),
         "thread_trace": dict(checkpoint_source.get("thread_trace", live_bundle["thread_trace"])),
@@ -950,7 +919,6 @@ def resume_from_checkpoint(
         "cursor": cursor,
         "local_buffer": local_buffer,
         "local_continuity": continuity,
-        "trigger_state": trigger_state,
         "resume_metadata": resume_metadata,
     }
     emit_resume_observability(
