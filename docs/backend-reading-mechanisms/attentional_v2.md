@@ -51,7 +51,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - Each formal unit read now receives a small `carry-forward context` built from persisted state.
   - `read` may request bounded supplemental context through `active_recall` or `look_back`.
   - private `read_audit` records capture context use.
-  - legacy `raw reaction` fields remain on the read packet only as a compatibility shell, not as the live visible-reaction authority.
+  - that slice temporarily retained a `raw_reaction` compatibility shell, which was later removed from the live path by `Phase F3`.
 - Phase E1 through E3 are now preserved as a landed intermediate compatibility-first baseline.
   - that branch routed through `navigate.unitize -> read -> express(if needed) -> navigate.route`
   - persisted visible reactions on that baseline now keep surfaced fields such as `prior_link`, `outside_link`, and `search_intent`
@@ -84,6 +84,11 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
     - `land_region`
     - `defer_detour`
   - once a detour region lands, the mechanism reads it through the same normal `navigate.unitize -> read -> navigate.route` loop instead of inventing a second reading path
+- Phase F3 is now landed as the reaction-persistence and compatibility reconvergence slice.
+  - persisted visible reactions now enter the system only through `Read.surfaced_reactions[]`
+  - mainline and detour reading now share one surfaced-native reaction-record builder
+  - chapter-result compatibility projection and normalized eval export now derive legacy family labels only through the compat helper
+  - dead live ownership paths for the old `Express` persistence flow and `raw_reaction` fallback are now removed
 - Phase C.1 of the post-eval structural rework is now landed.
   - Live prompt inputs now flow through a bounded internal `state_packet.v1` seam.
   - `navigate.unitize` now receives packetized `navigation_context`.
@@ -162,7 +167,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - `no_zoom`, `monitor`, and `zoom_now` are still persisted as watch metadata.
   - They no longer decide whether正文 gets a formal read.
   - Their Phase A role is observability, cheap salience evidence, and later audit/debug support.
-- The current live Phase F2 baseline now runs:
+- The current live Phase F3 baseline now runs:
   - ingest the next unread sentence
   - persist watch-state / trigger metadata
   - if an open detour exists, let `Navigate` run bounded detour search and choose the next detour region
@@ -192,7 +197,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
     - surfaced reactions that genuinely arise during that read
     - implicit memory/state updates
     - detour needs that must be routed later
-  - Legacy compatibility fields such as `raw_reaction`, `move_hint`, `prior_material_use`, `express_signal`, and `context_request` are now historical/E3-baseline territory, not the live F2 contract.
+  - Legacy compatibility fields such as `raw_reaction`, `move_hint`, `prior_material_use`, `express_signal`, and `context_request` are now historical territory, not the live F3 contract.
 - `unit_delta` is a temporary internal read result, not a new durable memory layer.
   - It exists only as the local read-after state of one unit.
   - Durable memory still changes only through `implicit_uptake` into the existing primary state layers.

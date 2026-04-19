@@ -1936,3 +1936,40 @@ The old active windows `nawaer_baodian_private_zh__wealth`, `nawaer_baodian_priv
 - `reading-companion-backend/tests/test_attentional_v2_phase_b.py`
 - `reading-companion-backend/tests/test_attentional_v2_scaffold.py`
 - `reading-companion-backend/tests/test_attentional_v2_resume.py`
+
+## Entry 68
+**ID**: DEC-071
+**Status**: active
+
+**Decision / Inflection**: Land `Phase F3` by making `Read.surfaced_reactions[]` the only internal persisted visible-reaction truth, collapsing all remaining live persistence onto one surfaced-native builder, and deleting confirmed-dead `Express` / `raw_reaction` ownership paths instead of carrying them forward as indefinite compatibility shells.
+
+**Period**: April 19, 2026, immediately after the F2 detour cutover had already stabilized the live reading loop.
+
+**Problem**: F2 had already restored a clean live reading loop, but the persistence and downstream-compatibility layer still had too much lingering ambiguity. Old family/type vocabulary still risked being mistaken for the internal truth, there were still dead ownership traces from the `Express` branch and the old `raw_reaction` era, and mainline versus detour persistence could drift if they continued to build reaction records through slightly different code paths. Leaving that state in place would make later cleanup harder and keep misleading future design work.
+
+**Alternatives considered**: Keep the old persistence fallbacks “just in case”, postpone cleanup until F4 quality validation, or do a breaking public-surface redesign now instead of first cleaning the backend truth/adapter boundary.
+
+**Why this path won**: The project already had enough information to tell which reaction paths were still real consumers and which were only dead migration scaffolding. Cleaning that boundary now keeps the system honest: surfaced reactions are the thing the reader actually produces, so they should be the only internal persisted truth. Family labels, chapter-result compatibility outputs, and normalized eval exports can remain as projections for current consumers, but they should not continue to own semantics. Deleting dead paths at the same time avoids exactly the long-tail “compat forever” drift the project is trying to avoid.
+
+**What changed in the system**: Mainline and detour reading now share one surfaced-native reaction-record builder. Persisted reaction records are now authored directly from `Read.surfaced_reactions[]` and keep native surfaced fields such as `thought`, `primary_anchor`, `prior_link`, `outside_link`, and `search_intent` as the internal truth. Chapter-result compatibility projection and normalized eval export now derive legacy family/type/search-query fields only through the compat helper rather than by trusting old record shapes. The old dedicated `Express` persistence ownership, the live `raw_reaction` fallback path, and other confirmed-dead family-first ownership branches were deleted instead of being kept as open-ended scaffolding.
+
+**Why it matters later**: This is the point where the project stopped merely saying “surfaced reactions are the truth” and made that statement mechanically true inside the backend. Future work on F4 quality validation, public-surface redesign, or later cleanup can now reason about one honest internal reaction model instead of a mixture of surfaced-native truth and lingering legacy ownership code.
+
+**Primary evidence**:
+- `docs/backend-reading-mechanisms/attentional_v2.md`
+- `docs/implementation/new-reading-mechanism/attentional_v2_structural_rework_plan.md`
+- `docs/current-state.md`
+- `docs/tasks/registry.md`
+- `docs/tasks/registry.json`
+- `reading-companion-backend/src/attentional_v2/__init__.py`
+- `reading-companion-backend/src/attentional_v2/schemas.py`
+- `reading-companion-backend/src/attentional_v2/prompts.py`
+- `reading-companion-backend/src/attentional_v2/nodes.py`
+- `reading-companion-backend/src/attentional_v2/runner.py`
+- `reading-companion-backend/src/attentional_v2/slow_cycle.py`
+- `reading-companion-backend/src/attentional_v2/evaluation.py`
+- `reading-companion-backend/tests/test_attentional_v2_phase_b.py`
+- `reading-companion-backend/tests/test_attentional_v2_bridge.py`
+- `reading-companion-backend/tests/test_attentional_v2_nodes.py`
+- `reading-companion-backend/tests/test_attentional_v2_slow_cycle.py`
+- `reading-companion-backend/tests/test_attentional_v2_evaluation.py`

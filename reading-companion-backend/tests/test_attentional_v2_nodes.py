@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 
 from src.attentional_v2 import nodes as nodes_module
+from src.attentional_v2.prompts import ATTENTIONAL_V2_PROMPTS
 from src.attentional_v2.nodes import (
     build_unitize_preview,
     controller_decision,
@@ -157,7 +158,7 @@ def test_zoom_read_writes_prompt_manifest_and_normalizes_payload(tmp_path, monke
     assert result["bridge_candidate"]["target_anchor_id"] == "a-1"
     assert result["consider_reaction_emission"] is True
     assert manifest["prompt_version"] == "attentional_v2.zoom_read.v5"
-    assert manifest["promptset_version"] == "attentional_v2-phase6-v13"
+    assert manifest["promptset_version"] == ATTENTIONAL_V2_PROMPTS.promptset_version
 
 
 def test_zoom_read_prompt_includes_micro_selectivity_cues(tmp_path, monkeypatch):

@@ -170,7 +170,7 @@ Last updated: `2026-04-19T15:32:58+08:00`
   - `Phase B` is now landed:
     - `read` now owns the authoritative current-unit packet on the live path
     - the live runner now builds bounded carry-forward context and allows bounded `active recall / look-back` supplementation
-    - mechanism-private `read_audit` records now capture carried refs plus supplemental-context use, while the old `raw_reaction` field remains only as a compatibility shell for later slices
+    - mechanism-private `read_audit` records now capture carried refs plus supplemental-context use; the temporary `raw_reaction` shell from that slice was later retired by `Phase F3`
   - `Phase C.1` is now landed:
     - live prompt inputs now flow through a bounded internal `state_packet.v1` layer
     - `navigate.unitize` now receives a small `navigation_context`
@@ -212,9 +212,13 @@ Last updated: `2026-04-19T15:32:58+08:00`
     - detour search uses one bounded prompt family with `narrow_scope / land_region / defer_detour`
     - detour regions are now read through the same normal `navigate.unitize -> read -> navigate.route` loop
     - chapter-tail detours are now drained before slow-cycle close
+  - `Phase F3` is now landed:
+    - persisted visible reactions now enter the system only through `Read.surfaced_reactions[]`
+    - mainline and detour reading now share one surfaced-native reaction-record builder
+    - chapter-result compatibility projection and normalized eval export now read surfaced-native persisted records and derive old family labels only through the compat helper
+    - dead live ownership paths for the old `Express` persistence flow and `raw_reaction` fallback are now removed
   - next implementation line:
-    - `Phase F3` — reaction persistence and compatibility reconvergence
-    - `Phase F4` — quality validation and dead-path cleanup
+    - `Phase F4` — quality validation and remaining dead-path cleanup
 - Post-Phase-D evaluation posture:
   - the April 12 post-Phase-D smoke is finished and the April 13 targeted judged validation is also finished
   - completed judged runs:

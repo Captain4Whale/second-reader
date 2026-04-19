@@ -18,7 +18,7 @@ from src.attentional_v2.schemas import (
 from src.attentional_v2.slow_cycle import (
     apply_reconsolidation,
     build_reaction_record,
-    build_reaction_record_from_express_result,
+    build_reaction_record_from_surfaced_reaction,
     compat_reaction_family,
     compat_search_query,
     project_chapter_result_compatibility,
@@ -146,12 +146,11 @@ def test_project_chapter_result_compatibility_groups_reactions_by_paragraph(tmp_
     assert compatibility_path.exists()
 
 
-def test_build_reaction_record_from_express_result_persists_native_surface_fields():
-    """Express-owned reactions should persist native surfaced fields before compat projection."""
+def test_build_reaction_record_from_surfaced_reaction_persists_native_surface_fields():
+    """Surfaced reactions should persist native surface fields before compat projection."""
 
-    record = build_reaction_record_from_express_result(
-        express_result={
-            "decision": "emit",
+    record = build_reaction_record_from_surfaced_reaction(
+        reaction={
             "anchor_quote": "Markets begin as relations among people.",
             "content": "The social framing matters because it sets the book's scale.",
             "prior_link": {
@@ -172,7 +171,7 @@ def test_build_reaction_record_from_express_result_persists_native_surface_field
     )
 
     assert record is not None
-    assert record["record_source"] == "express"
+    assert record["record_source"] == "read_surface"
     assert record["thought"] == "The social framing matters because it sets the book's scale."
     assert record["prior_link"]["ref_ids"] == ["anchor:a-0"]
     assert record["search_intent"]["query"] == "social marketplace framing"

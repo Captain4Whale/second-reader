@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-04-19T15:32:58+08:00`
+Last verified: `2026-04-19T18:35:00+08:00`
 
 ## Current Objective
 - Land `target-centered long-span accumulation v2` as the active long-span methodology while preserving bounded long-span v1 as historical evidence.
@@ -172,7 +172,7 @@ Last verified: `2026-04-19T15:32:58+08:00`
     - `read` now owns the authoritative current-unit read packet on the live path
     - the live runner now builds a bounded `carry-forward context` before each unit read
     - `read` may request bounded supplemental context through `active recall` or `look-back`
-    - private `read_audit` records now capture carried refs plus supplemental-context use, while the old `raw_reaction` field remains only as a compatibility shell for later slices
+    - private `read_audit` records now capture carried refs plus supplemental-context use; the temporary `raw_reaction` shell introduced at this stage was later retired by `Phase F3`
   - `Phase C.1` is now landed as the first packetization seam:
     - live prompt inputs are now built through a bounded internal state packet layer instead of ad hoc per-node context assembly
     - `navigate.unitize` now receives a small `navigation_context`
@@ -250,9 +250,13 @@ Last verified: `2026-04-19T15:32:58+08:00`
       - `defer_detour`
     - landed detour regions now flow back through the same normal `navigate.unitize -> read -> navigate.route` loop
     - chapter-tail detours are now drained before chapter slow-cycle closes, so a last-unit detour is not silently dropped
-  - the active next implementation slices are now:
-    - `Phase F3` — reaction persistence and compatibility reconvergence
-    - `Phase F4` — quality validation and dead-path cleanup
+  - `Phase F3` is now landed as the reaction-persistence and compatibility reconvergence slice:
+    - persisted visible reactions now enter the system only through `Read.surfaced_reactions[]`
+    - mainline and detour reading now share one surfaced-native reaction-record builder
+    - chapter-result compatibility projection and normalized eval export now read surfaced-native persisted records and derive old family labels only through the compat helper
+    - dead live ownership paths for the old `Express` persistence flow and `raw_reaction` fallback are now removed
+  - the active next implementation slice is now:
+    - `Phase F4` — quality validation and remaining dead-path cleanup
   - the April 12 post-Phase-D smoke has now finished and is interpreted as follows:
     - `value_of_others_private_en__8_10` produced repeated anomalous long-tail calls during the April 12 smoke
     - a static size/content snapshot now lives at:

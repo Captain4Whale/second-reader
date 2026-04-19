@@ -14,7 +14,7 @@ from src.attentional_v2.schemas import (
 )
 from src.attentional_v2.slow_cycle import (
     build_reaction_record,
-    build_reaction_record_from_express_result,
+    build_reaction_record_from_surfaced_reaction,
     project_chapter_result_compatibility,
 )
 from src.attentional_v2.storage import reaction_records_file, reconsolidation_records_file, reflective_frames_file, save_json
@@ -250,9 +250,8 @@ def test_normalized_eval_bundle_projects_compat_fields_from_native_reaction_reco
 
     reaction_records = build_empty_reaction_records()
     reaction_records["records"] = [
-        build_reaction_record_from_express_result(
-            express_result={
-                "decision": "emit",
+        build_reaction_record_from_surfaced_reaction(
+            reaction={
                 "anchor_quote": "Markets begin as relations among people.",
                 "content": "The social frame opens a question worth following.",
                 "prior_link": None,

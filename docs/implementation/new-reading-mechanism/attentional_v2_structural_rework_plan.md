@@ -21,8 +21,8 @@ Implementation checkpoint:
   - `read` now owns the authoritative unit packet on the live path
   - bounded `carry-forward context` is now the default continuity path into `read`
   - `read` may request one bounded `active recall` or `look-back` supplement
-  - legacy `raw_reaction` fields still exist on the read packet as a compatibility shell
-  - this is now treated as an intermediate baseline rather than the final ownership contract
+  - that slice introduced a temporary `raw_reaction` compatibility shell that later slices retired
+  - this remains an intermediate baseline rather than the final ownership contract
 - `Phase C.1` is landed:
   - live prompt inputs now flow through a bounded internal `state_packet.v1` seam
   - `navigate.unitize` now receives a packetized `navigation_context`
@@ -73,9 +73,13 @@ Implementation checkpoint:
     - `defer_detour`
   - landed detour regions now re-enter the same normal `navigate.unitize -> read -> navigate.route` reading loop
   - chapter-tail detours are now drained before chapter slow-cycle closes
-- next after F2:
-  - `Phase F3` should keep surfaced-reaction compatibility projections working while persistence and adapters reconverge on the simplified live path
-  - `Phase F4` should validate quality and clean dead steady-state branches
+- `Phase F3` is now landed as the reaction-persistence and compatibility reconvergence slice:
+  - persisted visible reactions now enter the system only through `Read.surfaced_reactions[]`
+  - mainline and detour reading now share one surfaced-native reaction-record builder
+  - chapter-result compatibility projection and normalized eval export now read surfaced-native persisted records and derive legacy family labels only through the compat helper
+  - dead live ownership paths for the old `Express` persistence flow and `raw_reaction` fallback are now removed
+- next after F3:
+  - `Phase F4` should validate quality and clean any remaining dead steady-state branches
 
 Primary upstream evidence:
 
@@ -1054,16 +1058,21 @@ Frozen node projections:
 
 ##### Phase F3 — Reaction persistence and compatibility reconvergence
 
-- persist surfaced reactions directly from `ReadResult`
-- keep the current family-based and chapter-result compatibility projections alive through adapters only
-- make the old dedicated `Express` path fallback/off-path rather than the approved main route
+Status: `landed`
+
+- persisted visible reactions now enter the system only through `Read.surfaced_reactions[]`
+- mainline and detour reading now share one surfaced-native reaction-record builder
+- chapter-result compatibility projection and normalized eval export now read surfaced-native persisted records and derive legacy family labels only through the compat helper
+- dead live ownership paths for the old `Express` persistence flow and `raw_reaction` fallback are now removed
 
 ##### Phase F4 — Quality validation and dead-path cleanup
+
+Status: `next`
 
 - run small-sample quality audits before any broad rerun
 - verify that surfaced reactions sound like reading-time reactions again
 - verify that prompt/context load is lighter and less duplicated
-- remove or isolate the dead steady-state `Express` path only after the simplified route proves stable
+- clean any remaining dead steady-state branches that F3 could not already prove safe to delete
 
 ## 8. Backend Compatibility Guardrails During Rework
 

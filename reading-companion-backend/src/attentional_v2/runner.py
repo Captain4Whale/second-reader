@@ -1380,54 +1380,18 @@ def _run_detour_episode(
             },
         )
 
-    emitted_reactions: list[AnchoredReactionRecord] = []
-    current_anchor = None
-    surfaced_reactions = [
-        dict(item)
-        for item in read_result.get("surfaced_reactions", [])
-        if isinstance(item, dict)
-    ]
-    chapter_reaction_count = len(reaction_records_for_chapter(reaction_records, chapter_ref=detour_chapter_ref))
-    for index, surfaced_reaction in enumerate(surfaced_reactions, start=1):
-        current_anchor = _build_current_anchor_from_read_result(
-            surfaced_reaction=surfaced_reaction,
-            chosen_unit_sentences=chosen_unit_sentences,
-            focal_sentence=focal_sentence,
-            unit_delta=_clean_text(read_result.get("unit_delta")),
-        )
-        emitted_reaction = build_reaction_record_from_surfaced_reaction(
-            reaction=surfaced_reaction,
-            primary_anchor=current_anchor,
-            chapter_id=detour_chapter_id,
-            chapter_ref=detour_chapter_ref,
-            emitted_at_sentence_id=_sentence_id(focal_sentence),
-            compatibility_section_ref=_compatibility_section_ref(detour_chapter_id, focal_sentence),
-            ordinal=chapter_reaction_count + index,
-        )
-        if emitted_reaction is None:
-            continue
-        anchor_bank = upsert_anchor_record(anchor_bank, current_anchor)  # type: ignore[assignment]
-        reaction_records = append_reaction_record(reaction_records, emitted_reaction)
-        emitted_reactions.append(emitted_reaction)
-        append_activity_event(
-            output_dir,
-            {
-                "type": "reaction_emitted",
-                "stream": "mindstream",
-                "kind": "thought",
-                "visibility": "default",
-                "message": _clean_text(emitted_reaction.get("thought")),
-                "chapter_id": detour_chapter_id,
-                "chapter_ref": detour_chapter_ref,
-                "segment_ref": _compatibility_section_ref(detour_chapter_id, focal_sentence),
-                "anchor_quote": _clean_text(emitted_reaction.get("primary_anchor", {}).get("quote")),
-                "reading_locus": _reading_locus(detour_chapter_id, detour_chapter_ref, focal_sentence, local_buffer),
-                "move_type": chosen_move or None,
-                "active_reaction_id": _clean_text(emitted_reaction.get("reaction_id")),
-                "reaction_types": [compat_reaction_family(emitted_reaction)],
-                "current_excerpt": _clean_text(focal_sentence.get("text"))[:220],
-            },
-        )
+    reaction_records, anchor_bank, emitted_reactions, current_anchor = _persist_surfaced_reactions(
+        read_result=read_result,
+        chosen_unit_sentences=chosen_unit_sentences,
+        focal_sentence=focal_sentence,
+        chapter_id=detour_chapter_id,
+        chapter_ref=detour_chapter_ref,
+        local_buffer=local_buffer,
+        reaction_records=reaction_records,
+        anchor_bank=anchor_bank,
+        output_dir=output_dir,
+        route_decision=route_decision,
+    )
 
     if route_decision.get("action") == "bridge_back":
         bridge_anchor = current_anchor or build_anchor_record(
@@ -1587,55 +1551,71 @@ def _build_current_anchor_from_read_result(
     )
 
 
-def _supporting_refs_for_express(
+def _persist_surfaced_reactions(
     *,
-    ref_ids: list[str],
-    carry_forward_context: dict[str, object],
-    supplemental_context: dict[str, object] | None,
-) -> list[dict[str, object]]:
-    """Collect a narrow express-supporting ref packet from carry-forward and supplemental context."""
+    read_result: ReadUnitResult,
+    chosen_unit_sentences: list[dict[str, object]],
+    focal_sentence: dict[str, object],
+    chapter_id: int,
+    chapter_ref: str,
+    local_buffer: LocalBufferState,
+    reaction_records: ReactionRecordsState,
+    anchor_bank: AnchorBankState,
+    output_dir: Path,
+    route_decision: NavigateRouteDecision,
+) -> tuple[ReactionRecordsState, AnchorBankState, list[AnchoredReactionRecord], dict[str, object] | None]:
+    """Persist read-owned surfaced reactions through one canonical builder path."""
 
-    requested_ref_ids = [_clean_text(ref_id) for ref_id in ref_ids if _clean_text(ref_id)]
-    if not requested_ref_ids:
-        return []
-
-    refs_by_id: dict[str, dict[str, object]] = {}
-    excerpt_by_id: dict[str, dict[str, object]] = {}
-    for source in (carry_forward_context, supplemental_context or {}):
-        if not isinstance(source, dict):
+    emitted_reactions: list[AnchoredReactionRecord] = []
+    current_anchor = None
+    surfaced_reactions = [
+        dict(item)
+        for item in read_result.get("surfaced_reactions", [])
+        if isinstance(item, dict)
+    ]
+    chapter_reaction_count = len(reaction_records_for_chapter(reaction_records, chapter_ref=chapter_ref))
+    chosen_move = _move_type_from_route_decision(route_decision)
+    for index, surfaced_reaction in enumerate(surfaced_reactions, start=1):
+        current_anchor = _build_current_anchor_from_read_result(
+            surfaced_reaction=surfaced_reaction,
+            chosen_unit_sentences=chosen_unit_sentences,
+            focal_sentence=focal_sentence,
+            unit_delta=_clean_text(read_result.get("unit_delta")),
+        )
+        emitted_reaction = build_reaction_record_from_surfaced_reaction(
+            reaction=surfaced_reaction,
+            primary_anchor=current_anchor,
+            chapter_id=chapter_id,
+            chapter_ref=chapter_ref,
+            emitted_at_sentence_id=_sentence_id(focal_sentence),
+            compatibility_section_ref=_compatibility_section_ref(chapter_id, focal_sentence),
+            ordinal=chapter_reaction_count + index,
+        )
+        if emitted_reaction is None:
             continue
-        for ref in source.get("refs", []):
-            if not isinstance(ref, dict):
-                continue
-            ref_id = _clean_text(ref.get("ref_id"))
-            if ref_id and ref_id not in refs_by_id:
-                refs_by_id[ref_id] = dict(ref)
-        for key in ("excerpts", "anchors", "concepts", "threads", "reactions", "moves", "reflective_items"):
-            items = source.get(key, [])
-            if not isinstance(items, list):
-                continue
-            for item in items:
-                if not isinstance(item, dict):
-                    continue
-                ref_id = _clean_text(item.get("ref_id"))
-                if ref_id and ref_id not in excerpt_by_id:
-                    excerpt_by_id[ref_id] = dict(item)
-
-    supporting_refs: list[dict[str, object]] = []
-    for ref_id in requested_ref_ids:
-        ref_payload = dict(refs_by_id.get(ref_id) or {})
-        if ref_payload:
-            detail = excerpt_by_id.get(ref_id)
-            if isinstance(detail, dict):
-                for field in ("excerpt_text", "sentence_ids", "chapter_ref", "anchor_id", "label", "kind", "summary"):
-                    if field in detail and field not in ref_payload:
-                        ref_payload[field] = detail.get(field)
-            supporting_refs.append(ref_payload)
-            continue
-        detail = excerpt_by_id.get(ref_id)
-        if isinstance(detail, dict):
-            supporting_refs.append(dict(detail))
-    return supporting_refs[:4]
+        anchor_bank = upsert_anchor_record(anchor_bank, current_anchor)  # type: ignore[assignment]
+        reaction_records = append_reaction_record(reaction_records, emitted_reaction)
+        emitted_reactions.append(emitted_reaction)
+        append_activity_event(
+            output_dir,
+            {
+                "type": "reaction_emitted",
+                "stream": "mindstream",
+                "kind": "thought",
+                "visibility": "default",
+                "message": _clean_text(emitted_reaction.get("thought")),
+                "chapter_id": chapter_id,
+                "chapter_ref": chapter_ref,
+                "segment_ref": _compatibility_section_ref(chapter_id, focal_sentence),
+                "anchor_quote": _clean_text(emitted_reaction.get("primary_anchor", {}).get("quote")),
+                "reading_locus": _reading_locus(chapter_id, chapter_ref, focal_sentence, local_buffer),
+                "move_type": chosen_move or None,
+                "active_reaction_id": _clean_text(emitted_reaction.get("reaction_id")),
+                "reaction_types": [compat_reaction_family(emitted_reaction)],
+                "current_excerpt": _clean_text(focal_sentence.get("text"))[:220],
+            },
+        )
+    return reaction_records, anchor_bank, emitted_reactions, current_anchor
 
 
 def _move_type_from_route_decision(
@@ -2177,54 +2157,18 @@ def read_attentional_v2(request: ReadRequest, mechanism: MechanismInfo) -> ReadR
                         },
                     )
 
-                emitted_reactions: list[AnchoredReactionRecord] = []
-                current_anchor = None
-                surfaced_reactions = [
-                    dict(item)
-                    for item in read_result.get("surfaced_reactions", [])
-                    if isinstance(item, dict)
-                ]
-                chapter_reaction_count = len(reaction_records_for_chapter(reaction_records, chapter_ref=chapter_ref))
-                for index, surfaced_reaction in enumerate(surfaced_reactions, start=1):
-                    current_anchor = _build_current_anchor_from_read_result(
-                        surfaced_reaction=surfaced_reaction,
-                        chosen_unit_sentences=chosen_unit_sentences,
-                        focal_sentence=focal_sentence,
-                        unit_delta=_clean_text(read_result.get("unit_delta")),
-                    )
-                    emitted_reaction = build_reaction_record_from_surfaced_reaction(
-                        reaction=surfaced_reaction,
-                        primary_anchor=current_anchor,
-                        chapter_id=chapter_id,
-                        chapter_ref=chapter_ref,
-                        emitted_at_sentence_id=focal_sentence_id,
-                        compatibility_section_ref=_compatibility_section_ref(chapter_id, focal_sentence),
-                        ordinal=chapter_reaction_count + index,
-                    )
-                    if emitted_reaction is None:
-                        continue
-                    anchor_bank = upsert_anchor_record(anchor_bank, current_anchor)  # type: ignore[assignment]
-                    reaction_records = append_reaction_record(reaction_records, emitted_reaction)
-                    emitted_reactions.append(emitted_reaction)
-                    append_activity_event(
-                        output_dir,
-                        {
-                            "type": "reaction_emitted",
-                            "stream": "mindstream",
-                            "kind": "thought",
-                            "visibility": "default",
-                            "message": _clean_text(emitted_reaction.get("thought")),
-                            "chapter_id": chapter_id,
-                            "chapter_ref": chapter_ref,
-                            "segment_ref": _compatibility_section_ref(chapter_id, focal_sentence),
-                            "anchor_quote": _clean_text(emitted_reaction.get("primary_anchor", {}).get("quote")),
-                            "reading_locus": _reading_locus(chapter_id, chapter_ref, focal_sentence, local_buffer),
-                            "move_type": chosen_move or None,
-                            "active_reaction_id": _clean_text(emitted_reaction.get("reaction_id")),
-                            "reaction_types": [compat_reaction_family(emitted_reaction)],
-                            "current_excerpt": _clean_text(focal_sentence.get("text"))[:220],
-                        },
-                    )
+                reaction_records, anchor_bank, emitted_reactions, current_anchor = _persist_surfaced_reactions(
+                    read_result=read_result,
+                    chosen_unit_sentences=chosen_unit_sentences,
+                    focal_sentence=focal_sentence,
+                    chapter_id=chapter_id,
+                    chapter_ref=chapter_ref,
+                    local_buffer=local_buffer,
+                    reaction_records=reaction_records,
+                    anchor_bank=anchor_bank,
+                    output_dir=output_dir,
+                    route_decision=route_decision,
+                )
 
                 if route_decision.get("action") == "bridge_back":
                     bridge_anchor = current_anchor or build_anchor_record(

@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 
 from src.attentional_v2 import bridge as bridge_module
+from src.attentional_v2.prompts import ATTENTIONAL_V2_PROMPTS
 from src.attentional_v2.bridge import bridge_resolution, run_phase5_bridge_cycle
 from src.attentional_v2.retrieval import generate_candidate_set
 from src.attentional_v2.schemas import (
@@ -150,7 +151,7 @@ def test_bridge_resolution_writes_manifest_and_keeps_search_rare(tmp_path, monke
     assert result["supporting_bridges"][0]["target_sentence_id"] == "c1-s2"
     assert result["search_policy_mode"] == "defer_search"
     assert manifest["prompt_version"] == "attentional_v2.bridge_resolution.v5"
-    assert manifest["promptset_version"] == "attentional_v2-phase6-v13"
+    assert manifest["promptset_version"] == ATTENTIONAL_V2_PROMPTS.promptset_version
 
 
 def test_bridge_resolution_declines_generic_bridge_without_specific_attribution(monkeypatch):

@@ -28,7 +28,6 @@ from .schemas import (
     AnchoredReactionRecord,
     ChapterConsolidationResult,
     ConceptRegistryState,
-    ExpressResult,
     KnowledgeActivationsState,
     OutsideLink,
     PriorLink,
@@ -162,6 +161,22 @@ def _copy_search_intent(value: object) -> SearchIntent | None:
     return payload
 
 
+def _surfaced_reaction_from_candidate(reaction: ReactionCandidate) -> SurfacedReaction | None:
+    """Project one legacy reaction candidate into the surfaced-reaction truth shape."""
+
+    content = _clean_text(reaction.get("content"))
+    anchor_quote = _clean_text(reaction.get("anchor_quote"))
+    if not (content and anchor_quote):
+        return None
+    return {
+        "anchor_quote": anchor_quote,
+        "content": content,
+        "prior_link": None,
+        "outside_link": None,
+        "search_intent": _legacy_search_intent_from_candidate(reaction),
+    }
+
+
 def compat_reaction_family(payload: Mapping[str, object]) -> str:
     """Derive the legacy family label from one native persisted reaction shape."""
 
@@ -260,119 +275,36 @@ def build_reaction_record(
     ordinal: int | None = None,
     record_source: str = "legacy_builder",
 ) -> AnchoredReactionRecord:
-    """Build one mechanism-authored durable reaction record."""
+    """Compatibility adapter from legacy candidates into the surfaced-native record builder."""
 
-    normalized_primary_anchor = build_reaction_anchor(primary_anchor)
-    normalized_related = [build_reaction_anchor(anchor) for anchor in related_anchors or [] if isinstance(anchor, dict)]
-    search_intent = _legacy_search_intent_from_candidate(reaction)
-    compat_family = compat_reaction_family(
-        {
-            "type": _clean_text(reaction.get("type")),
-            "content": _clean_text(reaction.get("content")),
-            "anchor_quote": _clean_text(reaction.get("anchor_quote")),
-            "search_intent": search_intent,
-        }
+    surfaced_reaction = _surfaced_reaction_from_candidate(reaction)
+    if surfaced_reaction is None:
+        raise ValueError("legacy reaction candidate must contain anchor_quote and content")
+    record = build_reaction_record_from_surfaced_reaction(
+        reaction=surfaced_reaction,
+        primary_anchor=primary_anchor,
+        related_anchors=related_anchors,
+        chapter_id=chapter_id,
+        chapter_ref=chapter_ref,
+        emitted_at_sentence_id=emitted_at_sentence_id,
+        reaction_id=reaction_id,
+        reconsolidation_record_id=reconsolidation_record_id,
+        supersedes_reaction_id=supersedes_reaction_id,
+        compatibility_section_ref=compatibility_section_ref,
+        created_at=created_at,
+        ordinal=ordinal,
+        compat_family_override=_clean_text(reaction.get("type")),
     )
-    return {
-        "reaction_id": reaction_id
-        or derive_reaction_id(
-            chapter_ref=chapter_ref,
-            emitted_at_sentence_id=emitted_at_sentence_id,
-            reaction_type=compat_family,
-            ordinal=ordinal,
-        ),
-        "chapter_id": int(chapter_id),
-        "chapter_ref": _clean_text(chapter_ref),
-        "emitted_at_sentence_id": _clean_text(emitted_at_sentence_id),
-        "record_source": _clean_text(record_source) or "legacy_builder",
-        "type": compat_family,  # type: ignore[typeddict-item]
-        "compat_family": compat_family,  # type: ignore[typeddict-item]
-        "thought": _clean_text(reaction.get("content")),
-        "primary_anchor": normalized_primary_anchor,
-        "related_anchors": normalized_related,
-        "reconsolidation_record_id": _clean_text(reconsolidation_record_id),
-        "supersedes_reaction_id": _clean_text(supersedes_reaction_id),
-        "compatibility_section_ref": _clean_text(compatibility_section_ref),
-        "prior_link": None,
-        "outside_link": None,
-        "search_intent": search_intent,
-        "search_query": compat_search_query({"search_intent": search_intent, "search_query": reaction.get("search_query")}),
-        "search_results": [
-            dict(item)
-            for item in reaction.get("search_results", [])
-            if isinstance(item, dict)
-        ]
-        if isinstance(reaction.get("search_results"), list)
-        else [],
-        "created_at": created_at or _timestamp(),
-    }
-
-
-def build_reaction_record_from_express_result(
-    *,
-    express_result: ExpressResult,
-    primary_anchor: AnchorRecord | dict[str, object],
-    related_anchors: list[AnchorRecord | dict[str, object]] | None = None,
-    chapter_id: int,
-    chapter_ref: str,
-    emitted_at_sentence_id: str,
-    reaction_id: str | None = None,
-    reconsolidation_record_id: str | None = None,
-    supersedes_reaction_id: str | None = None,
-    compatibility_section_ref: str | None = None,
-    created_at: str | None = None,
-    ordinal: int | None = None,
-) -> AnchoredReactionRecord | None:
-    """Build one native persisted reaction record directly from Express."""
-
-    if _clean_text(express_result.get("decision")) != "emit":
-        return None
-    thought = _clean_text(express_result.get("content"))
-    if not thought:
-        return None
-
-    normalized_primary_anchor = build_reaction_anchor(primary_anchor)
-    normalized_related = [build_reaction_anchor(anchor) for anchor in related_anchors or [] if isinstance(anchor, dict)]
-    prior_link = _copy_prior_link(express_result.get("prior_link"))
-    outside_link = _copy_outside_link(express_result.get("outside_link"))
-    search_intent = _copy_search_intent(express_result.get("search_intent"))
-    compat_family = compat_reaction_family(
-        {
-            "content": thought,
-            "anchor_quote": _clean_text(express_result.get("anchor_quote")) or _clean_text(normalized_primary_anchor.get("quote")),
-            "prior_link": prior_link,
-            "outside_link": outside_link,
-            "search_intent": search_intent,
-        }
-    )
-
-    return {
-        "reaction_id": reaction_id
-        or derive_reaction_id(
-            chapter_ref=chapter_ref,
-            emitted_at_sentence_id=emitted_at_sentence_id,
-            reaction_type=compat_family,
-            ordinal=ordinal,
-        ),
-        "chapter_id": int(chapter_id),
-        "chapter_ref": _clean_text(chapter_ref),
-        "emitted_at_sentence_id": _clean_text(emitted_at_sentence_id),
-        "record_source": "express",
-        "type": compat_family,  # type: ignore[typeddict-item]
-        "compat_family": compat_family,  # type: ignore[typeddict-item]
-        "thought": thought,
-        "primary_anchor": normalized_primary_anchor,
-        "related_anchors": normalized_related,
-        "reconsolidation_record_id": _clean_text(reconsolidation_record_id),
-        "supersedes_reaction_id": _clean_text(supersedes_reaction_id),
-        "compatibility_section_ref": _clean_text(compatibility_section_ref),
-        "prior_link": prior_link,
-        "outside_link": outside_link,
-        "search_intent": search_intent,
-        "search_query": compat_search_query({"search_intent": search_intent}),
-        "search_results": [],
-        "created_at": created_at or _timestamp(),
-    }
+    if record is None:
+        raise ValueError("legacy reaction candidate could not be converted into a surfaced reaction")
+    record["record_source"] = _clean_text(record_source) or "legacy_candidate_adapter"
+    record["search_results"] = [
+        dict(item)
+        for item in reaction.get("search_results", [])
+        if isinstance(item, dict)
+    ] if isinstance(reaction.get("search_results"), list) else []
+    record["search_query"] = compat_search_query({"search_intent": record.get("search_intent"), "search_query": reaction.get("search_query")})
+    return record
 
 
 def build_reaction_record_from_surfaced_reaction(
@@ -389,6 +321,7 @@ def build_reaction_record_from_surfaced_reaction(
     compatibility_section_ref: str | None = None,
     created_at: str | None = None,
     ordinal: int | None = None,
+    compat_family_override: str | None = None,
 ) -> AnchoredReactionRecord | None:
     """Build one native persisted reaction record directly from read-owned surfaced output."""
 
@@ -401,7 +334,10 @@ def build_reaction_record_from_surfaced_reaction(
     prior_link = _copy_prior_link(reaction.get("prior_link"))
     outside_link = _copy_outside_link(reaction.get("outside_link"))
     search_intent = _copy_search_intent(reaction.get("search_intent"))
-    compat_family = compat_reaction_family(
+    override_family = _clean_text(compat_family_override)
+    if override_family not in _COMPAT_FAMILIES:
+        override_family = ""
+    compat_family = override_family or compat_reaction_family(
         {
             "content": thought,
             "anchor_quote": _clean_text(reaction.get("anchor_quote")) or _clean_text(normalized_primary_anchor.get("quote")),

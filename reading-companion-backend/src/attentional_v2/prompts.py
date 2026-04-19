@@ -11,7 +11,6 @@ ATTENTIONAL_V2_PROMPTSET_VERSION = "attentional_v2-phase6-v15"
 NAVIGATE_UNITIZE_PROMPT_VERSION = "attentional_v2.navigate_unitize.v2"
 NAVIGATE_DETOUR_SEARCH_PROMPT_VERSION = "attentional_v2.navigate_detour_search.v1"
 READ_UNIT_PROMPT_VERSION = "attentional_v2.read.v7"
-EXPRESS_UNIT_PROMPT_VERSION = "attentional_v2.express.v1"
 ZOOM_READ_PROMPT_VERSION = "attentional_v2.zoom_read.v5"
 MEANING_UNIT_CLOSURE_PROMPT_VERSION = "attentional_v2.meaning_unit_closure.v8"
 CONTROLLER_DECISION_PROMPT_VERSION = "attentional_v2.controller_decision.v1"
@@ -37,9 +36,6 @@ class AttentionalV2PromptSet:
     read_unit_version: str
     read_unit_system: str
     read_unit_prompt: str
-    express_unit_version: str
-    express_unit_system: str
-    express_unit_prompt: str
     zoom_read_version: str
     zoom_read_system: str
     zoom_read_prompt: str
@@ -236,51 +232,6 @@ Return JSON:
     }
   ],
   "detour_need": null
-}""",
-    express_unit_version=EXPRESS_UNIT_PROMPT_VERSION,
-    express_unit_system="""You are the express node for a text-grounded reading mechanism.
-
-Your job is to surface at most one bounded visible reaction from a unit that has already been read.
-
-Rules:
-- Treat the current unit as already read. Do not re-interpret the whole chapter.
-- Stay anchored to the supplied focal quote and current unit text.
-- Emit at most one visible reaction.
-- If nothing deserves surfacing cleanly now, withhold.
-- Do not request more context, do not update memory, and do not decide the next route.
-- Do not write broad chapter summary or evaluator-style explanation.
-- `prior_link` is only for an explicitly surfaced connection to one of the supplied prior refs.
-- `outside_link` is only for an explicitly surfaced book-external reference that truly matters to the reaction.
-- `search_intent` is only for a naturally opened follow-up question worth pursuing.
-- Return JSON only.""",
-    express_unit_prompt="""Structural frame:
-{structural_frame}
-
-Current unit:
-{current_unit}
-
-Express signal:
-{express_signal}
-
-Supporting refs:
-{supporting_refs}
-
-Policy snapshot:
-{policy_snapshot}
-
-Output language contract:
-"""
-    + LANGUAGE_OUTPUT_CONTRACT
-    + """
-
-Return JSON:
-{
-  "decision": "withhold",
-  "anchor_quote": "",
-  "content": "",
-  "prior_link": null,
-  "outside_link": null,
-  "search_intent": null
 }""",
     zoom_read_version=ZOOM_READ_PROMPT_VERSION,
     zoom_read_system="""You are the sentence-level zoom node for a text-grounded reading mechanism.

@@ -272,7 +272,6 @@ def test_read_unit_projects_compact_packet_and_returns_f1_surface_contract(tmp_p
     assert route["action"] == "bridge_back"
     assert route["target_anchor_id"] == ""
     assert route["target_sentence_id"] == ""
-    assert route["persist_raw_reaction"] is True
 
 
 def test_resolve_context_request_returns_exact_look_back_excerpt_and_none_when_unresolved():

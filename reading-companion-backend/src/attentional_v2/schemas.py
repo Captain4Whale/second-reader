@@ -395,15 +395,6 @@ class PressureSignals(TypedDict, total=False):
     frame_shift_pressure: bool
 
 
-class ExpressSignal(TypedDict, total=False):
-    """One bounded signal saying whether the current unit deserves surfacing."""
-
-    should_express: bool
-    focal_quote: str
-    why_now: str
-    supporting_ref_ids: list[str]
-
-
 class ReadUnitResult(TypedDict, total=False):
     """Authoritative formal-read packet for one chosen coverage unit."""
 
@@ -508,17 +499,6 @@ class SearchIntent(TypedDict, total=False):
 
     query: str
     rationale: str
-
-
-class ExpressResult(TypedDict, total=False):
-    """One surfaced visible-reaction result emitted after the read step."""
-
-    decision: ReactionEmissionDecision
-    anchor_quote: str
-    content: str
-    prior_link: PriorLink | None
-    outside_link: OutsideLink | None
-    search_intent: SearchIntent | None
 
 
 class AnchorFocus(TypedDict, total=False):
@@ -627,7 +607,6 @@ class NavigateRouteDecision(TypedDict, total=False):
     close_current_unit: bool
     target_anchor_id: str
     target_sentence_id: str
-    persist_raw_reaction: bool
 
 
 class BridgeResolutionResult(TypedDict, total=False):

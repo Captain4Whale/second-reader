@@ -21,12 +21,9 @@ from .schemas import (
     AnchorRelationAssessment,
     BridgeCandidate,
     ClosureDecision,
-    ContextRequest,
     ControllerDecisionResult,
     DetourNeed,
     DetourSearchResult,
-    ExpressResult,
-    ExpressSignal,
     GateState,
     KnowledgeActivationsState,
     MeaningUnitClosureResult,
@@ -35,14 +32,12 @@ from .schemas import (
     NavigateRouteDecision,
     OutsideLink,
     PressureSignals,
-    PriorMaterialUse,
     PriorLink,
     PreviewRange,
     ReactionCandidate,
     ReactionEmissionDecision,
     ReactionEmissionResult,
     ReactionType,
-    ReadAnchorEvidence,
     ReadUnitResult,
     ReaderPolicy,
     SearchIntent,
@@ -68,7 +63,6 @@ _REACTION_TYPES: set[ReactionType] = {
 }
 _MOVE_TYPES: set[MoveType] = {"advance", "dwell", "bridge", "reframe"}
 _ROUTE_ACTIONS = {"commit", "continue", "bridge_back", "reframe"}
-_CONTEXT_REQUEST_KINDS = {"active_recall", "look_back"}
 _OUTSIDE_LINK_KINDS = {"work", "person", "concept", "history", "analogy", "other"}
 _UNITIZE_BOUNDARY_TYPES: set[UnitizeBoundaryType] = {
     "paragraph_end",
@@ -1122,47 +1116,6 @@ def _derive_pressure_signals_from_legacy_fields(
     }
 
 
-def _normalize_express_signal(
-    value: object,
-    *,
-    allowed_ref_ids: set[str],
-) -> ExpressSignal:
-    """Normalize one surfaced-expression signal emitted by the read step."""
-
-    if not isinstance(value, dict):
-        return {
-            "should_express": False,
-            "focal_quote": "",
-            "why_now": "",
-            "supporting_ref_ids": [],
-        }
-    should_express = bool(value.get("should_express"))
-    focal_quote = _clean_text(value.get("focal_quote"))
-    why_now = _clean_text(value.get("why_now"))
-    supporting_ref_ids = [
-        ref_id
-        for ref_id in (
-            _clean_text(item)
-            for item in value.get("supporting_ref_ids", [])
-            if isinstance(value.get("supporting_ref_ids"), list)
-        )
-        if ref_id and (not allowed_ref_ids or ref_id in allowed_ref_ids)
-    ]
-    if not should_express:
-        return {
-            "should_express": False,
-            "focal_quote": "",
-            "why_now": "",
-            "supporting_ref_ids": [],
-        }
-    return {
-        "should_express": True,
-        "focal_quote": focal_quote,
-        "why_now": why_now,
-        "supporting_ref_ids": supporting_ref_ids[:4],
-    }
-
-
 def _normalize_prior_link(
     value: object,
     *,
@@ -1322,144 +1275,6 @@ def _normalize_detour_search_result(
         "reason": _clean_text(value.get("reason")),
         "start_sentence_id": start_sentence_id,
         "end_sentence_id": end_sentence_id,
-    }
-
-
-def _normalize_express_result(
-    value: object,
-    *,
-    allowed_ref_ids: set[str],
-) -> ExpressResult:
-    """Normalize one visible-reaction result emitted by the express node."""
-
-    if not isinstance(value, dict):
-        return {
-            "decision": "withhold",
-            "anchor_quote": "",
-            "content": "",
-            "prior_link": None,
-            "outside_link": None,
-            "search_intent": None,
-        }
-    decision = _clean_text(value.get("decision")).lower()
-    if decision not in _EMISSION_DECISIONS:
-        decision = "withhold"
-    anchor_quote = _clean_text(value.get("anchor_quote"))
-    content = _clean_text(value.get("content"))
-    prior_link = _normalize_prior_link(value.get("prior_link"), allowed_ref_ids=allowed_ref_ids)
-    outside_link = _normalize_outside_link(value.get("outside_link"))
-    search_intent = _normalize_search_intent(value.get("search_intent"))
-    if decision != "emit":
-        return {
-            "decision": "withhold",
-            "anchor_quote": "",
-            "content": "",
-            "prior_link": None,
-            "outside_link": None,
-            "search_intent": None,
-        }
-    if not anchor_quote or not content:
-        return {
-            "decision": "withhold",
-            "anchor_quote": "",
-            "content": "",
-            "prior_link": None,
-            "outside_link": None,
-            "search_intent": None,
-        }
-    return {
-        "decision": "emit",
-        "anchor_quote": anchor_quote,
-        "content": content,
-        "prior_link": prior_link,
-        "outside_link": outside_link,
-        "search_intent": search_intent,
-    }
-
-
-def _normalize_read_anchor_evidence(
-    value: object,
-    *,
-    allowed_sentence_ids: set[str],
-) -> list[ReadAnchorEvidence]:
-    """Normalize one list of read-anchor evidence packets."""
-
-    evidence: list[ReadAnchorEvidence] = []
-    if not isinstance(value, list):
-        return evidence
-    for item in value:
-        if not isinstance(item, dict):
-            continue
-        sentence_id = _clean_text(item.get("sentence_id"))
-        quote = _clean_text(item.get("quote"))
-        why_it_matters = _clean_text(item.get("why_it_matters"))
-        if not sentence_id or sentence_id not in allowed_sentence_ids or not quote:
-            continue
-        evidence.append(
-            {
-                "sentence_id": sentence_id,
-                "quote": quote,
-                "why_it_matters": why_it_matters,
-            }
-        )
-    return evidence
-
-
-def _normalize_prior_material_use(
-    value: object,
-    *,
-    allowed_ref_ids: set[str],
-) -> PriorMaterialUse:
-    """Normalize one prior-material-use packet against visible context refs."""
-
-    if not isinstance(value, dict):
-        return {
-            "materially_used": False,
-            "explanation": "",
-            "supporting_ref_ids": [],
-        }
-    materially_used = bool(value.get("materially_used"))
-    explanation = _clean_text(value.get("explanation"))
-    supporting_ref_ids = [
-        ref_id
-        for ref_id in (
-            _clean_text(item)
-            for item in value.get("supporting_ref_ids", [])
-            if isinstance(value.get("supporting_ref_ids"), list)
-        )
-        if ref_id and (not allowed_ref_ids or ref_id in allowed_ref_ids)
-    ]
-    if not materially_used:
-        explanation = ""
-        supporting_ref_ids = []
-    return {
-        "materially_used": materially_used,
-        "explanation": explanation,
-        "supporting_ref_ids": supporting_ref_ids[:4],
-    }
-
-
-def _normalize_context_request(value: object) -> ContextRequest | None:
-    """Normalize one bounded supplemental-context request."""
-
-    if not isinstance(value, dict):
-        return None
-    kind = _clean_text(value.get("kind")).lower().replace("-", "_")
-    if kind not in _CONTEXT_REQUEST_KINDS:
-        return None
-    return {
-        "kind": kind,  # type: ignore[typeddict-item]
-        "reason": _clean_text(value.get("reason")),
-        "anchor_ids": [
-            _clean_text(item)
-            for item in value.get("anchor_ids", [])
-            if isinstance(value.get("anchor_ids"), list) and _clean_text(item)
-        ][:4],
-        "sentence_ids": [
-            _clean_text(item)
-            for item in value.get("sentence_ids", [])
-            if isinstance(value.get("sentence_ids"), list) and _clean_text(item)
-        ][:4],
     }
 
 
@@ -1820,18 +1635,6 @@ def read_unit(
         current_unit_texts=current_unit_texts,
         allowed_ref_ids=allowed_ref_ids,
     )
-    raw_reaction = _normalize_reaction_candidate(payload.get("raw_reaction")) if isinstance(payload, dict) else None
-    if not surfaced_reactions and raw_reaction is not None:
-        fallback_surface = _normalize_surfaced_reaction(
-            {
-                "anchor_quote": _clean_text(raw_reaction.get("anchor_quote")),
-                "content": _clean_text(raw_reaction.get("content")),
-            },
-            current_unit_texts=current_unit_texts,
-            allowed_ref_ids=allowed_ref_ids,
-        )
-        if fallback_surface is not None:
-            surfaced_reactions = [fallback_surface]
     unit_delta = _clean_text(payload.get("unit_delta")) if isinstance(payload, dict) else ""
     if not unit_delta:
         unit_delta = _clean_text(payload.get("local_understanding")) if isinstance(payload, dict) else ""
@@ -1852,64 +1655,6 @@ def read_unit(
         "detour_need": _normalize_detour_need(payload.get("detour_need")) if isinstance(payload, dict) else None,
     }
     return result
-
-
-def express_unit(
-    *,
-    current_unit_sentences: list[dict[str, object]],
-    express_signal: ExpressSignal,
-    supporting_refs: list[dict[str, object]],
-    reader_policy: ReaderPolicy,
-    output_language: str,
-    output_dir: Path | None = None,
-    book_title: str = "",
-    author: str = "",
-    chapter_title: str = "",
-) -> ExpressResult:
-    """Surface at most one visible reaction after the read step has already settled the unit."""
-
-    prompts = ATTENTIONAL_V2_PROMPTS
-    structural_frame = _structural_frame(
-        book_title=book_title,
-        author=author,
-        chapter_title=chapter_title,
-        output_language=output_language,
-    )
-    user_prompt = _render_prompt(
-        prompts.express_unit_prompt,
-        structural_frame=_json_block(structural_frame),
-        current_unit=_json_block(
-            [
-                {
-                    "sentence_id": _clean_text(sentence.get("sentence_id")),
-                    "text": _clean_text(sentence.get("text")),
-                    "text_role": _clean_text(sentence.get("text_role")),
-                }
-                for sentence in current_unit_sentences
-            ]
-        ),
-        express_signal=_json_block(dict(express_signal)),
-        supporting_refs=_json_block([dict(item) for item in supporting_refs if isinstance(item, dict)]),
-        policy_snapshot=_json_block(reader_policy),
-        output_language_name=language_name(output_language),
-    )
-    _write_prompt_manifest(
-        output_dir,
-        node_name="express_unit",
-        prompt_version=prompts.express_unit_version,
-        system_prompt=prompts.express_unit_system,
-        user_prompt=user_prompt,
-        promptset_version=prompts.promptset_version,
-    )
-    with llm_invocation_scope(trace_context=LLMTraceContext(stage="phase4", node="express_unit")):
-        payload = invoke_json(prompts.express_unit_system, user_prompt, default={})
-
-    allowed_ref_ids = {
-        _clean_text(item.get("ref_id"))
-        for item in supporting_refs
-        if isinstance(item, dict) and _clean_text(item.get("ref_id"))
-    }
-    return _normalize_express_result(payload, allowed_ref_ids=allowed_ref_ids)
 
 
 def navigate_route(
@@ -1934,7 +1679,6 @@ def navigate_route(
         "close_current_unit": True,
         "target_anchor_id": "",
         "target_sentence_id": "",
-        "persist_raw_reaction": bool(read_result.get("surfaced_reactions")),
     }
 
 

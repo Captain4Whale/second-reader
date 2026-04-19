@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-04-19T15:32:58+08:00",
+  "updated_at": "2026-04-19T18:35:00+08:00",
   "tasks": [
     {
       "id": "TASK-ACCUMULATION-BENCHMARK-V2",
@@ -114,7 +114,8 @@
         "DEC-067",
         "DEC-068",
         "DEC-069",
-        "DEC-070"
+        "DEC-070",
+        "DEC-071"
       ],
       "job_refs": [
         "bgjob_post_phase_d_longspan_smoke_20260412",
@@ -126,7 +127,7 @@
         "bgjob_post_phase_d_parallel_judged_eval_retry2_20260413"
       ],
       "acceptance_ref": "docs/implementation/new-reading-mechanism/attentional_v2_structural_rework_plan.md",
-      "next_action": "Continue from the post-Phase-9 structural rework plan under the existing attentional_v2 mechanism key. Phase A through Phase D are landed, and Phase E1 through Phase E3 remain preserved as a landed intermediate compatibility-first branch. Phase F1 is now landed: the live per-unit loop is back to navigate.unitize -> read -> navigate.route, Read now owns surfaced reactions / implicit uptake ops / pressure signals / optional detour_need, the dedicated live Express node is off the runner path, and read prompt packaging now follows compact always-carry / selective-carry / not-carry projections. Phase F2 is now also landed: Navigate owns bounded detour search over structure cards, long-distance-memory digests, and source-grounded anchor handles; local_continuity now persists mainline_cursor / active_detour_id / active_detour_need / detour_trace; detour search uses one bounded prompt family with narrow_scope / land_region / defer_detour; and landed detour regions now flow back through the same normal navigate.unitize -> read -> navigate.route loop, including chapter-tail detour draining before slow-cycle close. Build the next slices in order: Phase F3 reaction persistence and compatibility reconvergence; then Phase F4 quality validation and dead-path cleanup.",
+      "next_action": "Continue from the post-Phase-9 structural rework plan under the existing attentional_v2 mechanism key. Phase A through Phase D are landed, and Phase E1 through Phase E3 remain preserved as a landed intermediate compatibility-first branch. Phase F1 is now landed: the live per-unit loop is back to navigate.unitize -> read -> navigate.route, Read now owns surfaced reactions / implicit uptake ops / pressure signals / optional detour_need, the dedicated live Express node is off the runner path, and read prompt packaging now follows compact always-carry / selective-carry / not-carry projections. Phase F2 is now also landed: Navigate owns bounded detour search over structure cards, long-distance-memory digests, and source-grounded anchor handles; local_continuity now persists mainline_cursor / active_detour_id / active_detour_need / detour_trace; detour search uses one bounded prompt family with narrow_scope / land_region / defer_detour; and landed detour regions now flow back through the same normal navigate.unitize -> read -> navigate.route loop, including chapter-tail detour draining before slow-cycle close. Phase F3 is now also landed: persisted visible reactions enter the system only through Read.surfaced_reactions[], mainline and detour reading share one surfaced-native reaction-record builder, chapter-result compatibility projection and normalized eval export now derive legacy family labels only through the compat helper, and dead live ownership paths for the old Express persistence flow and raw_reaction fallback are removed. Build the next slice: Phase F4 quality validation and remaining dead-path cleanup.",
       "blocked_by": [],
       "evidence_refs": [
         "docs/implementation/new-reading-mechanism/attentional_v2_structural_rework_plan.md",
@@ -144,14 +145,20 @@
         "reading-companion-backend/src/attentional_v2/resume.py",
         "reading-companion-backend/src/attentional_v2/read_context.py",
         "reading-companion-backend/src/attentional_v2/runner.py",
+        "reading-companion-backend/src/attentional_v2/slow_cycle.py",
+        "reading-companion-backend/src/attentional_v2/evaluation.py",
         "reading-companion-backend/tests/test_attentional_v2_phase_b.py",
+        "reading-companion-backend/tests/test_attentional_v2_bridge.py",
+        "reading-companion-backend/tests/test_attentional_v2_nodes.py",
         "reading-companion-backend/tests/test_attentional_v2_scaffold.py",
+        "reading-companion-backend/tests/test_attentional_v2_slow_cycle.py",
+        "reading-companion-backend/tests/test_attentional_v2_evaluation.py",
         "reading-companion-backend/tests/test_attentional_v2_resume.py",
         "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_post_phase_d_longspan_smoke_20260412/diagnostics/value_of_others_abnormal_call_snapshot_20260413.md",
         "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_post_phase_d_longspan_smoke_20260412/diagnostics/value_of_others_progress_and_latency_check_20260413.md",
         "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_value_of_others_ch8_debug_legacykey_20260413/analysis/registry_snapshot.json"
       ],
-      "last_updated": "2026-04-19T15:32:58+08:00",
+      "last_updated": "2026-04-19T18:35:00+08:00",
       "last_updated_by": "codex"
     },
     {
