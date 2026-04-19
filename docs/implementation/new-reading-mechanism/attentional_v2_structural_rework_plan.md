@@ -1067,12 +1067,42 @@ Status: `landed`
 
 ##### Phase F4 — Quality validation and dead-path cleanup
 
-Status: `next`
+Status: `in_progress`
 
-- run small-sample quality audits before any broad rerun
-- verify that surfaced reactions sound like reading-time reactions again
-- verify that prompt/context load is lighter and less duplicated
-- clean any remaining dead steady-state branches that F3 could not already prove safe to delete
+- `Phase F4A` is now landed as the first focused six-case quality audit:
+  - harness / runner support:
+    - `reading-companion-backend/scripts/orchestrate_attentional_v2_f4a_quality_audit.py`
+    - `reading-companion-backend/src/attentional_v2/runner.py`
+  - evidence:
+    - `reading-companion-backend/docs/research/attentional_v2_f4a_focused_quality_audit_20260419.md`
+    - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_f4a_quality_audit_20260419/summary/report.md`
+- first F4A findings:
+  - visible reaction density is back:
+    - the old "almost never speaks" regression did not reproduce
+    - `supremacy_private_en__chapter_13` now produces sustained local reactions again
+  - sampled wording is mostly back in reading-time territory:
+    - local quotes drive the reactions more often
+    - broad chapter-summary / review voice is substantially reduced
+  - compat exports survived:
+    - chapter-result compatibility projection and normalized eval bundles both materialized for all six shards
+  - but the pack did not validate detour behavior:
+    - no shard emitted `detour_need`
+    - no shard created `detour_trace`
+    - the intended `land_region / narrow_scope -> land_region / defer_detour` audit goals therefore remain unproven
+  - surfaced optional semantics also stayed absent in this pack:
+    - `prior_link`
+    - `outside_link`
+    - `search_intent`
+- audit-visibility follow-up already landed after the first F4A run:
+  - future `read_audit.jsonl` rows now persist full `surfaced_reactions`, not only the count
+  - the F4A summary/report harness now records explicit compat / normalized artifact availability instead of leaving those fields null
+- next move before `Phase F4B`:
+  - make one small repair pass focused on:
+    - detour trigger willingness
+    - explicit surfaced semantic honesty
+    - any remaining over-literary reaction voice in the mixed English / `悉达多` samples
+  - rerun the same six-case focused pack
+  - only move to `Phase F4B` after at least one real detour path is observed and the structured surfaced semantics appear when genuinely warranted
 
 ## 8. Backend Compatibility Guardrails During Rework
 

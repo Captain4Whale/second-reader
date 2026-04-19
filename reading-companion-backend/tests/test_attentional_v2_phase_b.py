@@ -481,5 +481,6 @@ def test_run_read_with_context_loop_reads_once_and_persists_f1_audit(tmp_path, m
     assert read_result["detour_need"]["status"] == "open"
     assert audit_line["stop_reason"] == "read_complete"
     assert audit_line["surfaced_reaction_count"] == 1
+    assert audit_line["surfaced_reactions"][0]["anchor_quote"] == "Beta sentence."
     assert audit_line["detour_need"]["target_hint"] == "the opening sentence"
     assert audit_line["supplemental_satisfied"] is False

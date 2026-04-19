@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-04-19T18:35:00+08:00`
+Last verified: `2026-04-19T17:19:23+08:00`
 
 ## Current Objective
 - Land `target-centered long-span accumulation v2` as the active long-span methodology while preserving bounded long-span v1 as historical evidence.
@@ -255,8 +255,40 @@ Last verified: `2026-04-19T18:35:00+08:00`
     - mainline and detour reading now share one surfaced-native reaction-record builder
     - chapter-result compatibility projection and normalized eval export now read surfaced-native persisted records and derive old family labels only through the compat helper
     - dead live ownership paths for the old `Express` persistence flow and `raw_reaction` fallback are now removed
+  - `Phase F4A` is now landed as the first focused quality-audit pack:
+    - launcher / harness:
+      - `reading-companion-backend/scripts/orchestrate_attentional_v2_f4a_quality_audit.py`
+    - parent job:
+      - `bgjob_attentional_v2_f4a_quality_audit_20260419` (`completed`)
+    - run id:
+      - `attentional_v2_f4a_quality_audit_20260419`
+    - first audit findings:
+      - visible reaction density is back across the six short-window cases:
+        - `supremacy_private_en__chapter_13`: `7` reactions over `8` units
+        - `value_of_others_private_en__8_10`: `6` reactions over `8` units
+        - `huochu_shengming_de_yiyi_private_zh__segment_1`: `8` reactions over `8` units
+        - `xidaduo_private_zh__segment_1`: `7` reactions over `8` units
+        - `nawaer_baodian_private_zh__segment_1`: `8` reactions over `8` units
+        - `mangge_zhi_dao_private_zh__segment_1`: `4` reactions over `8` units
+      - sampled wording is mostly back in reading-time territory rather than broad review / chapter-summary voice
+      - chapter-result compatibility projection and normalized eval export both materialized for all six shards
+      - but no shard emitted a real detour:
+        - `detour_trace_count = 0`
+        - `backward_pull = 0`
+        - `detour_need.status = open|resolved|abandoned = 0`
+      - surfaced optional semantics also stayed absent in the pack:
+        - `prior_link_count = 0`
+        - `outside_link_count = 0`
+        - `search_intent_count = 0`
+    - audit-note path:
+      - `reading-companion-backend/docs/research/attentional_v2_f4a_focused_quality_audit_20260419.md`
+    - run summary:
+      - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_f4a_quality_audit_20260419/summary/report.md`
+    - small post-run visibility fix already landed:
+      - future `read_audit.jsonl` rows now persist full `surfaced_reactions`, not only the count
+      - the F4A summary/report harness now records explicit compat / normalized artifact availability
   - the active next implementation slice is now:
-    - `Phase F4` — quality validation and remaining dead-path cleanup
+    - one small post-F4A repair pass, then rerun the same six-case pack before opening `Phase F4B`
   - the April 12 post-Phase-D smoke has now finished and is interpreted as follows:
     - `value_of_others_private_en__8_10` produced repeated anomalous long-tail calls during the April 12 smoke
     - a static size/content snapshot now lives at:
@@ -332,6 +364,8 @@ Last verified: `2026-04-19T18:35:00+08:00`
         - but the separate legacy key failed fast with `MiniMax-M2.7` plan/entitlement rejection rather than reproducing the slow-call path
       - current consequence:
         - no active isolated replay is running now
+        - the April 19 focused F4A audit job finished cleanly:
+          - `bgjob_attentional_v2_f4a_quality_audit_20260419`
         - no active background eval jobs remain in the registry
         - a full prompt/response replay without touching the active eval pool requires another spare key with `MiniMax-M2.7` access, or must wait until using the main eval pool is acceptable
   - the next backend code slice should build on the landed `Phase E3` baseline:

@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-04-19T15:32:58+08:00`
+Last updated: `2026-04-19T17:19:23+08:00`
 
 ## Status Values
 - `active`
@@ -217,8 +217,34 @@ Last updated: `2026-04-19T15:32:58+08:00`
     - mainline and detour reading now share one surfaced-native reaction-record builder
     - chapter-result compatibility projection and normalized eval export now read surfaced-native persisted records and derive old family labels only through the compat helper
     - dead live ownership paths for the old `Express` persistence flow and `raw_reaction` fallback are now removed
+  - `Phase F4A` is now landed as the first focused quality-audit pack:
+    - launcher / harness:
+      - `reading-companion-backend/scripts/orchestrate_attentional_v2_f4a_quality_audit.py`
+    - completed job:
+      - `bgjob_attentional_v2_f4a_quality_audit_20260419`
+    - run id:
+      - `attentional_v2_f4a_quality_audit_20260419`
+    - outcome:
+      - visible reaction density recovered across all six short-window cases
+      - sampled wording is mostly back in reading-time territory
+      - chapter-result compatibility projection and normalized eval export both survived
+      - but detour was not validated:
+        - `detour_trace_count = 0` in every shard
+        - `backward_pull = 0` in every shard
+        - `detour_need.status = open|resolved|abandoned = 0` in every shard
+      - surfaced optional semantics were also absent:
+        - `prior_link_count = 0`
+        - `outside_link_count = 0`
+        - `search_intent_count = 0`
+    - audit note:
+      - `reading-companion-backend/docs/research/attentional_v2_f4a_focused_quality_audit_20260419.md`
+    - run summary:
+      - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_f4a_quality_audit_20260419/summary/report.md`
+    - follow-up visibility fix already landed:
+      - future `read_audit.jsonl` rows now persist full `surfaced_reactions`
+      - the F4A summary/report harness now records explicit compat / normalized artifact availability
   - next implementation line:
-    - `Phase F4` — quality validation and remaining dead-path cleanup
+    - one small post-F4A repair pass, then rerun the same six-case pack before opening `Phase F4B`
 - Post-Phase-D evaluation posture:
   - the April 12 post-Phase-D smoke is finished and the April 13 targeted judged validation is also finished
   - completed judged runs:
@@ -282,7 +308,8 @@ Last updated: `2026-04-19T15:32:58+08:00`
     - `/books/:id/chapters/:chapterId` is the main chapter reading scene and default return-to-context page
     - `/marks` is the saved-reaction list plus jump-back surface, not the main reading scene
   - do not open a separate cleanup-only wave for V1 display concepts before this lane
-- Jobs: none
+- Jobs:
+  - `bgjob_attentional_v2_f4a_quality_audit_20260419` (`completed`)
 
 ## Parked
 

@@ -238,6 +238,46 @@ This file is a living working ledger. Stable rules still belong in `docs/backend
 - Evidence:
   - first broader chapter-core comparison:
     - `attentional_v2_vs_iterator_v1_chapter_core_en_round1_20260326`
+
+### 9. Read-native reaction ownership restores local presence without reviving summary voice
+- Pattern kind: `strength`
+- Source mechanism: `attentional_v2` post-`Phase F3` live path
+- Potential destination: keep as the stable baseline for ongoing `attentional_v2` work
+- Why it matters:
+  - The biggest user-facing regression after the temporary `Read -> Express` split was sparse visible output that felt withheld, delayed, or summary-like.
+  - Returning visible reaction ownership to `Read` materially restored "I am here reading this now" presence without forcing a return to the old family checklist.
+- Evidence:
+  - `reading-companion-backend/docs/research/attentional_v2_f4a_focused_quality_audit_20260419.md`
+  - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_f4a_quality_audit_20260419/summary/report.md`
+  - six-case density snapshot:
+    - `supremacy_private_en__chapter_13`: `7` reactions / `8` units
+    - `nawaer_baodian_private_zh__segment_1`: `8` reactions / `8` units
+    - `mangge_zhi_dao_private_zh__segment_1`: `4` reactions / `8` units with honest silence rather than flat non-expression
+- Status: `adopted`
+- Next action:
+  - preserve `Read` as the only per-unit visible-reaction owner
+  - tune prompt voice and structured surfaced semantics from this baseline instead of reopening an `Express` split
+
+### 10. Detour and surfaced semantic tags can silently disappear even when local reactions look healthy
+- Pattern kind: `failure_mode`
+- Source mechanism: `attentional_v2` post-`Phase F3` live path
+- Potential destination: immediate follow-up repair inside `attentional_v2`
+- Why it matters:
+  - A mechanism can look locally alive and still fail an important part of its promised control shape if it never surfaces `detour_need`, `prior_link`, `outside_link`, or `search_intent`.
+  - If we celebrate the density recovery alone, we risk shipping a reader that only does the easy half of the new contract.
+- Evidence:
+  - `reading-companion-backend/docs/research/attentional_v2_f4a_focused_quality_audit_20260419.md`
+  - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_f4a_quality_audit_20260419/summary/aggregate.json`
+  - across the first F4A six-case pack:
+    - `detour_trace_count = 0` in all six shards
+    - `backward_pull = 0` in all six shards
+    - `prior_link_count / outside_link_count / search_intent_count = 0 / 0 / 0` in all six shards
+- Status: `observed`
+- Next action:
+  - run one bounded repair pass focused on:
+    - making real detour pressure easier to emit when warranted
+    - making explicit surfaced semantic tags appear only when genuinely present, but not vanish entirely
+  - rerun the same F4A six-case pack before opening `Phase F4B`
     - `attentional_v2_vs_iterator_v1_chapter_core_zh_round1_20260326`
 - Status: `avoid`
 - Next action:

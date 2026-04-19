@@ -1101,6 +1101,107 @@ def test_attentional_v2_runner_drains_last_unit_detour_before_chapter_close(tmp_
     assert continuity["detour_trace"][-1]["status"] == "resolved"
 
 
+def test_attentional_v2_runner_stops_at_audit_window_cap_and_persists_partial_outputs(tmp_path, monkeypatch):
+    """Audit-only unit caps should stop the live loop cleanly and still persist partial exports."""
+
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(runner_module, "ensure_canonical_parse", lambda *args, **kwargs: _provisioned_book_with_detour())
+    read_calls: list[list[str]] = []
+
+    def fake_read_unit(**kwargs):
+        sentence_ids = [str(sentence.get("sentence_id")) for sentence in kwargs["current_unit_sentences"]]
+        read_calls.append(sentence_ids)
+        focal_sentence = kwargs["current_unit_sentences"][-1]
+        return {
+            "unit_delta": f"Read {sentence_ids[-1]}.",
+            "pressure_signals": {
+                "continuation_pressure": False,
+                "backward_pull": False,
+                "frame_shift_pressure": False,
+            },
+            "surfaced_reactions": [
+                {
+                    "anchor_quote": str(focal_sentence.get("text")),
+                    "content": f"Immediate reaction to {sentence_ids[-1]}.",
+                }
+            ],
+            "implicit_uptake_ops": [],
+            "detour_need": None,
+        }
+
+    def fake_process_sentence_intake(sentence, *, local_buffer, working_state, concept_registry, thread_trace, anchor_bank, window_size=6, cadence_limit=4):
+        next_buffer = {
+            **local_buffer,
+            "current_sentence_id": sentence["sentence_id"],
+            "current_sentence_index": sentence["sentence_index"],
+            "recent_sentences": [*local_buffer.get("recent_sentences", []), dict(sentence)][-window_size:],
+            "open_meaning_unit_sentence_ids": [sentence["sentence_id"]],
+            "seen_sentence_ids": [*local_buffer.get("seen_sentence_ids", []), sentence["sentence_id"]],
+        }
+        return next_buffer, {
+            "schema_version": ATTENTIONAL_V2_SCHEMA_VERSION,
+            "mechanism_version": ATTENTIONAL_V2_MECHANISM_VERSION,
+            "current_sentence_id": sentence["sentence_id"],
+            "output": "zoom_now",
+            "gate_state": "hot",
+            "signals": [],
+            "cadence_counter": 1,
+            "callback_anchor_ids": [],
+        }
+
+    monkeypatch.setattr(
+        runner_module,
+        "navigate_unitize",
+        lambda *, current_sentence, preview_sentences, **_kwargs: {
+            "start_sentence_id": current_sentence["sentence_id"],
+            "end_sentence_id": current_sentence["sentence_id"],
+            "preview_range": {
+                "start_sentence_id": preview_sentences[0]["sentence_id"],
+                "end_sentence_id": preview_sentences[-1]["sentence_id"],
+            },
+            "boundary_type": "paragraph_end",
+            "evidence_sentence_ids": [current_sentence["sentence_id"]],
+            "reason": "test_unitize_single_sentence",
+            "continuation_pressure": False,
+        },
+    )
+    monkeypatch.setattr(runner_module, "process_sentence_intake", fake_process_sentence_intake)
+    monkeypatch.setattr(runner_module, "read_unit", fake_read_unit)
+    monkeypatch.setattr(
+        runner_module,
+        "run_phase6_chapter_cycle",
+        lambda **_kwargs: pytest.fail("phase6 should not run when audit_window_max_units stops the loop early"),
+    )
+
+    mechanism = AttentionalV2Mechanism()
+    result = mechanism.read_book(
+        ReadRequest(
+            book_path=_fixture_epub(),
+            mechanism_key=ATTENTIONAL_V2_MECHANISM_KEY,
+            mechanism_config={"audit_window_max_units": 2},
+        )
+    )
+
+    assert read_calls == [["c1-s1"], ["c1-s2"]]
+    assert result.normalized_eval_bundle is not None
+    assert len(result.normalized_eval_bundle["reactions"]) == 2
+    assert chapter_result_compatibility_file(result.output_dir, 1).exists()
+    assert not chapter_result_compatibility_file(result.output_dir, 2).exists()
+
+    read_audit_entries = [
+        json.loads(line)
+        for line in read_audit_file(result.output_dir).read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    ]
+    assert len(read_audit_entries) == 2
+
+    chapter_payload = json.loads(chapter_result_compatibility_file(result.output_dir, 1).read_text(encoding="utf-8"))
+    assert chapter_payload["visible_reaction_count"] == 2
+
+    shell = load_runtime_shell(runtime_shell_file(result.output_dir))
+    assert shell["status"] == "completed"
+
+
 def test_attentional_v2_rejects_book_analysis_mode(tmp_path, monkeypatch):
     """The live runner should fail fast on book_analysis mode in this slice."""
 

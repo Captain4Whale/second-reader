@@ -659,6 +659,11 @@ def persist_read_audit(
 
     if output_dir is None:
         return
+    surfaced_reactions = (
+        [dict(item) for item in read_result.get("surfaced_reactions", []) if isinstance(item, dict)]
+        if isinstance(read_result.get("surfaced_reactions"), list)
+        else []
+    )
     append_jsonl(
         read_audit_file(output_dir),
         {
@@ -674,11 +679,8 @@ def persist_read_audit(
             "budget_exhausted": bool(budget_exhausted),
             "unit_delta": clean_text(read_result.get("unit_delta")),
             "pressure_signals": dict(read_result.get("pressure_signals") or {}),
-            "surfaced_reaction_count": len(
-                [item for item in read_result.get("surfaced_reactions", []) if isinstance(item, dict)]
-            )
-            if isinstance(read_result.get("surfaced_reactions"), list)
-            else 0,
+            "surfaced_reaction_count": len(surfaced_reactions),
+            "surfaced_reactions": surfaced_reactions,
             "detour_need": dict(read_result.get("detour_need") or {})
             if isinstance(read_result.get("detour_need"), dict)
             else {},

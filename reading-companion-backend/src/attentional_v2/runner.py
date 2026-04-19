@@ -294,6 +294,47 @@ def _chapter_statuses(document: BookDocument, output_dir: Path) -> dict[int, str
     return statuses
 
 
+def _audit_window_max_units(request: ReadRequest) -> int:
+    """Return the optional audit-only unit cap for one read invocation."""
+
+    raw_value = dict(request.mechanism_config or {}).get("audit_window_max_units", 0)
+    try:
+        value = int(raw_value or 0)
+    except (TypeError, ValueError):
+        return 0
+    return max(0, value)
+
+
+def _persist_partial_chapter_projections(
+    *,
+    output_dir: Path,
+    chapter_lookup: dict[int, dict[str, object]],
+    touched_chapter_ids: set[int],
+    reaction_records: ReactionRecordsState,
+    output_language: str,
+    chapter_statuses: dict[int, str],
+) -> dict[int, str]:
+    """Persist compatibility payloads for chapters touched by a partial audit run."""
+
+    if not touched_chapter_ids:
+        return chapter_statuses
+    book_id = runtime_artifacts.book_id_from_output_dir(output_dir)
+    for chapter_id in sorted(int(item) for item in touched_chapter_ids if int(item) > 0):
+        chapter = chapter_lookup.get(chapter_id)
+        if not isinstance(chapter, dict):
+            continue
+        project_chapter_result_compatibility(
+            book_id=book_id,
+            chapter=chapter,
+            reaction_records=reaction_records,
+            output_language=output_language,
+            output_dir=output_dir,
+            persist=True,
+        )
+        chapter_statuses[chapter_id] = "done"
+    return chapter_statuses
+
+
 def _chapter_result_relative_paths(document: BookDocument, output_dir: Path) -> dict[int, str]:
     """Return manifest-relative compatibility result paths for ready chapters."""
 
@@ -1159,6 +1200,8 @@ def _run_detour_episode(
             "reconsolidation_records": reconsolidation_records,
             "bundle": bundle,
             "performed": False,
+            "units_read_delta": 0,
+            "touched_chapter_ids": [],
         }
 
     navigation_packet = _build_detour_navigation_packet(
@@ -1213,6 +1256,8 @@ def _run_detour_episode(
             "reconsolidation_records": reconsolidation_records,
             "bundle": bundle,
             "performed": False,
+            "units_read_delta": 0,
+            "touched_chapter_ids": [],
         }
 
     selected_region = _selected_detour_region(
@@ -1245,6 +1290,8 @@ def _run_detour_episode(
             "reconsolidation_records": reconsolidation_records,
             "bundle": bundle,
             "performed": False,
+            "units_read_delta": 0,
+            "touched_chapter_ids": [],
         }
 
     detour_chapter, detour_region_sentences = selected_region
@@ -1513,6 +1560,8 @@ def _run_detour_episode(
         "reconsolidation_records": reconsolidation_records,
         "bundle": bundle,
         "performed": True,
+        "units_read_delta": 1,
+        "touched_chapter_ids": [detour_chapter_id],
     }
 
 
@@ -1860,6 +1909,10 @@ def read_attentional_v2(request: ReadRequest, mechanism: MechanismInfo) -> ReadR
             bundle = _load_runtime_bundle(output_dir)
 
         reader_policy: ReaderPolicy = bundle["reader_policy"]  # type: ignore[assignment]
+        audit_window_max_units = _audit_window_max_units(request)
+        audit_window_units_read = 0
+        audit_window_stop_reason = ""
+        touched_chapter_ids: set[int] = set()
         local_buffer: LocalBufferState = bundle["local_buffer"]  # type: ignore[assignment]
         local_continuity: LocalContinuityState = bundle["local_continuity"]  # type: ignore[assignment]
         trigger_state: TriggerState = bundle["trigger_state"]  # type: ignore[assignment]
@@ -1977,6 +2030,11 @@ def read_attentional_v2(request: ReadRequest, mechanism: MechanismInfo) -> ReadR
                     reaction_records = detour_result["reaction_records"]  # type: ignore[assignment]
                     reconsolidation_records = detour_result["reconsolidation_records"]  # type: ignore[assignment]
                     bundle = detour_result["bundle"]  # type: ignore[assignment]
+                    touched_chapter_ids.update(int(item) for item in detour_result.get("touched_chapter_ids", []) if int(item) > 0)
+                    audit_window_units_read += int(detour_result.get("units_read_delta", 0) or 0)
+                    if audit_window_max_units and audit_window_units_read >= audit_window_max_units:
+                        audit_window_stop_reason = "audit_window_max_units_reached"
+                        break
                     if bool(detour_result.get("performed")):
                         continue
 
@@ -2294,8 +2352,15 @@ def read_attentional_v2(request: ReadRequest, mechanism: MechanismInfo) -> ReadR
                     status="running",
                     phase="reading",
                 )
+                touched_chapter_ids.add(chapter_id)
+                audit_window_units_read += 1
                 cursor += len(chosen_unit_sentences)
+                if audit_window_max_units and audit_window_units_read >= audit_window_max_units:
+                    audit_window_stop_reason = "audit_window_max_units_reached"
+                    break
 
+            if audit_window_stop_reason:
+                break
             detour_drain_steps = 0
             while _active_detour_need(local_continuity) is not None and detour_drain_steps < 8:
                 detour_result = _run_detour_episode(
@@ -2338,9 +2403,16 @@ def read_attentional_v2(request: ReadRequest, mechanism: MechanismInfo) -> ReadR
                 reaction_records = detour_result["reaction_records"]  # type: ignore[assignment]
                 reconsolidation_records = detour_result["reconsolidation_records"]  # type: ignore[assignment]
                 bundle = detour_result["bundle"]  # type: ignore[assignment]
+                touched_chapter_ids.update(int(item) for item in detour_result.get("touched_chapter_ids", []) if int(item) > 0)
+                audit_window_units_read += int(detour_result.get("units_read_delta", 0) or 0)
                 detour_drain_steps += 1
+                if audit_window_max_units and audit_window_units_read >= audit_window_max_units:
+                    audit_window_stop_reason = "audit_window_max_units_reached"
+                    break
                 if not bool(detour_result.get("performed")):
                     break
+            if audit_window_stop_reason:
+                break
 
             chapter_end_anchor = build_anchor_record(
                 sentence_start_id=_clean_text(sentences[-1].get("sentence_id")) if sentences else f"c{chapter_id}-end",
@@ -2436,6 +2508,29 @@ def read_attentional_v2(request: ReadRequest, mechanism: MechanismInfo) -> ReadR
                     resume_available=True,
                     last_checkpoint_at=checkpoint.get("created_at"),
                 ),
+            )
+        if audit_window_stop_reason:
+            chapter_statuses = _persist_partial_chapter_projections(
+                output_dir=output_dir,
+                chapter_lookup=chapter_lookup,
+                touched_chapter_ids=touched_chapter_ids,
+                reaction_records=reaction_records,
+                output_language=provisioned.output_language,
+                chapter_statuses=chapter_statuses,
+            )
+            completed_chapters = len([status for status in chapter_statuses.values() if status == "done"])
+            append_activity_event(
+                output_dir,
+                {
+                    "type": "audit_window_stopped",
+                    "message": f"Stopped attentional_v2 audit window after {audit_window_units_read} formal units.",
+                    "details": {
+                        "audit_window_max_units": audit_window_max_units,
+                        "formal_units_read": audit_window_units_read,
+                        "stop_reason": audit_window_stop_reason,
+                        "partial_read": True,
+                    },
+                },
             )
         _write_manifest(output_dir, provisioned.book_document, chapter_statuses=chapter_statuses)
         _update_shell_phase(output_dir, status="completed", phase="idle")

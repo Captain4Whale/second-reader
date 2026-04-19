@@ -408,6 +408,12 @@ Use `docs/backend-reading-mechanism.md` for shared mechanism-platform boundaries
 - A small repair harness clears its gate only when it is both faster and still judge-valid.
   - it should complete without blanket `mechanism_unavailable` or `judge_unavailable`
   - it should still produce discriminative judged results rather than reducing one mechanism to silence while the other wins by default
+- When a non-judged focused quality audit is used ahead of a broader rerun, the audit summary should explicitly record:
+  - visible reaction density
+  - silent-unit count
+  - whether detour behavior actually activated
+  - whether optional surfaced semantics such as `prior_link / outside_link / search_intent` appeared
+  - whether compatibility exports such as chapter-result projection and normalized eval bundles still materialized
 - Full excerpt-surface judged reruns should resume only after the current mechanism and launch posture can complete the smaller slice within an iteration budget the project is actually willing to repeat.
 - Once that bounded gate passes, the next move should usually return to the broader excerpt surface or to one narrow mechanism issue exposed by the slice, not to another broad rerun done only for reassurance.
 
