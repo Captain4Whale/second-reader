@@ -1070,8 +1070,8 @@ Status: `landed`
 Status: `in_progress`
 
 - `Phase F4A` is now landed as the first focused six-case quality audit:
-  - harness / runner support:
-    - `reading-companion-backend/scripts/orchestrate_attentional_v2_f4a_quality_audit.py`
+  - temporary one-off harness / runner support:
+    - `reading-companion-backend/scripts/temporary/attentional_v2_f4a_oneoff_quality_audit.py`
     - `reading-companion-backend/src/attentional_v2/runner.py`
   - evidence:
     - `reading-companion-backend/docs/research/attentional_v2_f4a_focused_quality_audit_20260419.md`

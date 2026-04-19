@@ -256,8 +256,8 @@ Last verified: `2026-04-19T17:19:23+08:00`
     - chapter-result compatibility projection and normalized eval export now read surfaced-native persisted records and derive old family labels only through the compat helper
     - dead live ownership paths for the old `Express` persistence flow and `raw_reaction` fallback are now removed
   - `Phase F4A` is now landed as the first focused quality-audit pack:
-    - launcher / harness:
-      - `reading-companion-backend/scripts/orchestrate_attentional_v2_f4a_quality_audit.py`
+    - temporary one-off launcher / harness:
+      - `reading-companion-backend/scripts/temporary/attentional_v2_f4a_oneoff_quality_audit.py`
     - parent job:
       - `bgjob_attentional_v2_f4a_quality_audit_20260419` (`completed`)
     - run id:

@@ -6,7 +6,12 @@ import sys
 from pathlib import Path
 
 
-SCRIPT_PATH = Path(__file__).resolve().parents[1] / "scripts" / "orchestrate_attentional_v2_f4a_quality_audit.py"
+SCRIPT_PATH = (
+    Path(__file__).resolve().parents[1]
+    / "scripts"
+    / "temporary"
+    / "attentional_v2_f4a_oneoff_quality_audit.py"
+)
 SPEC = importlib.util.spec_from_file_location("attentional_v2_f4a_quality_audit", SCRIPT_PATH)
 assert SPEC is not None and SPEC.loader is not None
 module = importlib.util.module_from_spec(SPEC)

@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
-"""Run the focused Phase F4A attentional_v2 quality audit."""
+"""Temporary one-off harness for the April 19 Phase F4A attentional_v2 quality audit.
+
+This script is intentionally not the general project evaluation entrypoint.
+Keep it under `scripts/temporary/` unless a later task proves the behavior
+deserves promotion into the shared evaluation framework.
+"""
 
 from __future__ import annotations
 

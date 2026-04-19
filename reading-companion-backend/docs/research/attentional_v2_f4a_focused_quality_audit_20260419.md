@@ -9,6 +9,8 @@ Run:
 - summary:
   - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_f4a_quality_audit_20260419/summary/aggregate.json`
   - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_f4a_quality_audit_20260419/summary/report.md`
+- full reaction appendix:
+  - `reading-companion-backend/docs/research/attentional_v2_f4a_full_reaction_appendix_20260419.md`
 
 ## Scope
 
