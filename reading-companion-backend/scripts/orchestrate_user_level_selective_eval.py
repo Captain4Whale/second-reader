@@ -108,21 +108,33 @@ def _assign_targets(
             str(item.get("segment_id")),
         ),
     )
-    target_loads = {target_id: 0 for target_id in target_ids}
-    target_counts = {target_id: 0 for target_id in target_ids}
-    max_jobs_per_target = (len(ordered) + len(target_ids) - 1) // len(target_ids)
+    per_mechanism_total = {mechanism_key: 0 for mechanism_key in mechanism_keys}
+    for row in ordered:
+        per_mechanism_total[str(row["mechanism_key"])] += 1
+    target_loads = {
+        mechanism_key: {target_id: 0 for target_id in target_ids}
+        for mechanism_key in mechanism_keys
+    }
+    target_counts = {
+        mechanism_key: {target_id: 0 for target_id in target_ids}
+        for mechanism_key in mechanism_keys
+    }
     plans: list[ShardPlan] = []
     for row in ordered:
+        mechanism_key = str(row["mechanism_key"])
+        max_jobs_per_target = (per_mechanism_total[mechanism_key] + len(target_ids) - 1) // len(target_ids)
         available_targets = [
-            target_id for target_id in target_ids if target_counts[target_id] < max_jobs_per_target
+            target_id for target_id in target_ids if target_counts[mechanism_key][target_id] < max_jobs_per_target
         ] or list(target_ids)
-        target_id = min(available_targets, key=lambda item: (target_loads[item], target_counts[item], item))
+        target_id = min(
+            available_targets,
+            key=lambda item: (target_loads[mechanism_key][item], target_counts[mechanism_key][item], item),
+        )
         note_weight = int(row.get("covered_note_count", 0) or 0)
-        target_loads[target_id] += note_weight
-        target_counts[target_id] += 1
+        target_loads[mechanism_key][target_id] += note_weight
+        target_counts[mechanism_key][target_id] += 1
         source_id = str(row["source_id"])
         segment_id = str(row["segment_id"])
-        mechanism_key = str(row["mechanism_key"])
         plans.append(
             ShardPlan(
                 segment_id=segment_id,

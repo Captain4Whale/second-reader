@@ -14,6 +14,43 @@ sys.modules[SPEC.name] = orchestrator
 SPEC.loader.exec_module(orchestrator)
 
 
+def test_assign_targets_balances_each_mechanism_across_targets() -> None:
+    selected_segments = [
+        {
+            "segment_id": "seg_xidaduo",
+            "source_id": "xidaduo",
+            "book_title": "Xidaduo",
+            "case_count": 6,
+        },
+        {
+            "segment_id": "seg_huochu",
+            "source_id": "huochu",
+            "book_title": "Huochu",
+            "case_count": 4,
+        },
+        {
+            "segment_id": "seg_mangge",
+            "source_id": "mangge",
+            "book_title": "Mangge",
+            "case_count": 2,
+        },
+    ]
+
+    plans = orchestrator._assign_targets(
+        selected_segments=selected_segments,
+        mechanism_keys=("attentional_v2", "iterator_v1"),
+        target_ids=("target_a", "target_b"),
+        run_id="demo_run",
+    )
+
+    by_mechanism: dict[str, set[str]] = {}
+    for plan in plans:
+        by_mechanism.setdefault(plan.mechanism_key, set()).add(plan.target_id)
+
+    assert by_mechanism["attentional_v2"] == {"target_a", "target_b"}
+    assert by_mechanism["iterator_v1"] == {"target_a", "target_b"}
+
+
 def test_completed_output_dir_from_seed_runs_only_reuses_completed_outputs(tmp_path: Path, monkeypatch) -> None:
     plan = orchestrator.ShardPlan(
         segment_id="segment_a",

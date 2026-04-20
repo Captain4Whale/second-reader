@@ -2053,3 +2053,54 @@ The completed repaired run now has a checked-in human interpretation report, tas
 - `reading-companion-backend/state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1/manifest.json`
 - `reading-companion-backend/state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260416/manifest.json`
 - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_user_level_selective_v1_repaired_rejudge_20260416/summary/aggregate.json`
+
+## Entry 71
+**ID**: DEC-074
+**Status**: active
+
+**Decision / Inflection**: Retire the temporary dual-pointer posture, promote the repaired `203`-case `user-level selective v1` package into the active benchmark pointer, and run the full active excerpt + long-span formal rerun through one durable parent orchestrator with 5-minute auto-recovery.
+
+**Period**: April 20, 2026, once the user explicitly requested a new full V1/V2 comparison over both active benchmark levels.
+
+**Problem**: The dual-pointer posture from Entry 70 had done its job as a repair bridge, but it was no longer the cleanest operating model once the project was ready to rerun the full active benchmark stack. Keeping the active pointer on the older `202`-case package would have forced long-span v2 to keep reusing the wrong substrate root, while also making the new formal rerun semantically ambiguous: some docs would describe the repaired package as "formal evidence only" even though the actual requested run needed that repaired package to be the real active truth. At the same time, the project needed a durable execution shape so a full rerun could survive provider failures and resume from completed shard outputs rather than restarting from scratch.
+
+**Alternatives considered**: Keep the older `202`-case package as the active pointer and run against a hidden repaired sibling again, leave excerpt and long-span as two fully separate rerun lanes that reread overlapping windows, or keep long-running recovery behavior as an operator-only manual ritual instead of encoding it in the orchestration layer.
+
+**Why this path won**: Once the user explicitly asked for the full active rerun, the "temporary dual truth" cost became higher than the "explicit promotion" cost. Promoting the repaired package makes the benchmark identity honest again: the active excerpt substrate is the repaired `203`-case package, and long-span v2 reuses that same repaired substrate. Encoding the rerun as one parent orchestration line plus recoverable child jobs also turns the previously manual restart playbook into a durable system behavior instead of relying on memory or chat history.
+
+**What changed in the system**: The active excerpt split manifest now points at `attentional_v2_user_level_selective_v1_repaired_20260416`, while the older `attentional_v2_user_level_selective_v1` package is preserved on disk but marked `superseded`. `run_accumulation_evaluation_v2.py` now supports `--reuse-output-dir`, excerpt and long-span reuse both rely on one shared completed-output rebuild helper, and the user-level orchestrator now supports same-run completed-shard reuse in addition to seed-run reuse. Two new durable orchestrators now exist: `orchestrate_accumulation_v2_eval.py` and `orchestrate_active_benchmark_eval.py`. The current formal rerun is now owned by:
+- parent:
+  - `bgjob_active_benchmark_rerun_20260419`
+  - `attentional_v2_active_benchmark_rerun_20260419`
+- shared watchdog:
+  - `bgjob_job_registry_auto_recovery_watchdog_active_benchmark_20260419`
+- excerpt child:
+  - `bgjob_user_level_selective_v1_active_formal_20260419`
+  - `attentional_v2_user_level_selective_v1_active_rerun_20260419`
+
+The accumulation child is queued behind the same parent and will reuse overlapping excerpt outputs for the three shared windows instead of rereading them.
+
+**Why it matters later**: This is the point where the repaired package stops being "special repair evidence" and becomes the normal active truth. Future agents no longer need to infer which excerpt substrate long-span v2 should reuse, and the next full rerun can be resumed from the registry plus completed outputs instead of being reconstructed from chat.
+
+**Primary evidence**:
+- `docs/backend-reader-evaluation.md`
+- `docs/current-state.md`
+- `docs/tasks/registry.md`
+- `docs/tasks/registry.json`
+- `docs/history/decision-log.md`
+- `reading-companion-backend/docs/evaluation/README.md`
+- `reading-companion-backend/docs/evaluation/user_level/README.md`
+- `reading-companion-backend/docs/evaluation/long_span/README.md`
+- `reading-companion-backend/docs/evaluation/long_span/target_centered_accumulation_v2_design.md`
+- `reading-companion-backend/eval/attentional_v2/completed_output_reuse.py`
+- `reading-companion-backend/eval/attentional_v2/run_user_level_selective_comparison.py`
+- `reading-companion-backend/eval/attentional_v2/run_accumulation_evaluation_v2.py`
+- `reading-companion-backend/eval/attentional_v2/user_level_selective_v1.py`
+- `reading-companion-backend/eval/attentional_v2/accumulation_benchmark_v2.py`
+- `reading-companion-backend/eval/manifests/splits/attentional_v2_user_level_selective_v1_draft.json`
+- `reading-companion-backend/eval/manifests/splits/attentional_v2_accumulation_benchmark_v2_frozen.json`
+- `reading-companion-backend/scripts/orchestrate_user_level_selective_eval.py`
+- `reading-companion-backend/scripts/orchestrate_accumulation_v2_eval.py`
+- `reading-companion-backend/scripts/orchestrate_active_benchmark_eval.py`
+- `reading-companion-backend/state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1/manifest.json`
+- `reading-companion-backend/state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260416/manifest.json`

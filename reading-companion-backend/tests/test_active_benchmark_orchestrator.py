@@ -66,3 +66,28 @@ def test_ensure_child_job_running_relaunches_failed_job(monkeypatch, tmp_path: P
 
     assert relaunched == ["bgjob_demo"]
     assert payload["status"] == "relaunched"
+
+
+def test_wait_for_child_registration_tolerates_launcher_race(monkeypatch) -> None:
+    calls = {"count": 0}
+
+    def _fake_job_status(_job_id: str):
+        calls["count"] += 1
+        if calls["count"] < 3:
+            return None
+        return {"status": "running"}
+
+    sleeps: list[int] = []
+    monotonic_values = iter([0.0, 0.2, 0.4, 0.6])
+    monkeypatch.setattr(orchestrator, "_job_status", _fake_job_status)
+    monkeypatch.setattr(orchestrator.time, "sleep", lambda seconds: sleeps.append(int(seconds)))
+    monkeypatch.setattr(orchestrator.time, "monotonic", lambda: next(monotonic_values))
+
+    record = orchestrator._wait_for_child_registration(
+        "bgjob_demo",
+        label="excerpt",
+        grace_seconds=5,
+    )
+
+    assert record == {"status": "running"}
+    assert sleeps == [1, 1]

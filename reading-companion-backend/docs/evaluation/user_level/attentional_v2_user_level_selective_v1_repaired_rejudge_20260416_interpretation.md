@@ -5,10 +5,10 @@
 - Surface: `user-level selective v1`
 - Dataset root used by the run:
   - `reading-companion-backend/state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260416`
-- Important pointer boundary:
-  - the current active dataset pointer still remains:
-    - `reading-companion-backend/state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1`
-  - this repaired rerun is therefore the current **formal evidence bundle**, not a silent promotion of the active dataset pointer
+- Historical pointer note:
+  - when this interpretation was first written on April 16, the repaired package was still the formal evidence bundle rather than the active dataset pointer
+  - on April 20, the project explicitly promoted the repaired `203`-case package into the active benchmark pointer
+  - read this file as the interpretation of the April 16 run itself, not as the latest active-pointer statement
 
 ## Top-Line Result
 
@@ -43,8 +43,8 @@
   - the current formal judged evidence lane for `user-level selective v1` is no longer "still running"
   - the repaired sibling package is now backed by a completed formal run with aggregate and report outputs
 - It **does not mean**:
-  - the repaired sibling package has automatically replaced the active dataset pointer
-  - the active `202`-case package has been retired
+  - by itself, this April 16 run proved an automatic promotion decision
+  - the earlier `202`-case package ceased to exist as historical evidence
 
 ## Primary Evidence
 

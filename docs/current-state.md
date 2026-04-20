@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-04-19T23:07:58+08:00`
+Last verified: `2026-04-20T09:09:28+08:00`
 
 ## Current Objective
 - Keep `target-centered long-span accumulation v2` as the active long-span methodology while preserving bounded long-span v1 as historical evidence.
@@ -31,7 +31,7 @@ Last verified: `2026-04-19T23:07:58+08:00`
   - current dataset posture:
     - the first reviewed/frozen v2 target-case set now exists
     - current window substrate is reused from:
-      - `reading-companion-backend/state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1`
+      - `reading-companion-backend/state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260416`
     - first frozen reviewed seed set is now landed:
       - review doc:
         - `reading-companion-backend/docs/evaluation/long_span/target_centered_candidate_review.md`
@@ -60,15 +60,26 @@ Last verified: `2026-04-19T23:07:58+08:00`
         - use the unified review doc as the main review/freeze record, and never fall back to the older substrate memo
       - current gate:
         - keep the frozen seed set stable unless explicit re-curation is requested
-        - do not rerun v2 eval until the user explicitly asks for a formal judged run on the frozen set
+        - the user explicitly requested a full formal V1/V2 rerun on April 19
+        - active parent rerun:
+          - job id:
+            - `bgjob_active_benchmark_rerun_20260419`
+          - run id:
+            - `attentional_v2_active_benchmark_rerun_20260419`
+        - active excerpt child:
+          - job id:
+            - `bgjob_user_level_selective_v1_active_formal_20260419`
+          - run id:
+            - `attentional_v2_user_level_selective_v1_active_rerun_20260419`
+        - accumulation child will launch under the same parent after excerpt completes and will reuse overlapping excerpt reading outputs rather than rereading shared windows
   - historical boundary:
     - keep `attentional_v2_accumulation_benchmark_v1_judged_rerun_20260407` as durable historical mechanism evidence
     - do not treat the old bounded `EARLY / MID / LATE` probe method as the active long-span methodology anymore
-- Keep the note-aligned `user-level selective v1` package as the active local/user-level dataset pointer while treating the repaired rejudge as the current formal evidence bundle.
+- Keep the note-aligned `user-level selective v1` package as the active local/user-level benchmark, now promoted onto the repaired `203`-case package.
   - active split manifest:
     - `reading-companion-backend/eval/manifests/splits/attentional_v2_user_level_selective_v1_draft.json`
   - active dataset package:
-    - `reading-companion-backend/state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1`
+    - `reading-companion-backend/state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260416`
   - active runner:
     - `reading-companion-backend/eval/attentional_v2/run_user_level_selective_comparison.py`
   - active scope:
@@ -84,28 +95,28 @@ Last verified: `2026-04-19T23:07:58+08:00`
       - its old preface-side note at `c6` is no longer part of the active package
     - active package now contains:
       - `5` reading segments
-      - `202` note cases
+      - `203` note cases
     - every active note case now carries a strict `segment_source_v1` char-span under `source_span_slices`
       - this is the source-coordinate system used for `Selective Legibility` candidate retrieval, because the mechanisms read the rendered `segment_sources/*.txt` substrate
       - original parsed-book sentence ids remain as provenance for audit, not as the primary matching coordinate
-    - repaired sibling package retained for formal evidence and audit:
-      - repaired dataset package:
-        - `reading-companion-backend/state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260416`
-      - repaired audit index:
-        - `reading-companion-backend/state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260416/audit_human_readable/index.md`
-      - current role:
-        - serve as the dataset root for the current formal evidence bundle
-      - repaired formal evidence bundle:
-        - run id:
-          - `attentional_v2_user_level_selective_v1_repaired_rejudge_20260416`
-        - checked-in interpretation:
-          - `reading-companion-backend/docs/evaluation/user_level/attentional_v2_user_level_selective_v1_repaired_rejudge_20260416_interpretation.md`
-        - machine outputs:
-          - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_user_level_selective_v1_repaired_rejudge_20260416/summary/aggregate.json`
-          - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_user_level_selective_v1_repaired_rejudge_20260416/summary/report.md`
-        - formal evidence truth:
-          - `5` reading segments
-          - `203` note cases
+    - active audit index:
+      - `reading-companion-backend/state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260416/audit_human_readable/index.md`
+    - superseded historical predecessor:
+      - dataset package:
+        - `reading-companion-backend/state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1`
+      - package truth:
+        - `5` reading segments
+        - `202` note cases
+      - status:
+        - `superseded`
+    - latest completed formal evidence bundle before the new rerun:
+      - run id:
+        - `attentional_v2_user_level_selective_v1_repaired_rejudge_20260416`
+      - checked-in interpretation:
+        - `reading-companion-backend/docs/evaluation/user_level/attentional_v2_user_level_selective_v1_repaired_rejudge_20260416_interpretation.md`
+      - machine outputs:
+        - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_user_level_selective_v1_repaired_rejudge_20260416/summary/aggregate.json`
+        - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_user_level_selective_v1_repaired_rejudge_20260416/summary/report.md`
       - verified example:
         - `huochu_shengming_de_yiyi_private_zh_personal_notes__e0002` now maps to the full two-sentence source span rather than truncating after the first sentence
   - `excerpt surface v1.1` remains preserved as historical / superseded evidence, not as the active local/user-level benchmark pointer
@@ -144,9 +155,23 @@ Last verified: `2026-04-19T23:07:58+08:00`
         - `attentional_v2` note recall: `0.0`
         - `iterator_v1` note recall: `0.2118`
       - current posture:
-        - keep the active dataset pointer on the `202`-case package
-        - treat the repaired sibling plus completed repaired rejudge as the current formal evidence bundle
-        - if a later task wants to promote the repaired sibling into the active pointer, do that as an explicit follow-up decision rather than an implicit doc assumption
+        - its repaired `203`-case dataset root is now the active benchmark pointer
+        - the April 16 repaired rejudge remains the last completed formal evidence until the current rerun finishes
+    - the new formal active rerun is now running:
+      - parent job id:
+        - `bgjob_active_benchmark_rerun_20260419`
+      - parent run id:
+        - `attentional_v2_active_benchmark_rerun_20260419`
+      - excerpt child job id:
+        - `bgjob_user_level_selective_v1_active_formal_20260419`
+      - excerpt child run id:
+        - `attentional_v2_user_level_selective_v1_active_rerun_20260419`
+      - shared watchdog:
+        - `bgjob_job_registry_auto_recovery_watchdog_active_benchmark_20260419`
+      - execution posture:
+        - `5` segments × `2` mechanisms = `10` shard reads on the active repaired package
+        - same-run recovery preserves completed shard summaries
+        - same-run and seed-run recovery both reuse completed reading outputs when strict rescoring can proceed without rereading
     - failed first mechanism-parallel attempt retained as failed evidence:
       - `bgjob_user_level_selective_v1_judged_parallel_20260414`
       - failure cause:
@@ -2736,18 +2761,22 @@ Last verified: `2026-04-19T23:07:58+08:00`
 - Benchmark confidence can look stronger than it really is if corpus growth, promotion, and reviewed-slice confidence gates drift apart.
 
 ## Active Task IDs
+- `TASK-ACTIVE-BENCHMARK-FORMAL-RERUN`
 - `TASK-ATTENTIONAL-V2-STRUCTURAL-REWORK`
 - `TASK-V2-NATIVE-READING-PRESENTATION`
-
-## Waiting Task IDs
 - `TASK-USER-LEVEL-SELECTIVE-V1`
 - `TASK-ACCUMULATION-BENCHMARK-V2`
+
+## Waiting Task IDs
+- none
 
 ## Blocked Task IDs
 - none
 
 ## Active Job IDs
-- none
+- `bgjob_job_registry_auto_recovery_watchdog_active_benchmark_20260419`
+- `bgjob_active_benchmark_rerun_20260419`
+- `bgjob_user_level_selective_v1_active_formal_20260419`
 
 ## Recommended Reading Path
 1. `AGENTS.md`
@@ -2768,18 +2797,22 @@ Last verified: `2026-04-19T23:07:58+08:00`
 ## Machine-Readable Appendix
 ```json
 {
-  "updated_at": "2026-04-19T15:07:58Z",
+  "updated_at": "2026-04-20T01:09:28Z",
   "last_updated_by": "codex",
   "active_task_ids": [
+    "TASK-ACTIVE-BENCHMARK-FORMAL-RERUN",
     "TASK-ATTENTIONAL-V2-STRUCTURAL-REWORK",
-    "TASK-V2-NATIVE-READING-PRESENTATION"
-  ],
-  "waiting_task_ids": [
+    "TASK-V2-NATIVE-READING-PRESENTATION",
     "TASK-USER-LEVEL-SELECTIVE-V1",
     "TASK-ACCUMULATION-BENCHMARK-V2"
   ],
+  "waiting_task_ids": [],
   "blocked_task_ids": [],
-  "active_job_ids": [],
+  "active_job_ids": [
+    "bgjob_job_registry_auto_recovery_watchdog_active_benchmark_20260419",
+    "bgjob_active_benchmark_rerun_20260419",
+    "bgjob_user_level_selective_v1_active_formal_20260419"
+  ],
   "open_decision_ids": [],
   "detail_refs": [
     "docs/backend-reader-evaluation.md",

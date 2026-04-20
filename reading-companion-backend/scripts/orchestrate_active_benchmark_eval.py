@@ -136,6 +136,17 @@ def _ensure_child_job_running(
     return relaunch_background_job(job_id, root=BACKEND_ROOT, reason="parent_orchestrator_resume")
 
 
+def _wait_for_child_registration(job_id: str, *, label: str, grace_seconds: int) -> dict[str, Any]:
+    deadline = time.monotonic() + max(1, int(grace_seconds))
+    while True:
+        record = _job_status(job_id)
+        if record is not None:
+            return record
+        if time.monotonic() >= deadline:
+            raise RuntimeError(f"{label} child job never appeared in registry after launch: {job_id}")
+        time.sleep(1)
+
+
 def _wait_for_child_job(job_id: str, *, label: str, poll_seconds: int, status_path: Path) -> dict[str, Any]:
     while True:
         record = _job_status(job_id)
@@ -301,6 +312,7 @@ def main() -> int:
         run_dir=excerpt_child["run_dir"],
         expected_outputs=[excerpt_child["aggregate_path"], excerpt_child["report_path"]],
     )
+    _wait_for_child_registration(excerpt_child["job_id"], label="excerpt", grace_seconds=15)
     excerpt_record = _wait_for_child_job(
         excerpt_child["job_id"],
         label="excerpt",
@@ -317,6 +329,7 @@ def main() -> int:
         run_dir=accumulation_child["run_dir"],
         expected_outputs=[accumulation_child["aggregate_path"], accumulation_child["report_path"]],
     )
+    _wait_for_child_registration(accumulation_child["job_id"], label="accumulation", grace_seconds=15)
     accumulation_record = _wait_for_child_job(
         accumulation_child["job_id"],
         label="accumulation",

@@ -48,6 +48,55 @@ def test_filter_plans_by_shard_keys_keeps_requested_subset() -> None:
     assert [plan.shard_key for plan in filtered] == ["source_a::iterator_v1"]
 
 
+def test_assign_targets_balances_each_mechanism_across_targets() -> None:
+    selected_segments = [
+        {
+            "segment_id": "seg_value",
+            "source_id": "value",
+            "book_title": "Value",
+            "covered_note_count": 94,
+        },
+        {
+            "segment_id": "seg_huochu",
+            "source_id": "huochu",
+            "book_title": "Huochu",
+            "covered_note_count": 40,
+        },
+        {
+            "segment_id": "seg_mangge",
+            "source_id": "mangge",
+            "book_title": "Mangge",
+            "covered_note_count": 25,
+        },
+        {
+            "segment_id": "seg_nawaer",
+            "source_id": "nawaer",
+            "book_title": "Nawaer",
+            "covered_note_count": 24,
+        },
+        {
+            "segment_id": "seg_xidaduo",
+            "source_id": "xidaduo",
+            "book_title": "Xidaduo",
+            "covered_note_count": 20,
+        },
+    ]
+
+    plans = orchestrator._assign_targets(
+        selected_segments=selected_segments,
+        mechanism_keys=("attentional_v2", "iterator_v1"),
+        target_ids=("target_a", "target_b"),
+        run_id="demo_run",
+    )
+
+    by_mechanism: dict[str, set[str]] = {}
+    for plan in plans:
+        by_mechanism.setdefault(plan.mechanism_key, set()).add(plan.target_id)
+
+    assert by_mechanism["attentional_v2"] == {"target_a", "target_b"}
+    assert by_mechanism["iterator_v1"] == {"target_a", "target_b"}
+
+
 def test_wait_for_shards_retries_retryable_failure_once(monkeypatch, tmp_path: Path) -> None:
     plan = orchestrator.ShardPlan(
         segment_id="seg_a",
