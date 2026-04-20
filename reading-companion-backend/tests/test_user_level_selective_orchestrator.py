@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import io
 import sys
 from pathlib import Path
 
@@ -19,6 +20,29 @@ class _FakeProcess:
 
     def poll(self):
         return self._exit_code
+
+
+class _RunningProcess:
+    def __init__(self, exit_code_after_stop: int = -15) -> None:
+        self._exit_code = None
+        self._exit_code_after_stop = exit_code_after_stop
+        self.terminated = False
+        self.killed = False
+        self._codex_log_handle = io.BytesIO()
+
+    def poll(self):
+        return self._exit_code
+
+    def terminate(self) -> None:
+        self.terminated = True
+        self._exit_code = self._exit_code_after_stop
+
+    def wait(self, timeout=None):
+        return self._exit_code
+
+    def kill(self) -> None:
+        self.killed = True
+        self._exit_code = -9
 
 
 def test_filter_plans_by_shard_keys_keeps_requested_subset() -> None:
@@ -141,6 +165,61 @@ def test_wait_for_shards_retries_retryable_failure_once(monkeypatch, tmp_path: P
 
     assert exit_codes == {plan.shard_key: 0}
     assert relaunched == [plan.shard_key]
+
+
+def test_wait_for_shards_fails_fast_and_stops_remaining_processes(monkeypatch, tmp_path: Path) -> None:
+    failed_plan = orchestrator.ShardPlan(
+        segment_id="seg_failed",
+        source_id="source_failed",
+        book_title="Book Failed",
+        covered_note_count=2,
+        mechanism_key="attentional_v2",
+        target_id="target_a",
+        shard_run_id="run/shards/source_failed__attentional_v2",
+    )
+    running_plan = orchestrator.ShardPlan(
+        segment_id="seg_running",
+        source_id="source_running",
+        book_title="Book Running",
+        covered_note_count=2,
+        mechanism_key="iterator_v1",
+        target_id="target_b",
+        shard_run_id="run/shards/source_running__iterator_v1",
+    )
+    run_root = tmp_path / "run"
+    failed_log_path = run_root / "logs" / "source_failed__attentional_v2.log"
+    failed_log_path.parent.mkdir(parents=True, exist_ok=True)
+    failed_log_path.write_text("Error code: 529 - overloaded_error\n", encoding="utf-8")
+    running_log_path = run_root / "logs" / "source_running__iterator_v1.log"
+    running_log_path.write_text("", encoding="utf-8")
+
+    monkeypatch.setattr(
+        orchestrator,
+        "_log_path_for_plan",
+        lambda **kwargs: failed_log_path if kwargs["plan"].shard_key == failed_plan.shard_key else running_log_path,
+    )
+    monkeypatch.setattr(orchestrator.time, "sleep", lambda _seconds: None)
+
+    running_process = _RunningProcess()
+    exit_codes = orchestrator._wait_for_shards(
+        processes={
+            failed_plan.shard_key: _FakeProcess(1),
+            running_plan.shard_key: running_process,
+        },
+        plan_by_key={
+            failed_plan.shard_key: failed_plan,
+            running_plan.shard_key: running_plan,
+        },
+        manifest_path=tmp_path / "manifest.json",
+        judge_mode="llm",
+        run_root=run_root,
+        max_attempts=1,
+        retry_backoff_seconds=0,
+        reuse_output_dirs={},
+    )
+
+    assert exit_codes == {failed_plan.shard_key: 1}
+    assert running_process.terminated is True
 
 
 def test_completed_output_dir_from_seed_runs_only_reuses_completed_outputs(tmp_path: Path, monkeypatch) -> None:

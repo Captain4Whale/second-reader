@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-04-20T09:09:28+08:00`
+Last updated: `2026-04-20T20:40:00+08:00`
 
 ## Status Values
 - `active`
@@ -213,12 +213,23 @@ Last updated: `2026-04-20T09:09:28+08:00`
         - `bgjob_user_level_selective_v1_active_formal_20260419`
       - run id:
         - `attentional_v2_user_level_selective_v1_active_rerun_20260419`
+      - April 20 incident:
+        - `3` excerpt shards had already gone cold after exhausting local shard retries while `1` `attentional_v2` shard kept reading
+        - that left the child job registry-`running`, so the shared watchdog had nothing terminal to relaunch yet
+      - landed recovery repair:
+        - `reading-companion-backend/scripts/orchestrate_user_level_selective_eval.py` now fails fast on terminal shard exhaustion, stops sibling shard workers, and lets the watchdog relaunch the same run
+        - the same fail-fast rule is also mirrored into `reading-companion-backend/scripts/orchestrate_accumulation_v2_eval.py`
+      - active same-run supplemental recovery jobs:
+        - `bgjob_user_level_selective_v1_active_formal_recovery_iter_20260420`
+        - `bgjob_user_level_selective_v1_active_formal_recovery_xidaduo_attn_20260420`
     - accumulation child:
       - will launch from the same parent after excerpt completes
 - Jobs:
   - `bgjob_job_registry_auto_recovery_watchdog_active_benchmark_20260419` (`running`)
   - `bgjob_active_benchmark_rerun_20260419` (`running`)
   - `bgjob_user_level_selective_v1_active_formal_20260419` (`running`)
+  - `bgjob_user_level_selective_v1_active_formal_recovery_iter_20260420` (`running`)
+  - `bgjob_user_level_selective_v1_active_formal_recovery_xidaduo_attn_20260420` (`running`)
 
 ### `TASK-ACCUMULATION-BENCHMARK-V2` — Land the target-centered long-span accumulation v2 framework
 - Status: `active`
@@ -301,10 +312,16 @@ Last updated: `2026-04-20T09:09:28+08:00`
       - `5` segments × `2` mechanisms = `10` shard reads
       - same-run completed shard summaries are skipped on relaunch
       - same-run completed reading outputs can be reused for rescoring if a shard later fails after reading
+    - April 20 recovery posture:
+      - `bgjob_user_level_selective_v1_active_formal_recovery_iter_20260420` now reactivates the cold `iterator_v1` shards for `芒格之道` and `悉达多`
+      - `bgjob_user_level_selective_v1_active_formal_recovery_xidaduo_attn_20260420` now reactivates the cold `xidaduo` `attentional_v2` shard without interrupting the still-live `mangge` `attentional_v2` shard
+      - future terminal shard failures should now fail the child orchestrator immediately instead of hiding behind one remaining live shard
 - Jobs:
   - `bgjob_active_benchmark_rerun_20260419` (`running`)
   - `bgjob_job_registry_auto_recovery_watchdog_active_benchmark_20260419` (`running`)
   - `bgjob_user_level_selective_v1_active_formal_20260419` (`running`)
+  - `bgjob_user_level_selective_v1_active_formal_recovery_iter_20260420` (`running`)
+  - `bgjob_user_level_selective_v1_active_formal_recovery_xidaduo_attn_20260420` (`running`)
 
 ## Parked
 

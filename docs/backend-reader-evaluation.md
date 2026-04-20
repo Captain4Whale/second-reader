@@ -369,6 +369,10 @@ Use `docs/backend-reading-mechanism.md` for shared mechanism-platform boundaries
 - When one chapter/window bundle fails on a recoverable transient runtime problem and the mechanism runtime exposes resume checkpoints, the comparison runner should preserve that mechanism output tree and allow one bounded resume-aware recovery pass before finalizing a failed payload.
   - recoverable here means transient network, timeout, or quota-style failures rather than auth/configuration or logic errors
   - a later targeted recovery launch should also be allowed to resume from the previously failed output tree instead of wiping it first
+- Multi-shard offline eval orchestrators should fail fast once one shard reaches terminal failure after its bounded local retry budget is exhausted.
+  - do not keep the child job marked `running` just because sibling shards are still alive
+  - stop the remaining local shard workers cleanly, preserve the same-run output trees, and let the registered watchdog relaunch the child job
+  - on relaunch, completed shard summaries should be skipped and incomplete shard outputs should resume or rejudge from the preserved same-run tree instead of starting the whole child run over
 - Global derived artifacts should be coordinated explicitly during concurrent work.
   - packet-local and run-local artifacts should stay owned by each job
   - shared summaries should usually be refreshed once after concurrent imports or job completions finish

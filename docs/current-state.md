@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-04-20T09:09:28+08:00`
+Last verified: `2026-04-20T20:40:00+08:00`
 
 ## Current Objective
 - Keep `target-centered long-span accumulation v2` as the active long-span methodology while preserving bounded long-span v1 as historical evidence.
@@ -172,6 +172,17 @@ Last verified: `2026-04-20T09:09:28+08:00`
         - `5` segments × `2` mechanisms = `10` shard reads on the active repaired package
         - same-run recovery preserves completed shard summaries
         - same-run and seed-run recovery both reuse completed reading outputs when strict rescoring can proceed without rereading
+      - April 20 recovery incident and repair:
+        - the excerpt child entered a semi-stuck posture because `3` shard failures had already exhausted their local retry budgets while `1` surviving shard was still running
+        - the child job therefore stayed registry-`running`, which meant the shared watchdog had no terminal child job to relaunch yet
+        - the shard orchestrators are now repaired at:
+          - `reading-companion-backend/scripts/orchestrate_user_level_selective_eval.py`
+          - `reading-companion-backend/scripts/orchestrate_accumulation_v2_eval.py`
+        - new recovery rule:
+          - once one shard reaches terminal failure after its bounded in-process retries, the orchestrator now stops sibling shard workers, exits failed immediately, and lets the same-run watchdog relaunch the child job
+        - active same-run supplemental recovery jobs:
+          - `bgjob_user_level_selective_v1_active_formal_recovery_iter_20260420`
+          - `bgjob_user_level_selective_v1_active_formal_recovery_xidaduo_attn_20260420`
     - failed first mechanism-parallel attempt retained as failed evidence:
       - `bgjob_user_level_selective_v1_judged_parallel_20260414`
       - failure cause:

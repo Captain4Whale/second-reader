@@ -263,6 +263,64 @@ def _is_retryable_failure(*, log_path: Path) -> bool:
     return any(marker.lower() in tail for marker in RETRYABLE_ERROR_MARKERS)
 
 
+def _write_process_log(process: subprocess.Popen[bytes], message: str) -> None:
+    log_handle = getattr(process, "_codex_log_handle", None)
+    if log_handle is None:
+        return
+    try:
+        log_handle.write(message.encode("utf-8"))
+        log_handle.flush()
+    except Exception:
+        return
+
+
+def _close_process_log(process: subprocess.Popen[bytes]) -> None:
+    log_handle = getattr(process, "_codex_log_handle", None)
+    if log_handle is None:
+        return
+    try:
+        log_handle.close()
+    except Exception:
+        pass
+    finally:
+        try:
+            process._codex_log_handle = None  # type: ignore[attr-defined]
+        except Exception:
+            pass
+
+
+def _stop_remaining_processes(
+    *,
+    processes: dict[str, subprocess.Popen[bytes]],
+    exclude_shard_key: str,
+    reason: str,
+) -> None:
+    for shard_key, process in list(processes.items()):
+        if shard_key == exclude_shard_key:
+            continue
+        exit_code = process.poll()
+        if exit_code is not None:
+            _write_process_log(process, f"[{utc_now()}] shard exited with code {exit_code}\n")
+            _close_process_log(process)
+            continue
+        _write_process_log(
+            process,
+            f"[{utc_now()}] stopping shard so the parent orchestrator can fail fast and let watchdog recover the run: {reason}\n",
+        )
+        try:
+            process.terminate()
+            exit_code = process.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            _write_process_log(process, f"[{utc_now()}] shard did not stop after SIGTERM; sending SIGKILL\n")
+            process.kill()
+            exit_code = process.wait(timeout=5)
+        except Exception:
+            exit_code = process.poll()
+        if exit_code is not None:
+            _write_process_log(process, f"[{utc_now()}] shard exited with code {exit_code}\n")
+        _close_process_log(process)
+
+
 def _wait_for_shards(
     *,
     processes: dict[str, subprocess.Popen[bytes]],
@@ -282,14 +340,8 @@ def _wait_for_shards(
             exit_code = process.poll()
             if exit_code is None:
                 continue
-            log_handle = getattr(process, "_codex_log_handle", None)
-            if log_handle is not None:
-                try:
-                    log_handle.write(f"[{utc_now()}] shard exited with code {exit_code}\n".encode("utf-8"))
-                    log_handle.flush()
-                    log_handle.close()
-                except Exception:
-                    pass
+            _write_process_log(process, f"[{utc_now()}] shard exited with code {exit_code}\n")
+            _close_process_log(process)
             plan = plan_by_key[shard_key]
             log_path = _log_path_for_plan(run_root=run_root, plan=plan)
             attempt = attempts[shard_key]
@@ -315,6 +367,14 @@ def _wait_for_shards(
                 attempts[shard_key] = attempt + 1
                 continue
             exit_codes[shard_key] = int(exit_code)
+            if int(exit_code) != 0:
+                reason = (
+                    f"terminal shard failure for {shard_key} after {attempt} attempt(s); "
+                    "remaining shard workers will stop so watchdog can relaunch the same run cleanly"
+                )
+                log(reason)
+                _stop_remaining_processes(processes=processes, exclude_shard_key=shard_key, reason=reason)
+                return exit_codes
             completed.append(shard_key)
         for shard_key in completed:
             processes.pop(shard_key, None)
