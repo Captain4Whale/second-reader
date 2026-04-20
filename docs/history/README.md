@@ -9,6 +9,7 @@ This directory is for historical context, not current authority. Facts about the
 
 ## What Belongs Here
 - `decision-log.md`: a curated set of major inflection points across the workspace
+- `reading-agent-evolution-roadmap.md`: a thematic narrative of how the reading mechanism and its evaluation stack evolved across major structural turns
 - each entry should preserve:
   - the problem that forced a decision
   - the alternatives that were still viable at the time
