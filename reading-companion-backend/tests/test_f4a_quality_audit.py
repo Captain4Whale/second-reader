@@ -30,6 +30,16 @@ def test_case_target_assignments_stay_balanced() -> None:
     }
 
 
+def test_resolve_case_honors_explicit_max_units(tmp_path: Path) -> None:
+    case = module._resolve_case(
+        "huochu_shengming_de_yiyi_private_zh__segment_1",
+        run_root=tmp_path,
+        max_units=0,
+    )
+
+    assert case.max_units == 0
+
+
 def test_render_window_text_from_book_document_preserves_selected_chapter_order() -> None:
     book_document = {
         "chapters": [

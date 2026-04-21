@@ -951,3 +951,27 @@ Use `docs/backend-reading-mechanism.md` for shared mechanism-platform boundaries
   - a run without complete aggregate/report files cannot be cataloged as `current_formal_evidence`
   - failed or invalidated runs may be cataloged as diagnostics when they preserve an important failure cause
 - This stable methodology document should not be used as a running benchmark log.
+
+### Focused Repair Audit Rule
+- A narrow before/after window audit is acceptable as first evidence when a repair is specifically about local surfaced behavior, such as:
+  - visible reaction density
+  - unit-internal anchor selection
+  - summary-voice regression at the unit/window level
+- A focused audit should stay explicitly bounded.
+  - it is a repair-validation instrument, not a substitute for a formal benchmark rerun
+  - it should use a small, named window pack with a clear reason each window was chosen
+- The `before` side may reuse a frozen earlier run instead of rerunning the old mechanism state, but only when:
+  - the selected window/case boundary is the same
+  - the visible artifact surface is the same
+  - the report makes the reused baseline explicit
+- Focused audit reports should expose the evidence directly.
+  - show the unit text
+  - show the visible reactions
+  - show the anchor quote for each visible reaction
+  - state the prompt or mechanism version on both sides when that is part of the comparison
+- Focused audit reports must distinguish evidence scales honestly.
+  - a window-level density/style improvement is valid window-level evidence
+  - it must not be written as proof that some narrower regression line was repaired if that line is not actually inside the selected window
+  - narrower direct-probe evidence may coexist with the window audit, but it should be labeled as a different evidence scale
+- A positive focused audit result is sufficient to justify the next bounded validation step, such as a full-window spot check on the same titles.
+  - it is not by itself sufficient to claim broad benchmark improvement or to reopen the formal benchmark scoreboard

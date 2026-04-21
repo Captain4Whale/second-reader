@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-04-21T13:07:00+08:00`
+Last updated: `2026-04-21T22:58:00+08:00`
 
 ## Status Values
 - `active`
@@ -120,8 +120,30 @@ Last updated: `2026-04-21T13:07:00+08:00`
     - meaningful headings may still stand alone, but label-like headings now prefer merging with the immediately following body paragraph when the preview allows
     - deterministic fallback now widens `heading + first body paragraph` instead of returning a bare heading when that body paragraph is already visible
     - `Read` now explicitly stays proportionate around thin heading-like units and may remain silent there
-  - next implementation line:
-    - then do one small post-F4A repair pass and rerun the same six-case pack before opening `Phase F4B`
+  - the unit-internal anchor-selection repair is now landed on top of the cleaned F4A baseline:
+    - `Read` now prefers the smallest self-sufficient surfaced anchor inside a unit
+    - multiple independently complete anchors inside one unit are now explicitly allowed
+    - the repair is aimed at preventing a sharper later line from swallowing an earlier independently complete framing / hinge line
+  - focused repair-level validation is now completed:
+    - before:
+      - `attentional_v2_f4a_quality_audit_20260419`
+    - after:
+      - `attentional_v2_window_ab_after_20260421`
+    - comparison note:
+      - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_window_ab_after_20260421/analysis/focused_window_ab_compare_20260421/README.md`
+    - observed window-level lift:
+      - `value_of_others_private_en__8_10`: visible reactions `6 -> 8`, with the selected setup hinge now surfaced
+      - `huochu_shengming_de_yiyi_private_zh__segment_1`: visible reactions `8 -> 11`, with `silent_unit_count 3 -> 2`
+    - evidence-boundary note:
+      - this is valid window-level density/style evidence, but not the same thing as a direct proof about the narrower `People want things from other people.` regression sentence
+  - next validation line:
+    - let the V2-only full-window overnight spot check finish on the same two titles before deciding whether this repair is broad enough for wider reruns
+    - active job:
+      - `bgjob_attentional_v2_full_window_spotcheck_20260421`
+    - run id:
+      - `attentional_v2_full_window_spotcheck_20260421`
+    - dedicated watchdog:
+      - `bgjob_job_registry_auto_recovery_watchdog_full_window_spotcheck_20260421`
 - Post-Phase-D evaluation posture:
   - the April 12 post-Phase-D smoke is finished and the April 13 targeted judged validation is also finished
   - completed judged runs:
@@ -187,6 +209,8 @@ Last updated: `2026-04-21T13:07:00+08:00`
   - do not open a separate cleanup-only wave for V1 display concepts before this lane
 - Jobs:
   - `bgjob_attentional_v2_f4a_quality_audit_20260419` (`completed`)
+  - `bgjob_attentional_v2_full_window_spotcheck_20260421` (`running`)
+  - `bgjob_job_registry_auto_recovery_watchdog_full_window_spotcheck_20260421` (`running`)
 
 ### `TASK-ACCUMULATION-BENCHMARK-V2` — Land the target-centered long-span accumulation v2 framework
 - Status: `active`

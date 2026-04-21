@@ -258,9 +258,20 @@ This file is a living working ledger. Stable rules still belong in `docs/backend
     - `People want things from other people.`
   - observed competing later line in the same unit:
     - `other people are typically a problem until they prove otherwise`
+  - focused window A/B evidence after the landed prompt repair:
+    - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_window_ab_after_20260421/analysis/focused_window_ab_compare_20260421/README.md`
+    - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_window_ab_after_20260421/analysis/focused_window_ab_compare_20260421/value_of_others_private_en__8_10.md`
+    - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_window_ab_after_20260421/analysis/focused_window_ab_compare_20260421/huochu_shengming_de_yiyi_private_zh__segment_1.md`
+  - observed post-repair window-level outcome:
+    - `value_of_others_private_en__8_10` increased from `6` to `8` visible reactions while keeping `silent_unit_count = 3`, and its setup hinge now surfaces where the older window audit had stayed silent
+    - `huochu_shengming_de_yiyi_private_zh__segment_1` increased from `8` to `11` visible reactions while reducing `silent_unit_count` from `3` to `2`, without pushing units beyond `0-2` visible reactions each
+  - important evidence-boundary note:
+    - the selected `value_of_others_private_en__8_10` window is a Chapters 2-4 spot-check window, not the exact paragraph that contains `People want things from other people.`
+    - therefore this A/B pack is valid evidence for density/style and unit-internal surfaced-anchor behavior at the window level, but not the sole proof for the narrower direct-probe regression line
 - Status: `adopted`
 - Next action:
   - landed prompt repair: choose the smallest self-sufficient anchor, allow multiple independently complete anchors inside one unit, and prefer the smallest multi-sentence span only when a single sentence would lose its meaning in isolation
+  - next bounded validation step: run a V2-only full-window overnight spot check on the same two titles to see whether the short-window density gain carries through the whole reading window without degrading overall reading quality
 
 ### 9. Read-native reaction ownership restores local presence without reviving summary voice
 - Pattern kind: `strength`

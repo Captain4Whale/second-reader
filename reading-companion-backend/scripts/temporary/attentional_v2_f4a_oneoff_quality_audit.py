@@ -190,7 +190,7 @@ def _prepare_value_of_others_window_source(run_root: Path) -> tuple[Path, dict[s
     return prepared_path, metadata
 
 
-def _resolve_case(case_id: str, *, run_root: Path) -> AuditCase:
+def _resolve_case(case_id: str, *, run_root: Path, max_units: int = DEFAULT_MAX_UNITS) -> AuditCase:
     if case_id in SEGMENT_CASE_IDS:
         segments = _segment_index()
         row = dict(segments[case_id])
@@ -202,7 +202,7 @@ def _resolve_case(case_id: str, *, run_root: Path) -> AuditCase:
             language_track=str(row["language_track"]),
             source_path=str(source_path),
             chapter_number=1,
-            max_units=DEFAULT_MAX_UNITS,
+            max_units=max_units,
             goal=CASE_GOALS[case_id],
             target_id=CASE_TARGET_ASSIGNMENTS[case_id],
             source_kind="segment_source",
@@ -223,7 +223,7 @@ def _resolve_case(case_id: str, *, run_root: Path) -> AuditCase:
             language_track=str(window["language_track"]),
             source_path=str(source_path),
             chapter_number=13,
-            max_units=DEFAULT_MAX_UNITS,
+            max_units=max_units,
             goal=CASE_GOALS[case_id],
             target_id=CASE_TARGET_ASSIGNMENTS[case_id],
             source_kind="source_chapter",
@@ -243,7 +243,7 @@ def _resolve_case(case_id: str, *, run_root: Path) -> AuditCase:
             language_track="en",
             source_path=str(prepared_path),
             chapter_number=1,
-            max_units=DEFAULT_MAX_UNITS,
+            max_units=max_units,
             goal=CASE_GOALS[case_id],
             target_id=CASE_TARGET_ASSIGNMENTS[case_id],
             source_kind="generated_cross_chapter_window",
@@ -386,8 +386,8 @@ def _run_case(case: AuditCase, *, run_root: Path) -> dict[str, Any]:
     return summary
 
 
-def _run_worker(case_id: str, *, run_root: Path, worker_result: Path) -> int:
-    case = _resolve_case(case_id, run_root=run_root)
+def _run_worker(case_id: str, *, run_root: Path, worker_result: Path, max_units: int = DEFAULT_MAX_UNITS) -> int:
+    case = _resolve_case(case_id, run_root=run_root, max_units=max_units)
     try:
         payload = _run_case(case, run_root=run_root)
     except Exception as exc:  # pragma: no cover - exercised by the parent process
@@ -412,6 +412,8 @@ def _report_text(summary: dict[str, Any]) -> str:
         "",
     ]
     for case in summary.get("cases", []):
+        cap_value = case.get("audit_window_max_units", 0)
+        cap_label = "full_window" if int(cap_value or 0) <= 0 else str(int(cap_value))
         lines.extend(
             [
                 f"## {case['case_id']}",
@@ -419,7 +421,7 @@ def _report_text(summary: dict[str, Any]) -> str:
                 f"- status: `{case.get('status', '')}`",
                 f"- target_id: `{case.get('target_id', '')}`",
                 f"- goal: {case.get('goal', '')}",
-                f"- formal_units_read: `{case.get('formal_units_read', 0)}` / cap `{case.get('audit_window_max_units', 0)}`",
+                f"- formal_units_read: `{case.get('formal_units_read', 0)}` / cap `{cap_label}`",
                 f"- visible_reaction_count: `{case.get('visible_reaction_count', 0)}`",
                 f"- silent_unit_count: `{case.get('silent_unit_count', 0)}`",
                 f"- detour_trace_count: `{case.get('detour_trace_count', 0)}`",
@@ -475,6 +477,7 @@ def run_audit(
     run_id: str | None = None,
     runs_root: Path = DEFAULT_RUNS_ROOT,
     case_ids: list[str] | None = None,
+    max_units: int = DEFAULT_MAX_UNITS,
 ) -> dict[str, Any]:
     selected_case_ids = [case_id for case_id in (case_ids or list(ALL_CASE_IDS)) if case_id in CASE_TARGET_ASSIGNMENTS]
     if not selected_case_ids:
@@ -482,7 +485,7 @@ def run_audit(
     actual_run_id = run_id or f"attentional_v2_f4a_quality_audit_{_timestamp_slug()}"
     run_root = runs_root / actual_run_id
     run_root.mkdir(parents=True, exist_ok=True)
-    cases = [_resolve_case(case_id, run_root=run_root) for case_id in selected_case_ids]
+    cases = [_resolve_case(case_id, run_root=run_root, max_units=max_units) for case_id in selected_case_ids]
     _json_dump(run_root / "meta" / "cases.json", [asdict(case) for case in cases])
 
     python = ROOT / ".venv" / "bin" / "python"
@@ -505,6 +508,8 @@ def run_audit(
             str(runs_root),
             "--run-id",
             actual_run_id,
+            "--max-units",
+            str(max_units),
             "--worker-case-id",
             case.case_id,
             "--worker-result",
@@ -572,6 +577,12 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument("--runs-root", default=str(DEFAULT_RUNS_ROOT))
     parser.add_argument("--run-id", default="")
     parser.add_argument("--case-id", action="append", default=[])
+    parser.add_argument(
+        "--max-units",
+        type=int,
+        default=DEFAULT_MAX_UNITS,
+        help="Maximum number of formal reading units per case. Use 0 for a full-window run.",
+    )
     parser.add_argument("--worker-case-id", default="", help=argparse.SUPPRESS)
     parser.add_argument("--worker-result", default="", help=argparse.SUPPRESS)
     return parser.parse_args()
@@ -587,11 +598,13 @@ def main() -> int:
             args.worker_case_id,
             run_root=runs_root / args.run_id,
             worker_result=Path(args.worker_result).resolve(),
+            max_units=args.max_units,
         )
     summary = run_audit(
         run_id=args.run_id or None,
         runs_root=runs_root,
         case_ids=[str(item) for item in args.case_id if str(item).strip()] or None,
+        max_units=args.max_units,
     )
     print(json.dumps(summary, ensure_ascii=False, indent=2))
     print(f"run_root={summary['run_root']}")

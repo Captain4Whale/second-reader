@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-04-21T13:07:00+08:00`
+Last verified: `2026-04-21T22:58:00+08:00`
 
 ## Current Objective
 - Keep `target-centered long-span accumulation v2` as the active long-span methodology while preserving bounded long-span v1 as historical evidence.
@@ -364,8 +364,33 @@ Last verified: `2026-04-21T13:07:00+08:00`
     - meaningful headings may still stand alone, but label-like headings now prefer merging with the immediately following body paragraph when the preview allows
     - deterministic fallback now widens `heading + first body paragraph` instead of returning a bare heading when that body paragraph is already visible
     - `Read` now explicitly stays proportionate around thin heading-like units and may remain silent there
-  - the active next implementation slice is now:
-    - then do one small post-F4A repair pass and rerun the same six-case pack before opening `Phase F4B`
+  - the unit-internal anchor-selection repair is now also landed on that baseline:
+    - `Read` now prefers the smallest self-sufficient surfaced anchor inside a unit
+    - multiple independently complete anchors inside one unit are now explicitly allowed
+    - if a single sentence would lose its meaning in isolation, `Read` may instead use the smallest multi-sentence span that stays self-sufficient
+    - this repair is meant to stop a sharper later line from swallowing an earlier independently complete framing / hinge line
+  - a focused two-window before/after spot check is now completed as the first repair-level validation:
+    - before run:
+      - `attentional_v2_f4a_quality_audit_20260419`
+    - after run:
+      - `attentional_v2_window_ab_after_20260421`
+    - comparison note:
+      - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_window_ab_after_20260421/analysis/focused_window_ab_compare_20260421/README.md`
+    - observed window-level outcome:
+      - `value_of_others_private_en__8_10`: visible reactions `6 -> 8`, while the selected setup hinge now surfaces instead of staying silent
+      - `huochu_shengming_de_yiyi_private_zh__segment_1`: visible reactions `8 -> 11`, with `silent_unit_count 3 -> 2`
+    - evidence-boundary note:
+      - this window-level spot check is valid evidence that density and surfaced-anchor behavior improved on the selected windows
+      - it is not the same thing as the narrower direct probe around `People want things from other people.`, because that exact sentence is not inside the selected `value_of_others_private_en__8_10` window
+  - the active next validation slice is now:
+    - let the V2-only full-window overnight spot check finish on the same two titles
+    - then judge whether the short-window density gain carries through the whole windows without degrading overall reading quality
+    - active background job:
+      - `bgjob_attentional_v2_full_window_spotcheck_20260421`
+    - run id:
+      - `attentional_v2_full_window_spotcheck_20260421`
+    - dedicated watchdog:
+      - `bgjob_job_registry_auto_recovery_watchdog_full_window_spotcheck_20260421`
   - the April 12 post-Phase-D smoke has now finished and is interpreted as follows:
     - `value_of_others_private_en__8_10` produced repeated anomalous long-tail calls during the April 12 smoke
     - a static size/content snapshot now lives at:
