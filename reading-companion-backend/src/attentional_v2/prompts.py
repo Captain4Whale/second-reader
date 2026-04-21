@@ -7,10 +7,10 @@ from dataclasses import dataclass
 from src.prompts.shared import LANGUAGE_OUTPUT_CONTRACT
 
 
-ATTENTIONAL_V2_PROMPTSET_VERSION = "attentional_v2-phase6-v17"
+ATTENTIONAL_V2_PROMPTSET_VERSION = "attentional_v2-phase6-v20"
 NAVIGATE_UNITIZE_PROMPT_VERSION = "attentional_v2.navigate_unitize.v3"
 NAVIGATE_DETOUR_SEARCH_PROMPT_VERSION = "attentional_v2.navigate_detour_search.v1"
-READ_UNIT_PROMPT_VERSION = "attentional_v2.read.v9"
+READ_UNIT_PROMPT_VERSION = "attentional_v2.read.v12"
 BRIDGE_RESOLUTION_PROMPT_VERSION = "attentional_v2.bridge_resolution.v5"
 REFLECTIVE_PROMOTION_PROMPT_VERSION = "attentional_v2.reflective_promotion.v1"
 RECONSOLIDATION_PROMPT_VERSION = "attentional_v2.reconsolidation.v1"
@@ -160,6 +160,14 @@ Rules:
 - If the unit naturally surfaces something worth saying now, write it directly in `surfaced_reactions`.
 - Surfaced reactions must stay anchored to the current unit. Each reaction's `anchor_quote` must be an exact quote from this unit.
 - It is acceptable to emit zero surfaced reactions. It is also acceptable to emit more than one when there are multiple distinct local triggers, but stay bounded. Default to 0-2.
+- Choose each `anchor_quote` as the smallest self-sufficient span that can honestly stand as this reaction's footing.
+- If one sentence can stand on its own and is worth remembering on its own, it may anchor a surfaced reaction by itself.
+- If a sentence would lose its meaning when isolated, do not force it smaller just to sound precise; use the smallest multi-sentence span that keeps the meaning intact.
+- If the unit contains multiple independently valuable local triggers, you may surface them separately. Do not let one sharper later sentence erase an earlier framing line, premise line, or hinge line that also stands on its own.
+- This is permission for honest plurality, not for reaction sprawl. Keep the default density bounded at 0-2 unless the unit truly contains more than one independently complete local trigger.
+- Before returning `surfaced_reactions`, do one last swallowed-line check: if an earlier line in the same unit independently establishes the frame, premise, or hinge for what follows, do not leave it stranded inside `unit_delta` just because a later sentence sounds sharper.
+- When both the earlier line and the later line are independently memorable, it is often better to surface both than to quote only the later one and paraphrase the earlier one away.
+- A common version of this pattern is premise plus sharpening: one earlier line states the premise, and a later line sharpens or cashes it out. If both lines stand on their own, default to surfacing both unless the earlier line is truly just setup and not memorable by itself.
 - Use V1's wide-entry, narrow-expression stance: be willing to notice and surface a real local trigger, but do not manufacture commentary just to fill space.
 - Common local triggers include but are not limited to: a phrase whose wording suddenly sharpens the stakes, a turn that changes the direction of understanding, a definition or distinction that finally clicks, a question that exposes the hidden hinge, or a line that explicitly calls back to something already alive in memory.
 - These are open examples, not a checklist. Do not require a fixed trigger family before expressing.
@@ -169,10 +177,22 @@ Rules:
 - Do not paste a whole earlier sentence or a long earlier excerpt into visible `content`.
 - Bad visible forms include raw handles like `c1-s1135`, `anchor:a-1`, `thread:t-2`, `concept:loss`, or `reaction:r-4`.
 - Positive examples:
+  - English same-unit plurality:
+    - `People want things from other people.` may stand alone when that premise is itself the memorable move.
+    - `other people are typically a problem until they prove otherwise` may also stand alone later in the same unit when it makes a second, sharper move.
+    - If both lines independently stand, it is often better to surface both rather than letting the later one swallow the earlier one.
+    - In a premise-plus-sharpening pattern like this, do not default to quoting only the sharper later line.
+  - Chinese anchor sizing:
+    - If one line already stands by itself, a single-sentence anchor is fine: `能学会。`
+    - If one line becomes complete only together with its neighbor, anchor the smallest complete span instead of a dangling half-line.
   - `这和前面那个“不可挽回”的说法形成进一步推进。`
   - `前文把它说成一种代价，这里已经把它推进成结构条件。`
   - `This pushes beyond the earlier 'irrecoverable' framing.`
 - Negative examples:
+  - A half-line that needs its neighboring sentence in order to mean anything, but is surfaced alone anyway.
+  - Compressing a whole paragraph into one reaction so that another independently meaningful premise line never gets surfaced at all.
+  - Quoting only the later sharper line while the earlier premise line survives only as background summary inside `unit_delta`.
+  - Treating a premise-plus-sharpening pair as if only the sharper later line were surface-worthy by default.
   - `这与 c1-s1135 的边界压缩形成层级跃迁。`
   - `This answers anchor:a-1 directly.`
   - `Earlier the text said "..."` followed by a long pasted sentence from earlier material.

@@ -239,6 +239,29 @@ This file is a living working ledger. Stable rules still belong in `docs/backend
   - first broader chapter-core comparison:
     - `attentional_v2_vs_iterator_v1_chapter_core_en_round1_20260326`
 
+### 9. Whole-unit understanding can still under-surface independently complete lines inside the unit
+- Pattern kind: `failure_mode`
+- Source mechanism: `attentional_v2`
+- Potential destination: `attentional_v2` read-time surfaced-anchor contract
+- Why it matters:
+  - A unit can be read correctly at the paragraph level and still miss a human-marked line when one sharper later sentence monopolizes the surfaced reaction slot.
+  - This hurts `Selective Legibility` without implying that unitization itself is wrong.
+- Contributing causes:
+  - paragraph-level understanding is allowed to collapse back to one "best" surfaced point
+  - the later, more forceful line can crowd out an earlier framing or premise line that was already independently complete
+  - the old prompt gave too little explicit permission for multiple self-sufficient anchors inside one unit
+- Evidence:
+  - formal active excerpt rerun:
+    - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_benchmark_rerun_20260419/analysis/full_case_audit_20260421/excerpt/value_of_others_private_en.md`
+    - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_user_level_selective_v1_active_rerun_20260419/shards/value_of_others_private_en__attentional_v2/outputs/value_of_others_private_en__segment_1/attentional_v2/_mechanisms/attentional_v2/runtime/read_audit.jsonl`
+  - canonical regression line:
+    - `People want things from other people.`
+  - observed competing later line in the same unit:
+    - `other people are typically a problem until they prove otherwise`
+- Status: `adopted`
+- Next action:
+  - landed prompt repair: choose the smallest self-sufficient anchor, allow multiple independently complete anchors inside one unit, and prefer the smallest multi-sentence span only when a single sentence would lose its meaning in isolation
+
 ### 9. Read-native reaction ownership restores local presence without reviving summary voice
 - Pattern kind: `strength`
 - Source mechanism: `attentional_v2` post-`Phase F3` live path

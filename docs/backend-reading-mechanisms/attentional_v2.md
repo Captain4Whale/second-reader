@@ -298,6 +298,15 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
       - optional `prior_link`
       - optional `outside_link`
       - optional `search_intent`
+    - `read` still understands the whole `unit`, but each `anchor_quote` should be chosen as the smallest self-sufficient span that can honestly carry that surfaced reaction
+      - if one sentence already stands on its own, it may anchor a surfaced reaction by itself
+      - if a sentence would lose meaning when isolated, `read` should use the smallest multi-sentence span that keeps the meaning intact
+      - a larger paragraph-sized anchor is allowed only when that larger span is genuinely the smallest complete footing, not as a lazy default
+    - one `unit` may legitimately yield more than one native surfaced reaction when it contains multiple independently complete local triggers
+      - a sharper later sentence should not automatically swallow an earlier framing line, premise line, or hinge line that also stands on its own
+      - `read` should do a final swallowed-line check before it settles on one reaction: if an earlier line independently frames the later move, it should not be left stranded inside `unit_delta` merely because a later line sounds more dramatic
+      - this applies especially to premise-plus-sharpening pairs: when the earlier line states the premise and the later line cashes it out, `read` should not default to surfacing only the later line if both independently stand
+      - this is bounded plurality, not pressure to spray reactions everywhere; the default density still stays low unless the unit honestly contains multiple independently valuable spans
     - the native surfaced-reaction shape does not carry a `type`
     - `content` must stay reader-facing and natural-language.
       - it may callback to earlier material, but it must not expose system handles such as sentence ids, `ref_ids`, anchor ids, thread ids, concept ids, or reaction ids

@@ -337,11 +337,25 @@ def test_read_unit_filters_unanchored_surface_and_falls_back_from_legacy_move_hi
     assert result["implicit_uptake_ops"][0]["target_store"] == "working_state"
     assert "Keep proportion around thin structural units." in captured["system_prompt"]
     assert "Do not inflate a bare heading or structural cue" in captured["system_prompt"]
+    assert "Choose each `anchor_quote` as the smallest self-sufficient span" in captured["system_prompt"]
+    assert "If a sentence would lose its meaning when isolated" in captured["system_prompt"]
+    assert "Do not let one sharper later sentence erase an earlier framing line" in captured["system_prompt"]
+    assert "If the unit contains multiple independently valuable local triggers" in captured["system_prompt"]
+    assert "do one last swallowed-line check" in captured["system_prompt"]
+    assert "it is often better to surface both" in captured["system_prompt"]
+    assert "A common version of this pattern is premise plus sharpening" in captured["system_prompt"]
+    assert "People want things from other people." in captured["system_prompt"]
+    assert "other people are typically a problem until they prove otherwise" in captured["system_prompt"]
+    assert "do not default to quoting only the sharper later line" in captured["system_prompt"]
+    assert "If one line already stands by itself, a single-sentence anchor is fine: `能学会。`" in captured["system_prompt"]
+    assert "Compressing a whole paragraph into one reaction" in captured["system_prompt"]
+    assert "Quoting only the later sharper line" in captured["system_prompt"]
+    assert "premise-plus-sharpening pair" in captured["system_prompt"]
     assert "`prior_link.ref_ids` are internal system handles" in captured["system_prompt"]
     assert "Never copy any `ref_id`, sentence id, anchor id" in captured["system_prompt"]
     assert "This pushes beyond the earlier 'irrecoverable' framing." in captured["system_prompt"]
     assert "This answers anchor:a-1 directly." in captured["system_prompt"]
-    assert manifest["prompt_version"] == "attentional_v2.read.v9"
+    assert manifest["prompt_version"] == "attentional_v2.read.v12"
 
 
 def test_navigate_route_uses_pressure_signals_only():
