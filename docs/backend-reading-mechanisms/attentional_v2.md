@@ -299,6 +299,10 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
       - optional `outside_link`
       - optional `search_intent`
     - the native surfaced-reaction shape does not carry a `type`
+    - `content` must stay reader-facing and natural-language.
+      - it may callback to earlier material, but it must not expose system handles such as sentence ids, `ref_ids`, anchor ids, thread ids, concept ids, or reaction ids
+      - `prior_link.ref_ids` remain internal structured linkage for the runtime and audits, not wording that should leak into visible text
+      - if visible wording briefly quotes earlier material, it should do so sparingly with a short fragment rather than pasting a whole earlier sentence back into the reaction
   - `implicit_uptake_ops`
     - explicit patch/append/close/link operations against the durable state layers
     - `read` should not rewrite whole state objects
@@ -327,6 +331,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - `retrospect`
     - no longer a primary reaction type
     - compatibility adapter uses it only when a surfaced `prior_link` must be rendered into older family-based outputs
+    - the surfaced wording itself should still speak naturally to the reader rather than mentioning runtime coordinates
   - `association`
     - compatibility adapter uses it when a surfaced `outside_link` must be rendered into older family-based outputs
   - `curious`

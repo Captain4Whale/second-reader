@@ -76,6 +76,10 @@ _STATE_OPERATION_TYPES = {
 }
 _DETOUR_STATUSES = {"open", "resolved", "abandoned"}
 _DETOUR_SEARCH_DECISIONS = {"narrow_scope", "land_region", "defer_detour"}
+_VISIBLE_INTERNAL_REFERENCE_PATTERNS = (
+    re.compile(r"\bc\d+-s\d+(?:-\d+)?(?:-c\d+-s\d+(?:-\d+)?)?\b", re.IGNORECASE),
+    re.compile(r"\b(?:anchor|thread|concept|reaction|move|ref):[A-Za-z0-9._-]+\b", re.IGNORECASE),
+)
 
 
 def _timestamp() -> str:
@@ -88,6 +92,15 @@ def _clean_text(value: object) -> str:
     """Normalize one free-text value."""
 
     return re.sub(r"\s+", " ", str(value or "")).strip()
+
+
+def _contains_internal_reference_markup(text: str) -> bool:
+    """Return whether one visible string leaks internal runtime handles."""
+
+    cleaned = _clean_text(text)
+    if not cleaned:
+        return False
+    return any(pattern.search(cleaned) for pattern in _VISIBLE_INTERNAL_REFERENCE_PATTERNS)
 
 
 def _json_block(value: object) -> str:
@@ -679,6 +692,8 @@ def _normalize_surfaced_reaction(
     if not anchor_quote or not content:
         return None
     if current_unit_texts and not any(anchor_quote in text for text in current_unit_texts):
+        return None
+    if _contains_internal_reference_markup(content):
         return None
     return {
         "anchor_quote": anchor_quote,

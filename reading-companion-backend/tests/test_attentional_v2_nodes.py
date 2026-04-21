@@ -252,7 +252,7 @@ def test_navigate_detour_search_normalizes_invalid_land_into_defer(tmp_path: Pat
 
 
 def test_read_unit_filters_unanchored_surface_and_falls_back_from_legacy_move_hint(tmp_path: Path, monkeypatch):
-    """Read should keep only unit-anchored surfaced reactions and derive pressure from legacy fallback fields."""
+    """Read should keep only reader-facing surfaced reactions and derive pressure from legacy fallback fields."""
 
     captured: dict[str, str] = {}
 
@@ -271,6 +271,14 @@ def test_read_unit_filters_unanchored_surface_and_falls_back_from_legacy_move_hi
                         "relation": "callback",
                         "note": "It answers the earlier thread.",
                     },
+                },
+                {
+                    "anchor_quote": "Beta consequence.",
+                    "content": "This pushes further than c1-s1135.",
+                },
+                {
+                    "anchor_quote": "Beta consequence.",
+                    "content": "This answers anchor:a-1 directly.",
                 },
                 {
                     "anchor_quote": "Quote outside unit",
@@ -329,7 +337,11 @@ def test_read_unit_filters_unanchored_surface_and_falls_back_from_legacy_move_hi
     assert result["implicit_uptake_ops"][0]["target_store"] == "working_state"
     assert "Keep proportion around thin structural units." in captured["system_prompt"]
     assert "Do not inflate a bare heading or structural cue" in captured["system_prompt"]
-    assert manifest["prompt_version"] == "attentional_v2.read.v8"
+    assert "`prior_link.ref_ids` are internal system handles" in captured["system_prompt"]
+    assert "Never copy any `ref_id`, sentence id, anchor id" in captured["system_prompt"]
+    assert "This pushes beyond the earlier 'irrecoverable' framing." in captured["system_prompt"]
+    assert "This answers anchor:a-1 directly." in captured["system_prompt"]
+    assert manifest["prompt_version"] == "attentional_v2.read.v9"
 
 
 def test_navigate_route_uses_pressure_signals_only():

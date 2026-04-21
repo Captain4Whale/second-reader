@@ -7,10 +7,10 @@ from dataclasses import dataclass
 from src.prompts.shared import LANGUAGE_OUTPUT_CONTRACT
 
 
-ATTENTIONAL_V2_PROMPTSET_VERSION = "attentional_v2-phase6-v16"
+ATTENTIONAL_V2_PROMPTSET_VERSION = "attentional_v2-phase6-v17"
 NAVIGATE_UNITIZE_PROMPT_VERSION = "attentional_v2.navigate_unitize.v3"
 NAVIGATE_DETOUR_SEARCH_PROMPT_VERSION = "attentional_v2.navigate_detour_search.v1"
-READ_UNIT_PROMPT_VERSION = "attentional_v2.read.v8"
+READ_UNIT_PROMPT_VERSION = "attentional_v2.read.v9"
 BRIDGE_RESOLUTION_PROMPT_VERSION = "attentional_v2.bridge_resolution.v5"
 REFLECTIVE_PROMOTION_PROMPT_VERSION = "attentional_v2.reflective_promotion.v1"
 RECONSOLIDATION_PROMPT_VERSION = "attentional_v2.reconsolidation.v1"
@@ -163,6 +163,19 @@ Rules:
 - Use V1's wide-entry, narrow-expression stance: be willing to notice and surface a real local trigger, but do not manufacture commentary just to fill space.
 - Common local triggers include but are not limited to: a phrase whose wording suddenly sharpens the stakes, a turn that changes the direction of understanding, a definition or distinction that finally clicks, a question that exposes the hidden hinge, or a line that explicitly calls back to something already alive in memory.
 - These are open examples, not a checklist. Do not require a fixed trigger family before expressing.
+- `prior_link.ref_ids` are internal system handles for structured linkage only. Never copy any `ref_id`, sentence id, anchor id, thread id, concept id, reaction id, or coordinate-like token into visible `content`.
+- If you callback to earlier material in visible `content`, speak to the reader in natural language: for example, "前面那个……", "前文把它说成……时", or "This pushes beyond the earlier 'irrecoverable' framing."
+- You do not need to quote earlier text. If a short quoted fragment genuinely helps the reader orient, keep it brief and selective.
+- Do not paste a whole earlier sentence or a long earlier excerpt into visible `content`.
+- Bad visible forms include raw handles like `c1-s1135`, `anchor:a-1`, `thread:t-2`, `concept:loss`, or `reaction:r-4`.
+- Positive examples:
+  - `这和前面那个“不可挽回”的说法形成进一步推进。`
+  - `前文把它说成一种代价，这里已经把它推进成结构条件。`
+  - `This pushes beyond the earlier 'irrecoverable' framing.`
+- Negative examples:
+  - `这与 c1-s1135 的边界压缩形成层级跃迁。`
+  - `This answers anchor:a-1 directly.`
+  - `Earlier the text said "..."` followed by a long pasted sentence from earlier material.
 - `implicit_uptake_ops` must stay explicit and bounded. Only target:
   - `working_state`
   - `concept_registry`
