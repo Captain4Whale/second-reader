@@ -89,6 +89,21 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - mainline and detour reading now share one surfaced-native reaction-record builder
   - chapter-result compatibility projection and normalized eval export now derive legacy family labels only through the compat helper
   - dead live ownership paths for the old `Express` persistence flow and `raw_reaction` fallback are now removed
+- Phase F4B is now landed as the survey-led `body-first` chapter scheduling slice.
+  - `survey` now performs one narrow LLM-backed `chapter_zone` classification pass over lightweight chapter samples.
+  - the legal survey scheduling zones are:
+    - `main_body`
+    - `front_support`
+    - `back_support`
+    - `auxiliary`
+  - `survey` now persists one machine-readable `reading_plan`:
+    - `mode`
+    - `mainline_chapter_ids`
+    - `deferred_chapter_ids`
+  - `runner` now consumes that plan and reads:
+    - main body first
+    - deferred support chapters after the main body drains
+  - `parse` still preserves the original chapter order as source truth, and `Navigate` still does not own book-level chapter ordering
 - Phase C.1 of the post-eval structural rework is now landed.
   - Live prompt inputs now flow through a bounded internal `state_packet.v1` seam.
   - `navigate.unitize` now receives packetized `navigation_context`.
@@ -159,9 +174,17 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
 
 ## Reading Progression Logic
 - The mechanism starts with a survey pass.
-  - It uses the shared `book document` to build a rough structural map of chapters, headings, and likely pivots.
-- It then reads through the text in sentence order.
-  - Sentence order is the intake discipline.
+  - It uses the shared `book document` to build a rough structural map of chapters, headings, likely pivots, and a narrow `chapter_zone` classification for scheduling.
+  - That survey pass remains an orientation layer rather than hidden full-book reading:
+    - it classifies structural role only
+    - it does not produce user-visible reactions
+    - it does not write durable reading memory
+  - It now also emits a machine-readable `reading_plan` whose default mode is `body_first`.
+- It then reads through the text in scheduled sentence order.
+  - The chapter queue now defaults to:
+    - `main_body` chapters first
+    - then `front_support` and `back_support`
+  - Within whichever chapter is currently active, sentence order is still the intake discipline.
   - Coverage-unit selection is now the reasoning-entry discipline.
 - Sentence intake is now a pure rolling-buffer ingest step.
   - It maintains `local_buffer` only.
@@ -195,8 +218,11 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - The deterministic fallback now follows the same posture:
     - ordinary body paragraphs still fall back to the current paragraph end
     - but a heading paragraph now falls back to `heading + first body paragraph` when the preview clearly contains that body paragraph
-  - `Preface`, `Appendix`, `Afterword`, and similar book-level body territory still remain normal reading material.
-    - this slice does not route them through a special runtime path
+  - `Preface`, `Foreword`, `Introduction`, `Appendix`, `Afterword`, and similar support chapters still remain legitimate reading material.
+    - but they are no longer treated as unconditional mainline reading territory
+    - `survey` now classifies them into `front_support` or `back_support` when appropriate
+    - `runner` then reads them after the `main_body` queue drains
+    - explicit chapter-targeted runs may still select them directly
 - `read` remains the authoritative formal unit-read node.
   - On the current live baseline, it now directly produces `unit_delta`, `surfaced_reactions`, `implicit_uptake_ops`, `pressure_signals`, and optional `detour_need`.
   - It should not remain a control super-node.
@@ -504,6 +530,11 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - `auxiliary` paragraphs are filtered before sentence-layer reading, so footnote-like or apparatus-like content that survives only as `auxiliary` never reaches `Navigate` on the live path.
 - Current scaffolded mechanism-private derived artifacts
   - `_mechanisms/attentional_v2/derived/survey_map.json`
+    - now includes:
+      - chapter-level `chapter_zone`
+      - `zone_confidence`
+      - `zone_reason`
+      - one machine-readable `reading_plan`
 - `_mechanisms/attentional_v2/derived/revisit_index.json`
   - historical/transition artifact from the pre-detour vocabulary
   - the live F2 loop no longer treats `revisit` as the active navigation concept, but this historical file is retained for compatibility territory until a later cleanup slice
@@ -514,6 +545,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
     - rolling intake buffer only
   - `_mechanisms/attentional_v2/runtime/local_continuity.json`
     - compact continuity plus detour ownership state
+    - also carries the current `reading_queue_stage` (`mainline` or `deferred_support`) for resume/observability
   - `_mechanisms/attentional_v2/runtime/continuation_capsule.json`
   - `_mechanisms/attentional_v2/runtime/unitization_audit.jsonl`
   - `_mechanisms/attentional_v2/runtime/read_audit.jsonl`
@@ -652,4 +684,6 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - the same smoke also showed that explicit callback-cue routing alone still did not produce a concrete earlier-target bridge in `nawaer_baodian_private_zh__chapter_22`
   - until that blocker is resolved, do not treat the current working-tree repair state as ready for another full formal excerpt rerun
 - The survey stage must stay coarse enough that it does not become hidden full-book cheating.
+  - even with the new LLM-based `chapter_zone` classifier, the survey pass is still limited to bounded structural samples and scheduling output
+  - it must not turn into chapter summarization, theme extraction, or durable understanding
 - Retrieval pressure, rare-search gating, and detour behavior will likely need careful budget control during implementation.

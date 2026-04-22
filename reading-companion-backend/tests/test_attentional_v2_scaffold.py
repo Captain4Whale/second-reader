@@ -217,6 +217,214 @@ def _provisioned_book_with_detour() -> ProvisionedBook:
     )
 
 
+def _provisioned_book_with_supporting_chapters() -> ProvisionedBook:
+    """Return a three-chapter fixture with support material around one body chapter."""
+
+    book_document = {
+        "metadata": {
+            "book": "Support Book",
+            "author": "Tester",
+            "book_language": "en",
+            "output_language": "en",
+            "source_file": str(_fixture_epub()),
+        },
+        "chapters": [
+            {
+                "id": 1,
+                "title": "Preface",
+                "chapter_number": None,
+                "reference": "Preface",
+                "paragraphs": [
+                    {
+                        "paragraph_index": 1,
+                        "text": "How to use this book.",
+                        "href": "preface.xhtml",
+                        "start_cfi": "/6/2[preface]!/4/2/1:0",
+                        "end_cfi": "/6/2[preface]!/4/2/1:22",
+                        "text_role": "body",
+                    }
+                ],
+                "sentences": [
+                    {
+                        "sentence_id": "c1-s1",
+                        "sentence_index": 1,
+                        "paragraph_index": 1,
+                        "text": "How to use this book.",
+                        "text_role": "body",
+                        "locator": {
+                            "href": "preface.xhtml",
+                            "paragraph_index": 1,
+                            "paragraph_start": 1,
+                            "paragraph_end": 1,
+                            "char_start": 0,
+                            "char_end": 22,
+                        },
+                    }
+                ],
+            },
+            {
+                "id": 2,
+                "title": "Chapter 1",
+                "chapter_number": 1,
+                "reference": "Chapter 1",
+                "paragraphs": [
+                    {
+                        "paragraph_index": 1,
+                        "text": "Main idea.",
+                        "href": "chapter-1.xhtml",
+                        "start_cfi": "/6/2[chap01]!/4/2/1:0",
+                        "end_cfi": "/6/2[chap01]!/4/2/1:10",
+                        "text_role": "body",
+                    }
+                ],
+                "sentences": [
+                    {
+                        "sentence_id": "c2-s1",
+                        "sentence_index": 1,
+                        "paragraph_index": 1,
+                        "text": "Main idea.",
+                        "text_role": "body",
+                        "locator": {
+                            "href": "chapter-1.xhtml",
+                            "paragraph_index": 1,
+                            "paragraph_start": 1,
+                            "paragraph_end": 1,
+                            "char_start": 0,
+                            "char_end": 10,
+                        },
+                    }
+                ],
+            },
+            {
+                "id": 3,
+                "title": "Afterword",
+                "chapter_number": None,
+                "reference": "Afterword",
+                "paragraphs": [
+                    {
+                        "paragraph_index": 1,
+                        "text": "Closing reflection.",
+                        "href": "afterword.xhtml",
+                        "start_cfi": "/6/2[afterword]!/4/2/1:0",
+                        "end_cfi": "/6/2[afterword]!/4/2/1:18",
+                        "text_role": "body",
+                    }
+                ],
+                "sentences": [
+                    {
+                        "sentence_id": "c3-s1",
+                        "sentence_index": 1,
+                        "paragraph_index": 1,
+                        "text": "Closing reflection.",
+                        "text_role": "body",
+                        "locator": {
+                            "href": "afterword.xhtml",
+                            "paragraph_index": 1,
+                            "paragraph_start": 1,
+                            "paragraph_end": 1,
+                            "char_start": 0,
+                            "char_end": 18,
+                        },
+                    }
+                ],
+            },
+        ],
+    }
+    return ProvisionedBook(
+        book_path=_fixture_epub(),
+        title="Support Book",
+        author="Tester",
+        book_language="en",
+        output_language="en",
+        output_dir=Path("output/support-book"),
+        raw_chapters=None,
+        book_document=book_document,
+    )
+
+
+@pytest.fixture(autouse=True)
+def _stub_survey_artifacts(monkeypatch):
+    """Keep scaffold tests deterministic by stubbing the survey artifact writer."""
+
+    def fake_write_book_survey_artifacts(output_dir, book_document, *, policy_snapshot=None):
+        chapters = [dict(chapter) for chapter in book_document.get("chapters", []) if isinstance(chapter, dict)]
+        chapter_map = []
+        mainline_chapter_ids: list[int] = []
+        deferred_chapter_ids: list[int] = []
+        for chapter in chapters:
+            chapter_id = int(chapter.get("id", 0) or 0)
+            title = str(chapter.get("title", "") or "")
+            lowered = title.lower()
+            if any(marker in lowered for marker in ("preface", "foreword", "introduction", "prologue")):
+                zone = "front_support"
+                deferred_chapter_ids.append(chapter_id)
+            elif any(marker in lowered for marker in ("appendix", "afterword", "epilogue", "postscript")):
+                zone = "back_support"
+                deferred_chapter_ids.append(chapter_id)
+            elif any(marker in lowered for marker in ("notes", "references", "bibliography", "index")):
+                zone = "auxiliary"
+            else:
+                zone = "main_body"
+                mainline_chapter_ids.append(chapter_id)
+            chapter_map.append(
+                {
+                    "chapter_id": chapter_id,
+                    "title": title,
+                    "chapter_number": chapter.get("chapter_number"),
+                    "level": int(chapter.get("level", 1) or 1),
+                    "structural_role_guess": "body",
+                    "role_confidence": "weak",
+                    "chapter_zone": zone,
+                    "zone_confidence": "stub",
+                    "zone_reason": "test_stub",
+                    "heading_text": "",
+                    "opening_sentences": [],
+                    "closing_sentences": [],
+                    "pivot_headings": [],
+                }
+            )
+        if not mainline_chapter_ids:
+            mainline_chapter_ids = [
+                int(chapter.get("id", 0) or 0)
+                for chapter in chapters
+                if int(chapter.get("id", 0) or 0) > 0 and int(chapter.get("id", 0) or 0) not in deferred_chapter_ids
+            ]
+        survey = {
+            "schema_version": 1,
+            "mechanism_version": "attentional_v2-phase6",
+            "generated_at": "2026-04-22T00:00:00Z",
+            "status": "orientation_only",
+            "book_frame": {
+                "book": str(book_document.get("metadata", {}).get("book", "") or ""),
+                "author": str(book_document.get("metadata", {}).get("author", "") or ""),
+                "total_chapters": len(chapters),
+            },
+            "chapter_map": chapter_map,
+            "reading_plan": {
+                "mode": "body_first",
+                "mainline_chapter_ids": mainline_chapter_ids,
+                "deferred_chapter_ids": deferred_chapter_ids,
+            },
+            "initial_motif_seeds": [],
+            "survey_caveats": [],
+            "policy_snapshot": dict(policy_snapshot or {}),
+        }
+        revisit = {
+            "schema_version": 1,
+            "mechanism_version": "attentional_v2-phase6",
+            "generated_at": "2026-04-22T00:00:00Z",
+            "status": "survey_seeded",
+            "anchors": {},
+            "chapter_boundaries": {},
+            "opening_sentence_ids": [],
+        }
+        survey_map_file(output_dir).write_text(json.dumps(survey, ensure_ascii=False, indent=2), encoding="utf-8")
+        revisit_index_file(output_dir).write_text(json.dumps(revisit, ensure_ascii=False, indent=2), encoding="utf-8")
+        return {"survey_map": survey, "revisit_index": revisit}
+
+    monkeypatch.setattr(runner_module, "write_book_survey_artifacts", fake_write_book_survey_artifacts)
+
+
 def test_attentional_v2_initialization_writes_phase8_artifacts(tmp_path):
     """The Phase 1-8 scaffold should write the shared shell and private state files."""
 
@@ -296,6 +504,10 @@ def test_attentional_v2_initialization_writes_phase8_artifacts(tmp_path):
 
     survey = json.loads(survey_map_file(output_dir).read_text(encoding="utf-8"))
     assert survey["status"] == "not_started"
+    assert survey["chapter_map"] == []
+    assert survey["reading_plan"]["mode"] == "body_first"
+    assert survey["reading_plan"]["mainline_chapter_ids"] == []
+    assert survey["reading_plan"]["deferred_chapter_ids"] == []
 
     revisit = json.loads(revisit_index_file(output_dir).read_text(encoding="utf-8"))
     assert revisit["anchors"] == {}
@@ -325,6 +537,126 @@ def test_attentional_v2_parse_book_creates_ready_artifacts_without_iterator_stru
     shell = load_runtime_shell(runtime_shell_file(result.output_dir))
     assert shell["mechanism_key"] == ATTENTIONAL_V2_MECHANISM_KEY
     assert json.loads((result.output_dir / "public" / "book_manifest.json").read_text(encoding="utf-8"))["chapters"]
+    survey = json.loads(survey_map_file(result.output_dir).read_text(encoding="utf-8"))
+    assert survey["reading_plan"]["mode"] == "body_first"
+
+
+def test_attentional_v2_runner_prefers_main_body_before_supporting_chapters(tmp_path, monkeypatch):
+    """Full-book runs should consume main-body chapters before deferred support chapters."""
+
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(runner_module, "ensure_canonical_parse", lambda *args, **kwargs: _provisioned_book_with_supporting_chapters())
+    chapter_read_order: list[str] = []
+
+    def fake_read_unit(**kwargs):
+        focal_sentence = kwargs["current_unit_sentences"][-1]
+        chapter_read_order.append(str(kwargs["chapter_title"]))
+        return {
+            "unit_delta": f"Read {focal_sentence['sentence_id']}.",
+            "pressure_signals": {
+                "continuation_pressure": False,
+                "backward_pull": False,
+                "frame_shift_pressure": False,
+            },
+            "surfaced_reactions": [],
+            "implicit_uptake_ops": [],
+            "detour_need": None,
+        }
+
+    def fake_phase6_chapter_cycle(**kwargs):
+        compatibility_payload = project_chapter_result_compatibility(
+            book_id=kwargs["book_id"],
+            chapter=kwargs["chapter"],
+            reaction_records=kwargs["reaction_records"],
+            output_language=kwargs["output_language"],
+            output_dir=kwargs["output_dir"],
+            persist=True,
+        )
+        return {
+            "chapter_consolidation": {"chapter_ref": kwargs["chapter"].get("reference", "")},
+            "promotion_results": [],
+            "working_state": kwargs["working_state"],
+            "concept_registry": kwargs["concept_registry"],
+            "thread_trace": kwargs["thread_trace"],
+            "anchor_bank": kwargs["anchor_bank"],
+            "reflective_frames": kwargs["reflective_frames"],
+            "knowledge_activations": kwargs["knowledge_activations"],
+            "reaction_records": kwargs["reaction_records"],
+            "compatibility_payload": compatibility_payload,
+        }
+
+    def fake_process_sentence_intake(sentence, *, local_buffer, window_size=6):
+        return {
+            **local_buffer,
+            "current_sentence_id": sentence["sentence_id"],
+            "current_sentence_index": sentence["sentence_index"],
+            "recent_sentences": [*local_buffer.get("recent_sentences", []), dict(sentence)][-window_size:],
+            "open_meaning_unit_sentence_ids": [sentence["sentence_id"]],
+            "seen_sentence_ids": [*local_buffer.get("seen_sentence_ids", []), sentence["sentence_id"]],
+        }
+
+    monkeypatch.setattr(
+        runner_module,
+        "navigate_unitize",
+        lambda *, current_sentence, preview_sentences, **_kwargs: {
+            "start_sentence_id": current_sentence["sentence_id"],
+            "end_sentence_id": current_sentence["sentence_id"],
+            "preview_range": {
+                "start_sentence_id": preview_sentences[0]["sentence_id"],
+                "end_sentence_id": preview_sentences[-1]["sentence_id"],
+            },
+            "boundary_type": "paragraph_end",
+            "evidence_sentence_ids": [current_sentence["sentence_id"]],
+            "reason": "test_unitize_single_sentence",
+            "continuation_pressure": False,
+        },
+    )
+    monkeypatch.setattr(runner_module, "process_sentence_intake", fake_process_sentence_intake)
+    monkeypatch.setattr(runner_module, "read_unit", fake_read_unit)
+    monkeypatch.setattr(runner_module, "run_phase6_chapter_cycle", fake_phase6_chapter_cycle)
+
+    mechanism = AttentionalV2Mechanism()
+    result = mechanism.read_book(
+        ReadRequest(
+            book_path=_fixture_epub(),
+            mechanism_key=ATTENTIONAL_V2_MECHANISM_KEY,
+            mechanism_config={},
+        )
+    )
+
+    shell = load_runtime_shell(runtime_shell_file(result.output_dir))
+    manifest = json.loads((result.output_dir / "public" / "book_manifest.json").read_text(encoding="utf-8"))
+    assert chapter_read_order == ["Chapter 1", "Preface", "Afterword"]
+    assert shell["status"] == "completed"
+    assert manifest["chapters"][0]["status"] == "done"
+    assert manifest["chapters"][1]["status"] == "done"
+    assert manifest["chapters"][2]["status"] == "done"
+
+
+def test_attentional_v2_chapter_selection_honors_explicit_request_over_reading_plan(tmp_path):
+    """Explicit chapter requests should bypass body-first chapter reordering."""
+
+    document = _provisioned_book_with_supporting_chapters().book_document
+    output_dir = tmp_path / "output" / "support-book"
+    AttentionalV2Mechanism().initialize_artifacts(output_dir)
+    survey_map = {
+        "reading_plan": {
+            "mode": "body_first",
+            "mainline_chapter_ids": [2],
+            "deferred_chapter_ids": [1, 3],
+        }
+    }
+
+    chapters = runner_module._chapter_selection(  # noqa: SLF001
+        document,
+        output_dir,
+        survey_map=survey_map,
+        chapter_number=3,
+        continue_mode=False,
+        resume_chapter_id=None,
+    )
+
+    assert [chapter["title"] for chapter in chapters] == ["Afterword"]
 
 
 def test_attentional_v2_read_book_runs_live_loop_and_persists_compatibility_results(tmp_path, monkeypatch):

@@ -51,8 +51,14 @@ Use `docs/backend-reading-mechanism.md` when the question is about shared mechan
   - the selected mechanism then derives its own parse-side artifacts from that substrate:
     - `iterator_v1` derives `_mechanisms/iterator_v1/derived/structure.json`
     - `attentional_v2` initializes survey/runtime artifacts under `_mechanisms/attentional_v2/`
+      - this now includes one narrow survey-side `chapter_zone` classification pass plus a `reading_plan`
+      - the plan is orientation-only scheduling metadata, not hidden full-book understanding
 5. Deferred uploads stop at `ready`, which means the canonical book substrate and the selected mechanism's parse-stage readiness artifacts exist but deep reading has not started.
 6. Immediate uploads or `analysis/start` move from preparation into chapter-by-chapter deep reading on the same long-task surface.
+  - `attentional_v2` now defaults to `body_first` chapter scheduling in full-book mode:
+    - main-body chapters first
+    - deferred support chapters after the main body drains
+  - explicit chapter-targeted or benchmark-window reads continue to use the explicitly requested chapter/span rather than being reordered by the body-first queue.
 7. While the reader is active, cross-mechanism runtime artifacts update stage-level state in `_runtime/`, while mechanism-private memory, checkpoints, and diagnostics update under `_mechanisms/<mechanism_key>/`.
 8. If the worker stops cleanly, deferred parse work finishes at `ready` and full read work finishes at `completed`. If runtime guards intervene, the run becomes `paused`. If recovery is no longer safe, the run becomes `error` or is restarted from scratch.
 9. Terminal runs are mirrored into `_history/runs/<job_id>/` so the latest live artifacts and run history stay separate.
@@ -104,6 +110,10 @@ Promotion from user upload into the durable source library or evaluation corpus 
   - Structure exists and the book can be started from the overview page, but deep reading is not currently running.
 - `deep_reading`
   - The sequential reader is actively moving through chapters and segments.
+  - For `attentional_v2`, the live run may currently be in either:
+    - the `mainline` chapter queue
+    - or the `deferred_support` queue
+  - That queue stage is resume/observability metadata only; it does not introduce a new public job status.
 - `chapter_note_generation`
   - A compatibility-stage active status used while a read run is still finalizing chapter notes. Treat it as part of the live read lifecycle, not as a separate product mode.
 - `paused`

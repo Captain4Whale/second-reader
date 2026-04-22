@@ -2,21 +2,43 @@
 
 from __future__ import annotations
 
+import json
 import re
 from collections import Counter, defaultdict
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Literal, TypedDict
 
 from src.reading_core import BookDocument, build_sentence_records
+from src.iterator_reader.llm_utils import LLMTraceContext, current_llm_scope, invoke_json, llm_invocation_scope
 
 from .schemas import ATTENTIONAL_V2_MECHANISM_VERSION, ATTENTIONAL_V2_SCHEMA_VERSION
-from .storage import revisit_index_file, save_json, survey_map_file
+from .storage import prompt_manifest_file, revisit_index_file, save_json, survey_map_file
+from .prompts import ATTENTIONAL_V2_PROMPTS
 
 
 SurveyRole = Literal["front_matter", "body", "back_matter"]
+SurveyZone = Literal["main_body", "front_support", "back_support", "auxiliary"]
 
 _FRONT_MATTER_MARKERS = ("contents", "table of contents", "overview", "road map", "roadmap", "preface", "prologue")
 _BACK_MATTER_MARKERS = ("appendix", "epilogue", "afterword", "notes", "references", "bibliography", "index")
+_FRONT_SUPPORT_MARKERS = ("preface", "foreword", "introduction", "prologue")
+_BACK_SUPPORT_MARKERS = ("appendix", "epilogue", "afterword", "postscript")
+_AUXILIARY_MARKERS = (
+    "contents",
+    "table of contents",
+    "overview",
+    "road map",
+    "roadmap",
+    "notes",
+    "references",
+    "bibliography",
+    "index",
+    "acknowledgments",
+    "acknowledgements",
+    "about the author",
+    "credits",
+)
 _STOPWORDS = {
     "the",
     "and",
@@ -66,12 +88,23 @@ class SurveyChapterEntry(TypedDict, total=False):
     level: int
     structural_role_guess: SurveyRole
     role_confidence: str
+    chapter_zone: SurveyZone
+    zone_confidence: str
+    zone_reason: str
     heading_text: str
     first_sentence_id: str
     last_sentence_id: str
     opening_sentences: list[SurveySentenceRef]
     closing_sentences: list[SurveySentenceRef]
     pivot_headings: list[str]
+
+
+class SurveyReadingPlan(TypedDict, total=False):
+    """One machine-readable chapter scheduling plan derived from the survey."""
+
+    mode: str
+    mainline_chapter_ids: list[int]
+    deferred_chapter_ids: list[int]
 
 
 class SurveyMap(TypedDict, total=False):
@@ -83,6 +116,7 @@ class SurveyMap(TypedDict, total=False):
     status: str
     book_frame: dict[str, object]
     chapter_map: list[SurveyChapterEntry]
+    reading_plan: SurveyReadingPlan
     initial_motif_seeds: list[MotifSeed]
     survey_caveats: list[str]
     policy_snapshot: dict[str, object]
@@ -103,6 +137,203 @@ def _role_guess(title: str, heading_text: str) -> tuple[SurveyRole, str]:
     if any(marker in lowered for marker in _BACK_MATTER_MARKERS):
         return "back_matter", "weak"
     return "body", "weak"
+
+
+def _zone_fallback(title: str, heading_text: str) -> tuple[SurveyZone, str, str]:
+    """Return one deterministic chapter-zone fallback from lightweight structure cues."""
+
+    lowered = " ".join(part for part in [title, heading_text] if part).strip().lower()
+    if any(marker in lowered for marker in _AUXILIARY_MARKERS):
+        return "auxiliary", "weak", "heuristic_auxiliary_marker"
+    if any(marker in lowered for marker in _FRONT_SUPPORT_MARKERS):
+        return "front_support", "weak", "heuristic_front_support_marker"
+    if any(marker in lowered for marker in _BACK_SUPPORT_MARKERS):
+        return "back_support", "weak", "heuristic_back_support_marker"
+    return "main_body", "weak", "heuristic_default_main_body"
+
+
+def _json_block(value: object) -> str:
+    """Render one prompt context block as stable JSON."""
+
+    return json.dumps(value, ensure_ascii=False, indent=2)
+
+
+def _render_prompt(template: str, **replacements: str) -> str:
+    """Render one prompt template without treating JSON braces as format fields."""
+
+    rendered = template
+    for key, value in replacements.items():
+        rendered = rendered.replace(f"{{{key}}}", value)
+    return rendered
+
+
+def _write_prompt_manifest(
+    output_dir: Path | None,
+    *,
+    node_name: str,
+    prompt_version: str,
+    system_prompt: str,
+    user_prompt: str,
+    promptset_version: str,
+) -> None:
+    """Persist one survey prompt manifest when an output directory is available."""
+
+    if output_dir is None:
+        return
+    save_json(
+        prompt_manifest_file(output_dir, node_name),
+        {
+            "node_name": node_name,
+            "prompt_version": prompt_version,
+            "promptset_version": promptset_version,
+            "generated_at": _timestamp(),
+            "system_prompt": system_prompt,
+            "user_prompt": user_prompt,
+        },
+    )
+
+
+def _chapter_sample_payload(
+    chapter_entry: SurveyChapterEntry,
+    *,
+    heuristic_zone: SurveyZone,
+    heuristic_confidence: str,
+    heuristic_reason: str,
+) -> dict[str, object]:
+    """Build the bounded chapter sample passed into the survey classifier."""
+
+    return {
+        "chapter_id": int(chapter_entry.get("chapter_id", 0) or 0),
+        "title": str(chapter_entry.get("title", "") or ""),
+        "chapter_number": chapter_entry.get("chapter_number"),
+        "level": int(chapter_entry.get("level", 1) or 1),
+        "heading_text": str(chapter_entry.get("heading_text", "") or ""),
+        "opening_sentences": [
+            dict(sentence)
+            for sentence in chapter_entry.get("opening_sentences", [])
+            if isinstance(sentence, dict)
+        ],
+        "closing_sentences": [
+            dict(sentence)
+            for sentence in chapter_entry.get("closing_sentences", [])
+            if isinstance(sentence, dict)
+        ],
+        "pivot_headings": list(chapter_entry.get("pivot_headings", [])),
+        "heuristic_zone": heuristic_zone,
+        "heuristic_confidence": heuristic_confidence,
+        "heuristic_reason": heuristic_reason,
+    }
+
+
+def _classify_chapter_zone(
+    *,
+    chapter_entry: SurveyChapterEntry,
+    chapter_position: int,
+    total_chapters: int,
+    book_frame: dict[str, object],
+    previous_title: str,
+    next_title: str,
+    output_dir: Path | None,
+) -> tuple[SurveyZone, str, str]:
+    """Classify one chapter's reading-order zone with LLM help plus deterministic fallback."""
+
+    fallback_zone, fallback_confidence, fallback_reason = _zone_fallback(
+        str(chapter_entry.get("title", "") or ""),
+        str(chapter_entry.get("heading_text", "") or ""),
+    )
+    if current_llm_scope() is None:
+        return fallback_zone, fallback_confidence, fallback_reason
+
+    prompts = ATTENTIONAL_V2_PROMPTS
+    chapter_sample = _chapter_sample_payload(
+        chapter_entry,
+        heuristic_zone=fallback_zone,
+        heuristic_confidence=fallback_confidence,
+        heuristic_reason=fallback_reason,
+    )
+    user_prompt = _render_prompt(
+        prompts.survey_chapter_zone_prompt,
+        book_frame=_json_block(
+            {
+                **book_frame,
+                "chapter_position": chapter_position,
+                "total_chapters": total_chapters,
+            }
+        ),
+        chapter_sample=_json_block(chapter_sample),
+        neighbor_titles=_json_block(
+            {
+                "previous_title": previous_title,
+                "next_title": next_title,
+            }
+        ),
+        heuristic_hint=_json_block(
+            {
+                "zone": fallback_zone,
+                "confidence": fallback_confidence,
+                "reason": fallback_reason,
+            }
+        ),
+    )
+    _write_prompt_manifest(
+        output_dir,
+        node_name="survey_chapter_zone_classifier",
+        prompt_version=prompts.survey_chapter_zone_version,
+        system_prompt=prompts.survey_chapter_zone_system,
+        user_prompt=user_prompt,
+        promptset_version=prompts.promptset_version,
+    )
+
+    try:
+        with llm_invocation_scope(trace_context=LLMTraceContext(stage="survey", node="chapter_zone_classifier")):
+            payload = invoke_json(prompts.survey_chapter_zone_system, user_prompt, default={})
+    except Exception:
+        return fallback_zone, fallback_confidence, fallback_reason
+
+    zone = str(payload.get("zone", "") or "").strip()
+    if zone not in {"main_body", "front_support", "back_support", "auxiliary"}:
+        zone = fallback_zone
+    confidence = str(payload.get("confidence", "") or "").strip() or fallback_confidence
+    reason = str(payload.get("reason", "") or "").strip() or fallback_reason
+    return zone, confidence, reason
+
+
+def _build_reading_plan(chapter_map: list[SurveyChapterEntry]) -> SurveyReadingPlan:
+    """Derive one body-first chapter queue from classified survey zones."""
+
+    mainline_chapter_ids = [
+        int(chapter.get("chapter_id", 0) or 0)
+        for chapter in chapter_map
+        if int(chapter.get("chapter_id", 0) or 0) > 0 and chapter.get("chapter_zone") == "main_body"
+    ]
+    deferred_chapter_ids = [
+        int(chapter.get("chapter_id", 0) or 0)
+        for chapter in chapter_map
+        if int(chapter.get("chapter_id", 0) or 0) > 0 and chapter.get("chapter_zone") in {"front_support", "back_support"}
+    ]
+
+    if not mainline_chapter_ids:
+        fallback_ids = [
+            int(chapter.get("chapter_id", 0) or 0)
+            for chapter in chapter_map
+            if int(chapter.get("chapter_id", 0) or 0) > 0 and chapter.get("chapter_zone") != "auxiliary"
+        ]
+        if fallback_ids:
+            mainline_chapter_ids = fallback_ids
+            deferred_chapter_ids = []
+        else:
+            mainline_chapter_ids = [
+                int(chapter.get("chapter_id", 0) or 0)
+                for chapter in chapter_map
+                if int(chapter.get("chapter_id", 0) or 0) > 0
+            ]
+            deferred_chapter_ids = []
+
+    return {
+        "mode": "body_first",
+        "mainline_chapter_ids": mainline_chapter_ids,
+        "deferred_chapter_ids": deferred_chapter_ids,
+    }
 
 
 def _sentence_refs(sentences: list[dict[str, object]], *, limit: int) -> list[SurveySentenceRef]:
@@ -220,6 +451,7 @@ def _motif_seeds(document: BookDocument, chapter_map: list[SurveyChapterEntry]) 
 def build_book_survey(
     document: BookDocument,
     *,
+    output_dir: Path | None = None,
     policy_snapshot: dict[str, object] | None = None,
     mechanism_version: str = ATTENTIONAL_V2_MECHANISM_VERSION,
 ) -> SurveyMap:
@@ -227,6 +459,7 @@ def build_book_survey(
 
     chapter_map: list[SurveyChapterEntry] = []
     chapters = document.get("chapters", [])
+    metadata = dict(document.get("metadata", {}))
 
     for chapter_index, raw_chapter in enumerate(chapters, start=1):
         if not isinstance(raw_chapter, dict):
@@ -270,34 +503,54 @@ def build_book_survey(
             chapter_entry["last_sentence_id"] = str(closing[-1].get("sentence_id", "") or "")
         chapter_map.append(chapter_entry)
 
-    metadata = dict(document.get("metadata", {}))
+    book_frame = {
+        "book": metadata.get("book", ""),
+        "author": metadata.get("author", ""),
+        "book_language": metadata.get("book_language", ""),
+        "output_language": metadata.get("output_language", ""),
+        "total_chapters": len(chapter_map),
+        "table_of_contents": [
+            {
+                "chapter_id": entry["chapter_id"],
+                "title": entry["title"],
+                "chapter_number": entry.get("chapter_number"),
+                "level": entry["level"],
+            }
+            for entry in chapter_map
+        ],
+    }
+
+    for index, chapter_entry in enumerate(chapter_map):
+        previous_title = str(chapter_map[index - 1].get("title", "") or "") if index > 0 else ""
+        next_title = str(chapter_map[index + 1].get("title", "") or "") if index + 1 < len(chapter_map) else ""
+        zone, zone_confidence, zone_reason = _classify_chapter_zone(
+            chapter_entry=chapter_entry,
+            chapter_position=index + 1,
+            total_chapters=len(chapter_map),
+            book_frame=book_frame,
+            previous_title=previous_title,
+            next_title=next_title,
+            output_dir=output_dir,
+        )
+        chapter_entry["chapter_zone"] = zone
+        chapter_entry["zone_confidence"] = zone_confidence
+        chapter_entry["zone_reason"] = zone_reason
+
+    reading_plan = _build_reading_plan(chapter_map)
     survey: SurveyMap = {
         "schema_version": ATTENTIONAL_V2_SCHEMA_VERSION,
         "mechanism_version": mechanism_version,
         "generated_at": _timestamp(),
         "status": "orientation_only",
-        "book_frame": {
-            "book": metadata.get("book", ""),
-            "author": metadata.get("author", ""),
-            "book_language": metadata.get("book_language", ""),
-            "output_language": metadata.get("output_language", ""),
-            "total_chapters": len(chapter_map),
-            "table_of_contents": [
-                {
-                    "chapter_id": entry["chapter_id"],
-                    "title": entry["title"],
-                    "chapter_number": entry.get("chapter_number"),
-                    "level": entry["level"],
-                }
-                for entry in chapter_map
-            ],
-        },
+        "book_frame": book_frame,
         "chapter_map": chapter_map,
+        "reading_plan": reading_plan,
         "initial_motif_seeds": _motif_seeds(document, chapter_map),
         "survey_caveats": [
             "Orientation only; not a substitute for sequential reading.",
             "Motif seeds are tentative and may be rejected during live reading.",
             "Survey inputs are limited to title, TOC, chapter boundaries, openings, closings, and structural pivots.",
+            "Chapter-zone classification is limited to scheduling roles; it must not become hidden chapter summarization or durable understanding.",
             "No anchors, knowledge activations, or user-visible reactions may be created from survey alone.",
         ],
         "policy_snapshot": dict(policy_snapshot or {}),
@@ -365,6 +618,7 @@ def write_book_survey_artifacts(
 
     survey = build_book_survey(
         document,
+        output_dir=output_dir,
         policy_snapshot=policy_snapshot,
         mechanism_version=mechanism_version,
     )

@@ -2104,3 +2104,37 @@ The accumulation child is queued behind the same parent and will reuse overlappi
 - `reading-companion-backend/scripts/orchestrate_active_benchmark_eval.py`
 - `reading-companion-backend/state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1/manifest.json`
 - `reading-companion-backend/state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260416/manifest.json`
+
+## Entry 72
+**ID**: DEC-075
+**Status**: active
+
+**Decision / Inflection**: Move support-material ordering out of `Navigate` and into a survey-led `body-first` chapter scheduling layer, where `survey` classifies chapter zones and `runner` executes the resulting reading plan without mutating parse-order source truth.
+
+**Period**: April 22, 2026, after the trigger/watch cleanup, the first special-content unitization slice, and the follow-up discussion about how prefaces, introductions, appendices, and afterwords should enter the live reading flow.
+
+**Problem**: The project had already cleaned up sentence-level special-content handling inside `navigate.unitize`, but book-level support material still sat on an awkward boundary. Treating `Preface`, `Introduction`, `Appendix`, or `Afterword` as unconditional mainline reading made some books feel unlike normal reading practice, while asking `Navigate` to improvise whole-book order at runtime would have turned a local unit-selection node back into a control center. At the same time, keeping chapter-role classification purely heuristic risked a high-leverage upstream mistake: a bad chapter-role guess would distort the whole run's reading order and be amplified by later reading.
+
+**Alternatives considered**: Keep all non-auxiliary chapters in source order, let `Navigate` infer support-vs-mainline order ad hoc during reading, or mutate parse-time chapter order so the source substrate itself becomes "body first."
+
+**Why this path won**: The winning split preserves simplicity and source truth at the same time. `parse` continues to expose the book as it really is. `survey` is the right layer to make one narrow structural judgment, because it already sits between raw substrate and live reading and can cheaply inspect bounded chapter samples. `runner` is the right place to execute the resulting queue, because it already owns whole-run progression. This keeps `Navigate` local: it still decides how to unitize and where to detour within the currently active chapter/zone, but not how to reorder the book.
+
+**What changed in the system**: `survey` now runs one bounded LLM-backed `chapter_zone` classifier over lightweight structural samples and emits both chapter-level zones and a machine-readable `reading_plan`. The legal scheduling zones are now `main_body`, `front_support`, `back_support`, and `auxiliary`. `runner` consumes that plan in full-book mode and drains `main_body` chapters before deferred support chapters. Explicit chapter-targeted reads and benchmark-window reads still bypass that queue rather than being forcibly reordered. Runtime continuity and resume shell now also carry a lightweight `reading_queue_stage` so the live run can expose whether it is in the mainline or deferred-support queue. Parse-order chapter ids and sentence ids remain the only source-of-truth locators; no new chapter primary key was introduced.
+
+**Why it matters later**: This is the decision that keeps future special-content work from collapsing back into prompt-only improvisation. It gives the mechanism a realistic "body first, support later" default without making survey into hidden reading or making navigate into a book-level planner. It also creates a clean place for later refinements, such as validating support-heavy books or improving chapter-zone classification, without reopening parse-order truth or unit-selection ownership.
+
+**Primary evidence**:
+- `docs/backend-reading-mechanisms/attentional_v2.md`
+- `docs/backend-sequential-lifecycle.md`
+- `docs/current-state.md`
+- `docs/tasks/registry.md`
+- `docs/tasks/registry.json`
+- `reading-companion-backend/src/attentional_v2/prompts.py`
+- `reading-companion-backend/src/attentional_v2/survey.py`
+- `reading-companion-backend/src/attentional_v2/runner.py`
+- `reading-companion-backend/src/attentional_v2/resume.py`
+- `reading-companion-backend/src/attentional_v2/schemas.py`
+- `reading-companion-backend/src/attentional_v2/storage.py`
+- `reading-companion-backend/tests/test_attentional_v2_survey.py`
+- `reading-companion-backend/tests/test_attentional_v2_resume.py`
+- `reading-companion-backend/tests/test_attentional_v2_scaffold.py`

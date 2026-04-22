@@ -291,6 +291,133 @@ def _chapter_statuses(document: BookDocument, output_dir: Path) -> dict[int, str
     return statuses
 
 
+def _survey_chapter_zone_index(survey_map: dict[str, object]) -> dict[int, str]:
+    """Return the chapter-id to zone index from one persisted survey map."""
+
+    index: dict[int, str] = {}
+    for entry in survey_map.get("chapter_map", []):
+        if not isinstance(entry, dict):
+            continue
+        chapter_id = int(entry.get("chapter_id", 0) or 0)
+        chapter_zone = _clean_text(entry.get("chapter_zone"))
+        if chapter_id <= 0 or not chapter_zone:
+            continue
+        index[chapter_id] = chapter_zone
+    return index
+
+
+def _reading_plan_from_survey(document: BookDocument, survey_map: dict[str, object]) -> dict[str, object]:
+    """Return one validated reading plan from the survey artifact or a conservative fallback."""
+
+    chapter_ids = [
+        int(chapter.get("id", 0) or 0)
+        for chapter in document.get("chapters", [])
+        if isinstance(chapter, dict) and int(chapter.get("id", 0) or 0) > 0
+    ]
+    plan = survey_map.get("reading_plan", {})
+    if not isinstance(plan, dict):
+        plan = {}
+    allowed_ids = set(chapter_ids)
+
+    def _validated_ids(raw_value: object) -> list[int]:
+        values = raw_value if isinstance(raw_value, list) else []
+        ordered: list[int] = []
+        for item in values:
+            chapter_id = int(item or 0)
+            if chapter_id <= 0 or chapter_id not in allowed_ids or chapter_id in ordered:
+                continue
+            ordered.append(chapter_id)
+        return ordered
+
+    mainline_chapter_ids = _validated_ids(plan.get("mainline_chapter_ids"))
+    deferred_chapter_ids = [
+        chapter_id
+        for chapter_id in _validated_ids(plan.get("deferred_chapter_ids"))
+        if chapter_id not in mainline_chapter_ids
+    ]
+    zone_index = _survey_chapter_zone_index(survey_map)
+    auxiliary_chapter_ids = [
+        chapter_id
+        for chapter_id in chapter_ids
+        if zone_index.get(chapter_id) == "auxiliary"
+        and chapter_id not in mainline_chapter_ids
+        and chapter_id not in deferred_chapter_ids
+    ]
+
+    if not mainline_chapter_ids:
+        fallback_ids = [
+            chapter_id
+            for chapter_id in chapter_ids
+            if chapter_id not in auxiliary_chapter_ids
+        ]
+        if fallback_ids:
+            mainline_chapter_ids = fallback_ids
+            deferred_chapter_ids = []
+        else:
+            mainline_chapter_ids = chapter_ids
+            auxiliary_chapter_ids = []
+
+    return {
+        "mode": _clean_text(plan.get("mode")) or "body_first",
+        "mainline_chapter_ids": mainline_chapter_ids,
+        "deferred_chapter_ids": deferred_chapter_ids,
+        "auxiliary_chapter_ids": auxiliary_chapter_ids,
+    }
+
+
+def _scheduled_chapter_ids(document: BookDocument, survey_map: dict[str, object]) -> list[int]:
+    """Return the ordered readable chapter ids for one body-first run."""
+
+    plan = _reading_plan_from_survey(document, survey_map)
+    queue = [
+        int(chapter_id)
+        for chapter_id in [*plan.get("mainline_chapter_ids", []), *plan.get("deferred_chapter_ids", [])]
+        if int(chapter_id) > 0
+    ]
+    return list(dict.fromkeys(queue))
+
+
+def _apply_reading_plan_statuses(
+    chapter_statuses: dict[int, str],
+    *,
+    document: BookDocument,
+    survey_map: dict[str, object],
+    chapter_number: int | None,
+) -> dict[int, str]:
+    """Mark default-skipped auxiliary chapters as completed for body-first scheduling."""
+
+    if chapter_number is not None:
+        return chapter_statuses
+    plan = _reading_plan_from_survey(document, survey_map)
+    for chapter_id in plan.get("auxiliary_chapter_ids", []):
+        if int(chapter_id) > 0:
+            chapter_statuses[int(chapter_id)] = "done"
+    return chapter_statuses
+
+
+def _reading_queue_stage_for_chapter(chapter_id: int, *, survey_map: dict[str, object]) -> str:
+    """Return the current queue stage label for one scheduled chapter."""
+
+    plan = survey_map.get("reading_plan", {})
+    deferred_ids = plan.get("deferred_chapter_ids", []) if isinstance(plan, dict) else []
+    if int(chapter_id) in {int(item or 0) for item in deferred_ids if int(item or 0) > 0}:
+        return "deferred_support"
+    return "mainline"
+
+
+def _completed_scheduled_chapters(chapter_statuses: dict[int, str], *, scheduled_chapter_ids: list[int]) -> int:
+    """Return the count of scheduled chapters already marked complete."""
+
+    scheduled_set = {int(chapter_id) for chapter_id in scheduled_chapter_ids if int(chapter_id) > 0}
+    return len(
+        [
+            chapter_id
+            for chapter_id, status in chapter_statuses.items()
+            if int(chapter_id) in scheduled_set and status == "done"
+        ]
+    )
+
+
 def _audit_window_max_units(request: ReadRequest) -> int:
     """Return the optional audit-only unit cap for one read invocation."""
 
@@ -616,6 +743,7 @@ def _chapter_selection(
     document: BookDocument,
     output_dir: Path,
     *,
+    survey_map: dict[str, object],
     chapter_number: int | None,
     continue_mode: bool,
     resume_chapter_id: int | None,
@@ -629,16 +757,33 @@ def _chapter_selection(
             raise ValueError(f"Chapter {chapter_number} was not found in the parsed book.")
         return selected
 
+    queue_ids = _scheduled_chapter_ids(document, survey_map)
+    chapter_lookup = {
+        int(chapter.get("id", 0) or 0): chapter
+        for chapter in chapters
+        if int(chapter.get("id", 0) or 0) > 0
+    }
+    queued_chapters = [
+        dict(chapter_lookup[chapter_id])
+        for chapter_id in queue_ids
+        if chapter_id in chapter_lookup
+    ]
+
     if not continue_mode:
-        return chapters
+        return queued_chapters or chapters
 
     remaining = [
         chapter
-        for chapter in chapters
+        for chapter in (queued_chapters or chapters)
         if not chapter_result_compatibility_file(output_dir, int(chapter.get("id", 0) or 0)).exists()
     ]
-    if resume_chapter_id:
-        remaining.sort(key=lambda chapter: (int(chapter.get("id", 0) or 0) < int(resume_chapter_id), int(chapter.get("id", 0) or 0)))
+    if resume_chapter_id and any(int(chapter.get("id", 0) or 0) == int(resume_chapter_id) for chapter in remaining):
+        start_index = next(
+            index
+            for index, chapter in enumerate(remaining)
+            if int(chapter.get("id", 0) or 0) == int(resume_chapter_id)
+        )
+        remaining = [*remaining[start_index:], *remaining[:start_index]]
     return remaining
 
 
@@ -1912,22 +2057,43 @@ def read_attentional_v2(request: ReadRequest, mechanism: MechanismInfo) -> ReadR
         sentence_lookup, chapter_lookup = _build_sentence_lookup(provisioned.book_document)
 
         chapter_statuses = _chapter_statuses(provisioned.book_document, output_dir)
+        chapter_statuses = _apply_reading_plan_statuses(
+            chapter_statuses,
+            document=provisioned.book_document,
+            survey_map=survey_map,
+            chapter_number=request.chapter_number,
+        )
+        _write_manifest(output_dir, provisioned.book_document, chapter_statuses=chapter_statuses)
+        scheduled_chapter_ids = _scheduled_chapter_ids(provisioned.book_document, survey_map)
         resume_chapter_id = int(resume_payload.get("local_continuity", {}).get("chapter_id", 0) or 0) if isinstance(resume_payload, dict) else None
         chapters = _chapter_selection(
             provisioned.book_document,
             output_dir,
+            survey_map=survey_map,
             chapter_number=request.chapter_number,
             continue_mode=request.continue_mode,
             resume_chapter_id=resume_chapter_id,
         )
 
-        completed_chapters = len([status for status in chapter_statuses.values() if status == "done"])
-        total_chapters = len([chapter for chapter in provisioned.book_document.get("chapters", []) if isinstance(chapter, dict)])
+        completed_chapters = _completed_scheduled_chapters(
+            chapter_statuses,
+            scheduled_chapter_ids=scheduled_chapter_ids,
+        )
+        total_chapters = len(scheduled_chapter_ids) or len(
+            [chapter for chapter in provisioned.book_document.get("chapters", []) if isinstance(chapter, dict)]
+        )
         run_started_at = _timestamp()
 
         for chapter in chapters:
             chapter_id = int(chapter.get("id", 0) or 0)
             chapter_ref = _chapter_ref(chapter)
+            reading_queue_stage = ""
+            if request.chapter_number is None:
+                reading_queue_stage = _reading_queue_stage_for_chapter(chapter_id, survey_map=survey_map)
+            if reading_queue_stage:
+                local_continuity["reading_queue_stage"] = reading_queue_stage
+            else:
+                local_continuity["reading_queue_stage"] = ""
             chapter_statuses[chapter_id] = "in_progress"
             _write_manifest(output_dir, provisioned.book_document, chapter_statuses=chapter_statuses)
             write_run_state(
@@ -1961,6 +2127,10 @@ def read_attentional_v2(request: ReadRequest, mechanism: MechanismInfo) -> ReadR
                 start_index = _chapter_start_index(chapter, _clean_text(local_buffer.get("current_sentence_id")))
             if start_index >= len(sentences):
                 chapter_statuses[chapter_id] = "done"
+                completed_chapters = _completed_scheduled_chapters(
+                    chapter_statuses,
+                    scheduled_chapter_ids=scheduled_chapter_ids,
+                )
                 continue
 
             cursor = start_index
@@ -2085,6 +2255,8 @@ def read_attentional_v2(request: ReadRequest, mechanism: MechanismInfo) -> ReadR
                     sentence=focal_sentence,
                     local_buffer=local_buffer,
                 )
+                if reading_queue_stage:
+                    current_activity["reading_queue_stage"] = reading_queue_stage
                 persist_reading_position(
                     output_dir,
                     chapter_id=chapter_id,
@@ -2444,7 +2616,10 @@ def read_attentional_v2(request: ReadRequest, mechanism: MechanismInfo) -> ReadR
             )
             _save_runtime_bundle(output_dir, bundle)
             chapter_statuses[chapter_id] = "done"
-            completed_chapters += 1
+            completed_chapters = _completed_scheduled_chapters(
+                chapter_statuses,
+                scheduled_chapter_ids=scheduled_chapter_ids,
+            )
             _write_manifest(output_dir, provisioned.book_document, chapter_statuses=chapter_statuses)
             checkpoint = write_full_checkpoint(
                 output_dir,
@@ -2483,7 +2658,10 @@ def read_attentional_v2(request: ReadRequest, mechanism: MechanismInfo) -> ReadR
                 output_language=provisioned.output_language,
                 chapter_statuses=chapter_statuses,
             )
-            completed_chapters = len([status for status in chapter_statuses.values() if status == "done"])
+            completed_chapters = _completed_scheduled_chapters(
+                chapter_statuses,
+                scheduled_chapter_ids=scheduled_chapter_ids,
+            )
             append_activity_event(
                 output_dir,
                 {

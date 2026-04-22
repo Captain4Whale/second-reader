@@ -220,6 +220,7 @@ def test_persist_reading_position_preserves_detour_state(tmp_path: Path):
                 "chapter_ref": "Chapter 1",
                 "sentence_id": "c1-s6",
             },
+            "reading_queue_stage": "deferred_support",
             "active_detour_id": "detour:1:c1-s6:1",
             "active_detour_need": {
                 "reason": "Need to revisit the earlier setup.",
@@ -243,9 +244,12 @@ def test_persist_reading_position_preserves_detour_state(tmp_path: Path):
     )
 
     continuity = persisted["local_continuity"]
+    shell = load_runtime_shell(runtime_shell_file(output_dir))
+    assert continuity["reading_queue_stage"] == "deferred_support"
     assert continuity["active_detour_id"] == "detour:1:c1-s6:1"
     assert continuity["active_detour_need"]["target_hint"] == "the opening setup"
     assert continuity["detour_trace"][0]["status"] == "open"
+    assert shell["reading_queue_stage"] == "deferred_support"
 
 
 def test_cold_resume_expands_to_open_meaning_unit_start(tmp_path: Path):

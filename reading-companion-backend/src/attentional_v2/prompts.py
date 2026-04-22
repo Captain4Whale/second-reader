@@ -7,7 +7,8 @@ from dataclasses import dataclass
 from src.prompts.shared import LANGUAGE_OUTPUT_CONTRACT
 
 
-ATTENTIONAL_V2_PROMPTSET_VERSION = "attentional_v2-phase6-v20"
+ATTENTIONAL_V2_PROMPTSET_VERSION = "attentional_v2-phase6-v21"
+SURVEY_CHAPTER_ZONE_PROMPT_VERSION = "attentional_v2.survey_chapter_zone.v1"
 NAVIGATE_UNITIZE_PROMPT_VERSION = "attentional_v2.navigate_unitize.v3"
 NAVIGATE_DETOUR_SEARCH_PROMPT_VERSION = "attentional_v2.navigate_detour_search.v1"
 READ_UNIT_PROMPT_VERSION = "attentional_v2.read.v12"
@@ -23,6 +24,9 @@ class AttentionalV2PromptSet:
 
     language_output_contract: str
     promptset_version: str
+    survey_chapter_zone_version: str
+    survey_chapter_zone_system: str
+    survey_chapter_zone_prompt: str
     navigate_unitize_version: str
     navigate_unitize_system: str
     navigate_unitize_prompt: str
@@ -49,6 +53,43 @@ class AttentionalV2PromptSet:
 ATTENTIONAL_V2_PROMPTS = AttentionalV2PromptSet(
     language_output_contract=LANGUAGE_OUTPUT_CONTRACT,
     promptset_version=ATTENTIONAL_V2_PROMPTSET_VERSION,
+    survey_chapter_zone_version=SURVEY_CHAPTER_ZONE_PROMPT_VERSION,
+    survey_chapter_zone_system="""You are a survey-only chapter-role classifier for a text-grounded reading mechanism.
+
+Your job is to classify one chapter's functional role in the book-level reading order.
+
+Rules:
+- This is not a chapter summary task.
+- Do not infer themes, character arcs, or durable interpretations.
+- Judge only the chapter's structural reading role in the whole book.
+- Use the supplied chapter sample, chapter position, and neighboring chapter titles.
+- Allowed zones:
+  - `main_body`: part of the main reading body; advances the book's primary argument, narration, or exposition
+  - `front_support`: pre-body framing/support such as preface, foreword, introduction, or a genuinely supportive prologue
+  - `back_support`: post-body support such as afterword, epilogue, or appendix-like wrap-up/support
+  - `auxiliary`: functional or apparatus-like material such as contents, index, references, bibliography, or similarly low-reading-value support matter
+- Prefer `main_body` unless the evidence for a support/auxiliary role is clear.
+- Use the heuristic hint only as a weak prior. It is allowed to be wrong.
+- Keep `reason` short, structural, and non-interpretive.
+- Return JSON only.""",
+    survey_chapter_zone_prompt="""Book frame:
+{book_frame}
+
+Current chapter sample:
+{chapter_sample}
+
+Neighboring chapter titles:
+{neighbor_titles}
+
+Weak heuristic hint:
+{heuristic_hint}
+
+Return JSON:
+{
+  "zone": "main_body",
+  "confidence": "medium",
+  "reason": "<short structural reason>"
+}""",
     navigate_unitize_version=NAVIGATE_UNITIZE_PROMPT_VERSION,
     navigate_unitize_system="""You are the navigation-unitization node for a text-grounded reading mechanism.
 

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 
+from src.attentional_v2 import survey as survey_module
 from src.attentional_v2.survey import build_book_survey, write_book_survey_artifacts
 from src.reading_mechanisms.attentional_v2 import AttentionalV2Mechanism
 from src.reading_runtime.artifacts import mechanism_manifest_file
@@ -169,6 +170,11 @@ def test_build_book_survey_stays_orientation_only():
     assert survey["chapter_map"][0]["closing_sentences"][-1]["sentence_id"] == "c1-s7"
     assert survey["chapter_map"][0]["pivot_headings"] == ["The covert calculator"]
     assert survey["chapter_map"][1]["structural_role_guess"] == "back_matter"
+    assert survey["chapter_map"][0]["chapter_zone"] == "main_body"
+    assert survey["chapter_map"][1]["chapter_zone"] == "auxiliary"
+    assert survey["reading_plan"]["mode"] == "body_first"
+    assert survey["reading_plan"]["mainline_chapter_ids"] == [1]
+    assert survey["reading_plan"]["deferred_chapter_ids"] == []
     assert "Markets arise in relationships." not in {
         sentence["text"]
         for chapter in survey["chapter_map"]
@@ -201,7 +207,76 @@ def test_write_book_survey_artifacts_persists_survey_and_revisit_index(tmp_path)
 
     assert result["survey_map"]["status"] == "orientation_only"
     assert survey["policy_snapshot"]["survey_mode"] == "orientation_only"
+    assert survey["reading_plan"]["mode"] == "body_first"
+    assert survey["chapter_map"][0]["chapter_zone"] == "main_body"
+    assert survey["chapter_map"][1]["chapter_zone"] == "auxiliary"
     assert revisit["status"] == "survey_seeded"
     assert revisit["chapter_boundaries"]["1"]["first_sentence_id"] == "c1-s1"
     assert revisit["opening_sentence_ids"][:2] == ["c1-s1", "c1-s2"]
     assert manifest["mechanism_key"] == "attentional_v2"
+
+
+def test_build_book_survey_uses_llm_zone_classifier_when_available(monkeypatch):
+    """Survey should accept LLM chapter-zone classifications and derive a body-first plan."""
+
+    document = _sample_book_document()
+    document["chapters"].insert(0, {  # type: ignore[union-attr]
+        "id": 3,
+        "title": "Preface",
+        "chapter_number": None,
+        "level": 1,
+        "paragraphs": [],
+        "sentences": [
+            {
+                "sentence_id": "c0-s1",
+                "sentence_index": 1,
+                "sentence_in_paragraph": 1,
+                "paragraph_index": 1,
+                "text": "Preface",
+                "text_role": "chapter_heading",
+                "locator": {"paragraph_index": 1, "paragraph_start": 1, "paragraph_end": 1, "char_start": 0, "char_end": 7},
+            }
+        ],
+    })
+    calls: list[str] = []
+
+    def fake_invoke_json(_system_prompt, user_prompt, default=None):
+        calls.append(user_prompt)
+        if len(calls) == 1:
+            return {"zone": "front_support", "confidence": "high", "reason": "Preface introduces the book."}
+        if len(calls) == 2:
+            return {"zone": "main_body", "confidence": "high", "reason": "This is the main chapter."}
+        return {"zone": "back_support", "confidence": "medium", "reason": "Appendix-like supporting material."}
+
+    monkeypatch.setattr(survey_module, "current_llm_scope", lambda: object())
+    monkeypatch.setattr(survey_module, "invoke_json", fake_invoke_json)
+
+    survey = build_book_survey(
+        document,  # type: ignore[arg-type]
+        policy_snapshot={"survey_mode": "orientation_only"},
+    )
+
+    assert len(calls) == 3
+    assert [chapter["chapter_zone"] for chapter in survey["chapter_map"]] == [
+        "front_support",
+        "main_body",
+        "back_support",
+    ]
+    assert survey["reading_plan"]["mainline_chapter_ids"] == [1]
+    assert survey["reading_plan"]["deferred_chapter_ids"] == [3, 2]
+
+
+def test_build_book_survey_falls_back_when_llm_classifier_errors(monkeypatch):
+    """Survey should keep generating a plan even if the chapter-zone classifier fails."""
+
+    monkeypatch.setattr(survey_module, "current_llm_scope", lambda: object())
+    monkeypatch.setattr(survey_module, "invoke_json", lambda *_args, **_kwargs: (_ for _ in ()).throw(RuntimeError("boom")))
+
+    survey = build_book_survey(
+        _sample_book_document(),  # type: ignore[arg-type]
+        policy_snapshot={"survey_mode": "orientation_only"},
+    )
+
+    assert survey["chapter_map"][0]["chapter_zone"] == "main_body"
+    assert survey["chapter_map"][1]["chapter_zone"] == "auxiliary"
+    assert survey["reading_plan"]["mainline_chapter_ids"] == [1]

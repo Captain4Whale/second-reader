@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-04-21T22:58:00+08:00`
+Last updated: `2026-04-22T14:35:00+08:00`
 
 ## Status Values
 - `active`
@@ -120,6 +120,14 @@ Last updated: `2026-04-21T22:58:00+08:00`
     - meaningful headings may still stand alone, but label-like headings now prefer merging with the immediately following body paragraph when the preview allows
     - deterministic fallback now widens `heading + first body paragraph` instead of returning a bare heading when that body paragraph is already visible
     - `Read` now explicitly stays proportionate around thin heading-like units and may remain silent there
+  - `Phase F4B` is now landed as the survey-led `body-first` scheduling slice:
+    - `survey` now runs one narrow LLM-backed `chapter_zone` classifier over lightweight structural samples
+    - `survey_map.json` now persists both chapter-level zones and one machine-readable `reading_plan`
+    - `runner` now consumes that plan in full-book mode:
+      - `main_body` chapters first
+      - deferred `front_support` / `back_support` chapters after the mainline queue drains
+    - explicit chapter-targeted reads and benchmark windows are not forcibly reordered
+    - runtime continuity and resume shell now carry `reading_queue_stage` for `mainline` vs `deferred_support`
   - the unit-internal anchor-selection repair is now landed on top of the cleaned F4A baseline:
     - `Read` now prefers the smallest self-sufficient surfaced anchor inside a unit
     - multiple independently complete anchors inside one unit are now explicitly allowed
@@ -138,6 +146,7 @@ Last updated: `2026-04-21T22:58:00+08:00`
       - this is valid window-level density/style evidence, but not the same thing as a direct proof about the narrower `People want things from other people.` regression sentence
   - next validation line:
     - let the V2-only full-window overnight spot check finish on the same two titles before deciding whether this repair is broad enough for wider reruns
+    - then decide whether the new `body-first` scheduling slice needs its own focused full-book validation on support-heavy books such as `nawaer_baodian_private_zh`
     - active job:
       - `bgjob_attentional_v2_full_window_spotcheck_20260421`
     - run id:

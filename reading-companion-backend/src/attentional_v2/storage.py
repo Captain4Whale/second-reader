@@ -330,7 +330,12 @@ def initialize_artifact_tree(
             "schema_version": ATTENTIONAL_V2_SCHEMA_VERSION,
             "mechanism_version": mechanism_version,
             "status": "not_started",
-            "chapters": [],
+            "chapter_map": [],
+            "reading_plan": {
+                "mode": "body_first",
+                "mainline_chapter_ids": [],
+                "deferred_chapter_ids": [],
+            },
         },
     )
     ensure_json(

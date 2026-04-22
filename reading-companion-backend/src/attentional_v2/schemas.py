@@ -145,6 +145,7 @@ class LocalContinuityState(TypedDict, total=False):
     recent_meaning_units: list[list[str]]
     last_meaning_unit_closed_at_sentence_id: str
     mainline_cursor: SharedRunCursor
+    reading_queue_stage: str
     active_detour_id: str
     active_detour_need: "DetourNeed" | None
     detour_trace: list["DetourTraceEntry"]
@@ -931,6 +932,7 @@ def build_empty_local_continuity(
             "chapter_id": None,
             "chapter_ref": "",
         },
+        "reading_queue_stage": "",
         "active_detour_id": "",
         "active_detour_need": None,
         "detour_trace": [],

@@ -212,6 +212,9 @@ def capture_local_continuity(
                 if _clean_text(sentence_id)
             ],
         ),
+        "reading_queue_stage": _clean_text(prior_continuity.get("reading_queue_stage"))
+        if isinstance(prior_continuity, dict)
+        else "",
         "active_detour_id": _clean_text(prior_continuity.get("active_detour_id"))
         if isinstance(prior_continuity, dict)
         else "",
@@ -272,6 +275,11 @@ def persist_reading_position(
         shell["status"] = status
     if phase is not None:
         shell["phase"] = phase
+    reading_queue_stage = _clean_text(continuity.get("reading_queue_stage"))
+    if reading_queue_stage:
+        shell["reading_queue_stage"] = reading_queue_stage
+    else:
+        shell.pop("reading_queue_stage", None)
     shell["updated_at"] = _timestamp()
     save_runtime_shell(runtime_shell_file(output_dir), shell)
     return {"cursor": shell["cursor"], "local_continuity": continuity, "runtime_shell": shell}

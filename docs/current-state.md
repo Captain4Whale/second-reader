@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-04-21T22:58:00+08:00`
+Last verified: `2026-04-22T14:35:00+08:00`
 
 ## Current Objective
 - Keep `target-centered long-span accumulation v2` as the active long-span methodology while preserving bounded long-span v1 as historical evidence.
@@ -364,6 +364,20 @@ Last verified: `2026-04-21T22:58:00+08:00`
     - meaningful headings may still stand alone, but label-like headings now prefer merging with the immediately following body paragraph when the preview allows
     - deterministic fallback now widens `heading + first body paragraph` instead of returning a bare heading when that body paragraph is already visible
     - `Read` now explicitly stays proportionate around thin heading-like units and may remain silent there
+  - `Phase F4B` is now landed as the survey-led `body-first` scheduling slice:
+    - `survey` now runs one narrow LLM-backed `chapter_zone` classifier over lightweight structural samples rather than relying only on heading-keyword heuristics
+    - the legal survey scheduling zones are now:
+      - `main_body`
+      - `front_support`
+      - `back_support`
+      - `auxiliary`
+    - `survey_map.json` now also persists one machine-readable `reading_plan`
+    - `runner` now consumes that plan in full-book mode:
+      - `main_body` chapters first
+      - `front_support` / `back_support` after the mainline queue drains
+    - parse-time chapter order remains the source truth
+    - explicit chapter-targeted runs and benchmark windows are not forcibly reordered by the body-first queue
+    - resume/runtime shell now also record the current queue stage as `mainline` or `deferred_support`
   - the unit-internal anchor-selection repair is now also landed on that baseline:
     - `Read` now prefers the smallest self-sufficient surfaced anchor inside a unit
     - multiple independently complete anchors inside one unit are now explicitly allowed
