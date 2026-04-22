@@ -215,6 +215,10 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
     - `chapter_heading` and `section_heading` may stand alone when their visible wording already forms a complete local move
     - but they are not automatic standalone units just because their `text_role` says `heading`
     - if a heading reads more like a label, lead-in, or structural setup, `navigate.unitize` should prefer merging it with the immediately following body paragraph when the preview allows
+  - Boundary residue handling is also conservative:
+    - purely non-lexical ornament / divider / separator lines at a proposed unit boundary are structure cues, not content
+    - `navigate.unitize` should trim those boundary sentences out of the chosen unit when they are not part of a substantive sentence, formula, quotation, poem, list item, or authorial expression
+    - this is a unit-boundary choice only; it does not rewrite, delete, or replace source text in the parse/substrate layer
   - The deterministic fallback now follows the same posture:
     - ordinary body paragraphs still fall back to the current paragraph end
     - but a heading paragraph now falls back to `heading + first body paragraph` when the preview clearly contains that body paragraph

@@ -76,6 +76,7 @@ _STATE_OPERATION_TYPES = {
 }
 _DETOUR_STATUSES = {"open", "resolved", "abandoned"}
 _DETOUR_SEARCH_DECISIONS = {"narrow_scope", "land_region", "defer_detour"}
+_LEXICAL_CONTENT_RE = re.compile(r"[A-Za-z0-9\u4e00-\u9fff]")
 _VISIBLE_INTERNAL_REFERENCE_PATTERNS = (
     re.compile(r"\bc\d+-s\d+(?:-\d+)?(?:-c\d+-s\d+(?:-\d+)?)?\b", re.IGNORECASE),
     re.compile(r"\b(?:anchor|thread|concept|reaction|move|ref):[A-Za-z0-9._-]+\b", re.IGNORECASE),
@@ -363,6 +364,13 @@ def _normalize_unitize_boundary_type(value: object) -> UnitizeBoundaryType:
     return "paragraph_end"
 
 
+def _is_pure_non_lexical_boundary_residue(sentence: dict[str, object]) -> bool:
+    """Return true only for standalone symbol/divider residue with no lexical content."""
+
+    text = _clean_text(sentence.get("text"))
+    return bool(text) and _LEXICAL_CONTENT_RE.search(text) is None
+
+
 def _apply_unitize_guardrail(
     decision: UnitizeDecision,
     *,
@@ -380,17 +388,31 @@ def _apply_unitize_guardrail(
     preview_ids = [_sentence_id(sentence) for sentence in preview_sentences if _sentence_id(sentence)]
     preview_start = preview_ids[0]
     preview_end = preview_ids[-1]
+    chosen_start = _clean_text(decision.get("start_sentence_id")) or preview_start
     chosen_end = _clean_text(decision.get("end_sentence_id")) or _current_paragraph_end_sentence_id(preview_sentences) or preview_end
+    if chosen_start not in preview_ids:
+        chosen_start = preview_start
     if chosen_end not in preview_ids:
         chosen_end = _current_paragraph_end_sentence_id(preview_sentences) or preview_end
 
+    start_index = preview_ids.index(chosen_start)
     end_index = preview_ids.index(chosen_end)
-    if end_index + 1 > max_sentences:
-        bounded_end = preview_sentences[max_sentences - 1]
-        bounded_ids = preview_ids[:max_sentences]
+    if start_index > 0 and not all(
+        _is_pure_non_lexical_boundary_residue(sentence)
+        for sentence in preview_sentences[:start_index]
+    ):
+        chosen_start = preview_start
+        start_index = 0
+    if end_index < start_index:
+        chosen_start = preview_start
+        start_index = 0
+
+    if end_index - start_index + 1 > max_sentences:
+        bounded_end = preview_sentences[start_index + max_sentences - 1]
+        bounded_ids = preview_ids[start_index : start_index + max_sentences]
         return {
             **decision,
-            "start_sentence_id": preview_start,
+            "start_sentence_id": chosen_start,
             "end_sentence_id": _sentence_id(bounded_end),
             "preview_range": {
                 "start_sentence_id": preview_start,
@@ -405,13 +427,13 @@ def _apply_unitize_guardrail(
     evidence_sentence_ids = [
         sentence_id
         for sentence_id in decision.get("evidence_sentence_ids", [])
-        if sentence_id in preview_ids[: end_index + 1]
+        if sentence_id in preview_ids[start_index : end_index + 1]
     ]
-    if not evidence_sentence_ids:
-        evidence_sentence_ids = preview_ids[: end_index + 1]
+    if not evidence_sentence_ids or evidence_sentence_ids[0] != chosen_start:
+        evidence_sentence_ids = preview_ids[start_index : end_index + 1]
     return {
         **decision,
-        "start_sentence_id": preview_start,
+        "start_sentence_id": chosen_start,
         "end_sentence_id": chosen_end,
         "preview_range": {
             "start_sentence_id": preview_start,

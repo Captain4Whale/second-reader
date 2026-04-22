@@ -2494,7 +2494,11 @@ def read_attentional_v2(request: ReadRequest, mechanism: MechanismInfo) -> ReadR
                 )
                 touched_chapter_ids.add(chapter_id)
                 audit_window_units_read += 1
-                cursor += len(chosen_unit_sentences)
+                focal_index = next(
+                    (index for index, candidate in enumerate(sentences) if _sentence_id(candidate) == focal_sentence_id),
+                    cursor + len(chosen_unit_sentences) - 1,
+                )
+                cursor = max(cursor + 1, focal_index + 1)
                 if audit_window_max_units and audit_window_units_read >= audit_window_max_units:
                     audit_window_stop_reason = "audit_window_max_units_reached"
                     break

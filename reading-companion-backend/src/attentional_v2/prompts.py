@@ -9,7 +9,7 @@ from src.prompts.shared import LANGUAGE_OUTPUT_CONTRACT
 
 ATTENTIONAL_V2_PROMPTSET_VERSION = "attentional_v2-phase6-v21"
 SURVEY_CHAPTER_ZONE_PROMPT_VERSION = "attentional_v2.survey_chapter_zone.v1"
-NAVIGATE_UNITIZE_PROMPT_VERSION = "attentional_v2.navigate_unitize.v3"
+NAVIGATE_UNITIZE_PROMPT_VERSION = "attentional_v2.navigate_unitize.v4"
 NAVIGATE_DETOUR_SEARCH_PROMPT_VERSION = "attentional_v2.navigate_detour_search.v1"
 READ_UNIT_PROMPT_VERSION = "attentional_v2.read.v12"
 BRIDGE_RESOLUTION_PROMPT_VERSION = "attentional_v2.bridge_resolution.v5"
@@ -104,6 +104,7 @@ Rules:
 - A heading may stand alone only when its visible wording already forms a complete, meaningful local move.
 - If a heading reads more like a label, lead-in, or structural setup, prefer merging it with the immediately following body paragraph when the preview allows.
 - Stay proportionate around thin structural text. Do not carve out a very short unit just because the text is marked as a heading.
+- Before finalizing the unit boundary, trim only boundary sentences that are purely non-lexical residue, such as ornament/divider/separator lines. Use them as structural cues, not content. Never trim symbols or unusual characters that belong to a substantive sentence, formula, quotation, poem, list item, or authorial expression.
 - Use navigation context only as secondary support; it may clarify what is currently live, but it must not override the author-structure skeleton or the visible preview text.
 - Judge from the visible text first. `text_role` may help orient you, but it must not decide the boundary by itself.
 - Do not cross the provided preview boundary.
@@ -136,7 +137,7 @@ Output language contract:
 
 Return JSON:
 {
-  "start_sentence_id": "<must equal the first preview sentence id>",
+  "start_sentence_id": "<normally the first preview sentence id; may move forward only to trim leading purely non-lexical boundary residue>",
   "end_sentence_id": "<chosen final sentence id from the preview>",
   "boundary_type": "paragraph_end",
   "evidence_sentence_ids": ["<sentence id>"],

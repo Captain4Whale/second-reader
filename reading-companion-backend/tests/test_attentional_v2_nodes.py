@@ -115,7 +115,80 @@ def test_navigate_unitize_writes_manifest_and_applies_sentence_cap(tmp_path: Pat
     assert decision["continuation_pressure"] is True
     assert "\"packet_version\": \"attentional_v2.state_packet.v1\"" in captured["prompt"]
     assert "weak structure cues, not automatic permission to cut a standalone unit" in captured["system_prompt"]
-    assert manifest["prompt_version"] == "attentional_v2.navigate_unitize.v3"
+    assert "purely non-lexical residue" in captured["system_prompt"]
+    assert "Use them as structural cues, not content" in captured["system_prompt"]
+    assert "Never trim symbols or unusual characters that belong to a substantive sentence" in captured["system_prompt"]
+    assert "may move forward only to trim leading purely non-lexical boundary residue" in captured["prompt"]
+    assert manifest["prompt_version"] == "attentional_v2.navigate_unitize.v4"
+
+
+def test_navigate_unitize_can_trim_leading_boundary_residue(tmp_path: Path, monkeypatch):
+    """Unitize may start after a pure separator when the LLM treats it as boundary residue."""
+
+    def fake_invoke_json(_system_prompt: str, _prompt: str, default: object) -> object:
+        return {
+            "start_sentence_id": "c1-s2",
+            "end_sentence_id": "c1-s2",
+            "boundary_type": "paragraph_end",
+            "evidence_sentence_ids": ["c1-s2"],
+            "reason": "The divider is a structural cue, not content.",
+            "continuation_pressure": False,
+        }
+
+    monkeypatch.setattr(nodes_module, "invoke_json", fake_invoke_json)
+
+    preview_sentences = [
+        _sentence("c1-s1", "∨", sentence_index=1, paragraph_index=1),
+        _sentence("c1-s2", "运用专长，发挥杠杆效应，最终你会得到自己应得的。", sentence_index=2, paragraph_index=2),
+    ]
+
+    decision = navigate_unitize(
+        current_sentence=preview_sentences[0],
+        preview_sentences=preview_sentences,
+        navigation_context=_navigation_context(),
+        reader_policy=build_default_reader_policy(),
+        output_language="zh",
+        output_dir=tmp_path,
+    )
+
+    assert decision["preview_range"]["start_sentence_id"] == "c1-s1"
+    assert decision["start_sentence_id"] == "c1-s2"
+    assert decision["end_sentence_id"] == "c1-s2"
+    assert decision["evidence_sentence_ids"] == ["c1-s2"]
+
+
+def test_navigate_unitize_refuses_to_trim_leading_lexical_content(tmp_path: Path, monkeypatch):
+    """A shifted start is accepted only when skipped leading sentences are pure residue."""
+
+    def fake_invoke_json(_system_prompt: str, _prompt: str, default: object) -> object:
+        return {
+            "start_sentence_id": "c1-s2",
+            "end_sentence_id": "c1-s2",
+            "boundary_type": "paragraph_end",
+            "evidence_sentence_ids": ["c1-s2"],
+            "reason": "Badly tries to skip normal content.",
+            "continuation_pressure": False,
+        }
+
+    monkeypatch.setattr(nodes_module, "invoke_json", fake_invoke_json)
+
+    preview_sentences = [
+        _sentence("c1-s1", "People want things from other people.", sentence_index=1, paragraph_index=1),
+        _sentence("c1-s2", "Other people are typically a problem until they prove otherwise.", sentence_index=2, paragraph_index=1),
+    ]
+
+    decision = navigate_unitize(
+        current_sentence=preview_sentences[0],
+        preview_sentences=preview_sentences,
+        navigation_context=_navigation_context(),
+        reader_policy=build_default_reader_policy(),
+        output_language="en",
+        output_dir=tmp_path,
+    )
+
+    assert decision["start_sentence_id"] == "c1-s1"
+    assert decision["end_sentence_id"] == "c1-s2"
+    assert decision["evidence_sentence_ids"] == ["c1-s1", "c1-s2"]
 
 
 def test_navigate_unitize_fallback_merges_heading_with_following_body(tmp_path: Path, monkeypatch):
