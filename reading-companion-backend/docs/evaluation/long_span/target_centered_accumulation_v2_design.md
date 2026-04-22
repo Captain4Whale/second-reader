@@ -75,21 +75,29 @@ It contains only externalized or normalized evidence:
 - `target_local_reactions`
   - the target-zone reactions that overlap the prepared target span
 - `explicit_callback_actions`
-  - relevant callback / revisit / bridge behavior near the target point
+  - target-local or short-horizon post-target callback evidence that visibly returns to an upstream / callback-eligible span
 - `short_horizon_followups`
   - the next short sequence of reactions after the target point
+- `pre_target_observed_callbacks`
+  - audit-only callback-like behavior seen before the target or outside the target-proximal evidence window
 - `target_ref`
 - `upstream_refs`
 - `expected_integration`
 - `non_goal_but_tempting_points`
 
 It does **not** directly judge raw mechanism-specific memory/state structures.
+It also does **not** treat the case-definition source text as mechanism output evidence:
+
+- `target_ref`, `upstream_refs`, and `expected_integration` define what the case is asking.
+- They may orient the judge, but they must not create score by themselves.
+- If a mechanism has no target-local reaction, no target-proximal callback, and no short-horizon followup, the case must stay low-scored even when the target passage itself is strong.
 
 Rationale:
 
 - state only matters if it affects observable reading behavior
 - raw internal structures are not comparable across mechanisms
 - storing something internally without using it at the target point is not meaningful accumulation evidence
+- a judge can always infer a beautiful connection from the source text after the fact, but the benchmark is about whether the reader agent made that connection visible near the target
 
 ## Judge Contract
 
@@ -111,9 +119,20 @@ The judge returns an absolute per-mechanism result:
 
 Interpretation:
 
-- `quality_score` measures whether the target-point reaction actually reconstructs the prepared thread
-- `callback_score` rewards relevant explicit callback evidence
-- `short_horizon_followups` support the `quality_score` judgment by showing whether the mechanism keeps using the thread after the target point rather than only saying one lucky sentence
+- `quality_score` measures whether target-local reactions and short-horizon followups semantically recall or use the upstream refs
+- `expected_integration` is a high-score orientation, not a rigid checklist or required wording
+- `callback_score` rewards relevant explicit callback evidence only when that callback is target-proximal
+- `pre_target_observed_callbacks` may be shown in audit docs, but they are not scoring evidence unless later target-near evidence visibly uses the same thread
+- `short_horizon_followups` support the `quality_score` judgment only when they continue the thread after target contact; being merely nearby in time is not enough
+
+Contract repair note:
+
+- the April 19 first formal rerun exposed a judge-contract flaw: some cases could be scored from the target passage itself or from callbacks that happened before the target
+- the April 22 repaired contract is rejudge-only:
+  - reuse completed normalized reading bundles
+  - do not call `read_book`
+  - rebuild only the evidence bundle and judgments
+  - preserve the April 19 result as diagnostic evidence, not current Long Span mechanism evidence
 
 ## Scoring And Comparison
 

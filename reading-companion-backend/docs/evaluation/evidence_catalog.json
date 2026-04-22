@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-04-21T12:17:06.278637Z",
+  "updated_at": "2026-04-22T12:56:33.923973Z",
   "entries": [
     {
       "run_id": "attentional_v2_active_benchmark_rerun_20260419",
@@ -39,9 +39,10 @@
       },
       "job_ids": [
         "bgjob_accumulation_benchmark_v2_active_formal_20260419",
+        "bgjob_accumulation_v2_rejudge_contract_fix_20260422",
         "bgjob_user_level_selective_v1_active_formal_20260419"
       ],
-      "one_line_conclusion": "Active benchmark bundle completed: V2 leads excerpt Selective Legibility; iterator_v1 leads target-centered long-span accumulation.",
+      "one_line_conclusion": "Active benchmark bundle completed: V2 leads excerpt Selective Legibility. The original April 19 Long Span child is invalidated by the repaired contract and replaced by the April 22 rejudge, where V2 leads.",
       "updated_at": "2026-04-21T12:17:06.195694Z"
     },
     {
@@ -75,7 +76,7 @@
       "run_id": "attentional_v2_accumulation_benchmark_v1_judged_rerun_20260407",
       "surface": "bounded_longspan_accumulation_v1",
       "evaluation_goal": "Coherent Accumulation",
-      "status": "historical_evidence",
+      "status": "invalidated_diagnostic",
       "dataset_id": "",
       "dataset_path": "",
       "manifest_path": "",
@@ -186,7 +187,7 @@
       "run_id": "attentional_v2_accumulation_benchmark_v2_frozen_active_rerun_20260419",
       "surface": "target_centered_accumulation_v2",
       "evaluation_goal": "Coherent Accumulation",
-      "status": "current_formal_evidence",
+      "status": "invalidated_diagnostic",
       "dataset_id": "",
       "dataset_path": "state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260416",
       "manifest_path": "eval/manifests/splits/attentional_v2_accumulation_benchmark_v2_frozen.json",
@@ -234,8 +235,61 @@
       "job_ids": [
         "bgjob_accumulation_benchmark_v2_active_formal_20260419"
       ],
-      "one_line_conclusion": "Current target-centered long-span v2 rerun: iterator_v1 leads average quality score 3.083 vs attentional_v2 2.583.",
-      "updated_at": "2026-04-21T12:16:35.894645Z"
+      "one_line_conclusion": "Invalidated diagnostic evidence: the April 19 Long Span judge contract could credit target text itself or pre-target callbacks, so this run is replaced by the April 22 contract-fix rejudge.",
+      "updated_at": "2026-04-22T12:46:01.563813Z"
+    },
+    {
+      "run_id": "attentional_v2_accumulation_benchmark_v2_frozen_rejudge_contract_fix_20260422",
+      "surface": "target_centered_accumulation_v2",
+      "evaluation_goal": "Coherent Accumulation",
+      "status": "current_formal_evidence",
+      "dataset_id": "attentional_v2_user_level_selective_v1_repaired_20260416",
+      "dataset_path": "state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260416",
+      "manifest_path": "eval/manifests/splits/attentional_v2_accumulation_benchmark_v2_frozen.json",
+      "mechanisms": [
+        "attentional_v2",
+        "iterator_v1"
+      ],
+      "metric_summary": {
+        "case_count": 12,
+        "segment_count": 3,
+        "question_family": "reader_character.coherent_accumulation",
+        "mechanisms": {
+          "attentional_v2": {
+            "average_quality_score": 2.333,
+            "average_callback_score": 0,
+            "case_count": 12,
+            "judge_unavailable_count": 0,
+            "mechanism_unavailable_count": 0
+          },
+          "iterator_v1": {
+            "average_quality_score": 1,
+            "average_callback_score": 0,
+            "case_count": 12,
+            "judge_unavailable_count": 0,
+            "mechanism_unavailable_count": 0
+          }
+        },
+        "derived_comparison": {
+          "winner_counts": {
+            "attentional_v2": 8,
+            "tie": 4
+          },
+          "comparison_rule": "quality_score_then_callback_score_then_tie",
+          "case_count": 12
+        }
+      },
+      "run_paths": {
+        "run_dir": "eval/runs/attentional_v2/attentional_v2_accumulation_benchmark_v2_frozen_rejudge_contract_fix_20260422",
+        "aggregate": "eval/runs/attentional_v2/attentional_v2_accumulation_benchmark_v2_frozen_rejudge_contract_fix_20260422/summary/aggregate.json",
+        "report": "eval/runs/attentional_v2/attentional_v2_accumulation_benchmark_v2_frozen_rejudge_contract_fix_20260422/summary/report.md",
+        "case_results": "eval/runs/attentional_v2/attentional_v2_accumulation_benchmark_v2_frozen_rejudge_contract_fix_20260422/summary/case_results.jsonl",
+        "llm_usage": "eval/runs/attentional_v2/attentional_v2_accumulation_benchmark_v2_frozen_rejudge_contract_fix_20260422/summary/llm_usage.json",
+        "selection": "eval/runs/attentional_v2/attentional_v2_accumulation_benchmark_v2_frozen_rejudge_contract_fix_20260422/summary/selection.json"
+      },
+      "job_ids": [],
+      "one_line_conclusion": "Formal target-centered accumulation v2 rerun completed; attentional_v2 average_quality_score=2.333, iterator_v1 average_quality_score=1.",
+      "updated_at": "2026-04-22T12:56:33.923891Z"
     },
     {
       "run_id": "attentional_v2_user_level_selective_v1_active_rerun_20260419",

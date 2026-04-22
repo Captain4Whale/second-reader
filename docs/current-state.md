@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-04-22T08:57:23+08:00`
+Last verified: `2026-04-22T20:46:30+08:00`
 
 ## Current Objective
 - Keep `target-centered long-span accumulation v2` as the active long-span methodology while preserving bounded long-span v1 as historical evidence.
@@ -74,18 +74,38 @@ Last verified: `2026-04-22T08:57:23+08:00`
             - `bgjob_user_level_selective_v1_active_formal_20260419`
           - run id:
             - `attentional_v2_user_level_selective_v1_active_rerun_20260419`
-        - completed accumulation child:
+        - superseded accumulation child:
           - job id:
             - `bgjob_accumulation_benchmark_v2_active_formal_20260419`
           - run id:
             - `attentional_v2_accumulation_benchmark_v2_frozen_active_rerun_20260419`
-          - current evidence:
+          - invalidated diagnostic evidence:
             - `12` frozen target cases completed across `3` windows and `2` mechanisms
             - `attentional_v2 average_quality_score = 2.583`
             - `iterator_v1 average_quality_score = 3.083`
             - overlapping excerpt reading outputs were reused rather than reread
+            - this result is no longer current Long Span mechanism evidence because the old judge contract could credit target source text itself and pre-target callback evidence
             - report:
               - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_accumulation_benchmark_v2_frozen_active_rerun_20260419/summary/report.md`
+        - current Long Span rejudge:
+          - job id:
+            - `bgjob_accumulation_v2_rejudge_contract_fix_20260422`
+          - run id:
+            - `attentional_v2_accumulation_benchmark_v2_frozen_rejudge_contract_fix_20260422`
+          - current evidence:
+            - rejudge-only over the completed April 19 normalized reading bundles
+            - no V1/V2 reading was rerun
+            - `12` frozen target cases completed across `3` windows and `2` mechanisms
+            - `attentional_v2 average_quality_score = 2.333`
+            - `iterator_v1 average_quality_score = 1.0`
+            - repaired contract only credits target-visible mechanism behavior:
+              - target-local reactions
+              - target-proximal callbacks
+              - short-horizon followups
+            - report:
+              - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_accumulation_benchmark_v2_frozen_rejudge_contract_fix_20260422/summary/report.md`
+            - audit:
+              - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_accumulation_benchmark_v2_frozen_rejudge_contract_fix_20260422/analysis/longspan_rejudge_audit_20260422/README.md`
   - historical boundary:
     - keep `attentional_v2_accumulation_benchmark_v1_judged_rerun_20260407` as durable historical mechanism evidence
     - do not treat the old bounded `EARLY / MID / LATE` probe method as the active long-span methodology anymore

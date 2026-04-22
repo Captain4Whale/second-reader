@@ -199,6 +199,10 @@ Use `docs/backend-reading-mechanism.md` for shared mechanism-platform boundaries
     - when the mechanism reaches the target point, does it actually build the prepared long-range thread there?
 - The target of evaluation is therefore not "did the mechanism react separately at early / middle / late points?"
   - the target is whether the final target-point behavior shows that earlier material has been carried forward and used correctly
+- The target source passage, upstream refs, and expected integration are case-definition material, not mechanism-visible evidence.
+  - they may define what the judge should look for
+  - they must not create score by themselves
+  - if there is no target-local reaction, no target-proximal callback, and no short-horizon followup, the case should remain low-scored even when the target passage itself expresses a strong connection
 - A valid accumulation case usually reuses one continuous reading window and prepares:
   - one `target_span`
   - `2+` upstream nodes
@@ -234,7 +238,7 @@ Use `docs/backend-reading-mechanism.md` for shared mechanism-platform boundaries
   - the formal benchmark target
     - for example the formal `target_span`, prepared long-range thread, and expected integration
   - direct scored evidence
-    - target-local reactions and nearby observable behavior that actually bear on the target-centered question
+    - target-local reactions, target-proximal callback actions, and short-horizon followups that actually bear on the target-centered question
   - supporting evidence
     - nearby material that helps explain the judgment but is not itself the decisive target-point evidence
   - negative evidence
@@ -242,6 +246,13 @@ Use `docs/backend-reading-mechanism.md` for shared mechanism-platform boundaries
 - Reports must not present supporting evidence as though it were the formal hit.
   - nearby echoes or same-window support may still matter
   - they must be labeled as supporting evidence rather than written as successful target-point integration
+- Long-span reports must distinguish target-visible evidence from pre-target observed callbacks.
+  - a pre-target callback can show that the reader touched earlier material somewhere in the run
+  - it cannot by itself prove coherent accumulation at the target point
+  - if it is shown in an audit appendix, label it as audit-only unless a later target-near reaction visibly uses it
+- `expected_integration` should be used as an orientation for high-scoring semantic recall, not as a brittle checklist.
+  - a mechanism can receive credit for a differently worded but correct target-near link to upstream refs
+  - it should not receive credit for the case author's integration text when no mechanism output made the connection visible
 - Reports must not let summary counts stand in for interpretation.
   - callback counts, nearby evidence counts, or similar totals are evidence summaries only
   - they do not by themselves prove that the mechanism built the required thread at the target point

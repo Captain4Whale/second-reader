@@ -579,6 +579,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--segment-id", action="append", dest="segment_ids", default=[])
     parser.add_argument("--shard-key", action="append", dest="shard_keys", default=[])
     parser.add_argument("--reuse-output-run-id", action="append", dest="reuse_output_run_ids", default=[])
+    parser.add_argument(
+        "--require-reuse-output",
+        action="store_true",
+        help="Fail fast instead of rereading if any selected shard lacks a completed reusable output.",
+    )
     parser.add_argument("--wait-for-reuse-ready", action="store_true")
     parser.add_argument("--reuse-ready-poll-seconds", type=int, default=30)
     parser.add_argument("--max-shard-attempts", type=int, default=3)
@@ -654,6 +659,15 @@ def main() -> int:
         )
     }
     launch_plans = [plan for plan in plans if plan.shard_key not in completed_shard_keys]
+    if args.require_reuse_output:
+        missing_reuse = sorted(
+            plan.shard_key for plan in launch_plans if plan.shard_key not in reuse_output_dirs
+        )
+        if missing_reuse:
+            raise SystemExit(
+                "--require-reuse-output was set, but these shards have no completed reusable output: "
+                + ", ".join(missing_reuse)
+            )
     _json_dump(
         run_root / "meta" / "shard_plan.json",
         {
@@ -663,6 +677,7 @@ def main() -> int:
             "target_ids": list(target_ids),
             "reuse_output_run_ids": list(reuse_output_run_ids),
             "wait_for_reuse_ready": bool(args.wait_for_reuse_ready),
+            "require_reuse_output": bool(args.require_reuse_output),
             "reuse_ready_poll_seconds": int(args.reuse_ready_poll_seconds),
             "max_shard_attempts": int(args.max_shard_attempts),
             "retry_backoff_seconds": int(args.retry_backoff_seconds),

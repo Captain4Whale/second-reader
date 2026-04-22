@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from contextlib import nullcontext
 import json
 from pathlib import Path
 from typing import Any
@@ -267,6 +268,227 @@ def test_build_target_evidence_bundle_collects_target_callbacks_and_followups() 
     assert evidence.target_local_reactions[0]["reaction_id"] == "r2"
     assert any(item.get("matched_callback_point_id") == "cb1" for item in evidence.explicit_callback_actions)
     assert evidence.short_horizon_followups[0]["reaction_id"] == "r3"
+
+
+def test_build_target_evidence_bundle_keeps_pre_target_callbacks_audit_only() -> None:
+    case = accumulation_v2_runner.target_case_from_row(
+        {
+            "case_id": "case_a",
+            "source_id": "source_a",
+            "book": "Book A",
+            "author": "Author A",
+            "output_language": "en",
+            "window_id": "segment_a",
+            "thread_type": "叙事型故事脉络",
+            "target_span": _span_point("target", segment_id="segment_a", paragraph_index=3, char_start=0, char_end=11, text="late target"),
+            "upstream_nodes": [
+                {
+                    "node_id": "u1",
+                    "label": "u1",
+                    "summary": "setup",
+                    "span_text": "early setup",
+                    "span_slices": [_span_slice(segment_id="segment_a", paragraph_index=1, char_start=0, char_end=11, text="early setup")],
+                },
+                {
+                    "node_id": "u2",
+                    "label": "u2",
+                    "summary": "mid pressure",
+                    "span_text": "mid pressure",
+                    "span_slices": [_span_slice(segment_id="segment_a", paragraph_index=2, char_start=0, char_end=12, text="mid pressure")],
+                },
+            ],
+            "expected_integration": "late depends on earlier setup",
+            "callback_eligible_spans": [_span_point("cb1", segment_id="segment_a", paragraph_index=1, char_start=0, char_end=11, text="early setup")],
+            "non_goal_but_tempting_points": [],
+            "long_range_rationale": "Later depends on earlier",
+            "curation_status": "candidate_review_pending",
+            "provenance": {},
+        }
+    )
+    segment = accumulation_v2_runner.ReadingSegment(
+        segment_id="segment_a",
+        source_id="source_a",
+        book_title="Book A",
+        author="Author A",
+        language_track="en",
+        start_sentence_id="c1-s1",
+        end_sentence_id="c1-s8",
+        chapter_ids=[1],
+        chapter_titles=["Chapter 1"],
+        target_note_count=20,
+        covered_note_count=20,
+        termination_reason="chapter_end_after_target_notes",
+        segment_source_path="segment_sources/segment_a.txt",
+    )
+    bundle = {
+        "reactions": [
+            _reaction(reaction_id="r1", paragraph_index=1, text="early setup", content="noticed the setup"),
+        ],
+        "attention_events": [
+            {
+                "kind": "thought",
+                "phase": "thinking",
+                "section_ref": "1.1",
+                "move_type": "bridge",
+                "message": "This connects back to the early setup.",
+                "current_excerpt": "early setup",
+            }
+        ],
+    }
+
+    evidence = accumulation_v2_runner._build_target_evidence_bundle(case=case, segment=segment, bundle=bundle)
+
+    assert evidence.target_local_reactions == []
+    assert evidence.explicit_callback_actions == []
+    assert evidence.short_horizon_followups == []
+    assert [item["evidence_role"] for item in evidence.pre_target_observed_callbacks] == [
+        "audit_only_not_target_visible",
+        "audit_only_attention_event_not_target_visible",
+    ]
+
+
+def test_judge_target_case_fail_closes_when_no_target_visible_evidence(tmp_path: Path, monkeypatch) -> None:
+    case = accumulation_v2_runner.target_case_from_row(
+        {
+            "case_id": "case_a",
+            "source_id": "source_a",
+            "book": "Book A",
+            "author": "Author A",
+            "output_language": "en",
+            "window_id": "segment_a",
+            "thread_type": "叙事型故事脉络",
+            "target_span": _span_point("target", segment_id="segment_a", paragraph_index=3, char_start=0, char_end=11, text="late target"),
+            "upstream_nodes": [
+                {
+                    "node_id": "u1",
+                    "label": "u1",
+                    "summary": "setup",
+                    "span_text": "early setup",
+                    "span_slices": [_span_slice(segment_id="segment_a", paragraph_index=1, char_start=0, char_end=11, text="early setup")],
+                },
+                {
+                    "node_id": "u2",
+                    "label": "u2",
+                    "summary": "mid pressure",
+                    "span_text": "mid pressure",
+                    "span_slices": [_span_slice(segment_id="segment_a", paragraph_index=2, char_start=0, char_end=12, text="mid pressure")],
+                },
+            ],
+            "expected_integration": "late depends on earlier setup",
+            "callback_eligible_spans": [],
+            "non_goal_but_tempting_points": [],
+            "long_range_rationale": "Later depends on earlier",
+            "curation_status": "candidate_review_pending",
+            "provenance": {},
+        }
+    )
+    evidence = accumulation_v2_runner.TargetEvidenceBundle(
+        case_id="case_a",
+        segment_id="segment_a",
+        target_ref={},
+        upstream_refs=[],
+        expected_integration="late depends on earlier setup",
+        target_local_reactions=[],
+        explicit_callback_actions=[],
+        short_horizon_followups=[],
+        pre_target_observed_callbacks=[],
+        non_goal_but_tempting_points=[],
+    )
+    monkeypatch.setattr(
+        accumulation_v2_runner,
+        "invoke_json",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(AssertionError("judge should not be called")),
+    )
+
+    judgment = accumulation_v2_runner._judge_target_case(
+        case=case,
+        evidence_bundle=evidence,
+        run_root=tmp_path,
+        mechanism_key="attentional_v2",
+        judge_mode="llm",
+    )
+
+    assert judgment["quality_score"] == 1
+    assert judgment["callback_score"] == 0
+    assert judgment["thread_built"] == "not_built"
+    assert "case-definition text" in judgment["reason"]
+
+
+def test_judge_target_case_prompt_forbids_target_text_credit(tmp_path: Path, monkeypatch) -> None:
+    case = accumulation_v2_runner.target_case_from_row(
+        {
+            "case_id": "case_a",
+            "source_id": "source_a",
+            "book": "Book A",
+            "author": "Author A",
+            "output_language": "en",
+            "window_id": "segment_a",
+            "thread_type": "叙事型故事脉络",
+            "target_span": _span_point("target", segment_id="segment_a", paragraph_index=3, char_start=0, char_end=11, text="late target"),
+            "upstream_nodes": [
+                {
+                    "node_id": "u1",
+                    "label": "u1",
+                    "summary": "setup",
+                    "span_text": "early setup",
+                    "span_slices": [_span_slice(segment_id="segment_a", paragraph_index=1, char_start=0, char_end=11, text="early setup")],
+                },
+                {
+                    "node_id": "u2",
+                    "label": "u2",
+                    "summary": "mid pressure",
+                    "span_text": "mid pressure",
+                    "span_slices": [_span_slice(segment_id="segment_a", paragraph_index=2, char_start=0, char_end=12, text="mid pressure")],
+                },
+            ],
+            "expected_integration": "late depends on earlier setup",
+            "callback_eligible_spans": [],
+            "non_goal_but_tempting_points": [],
+            "long_range_rationale": "Later depends on earlier",
+            "curation_status": "candidate_review_pending",
+            "provenance": {},
+        }
+    )
+    evidence = accumulation_v2_runner.TargetEvidenceBundle(
+        case_id="case_a",
+        segment_id="segment_a",
+        target_ref={},
+        upstream_refs=[],
+        expected_integration="late depends on earlier setup",
+        target_local_reactions=[{"reaction_id": "r-target", "content": "this recalls the setup"}],
+        explicit_callback_actions=[],
+        short_horizon_followups=[],
+        pre_target_observed_callbacks=[],
+        non_goal_but_tempting_points=[],
+    )
+    captured: dict[str, str] = {}
+
+    def fake_invoke_json(system_prompt, user_prompt, default):
+        captured["system_prompt"] = system_prompt
+        captured["user_prompt"] = user_prompt
+        return {
+            "quality_score": 4,
+            "callback_score": 1,
+            "thread_built": "partial",
+            "reason": "r-target provides target-near evidence.",
+        }
+
+    monkeypatch.setattr(accumulation_v2_runner, "llm_invocation_scope", lambda **_kwargs: nullcontext())
+    monkeypatch.setattr(accumulation_v2_runner, "invoke_json", fake_invoke_json)
+
+    judgment = accumulation_v2_runner._judge_target_case(
+        case=case,
+        evidence_bundle=evidence,
+        run_root=tmp_path,
+        mechanism_key="attentional_v2",
+        judge_mode="llm",
+    )
+
+    assert judgment["quality_score"] == 4
+    assert "Score only mechanism-visible evidence" in captured["system_prompt"]
+    assert "They are not" in captured["system_prompt"]
+    assert "mechanism output evidence" in captured["system_prompt"]
+    assert "Never give credit just because the target source text itself expresses" in captured["system_prompt"]
 
 
 def test_aggregate_results_uses_quality_then_callback_then_tie() -> None:

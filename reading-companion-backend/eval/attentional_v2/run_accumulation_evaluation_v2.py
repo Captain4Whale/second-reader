@@ -46,6 +46,7 @@ MECHANISM_KEYS = ("attentional_v2", "iterator_v1")
 MECHANISM_FILTER_VALUES = ("attentional_v2", "iterator_v1", "both")
 JUDGE_MODE_VALUES = ("llm", "none")
 CALLBACK_MOVE_TYPES = {"bridge", "callback", "return", "look_back", "revisit", "compare"}
+TARGET_PROXIMAL_REACTION_LIMIT = 3
 JUDGE_SCHEMA_RETRY_INSTRUCTION = (
     "\n\nReminder: return exactly one JSON object matching the requested schema. "
     "Do not wrap it in markdown fences or nest it under another key."
@@ -91,6 +92,7 @@ class TargetEvidenceBundle:
     target_local_reactions: list[dict[str, Any]]
     explicit_callback_actions: list[dict[str, Any]]
     short_horizon_followups: list[dict[str, Any]]
+    pre_target_observed_callbacks: list[dict[str, Any]]
     non_goal_but_tempting_points: list[dict[str, Any]]
 
 
@@ -630,13 +632,14 @@ def _build_target_evidence_bundle(
     callback_points = _callback_points_for_case(case)
     latest_target_index = max((int(item["order_index"]) for item in target_local_reactions), default=-1)
     explicit_callback_actions: list[dict[str, Any]] = []
+    pre_target_observed_callbacks: list[dict[str, Any]] = []
     seen_callback_ids: set[tuple[str, str]] = set()
+    seen_pre_target_callback_ids: set[tuple[str, str]] = set()
 
     for reaction in reaction_payloads:
-        if latest_target_index >= 0 and int(reaction["order_index"]) < latest_target_index:
-            continue
         if not reaction["source_span_slices"]:
             continue
+        reaction_order = int(reaction["order_index"])
         matched_point: SpanPoint | None = None
         for point in callback_points:
             relation, overlap_chars, overlap_coverage = _source_span_relation(
@@ -650,9 +653,17 @@ def _build_target_evidence_bundle(
                 payload["overlap_chars"] = overlap_chars
                 payload["overlap_coverage"] = round(overlap_coverage, 4)
                 key = ("reaction", payload["reaction_id"])
-                if key not in seen_callback_ids:
-                    explicit_callback_actions.append(payload)
-                    seen_callback_ids.add(key)
+                if latest_target_index >= 0 and latest_target_index <= reaction_order <= (
+                    latest_target_index + TARGET_PROXIMAL_REACTION_LIMIT
+                ):
+                    payload["evidence_role"] = "target_or_short_horizon_callback"
+                    if key not in seen_callback_ids:
+                        explicit_callback_actions.append(payload)
+                        seen_callback_ids.add(key)
+                elif key not in seen_pre_target_callback_ids:
+                    payload["evidence_role"] = "audit_only_not_target_visible"
+                    pre_target_observed_callbacks.append(payload)
+                    seen_pre_target_callback_ids.add(key)
                 matched_point = point
                 break
         if matched_point is not None and len(explicit_callback_actions) >= 6:
@@ -675,12 +686,13 @@ def _build_target_evidence_bundle(
         payload = dict(event)
         payload["matched_callback_point_id"] = matched_point.point_id if matched_point else ""
         payload["matched_callback_label"] = matched_point.label if matched_point else ""
+        payload["evidence_role"] = "audit_only_attention_event_not_target_visible"
         key = ("event", f"{event['order_index']}:{event['move_type']}:{event['section_ref']}")
-        if key in seen_callback_ids:
+        if key in seen_pre_target_callback_ids:
             continue
-        explicit_callback_actions.append(payload)
-        seen_callback_ids.add(key)
-        if len(explicit_callback_actions) >= 6:
+        pre_target_observed_callbacks.append(payload)
+        seen_pre_target_callback_ids.add(key)
+        if len(pre_target_observed_callbacks) >= 8:
             break
 
     short_horizon_followups: list[dict[str, Any]] = []
@@ -695,9 +707,9 @@ def _build_target_evidence_bundle(
                     "section_ref": reaction["section_ref"],
                     "anchor_quote": reaction["anchor_quote"],
                     "content": reaction["content"],
-                }
+            }
             )
-            if len(short_horizon_followups) >= 3:
+            if len(short_horizon_followups) >= TARGET_PROXIMAL_REACTION_LIMIT:
                 break
 
     return TargetEvidenceBundle(
@@ -709,6 +721,7 @@ def _build_target_evidence_bundle(
         target_local_reactions=target_local_reactions,
         explicit_callback_actions=explicit_callback_actions,
         short_horizon_followups=short_horizon_followups,
+        pre_target_observed_callbacks=pre_target_observed_callbacks[:8],
         non_goal_but_tempting_points=[_point_to_payload(point) for point in case.non_goal_but_tempting_points],
     )
 
@@ -768,6 +781,18 @@ def _judge_target_case(
         return _default_judgment(reason="judge_disabled")
     if judge_mode not in JUDGE_MODE_VALUES:
         raise ValueError(f"unsupported judge mode: {judge_mode}")
+    if not (
+        evidence_bundle.target_local_reactions
+        or evidence_bundle.explicit_callback_actions
+        or evidence_bundle.short_horizon_followups
+    ):
+        return _default_judgment(
+            reason=(
+                "No target-local reaction, target-proximal callback action, or short-horizon followup was "
+                "available. The target span and upstream refs are case-definition text, not mechanism-visible "
+                "evidence, so this case cannot receive coherent-accumulation credit."
+            )
+        )
 
     system_prompt = """You are doing offline single-mechanism reader evaluation.
 
@@ -776,7 +801,21 @@ Question family: `reader_character.coherent_accumulation`
 Judge one mechanism on one target-centered long-span case.
 
 The core question is:
-- At the target point, did the reader successfully build the prepared long-range thread?
+- Near the target point, did the reader's visible reactions or short-horizon followups semantically recall
+  or connect to the upstream refs?
+
+Evidence boundaries:
+- Score only mechanism-visible evidence in `target_local_reactions`, `explicit_callback_actions`, and
+  `short_horizon_followups`.
+- `target_span`, `upstream_nodes`, and `expected_integration` are the case definition. They are not
+  mechanism output evidence. Never give credit just because the target source text itself expresses the
+  right idea.
+- `pre_target_observed_callbacks` are audit context only. They may explain what happened earlier, but they
+  do not directly add score unless target-near evidence visibly uses the same thread.
+- `expected_integration` describes a high-score orientation. Do not require exact wording or a rigid
+  checklist match; judge semantic recall and integration.
+- If the evidence does not show a target-near recall/link to upstream refs, score low even when the target
+  source passage is intrinsically strong.
 
 Main scoring:
 - `quality_score` (1-5) is the primary score
@@ -786,6 +825,9 @@ Use:
 - `thread_built = built` when the target-point reaction clearly reconstructs the prepared thread
 - `thread_built = partial` when it captures only part of the thread
 - `thread_built = not_built` when it misses or distorts the prepared thread
+
+The reason must name the specific reaction/followup/callback evidence that supports the score, or say that
+no sufficient target-near mechanism evidence exists.
 
 Return JSON only.""";
     case_payload = {
@@ -1044,6 +1086,8 @@ def _render_report(
             f"- Active question family: `{ACTIVE_QUESTION_FAMILY}`",
             "- Method shape: `target-centered long-span accumulation v2`",
             "- Historical bounded `EARLY / MID / LATE` v1 remains preserved as historical evidence only.",
+            "- Scoring evidence is target-visible mechanism behavior only: target-local reactions, target-proximal callbacks, and short-horizon followups.",
+            "- `target_span`, `upstream_refs`, and `expected_integration` define the case and must not create score by themselves.",
             "",
             "## Selection",
             f"- Reading segments: `{len(selection.segments)}`",

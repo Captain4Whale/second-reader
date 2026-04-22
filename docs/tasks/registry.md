@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-04-22T08:57:23+08:00`
+Last updated: `2026-04-22T20:46:30+08:00`
 
 ## Status Values
 - `active`
@@ -238,6 +238,11 @@ Last updated: `2026-04-22T08:57:23+08:00`
     - `2+` upstream nodes plus one explicit `expected_integration`
     - absolute per-mechanism `quality_score` as the main output
     - `callback_score` as a secondary bonus score
+    - score only target-visible mechanism behavior:
+      - target-local reactions
+      - target-proximal callback actions
+      - short-horizon followups
+    - do not credit `target_span`, `upstream_refs`, or `expected_integration` as mechanism output evidence
     - no direct judging of raw mechanism-specific memory/state structures
     - no pairwise LLM judge prompt
   - active substrate:
@@ -254,20 +259,32 @@ Last updated: `2026-04-22T08:57:23+08:00`
       - `悉达多`: `6`
       - `活出生命的意义`: `4`
       - `芒格之道`: `2`
-  - latest formal-rerun evidence:
+  - current formal-rerun evidence:
     - run id:
-      - `attentional_v2_accumulation_benchmark_v2_frozen_active_rerun_20260419`
+      - `attentional_v2_accumulation_benchmark_v2_frozen_rejudge_contract_fix_20260422`
     - summary:
-      - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_accumulation_benchmark_v2_frozen_active_rerun_20260419/summary/report.md`
+      - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_accumulation_benchmark_v2_frozen_rejudge_contract_fix_20260422/summary/report.md`
+    - audit:
+      - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_accumulation_benchmark_v2_frozen_rejudge_contract_fix_20260422/analysis/longspan_rejudge_audit_20260422/README.md`
     - completed scope:
       - `12` target cases across `3` shared reading windows and `2` mechanisms
     - result:
+      - `attentional_v2 average_quality_score = 2.333`
+      - `iterator_v1 average_quality_score = 1.0`
+    - reuse posture:
+      - completed April 19 normalized reading outputs were reused; no V1/V2 reading was rerun
+  - invalidated diagnostic evidence:
+    - run id:
+      - `attentional_v2_accumulation_benchmark_v2_frozen_active_rerun_20260419`
+    - old result:
       - `attentional_v2 average_quality_score = 2.583`
       - `iterator_v1 average_quality_score = 3.083`
-    - reuse posture:
-      - overlapping excerpt reading outputs were reused for the shared windows rather than reread
+    - invalidation reason:
+      - the old judge contract could credit target source text itself or pre-target callbacks as if they were target-visible mechanism evidence
 - Jobs:
   - `bgjob_accumulation_benchmark_v2_active_formal_20260419` (`completed`)
+  - `bgjob_accumulation_v2_rejudge_contract_fix_20260422` (`completed`)
+  - `bgjob_job_registry_auto_recovery_watchdog_longspan_rejudge_20260422` (`completed / stopped`)
 
 ### `TASK-USER-LEVEL-SELECTIVE-V1` — Replace the active local/user-level benchmark with the note-aligned selective package
 - Status: `active`
@@ -440,6 +457,12 @@ Last updated: `2026-04-22T08:57:23+08:00`
     - run id: `attentional_v2_accumulation_benchmark_v2_frozen_active_rerun_20260419`
     - scope: `12` target cases across `3` windows and `2` mechanisms
     - result: `attentional_v2 average_quality_score = 2.583`; `iterator_v1 average_quality_score = 3.083`
+    - status: superseded / invalidated for the Long Span child because the judge contract credited non-target-visible evidence
+  - replacement long-span rejudge:
+    - run id: `attentional_v2_accumulation_benchmark_v2_frozen_rejudge_contract_fix_20260422`
+    - scope: `12` target cases across `3` windows and `2` mechanisms
+    - result: `attentional_v2 average_quality_score = 2.333`; `iterator_v1 average_quality_score = 1.0`
+    - posture: rejudge-only; no reading rerun
   - April 21 repair note:
     - all shard outputs were complete, but a shard-filtered recovery invocation had overwritten the excerpt root summary with a partial one-shard aggregate
     - the root summary/report were regenerated from all completed shards
