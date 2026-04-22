@@ -10,9 +10,9 @@ The current active benchmark is `user-level selective v1`:
 - active split manifest:
   - [attentional_v2_user_level_selective_v1_draft.json](../../../eval/manifests/splits/attentional_v2_user_level_selective_v1_draft.json)
 - active dataset package:
-  - [manifest.json](../../../state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260416/manifest.json)
-  - [segments.jsonl](../../../state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260416/segments.jsonl)
-  - [note_cases.jsonl](../../../state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260416/note_cases.jsonl)
+  - [manifest.json](../../../state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260422/manifest.json)
+  - [segments.jsonl](../../../state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260422/segments.jsonl)
+  - [note_cases.jsonl](../../../state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260422/note_cases.jsonl)
 - active comparison runner:
   - [run_user_level_selective_comparison.py](../../../eval/attentional_v2/run_user_level_selective_comparison.py)
 
@@ -20,8 +20,10 @@ Current formal evidence bundle:
 
 - run id:
   - `attentional_v2_user_level_selective_v1_active_rerun_20260419`
-- active dataset root used by that run:
+- formal-run dataset root used by that run:
   - [manifest.json](../../../state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260416/manifest.json)
+- current active dataset root:
+  - [manifest.json](../../../state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260422/manifest.json)
 - machine outputs:
   - [aggregate.json](../../../eval/runs/attentional_v2/attentional_v2_user_level_selective_v1_active_rerun_20260419/summary/aggregate.json)
   - [report.md](../../../eval/runs/attentional_v2/attentional_v2_user_level_selective_v1_active_rerun_20260419/summary/report.md)
@@ -50,14 +52,27 @@ Current formal evidence bundle:
   - visible reactions without usable source locators fail the run instead of falling back to string matching
 - current eligible source count:
   - `5 / 5`
-  - `nawaer_baodian_private_zh` remains included after repairing the library-notes alignment fallback and then rebuilding the active package with a stricter body-start rule
+  - `nawaer_baodian_private_zh` remains included after repairing the library-notes alignment fallback and then rebuilding the active package with a stricter body-start rule, followed by the April 22 active-window repair
   - current package size:
     - `5` reading segments
-    - `203` note cases
+    - `202` note cases
+  - current active-pointer repair:
+    - `nawaer_baodian_private_zh__segment_1` now starts at `c13-s1`
+    - it ends at `c13-s168`
+    - active `nawaer` note cases are now exactly `e0001-e0023`
+    - the old preface-side case `e0056` is no longer part of the active package
+  - evidence boundary:
+    - the completed April 19 formal rerun still reflects the then-active prior repaired package `attentional_v2_user_level_selective_v1_repaired_20260416`
+    - that run therefore still reports `203` note cases
   - superseded historical predecessor:
     - [manifest.json](../../../state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1/manifest.json)
     - `5` reading segments
     - `202` note cases
+    - status: `superseded`
+  - superseded prior repaired package:
+    - [manifest.json](../../../state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260416/manifest.json)
+    - `5` reading segments
+    - `203` note cases
     - status: `superseded`
   - every note case includes `source_span_slices` in the rendered segment coordinate system used by the reader runtime
 
@@ -74,7 +89,8 @@ Current formal evidence bundle:
 - current active exception:
   - `nawaer_baodian_private_zh`
   - active body start is pinned to `c13` (`认识财富创造的原理`)
-  - the old preface-side note at `c6` no longer participates in the active package
+  - active window now ends at `c13-s168`, so the package stops naturally at the end of that first real body chapter
+  - the old preface-side note at `c6` (`e0056`) no longer participates in the active package
   - retained `nawaer` note cases still preserve their original aligned source spans; they were rebuilt, not trimmed
 
 ## Dataset Form
@@ -93,7 +109,7 @@ For human auditing, a local-only Markdown export is now available:
 - default command:
   - `cd reading-companion-backend && .venv/bin/python eval/attentional_v2/render_user_level_selective_audit.py`
 - default output directory:
-  - `state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260416/audit_human_readable/`
+  - `state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260422/audit_human_readable/`
 - output shape:
   - `index.md`
   - `windows/<segment_id>.md`
@@ -157,9 +173,11 @@ Current formal evidence bundle:
 
 Current active rerun posture:
 
-- the repaired `203`-case package is now both:
-  - the active benchmark pointer
-  - the shared reading substrate for `target-centered accumulation v2`
+- the repaired `202`-case package is now the active benchmark pointer:
+  - `attentional_v2_user_level_selective_v1_repaired_20260422`
+- the completed April 19 formal evidence bundle still used the then-active prior repaired `203`-case package:
+  - `attentional_v2_user_level_selective_v1_repaired_20260416`
+- `target-centered accumulation v2` is unchanged by this Naval repair because its frozen active set does not include `《纳瓦尔宝典》`
 - the next formal active comparison rerun should:
   - rerun `user-level selective v1` first
   - reuse overlapping completed reading outputs for `target-centered accumulation v2`

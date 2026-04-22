@@ -42,9 +42,15 @@ Do not use the older April 6 lane as current mechanism evidence; it remains hist
   - retained implementation mirror:
     - [attentional_v2_accumulation_benchmark_v2_draft.json](../../../eval/manifests/splits/attentional_v2_accumulation_benchmark_v2_draft.json)
 
-`v2` is now the active long-span method definition. It reuses the repaired active user-level window substrate at:
+`v2` is now the active long-span method definition. Its active window substrate pointer now follows:
+
+- [attentional_v2_user_level_selective_v1_repaired_20260422](../../../state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260422/manifest.json)
+
+The current completed April 19 formal long-span rerun still reused the then-active prior repaired substrate:
 
 - [attentional_v2_user_level_selective_v1_repaired_20260416](../../../state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260416/manifest.json)
+
+This Naval-only active-window repair does not change the frozen long-span set, because `《纳瓦尔宝典》` is not part of that active v2 case pack.
 
 It has a first frozen reviewed seed set and a completed first formal judged rerun.
 

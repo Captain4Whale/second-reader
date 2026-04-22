@@ -58,7 +58,11 @@ The active coordinate system is `segment_source_v1`, because the mechanisms read
 `v2` reuses the active `user-level selective v1` reading windows:
 
 - current window dataset:
-  - `reading-companion-backend/state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260416`
+  - `reading-companion-backend/state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260422`
+
+- evidence boundary:
+  - the completed April 19 formal long-span rerun still reused overlapping outputs from the then-active prior repaired window dataset `attentional_v2_user_level_selective_v1_repaired_20260416`
+  - the April 22 Naval-only active-window repair does not change the frozen long-span case set because `《纳瓦尔宝典》` is not in that active v2 batch
 
 This keeps the reading setup aligned with the repaired body-start rule and avoids maintaining a second long-span-only window family unless later evidence shows that these windows are insufficient.
 

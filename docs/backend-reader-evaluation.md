@@ -267,8 +267,18 @@ Use `docs/backend-reading-mechanism.md` for shared mechanism-platform boundaries
 - Stable docs may name one active benchmark pointer while keeping earlier benchmark packages as historical evidence.
 - An active benchmark does not need to maximize breadth if the current project constraint is iteration speed under real token and time pressure.
 - The active local/user-level benchmark pointer now belongs to the note-aligned `user-level selective v1` package rather than to `excerpt surface v1.1`.
-- The active local/user-level dataset root now belongs to the repaired `203`-case package `attentional_v2_user_level_selective_v1_repaired_20260416`.
+- The active local/user-level dataset root now belongs to the repaired `202`-case package `attentional_v2_user_level_selective_v1_repaired_20260422`.
+  - this April 22 repair keeps `nawaer_baodian_private_zh` on the agreed body-start rule:
+    - start at `c13-s1`
+    - stop at `c13-s168`
+    - keep only the `23` `c13` body notes
+    - remove the old preface-side case `e0056`
+  - the prior repaired `203`-case package `attentional_v2_user_level_selective_v1_repaired_20260416` remains preserved as superseded prior evidence
   - the earlier `202`-case `attentional_v2_user_level_selective_v1` package remains preserved as superseded historical evidence
+- If the active benchmark pointer moves after a formal run, stable docs should preserve both truths explicitly:
+  - which dataset package is active now
+  - which dataset package a completed formal evidence bundle actually used
+  - for the current local/user-level surface, the active pointer is now `20260422 / 202` cases, while the April 19 formal rerun still reflects the then-active `20260416 / 203`-case package
 - Older excerpt-surface freezes and their judged reports should remain readable as historical evidence, but they should be labeled `historical` / `superseded` once the active pointer moves.
 - The durable long-span run evidence from bounded accumulation benchmark v1 remains historical mechanism evidence rather than active methodology authority.
   - preserve:

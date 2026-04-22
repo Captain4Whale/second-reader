@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-04-22T14:35:00+08:00`
+Last verified: `2026-04-22T08:57:23+08:00`
 
 ## Current Objective
 - Keep `target-centered long-span accumulation v2` as the active long-span methodology while preserving bounded long-span v1 as historical evidence.
@@ -30,8 +30,11 @@ Last verified: `2026-04-22T14:35:00+08:00`
     - first release only covers `reader_character.coherent_accumulation`
   - current dataset posture:
     - the first reviewed/frozen v2 target-case set now exists
-    - current window substrate is reused from:
-      - `reading-companion-backend/state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260416`
+    - current active window substrate is now reused from:
+      - `reading-companion-backend/state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260422`
+    - evidence boundary:
+      - the completed April 19 long-span formal rerun still reused overlapping excerpt outputs from the then-active prior repaired package `attentional_v2_user_level_selective_v1_repaired_20260416`
+      - the frozen long-span set itself did not change, because it does not include `nawaer_baodian_private_zh`
     - first frozen reviewed seed set is now landed:
       - review doc:
         - `reading-companion-backend/docs/evaluation/long_span/target_centered_candidate_review.md`
@@ -86,11 +89,11 @@ Last verified: `2026-04-22T14:35:00+08:00`
   - historical boundary:
     - keep `attentional_v2_accumulation_benchmark_v1_judged_rerun_20260407` as durable historical mechanism evidence
     - do not treat the old bounded `EARLY / MID / LATE` probe method as the active long-span methodology anymore
-- Keep the note-aligned `user-level selective v1` package as the active local/user-level benchmark, now promoted onto the repaired `203`-case package.
+- Keep the note-aligned `user-level selective v1` package as the active local/user-level benchmark, now promoted onto the repaired `202`-case package.
   - active split manifest:
     - `reading-companion-backend/eval/manifests/splits/attentional_v2_user_level_selective_v1_draft.json`
   - active dataset package:
-    - `reading-companion-backend/state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260416`
+    - `reading-companion-backend/state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260422`
   - active runner:
     - `reading-companion-backend/eval/attentional_v2/run_user_level_selective_comparison.py`
   - active scope:
@@ -99,19 +102,28 @@ Last verified: `2026-04-22T14:35:00+08:00`
   - current dataset truth:
     - `5 / 5` registered note-linked books are currently eligible
     - `nawaer_baodian_private_zh` was first repaired on April 14 after fixing the note-alignment fallback so title-page chapter hints no longer block later exact正文 matches
-    - the active package was rebuilt on April 16 with a stricter body-start rule:
-      - reading segments now begin at the first real body unit rather than at the absolute start of the source file
+    - the active pointer first moved to a repaired April 16 package with a stricter body-start rule, and then was repaired again on April 22 for `《纳瓦尔宝典》`:
+      - reading segments begin at the first real body unit rather than at the absolute start of the source file
       - front matter such as disclaimers, recommendation / preface material, book-about-book notes, timeline pages, and part/chapter stubs is skipped
       - `nawaer_baodian_private_zh` now uses a benchmark-local body-start override at `c13` (`认识财富创造的原理`)
-      - its old preface-side note at `c6` is no longer part of the active package
+      - its active window is now exactly `c13-s1 -> c13-s168`
+      - its old preface-side note at `c6` (`e0056`) is no longer part of the active package
     - active package now contains:
       - `5` reading segments
-      - `203` note cases
+      - `202` note cases
     - every active note case now carries a strict `segment_source_v1` char-span under `source_span_slices`
       - this is the source-coordinate system used for `Selective Legibility` candidate retrieval, because the mechanisms read the rendered `segment_sources/*.txt` substrate
       - original parsed-book sentence ids remain as provenance for audit, not as the primary matching coordinate
     - active audit index:
-      - `reading-companion-backend/state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260416/audit_human_readable/index.md`
+      - `reading-companion-backend/state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260422/audit_human_readable/index.md`
+    - superseded prior repaired package:
+      - dataset package:
+        - `reading-companion-backend/state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260416`
+      - package truth:
+        - `5` reading segments
+        - `203` note cases
+      - status:
+        - `superseded`
     - superseded historical predecessor:
       - dataset package:
         - `reading-companion-backend/state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1`
@@ -166,7 +178,7 @@ Last verified: `2026-04-22T14:35:00+08:00`
         - `attentional_v2` note recall: `0.0`
         - `iterator_v1` note recall: `0.2118`
       - current posture:
-        - its repaired `203`-case dataset root is now the active benchmark pointer
+        - its repaired `203`-case dataset root is now preserved as superseded prior evidence after the April 22 Naval active-window repair
         - the April 16 repaired rejudge is superseded as the latest active evidence by the April 19 formal rerun below
     - the April 19 formal active rerun is now completed and is the current active benchmark evidence bundle:
       - parent job id:
@@ -180,11 +192,14 @@ Last verified: `2026-04-22T14:35:00+08:00`
       - shared watchdog:
         - `bgjob_job_registry_auto_recovery_watchdog_active_benchmark_20260419` (`completed / stopped`)
       - completed excerpt scope:
-        - `5` segments × `2` mechanisms = `10` shard reads on the active repaired package
+        - `5` segments × `2` mechanisms = `10` shard reads on the then-active prior repaired package
         - `203` note cases
       - excerpt result:
         - `attentional_v2 note_recall = 0.3498`
         - `iterator_v1 note_recall = 0.1232`
+      - current pointer boundary:
+        - the formal April 19 evidence still reflects `attentional_v2_user_level_selective_v1_repaired_20260416`
+        - the active local/user-level pointer has since moved to `attentional_v2_user_level_selective_v1_repaired_20260422` with `202` note cases
       - parent report:
         - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_benchmark_rerun_20260419/summary/report.md`
       - excerpt report:

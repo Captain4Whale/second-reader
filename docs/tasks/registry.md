@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-04-22T14:35:00+08:00`
+Last updated: `2026-04-22T08:57:23+08:00`
 
 ## Status Values
 - `active`
@@ -283,13 +283,17 @@ Last updated: `2026-04-22T14:35:00+08:00`
     - `reading-companion-backend/eval/manifests/splits/attentional_v2_user_level_selective_v1_draft.json`
   - active dataset package truth:
     - dataset root:
-      - `reading-companion-backend/state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260416`
+      - `reading-companion-backend/state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260422`
     - `5` reading segments
-    - `203` note cases
+    - `202` note cases
     - reading segments start at the first real body unit rather than the absolute beginning of the source file
     - front matter such as disclaimers, recommendation / preface material, book-about-book notes, timeline pages, and part/chapter stubs is skipped before segment construction
-    - `nawaer_baodian_private_zh` now uses a benchmark-local body-start override at `c13`
+    - `nawaer_baodian_private_zh` now uses a benchmark-local body-start override at `c13`, with the active window repaired to `c13-s1 -> c13-s168` and the old preface-side case `e0056` removed
     - every note case now has `segment_source_v1` char-span slices; this is the strict matching coordinate for `Selective Legibility`
+  - superseded prior repaired package:
+    - `reading-companion-backend/state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260416`
+    - `5` reading segments
+    - `203` note cases
   - superseded historical predecessor:
     - `reading-companion-backend/state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1`
     - `5` reading segments
@@ -310,6 +314,9 @@ Last updated: `2026-04-22T14:35:00+08:00`
     - result:
       - `attentional_v2 note_recall = 0.3498`
       - `iterator_v1 note_recall = 0.1232`
+    - evidence boundary:
+      - this formal rerun still used the then-active prior repaired package `attentional_v2_user_level_selective_v1_repaired_20260416`
+      - the current active pointer has since moved to `attentional_v2_user_level_selective_v1_repaired_20260422` with `202` note cases
     - April 21 repair note:
       - a shard-filtered recovery command had overwritten the root summary with a partial one-shard aggregate
       - the root summary/report are now regenerated from all completed shards

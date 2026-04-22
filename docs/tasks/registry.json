@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-04-21T14:58:00Z",
+  "updated_at": "2026-04-22T00:57:23Z",
   "tasks": [
     {
       "id": "TASK-ACTIVE-BENCHMARK-FORMAL-RERUN",
@@ -128,7 +128,7 @@
         "bgjob_user_level_selective_v1_active_formal_recovery_xidaduo_attn_20260420"
       ],
       "acceptance_ref": "docs/backend-reader-evaluation.md",
-      "next_action": "Keep the active local/user-level pointer on user-level selective v1 and treat the older excerpt surface v1.1 line as historical / superseded evidence only. The active package now lives at reading-companion-backend/state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260416 with 5 reading segments and 203 note cases; the older 202-case package remains preserved as superseded evidence. Latest formal rerun: attentional_v2_user_level_selective_v1_active_rerun_20260419 completed 203 note cases across 5 windows and 2 mechanisms. Result: attentional_v2 note_recall = 0.3498; iterator_v1 note_recall = 0.1232. April 21 repair: a shard-filtered recovery invocation had overwritten the root summary with a partial one-shard aggregate; the root summary/report were regenerated from all completed shards, and shard-filtered recovery now skips root-level merge/report ownership.",
+      "next_action": "Keep the active local/user-level pointer on user-level selective v1 and treat the older excerpt surface v1.1 line as historical / superseded evidence only. The active package now lives at reading-companion-backend/state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260422 with 5 reading segments and 202 note cases; the prior repaired 20260416 package remains preserved as superseded prior evidence with 203 note cases, and the older 202-case package remains preserved as superseded historical evidence. The April 22 active-window repair keeps nawaer_baodian_private_zh on c13-s1 -> c13-s168 and removes the old preface-side case e0056. Latest formal rerun: attentional_v2_user_level_selective_v1_active_rerun_20260419 still reflects the then-active prior repaired 20260416 package, completed 203 note cases across 5 windows and 2 mechanisms, and scored attentional_v2 note_recall = 0.3498 vs iterator_v1 0.1232. April 21 repair: a shard-filtered recovery invocation had overwritten the root summary with a partial one-shard aggregate; the root summary/report were regenerated from all completed shards, and shard-filtered recovery now skips root-level merge/report ownership.",
       "blocked_by": [],
       "evidence_refs": [
         "docs/backend-reader-evaluation.md",
@@ -136,10 +136,11 @@
         "reading-companion-backend/eval/attentional_v2/user_level_selective_v1.py",
         "reading-companion-backend/eval/attentional_v2/run_user_level_selective_comparison.py",
         "reading-companion-backend/eval/manifests/splits/attentional_v2_user_level_selective_v1_draft.json",
+        "reading-companion-backend/state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260422/manifest.json",
+        "reading-companion-backend/state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260422/attentional_v2_user_level_selective_v1_repaired_20260422_draft.json",
+        "reading-companion-backend/state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260422/note_cases.jsonl",
+        "reading-companion-backend/state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260422/audit_human_readable/index.md",
         "reading-companion-backend/state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260416/manifest.json",
-        "reading-companion-backend/state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260416/attentional_v2_user_level_selective_v1_repaired_20260416_draft.json",
-        "reading-companion-backend/state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260416/note_cases.jsonl",
-        "reading-companion-backend/state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260416/audit_human_readable/index.md",
         "reading-companion-backend/state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1/manifest.json",
         "reading-companion-backend/docs/evaluation/user_level/attentional_v2_user_level_selective_v1_repaired_rejudge_20260416_interpretation.md",
         "reading-companion-backend/docs/evaluation/user_level/README.md",
@@ -148,7 +149,7 @@
         "reading-companion-backend/scripts/orchestrate_user_level_selective_eval.py",
         "reading-companion-backend/scripts/orchestrate_active_benchmark_eval.py"
       ],
-      "last_updated": "2026-04-21T05:07:00Z",
+      "last_updated": "2026-04-22T00:57:23Z",
       "last_updated_by": "codex"
     },
     {
