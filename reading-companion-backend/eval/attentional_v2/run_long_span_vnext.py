@@ -12,6 +12,7 @@ import json
 from pathlib import Path
 import shutil
 from statistics import mean
+import time
 from typing import Any
 
 from eval.attentional_v2.completed_output_reuse import rebuild_normalized_bundle_from_completed_output, run_state_status
@@ -43,6 +44,17 @@ JUDGE_SCHEMA_RETRY_INSTRUCTION = (
     "\n\nReminder: return exactly one JSON object matching the requested schema. "
     "Do not wrap it in markdown fences or nest it under another key."
 )
+DEFAULT_OUTPUT_ATTEMPTS = 4
+DEFAULT_OUTPUT_RETRY_SLEEP_SECONDS = 300
+RETRYABLE_OUTPUT_ERROR_MARKERS = (
+    "overloaded",
+    "timeout",
+    "timed out",
+    "rate limit",
+    "quota",
+    "529",
+    "520",
+)
 
 
 def _run_in_parallel(items: list[Any], worker_count: int, fn) -> list[Any]:
@@ -55,6 +67,26 @@ def _run_in_parallel(items: list[Any], worker_count: int, fn) -> list[Any]:
         for future in as_completed(future_to_index):
             results[future_to_index[future]] = future.result()
     return results
+
+
+def _output_dir_for(run_root: Path, segment_id: str, mechanism_key: str) -> Path:
+    return run_root / "outputs" / segment_id / mechanism_key
+
+
+def _runtime_error_text(output_dir: Path) -> str:
+    state_path = output_dir / "_runtime" / "run_state.json"
+    if not state_path.exists():
+        return ""
+    try:
+        payload = json.loads(state_path.read_text(encoding="utf-8"))
+    except Exception:
+        return ""
+    return _clean_text(payload.get("error"))
+
+
+def _is_retryable_output_error(exc: BaseException, *, output_dir: Path) -> bool:
+    text = f"{exc} {_runtime_error_text(output_dir)}".lower()
+    return any(marker in text for marker in RETRYABLE_OUTPUT_ERROR_MARKERS)
 
 
 @dataclass(frozen=True)
@@ -193,7 +225,7 @@ def ensure_window_output(
     run_root: Path,
     require_probe_export: bool,
 ) -> dict[str, Any]:
-    output_dir = run_root / "outputs" / window.segment_id / mechanism_key
+    output_dir = _output_dir_for(run_root, window.segment_id, mechanism_key)
     status = run_state_status(output_dir) if output_dir.exists() else ""
 
     if status == "completed":
@@ -246,6 +278,60 @@ def ensure_window_output(
     )
     payload["run_mode"] = "resume" if continue_mode else "fresh"
     return payload
+
+
+def ensure_window_output_with_retries(
+    *,
+    window: ReadingWindow,
+    dataset_dir: Path,
+    mechanism_key: str,
+    run_root: Path,
+    require_probe_export: bool,
+    max_attempts: int,
+    retry_sleep_seconds: int,
+) -> dict[str, Any]:
+    output_dir = _output_dir_for(run_root, window.segment_id, mechanism_key)
+    attempts = max(1, int(max_attempts or 1))
+    sleep_seconds = max(0, int(retry_sleep_seconds or 0))
+    last_error: BaseException | None = None
+
+    for attempt in range(1, attempts + 1):
+        try:
+            payload = ensure_window_output(
+                window=window,
+                dataset_dir=dataset_dir,
+                mechanism_key=mechanism_key,
+                run_root=run_root,
+                require_probe_export=require_probe_export,
+            )
+            payload["output_attempt"] = attempt
+            return payload
+        except Exception as exc:
+            last_error = exc
+            retryable = _is_retryable_output_error(exc, output_dir=output_dir)
+            if attempt >= attempts or not retryable:
+                raise
+            if sleep_seconds:
+                print(
+                    json.dumps(
+                        {
+                            "event": "output_retry_wait",
+                            "segment_id": window.segment_id,
+                            "mechanism_key": mechanism_key,
+                            "attempt": attempt,
+                            "next_attempt": attempt + 1,
+                            "sleep_seconds": sleep_seconds,
+                            "error": str(exc),
+                            "runtime_error": _runtime_error_text(output_dir),
+                        },
+                        ensure_ascii=False,
+                    ),
+                    flush=True,
+                )
+                time.sleep(sleep_seconds)
+
+    assert last_error is not None
+    raise last_error
 
 
 def _paragraph_lookup(chapter: dict[str, Any]) -> dict[int, str]:
@@ -790,6 +876,8 @@ def run_long_span_vnext(
     segment_ids: set[str] | None = None,
     window_limit: int | None = None,
     workers: int = 1,
+    output_attempts: int = DEFAULT_OUTPUT_ATTEMPTS,
+    output_retry_sleep_seconds: int = DEFAULT_OUTPUT_RETRY_SLEEP_SECONDS,
 ) -> dict[str, Any]:
     worker_count = max(1, int(workers or 1))
     dataset_dir = _resolve_dataset_dir(manifest_path)
@@ -818,12 +906,14 @@ def run_long_span_vnext(
 
     def _ensure_output(task: tuple[ReadingWindow, str]) -> tuple[tuple[str, str], dict[str, Any]]:
         window, mechanism_key = task
-        payload = ensure_window_output(
+        payload = ensure_window_output_with_retries(
             window=window,
             dataset_dir=dataset_dir,
             mechanism_key=mechanism_key,
             run_root=run_root,
             require_probe_export=mechanism_key == "attentional_v2",
+            max_attempts=output_attempts,
+            retry_sleep_seconds=output_retry_sleep_seconds,
         )
         return (window.segment_id, mechanism_key), payload
 
@@ -948,6 +1038,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--segment-id", action="append", default=[])
     parser.add_argument("--window-limit", type=int, default=None)
     parser.add_argument("--workers", type=int, default=1, help="Parallel workers for window reads and judge calls.")
+    parser.add_argument("--output-attempts", type=int, default=DEFAULT_OUTPUT_ATTEMPTS)
+    parser.add_argument("--output-retry-sleep-seconds", type=int, default=DEFAULT_OUTPUT_RETRY_SLEEP_SECONDS)
     args = parser.parse_args(argv)
 
     run_root = args.runs_root / args.run_id
@@ -959,6 +1051,8 @@ def main(argv: list[str] | None = None) -> int:
         segment_ids={str(item) for item in args.segment_id if str(item).strip()} or None,
         window_limit=args.window_limit,
         workers=args.workers,
+        output_attempts=args.output_attempts,
+        output_retry_sleep_seconds=args.output_retry_sleep_seconds,
     )
     print(json.dumps(aggregate, ensure_ascii=False, indent=2))
     return 0

@@ -224,6 +224,46 @@ def test_ensure_window_output_reuses_completed_v2_with_probe_export(tmp_path: Pa
     assert payload["run_mode"] == "reuse_completed"
 
 
+def test_ensure_window_output_with_retries_retries_provider_overload(tmp_path: Path, monkeypatch) -> None:
+    run_root = tmp_path / "run"
+    window = _window()
+    dataset_dir = tmp_path / "dataset"
+    output_dir = run_root / "outputs" / window.segment_id / "iterator_v1"
+    (output_dir / "_runtime").mkdir(parents=True, exist_ok=True)
+    (output_dir / "_runtime" / "run_state.json").write_text(
+        json.dumps({"status": "error", "error": "overloaded_error (529)"}),
+        encoding="utf-8",
+    )
+    attempts = {"count": 0}
+
+    def _fake_ensure_window_output(**kwargs):
+        attempts["count"] += 1
+        if attempts["count"] == 1:
+            raise RuntimeError("Error code: 529 - overloaded_error")
+        return {
+            "status": "completed",
+            "mechanism_key": kwargs["mechanism_key"],
+            "output_dir": str(output_dir),
+            "normalized_eval_bundle": {"reactions": [], "memory_summaries": []},
+        }
+
+    monkeypatch.setattr(runner, "ensure_window_output", _fake_ensure_window_output)
+
+    payload = runner.ensure_window_output_with_retries(
+        window=window,
+        dataset_dir=dataset_dir,
+        mechanism_key="iterator_v1",
+        run_root=run_root,
+        require_probe_export=False,
+        max_attempts=2,
+        retry_sleep_seconds=0,
+    )
+
+    assert attempts["count"] == 2
+    assert payload["status"] == "completed"
+    assert payload["output_attempt"] == 2
+
+
 def test_run_long_span_vnext_writes_separated_memory_and_reaction_outputs(tmp_path: Path, monkeypatch) -> None:
     run_root = tmp_path / "run"
     dataset_dir = tmp_path / "dataset"
@@ -254,7 +294,7 @@ def test_run_long_span_vnext_writes_separated_memory_and_reaction_outputs(tmp_pa
     monkeypatch.setattr(runner, "_load_windows", lambda dataset_dir: [window])
     monkeypatch.setattr(
         runner,
-        "ensure_window_output",
+        "ensure_window_output_with_retries",
         lambda **kwargs: {
             "status": "completed",
             "mechanism_key": kwargs["mechanism_key"],
