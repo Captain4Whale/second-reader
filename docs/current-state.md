@@ -34,13 +34,25 @@ Last verified: `2026-04-23T18:42:00+08:00`
         - Phase-1 comparison scope:
           - `Memory Quality`: `attentional_v2` only
           - reaction audit: `attentional_v2` vs `iterator_v1`
-    - there is still no formal long-span benchmark run yet under the new direction
-    - the next long-span move is:
-      - run the first real `run_long_span_vnext.py` evaluation on the active `5` windows
-      - review whether the phase-1 report is already strong enough for a formal benchmark promotion
-      - then decide phase-2 work:
-        - `iterator_v1` probe-normalized `Memory Quality`
-        - broader formal authority promotion
+    - first real Phase-1 run is now active:
+      - job id:
+        - `bgjob_long_span_vnext_phase1_20260423`
+      - watchdog:
+        - `bgjob_long_span_vnext_phase1_watchdog_20260423`
+      - run id:
+        - `attentional_v2_long_span_vnext_phase1_20260423`
+      - runner command:
+        - `./.venv/bin/python eval/attentional_v2/run_long_span_vnext.py --run-id attentional_v2_long_span_vnext_phase1_20260423 --workers 2 --judge-mode llm`
+      - expected outputs:
+        - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_long_span_vnext_phase1_20260423/summary/aggregate.json`
+        - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_long_span_vnext_phase1_20260423/summary/report.md`
+      - recovery posture:
+        - job is registered as recoverable
+        - watchdog checks every `300` seconds
+        - runner uses same-run reuse for completed outputs and probe snapshots
+    - after the active run finishes, review whether the phase-1 report is already strong enough for a formal benchmark promotion, then decide phase-2 work:
+      - `iterator_v1` probe-normalized `Memory Quality`
+      - broader formal authority promotion
   - preserved discontinued evidence:
     - target-centered design doc:
       - `reading-companion-backend/docs/evaluation/long_span/target_centered_accumulation_v2_design.md`

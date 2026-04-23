@@ -298,7 +298,7 @@ Last updated: `2026-04-23T18:42:00+08:00`
 - Lane: `dataset_platform`
 - Priority: `high`
 - Detail: `docs/backend-reader-evaluation.md`
-- Next: use the newly landed Phase-1 implementation to run the first real Long Span vNext evaluation over the active `5` windows, review the resulting report shape, and decide whether phase 2 is needed before formal benchmark promotion.
+- Next: let the active Phase-1 Long Span vNext evaluation finish over the active `5` windows, then review the resulting report shape and decide whether phase 2 is needed before formal benchmark promotion.
   - landed Phase-1 runner:
     - `reading-companion-backend/eval/attentional_v2/run_long_span_vnext.py`
   - landed `Memory Quality` implementation:
@@ -314,12 +314,20 @@ Last updated: `2026-04-23T18:42:00+08:00`
     - reaction audit: `attentional_v2` vs `iterator_v1`
   - current state:
     - phase 1 implementation landed
-    - no formal benchmark run yet
+    - first real Phase-1 run is active:
+      - run id:
+        - `attentional_v2_long_span_vnext_phase1_20260423`
+      - command:
+        - `./.venv/bin/python eval/attentional_v2/run_long_span_vnext.py --run-id attentional_v2_long_span_vnext_phase1_20260423 --workers 2 --judge-mode llm`
+      - recovery:
+        - same-run reuse is enabled
+        - watchdog checks every `300` seconds
     - next likely phase-2 line:
       - `iterator_v1` normalized probe export for cross-mechanism `Memory Quality`
       - broader formal benchmark promotion
 - Jobs:
-  - none yet
+  - `bgjob_long_span_vnext_phase1_20260423` (`running`)
+  - `bgjob_long_span_vnext_phase1_watchdog_20260423` (`running`)
 
 ### `TASK-USER-LEVEL-SELECTIVE-V1` — Replace the active local/user-level benchmark with the note-aligned selective package
 - Status: `active`
