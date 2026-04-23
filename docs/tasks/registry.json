@@ -120,7 +120,7 @@
       ],
       "job_refs": [],
       "acceptance_ref": "docs/backend-reader-evaluation.md",
-      "next_action": "Implement the new active Long Span direction as a three-metric benchmark family: Memory Quality via probe-based holistic state/memory snapshots during continuous reading; Spontaneous Callback via complete-window visible reaction audit; and False Visible Integration via negative audit of callback-like reactions for weak grounding, hard-linking, or drift. Keep the active user-level selective windows as the first substrate. No formal benchmark run exists yet under this new direction.",
+      "next_action": "Use the landed Phase-1 Long Span vNext implementation to run the first real evaluation over the active 5 windows, review the report shape, and decide whether phase 2 is needed before formal benchmark promotion. Landed runner: reading-companion-backend/eval/attentional_v2/run_long_span_vnext.py. Phase-1 scope: Memory Quality via V2-only probe-based holistic state/memory snapshots during continuous reading; Spontaneous Callback and False Visible Integration via complete-window visible reaction audit on attentional_v2 plus iterator_v1. No formal benchmark run exists yet under this new direction.",
       "blocked_by": [],
       "evidence_refs": [
         "docs/backend-reader-evaluation.md",
@@ -129,9 +129,11 @@
         "docs/history/decision-log.md",
         "reading-companion-backend/docs/evaluation/README.md",
         "reading-companion-backend/docs/evaluation/long_span/README.md",
-        "reading-companion-backend/docs/evaluation/long_span/target_centered_accumulation_v2_design.md"
+        "reading-companion-backend/docs/evaluation/long_span/target_centered_accumulation_v2_design.md",
+        "reading-companion-backend/eval/attentional_v2/run_long_span_vnext.py",
+        "reading-companion-backend/src/attentional_v2/benchmark_probes.py"
       ],
-      "last_updated": "2026-04-22T15:12:28Z",
+      "last_updated": "2026-04-23T10:42:00Z",
       "last_updated_by": "codex"
     },
     {

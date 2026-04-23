@@ -226,10 +226,16 @@ Use `docs/backend-reading-mechanism.md` for shared mechanism-platform boundaries
 - These three long-span goals are complementary, but they remain contract-level distinct:
   - one metric can be strong while another is weak
   - later analysis may compare them, but the benchmark contract should not collapse them into one forced score prematurely
-- The planned first implementation posture is:
+- The phase-1 implementation posture is now landed:
   - reuse the active user-level selective reading windows
   - add probe-based state snapshots for `Memory Quality`
+    - phase-1 scope is `attentional_v2` only
   - add full-window reaction audit for `Spontaneous Callback` and `False Visible Integration`
+    - phase-1 comparison scope is `attentional_v2` vs `iterator_v1`
+  - landed runner:
+    - `reading-companion-backend/eval/attentional_v2/run_long_span_vnext.py`
+  - landed benchmark-only V2 probe export:
+    - `reading-companion-backend/src/attentional_v2/benchmark_probes.py`
 - There is currently no formal long-span benchmark run under this new direction yet.
 
 ## Archived Target-Centered Report Writing Rule
@@ -300,11 +306,12 @@ Use `docs/backend-reading-mechanism.md` for shared mechanism-platform boundaries
   - `Memory Quality`
   - `Spontaneous Callback`
   - `False Visible Integration`
-- The planned first long-span implementation workflow is:
-  - define the probe-based state-snapshot contract for `Memory Quality`
-  - define the complete-window reaction-audit contract for `Spontaneous Callback`
-  - define the negative callback-quality contract for `False Visible Integration`
-  - freeze those contracts before any new formal long-span rerun is treated as current evidence
+- The current long-span implementation workflow is:
+  - Phase 1 has landed:
+    - probe-based state-snapshot contract for `Memory Quality`
+    - complete-window reaction-audit contract for `Spontaneous Callback`
+    - negative callback-quality contract for `False Visible Integration`
+  - the next move is to run the first real vNext evaluation and review whether phase 2 is needed before any new formal long-span rerun is treated as current evidence
 - Historical broad freezes should remain readable, but they should not keep acting as the active benchmark pointer once a deliberate replacement has been recorded.
 
 ## Bounded Dataset-Platform Strategy Rule

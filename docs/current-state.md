@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-04-22T23:12:28+08:00`
+Last verified: `2026-04-23T18:42:00+08:00`
 
 ## Current Objective
 - Shift Long Span from the discontinued `target-centered accumulation v2` method to the new active design direction:
@@ -18,12 +18,29 @@ Last verified: `2026-04-22T23:12:28+08:00`
     - `docs/backend-reader-evaluation.md`
     - `reading-companion-backend/docs/evaluation/long_span/README.md`
   - current posture:
-    - the new long-span direction is design-frozen but not implemented yet
-    - there is currently no formal long-span benchmark run under the new direction
-    - the next long-span implementation move is:
-      - probe-based state snapshots over the active user-level windows for `Memory Quality`
-      - complete-window reaction audit for `Spontaneous Callback`
-      - negative callback-quality audit for `False Visible Integration`
+    - the new long-span direction is now implemented as a Phase-1 benchmark lane, but it has not yet been promoted to formal benchmark authority
+    - landed Phase-1 implementation:
+      - unified runner:
+        - `reading-companion-backend/eval/attentional_v2/run_long_span_vnext.py`
+      - `Memory Quality`:
+        - benchmark-only V2 probe snapshot export captured at `20% / 40% / 60% / 80% / window end`
+        - export path:
+          - `reading-companion-backend/src/attentional_v2/benchmark_probes.py`
+          - `reading-companion-backend/src/attentional_v2/storage.py`
+      - reaction audit:
+        - complete-window visible reaction classification for:
+          - `Spontaneous Callback`
+          - `False Visible Integration`
+        - Phase-1 comparison scope:
+          - `Memory Quality`: `attentional_v2` only
+          - reaction audit: `attentional_v2` vs `iterator_v1`
+    - there is still no formal long-span benchmark run yet under the new direction
+    - the next long-span move is:
+      - run the first real `run_long_span_vnext.py` evaluation on the active `5` windows
+      - review whether the phase-1 report is already strong enough for a formal benchmark promotion
+      - then decide phase-2 work:
+        - `iterator_v1` probe-normalized `Memory Quality`
+        - broader formal authority promotion
   - preserved discontinued evidence:
     - target-centered design doc:
       - `reading-companion-backend/docs/evaluation/long_span/target_centered_accumulation_v2_design.md`

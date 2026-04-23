@@ -4,7 +4,7 @@ This directory now has three layers:
 
 - historical bounded long-span judged reports from `accumulation benchmark v1`
 - discontinued `target-centered accumulation v2` design and diagnostic evidence
-- the new active Long Span direction, which is design-frozen but not yet implemented as a formal benchmark run
+- the new active Long Span direction, whose phase-1 implementation is now landed but not yet promoted to formal benchmark authority
 
 ## Conventions
 
@@ -39,7 +39,14 @@ Current implementation posture:
 - methodology status:
   - active design direction
   - design frozen
-  - implementation pending
+  - phase-1 implementation landed
+    - runner:
+      - [run_long_span_vnext.py](../../../eval/attentional_v2/run_long_span_vnext.py)
+    - V2 probe export:
+      - [benchmark_probes.py](../../../src/attentional_v2/benchmark_probes.py)
+    - phase-1 scope:
+      - `Memory Quality`: `attentional_v2` only
+      - reaction audit: `attentional_v2` vs `iterator_v1`
 - formal evidence status:
   - there is no current formal Long Span benchmark run yet under this new direction
 

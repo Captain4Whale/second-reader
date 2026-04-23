@@ -229,6 +229,16 @@ def normalized_eval_bundle_file(output_dir: Path) -> Path:
     return runtime_artifacts.mechanism_export_file(output_dir, ATTENTIONAL_V2_MECHANISM_KEY, "normalized_eval_bundle.json")
 
 
+def memory_quality_probe_export_file(output_dir: Path) -> Path:
+    """Return the benchmark-only memory-quality probe export path."""
+
+    return runtime_artifacts.mechanism_export_file(
+        output_dir,
+        ATTENTIONAL_V2_MECHANISM_KEY,
+        "memory_quality_probe_snapshots.json",
+    )
+
+
 def artifact_map(output_dir: Path) -> dict[str, str]:
     """Return the Phase 1 artifact map relative to one output directory."""
 
@@ -253,6 +263,7 @@ def artifact_map(output_dir: Path) -> dict[str, str]:
         "resume_metadata": str(resume_metadata_file(output_dir).relative_to(output_dir)),
         "chapter_result_compatibility": str(chapter_result_compatibility_file(output_dir, 1).parent.relative_to(output_dir)),
         "normalized_eval_bundle": str(normalized_eval_bundle_file(output_dir).relative_to(output_dir)),
+        "memory_quality_probe_export": str(memory_quality_probe_export_file(output_dir).relative_to(output_dir)),
         "full_checkpoints": str(checkpoints_dir(output_dir).relative_to(output_dir)),
         "event_stream": str(event_stream_file(output_dir).relative_to(output_dir)),
         "debug_event_stream": str(event_stream_file(output_dir).relative_to(output_dir)),

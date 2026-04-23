@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-04-22T23:12:28+08:00`
+Last updated: `2026-04-23T18:42:00+08:00`
 
 ## Status Values
 - `active`
@@ -298,23 +298,26 @@ Last updated: `2026-04-22T23:12:28+08:00`
 - Lane: `dataset_platform`
 - Priority: `high`
 - Detail: `docs/backend-reader-evaluation.md`
-- Next: implement the new active Long Span direction as a three-metric benchmark family:
-  - `Memory Quality`
-    - probe-based holistic evaluation of memory/state snapshots during continuous reading
+- Next: use the newly landed Phase-1 implementation to run the first real Long Span vNext evaluation over the active `5` windows, review the resulting report shape, and decide whether phase 2 is needed before formal benchmark promotion.
+  - landed Phase-1 runner:
+    - `reading-companion-backend/eval/attentional_v2/run_long_span_vnext.py`
+  - landed `Memory Quality` implementation:
+    - benchmark-only V2 probe snapshots during continuous reading
     - no gold-sentence requirement
     - no hard dependency on human notes
-  - `Spontaneous Callback`
-    - complete-window visible reaction audit for natural callbacks to earlier material
-  - `False Visible Integration`
-    - negative audit of callback-like reactions for weak grounding, hard-linking, or drift
-  - implementation posture:
-    - keep using the active `user-level selective v1` reading windows as the first substrate
-    - add probe-based state snapshots rather than target-centered target spans
-    - audit full-window reactions rather than score one prepared target point
+  - landed reaction-audit implementation:
+    - `Spontaneous Callback`
+    - `False Visible Integration`
+    - complete-window visible reaction audit over reused normalized outputs
+  - phase-1 scope:
+    - `Memory Quality`: `attentional_v2` only
+    - reaction audit: `attentional_v2` vs `iterator_v1`
   - current state:
-    - design frozen in stable docs
+    - phase 1 implementation landed
     - no formal benchmark run yet
-    - next implementation move is to define the probe bundle, reaction-audit bundle, and judge contracts
+    - next likely phase-2 line:
+      - `iterator_v1` normalized probe export for cross-mechanism `Memory Quality`
+      - broader formal benchmark promotion
 - Jobs:
   - none yet
 

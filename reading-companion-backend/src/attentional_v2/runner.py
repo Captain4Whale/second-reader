@@ -26,6 +26,7 @@ from src.reading_runtime.sequential_state import (
 from src.reading_runtime.shell_state import load_runtime_shell, save_runtime_shell
 from src.iterator_reader.llm_utils import ReaderLLMError, llm_invocation_scope, runtime_trace_context
 
+from .benchmark_probes import memory_quality_probe_settings, persist_due_memory_quality_probe_snapshots
 from .bridge import build_anchor_record, run_phase5_bridge_cycle
 from .evaluation import build_normalized_eval_bundle, persist_normalized_eval_bundle
 from .intake import process_sentence_intake
@@ -109,6 +110,7 @@ from .storage import (
     load_json,
     local_buffer_file,
     local_continuity_file,
+    memory_quality_probe_export_file,
     move_history_file,
     normalized_eval_bundle_file,
     reaction_records_file,
@@ -727,6 +729,7 @@ def _reset_live_runtime(output_dir: Path) -> None:
         resume_metadata_file(output_dir),
         read_audit_file(output_dir),
         unitization_audit_file(output_dir),
+        memory_quality_probe_export_file(output_dir),
         runtime_artifacts.runtime_shell_file(output_dir),
         runtime_artifacts.run_state_file(output_dir),
         runtime_artifacts.parse_state_file(output_dir),
@@ -803,6 +806,22 @@ def _sentence_id(sentence: dict[str, object]) -> str:
     """Return the normalized sentence id for one sentence-like mapping."""
 
     return _clean_text(sentence.get("sentence_id"))
+
+
+def _ordered_sentence_ids(chapters: list[dict[str, object]]) -> list[str]:
+    """Return the stable sentence order across one selected chapter sequence."""
+
+    ordered: list[str] = []
+    for chapter in chapters:
+        if not isinstance(chapter, dict):
+            continue
+        for sentence in chapter.get("sentences", []):
+            if not isinstance(sentence, dict):
+                continue
+            sentence_id = _sentence_id(sentence)
+            if sentence_id:
+                ordered.append(sentence_id)
+    return ordered
 
 
 def _resolve_unit_sentences(
@@ -2055,6 +2074,7 @@ def read_attentional_v2(request: ReadRequest, mechanism: MechanismInfo) -> ReadR
         resume_metadata = bundle["resume_metadata"]
         survey_map = load_json(survey_map_file(output_dir)) if survey_map_file(output_dir).exists() else {}
         sentence_lookup, chapter_lookup = _build_sentence_lookup(provisioned.book_document)
+        memory_quality_probe_config = memory_quality_probe_settings(dict(request.mechanism_config or {}))
 
         chapter_statuses = _chapter_statuses(provisioned.book_document, output_dir)
         chapter_statuses = _apply_reading_plan_statuses(
@@ -2074,6 +2094,16 @@ def read_attentional_v2(request: ReadRequest, mechanism: MechanismInfo) -> ReadR
             continue_mode=request.continue_mode,
             resume_chapter_id=resume_chapter_id,
         )
+        if request.chapter_number is not None:
+            probe_source_chapters = chapters
+        else:
+            scheduled_probe_chapter_ids = set(scheduled_chapter_ids)
+            probe_source_chapters = [
+                dict(chapter)
+                for chapter in provisioned.book_document.get("chapters", [])
+                if isinstance(chapter, dict) and int(chapter.get("id", 0) or 0) in scheduled_probe_chapter_ids
+            ]
+        ordered_probe_sentence_ids = _ordered_sentence_ids(probe_source_chapters)
 
         completed_chapters = _completed_scheduled_chapters(
             chapter_statuses,
@@ -2477,6 +2507,22 @@ def read_attentional_v2(request: ReadRequest, mechanism: MechanismInfo) -> ReadR
                     }
                 )
                 _save_runtime_bundle(output_dir, bundle)
+                persist_due_memory_quality_probe_snapshots(
+                    output_dir=output_dir,
+                    settings=memory_quality_probe_config,
+                    ordered_sentence_ids=ordered_probe_sentence_ids,
+                    actual_sentence_id=focal_sentence_id,
+                    chapter_ref=chapter_ref,
+                    local_buffer=local_buffer,
+                    local_continuity=local_continuity,
+                    working_state=working_state,
+                    concept_registry=concept_registry,
+                    thread_trace=thread_trace,
+                    reflective_frames=reflective_frames,
+                    anchor_bank=anchor_bank,
+                    move_history=move_history,
+                    reaction_records=reaction_records,
+                )
                 active_refs = {
                     "reaction_id": _clean_text(emitted_reactions[-1].get("reaction_id")) if emitted_reactions else "",
                     "anchor_id": _clean_text(current_anchor.get("anchor_id")) if isinstance(current_anchor, dict) else "",
