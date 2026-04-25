@@ -261,14 +261,22 @@ def _normalized_reactions(output_dir: Path) -> list[NormalizedReaction]:
         chapter_id = int(raw.get("chapter_id", 0) or 0)
         primary_anchor = raw.get("primary_anchor")
         target_locator = primary_anchor.get("locator") if isinstance(primary_anchor, Mapping) else None
+        prior_link = raw.get("prior_link")
+        outside_link = raw.get("outside_link")
+        search_intent = raw.get("search_intent")
+        compat_family = compat_reaction_family(raw)
         reactions.append(
             {
                 "reaction_id": _clean_text(raw.get("reaction_id")),
-                "type": compat_reaction_family(raw),
+                "type": compat_family,
+                "compat_family": compat_family,
                 "chapter_ref": _clean_text(raw.get("chapter_ref")),
                 "section_ref": _reaction_section_ref(raw, chapter_id=chapter_id),
                 "anchor_quote": _clean_text(primary_anchor.get("quote")) if isinstance(primary_anchor, Mapping) else "",
                 "content": _clean_text(raw.get("thought")),
+                "prior_link": dict(prior_link) if isinstance(prior_link, Mapping) else None,
+                "outside_link": dict(outside_link) if isinstance(outside_link, Mapping) else None,
+                "search_intent": dict(search_intent) if isinstance(search_intent, Mapping) else None,
                 "search_query": compat_search_query(raw),
                 "search_results": [
                     dict(item)

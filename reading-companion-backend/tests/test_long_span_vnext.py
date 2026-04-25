@@ -469,9 +469,13 @@ def test_run_long_span_vnext_writes_separated_memory_and_reaction_outputs(tmp_pa
                     {
                         "reaction_id": f"{kwargs['mechanism_key']}-r1",
                         "type": "highlight",
+                        "compat_family": "highlight",
                         "section_ref": "1.1",
                         "anchor_quote": "Anchor",
                         "content": "Reaction content",
+                        "prior_link": {"ref_ids": ["anchor:a-1"]} if kwargs["mechanism_key"] == "attentional_v2" else None,
+                        "outside_link": None,
+                        "search_intent": None,
                     }
                 ],
                 "memory_summaries": [],
@@ -515,7 +519,16 @@ def test_run_long_span_vnext_writes_separated_memory_and_reaction_outputs(tmp_pa
     assert set(aggregate["reaction_audit"]["mechanisms"].keys()) == {"attentional_v2", "iterator_v1"}
     report = (run_root / "summary" / "report.md").read_text(encoding="utf-8")
     assert "## Memory Quality (V2 only)" in report
-    assert "## Reaction Audit" in report
+    assert "## Reaction Audit Method" in report
+    assert "## Spontaneous Callback" in report
+    assert "## False Visible Integration" in report
+    rows = [
+        json.loads(line)
+        for line in (run_root / "summary" / "reaction_audit_results.jsonl").read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    ]
+    v2_row = next(row for row in rows if row["mechanism_key"] == "attentional_v2")
+    assert v2_row["prior_link"] == {"ref_ids": ["anchor:a-1"]}
 
 
 def test_run_long_span_vnext_memory_quality_rejudge_reuses_source_run(tmp_path: Path, monkeypatch) -> None:
@@ -649,6 +662,243 @@ def test_run_long_span_vnext_memory_quality_rejudge_reuses_source_run(tmp_path: 
     report = (run_root / "summary" / "report.md").read_text(encoding="utf-8")
     assert "Scoring scale" in report
     assert "Reaction-audit results are copied unchanged" in report
+
+
+def test_run_long_span_vnext_can_copy_memory_quality_and_rerun_reaction_audit(tmp_path: Path, monkeypatch) -> None:
+    run_root = tmp_path / "reaction_rejudge_run"
+    output_source_root = tmp_path / "output_source_run"
+    memory_result_source_root = tmp_path / "memory_result_source_run"
+    dataset_dir = tmp_path / "dataset"
+    window = _window()
+    _write_dataset(dataset_dir, [window], {window.segment_id: "Alpha. Beta."})
+    (output_source_root / "meta").mkdir(parents=True, exist_ok=True)
+    (output_source_root / "meta" / "selected_windows.json").write_text(
+        json.dumps({"windows": [runner.asdict(window)]}),
+        encoding="utf-8",
+    )
+
+    for mechanism_key in ("attentional_v2", "iterator_v1"):
+        output_dir = output_source_root / "outputs" / window.segment_id / mechanism_key
+        (output_dir / "_runtime").mkdir(parents=True, exist_ok=True)
+        (output_dir / "_runtime" / "run_state.json").write_text(json.dumps({"status": "completed"}), encoding="utf-8")
+        (output_dir / "public").mkdir(parents=True, exist_ok=True)
+        (output_dir / "public" / "book_document.json").write_text(json.dumps(_book_document()), encoding="utf-8")
+        if mechanism_key == "attentional_v2":
+            memory_quality_probe_export_file(output_dir).parent.mkdir(parents=True, exist_ok=True)
+            memory_quality_probe_export_file(output_dir).write_text(
+                json.dumps(
+                    {
+                        "probe_targets": [{"probe_index": index} for index in range(1, 6)],
+                        "snapshots": [
+                            {
+                                "probe_index": index,
+                                "threshold_ratio": index / 5,
+                                "capture_sentence_id": "c1-s2",
+                            }
+                            for index in range(1, 6)
+                        ],
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+    memory_summary = memory_result_source_root / "summary"
+    memory_summary.mkdir(parents=True, exist_ok=True)
+    (memory_summary / "memory_quality_results.jsonl").write_text(
+        json.dumps(
+            {
+                "segment_id": window.segment_id,
+                "source_id": window.source_id,
+                "book_title": window.book_title,
+                "mechanism_key": "attentional_v2",
+                "probe_index": 1,
+                "threshold_ratio": 0.2,
+                "capture_sentence_id": "c1-s2",
+                "salience_score": 4,
+                "mainline_fidelity_score": 4,
+                "organization_score": 4,
+                "fidelity_score": 4,
+                "overall_memory_quality_score": 4,
+                "reason": "copied corrected memory quality judgment",
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    monkeypatch.setattr(runner, "_resolve_dataset_dir", lambda manifest_path: dataset_dir)
+    monkeypatch.setattr(
+        runner,
+        "rebuild_normalized_bundle_from_completed_output",
+        lambda **kwargs: {
+            "mechanism_label": kwargs["mechanism_key"],
+            "normalized_eval_bundle": {
+                "reactions": [
+                    {
+                        "reaction_id": f"{kwargs['mechanism_key']}-r1",
+                        "type": "retrospect",
+                        "compat_family": "retrospect",
+                        "section_ref": "1.1",
+                        "anchor_quote": "Anchor",
+                        "content": "This calls back to the earlier Alpha frame.",
+                        "prior_link": {"ref_ids": ["anchor:alpha"]} if kwargs["mechanism_key"] == "attentional_v2" else None,
+                    }
+                ],
+                "memory_summaries": [],
+            },
+        },
+    )
+    monkeypatch.setattr(
+        runner,
+        "ensure_window_output_with_retries",
+        lambda **kwargs: (_ for _ in ()).throw(AssertionError("rejudge must not read")),
+    )
+    monkeypatch.setattr(
+        runner,
+        "judge_memory_quality_probe",
+        lambda **kwargs: (_ for _ in ()).throw(AssertionError("memory quality should be copied")),
+    )
+    audit_calls: list[str] = []
+
+    def _fake_audit_window_reactions(**kwargs):
+        audit_calls.append(kwargs["mechanism_key"])
+        return [
+            {
+                "reaction_id": kwargs["normalized_bundle"]["reactions"][0]["reaction_id"],
+                "label": "grounded_callback",
+                "reason": "native evidence visible text was re-audited",
+            }
+        ]
+
+    monkeypatch.setattr(runner, "audit_window_reactions", _fake_audit_window_reactions)
+    monkeypatch.setattr(runner, "write_llm_usage_summary", lambda *args, **kwargs: None)
+
+    aggregate = runner.run_long_span_vnext(
+        run_root=run_root,
+        manifest_path=tmp_path / "unused.json",
+        judge_mode="llm",
+        workers=2,
+        memory_quality_source_run_root=output_source_root,
+        memory_quality_results_source_run_root=memory_result_source_root,
+        copy_reaction_audit_from_source=False,
+    )
+
+    assert set(audit_calls) == {"attentional_v2", "iterator_v1"}
+    assert aggregate["memory_quality_source"] == "copied_from_results_source_run"
+    assert aggregate["reaction_audit_source"] == "fresh_judge"
+    rows = [
+        json.loads(line)
+        for line in (run_root / "summary" / "reaction_audit_results.jsonl").read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    ]
+    v2_row = next(row for row in rows if row["mechanism_key"] == "attentional_v2")
+    assert v2_row["prior_link"] == {"ref_ids": ["anchor:alpha"]}
+    report = (run_root / "summary" / "report.md").read_text(encoding="utf-8")
+    assert "Memory Quality judgments are copied unchanged" in report
+    assert "## Spontaneous Callback" in report
+    assert "## False Visible Integration" in report
+
+
+def test_reaction_audit_batches_large_windows_with_prior_context(tmp_path: Path, monkeypatch) -> None:
+    bundle = {
+        "reactions": [
+            {
+                "reaction_id": f"r{index}",
+                "type": "highlight",
+                "section_ref": "1.1",
+                "anchor_quote": f"Anchor {index}",
+                "content": f"Reaction {index}",
+            }
+            for index in range(1, runner.REACTION_AUDIT_BATCH_SIZE + 2)
+        ]
+    }
+    prompts: list[str] = []
+
+    def _fake_invoke_json(system_prompt, user_prompt, default):
+        prompts.append(user_prompt)
+        marker = "Current visible reactions to classify:\n"
+        current_payload = user_prompt.split(marker, 1)[1].split("\n\nReturn JSON:", 1)[0]
+        current_items = json.loads(current_payload)
+        return {
+            "results": [
+                {
+                    "reaction_id": item["reaction_id"],
+                    "label": "local_only",
+                    "reason": "classified in batch",
+                }
+                for item in current_items
+            ]
+        }
+
+    monkeypatch.setattr(runner, "invoke_json", _fake_invoke_json)
+
+    labels = runner.audit_window_reactions(
+        run_root=tmp_path / "run",
+        window=_window(),
+        mechanism_key="attentional_v2",
+        output_dir=tmp_path / "output",
+        normalized_bundle=bundle,
+        judge_mode="llm",
+    )
+
+    assert len(labels) == runner.REACTION_AUDIT_BATCH_SIZE + 1
+    assert len(prompts) == 2
+    assert '"reaction_id": "r1"' in prompts[1]
+    assert "Earlier visible reactions for callback context" in prompts[1]
+
+
+def test_reaction_audit_retries_missing_labels_in_small_batches(tmp_path: Path, monkeypatch) -> None:
+    bundle = {
+        "reactions": [
+            {
+                "reaction_id": f"r{index}",
+                "type": "highlight",
+                "section_ref": "1.1",
+                "anchor_quote": f"Anchor {index}",
+                "content": f"Reaction {index}",
+            }
+            for index in range(1, 4)
+        ]
+    }
+    prompts: list[str] = []
+
+    def _fake_invoke_json(system_prompt, user_prompt, default):
+        prompts.append(user_prompt)
+        marker = "Current visible reactions to classify:\n"
+        current_payload = user_prompt.split(marker, 1)[1].split("\n\nReturn JSON:", 1)[0]
+        current_items = json.loads(current_payload)
+        if "Retry stage: missing_retry_1" not in user_prompt:
+            current_items = current_items[:-1]
+        return {
+            "results": [
+                {
+                    "reaction_id": item["reaction_id"],
+                    "label": "local_only",
+                    "reason": "classified after retry" if "missing_retry_1" in user_prompt else "classified in primary batch",
+                }
+                for item in current_items
+            ]
+        }
+
+    monkeypatch.setattr(runner, "invoke_json", _fake_invoke_json)
+
+    labels = runner.audit_window_reactions(
+        run_root=tmp_path / "run",
+        window=_window(),
+        mechanism_key="attentional_v2",
+        output_dir=tmp_path / "output",
+        normalized_bundle=bundle,
+        judge_mode="llm",
+    )
+
+    assert len(labels) == 3
+    assert {label["reaction_id"] for label in labels} == {"r1", "r2", "r3"}
+    assert all(label["reason"] != "judge_unavailable" for label in labels)
+    assert any("Retry stage: missing_retry_1" in prompt for prompt in prompts)
+    retry_prompt = next(prompt for prompt in prompts if "Retry stage: missing_retry_1" in prompt)
+    retry_current_payload = retry_prompt.split("Current visible reactions to classify:\n", 1)[1].split("\n\nReturn JSON:", 1)[0]
+    retry_current_items = json.loads(retry_current_payload)
+    assert [item["reaction_id"] for item in retry_current_items] == ["r3"]
 
 
 def test_run_long_span_vnext_reuses_v1_for_unchanged_windows_only(tmp_path: Path, monkeypatch) -> None:

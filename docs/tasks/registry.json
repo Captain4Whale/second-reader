@@ -120,9 +120,11 @@
       ],
       "job_refs": [],
       "acceptance_ref": "docs/backend-reader-evaluation.md",
-      "next_action": "Review the completed scale-fixed Phase-1 diagnostic report, then decide whether phase 2 is needed before formal benchmark promotion. Source run id: attentional_v2_long_span_vnext_phase1_20260423. Corrected rejudge run id: attentional_v2_long_span_vnext_phase1_memory_quality_scale_fix_rejudge_20260425. Memory Quality average overall score = 3.48 over 25 probes under judge contract scale_v2_1_low_5_high. The correction reused completed V2 probe snapshots, did not reread books, and copied reaction-audit results unchanged from the April 23 source run. Landed runner: reading-companion-backend/eval/attentional_v2/run_long_span_vnext.py. Phase-1 scope: Memory Quality via V2-only probe-based holistic state/memory snapshots during continuous reading; Spontaneous Callback and False Visible Integration via complete-window visible reaction audit on attentional_v2 plus iterator_v1. No active Long Span vNext background job remains for this run.",
+      "next_action": "Review the reaction-evidence-fixed Phase-1 diagnostic report, then decide whether phase 2 is needed before formal benchmark promotion. Source reading run id: attentional_v2_long_span_vnext_phase1_20260423. Corrected Memory Quality rejudge run id: attentional_v2_long_span_vnext_phase1_memory_quality_scale_fix_rejudge_20260425. Current reaction-evidence rejudge run id: attentional_v2_long_span_vnext_phase1_reaction_evidence_fix_rejudge_20260425. Memory Quality average overall score = 3.48 over 25 probes under judge contract scale_v2_1_low_5_high. Reaction audit was freshly rejudged with native V2 surfaced fields visible and no unavailable judge rows: attentional_v2 has 152 grounded spontaneous callbacks, 84 weak callbacks, and 2 false visible integrations over 1282 visible reactions; iterator_v1 has 51 grounded callbacks, 13 weak callbacks, and 0 false visible integrations over 375 visible reactions. No books were reread. Landed runner: reading-companion-backend/eval/attentional_v2/run_long_span_vnext.py. No active Long Span vNext background job remains for this run.",
       "blocked_by": [],
       "evidence_refs": [
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_long_span_vnext_phase1_reaction_evidence_fix_rejudge_20260425/summary/report.md",
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_long_span_vnext_phase1_reaction_evidence_fix_rejudge_20260425/summary/aggregate.json",
         "docs/backend-reader-evaluation.md",
         "docs/current-state.md",
         "docs/tasks/registry.md",
@@ -135,7 +137,7 @@
         "reading-companion-backend/eval/attentional_v2/run_long_span_vnext.py",
         "reading-companion-backend/src/attentional_v2/benchmark_probes.py"
       ],
-      "last_updated": "2026-04-25T01:24:00Z",
+      "last_updated": "2026-04-25T01:50:00Z",
       "last_updated_by": "codex"
     },
     {

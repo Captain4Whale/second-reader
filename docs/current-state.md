@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-04-25T09:24:00+08:00`
+Last verified: `2026-04-25T11:08:49+08:00`
 
 ## Current Objective
 - Shift Long Span from the discontinued `target-centered accumulation v2` method to the new active design direction:
@@ -37,19 +37,24 @@ Last verified: `2026-04-25T09:24:00+08:00`
     - first real Phase-1 diagnostic run has completed and was rejudged for Memory Quality scale calibration:
       - source run id:
         - `attentional_v2_long_span_vnext_phase1_20260423`
-      - corrected rejudge run id:
+      - corrected Memory Quality rejudge run id:
         - `attentional_v2_long_span_vnext_phase1_memory_quality_scale_fix_rejudge_20260425`
+      - current reaction-evidence rejudge run id:
+        - `attentional_v2_long_span_vnext_phase1_reaction_evidence_fix_rejudge_20260425`
       - corrected output:
-        - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_long_span_vnext_phase1_memory_quality_scale_fix_rejudge_20260425/summary/aggregate.json`
-        - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_long_span_vnext_phase1_memory_quality_scale_fix_rejudge_20260425/summary/report.md`
+        - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_long_span_vnext_phase1_reaction_evidence_fix_rejudge_20260425/summary/aggregate.json`
+        - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_long_span_vnext_phase1_reaction_evidence_fix_rejudge_20260425/summary/report.md`
       - result:
         - `Memory Quality` average overall score: `3.48`
         - probe count: `25`
         - scoring contract: `scale_v2_1_low_5_high`
+        - `Spontaneous Callback`: `attentional_v2` has `152` grounded callbacks and `84` weak callbacks over `1282` visible reactions; `iterator_v1` has `51` grounded callbacks and `13` weak callbacks over `375` visible reactions
+        - `False Visible Integration`: `attentional_v2` has `2`; `iterator_v1` has `0`
+        - judge unavailable count: `0` for both mechanisms
       - rejudge posture:
         - no books were reread
-        - completed V2 probe snapshots were reused from the April 23 source run
-        - reaction-audit results were copied unchanged from the source run
+        - Memory Quality judgments were copied from the scale-fixed April 25 rejudge
+        - reaction audit was freshly judged from April 23 completed reading outputs with native V2 surfaced fields visible
       - evidence-catalog status:
         - `quality_audit`
       - no active Long Span vNext background job remains for this run

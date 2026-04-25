@@ -317,14 +317,22 @@ Last updated: `2026-04-25T09:24:00+08:00`
     - first real Phase-1 run completed, then Memory Quality was rejudged with the corrected `1 low / 5 high` scale:
       - source run id:
         - `attentional_v2_long_span_vnext_phase1_20260423`
-      - corrected run id:
+      - corrected Memory Quality run id:
         - `attentional_v2_long_span_vnext_phase1_memory_quality_scale_fix_rejudge_20260425`
+      - current reaction-evidence rejudge run id:
+        - `attentional_v2_long_span_vnext_phase1_reaction_evidence_fix_rejudge_20260425`
       - result:
         - `Memory Quality` average overall score: `3.48`
         - probe count: `25`
-        - reaction audit copied unchanged from the April 23 source run
+        - `Spontaneous Callback`: `attentional_v2` has `152` grounded callbacks and `84` weak callbacks over `1282` visible reactions; `iterator_v1` has `51` grounded callbacks and `13` weak callbacks over `375` visible reactions
+        - `False Visible Integration`: `attentional_v2` has `2`; `iterator_v1` has `0`
+        - judge unavailable count: `0` for both mechanisms
       - evidence status:
         - `quality_audit`
+      - rejudge posture:
+        - no books were reread
+        - Memory Quality judgments were copied from the scale-fixed April 25 run
+        - reaction audit was freshly judged from April 23 completed reading outputs with native V2 surfaced fields visible
       - no active Long Span vNext background job remains for this run
     - next likely phase-2 line:
       - `iterator_v1` normalized probe export for cross-mechanism `Memory Quality`

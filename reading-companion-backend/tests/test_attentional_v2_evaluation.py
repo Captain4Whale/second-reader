@@ -281,7 +281,11 @@ def test_normalized_eval_bundle_projects_compat_fields_from_native_reaction_reco
     bundle = mechanism.build_normalized_eval_bundle(output_dir, config_payload={"benchmark": "attentional_v2_local"})
 
     assert bundle["reactions"][0]["type"] == "curious"
+    assert bundle["reactions"][0]["compat_family"] == "curious"
     assert bundle["reactions"][0]["content"] == "The social frame opens a question worth following."
+    assert bundle["reactions"][0]["prior_link"] is None
+    assert bundle["reactions"][0]["outside_link"] is None
+    assert bundle["reactions"][0]["search_intent"]["query"] == "social marketplace framing"
     assert bundle["reactions"][0]["search_query"] == "social marketplace framing"
 
 

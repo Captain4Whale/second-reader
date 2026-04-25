@@ -56,10 +56,14 @@ class NormalizedReaction(TypedDict, total=False):
 
     reaction_id: str
     type: ReactionType
+    compat_family: str
     chapter_ref: str
     section_ref: str
     anchor_quote: str
     content: str
+    prior_link: dict[str, object] | None
+    outside_link: dict[str, object] | None
+    search_intent: dict[str, object] | None
     search_query: str
     search_results: list[SearchHit]
     target_locator: dict[str, object] | None

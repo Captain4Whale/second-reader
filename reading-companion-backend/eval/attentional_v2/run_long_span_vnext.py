@@ -41,12 +41,16 @@ DEFAULT_USER_INTENT = (
 )
 MECHANISM_KEYS = ("attentional_v2", "iterator_v1")
 REACTION_LABELS = ("local_only", "grounded_callback", "weak_callback", "false_visible_integration")
+REACTION_AUDIT_BATCH_SIZE = 40
+REACTION_AUDIT_MISSING_RETRY_BATCH_SIZE = 8
+REACTION_AUDIT_MISSING_RETRY_ROUNDS = 2
 JUDGE_MODE_VALUES = ("llm", "none")
 JUDGE_SCHEMA_RETRY_INSTRUCTION = (
     "\n\nReminder: return exactly one JSON object matching the requested schema. "
     "Do not wrap it in markdown fences or nest it under another key."
 )
 MEMORY_QUALITY_JUDGE_CONTRACT = "scale_v2_1_low_5_high"
+REACTION_AUDIT_JUDGE_CONTRACT = "visible_reaction_audit_v2_native_evidence"
 MEMORY_QUALITY_DIMENSION_KEYS = (
     "salience_score",
     "mainline_fidelity_score",
@@ -791,6 +795,55 @@ def _reaction_auxiliary_metadata(*, mechanism_key: str, output_dir: Path) -> dic
     return metadata
 
 
+def _optional_mapping(value: object) -> dict[str, Any] | None:
+    if isinstance(value, dict) and value:
+        return dict(value)
+    return None
+
+
+def _source_run_output_dir(
+    *,
+    source_run_root: Path,
+    segment_id: str,
+    mechanism_key: str,
+) -> Path:
+    direct_output_dir = _output_dir_for(source_run_root, segment_id, mechanism_key)
+    if direct_output_dir.exists() and run_state_status(direct_output_dir) == "completed":
+        return direct_output_dir
+
+    sourcing_path = source_run_root / "meta" / "output_sourcing.json"
+    if sourcing_path.exists():
+        payload = json.loads(sourcing_path.read_text(encoding="utf-8"))
+        for decision in payload.get("reuse_decisions", []):
+            if not isinstance(decision, dict):
+                continue
+            if (
+                _clean_text(decision.get("segment_id")) == segment_id
+                and _clean_text(decision.get("mechanism_key")) == mechanism_key
+                and _clean_text(decision.get("decision")) == "reused"
+            ):
+                output_dir = Path(_clean_text(decision.get("output_dir")))
+                if output_dir.exists():
+                    return output_dir
+    return direct_output_dir
+
+
+def _native_evidence_from_reaction(
+    *,
+    reaction: dict[str, Any],
+    auxiliary: dict[str, Any],
+) -> dict[str, Any]:
+    compat_family = _clean_text(reaction.get("compat_family")) or _clean_text(auxiliary.get("compat_family"))
+    if not compat_family:
+        compat_family = _clean_text(reaction.get("type"))
+    return {
+        "compat_family": compat_family,
+        "prior_link": _optional_mapping(reaction.get("prior_link")) or _optional_mapping(auxiliary.get("prior_link")),
+        "outside_link": _optional_mapping(reaction.get("outside_link")) or _optional_mapping(auxiliary.get("outside_link")),
+        "search_intent": _optional_mapping(reaction.get("search_intent")) or _optional_mapping(auxiliary.get("search_intent")),
+    }
+
+
 def _reaction_audit_items(
     *,
     mechanism_key: str,
@@ -805,18 +858,45 @@ def _reaction_audit_items(
         reaction_id = _clean_text(reaction.get("reaction_id"))
         if not reaction_id:
             continue
+        native_evidence = _native_evidence_from_reaction(
+            reaction=reaction,
+            auxiliary=auxiliary.get(reaction_id, {}),
+        )
         items.append(
             {
                 "reaction_index": index,
                 "reaction_id": reaction_id,
                 "section_ref": _clean_text(reaction.get("section_ref")),
                 "compat_type": _clean_text(reaction.get("type")),
+                "compat_family": native_evidence["compat_family"],
                 "anchor_quote": _clean_text(reaction.get("anchor_quote")),
                 "content": _clean_text(reaction.get("content")),
-                "auxiliary": auxiliary.get(reaction_id, {}),
+                "prior_link": native_evidence["prior_link"],
+                "outside_link": native_evidence["outside_link"],
+                "search_intent": native_evidence["search_intent"],
+                "native_surfaced_evidence": native_evidence,
             }
         )
     return items
+
+
+def _compact_reaction_context(items: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    compact: list[dict[str, Any]] = []
+    for item in items:
+        compact.append(
+            {
+                "reaction_index": item["reaction_index"],
+                "reaction_id": item["reaction_id"],
+                "anchor_quote": _clean_text(item.get("anchor_quote"))[:160],
+                "content": _clean_text(item.get("content"))[:240],
+                "native_surfaced_evidence": item.get("native_surfaced_evidence"),
+            }
+        )
+    return compact
+
+
+def _chunks(items: list[dict[str, Any]], size: int) -> list[list[dict[str, Any]]]:
+    return [items[index : index + size] for index in range(0, len(items), size)]
 
 
 def _default_reaction_label(reaction_id: str, *, reason: str) -> dict[str, Any]:
@@ -848,6 +928,59 @@ def _normalize_reaction_labels(
     return results
 
 
+def _invoke_reaction_audit_batch(
+    *,
+    run_root: Path,
+    window: ReadingWindow,
+    mechanism_key: str,
+    system_prompt: str,
+    batch_index: int,
+    batch_items: list[dict[str, Any]],
+    earlier_items: list[dict[str, Any]],
+    retry_stage: str,
+) -> list[dict[str, Any]]:
+    base_user_prompt = (
+        f"Reading window metadata:\n{json.dumps(asdict(window), ensure_ascii=False, indent=2)}\n\n"
+        f"Mechanism key: {mechanism_key}\n"
+        f"Batch: {batch_index}\n"
+        f"Retry stage: {retry_stage}\n\n"
+        f"Earlier visible reactions for callback context (compact, not to classify):\n{json.dumps(_compact_reaction_context(earlier_items), ensure_ascii=False, indent=2)}\n\n"
+        f"Current visible reactions to classify:\n{json.dumps(batch_items, ensure_ascii=False, indent=2)}\n\n"
+        'Return JSON: {"results":[{"reaction_id":"...","label":"local_only|grounded_callback|weak_callback|false_visible_integration","reason":"1-2 sentences."}]}'
+    )
+    payload: object = {}
+    for user_prompt in (base_user_prompt, base_user_prompt + JUDGE_SCHEMA_RETRY_INSTRUCTION):
+        try:
+            with llm_invocation_scope(
+                profile_id=DEFAULT_EVAL_JUDGE_PROFILE_ID,
+                trace_context=eval_trace_context(
+                    run_root,
+                    eval_target=DEFAULT_TARGET,
+                    stage="reaction_audit",
+                    node="reaction_audit_batch",
+                    extra={
+                        "segment_id": window.segment_id,
+                        "mechanism_key": mechanism_key,
+                        "batch_index": batch_index,
+                        "retry_stage": retry_stage,
+                    },
+                ),
+            ):
+                payload = invoke_json(
+                    system_prompt,
+                    user_prompt,
+                    {"results": [_default_reaction_label(str(item["reaction_id"]), reason="judge_unavailable") for item in batch_items]},
+                )
+        except ReaderLLMError:
+            payload = {}
+        except Exception:
+            payload = {}
+        normalized = _normalize_reaction_labels(payload, audit_items=batch_items)
+        if all(_clean_text(item.get("reason")) != "judge_unavailable" for item in normalized):
+            return normalized
+    return _normalize_reaction_labels(payload, audit_items=batch_items)
+
+
 def audit_window_reactions(
     *,
     run_root: Path,
@@ -871,7 +1004,8 @@ def audit_window_reactions(
 
 Classify each reaction using the ordered visible reactions from this same window as the primary evidence surface.
 Later reactions may callback to earlier visible material in the same list.
-Auxiliary metadata is only support; do not overrule the visible reaction text with metadata alone.
+Native surfaced evidence (`prior_link`, `outside_link`, `search_intent`) is support for interpreting intent, not a substitute for user-visible callback wording.
+Compatibility labels such as `type=retrospect` are projection vocabulary only; never treat a compat label alone as proof of Spontaneous Callback.
 
 Labels:
 - local_only: no meaningful earlier-material linkage attempt
@@ -880,38 +1014,60 @@ Labels:
 - false_visible_integration: overclaimed, misremembered, theme-only, or hard-linked without real grounding
 
 Return JSON only."""
-    base_user_prompt = (
-        f"Reading window metadata:\n{json.dumps(asdict(window), ensure_ascii=False, indent=2)}\n\n"
-        f"Mechanism key: {mechanism_key}\n\n"
-        f"Ordered visible reactions:\n{json.dumps(audit_items, ensure_ascii=False, indent=2)}\n\n"
-        'Return JSON: {"results":[{"reaction_id":"...","label":"local_only|grounded_callback|weak_callback|false_visible_integration","reason":"1-2 sentences."}]}'
-    )
-    payload: object = {}
-    for user_prompt in (base_user_prompt, base_user_prompt + JUDGE_SCHEMA_RETRY_INSTRUCTION):
-        try:
-            with llm_invocation_scope(
-                profile_id=DEFAULT_EVAL_JUDGE_PROFILE_ID,
-                trace_context=eval_trace_context(
-                    run_root,
-                    eval_target=DEFAULT_TARGET,
-                    stage="reaction_audit",
-                    node="reaction_audit_batch",
-                    extra={"segment_id": window.segment_id, "mechanism_key": mechanism_key},
-                ),
-            ):
-                payload = invoke_json(
-                    system_prompt,
-                    user_prompt,
-                    {"results": [_default_reaction_label(str(item["reaction_id"]), reason="judge_unavailable") for item in audit_items]},
+    all_labels_by_id: dict[str, dict[str, Any]] = {}
+    for batch_index, batch_items in enumerate(_chunks(audit_items, REACTION_AUDIT_BATCH_SIZE), start=1):
+        batch_start = int(batch_items[0]["reaction_index"])
+        earlier_items = [item for item in audit_items if int(item["reaction_index"]) < batch_start]
+        normalized = _invoke_reaction_audit_batch(
+            run_root=run_root,
+            window=window,
+            mechanism_key=mechanism_key,
+            system_prompt=system_prompt,
+            batch_index=batch_index,
+            batch_items=batch_items,
+            earlier_items=earlier_items,
+            retry_stage="primary",
+        )
+        for label in normalized:
+            all_labels_by_id[str(label["reaction_id"])] = label
+
+        missing_items = [
+            item
+            for item in batch_items
+            if _clean_text(all_labels_by_id.get(str(item["reaction_id"]), {}).get("reason")) == "judge_unavailable"
+        ]
+        for retry_round in range(1, REACTION_AUDIT_MISSING_RETRY_ROUNDS + 1):
+            if not missing_items:
+                break
+            next_missing: list[dict[str, Any]] = []
+            for retry_items in _chunks(missing_items, REACTION_AUDIT_MISSING_RETRY_BATCH_SIZE):
+                retry_start = min(int(item["reaction_index"]) for item in retry_items)
+                retry_context = [item for item in audit_items if int(item["reaction_index"]) < retry_start]
+                retry_labels = _invoke_reaction_audit_batch(
+                    run_root=run_root,
+                    window=window,
+                    mechanism_key=mechanism_key,
+                    system_prompt=system_prompt,
+                    batch_index=batch_index,
+                    batch_items=retry_items,
+                    earlier_items=retry_context,
+                    retry_stage=f"missing_retry_{retry_round}",
                 )
-        except ReaderLLMError:
-            payload = {}
-        except Exception:
-            payload = {}
-        normalized = _normalize_reaction_labels(payload, audit_items=audit_items)
-        if all(_clean_text(item.get("reason")) != "judge_unavailable" for item in normalized):
-            return normalized
-    return _normalize_reaction_labels(payload, audit_items=audit_items)
+                for label in retry_labels:
+                    all_labels_by_id[str(label["reaction_id"])] = label
+                next_missing.extend(
+                    item
+                    for item in retry_items
+                    if _clean_text(all_labels_by_id.get(str(item["reaction_id"]), {}).get("reason")) == "judge_unavailable"
+                )
+            missing_items = next_missing
+    return [
+        all_labels_by_id.get(
+            str(item["reaction_id"]),
+            _default_reaction_label(str(item["reaction_id"]), reason="judge_unavailable"),
+        )
+        for item in audit_items
+    ]
 
 
 def _reaction_summary_rows(
@@ -919,17 +1075,40 @@ def _reaction_summary_rows(
     window: ReadingWindow,
     mechanism_key: str,
     mechanism_label: str,
+    output_dir: Path,
     normalized_bundle: dict[str, Any],
     labels: list[dict[str, Any]],
 ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     reactions = [dict(item) for item in normalized_bundle.get("reactions") or [] if isinstance(item, dict)]
     label_by_id = {str(item["reaction_id"]): item for item in labels}
+    audit_item_by_id = {
+        str(item["reaction_id"]): item
+        for item in _reaction_audit_items(
+            mechanism_key=mechanism_key,
+            output_dir=output_dir,
+            normalized_bundle=normalized_bundle,
+        )
+    }
     rows: list[dict[str, Any]] = []
     counts = Counter()
+    native_counts = Counter()
     for reaction in reactions:
         reaction_id = _clean_text(reaction.get("reaction_id"))
         label_payload = label_by_id.get(reaction_id, _default_reaction_label(reaction_id, reason="missing_label"))
         label = str(label_payload["label"])
+        reason = _clean_text(label_payload.get("reason"))
+        audit_item = audit_item_by_id.get(reaction_id, {})
+        prior_link = _optional_mapping(audit_item.get("prior_link"))
+        outside_link = _optional_mapping(audit_item.get("outside_link"))
+        search_intent = _optional_mapping(audit_item.get("search_intent"))
+        if prior_link:
+            native_counts["prior_link"] += 1
+        if outside_link:
+            native_counts["outside_link"] += 1
+        if search_intent:
+            native_counts["search_intent"] += 1
+        if reason == "judge_unavailable":
+            native_counts["judge_unavailable"] += 1
         counts[label] += 1
         rows.append(
             {
@@ -941,11 +1120,15 @@ def _reaction_summary_rows(
                 "reaction_id": reaction_id,
                 "reaction_index": len(rows) + 1,
                 "label": label,
-                "reason": _clean_text(label_payload.get("reason")),
+                "reason": reason,
                 "section_ref": _clean_text(reaction.get("section_ref")),
                 "anchor_quote": _clean_text(reaction.get("anchor_quote")),
                 "content": _clean_text(reaction.get("content")),
                 "compat_type": _clean_text(reaction.get("type")),
+                "compat_family": _clean_text(audit_item.get("compat_family")),
+                "prior_link": prior_link,
+                "outside_link": outside_link,
+                "search_intent": search_intent,
             }
         )
 
@@ -963,6 +1146,10 @@ def _reaction_summary_rows(
         "weak_callback_count": counts["weak_callback"],
         "false_visible_integration_count": counts["false_visible_integration"],
         "local_only_count": counts["local_only"],
+        "native_prior_link_count": native_counts["prior_link"],
+        "native_outside_link_count": native_counts["outside_link"],
+        "native_search_intent_count": native_counts["search_intent"],
+        "judge_unavailable_count": native_counts["judge_unavailable"],
         "callback_attempt_rate": callback_attempt_count / total_visible_reactions if total_visible_reactions else 0.0,
         "grounded_callback_rate": counts["grounded_callback"] / total_visible_reactions if total_visible_reactions else 0.0,
         "false_visible_integration_rate": counts["false_visible_integration"] / total_visible_reactions if total_visible_reactions else 0.0,
@@ -976,6 +1163,16 @@ def _reaction_summary_rows(
             }
             for row in rows
             if row["label"] == "grounded_callback"
+        ][:3],
+        "representative_weak_callbacks": [
+            {
+                "reaction_id": row["reaction_id"],
+                "anchor_quote": row["anchor_quote"],
+                "content": row["content"],
+                "reason": row["reason"],
+            }
+            for row in rows
+            if row["label"] == "weak_callback"
         ][:3],
         "representative_false_visible_integrations": [
             {
@@ -1038,6 +1235,10 @@ def _aggregate_reaction_audit(window_summaries: list[dict[str, Any]]) -> dict[st
         weak_callback_count = sum(int(row["weak_callback_count"]) for row in rows)
         false_visible_integration_count = sum(int(row["false_visible_integration_count"]) for row in rows)
         local_only_count = sum(int(row["local_only_count"]) for row in rows)
+        native_prior_link_count = sum(int(row.get("native_prior_link_count", 0) or 0) for row in rows)
+        native_outside_link_count = sum(int(row.get("native_outside_link_count", 0) or 0) for row in rows)
+        native_search_intent_count = sum(int(row.get("native_search_intent_count", 0) or 0) for row in rows)
+        judge_unavailable_count = sum(int(row.get("judge_unavailable_count", 0) or 0) for row in rows)
         mechanisms[mechanism_key] = {
             "mechanism_key": mechanism_key,
             "mechanism_label": rows[0]["mechanism_label"],
@@ -1048,6 +1249,10 @@ def _aggregate_reaction_audit(window_summaries: list[dict[str, Any]]) -> dict[st
             "weak_callback_count": weak_callback_count,
             "false_visible_integration_count": false_visible_integration_count,
             "local_only_count": local_only_count,
+            "native_prior_link_count": native_prior_link_count,
+            "native_outside_link_count": native_outside_link_count,
+            "native_search_intent_count": native_search_intent_count,
+            "judge_unavailable_count": judge_unavailable_count,
             "callback_attempt_rate": callback_attempt_count / total_visible_reactions if total_visible_reactions else 0.0,
             "grounded_callback_rate": grounded_callback_count / total_visible_reactions if total_visible_reactions else 0.0,
             "false_visible_integration_rate": false_visible_integration_count / total_visible_reactions if total_visible_reactions else 0.0,
@@ -1057,6 +1262,39 @@ def _aggregate_reaction_audit(window_summaries: list[dict[str, Any]]) -> dict[st
         "mechanisms": mechanisms,
         "windows": sorted(window_summaries, key=lambda item: (item["segment_id"], item["mechanism_key"])),
     }
+
+
+def _representative_examples(
+    reaction_window_summaries: list[dict[str, Any]],
+    *,
+    mechanism_key: str,
+    key: str,
+    limit: int = 5,
+) -> list[dict[str, Any]]:
+    examples: list[dict[str, Any]] = []
+    for summary in reaction_window_summaries:
+        if summary.get("mechanism_key") != mechanism_key:
+            continue
+        for example in summary.get(key, []):
+            if isinstance(example, dict):
+                examples.append(
+                    {
+                        "book_title": summary.get("book_title"),
+                        "segment_id": summary.get("segment_id"),
+                        **example,
+                    }
+                )
+            if len(examples) >= limit:
+                return examples
+    return examples
+
+
+def _append_examples(lines: list[str], examples: list[dict[str, Any]]) -> None:
+    for example in examples:
+        lines.append(
+            f"- `{example.get('reaction_id')}` / {example.get('book_title')}: “{example.get('anchor_quote')}” -> "
+            f"{example.get('content')} ({example.get('reason')})"
+        )
 
 
 def _render_report(
@@ -1080,6 +1318,8 @@ def _render_report(
         f"- Window count: `{memory_quality.get('window_count', 0)}`",
         "",
     ]
+    if aggregate.get("memory_quality_source") == "copied_from_results_source_run":
+        lines.extend(["Memory Quality judgments are copied unchanged from the corrected source run.", ""])
     for window_summary in memory_quality.get("windows", []):
         lines.extend(
             [
@@ -1096,9 +1336,22 @@ def _render_report(
             )
         lines.append("")
 
-    lines.extend(["## Reaction Audit", ""])
+    lines.extend(
+        [
+            "## Reaction Audit Method",
+            "",
+            f"- Judge contract: `{REACTION_AUDIT_JUDGE_CONTRACT}`",
+            "- `Spontaneous Callback` counts visible reactions that naturally connect current reading to earlier material.",
+            "- `False Visible Integration` counts callback-like reactions that overclaim, misremember, or force a weak thematic link.",
+            "- V2 native surfaced evidence (`prior_link`, `outside_link`, `search_intent`) is exported and shown as support, but visible reaction text remains the primary evidence.",
+            "- Compatibility labels such as `retrospect` are projection vocabulary, not native callback truth.",
+            "",
+        ]
+    )
     if aggregate.get("reaction_audit_source") == "copied_from_memory_quality_source_run":
         lines.extend(["Reaction-audit results are copied unchanged from the source run for this Memory Quality rejudge.", ""])
+
+    lines.extend(["## Spontaneous Callback", ""])
     for mechanism_key in MECHANISM_KEYS:
         mechanism_summary = dict((reaction_audit.get("mechanisms") or {}).get(mechanism_key) or {})
         if not mechanism_summary:
@@ -1110,10 +1363,53 @@ def _render_report(
                 f"- Callback attempts: `{mechanism_summary['callback_attempt_count']}` (`{mechanism_summary['callback_attempt_rate']:.3f}`)",
                 f"- Grounded callbacks: `{mechanism_summary['grounded_callback_count']}` (`{mechanism_summary['grounded_callback_rate']:.3f}`)",
                 f"- Weak callbacks: `{mechanism_summary['weak_callback_count']}`",
-                f"- False visible integrations: `{mechanism_summary['false_visible_integration_count']}` (`{mechanism_summary['false_visible_integration_rate']:.3f}`)",
+                f"- Judge-unavailable labels: `{mechanism_summary.get('judge_unavailable_count', 0)}`",
+                f"- Native surfaced evidence counts: prior_link `{mechanism_summary.get('native_prior_link_count', 0)}`, outside_link `{mechanism_summary.get('native_outside_link_count', 0)}`, search_intent `{mechanism_summary.get('native_search_intent_count', 0)}`",
                 "",
             ]
         )
+        grounded_examples = _representative_examples(
+            reaction_window_summaries,
+            mechanism_key=mechanism_key,
+            key="representative_grounded_callbacks",
+        )
+        weak_examples = _representative_examples(
+            reaction_window_summaries,
+            mechanism_key=mechanism_key,
+            key="representative_weak_callbacks",
+            limit=3,
+        )
+        if grounded_examples:
+            lines.append("Representative grounded callbacks:")
+            _append_examples(lines, grounded_examples)
+            lines.append("")
+        if weak_examples:
+            lines.append("Representative weak callbacks:")
+            _append_examples(lines, weak_examples)
+            lines.append("")
+
+    lines.extend(["## False Visible Integration", ""])
+    for mechanism_key in MECHANISM_KEYS:
+        mechanism_summary = dict((reaction_audit.get("mechanisms") or {}).get(mechanism_key) or {})
+        if not mechanism_summary:
+            continue
+        lines.extend(
+            [
+                f"### {mechanism_summary['mechanism_label']} (`{mechanism_key}`)",
+                f"- False visible integrations: `{mechanism_summary['false_visible_integration_count']}` (`{mechanism_summary['false_visible_integration_rate']:.3f}` of all visible reactions)",
+                f"- False rate among callback attempts: `{mechanism_summary['false_rate_among_callback_attempts']:.3f}`",
+                "",
+            ]
+        )
+        false_examples = _representative_examples(
+            reaction_window_summaries,
+            mechanism_key=mechanism_key,
+            key="representative_false_visible_integrations",
+        )
+        if false_examples:
+            lines.append("Representative false visible integrations:")
+            _append_examples(lines, false_examples)
+            lines.append("")
 
     lines.extend(["## Per-window Reaction Audit", ""])
     for summary in reaction_window_summaries:
@@ -1122,12 +1418,21 @@ def _render_report(
                 f"### {summary['book_title']} / {summary['mechanism_key']}",
                 f"- Total visible reactions: `{summary['total_visible_reactions']}`",
                 f"- Grounded callbacks: `{summary['grounded_callback_count']}`",
+                f"- Weak callbacks: `{summary['weak_callback_count']}`",
                 f"- False visible integrations: `{summary['false_visible_integration_count']}`",
+                f"- Judge-unavailable labels: `{summary.get('judge_unavailable_count', 0)}`",
+                f"- Native surfaced evidence: prior_link `{summary.get('native_prior_link_count', 0)}`, outside_link `{summary.get('native_outside_link_count', 0)}`, search_intent `{summary.get('native_search_intent_count', 0)}`",
             ]
         )
         if summary["representative_grounded_callbacks"]:
             lines.append("- Representative grounded callbacks:")
             for example in summary["representative_grounded_callbacks"]:
+                lines.append(
+                    f"  - `{example['reaction_id']}`: “{example['anchor_quote']}” -> {example['content']} ({example['reason']})"
+                )
+        if summary.get("representative_weak_callbacks"):
+            lines.append("- Representative weak callbacks:")
+            for example in summary["representative_weak_callbacks"]:
                 lines.append(
                     f"  - `{example['reaction_id']}`: “{example['anchor_quote']}” -> {example['content']} ({example['reason']})"
                 )
@@ -1155,10 +1460,15 @@ def run_long_span_vnext(
     output_retry_sleep_seconds: int = DEFAULT_OUTPUT_RETRY_SLEEP_SECONDS,
     reaction_reuse_run_root: Path | None = DEFAULT_REACTION_REUSE_RUN_ROOT,
     memory_quality_source_run_root: Path | None = None,
+    memory_quality_results_source_run_root: Path | None = None,
+    copy_reaction_audit_from_source: bool = True,
 ) -> dict[str, Any]:
     worker_count = max(1, int(workers or 1))
     dataset_dir = _resolve_dataset_dir(manifest_path)
     memory_quality_source_run_root = memory_quality_source_run_root.resolve() if memory_quality_source_run_root else None
+    memory_quality_results_source_run_root = (
+        memory_quality_results_source_run_root.resolve() if memory_quality_results_source_run_root else None
+    )
     windows = _load_windows_from_run(memory_quality_source_run_root) if memory_quality_source_run_root else _load_windows(dataset_dir)
     if segment_ids:
         windows = [window for window in windows if window.segment_id in segment_ids]
@@ -1176,6 +1486,8 @@ def run_long_span_vnext(
             "manifest_path": str(manifest_path),
             "reaction_reuse_run_root": str(reaction_reuse_run_root) if reaction_reuse_run_root else "",
             "memory_quality_source_run_root": str(memory_quality_source_run_root) if memory_quality_source_run_root else "",
+            "memory_quality_results_source_run_root": str(memory_quality_results_source_run_root) if memory_quality_results_source_run_root else "",
+            "copy_reaction_audit_from_source": copy_reaction_audit_from_source,
             "windows": [asdict(window) for window in windows],
             "window_fingerprints": [_window_fingerprint(dataset_dir, window) for window in windows],
         },
@@ -1186,15 +1498,31 @@ def run_long_span_vnext(
     output_tasks: list[tuple[ReadingWindow, str]] = []
     source_summary_dir = memory_quality_source_run_root / "summary" if memory_quality_source_run_root else None
     copied_reaction_audit = bool(
-        source_summary_dir
+        copy_reaction_audit_from_source
+        and source_summary_dir
         and (source_summary_dir / "reaction_audit_results.jsonl").exists()
         and (source_summary_dir / "reaction_window_summaries.jsonl").exists()
     )
+    memory_quality_results_source_summary_dir = (
+        memory_quality_results_source_run_root / "summary" if memory_quality_results_source_run_root else None
+    )
+    copied_memory_quality_results = bool(
+        memory_quality_results_source_summary_dir
+        and (memory_quality_results_source_summary_dir / "memory_quality_results.jsonl").exists()
+    )
+    if memory_quality_results_source_run_root and not copied_memory_quality_results:
+        raise FileNotFoundError(
+            f"missing memory quality results source: {memory_quality_results_source_run_root / 'summary' / 'memory_quality_results.jsonl'}"
+        )
     for window in windows:
         if memory_quality_source_run_root:
             source_mechanism_keys = ("attentional_v2",) if copied_reaction_audit else MECHANISM_KEYS
             for mechanism_key in source_mechanism_keys:
-                source_output_dir = _output_dir_for(memory_quality_source_run_root, window.segment_id, mechanism_key)
+                source_output_dir = _source_run_output_dir(
+                    source_run_root=memory_quality_source_run_root,
+                    segment_id=window.segment_id,
+                    mechanism_key=mechanism_key,
+                )
                 if run_state_status(source_output_dir) != "completed":
                     raise FileNotFoundError(
                         f"missing completed source output for rejudge: {source_output_dir}"
@@ -1262,6 +1590,8 @@ def run_long_span_vnext(
             "generated_at": _timestamp(),
             "reaction_reuse_run_root": str(reaction_reuse_run_root) if reaction_reuse_run_root else "",
             "memory_quality_source_run_root": str(memory_quality_source_run_root) if memory_quality_source_run_root else "",
+            "memory_quality_results_source_run_root": str(memory_quality_results_source_run_root) if memory_quality_results_source_run_root else "",
+            "copy_reaction_audit_from_source": copy_reaction_audit_from_source,
             "fresh_task_count": len(output_tasks),
             "fresh_tasks": [
                 {
@@ -1279,22 +1609,23 @@ def run_long_span_vnext(
     )
 
     memory_quality_tasks: list[tuple[ReadingWindow, dict[str, Any], dict[str, Any]]] = []
-    for window in windows:
-        payload = output_payloads[(window.segment_id, "attentional_v2")]
-        output_dir = Path(str(payload["output_dir"]))
-        probe_export = load_memory_quality_probe_export(output_dir)
-        book_document = json.loads(book_document_file(output_dir).read_text(encoding="utf-8"))
-        for snapshot in probe_export.get("snapshots", []):
-            if not isinstance(snapshot, dict):
-                continue
-            capture_sentence_id = _clean_text(snapshot.get("capture_sentence_id"))
-            probe_payload = {
-                "probe_index": int(snapshot.get("probe_index", 0) or 0),
-                "threshold_ratio": float(snapshot.get("threshold_ratio", 0.0) or 0.0),
-                "read_so_far_source_text": build_read_so_far_source_text(book_document, capture_sentence_id),
-                "memory_snapshot": snapshot,
-            }
-            memory_quality_tasks.append((window, snapshot, probe_payload))
+    if not copied_memory_quality_results:
+        for window in windows:
+            payload = output_payloads[(window.segment_id, "attentional_v2")]
+            output_dir = Path(str(payload["output_dir"]))
+            probe_export = load_memory_quality_probe_export(output_dir)
+            book_document = json.loads(book_document_file(output_dir).read_text(encoding="utf-8"))
+            for snapshot in probe_export.get("snapshots", []):
+                if not isinstance(snapshot, dict):
+                    continue
+                capture_sentence_id = _clean_text(snapshot.get("capture_sentence_id"))
+                probe_payload = {
+                    "probe_index": int(snapshot.get("probe_index", 0) or 0),
+                    "threshold_ratio": float(snapshot.get("threshold_ratio", 0.0) or 0.0),
+                    "read_so_far_source_text": build_read_so_far_source_text(book_document, capture_sentence_id),
+                    "memory_snapshot": snapshot,
+                }
+                memory_quality_tasks.append((window, snapshot, probe_payload))
 
     def _judge_probe(task: tuple[ReadingWindow, dict[str, Any], dict[str, Any]]) -> dict[str, Any]:
         window, snapshot, probe_payload = task
@@ -1316,7 +1647,12 @@ def run_long_span_vnext(
             **judgment,
         }
 
-    memory_quality_results: list[dict[str, Any]] = _run_in_parallel(memory_quality_tasks, worker_count, _judge_probe)
+    if copied_memory_quality_results and memory_quality_results_source_summary_dir:
+        memory_quality_results: list[dict[str, Any]] = _jsonl_load(
+            memory_quality_results_source_summary_dir / "memory_quality_results.jsonl"
+        )
+    else:
+        memory_quality_results = _run_in_parallel(memory_quality_tasks, worker_count, _judge_probe)
 
     if copied_reaction_audit and source_summary_dir:
         reaction_audit_results = _jsonl_load(source_summary_dir / "reaction_audit_results.jsonl")
@@ -1345,6 +1681,7 @@ def run_long_span_vnext(
                 window=window,
                 mechanism_key=mechanism_key,
                 mechanism_label=str(payload.get("mechanism_label") or mechanism_key),
+                output_dir=output_dir,
                 normalized_bundle=normalized_bundle,
                 labels=labels,
             )
@@ -1361,10 +1698,13 @@ def run_long_span_vnext(
         "generated_at": _timestamp(),
         "dataset_dir": str(dataset_dir),
         "memory_quality_judge_contract": MEMORY_QUALITY_JUDGE_CONTRACT,
+        "reaction_audit_judge_contract": REACTION_AUDIT_JUDGE_CONTRACT,
         "metric_slugs": ["memory_quality", "spontaneous_callback", "false_visible_integration"],
         "memory_quality": _aggregate_memory_quality(memory_quality_results),
         "reaction_audit": _aggregate_reaction_audit(reaction_window_summaries),
+        "memory_quality_source": "copied_from_results_source_run" if copied_memory_quality_results else "fresh_judge",
         "reaction_audit_source": "copied_from_memory_quality_source_run" if copied_reaction_audit else "fresh_judge",
+        "memory_quality_results_source_run_root": str(memory_quality_results_source_run_root) if memory_quality_results_source_run_root else "",
         "output_modes": {
             f"{segment_id}:{mechanism_key}": payload.get("run_mode")
             for (segment_id, mechanism_key), payload in output_payloads.items()
@@ -1419,6 +1759,19 @@ def main(argv: list[str] | None = None) -> int:
             "When set, completed outputs and probe snapshots are reused and no reading is launched."
         ),
     )
+    parser.add_argument(
+        "--memory-quality-results-source-run-root",
+        default="",
+        help=(
+            "Existing Long Span vNext run root whose memory_quality_results.jsonl should be copied. "
+            "Use this when only the reaction-audit evidence surface is being rejudged."
+        ),
+    )
+    parser.add_argument(
+        "--rerun-reaction-audit",
+        action="store_true",
+        help="When reusing a source run root, rerun reaction audit instead of copying source reaction-audit outputs.",
+    )
     args = parser.parse_args(argv)
 
     run_root = args.runs_root / args.run_id
@@ -1426,6 +1779,11 @@ def main(argv: list[str] | None = None) -> int:
     reaction_reuse_run_root = Path(args.reaction_reuse_run_root) if str(args.reaction_reuse_run_root).strip() else None
     memory_quality_source_run_root = (
         Path(args.memory_quality_source_run_root) if str(args.memory_quality_source_run_root).strip() else None
+    )
+    memory_quality_results_source_run_root = (
+        Path(args.memory_quality_results_source_run_root)
+        if str(args.memory_quality_results_source_run_root).strip()
+        else None
     )
     aggregate = run_long_span_vnext(
         run_root=run_root,
@@ -1438,6 +1796,8 @@ def main(argv: list[str] | None = None) -> int:
         output_retry_sleep_seconds=args.output_retry_sleep_seconds,
         reaction_reuse_run_root=reaction_reuse_run_root,
         memory_quality_source_run_root=memory_quality_source_run_root,
+        memory_quality_results_source_run_root=memory_quality_results_source_run_root,
+        copy_reaction_audit_from_source=not bool(args.rerun_reaction_audit),
     )
     print(json.dumps(aggregate, ensure_ascii=False, indent=2))
     return 0

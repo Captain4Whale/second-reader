@@ -122,6 +122,13 @@ Use `docs/backend-reading-mechanism.md` for shared mechanism-platform boundaries
   - the first Phase-1 diagnostic run is complete, but it is not yet promoted to formal long-span benchmark authority
   - the current corrected Memory Quality read of that diagnostic run is:
     - `attentional_v2_long_span_vnext_phase1_memory_quality_scale_fix_rejudge_20260425`
+  - the current reaction-evidence-fixed read of that diagnostic run is:
+    - `attentional_v2_long_span_vnext_phase1_reaction_evidence_fix_rejudge_20260425`
+    - this run copies corrected Memory Quality judgments and freshly rejudges complete-window reactions with native V2 surfaced fields visible
+    - headline reaction-audit counts:
+      - `attentional_v2`: `152` grounded callbacks, `84` weak callbacks, `2` false visible integrations over `1282` visible reactions
+      - `iterator_v1`: `51` grounded callbacks, `13` weak callbacks, `0` false visible integrations over `375` visible reactions
+      - judge unavailable count: `0` for both mechanisms
   - the Phase-1 substrate remains the active user-level selective reading windows unless later evidence requires a different window family
 - `reader_value.insight_and_clarification` remains an orthogonal output-value axis, but it is not part of the first release of the new long-span `Memory Quality / Spontaneous Callback / False Visible Integration` direction.
 - `excerpt surface` is now a historical chapter-scoped local-text surface name used by older formal runs.
@@ -241,18 +248,23 @@ Use `docs/backend-reading-mechanism.md` for shared mechanism-platform boundaries
     - `reading-companion-backend/eval/attentional_v2/run_long_span_vnext.py`
   - landed benchmark-only V2 probe export:
     - `reading-companion-backend/src/attentional_v2/benchmark_probes.py`
-- The first Phase-1 diagnostic run has been corrected for Memory Quality scale calibration:
+- The first Phase-1 diagnostic run has been corrected in two steps:
   - corrected run:
     - `attentional_v2_long_span_vnext_phase1_memory_quality_scale_fix_rejudge_20260425`
+  - current reaction-evidence rejudge:
+    - `attentional_v2_long_span_vnext_phase1_reaction_evidence_fix_rejudge_20260425`
   - source reading run:
     - `attentional_v2_long_span_vnext_phase1_20260423`
-  - the correction did not reread books; it reused completed V2 probe snapshots and copied reaction-audit results unchanged
+  - neither correction reread books
+  - the scale-fix rejudge reused completed V2 probe snapshots and copied reaction-audit results unchanged
+  - the reaction-evidence rejudge copied the corrected Memory Quality judgments and freshly rejudged complete-window reactions with native V2 surfaced fields visible
   - Memory Quality scoring now uses:
     - `1 = poor / absent`
     - `3 = adequate / useful`
     - `5 = excellent`
     - higher is better
   - `overall_memory_quality_score` is derived from `salience_score`, `mainline_fidelity_score`, `organization_score`, and `fidelity_score` rather than trusted blindly from the judge response
+  - reaction audit now treats `prior_link / outside_link / search_intent` as support while keeping visible reaction wording as the primary evidence; compat `type=retrospect` is not sufficient evidence by itself
   - this is usable phase-1 diagnostic evidence, but it is not yet a promoted formal long-span benchmark authority
 
 ## Archived Target-Centered Report Writing Rule

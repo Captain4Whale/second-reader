@@ -52,17 +52,23 @@ Current implementation posture:
       - unchanged `iterator_v1` windows reuse April 19 completed normalized outputs for reaction audit
       - `iterator_v1` is re-read only when the active window fingerprint differs from the reuse source
       - fingerprint checks cover `segment_id / start_sentence_id / end_sentence_id / source_chapter_ids / source_text_sha256`
-- formal evidence status:
-  - the first completed Phase-1 diagnostic evidence is:
-    - `attentional_v2_long_span_vnext_phase1_memory_quality_scale_fix_rejudge_20260425`
+- evidence status:
+  - the current Phase-1 diagnostic evidence is:
+    - `attentional_v2_long_span_vnext_phase1_reaction_evidence_fix_rejudge_20260425`
   - this run is not yet promoted to formal Long Span benchmark authority
-  - it rejudges Memory Quality from the April 23 reading outputs without rereading books
-  - it fixes the Memory Quality score scale:
-    - `1 = poor / absent`
-    - `3 = adequate / useful`
-    - `5 = excellent`
-    - higher is better
-  - reaction-audit results are copied unchanged from the April 23 source run
+  - it copies the corrected Memory Quality judgments from:
+    - `attentional_v2_long_span_vnext_phase1_memory_quality_scale_fix_rejudge_20260425`
+  - it freshly rejudges reaction audit from the April 23 reading outputs without rereading books
+  - the reaction-audit evidence surface now carries V2 native surfaced fields:
+    - `prior_link`
+    - `outside_link`
+    - `search_intent`
+    - `compat_family`
+  - headline diagnostic reading:
+    - `attentional_v2`: `152` grounded spontaneous callbacks, `84` weak callbacks, `2` false visible integrations over `1282` visible reactions
+    - `iterator_v1`: `51` grounded callbacks, `13` weak callbacks, `0` false visible integrations over `375` visible reactions
+    - judge unavailable count: `0` for both mechanisms
+  - the prior scale-fix rejudge remains useful for Memory Quality but its reaction-audit section copied the April 23 evidence surface and is superseded for reaction interpretation
 
 ## Historical Durable Evidence
 

@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-04-25T01:20:12.163994Z",
+  "updated_at": "2026-04-25T03:08:14.882653Z",
   "entries": [
     {
       "run_id": "attentional_v2_active_benchmark_rerun_20260419",
@@ -204,6 +204,7 @@
         },
         "reaction_audit": {
           "source": "copied_from_20260423",
+          "evidence_surface": "incomplete_native_surface",
           "attentional_v2_visible_reactions": 1282,
           "iterator_v1_visible_reactions": 375
         }
@@ -215,8 +216,56 @@
         "llm_usage": "eval/runs/attentional_v2/attentional_v2_long_span_vnext_phase1_memory_quality_scale_fix_rejudge_20260425/summary/llm_usage.json"
       },
       "job_ids": [],
-      "one_line_conclusion": "Phase-1 Long Span vNext diagnostic evidence with corrected Memory Quality scale; books were not reread, and reaction-audit results were copied unchanged from the April 23 source run.",
-      "updated_at": "2026-04-25T01:20:12.163779Z"
+      "one_line_conclusion": "Phase-1 Long Span vNext diagnostic evidence with corrected Memory Quality scale; books were not reread, but reaction-audit results were copied unchanged from the April 23 source run and are superseded for reaction-evidence interpretation by the later April 25 reaction-evidence rejudge.",
+      "updated_at": "2026-04-25T01:48:03.433701Z"
+    },
+    {
+      "run_id": "attentional_v2_long_span_vnext_phase1_reaction_evidence_fix_rejudge_20260425",
+      "surface": "long_span_vnext_phase1",
+      "evaluation_goal": "Memory Quality / Spontaneous Callback / False Visible Integration",
+      "status": "quality_audit",
+      "dataset_id": "",
+      "dataset_path": "state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260422",
+      "manifest_path": "",
+      "mechanisms": [
+        "attentional_v2",
+        "iterator_v1"
+      ],
+      "metric_summary": {
+        "memory_quality": {
+          "attentional_v2_average_overall": 3.48,
+          "probe_count": 25,
+          "window_count": 5,
+          "judge_contract": "scale_v2_1_low_5_high",
+          "source": "copied_from_scale_fix_rejudge"
+        },
+        "reaction_audit": {
+          "judge_contract": "visible_reaction_audit_v2_native_evidence",
+          "source": "fresh_judge",
+          "attentional_v2_visible_reactions": 1282,
+          "attentional_v2_callback_attempts": 238,
+          "attentional_v2_grounded_callbacks": 152,
+          "attentional_v2_weak_callbacks": 84,
+          "attentional_v2_false_visible_integrations": 2,
+          "attentional_v2_native_prior_link_count": 49,
+          "attentional_v2_judge_unavailable_count": 0,
+          "iterator_v1_visible_reactions": 375,
+          "iterator_v1_callback_attempts": 64,
+          "iterator_v1_grounded_callbacks": 51,
+          "iterator_v1_weak_callbacks": 13,
+          "iterator_v1_false_visible_integrations": 0,
+          "iterator_v1_judge_unavailable_count": 0
+        }
+      },
+      "run_paths": {
+        "run_dir": "eval/runs/attentional_v2/attentional_v2_long_span_vnext_phase1_reaction_evidence_fix_rejudge_20260425",
+        "aggregate": "eval/runs/attentional_v2/attentional_v2_long_span_vnext_phase1_reaction_evidence_fix_rejudge_20260425/summary/aggregate.json",
+        "report": "eval/runs/attentional_v2/attentional_v2_long_span_vnext_phase1_reaction_evidence_fix_rejudge_20260425/summary/report.md",
+        "llm_usage": "eval/runs/attentional_v2/attentional_v2_long_span_vnext_phase1_reaction_evidence_fix_rejudge_20260425/summary/llm_usage.json"
+      },
+      "job_ids": [],
+      "one_line_conclusion": "Phase-1 Long Span vNext diagnostic evidence with corrected Memory Quality scale and freshly rejudged reaction-audit evidence surface; V2 shows 152 grounded spontaneous callbacks, 84 weak callbacks, and 2 false visible integrations across 1282 visible reactions, while V1 shows 51 grounded callbacks and 13 weak callbacks across 375 visible reactions. No books were reread.",
+      "updated_at": "2026-04-25T03:08:14.882445Z"
     },
     {
       "run_id": "attentional_v2_accumulation_benchmark_v2_frozen_active_rerun_20260419",
