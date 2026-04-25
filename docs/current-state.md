@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-04-23T19:28:00+08:00`
+Last verified: `2026-04-25T09:24:00+08:00`
 
 ## Current Objective
 - Shift Long Span from the discontinued `target-centered accumulation v2` method to the new active design direction:
@@ -34,28 +34,26 @@ Last verified: `2026-04-23T19:28:00+08:00`
         - Phase-1 comparison scope:
           - `Memory Quality`: `attentional_v2` only
           - reaction audit: `attentional_v2` vs `iterator_v1`
-    - first real Phase-1 run is now active:
-      - job id:
-        - `bgjob_long_span_vnext_phase1_20260423`
-      - watchdog:
-        - `bgjob_long_span_vnext_phase1_watchdog_20260423`
-      - run id:
+    - first real Phase-1 diagnostic run has completed and was rejudged for Memory Quality scale calibration:
+      - source run id:
         - `attentional_v2_long_span_vnext_phase1_20260423`
-      - runner command:
-        - `./.venv/bin/python eval/attentional_v2/run_long_span_vnext.py --run-id attentional_v2_long_span_vnext_phase1_20260423 --workers 6 --judge-mode llm --output-attempts 6 --output-retry-sleep-seconds 300 --reaction-reuse-run-root eval/runs/attentional_v2/attentional_v2_user_level_selective_v1_active_rerun_20260419`
-      - output sourcing:
-        - `attentional_v2` fresh/resume outputs are required for `Memory Quality` probe snapshots
-        - `iterator_v1` defaults to April 19 completed normalized reading outputs for reaction audit
-        - `iterator_v1` is only re-read when the current active window fingerprint mismatches the April 19 output
-        - current expected fresh work is `attentional_v2 × 5` plus `iterator_v1 × 1` for `nawaer_baodian_private_zh`, because the Naval window moved to `c13`
-      - expected outputs:
-        - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_long_span_vnext_phase1_20260423/summary/aggregate.json`
-        - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_long_span_vnext_phase1_20260423/summary/report.md`
-      - recovery posture:
-        - job is registered as recoverable
-        - watchdog checks every `300` seconds
-        - runner uses same-run reuse for completed V2 outputs/probe snapshots and cross-run reuse for unchanged V1 reaction-audit outputs
-    - after the active run finishes, review whether the phase-1 report is already strong enough for a formal benchmark promotion, then decide phase-2 work:
+      - corrected rejudge run id:
+        - `attentional_v2_long_span_vnext_phase1_memory_quality_scale_fix_rejudge_20260425`
+      - corrected output:
+        - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_long_span_vnext_phase1_memory_quality_scale_fix_rejudge_20260425/summary/aggregate.json`
+        - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_long_span_vnext_phase1_memory_quality_scale_fix_rejudge_20260425/summary/report.md`
+      - result:
+        - `Memory Quality` average overall score: `3.48`
+        - probe count: `25`
+        - scoring contract: `scale_v2_1_low_5_high`
+      - rejudge posture:
+        - no books were reread
+        - completed V2 probe snapshots were reused from the April 23 source run
+        - reaction-audit results were copied unchanged from the source run
+      - evidence-catalog status:
+        - `quality_audit`
+      - no active Long Span vNext background job remains for this run
+    - next, review whether the phase-1 report is already strong enough for a formal benchmark promotion, then decide phase-2 work:
       - `iterator_v1` probe-normalized `Memory Quality`
       - broader formal authority promotion
   - preserved discontinued evidence:

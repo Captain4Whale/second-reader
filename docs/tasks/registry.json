@@ -118,12 +118,9 @@
       "decision_refs": [
         "DEC-076"
       ],
-      "job_refs": [
-        "bgjob_long_span_vnext_phase1_20260423",
-        "bgjob_long_span_vnext_phase1_watchdog_20260423"
-      ],
+      "job_refs": [],
       "acceptance_ref": "docs/backend-reader-evaluation.md",
-      "next_action": "Let the active Phase-1 Long Span vNext evaluation finish over the active 5 windows, then review the report shape and decide whether phase 2 is needed before formal benchmark promotion. Active run id: attentional_v2_long_span_vnext_phase1_20260423. Active job: bgjob_long_span_vnext_phase1_20260423 with watchdog bgjob_long_span_vnext_phase1_watchdog_20260423. Relaunched after minimal-read scheduling fix: V2 is freshly read or same-run resumed for Memory Quality probes; unchanged V1 windows reuse April 19 normalized outputs for reaction audit; only fingerprint-mismatched V1 windows are re-read. Command: reading-companion-backend/.venv/bin/python eval/attentional_v2/run_long_span_vnext.py --run-id attentional_v2_long_span_vnext_phase1_20260423 --workers 6 --judge-mode llm --output-attempts 6 --output-retry-sleep-seconds 300 --reaction-reuse-run-root eval/runs/attentional_v2/attentional_v2_user_level_selective_v1_active_rerun_20260419. Landed runner: reading-companion-backend/eval/attentional_v2/run_long_span_vnext.py. Phase-1 scope: Memory Quality via V2-only probe-based holistic state/memory snapshots during continuous reading; Spontaneous Callback and False Visible Integration via complete-window visible reaction audit on attentional_v2 plus iterator_v1.",
+      "next_action": "Review the completed scale-fixed Phase-1 diagnostic report, then decide whether phase 2 is needed before formal benchmark promotion. Source run id: attentional_v2_long_span_vnext_phase1_20260423. Corrected rejudge run id: attentional_v2_long_span_vnext_phase1_memory_quality_scale_fix_rejudge_20260425. Memory Quality average overall score = 3.48 over 25 probes under judge contract scale_v2_1_low_5_high. The correction reused completed V2 probe snapshots, did not reread books, and copied reaction-audit results unchanged from the April 23 source run. Landed runner: reading-companion-backend/eval/attentional_v2/run_long_span_vnext.py. Phase-1 scope: Memory Quality via V2-only probe-based holistic state/memory snapshots during continuous reading; Spontaneous Callback and False Visible Integration via complete-window visible reaction audit on attentional_v2 plus iterator_v1. No active Long Span vNext background job remains for this run.",
       "blocked_by": [],
       "evidence_refs": [
         "docs/backend-reader-evaluation.md",
@@ -132,11 +129,13 @@
         "docs/history/decision-log.md",
         "reading-companion-backend/docs/evaluation/README.md",
         "reading-companion-backend/docs/evaluation/long_span/README.md",
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_long_span_vnext_phase1_memory_quality_scale_fix_rejudge_20260425/summary/aggregate.json",
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_long_span_vnext_phase1_memory_quality_scale_fix_rejudge_20260425/summary/report.md",
         "reading-companion-backend/docs/evaluation/long_span/target_centered_accumulation_v2_design.md",
         "reading-companion-backend/eval/attentional_v2/run_long_span_vnext.py",
         "reading-companion-backend/src/attentional_v2/benchmark_probes.py"
       ],
-      "last_updated": "2026-04-23T11:28:00Z",
+      "last_updated": "2026-04-25T01:24:00Z",
       "last_updated_by": "codex"
     },
     {

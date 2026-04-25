@@ -119,7 +119,9 @@ Use `docs/backend-reading-mechanism.md` for shared mechanism-platform boundaries
   - `False Visible Integration`
     - audit callback-like reactions for overclaim, hard-linking, theme-only similarity, or memory drift
 - this new long-span direction is active at the methodology layer and now has a Phase-1 runner:
-  - there is no completed formal long-span benchmark authority under the new direction yet
+  - the first Phase-1 diagnostic run is complete, but it is not yet promoted to formal long-span benchmark authority
+  - the current corrected Memory Quality read of that diagnostic run is:
+    - `attentional_v2_long_span_vnext_phase1_memory_quality_scale_fix_rejudge_20260425`
   - the Phase-1 substrate remains the active user-level selective reading windows unless later evidence requires a different window family
 - `reader_value.insight_and_clarification` remains an orthogonal output-value axis, but it is not part of the first release of the new long-span `Memory Quality / Spontaneous Callback / False Visible Integration` direction.
 - `excerpt surface` is now a historical chapter-scoped local-text surface name used by older formal runs.
@@ -239,7 +241,19 @@ Use `docs/backend-reading-mechanism.md` for shared mechanism-platform boundaries
     - `reading-companion-backend/eval/attentional_v2/run_long_span_vnext.py`
   - landed benchmark-only V2 probe export:
     - `reading-companion-backend/src/attentional_v2/benchmark_probes.py`
-- There is currently no completed formal long-span benchmark run under this new direction yet.
+- The first Phase-1 diagnostic run has been corrected for Memory Quality scale calibration:
+  - corrected run:
+    - `attentional_v2_long_span_vnext_phase1_memory_quality_scale_fix_rejudge_20260425`
+  - source reading run:
+    - `attentional_v2_long_span_vnext_phase1_20260423`
+  - the correction did not reread books; it reused completed V2 probe snapshots and copied reaction-audit results unchanged
+  - Memory Quality scoring now uses:
+    - `1 = poor / absent`
+    - `3 = adequate / useful`
+    - `5 = excellent`
+    - higher is better
+  - `overall_memory_quality_score` is derived from `salience_score`, `mainline_fidelity_score`, `organization_score`, and `fidelity_score` rather than trusted blindly from the judge response
+  - this is usable phase-1 diagnostic evidence, but it is not yet a promoted formal long-span benchmark authority
 
 ## Archived Target-Centered Report Writing Rule
 - Archived target-centered judged interpretation reports must separate at least four things explicitly:
@@ -314,7 +328,8 @@ Use `docs/backend-reading-mechanism.md` for shared mechanism-platform boundaries
     - probe-based state-snapshot contract for `Memory Quality`
     - complete-window reaction-audit contract for `Spontaneous Callback`
     - negative callback-quality contract for `False Visible Integration`
-  - the first real vNext evaluation is running over the active five windows
+  - the first real vNext evaluation has completed and was rejudged for Memory Quality scale calibration:
+    - `attentional_v2_long_span_vnext_phase1_memory_quality_scale_fix_rejudge_20260425`
   - the runner reads only the minimum required fresh outputs:
     - `attentional_v2` for V2 probe snapshots
     - `iterator_v1` only for windows whose prior normalized outputs do not match the current active window fingerprint

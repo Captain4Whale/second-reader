@@ -3,7 +3,7 @@
 This checked-in catalog indexes meaningful evaluation evidence. Raw machine outputs remain under `eval/runs/`; local/private text-bearing datasets remain under `state/eval_local_datasets/`; human interpretation reports remain under `docs/evaluation/`.
 
 - Schema version: `1`
-- Last updated: `2026-04-22T15:12:28Z`
+- Last updated: `2026-04-25T01:20:12.163994Z`
 
 ## Status Meanings
 
@@ -25,6 +25,7 @@ This checked-in catalog indexes meaningful evaluation evidence. Raw machine outp
 | run id | surface | goal | mechanisms | metrics | conclusion | evidence |
 | --- | --- | --- | --- | --- | --- | --- |
 | `attentional_v2_f4a_quality_audit_20260419` | attentional_v2_quality_audit | Focused mechanism quality audit | `attentional_v2` | case_count=6; completed_case_count=6; failed_case_count=0 | Focused quality audit found V2 reaction density and reading-time wording recovered, while detour behavior was not exercised. | [run dir](../../eval/runs/attentional_v2/attentional_v2_f4a_quality_audit_20260419) · [aggregate](../../eval/runs/attentional_v2/attentional_v2_f4a_quality_audit_20260419/summary/aggregate.json) · [report](../../eval/runs/attentional_v2/attentional_v2_f4a_quality_audit_20260419/summary/report.md) |
+| `attentional_v2_long_span_vnext_phase1_memory_quality_scale_fix_rejudge_20260425` | long_span_vnext_phase1 | Memory Quality / Spontaneous Callback / False Visible Integration | `attentional_v2`, `iterator_v1` | {"memory_quality": {"attentional_v2_average_overall": 3.48, "probe_count": 25, "window_count": 5, "judge_contract": "scale_v2_1_low_5_high"}, "reaction_audit": {"source": "copied_from_20260423", "attentional_v2_visible_reactions": 1282, "iterator_v1_visible_reactions": 375}} | Phase-1 Long Span vNext diagnostic evidence with corrected Memory Quality scale; books were not reread, and reaction-audit results were copied unchanged from the April 23 source run. | [run dir](../../eval/runs/attentional_v2/attentional_v2_long_span_vnext_phase1_memory_quality_scale_fix_rejudge_20260425) · [aggregate](../../eval/runs/attentional_v2/attentional_v2_long_span_vnext_phase1_memory_quality_scale_fix_rejudge_20260425/summary/aggregate.json) · [report](../../eval/runs/attentional_v2/attentional_v2_long_span_vnext_phase1_memory_quality_scale_fix_rejudge_20260425/summary/report.md) |
 
 ## Historical Evidence
 

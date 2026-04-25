@@ -53,7 +53,16 @@ Current implementation posture:
       - `iterator_v1` is re-read only when the active window fingerprint differs from the reuse source
       - fingerprint checks cover `segment_id / start_sentence_id / end_sentence_id / source_chapter_ids / source_text_sha256`
 - formal evidence status:
-  - there is no completed formal Long Span benchmark run yet under this new direction
+  - the first completed Phase-1 diagnostic evidence is:
+    - `attentional_v2_long_span_vnext_phase1_memory_quality_scale_fix_rejudge_20260425`
+  - this run is not yet promoted to formal Long Span benchmark authority
+  - it rejudges Memory Quality from the April 23 reading outputs without rereading books
+  - it fixes the Memory Quality score scale:
+    - `1 = poor / absent`
+    - `3 = adequate / useful`
+    - `5 = excellent`
+    - higher is better
+  - reaction-audit results are copied unchanged from the April 23 source run
 
 ## Historical Durable Evidence
 

@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-04-23T19:28:00+08:00`
+Last updated: `2026-04-25T09:24:00+08:00`
 
 ## Status Values
 - `active`
@@ -298,7 +298,7 @@ Last updated: `2026-04-23T19:28:00+08:00`
 - Lane: `dataset_platform`
 - Priority: `high`
 - Detail: `docs/backend-reader-evaluation.md`
-- Next: let the active Phase-1 Long Span vNext evaluation finish over the active `5` windows, then review the resulting report shape and decide whether phase 2 is needed before formal benchmark promotion.
+- Next: review the completed scale-fixed Phase-1 diagnostic report, then decide whether phase 2 is needed before formal benchmark promotion.
   - landed Phase-1 runner:
     - `reading-companion-backend/eval/attentional_v2/run_long_span_vnext.py`
   - landed `Memory Quality` implementation:
@@ -314,26 +314,23 @@ Last updated: `2026-04-23T19:28:00+08:00`
     - reaction audit: `attentional_v2` vs `iterator_v1`
   - current state:
     - phase 1 implementation landed
-    - first real Phase-1 run is active:
-      - run id:
+    - first real Phase-1 run completed, then Memory Quality was rejudged with the corrected `1 low / 5 high` scale:
+      - source run id:
         - `attentional_v2_long_span_vnext_phase1_20260423`
-      - command:
-        - `./.venv/bin/python eval/attentional_v2/run_long_span_vnext.py --run-id attentional_v2_long_span_vnext_phase1_20260423 --workers 6 --judge-mode llm --output-attempts 6 --output-retry-sleep-seconds 300 --reaction-reuse-run-root eval/runs/attentional_v2/attentional_v2_user_level_selective_v1_active_rerun_20260419`
-      - output sourcing:
-        - `attentional_v2` is freshly read or same-run resumed for `Memory Quality` probe snapshots
-        - unchanged `iterator_v1` windows reuse April 19 normalized reading outputs for reaction audit
-        - only fingerprint-mismatched `iterator_v1` windows enter the fresh-read queue
-        - current expected fresh task set is `attentional_v2 × 5` plus `iterator_v1 × 1` for the repaired `nawaer_baodian_private_zh` window
-      - recovery:
-        - same-run reuse is enabled
-        - V1 cross-run reuse is guarded by `segment_id / start_sentence_id / end_sentence_id / source_chapter_ids / source_text_sha256`
-        - watchdog checks every `300` seconds
+      - corrected run id:
+        - `attentional_v2_long_span_vnext_phase1_memory_quality_scale_fix_rejudge_20260425`
+      - result:
+        - `Memory Quality` average overall score: `3.48`
+        - probe count: `25`
+        - reaction audit copied unchanged from the April 23 source run
+      - evidence status:
+        - `quality_audit`
+      - no active Long Span vNext background job remains for this run
     - next likely phase-2 line:
       - `iterator_v1` normalized probe export for cross-mechanism `Memory Quality`
       - broader formal benchmark promotion
 - Jobs:
-  - `bgjob_long_span_vnext_phase1_20260423` (`running`)
-  - `bgjob_long_span_vnext_phase1_watchdog_20260423` (`running`)
+  - no active Long Span vNext jobs remain for the completed Phase-1 diagnostic run
 
 ### `TASK-USER-LEVEL-SELECTIVE-V1` — Replace the active local/user-level benchmark with the note-aligned selective package
 - Status: `active`

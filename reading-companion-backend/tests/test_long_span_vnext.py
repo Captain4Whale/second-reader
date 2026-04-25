@@ -231,6 +231,62 @@ def test_build_read_so_far_source_text_cuts_at_capture_sentence() -> None:
     assert "Delta." not in source_text
 
 
+def test_memory_quality_judge_prompt_defines_score_scale(tmp_path: Path, monkeypatch) -> None:
+    captured: dict[str, str] = {}
+
+    def _fake_invoke_json(system_prompt, user_prompt, default):
+        captured["system_prompt"] = system_prompt
+        captured["user_prompt"] = user_prompt
+        return {
+            "salience_score": 4,
+            "mainline_fidelity_score": 3,
+            "organization_score": 2,
+            "fidelity_score": 5,
+            "overall_memory_quality_score": 1,
+            "reason": "The snapshot retains useful mainline material with some organization gaps.",
+        }
+
+    monkeypatch.setattr(runner, "invoke_json", _fake_invoke_json)
+
+    judgment = runner.judge_memory_quality_probe(
+        run_root=tmp_path / "run",
+        window=_window(),
+        probe_payload={"probe_index": 1, "read_so_far_source_text": "Alpha.", "memory_snapshot": {"items": ["Alpha"]}},
+        judge_mode="llm",
+    )
+
+    assert "Higher is better" in captured["system_prompt"]
+    assert "1 = poor / absent" in captured["system_prompt"]
+    assert "3 = adequate / useful" in captured["system_prompt"]
+    assert "5 = excellent" in captured["system_prompt"]
+    assert "context, not substitute memory" in captured["system_prompt"]
+    assert "Do not copy numbers from the output schema as defaults" in captured["system_prompt"]
+    assert runner.MEMORY_QUALITY_JUDGE_CONTRACT in captured["user_prompt"]
+    assert judgment["judge_provided_overall_memory_quality_score"] == 1
+    assert judgment["overall_memory_quality_score"] == 3.5
+
+
+def test_normalize_memory_quality_judgment_clamps_and_derives_overall() -> None:
+    judgment = runner._normalize_memory_quality_judgment(
+        {
+            "salience_score": 6,
+            "mainline_fidelity_score": 0,
+            "organization_score": "bad",
+            "fidelity_score": 4,
+            "overall_memory_quality_score": 5,
+            "reason": "mixed",
+        }
+    )
+
+    assert judgment["salience_score"] == 5
+    assert judgment["mainline_fidelity_score"] == 1
+    assert judgment["organization_score"] == 1
+    assert judgment["fidelity_score"] == 4
+    assert judgment["judge_provided_overall_memory_quality_score"] == 5
+    assert judgment["overall_memory_quality_score"] == 2.75
+    assert judgment["memory_quality_judge_contract"] == runner.MEMORY_QUALITY_JUDGE_CONTRACT
+
+
 def test_ensure_window_output_reuses_completed_v2_with_probe_export(tmp_path: Path, monkeypatch) -> None:
     run_root = tmp_path / "run"
     window = _window()
@@ -446,7 +502,7 @@ def test_run_long_span_vnext_writes_separated_memory_and_reaction_outputs(tmp_pa
             }
         ],
     )
-    monkeypatch.setattr(runner, "write_llm_usage_summary", lambda run_root: None)
+    monkeypatch.setattr(runner, "write_llm_usage_summary", lambda *args, **kwargs: None)
 
     aggregate = runner.run_long_span_vnext(
         run_root=run_root,
@@ -460,6 +516,139 @@ def test_run_long_span_vnext_writes_separated_memory_and_reaction_outputs(tmp_pa
     report = (run_root / "summary" / "report.md").read_text(encoding="utf-8")
     assert "## Memory Quality (V2 only)" in report
     assert "## Reaction Audit" in report
+
+
+def test_run_long_span_vnext_memory_quality_rejudge_reuses_source_run(tmp_path: Path, monkeypatch) -> None:
+    run_root = tmp_path / "rejudge_run"
+    source_root = tmp_path / "source_run"
+    dataset_dir = tmp_path / "dataset"
+    window = _window()
+    _write_dataset(dataset_dir, [window], {window.segment_id: "Alpha. Beta."})
+    (source_root / "meta").mkdir(parents=True, exist_ok=True)
+    (source_root / "meta" / "selected_windows.json").write_text(
+        json.dumps(
+            {
+                "windows": [runner.asdict(window)],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    for mechanism_key in ("attentional_v2", "iterator_v1"):
+        output_dir = source_root / "outputs" / window.segment_id / mechanism_key
+        (output_dir / "_runtime").mkdir(parents=True, exist_ok=True)
+        (output_dir / "_runtime" / "run_state.json").write_text(json.dumps({"status": "completed"}), encoding="utf-8")
+        (output_dir / "public").mkdir(parents=True, exist_ok=True)
+        (output_dir / "public" / "book_document.json").write_text(json.dumps(_book_document()), encoding="utf-8")
+        if mechanism_key == "attentional_v2":
+            memory_quality_probe_export_file(output_dir).parent.mkdir(parents=True, exist_ok=True)
+            memory_quality_probe_export_file(output_dir).write_text(
+                json.dumps(
+                    {
+                        "probe_targets": [{"probe_index": index} for index in range(1, 6)],
+                        "snapshots": [
+                            {
+                                "probe_index": index,
+                                "threshold_ratio": index / 5,
+                                "capture_sentence_id": "c1-s2",
+                            }
+                            for index in range(1, 6)
+                        ],
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+    source_summary = source_root / "summary"
+    source_summary.mkdir(parents=True, exist_ok=True)
+    (source_summary / "reaction_audit_results.jsonl").write_text(
+        json.dumps(
+            {
+                "segment_id": window.segment_id,
+                "mechanism_key": "attentional_v2",
+                "reaction_id": "r1",
+                "label": "local_only",
+                "reason": "copied",
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    (source_summary / "reaction_window_summaries.jsonl").write_text(
+        json.dumps(
+            {
+                "segment_id": window.segment_id,
+                "source_id": window.source_id,
+                "book_title": window.book_title,
+                "mechanism_key": "attentional_v2",
+                "mechanism_label": "attentional_v2",
+                "total_visible_reactions": 1,
+                "callback_attempt_count": 0,
+                "grounded_callback_count": 0,
+                "weak_callback_count": 0,
+                "false_visible_integration_count": 0,
+                "local_only_count": 1,
+                "callback_attempt_rate": 0.0,
+                "grounded_callback_rate": 0.0,
+                "false_visible_integration_rate": 0.0,
+                "false_rate_among_callback_attempts": 0.0,
+                "representative_grounded_callbacks": [],
+                "representative_false_visible_integrations": [],
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    monkeypatch.setattr(runner, "_resolve_dataset_dir", lambda manifest_path: dataset_dir)
+    monkeypatch.setattr(
+        runner,
+        "rebuild_normalized_bundle_from_completed_output",
+        lambda **kwargs: {
+            "mechanism_label": kwargs["mechanism_key"],
+            "normalized_eval_bundle": {"reactions": [], "memory_summaries": []},
+        },
+    )
+    monkeypatch.setattr(
+        runner,
+        "ensure_window_output_with_retries",
+        lambda **kwargs: (_ for _ in ()).throw(AssertionError("rejudge must not read")),
+    )
+    monkeypatch.setattr(
+        runner,
+        "audit_window_reactions",
+        lambda **kwargs: (_ for _ in ()).throw(AssertionError("reaction audit should be copied")),
+    )
+    monkeypatch.setattr(
+        runner,
+        "judge_memory_quality_probe",
+        lambda **kwargs: {
+            "salience_score": 4,
+            "mainline_fidelity_score": 4,
+            "organization_score": 4,
+            "fidelity_score": 4,
+            "overall_memory_quality_score": 4.0,
+            "reason": "rejudged",
+            "memory_quality_judge_contract": runner.MEMORY_QUALITY_JUDGE_CONTRACT,
+        },
+    )
+    monkeypatch.setattr(runner, "write_llm_usage_summary", lambda *args, **kwargs: None)
+
+    aggregate = runner.run_long_span_vnext(
+        run_root=run_root,
+        manifest_path=tmp_path / "unused.json",
+        judge_mode="llm",
+        workers=2,
+        memory_quality_source_run_root=source_root,
+    )
+
+    assert aggregate["memory_quality_judge_contract"] == runner.MEMORY_QUALITY_JUDGE_CONTRACT
+    assert aggregate["reaction_audit_source"] == "copied_from_memory_quality_source_run"
+    assert aggregate["output_modes"][f"{window.segment_id}:attentional_v2"] == "memory_quality_rejudge_source_output"
+    assert (run_root / "summary" / "memory_quality_results.jsonl").exists()
+    report = (run_root / "summary" / "report.md").read_text(encoding="utf-8")
+    assert "Scoring scale" in report
+    assert "Reaction-audit results are copied unchanged" in report
 
 
 def test_run_long_span_vnext_reuses_v1_for_unchanged_windows_only(tmp_path: Path, monkeypatch) -> None:
@@ -580,7 +769,7 @@ def test_run_long_span_vnext_reuses_v1_for_unchanged_windows_only(tmp_path: Path
             for reaction in kwargs["normalized_bundle"].get("reactions", [])
         ],
     )
-    monkeypatch.setattr(runner, "write_llm_usage_summary", lambda run_root: None)
+    monkeypatch.setattr(runner, "write_llm_usage_summary", lambda *args, **kwargs: None)
 
     aggregate = runner.run_long_span_vnext(
         run_root=run_root,

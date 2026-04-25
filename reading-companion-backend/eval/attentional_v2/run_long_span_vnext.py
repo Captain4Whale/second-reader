@@ -46,6 +46,13 @@ JUDGE_SCHEMA_RETRY_INSTRUCTION = (
     "\n\nReminder: return exactly one JSON object matching the requested schema. "
     "Do not wrap it in markdown fences or nest it under another key."
 )
+MEMORY_QUALITY_JUDGE_CONTRACT = "scale_v2_1_low_5_high"
+MEMORY_QUALITY_DIMENSION_KEYS = (
+    "salience_score",
+    "mainline_fidelity_score",
+    "organization_score",
+    "fidelity_score",
+)
 DEFAULT_OUTPUT_ATTEMPTS = 4
 DEFAULT_OUTPUT_RETRY_SLEEP_SECONDS = 300
 RETRYABLE_OUTPUT_ERROR_MARKERS = (
@@ -121,6 +128,21 @@ def _json_dump(path: Path, payload: object) -> None:
     path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
 
+def _jsonl_load(path: Path) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    if not path.exists():
+        return rows
+    with path.open("r", encoding="utf-8") as handle:
+        for line in handle:
+            line = line.strip()
+            if not line:
+                continue
+            payload = json.loads(line)
+            if isinstance(payload, dict):
+                rows.append(payload)
+    return rows
+
+
 def _jsonl_dump(path: Path, rows: list[dict[str, Any]]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", encoding="utf-8") as handle:
@@ -167,6 +189,35 @@ def _load_windows(dataset_dir: Path) -> list[ReadingWindow]:
             segment_source_path=str(row["segment_source_path"]),
         )
         for row in rows
+    ]
+
+
+def _load_windows_from_run(run_root: Path) -> list[ReadingWindow]:
+    selected_path = run_root / "meta" / "selected_windows.json"
+    if not selected_path.exists():
+        raise FileNotFoundError(f"missing selected windows for source run: {selected_path}")
+    payload = json.loads(selected_path.read_text(encoding="utf-8"))
+    rows = payload.get("windows") if isinstance(payload, dict) else None
+    if not isinstance(rows, list) or not rows:
+        raise ValueError(f"source run has no selected windows: {selected_path}")
+    return [
+        ReadingWindow(
+            segment_id=str(row["segment_id"]),
+            source_id=str(row["source_id"]),
+            book_title=str(row["book_title"]),
+            author=str(row.get("author", "")),
+            language_track=str(row["language_track"]),
+            start_sentence_id=str(row["start_sentence_id"]),
+            end_sentence_id=str(row["end_sentence_id"]),
+            source_chapter_ids=[int(item) for item in row.get("source_chapter_ids", row.get("chapter_ids", []))],
+            chapter_titles=[str(item) for item in row.get("chapter_titles", [])],
+            target_note_count=int(row.get("target_note_count", 0) or 0),
+            covered_note_count=int(row.get("covered_note_count", 0) or 0),
+            termination_reason=str(row.get("termination_reason", "")),
+            segment_source_path=str(row.get("segment_source_path", "")),
+        )
+        for row in rows
+        if isinstance(row, dict)
     ]
 
 
@@ -597,34 +648,54 @@ def build_read_so_far_source_text(book_document: dict[str, Any], capture_sentenc
 
 
 def _default_memory_quality_judgment(*, reason: str) -> dict[str, Any]:
+    overall = _derive_overall_memory_quality_score(
+        {
+            "salience_score": 1,
+            "mainline_fidelity_score": 1,
+            "organization_score": 1,
+            "fidelity_score": 1,
+        }
+    )
     return {
         "salience_score": 1,
         "mainline_fidelity_score": 1,
         "organization_score": 1,
         "fidelity_score": 1,
-        "overall_memory_quality_score": 1,
+        "overall_memory_quality_score": overall,
         "reason": reason,
+        "memory_quality_judge_contract": MEMORY_QUALITY_JUDGE_CONTRACT,
     }
+
+
+def _clamp_memory_quality_score(value: object) -> int:
+    try:
+        score = int(value or 1)
+    except (TypeError, ValueError):
+        score = 1
+    return max(1, min(5, score))
+
+
+def _derive_overall_memory_quality_score(scores: dict[str, Any]) -> float:
+    dimension_scores = [_clamp_memory_quality_score(scores.get(key)) for key in MEMORY_QUALITY_DIMENSION_KEYS]
+    return round(mean(dimension_scores), 3)
 
 
 def _normalize_memory_quality_judgment(payload: object) -> dict[str, Any]:
     raw = payload if isinstance(payload, dict) else {}
 
-    def _score(key: str) -> int:
-        try:
-            value = int(raw.get(key, 1) or 1)
-        except (TypeError, ValueError):
-            value = 1
-        return max(1, min(5, value))
-
-    return {
-        "salience_score": _score("salience_score"),
-        "mainline_fidelity_score": _score("mainline_fidelity_score"),
-        "organization_score": _score("organization_score"),
-        "fidelity_score": _score("fidelity_score"),
-        "overall_memory_quality_score": _score("overall_memory_quality_score"),
+    normalized = {
+        "salience_score": _clamp_memory_quality_score(raw.get("salience_score")),
+        "mainline_fidelity_score": _clamp_memory_quality_score(raw.get("mainline_fidelity_score")),
+        "organization_score": _clamp_memory_quality_score(raw.get("organization_score")),
+        "fidelity_score": _clamp_memory_quality_score(raw.get("fidelity_score")),
         "reason": _clean_text(raw.get("reason")) or "judge_unavailable",
+        "memory_quality_judge_contract": MEMORY_QUALITY_JUDGE_CONTRACT,
     }
+    normalized["judge_provided_overall_memory_quality_score"] = _clamp_memory_quality_score(
+        raw.get("overall_memory_quality_score")
+    )
+    normalized["overall_memory_quality_score"] = _derive_overall_memory_quality_score(normalized)
+    return normalized
 
 
 def judge_memory_quality_probe(
@@ -637,24 +708,37 @@ def judge_memory_quality_probe(
     if judge_mode == "none":
         return _default_memory_quality_judgment(reason="judge_skipped")
 
-    system_prompt = """You are judging long-span memory quality for a continuous-reading agent.
+    system_prompt = f"""You are judging long-span memory quality for a continuous-reading agent.
 
 Focus on what the memory snapshot actually retains at this probe point.
 The source slice shows what has already been read; it is context, not substitute memory.
 Do not reward the snapshot for information that exists only in the source slice.
 
-Judge holistically on:
-- salience: whether retained items are important and worth remembering
-- mainline fidelity: whether the retained picture stays close to the book's main line so far
-- organization: whether memory is organized into usable concepts/threads instead of scattered fragments
-- fidelity: whether retained items are accurate rather than drifted, distorted, or over-abstracted
-- overall memory quality
+Use this 1-5 scale for every score. Higher is better.
+- 1 = poor / absent: mostly empty, trivial, badly drifted, or not useful as reading memory.
+- 2 = weak: some retained material exists, but it is thin, mostly local, poorly organized, or unreliable.
+- 3 = adequate / useful: retains a usable partial picture of important material with some gaps.
+- 4 = strong: retains important material clearly, with good continuity and only minor omissions.
+- 5 = excellent: compactly retains the central material so far with high fidelity and usable organization.
+
+Judge these dimensions:
+- salience_score: whether retained items are important and worth remembering.
+- mainline_fidelity_score: whether the retained picture stays close to the book's main line so far.
+- organization_score: whether memory is organized into usable concepts/threads instead of scattered fragments.
+- fidelity_score: whether retained items are accurate rather than drifted, distorted, or over-abstracted.
+
+Do not copy numbers from the output schema as defaults. Choose scores from the rubric.
+The system will derive overall_memory_quality_score from the four dimension scores.
 
 Return JSON only."""
     base_user_prompt = (
         f"Reading window metadata:\n{json.dumps(asdict(window), ensure_ascii=False, indent=2)}\n\n"
         f"Probe payload:\n{json.dumps(probe_payload, ensure_ascii=False, indent=2)}\n\n"
-        'Return JSON: {"salience_score":1,"mainline_fidelity_score":1,"organization_score":1,"fidelity_score":1,"overall_memory_quality_score":1,"reason":"2-5 sentences citing concrete retained items and any important omissions/drift."}'
+        "Return one JSON object with integer 1-5 scores for these keys: "
+        "salience_score, mainline_fidelity_score, organization_score, fidelity_score. "
+        "You may include overall_memory_quality_score, but it is audit-only and will be recomputed. "
+        f'Also include "memory_quality_judge_contract":"{MEMORY_QUALITY_JUDGE_CONTRACT}" and '
+        '"reason":"2-5 sentences citing concrete retained items from the snapshot and any important omissions/drift."'
     )
     payload: object = {}
     for user_prompt in (base_user_prompt, base_user_prompt + JUDGE_SCHEMA_RETRY_INSTRUCTION):
@@ -930,6 +1014,7 @@ def _aggregate_memory_quality(probe_results: list[dict[str, Any]]) -> dict[str, 
     ordered_windows = sorted(window_summaries, key=lambda item: item["segment_id"])
     return {
         "mechanism_key": "attentional_v2",
+        "memory_quality_judge_contract": MEMORY_QUALITY_JUDGE_CONTRACT,
         "probe_count": len(probe_results),
         "window_count": len(ordered_windows),
         "average_overall_memory_quality_score": mean(
@@ -987,6 +1072,9 @@ def _render_report(
         "",
         "## Memory Quality (V2 only)",
         "",
+        f"- Judge contract: `{memory_quality.get('memory_quality_judge_contract') or aggregate.get('memory_quality_judge_contract') or MEMORY_QUALITY_JUDGE_CONTRACT}`",
+        "- Scoring scale: `1 = poor / absent`, `3 = adequate / useful`, `5 = excellent`; higher is better.",
+        "- Overall memory quality is derived from salience, mainline fidelity, organization, and fidelity scores.",
         f"- Overall average memory quality score: `{memory_quality.get('average_overall_memory_quality_score', 0.0):.3f}`",
         f"- Probe count: `{memory_quality.get('probe_count', 0)}`",
         f"- Window count: `{memory_quality.get('window_count', 0)}`",
@@ -1004,11 +1092,13 @@ def _render_report(
         probe_rows = [row for row in memory_quality_results if row["segment_id"] == window_summary["segment_id"]]
         for row in probe_rows:
             lines.append(
-                f"- Probe `{row['probe_index']}` (`{row['threshold_ratio']:.1%}`): overall `{row['overall_memory_quality_score']}`. {row['reason']}"
+                f"- Probe `{row['probe_index']}` (`{row['threshold_ratio']:.1%}`): overall `{float(row['overall_memory_quality_score']):.3f}`. {row['reason']}"
             )
         lines.append("")
 
     lines.extend(["## Reaction Audit", ""])
+    if aggregate.get("reaction_audit_source") == "copied_from_memory_quality_source_run":
+        lines.extend(["Reaction-audit results are copied unchanged from the source run for this Memory Quality rejudge.", ""])
     for mechanism_key in MECHANISM_KEYS:
         mechanism_summary = dict((reaction_audit.get("mechanisms") or {}).get(mechanism_key) or {})
         if not mechanism_summary:
@@ -1064,10 +1154,12 @@ def run_long_span_vnext(
     output_attempts: int = DEFAULT_OUTPUT_ATTEMPTS,
     output_retry_sleep_seconds: int = DEFAULT_OUTPUT_RETRY_SLEEP_SECONDS,
     reaction_reuse_run_root: Path | None = DEFAULT_REACTION_REUSE_RUN_ROOT,
+    memory_quality_source_run_root: Path | None = None,
 ) -> dict[str, Any]:
     worker_count = max(1, int(workers or 1))
     dataset_dir = _resolve_dataset_dir(manifest_path)
-    windows = _load_windows(dataset_dir)
+    memory_quality_source_run_root = memory_quality_source_run_root.resolve() if memory_quality_source_run_root else None
+    windows = _load_windows_from_run(memory_quality_source_run_root) if memory_quality_source_run_root else _load_windows(dataset_dir)
     if segment_ids:
         windows = [window for window in windows if window.segment_id in segment_ids]
     if window_limit is not None:
@@ -1083,6 +1175,7 @@ def run_long_span_vnext(
             "dataset_dir": str(dataset_dir),
             "manifest_path": str(manifest_path),
             "reaction_reuse_run_root": str(reaction_reuse_run_root) if reaction_reuse_run_root else "",
+            "memory_quality_source_run_root": str(memory_quality_source_run_root) if memory_quality_source_run_root else "",
             "windows": [asdict(window) for window in windows],
             "window_fingerprints": [_window_fingerprint(dataset_dir, window) for window in windows],
         },
@@ -1091,7 +1184,35 @@ def run_long_span_vnext(
     output_payloads: dict[tuple[str, str], dict[str, Any]] = {}
     reuse_decisions: list[dict[str, Any]] = []
     output_tasks: list[tuple[ReadingWindow, str]] = []
+    source_summary_dir = memory_quality_source_run_root / "summary" if memory_quality_source_run_root else None
+    copied_reaction_audit = bool(
+        source_summary_dir
+        and (source_summary_dir / "reaction_audit_results.jsonl").exists()
+        and (source_summary_dir / "reaction_window_summaries.jsonl").exists()
+    )
     for window in windows:
+        if memory_quality_source_run_root:
+            source_mechanism_keys = ("attentional_v2",) if copied_reaction_audit else MECHANISM_KEYS
+            for mechanism_key in source_mechanism_keys:
+                source_output_dir = _output_dir_for(memory_quality_source_run_root, window.segment_id, mechanism_key)
+                if run_state_status(source_output_dir) != "completed":
+                    raise FileNotFoundError(
+                        f"missing completed source output for rejudge: {source_output_dir}"
+                    )
+                if mechanism_key == "attentional_v2" and not is_memory_quality_probe_export_complete(source_output_dir):
+                    raise FileNotFoundError(
+                        f"missing complete memory quality probe export for rejudge: {memory_quality_probe_export_file(source_output_dir)}"
+                    )
+                payload = _completed_output_payload(
+                    mechanism_key=mechanism_key,
+                    output_dir=source_output_dir,
+                    segment_id=window.segment_id,
+                )
+                payload["run_mode"] = "memory_quality_rejudge_source_output"
+                payload["memory_quality_source_run_root"] = str(memory_quality_source_run_root)
+                output_payloads[(window.segment_id, mechanism_key)] = payload
+            continue
+
         output_tasks.append((window, "attentional_v2"))
         reuse_payload = find_reaction_reuse_output(
             current_dataset_dir=dataset_dir,
@@ -1140,6 +1261,7 @@ def run_long_span_vnext(
         {
             "generated_at": _timestamp(),
             "reaction_reuse_run_root": str(reaction_reuse_run_root) if reaction_reuse_run_root else "",
+            "memory_quality_source_run_root": str(memory_quality_source_run_root) if memory_quality_source_run_root else "",
             "fresh_task_count": len(output_tasks),
             "fresh_tasks": [
                 {
@@ -1196,47 +1318,53 @@ def run_long_span_vnext(
 
     memory_quality_results: list[dict[str, Any]] = _run_in_parallel(memory_quality_tasks, worker_count, _judge_probe)
 
-    reaction_tasks = [
-        (window, mechanism_key)
-        for window in windows
-        for mechanism_key in MECHANISM_KEYS
-    ]
+    if copied_reaction_audit and source_summary_dir:
+        reaction_audit_results = _jsonl_load(source_summary_dir / "reaction_audit_results.jsonl")
+        reaction_window_summaries = _jsonl_load(source_summary_dir / "reaction_window_summaries.jsonl")
+    else:
+        reaction_tasks = [
+            (window, mechanism_key)
+            for window in windows
+            for mechanism_key in MECHANISM_KEYS
+        ]
 
-    def _audit_reactions(task: tuple[ReadingWindow, str]) -> tuple[list[dict[str, Any]], dict[str, Any]]:
-        window, mechanism_key = task
-        payload = output_payloads[(window.segment_id, mechanism_key)]
-        output_dir = Path(str(payload["output_dir"]))
-        normalized_bundle = dict(payload.get("normalized_eval_bundle") or {})
-        labels = audit_window_reactions(
-            run_root=run_root,
-            window=window,
-            mechanism_key=mechanism_key,
-            output_dir=output_dir,
-            normalized_bundle=normalized_bundle,
-            judge_mode=judge_mode,
-        )
-        return _reaction_summary_rows(
-            window=window,
-            mechanism_key=mechanism_key,
-            mechanism_label=str(payload.get("mechanism_label") or mechanism_key),
-            normalized_bundle=normalized_bundle,
-            labels=labels,
-        )
+        def _audit_reactions(task: tuple[ReadingWindow, str]) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+            window, mechanism_key = task
+            payload = output_payloads[(window.segment_id, mechanism_key)]
+            output_dir = Path(str(payload["output_dir"]))
+            normalized_bundle = dict(payload.get("normalized_eval_bundle") or {})
+            labels = audit_window_reactions(
+                run_root=run_root,
+                window=window,
+                mechanism_key=mechanism_key,
+                output_dir=output_dir,
+                normalized_bundle=normalized_bundle,
+                judge_mode=judge_mode,
+            )
+            return _reaction_summary_rows(
+                window=window,
+                mechanism_key=mechanism_key,
+                mechanism_label=str(payload.get("mechanism_label") or mechanism_key),
+                normalized_bundle=normalized_bundle,
+                labels=labels,
+            )
 
-    reaction_audit_results: list[dict[str, Any]] = []
-    reaction_window_summaries: list[dict[str, Any]] = []
-    for rows, window_summary in _run_in_parallel(reaction_tasks, worker_count, _audit_reactions):
-        reaction_audit_results.extend(rows)
-        reaction_window_summaries.append(window_summary)
+        reaction_audit_results: list[dict[str, Any]] = []
+        reaction_window_summaries: list[dict[str, Any]] = []
+        for rows, window_summary in _run_in_parallel(reaction_tasks, worker_count, _audit_reactions):
+            reaction_audit_results.extend(rows)
+            reaction_window_summaries.append(window_summary)
 
     aggregate = {
         "run_id": run_root.name,
         "target": DEFAULT_TARGET,
         "generated_at": _timestamp(),
         "dataset_dir": str(dataset_dir),
+        "memory_quality_judge_contract": MEMORY_QUALITY_JUDGE_CONTRACT,
         "metric_slugs": ["memory_quality", "spontaneous_callback", "false_visible_integration"],
         "memory_quality": _aggregate_memory_quality(memory_quality_results),
         "reaction_audit": _aggregate_reaction_audit(reaction_window_summaries),
+        "reaction_audit_source": "copied_from_memory_quality_source_run" if copied_reaction_audit else "fresh_judge",
         "output_modes": {
             f"{segment_id}:{mechanism_key}": payload.get("run_mode")
             for (segment_id, mechanism_key), payload in output_payloads.items()
@@ -1256,7 +1384,7 @@ def run_long_span_vnext(
         ),
         encoding="utf-8",
     )
-    write_llm_usage_summary(run_root)
+    write_llm_usage_summary(run_root, summary_path=summary_dir / "llm_usage.json")
     return aggregate
 
 
@@ -1283,11 +1411,22 @@ def main(argv: list[str] | None = None) -> int:
             "Pass an empty string to disable cross-run reuse."
         ),
     )
+    parser.add_argument(
+        "--memory-quality-source-run-root",
+        default="",
+        help=(
+            "Existing Long Span vNext run root to use for memory-quality rejudge-only mode. "
+            "When set, completed outputs and probe snapshots are reused and no reading is launched."
+        ),
+    )
     args = parser.parse_args(argv)
 
     run_root = args.runs_root / args.run_id
     run_root.mkdir(parents=True, exist_ok=True)
     reaction_reuse_run_root = Path(args.reaction_reuse_run_root) if str(args.reaction_reuse_run_root).strip() else None
+    memory_quality_source_run_root = (
+        Path(args.memory_quality_source_run_root) if str(args.memory_quality_source_run_root).strip() else None
+    )
     aggregate = run_long_span_vnext(
         run_root=run_root,
         manifest_path=args.manifest_path,
@@ -1298,6 +1437,7 @@ def main(argv: list[str] | None = None) -> int:
         output_attempts=args.output_attempts,
         output_retry_sleep_seconds=args.output_retry_sleep_seconds,
         reaction_reuse_run_root=reaction_reuse_run_root,
+        memory_quality_source_run_root=memory_quality_source_run_root,
     )
     print(json.dumps(aggregate, ensure_ascii=False, indent=2))
     return 0
