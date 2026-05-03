@@ -2015,6 +2015,41 @@ The old active windows `nawaer_baodian_private_zh__wealth`, `nawaer_baodian_priv
 - `reading-companion-backend/tests/test_attentional_v2_resume.py`
 - `reading-companion-backend/tests/test_attentional_v2_scaffold.py`
 
+## Entry 76
+**ID**: DEC-079
+**Status**: active
+
+**Decision / Inflection**: Naturalize the current `attentional_v2` `Read` contract from field-filling node language to reader-like reading experience. The current field names are now `reading_impression` and `memory_uptake_ops`; `unit_delta` and `implicit_uptake_ops` are historical names.
+
+**Period**: May 3, 2026, after the Memory Quality probe review showed that important source-given structures could remain trapped in the local read audit while not settling into durable memory.
+
+**Problem**: The previous `Read` prompt still sounded like an authoritative node filling several independent output fields. That wording made the call easier to audit structurally, but it encouraged the model to treat local understanding, visible reactions, and memory updates as parallel form fields rather than as natural consequences of one reading experience. In particular, explicit source structures such as the three-stage model in `活出生命的意义` could be described in the local read result without being carried forward into concept or thread memory, even though they are exactly the kind of framework a human reader would remember.
+
+**Alternatives considered**: Keep the fields and only strengthen the memory-uptake checklist, add a separate post-read memory extractor node, or carry major reactions forward in prompt packaging immediately. These were rejected for this slice because they would either preserve the field-filling posture, add another node before the core prompt problem was fixed, or solve a related context-packaging problem before the `Read` call itself was made more natural.
+
+**Why this path won**: The approved reading model is simpler: read the unit as a reader, form a natural impression, surface any underlines or margin-note style reactions that genuinely arise, then let material that should remain available settle into bounded memory operations. Visible reaction and memory uptake are both consequences of the same reading act, but they are not duplicates: a reaction is already persisted as a reaction record, while memory uptake should capture durable concepts, threads, anchors, or active attention only when they naturally need to shape later reading. Author-given frameworks, stage models, classifications, definitions, and chapter roadmaps may be remembered even when they do not call for visible commentary.
+
+**What changed in the system**: The `ReadUnitResult` contract now exposes `reading_impression`, `surfaced_reactions[]`, `memory_uptake_ops[]`, `pressure_signals`, and optional `detour_need`. The `read_unit` prompt now addresses the model as a careful reader moving through the book, explicitly avoids a field-filling stance, and treats `memory_uptake_ops` as natural memory settlement rather than a checklist. Runtime application, read audit, route reasoning, anchor creation, prompt manifests, tests, and evaluation guidance now use the new field names. New runs do not dual-write or dual-read the old fields. Historical run artifacts and reports that contain `unit_delta` or `implicit_uptake_ops` remain readable as pre-cutover evidence.
+
+**Why it matters later**: Future memory-quality work should diagnose whether important material naturally settles into `active_attention`, `concept_registry`, `thread_trace`, or `anchor_bank`, not whether an old local delta string happened to mention it. This entry also records why a strong visible reaction should not automatically be copied into memory: the reaction record already preserves the expressive event, while memory should preserve what must remain useful for future reading.
+
+**Primary evidence**:
+- `docs/backend-reading-mechanisms/attentional_v2.md`
+- `docs/backend-state-aggregation.md`
+- `docs/backend-reader-evaluation.md`
+- `docs/current-state.md`
+- `docs/tasks/registry.md`
+- `docs/tasks/registry.json`
+- `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_long_span_vnext_phase1_reaction_evidence_fix_rejudge_20260425/analysis/post_eval_action_ledger_20260503/README.md`
+- `reading-companion-backend/src/attentional_v2/prompts.py`
+- `reading-companion-backend/src/attentional_v2/nodes.py`
+- `reading-companion-backend/src/attentional_v2/runner.py`
+- `reading-companion-backend/src/attentional_v2/read_context.py`
+- `reading-companion-backend/src/attentional_v2/schemas.py`
+- `reading-companion-backend/tests/test_attentional_v2_nodes.py`
+- `reading-companion-backend/tests/test_attentional_v2_phase_b.py`
+- `reading-companion-backend/tests/test_attentional_v2_scaffold.py`
+
 ## Entry 70
 **ID**: DEC-073
 **Status**: active

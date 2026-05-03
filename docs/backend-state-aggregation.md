@@ -57,6 +57,10 @@ Use `docs/api-contract.md` for exact fields and routes. Use this file to underst
   - The live contract is `active_attention.active_items[]`; each item may carry lightweight `attention_tags[]`.
   - The old `working_state` name and fixed question/tension/hypothesis/motif digest lists are historical, not current aggregation truth.
   - `gate_state`, `pressure_snapshot`, and old working-pressure files may appear in historical output trees but must not be treated as current aggregation truth.
+- `_mechanisms/attentional_v2/runtime/read_audit.jsonl`
+  - Per-unit audit history for `attentional_v2` reads.
+  - New rows after the Read naturalization cutover use `reading_impression` for the immediate unit-level read impression.
+  - Historical rows may contain `unit_delta`; aggregation should treat that as the old name for the pre-cutover local read impression, not as a current public field.
 - `_mechanisms/iterator_v1/runtime/reader_memory.json`
   - Iterator-private live reader memory for resume and continuity.
   - Shared aggregation should only read it through storage helpers when compatibility or recovery behavior requires it.

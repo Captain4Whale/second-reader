@@ -1552,10 +1552,10 @@ def _run_detour_episode(
                 "problem_code": _clean_text(fallback.get("problem_code")),
             },
         )
-    active_attention = apply_active_attention_operations(active_attention, read_result.get("implicit_uptake_ops", []))
-    concept_registry = apply_concept_registry_operations(concept_registry, read_result.get("implicit_uptake_ops", []))
-    thread_trace = apply_thread_trace_operations(thread_trace, read_result.get("implicit_uptake_ops", []))
-    anchor_bank = apply_anchor_bank_operations(anchor_bank, read_result.get("implicit_uptake_ops", []))
+    active_attention = apply_active_attention_operations(active_attention, read_result.get("memory_uptake_ops", []))
+    concept_registry = apply_concept_registry_operations(concept_registry, read_result.get("memory_uptake_ops", []))
+    thread_trace = apply_thread_trace_operations(thread_trace, read_result.get("memory_uptake_ops", []))
+    anchor_bank = apply_anchor_bank_operations(anchor_bank, read_result.get("memory_uptake_ops", []))
 
     chosen_move = _move_type_from_route_decision(route_decision)
     if chosen_move in {"advance", "dwell", "bridge", "reframe"}:
@@ -1592,7 +1592,7 @@ def _run_detour_episode(
             quote=_clean_text(focal_sentence.get("text")),
             locator=dict(focal_sentence.get("locator", {})) if isinstance(focal_sentence.get("locator"), dict) else {},
             anchor_kind="unit_evidence",
-            why_it_mattered=_clean_text(read_result.get("unit_delta")),
+            why_it_mattered=_clean_text(read_result.get("reading_impression")),
         )
         candidate_set = generate_candidate_set(
             provisioned.book_document,
@@ -1713,13 +1713,13 @@ def _build_current_anchor_from_read_result(
     surfaced_reaction: dict[str, object] | None,
     chosen_unit_sentences: list[dict[str, object]],
     focal_sentence: dict[str, object],
-    unit_delta: str = "",
+    reading_impression: str = "",
 ) -> dict[str, object]:
     """Build one deterministic current anchor from a read-owned surfaced reaction."""
 
     anchor_quote = _clean_text((surfaced_reaction or {}).get("anchor_quote"))
     anchor_sentence = None
-    why_it_mattered = _clean_text((surfaced_reaction or {}).get("content")) or _clean_text(unit_delta)
+    why_it_mattered = _clean_text((surfaced_reaction or {}).get("content")) or _clean_text(reading_impression)
 
     if anchor_quote:
         for sentence in chosen_unit_sentences:
@@ -1772,7 +1772,7 @@ def _persist_surfaced_reactions(
             surfaced_reaction=surfaced_reaction,
             chosen_unit_sentences=chosen_unit_sentences,
             focal_sentence=focal_sentence,
-            unit_delta=_clean_text(read_result.get("unit_delta")),
+            reading_impression=_clean_text(read_result.get("reading_impression")),
         )
         emitted_reaction = build_reaction_record_from_surfaced_reaction(
             reaction=surfaced_reaction,
@@ -1915,14 +1915,14 @@ def _run_read_with_context_loop(
     except ReaderLLMError as exc:
         llm_fallbacks.append({"node": "read_unit", "problem_code": exc.problem_code})
         read_result = {
-            "unit_delta": "",
+            "reading_impression": "",
             "pressure_signals": {
                 "continuation_pressure": bool(unitize_decision.get("continuation_pressure")),
                 "backward_pull": False,
                 "frame_shift_pressure": False,
             },
             "surfaced_reactions": [],
-            "implicit_uptake_ops": [],
+            "memory_uptake_ops": [],
             "detour_need": None,
         }
 
@@ -2354,17 +2354,17 @@ def read_attentional_v2(request: ReadRequest, mechanism: MechanismInfo) -> ReadR
                     )
                 active_attention = apply_active_attention_operations(
                     active_attention,
-                    read_result.get("implicit_uptake_ops", []),
+                    read_result.get("memory_uptake_ops", []),
                 )
                 concept_registry = apply_concept_registry_operations(
                     concept_registry,
-                    read_result.get("implicit_uptake_ops", []),
+                    read_result.get("memory_uptake_ops", []),
                 )
                 thread_trace = apply_thread_trace_operations(
                     thread_trace,
-                    read_result.get("implicit_uptake_ops", []),
+                    read_result.get("memory_uptake_ops", []),
                 )
-                anchor_bank = apply_anchor_bank_operations(anchor_bank, read_result.get("implicit_uptake_ops", []))
+                anchor_bank = apply_anchor_bank_operations(anchor_bank, read_result.get("memory_uptake_ops", []))
                 local_continuity = _apply_detour_need(local_continuity, read_result.get("detour_need"))  # type: ignore[arg-type]
 
                 chosen_move = _move_type_from_route_decision(route_decision)
@@ -2402,7 +2402,7 @@ def read_attentional_v2(request: ReadRequest, mechanism: MechanismInfo) -> ReadR
                         quote=_clean_text(focal_sentence.get("text")),
                         locator=dict(focal_sentence.get("locator", {})) if isinstance(focal_sentence.get("locator"), dict) else {},
                         anchor_kind="unit_evidence",
-                        why_it_mattered=_clean_text(read_result.get("unit_delta")),
+                        why_it_mattered=_clean_text(read_result.get("reading_impression")),
                     )
                     candidate_set = generate_candidate_set(
                         provisioned.book_document,
@@ -2468,7 +2468,7 @@ def read_attentional_v2(request: ReadRequest, mechanism: MechanismInfo) -> ReadR
                     meaning_units_in_chapter.append(
                         {
                             "sentence_ids": [_clean_text(item.get("sentence_id")) for item in chosen_unit_sentences if _clean_text(item.get("sentence_id"))],
-                            "summary": _clean_text(read_result.get("unit_delta")),
+                            "summary": _clean_text(read_result.get("reading_impression")),
                             "dominant_move": chosen_move,
                         }
                     )

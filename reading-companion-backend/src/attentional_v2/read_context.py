@@ -677,7 +677,7 @@ def persist_read_audit(
             "supplemental_steps": [dict(step) for step in (supplemental_steps or []) if isinstance(step, dict)],
             "stop_reason": clean_text(stop_reason),
             "budget_exhausted": bool(budget_exhausted),
-            "unit_delta": clean_text(read_result.get("unit_delta")),
+            "reading_impression": clean_text(read_result.get("reading_impression")),
             "pressure_signals": dict(read_result.get("pressure_signals") or {}),
             "surfaced_reaction_count": len(surfaced_reactions),
             "surfaced_reactions": surfaced_reactions,

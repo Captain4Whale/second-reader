@@ -324,8 +324,8 @@ def test_navigate_detour_search_normalizes_invalid_land_into_defer(tmp_path: Pat
     }
 
 
-def test_read_unit_filters_unanchored_surface_and_falls_back_from_legacy_move_hint(tmp_path: Path, monkeypatch):
-    """Read should keep only reader-facing surfaced reactions and derive pressure from legacy fallback fields."""
+def test_read_unit_filters_unanchored_surface_and_derives_pressure_from_legacy_move_hint(tmp_path: Path, monkeypatch):
+    """Read should keep only reader-facing surfaced reactions and use the current naturalized contract."""
 
     captured: dict[str, str] = {}
 
@@ -333,7 +333,7 @@ def test_read_unit_filters_unanchored_surface_and_falls_back_from_legacy_move_hi
         captured["system_prompt"] = system_prompt
         captured["prompt"] = prompt
         return {
-            "local_understanding": "The line flips the frame.",
+            "reading_impression": "The line flips the frame.",
             "move_hint": "reframe",
             "surfaced_reactions": [
                 {
@@ -358,7 +358,7 @@ def test_read_unit_filters_unanchored_surface_and_falls_back_from_legacy_move_hi
                     "content": "This one should be dropped.",
                 },
             ],
-            "implicit_uptake": [
+            "memory_uptake_ops": [
                 {
                     "op": "append",
                     "target_store": "active_attention",
@@ -388,7 +388,7 @@ def test_read_unit_filters_unanchored_surface_and_falls_back_from_legacy_move_hi
 
     manifest = json.loads((tmp_path / "_mechanisms" / "attentional_v2" / "internal" / "prompt_manifests" / "read_unit.json").read_text(encoding="utf-8"))
 
-    assert result["unit_delta"] == "The line flips the frame."
+    assert result["reading_impression"] == "The line flips the frame."
     assert result["pressure_signals"] == {
         "continuation_pressure": False,
         "backward_pull": False,
@@ -407,7 +407,13 @@ def test_read_unit_filters_unanchored_surface_and_falls_back_from_legacy_move_hi
             "search_intent": None,
         }
     ]
-    assert result["implicit_uptake_ops"][0]["target_store"] == "active_attention"
+    assert result["memory_uptake_ops"][0]["target_store"] == "active_attention"
+    assert "You are a careful reader moving through this book." in captured["system_prompt"]
+    assert "not as a field-filling task" in captured["system_prompt"]
+    assert "Let `reading_impression` be the brief natural impression" in captured["system_prompt"]
+    assert "After the impression and any surfaced reactions, let memory settle naturally." in captured["system_prompt"]
+    assert "A surfaced reaction is already persisted as a reaction record." in captured["system_prompt"]
+    assert "Explicit source structures can be worth remembering" in captured["system_prompt"]
     assert "Keep proportion around thin structural units." in captured["system_prompt"]
     assert "Do not inflate a bare heading or structural cue" in captured["system_prompt"]
     assert "Choose each `anchor_quote` as the smallest self-sufficient span" in captured["system_prompt"]
@@ -428,7 +434,71 @@ def test_read_unit_filters_unanchored_surface_and_falls_back_from_legacy_move_hi
     assert "Never copy any `ref_id`, sentence id, anchor id" in captured["system_prompt"]
     assert "This pushes beyond the earlier 'irrecoverable' framing." in captured["system_prompt"]
     assert "This answers anchor:a-1 directly." in captured["system_prompt"]
-    assert manifest["prompt_version"] == "attentional_v2.read.v12"
+    assert "`unit_delta`" not in captured["system_prompt"]
+    assert "`implicit_uptake_ops`" not in captured["system_prompt"]
+    assert manifest["prompt_version"] == "attentional_v2.read.v13"
+
+
+def test_read_unit_contract_preserves_source_given_stage_model_as_memory_uptake(tmp_path: Path, monkeypatch):
+    """Source-given structural frameworks should be allowed to settle into memory without requiring a reaction."""
+
+    captured: dict[str, str] = {}
+
+    def fake_invoke_json(system_prompt: str, prompt: str, default: object) -> object:
+        captured["system_prompt"] = system_prompt
+        captured["prompt"] = prompt
+        return {
+            "reading_impression": "作者把集中营生活的精神反应先搭成三阶段框架，并开始进入第一阶段。",
+            "pressure_signals": {
+                "continuation_pressure": True,
+                "backward_pull": False,
+                "frame_shift_pressure": False,
+            },
+            "surfaced_reactions": [],
+            "memory_uptake_ops": [
+                {
+                    "op": "append",
+                    "target_store": "thread_trace",
+                    "target_key": "camp-reaction-stages",
+                    "reason": "The three-stage structure will organize later reading.",
+                    "payload": {
+                        "thread_key": "camp_reaction_stages",
+                        "statement": "囚徒对集中营生活的精神反应被作者划分为收容、适应、释放与解放三个阶段。",
+                        "support_anchor_ids": [],
+                    },
+                }
+            ],
+        }
+
+    monkeypatch.setattr(nodes_module, "invoke_json", fake_invoke_json)
+
+    result = read_unit(
+        current_unit_sentences=[
+            _sentence(
+                "c1-s1",
+                "囚徒对集中营生活的精神反应可以被划分为三个阶段：收容阶段、适应阶段、释放与解放阶段。",
+                sentence_index=1,
+                paragraph_index=1,
+            ),
+            _sentence(
+                "c1-s2",
+                "第一阶段显露的症状是惊恐。",
+                sentence_index=2,
+                paragraph_index=1,
+            ),
+        ],
+        carry_forward_context={"packet_version": STATE_PACKET_VERSION, "refs": []},
+        reader_policy=build_default_reader_policy(),
+        output_language="zh",
+        output_dir=tmp_path,
+        book_title="活出生命的意义",
+    )
+
+    assert "stage models" in captured["system_prompt"]
+    assert "even when they do not call for a visible reaction" in captured["system_prompt"]
+    assert result["surfaced_reactions"] == []
+    assert result["memory_uptake_ops"][0]["target_store"] == "thread_trace"
+    assert "三个阶段" in result["memory_uptake_ops"][0]["payload"]["statement"]
 
 
 def test_navigate_route_uses_pressure_signals_only():
@@ -436,7 +506,7 @@ def test_navigate_route_uses_pressure_signals_only():
 
     decision = navigate_route(
         read_result={
-            "unit_delta": "This section wants to keep unfolding.",
+            "reading_impression": "This section wants to keep unfolding.",
             "pressure_signals": {
                 "continuation_pressure": True,
                 "backward_pull": False,

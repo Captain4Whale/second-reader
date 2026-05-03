@@ -73,9 +73,13 @@ Last updated: `2026-05-03T08:37:27+08:00`
     - this branch remains valuable evidence, but it is no longer the approved end-state target
   - `Phase F1` is now landed:
     - the live per-unit loop is back to `navigate.unitize -> read -> navigate.route`
-    - `Read` now owns surfaced reactions, implicit uptake ops, pressure signals, and optional `detour_need`
+    - `Read` now owns `reading_impression`, surfaced reactions, memory uptake ops, pressure signals, and optional `detour_need`
     - the dedicated live `Express` node is no longer on the runner path
     - `Read` prompt packaging now follows compact `always carry / selective carry / not carry` projections
+  - Read naturalization is now landed on top of the F-line:
+    - the prompt now frames `read` as a reader moving through the book rather than a field-filling node
+    - current output fields are `reading_impression` and `memory_uptake_ops`; `unit_delta` and `implicit_uptake_ops` are historical field names
+    - explicit source structures that matter later, such as stage models or classifications, can settle into memory even without a visible reaction
   - `Phase F2` is now landed:
     - the live `Read` contract now emits `detour_need`
     - `Navigate` now owns bounded detour search over structure cards, memory digests, and source-grounded anchor handles
@@ -328,7 +332,7 @@ Last updated: `2026-05-03T08:37:27+08:00`
         - `attentional_v2_long_span_vnext_phase1_reaction_evidence_fix_rejudge_20260425`
       - post-eval action ledger:
         - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_long_span_vnext_phase1_reaction_evidence_fix_rejudge_20260425/analysis/post_eval_action_ledger_20260503/README.md`
-        - first recorded action: `A1_legacy_gate_pressure_cleanup`
+        - recorded actions now include `A1_legacy_gate_pressure_cleanup`, `A2_active_attention_cutover`, and `A3_read_naturalization_cutover`
       - result:
         - `Memory Quality` average overall score: `3.48`
         - probe count: `25`

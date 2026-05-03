@@ -1604,7 +1604,7 @@ def test_attentional_node_uses_shared_runtime_trace(tmp_path: Path, monkeypatch:
             ],
         },
     )
-    adapter = _RecordingAdapter(response_content='{"unit_delta": "Focused on the hinge.", "surfaced_reactions": []}')
+    adapter = _RecordingAdapter(response_content='{"reading_impression": "Focused on the hinge.", "surfaced_reactions": []}')
     monkeypatch.setitem(CONTRACT_ADAPTERS, "anthropic", adapter)
 
     output_dir = tmp_path / "output" / "attn-demo"
@@ -1621,7 +1621,7 @@ def test_attentional_node_uses_shared_runtime_trace(tmp_path: Path, monkeypatch:
         )
 
     standard_rows = _read_jsonl(runtime_artifacts.llm_standard_trace_file(output_dir))
-    assert result["unit_delta"] == "Focused on the hinge."
+    assert result["reading_impression"] == "Focused on the hinge."
     assert standard_rows[-1]["mechanism_key"] == "attentional_v2"
     assert standard_rows[-1]["stage"] == "phase4"
     assert standard_rows[-1]["node"] == "read_unit"

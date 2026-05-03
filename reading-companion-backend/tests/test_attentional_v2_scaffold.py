@@ -553,14 +553,14 @@ def test_attentional_v2_runner_prefers_main_body_before_supporting_chapters(tmp_
         focal_sentence = kwargs["current_unit_sentences"][-1]
         chapter_read_order.append(str(kwargs["chapter_title"]))
         return {
-            "unit_delta": f"Read {focal_sentence['sentence_id']}.",
+            "reading_impression": f"Read {focal_sentence['sentence_id']}.",
             "pressure_signals": {
                 "continuation_pressure": False,
                 "backward_pull": False,
                 "frame_shift_pressure": False,
             },
             "surfaced_reactions": [],
-            "implicit_uptake_ops": [],
+            "memory_uptake_ops": [],
             "detour_need": None,
         }
 
@@ -675,7 +675,7 @@ def test_attentional_v2_read_book_runs_live_loop_and_persists_compatibility_resu
         captured_unit_reads.append([str(sentence.get("sentence_id")) for sentence in current_unit_sentences])
         captured_carry_forward_contexts.append(dict(kwargs["carry_forward_context"]))
         return {
-            "unit_delta": f"Meaning unit around {anchor_quote[:24]}",
+            "reading_impression": f"Meaning unit around {anchor_quote[:24]}",
             "pressure_signals": {
                 "continuation_pressure": False,
                 "backward_pull": False,
@@ -692,7 +692,7 @@ def test_attentional_v2_read_book_runs_live_loop_and_persists_compatibility_resu
                     },
                 }
             ],
-            "implicit_uptake_ops": [],
+            "memory_uptake_ops": [],
             "detour_need": None,
         }
 
@@ -799,7 +799,7 @@ def test_attentional_v2_runner_persists_multiple_read_surface_reactions(tmp_path
         focal_sentence = kwargs["current_unit_sentences"][-1]
         anchor_quote = str(focal_sentence.get("text", "") or "").strip()[:80]
         return {
-            "unit_delta": f"Meaning unit around {anchor_quote[:24]}",
+            "reading_impression": f"Meaning unit around {anchor_quote[:24]}",
             "pressure_signals": {
                 "continuation_pressure": False,
                 "backward_pull": False,
@@ -819,7 +819,7 @@ def test_attentional_v2_runner_persists_multiple_read_surface_reactions(tmp_path
                     },
                 },
             ],
-            "implicit_uptake_ops": [],
+            "memory_uptake_ops": [],
             "detour_need": None,
         }
 
@@ -902,14 +902,14 @@ def test_attentional_v2_read_book_tolerates_missing_reaction_payload(tmp_path, m
         focal_sentence = kwargs["current_unit_sentences"][-1]
         anchor_quote = str(focal_sentence.get("text", "") or "").strip()[:80]
         return {
-            "unit_delta": f"Meaning unit around {anchor_quote[:24]}",
+            "reading_impression": f"Meaning unit around {anchor_quote[:24]}",
             "pressure_signals": {
                 "continuation_pressure": False,
                 "backward_pull": False,
                 "frame_shift_pressure": False,
             },
             "surfaced_reactions": [],
-            "implicit_uptake_ops": [],
+            "memory_uptake_ops": [],
             "detour_need": None,
         }
 
@@ -1033,14 +1033,14 @@ def test_attentional_v2_read_book_still_runs_formal_read_for_monitor_path(tmp_pa
             ]
         )
         return {
-            "unit_delta": "single-sentence path still got read",
+            "reading_impression": "single-sentence path still got read",
             "pressure_signals": {
                 "continuation_pressure": False,
                 "backward_pull": False,
                 "frame_shift_pressure": False,
             },
             "surfaced_reactions": [],
-            "implicit_uptake_ops": [],
+            "memory_uptake_ops": [],
             "detour_need": None,
         }
 
@@ -1098,7 +1098,7 @@ def test_attentional_v2_runner_executes_detour_search_and_returns_to_mainline(tm
         focal_sentence_id = sentence_ids[-1]
         if focal_sentence_id == "c2-s1" and not is_detour:
             return {
-                "unit_delta": "The later question clearly points back to the setup.",
+                "reading_impression": "The later question clearly points back to the setup.",
                 "pressure_signals": {
                     "continuation_pressure": False,
                     "backward_pull": False,
@@ -1110,7 +1110,7 @@ def test_attentional_v2_runner_executes_detour_search_and_returns_to_mainline(tm
                         "content": "This question is still leaning on something earlier.",
                     }
                 ],
-                "implicit_uptake_ops": [],
+                "memory_uptake_ops": [],
                 "detour_need": {
                     "reason": "The later question depends on the opening setup.",
                     "target_hint": "opening setup",
@@ -1118,7 +1118,7 @@ def test_attentional_v2_runner_executes_detour_search_and_returns_to_mainline(tm
                 },
             }
         return {
-            "unit_delta": f"Read {focal_sentence_id}.",
+            "reading_impression": f"Read {focal_sentence_id}.",
             "pressure_signals": {
                 "continuation_pressure": False,
                 "backward_pull": False,
@@ -1130,7 +1130,7 @@ def test_attentional_v2_runner_executes_detour_search_and_returns_to_mainline(tm
                     "content": f"Read noticed {focal_sentence_id}.",
                 }
             ],
-            "implicit_uptake_ops": [],
+            "memory_uptake_ops": [],
             "detour_need": None,
         }
 
@@ -1247,7 +1247,7 @@ def test_attentional_v2_runner_drains_last_unit_detour_before_chapter_close(tmp_
         focal_sentence_id = sentence_ids[-1]
         if focal_sentence_id == "c2-s2" and not is_detour:
             return {
-                "unit_delta": "The chapter ending points back to the opening setup.",
+                "reading_impression": "The chapter ending points back to the opening setup.",
                 "pressure_signals": {
                     "continuation_pressure": False,
                     "backward_pull": False,
@@ -1259,7 +1259,7 @@ def test_attentional_v2_runner_drains_last_unit_detour_before_chapter_close(tmp_
                         "content": "This answer still depends on the opening setup.",
                     }
                 ],
-                "implicit_uptake_ops": [],
+                "memory_uptake_ops": [],
                 "detour_need": {
                     "reason": "The chapter ending still depends on the opening setup.",
                     "target_hint": "opening setup",
@@ -1267,7 +1267,7 @@ def test_attentional_v2_runner_drains_last_unit_detour_before_chapter_close(tmp_
                 },
             }
         return {
-            "unit_delta": f"Read {focal_sentence_id}.",
+            "reading_impression": f"Read {focal_sentence_id}.",
             "pressure_signals": {
                 "continuation_pressure": False,
                 "backward_pull": False,
@@ -1279,7 +1279,7 @@ def test_attentional_v2_runner_drains_last_unit_detour_before_chapter_close(tmp_
                     "content": f"Read noticed {focal_sentence_id}.",
                 }
             ],
-            "implicit_uptake_ops": [],
+            "memory_uptake_ops": [],
             "detour_need": None,
         }
 
@@ -1386,7 +1386,7 @@ def test_attentional_v2_runner_stops_at_audit_window_cap_and_persists_partial_ou
         read_calls.append(sentence_ids)
         focal_sentence = kwargs["current_unit_sentences"][-1]
         return {
-            "unit_delta": f"Read {sentence_ids[-1]}.",
+            "reading_impression": f"Read {sentence_ids[-1]}.",
             "pressure_signals": {
                 "continuation_pressure": False,
                 "backward_pull": False,
@@ -1398,7 +1398,7 @@ def test_attentional_v2_runner_stops_at_audit_window_cap_and_persists_partial_ou
                     "content": f"Immediate reaction to {sentence_ids[-1]}.",
                 }
             ],
-            "implicit_uptake_ops": [],
+            "memory_uptake_ops": [],
             "detour_need": None,
         }
 

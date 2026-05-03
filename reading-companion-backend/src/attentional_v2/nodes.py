@@ -808,14 +808,14 @@ def _fallback_read_unit_result(
     """Return one conservative fallback read result."""
 
     return {
-        "unit_delta": _clean_text(reason),
+        "reading_impression": _clean_text(reason),
         "pressure_signals": {
             "continuation_pressure": bool(continuation_pressure),
             "backward_pull": False,
             "frame_shift_pressure": False,
         },
         "surfaced_reactions": [],
-        "implicit_uptake_ops": [],
+        "memory_uptake_ops": [],
         "detour_need": None,
     }
 
@@ -1096,22 +1096,13 @@ def read_unit(
         current_unit_texts=current_unit_texts,
         allowed_ref_ids=allowed_ref_ids,
     )
-    unit_delta = _clean_text(payload.get("unit_delta")) if isinstance(payload, dict) else ""
-    if not unit_delta:
-        unit_delta = _clean_text(payload.get("local_understanding")) if isinstance(payload, dict) else ""
+    reading_impression = _clean_text(payload.get("reading_impression")) if isinstance(payload, dict) else ""
     result: ReadUnitResult = {
-        "unit_delta": unit_delta,
+        "reading_impression": reading_impression,
         "pressure_signals": pressure_signals,
         "surfaced_reactions": surfaced_reactions,
-        "implicit_uptake_ops": _normalize_state_operations(
-            payload.get("implicit_uptake_ops")
-            if isinstance(payload, dict)
-            else None
-        )
-        or _normalize_state_operations(
-            payload.get("implicit_uptake")
-            if isinstance(payload, dict)
-            else None
+        "memory_uptake_ops": _normalize_state_operations(
+            payload.get("memory_uptake_ops") if isinstance(payload, dict) else None
         ),
         "detour_need": _normalize_detour_need(payload.get("detour_need")) if isinstance(payload, dict) else None,
     }
@@ -1136,7 +1127,7 @@ def navigate_route(
         action = "commit"
     return {
         "action": action,  # type: ignore[typeddict-item]
-        "reason": _clean_text(read_result.get("unit_delta")),
+        "reason": _clean_text(read_result.get("reading_impression")),
         "close_current_unit": True,
         "target_anchor_id": "",
         "target_sentence_id": "",

@@ -7,11 +7,11 @@ from dataclasses import dataclass
 from src.prompts.shared import LANGUAGE_OUTPUT_CONTRACT
 
 
-ATTENTIONAL_V2_PROMPTSET_VERSION = "attentional_v2-phase6-v21"
+ATTENTIONAL_V2_PROMPTSET_VERSION = "attentional_v2-phase6-v22"
 SURVEY_CHAPTER_ZONE_PROMPT_VERSION = "attentional_v2.survey_chapter_zone.v1"
 NAVIGATE_UNITIZE_PROMPT_VERSION = "attentional_v2.navigate_unitize.v4"
 NAVIGATE_DETOUR_SEARCH_PROMPT_VERSION = "attentional_v2.navigate_detour_search.v1"
-READ_UNIT_PROMPT_VERSION = "attentional_v2.read.v12"
+READ_UNIT_PROMPT_VERSION = "attentional_v2.read.v13"
 BRIDGE_RESOLUTION_PROMPT_VERSION = "attentional_v2.bridge_resolution.v5"
 REFLECTIVE_PROMOTION_PROMPT_VERSION = "attentional_v2.reflective_promotion.v1"
 RECONSOLIDATION_PROMPT_VERSION = "attentional_v2.reconsolidation.v1"
@@ -186,28 +186,30 @@ Return JSON:
   "end_sentence_id": ""
 }""",
     read_unit_version=READ_UNIT_PROMPT_VERSION,
-    read_unit_system="""You are the authoritative read node for a text-grounded reading mechanism.
+    read_unit_system="""You are a careful reader moving through this book.
 
-Your job is to read the exact current unit together with a small carried-forward memory packet.
+Your job is to read the exact current unit with a small carried-forward memory packet, then return a structured record of the reading experience.
 
 Rules:
-- Treat the provided unit text as the current reading present.
+- First read the provided unit as the current reading present, not as a field-filling task.
+- Let `reading_impression` be the brief natural impression that remains after reading: what you now understand, notice, or feel from this passage.
 - Use the carried-forward memory naturally when it genuinely matters, but do not collapse the unit into a chapter summary or evaluator voice.
 - Do not invent earlier text that is not present in the carried memory or selective carry.
 - Keep proportion around thin structural units. If the current unit is mostly a heading, label, or similarly slight structural cue, it is acceptable to emit no surfaced reaction.
 - Do not inflate a bare heading or structural cue into literary commentary, review voice, or a fake moment of depth.
 - Only surface a reaction to a very thin heading-like unit when the wording itself clearly carries real local force.
-- `unit_delta` should say what shifted locally in understanding, pressure, or attention after this exact unit.
 - `pressure_signals` are local post-read signals only. They are not route decisions.
-- If the unit naturally surfaces something worth saying now, write it directly in `surfaced_reactions`.
+- After forming the impression, surface only what naturally feels worth marking, underlining, or writing a margin note about.
+- Do not create a reaction just to fill the field.
+- A surfaced reaction may be a line that lands with force, a margin-note thought or question, a natural connection, or a distinction/turn that suddenly clarifies something.
 - Surfaced reactions must stay anchored to the current unit. Each reaction's `anchor_quote` must be an exact quote from this unit.
-- It is acceptable to emit zero surfaced reactions. It is also acceptable to emit more than one when there are multiple distinct local triggers, but stay bounded. Default to 0-2.
+- It is acceptable to emit zero surfaced reactions. It is also acceptable to emit more than one when there are multiple distinct local moments worth marking, but stay bounded. Default to 0-2.
 - Choose each `anchor_quote` as the smallest self-sufficient span that can honestly stand as this reaction's footing.
 - If one sentence can stand on its own and is worth remembering on its own, it may anchor a surfaced reaction by itself.
 - If a sentence would lose its meaning when isolated, do not force it smaller just to sound precise; use the smallest multi-sentence span that keeps the meaning intact.
 - If the unit contains multiple independently valuable local triggers, you may surface them separately. Do not let one sharper later sentence erase an earlier framing line, premise line, or hinge line that also stands on its own.
 - This is permission for honest plurality, not for reaction sprawl. Keep the default density bounded at 0-2 unless the unit truly contains more than one independently complete local trigger.
-- Before returning `surfaced_reactions`, do one last swallowed-line check: if an earlier line in the same unit independently establishes the frame, premise, or hinge for what follows, do not leave it stranded inside `unit_delta` just because a later sentence sounds sharper.
+- Before returning `surfaced_reactions`, do one last swallowed-line check: if an earlier line in the same unit independently establishes the frame, premise, or hinge for what follows, do not leave it stranded inside `reading_impression` just because a later sentence sounds sharper.
 - When both the earlier line and the later line are independently memorable, it is often better to surface both than to quote only the later one and paraphrase the earlier one away.
 - A common version of this pattern is premise plus sharpening: one earlier line states the premise, and a later line sharpens or cashes it out. If both lines stand on their own, default to surfacing both unless the earlier line is truly just setup and not memorable by itself.
 - Use V1's wide-entry, narrow-expression stance: be willing to notice and surface a real local trigger, but do not manufacture commentary just to fill space.
@@ -233,19 +235,27 @@ Rules:
 - Negative examples:
   - A half-line that needs its neighboring sentence in order to mean anything, but is surfaced alone anyway.
   - Compressing a whole paragraph into one reaction so that another independently meaningful premise line never gets surfaced at all.
-  - Quoting only the later sharper line while the earlier premise line survives only as background summary inside `unit_delta`.
+  - Quoting only the later sharper line while the earlier premise line survives only as background summary inside `reading_impression`.
   - Treating a premise-plus-sharpening pair as if only the sharper later line were surface-worthy by default.
   - `这与 c1-s1135 的边界压缩形成层级跃迁。`
   - `This answers anchor:a-1 directly.`
   - `Earlier the text said "..."` followed by a long pasted sentence from earlier material.
-- `implicit_uptake_ops` must stay explicit and bounded. Only target:
+- After the impression and any surfaced reactions, let memory settle naturally.
+- `memory_uptake_ops` records only what should remain available after this unit. Do not maintain state for its own sake.
+- A surfaced reaction is already persisted as a reaction record. Do not copy it into `concept_registry` or `thread_trace` just because it was strong.
+- Create a memory operation only when the reading experience yields something that should continue shaping later reading: a live focus, a reusable concept/model/definition, an unfolding thread, or a source-grounded anchor.
+- Explicit source structures can be worth remembering even when they do not call for a visible reaction: stage models, classifications, core definitions, named distinctions, chapter roadmaps, and other author-given frameworks may belong in durable memory.
+- Do not disguise plainly stated source material as your own interpretation. Preserve source-given structure as source-given structure.
+- `memory_uptake_ops` must stay explicit and bounded. Only target:
   - `active_attention`
   - `concept_registry`
   - `thread_trace`
   - `anchor_bank`
-- Write to `active_attention` only when an item will continue pulling on the next reads: an unresolved question, live tension, provisional interpretation, recurring motif, or near-term focus that should stay available.
-- Ordinary local understanding belongs in `unit_delta`, not in persistent active attention.
-- If the source text already states something plainly, do not repackage it as a new active-attention interpretation unless it will actively guide later reading.
+- Write to `active_attention` only when an item will keep pulling on the next reads.
+- Use `concept_registry` for reusable concepts, models, definitions, or distinctions.
+- Use `thread_trace` for cross-passage or cross-chapter lines of development.
+- Use `anchor_bank` for source-grounded anchors worth keeping as evidence.
+- Ordinary passing understanding belongs in `reading_impression`, not in persistent memory.
 - Active-attention item payloads use `attention_tags` as lightweight labels. Suggested tags include `question`, `tension`, `interpretation`, `motif`, and `focus`, but these are examples, not fixed buckets.
 - Do not use legacy active-attention bucket/list fields in new state operations.
 - Do not write `reflective_frames`, `reaction_records`, or history/audit layers here.
@@ -279,7 +289,7 @@ Output language contract:
 
 Return JSON:
 {
-  "unit_delta": "<brief local read delta>",
+  "reading_impression": "<brief natural impression after reading this unit>",
   "pressure_signals": {
     "continuation_pressure": false,
     "backward_pull": false,
@@ -294,14 +304,14 @@ Return JSON:
       "search_intent": null
     }
   ],
-  "implicit_uptake_ops": [
+  "memory_uptake_ops": [
     {
       "op": "append",
       "target_store": "active_attention",
       "target_key": "item-key",
       "reason": "<brief reason>",
       "payload": {
-        "statement": "<only if it will keep shaping later reading>",
+        "statement": "<only if this naturally needs to remain available after the unit>",
         "attention_tags": ["focus"]
       }
     }

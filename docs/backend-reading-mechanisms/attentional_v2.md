@@ -60,10 +60,10 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
 - Phase F1 of the post-E3 rework is now landed.
   - the live per-unit loop has been cut back to:
     - `navigate.unitize -> read -> navigate.route`
-  - `Read` now directly owns:
-    - `unit_delta`
+  - `Read` now directly owns a naturalized reading-result contract:
+    - `reading_impression`
     - `surfaced_reactions`
-    - `implicit_uptake_ops`
+    - `memory_uptake_ops`
     - `pressure_signals`
     - optional `detour_need`
   - the dedicated live `Express` node is no longer on the live runner path
@@ -233,22 +233,24 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
     - `survey` now classifies them into `front_support` or `back_support` when appropriate
     - `runner` then reads them after the `main_body` queue drains
     - explicit chapter-targeted runs may still select them directly
-- `read` remains the authoritative formal unit-read node.
-  - On the current live baseline, it now directly produces `unit_delta`, `surfaced_reactions`, `implicit_uptake_ops`, `pressure_signals`, and optional `detour_need`.
-  - It should not remain a control super-node.
-  - It should stay centered on:
-    - current-unit understanding
-    - surfaced reactions that genuinely arise during that read
-    - implicit memory/state updates
-    - detour needs that must be routed later
+- `read` remains the current formal unit-read call, but its prompt role is now reader-first rather than node-first.
+  - On the current live baseline, it directly produces `reading_impression`, `surfaced_reactions`, `memory_uptake_ops`, `pressure_signals`, and optional `detour_need`.
+  - It should not behave like a control super-node or a checklist-filling state updater.
+  - Its intended order is:
+    - read the current unit as a reader
+    - form a brief natural `reading_impression`
+    - surface any underline / margin-note style reactions that genuinely arise
+    - let durable memory settle through bounded `memory_uptake_ops`
+    - emit only local pressure and detour signals that the runner / navigate layer can route later
   - Legacy compatibility fields such as `raw_reaction`, `move_hint`, `prior_material_use`, `express_signal`, and `context_request` are now historical territory, not the live F3 contract.
   - It now also carries an explicit proportion rule for thin structural units:
     - a bare heading, label, or similarly slight structural cue may legitimately produce no surfaced reaction
     - the mechanism should not inflate that kind of unit into review voice or manufactured gravitas unless the wording itself genuinely carries local force
-- `unit_delta` is a temporary internal read result, not a new durable memory layer.
-  - It exists only as the local read-after state of one unit.
-  - Durable memory still changes only through `implicit_uptake` into the existing primary state layers.
-  - Visible reaction is only the surfaced tip of that temporary read result, not the whole thing.
+- `reading_impression` is a temporary natural-language read-after impression, not a new durable memory layer.
+  - It exists as the immediate reader-like impression after one unit.
+  - Durable memory changes only through `memory_uptake_ops` into the existing primary state layers.
+  - Visible reactions and memory uptake come from the same reading experience, but a surfaced reaction is already persisted as a reaction record and is not automatically copied into concept or thread memory.
+  - Author-given structures such as stage models, classifications, core definitions, named distinctions, or chapter roadmaps may enter memory even when they do not produce a visible reaction.
 - `Express` is now best understood as historical intermediate compatibility-first territory rather than a live mechanism node.
   - It helped isolate visible wording while the system proved out surfaced-reaction persistence.
   - But the approved next shape no longer treats a dedicated `Express` step as the mechanism's stable center of gravity, and F1 has already removed it from the live runner path.
@@ -317,15 +319,16 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - `navigate.route` remains deterministic and does not make another LLM call
   - deterministic bridge retrieval is only paid when `navigate.route` actually chooses `bridge_back`
 - Under the approved next shape:
-  - `read` owns current-unit understanding, surfaced reactions, implicit uptake, and detour signaling
+  - `read` owns current-unit reading impression, surfaced reactions, memory uptake, and detour signaling
   - `navigate.route` owns next-move choice
   - `slow cycle` owns chapter-end consolidation and promotion
 
 ## Frozen Next-Shape Contract
 - This section freezes the approved next target shape after the post-E3 quality review.
 - `ReadResult` should minimally expose:
-  - `unit_delta`
-    - the temporary internal read-after change for the current unit
+  - `reading_impression`
+    - the temporary natural-language impression left by the current unit
+    - this is intentionally not split into subfields; it is the reader's immediate understanding / noticing after the unit
   - `surfaced_reactions`
     - zero to many visible reading-time reactions surfaced directly by `read`
     - each surfaced reaction should carry:
@@ -340,7 +343,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
       - a larger paragraph-sized anchor is allowed only when that larger span is genuinely the smallest complete footing, not as a lazy default
     - one `unit` may legitimately yield more than one native surfaced reaction when it contains multiple independently complete local triggers
       - a sharper later sentence should not automatically swallow an earlier framing line, premise line, or hinge line that also stands on its own
-      - `read` should do a final swallowed-line check before it settles on one reaction: if an earlier line independently frames the later move, it should not be left stranded inside `unit_delta` merely because a later line sounds more dramatic
+      - `read` should do a final swallowed-line check before it settles on one reaction: if an earlier line independently frames the later move, it should not be left stranded inside `reading_impression` merely because a later line sounds more dramatic
       - this applies especially to premise-plus-sharpening pairs: when the earlier line states the premise and the later line cashes it out, `read` should not default to surfacing only the later line if both independently stand
       - this is bounded plurality, not pressure to spray reactions everywhere; the default density still stays low unless the unit honestly contains multiple independently valuable spans
     - the native surfaced-reaction shape does not carry a `type`
@@ -348,8 +351,9 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
       - it may callback to earlier material, but it must not expose system handles such as sentence ids, `ref_ids`, anchor ids, thread ids, concept ids, or reaction ids
       - `prior_link.ref_ids` remain internal structured linkage for the runtime and audits, not wording that should leak into visible text
       - if visible wording briefly quotes earlier material, it should do so sparingly with a short fragment rather than pasting a whole earlier sentence back into the reaction
-  - `implicit_uptake_ops`
+  - `memory_uptake_ops`
     - explicit patch/append/close/link operations against the durable state layers
+    - these express what naturally needs to remain available after the unit, not a checklist of every local understanding
     - `read` should not rewrite whole state objects
   - `pressure_signals`
     - descriptive local pressure such as continuation, backward pull, or frame-shift pressure

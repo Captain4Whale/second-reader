@@ -34,7 +34,7 @@ Implementation checkpoint:
   - `navigate.unitize` and `read` now both receive those small concept/thread digests through the packet layer
   - persisted runtime files and public compatibility surfaces remain unchanged
 - `Phase C.3` is landed as the direct main-state cutover:
-  - new runs now treat `working_state / concept_registry / thread_trace / reflective_frames / anchor_bank` as the primary runtime and checkpoint truth
+  - new runs now treat `active_attention / concept_registry / thread_trace / reflective_frames / anchor_bank` as the primary runtime and checkpoint truth
   - `working_pressure / anchor_memory / reflective_summaries` were initially demoted to legacy load/projection territory during the cutover
   - `active_recall` now surfaces first-class `concepts` and `threads` from the new state layers
   - newly written checkpoints now use only the new primary state keys
@@ -45,7 +45,7 @@ Implementation checkpoint:
   - live runtime loading and resume now reject pre-`Phase C.3` runtime directories and checkpoints instead of migrating them on the live path
   - public compatibility surfaces remain unchanged
 - The post-F4 legacy gate/pressure cleanup is now landed:
-  - `working_state.active_items` is the only current hot-state contract
+  - `active_attention.active_items` is the only current hot-state contract
   - `gate_state`, `pressure_snapshot`, reader-policy gate/controller defaults, and the old working-pressure runtime file are no longer current schema, prompt, runtime, checkpoint, or evaluation-evidence fields
   - current `pressure_signals` remain live only as one-step `Read -> Navigate.route` signals
 - `Phase D` is now landed as the continuity / recall / resume polish slice:
@@ -60,9 +60,13 @@ Implementation checkpoint:
   - this branch remains valuable evidence, but it is no longer the approved end-state target for the mechanism
 - `Phase F1` is now landed as the first post-freeze cutover:
   - the live per-unit loop is now `navigate.unitize -> read -> navigate.route`
-  - `Read` now directly owns surfaced reactions, implicit uptake ops, pressure signals, and optional `detour_need`
+  - `Read` now directly owns `reading_impression`, surfaced reactions, memory uptake ops, pressure signals, and optional `detour_need`
   - the dedicated live `Express` node is no longer on the runner path
   - `Read` prompt packaging now follows compact `always carry / selective carry / not carry` projections
+- Read naturalization is now landed:
+  - current `Read` prompt role is reader-first rather than node-first
+  - current field names are `reading_impression` and `memory_uptake_ops`
+  - historical implementation slices may still refer to `unit_delta` or `implicit_uptake_ops`, but those are no longer current contract names
 - `Phase F2` is now landed as the navigate-owned detour cutover:
   - the live `Read` contract now emits `detour_need` directly
   - `Navigate` now owns bounded hierarchical detour search rather than a private supplemental fetch loop
@@ -282,7 +286,7 @@ The rework should be understood as a controlled remap of current V2 responsibili
 | `controller_decision` | one more control surface in an already over-fragmented chain | absorb into `navigate.route` |
 | `reaction_emission` | thins out already-formed reading truth | collapse surfaced reactions back into `read` and keep old family handling only as compatibility projection |
 | lazy bridge retrieval / `bridge_resolution` | useful in principle, but too downstream to carry continuity by itself | keep only as optional execution path beneath `carry-forward context` and `active recall / look-back` |
-| `working_pressure` | historical hot-state sidecar from the older local-cycle shape | retired; current hot state is `working_state.active_items` |
+| `working_pressure` | historical hot-state sidecar from the older local-cycle shape | retired; current hot state is `active_attention.active_items` |
 | `anchor_memory` | useful evidence territory, but too easy to over-expand conceptually | evolve into `anchor_bank` only |
 | `knowledge_activations` | currently too easy to treat as a durable memory layer | keep only as in-read immediate external-knowledge activation, not as a main state layer |
 
@@ -598,15 +602,15 @@ Status:
 - `Phase C.2` also landed on April 12, 2026 as the first state-territory slice
   - live packets now include bounded `concept_digest` and `thread_digest` views derived from the current persisted indexes
 - `Phase C.3` also landed on April 12, 2026 as the direct main-state cutover
-  - new runs now write and resume against `working_state / concept_registry / thread_trace / reflective_frames / anchor_bank` as the primary runtime/checkpoint truth
+  - new runs now write and resume against `active_attention / concept_registry / thread_trace / reflective_frames / anchor_bank` as the primary runtime/checkpoint truth
   - legacy `working_pressure / anchor_memory / reflective_summaries` were initially accepted on load for cutover compatibility, but that compatibility has since been retired from the current live path
   - `active_recall` now exposes first-class `concepts` and `threads` from the new layers
 - `Phase C.4` also landed on April 12, 2026 as the helper-contract cutover
-  - sentence-intake / bridge / slow-cycle now operate directly on `working_state / concept_registry / thread_trace / reflective_frames / anchor_bank`
+  - sentence-intake / bridge / slow-cycle now operate directly on `active_attention / concept_registry / thread_trace / reflective_frames / anchor_bank`
   - live helper execution no longer depends on `project_legacy_*` adapters or migrate-back round trips
   - live runtime loading and resume now reject pre-`Phase C.3` runtime/checkpoint shapes
 - Post-F4 cleanup later removed the remaining gate/pressure sidecar:
-  - `working_state.active_items` is now the only current hot-state container
+  - `active_attention.active_items` is now the only current hot-state container
   - `gate_state`, `pressure_snapshot`, and old working-pressure runtime artifacts are historical only
 - `Phase C` is now complete, and the next open work is `Phase D`
 
@@ -616,7 +620,7 @@ Keep V2's typed-state base, but stop exposing it to the model as an unstructured
 
 #### State target
 
-- `working_state`
+- `active_attention`
 - `concept_registry`
 - `thread_trace`
 - `reflective_frames`
@@ -624,9 +628,9 @@ Keep V2's typed-state base, but stop exposing it to the model as an unstructured
 
 #### State semantics that should be explicit in Phase C
 
-- `working_state`
+- `active_attention`
   - hot state needed by the next immediate reading step
-  - current focus, open questions, active tensions, bridge pull, local unresolved items
+  - current focus, open questions, active tensions, bridge pull, local unresolved items as lightweight tagged active items
 - `concept_registry`
   - object memory
   - people, places, institutions, terms, abstract concepts, key objects
@@ -922,10 +926,10 @@ Why this reset won:
   - owns detour search and dispatch
 - `Read`
   - owns current-unit understanding
-  - owns `unit_delta`
+  - owns `reading_impression`
   - owns `surfaced_reactions[]`
   - owns surfaced semantics directly rather than emitting a native reaction-family label
-  - owns `implicit_uptake_ops[]`
+  - owns `memory_uptake_ops[]`
   - owns `pressure_signals`
   - may emit one `detour_need`
 - `slow cycle`
@@ -1030,9 +1034,9 @@ Frozen node projections:
 
 - live per-unit loop now runs `navigate.unitize -> read -> navigate.route`
 - `Read` now owns:
-  - `unit_delta`
+  - `reading_impression`
   - `surfaced_reactions`
-  - `implicit_uptake_ops`
+  - `memory_uptake_ops`
   - `pressure_signals`
   - optional `detour_need`
 - the live runner no longer calls the dedicated `Express` step

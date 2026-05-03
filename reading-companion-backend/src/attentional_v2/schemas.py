@@ -321,12 +321,12 @@ class PressureSignals(TypedDict, total=False):
 
 
 class ReadUnitResult(TypedDict, total=False):
-    """Authoritative formal-read packet for one chosen coverage unit."""
+    """Structured record of one reader-like pass over a chosen coverage unit."""
 
-    unit_delta: str
+    reading_impression: str
     pressure_signals: PressureSignals
     surfaced_reactions: list["SurfacedReaction"]
-    implicit_uptake_ops: list["StateOperation"]
+    memory_uptake_ops: list["StateOperation"]
     detour_need: "DetourNeed" | None
 
 

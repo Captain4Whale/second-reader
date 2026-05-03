@@ -88,7 +88,7 @@ def test_read_unit_projects_compact_packet_and_returns_f1_surface_contract(tmp_p
     def fake_invoke_json(_system: str, prompt: str, default: object) -> object:
         captured["prompt"] = prompt
         return {
-            "unit_delta": "The second sentence sharpens the first one.",
+            "reading_impression": "The second sentence sharpens the first one.",
             "pressure_signals": {
                 "continuation_pressure": True,
                 "backward_pull": True,
@@ -105,7 +105,7 @@ def test_read_unit_projects_compact_packet_and_returns_f1_surface_contract(tmp_p
                     },
                 }
             ],
-            "implicit_uptake_ops": [
+            "memory_uptake_ops": [
                 {
                     "op": "update",
                     "target_store": "active_attention",
@@ -251,8 +251,8 @@ def test_read_unit_projects_compact_packet_and_returns_f1_surface_contract(tmp_p
     assert "\"earlier_excerpts\"" in captured["prompt"]
     assert "\"refs\": [" not in captured["prompt"]
     assert "\"anchor_bank_digest\"" not in captured["prompt"]
-    assert manifest["prompt_version"] == "attentional_v2.read.v12"
-    assert result["unit_delta"] == "The second sentence sharpens the first one."
+    assert manifest["prompt_version"] == "attentional_v2.read.v13"
+    assert result["reading_impression"] == "The second sentence sharpens the first one."
     assert result["pressure_signals"] == {
         "continuation_pressure": True,
         "backward_pull": True,
@@ -260,8 +260,8 @@ def test_read_unit_projects_compact_packet_and_returns_f1_surface_contract(tmp_p
     }
     assert result["surfaced_reactions"][0]["anchor_quote"] == "Beta sentence."
     assert result["surfaced_reactions"][0]["prior_link"]["ref_ids"] == ["anchor:a-1", "lookback:sentence:c1-s1"]
-    assert result["implicit_uptake_ops"][0]["op"] == "update"
-    assert result["implicit_uptake_ops"][0]["target_store"] == "active_attention"
+    assert result["memory_uptake_ops"][0]["op"] == "update"
+    assert result["memory_uptake_ops"][0]["target_store"] == "active_attention"
     assert result["detour_need"]["status"] == "open"
 
     route = navigate_route(read_result=result)
@@ -406,7 +406,7 @@ def test_run_read_with_context_loop_reads_once_and_persists_f1_audit(tmp_path, m
             }
         )
         return {
-            "unit_delta": "The unit becomes legible immediately.",
+            "reading_impression": "The unit becomes legible immediately.",
             "pressure_signals": {
                 "continuation_pressure": False,
                 "backward_pull": False,
@@ -418,7 +418,7 @@ def test_run_read_with_context_loop_reads_once_and_persists_f1_audit(tmp_path, m
                     "content": "The bridge is clear without a second pass.",
                 }
             ],
-            "implicit_uptake_ops": [
+            "memory_uptake_ops": [
                 {
                     "op": "append",
                     "target_store": "active_attention",
@@ -473,7 +473,7 @@ def test_run_read_with_context_loop_reads_once_and_persists_f1_audit(tmp_path, m
     assert len(calls) == 1
     assert calls[0]["supplemental_context"] is None
     assert read_result["surfaced_reactions"][0]["anchor_quote"] == "Beta sentence."
-    assert read_result["implicit_uptake_ops"][0]["op"] == "append"
+    assert read_result["memory_uptake_ops"][0]["op"] == "append"
     assert read_result["detour_need"]["status"] == "open"
     assert audit_line["stop_reason"] == "read_complete"
     assert audit_line["surfaced_reaction_count"] == 1

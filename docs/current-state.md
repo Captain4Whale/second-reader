@@ -268,7 +268,7 @@ Last verified: `2026-05-03T08:37:27+08:00`
     - new runs now treat `active_attention / concept_registry / thread_trace / reflective_frames / anchor_bank` as the primary runtime and checkpoint truth
     - the old V2 state stores were demoted to cutover-only legacy territory
     - `active_recall` now surfaces first-class `concepts` and `threads` from the new state layers
-    - `read` may now write explicit `implicit_uptake` into:
+    - `read` introduced explicit memory-update operations, then called `implicit_uptake`, into:
       - `active_attention`
       - `concept_registry`
       - `thread_trace`
@@ -306,14 +306,19 @@ Last verified: `2026-05-03T08:37:27+08:00`
   - `Phase F1` is now landed as the read-contract and prompt-packaging cutover:
     - the live per-unit loop is now:
       - `navigate.unitize -> read -> navigate.route`
-    - `Read` now directly owns:
-      - `unit_delta`
+    - `Read` now directly owns the current naturalized read contract:
+      - `reading_impression`
       - `surfaced_reactions`
-      - `implicit_uptake_ops`
+      - `memory_uptake_ops`
       - `pressure_signals`
       - optional `detour_need`
     - the dedicated live `Express` node is no longer on the live path
     - `Read` prompt packaging now uses compact `always carry / selective carry / not carry` projections instead of the broader intermediate packet
+  - Read naturalization is now landed:
+    - the `Read` prompt addresses the model as a reader moving through the book, not as a field-filling node
+    - the old current-field names `unit_delta` and `implicit_uptake_ops` are historical
+    - new runs use `reading_impression` and `memory_uptake_ops`
+    - `memory_uptake_ops` should capture what naturally needs to remain available after the unit, including explicit source structures such as stage models, classifications, definitions, distinctions, and chapter roadmaps when they matter
   - `Phase F2` is now landed as the navigate-owned detour cutover:
     - the live `Read` contract now emits `detour_need` instead of the transitional `revisit_need`
     - `Navigate` now owns bounded detour search over:
