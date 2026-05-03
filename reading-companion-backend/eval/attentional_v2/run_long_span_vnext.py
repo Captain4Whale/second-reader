@@ -49,7 +49,7 @@ JUDGE_SCHEMA_RETRY_INSTRUCTION = (
     "\n\nReminder: return exactly one JSON object matching the requested schema. "
     "Do not wrap it in markdown fences or nest it under another key."
 )
-MEMORY_QUALITY_JUDGE_CONTRACT = "scale_v2_1_low_5_high"
+MEMORY_QUALITY_JUDGE_CONTRACT = "scale_v3_structural_signal_aware"
 REACTION_AUDIT_JUDGE_CONTRACT = "visible_reaction_audit_v2_native_evidence"
 MEMORY_QUALITY_DIMENSION_KEYS = (
     "salience_score",
@@ -69,6 +69,30 @@ RETRYABLE_OUTPUT_ERROR_MARKERS = (
     "520",
 )
 
+MEMORY_QUALITY_PROBE_REVIEW_FOCUS: dict[tuple[str, int], dict[str, str]] = {
+    (
+        "huochu_shengming_de_yiyi_private_zh__segment_1",
+        1,
+    ): {
+        "focus_id": "huochu_probe1_prisoner_response_three_stages",
+        "title": "囚徒精神反应三阶段",
+        "source_signal": (
+            "The source-so-far explicitly introduces a three-stage framework for prisoners' mental "
+            "reaction to camp life: admission, adaptation, and release/liberation, then begins the "
+            "first stage."
+        ),
+        "audit_question": (
+            "Does the memory snapshot retain that the author is organizing camp-life psychology "
+            "through this three-stage structure, even if it does not use the exact same wording?"
+        ),
+        "scoring_guidance": (
+            "Treat this as a salient source-given structural signal. If it is absent from the "
+            "snapshot, consider that omission when assigning salience and organization scores; "
+            "do not treat this as an exact-match gold answer."
+        ),
+    }
+}
+
 
 def _run_in_parallel(items: list[Any], worker_count: int, fn) -> list[Any]:
     if worker_count <= 1 or len(items) <= 1:
@@ -84,6 +108,11 @@ def _run_in_parallel(items: list[Any], worker_count: int, fn) -> list[Any]:
 
 def _output_dir_for(run_root: Path, segment_id: str, mechanism_key: str) -> Path:
     return run_root / "outputs" / segment_id / mechanism_key
+
+
+def memory_quality_probe_review_focus(*, segment_id: str, probe_index: int) -> dict[str, str] | None:
+    focus = MEMORY_QUALITY_PROBE_REVIEW_FOCUS.get((segment_id, probe_index))
+    return dict(focus) if focus else None
 
 
 def _runtime_error_text(output_dir: Path) -> str:
@@ -718,6 +747,17 @@ Focus on what the memory snapshot actually retains at this probe point.
 The source slice shows what has already been read; it is context, not substitute memory.
 Do not reward the snapshot for information that exists only in the source slice.
 
+Pay special attention to source-given structural signals. If the source-so-far explicitly introduces
+an organizing structure such as a stage model, classification, core definition, roadmap, or named distinction,
+check whether the snapshot retains it in some meaningful form. Exact wording and fixed
+field placement are not required. If a salient source-given structure is missing from the snapshot,
+that should usually affect salience_score and organization_score, and sometimes mainline_fidelity_score.
+
+Some probe payloads include probe_review_focus. Treat it as a human-authored structural signal to
+inspect carefully, not as an exact-match gold answer. The focus should sharpen your audit of the
+snapshot, but the final judgment must still be holistic and based on what the snapshot actually
+retains.
+
 Use this 1-5 scale for every score. Higher is better.
 - 1 = poor / absent: mostly empty, trivial, badly drifted, or not useful as reading memory.
 - 2 = weak: some retained material exists, but it is thin, mostly local, poorly organized, or unreliable.
@@ -742,7 +782,8 @@ Return JSON only."""
         "salience_score, mainline_fidelity_score, organization_score, fidelity_score. "
         "You may include overall_memory_quality_score, but it is audit-only and will be recomputed. "
         f'Also include "memory_quality_judge_contract":"{MEMORY_QUALITY_JUDGE_CONTRACT}" and '
-        '"reason":"2-5 sentences citing concrete retained items from the snapshot and any important omissions/drift."'
+        '"reason":"2-5 sentences citing concrete retained items from the snapshot and any important omissions/drift. '
+        'If probe_review_focus is present and materially retained or missing, mention it explicitly."'
     )
     payload: object = {}
     for user_prompt in (base_user_prompt, base_user_prompt + JUDGE_SCHEMA_RETRY_INSTRUCTION):
@@ -1313,6 +1354,7 @@ def _render_report(
         f"- Judge contract: `{memory_quality.get('memory_quality_judge_contract') or aggregate.get('memory_quality_judge_contract') or MEMORY_QUALITY_JUDGE_CONTRACT}`",
         "- Scoring scale: `1 = poor / absent`, `3 = adequate / useful`, `5 = excellent`; higher is better.",
         "- Overall memory quality is derived from salience, mainline fidelity, organization, and fidelity scores.",
+        "- Structural-signal supplement: when source-so-far explicitly introduces a stage model, classification, core definition, roadmap, or named distinction, the judge checks whether the snapshot retains it; probe-specific review focus is an audit aid, not an exact-match gold answer.",
         f"- Overall average memory quality score: `{memory_quality.get('average_overall_memory_quality_score', 0.0):.3f}`",
         f"- Probe count: `{memory_quality.get('probe_count', 0)}`",
         f"- Window count: `{memory_quality.get('window_count', 0)}`",
@@ -1334,6 +1376,13 @@ def _render_report(
             lines.append(
                 f"- Probe `{row['probe_index']}` (`{row['threshold_ratio']:.1%}`): overall `{float(row['overall_memory_quality_score']):.3f}`. {row['reason']}"
             )
+            review_focus = row.get("probe_review_focus")
+            if isinstance(review_focus, dict) and review_focus:
+                lines.append(
+                    "  - Structural signal to check: "
+                    f"{_clean_text(review_focus.get('title')) or _clean_text(review_focus.get('focus_id'))}. "
+                    f"{_clean_text(review_focus.get('audit_question'))}"
+                )
         lines.append("")
 
     lines.extend(
@@ -1625,6 +1674,12 @@ def run_long_span_vnext(
                     "read_so_far_source_text": build_read_so_far_source_text(book_document, capture_sentence_id),
                     "memory_snapshot": snapshot,
                 }
+                probe_review_focus = memory_quality_probe_review_focus(
+                    segment_id=window.segment_id,
+                    probe_index=int(probe_payload["probe_index"]),
+                )
+                if probe_review_focus:
+                    probe_payload["probe_review_focus"] = probe_review_focus
                 memory_quality_tasks.append((window, snapshot, probe_payload))
 
     def _judge_probe(task: tuple[ReadingWindow, dict[str, Any], dict[str, Any]]) -> dict[str, Any]:
@@ -1644,6 +1699,7 @@ def run_long_span_vnext(
             "probe_index": int(snapshot.get("probe_index", 0) or 0),
             "threshold_ratio": float(snapshot.get("threshold_ratio", 0.0) or 0.0),
             "capture_sentence_id": capture_sentence_id,
+            "probe_review_focus": probe_payload.get("probe_review_focus"),
             **judgment,
         }
 

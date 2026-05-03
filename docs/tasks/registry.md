@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-05-03T08:37:27+08:00`
+Last updated: `2026-05-03T19:52:47+08:00`
 
 ## Status Values
 - `active`
@@ -332,10 +332,11 @@ Last updated: `2026-05-03T08:37:27+08:00`
         - `attentional_v2_long_span_vnext_phase1_reaction_evidence_fix_rejudge_20260425`
       - post-eval action ledger:
         - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_long_span_vnext_phase1_reaction_evidence_fix_rejudge_20260425/analysis/post_eval_action_ledger_20260503/README.md`
-        - recorded actions now include `A1_legacy_gate_pressure_cleanup`, `A2_active_attention_cutover`, and `A3_read_naturalization_cutover`
+        - recorded actions now include `A1_legacy_gate_pressure_cleanup`, `A2_active_attention_cutover`, `A3_read_naturalization_cutover`, and `A4_memory_quality_structural_signal_supplement`
       - result:
         - `Memory Quality` average overall score: `3.48`
         - probe count: `25`
+        - next Memory Quality judgments will use `scale_v3_structural_signal_aware`, adding structural-signal-aware scoring for salient source-given stage models, classifications, definitions, roadmaps, and named distinctions
         - `Spontaneous Callback`: `attentional_v2` has `152` grounded callbacks and `84` weak callbacks over `1282` visible reactions; `iterator_v1` has `51` grounded callbacks and `13` weak callbacks over `375` visible reactions
         - `False Visible Integration`: `attentional_v2` has `2`; `iterator_v1` has `0`
         - judge unavailable count: `0` for both mechanisms

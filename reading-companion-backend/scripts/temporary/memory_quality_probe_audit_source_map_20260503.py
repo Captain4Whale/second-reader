@@ -25,6 +25,28 @@ OLD_AUDIT = RUN_ROOT / "analysis/memory_quality_probe_audit_20260502"
 NEW_AUDIT = RUN_ROOT / "analysis/memory_quality_probe_audit_20260503_source_map"
 RESULTS_PATH = RUN_ROOT / "summary/memory_quality_results.jsonl"
 
+MEMORY_QUALITY_PROBE_REVIEW_FOCUS: dict[tuple[str, int], dict[str, str]] = {
+    (
+        "huochu_shengming_de_yiyi_private_zh__segment_1",
+        1,
+    ): {
+        "focus_id": "huochu_probe1_prisoner_response_three_stages",
+        "title": "囚徒精神反应三阶段",
+        "source_signal": (
+            "source-so-far 明确引入囚徒对集中营生活的精神反应三阶段："
+            "收容阶段、适应阶段、释放与解放阶段，并开始讲第一阶段。"
+        ),
+        "audit_question": (
+            "snapshot 是否保留了作者正在用三阶段框架组织集中营心理反应这一点，"
+            "即使没有逐字复述？"
+        ),
+        "scoring_guidance": (
+            "这是重要的 source-given structural signal。它不是 exact-match gold answer，"
+            "但如果完全缺席，应影响 salience / organization 的人工复核判断。"
+        ),
+    }
+}
+
 
 @dataclass(frozen=True)
 class Probe:
@@ -135,6 +157,11 @@ def source_link(probe: Probe) -> str:
     return f"../source_texts/{probe.segment_id}.md#{probe.probe_slug}"
 
 
+def probe_review_focus(probe: Probe) -> dict[str, str] | None:
+    focus = MEMORY_QUALITY_PROBE_REVIEW_FOCUS.get((probe.segment_id, probe.probe_index))
+    return dict(focus) if focus else None
+
+
 def snippet_around(full_source: str, position: int, before: int = 500, after: int = 260) -> str:
     start = max(0, position - before)
     end = min(len(full_source), position + after)
@@ -232,10 +259,11 @@ def render_probe_source_map(probes: list[Probe]) -> str:
         "",
         "这些 probe 是固定进度检查点，不是语义挑点。`target` 是按窗口句数计算出的目标位置；`captured` 是第一个读完并越过该目标位置的完整 read unit 结束点。",
         "",
-        "| Probe | Schedule | Target | Captured | Why captured here | Full source marker |",
-        "| ---: | ---: | --- | --- | --- | --- |",
+        "| Probe | Schedule | Target | Captured | Why captured here | Structural signal focus | Full source marker |",
+        "| ---: | ---: | --- | --- | --- | --- | --- |",
     ]
     for probe in probes:
+        focus = probe_review_focus(probe)
         lines.append(
             "| "
             f"{probe.probe_index} | "
@@ -243,6 +271,7 @@ def render_probe_source_map(probes: list[Probe]) -> str:
             f"`{probe.target_sentence_id}` / ordinal `{probe.target_sentence_ordinal}` | "
             f"`{probe.capture_sentence_id}` / ordinal `{probe.capture_sentence_ordinal}` | "
             f"{escape_table_cell(why_here(probe))} | "
+            f"{escape_table_cell(focus['title']) if focus else 'none'} | "
             f"[open]({source_link(probe)}) |"
         )
     return "\n".join(lines)
@@ -275,6 +304,7 @@ def render_window(segment_id: str, probes: list[Probe], snippets: dict[int, str]
 
     for probe in probes:
         result = probe.scores
+        focus = probe_review_focus(probe)
         lines.extend(
             [
                 f"## Probe {probe.probe_index} — {probe.percent_label}",
@@ -288,6 +318,22 @@ def render_window(segment_id: str, probes: list[Probe], snippets: dict[int, str]
                 f"- raw snapshot JSON: [{probe.snapshot_path.name}](../raw_snapshots/{probe.snapshot_path.name})",
                 f"- full runtime appendix: [runtime_dumps/{segment_id}/index.md](../runtime_dumps/{segment_id}/index.md)",
                 "",
+            ]
+        )
+        if focus:
+            lines.extend(
+                [
+                    "### Structural Signals To Check",
+                    "",
+                    f"- focus: `{focus['title']}`",
+                    f"- source signal: {focus['source_signal']}",
+                    f"- audit question: {focus['audit_question']}",
+                    f"- scoring guidance: {focus['scoring_guidance']}",
+                    "",
+                ]
+            )
+        lines.extend(
+            [
                 "### Scores",
                 "",
                 f"- salience: `{result['salience_score']}`",

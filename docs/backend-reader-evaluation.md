@@ -263,6 +263,11 @@ Use `docs/backend-reading-mechanism.md` for shared mechanism-platform boundaries
     - `3 = adequate / useful`
     - `5 = excellent`
     - higher is better
+  - Memory Quality scoring also includes a structural-signal supplement:
+    - when source-so-far explicitly introduces a stage model, classification, core definition, roadmap, or named distinction, the judge should check whether the snapshot retains that structure in some meaningful form
+    - this is not an exact-match gold case and does not turn Memory Quality into sentence-hit recall
+    - if a salient source-given structure appears only in the source text and not in the snapshot, it should affect `salience_score` and `organization_score`, and sometimes `mainline_fidelity_score`
+    - individual probes may carry a small `probe_review_focus` note for high-risk structural signals; the focus sharpens the audit but the judgment remains holistic
   - Memory Quality probe snapshots should expose current prompt-facing state only:
     - `active_attention.active_items[]`
     - each active item uses lightweight `attention_tags[]`; old `working_state` and fixed `open_questions / live_tensions / live_hypotheses / live_motifs` views belong to historical reports only

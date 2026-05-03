@@ -26,6 +26,8 @@ The active direction is now a design-frozen three-metric line:
   - sample probe points inside one continuous reading window
   - judge the current memory/state snapshot holistically
   - do not predeclare gold sentences or hard-bind human notes into the contract
+  - do check whether salient source-given structures, such as stage models, classifications, core definitions, roadmaps, or named distinctions, are retained in the snapshot when they matter
+  - optional `probe_review_focus` notes may mark known high-risk structural signals for a probe; they are audit aids, not exact-match gold answers
 - `Spontaneous Callback`
   - audit all visible reactions in a completed reading window
   - count and interpret reactions that naturally recall or connect prior material
@@ -71,6 +73,10 @@ Current implementation posture:
     - `iterator_v1`: `51` grounded callbacks, `13` weak callbacks, `0` false visible integrations over `375` visible reactions
     - judge unavailable count: `0` for both mechanisms
   - the prior scale-fix rejudge remains useful for Memory Quality but its reaction-audit section copied the April 23 evidence surface and is superseded for reaction interpretation
+  - future Memory Quality judgments use the structural-signal-aware contract:
+    - source text alone cannot earn credit
+    - a salient author-given structure that never enters the snapshot should be visible in the judge reason and reflected in the relevant dimension scores
+    - `huochu_shengming_de_yiyi_private_zh__segment_1` Probe 1 now carries a review focus for the three-stage prisoner-response framework discovered during report review
 
 ## Historical Durable Evidence
 

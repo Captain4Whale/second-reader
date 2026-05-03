@@ -251,7 +251,16 @@ def test_memory_quality_judge_prompt_defines_score_scale(tmp_path: Path, monkeyp
     judgment = runner.judge_memory_quality_probe(
         run_root=tmp_path / "run",
         window=_window(),
-        probe_payload={"probe_index": 1, "read_so_far_source_text": "Alpha.", "memory_snapshot": {"items": ["Alpha"]}},
+        probe_payload={
+            "probe_index": 1,
+            "read_so_far_source_text": "Alpha.",
+            "memory_snapshot": {"items": ["Alpha"]},
+            "probe_review_focus": {
+                "focus_id": "demo_structural_signal",
+                "title": "Demo structure",
+                "audit_question": "Does the snapshot retain the source-given structure?",
+            },
+        },
         judge_mode="llm",
     )
 
@@ -260,10 +269,72 @@ def test_memory_quality_judge_prompt_defines_score_scale(tmp_path: Path, monkeyp
     assert "3 = adequate / useful" in captured["system_prompt"]
     assert "5 = excellent" in captured["system_prompt"]
     assert "context, not substitute memory" in captured["system_prompt"]
+    assert "source-given structural signals" in captured["system_prompt"]
+    assert "stage model, classification, core definition, roadmap, or named distinction" in captured["system_prompt"]
+    assert "not as an exact-match gold answer" in captured["system_prompt"]
     assert "Do not copy numbers from the output schema as defaults" in captured["system_prompt"]
+    assert "probe_review_focus" in captured["user_prompt"]
     assert runner.MEMORY_QUALITY_JUDGE_CONTRACT in captured["user_prompt"]
     assert judgment["judge_provided_overall_memory_quality_score"] == 1
     assert judgment["overall_memory_quality_score"] == 3.5
+
+
+def test_memory_quality_review_focus_marks_huochu_probe_one() -> None:
+    focus = runner.memory_quality_probe_review_focus(
+        segment_id="huochu_shengming_de_yiyi_private_zh__segment_1",
+        probe_index=1,
+    )
+
+    assert focus
+    assert focus["focus_id"] == "huochu_probe1_prisoner_response_three_stages"
+    assert "three-stage framework" in focus["source_signal"]
+    assert runner.memory_quality_probe_review_focus(
+        segment_id="huochu_shengming_de_yiyi_private_zh__segment_1",
+        probe_index=2,
+    ) is None
+
+
+def test_memory_quality_report_surfaces_probe_review_focus() -> None:
+    focus = runner.memory_quality_probe_review_focus(
+        segment_id="huochu_shengming_de_yiyi_private_zh__segment_1",
+        probe_index=1,
+    )
+    assert focus
+
+    report = runner._render_report(
+        aggregate={
+            "memory_quality": {
+                "memory_quality_judge_contract": runner.MEMORY_QUALITY_JUDGE_CONTRACT,
+                "average_overall_memory_quality_score": 4.0,
+                "probe_count": 1,
+                "window_count": 1,
+                "windows": [
+                    {
+                        "book_title": "活出生命的意义",
+                        "segment_id": "huochu_shengming_de_yiyi_private_zh__segment_1",
+                        "average_overall_memory_quality_score": 4.0,
+                        "probe_count": 1,
+                    }
+                ],
+            },
+            "reaction_audit": {"mechanisms": {}},
+        },
+        memory_quality_results=[
+            {
+                "segment_id": "huochu_shengming_de_yiyi_private_zh__segment_1",
+                "probe_index": 1,
+                "threshold_ratio": 0.2,
+                "overall_memory_quality_score": 4.0,
+                "reason": "The snapshot retains a structural frame.",
+                "probe_review_focus": focus,
+            }
+        ],
+        reaction_window_summaries=[],
+    )
+
+    assert "Structural-signal supplement" in report
+    assert "Structural signal to check" in report
+    assert "囚徒精神反应三阶段" in report
 
 
 def test_normalize_memory_quality_judgment_clamps_and_derives_overall() -> None:
@@ -519,6 +590,7 @@ def test_run_long_span_vnext_writes_separated_memory_and_reaction_outputs(tmp_pa
     assert set(aggregate["reaction_audit"]["mechanisms"].keys()) == {"attentional_v2", "iterator_v1"}
     report = (run_root / "summary" / "report.md").read_text(encoding="utf-8")
     assert "## Memory Quality (V2 only)" in report
+    assert "Structural-signal supplement" in report
     assert "## Reaction Audit Method" in report
     assert "## Spontaneous Callback" in report
     assert "## False Visible Integration" in report
