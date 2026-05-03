@@ -621,7 +621,7 @@ def _normalize_reflective_item(value: object, *, chapter_ref: str) -> Reflective
         if isinstance(value.get("support_anchor_ids"), list)
         else [],
         "confidence_band": _clean_text(value.get("confidence_band")) or "working",
-        "promoted_from": _clean_text(value.get("promoted_from")) or "local_hypothesis",
+        "promoted_from": _clean_text(value.get("promoted_from")) or "active_attention_item",
         "status": _clean_text(value.get("status")) or "active",
         "chapter_ref": chapter_ref,
     }

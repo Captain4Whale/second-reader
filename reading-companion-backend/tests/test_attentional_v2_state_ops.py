@@ -226,7 +226,7 @@ def test_reflective_move_reaction_reconsolidation_and_policy_helpers_append_clea
             "statement": "Value is mediated by other people.",
             "support_anchor_ids": ["a-1"],
             "confidence_band": "working",
-            "promoted_from": "local_hypothesis",
+            "promoted_from": "active_attention_item",
             "status": "active",
         },
     )

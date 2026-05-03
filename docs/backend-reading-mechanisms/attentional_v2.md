@@ -126,6 +126,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - Current hot state is `active_attention.active_items`.
   - `Working State` was the historical name for this hot layer; current code, prompts, runtime artifacts, checkpoints, and Memory Quality snapshots use `Active Attention`.
   - Each active item now carries lightweight `attention_tags[]` rather than the old fixed question/tension/hypothesis/motif digest lists.
+  - `local_hypotheses` / `live_hypotheses` are historical names only. Hypothesis-like material is now just an `active_attention.active_items[]` entry with tags such as `interpretation`, `tension`, or another natural label; if it becomes stable and reusable, it should move into `concept_registry` or `thread_trace` instead of remaining as a separate hot-state list.
   - `gate_state`, `pressure_snapshot`, and the old working-pressure file are historical trigger/watch/zoom design artifacts, not current runtime or prompt inputs.
   - Current `pressure_signals` are different: they are one-step `Read -> Navigate.route` signals and remain live.
 - Phase D of the post-eval structural rework is now landed as preserved intermediate continuity / recall / resume evidence.

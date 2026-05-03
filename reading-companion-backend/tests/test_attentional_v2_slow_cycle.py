@@ -180,6 +180,18 @@ def test_build_reaction_record_from_surfaced_reaction_persists_native_surface_fi
     assert compat_search_query(record) == "social marketplace framing"
 
 
+def test_reflective_item_default_provenance_uses_active_attention_item():
+    """Slow-cycle defaults should use the current hot-state term, not old local-hypothesis buckets."""
+
+    item = slow_cycle_module._normalize_reflective_item(
+        {"statement": "The opening social frame now feels durable."},
+        chapter_ref="Chapter 1",
+    )
+
+    assert item is not None
+    assert item["promoted_from"] == "active_attention_item"
+
+
 def test_project_chapter_result_compatibility_prefers_native_surface_fields_over_legacy_type():
     """Compatibility projection should derive family labels from native surfaced semantics, not stale legacy type."""
 

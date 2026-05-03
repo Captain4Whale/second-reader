@@ -56,6 +56,7 @@ Use `docs/api-contract.md` for exact fields and routes. Use this file to underst
   - Current hot-attention source for `attentional_v2`.
   - The live contract is `active_attention.active_items[]`; each item may carry lightweight `attention_tags[]`.
   - The old `working_state` name and fixed question/tension/hypothesis/motif digest lists are historical, not current aggregation truth.
+  - Historical `local_hypothesis` / `live_hypotheses` labels should be read only as old provenance vocabulary. Current aggregation should treat hypothesis-like hot material as tagged active-attention items, not as a separate state layer.
   - `gate_state`, `pressure_snapshot`, and old working-pressure files may appear in historical output trees but must not be treated as current aggregation truth.
 - `_mechanisms/attentional_v2/runtime/read_audit.jsonl`
   - Per-unit audit history for `attentional_v2` reads.
