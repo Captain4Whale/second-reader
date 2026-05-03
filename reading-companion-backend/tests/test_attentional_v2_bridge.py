@@ -13,7 +13,7 @@ from src.attentional_v2.schemas import (
     build_empty_anchor_bank,
     build_empty_concept_registry,
     build_empty_knowledge_activations,
-    build_empty_move_history,
+    build_empty_route_history,
     build_empty_thread_trace,
     build_empty_active_attention,
 )
@@ -308,7 +308,7 @@ def test_run_phase5_bridge_cycle_materializes_anchor_state(monkeypatch):
         thread_trace=build_empty_thread_trace(),
         anchor_bank=build_empty_anchor_bank(),
         knowledge_activations=build_empty_knowledge_activations(),
-        move_history=build_empty_move_history(),
+        route_history=build_empty_route_history(),
         reader_policy=build_default_reader_policy(),
         output_language="en",
         motif_keys=["relation"],
@@ -326,5 +326,5 @@ def test_run_phase5_bridge_cycle_materializes_anchor_state(monkeypatch):
     assert result["anchor_bank"]["anchor_relations"][0]["relation_type"] == "callback"
     assert {entry["concept_key"] for entry in result["concept_registry"]["entries"]} == {"relation", "value shift"}
     assert result["thread_trace"]["entries"][0]["thread_key"] == f"trace:{current_anchor_id}"
-    assert result["move_history"]["moves"][0]["move_type"] == "bridge"
-    assert result["move_history"]["moves"][0]["target_anchor_id"] == "anchor:c1-s2:c1-s2"
+    assert result["route_history"]["routes"][0]["route_action"] == "bridge_back"
+    assert result["route_history"]["routes"][0]["target_anchor_id"] == "anchor:c1-s2:c1-s2"

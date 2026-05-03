@@ -7,7 +7,7 @@ from src.attentional_v2.schemas import (
     build_empty_anchor_memory,
     build_empty_knowledge_activations,
     build_empty_local_buffer,
-    build_empty_move_history,
+    build_empty_route_history,
     build_empty_reaction_records,
     build_empty_reconsolidation_records,
     build_empty_reflective_summaries,
@@ -15,7 +15,7 @@ from src.attentional_v2.schemas import (
 )
 from src.attentional_v2.state_ops import (
     append_anchor_relation,
-    append_move,
+    append_route,
     append_reaction_record,
     append_reconsolidation_record,
     apply_active_attention_operations,
@@ -230,11 +230,11 @@ def test_reflective_move_reaction_reconsolidation_and_policy_helpers_append_clea
             "status": "active",
         },
     )
-    move_state = append_move(
-        build_empty_move_history(),
+    route_state = append_route(
+        build_empty_route_history(),
         {
-            "move_id": "m-1",
-            "move_type": "bridge",
+            "route_id": "m-1",
+            "route_action": "bridge_back",
             "reason": "motif recurs after a new example",
             "source_sentence_id": "c1-s4",
             "target_anchor_id": "a-1",
@@ -287,7 +287,7 @@ def test_reflective_move_reaction_reconsolidation_and_policy_helpers_append_clea
     )
 
     assert reflective_state["chapter_understandings"][0]["status"] == "superseded"
-    assert move_state["moves"][0]["move_type"] == "bridge"
+    assert route_state["routes"][0]["route_action"] == "bridge_back"
     assert reaction_state["records"][0]["reaction_id"] == "rx-1"
     assert reconsolidation_state["records"][0]["record_id"] == "rc-1"
     assert policy["resume"]["cold_resume_target_sentences"] == 3

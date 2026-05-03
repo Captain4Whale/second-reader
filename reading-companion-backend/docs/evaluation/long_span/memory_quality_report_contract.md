@@ -76,19 +76,19 @@ Each probe should show:
 - readable state digests
 - recent orientation context
 
-## Recent Moves Naming Rule
+## Recent Routes Naming Rule
 
-`Recent Moves` is a compact projection from runtime `move_history`, not the raw full move history.
+`Recent Routes` is a compact projection from runtime `route_history`, not the raw full route history.
 
 Current renderer behavior:
 
-- source: `move_history.moves[-3:]` at the probe snapshot time
-- kept fields include move id, move type, route reason, source sentence, target anchor, and target sentence
-- dropped fields include full file-level metadata and older moves outside the recent window
-- the text should be labeled `move reason`, not `statement`
-- `Recent Moves` is local continuity / audit evidence, not long-term memory
+- source: `route_history.routes[-3:]` at the probe snapshot time
+- kept fields include route id, route action, route reason, source sentence, target anchor, and target sentence
+- dropped fields include full file-level metadata and older routes outside the recent window
+- the text should be labeled `route reason`, not `statement`
+- `Recent Routes` is local continuity / audit evidence, not long-term memory
 
-Do not label a move reason as `statement` in generated Memory Quality reports. `statement` is reserved for memory-like items such as active-attention items, concepts, threads, anchors, or reactions.
+Do not label a route reason as `statement` in generated Memory Quality reports. `statement` is reserved for memory-like items such as active-attention items, concepts, threads, anchors, or reactions.
 
 ## Current-State Naming Rules
 
@@ -111,6 +111,6 @@ Before closing a generated Memory Quality evidence report, check:
 - Each full source document has 5 probe markers.
 - Probe sections do not repeat full source-so-far blocks.
 - Every probe links to raw snapshot JSON, source marker, source landmark, and runtime appendix.
-- `Recent Moves` blocks say `move reason`, not `statement`.
+- `Recent Routes` blocks say `route reason`, not `statement`.
 - The report states that probe placement is progress-based, not semantic.
 - The report states that final runtime dump cannot replace probe-time snapshot evidence.

@@ -2019,6 +2019,42 @@ The old active windows `nawaer_baodian_private_zh__wealth`, `nawaer_baodian_priv
 **ID**: DEC-079
 **Status**: active
 
+**Decision / Inflection**: Cut current `attentional_v2` routing vocabulary from the historical `advance / dwell / bridge / reframe` move model to the current `Navigate.route` action contract: `commit`, `continue`, `bridge_back`, and `reframe`.
+
+**Period**: May 3, 2026, after the Runner/Navigate cleanup made clear that the old controller vocabulary was no longer the live scheduling model and was only surviving through compatibility projection.
+
+**Problem**: The old move names came from an earlier controller design where the mechanism chose among `advance`, `dwell`, `bridge`, and `reframe`. The current mechanism no longer operates that way. It reads a semantic unit, receives one-step `pressure_signals`, and lets deterministic `Navigate.route` record the next route action. Keeping `MoveType`, `move_type`, `move_history`, and the `continue -> dwell` projection made current code, public payloads, frontend copy, and evaluation exports look as if the older controller still governed reading. It also made `continue` easy to misread as merely a renamed `dwell`, which is not the current meaning.
+
+**Alternatives considered**: Keep `move_type` as a public compatibility field while adding `route_action`, keep double-written `move_history` and `route_history` for a transition period, or only update docs while leaving code adapters in place. These were rejected because this project phase is explicitly cleaning confirmed-dead compatibility tails rather than preserving them indefinitely.
+
+**Why this path won**: The new contract names what the live runner actually does. `commit` accepts the current unit and advances; `continue` means the current semantic movement still has forward continuation pressure; `bridge_back` records a source-grounded callback route into the bridge-resolution helper; `reframe` records that the current unit changed the active reading frame. These are route actions, not legacy controller moves. Removing the old projection makes the route layer easier to reason about and prevents future prompt/eval/report work from reintroducing `dwell` or `bridge` as current scheduling entities.
+
+**What changed in the system**: New runtime artifacts now write `route_history.json` containing `routes[]` with `route_action`. New runtime and checkpoint loading fail fast on pre-cutover `move_history`-only state. Public analysis-state and activity payloads now expose `route_action` instead of `move_type`; the frontend generated API type and live-chip copy now use the same field and the four current values. Normalized eval exports and current Memory Quality report-writing contracts use route evidence rather than move evidence. Historical run artifacts and archived reports are not migrated.
+
+**Why it matters later**: Future navigation work should start from the actual loop, `Navigate.unitize -> read -> Navigate.route`, not from the abandoned move-controller vocabulary. If a later mechanism needs richer route semantics, it should extend `route_action` deliberately rather than reviving `MoveType` or treating old `advance/dwell/bridge/reframe` as still canonical.
+
+**Primary evidence**:
+- `docs/backend-reading-mechanisms/attentional_v2.md`
+- `docs/api-contract.md`
+- `docs/api-integration.md`
+- `docs/backend-state-aggregation.md`
+- `docs/backend-reader-evaluation.md`
+- `docs/current-state.md`
+- `docs/tasks/registry.md`
+- `docs/tasks/registry.json`
+- `reading-companion-backend/src/attentional_v2/schemas.py`
+- `reading-companion-backend/src/attentional_v2/runner.py`
+- `reading-companion-backend/src/attentional_v2/resume.py`
+- `reading-companion-backend/src/attentional_v2/storage.py`
+- `reading-companion-backend/src/api/schemas.py`
+- `reading-companion-backend/src/library/catalog.py`
+- `reading-companion-frontend/src/app/components/book-overview-page.tsx`
+- `reading-companion-frontend/src/app/config/controlled-copy.ts`
+
+## Entry 76
+**ID**: DEC-079
+**Status**: active
+
 **Decision / Inflection**: Naturalize the current `attentional_v2` `Read` contract from field-filling node language to reader-like reading experience. The current field names are now `reading_impression` and `memory_uptake_ops`; `unit_delta` and `implicit_uptake_ops` are historical names.
 
 **Period**: May 3, 2026, after the Memory Quality probe review showed that important source-given structures could remain trapped in the local read audit while not settling into durable memory.

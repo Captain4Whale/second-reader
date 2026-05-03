@@ -126,8 +126,8 @@ def _render_reaction_like(item: dict[str, Any], index: int) -> str:
     lines = [f"{index}. {_reaction_title(item, index)}"]
     if item.get("section_ref"):
         lines.append(f"- section_ref: `{item.get('section_ref')}`")
-    if item.get("move_type"):
-        lines.append(f"- move_type: `{item.get('move_type')}`")
+    if item.get("route_action"):
+        lines.append(f"- route_action: `{item.get('route_action')}`")
     if item.get("matched_callback_label") or item.get("matched_callback_point_id"):
         lines.append(
             "- callback target: "

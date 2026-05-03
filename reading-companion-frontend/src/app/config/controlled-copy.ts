@@ -1535,38 +1535,38 @@ export const CONTROLLED_COPY = {
     toneNote: "Quiet and patient.",
     usageScope: "Book overview runtime panel.",
   },
-  "overview.mindstream.meta.moveType.label": {
-    en: "Move",
-    zh: "当前动作",
-    intent: "Compact label for the current attentional move chip in the live mindstream panel.",
+  "overview.mindstream.meta.routeAction.label": {
+    en: "Route",
+    zh: "当前路线",
+    intent: "Compact label for the current route-action chip in the live mindstream panel.",
     toneNote: "Short and factual.",
     usageScope: "Book overview runtime panel.",
   },
-  "overview.mindstream.meta.moveType.advance": {
-    en: "Advancing",
-    zh: "推进中",
-    intent: "Compact value for the advance move type.",
+  "overview.mindstream.meta.routeAction.commit": {
+    en: "Committing",
+    zh: "确认并推进",
+    intent: "Compact value for accepting the current unit and moving forward.",
     toneNote: "Short and active.",
     usageScope: "Book overview runtime panel.",
   },
-  "overview.mindstream.meta.moveType.dwell": {
-    en: "Dwelling",
-    zh: "停驻中",
-    intent: "Compact value for the dwell move type.",
+  "overview.mindstream.meta.routeAction.continue": {
+    en: "Continuing",
+    zh: "继续往后读",
+    intent: "Compact value for continuing because the current semantic action is not complete.",
     toneNote: "Short and active.",
     usageScope: "Book overview runtime panel.",
   },
-  "overview.mindstream.meta.moveType.bridge": {
-    en: "Bridging",
-    zh: "回桥中",
-    intent: "Compact value for the bridge move type.",
+  "overview.mindstream.meta.routeAction.bridgeBack": {
+    en: "Bridging back",
+    zh: "回连前文",
+    intent: "Compact value for linking the current unit back to an earlier source anchor.",
     toneNote: "Short and active.",
     usageScope: "Book overview runtime panel.",
   },
-  "overview.mindstream.meta.moveType.reframe": {
+  "overview.mindstream.meta.routeAction.reframe": {
     en: "Reframing",
-    zh: "重构中",
-    intent: "Compact value for the reframe move type.",
+    zh: "调整框架",
+    intent: "Compact value for content that changes the reader's current frame.",
     toneNote: "Short and active.",
     usageScope: "Book overview runtime panel.",
   },
@@ -1620,7 +1620,7 @@ export const CONTROLLED_COPY = {
     usageScope: "Book overview mindstream desktop sidecar.",
   },
   "overview.mindstream.locus.detail": {
-    en: "A soft marker of where the thread is currently dwelling.",
+    en: "A soft marker of where the thread is currently resting.",
     zh: "一个轻柔的标记，提示这条思路此刻停留在哪里。",
     intent: "Supporting descriptor beneath the reading-locus sidecar content.",
     toneNote: "Editorial, calm, and non-technical.",

@@ -13,7 +13,7 @@ from .schemas import (
     ConceptRegistryState,
     ContinuationCapsule,
     ContextRequest,
-    MoveHistoryState,
+    RouteHistoryState,
     ReactionRecordsState,
     ReaderPolicy,
     ReflectiveFramesState,
@@ -140,7 +140,7 @@ def merge_supplemental_contexts(
         ("concepts", "concept_key"),
         ("threads", "thread_key"),
         ("reactions", "reaction_id"),
-        ("moves", "move_id"),
+        ("routes", "route_id"),
         ("reflective_items", "item_id"),
         ("excerpts", "ref_id"),
     ):
@@ -193,7 +193,7 @@ def resolve_context_request(
     concept_registry: ConceptRegistryState,
     thread_trace: ThreadTraceState,
     reflective_frames: ReflectiveFramesState,
-    move_history: MoveHistoryState,
+    route_history: RouteHistoryState,
     reaction_records: ReactionRecordsState,
     reader_policy: ReaderPolicy | None = None,
     current_unit_sentence_ids: list[str] | None = None,
@@ -228,10 +228,10 @@ def resolve_context_request(
         for item in continuity_capsule.get("recent_reactions", [])
         if isinstance(item, dict) and clean_text(item.get("reaction_id"))
     }
-    carry_move_ids = {
-        clean_text(item.get("move_id"))
-        for item in continuity_capsule.get("recent_moves", [])
-        if isinstance(item, dict) and clean_text(item.get("move_id"))
+    carry_route_ids = {
+        clean_text(item.get("route_id"))
+        for item in continuity_capsule.get("recent_routes", [])
+        if isinstance(item, dict) and clean_text(item.get("route_id"))
     }
     carry_concept_keys = _linked_keys_from_digest(
         carry_forward_context,
@@ -466,16 +466,16 @@ def resolve_context_request(
             if len(reactions) >= 3:
                 break
 
-        moves: list[dict[str, object]] = []
-        for move in list(move_history.get("moves", []))[-6:]:
-            if not isinstance(move, dict):
+        routes: list[dict[str, object]] = []
+        for route in list(route_history.get("routes", []))[-6:]:
+            if not isinstance(route, dict):
                 continue
-            move_id = clean_text(move.get("move_id"))
-            if not move_id or move_id in carry_move_ids:
+            route_id = clean_text(route.get("route_id"))
+            if not route_id or route_id in carry_route_ids:
                 continue
-            source_sentence_id = clean_text(move.get("source_sentence_id"))
-            target_anchor_id = clean_text(move.get("target_anchor_id"))
-            target_sentence_id = clean_text(move.get("target_sentence_id"))
+            source_sentence_id = clean_text(route.get("source_sentence_id"))
+            target_anchor_id = clean_text(route.get("target_anchor_id"))
+            target_sentence_id = clean_text(route.get("target_sentence_id"))
             if requested_anchor_ids or requested_sentence_ids:
                 if (
                     target_anchor_id not in requested_anchor_ids
@@ -483,13 +483,13 @@ def resolve_context_request(
                     and target_sentence_id not in requested_sentence_ids
                 ):
                     continue
-            ref_id = f"move:{move_id}"
-            moves.append(
+            ref_id = f"route:{route_id}"
+            routes.append(
                 {
                     "ref_id": ref_id,
-                    "move_id": move_id,
-                    "move_type": clean_text(move.get("move_type")),
-                    "reason": clean_text(move.get("reason")),
+                    "route_id": route_id,
+                    "route_action": clean_text(route.get("route_action")),
+                    "reason": clean_text(route.get("reason")),
                     "source_sentence_id": source_sentence_id,
                     "target_anchor_id": target_anchor_id,
                     "target_sentence_id": target_sentence_id,
@@ -498,15 +498,15 @@ def resolve_context_request(
             refs.append(
                 {
                     "ref_id": ref_id,
-                    "kind": "move",
-                    "item_id": move_id,
-                    "summary": clean_text(move.get("reason")) or clean_text(move.get("move_type")),
-                    "move_id": move_id,
+                    "kind": "route",
+                    "item_id": route_id,
+                    "summary": clean_text(route.get("reason")) or clean_text(route.get("route_action")),
+                    "route_id": route_id,
                     "sentence_id": source_sentence_id,
                     "anchor_id": target_anchor_id,
                 }
             )
-            if len(moves) >= 3:
+            if len(routes) >= 3:
                 break
 
         reflective_items: list[dict[str, object]] = []
@@ -542,7 +542,7 @@ def resolve_context_request(
                     }
                 )
 
-        if not any((anchors, concepts, threads, reactions, moves, reflective_items)):
+        if not any((anchors, concepts, threads, reactions, routes, reflective_items)):
             return None
         return {
             "kind": "active_recall",
@@ -552,7 +552,7 @@ def resolve_context_request(
             "concepts": concepts,
             "threads": threads,
             "reactions": reactions,
-            "moves": moves,
+            "routes": routes,
             "reflective_items": reflective_items,
         }
 

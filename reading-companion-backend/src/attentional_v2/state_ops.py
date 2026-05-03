@@ -17,8 +17,8 @@ from .schemas import (
     KnowledgeActivationsState,
     LocalBufferSentence,
     LocalBufferState,
-    MoveHistoryState,
-    MoveRecord,
+    RouteHistoryState,
+    RouteRecord,
     ReactionRecordsState,
     ReaderPolicy,
     ReconsolidationRecord,
@@ -579,11 +579,11 @@ def upsert_knowledge_activation(
     return next_state  # type: ignore[return-value]
 
 
-def append_move(state: MoveHistoryState, move: MoveRecord) -> MoveHistoryState:
-    """Append one controller move in source order."""
+def append_route(state: RouteHistoryState, route: RouteRecord) -> RouteHistoryState:
+    """Append one route decision in source order."""
 
     next_state = _touch_state(state)
-    next_state["moves"] = [*state.get("moves", []), dict(move)]
+    next_state["routes"] = [*state.get("routes", []), dict(route)]
     return next_state  # type: ignore[return-value]
 
 

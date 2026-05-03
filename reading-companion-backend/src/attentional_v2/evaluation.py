@@ -202,14 +202,14 @@ def _normalized_run_snapshot(
     if current_activity:
         activity_payload = {
             "reading_locus": current_activity.get("reading_locus"),
-            "move_type": current_activity.get("move_type"),
+            "route_action": current_activity.get("route_action"),
             "current_excerpt": current_activity.get("anchor_quote") or current_activity.get("highlight_quote") or "",
             "reconstructed_hot_state": bool(current_activity.get("reconstructed_hot_state")),
             "last_resume_kind": current_activity.get("last_resume_kind"),
             "active_reaction_id": current_activity.get("active_reaction_id") or active_reaction_id or None,
         }
         snapshot["current_reading_activity"] = activity_payload
-        snapshot["current_move_type"] = _clean_text(current_activity.get("move_type"))
+        snapshot["current_route_action"] = _clean_text(current_activity.get("route_action"))
         snapshot["reconstructed_hot_state"] = (
             bool(current_activity.get("reconstructed_hot_state"))
             if current_activity.get("reconstructed_hot_state") is not None
@@ -238,7 +238,7 @@ def _normalized_attention_events(output_dir: Path) -> list[NormalizedAttentionEv
             "search_query": _clean_text(raw.get("search_query")),
             "thought_family": _clean_text(raw.get("thought_family")),
             "problem_code": _clean_text(raw.get("problem_code")),
-            "move_type": _clean_text(raw.get("move_type")),
+            "route_action": _clean_text(raw.get("route_action")),
             "active_reaction_id": _clean_text(raw.get("active_reaction_id")),
         }
         phase = _clean_text(raw.get("phase"))

@@ -10,7 +10,6 @@ from src.reading_core.normalized_outputs import ReactionType, SearchHit
 from src.reading_core.runtime_contracts import ObservabilityMode, ResumeKind, RuntimeArtifactRefs, SharedRunCursor
 
 
-MoveType = Literal["advance", "dwell", "bridge", "reframe"]
 UnitizeBoundaryType = Literal[
     "paragraph_end",
     "intra_paragraph_semantic_close",
@@ -159,7 +158,7 @@ class CarryForwardRef(TypedDict, total=False):
     sentence_id: str
     anchor_id: str
     reaction_id: str
-    move_id: str
+    route_id: str
 
 
 class SessionContinuityCapsule(TypedDict, total=False):
@@ -167,7 +166,7 @@ class SessionContinuityCapsule(TypedDict, total=False):
 
     recent_sentence_ids: list[str]
     recent_meaning_units: list[list[str]]
-    recent_moves: list[dict[str, object]]
+    recent_routes: list[dict[str, object]]
     recent_reactions: list[dict[str, object]]
 
 
@@ -221,7 +220,7 @@ class ActiveFocusDigest(TypedDict, total=False):
     """Small digest of currently active attention plus recent moves and reactions."""
 
     active_items: list[dict[str, object]]
-    recent_moves: list[dict[str, object]]
+    recent_routes: list[dict[str, object]]
     recent_reactions: list[dict[str, object]]
 
 
@@ -670,11 +669,11 @@ class KnowledgeActivationsState(TypedDict, total=False):
     activations: list[KnowledgeActivation]
 
 
-class MoveRecord(TypedDict, total=False):
-    """One recorded controller move."""
+class RouteRecord(TypedDict, total=False):
+    """One recorded route decision."""
 
-    move_id: str
-    move_type: MoveType
+    route_id: str
+    route_action: RouteAction
     reason: str
     source_sentence_id: str
     target_anchor_id: str
@@ -682,13 +681,13 @@ class MoveRecord(TypedDict, total=False):
     created_at: str
 
 
-class MoveHistoryState(TypedDict, total=False):
-    """Ordered controller move history."""
+class RouteHistoryState(TypedDict, total=False):
+    """Ordered route-decision history."""
 
     schema_version: int
     mechanism_version: str
     updated_at: str
-    moves: list[MoveRecord]
+    routes: list[RouteRecord]
 
 
 class ReactionRecordsState(TypedDict, total=False):
@@ -815,7 +814,7 @@ class FullCheckpointState(TypedDict, total=False):
     anchor_memory: AnchorMemoryState
     reflective_summaries: ReflectiveSummariesState
     knowledge_activations: KnowledgeActivationsState
-    move_history: MoveHistoryState
+    route_history: RouteHistoryState
     reaction_records: ReactionRecordsState
     reconsolidation_records: ReconsolidationRecordsState
     reader_policy: ReaderPolicy
@@ -901,7 +900,7 @@ def build_empty_continuation_capsule(
         "session_continuity_capsule": {
             "recent_sentence_ids": [],
             "recent_meaning_units": [],
-            "recent_moves": [],
+            "recent_routes": [],
             "recent_reactions": [],
         },
         "active_attention_digest": {
@@ -915,7 +914,7 @@ def build_empty_continuation_capsule(
         },
         "active_focus_digest": {
             "active_items": [],
-            "recent_moves": [],
+            "recent_routes": [],
             "recent_reactions": [],
         },
         "concept_digest": [],
@@ -1025,14 +1024,14 @@ def build_empty_knowledge_activations(
     }
 
 
-def build_empty_move_history(*, mechanism_version: str = ATTENTIONAL_V2_MECHANISM_VERSION) -> MoveHistoryState:
-    """Return the default move-history state."""
+def build_empty_route_history(*, mechanism_version: str = ATTENTIONAL_V2_MECHANISM_VERSION) -> RouteHistoryState:
+    """Return the default route-history state."""
 
     return {
         "schema_version": ATTENTIONAL_V2_SCHEMA_VERSION,
         "mechanism_version": mechanism_version,
         "updated_at": _timestamp(),
-        "moves": [],
+        "routes": [],
     }
 
 

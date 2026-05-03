@@ -237,7 +237,7 @@ except as migration compatibility text where the underlying value remains in the
   - optional `segment_ref`
   - optional `current_excerpt` carrying the normalized live excerpt text for the active segment
   - optional additive `reading_locus` carrying span- or sentence-based mechanism truth when available
-  - optional additive `move_type`
+  - optional additive `route_action`
   - optional `search_query`
   - optional `thought_family`
   - optional `reconstructed_hot_state`
@@ -302,10 +302,18 @@ Activity and realtime payloads must continue to normalize into the public contra
 
 Activity events may now additively expose:
 - `reading_locus`
-- `move_type`
+- `route_action`
 - `active_reaction_id`
 
 These fields are additive and compatibility-preserving. Current routed frontend surfaces may ignore them until a later migration is ready.
+
+`route_action` is the current `attentional_v2` route contract. Allowed values are:
+- `commit`
+- `continue`
+- `bridge_back`
+- `reframe`
+
+The older `move_type` field and values such as `advance`, `dwell`, or `bridge` are historical runtime vocabulary and must not be emitted by new public payloads.
 
 ### Additive Reaction And Mark Fields
 Reaction previews, reaction cards, and mark payloads may now additively expose richer mechanism-authored fields:

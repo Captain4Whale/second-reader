@@ -14,7 +14,7 @@ from src.attentional_v2.schemas import (
     build_empty_concept_registry,
     build_empty_local_buffer,
     build_empty_local_continuity,
-    build_empty_move_history,
+    build_empty_route_history,
     build_empty_reaction_records,
     build_empty_reflective_frames,
     build_empty_thread_trace,
@@ -178,7 +178,7 @@ def test_persist_due_memory_quality_probe_snapshots_emits_once_per_threshold(tmp
         thread_trace=build_empty_thread_trace(),
         reflective_frames=build_empty_reflective_frames(),
         anchor_bank=build_empty_anchor_bank(),
-        move_history=build_empty_move_history(),
+        route_history=build_empty_route_history(),
         reaction_records=build_empty_reaction_records(),
     )
 
@@ -199,7 +199,7 @@ def test_persist_due_memory_quality_probe_snapshots_emits_once_per_threshold(tmp
         thread_trace=build_empty_thread_trace(),
         reflective_frames=build_empty_reflective_frames(),
         anchor_bank=build_empty_anchor_bank(),
-        move_history=build_empty_move_history(),
+        route_history=build_empty_route_history(),
         reaction_records=build_empty_reaction_records(),
     )
     assert second == []
@@ -217,7 +217,7 @@ def test_persist_due_memory_quality_probe_snapshots_emits_once_per_threshold(tmp
         thread_trace=build_empty_thread_trace(),
         reflective_frames=build_empty_reflective_frames(),
         anchor_bank=build_empty_anchor_bank(),
-        move_history=build_empty_move_history(),
+        route_history=build_empty_route_history(),
         reaction_records=build_empty_reaction_records(),
     )
     assert len(final) == 1

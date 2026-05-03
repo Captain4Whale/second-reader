@@ -13,7 +13,7 @@ from src.attentional_v2.schemas import (
     build_empty_anchor_memory,
     build_empty_knowledge_activations,
     build_empty_local_buffer,
-    build_empty_move_history,
+    build_empty_route_history,
     build_empty_reaction_records,
     build_empty_reflective_summaries,
     build_empty_active_attention,
@@ -164,11 +164,11 @@ def test_read_unit_projects_compact_packet_and_returns_f1_surface_contract(tmp_p
         }
     ]
 
-    move_history = build_empty_move_history()
-    move_history["moves"] = [
+    route_history = build_empty_route_history()
+    route_history["routes"] = [
         {
-            "move_id": "move-1",
-            "move_type": "advance",
+            "route_id": "move-1",
+            "route_action": "commit",
             "reason": "follow the opening claim",
             "source_sentence_id": "c1-s1",
             "target_anchor_id": "",
@@ -194,7 +194,7 @@ def test_read_unit_projects_compact_packet_and_returns_f1_surface_contract(tmp_p
         active_attention=active_attention,
         anchor_memory=anchor_memory,
         reflective_summaries=reflective_summaries,
-        move_history=move_history,
+        route_history=route_history,
         reaction_records=reaction_records,
     )
 
@@ -285,7 +285,7 @@ def test_resolve_context_request_returns_exact_look_back_excerpt_and_none_when_u
         active_attention=build_empty_active_attention(),
         anchor_memory=anchor_memory,
         reflective_summaries=build_empty_reflective_summaries(),
-        move_history=build_empty_move_history(),
+        route_history=build_empty_route_history(),
         reaction_records=build_empty_reaction_records(),
     )
 
@@ -303,7 +303,7 @@ def test_resolve_context_request_returns_exact_look_back_excerpt_and_none_when_u
         concept_registry=concept_registry,
         thread_trace=thread_trace,
         reflective_frames=reflective_frames,
-        move_history=build_empty_move_history(),
+        route_history=build_empty_route_history(),
         reaction_records=build_empty_reaction_records(),
     )
 
@@ -326,7 +326,7 @@ def test_resolve_context_request_returns_exact_look_back_excerpt_and_none_when_u
         concept_registry=concept_registry,
         thread_trace=thread_trace,
         reflective_frames=reflective_frames,
-        move_history=build_empty_move_history(),
+        route_history=build_empty_route_history(),
         reaction_records=build_empty_reaction_records(),
     )
 
@@ -354,7 +354,7 @@ def test_resolve_context_request_active_recall_surfaces_concepts_and_threads():
         active_attention=build_empty_active_attention(),
         anchor_memory=anchor_memory,
         reflective_summaries=build_empty_reflective_summaries(),
-        move_history=build_empty_move_history(),
+        route_history=build_empty_route_history(),
         reaction_records=build_empty_reaction_records(),
     )
 
@@ -372,7 +372,7 @@ def test_resolve_context_request_active_recall_surfaces_concepts_and_threads():
         concept_registry=concept_registry,
         thread_trace=thread_trace,
         reflective_frames=reflective_frames,
-        move_history=build_empty_move_history(),
+        route_history=build_empty_route_history(),
         reaction_records=build_empty_reaction_records(),
         current_unit_sentence_ids=["c1-s2"],
     )
@@ -455,7 +455,7 @@ def test_run_read_with_context_loop_reads_once_and_persists_f1_audit(tmp_path, m
         reflective_frames=reflective_frames,
         anchor_bank=anchor_bank,
         knowledge_activations=build_empty_knowledge_activations(),
-        move_history=build_empty_move_history(),
+        route_history=build_empty_route_history(),
         reaction_records=build_empty_reaction_records(),
         reader_policy=build_default_reader_policy(),
         output_language="en",

@@ -752,7 +752,7 @@ def _decorate_activity_event(
         excerpt=_clean_text(event.get("highlight_quote") or event.get("anchor_quote")),
         root=root,
     )
-    move_type = _clean_text(event.get("move_type"))
+    route_action = _clean_text(event.get("route_action"))
 
     return {
         "event_id": str(event.get("event_id", "") or _event_id(event)),
@@ -767,7 +767,7 @@ def _decorate_activity_event(
         "chapter_ref": chapter_ref,
         "section_ref": section_ref,
         "reading_locus": reading_locus,
-        "move_type": move_type if move_type in {"advance", "dwell", "bridge", "reframe"} else None,
+        "route_action": route_action if route_action in {"commit", "continue", "bridge_back", "reframe"} else None,
         "active_reaction_id": _public_optional_reaction_id(book_id, event.get("active_reaction_id")),
         "anchor_quote": str(event.get("anchor_quote", "") or "") or None,
         "highlight_quote": str(event.get("highlight_quote", "") or "") or None,
@@ -1347,9 +1347,9 @@ def _analysis_current_reading_activity(
     if reading_locus is not None:
         payload["reading_locus"] = reading_locus
 
-    move_type = _clean_text(current_payload.get("move_type"))
-    if move_type in {"advance", "dwell", "bridge", "reframe"}:
-        payload["move_type"] = move_type
+    route_action = _clean_text(current_payload.get("route_action"))
+    if route_action in {"commit", "continue", "bridge_back", "reframe"}:
+        payload["route_action"] = route_action
 
     reconstructed = current_payload.get("reconstructed_hot_state")
     if reconstructed is None and "is_reconstructed" in current_payload:

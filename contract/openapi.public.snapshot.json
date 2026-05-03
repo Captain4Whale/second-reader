@@ -112,24 +112,6 @@
             "title": "Message",
             "type": "string"
           },
-          "move_type": {
-            "anyOf": [
-              {
-                "enum": [
-                  "advance",
-                  "dwell",
-                  "bridge",
-                  "reframe"
-                ],
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "Current move type when the event represents a mechanism-authored attentional move.",
-            "title": "Move Type"
-          },
           "reaction_types": {
             "description": "Reaction types represented in this event.",
             "items": {
@@ -167,6 +149,24 @@
             ],
             "description": "Frontend result route associated with the event when available.",
             "title": "Result Url"
+          },
+          "route_action": {
+            "anyOf": [
+              {
+                "enum": [
+                  "commit",
+                  "continue",
+                  "bridge_back",
+                  "reframe"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Current route action when the event represents a mechanism-authored route decision.",
+            "title": "Route Action"
           },
           "search_query": {
             "anyOf": [
@@ -1753,24 +1753,6 @@
             "description": "Resume mode that produced the current live state when the mechanism exposes it.",
             "title": "Last Resume Kind"
           },
-          "move_type": {
-            "anyOf": [
-              {
-                "enum": [
-                  "advance",
-                  "dwell",
-                  "bridge",
-                  "reframe"
-                ],
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "Current attentional move when the mechanism exposes it directly.",
-            "title": "Move Type"
-          },
           "phase": {
             "description": "Current live reading phase.",
             "enum": [
@@ -1828,6 +1810,24 @@
             ],
             "description": "Whether the mechanism rebuilt hot local state from persistence instead of continuing warm in-memory continuity.",
             "title": "Reconstructed Hot State"
+          },
+          "route_action": {
+            "anyOf": [
+              {
+                "enum": [
+                  "commit",
+                  "continue",
+                  "bridge_back",
+                  "reframe"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Current route action when the mechanism exposes it directly.",
+            "title": "Route Action"
           },
           "search_query": {
             "anyOf": [

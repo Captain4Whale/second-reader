@@ -19,7 +19,7 @@ from src.attentional_v2.storage import (
     knowledge_activations_file,
     local_buffer_file,
     local_continuity_file,
-    move_history_file,
+    route_history_file,
     reaction_records_file,
     reader_policy_file,
     read_audit_file,
@@ -480,8 +480,8 @@ def test_attentional_v2_initialization_writes_phase8_artifacts(tmp_path):
     assert activations["knowledge_use_mode"] == "book_grounded_only"
     assert activations["search_policy_mode"] == "no_search"
 
-    moves = json.loads(move_history_file(output_dir).read_text(encoding="utf-8"))
-    assert moves["moves"] == []
+    route_history = json.loads(route_history_file(output_dir).read_text(encoding="utf-8"))
+    assert route_history["routes"] == []
 
     reaction_records = json.loads(reaction_records_file(output_dir).read_text(encoding="utf-8"))
     assert reaction_records["records"] == []

@@ -8,7 +8,7 @@ from src.attentional_v2.schemas import (
     build_default_reader_policy,
     build_empty_anchor_memory,
     build_empty_local_buffer,
-    build_empty_move_history,
+    build_empty_route_history,
     build_empty_reaction_records,
     build_empty_reflective_summaries,
     build_empty_active_attention,
@@ -92,11 +92,11 @@ def test_build_carry_forward_context_exposes_phase_c1_packet_shape():
         }
     ]
 
-    move_history = build_empty_move_history()
-    move_history["moves"] = [
+    route_history = build_empty_route_history()
+    route_history["routes"] = [
         {
-            "move_id": "move-1",
-            "move_type": "advance",
+            "route_id": "route-1",
+            "route_action": "commit",
             "reason": "follow the opening claim",
             "source_sentence_id": "c1-s1",
             "target_anchor_id": "",
@@ -122,7 +122,7 @@ def test_build_carry_forward_context_exposes_phase_c1_packet_shape():
         active_attention=active_attention,
         anchor_memory=anchor_memory,
         reflective_summaries=reflective_summaries,
-        move_history=move_history,
+        route_history=route_history,
         reaction_records=reaction_records,
     )
 
@@ -132,7 +132,7 @@ def test_build_carry_forward_context_exposes_phase_c1_packet_shape():
     assert packet["chapter_reflective_frame"]["chapter_frames"][0]["item_id"] == "frame-1"
     assert packet["anchor_bank_digest"]["active_anchors"][0]["anchor_id"] == "a-1"
     assert packet["session_continuity_capsule"]["recent_sentence_ids"] == ["c1-s1"]
-    assert packet["active_focus_digest"]["recent_moves"][0]["move_id"] == "move-1"
+    assert packet["active_focus_digest"]["recent_routes"][0]["route_id"] == "route-1"
     assert packet["concept_digest"][0]["concept_key"] == "promise"
     assert packet["concept_digest"][0]["concept_type"] == "motif_and_unresolved_reference"
     assert packet["thread_digest"][0]["thread_type"] in {"trace_link", "open_reference"}
@@ -155,7 +155,7 @@ def test_build_navigation_context_exposes_state_packet_without_watch_metadata():
         active_attention=build_empty_active_attention(),
         anchor_memory=build_empty_anchor_memory(),
         reflective_summaries=build_empty_reflective_summaries(),
-        move_history=build_empty_move_history(),
+        route_history=build_empty_route_history(),
         reaction_records=build_empty_reaction_records(),
     )
 
@@ -212,7 +212,7 @@ def test_build_read_prompt_packet_projects_compact_always_carry_and_selective_ca
         }
     ]
 
-    move_history = build_empty_move_history()
+    route_history = build_empty_route_history()
     reaction_records = build_empty_reaction_records()
     reaction_records["records"] = [
         {
@@ -231,7 +231,7 @@ def test_build_read_prompt_packet_projects_compact_always_carry_and_selective_ca
         active_attention=active_attention,
         anchor_memory=anchor_memory,
         reflective_summaries=reflective_summaries,
-        move_history=move_history,
+        route_history=route_history,
         reaction_records=reaction_records,
     )
 
@@ -291,7 +291,7 @@ def test_navigate_unitize_prompt_receives_navigation_context(monkeypatch):
             "session_continuity_capsule": {"recent_sentence_ids": ["c1-s0"]},
             "active_attention_digest": {"active_items": []},
             "chapter_reflective_frame": {"chapter_frames": []},
-            "active_focus_digest": {"recent_moves": []},
+            "active_focus_digest": {"recent_routes": []},
             "concept_digest": [{"concept_key": "promise"}],
             "thread_digest": [{"thread_key": "trace:a-1"}],
             "anchor_bank_digest": {"active_anchors": []},

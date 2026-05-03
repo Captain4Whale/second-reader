@@ -14,7 +14,7 @@ from .schemas import (
     ConceptRegistryState,
     ConceptDigestItem,
     LocalBufferState,
-    MoveHistoryState,
+    RouteHistoryState,
     NavigationContext,
     ReactionRecordsState,
     ReflectiveFrameDigest,
@@ -414,44 +414,44 @@ def _build_thread_digest(
     return digest
 
 
-def _build_recent_moves(
-    move_history: MoveHistoryState,
+def _build_recent_routes(
+    route_history: RouteHistoryState,
     *,
     refs: list[CarryForwardRef],
 ) -> list[dict[str, object]]:
-    """Build a bounded recent-moves digest."""
+    """Build a bounded recent-route digest."""
 
-    recent_moves: list[dict[str, object]] = []
-    for move in list(move_history.get("moves", []))[-3:]:
-        if not isinstance(move, dict):
+    recent_routes: list[dict[str, object]] = []
+    for route in list(route_history.get("routes", []))[-3:]:
+        if not isinstance(route, dict):
             continue
-        move_id = clean_text(move.get("move_id"))
-        if not move_id:
+        route_id = clean_text(route.get("route_id"))
+        if not route_id:
             continue
-        ref_id = f"move:{move_id}"
+        ref_id = f"route:{route_id}"
         record = {
             "ref_id": ref_id,
-            "move_id": move_id,
-            "move_type": clean_text(move.get("move_type")),
-            "reason": clean_text(move.get("reason")),
-            "source_sentence_id": clean_text(move.get("source_sentence_id")),
-            "target_anchor_id": clean_text(move.get("target_anchor_id")),
-            "target_sentence_id": clean_text(move.get("target_sentence_id")),
+            "route_id": route_id,
+            "route_action": clean_text(route.get("route_action")),
+            "reason": clean_text(route.get("reason")),
+            "source_sentence_id": clean_text(route.get("source_sentence_id")),
+            "target_anchor_id": clean_text(route.get("target_anchor_id")),
+            "target_sentence_id": clean_text(route.get("target_sentence_id")),
         }
-        recent_moves.append(record)
+        recent_routes.append(record)
         _append_ref(
             refs,
             {
                 "ref_id": ref_id,
-                "kind": "move",
-                "item_id": move_id,
-                "summary": clean_text(move.get("reason")) or clean_text(move.get("move_type")),
-                "move_id": move_id,
-                "sentence_id": clean_text(move.get("source_sentence_id")),
-                "anchor_id": clean_text(move.get("target_anchor_id")),
+                "kind": "route",
+                "item_id": route_id,
+                "summary": clean_text(route.get("reason")) or clean_text(route.get("route_action")),
+                "route_id": route_id,
+                "sentence_id": clean_text(route.get("source_sentence_id")),
+                "anchor_id": clean_text(route.get("target_anchor_id")),
             },
         )
-    return recent_moves
+    return recent_routes
 
 
 def _build_recent_reactions(
@@ -499,7 +499,7 @@ def _build_session_continuity_capsule(
     local_buffer: LocalBufferState,
     *,
     excluded_sentence_ids: set[str],
-    recent_moves: list[dict[str, object]],
+    recent_routes: list[dict[str, object]],
     recent_reactions: list[dict[str, object]],
 ) -> dict[str, object]:
     """Build a cheap always-carried continuity capsule."""
@@ -519,7 +519,7 @@ def _build_session_continuity_capsule(
     return {
         "recent_sentence_ids": recent_sentence_ids,
         "recent_meaning_units": recent_meaning_units,
-        "recent_moves": recent_moves,
+        "recent_routes": recent_routes,
         "recent_reactions": recent_reactions,
     }
 
@@ -527,14 +527,14 @@ def _build_session_continuity_capsule(
 def _build_active_focus_digest(
     active_attention_digest: ActiveAttentionDigest,
     *,
-    recent_moves: list[dict[str, object]],
+    recent_routes: list[dict[str, object]],
     recent_reactions: list[dict[str, object]],
 ) -> ActiveFocusDigest:
     """Build a compact digest of currently active focus lines."""
 
     return {
         "active_items": [dict(item) for item in active_attention_digest.get("active_items", [])[:4]],
-        "recent_moves": [dict(item) for item in recent_moves[:2]],
+        "recent_routes": [dict(item) for item in recent_routes[:2]],
         "recent_reactions": [dict(item) for item in recent_reactions[:2]],
     }
 
@@ -658,7 +658,7 @@ def build_carry_forward_context(
     anchor_bank: AnchorBankState | None = None,
     anchor_memory: AnchorMemoryState | None = None,
     reflective_summaries: ReflectiveSummariesState | None = None,
-    move_history: MoveHistoryState,
+    route_history: RouteHistoryState,
     reaction_records: ReactionRecordsState,
     continuation_capsule: ContinuationCapsule | None = None,
 ) -> CarryForwardContext:
@@ -689,17 +689,17 @@ def build_carry_forward_context(
     concept_digest = _build_concept_digest(primary_concept_registry, primary_anchor_bank, refs=refs)
     thread_digest = _build_thread_digest(primary_thread_trace, primary_anchor_bank, refs=refs)
     anchor_bank_digest = _build_anchor_bank_digest(primary_anchor_bank, refs=refs)
-    recent_moves = _build_recent_moves(move_history, refs=refs)
+    recent_routes = _build_recent_routes(route_history, refs=refs)
     recent_reactions = _build_recent_reactions(reaction_records, refs=refs)
     session_continuity_capsule = _build_session_continuity_capsule(
         local_buffer,
         excluded_sentence_ids=excluded_sentence_ids,
-        recent_moves=recent_moves,
+        recent_routes=recent_routes,
         recent_reactions=recent_reactions,
     )
     active_focus_digest = _build_active_focus_digest(
         active_attention_digest,
-        recent_moves=recent_moves,
+        recent_routes=recent_routes,
         recent_reactions=recent_reactions,
     )
     primary_continuation_capsule = (
@@ -830,8 +830,8 @@ def build_navigation_context(
     anchor_bank: AnchorBankState | None = None,
     anchor_memory: AnchorMemoryState | None = None,
     reflective_summaries: ReflectiveSummariesState | None = None,
-    move_history: MoveHistoryState,
-        reaction_records: ReactionRecordsState,
+    route_history: RouteHistoryState,
+    reaction_records: ReactionRecordsState,
     continuation_capsule: ContinuationCapsule | None = None,
 ) -> NavigationContext:
     """Build the bounded navigation packet used by Navigate.unitize."""
@@ -847,7 +847,7 @@ def build_navigation_context(
         anchor_bank=anchor_bank,
         anchor_memory=anchor_memory,
         reflective_summaries=reflective_summaries,
-        move_history=move_history,
+        route_history=route_history,
         reaction_records=reaction_records,
         continuation_capsule=continuation_capsule,
     )

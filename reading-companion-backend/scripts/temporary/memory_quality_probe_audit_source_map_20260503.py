@@ -47,9 +47,9 @@ MEMORY_QUALITY_PROBE_REVIEW_FOCUS: dict[tuple[str, int], dict[str, str]] = {
     }
 }
 
-RECENT_MOVES_NOTE = (
-    "_最近阅读动作；这里显示的是从 `move_history.moves[-3:]` 投影出的 "
-    "`move reason`，不是完整 raw `move_history`，也不等同于长期记忆。_"
+RECENT_ROUTES_NOTE = (
+    "_最近阅读路线动作；这里显示的是从 `route_history.routes[-3:]` 投影出的 "
+    "`route reason`，不是完整 raw `route_history`，也不等同于长期记忆。_"
 )
 
 
@@ -259,7 +259,7 @@ def extract_probe_tail(old_window_text: str, probe_index: int) -> str:
 
 
 def normalize_recent_moves_sections(markdown: str) -> str:
-    """Make the reused historical Recent Moves block match the current report wording."""
+    """Make reused historical Recent Routes blocks match the current route wording."""
 
     lines = markdown.splitlines()
     out: list[str] = []
@@ -267,12 +267,12 @@ def normalize_recent_moves_sections(markdown: str) -> str:
     skip_legacy_note = False
 
     for line in lines:
-        if line.startswith("#### Recent Moves"):
+        if line.startswith("#### Recent Moves") or line.startswith("#### Recent Routes"):
             in_recent_moves = True
             skip_legacy_note = True
-            out.append(line)
+            out.append("#### Recent Routes")
             out.append("")
-            out.append(RECENT_MOVES_NOTE)
+            out.append(RECENT_ROUTES_NOTE)
             continue
 
         if in_recent_moves and line.startswith("#### "):
@@ -289,7 +289,9 @@ def normalize_recent_moves_sections(markdown: str) -> str:
             skip_legacy_note = False
 
         if in_recent_moves:
-            line = line.replace("- statement:", "- move reason:", 1)
+            line = line.replace("- statement:", "- route reason:", 1)
+            line = line.replace("move id:", "route id:")
+            line = line.replace("move type:", "route action:")
 
         out.append(line)
 
@@ -524,12 +526,12 @@ def validate(grouped: dict[str, list[Probe]]) -> None:
         source_marker_link_count = len(re.findall(r"^- full window source marker: ", text, re.MULTILINE))
         if source_marker_link_count != 5:
             raise AssertionError(f"{window_file} does not link every probe to full source")
-        for section in re.split(r"^#### Recent Moves\n", text, flags=re.MULTILINE)[1:]:
+        for section in re.split(r"^#### Recent Routes\n", text, flags=re.MULTILINE)[1:]:
             recent_moves_block = re.split(r"^#### ", section, maxsplit=1, flags=re.MULTILINE)[0]
             if "- statement:" in recent_moves_block:
-                raise AssertionError(f"{window_file} still labels Recent Moves reason as statement")
-            if "move reason" not in recent_moves_block:
-                raise AssertionError(f"{window_file} Recent Moves block does not explain move reason")
+                raise AssertionError(f"{window_file} still labels Recent Routes reason as statement")
+            if "route reason" not in recent_moves_block:
+                raise AssertionError(f"{window_file} Recent Routes block does not explain route reason")
 
     expected_segments = set(grouped)
     actual_segments = {path.stem for path in source_files}

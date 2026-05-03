@@ -55,7 +55,7 @@ from .schemas import (
     KnowledgeActivationsState,
     LocalBufferState,
     LocalContinuityState,
-    MoveHistoryState,
+    RouteHistoryState,
     NavigateRouteDecision,
     ReactionRecordsState,
     ReaderPolicy,
@@ -71,7 +71,7 @@ from .schemas import (
     build_empty_knowledge_activations,
     build_empty_local_buffer,
     build_empty_local_continuity,
-    build_empty_move_history,
+    build_empty_route_history,
     build_empty_reaction_records,
     build_empty_reconsolidation_records,
     build_empty_reflective_frames,
@@ -87,7 +87,7 @@ from .slow_cycle import (
     run_phase6_chapter_cycle,
 )
 from .state_ops import (
-    append_move,
+    append_route,
     append_reaction_record,
     apply_anchor_bank_operations,
     apply_concept_registry_operations,
@@ -111,7 +111,7 @@ from .storage import (
     local_buffer_file,
     local_continuity_file,
     memory_quality_probe_export_file,
-    move_history_file,
+    route_history_file,
     normalized_eval_bundle_file,
     reaction_records_file,
     reader_policy_file,
@@ -546,7 +546,7 @@ def _default_builder(name: str) -> Callable[[], dict[str, object]]:
         "reflective_frames": lambda: build_empty_reflective_frames(mechanism_version=ATTENTIONAL_V2_MECHANISM_VERSION),
         "anchor_bank": lambda: build_empty_anchor_bank(mechanism_version=ATTENTIONAL_V2_MECHANISM_VERSION),
         "knowledge_activations": lambda: build_empty_knowledge_activations(mechanism_version=ATTENTIONAL_V2_MECHANISM_VERSION),
-        "move_history": lambda: build_empty_move_history(mechanism_version=ATTENTIONAL_V2_MECHANISM_VERSION),
+        "route_history": lambda: build_empty_route_history(mechanism_version=ATTENTIONAL_V2_MECHANISM_VERSION),
         "reaction_records": lambda: build_empty_reaction_records(mechanism_version=ATTENTIONAL_V2_MECHANISM_VERSION),
         "reconsolidation_records": lambda: build_empty_reconsolidation_records(mechanism_version=ATTENTIONAL_V2_MECHANISM_VERSION),
         "reader_policy": lambda: build_default_reader_policy(
@@ -572,6 +572,10 @@ def _load_or_default(path: Path, builder: Callable[[], dict[str, object]]) -> di
 def _load_runtime_bundle(output_dir: Path) -> dict[str, dict[str, object]]:
     """Load the attentional runtime bundle from persisted artifacts."""
 
+    if not route_history_file(output_dir).exists() and (runtime_dir(output_dir) / "move_history.json").exists():
+        raise RuntimeError(
+            "Pre-route-action attentional_v2 runtime state is no longer supported; rerun from a route_history state directory."
+        )
     bundle = {
         "local_buffer": _load_or_default(local_buffer_file(output_dir), _default_builder("local_buffer")),
         "local_continuity": _load_or_default(local_continuity_file(output_dir), _default_builder("local_continuity")),
@@ -580,7 +584,7 @@ def _load_runtime_bundle(output_dir: Path) -> dict[str, dict[str, object]]:
             knowledge_activations_file(output_dir),
             _default_builder("knowledge_activations"),
         ),
-        "move_history": _load_or_default(move_history_file(output_dir), _default_builder("move_history")),
+        "route_history": _load_or_default(route_history_file(output_dir), _default_builder("route_history")),
         "reaction_records": _load_or_default(reaction_records_file(output_dir), _default_builder("reaction_records")),
         "reconsolidation_records": _load_or_default(
             reconsolidation_records_file(output_dir),
@@ -623,7 +627,7 @@ def _save_runtime_bundle(output_dir: Path, bundle: dict[str, dict[str, object]])
     save_json(reflective_frames_file(output_dir), bundle["reflective_frames"])
     save_json(anchor_bank_file(output_dir), bundle["anchor_bank"])
     save_json(knowledge_activations_file(output_dir), bundle["knowledge_activations"])
-    save_json(move_history_file(output_dir), bundle["move_history"])
+    save_json(route_history_file(output_dir), bundle["route_history"])
     save_json(reaction_records_file(output_dir), bundle["reaction_records"])
     save_json(reconsolidation_records_file(output_dir), bundle["reconsolidation_records"])
     save_json(reader_policy_file(output_dir), bundle["reader_policy"])
@@ -677,7 +681,7 @@ def _current_activity(
     chapter_ref: str,
     sentence: dict[str, object],
     local_buffer: LocalBufferState,
-    move_type: str | None = None,
+    route_action: str | None = None,
     active_reaction_id: str | None = None,
 ) -> dict[str, object]:
     """Build the shared current-reading-activity snapshot."""
@@ -691,8 +695,8 @@ def _current_activity(
         "reconstructed_hot_state": bool(local_buffer.get("is_reconstructed")),
         "last_resume_kind": local_buffer.get("last_resume_kind"),
     }
-    if move_type:
-        activity["move_type"] = move_type
+    if route_action:
+        activity["route_action"] = route_action
     if active_reaction_id:
         activity["active_reaction_id"] = active_reaction_id
     return activity
@@ -722,7 +726,7 @@ def _reset_live_runtime(output_dir: Path) -> None:
         anchor_bank_file(output_dir),
         reflective_frames_file(output_dir),
         knowledge_activations_file(output_dir),
-        move_history_file(output_dir),
+        route_history_file(output_dir),
         reaction_records_file(output_dir),
         reconsolidation_records_file(output_dir),
         resume_metadata_file(output_dir),
@@ -1092,7 +1096,7 @@ def _build_detour_navigation_packet(
     thread_trace: ThreadTraceState,
     reflective_frames: ReflectiveFramesState,
     anchor_bank: AnchorBankState,
-    move_history: MoveHistoryState,
+    route_history: RouteHistoryState,
     reaction_records: ReactionRecordsState,
     continuation_capsule: dict[str, object],
     local_continuity: LocalContinuityState,
@@ -1108,7 +1112,7 @@ def _build_detour_navigation_packet(
         thread_trace=thread_trace,
         reflective_frames=reflective_frames,
         anchor_bank=anchor_bank,
-        move_history=move_history,
+        route_history=route_history,
         reaction_records=reaction_records,
         continuation_capsule=continuation_capsule,
     )
@@ -1323,7 +1327,7 @@ def _run_detour_episode(
     reflective_frames: ReflectiveFramesState,
     anchor_bank: AnchorBankState,
     knowledge_activations: KnowledgeActivationsState,
-    move_history: MoveHistoryState,
+    route_history: RouteHistoryState,
     reaction_records: ReactionRecordsState,
     reconsolidation_records: dict[str, object],
     reader_policy: ReaderPolicy,
@@ -1347,7 +1351,7 @@ def _run_detour_episode(
             "reflective_frames": reflective_frames,
             "anchor_bank": anchor_bank,
             "knowledge_activations": knowledge_activations,
-            "move_history": move_history,
+            "route_history": route_history,
             "reaction_records": reaction_records,
             "reconsolidation_records": reconsolidation_records,
             "bundle": bundle,
@@ -1364,7 +1368,7 @@ def _run_detour_episode(
         thread_trace=thread_trace,
         reflective_frames=reflective_frames,
         anchor_bank=anchor_bank,
-        move_history=move_history,
+        route_history=route_history,
         reaction_records=reaction_records,
         continuation_capsule=continuation_capsule,
         local_continuity=local_continuity,
@@ -1402,7 +1406,7 @@ def _run_detour_episode(
             "reflective_frames": reflective_frames,
             "anchor_bank": anchor_bank,
             "knowledge_activations": knowledge_activations,
-            "move_history": move_history,
+            "route_history": route_history,
             "reaction_records": reaction_records,
             "reconsolidation_records": reconsolidation_records,
             "bundle": bundle,
@@ -1435,7 +1439,7 @@ def _run_detour_episode(
             "reflective_frames": reflective_frames,
             "anchor_bank": anchor_bank,
             "knowledge_activations": knowledge_activations,
-            "move_history": move_history,
+            "route_history": route_history,
             "reaction_records": reaction_records,
             "reconsolidation_records": reconsolidation_records,
             "bundle": bundle,
@@ -1456,7 +1460,7 @@ def _run_detour_episode(
         thread_trace=thread_trace,
         reflective_frames=reflective_frames,
         anchor_bank=anchor_bank,
-        move_history=move_history,
+        route_history=route_history,
         reaction_records=reaction_records,
         continuation_capsule=continuation_capsule,
     )
@@ -1521,7 +1525,7 @@ def _run_detour_episode(
         reflective_frames=reflective_frames,
         anchor_bank=anchor_bank,
         knowledge_activations=knowledge_activations,
-        move_history=move_history,
+        route_history=route_history,
         reaction_records=reaction_records,
         reader_policy=reader_policy,
         output_language=output_language,
@@ -1557,20 +1561,19 @@ def _run_detour_episode(
     thread_trace = apply_thread_trace_operations(thread_trace, read_result.get("memory_uptake_ops", []))
     anchor_bank = apply_anchor_bank_operations(anchor_bank, read_result.get("memory_uptake_ops", []))
 
-    chosen_move = _move_type_from_route_decision(route_decision)
-    if chosen_move in {"advance", "dwell", "bridge", "reframe"}:
-        move_history = append_move(
-            move_history,
-            {
-                "move_id": f"move:{_sentence_id(focal_sentence)}:{chosen_move}",
-                "move_type": chosen_move,
-                "reason": _clean_text(route_decision.get("reason")) or "detour read route",
-                "source_sentence_id": _sentence_id(focal_sentence),
-                "target_anchor_id": _clean_text(route_decision.get("target_anchor_id")),
-                "target_sentence_id": _clean_text(route_decision.get("target_sentence_id")),
-                "created_at": _timestamp(),
-            },
-        )
+    route_action = _route_action_from_route_decision(route_decision)
+    route_history = append_route(
+        route_history,
+        {
+            "route_id": f"route:{_sentence_id(focal_sentence)}:{route_action}",
+            "route_action": route_action,
+            "reason": _clean_text(route_decision.get("reason")) or "detour read route",
+            "source_sentence_id": _sentence_id(focal_sentence),
+            "target_anchor_id": _clean_text(route_decision.get("target_anchor_id")),
+            "target_sentence_id": _clean_text(route_decision.get("target_sentence_id")),
+            "created_at": _timestamp(),
+        },
+    )
 
     reaction_records, anchor_bank, emitted_reactions, current_anchor = _persist_surfaced_reactions(
         read_result=read_result,
@@ -1610,7 +1613,7 @@ def _run_detour_episode(
             thread_trace=thread_trace,
             anchor_bank=anchor_bank,
             knowledge_activations=knowledge_activations,
-            move_history=move_history,
+            route_history=route_history,
             reader_policy=reader_policy,
             output_language=output_language,
             current_anchor=bridge_anchor,
@@ -1624,7 +1627,7 @@ def _run_detour_episode(
         thread_trace = phase5["thread_trace"]  # type: ignore[assignment]
         anchor_bank = phase5["anchor_bank"]  # type: ignore[assignment]
         knowledge_activations = phase5["knowledge_activations"]  # type: ignore[assignment]
-        move_history = phase5["move_history"]  # type: ignore[assignment]
+        route_history = phase5["route_history"]  # type: ignore[assignment]
 
     if route_decision.get("close_current_unit", True):
         local_buffer = close_local_meaning_unit(local_buffer)
@@ -1663,7 +1666,7 @@ def _run_detour_episode(
                 thread_trace=thread_trace,
                 reflective_frames=reflective_frames,
                 anchor_bank=anchor_bank,
-                move_history=move_history,
+                route_history=route_history,
                 reaction_records=reaction_records,
             ),
             "active_attention": active_attention,
@@ -1672,7 +1675,7 @@ def _run_detour_episode(
             "reflective_frames": reflective_frames,
             "anchor_bank": anchor_bank,
             "knowledge_activations": knowledge_activations,
-            "move_history": move_history,
+            "route_history": route_history,
             "reaction_records": reaction_records,
             "reconsolidation_records": reconsolidation_records,
             "reader_policy": reader_policy,
@@ -1698,7 +1701,7 @@ def _run_detour_episode(
         "reflective_frames": reflective_frames,
         "anchor_bank": anchor_bank,
         "knowledge_activations": knowledge_activations,
-        "move_history": move_history,
+        "route_history": route_history,
         "reaction_records": reaction_records,
         "reconsolidation_records": reconsolidation_records,
         "bundle": bundle,
@@ -1766,7 +1769,7 @@ def _persist_surfaced_reactions(
         if isinstance(item, dict)
     ]
     chapter_reaction_count = len(reaction_records_for_chapter(reaction_records, chapter_ref=chapter_ref))
-    chosen_move = _move_type_from_route_decision(route_decision)
+    route_action = _route_action_from_route_decision(route_decision)
     for index, surfaced_reaction in enumerate(surfaced_reactions, start=1):
         current_anchor = _build_current_anchor_from_read_result(
             surfaced_reaction=surfaced_reaction,
@@ -1801,7 +1804,7 @@ def _persist_surfaced_reactions(
                 "segment_ref": _compatibility_section_ref(chapter_id, focal_sentence),
                 "anchor_quote": _clean_text(emitted_reaction.get("primary_anchor", {}).get("quote")),
                 "reading_locus": _reading_locus(chapter_id, chapter_ref, focal_sentence, local_buffer),
-                "move_type": chosen_move or None,
+                "route_action": route_action or None,
                 "active_reaction_id": _clean_text(emitted_reaction.get("reaction_id")),
                 "reaction_types": [compat_reaction_family(emitted_reaction)],
                 "current_excerpt": _clean_text(focal_sentence.get("text"))[:220],
@@ -1810,19 +1813,15 @@ def _persist_surfaced_reactions(
     return reaction_records, anchor_bank, emitted_reactions, current_anchor
 
 
-def _move_type_from_route_decision(
+def _route_action_from_route_decision(
     route_decision: NavigateRouteDecision,
 ) -> str:
-    """Project a route action back into the current move-history vocabulary."""
+    """Return the current route action from one route decision."""
 
     action = _clean_text(route_decision.get("action"))
-    if action == "bridge_back":
-        return "bridge"
-    if action == "reframe":
-        return "reframe"
-    if action == "continue":
-        return "dwell"
-    return "advance"
+    if action in {"commit", "continue", "bridge_back", "reframe"}:
+        return action
+    return "commit"
 
 
 def _build_runtime_continuation_capsule(
@@ -1834,7 +1833,7 @@ def _build_runtime_continuation_capsule(
     thread_trace: ThreadTraceState,
     reflective_frames: ReflectiveFramesState,
     anchor_bank: AnchorBankState,
-    move_history: MoveHistoryState,
+    route_history: RouteHistoryState,
     reaction_records: ReactionRecordsState,
 ) -> dict[str, object]:
     """Build the persisted continuation capsule from the current live primary state."""
@@ -1848,7 +1847,7 @@ def _build_runtime_continuation_capsule(
         thread_trace=thread_trace,
         reflective_frames=reflective_frames,
         anchor_bank=anchor_bank,
-        move_history=move_history,
+        route_history=route_history,
         reaction_records=reaction_records,
     )
     capsule = carry_forward_context.get("continuation_capsule", {})
@@ -1868,7 +1867,7 @@ def _run_read_with_context_loop(
     reflective_frames: ReflectiveFramesState,
     anchor_bank: AnchorBankState,
     knowledge_activations: KnowledgeActivationsState,
-    move_history: MoveHistoryState,
+    route_history: RouteHistoryState,
     reaction_records: ReactionRecordsState,
     reader_policy: ReaderPolicy,
     output_language: str,
@@ -1894,7 +1893,7 @@ def _run_read_with_context_loop(
         thread_trace=thread_trace,
         reflective_frames=reflective_frames,
         anchor_bank=anchor_bank,
-        move_history=move_history,
+        route_history=route_history,
         reaction_records=reaction_records,
         continuation_capsule=continuation_capsule,
     )
@@ -2064,7 +2063,7 @@ def read_attentional_v2(request: ReadRequest, mechanism: MechanismInfo) -> ReadR
         reflective_frames: ReflectiveFramesState = bundle["reflective_frames"]  # type: ignore[assignment]
         anchor_bank: AnchorBankState = bundle["anchor_bank"]  # type: ignore[assignment]
         knowledge_activations: KnowledgeActivationsState = bundle["knowledge_activations"]  # type: ignore[assignment]
-        move_history: MoveHistoryState = bundle["move_history"]  # type: ignore[assignment]
+        route_history: RouteHistoryState = bundle["route_history"]  # type: ignore[assignment]
         reaction_records: ReactionRecordsState = bundle["reaction_records"]  # type: ignore[assignment]
         reconsolidation_records = bundle["reconsolidation_records"]
         resume_metadata = bundle["resume_metadata"]
@@ -2183,7 +2182,7 @@ def read_attentional_v2(request: ReadRequest, mechanism: MechanismInfo) -> ReadR
                         reflective_frames=reflective_frames,
                         anchor_bank=anchor_bank,
                         knowledge_activations=knowledge_activations,
-                        move_history=move_history,
+                        route_history=route_history,
                         reaction_records=reaction_records,
                         reconsolidation_records=reconsolidation_records,
                         reader_policy=reader_policy,
@@ -2202,7 +2201,7 @@ def read_attentional_v2(request: ReadRequest, mechanism: MechanismInfo) -> ReadR
                     reflective_frames = detour_result["reflective_frames"]  # type: ignore[assignment]
                     anchor_bank = detour_result["anchor_bank"]  # type: ignore[assignment]
                     knowledge_activations = detour_result["knowledge_activations"]  # type: ignore[assignment]
-                    move_history = detour_result["move_history"]  # type: ignore[assignment]
+                    route_history = detour_result["route_history"]  # type: ignore[assignment]
                     reaction_records = detour_result["reaction_records"]  # type: ignore[assignment]
                     reconsolidation_records = detour_result["reconsolidation_records"]  # type: ignore[assignment]
                     bundle = detour_result["bundle"]  # type: ignore[assignment]
@@ -2233,7 +2232,7 @@ def read_attentional_v2(request: ReadRequest, mechanism: MechanismInfo) -> ReadR
                     thread_trace=thread_trace,
                     reflective_frames=reflective_frames,
                     anchor_bank=anchor_bank,
-                    move_history=move_history,
+                    route_history=route_history,
                     reaction_records=reaction_records,
                 )
                 unitize_decision = navigate_unitize(
@@ -2321,7 +2320,7 @@ def read_attentional_v2(request: ReadRequest, mechanism: MechanismInfo) -> ReadR
                     reflective_frames=reflective_frames,
                     anchor_bank=anchor_bank,
                     knowledge_activations=knowledge_activations,
-                    move_history=move_history,
+                    route_history=route_history,
                     reaction_records=reaction_records,
                     reader_policy=reader_policy,
                     output_language=provisioned.output_language,
@@ -2367,20 +2366,19 @@ def read_attentional_v2(request: ReadRequest, mechanism: MechanismInfo) -> ReadR
                 anchor_bank = apply_anchor_bank_operations(anchor_bank, read_result.get("memory_uptake_ops", []))
                 local_continuity = _apply_detour_need(local_continuity, read_result.get("detour_need"))  # type: ignore[arg-type]
 
-                chosen_move = _move_type_from_route_decision(route_decision)
-                if chosen_move in {"advance", "dwell", "bridge", "reframe"}:
-                    move_history = append_move(
-                        move_history,
-                        {
-                            "move_id": f"move:{sentence_id}:{chosen_move}",
-                            "move_type": chosen_move,
-                            "reason": _clean_text(route_decision.get("reason")) or "read route",
-                            "source_sentence_id": focal_sentence_id,
-                            "target_anchor_id": _clean_text(route_decision.get("target_anchor_id")),
-                            "target_sentence_id": _clean_text(route_decision.get("target_sentence_id")),
-                            "created_at": _timestamp(),
-                        },
-                    )
+                route_action = _route_action_from_route_decision(route_decision)
+                route_history = append_route(
+                    route_history,
+                    {
+                        "route_id": f"route:{sentence_id}:{route_action}",
+                        "route_action": route_action,
+                        "reason": _clean_text(route_decision.get("reason")) or "read route",
+                        "source_sentence_id": focal_sentence_id,
+                        "target_anchor_id": _clean_text(route_decision.get("target_anchor_id")),
+                        "target_sentence_id": _clean_text(route_decision.get("target_sentence_id")),
+                        "created_at": _timestamp(),
+                    },
+                )
 
                 reaction_records, anchor_bank, emitted_reactions, current_anchor = _persist_surfaced_reactions(
                     read_result=read_result,
@@ -2420,7 +2418,7 @@ def read_attentional_v2(request: ReadRequest, mechanism: MechanismInfo) -> ReadR
                         thread_trace=thread_trace,
                         anchor_bank=anchor_bank,
                         knowledge_activations=knowledge_activations,
-                        move_history=move_history,
+                        route_history=route_history,
                         reader_policy=reader_policy,
                         output_language=provisioned.output_language,
                         current_anchor=bridge_anchor,
@@ -2434,7 +2432,7 @@ def read_attentional_v2(request: ReadRequest, mechanism: MechanismInfo) -> ReadR
                     thread_trace = phase5["thread_trace"]  # type: ignore[assignment]
                     anchor_bank = phase5["anchor_bank"]  # type: ignore[assignment]
                     knowledge_activations = phase5["knowledge_activations"]  # type: ignore[assignment]
-                    move_history = phase5["move_history"]  # type: ignore[assignment]
+                    route_history = phase5["route_history"]  # type: ignore[assignment]
                     bridge_result = dict(phase5.get("bridge_result") or {})
                     primary_attribution = dict(bridge_result.get("primary_attribution") or {})
                     if (
@@ -2458,7 +2456,7 @@ def read_attentional_v2(request: ReadRequest, mechanism: MechanismInfo) -> ReadR
                                 "segment_ref": _compatibility_section_ref(chapter_id, focal_sentence),
                                 "anchor_quote": _clean_text(primary_attribution.get("target_quote")),
                                 "reading_locus": _reading_locus(chapter_id, chapter_ref, focal_sentence, local_buffer),
-                                "move_type": "bridge",
+                                "route_action": "bridge_back",
                                 "current_excerpt": _clean_text(primary_attribution.get("current_quote"))
                                 or _clean_text(focal_sentence.get("text"))[:220],
                             },
@@ -2469,7 +2467,7 @@ def read_attentional_v2(request: ReadRequest, mechanism: MechanismInfo) -> ReadR
                         {
                             "sentence_ids": [_clean_text(item.get("sentence_id")) for item in chosen_unit_sentences if _clean_text(item.get("sentence_id"))],
                             "summary": _clean_text(read_result.get("reading_impression")),
-                            "dominant_move": chosen_move,
+                            "dominant_route_action": route_action,
                         }
                     )
                     local_buffer = close_local_meaning_unit(local_buffer)
@@ -2486,7 +2484,7 @@ def read_attentional_v2(request: ReadRequest, mechanism: MechanismInfo) -> ReadR
                             thread_trace=thread_trace,
                             reflective_frames=reflective_frames,
                             anchor_bank=anchor_bank,
-                            move_history=move_history,
+                            route_history=route_history,
                             reaction_records=reaction_records,
                         ),
                         "active_attention": active_attention,
@@ -2495,7 +2493,7 @@ def read_attentional_v2(request: ReadRequest, mechanism: MechanismInfo) -> ReadR
                         "reflective_frames": reflective_frames,
                         "anchor_bank": anchor_bank,
                         "knowledge_activations": knowledge_activations,
-                        "move_history": move_history,
+                        "route_history": route_history,
                         "reaction_records": reaction_records,
                         "reconsolidation_records": reconsolidation_records,
                         "reader_policy": reader_policy,
@@ -2516,13 +2514,13 @@ def read_attentional_v2(request: ReadRequest, mechanism: MechanismInfo) -> ReadR
                     thread_trace=thread_trace,
                     reflective_frames=reflective_frames,
                     anchor_bank=anchor_bank,
-                    move_history=move_history,
+                    route_history=route_history,
                     reaction_records=reaction_records,
                 )
                 active_refs = {
                     "reaction_id": _clean_text(emitted_reactions[-1].get("reaction_id")) if emitted_reactions else "",
                     "anchor_id": _clean_text(current_anchor.get("anchor_id")) if isinstance(current_anchor, dict) else "",
-                    "move_id": _clean_text(move_history.get("moves", [])[-1].get("move_id")) if move_history.get("moves") else "",
+                    "route_id": _clean_text(route_history.get("routes", [])[-1].get("route_id")) if route_history.get("routes") else "",
                 }
                 persist_reading_position(
                     output_dir,
@@ -2564,7 +2562,7 @@ def read_attentional_v2(request: ReadRequest, mechanism: MechanismInfo) -> ReadR
                     reflective_frames=reflective_frames,
                     anchor_bank=anchor_bank,
                     knowledge_activations=knowledge_activations,
-                    move_history=move_history,
+                    route_history=route_history,
                     reaction_records=reaction_records,
                     reconsolidation_records=reconsolidation_records,
                     reader_policy=reader_policy,
@@ -2583,7 +2581,7 @@ def read_attentional_v2(request: ReadRequest, mechanism: MechanismInfo) -> ReadR
                 reflective_frames = detour_result["reflective_frames"]  # type: ignore[assignment]
                 anchor_bank = detour_result["anchor_bank"]  # type: ignore[assignment]
                 knowledge_activations = detour_result["knowledge_activations"]  # type: ignore[assignment]
-                move_history = detour_result["move_history"]  # type: ignore[assignment]
+                route_history = detour_result["route_history"]  # type: ignore[assignment]
                 reaction_records = detour_result["reaction_records"]  # type: ignore[assignment]
                 reconsolidation_records = detour_result["reconsolidation_records"]  # type: ignore[assignment]
                 bundle = detour_result["bundle"]  # type: ignore[assignment]
@@ -2644,7 +2642,7 @@ def read_attentional_v2(request: ReadRequest, mechanism: MechanismInfo) -> ReadR
                         thread_trace=thread_trace,
                         reflective_frames=reflective_frames,
                         anchor_bank=anchor_bank,
-                        move_history=move_history,
+                        route_history=route_history,
                         reaction_records=reaction_records,
                     ),
                     "active_attention": active_attention,
@@ -2653,7 +2651,7 @@ def read_attentional_v2(request: ReadRequest, mechanism: MechanismInfo) -> ReadR
                     "reflective_frames": reflective_frames,
                     "anchor_bank": anchor_bank,
                     "knowledge_activations": knowledge_activations,
-                    "move_history": move_history,
+                    "route_history": route_history,
                     "reaction_records": reaction_records,
                     "reconsolidation_records": reconsolidation_records,
                     "reader_policy": reader_policy,

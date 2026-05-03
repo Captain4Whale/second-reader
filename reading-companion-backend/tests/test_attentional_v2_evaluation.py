@@ -208,7 +208,7 @@ def test_attentional_v2_can_build_and_persist_normalized_eval_bundle(tmp_path):
                 "chapter_ref": "Chapter 1",
                 "segment_ref": "1.1",
                 "anchor_quote": "Markets begin as relations among people.",
-                "move_type": "bridge",
+                "route_action": "bridge_back",
                 "active_reaction_id": "rx:Chapter_1:c1-s1:highlight",
                 "reading_locus": {
                     "kind": "span",
@@ -229,7 +229,7 @@ def test_attentional_v2_can_build_and_persist_normalized_eval_bundle(tmp_path):
     assert bundle["mechanism_key"] == "attentional_v2"
     assert bundle["run_snapshot"]["current_chapter_ref"] == "Chapter 1"
     assert bundle["run_snapshot"]["current_reading_locus"]["sentence_start_id"] == "c1-s1"
-    assert bundle["attention_events"][0]["move_type"] == "bridge"
+    assert bundle["attention_events"][0]["route_action"] == "bridge_back"
     assert bundle["reactions"][0]["primary_anchor"]["quote"] == "Markets begin as relations among people."
     assert bundle["reactions"][0]["related_anchors"][0]["sentence_start_id"] == "c1-s2"
     assert bundle["chapters"][0]["visible_reaction_count"] == 1

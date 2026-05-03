@@ -40,7 +40,7 @@ def _navigation_context() -> dict[str, object]:
         "session_continuity_capsule": {"recent_sentence_ids": ["c0-s9"]},
         "active_attention_digest": {"active_items": []},
         "chapter_reflective_frame": {"chapter_frames": []},
-        "active_focus_digest": {"recent_moves": []},
+        "active_focus_digest": {"recent_routes": []},
         "concept_digest": [],
         "thread_digest": [],
         "anchor_bank_digest": {"active_anchors": []},
@@ -336,7 +336,7 @@ def test_navigate_detour_search_normalizes_invalid_land_into_defer(tmp_path: Pat
     assert "Navigate.detour_search" in manifest["system_prompt"]
 
 
-def test_read_unit_filters_unanchored_surface_and_derives_pressure_from_legacy_move_hint(tmp_path: Path, monkeypatch):
+def test_read_unit_filters_unanchored_surface_and_uses_pressure_signals(tmp_path: Path, monkeypatch):
     """Read should keep only reader-facing surfaced reactions and use the current naturalized contract."""
 
     captured: dict[str, str] = {}
@@ -346,7 +346,11 @@ def test_read_unit_filters_unanchored_surface_and_derives_pressure_from_legacy_m
         captured["prompt"] = prompt
         return {
             "reading_impression": "The line flips the frame.",
-            "move_hint": "reframe",
+            "pressure_signals": {
+                "continuation_pressure": False,
+                "backward_pull": False,
+                "frame_shift_pressure": True,
+            },
             "surfaced_reactions": [
                 {
                     "anchor_quote": "Alpha hinge.",

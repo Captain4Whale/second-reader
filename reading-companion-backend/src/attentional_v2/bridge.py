@@ -36,14 +36,14 @@ from .schemas import (
     BridgeResolutionResult,
     ConceptRegistryState,
     KnowledgeActivationsState,
-    MoveHistoryState,
+    RouteHistoryState,
     ReaderPolicy,
     ThreadTraceState,
     ActiveAttention,
 )
 from .state_ops import (
     append_anchor_relation,
-    append_move,
+    append_route,
     apply_anchor_bank_operations,
     apply_concept_registry_operations,
     apply_thread_trace_operations,
@@ -632,7 +632,7 @@ def run_phase5_bridge_cycle(
     thread_trace: ThreadTraceState,
     anchor_bank: AnchorBankState,
     knowledge_activations: KnowledgeActivationsState,
-    move_history: MoveHistoryState,
+    route_history: RouteHistoryState,
     reader_policy: ReaderPolicy,
     output_language: str,
     current_anchor: AnchorRecord | None = None,
@@ -665,7 +665,7 @@ def run_phase5_bridge_cycle(
             "thread_trace": thread_trace,
             "anchor_bank": anchor_bank,
             "knowledge_activations": knowledge_activations,
-            "move_history": move_history,
+            "route_history": route_history,
         }
 
     last_sentence = current_span_sentences[-1]
@@ -740,13 +740,13 @@ def run_phase5_bridge_cycle(
         unresolved_reference_keys=unresolved_reference_keys,
     )
 
-    next_move_history = move_history
+    next_route_history = route_history
     if bridge_result.get("decision") == "bridge" and materialized_primary is not None:
-        next_move_history = append_move(
-            move_history,
+        next_route_history = append_route(
+            route_history,
             {
-                "move_id": f"move:{source_sentence_id}:bridge",
-                "move_type": "bridge",
+                "route_id": f"route:{source_sentence_id}:bridge_back",
+                "route_action": "bridge_back",
                 "reason": _clean_text(bridge_result.get("reason")) or "bridge resolution selected an earlier anchor",
                 "source_sentence_id": source_sentence_id,
                 "target_anchor_id": _clean_text(materialized_primary.get("target_anchor_id")),
@@ -765,5 +765,5 @@ def run_phase5_bridge_cycle(
         "thread_trace": next_thread_trace,
         "anchor_bank": next_anchor_bank,
         "knowledge_activations": next_knowledge,
-        "move_history": next_move_history,
+        "route_history": next_route_history,
     }

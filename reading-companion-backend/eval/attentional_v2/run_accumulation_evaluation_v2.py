@@ -45,7 +45,7 @@ DEFAULT_USER_INTENT = (
 MECHANISM_KEYS = ("attentional_v2", "iterator_v1")
 MECHANISM_FILTER_VALUES = ("attentional_v2", "iterator_v1", "both")
 JUDGE_MODE_VALUES = ("llm", "none")
-CALLBACK_MOVE_TYPES = {"bridge", "callback", "return", "look_back", "revisit", "compare"}
+CALLBACK_ROUTE_ACTIONS = {"bridge_back", "callback", "return", "look_back", "revisit", "compare"}
 TARGET_PROXIMAL_REACTION_LIMIT = 3
 JUDGE_SCHEMA_RETRY_INSTRUCTION = (
     "\n\nReminder: return exactly one JSON object matching the requested schema. "
@@ -299,7 +299,7 @@ def _bundle_summary(bundle: dict[str, Any]) -> dict[str, Any]:
                 "kind": _clean_text(item.get("kind")),
                 "phase": _clean_text(item.get("phase")),
                 "section_ref": _clean_text(item.get("section_ref")),
-                "move_type": _clean_text(item.get("move_type")),
+                "route_action": _clean_text(item.get("route_action")),
                 "message": _clean_text(item.get("message"))[:180],
                 "current_excerpt": _clean_text(item.get("current_excerpt"))[:180],
             }
@@ -585,7 +585,7 @@ def _attention_event_payloads(bundle: dict[str, Any]) -> list[dict[str, Any]]:
                 "kind": _clean_text(item.get("kind")),
                 "phase": _clean_text(item.get("phase")),
                 "section_ref": _clean_text(item.get("section_ref")),
-                "move_type": _clean_text(item.get("move_type")).lower(),
+                "route_action": _clean_text(item.get("route_action")).lower(),
                 "message": _clean_text(item.get("message")),
                 "current_excerpt": _clean_text(item.get("current_excerpt")),
             }
@@ -670,7 +670,7 @@ def _build_target_evidence_bundle(
             break
 
     for event in attention_payloads:
-        if event["move_type"] not in CALLBACK_MOVE_TYPES and not any(
+        if event["route_action"] not in CALLBACK_ROUTE_ACTIONS and not any(
             _text_mentions_point(event["message"], point) or _text_mentions_point(event["current_excerpt"], point)
             for point in callback_points
         ):
@@ -687,7 +687,7 @@ def _build_target_evidence_bundle(
         payload["matched_callback_point_id"] = matched_point.point_id if matched_point else ""
         payload["matched_callback_label"] = matched_point.label if matched_point else ""
         payload["evidence_role"] = "audit_only_attention_event_not_target_visible"
-        key = ("event", f"{event['order_index']}:{event['move_type']}:{event['section_ref']}")
+        key = ("event", f"{event['order_index']}:{event['route_action']}:{event['section_ref']}")
         if key in seen_pre_target_callback_ids:
             continue
         pre_target_observed_callbacks.append(payload)

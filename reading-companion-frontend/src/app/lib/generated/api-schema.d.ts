@@ -429,11 +429,6 @@ export interface components {
              */
             message: string;
             /**
-             * Move Type
-             * @description Current move type when the event represents a mechanism-authored attentional move.
-             */
-            move_type?: ("advance" | "dwell" | "bridge" | "reframe") | null;
-            /**
              * Reaction Types
              * @description Reaction types represented in this event.
              */
@@ -445,6 +440,11 @@ export interface components {
              * @description Frontend result route associated with the event when available.
              */
             result_url?: string | null;
+            /**
+             * Route Action
+             * @description Current route action when the event represents a mechanism-authored route decision.
+             */
+            route_action?: ("commit" | "continue" | "bridge_back" | "reframe") | null;
             /**
              * Search Query
              * @description Search query attached to the event when applicable.
@@ -1338,11 +1338,6 @@ export interface components {
              */
             last_resume_kind?: ("warm_resume" | "cold_resume" | "reconstitution_resume") | null;
             /**
-             * Move Type
-             * @description Current attentional move when the mechanism exposes it directly.
-             */
-            move_type?: ("advance" | "dwell" | "bridge" | "reframe") | null;
-            /**
              * Phase
              * @description Current live reading phase.
              * @enum {string}
@@ -1360,6 +1355,11 @@ export interface components {
              * @description Whether the mechanism rebuilt hot local state from persistence instead of continuing warm in-memory continuity.
              */
             reconstructed_hot_state?: boolean | null;
+            /**
+             * Route Action
+             * @description Current route action when the mechanism exposes it directly.
+             */
+            route_action?: ("commit" | "continue" | "bridge_back" | "reframe") | null;
             /**
              * Search Query
              * @description Search query being investigated when the reader is searching.

@@ -21,7 +21,6 @@ from .schemas import (
     DetourNeed,
     DetourSearchResult,
     KnowledgeActivationsState,
-    MoveType,
     NavigationContext,
     NavigateRouteDecision,
     OutsideLink,
@@ -49,7 +48,6 @@ _REACTION_TYPES: set[ReactionType] = {
     "retrospect",
     "silent",
 }
-_MOVE_TYPES: set[MoveType] = {"advance", "dwell", "bridge", "reframe"}
 _ROUTE_ACTIONS = {"commit", "continue", "bridge_back", "reframe"}
 _OUTSIDE_LINK_KINDS = {"work", "person", "concept", "history", "analogy", "other"}
 _UNITIZE_BOUNDARY_TYPES: set[UnitizeBoundaryType] = {
@@ -620,21 +618,6 @@ def _normalize_pressure_signals(value: object) -> PressureSignals:
     }
 
 
-def _derive_pressure_signals_from_legacy_fields(
-    *,
-    move_hint: str,
-    continuation_pressure: bool,
-) -> PressureSignals:
-    """Derive pressure signals from the legacy route-oriented read fields."""
-
-    normalized_move = _clean_text(move_hint).lower().replace("-", "_")
-    return {
-        "continuation_pressure": bool(continuation_pressure),
-        "backward_pull": normalized_move == "bridge",
-        "frame_shift_pressure": normalized_move == "reframe",
-    }
-
-
 def _normalize_prior_link(
     value: object,
     *,
@@ -1082,15 +1065,6 @@ def read_unit(
         )
 
     pressure_signals = _normalize_pressure_signals(payload.get("pressure_signals")) if isinstance(payload, dict) else {}
-    if not any(pressure_signals.values()):
-        legacy_move_hint = _clean_text(payload.get("move_hint") if isinstance(payload, dict) else "").lower().replace("-", "_")
-        if legacy_move_hint not in _MOVE_TYPES:
-            legacy_move_hint = "advance"
-        legacy_continuation_pressure = bool(payload.get("continuation_pressure")) if isinstance(payload, dict) else False
-        pressure_signals = _derive_pressure_signals_from_legacy_fields(
-            move_hint=legacy_move_hint,
-            continuation_pressure=legacy_continuation_pressure,
-        )
     surfaced_reactions = _normalize_surfaced_reactions(
         payload.get("surfaced_reactions") if isinstance(payload, dict) else None,
         current_unit_texts=current_unit_texts,

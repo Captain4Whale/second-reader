@@ -47,7 +47,7 @@ class NormalizedAttentionEvent(TypedDict, total=False):
     thought_family: ThoughtFamily
     problem_code: str
     reading_locus: dict[str, object] | None
-    move_type: str
+    route_action: str
     active_reaction_id: str
 
 
@@ -80,7 +80,7 @@ class NormalizedRunSnapshot(TypedDict, total=False):
     current_section_ref: str
     current_reading_activity: dict[str, object] | None
     current_reading_locus: dict[str, object] | None
-    current_move_type: str
+    current_route_action: str
     reconstructed_hot_state: bool | None
     last_resume_kind: str | None
     active_reaction_id: str | None

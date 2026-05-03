@@ -23,7 +23,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
 
 ## Reading Progression Logic
 - Describe how the mechanism moves through a book.
-- Describe default movement, local dwell behavior, revisits, and fallback behavior.
+- Describe default route actions, local continuation behavior, revisits/detours, and fallback behavior.
 
 ## LLM Call Schedule
 - Describe when the main LLM is called.

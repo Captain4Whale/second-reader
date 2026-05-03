@@ -107,7 +107,7 @@ def _checkpoint_state_counts(checkpoint: FullCheckpointState) -> dict[str, int]:
     thread_trace = checkpoint.get("thread_trace", {})
     reflective_frames = checkpoint.get("reflective_frames", {}) or checkpoint.get("reflective_summaries", {})
     knowledge_activations = checkpoint.get("knowledge_activations", {})
-    move_history = checkpoint.get("move_history", {})
+    route_history = checkpoint.get("route_history", {})
     reaction_records = checkpoint.get("reaction_records", {})
     reconsolidation_records = checkpoint.get("reconsolidation_records", {})
     return {
@@ -118,7 +118,7 @@ def _checkpoint_state_counts(checkpoint: FullCheckpointState) -> dict[str, int]:
         "thread_count": len(thread_trace.get("entries", [])),
         "reflective_item_count": len(reflective_frames.get("chapter_understandings", [])),
         "activation_count": len(knowledge_activations.get("activations", [])),
-        "move_count": len(move_history.get("moves", [])),
+        "route_count": len(route_history.get("routes", [])),
         "reaction_count": len(reaction_records.get("records", [])),
         "reconsolidation_count": len(reconsolidation_records.get("records", [])),
     }

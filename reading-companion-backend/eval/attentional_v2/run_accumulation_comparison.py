@@ -709,7 +709,7 @@ def _summarize_bundle(bundle: dict[str, Any]) -> dict[str, Any]:
                 "kind": _clean_text(item.get("kind")),
                 "phase": _clean_text(item.get("phase")),
                 "section_ref": _clean_text(item.get("section_ref")),
-                "move_type": _clean_text(item.get("move_type")),
+                "route_action": _clean_text(item.get("route_action")),
                 "message": _clean_text(item.get("message"))[:180],
                 "current_excerpt": _clean_text(item.get("current_excerpt"))[:180],
             }
@@ -1170,7 +1170,7 @@ def _extract_probe_local_evidence(
                 "kind": _clean_text(item.get("kind")),
                 "phase": _clean_text(item.get("phase")),
                 "section_ref": _clean_text(item.get("section_ref")),
-                "move_type": _clean_text(item.get("move_type")),
+                "route_action": _clean_text(item.get("route_action")),
                 "message": _clean_text(item.get("message"))[:240],
                 "current_excerpt": _clean_text(item.get("current_excerpt"))[:240],
                 "match_score": score,

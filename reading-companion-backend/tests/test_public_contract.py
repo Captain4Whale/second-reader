@@ -277,7 +277,7 @@ def test_openapi_public_snapshot_and_key_contracts(tmp_path):
 
     current_activity = schemas["CurrentReadingActivity"]
     assert current_activity["properties"]["reading_locus"]["anyOf"][0]["$ref"] == "#/components/schemas/ReadingLocus"
-    assert current_activity["properties"]["move_type"]["anyOf"][0]["enum"] == ["advance", "dwell", "bridge", "reframe"]
+    assert current_activity["properties"]["route_action"]["anyOf"][0]["enum"] == ["commit", "continue", "bridge_back", "reframe"]
     assert schemas["ReadingLocus"]["properties"]["chapter_number"]["anyOf"][0]["type"] == "integer"
     assert schemas["FeaturedReactionPreview"]["properties"]["chapter_number"]["anyOf"][0]["type"] == "integer"
     assert schemas["MarkRecord"]["properties"]["chapter_number"]["anyOf"][0]["type"] == "integer"

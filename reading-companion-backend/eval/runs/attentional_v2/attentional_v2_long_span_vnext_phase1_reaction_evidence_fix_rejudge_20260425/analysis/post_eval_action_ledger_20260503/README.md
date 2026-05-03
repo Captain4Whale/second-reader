@@ -195,18 +195,18 @@ Each action should answer:
   - The report-writing shape had also been improved several times by hand, which created a risk that the next evaluation report would drift back into unreadable or inconsistent evidence layout.
 - `decision`:
   - Treat Memory Quality report writing as part of the fixed Long Span vNext evidence contract.
-  - Rename the report label for route explanations from `statement` to `move reason`.
-  - Keep `Recent Moves` explicitly scoped as a compact projection from `move_history.moves[-3:]`, not as raw move history and not as long-term memory.
+  - Rename the report label for route explanations from `statement` to `route reason`.
+  - Keep `Recent Routes` explicitly scoped as a compact projection from `route_history.routes[-3:]`, not as raw route history and not as long-term memory.
   - Persist the full evidence-report shape so future renderers reuse the same structure instead of reinventing it.
 - `implemented changes`:
   - Added a stable Memory Quality evidence report contract under the Long Span evaluation docs.
-  - Updated the source-map audit renderer so regenerated reports normalize `Recent Moves` sections to use `move reason` and explain their source.
+  - Updated the source-map audit renderer so regenerated reports normalize `Recent Routes` sections to use `route reason` and explain their source.
   - Regenerated the current source-map audit docs so the visible report now uses the corrected label.
   - Linked the report contract from current Long Span evaluation docs, backend reader evaluation docs, current-state, and task registry.
 - `validation`:
   - Regenerated `memory_quality_probe_audit_20260503_source_map` without changing scores, judgments, or reading outputs.
   - Checked that generated source-map reports contain 5 windows, 25 probes, 5 full source documents, and 25 raw snapshot links.
-  - Checked that `Recent Moves` blocks no longer label route reasons as `statement`.
+  - Checked that `Recent Routes` blocks no longer label route reasons as `statement`.
 - `evidence links`:
   - Report contract: `../../../../../../../reading-companion-backend/docs/evaluation/long_span/memory_quality_report_contract.md`
   - Source-map renderer: `../../../../../../../reading-companion-backend/scripts/temporary/memory_quality_probe_audit_source_map_20260503.py`
@@ -219,7 +219,44 @@ Each action should answer:
 
 ## Next Actions Pending
 
-The first six post-eval actions are recorded above. Later actions should be appended here only after their finding, decision, and implementation boundary have been agreed.
+### A7 — Route action contract cutover
+
+- `action_id`: `A7_route_action_contract_cutover`
+- `status`: `landed`
+- `source finding`:
+  - While reviewing Navigator behavior and report terminology, the project confirmed that the old `advance / dwell / bridge / reframe` move vocabulary was a historical controller layer, not the current live scheduling contract.
+  - The old `move_type` / `move_history` projection risked making `continue` look like a renamed `dwell`, and made current frontend/API/eval surfaces preserve a retired model.
+- `decision`:
+  - Make `route_action` the current contract for `Navigate.route`.
+  - Current legal values are `commit`, `continue`, `bridge_back`, and `reframe`.
+  - Do not dual-write `move_type` or `move_history` in new runs.
+  - Preserve old artifacts and old reports as historical evidence only.
+- `implemented changes`:
+  - Runtime route audit now writes `route_history.json` with `routes[]`.
+  - `RouteRecord` stores `route_action`, reason, source sentence, and optional target anchor/sentence.
+  - New runtime/checkpoint loading fails fast on old-only `move_history` state.
+  - Public schemas, OpenAPI, frontend generated types, and overview live-chip copy now use `route_action`.
+  - Current normalized eval and Long Span support code use route evidence rather than old move evidence.
+  - Stable mechanism/API/evaluation/current-state docs now mark the old move vocabulary as historical.
+- `validation`:
+  - `cd reading-companion-backend && .venv/bin/pytest -q tests/test_attentional_v2_nodes.py tests/test_attentional_v2_state_ops.py tests/test_attentional_v2_state_projection.py tests/test_attentional_v2_phase_b.py tests/test_attentional_v2_bridge.py tests/test_attentional_v2_scaffold.py tests/test_attentional_v2_resume.py tests/test_attentional_v2_evaluation.py tests/test_public_contract.py tests/test_long_span_vnext.py tests/test_run_accumulation_evaluation_v2.py tests/test_run_accumulation_comparison.py tests/test_run_excerpt_comparison.py`
+  - `cd reading-companion-backend && .venv/bin/python scripts/export_openapi.py --check`
+  - `cd reading-companion-frontend && npm run typecheck`
+  - `python3 -m json.tool docs/tasks/registry.json >/dev/null`
+  - `git diff --check`
+- `evidence links`:
+  - Current mechanism contract: `../../../../../../../docs/backend-reading-mechanisms/attentional_v2.md`
+  - Public API contract: `../../../../../../../docs/api-contract.md`
+  - Integration docs: `../../../../../../../docs/api-integration.md`
+  - State aggregation boundary: `../../../../../../../docs/backend-state-aggregation.md`
+  - Decision history: `../../../../../../../docs/history/decision-log.md`
+  - Backend route/runtime code: `../../../../../../../reading-companion-backend/src/attentional_v2/runner.py`, `../../../../../../../reading-companion-backend/src/attentional_v2/schemas.py`, `../../../../../../../reading-companion-backend/src/attentional_v2/storage.py`
+  - Public schema/frontend code: `../../../../../../../reading-companion-backend/src/api/schemas.py`, `../../../../../../../reading-companion-frontend/src/app/components/book-overview-page.tsx`
+- `follow-up`:
+  - Complete for the route-action contract cutover.
+  - `bridge_resolution` remains a source-grounded callback helper; it should not be confused with the old `bridge` move type.
+
+The first seven post-eval actions are recorded above. Later actions should be appended here only after their finding, decision, and implementation boundary have been agreed.
 
 ### Action Template
 

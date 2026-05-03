@@ -278,22 +278,20 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - `Navigate.route` derives `bridge_back` from the final `ReadUnitResult`.
   - If the route asks for `bridge_back`, the runtime then materializes the deterministic candidate set and enters `bridge_resolution`.
 - The bridge layer then adds bridge judgment after deterministic candidate generation when that pressure actually exists:
-  - `candidate_generation_if_needed -> bridge_resolution -> durable anchor / move updates`
-- The next move is one of:
-  - `advance`
-    - move to the next unresolved local span when understanding is good enough
-  - `dwell`
-    - stay on the current span and zoom further in when interpretive pressure remains high
-  - `bridge`
-    - detour toward a non-mainline span that has become newly relevant
-  - `reframe`
-    - update the broader hypothesis about the chapter/book, then continue with changed attention priorities
-- Phase A route actions are normalized as:
+  - `candidate_generation_if_needed -> bridge_resolution -> durable anchor / route-history updates`
+- The current `Navigate.route` action is one of:
   - `commit`
+    - accept the current unit and advance the main reading cursor
   - `continue`
+    - the current semantic movement still has forward continuation pressure, so keep reading the next normal unit
   - `bridge_back`
+    - connect the just-read unit back to a source-grounded earlier anchor through the bridge-resolution helper
   - `reframe`
-  These route labels are mechanism-internal control labels and do not yet replace the older controller move vocabulary in persisted compatibility outputs.
+    - let the current unit change the active interpretive frame before continuing
+- The older `advance / dwell / bridge / reframe` controller vocabulary is historical.
+  - New runs do not persist `MoveType`, `move_type`, or `move_history`.
+  - There is no live `continue -> dwell` compatibility projection.
+  - Historical artifacts and archived reports may still contain the old names, but current code, prompts, runtime, public payloads, and eval exports use `route_action`.
 - Reading is pushed forward by unresolved interpretive pressure under coverage constraints.
   - Coverage prevents wandering forever.
   - Interpretive pressure prevents mechanical traversal.
@@ -428,7 +426,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - `not carry`
     - large earlier source excerpts
     - full reaction history
-    - full move history
+    - full route history
     - audit/debug ledgers
 - `Read` should carry:
   - `always carry`
@@ -444,7 +442,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
     - sparse supporting refs
   - `not carry`
     - full `refs`
-    - full `move_history`
+    - full `route_history`
     - full `reaction_records`
     - full `read_audit`
     - full `anchor_bank`
@@ -481,7 +479,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
     - the grounding substrate for source-honest visible reactions, detour localization, and evaluation/audit evidence
   - `artifacts / history`
     - `reaction_records`
-    - `move_history`
+    - `route_history`
     - `read_audit`
     - `refs`
     - `knowledge_activations` as helper territory rather than primary carried memory
@@ -577,7 +575,10 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - `_mechanisms/attentional_v2/runtime/reflective_frames.json`
   - `_mechanisms/attentional_v2/runtime/anchor_bank.json`
   - `_mechanisms/attentional_v2/runtime/knowledge_activations.json`
-  - `_mechanisms/attentional_v2/runtime/move_history.json`
+  - `_mechanisms/attentional_v2/runtime/route_history.json`
+    - current route audit history
+    - records `route_action`, reason, source sentence, and optional target anchor/sentence
+    - replaces the historical `move_history.json` / `move_type` vocabulary for new runs
   - `_mechanisms/attentional_v2/runtime/reaction_records.json`
     - persisted visible reactions now store native surfaced semantics first:
       - `thought`
@@ -630,7 +631,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
 - Phase D now adds persisted continuation capsules so warm resume can restore a bounded continuity seed instead of reconstructing context only from raw state files.
 - Phase 8 now lands the first additive public-surface projection layer:
   - `current_reading_activity.reading_locus`
-  - `current_reading_activity.move_type`
+  - `current_reading_activity.route_action`
   - `current_reading_activity.reconstructed_hot_state`
   - `current_reading_activity.last_resume_kind`
   - `current_reading_activity.active_reaction_id`
@@ -671,8 +672,8 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - Does the mechanism preserve source-order intake and avoid future-text leakage while still remaining selective at the reasoning layer?
 - `coverage_unit_interpretation_quality`
   - Does the mechanism form strong coverage-unit interpretations instead of producing sentence-by-sentence sparks or vague paragraph blur?
-- `move_choice_quality`
-  - Does the mechanism choose `advance`, `dwell`, `bridge`, and `reframe` in a way that feels text-earned rather than procedural or arbitrary?
+- `route_action_quality`
+  - Does the mechanism choose `commit`, `continue`, `bridge_back`, and `reframe` in a way that feels text-earned rather than procedural or arbitrary?
 - `bridge_resolution_honesty`
   - When the mechanism links backward, are those links source-grounded and interpretively justified rather than merely suggestive?
 - `reaction_selectivity_and_anchor_fidelity`
