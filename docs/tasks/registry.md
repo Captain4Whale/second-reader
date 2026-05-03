@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-04-25T09:24:00+08:00`
+Last updated: `2026-05-03T08:37:27+08:00`
 
 ## Status Values
 - `active`
@@ -48,14 +48,18 @@ Last updated: `2026-04-25T09:24:00+08:00`
     - `navigate.unitize` and `read` now both receive those small concept/thread digests without changing persisted runtime files or public surfaces
   - `Phase C.3` is now landed:
     - new runs now treat `working_state / concept_registry / thread_trace / reflective_frames / anchor_bank` as the primary runtime and checkpoint truth
-    - old `working_pressure / anchor_memory / reflective_summaries` were demoted to legacy load/projection territory during the cutover
+    - old V2 state stores were demoted to cutover-only legacy territory during the cutover
     - `active_recall` now exposes first-class `concepts` and `threads` from the new state layers
     - checkpoint/resume temporarily accepted both old and new state territory during the cutover, while newly written checkpoints already used only the new primary keys
   - `Phase C.4` is now landed:
     - sentence-intake / bridge / slow-cycle now consume and write the new primary state layers directly
-    - the live runner no longer projects new state back into `working_pressure / anchor_memory / reflective_summaries` to execute helpers
+    - the live runner no longer projects new state back into old V2 helper stores to execute helpers
     - live runtime loading and resume now reject pre-`Phase C.3` runtime directories and checkpoints
     - public/frontend compatibility surfaces remain unchanged
+  - legacy gate/pressure sidecar cleanup is now landed:
+    - current hot state is `working_state.active_items`
+    - old `gate_state`, `pressure_snapshot`, and working-pressure runtime artifacts are no longer current schema, prompt, runtime, checkpoint, or Memory Quality evidence fields
+    - current `pressure_signals` remain live as one-step `Read -> Navigate.route` signals
   - `Phase D` is now landed:
     - `read` now supports a budget-bounded multi-step supplemental recall loop instead of a single extra pass
     - runtime state and full checkpoints now persist a lightweight `continuation capsule` with rehydration entrypoints
@@ -321,6 +325,9 @@ Last updated: `2026-04-25T09:24:00+08:00`
         - `attentional_v2_long_span_vnext_phase1_memory_quality_scale_fix_rejudge_20260425`
       - current reaction-evidence rejudge run id:
         - `attentional_v2_long_span_vnext_phase1_reaction_evidence_fix_rejudge_20260425`
+      - post-eval action ledger:
+        - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_long_span_vnext_phase1_reaction_evidence_fix_rejudge_20260425/analysis/post_eval_action_ledger_20260503/README.md`
+        - first recorded action: `A1_legacy_gate_pressure_cleanup`
       - result:
         - `Memory Quality` average overall score: `3.48`
         - probe count: `25`

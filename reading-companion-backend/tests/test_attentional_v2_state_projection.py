@@ -11,7 +11,7 @@ from src.attentional_v2.schemas import (
     build_empty_move_history,
     build_empty_reaction_records,
     build_empty_reflective_summaries,
-    build_empty_working_pressure,
+    build_empty_working_state,
 )
 from src.attentional_v2.state_projection import (
     STATE_PACKET_VERSION,
@@ -31,16 +31,15 @@ def _sentence(sentence_id: str, text: str, *, sentence_index: int = 1) -> dict[s
     }
 
 
-def test_build_carry_forward_context_exposes_phase_c1_packet_shape_and_legacy_aliases():
-    """Carry-forward packetization should expose the new packet shape without breaking legacy aliases."""
+def test_build_carry_forward_context_exposes_phase_c1_packet_shape():
+    """Carry-forward packetization should expose bounded current state layers."""
 
     local_buffer = build_empty_local_buffer()
     local_buffer["recent_sentences"] = [_sentence("c1-s1", "Alpha sentence.")]
     local_buffer["recent_meaning_units"] = [["c1-s1"]]
 
-    working_pressure = build_empty_working_pressure()
-    working_pressure["gate_state"] = "watch"
-    working_pressure["local_questions"] = [
+    working_state = build_empty_working_state()
+    working_state["active_items"] = [
         {
             "item_id": "question-1",
             "bucket": "local_questions",
@@ -121,7 +120,7 @@ def test_build_carry_forward_context_exposes_phase_c1_packet_shape_and_legacy_al
         chapter_ref="Chapter 1",
         current_unit_sentence_ids=["c1-s2"],
         local_buffer=local_buffer,
-        working_pressure=working_pressure,
+        working_state=working_state,
         anchor_memory=anchor_memory,
         reflective_summaries=reflective_summaries,
         move_history=move_history,
@@ -140,7 +139,6 @@ def test_build_carry_forward_context_exposes_phase_c1_packet_shape_and_legacy_al
     assert any(ref["kind"] == "concept" for ref in packet["refs"])
     assert any(ref["kind"] == "thread" for ref in packet["refs"])
 
-    assert packet["working_pressure_digest"]["items"][0]["item_id"] == "question-1"
     assert packet["reflective_digest"][0]["item_id"] == "frame-1"
     assert packet["anchor_digest"][0]["anchor_id"] == "a-1"
     assert packet["continuity_digest"]["recent_reactions"][0]["reaction_id"] == "reaction-1"
@@ -154,7 +152,7 @@ def test_build_navigation_context_exposes_state_packet_without_watch_metadata():
         chapter_ref="Chapter 1",
         current_sentence_id="c1-s2",
         local_buffer=build_empty_local_buffer(),
-        working_pressure=build_empty_working_pressure(),
+        working_state=build_empty_working_state(),
         anchor_memory=build_empty_anchor_memory(),
         reflective_summaries=build_empty_reflective_summaries(),
         move_history=build_empty_move_history(),
@@ -176,9 +174,8 @@ def test_build_read_prompt_packet_projects_compact_always_carry_and_selective_ca
     local_buffer["recent_sentences"] = [_sentence("c1-s1", "Alpha sentence.")]
     local_buffer["recent_meaning_units"] = [["c1-s1"]]
 
-    working_pressure = build_empty_working_pressure()
-    working_pressure["gate_state"] = "watch"
-    working_pressure["local_questions"] = [
+    working_state = build_empty_working_state()
+    working_state["active_items"] = [
         {
             "item_id": "question-1",
             "bucket": "local_questions",
@@ -232,7 +229,7 @@ def test_build_read_prompt_packet_projects_compact_always_carry_and_selective_ca
         chapter_ref="Chapter 1",
         current_unit_sentence_ids=["c1-s2"],
         local_buffer=local_buffer,
-        working_pressure=working_pressure,
+        working_state=working_state,
         anchor_memory=anchor_memory,
         reflective_summaries=reflective_summaries,
         move_history=move_history,
@@ -264,7 +261,6 @@ def test_build_read_prompt_packet_projects_compact_always_carry_and_selective_ca
     )
 
     assert prompt_packet["packet_version"] == STATE_PACKET_VERSION
-    assert prompt_packet["working_state"]["gate_state"] == "watch"
     assert prompt_packet["working_state"]["active_items"][0]["item_id"] == "question-1"
     assert prompt_packet["concept_digest"][0]["concept_key"] == "promise"
     assert prompt_packet["thread_digest"][0]["thread_key"]
@@ -273,7 +269,6 @@ def test_build_read_prompt_packet_projects_compact_always_carry_and_selective_ca
     assert prompt_packet["selective_carry"]["supporting_refs"][0]["ref_id"] == "lookback:sentence:c1-s1"
     assert "refs" not in prompt_packet
     assert "anchor_bank_digest" not in prompt_packet
-    assert "working_pressure_digest" not in prompt_packet
     assert prompt_packet["local_continuity"]["recent_reactions"][0]["reaction_id"] == "reaction-1"
 
 

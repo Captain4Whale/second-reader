@@ -16,12 +16,11 @@ from src.attentional_v2.schemas import (
     build_empty_move_history,
     build_empty_reaction_records,
     build_empty_reflective_summaries,
-    build_empty_working_pressure,
+    build_empty_working_state,
 )
 from src.attentional_v2.state_migration import (
     migrate_anchor_memory_to_new_layers,
     migrate_reflective_summaries_to_frames,
-    migrate_working_pressure_to_working_state,
 )
 from src.attentional_v2.storage import read_audit_file
 from src.reading_mechanisms.attentional_v2 import AttentionalV2Mechanism
@@ -138,11 +137,10 @@ def test_read_unit_projects_compact_packet_and_returns_f1_surface_contract(tmp_p
     ]
     local_buffer["recent_meaning_units"] = [["c1-s1"]]
 
-    working_pressure = build_empty_working_pressure()
-    working_pressure["gate_state"] = "watch"
-    working_pressure["local_questions"] = [
+    working_state = build_empty_working_state()
+    working_state["active_items"] = [
         {
-            "item_id": "pressure-1",
+            "item_id": "question-1",
             "bucket": "local_questions",
             "kind": "question",
             "statement": "Why does the chapter turn here?",
@@ -194,7 +192,7 @@ def test_read_unit_projects_compact_packet_and_returns_f1_surface_contract(tmp_p
         chapter_ref="Chapter 1",
         current_unit_sentence_ids=["c1-s2"],
         local_buffer=local_buffer,
-        working_pressure=working_pressure,
+        working_state=working_state,
         anchor_memory=anchor_memory,
         reflective_summaries=reflective_summaries,
         move_history=move_history,
@@ -252,7 +250,6 @@ def test_read_unit_projects_compact_packet_and_returns_f1_surface_contract(tmp_p
     assert "\"active_items\"" in captured["prompt"]
     assert "\"concept_key\": \"promise\"" in captured["prompt"]
     assert "\"earlier_excerpts\"" in captured["prompt"]
-    assert "\"working_pressure_digest\"" not in captured["prompt"]
     assert "\"refs\": [" not in captured["prompt"]
     assert "\"anchor_bank_digest\"" not in captured["prompt"]
     assert manifest["prompt_version"] == "attentional_v2.read.v12"
@@ -286,7 +283,7 @@ def test_resolve_context_request_returns_exact_look_back_excerpt_and_none_when_u
         chapter_ref="Chapter 1",
         current_unit_sentence_ids=["c1-s2"],
         local_buffer=build_empty_local_buffer(),
-        working_pressure=build_empty_working_pressure(),
+        working_state=build_empty_working_state(),
         anchor_memory=anchor_memory,
         reflective_summaries=build_empty_reflective_summaries(),
         move_history=build_empty_move_history(),
@@ -355,7 +352,7 @@ def test_resolve_context_request_active_recall_surfaces_concepts_and_threads():
         chapter_ref="Chapter 1",
         current_unit_sentence_ids=["c1-s2"],
         local_buffer=build_empty_local_buffer(),
-        working_pressure=build_empty_working_pressure(),
+        working_state=build_empty_working_state(),
         anchor_memory=anchor_memory,
         reflective_summaries=build_empty_reflective_summaries(),
         move_history=build_empty_move_history(),
@@ -453,7 +450,7 @@ def test_run_read_with_context_loop_reads_once_and_persists_f1_audit(tmp_path, m
         },
         local_buffer=build_empty_local_buffer(),
         continuation_capsule={},
-        working_state=migrate_working_pressure_to_working_state(build_empty_working_pressure()),
+        working_state=build_empty_working_state(),
         concept_registry=concept_registry,
         thread_trace=thread_trace,
         reflective_frames=reflective_frames,

@@ -1,293 +1,211 @@
-# Reading Companion Gap Map
+# Reading Companion Methodology Summary
 
-Purpose: 将 Reading Companion 的真实项目做法映射到 AI Harness Stack，判断哪些层已经 strong、哪些 partial、哪些 missing。
-Use when: 需要回答“我已经形成了哪些 AI 协同方法”以及“下一步最值得补强什么”。
+Purpose: 总结 Reading Companion 项目中已经形成的 operator-side AI Harness 方法论，并标出仍需补强的能力。
+Use when: 需要回答“我在这个项目中如何驾驭 AI / coding agent 工具”以及“下一步最值得提升什么”。
 Not for: 产品运行时权威、机制规格、任务状态更新、评测结论权威或简历 bullet。
 
-This document is evidence-mapped. Every `strong` or `partial` claim includes concrete project evidence. `missing` entries are improvement opportunities, not criticism of current product behavior.
+Boundary statement: 本文不是讲如何开发 agent，而是总结一个 operator 如何用现有 AI agent、coding agent 和多工具 workflow 推进复杂 AI 产品项目。
 
-## Summary Table
+## Summary
 
-| Harness layer | Status | Reading Companion evidence | Main gap |
-| --- | --- | --- | --- |
-| Intent Harness | `strong` | Product purpose, evaluation constitution, decision log | Pre-task evidence contract is not yet a universal habit. |
-| Context Harness | `strong` | AGENTS load matrix, source-of-truth map, current state, task registry, context research | Cross-tool personal context budget is still informal. |
-| Tool / Environment Harness | `partial` | Shared backend runtime, LLM gateway, job registry, validation scripts | Strong project tooling, weaker generalized AI tool governance. |
-| Execution Harness | `strong` | Durable job registry, staged eval runners, watchdogs, run artifacts | Execution-path metrics are not yet visible as one dashboard. |
-| Evaluation Harness | `strong` | Dual diagnosis, evidence catalog, LLM adjudication, invalidation rules | Human calibration and execution-path evals need more structure. |
-| Observability Harness | `partial` | run ids, artifacts, `llm_usage`, `read_audit`, evidence catalog | Strong provenance, weaker visual/queryable trace layer. |
-| Governance Harness | `partial` | Eval governance, source-span invalidation, doc routing, long-job rules | General agent safety, prompt-injection, permission, provider-upgrade protocol are underdeveloped. |
-| Learning Harness | `strong` | Pattern ledger, decision log, retrospective package | External source-monitoring habit is not yet systematic. |
+Reading Companion 中形成的方法论可以概括为七个环节：
 
-## Layer-by-Layer Assessment
+| 环节 | 本质 | 当前状态 |
+| --- | --- | --- |
+| 目标与意图控制 | 把模糊愿望变成 AI 可执行、可评测、可停止的任务契约 | strong |
+| 上下文治理 | 让重要信息有权威来源、生命周期、路由和输入策略 | strong |
+| 执行可靠性 | 把 AI 对话变成分阶段、可恢复、可交接的工程流程 | strong |
+| 证据与评测 | 把“感觉好坏”转成可复查、可校准、可改进的证据系统 | strong |
+| 工具、环境与权限控制 | 管理 AI 能调用什么、在哪里调用、风险如何隔离 | partial |
+| 可观测与交接 | 让 agent 的过程、产物、判断和恢复姿态可追踪 | partial |
+| 复盘与学习 | 把一次协作经验转成下一轮结构性能力 | strong |
 
-### 1. Intent Harness
+## 1. 目标与意图控制
 
-Status: `strong`
+### 这一层在治理什么
 
-Reading Companion already uses AI to clarify intent before implementation. The clearest evidence is the product reframing from a narrower blind-spot promise to a living co-reader mind, then turning that into stable documents.
+这一层治理的是“AI 到底应该服务哪个人的目标”。复杂项目里，最危险的不是 AI 不够聪明，而是目标没有被人先界定清楚，AI 就沿着看似合理的方向继续产出。
 
-Evidence:
+目标与意图控制不是把 prompt 写得更长，而是把任务变成一个小契约：当前问题是什么、什么算完成、什么不做、谁有最终判断权、什么证据会改变方向。
 
-- [Product Overview](../../product-overview.md) defines the product as a curious, self-propelled co-reading mind rather than a summary engine.
-- [Backend Reader Evaluation](../../backend-reader-evaluation.md) operationalizes that purpose as a mechanism-agnostic evaluation constitution.
-- [Decision Log](../../history/decision-log.md) records `DEC-011`, `DEC-012`, and `DEC-013`, which freeze product-first evaluation, living co-reader purpose, and product-purpose authority.
+### 需要设计的机制
 
-What is strong:
+- 任务开始前要先区分任务类型：澄清产品方向、比较技术方案、实现代码、解释评测、修复回归、整理交接，不能混成一句“继续优化”。
+- 目标表达要包含 success criteria 和 non-goals，让 AI 的注意力集中在本轮真正要解决的问题上。
+- 对复杂或高成本任务，要定义 stop / retry / abandon condition，避免 AI 把不确定性自动转成更长的执行。
 
-- Product intent became an upstream constraint, not a downstream copy exercise.
-- Evaluation is tied to product purpose rather than to one current mechanism shape.
-- Design reversals are recorded when the project learns that the old question is no longer the right question.
+### Reading Companion 中的体现
 
-Gap:
+- [Product Overview](../../product-overview.md) 将项目从 summary engine 稳定为 living co-reader mind，给后续机制和评测提供上游目的。
+- [Backend Reader Evaluation](../../backend-reader-evaluation.md) 把产品目的转成 mechanism-agnostic evaluation constitution。
+- [Decision Log](../../history/decision-log.md) 保存 `DEC-011`、`DEC-012`、`DEC-013` 等关键意图决策，避免后续 AI 协作漂回旧目标。
+- [Requirement Ledger](../../implementation/new-reading-mechanism/requirement-ledger.md) 用 atomic requirements 和 disposition 管理大设计里的目标遗漏。
 
-- The project often writes evidence interpretation after the fact, but the pre-task evidence contract is not yet a standard opening move for every high-risk AI task.
+### 仍需补强
 
-Improvement opportunity:
+最值得补强的是“每轮任务开工前的轻量 task contract”。项目已经有很多事后证据，但未来更应该在任务启动时就写清：本轮要回答的问题、完成标准、无效条件和停止条件。
 
-- Add a lightweight `Evidence Contract` step before major AI-assisted design, eval, or implementation work.
+## 2. 上下文治理
 
-### 2. Context Harness
+### 这一层在治理什么
 
-Status: `strong`
+这一层治理的是“AI 该知道什么，以及它应该从哪里知道”。上下文治理的核心不是多写文档，也不是把所有信息塞进 context window，而是设计一套信息维护框架：哪些信息是长期规则，哪些是当前状态，哪些是历史决策，哪些只是临时探索。
 
-The project has a mature repo-first memory system. AI agents are expected to load canonical docs, respect doc layers, and update the right source of truth.
+如果没有上下文治理，AI 会在聊天记忆、过期总结、局部代码和个人偏好之间拼接事实，最后看似懂很多，实际失去判断依据。
 
-Evidence:
+### 需要设计的机制
 
-- [AGENTS.md](../../../AGENTS.md) defines workspace rules, load matrix, doc routing, trigger matrix, and cross-doc update rules.
-- [Source Of Truth Map](../../source-of-truth-map.md) maps durable information to canonical locations, validation commands, and update triggers.
-- [Current State](../../current-state.md) captures current objective, active jobs, recovery posture, and recommended reading path.
-- [Task Registry](../../tasks/registry.md) and [registry.json](../../tasks/registry.json) capture task routing, status, decision refs, job refs, and evidence refs.
-- [Claude Code context-management research](../../../reading-companion-backend/docs/research/claude_code_context_management_research_20260412.md) explicitly imported lessons such as index-first memory, compaction plus re-injection, side-context isolation, and session continuity.
-- [Attentional V2 mechanism doc](../../backend-reading-mechanisms/attentional_v2.md) shows that the product mechanism itself moved toward bounded packets, `state_packet.v1`, `concept_digest`, `thread_digest`, carry-forward context, and supplemental recall.
+- 先设计信息分层，再写具体文档：规则、当前状态、任务索引、稳定事实、决策历史、临时 handoff、评测证据应该有不同生命周期。
+- 先检索索引和路由，再加载全文：AI 应该通过 source-of-truth map、registry、load matrix 或搜索进入事实，而不是靠操作者每次手动复制背景。
+- 对高噪声探索使用隔离上下文或 subagent，只把结论、证据、风险和下一步回传主线。
+- 每次自动维护文档时，都要判断这条信息是 durable fact、current state、decision、diagnostic evidence，还是只该留在 scratch。
 
-What is strong:
+### Reading Companion 中的体现
 
-- Chat is no longer the primary memory.
-- Durable state, task state, history, mechanism docs, and temp notes have separate ownership.
-- Context architecture ideas from coding agents were transferred into product mechanism design.
+- [AGENTS.md](../../../AGENTS.md) 定义 load matrix、doc routing、trigger matrix 和长任务协作规则。
+- [Source Of Truth Map](../../source-of-truth-map.md) 说明 durable information 应该进入哪里，以及如何验证 switching system。
+- [Current State](../../current-state.md) 和 [Task Registry](../../tasks/registry.md) 让 AI 能找到当前目标、active jobs、task status、decision refs 和 evidence refs。
+- [Claude Code context-management research](../../../reading-companion-backend/docs/research/claude_code_context_management_research_20260412.md) 将 coding-agent context management 的经验转成 index-first memory、side context、compaction plus re-injection 等实践。
 
-Gap:
+### 仍需补强
 
-- The project has strong project-local context routing, but not yet a personal cross-tool context budget protocol for Codex, Claude Code, browser research, local scripts, and subagents together.
+项目内上下文治理已经很强，但跨工具、跨 repo、跨模型的个人上下文治理仍不够显式。未来需要更清楚地定义哪些规则属于个人级 AI Harness，哪些只属于 Reading Companion 这个项目。
 
-Improvement opportunity:
+## 3. 执行可靠性
 
-- Maintain a personal `AI context budget checklist`: what must be preloaded, what should be retrieved on demand, what belongs in subagents, and what should be omitted because the tool can inspect it directly.
+### 这一层在治理什么
 
-### 3. Tool / Environment Harness
+这一层治理的是“AI 如何把事情做完，而不是只在聊天里推进”。复杂任务不能依赖一次对话、一段超长 prompt 或一个 agent 的短期记忆，而要被拆成可检查、可恢复、可交接的执行流程。
 
-Status: `partial`
+执行可靠性不是让 AI 先写一份计划这么简单。计划只是入口，真正重要的是阶段产物、状态记录、失败恢复、边界控制和下一位 agent 能否接手。
 
-Reading Companion has strong internal tooling, but that tooling is mostly product/eval-specific rather than a generalized personal AI tool governance layer.
+### 需要设计的机制
 
-Evidence:
+- 高不确定任务先设计 execution plan，再让 AI 按阶段实现，不让它边猜目标边改代码。
+- 每个阶段要有 artifact、检查命令、完成条件和下一步，而不是只留下聊天摘要。
+- 长任务要登记 run id、命令、输入、输出路径、watchdog、当前阶段和恢复方式。
+- 失败后要能判断继续、retry、resume、restart、废弃，或者把结果降级为 diagnostic evidence。
 
-- [Backend Reading Mechanism](../../backend-reading-mechanism.md) defines shared runtime shell, shared substrate, mechanism-private artifacts, and shared evaluation seam.
-- [Backend Sequential Lifecycle](../../backend-sequential-lifecycle.md) defines upload/start/resume, job records, checkpoint behavior, and recovery semantics.
-- [Backend AGENTS.md](../../../reading-companion-backend/AGENTS.md) defines backend-local rules for LLM gateway usage, artifact routing, job registry usage, and generated artifact hygiene.
-- [Source Of Truth Map](../../source-of-truth-map.md) records validation commands such as `make agent-check`, `make contract-check`, background-job checks, and source-intake checks.
-- [Decision Log](../../history/decision-log.md) records shared substrate and artifact-boundary decisions such as `DEC-015`, `DEC-016`, `DEC-020`, and `DEC-021`.
+### Reading Companion 中的体现
 
-What is strong:
+- [Backend Sequential Lifecycle](../../backend-sequential-lifecycle.md) 定义 upload/start/resume、job records、checkpoint 和 recovery semantics。
+- [Execution Tracker](../../implementation/new-reading-mechanism/new-reading-mechanism-execution-tracker.md) 记录 phased implementation、landed behavior、validation posture 和 next moves。
+- [Dataset Platform Closed Loop](../../implementation/new-reading-mechanism/dataset-platform-closed-loop.md) 展示 source intake、case generation、packet review、repair loop、stop condition 的闭环。
+- `bundle -> judge -> merge`、job registry、watchdogs 和 expected outputs 让 long-running eval 可以跨线程恢复，而不是靠聊天窗口记住。
 
-- Product/runtime tooling has clear ownership boundaries.
-- Long-running jobs and generated artifacts have canonical territories.
-- Mechanism-private versus shared artifacts are explicit.
+### 仍需补强
 
-Gap:
+执行流程强，但个人级 reusable multi-agent planning / execution pattern 还不够抽象。未来可以把“什么时候主线程做、什么时候 subagent 探索、什么时候脚本控制流程”沉淀成稳定模板。
 
-- There is no generalized AI tool registry that says which external AI tools, MCP servers, browser sources, local scripts, permission modes, or sandbox policies should be used for which kind of personal workflow task.
+## 4. 证据与评测
 
-Improvement opportunity:
+### 这一层在治理什么
 
-- Build a personal tool governance layer: tool inventory, allowed operations, source trust tiers, sandbox defaults, credential rules, and “when to browse / when to inspect repo / when to spawn subagents” rules.
+这一层治理的是“AI 结果为什么可信，以及它到底说明了什么”。复杂 AI 项目里，结果看起来好不等于方向正确，分数提高也不一定代表机制更好；有时只是 dataset、judge、source retrieval 或 harness 本身出了问题。
 
-### 4. Execution Harness
+证据与评测的核心是把主观感觉转成可复查的 evidence contract：评测回答什么问题、什么证据有效、什么会使 run invalid、LLM judge 可以判断什么、人类校准在哪里介入。
 
-Status: `strong`
+### 需要设计的机制
 
-The project has evolved from ad hoc execution to durable, staged, recoverable execution.
+- 评测前定义 objective、dataset、validity criteria、artifact path、decision rule 和 stop condition。
+- 评测后写 post-run interpretation，区分 top-line result、validity、causal read、decision 和 follow-up。
+- 区分 formal evidence、diagnostic evidence、invalidated run 和 historical evidence，避免把错误证据继续用于决策。
+- 先做 error analysis，再决定改 prompt、换模型、修工具、改数据还是调整产品目标。
 
-Evidence:
+### Reading Companion 中的体现
 
-- [Source Of Truth Map](../../source-of-truth-map.md) makes backend job registry the canonical source for long-running job runtime state.
-- [Current State](../../current-state.md) preserves active job ids, watchdogs, run ids, commands, expected outputs, and recovery posture.
-- [Decision Log](../../history/decision-log.md) records:
-  - `DEC-037`: durable registry for long-running eval and dataset background jobs.
-  - `DEC-050`: artifact-staged `bundle -> judge -> merge` comparison work.
-  - `DEC-051`: restart only when reusable evidence is weak, not because of sunk-cost anxiety.
-  - `DEC-053`: chapter-unit readiness instead of whole-surface smoke as the gate.
-  - `DEC-063`: registry-level long-horizon auto-recovery.
-- [New Reading Mechanism Execution Tracker](../../implementation/new-reading-mechanism/new-reading-mechanism-execution-tracker.md) records phased implementation progress, landed behavior, validation posture, and next moves.
+- [Backend Reader Evaluation](../../backend-reader-evaluation.md) 定义 product-first evaluation、dual diagnosis、source-span rules 和 benchmark-size adequacy。
+- [Evaluation Evidence Catalog](../../../reading-companion-backend/docs/evaluation/evidence_catalog.md) 将 current formal evidence、quality audits、historical evidence、superseded evidence、failed diagnostics、invalidated diagnostics 分层。
+- [Long-Span Evaluation README](../../../reading-companion-backend/docs/evaluation/long_span/README.md) 记录从 discontinued target-centered route 转向 Memory Quality、Spontaneous Callback、False Visible Integration 的方法路线调整。
+- [Decision Log](../../history/decision-log.md) 的 `DEC-064` 将错误 candidate retrieval gate 视为 benchmark-contract failure，而不是弱模型结果。
 
-What is strong:
+### 仍需补强
 
-- AI-assisted execution can survive long jobs, restarts, and agent handoffs.
-- Work is staged into artifacts that can be reused, judged, merged, or invalidated.
-- Retry and recovery policy moved from chat memory into durable records.
+下一步最值得补强的是预任务 evidence contract 和更强的人类校准。项目已经擅长事后解释证据，但高成本 eval 应该在运行前就更明确地定义“什么样的结果有资格改变决策”。
 
-Gap:
+## 5. 工具、环境与权限控制
 
-- Execution paths are still mostly inspected through files and prose rather than through a unified run dashboard.
+### 这一层在治理什么
 
-Improvement opportunity:
+这一层治理的是“AI 可以调用什么，以及调用时风险如何被限制”。对 coding agent 来说，模型能力只是其中一部分；工具接口、工作目录、sandbox、依赖、凭证、审批和失败模式共同决定了它能做什么、会误伤什么。
 
-- Add lightweight workflow metrics: stage durations, retry counts, failure categories, token/cost usage, artifact reuse rates, watchdog recovery counts, and post-run decision outcomes.
+这不是开发一个工具平台，而是 operator 为现有 AI 工具设计使用边界。
 
-### 5. Evaluation Harness
+### 需要设计的机制
 
-Status: `strong`
+- 明确哪些工具适合读取、哪些适合修改、哪些适合验证、哪些需要人工审批。
+- 对高风险操作设置 sandbox、permission、credential isolation 和 irreversible-action guard。
+- 记录模型/provider、依赖、环境、命令入口和输出位置，避免 agent 依赖想象中的环境。
+- 将工具失败视为可观察事件，而不是让模型把空输出、超时或局部成功误读成事实。
 
-Reading Companion's evaluation system is one of the strongest parts of the AI-native workflow.
+### Reading Companion 中的体现
 
-Evidence:
+- [Backend Reading Mechanism](../../backend-reading-mechanism.md) 定义 shared runtime shell、shared substrate、mechanism-private artifacts 和 shared evaluation boundary。
+- [Backend AGENTS.md](../../../reading-companion-backend/AGENTS.md) 定义 backend-local 的 LLM gateway、artifact routing、job registry usage 和 generated artifact hygiene。
+- [Source Of Truth Map](../../source-of-truth-map.md) 记录 `make agent-check`、contract checks、background-job checks 等 validation commands。
 
-- [Backend Reader Evaluation](../../backend-reader-evaluation.md) defines evaluation constitution, dataset trust model, dual diagnosis, benchmark-size adequacy, source-span matching, and current long-span direction.
-- [Evaluation Evidence Catalog](../../../reading-companion-backend/docs/evaluation/evidence_catalog.md) classifies current formal evidence, quality audits, historical evidence, superseded evidence, failed diagnostics, and invalidated diagnostics.
-- [Long-Span Evaluation README](../../../reading-companion-backend/docs/evaluation/long_span/README.md) shows a method route change from discontinued target-centered accumulation to `Memory Quality`, `Spontaneous Callback`, and `False Visible Integration`.
-- [Decision Log](../../history/decision-log.md) records:
-  - `DEC-030`: benchmark quality as first-class and dual diagnosis.
-  - `DEC-031`: multi-prompt LLM adjudication as operational default when human review is scarce.
-  - `DEC-064`: invalidating a run when source-span eligibility was wrong.
-  - `DEC-076`: retiring a repaired but misaligned Long Span method.
+### 仍需补强
 
-What is strong:
+Reading Companion 内部工具治理较强，但还没有 generalized personal AI tool governance layer。未来需要一个轻量规则：哪些 AI 工具、MCP server、browser source、local script、permission mode 适用于哪类个人 workflow task。
 
-- Evaluation checks both mechanism and harness.
-- LLM-as-judge is treated as an auditable component, not a magic oracle.
-- Invalidated evidence is preserved as diagnostic memory rather than erased.
+## 6. 可观测与交接
 
-Gap:
+### 这一层在治理什么
 
-- Human calibration of LLM judges is acknowledged but not yet systematic enough.
-- Execution-path evaluation is weaker than output evaluation.
+这一层治理的是“AI 做过什么，以及下一轮如何接上”。复杂 AI 协作如果只保存最终输出，下一个 agent 或未来的自己就必须重新考古；真正可恢复的协作需要 run、artifact、metadata、decision 和 recovery posture 的链路。
 
-Improvement opportunity:
+可观测不是为了做漂亮 dashboard，而是为了在失败、回归、交接、评审时能回答：这次 run 发生了什么、用了什么输入、产出了什么证据、哪些结论可信、下一步从哪里继续。
 
-- Add a small human-calibration slice for high-impact judge rubrics.
-- Add evals that grade trajectory quality: tool choice, context retrieval, retry behavior, source-span eligibility, artifact reuse, and stop/retry decisions.
+### 需要设计的机制
 
-### 6. Observability Harness
+- 每个关键 run 都应该能连到命令、输入、输出、模型/provider、artifact、评测、人工判断和后续动作。
+- 长任务和复杂评测需要 run dossier 或等价索引，避免证据散落在日志、聊天和目录里。
+- 交接文档应记录当前状态、blocked items、expected outputs、recovery command 和失效证据。
+- 评审不仅看最终输出，还要检查 execution path 是否合理。
 
-Status: `partial`
+### Reading Companion 中的体现
 
-The project has strong artifact provenance but weaker visual and queryable observability.
+- [Current State](../../current-state.md) 记录 active jobs、run ids、watchdog ids、expected outputs 和 recovery posture。
+- [Task Registry](../../tasks/registry.md) 将 task status 连接到 decision refs、job refs、evidence refs 和 next actions。
+- [Attentional V2 mechanism doc](../../backend-reading-mechanisms/attentional_v2.md) 记录 read audits、context use、continuation capsules、probe snapshots 和 mechanism-private runtime artifacts。
+- [Evaluation Evidence Catalog](../../../reading-companion-backend/docs/evaluation/evidence_catalog.md) 将 runs 连接到 aggregates、reports、analyses 和 status classes。
 
-Evidence:
+### 仍需补强
 
-- [Current State](../../current-state.md) preserves run ids, job ids, watchdog ids, expected outputs, and recovery posture.
-- [Evaluation Evidence Catalog](../../../reading-companion-backend/docs/evaluation/evidence_catalog.md) links runs to aggregates, reports, analyses, and status classes.
-- [Attentional V2 mechanism doc](../../backend-reading-mechanisms/attentional_v2.md) records `read_audit`, context use, continuation capsules, probe snapshots, and mechanism-private runtime artifacts.
-- [Decision Log](../../history/decision-log.md) records `DEC-050` with `llm_usage.json` summaries and staged runner observability.
+项目有很强的 artifact provenance，但缺少更 visual / queryable 的 trace or dashboard layer。未来应重点补 run dossier、execution-path inspection 和 trace-to-eval-to-review linkage。
 
-What is strong:
+## 7. 复盘与学习
 
-- Artifacts are not anonymous. They usually have run ids, job ids, paths, status, and interpretation.
-- Invalidated and failed runs remain findable.
-- Many runtime internals are captured as files rather than disappearing into logs.
+### 这一层在治理什么
 
-Gap:
+这一层治理的是“这次协作如何改变下一次协作”。复盘不是写感想，而是判断一条经验应该进入规则、checklist、test、eval case、script、decision log、roadmap，还是应该被丢弃。
 
-- There is no first-class trace viewer or dashboard connecting prompt inputs, model calls, tool calls, artifacts, eval scores, and human decisions.
+如果没有学习治理，AI 协作会反复依赖同样的手动提醒；如果学习治理过度，又会把所有经验塞进上下文，制造新的噪声。
 
-Improvement opportunity:
+### 需要设计的机制
 
-- Build a lightweight local “run dossier” format: one index per major run linking command, input dataset, model/provider config, traces, artifacts, eval results, interpretation, decision, and follow-up action.
+- 只保留 failure-backed rules：每条稳定规则都应该能解释它预防了什么真实失败或反复成本。
+- 区分 durable principle、current tactical 和 speculative signal，避免把工具阶段性技巧写成长期方法论。
+- 对高价值 insight 设置 disposition：adopt、test、defer、reject、monitor，而不是只存进 ledger。
+- 建立 source monitoring，让外部 AI workflow 方法论进入观察雷达，但只有被项目经验或多方实践印证后才升级为规则。
 
-### 7. Governance Harness
+### Reading Companion 中的体现
 
-Status: `partial`
+- [Mechanism Pattern Ledger](../../implementation/new-reading-mechanism/mechanism-pattern-ledger.md) 保存 strengths、adoption candidates、failure modes、anti-patterns、status 和 next action。
+- [Decision Log](../../history/decision-log.md) 保存后续难以从代码恢复的设计 inflections 和 rejected alternatives。
+- [Claude Code context-management research](../../../reading-companion-backend/docs/research/claude_code_context_management_research_20260412.md) 展示如何把 coding-agent context management 迁移到 Reading Companion 机制设计。
+- 本 case-study 包本身就是一次将项目经验从 chat 迁移成方法论结构的学习产物。
 
-The project has strong eval governance, but weaker general AI-agent governance.
+### 仍需补强
 
-Evidence:
-
-- [Backend Reader Evaluation](../../backend-reader-evaluation.md) defines when benchmark evidence is valid, when runs are invalidated, how LLM adjudication is used, and how source-span matching works.
-- [AGENTS.md](../../../AGENTS.md) and [Backend AGENTS.md](../../../reading-companion-backend/AGENTS.md) define repository-level and backend-level rules for long jobs, generated artifacts, doc updates, mechanism boundaries, and evaluation follow-up.
-- [Decision Log](../../history/decision-log.md) records `DEC-064`, which treats a wrong candidate retrieval gate as benchmark-contract failure, not a weak model result.
-- [Source Of Truth Map](../../source-of-truth-map.md) defines canonical locations and validation commands for durable information.
-
-What is strong:
-
-- The project rejects misleading evidence instead of letting it remain in the main comparison pool.
-- Agent work is constrained by doc routing and stable source-of-truth boundaries.
-- Long jobs must be registered, and generated artifacts must be routed intentionally.
-
-Gap:
-
-- There is no generalized policy for prompt injection, tool permissions, sandboxing, destructive commands, credential exposure, model/provider upgrades, or multi-agent approval gates.
-
-Improvement opportunity:
-
-- Add a personal AI governance checklist for high-risk work:
-  - allowed tools
-  - forbidden operations
-  - approval gates
-  - model/provider pinning
-  - browse/source trust tier
-  - credential boundaries
-  - rollback plan
-
-### 8. Learning Harness
-
-Status: `strong`
-
-The project has a real learning loop: evaluation findings, decisions, and failure modes are preserved as working memory.
-
-Evidence:
-
-- [Mechanism Pattern Ledger](../../implementation/new-reading-mechanism/mechanism-pattern-ledger.md) records strengths, adoption candidates, failure modes, anti-patterns, evidence, status, and next action.
-- [Decision Log](../../history/decision-log.md) captures design inflections and rejected alternatives that would be hard to recover from code.
-- [Claude Code context-management research](../../../reading-companion-backend/docs/research/claude_code_context_management_research_20260412.md) shows cross-domain transfer from coding-agent context management to Reading Companion mechanism design.
-- This retrospective package itself is now a case-study layer under [docs/case-study](../ai-native-workflow-retrospective.md).
-
-What is strong:
-
-- The project does not only keep “what happened”; it keeps “what we learned and how that should change future work.”
-- Evaluation lessons are given dispositions rather than left as vague notes.
-- Historical routes remain readable even when retired.
-
-Gap:
-
-- Source monitoring for fast-moving AI workflow ideas is still ad hoc.
-
-Improvement opportunity:
-
-- Maintain a monthly or milestone-based AI workflow source review:
-  - official platform docs
-  - open-source agent harness changes
-  - practitioner eval / observability methods
-  - selected Reddit / HN / X signals
-  - internal lessons from recent runs
+未来最值得做的是 systematic source monitoring：定期观察官方 docs、实践者框架和社区信号，但用 evidence index 和 project fit 过滤噪声，而不是追逐每个新工具技巧。
 
 ## The Two Direct Answers
 
-### What effective AI collaboration methods already exist?
+### 当前做得好的地方
 
-You have already formed a strong method around:
+你已经形成了目标优先、repo-first context governance、staged execution、evidence-driven evaluation、recoverable handoff 和 learning loop。最核心的进步是：你不是只让 AI 产出答案，而是在逐步设计 AI 协作的外部控制系统。
 
-- repo-first memory
-- intent-before-implementation product clarification
-- mechanism boundaries before architecture changes
-- staged execution with durable recovery
-- eval-driven repair rather than vibes
-- dual diagnosis of model / data / harness
-- decision logs and pattern ledgers as agent memory
-- evidence invalidation instead of score worship
+### 最值得继续补强的能力
 
-### What is most worth improving next?
-
-The highest-leverage upgrade is an explicit personal AI Harness around evidence and observability.
-
-Practically, that means:
-
-- pre-task evidence contracts
-- post-run interpretation templates
-- execution-path evals
-- trace-to-review linkage
-- source-monitoring rhythm
-- governance rules for tools, models, permissions, and irreversible actions
-
-Reading Companion already proves you can use AI to move a complex product. The next level is making the way you use AI itself observable, testable, and reusable.
+最值得补强的是前置化：在任务开始前更明确地设计目标契约、上下文入口、工具权限、证据契约和可观测路径。也就是说，把现在很多强大的事后整理能力，提前放到 AI 协作开始之前。

@@ -35,15 +35,19 @@ Implementation checkpoint:
   - persisted runtime files and public compatibility surfaces remain unchanged
 - `Phase C.3` is landed as the direct main-state cutover:
   - new runs now treat `working_state / concept_registry / thread_trace / reflective_frames / anchor_bank` as the primary runtime and checkpoint truth
-  - `working_pressure / anchor_memory / reflective_summaries` were demoted to legacy load/projection territory during the cutover
+  - `working_pressure / anchor_memory / reflective_summaries` were initially demoted to legacy load/projection territory during the cutover
   - `active_recall` now surfaces first-class `concepts` and `threads` from the new state layers
-  - newly written checkpoints now use only the new primary state keys, while resume still accepts both old and new runtime/checkpoint shapes
+  - newly written checkpoints now use only the new primary state keys
   - public compatibility surfaces remain unchanged
 - `Phase C.4` is landed as the helper-contract cutover and live legacy-state retirement slice:
   - sentence-intake / bridge / slow-cycle now consume and write the new primary state layers directly
   - the live runner no longer projects new state into `working_pressure / anchor_memory / reflective_summaries` to execute helpers
   - live runtime loading and resume now reject pre-`Phase C.3` runtime directories and checkpoints instead of migrating them on the live path
   - public compatibility surfaces remain unchanged
+- The post-F4 legacy gate/pressure cleanup is now landed:
+  - `working_state.active_items` is the only current hot-state contract
+  - `gate_state`, `pressure_snapshot`, reader-policy gate/controller defaults, and the old working-pressure runtime file are no longer current schema, prompt, runtime, checkpoint, or evaluation-evidence fields
+  - current `pressure_signals` remain live only as one-step `Read -> Navigate.route` signals
 - `Phase D` is now landed as the continuity / recall / resume polish slice:
   - `read` now supports a budget-bounded multi-step supplemental loop
   - runtime state and full checkpoints now persist a lightweight `continuation capsule` with rehydration entrypoints
@@ -278,7 +282,7 @@ The rework should be understood as a controlled remap of current V2 responsibili
 | `controller_decision` | one more control surface in an already over-fragmented chain | absorb into `navigate.route` |
 | `reaction_emission` | thins out already-formed reading truth | collapse surfaced reactions back into `read` and keep old family handling only as compatibility projection |
 | lazy bridge retrieval / `bridge_resolution` | useful in principle, but too downstream to carry continuity by itself | keep only as optional execution path beneath `carry-forward context` and `active recall / look-back` |
-| `working_pressure` | useful hot-state concept, but currently mixed with older local-cycle shape | evolve into `working_state` |
+| `working_pressure` | historical hot-state sidecar from the older local-cycle shape | retired; current hot state is `working_state.active_items` |
 | `anchor_memory` | useful evidence territory, but too easy to over-expand conceptually | evolve into `anchor_bank` only |
 | `knowledge_activations` | currently too easy to treat as a durable memory layer | keep only as in-read immediate external-knowledge activation, not as a main state layer |
 
@@ -595,12 +599,15 @@ Status:
   - live packets now include bounded `concept_digest` and `thread_digest` views derived from the current persisted indexes
 - `Phase C.3` also landed on April 12, 2026 as the direct main-state cutover
   - new runs now write and resume against `working_state / concept_registry / thread_trace / reflective_frames / anchor_bank` as the primary runtime/checkpoint truth
-  - legacy `working_pressure / anchor_memory / reflective_summaries` are still accepted on load and are still projected for helper compatibility, but they no longer own the live semantic state
+  - legacy `working_pressure / anchor_memory / reflective_summaries` were initially accepted on load for cutover compatibility, but that compatibility has since been retired from the current live path
   - `active_recall` now exposes first-class `concepts` and `threads` from the new layers
 - `Phase C.4` also landed on April 12, 2026 as the helper-contract cutover
   - sentence-intake / bridge / slow-cycle now operate directly on `working_state / concept_registry / thread_trace / reflective_frames / anchor_bank`
   - live helper execution no longer depends on `project_legacy_*` adapters or migrate-back round trips
   - live runtime loading and resume now reject pre-`Phase C.3` runtime/checkpoint shapes
+- Post-F4 cleanup later removed the remaining gate/pressure sidecar:
+  - `working_state.active_items` is now the only current hot-state container
+  - `gate_state`, `pressure_snapshot`, and old working-pressure runtime artifacts are historical only
 - `Phase C` is now complete, and the next open work is `Phase D`
 
 #### Concrete design target
@@ -639,7 +646,7 @@ Keep V2's typed-state base, but stop exposing it to the model as an unstructured
 
 Keep and rename or tighten:
 
-- `working_pressure` -> `working_state`
+- `working_pressure` -> `working_state.active_items` in the final current contract
 - `anchor_memory` -> `anchor_bank`
 - `reflective_summaries` -> `reflective_frames`
 

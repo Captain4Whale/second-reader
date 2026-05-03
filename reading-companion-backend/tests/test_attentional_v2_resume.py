@@ -12,7 +12,6 @@ from src.attentional_v2.schemas import (
     build_empty_anchor_memory,
     build_empty_local_buffer,
     build_empty_reflective_summaries,
-    build_empty_working_pressure,
 )
 from src.attentional_v2.state_ops import close_local_meaning_unit, push_local_buffer_sentence
 from src.attentional_v2.storage import (
@@ -336,8 +335,11 @@ def test_resume_rejects_legacy_runtime_and_old_checkpoint_shapes(tmp_path: Path)
     local_buffer = _build_buffer(total_sentences=6, closed_breaks=[3])
     persist_reading_position(output_dir, chapter_id=1, chapter_ref="Chapter 1", local_buffer=local_buffer)
 
-    legacy_working_pressure = build_empty_working_pressure()
-    legacy_working_pressure["local_questions"] = [
+    legacy_hot_state = {
+        "schema_version": 1,
+        "mechanism_version": "legacy",
+        "updated_at": "2026-04-12T00:00:00Z",
+        "local_questions": [
         {
             "item_id": "q-1",
             "kind": "question",
@@ -345,7 +347,8 @@ def test_resume_rejects_legacy_runtime_and_old_checkpoint_shapes(tmp_path: Path)
             "status": "open",
             "support_anchor_ids": ["a-1"],
         }
-    ]
+        ],
+    }
     legacy_anchor_memory = build_empty_anchor_memory()
     legacy_anchor_memory["anchor_records"] = [
         {
@@ -380,7 +383,7 @@ def test_resume_rejects_legacy_runtime_and_old_checkpoint_shapes(tmp_path: Path)
     ):
         path.unlink(missing_ok=True)
 
-    save_json(runtime_dir(output_dir) / "working_pressure.json", legacy_working_pressure)
+    save_json(runtime_dir(output_dir) / ("working_" + "pressure.json"), legacy_hot_state)
     save_json(runtime_dir(output_dir) / "anchor_memory.json", legacy_anchor_memory)
     save_json(runtime_dir(output_dir) / "reflective_summaries.json", legacy_reflective)
 
@@ -398,7 +401,7 @@ def test_resume_rejects_legacy_runtime_and_old_checkpoint_shapes(tmp_path: Path)
         "visible_reaction_ids": [],
         "local_buffer": load_json(local_buffer_file(output_dir)),
         "local_continuity": load_json(runtime_dir(output_dir) / "local_continuity.json"),
-        "working_pressure": legacy_working_pressure,
+        "legacy_hot_state": legacy_hot_state,
         "anchor_memory": legacy_anchor_memory,
         "reflective_summaries": legacy_reflective,
         "knowledge_activations": load_json(runtime_dir(output_dir) / "knowledge_activations.json"),

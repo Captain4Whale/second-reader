@@ -58,9 +58,9 @@ Update when: status changes, blockers appear, or phases complete.
   - `Phase C.3` is now landed as the direct main-state cutover under the existing `attentional_v2` mechanism key
   - landed behavior:
     - new runs now treat `working_state / concept_registry / thread_trace / reflective_frames / anchor_bank` as the primary runtime and checkpoint truth
-    - `working_pressure / anchor_memory / reflective_summaries` were demoted to legacy load/projection territory during the cutover
+    - `working_pressure / anchor_memory / reflective_summaries` were demoted to legacy load/projection territory during the cutover, and later post-F4 cleanup removed the remaining gate/pressure sidecar from the current live path
     - `active_recall` now exposes first-class `concepts` and `threads` from the new state layers
-    - newly written checkpoints now use only the new primary state keys, while resume still accepts both old and new checkpoint/runtime shapes
+    - newly written checkpoints now use only the new primary state keys; pre-`Phase C.3` checkpoint/runtime shapes are no longer live-resumable
     - public/frontend compatibility surfaces still remain unchanged
   - `Phase C.4` is now landed as the helper-contract cutover under the existing `attentional_v2` mechanism key
   - landed behavior:

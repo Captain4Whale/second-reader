@@ -321,7 +321,8 @@ def test_run_phase5_bridge_cycle_materializes_anchor_state(monkeypatch):
     assert result["bridge_result"]["decision"] == "bridge"
     assert result["knowledge_activations"]["knowledge_use_mode"] == "book_grounded_plus_prior_knowledge"
     assert result["knowledge_activations"]["search_policy_mode"] == "no_search"
-    assert result["working_state"]["local_motifs"][0]["item_id"] == "motif-1"
+    assert result["working_state"]["active_items"][0]["item_id"] == "motif-1"
+    assert result["working_state"]["active_items"][0]["bucket"] == "local_motifs"
     assert len(result["anchor_bank"]["anchor_records"]) == 2
     assert result["anchor_bank"]["anchor_relations"][0]["relation_type"] == "callback"
     assert {entry["concept_key"] for entry in result["concept_registry"]["entries"]} == {"relation", "value shift"}

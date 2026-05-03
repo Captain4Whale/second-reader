@@ -13,14 +13,12 @@ from .schemas import (
     AnchorRelation,
     ConceptRegistryEntry,
     ConceptRegistryState,
-    GateState,
     KnowledgeActivation,
     KnowledgeActivationsState,
     LocalBufferSentence,
     LocalBufferState,
     MoveHistoryState,
     MoveRecord,
-    PressureSnapshot,
     ReactionRecordsState,
     ReaderPolicy,
     ReconsolidationRecord,
@@ -30,14 +28,13 @@ from .schemas import (
     ReflectiveSummariesState,
     ThreadTraceEntry,
     ThreadTraceState,
-    WorkingPressureItem,
-    WorkingPressureState,
+    WorkingStateItem,
     WorkingState,
     StateOperation,
 )
 
 
-PressureBucket = Literal["local_hypotheses", "local_questions", "local_tensions", "local_motifs"]
+ActiveItemBucket = Literal["local_hypotheses", "local_questions", "local_tensions", "local_motifs"]
 ReflectiveBucket = Literal[
     "chapter_understandings",
     "book_level_frames",
@@ -91,45 +88,15 @@ def _remove_by_id(items: list[dict[str, object]], item_id: str, *, id_key: str) 
     return [item for item in items if str(item.get(id_key, "") or "") != selected]
 
 
-def _working_state_active_items(state: WorkingPressureState | WorkingState) -> list[WorkingPressureItem]:
+def _working_state_active_items(state: WorkingState) -> list[WorkingStateItem]:
     """Return the normalized active-items view over the current working state."""
 
     active_items = [dict(item) for item in state.get("active_items", []) if isinstance(item, dict)]
-    if active_items:
-        return active_items  # type: ignore[return-value]
-
-    flattened: list[WorkingPressureItem] = []
-    for bucket in ("local_hypotheses", "local_questions", "local_tensions", "local_motifs"):
-        for item in state.get(bucket, []):
-            if not isinstance(item, dict):
-                continue
-            item_id = str(item.get("item_id", "") or "").strip()
-            if not item_id:
-                continue
-            flattened.append(
-                {
-                    "item_id": item_id,
-                    "bucket": bucket,
-                    "kind": str(item.get("kind", "") or "").strip(),
-                    "statement": str(item.get("statement", "") or "").strip(),
-                    "support_anchor_ids": list(item.get("support_anchor_ids", []))
-                    if isinstance(item.get("support_anchor_ids"), list)
-                    else [],
-                    "linked_concept_keys": list(item.get("linked_concept_keys", []))
-                    if isinstance(item.get("linked_concept_keys"), list)
-                    else [],
-                    "linked_thread_keys": list(item.get("linked_thread_keys", []))
-                    if isinstance(item.get("linked_thread_keys"), list)
-                    else [],
-                    "last_touched_sentence_id": str(item.get("last_touched_sentence_id", "") or "").strip(),
-                    "status": str(item.get("status", "") or "").strip(),
-                }
-            )
-    return flattened
+    return active_items  # type: ignore[return-value]
 
 
-def _classify_pressure_bucket(item: dict[str, object]) -> PressureBucket:
-    """Infer the closest legacy pressure bucket for one active item."""
+def _classify_active_item_bucket(item: dict[str, object]) -> ActiveItemBucket:
+    """Infer a lightweight presentation bucket for one active item."""
 
     explicit_bucket = str(item.get("bucket", "") or "").strip()
     if explicit_bucket in {"local_hypotheses", "local_questions", "local_tensions", "local_motifs"}:
@@ -145,40 +112,16 @@ def _classify_pressure_bucket(item: dict[str, object]) -> PressureBucket:
     return "local_hypotheses"
 
 
-def _sync_legacy_pressure_buckets(
-    state: WorkingPressureState | WorkingState,
+def _with_active_items(
+    state: WorkingState,
     *,
-    active_items: list[WorkingPressureItem],
-) -> WorkingPressureState | WorkingState:
-    """Project active-items back into the legacy pressure buckets."""
+    active_items: list[WorkingStateItem],
+) -> WorkingState:
+    """Return one state copy with normalized active items."""
 
-    bucketed: dict[PressureBucket, list[WorkingPressureItem]] = {
-        "local_hypotheses": [],
-        "local_questions": [],
-        "local_tensions": [],
-        "local_motifs": [],
-    }
-    for item in active_items:
-        bucket = _classify_pressure_bucket(item)
-        bucketed[bucket].append(
-            {
-                **dict(item),
-                "bucket": bucket,
-            }
-        )
     next_state = dict(state)
-    next_state["active_items"] = [dict(item) for item in active_items]
-    for bucket, items in bucketed.items():
-        next_state[bucket] = [dict(item) for item in items]
+    next_state["active_items"] = [{**dict(item), "bucket": _classify_active_item_bucket(item)} for item in active_items]
     return next_state  # type: ignore[return-value]
-
-
-def _rebuild_active_items_from_buckets(
-    state: WorkingPressureState | WorkingState,
-) -> WorkingPressureState | WorkingState:
-    """Project the legacy bucketed state back into active-items."""
-
-    return _sync_legacy_pressure_buckets(state, active_items=_working_state_active_items(state))
 
 
 def _merge_unique_ids(*values: object) -> list[str]:
@@ -203,10 +146,10 @@ def _merge_active_item(
     payload: dict[str, object],
     *,
     item_id: str,
-) -> WorkingPressureItem:
+) -> WorkingStateItem:
     """Merge one active-item payload on top of an existing entry."""
 
-    merged: WorkingPressureItem = {
+    merged: WorkingStateItem = {
         "item_id": item_id,
         "bucket": str(payload.get("bucket", "") or existing.get("bucket", "") or "").strip(),
         "kind": str(payload.get("kind", "") or existing.get("kind", "") or "").strip(),
@@ -222,48 +165,13 @@ def _merge_active_item(
     return merged
 
 
-def set_gate_state(
-    state: WorkingPressureState | WorkingState,
-    gate_state: GateState,
-) -> WorkingPressureState | WorkingState:
-    """Set the controller gate state."""
-
-    next_state = _touch_state(state)
-    next_state["gate_state"] = gate_state
-    return next_state  # type: ignore[return-value]
-
-
-def replace_pressure_bucket(
-    state: WorkingPressureState | WorkingState,
-    *,
-    bucket: PressureBucket,
-    items: list[WorkingPressureItem],
-) -> WorkingPressureState | WorkingState:
-    """Replace one local-pressure bucket."""
-
-    next_state = _touch_state(state)
-    next_state[bucket] = [dict(item) for item in items]
-    return _rebuild_active_items_from_buckets(next_state)  # type: ignore[return-value]
-
-
-def set_pressure_snapshot(
-    state: WorkingPressureState | WorkingState,
-    snapshot: PressureSnapshot,
-) -> WorkingPressureState | WorkingState:
-    """Replace the derived pressure snapshot."""
-
-    next_state = _touch_state(state)
-    next_state["pressure_snapshot"] = dict(snapshot)
-    return next_state  # type: ignore[return-value]
-
-
 def _apply_working_state_operations(
-    state: WorkingPressureState | WorkingState,
+    state: WorkingState,
     operations: list[StateOperation],
     *,
     allowed_target_stores: set[str],
-) -> WorkingPressureState | WorkingState:
-    """Apply explicit working-pressure mutations from node outputs."""
+) -> WorkingState:
+    """Apply explicit working-state mutations from node outputs."""
 
     next_state = dict(state)
     active_items = [dict(item) for item in _working_state_active_items(state)]
@@ -318,20 +226,7 @@ def _apply_working_state_operations(
         return state
 
     next_state["updated_at"] = _timestamp()
-    return _sync_legacy_pressure_buckets(next_state, active_items=active_items)  # type: ignore[return-value]
-
-
-def apply_working_pressure_operations(
-    state: WorkingPressureState,
-    operations: list[StateOperation],
-) -> WorkingPressureState:
-    """Apply explicit working-pressure mutations from node outputs."""
-
-    return _apply_working_state_operations(
-        state,
-        operations,
-        allowed_target_stores={"working_pressure"},
-    )  # type: ignore[return-value]
+    return _with_active_items(next_state, active_items=active_items)
 
 
 def apply_working_state_operations(
@@ -773,7 +668,7 @@ def supersede_reflective_item(
 def replace_policy_section(
     policy: ReaderPolicy,
     *,
-    section: Literal["gate", "controller", "knowledge", "search", "bridge", "resume", "logging"],
+    section: Literal["knowledge", "search", "bridge", "resume", "logging"],
     payload: dict[str, object],
 ) -> ReaderPolicy:
     """Replace one reader-policy section while preserving other policy data."""

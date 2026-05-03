@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-04-25T11:08:49+08:00`
+Last verified: `2026-05-03T08:37:27+08:00`
 
 ## Current Objective
 - Shift Long Span from the discontinued `target-centered accumulation v2` method to the new active design direction:
@@ -44,6 +44,9 @@ Last verified: `2026-04-25T11:08:49+08:00`
       - corrected output:
         - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_long_span_vnext_phase1_reaction_evidence_fix_rejudge_20260425/summary/aggregate.json`
         - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_long_span_vnext_phase1_reaction_evidence_fix_rejudge_20260425/summary/report.md`
+      - post-eval action ledger:
+        - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_long_span_vnext_phase1_reaction_evidence_fix_rejudge_20260425/analysis/post_eval_action_ledger_20260503/README.md`
+        - first recorded action: `A1_legacy_gate_pressure_cleanup`
       - result:
         - `Memory Quality` average overall score: `3.48`
         - probe count: `25`
@@ -263,7 +266,7 @@ Last verified: `2026-04-25T11:08:49+08:00`
     - persisted runtime files and public compatibility surfaces still remain unchanged
   - `Phase C.3` is now landed as the direct main-state cutover:
     - new runs now treat `working_state / concept_registry / thread_trace / reflective_frames / anchor_bank` as the primary runtime and checkpoint truth
-    - `working_pressure / anchor_memory / reflective_summaries` were demoted to legacy load/projection territory during the cutover
+    - the old V2 state stores were demoted to cutover-only legacy territory
     - `active_recall` now surfaces first-class `concepts` and `threads` from the new state layers
     - `read` may now write explicit `implicit_uptake` into:
       - `working_state`
@@ -277,9 +280,13 @@ Last verified: `2026-04-25T11:08:49+08:00`
     - sentence-intake now consumes `working_state / concept_registry / thread_trace / anchor_bank` directly
     - bridge retrieval and live bridge-cycle updates now consume and write new-state ownership directly
     - chapter slow-cycle now consumes and writes `working_state / concept_registry / thread_trace / reflective_frames / anchor_bank` directly
-    - the live runner no longer projects new state into `working_pressure / anchor_memory / reflective_summaries` for helper execution
+    - the live runner no longer projects new state into old V2 helper stores for execution
     - live runtime loading and resume now reject pre-`Phase C.3` runtime directories and checkpoints with explicit unsupported-format errors
     - public/frontend compatibility surfaces remain unchanged
+  - legacy gate/pressure sidecar cleanup is now landed:
+    - `working_state.active_items` is the current hot-state contract
+    - old `gate_state`, `pressure_snapshot`, and working-pressure runtime artifacts are no longer schema, prompt, runtime, checkpoint, or Memory Quality evidence fields
+    - current `pressure_signals` remain live as one-step `Read -> Navigate.route` signals and are not part of the old sidecar
   - `Phase D` is now landed as the continuity / recall / resume polish slice:
     - `read` now runs under a budget-bounded multi-step supplemental loop instead of a single extra pass
     - runtime and full checkpoints now persist a lightweight `continuation capsule` with explicit `rehydration entrypoints`

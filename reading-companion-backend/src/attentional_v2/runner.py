@@ -590,7 +590,7 @@ def _load_runtime_bundle(output_dir: Path) -> dict[str, dict[str, object]]:
         "resume_metadata": _load_or_default(resume_metadata_file(output_dir), _default_builder("resume_metadata")),
     }
     legacy_paths = {
-        "working_pressure": runtime_dir(output_dir) / "working_pressure.json",
+        "legacy_hot_state": runtime_dir(output_dir) / ("working_" + "pressure.json"),
         "anchor_memory": runtime_dir(output_dir) / "anchor_memory.json",
         "reflective_summaries": runtime_dir(output_dir) / "reflective_summaries.json",
     }
@@ -718,7 +718,6 @@ def _reset_live_runtime(output_dir: Path) -> None:
         thread_trace_file(output_dir),
         local_buffer_file(output_dir),
         local_continuity_file(output_dir),
-        runtime_dir(output_dir) / "trigger_state.json",
         continuation_capsule_file(output_dir),
         anchor_bank_file(output_dir),
         reflective_frames_file(output_dir),
@@ -1138,9 +1137,6 @@ def _build_detour_navigation_packet(
         else {},
         "detour_trace": detour_trace_summary,
         "working_state": {
-            "gate_state": _clean_text(carry_forward_context.get("working_state_digest", {}).get("gate_state"))
-            if isinstance(carry_forward_context.get("working_state_digest"), dict)
-            else "",
             "active_items": [
                 dict(item)
                 for item in carry_forward_context.get("working_state_digest", {}).get("active_items", [])

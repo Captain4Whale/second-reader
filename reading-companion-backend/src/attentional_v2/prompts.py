@@ -322,11 +322,11 @@ Rules:
 Current local span:
 {current_span}
 
-Working pressure:
-{working_pressure}
+Working state:
+{working_state}
 
 Relevant anchors:
-{anchor_context}
+{anchor_bank_context}
 
 Live activations:
 {activation_context}

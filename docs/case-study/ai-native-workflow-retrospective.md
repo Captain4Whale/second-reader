@@ -1,73 +1,69 @@
 # AI-Native Workflow Retrospective
 
-Purpose: 作为 Reading Companion case study 的入口，概括“驾驭 AI / AI Harness”方法论体系，并指向更细的分析文档。
+Purpose: 作为 Reading Companion case study 的入口，概括 operator-side AI Harness 方法论，并指向更细的项目总结、外部调研、操作手册和改进路线。
 Use when: 复盘个人 AI 协同能力、准备方法论材料、规划下一阶段复杂 AI 产品项目的工作方式。
 Not for: 产品运行时权威说明、机制规格、评测契约、简历 bullet 或面试话术成稿。
 
 This document is a case-study gateway. It deliberately does not update product behavior, runtime behavior, task status, mechanism authority, or benchmark authority.
 
+Boundary statement: 本包讨论的不是如何从零开发 agent runtime、agent framework 或通用 agent 平台，而是一个 operator 如何驾驭现有 AI agent、coding agent 和多工具 AI workflow。
+
 ## Core Thesis
 
-Reading Companion 最值得沉淀的 AI-native workflow，不是“用 AI 更快写代码”，而是逐步形成了一套 repo-first、证据驱动、可恢复的 AI Harness。
+Reading Companion 最值得沉淀的 AI-native workflow，不是“用 AI 更快写代码”，而是逐步形成了一套 operator-side AI Harness：在复杂项目里，人如何定义目标、治理上下文、组织执行、校验证据、控制工具风险，并把每轮经验转成下一轮 AI 更容易接住的结构。
 
-这里的 Harness 指的是围绕 AI 协作建立的外部控制系统：意图如何被界定、上下文如何被装载、工具如何被约束、长任务如何被恢复、评测如何被校准、证据如何进入文档、下一轮学习如何发生。
+这个 Harness 的核心不是一组工具技巧，而是一种工作方式：
 
-从这个角度看，你已经不是在单纯“提示 AI”。你已经在做三件更长期有效的事：
-
-- 把 AI 从 executor 提升为 co-designer，但不给它无边界漂移空间。
-- 把复杂项目的记忆、证据、任务、决策和评测放进 repo，而不是留在聊天线程里。
-- 把每一次实现、失败、评测和路线调整都尽量转化为下一轮 AI 更容易接住的结构。
-
-下一步最值得补强的能力也很清楚：从“项目内证据系统”升级为“个人 AI Harness 系统”。也就是在每个复杂任务开始前，先定义 evidence contract、上下文预算、工具权限、执行轨迹、评测路径、人工校准点和复盘入口。
+- 先治理目标：让 AI 明确这轮到底要解决什么、什么算完成、什么不该做。
+- 再治理上下文：让重要信息有生命周期、权威来源、检索入口和更新规则。
+- 然后治理执行：让 coding agent 的工作可分阶段推进、可恢复、可交接、可追溯。
+- 同时治理证据：让结果不只是“看起来不错”，而是能被 eval、artifact、run id 和人工判断复查。
+- 最后治理学习：把失败和洞察转成规则、模板、评测样本、脚本、文档路由或明确的 defer reason。
 
 ## Document Map
 
 | Document | Job |
 | --- | --- |
-| [Frontier Harness Landscape](ai-native-workflow/frontier-harness-landscape.md) | 用当前官方文档、实践者系统和社区信号综合出 AI Harness Stack。 |
-| [Reading Companion Gap Map](ai-native-workflow/reading-companion-gap-map.md) | 把项目现有做法映射到 AI Harness Stack，标出 strong / partial / missing。 |
-| [Playbook](ai-native-workflow/playbook.md) | 把可复用工作流整理成从意图澄清到复盘学习的操作手册。 |
-| [Improvement Roadmap](ai-native-workflow/improvement-roadmap.md) | 规划近中长期最值得补强的 AI 协同能力。 |
+| [Reading Companion Methodology Summary](ai-native-workflow/reading-companion-gap-map.md) | 总结本项目中已经形成的 AI 协同方法、强项、缺口和改进方向。 |
+| [Frontier Harness Landscape](ai-native-workflow/frontier-harness-landscape.md) | 调研外部 agent / eval / context / observability / governance 方法论，并说明它们如何支撑 operator-side AI Harness。 |
+| [Playbook](ai-native-workflow/playbook.md) | 把方法论转成下一次复杂 AI 协作可直接使用的操作流程。 |
+| [Improvement Roadmap](ai-native-workflow/improvement-roadmap.md) | 按能力环节规划下一阶段最值得补强的 AI 协同能力。 |
 | [Evidence Index](ai-native-workflow/evidence-index.md) | 汇总项目证据、外部来源、来源类型、耐久性和纳入原因。 |
 
 建议阅读顺序：
 
-1. 先读 [Frontier Harness Landscape](ai-native-workflow/frontier-harness-landscape.md)，建立“前沿方法论长什么样”的参照系。
-2. 再读 [Reading Companion Gap Map](ai-native-workflow/reading-companion-gap-map.md)，看 Reading Companion 已经做到什么、缺什么。
-3. 然后读 [Playbook](ai-native-workflow/playbook.md)，把经验转成下次可执行的流程。
+1. 先读 [Reading Companion Methodology Summary](ai-native-workflow/reading-companion-gap-map.md)，看自己的项目实践已经形成了什么。
+2. 再读 [Frontier Harness Landscape](ai-native-workflow/frontier-harness-landscape.md)，看外部方法论如何呼应这些经验。
+3. 然后读 [Playbook](ai-native-workflow/playbook.md)，把经验转成下一次可执行的流程。
 4. 最后读 [Improvement Roadmap](ai-native-workflow/improvement-roadmap.md)，决定下一阶段训练什么能力。
 
 ## One-Page Answer
 
 ### 截止目前已经形成的有效方法
 
-第一，你已经形成了 repo-first memory。项目的工作规则、文档路由、当前状态、任务注册、决策历史和评测证据都在 repo 中有位置。证据包括 [AGENTS.md](../../AGENTS.md)、[source-of-truth map](../source-of-truth-map.md)、[current state](../current-state.md) 和 [task registry](../tasks/registry.md)。
+第一，你已经形成了目标优先的 AI 协作方式。AI 不再只是被要求“继续做”，而是被放进更明确的产品目的、机制边界、评测目标和停止条件中。证据包括 [Product Overview](../product-overview.md)、[Backend Reader Evaluation](../backend-reader-evaluation.md) 和 [Decision Log](../history/decision-log.md) 中关于 product-first evaluation 与机制方向的决策。
 
-第二，你已经会用 AI 做产品意图和技术机制的共同澄清，而不是只让 AI 产出方案。产品从较窄的 blind-spot 叙事稳定到 living co-reader mind，并被写入 [product overview](../product-overview.md) 和 [reader evaluation constitution](../backend-reader-evaluation.md)。这让后续机制、评测、前端体验都能围绕同一个上游目标展开。
+第二，你已经形成了 repo-first context governance。项目的工作规则、当前状态、任务注册、决策历史、评测证据和机制说明都有稳定位置，AI 通过文档路由进入项目，而不是依赖聊天记忆。证据包括 [AGENTS.md](../../AGENTS.md)、[Source Of Truth Map](../source-of-truth-map.md)、[Current State](../current-state.md) 和 [Task Registry](../tasks/registry.md)。
 
-第三，你已经在复杂机制设计里建立了 omission-control system。新阅读机制不是靠聊天记忆推进，而是通过 source mirror、design capture、requirement ledger、execution tracker、validation matrix 分层推进，见 [source mirror](../implementation/new-reading-mechanism/source-mirror.md)、[requirement ledger](../implementation/new-reading-mechanism/requirement-ledger.md) 和 [validation matrix](../implementation/new-reading-mechanism/validation-matrix.md)。
+第三，你已经把复杂实现从“一次性让 AI 写完”变成了 staged execution。source mirror、requirement ledger、execution tracker、validation matrix、job registry、watchdog 和 `bundle -> judge -> merge` 这类设计，让任务可以分阶段推进、失败后恢复、跨线程交接。
 
-第四，你已经把评测从 scoreboard 变成学习回路。项目要求 dual diagnosis，区分机制弱、数据弱、harness 弱，并把有意义的结果转成 causal interpretation、selective implementation 或 explicit deferment。证据包括 [backend reader evaluation](../backend-reader-evaluation.md)、[mechanism pattern ledger](../implementation/new-reading-mechanism/mechanism-pattern-ledger.md) 和 [decision log](../history/decision-log.md) 中的 `DEC-030`、`DEC-035`、`DEC-036`、`DEC-064`、`DEC-076`。
+第四，你已经把评测从 scoreboard 变成 evidence system。项目会区分机制弱、数据弱、harness 弱；会保留 invalidated / diagnostic / formal evidence 的边界；也会要求 meaningful eval result 进入 selective implementation 或 explicit deferment。证据包括 [Evaluation Evidence Catalog](../../reading-companion-backend/docs/evaluation/evidence_catalog.md)、[Mechanism Pattern Ledger](../implementation/new-reading-mechanism/mechanism-pattern-ledger.md) 和 [Backend Reader Evaluation](../backend-reader-evaluation.md)。
 
-第五，你已经把长任务和失败恢复纳入 AI 协同系统。job registry、watchdog、run id、artifact-staged `bundle -> judge -> merge`、expected outputs 和 recovery posture 让任务可以跨线程接力，而不是靠一个聊天窗口记住。证据包括 [source-of-truth map](../source-of-truth-map.md)、[current state](../current-state.md)、[decision log](../history/decision-log.md) 的 `DEC-037`、`DEC-050`、`DEC-063`。
+第五，你已经开始区分长期原则和阶段性工具技巧。比如某个模型、某个 watchdog interval、某个 context window 限制都是阶段性策略；但目标契约、上下文路由、source-grounded eval、run provenance、decision-bearing docs 是更长期有效的 operator-side 方法。
 
-第六，你已经开始区分短期工具技巧和长期原则。比如某个模型、某个 watchdog interval、某个上下文窗口大小都是阶段性策略；repo-first memory、typed context、source-grounded evaluation、durable task registry、decision-bearing docs 则是更长期有效的工作原则。
+### 最值得继续补强的能力
 
-### 最值得继续补强的 AI 协同能力
+最值得补强的是“预先设计 AI 协作结构”的能力。
 
-最值得补强的是“预先定义证据与执行轨迹”的能力。
+项目已经很强地把结果沉淀成证据，但很多高成本问题仍然来自开工前的 harness 不够显式：这轮到底回答什么、什么证据足以改变决策、哪些上下文必须进入、哪些工具权限可以开放、哪些 artifact 只是 diagnostic、什么时候应停止或重跑。
 
-项目已经很强地把结果写成证据，但很多高成本问题仍然来自开工前的 evidence contract 不够显式：这一轮到底回答什么问题，什么证据足以改变决策，哪些 artifact 只是 diagnostic，什么时候应停止、重跑、缩小范围或废弃路线。
+下一阶段应把复杂 AI 协作任务都包进一层轻量 operator harness：
 
-如果继续做复杂 AI 产品项目，下一阶段应把每个 AI 协作任务都包进一层轻量 harness：
-
-- 任务开始前写清 intent、scope、non-goal、decision owner。
-- 开工前定义 evidence contract、artifact path、invalidity criteria、stop condition。
-- 执行中保留 run id、tool path、subagent boundary、context budget 和 recovery command。
-- 评测后必须写 post-run interpretation，区分 result、cause、harness validity、action / defer。
-- 定期把外部 AI workflow 前沿材料纳入 source monitoring，而不是等到工具变化后临时适应。
-
-这不是要把每个任务变重，而是要让高风险、高成本、高不确定性的任务一开始就拥有可审计的协作结构。
+- 开始前定义目标、scope、non-goal、decision owner、stop condition。
+- 装载上下文前先确认信息路由、权威来源、检索入口和上下文预算。
+- 执行中保留 run id、命令、artifact path、工具边界、恢复姿态。
+- 评测后写 post-run interpretation，区分 result、validity、cause、decision、follow-up。
+- 定期把外部 AI workflow 前沿材料纳入 source monitoring，但只把被验证的做法转成稳定规则。
 
 ## Evidence Links
 

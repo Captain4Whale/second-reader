@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections import Counter, defaultdict
+from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Mapping
@@ -45,15 +45,13 @@ from .schemas import (
     SearchIntent,
     SurfacedReaction,
     ThreadTraceState,
-    WorkingPressureItem,
+    WorkingStateItem,
     WorkingState,
 )
 from .state_ops import (
     append_reaction_record,
     append_reconsolidation_record,
     apply_working_state_operations,
-    replace_pressure_bucket,
-    set_gate_state,
     supersede_reflective_item,
     upsert_anchor_record,
     upsert_reflective_item,
@@ -76,7 +74,7 @@ _REFLECTIVE_BUCKETS = {
     "resolved_questions_of_record",
     "chapter_end_notes",
 }
-_PRESSURE_BUCKETS = {
+_ACTIVE_ITEM_BUCKETS = {
     "local_hypotheses",
     "local_questions",
     "local_tensions",
@@ -945,8 +943,8 @@ def apply_reconsolidation(
     )
 
 
-def _normalize_carry_forward_item(value: object) -> WorkingPressureItem | None:
-    """Normalize one carry-forward pressure item."""
+def _normalize_carry_forward_item(value: object) -> WorkingStateItem | None:
+    """Normalize one chapter-boundary carry-forward working-state item."""
 
     if not isinstance(value, dict):
         return None
@@ -954,7 +952,7 @@ def _normalize_carry_forward_item(value: object) -> WorkingPressureItem | None:
     if not statement:
         return None
     bucket = _clean_text(value.get("bucket"))
-    if bucket not in _PRESSURE_BUCKETS:
+    if bucket not in _ACTIVE_ITEM_BUCKETS:
         kind = _clean_text(value.get("kind")).lower()
         if "question" in kind:
             bucket = "local_questions"
@@ -1126,22 +1124,21 @@ def apply_anchor_status_updates(
 
 def apply_cross_chapter_carry_forward(
     working_state: WorkingState,
-    carry_forward: list[WorkingPressureItem],
+    carry_forward: list[WorkingStateItem],
 ) -> WorkingState:
-    """Cool local pressure into a chapter-boundary carry-forward state."""
+    """Replace active working-state items with chapter-boundary carry-forward items."""
 
-    next_state = working_state
-    for bucket in _PRESSURE_BUCKETS:
-        next_state = replace_pressure_bucket(next_state, bucket=bucket, items=[])
-    bucketed: dict[str, list[WorkingPressureItem]] = defaultdict(list)
+    next_items: list[WorkingStateItem] = []
     for item in carry_forward:
         bucket = _clean_text(item.get("bucket")) or "local_hypotheses"
-        if bucket not in _PRESSURE_BUCKETS:
+        if bucket not in _ACTIVE_ITEM_BUCKETS:
             bucket = "local_hypotheses"
-        bucketed[bucket].append(dict(item))
-    for bucket, items in bucketed.items():
-        next_state = replace_pressure_bucket(next_state, bucket=bucket, items=items)
-    return set_gate_state(next_state, "watch" if carry_forward else "quiet")
+        next_items.append({**dict(item), "bucket": bucket})
+    return {
+        **dict(working_state),
+        "updated_at": _timestamp(),
+        "active_items": next_items,
+    }
 
 
 def run_phase6_chapter_cycle(

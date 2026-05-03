@@ -2172,3 +2172,42 @@ This new direction is design frozen but not yet implemented as a formal benchmar
 - `reading-companion-backend/docs/evaluation/long_span/target_centered_accumulation_v2_design.md`
 - `reading-companion-backend/docs/evaluation/evidence_catalog.json`
 - `reading-companion-backend/docs/evaluation/evidence_catalog.md`
+
+## Entry 74
+**ID**: DEC-077
+**Status**: active
+
+**Decision / Inflection**: Remove the legacy `gate_state / pressure_snapshot / working_pressure` sidecar from current `attentional_v2` state, prompt packets, runtime artifacts, checkpoint/resume, and Memory Quality evidence. Keep `working_state.active_items` as the current hot-state contract, and keep `pressure_signals` only as one-step `Read -> Navigate.route` signals.
+
+**Period**: May 3, 2026, after the Memory Quality probe-audit report made the old control-door fields visible again and the project decided they were now misleading rather than useful compatibility.
+
+**Problem**: The old trigger/watch/zoom design had left behind several control-door surfaces: `gate_state`, `pressure_snapshot`, a separate working-pressure runtime artifact, and related policy/default shells. Earlier phases had already removed the live trigger/watch path, but these sidecars still appeared in state schemas, projection helpers, runtime maps, resume handling, and Memory Quality audit explanations. That made the current mechanism look more complicated and more controller-driven than it actually is, and it risked misleading both humans and future agents into treating historical control scaffolding as current reader memory.
+
+**Alternatives considered**: Keep the fields as legacy compatibility sidecars and merely label them as historical in reports, continue migrating old working-pressure files into current working state on resume, or remove only the report display while leaving the runtime/schema surfaces intact.
+
+**Why this path won**: The current mechanism no longer needs these entities. The live reader's hot state is `working_state.active_items`, while the current route handoff is handled by per-step `pressure_signals`. Keeping a second old pressure/gate object would add complexity without improving reading, evaluation, or product behavior. Failing fast on pre-cutover runtime directories is cleaner than pretending old sidecars can be safely migrated into the current contract, because old run artifacts remain available as historical evidence but should not be treated as resumable current truth.
+
+**What changed in the system**: `WorkingState` no longer inherits or projects the old working-pressure structure. Current prompt packets and carry-forward context no longer contain `working_pressure_digest`, `gate_state`, or `pressure_snapshot`. New runtime shells and checkpoints no longer create or read a working-pressure file, and pre-cutover runtime directories that only contain legacy pressure/anchor/reflective sidecars now fail fast with a re-run requirement. Slow-cycle carry-forward now writes directly into `working_state.active_items`. Memory Quality evidence docs now describe probe snapshots in terms of current prompt-facing state rather than old control-door fields. Public API and frontend payloads did not change.
+
+**Why it matters later**: This is the cleanup point where `attentional_v2` stops carrying a compatibility shadow from an abandoned trigger/watch/zoom route. Future context-memory work should build on `working_state.active_items`, `concept_registry`, `thread_trace`, `reflective_frames`, and `anchor_bank`, not resurrect `gate_state` or `working_pressure` as if they were still live state. If historical reports show those fields, they should be read as pre-cleanup artifacts, not current mechanism authority.
+
+**Primary evidence**:
+- `docs/backend-reading-mechanisms/attentional_v2.md`
+- `docs/backend-state-aggregation.md`
+- `docs/backend-reader-evaluation.md`
+- `docs/current-state.md`
+- `docs/tasks/registry.md`
+- `docs/tasks/registry.json`
+- `reading-companion-backend/src/attentional_v2/schemas.py`
+- `reading-companion-backend/src/attentional_v2/state_ops.py`
+- `reading-companion-backend/src/attentional_v2/state_projection.py`
+- `reading-companion-backend/src/attentional_v2/state_migration.py`
+- `reading-companion-backend/src/attentional_v2/runner.py`
+- `reading-companion-backend/src/attentional_v2/resume.py`
+- `reading-companion-backend/src/attentional_v2/slow_cycle.py`
+- `reading-companion-backend/src/attentional_v2/storage.py`
+- `reading-companion-backend/tests/test_attentional_v2_state_ops.py`
+- `reading-companion-backend/tests/test_attentional_v2_state_projection.py`
+- `reading-companion-backend/tests/test_attentional_v2_phase_b.py`
+- `reading-companion-backend/tests/test_attentional_v2_resume.py`
+- `reading-companion-backend/tests/test_attentional_v2_scaffold.py`

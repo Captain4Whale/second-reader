@@ -10,7 +10,6 @@ from src.reading_core.normalized_outputs import ReactionType, SearchHit
 from src.reading_core.runtime_contracts import ObservabilityMode, ResumeKind, RuntimeArtifactRefs, SharedRunCursor
 
 
-GateState = Literal["quiet", "watch", "hot", "must_evaluate"]
 MoveType = Literal["advance", "dwell", "bridge", "reframe"]
 UnitizeBoundaryType = Literal[
     "paragraph_end",
@@ -57,8 +56,8 @@ def _timestamp() -> str:
     return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
 
-class WorkingPressureItem(TypedDict, total=False):
-    """One hot local item carried in the current pressure state."""
+class WorkingStateItem(TypedDict, total=False):
+    """One hot local item carried in the current working state."""
 
     item_id: str
     bucket: str
@@ -71,35 +70,13 @@ class WorkingPressureItem(TypedDict, total=False):
     status: str
 
 
-class PressureSnapshot(TypedDict, total=False):
-    """Controller-facing summary of the current local interpretive state."""
-
-    dominant_pressure_kind: str
-    dominant_pressure_strength: str
-    interpretive_temperature: str
-    local_clarity: str
-    bridge_pull_present: bool
-    reframe_pressure_present: bool
-
-
-class WorkingPressureState(TypedDict, total=False):
-    """Hot local state that governs whether the mechanism should escalate."""
+class WorkingState(TypedDict, total=False):
+    """Primary hot state for active questions, tensions, hypotheses, and motifs."""
 
     schema_version: int
     mechanism_version: str
     updated_at: str
-    gate_state: GateState
-    local_hypotheses: list[WorkingPressureItem]
-    local_questions: list[WorkingPressureItem]
-    local_tensions: list[WorkingPressureItem]
-    local_motifs: list[WorkingPressureItem]
-    pressure_snapshot: PressureSnapshot
-
-
-class WorkingState(WorkingPressureState, total=False):
-    """Primary hot state after the Phase C.3 direct migration."""
-
-    active_items: list[WorkingPressureItem]
+    active_items: list[WorkingStateItem]
 
 
 class LocalBufferSentence(TypedDict, total=False):
@@ -229,8 +206,6 @@ class ContinuationCapsule(TypedDict, total=False):
 class WorkingStateDigest(TypedDict, total=False):
     """Prompt-facing digest of the current hot working state."""
 
-    gate_state: str
-    pressure_snapshot: dict[str, object]
     active_items: list[dict[str, object]]
     hot_items: list[dict[str, object]]
     open_questions: list[dict[str, object]]
@@ -298,7 +273,6 @@ class CarryForwardContext(TypedDict, total=False):
     concept_digest: list[ConceptDigestItem]
     thread_digest: list[ThreadDigestItem]
     anchor_bank_digest: AnchorBankDigest
-    working_pressure_digest: dict[str, object]
     reflective_digest: list[dict[str, object]]
     anchor_digest: list[dict[str, object]]
     continuity_digest: dict[str, object]
@@ -773,7 +747,7 @@ class ChapterConsolidationResult(TypedDict, total=False):
     promotion_candidates: list[ReflectivePromotionCandidate]
     anchor_status_updates: list[dict[str, object]]
     knowledge_activation_updates: list[StateOperation]
-    cross_chapter_carry_forward: list[WorkingPressureItem]
+    cross_chapter_carry_forward: list[WorkingStateItem]
     chapter_summary_note: str
     optional_chapter_reaction: ReactionCandidate | None
 
@@ -796,8 +770,6 @@ class ReaderPolicy(TypedDict, total=False):
     policy_version: str
     updated_at: str
     unitize: dict[str, object]
-    gate: dict[str, object]
-    controller: dict[str, object]
     read: dict[str, object]
     knowledge: dict[str, object]
     search: dict[str, object]
@@ -847,7 +819,6 @@ class FullCheckpointState(TypedDict, total=False):
     thread_trace: ThreadTraceState
     reflective_frames: ReflectiveFramesState
     anchor_bank: AnchorBankState
-    working_pressure: WorkingPressureState
     anchor_memory: AnchorMemoryState
     reflective_summaries: ReflectiveSummariesState
     knowledge_activations: KnowledgeActivationsState
@@ -858,35 +829,15 @@ class FullCheckpointState(TypedDict, total=False):
     resume_metadata: ResumeMetadataState
 
 
-def build_empty_working_pressure(*, mechanism_version: str = ATTENTIONAL_V2_MECHANISM_VERSION) -> WorkingPressureState:
-    """Return the default hot local state."""
+def build_empty_working_state(*, mechanism_version: str = ATTENTIONAL_V2_MECHANISM_VERSION) -> WorkingState:
+    """Return the default primary hot state."""
 
     return {
         "schema_version": ATTENTIONAL_V2_SCHEMA_VERSION,
         "mechanism_version": mechanism_version,
         "updated_at": _timestamp(),
-        "gate_state": "quiet",
-        "local_hypotheses": [],
-        "local_questions": [],
-        "local_tensions": [],
-        "local_motifs": [],
-        "pressure_snapshot": {
-            "dominant_pressure_kind": "",
-            "dominant_pressure_strength": "low",
-            "interpretive_temperature": "cool",
-            "local_clarity": "unknown",
-            "bridge_pull_present": False,
-            "reframe_pressure_present": False,
-        },
+        "active_items": [],
     }
-
-
-def build_empty_working_state(*, mechanism_version: str = ATTENTIONAL_V2_MECHANISM_VERSION) -> WorkingState:
-    """Return the default primary hot state."""
-
-    state = build_empty_working_pressure(mechanism_version=mechanism_version)
-    state["active_items"] = []
-    return state  # type: ignore[return-value]
 
 
 def build_empty_local_buffer(*, mechanism_version: str = ATTENTIONAL_V2_MECHANISM_VERSION) -> LocalBufferState:
@@ -961,8 +912,6 @@ def build_empty_continuation_capsule(
             "recent_reactions": [],
         },
         "working_state_digest": {
-            "gate_state": "",
-            "pressure_snapshot": {},
             "active_items": [],
             "hot_items": [],
             "open_questions": [],
@@ -1143,8 +1092,6 @@ def build_default_reader_policy(
         "unitize": {
             "max_coverage_unit_sentences": 12,
         },
-        "gate": {"default_state": "quiet"},
-        "controller": {"default_move": "advance", "allow_bridge_without_anchor": False},
         "read": {
             "supplemental_context_budget": 4,
             "supplemental_context_emergency_cap": 4,

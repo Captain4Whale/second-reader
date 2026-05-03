@@ -55,6 +55,8 @@ Current implementation posture:
 - evidence status:
   - the current Phase-1 diagnostic evidence is:
     - `attentional_v2_long_span_vnext_phase1_reaction_evidence_fix_rejudge_20260425`
+  - follow-up implementation actions derived from this diagnostic run are tracked in the run-local post-eval ledger:
+    - [post_eval_action_ledger_20260503](../../../eval/runs/attentional_v2/attentional_v2_long_span_vnext_phase1_reaction_evidence_fix_rejudge_20260425/analysis/post_eval_action_ledger_20260503/README.md)
   - this run is not yet promoted to formal Long Span benchmark authority
   - it copies the corrected Memory Quality judgments from:
     - `attentional_v2_long_span_vnext_phase1_memory_quality_scale_fix_rejudge_20260425`

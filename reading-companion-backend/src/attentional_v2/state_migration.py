@@ -13,13 +13,10 @@ from .schemas import (
     ReflectiveSummariesState,
     ThreadTraceEntry,
     ThreadTraceState,
-    WorkingPressureState,
-    WorkingState,
     build_empty_anchor_bank,
     build_empty_concept_registry,
     build_empty_reflective_frames,
     build_empty_thread_trace,
-    build_empty_working_state,
 )
 
 
@@ -75,18 +72,6 @@ def _last_touched_sentence_id(anchor_ids: list[str], anchor_lookup: dict[str, di
         if sentence_id:
             return sentence_id
     return ""
-
-
-def migrate_working_pressure_to_working_state(
-    working_pressure: WorkingPressureState | None,
-    *,
-    mechanism_version: str = ATTENTIONAL_V2_MECHANISM_VERSION,
-) -> WorkingState:
-    """Convert legacy working-pressure state into the new primary working-state shape."""
-
-    if isinstance(working_pressure, dict) and working_pressure:
-        return dict(working_pressure)  # type: ignore[return-value]
-    return build_empty_working_state(mechanism_version=mechanism_version)
 
 
 def migrate_reflective_summaries_to_frames(
@@ -325,48 +310,6 @@ def migrate_anchor_memory_to_new_layers(
         for entry in derived_threads
     ]
     return anchor_bank, concept_registry, thread_trace
-
-
-def migrate_legacy_runtime_state(
-    *,
-    working_pressure: WorkingPressureState | None,
-    anchor_memory: AnchorMemoryState | None,
-    reflective_summaries: ReflectiveSummariesState | None,
-    existing_concept_registry: ConceptRegistryState | None = None,
-    existing_thread_trace: ThreadTraceState | None = None,
-    mechanism_version: str = ATTENTIONAL_V2_MECHANISM_VERSION,
-) -> dict[str, object]:
-    """Convert the old V2 primary runtime state territory into the new main layers."""
-
-    working_state = migrate_working_pressure_to_working_state(
-        working_pressure,
-        mechanism_version=mechanism_version,
-    )
-    anchor_bank, concept_registry, thread_trace = migrate_anchor_memory_to_new_layers(
-        anchor_memory,
-        existing_concept_registry=existing_concept_registry,
-        existing_thread_trace=existing_thread_trace,
-        mechanism_version=mechanism_version,
-    )
-    reflective_frames = migrate_reflective_summaries_to_frames(
-        reflective_summaries,
-        mechanism_version=mechanism_version,
-    )
-    return {
-        "working_state": working_state,
-        "concept_registry": concept_registry,
-        "thread_trace": thread_trace,
-        "reflective_frames": reflective_frames,
-        "anchor_bank": anchor_bank,
-    }
-
-
-def project_legacy_working_pressure(working_state: WorkingState | None) -> WorkingPressureState:
-    """Project the new primary working state back into the legacy helper shape."""
-
-    if isinstance(working_state, dict) and working_state:
-        return dict(working_state)  # type: ignore[return-value]
-    return build_empty_working_state()
 
 
 def project_legacy_reflective_summaries(

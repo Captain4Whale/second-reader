@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-04-25T03:08:14.882653Z",
+  "updated_at": "2026-05-03T00:00:00Z",
   "entries": [
     {
       "run_id": "attentional_v2_active_benchmark_rerun_20260419",
@@ -261,11 +261,14 @@
         "run_dir": "eval/runs/attentional_v2/attentional_v2_long_span_vnext_phase1_reaction_evidence_fix_rejudge_20260425",
         "aggregate": "eval/runs/attentional_v2/attentional_v2_long_span_vnext_phase1_reaction_evidence_fix_rejudge_20260425/summary/aggregate.json",
         "report": "eval/runs/attentional_v2/attentional_v2_long_span_vnext_phase1_reaction_evidence_fix_rejudge_20260425/summary/report.md",
-        "llm_usage": "eval/runs/attentional_v2/attentional_v2_long_span_vnext_phase1_reaction_evidence_fix_rejudge_20260425/summary/llm_usage.json"
+        "llm_usage": "eval/runs/attentional_v2/attentional_v2_long_span_vnext_phase1_reaction_evidence_fix_rejudge_20260425/summary/llm_usage.json",
+        "analysis_docs": {
+          "post_eval_action_ledger": "eval/runs/attentional_v2/attentional_v2_long_span_vnext_phase1_reaction_evidence_fix_rejudge_20260425/analysis/post_eval_action_ledger_20260503/README.md"
+        }
       },
       "job_ids": [],
       "one_line_conclusion": "Phase-1 Long Span vNext diagnostic evidence with corrected Memory Quality scale and freshly rejudged reaction-audit evidence surface; V2 shows 152 grounded spontaneous callbacks, 84 weak callbacks, and 2 false visible integrations across 1282 visible reactions, while V1 shows 51 grounded callbacks and 13 weak callbacks across 375 visible reactions. No books were reread.",
-      "updated_at": "2026-04-25T03:08:14.882445Z"
+      "updated_at": "2026-05-03T00:00:00Z"
     },
     {
       "run_id": "attentional_v2_accumulation_benchmark_v2_frozen_active_rerun_20260419",

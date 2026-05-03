@@ -52,6 +52,10 @@ Use `docs/api-contract.md` for exact fields and routes. Use this file to underst
 - `_mechanisms/attentional_v2/internal/diagnostics/events.jsonl`
   - Debug-only diagnostics stream for `attentional_v2`.
   - Controller-facing forensics, candidate traces, and other deep debug events belong here instead of the shared runtime history.
+- `_mechanisms/attentional_v2/runtime/working_state.json`
+  - Current hot-state source for `attentional_v2`.
+  - The live contract is `working_state.active_items`, not the old trigger/watch gate sidecar.
+  - `gate_state`, `pressure_snapshot`, and old working-pressure files may appear in historical output trees but must not be treated as current aggregation truth.
 - `_mechanisms/iterator_v1/runtime/reader_memory.json`
   - Iterator-private live reader memory for resume and continuity.
   - Shared aggregation should only read it through storage helpers when compatibility or recovery behavior requires it.

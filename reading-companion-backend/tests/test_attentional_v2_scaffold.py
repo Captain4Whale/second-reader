@@ -452,7 +452,8 @@ def test_attentional_v2_initialization_writes_phase8_artifacts(tmp_path):
 
     working_state = json.loads(working_state_file(output_dir).read_text(encoding="utf-8"))
     assert working_state["schema_version"] == ATTENTIONAL_V2_SCHEMA_VERSION
-    assert working_state["gate_state"] == "quiet"
+    assert working_state["active_items"] == []
+    assert ("gate_" + "state") not in working_state
 
     local_buffer = json.loads(local_buffer_file(output_dir).read_text(encoding="utf-8"))
     assert local_buffer["recent_sentences"] == []
@@ -1032,7 +1033,7 @@ def test_attentional_v2_read_book_still_runs_formal_read_for_monitor_path(tmp_pa
             ]
         )
         return {
-            "unit_delta": "monitor path still got read",
+            "unit_delta": "single-sentence path still got read",
             "pressure_signals": {
                 "continuation_pressure": False,
                 "backward_pull": False,
@@ -1055,7 +1056,7 @@ def test_attentional_v2_read_book_still_runs_formal_read_for_monitor_path(tmp_pa
             },
             "boundary_type": "paragraph_end",
             "evidence_sentence_ids": [current_sentence["sentence_id"]],
-            "reason": "monitor path single sentence",
+            "reason": "single-sentence path",
             "continuation_pressure": False,
         },
     )

@@ -28,7 +28,6 @@ from .schemas import (
     build_empty_resume_metadata,
     build_empty_thread_trace,
     build_empty_working_state,
-    build_empty_working_pressure,
 )
 
 
@@ -81,12 +80,6 @@ def revisit_index_file(output_dir: Path) -> Path:
     """Return the future revisit-index artifact path."""
 
     return derived_dir(output_dir) / "revisit_index.json"
-
-
-def working_pressure_file(output_dir: Path) -> Path:
-    """Return the current working-pressure path."""
-
-    return runtime_dir(output_dir) / "working_pressure.json"
 
 
 def working_state_file(output_dir: Path) -> Path:

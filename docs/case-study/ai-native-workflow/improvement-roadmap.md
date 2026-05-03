@@ -1,228 +1,153 @@
 # Improvement Roadmap
 
-Purpose: 规划未来继续做复杂 AI 产品项目时，最值得补强的 AI 协同能力。
+Purpose: 按 operator-side AI Harness 能力环节规划未来最值得补强的 AI 协同能力。
 Use when: 制定个人 AI-native workflow 学习计划、决定下一阶段方法论升级、把 Reading Companion 经验转成可复用系统。
 Not for: Reading Companion 当前任务状态、产品机制权威、运行时计划、评测结果权威或简历 bullet。
 
-This roadmap is about improving the way AI is used, not changing Reading Companion product behavior.
+Boundary statement: 本路线图关注如何更好地驾驭现有 AI / coding agent 工具，不是如何开发 agent framework。
 
 ## North Star
 
-下一阶段目标不是“更会写 prompt”，而是建立一个个人 AI Operating System：
+下一阶段目标不是让每个任务更重，而是让高不确定、高成本、高风险的 AI 协作任务在开始前就拥有清晰 harness：
 
-- 每个复杂任务都有明确 intent 和 evidence contract。
-- 每次执行都有可追踪 run path。
-- 每个外部 AI 方法论信号都有来源分类和耐久性判断。
-- 每次失败都能回流成 checklist、eval、tool rule、context rule 或 explicit defer。
-- 模型、工具、上下文、评测、治理都不再靠临时感觉。
+- 目标有契约。
+- 上下文有路由。
+- 执行有阶段。
+- 证据有有效性边界。
+- 工具有权限治理。
+- 过程有可观测链路。
+- 经验能进入下一轮结构。
 
-## Near-Term Upgrades
+## 1. 目标与意图控制
 
-### 1. Pre-Task Evidence Contract Template
+### Current state
 
-Why:
+Reading Companion 已经能把产品目的、机制边界和评测目标写进稳定文档，避免 AI 协作漂回 summary engine 或局部机制迷恋。
 
-- Reading Companion 已经擅长事后解释证据，但很多高成本偏航来自开工前没有显式定义证据边界。
+### Upgrade
 
-Upgrade:
+建立 pre-task intent contract：每个复杂任务启动前写清 question、done criteria、non-goals、decision owner、stop / retry / abandon condition。
 
-- 在高风险任务开始前写一个短 evidence contract。
-- 明确 question、artifact、validity criteria、decision rule、stop condition。
-- 对 eval / long-running job / architecture comparison 强制使用。
+### Success signal
 
-Definition of done:
+高成本任务不再以“继续优化”开头，而是以可判断、可停止、可复查的任务契约开头。
 
-- 任一高风险任务开工前都能回答：
-  - What evidence would change my mind?
-  - What would invalidate this run?
-  - Which output is formal evidence, and which is diagnostic only?
+## 2. 上下文治理
 
-### 2. Post-Run Interpretation Template
+### Current state
 
-Why:
+项目内 repo-first memory 很强：load matrix、source-of-truth map、current-state、registry、decision log 都已经形成。
 
-- 目前项目有很多高质量解释，但格式分散在 current-state、decision-log、evaluation reports、research notes 中。
+### Upgrade
 
-Upgrade:
+把项目内上下文治理升级为个人级 context governance：
 
-- 对每个 meaningful run 输出固定解释：
-  - top-line result
-  - validity
-  - causal read
-  - decision
-  - follow-up
+- 区分 project-specific rules 和 personal AI workflow rules。
+- 为跨 repo / 跨工具任务设计 shared entry point。
+- 建立 context budget habit：先索引和检索，再加载全文。
 
-Definition of done:
+### Success signal
 
-- 下一个 agent 不需要重新读所有 raw artifacts，也能知道 run 是否有效、支持什么决策、下一步是什么。
+换项目或换 AI 工具时，方法论不从零开始；只需要替换项目特定上下文。
 
-### 3. Source-Monitoring Habit
+## 3. 执行可靠性
 
-Why:
+### Current state
 
-- AI Harness 方法论变化很快。只靠论文和官方文档会慢，只靠 X / Reddit 又会噪声太大。
+Reading Companion 已经有 phased implementation、job registry、watchdogs、staged artifacts 和 long-running eval recovery。
 
-Upgrade:
+### Upgrade
 
-- 建立周期性 source review，按来源类型分层：
-  - official/frontier docs
-  - practitioner systems
-  - open-source harness patterns
-  - community signals
-- 每条来源都标注：
-  - date / recency
-  - source type
-  - durable takeaway
-  - principle / tactic / signal
+沉淀 reusable multi-agent planning / execution pattern：
 
-Definition of done:
+- 主线程负责目标、决策和整合。
+- Side context / subagent 负责高体积探索。
+- Deterministic scripts 负责可重复流程。
+- Run dossier 负责状态和证据。
 
-- 新工具变化先进入 evidence-index 或 personal source notes，再决定是否改变工作流。
+### Success signal
 
-## Mid-Term Upgrades
+复杂任务可以在 agent 中断、上下文压缩或跨线程交接后继续推进，而不是重新考古。
 
-### 4. Stronger Human Calibration For LLM Judges
+## 4. 证据与评测
 
-Why:
+### Current state
 
-- 项目已经能使用 multi-prompt LLM adjudication，但 LLM judge 仍然需要人类校准，尤其是高影响 benchmark、路线切换、default promotion。
+项目已经擅长事后解释 eval：dual diagnosis、invalidated evidence、diagnostic evidence、formal evidence 都有明确概念。
 
-Upgrade:
+### Upgrade
 
-- 选少量高影响 case 做 human calibration slice。
-- 记录 judge-human disagreement 类型，而不只记录一致率。
-- 把 disagreement 转成 rubric repair 或 judge prompt invalidation criteria。
+把 evidence contract 前置化，并增强人类校准：
 
-Definition of done:
+- 评测前定义 objective、dataset、validity criteria、decision rule。
+- LLM-as-judge 必须说明可判断范围和人工校准点。
+- 高影响结果必须写 post-run interpretation。
 
-- 对每个重要 judge family，都能说清：
-  - 哪些判断 LLM judge 可靠
-  - 哪些边界 case 需要 human review
-  - 哪些 label 易漂移
+### Success signal
 
-### 5. Execution-Path Evals
+每个高成本 eval 都能回答：它测了什么、证据是否有效、结果由什么导致、下一步采用/推迟/否决/重跑的理由是什么。
 
-Why:
+## 5. 工具、环境与权限控制
 
-- 现在评测主要强在 output / artifact 层，但 agentic workflow 的失败常常发生在路径上：工具选错、上下文取错、重试策略错、早停或晚停、错误 artifact 被 merge。
+### Current state
 
-Upgrade:
+项目内有较强的 backend runtime、validation scripts、job registry 和 artifact hygiene，但个人级 AI tool governance 还不够显式。
 
-- 为长任务和 agent workflow 增加路径级评测：
-  - Did it load the right docs?
-  - Did it choose the right tool?
-  - Did it preserve artifact ownership?
-  - Did it respect source grounding?
-  - Did it stop or retry at the right time?
-  - Did it record approval / invalidation?
+### Upgrade
 
-Definition of done:
+建立 lightweight tool governance：
 
-- 对重要 agent run，不只评最终结果，也能评执行路径是否健康。
+- 工具分类：read、write、execute、browse、judge、deploy、delete。
+- 权限分类：auto-allowed、ask-first、forbidden。
+- 风险规则：credentials、destructive commands、external systems、model/provider upgrades。
+- 环境记录：cwd、dependencies、outputs、sandbox assumptions。
 
-### 6. Lightweight Workflow Metrics / Dashboarding
+### Success signal
 
-Why:
+AI 工具使用不再靠临场判断；高风险操作有稳定审批规则，模型/provider 变化有证据和回退。
 
-- 项目已经有 run ids、logs、artifacts、`llm_usage`、evidence catalog，但人仍然需要在文件系统中手动拼图。
+## 6. 可观测与交接
 
-Upgrade:
+### Current state
 
-- 建一个轻量 run dossier 或 dashboard index：
-  - command
-  - inputs
-  - model/provider config
-  - stages
-  - retries
-  - artifacts
-  - eval scores
-  - interpretation
-  - decision
+Reading Companion 的 artifact provenance 很强，但 visual / queryable observability 还弱。
 
-Definition of done:
+### Upgrade
 
-- 任一重要 run 都能被一个 index 页面重建，而不是靠 current-state 长段落和人工路径搜索。
+建立轻量 run dossier 和 execution-path inspection：
 
-## Long-Term Upgrades
+- 每个关键 run 有 command、input、model/provider、output、artifact、eval、interpretation、decision。
+- Long-running jobs 有 active view、check command、recovery posture。
+- 重要评审可以从 final result 回溯到 run path。
 
-### 7. Personal AI Operating System / Harness
+### Success signal
 
-Why:
+未来自己或另一个 agent 可以从 run dossier 恢复任务，而不是从聊天记录里找线索。
 
-- Reading Companion 的 repo-first memory 很强，但它主要服务这个项目。未来复杂项目需要跨 repo、跨工具、跨模型的个人协作系统。
+## 7. 复盘与学习
 
-Upgrade:
+### Current state
 
-- 建立个人级 AI Harness：
-  - source monitoring
-  - context rules
-  - tool governance
-  - evidence contract templates
-  - eval templates
-  - decision log pattern
-  - model/provider upgrade protocol
-  - reusable subagent roles
+项目已经通过 mechanism pattern ledger、decision log、case-study docs 将经验从 chat 迁移到 repo。
 
-Definition of done:
+### Upgrade
 
-- 换项目时，方法论不从零开始；只需要加载项目特定上下文。
+建立 source-monitoring habit 和 learning disposition：
 
-### 8. Reusable Multi-Agent Planning / Execution Pattern
+- 每月或每个项目阶段检查官方 docs、实践者框架和高信号社区讨论。
+- 每条新做法标记为 durable principle、current tactical 或 speculative signal。
+- 每条项目内经验标记为 adopt、test、defer、reject、monitor。
 
-Why:
+### Success signal
 
-- 目前多 agent / subagent 更像即时策略。未来应形成稳定模式：什么时候并行探索、什么时候主线执行、什么时候独立审查、什么时候 worker 改代码。
-
-Upgrade:
-
-- 定义 reusable roles：
-  - explorer
-  - implementer
-  - evaluator
-  - reviewer
-  - evidence librarian
-- 定义 delegation rules：
-  - sidecar vs critical path
-  - read-only vs write scope
-  - isolated context vs shared memory
-  - merge / review expectations
-
-Definition of done:
-
-- 复杂任务可以快速决定哪些工作留在主线程、哪些交给独立上下文、哪些必须人工决策。
-
-### 9. Model / Provider Upgrade Protocol
-
-Why:
-
-- 前沿模型变化快，但模型升级不能只看榜单或感觉。对复杂 AI 产品和 AI 协作 workflow，模型升级会影响 prompt、judge、工具调用、成本、延迟、上下文策略和失败模式。
-
-Upgrade:
-
-- 建立升级协议：
-  - candidate model
-  - expected benefit
-  - affected workflows
-  - smoke eval
-  - regression eval
-  - judge calibration
-  - cost / latency profile
-  - fallback plan
-  - rollout decision
-
-Definition of done:
-
-- 每次模型/provider 切换都有证据、有回退、有范围，而不是“新模型应该更好”。
+AI 协作方法持续进化，但不会被新工具信号带偏；只有经验证的做法进入稳定规则。
 
 ## Highest-Leverage Focus
 
-如果只能先补一个能力，优先补：Evidence Contract + Run Dossier。
+下一阶段最高杠杆不是新增更多文档，而是把三个动作前置化：
 
-原因：
+1. Pre-task intent contract。
+2. Pre-run evidence contract。
+3. Post-run interpretation。
 
-- 它直接减少高成本偏航。
-- 它能连接 intent、execution、eval、observability、learning。
-- 它不依赖某个新工具。
-- 它能让 AI 协作本身变成可复盘对象。
-
-The next level is not more automation. The next level is making automation inspectable enough that you can trust it, correct it, and compound what it learns.
+这三个动作能同时改善目标清晰度、上下文选择、执行恢复、评测解释和下一轮学习，是从“项目内证据系统”升级到“个人 AI Harness”的最小可行路径。

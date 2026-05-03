@@ -120,8 +120,12 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - Newly written checkpoints use only the new primary state keys.
 - Phase C.4 of the post-eval structural rework is now also landed as the helper-contract cutover.
   - Sentence-intake, bridge, and chapter slow-cycle now execute directly on the new primary state layers.
-  - The live runner no longer projects into `working_pressure / anchor_memory / reflective_summaries` in order to execute helpers.
+  - The live runner no longer projects into legacy state stores in order to execute helpers.
   - Live runtime loading and resume now reject pre-`Phase C.3` runtime/checkpoint shapes instead of migrating them on the live path.
+- The post-F4 cleanup has also retired the old gate/pressure sidecar from current state.
+  - Current hot state is `working_state.active_items`.
+  - `gate_state`, `pressure_snapshot`, and the old working-pressure file are historical trigger/watch/zoom design artifacts, not current runtime or prompt inputs.
+  - Current `pressure_signals` are different: they are one-step `Read -> Navigate.route` signals and remain live.
 - Phase D of the post-eval structural rework is now landed as preserved intermediate continuity / recall / resume evidence.
   - that branch added a budget-bounded multi-step supplemental loop around `read`.
   - Runtime state and full checkpoints now persist a lightweight `continuation capsule` with explicit `rehydration entrypoints`.
@@ -575,7 +579,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - `_mechanisms/attentional_v2/runtime/working_pressure.json`
   - `_mechanisms/attentional_v2/runtime/anchor_memory.json`
   - `_mechanisms/attentional_v2/runtime/reflective_summaries.json`
-  - these are no longer accepted by the live `attentional_v2` runtime/resume path after `Phase C.4`
+  - these are no longer accepted by the live `attentional_v2` runtime/resume path after the legacy gate/pressure cleanup
   - they remain historical evidence from older runs, not a supported live-state format
 - Current scaffolded shared runtime resume artifacts
   - `_runtime/runtime_shell.json`

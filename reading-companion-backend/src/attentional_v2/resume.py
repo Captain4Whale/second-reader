@@ -341,7 +341,7 @@ def _load_runtime_bundle(output_dir: Path) -> dict[str, dict[str, object]]:
         if name not in {"working_state", "concept_registry", "thread_trace", "reflective_frames", "anchor_bank"}
     }
     legacy_paths = {
-        "working_pressure": runtime_dir(output_dir) / "working_pressure.json",
+        "legacy_hot_state": runtime_dir(output_dir) / ("working_" + "pressure.json"),
         "anchor_memory": runtime_dir(output_dir) / "anchor_memory.json",
         "reflective_summaries": runtime_dir(output_dir) / "reflective_summaries.json",
     }

@@ -25,13 +25,12 @@ from .schemas import (
     ThreadTraceState,
     ThreadDigestItem,
     WorkingState,
-    WorkingPressureState,
     WorkingStateDigest,
+    build_empty_working_state,
 )
 from .state_migration import (
     migrate_anchor_memory_to_new_layers,
     migrate_reflective_summaries_to_frames,
-    migrate_working_pressure_to_working_state,
 )
 
 
@@ -133,40 +132,10 @@ def _sample_quotes(
 
 
 def _working_state_active_items(working_state: WorkingState) -> list[dict[str, object]]:
-    """Return the active-items view, falling back to legacy buckets when needed."""
+    """Return the active-items view over the current working state."""
 
     active_items = [dict(item) for item in working_state.get("active_items", []) if isinstance(item, dict)]
-    if active_items:
-        return active_items
-
-    flattened: list[dict[str, object]] = []
-    for bucket in ("local_questions", "local_tensions", "local_hypotheses", "local_motifs"):
-        for item in working_state.get(bucket, []):
-            if not isinstance(item, dict):
-                continue
-            item_id = clean_text(item.get("item_id"))
-            if not item_id:
-                continue
-            flattened.append(
-                {
-                    "item_id": item_id,
-                    "bucket": bucket,
-                    "kind": clean_text(item.get("kind")),
-                    "statement": clean_text(item.get("statement")),
-                    "status": clean_text(item.get("status")),
-                    "support_anchor_ids": list(item.get("support_anchor_ids", []))
-                    if isinstance(item.get("support_anchor_ids"), list)
-                    else [],
-                    "linked_concept_keys": list(item.get("linked_concept_keys", []))
-                    if isinstance(item.get("linked_concept_keys"), list)
-                    else [],
-                    "linked_thread_keys": list(item.get("linked_thread_keys", []))
-                    if isinstance(item.get("linked_thread_keys"), list)
-                    else [],
-                    "last_touched_sentence_id": clean_text(item.get("last_touched_sentence_id")),
-                }
-            )
-    return flattened
+    return active_items
 
 
 def _digest_bucket_for_active_item(item: dict[str, object]) -> str:
@@ -206,7 +175,7 @@ def _build_working_state_digest(
         if not item_id:
             continue
         bucket = _digest_bucket_for_active_item(item)
-        ref_id = f"pressure:{item_id}"
+        ref_id = f"working_state:{item_id}"
         record = {
             "ref_id": ref_id,
             "item_id": item_id,
@@ -240,10 +209,6 @@ def _build_working_state_digest(
             },
         )
     return {
-        "gate_state": clean_text(working_state.get("gate_state")),
-        "pressure_snapshot": dict(working_state.get("pressure_snapshot", {}))
-        if isinstance(working_state.get("pressure_snapshot"), dict)
-        else {},
         "active_items": digest_active_items[:6],
         "hot_items": hot_items,
         "open_questions": bucket_records["local_questions"],
@@ -706,7 +671,6 @@ def build_carry_forward_context(
     thread_trace: ThreadTraceState | None = None,
     reflective_frames: ReflectiveFramesState | None = None,
     anchor_bank: AnchorBankState | None = None,
-    working_pressure: WorkingPressureState | None = None,
     anchor_memory: AnchorMemoryState | None = None,
     reflective_summaries: ReflectiveSummariesState | None = None,
     move_history: MoveHistoryState,
@@ -715,11 +679,7 @@ def build_carry_forward_context(
 ) -> CarryForwardContext:
     """Build the bounded read-context packet from current persisted state."""
 
-    primary_working_state = (
-        dict(working_state)
-        if isinstance(working_state, dict)
-        else migrate_working_pressure_to_working_state(working_pressure)
-    )
+    primary_working_state = dict(working_state) if isinstance(working_state, dict) else build_empty_working_state()
     primary_reflective_frames = (
         dict(reflective_frames)
         if isinstance(reflective_frames, dict)
@@ -788,11 +748,6 @@ def build_carry_forward_context(
         "concept_digest": concept_digest,
         "thread_digest": thread_digest,
         "anchor_bank_digest": anchor_bank_digest,
-        "working_pressure_digest": {
-            "gate_state": working_state_digest.get("gate_state", ""),
-            "pressure_snapshot": dict(working_state_digest.get("pressure_snapshot", {})),
-            "items": list(working_state_digest.get("hot_items", [])),
-        },
         "reflective_digest": reflective_digest,
         "anchor_digest": anchor_digest,
         "continuity_digest": session_continuity_capsule,
@@ -814,9 +769,6 @@ def build_read_prompt_packet(
         if isinstance(carry_forward_context.get("session_continuity_capsule"), dict)
         else {},
         "working_state": {
-            "gate_state": clean_text(carry_forward_context.get("working_state_digest", {}).get("gate_state"))
-            if isinstance(carry_forward_context.get("working_state_digest"), dict)
-            else "",
             "active_items": [
                 dict(item)
                 for item in carry_forward_context.get("working_state_digest", {}).get("active_items", [])
@@ -889,7 +841,6 @@ def build_navigation_context(
     thread_trace: ThreadTraceState | None = None,
     reflective_frames: ReflectiveFramesState | None = None,
     anchor_bank: AnchorBankState | None = None,
-    working_pressure: WorkingPressureState | None = None,
     anchor_memory: AnchorMemoryState | None = None,
     reflective_summaries: ReflectiveSummariesState | None = None,
     move_history: MoveHistoryState,
@@ -907,7 +858,6 @@ def build_navigation_context(
         thread_trace=thread_trace,
         reflective_frames=reflective_frames,
         anchor_bank=anchor_bank,
-        working_pressure=working_pressure,
         anchor_memory=anchor_memory,
         reflective_summaries=reflective_summaries,
         move_history=move_history,

@@ -11,19 +11,17 @@ from src.attentional_v2.schemas import (
     build_empty_reaction_records,
     build_empty_reconsolidation_records,
     build_empty_reflective_summaries,
-    build_empty_working_pressure,
+    build_empty_working_state,
 )
 from src.attentional_v2.state_ops import (
     append_anchor_relation,
     append_move,
     append_reaction_record,
     append_reconsolidation_record,
-    apply_working_pressure_operations,
+    apply_working_state_operations,
     close_local_meaning_unit,
     push_local_buffer_sentence,
     replace_policy_section,
-    replace_pressure_bucket,
-    set_gate_state,
     supersede_reflective_item,
     upsert_anchor_record,
     upsert_knowledge_activation,
@@ -31,41 +29,16 @@ from src.attentional_v2.state_ops import (
 )
 
 
-def test_working_pressure_helpers_replace_bucket_and_gate_state():
-    """Working-pressure helpers should return updated copies instead of mutating input."""
+def test_apply_working_state_operations_handles_append_update_close_link_and_drop():
+    """Working-state helpers should update active_items without legacy bucket side effects."""
 
-    state = build_empty_working_pressure()
-
-    next_state = replace_pressure_bucket(
-        set_gate_state(state, "watch"),
-        bucket="local_questions",
-        items=[
-            {
-                "item_id": "q-1",
-                "kind": "question",
-                "statement": "Why does the author make this turn now?",
-                "support_anchor_ids": ["a-1"],
-                "status": "open",
-            }
-        ],
-    )
-
-    assert state["gate_state"] == "quiet"
-    assert state["local_questions"] == []
-    assert next_state["gate_state"] == "watch"
-    assert next_state["local_questions"][0]["item_id"] == "q-1"
-
-
-def test_apply_working_pressure_operations_handles_create_and_drop():
-    """Phase 5 working-pressure operations should update the hot buckets explicitly."""
-
-    state = build_empty_working_pressure()
-    state = apply_working_pressure_operations(
+    state = build_empty_working_state()
+    state = apply_working_state_operations(
         state,
         [
             {
-                "operation_type": "create",
-                "target_store": "working_pressure",
+                "operation_type": "append",
+                "target_store": "working_state",
                 "item_id": "m-1",
                 "reason": "motif became active",
                 "payload": {
@@ -79,12 +52,33 @@ def test_apply_working_pressure_operations_handles_create_and_drop():
         ],
     )
 
-    dropped = apply_working_pressure_operations(
+    state = apply_working_state_operations(
+        state,
+        [
+            {
+                "operation_type": "update",
+                "target_store": "working_state",
+                "item_id": "m-1",
+                "payload": {
+                    "linked_concept_keys": ["concept:value"],
+                    "linked_thread_keys": ["thread:value"],
+                },
+            },
+            {
+                "operation_type": "close",
+                "target_store": "working_state",
+                "item_id": "m-1",
+                "payload": {},
+            },
+        ],
+    )
+
+    dropped = apply_working_state_operations(
         state,
         [
             {
                 "operation_type": "drop",
-                "target_store": "working_pressure",
+                "target_store": "working_state",
                 "item_id": "m-1",
                 "reason": "motif cooled below the hot layer",
                 "payload": {
@@ -94,8 +88,13 @@ def test_apply_working_pressure_operations_handles_create_and_drop():
         ],
     )
 
-    assert state["local_motifs"][0]["item_id"] == "m-1"
-    assert dropped["local_motifs"] == []
+    assert state["active_items"][0]["item_id"] == "m-1"
+    assert state["active_items"][0]["bucket"] == "local_motifs"
+    assert state["active_items"][0]["status"] == "closed"
+    assert state["active_items"][0]["linked_concept_keys"] == ["concept:value"]
+    assert state["active_items"][0]["linked_thread_keys"] == ["thread:value"]
+    assert "local_motifs" not in state
+    assert dropped["active_items"] == []
 
 
 def test_anchor_and_activation_helpers_upsert_by_id():
