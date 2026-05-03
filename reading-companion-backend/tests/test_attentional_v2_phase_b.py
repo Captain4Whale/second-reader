@@ -16,7 +16,7 @@ from src.attentional_v2.schemas import (
     build_empty_move_history,
     build_empty_reaction_records,
     build_empty_reflective_summaries,
-    build_empty_working_state,
+    build_empty_active_attention,
 )
 from src.attentional_v2.state_migration import (
     migrate_anchor_memory_to_new_layers,
@@ -108,10 +108,10 @@ def test_read_unit_projects_compact_packet_and_returns_f1_surface_contract(tmp_p
             "implicit_uptake_ops": [
                 {
                     "op": "update",
-                    "target_store": "working_state",
+                    "target_store": "active_attention",
                     "target_key": "pressure-1",
                     "payload": {
-                        "kind": "question",
+                        "attention_tags": ["question"],
                         "statement": "What changes here?",
                     },
                 }
@@ -137,12 +137,11 @@ def test_read_unit_projects_compact_packet_and_returns_f1_surface_contract(tmp_p
     ]
     local_buffer["recent_meaning_units"] = [["c1-s1"]]
 
-    working_state = build_empty_working_state()
-    working_state["active_items"] = [
+    active_attention = build_empty_active_attention()
+    active_attention["active_items"] = [
         {
             "item_id": "question-1",
-            "bucket": "local_questions",
-            "kind": "question",
+            "attention_tags": ["question"],
             "statement": "Why does the chapter turn here?",
             "support_anchor_ids": [],
             "status": "open",
@@ -192,7 +191,7 @@ def test_read_unit_projects_compact_packet_and_returns_f1_surface_contract(tmp_p
         chapter_ref="Chapter 1",
         current_unit_sentence_ids=["c1-s2"],
         local_buffer=local_buffer,
-        working_state=working_state,
+        active_attention=active_attention,
         anchor_memory=anchor_memory,
         reflective_summaries=reflective_summaries,
         move_history=move_history,
@@ -262,7 +261,7 @@ def test_read_unit_projects_compact_packet_and_returns_f1_surface_contract(tmp_p
     assert result["surfaced_reactions"][0]["anchor_quote"] == "Beta sentence."
     assert result["surfaced_reactions"][0]["prior_link"]["ref_ids"] == ["anchor:a-1", "lookback:sentence:c1-s1"]
     assert result["implicit_uptake_ops"][0]["op"] == "update"
-    assert result["implicit_uptake_ops"][0]["target_store"] == "working_state"
+    assert result["implicit_uptake_ops"][0]["target_store"] == "active_attention"
     assert result["detour_need"]["status"] == "open"
 
     route = navigate_route(read_result=result)
@@ -283,7 +282,7 @@ def test_resolve_context_request_returns_exact_look_back_excerpt_and_none_when_u
         chapter_ref="Chapter 1",
         current_unit_sentence_ids=["c1-s2"],
         local_buffer=build_empty_local_buffer(),
-        working_state=build_empty_working_state(),
+        active_attention=build_empty_active_attention(),
         anchor_memory=anchor_memory,
         reflective_summaries=build_empty_reflective_summaries(),
         move_history=build_empty_move_history(),
@@ -352,7 +351,7 @@ def test_resolve_context_request_active_recall_surfaces_concepts_and_threads():
         chapter_ref="Chapter 1",
         current_unit_sentence_ids=["c1-s2"],
         local_buffer=build_empty_local_buffer(),
-        working_state=build_empty_working_state(),
+        active_attention=build_empty_active_attention(),
         anchor_memory=anchor_memory,
         reflective_summaries=build_empty_reflective_summaries(),
         move_history=build_empty_move_history(),
@@ -422,9 +421,9 @@ def test_run_read_with_context_loop_reads_once_and_persists_f1_audit(tmp_path, m
             "implicit_uptake_ops": [
                 {
                     "op": "append",
-                    "target_store": "working_state",
+                    "target_store": "active_attention",
                     "target_key": "pressure-1",
-                    "payload": {"kind": "question", "statement": "What changes here?"},
+                    "payload": {"attention_tags": ["question"], "statement": "What changes here?"},
                 }
             ],
             "detour_need": {
@@ -450,7 +449,7 @@ def test_run_read_with_context_loop_reads_once_and_persists_f1_audit(tmp_path, m
         },
         local_buffer=build_empty_local_buffer(),
         continuation_capsule={},
-        working_state=build_empty_working_state(),
+        active_attention=build_empty_active_attention(),
         concept_registry=concept_registry,
         thread_trace=thread_trace,
         reflective_frames=reflective_frames,

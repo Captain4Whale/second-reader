@@ -13,7 +13,7 @@ from src.attentional_v2.schemas import (
     build_empty_reaction_records,
     build_empty_reflective_frames,
     build_empty_thread_trace,
-    build_empty_working_state,
+    build_empty_active_attention,
 )
 from src.attentional_v2.slow_cycle import (
     apply_reconsolidation,
@@ -297,10 +297,10 @@ def test_run_phase6_chapter_cycle_applies_cooling_promotion_and_optional_reactio
                 "cooling_operations": [
                     {
                         "operation_type": "drop",
-                        "target_store": "working_state",
+                        "target_store": "active_attention",
                         "item_id": "h-1",
                         "reason": "local heat ends with the chapter",
-                        "payload": {"bucket": "local_hypotheses"},
+                        "payload": {},
                     }
                 ],
                 "promotion_candidates": [
@@ -320,8 +320,7 @@ def test_run_phase6_chapter_cycle_applies_cooling_promotion_and_optional_reactio
                 "cross_chapter_carry_forward": [
                     {
                         "item_id": "q-1",
-                        "bucket": "local_questions",
-                        "kind": "question",
+                        "attention_tags": ["question"],
                         "statement": "How narrow will the later book make value?",
                         "support_anchor_ids": ["a-2"],
                         "status": "open",
@@ -367,13 +366,12 @@ def test_run_phase6_chapter_cycle_applies_cooling_promotion_and_optional_reactio
             {"sentence_ids": ["c1-s2"], "summary": "narrowing turn"},
         ],
         chapter_end_anchor=_anchor("a-2", "c1-s2", "Later the author narrows what counts as value.", 2),
-        working_state={
-            **build_empty_working_state(),
+        active_attention={
+            **build_empty_active_attention(),
             "active_items": [
                 {
                     "item_id": "h-1",
-                    "bucket": "local_hypotheses",
-                    "kind": "hypothesis",
+                    "attention_tags": ["interpretation"],
                     "statement": "Value is purely social.",
                     "support_anchor_ids": ["a-1"],
                     "status": "active",
@@ -416,8 +414,8 @@ def test_run_phase6_chapter_cycle_applies_cooling_promotion_and_optional_reactio
     )
 
     assert result["chapter_consolidation"]["chapter_summary_note"] == "The chapter narrows its own opening frame."
-    assert [item["item_id"] for item in result["working_state"]["active_items"]] == ["q-1"]
-    assert result["working_state"]["active_items"][0]["bucket"] == "local_questions"
+    assert [item["item_id"] for item in result["active_attention"]["active_items"]] == ["q-1"]
+    assert result["active_attention"]["active_items"][0]["attention_tags"] == ["question"]
     assert result["reflective_frames"]["chapter_understandings"][0]["item_id"] == "ru-1"
     assert result["reaction_records"]["records"][0]["type"] == "retrospect"
     assert result["compatibility_payload"]["visible_reaction_count"] == 1

@@ -15,7 +15,7 @@ from .schemas import (
     ReactionRecordsState,
     ReflectiveFramesState,
     ThreadTraceState,
-    WorkingState,
+    ActiveAttention,
 )
 from .state_projection import build_carry_forward_context
 from .storage import load_json, memory_quality_probe_export_file, save_json
@@ -168,7 +168,7 @@ def _build_probe_snapshot(
     chapter_ref: str,
     local_buffer: LocalBufferState,
     local_continuity: LocalContinuityState,
-    working_state: WorkingState,
+    active_attention: ActiveAttention,
     concept_registry: ConceptRegistryState,
     thread_trace: ThreadTraceState,
     reflective_frames: ReflectiveFramesState,
@@ -182,7 +182,7 @@ def _build_probe_snapshot(
         chapter_ref=chapter_ref,
         current_unit_sentence_ids=[],
         local_buffer=local_buffer,
-        working_state=working_state,
+        active_attention=active_attention,
         concept_registry=concept_registry,
         thread_trace=thread_trace,
         reflective_frames=reflective_frames,
@@ -206,8 +206,8 @@ def _build_probe_snapshot(
         "continuity_context": dict(carry_forward_context.get("session_continuity_capsule", {}))
         if isinstance(carry_forward_context.get("session_continuity_capsule"), dict)
         else {},
-        "working_state_digest": dict(carry_forward_context.get("working_state_digest", {}))
-        if isinstance(carry_forward_context.get("working_state_digest"), dict)
+        "active_attention_digest": dict(carry_forward_context.get("active_attention_digest", {}))
+        if isinstance(carry_forward_context.get("active_attention_digest"), dict)
         else {},
         "concept_digest": [
             dict(item)
@@ -244,7 +244,7 @@ def persist_due_memory_quality_probe_snapshots(
     chapter_ref: str,
     local_buffer: LocalBufferState,
     local_continuity: LocalContinuityState,
-    working_state: WorkingState,
+    active_attention: ActiveAttention,
     concept_registry: ConceptRegistryState,
     thread_trace: ThreadTraceState,
     reflective_frames: ReflectiveFramesState,
@@ -312,7 +312,7 @@ def persist_due_memory_quality_probe_snapshots(
             chapter_ref=chapter_ref,
             local_buffer=local_buffer,
             local_continuity=local_continuity,
-            working_state=working_state,
+            active_attention=active_attention,
             concept_registry=concept_registry,
             thread_trace=thread_trace,
             reflective_frames=reflective_frames,

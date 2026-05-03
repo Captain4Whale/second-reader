@@ -2175,7 +2175,7 @@ This new direction is design frozen but not yet implemented as a formal benchmar
 
 ## Entry 74
 **ID**: DEC-077
-**Status**: active
+**Status**: superseded / refined by `DEC-078`
 
 **Decision / Inflection**: Remove the legacy `gate_state / pressure_snapshot / working_pressure` sidecar from current `attentional_v2` state, prompt packets, runtime artifacts, checkpoint/resume, and Memory Quality evidence. Keep `working_state.active_items` as the current hot-state contract, and keep `pressure_signals` only as one-step `Read -> Navigate.route` signals.
 
@@ -2198,10 +2198,36 @@ This new direction is design frozen but not yet implemented as a formal benchmar
 - `docs/current-state.md`
 - `docs/tasks/registry.md`
 - `docs/tasks/registry.json`
+
+## Entry 75
+**ID**: DEC-078
+**Status**: active
+
+**Decision / Inflection**: Rename the current `attentional_v2` hot-state contract from `Working State` to `Active Attention`. The current native runtime truth is now `active_attention.active_items[]`, and each item carries lightweight `attention_tags[]` rather than a fixed `kind / bucket` ontology or the old derived lists `open_questions / live_tensions / live_hypotheses / live_motifs`.
+
+**Period**: May 3, 2026, after the Memory Quality report review exposed that the old `Working State` name and fixed sublists made the hot attention layer look broader, more categorical, and more ontological than the mechanism now intends.
+
+**Problem**: After the legacy gate/pressure cleanup, the remaining hot-state layer still used a name that was too broad. `Working State` sounded like it might cover the whole live agent state, even though concept memory, thread memory, reflective frames, anchors, audit history, and active focus are separate layers. The fixed `kind / bucket` vocabulary also made `live_hypotheses` and related lists look like durable categories, which encouraged over-reading ordinary local uptake as formal interpretation or long-term memory.
+
+**Alternatives considered**: Keep the current code and clarify only in generated reports, keep `working_state` as a compatibility alias while also writing `active_attention`, or preserve fixed buckets as first-class categories. These options were rejected because they would leave another compatibility tail in the current mechanism contract and keep inviting future agents to treat a convenience classification as the ontology of the reader.
+
+**Why this path won**: `Active Attention` names the layer by its real role: a hot, near-term attention surface that keeps items likely to shape the next stretch of reading. Lightweight `attention_tags[]` preserve useful labels such as `question`, `tension`, `interpretation`, `motif`, and `focus` without turning them into routing contracts or exhaustive buckets. This keeps the state hierarchy simple: `active_attention` for hot attention, `concept_registry` and `thread_trace` for longer memory, `reflective_frames` for slow chapter/book understanding, and `anchor_bank` for source-grounded evidence.
+
+**What changed in the system**: Current schemas, runtime artifacts, checkpoints, state operations, prompt packets, Memory Quality probe export, and documentation now use `active_attention`. New runs create `active_attention.json`, not `working_state.json`. `StateOperation.target_store` uses `active_attention`. Current prompt-facing digests expose compact `active_items[]` with `attention_tags[]` and no longer emit `open_questions / live_tensions / live_hypotheses / live_motifs` as current lists. Old run artifacts and reports keep their original field names as historical evidence, but old-only `working_state` runtime/checkpoint state is not a supported warm-resume target for the current contract.
+
+**Why it matters later**: Future memory work should not add new fixed hot-state buckets by default. If a reading pattern needs to be remembered briefly, it should usually become an `active_attention.active_items[]` entry with tags. If it becomes durable, it should graduate into `concept_registry`, `thread_trace`, or `reflective_frames`. This prevents the hot layer from becoming a dumping ground and keeps the distinction between current attention and long-distance memory crisp.
+
+**Primary evidence**:
+- `docs/backend-reading-mechanisms/attentional_v2.md`
+- `docs/backend-state-aggregation.md`
+- `docs/backend-reader-evaluation.md`
+- `docs/current-state.md`
+- `docs/tasks/registry.md`
+- `docs/tasks/registry.json`
+- `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_long_span_vnext_phase1_reaction_evidence_fix_rejudge_20260425/analysis/post_eval_action_ledger_20260503/README.md`
 - `reading-companion-backend/src/attentional_v2/schemas.py`
 - `reading-companion-backend/src/attentional_v2/state_ops.py`
 - `reading-companion-backend/src/attentional_v2/state_projection.py`
-- `reading-companion-backend/src/attentional_v2/state_migration.py`
 - `reading-companion-backend/src/attentional_v2/runner.py`
 - `reading-companion-backend/src/attentional_v2/resume.py`
 - `reading-companion-backend/src/attentional_v2/slow_cycle.py`

@@ -107,7 +107,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
 - Phase C.1 of the post-eval structural rework is now landed.
   - Live prompt inputs now flow through a bounded internal `state_packet.v1` seam.
   - `navigate.unitize` now receives packetized `navigation_context`.
-  - `read` now receives packetized read-context views that explicitly separate continuity, working-state, reflective, active-focus, and anchor-bank digests.
+  - `read` now receives packetized read-context views that explicitly separate continuity, active-attention, reflective, active-focus, and anchor-bank digests.
   - Persisted runtime files and public compatibility surfaces remain unchanged in this slice.
 - Phase C.2 of the post-eval structural rework is now also landed as the first state-territory slice.
   - Live state packets now derive a bounded `concept_digest` from the current `motif_index + unresolved_reference_index`.
@@ -115,7 +115,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - `navigate.unitize` and `read` now both receive those concept/thread digests through the packet layer.
   - Persisted runtime files and public compatibility surfaces remain unchanged in this slice too.
 - Phase C.3 of the post-eval structural rework is now landed as the direct main-state cutover.
-  - New runs now treat `working_state / concept_registry / thread_trace / reflective_frames / anchor_bank` as the primary runtime and checkpoint truth.
+  - New runs now treat `active_attention / concept_registry / thread_trace / reflective_frames / anchor_bank` as the primary runtime and checkpoint truth.
   - `active_recall` now exposes first-class `concepts` and `threads` from those new layers.
   - Newly written checkpoints use only the new primary state keys.
 - Phase C.4 of the post-eval structural rework is now also landed as the helper-contract cutover.
@@ -123,7 +123,9 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - The live runner no longer projects into legacy state stores in order to execute helpers.
   - Live runtime loading and resume now reject pre-`Phase C.3` runtime/checkpoint shapes instead of migrating them on the live path.
 - The post-F4 cleanup has also retired the old gate/pressure sidecar from current state.
-  - Current hot state is `working_state.active_items`.
+  - Current hot state is `active_attention.active_items`.
+  - `Working State` was the historical name for this hot layer; current code, prompts, runtime artifacts, checkpoints, and Memory Quality snapshots use `Active Attention`.
+  - Each active item now carries lightweight `attention_tags[]` rather than the old fixed question/tension/hypothesis/motif digest lists.
   - `gate_state`, `pressure_snapshot`, and the old working-pressure file are historical trigger/watch/zoom design artifacts, not current runtime or prompt inputs.
   - Current `pressure_signals` are different: they are one-step `Read -> Navigate.route` signals and remain live.
 - Phase D of the post-eval structural rework is now landed as preserved intermediate continuity / recall / resume evidence.
@@ -409,7 +411,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
 - `Navigate` should carry:
   - `always carry`
     - `local_continuity`
-    - one thin routing digest from `working_state`
+    - one thin routing digest from `active_attention`
   - `selective carry`
     - structure-map cards
     - minimal anchor/thread/concept handles only when needed to localize a detour target
@@ -422,7 +424,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - `always carry`
     - `current_unit`
     - a compact `local_continuity` summary
-    - compact `working_state`
+    - compact `active_attention`
     - compact `concept_digest`
     - compact `thread_digest`
     - compact `reflective_digest`
@@ -457,8 +459,10 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
 - The mechanism now distinguishes five state territories:
   - `local_continuity`
     - reading-flow position, recent unit boundaries, `mainline_cursor`, active detour trace, and return semantics
-  - `working_state`
+  - `active_attention`
     - the current unresolved hot items that may still shape the next reads
+    - native truth is `active_attention.active_items[]`
+    - item labels are lightweight `attention_tags[]`, not fixed routing buckets
   - `long-distance memory`
     - `concept_registry`
     - `thread_trace`
@@ -478,7 +482,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - `Read`
     - owns current-unit understanding
     - owns surfaced reactions
-    - owns updates into `working_state / concept_registry / thread_trace`
+    - owns updates into `active_attention / concept_registry / thread_trace`
     - may request later detour by emitting `detour_need`
   - `slow cycle`
     - owns chapter-end cooling, promotion, reconsolidation, and `reflective_frames`
@@ -557,7 +561,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - `_mechanisms/attentional_v2/runtime/continuation_capsule.json`
   - `_mechanisms/attentional_v2/runtime/unitization_audit.jsonl`
   - `_mechanisms/attentional_v2/runtime/read_audit.jsonl`
-  - `_mechanisms/attentional_v2/runtime/working_state.json`
+  - `_mechanisms/attentional_v2/runtime/active_attention.json`
   - `_mechanisms/attentional_v2/runtime/concept_registry.json`
   - `_mechanisms/attentional_v2/runtime/thread_trace.json`
   - `_mechanisms/attentional_v2/runtime/reflective_frames.json`

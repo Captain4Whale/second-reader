@@ -38,7 +38,7 @@ def _navigation_context() -> dict[str, object]:
     return {
         "packet_version": STATE_PACKET_VERSION,
         "session_continuity_capsule": {"recent_sentence_ids": ["c0-s9"]},
-        "working_state_digest": {"open_questions": []},
+        "active_attention_digest": {"active_items": []},
         "chapter_reflective_frame": {"chapter_frames": []},
         "active_focus_digest": {"recent_moves": []},
         "concept_digest": [],
@@ -361,7 +361,7 @@ def test_read_unit_filters_unanchored_surface_and_falls_back_from_legacy_move_hi
             "implicit_uptake": [
                 {
                     "op": "append",
-                    "target_store": "working_state",
+                    "target_store": "active_attention",
                     "target_key": "q-1",
                     "payload": {"statement": "The frame just shifted."},
                 }
@@ -407,7 +407,7 @@ def test_read_unit_filters_unanchored_surface_and_falls_back_from_legacy_move_hi
             "search_intent": None,
         }
     ]
-    assert result["implicit_uptake_ops"][0]["target_store"] == "working_state"
+    assert result["implicit_uptake_ops"][0]["target_store"] == "active_attention"
     assert "Keep proportion around thin structural units." in captured["system_prompt"]
     assert "Do not inflate a bare heading or structural cue" in captured["system_prompt"]
     assert "Choose each `anchor_quote` as the smallest self-sufficient span" in captured["system_prompt"]

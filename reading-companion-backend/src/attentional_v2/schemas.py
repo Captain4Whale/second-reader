@@ -56,12 +56,11 @@ def _timestamp() -> str:
     return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
 
-class WorkingStateItem(TypedDict, total=False):
-    """One hot local item carried in the current working state."""
+class ActiveAttentionItem(TypedDict, total=False):
+    """One hot local item carried in active attention."""
 
     item_id: str
-    bucket: str
-    kind: str
+    attention_tags: list[str]
     statement: str
     support_anchor_ids: list[str]
     linked_concept_keys: list[str]
@@ -70,13 +69,13 @@ class WorkingStateItem(TypedDict, total=False):
     status: str
 
 
-class WorkingState(TypedDict, total=False):
-    """Primary hot state for active questions, tensions, hypotheses, and motifs."""
+class ActiveAttention(TypedDict, total=False):
+    """Primary hot attention state for items still shaping near-term reading."""
 
     schema_version: int
     mechanism_version: str
     updated_at: str
-    active_items: list[WorkingStateItem]
+    active_items: list[ActiveAttentionItem]
 
 
 class LocalBufferSentence(TypedDict, total=False):
@@ -193,7 +192,7 @@ class ContinuationCapsule(TypedDict, total=False):
     chapter_ref: str
     current_sentence_id: str
     session_continuity_capsule: SessionContinuityCapsule
-    working_state_digest: "WorkingStateDigest"
+    active_attention_digest: "ActiveAttentionDigest"
     chapter_reflective_frame: "ReflectiveFrameDigest"
     active_focus_digest: "ActiveFocusDigest"
     concept_digest: list["ConceptDigestItem"]
@@ -203,15 +202,11 @@ class ContinuationCapsule(TypedDict, total=False):
     rehydration_entrypoints: list[RehydrationEntry]
 
 
-class WorkingStateDigest(TypedDict, total=False):
-    """Prompt-facing digest of the current hot working state."""
+class ActiveAttentionDigest(TypedDict, total=False):
+    """Prompt-facing digest of the current hot active-attention state."""
 
     active_items: list[dict[str, object]]
     hot_items: list[dict[str, object]]
-    open_questions: list[dict[str, object]]
-    live_tensions: list[dict[str, object]]
-    live_hypotheses: list[dict[str, object]]
-    live_motifs: list[dict[str, object]]
 
 
 class ReflectiveFrameDigest(TypedDict, total=False):
@@ -223,11 +218,9 @@ class ReflectiveFrameDigest(TypedDict, total=False):
 
 
 class ActiveFocusDigest(TypedDict, total=False):
-    """Small digest of what is currently active across local questions, moves, and reactions."""
+    """Small digest of currently active attention plus recent moves and reactions."""
 
-    open_questions: list[dict[str, object]]
-    live_tensions: list[dict[str, object]]
-    live_hypotheses: list[dict[str, object]]
+    active_items: list[dict[str, object]]
     recent_moves: list[dict[str, object]]
     recent_reactions: list[dict[str, object]]
 
@@ -267,7 +260,7 @@ class CarryForwardContext(TypedDict, total=False):
     packet_version: str
     continuation_capsule: ContinuationCapsule
     session_continuity_capsule: SessionContinuityCapsule
-    working_state_digest: WorkingStateDigest
+    active_attention_digest: ActiveAttentionDigest
     chapter_reflective_frame: ReflectiveFrameDigest
     active_focus_digest: ActiveFocusDigest
     concept_digest: list[ConceptDigestItem]
@@ -285,7 +278,7 @@ class NavigationContext(TypedDict, total=False):
     packet_version: str
     continuation_capsule: ContinuationCapsule
     session_continuity_capsule: SessionContinuityCapsule
-    working_state_digest: WorkingStateDigest
+    active_attention_digest: ActiveAttentionDigest
     chapter_reflective_frame: ReflectiveFrameDigest
     active_focus_digest: ActiveFocusDigest
     concept_digest: list[ConceptDigestItem]
@@ -747,7 +740,7 @@ class ChapterConsolidationResult(TypedDict, total=False):
     promotion_candidates: list[ReflectivePromotionCandidate]
     anchor_status_updates: list[dict[str, object]]
     knowledge_activation_updates: list[StateOperation]
-    cross_chapter_carry_forward: list[WorkingStateItem]
+    cross_chapter_carry_forward: list[ActiveAttentionItem]
     chapter_summary_note: str
     optional_chapter_reaction: ReactionCandidate | None
 
@@ -814,7 +807,7 @@ class FullCheckpointState(TypedDict, total=False):
     local_buffer: LocalBufferState
     local_continuity: LocalContinuityState
     continuation_capsule: ContinuationCapsule
-    working_state: WorkingState
+    active_attention: ActiveAttention
     concept_registry: ConceptRegistryState
     thread_trace: ThreadTraceState
     reflective_frames: ReflectiveFramesState
@@ -829,8 +822,8 @@ class FullCheckpointState(TypedDict, total=False):
     resume_metadata: ResumeMetadataState
 
 
-def build_empty_working_state(*, mechanism_version: str = ATTENTIONAL_V2_MECHANISM_VERSION) -> WorkingState:
-    """Return the default primary hot state."""
+def build_empty_active_attention(*, mechanism_version: str = ATTENTIONAL_V2_MECHANISM_VERSION) -> ActiveAttention:
+    """Return the default primary hot attention state."""
 
     return {
         "schema_version": ATTENTIONAL_V2_SCHEMA_VERSION,
@@ -911,13 +904,9 @@ def build_empty_continuation_capsule(
             "recent_moves": [],
             "recent_reactions": [],
         },
-        "working_state_digest": {
+        "active_attention_digest": {
             "active_items": [],
             "hot_items": [],
-            "open_questions": [],
-            "live_tensions": [],
-            "live_hypotheses": [],
-            "live_motifs": [],
         },
         "chapter_reflective_frame": {
             "chapter_frames": [],
@@ -925,9 +914,7 @@ def build_empty_continuation_capsule(
             "durable_definitions": [],
         },
         "active_focus_digest": {
-            "open_questions": [],
-            "live_tensions": [],
-            "live_hypotheses": [],
+            "active_items": [],
             "recent_moves": [],
             "recent_reactions": [],
         },

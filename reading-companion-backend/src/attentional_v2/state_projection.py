@@ -24,9 +24,9 @@ from .schemas import (
     RehydrationEntry,
     ThreadTraceState,
     ThreadDigestItem,
-    WorkingState,
-    WorkingStateDigest,
-    build_empty_working_state,
+    ActiveAttention,
+    ActiveAttentionDigest,
+    build_empty_active_attention,
 )
 from .state_migration import (
     migrate_anchor_memory_to_new_layers,
@@ -131,56 +131,49 @@ def _sample_quotes(
     return quotes
 
 
-def _working_state_active_items(working_state: WorkingState) -> list[dict[str, object]]:
-    """Return the active-items view over the current working state."""
+def _active_attention_items(active_attention: ActiveAttention) -> list[dict[str, object]]:
+    """Return the active-items view over the current active attention."""
 
-    active_items = [dict(item) for item in working_state.get("active_items", []) if isinstance(item, dict)]
+    active_items = [dict(item) for item in active_attention.get("active_items", []) if isinstance(item, dict)]
     return active_items
 
 
-def _digest_bucket_for_active_item(item: dict[str, object]) -> str:
-    """Classify one active item into the legacy digest buckets."""
+def _item_tags(item: dict[str, object]) -> list[str]:
+    """Return clean lightweight attention tags for one active-attention item."""
 
-    explicit_bucket = clean_text(item.get("bucket"))
-    if explicit_bucket in {"local_questions", "local_tensions", "local_hypotheses", "local_motifs"}:
-        return explicit_bucket
-    kind = clean_text(item.get("kind")).lower()
-    if "question" in kind:
-        return "local_questions"
-    if any(token in kind for token in ("tension", "conflict", "contrast", "pressure")):
-        return "local_tensions"
-    if any(token in kind for token in ("motif", "image", "pattern", "callback", "echo")):
-        return "local_motifs"
-    return "local_hypotheses"
+    raw_tags = item.get("attention_tags")
+    if not isinstance(raw_tags, list):
+        return []
+    tags: list[str] = []
+    seen: set[str] = set()
+    for raw_tag in raw_tags:
+        tag = clean_text(raw_tag)
+        if not tag or tag in seen:
+            continue
+        seen.add(tag)
+        tags.append(tag)
+    return tags
 
 
-def _build_working_state_digest(
-    working_state: WorkingState,
+def _build_active_attention_digest(
+    active_attention: ActiveAttention,
     *,
     refs: list[CarryForwardRef],
-) -> WorkingStateDigest:
-    """Build the prompt-facing digest of the current hot working state."""
+) -> ActiveAttentionDigest:
+    """Build the prompt-facing digest of the current hot active-attention state."""
 
-    active_items = _working_state_active_items(working_state)
+    active_items = _active_attention_items(active_attention)
     hot_items: list[dict[str, object]] = []
-    bucket_records: dict[str, list[dict[str, object]]] = {
-        "local_questions": [],
-        "local_tensions": [],
-        "local_hypotheses": [],
-        "local_motifs": [],
-    }
     digest_active_items: list[dict[str, object]] = []
     for item in active_items:
         item_id = clean_text(item.get("item_id"))
         if not item_id:
             continue
-        bucket = _digest_bucket_for_active_item(item)
-        ref_id = f"working_state:{item_id}"
+        ref_id = f"active_attention:{item_id}"
         record = {
             "ref_id": ref_id,
             "item_id": item_id,
-            "bucket": bucket,
-            "kind": clean_text(item.get("kind")),
+            "attention_tags": _item_tags(item),
             "statement": clean_text(item.get("statement")),
             "status": clean_text(item.get("status")),
             "support_anchor_ids": list(item.get("support_anchor_ids", []))
@@ -195,26 +188,20 @@ def _build_working_state_digest(
             "last_touched_sentence_id": clean_text(item.get("last_touched_sentence_id")),
         }
         digest_active_items.append(record)
-        if len(bucket_records[bucket]) < 3:
-            bucket_records[bucket].append(record)
         if len(hot_items) < 4:
             hot_items.append(record)
         _append_ref(
             refs,
             {
                 "ref_id": ref_id,
-                "kind": "working_state",
+                "kind": "active_attention",
                 "item_id": item_id,
-                "summary": clean_text(item.get("statement")) or clean_text(item.get("kind")),
+                "summary": clean_text(item.get("statement")) or ", ".join(_item_tags(item)),
             },
         )
     return {
         "active_items": digest_active_items[:6],
         "hot_items": hot_items,
-        "open_questions": bucket_records["local_questions"],
-        "live_tensions": bucket_records["local_tensions"],
-        "live_hypotheses": bucket_records["local_hypotheses"],
-        "live_motifs": bucket_records["local_motifs"],
     }
 
 
@@ -538,7 +525,7 @@ def _build_session_continuity_capsule(
 
 
 def _build_active_focus_digest(
-    working_state_digest: WorkingStateDigest,
+    active_attention_digest: ActiveAttentionDigest,
     *,
     recent_moves: list[dict[str, object]],
     recent_reactions: list[dict[str, object]],
@@ -546,9 +533,7 @@ def _build_active_focus_digest(
     """Build a compact digest of currently active focus lines."""
 
     return {
-        "open_questions": [dict(item) for item in working_state_digest.get("open_questions", [])[:3]],
-        "live_tensions": [dict(item) for item in working_state_digest.get("live_tensions", [])[:3]],
-        "live_hypotheses": [dict(item) for item in working_state_digest.get("live_hypotheses", [])[:2]],
+        "active_items": [dict(item) for item in active_attention_digest.get("active_items", [])[:4]],
         "recent_moves": [dict(item) for item in recent_moves[:2]],
         "recent_reactions": [dict(item) for item in recent_reactions[:2]],
     }
@@ -627,7 +612,7 @@ def build_continuation_capsule(
     *,
     chapter_ref: str,
     local_buffer: LocalBufferState,
-    working_state_digest: WorkingStateDigest,
+    active_attention_digest: ActiveAttentionDigest,
     chapter_reflective_frame: ReflectiveFrameDigest,
     active_focus_digest: ActiveFocusDigest,
     concept_digest: list[ConceptDigestItem],
@@ -646,7 +631,7 @@ def build_continuation_capsule(
         "chapter_ref": clean_text(chapter_ref),
         "current_sentence_id": clean_text(local_buffer.get("current_sentence_id")),
         "session_continuity_capsule": dict(session_continuity_capsule),
-        "working_state_digest": dict(working_state_digest),
+        "active_attention_digest": dict(active_attention_digest),
         "chapter_reflective_frame": dict(chapter_reflective_frame),
         "active_focus_digest": dict(active_focus_digest),
         "concept_digest": [dict(item) for item in concept_digest if isinstance(item, dict)],
@@ -666,7 +651,7 @@ def build_carry_forward_context(
     chapter_ref: str,
     current_unit_sentence_ids: list[str],
     local_buffer: LocalBufferState,
-    working_state: WorkingState | None = None,
+    active_attention: ActiveAttention | None = None,
     concept_registry: ConceptRegistryState | None = None,
     thread_trace: ThreadTraceState | None = None,
     reflective_frames: ReflectiveFramesState | None = None,
@@ -679,7 +664,9 @@ def build_carry_forward_context(
 ) -> CarryForwardContext:
     """Build the bounded read-context packet from current persisted state."""
 
-    primary_working_state = dict(working_state) if isinstance(working_state, dict) else build_empty_working_state()
+    primary_active_attention = (
+        dict(active_attention) if isinstance(active_attention, dict) else build_empty_active_attention()
+    )
     primary_reflective_frames = (
         dict(reflective_frames)
         if isinstance(reflective_frames, dict)
@@ -697,7 +684,7 @@ def build_carry_forward_context(
         )
     excluded_sentence_ids = {clean_text(item) for item in current_unit_sentence_ids if clean_text(item)}
     refs: list[CarryForwardRef] = []
-    working_state_digest = _build_working_state_digest(primary_working_state, refs=refs)
+    active_attention_digest = _build_active_attention_digest(primary_active_attention, refs=refs)
     chapter_reflective_frame = _build_reflective_frame_digest(primary_reflective_frames, chapter_ref=chapter_ref, refs=refs)
     concept_digest = _build_concept_digest(primary_concept_registry, primary_anchor_bank, refs=refs)
     thread_digest = _build_thread_digest(primary_thread_trace, primary_anchor_bank, refs=refs)
@@ -711,7 +698,7 @@ def build_carry_forward_context(
         recent_reactions=recent_reactions,
     )
     active_focus_digest = _build_active_focus_digest(
-        working_state_digest,
+        active_attention_digest,
         recent_moves=recent_moves,
         recent_reactions=recent_reactions,
     )
@@ -721,7 +708,7 @@ def build_carry_forward_context(
         else build_continuation_capsule(
             chapter_ref=chapter_ref,
             local_buffer=local_buffer,
-            working_state_digest=working_state_digest,
+            active_attention_digest=active_attention_digest,
             chapter_reflective_frame=chapter_reflective_frame,
             active_focus_digest=active_focus_digest,
             concept_digest=concept_digest,
@@ -729,7 +716,7 @@ def build_carry_forward_context(
             anchor_bank_digest=anchor_bank_digest,
             session_continuity_capsule=session_continuity_capsule,
             refs=refs,
-            mechanism_version=clean_text(primary_working_state.get("mechanism_version")),
+            mechanism_version=clean_text(primary_active_attention.get("mechanism_version")),
         )
     )
     reflective_digest = [
@@ -742,7 +729,7 @@ def build_carry_forward_context(
         "packet_version": STATE_PACKET_VERSION,
         "continuation_capsule": primary_continuation_capsule,
         "session_continuity_capsule": session_continuity_capsule,
-        "working_state_digest": working_state_digest,
+        "active_attention_digest": active_attention_digest,
         "chapter_reflective_frame": chapter_reflective_frame,
         "active_focus_digest": active_focus_digest,
         "concept_digest": concept_digest,
@@ -768,13 +755,13 @@ def build_read_prompt_packet(
         "local_continuity": dict(carry_forward_context.get("session_continuity_capsule", {}))
         if isinstance(carry_forward_context.get("session_continuity_capsule"), dict)
         else {},
-        "working_state": {
+        "active_attention": {
             "active_items": [
                 dict(item)
-                for item in carry_forward_context.get("working_state_digest", {}).get("active_items", [])
+                for item in carry_forward_context.get("active_attention_digest", {}).get("active_items", [])
                 if isinstance(item, dict)
             ][:6]
-            if isinstance(carry_forward_context.get("working_state_digest"), dict)
+            if isinstance(carry_forward_context.get("active_attention_digest"), dict)
             else [],
         },
         "concept_digest": [
@@ -836,7 +823,7 @@ def build_navigation_context(
     chapter_ref: str,
     current_sentence_id: str,
     local_buffer: LocalBufferState,
-    working_state: WorkingState | None = None,
+    active_attention: ActiveAttention | None = None,
     concept_registry: ConceptRegistryState | None = None,
     thread_trace: ThreadTraceState | None = None,
     reflective_frames: ReflectiveFramesState | None = None,
@@ -853,7 +840,7 @@ def build_navigation_context(
         chapter_ref=chapter_ref,
         current_unit_sentence_ids=[current_sentence_id] if current_sentence_id else [],
         local_buffer=local_buffer,
-        working_state=working_state,
+        active_attention=active_attention,
         concept_registry=concept_registry,
         thread_trace=thread_trace,
         reflective_frames=reflective_frames,
@@ -868,7 +855,7 @@ def build_navigation_context(
         "packet_version": STATE_PACKET_VERSION,
         "continuation_capsule": dict(carry_forward_context.get("continuation_capsule", {})),
         "session_continuity_capsule": dict(carry_forward_context.get("session_continuity_capsule", {})),
-        "working_state_digest": dict(carry_forward_context.get("working_state_digest", {})),
+        "active_attention_digest": dict(carry_forward_context.get("active_attention_digest", {})),
         "chapter_reflective_frame": dict(carry_forward_context.get("chapter_reflective_frame", {})),
         "active_focus_digest": dict(carry_forward_context.get("active_focus_digest", {})),
         "concept_digest": [dict(item) for item in carry_forward_context.get("concept_digest", []) if isinstance(item, dict)],

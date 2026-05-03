@@ -37,7 +37,6 @@ from .schemas import (
     SurfacedReaction,
     UnitizeBoundaryType,
     UnitizeDecision,
-    WorkingState,
 )
 from .storage import append_jsonl, prompt_manifest_file, save_json, unitization_audit_file
 
@@ -526,7 +525,7 @@ def _normalize_state_operations(value: object) -> list[StateOperation]:
             {
                 "op": operation_type,  # type: ignore[typeddict-item]
                 "operation_type": operation_type,  # type: ignore[typeddict-item]
-                "target_store": _clean_text(item.get("target_store")) or "working_state",
+                "target_store": _clean_text(item.get("target_store")) or "active_attention",
                 "target_key": target_key,
                 "item_id": target_key,
                 "reason": _clean_text(item.get("reason")),

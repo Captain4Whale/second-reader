@@ -1748,7 +1748,7 @@ def build_private_library_supplement(
     )
     bootstrap_summary = ensure_source_catalog(config)
     state = collect_source_build_state(config)
-    working_state = state
+    selected_state = state
     note_guided_cluster_plan: dict[str, Any] | None = None
     source_index = {str(record["source_id"]): record for record in state.source_records}
     if config.benchmark_mode == HUMAN_NOTES_GUIDED_BENCHMARK_MODE:
@@ -1757,7 +1757,7 @@ def build_private_library_supplement(
             source_records=state.source_records,
             chapter_rows_by_language=state.chapter_rows_by_language,
         )
-        working_state = _state_with_selected_chapters(
+        selected_state = _state_with_selected_chapters(
             state,
             chapter_rows_by_language=note_guided_cluster_plan["selected_chapter_rows_by_language"],
         )
@@ -1766,7 +1766,7 @@ def build_private_library_supplement(
         dataset_ids=config.feedback_dataset_ids,
     )
     question_aligned_scope = build_question_aligned_excerpt_scope(
-        chapter_rows_by_language=working_state.chapter_rows_by_language,
+        chapter_rows_by_language=selected_state.chapter_rows_by_language,
         source_index=source_index,
         existing_rows_by_language=existing_excerpt_feedback,
         dataset_ids_by_language=config.ids.package_ids["excerpt_cases"],
@@ -1804,16 +1804,16 @@ def build_private_library_supplement(
         else None
     )
     compatibility_rows = make_compatibility_fixtures(
-        working_state.runtime_rows_by_language.get("en", []) + working_state.runtime_rows_by_language.get("zh", [])
+        selected_state.runtime_rows_by_language.get("en", []) + selected_state.runtime_rows_by_language.get("zh", [])
     )
     manifest_bundle = write_manifest_bundle(
         config,
-        working_state,
+        selected_state,
         note_guided_cluster_plan=note_guided_cluster_plan,
     )
     write_local_dataset_packages(
         config,
-        working_state,
+        selected_state,
         question_aligned_scope=question_aligned_scope,
         question_aligned_artifact_refs=question_aligned_artifact_refs,
         note_guided_artifact_refs=note_guided_artifact_refs,
@@ -1822,7 +1822,7 @@ def build_private_library_supplement(
     )
     summary = build_summary_payload(
         config,
-        working_state,
+        selected_state,
         bootstrap_summary=bootstrap_summary,
         question_aligned_scope=question_aligned_scope,
         question_aligned_artifact_refs=question_aligned_artifact_refs,

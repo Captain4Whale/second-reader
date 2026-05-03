@@ -29,7 +29,7 @@ from src.attentional_v2.storage import (
     runtime_dir,
     save_json,
     thread_trace_file,
-    working_state_file,
+    active_attention_file,
 )
 from src.reading_mechanisms.attentional_v2 import AttentionalV2Mechanism
 from src.reading_runtime.artifacts import activity_file, checkpoint_summary_file, runtime_shell_file
@@ -375,7 +375,7 @@ def test_resume_rejects_legacy_runtime_and_old_checkpoint_shapes(tmp_path: Path)
     ]
 
     for path in (
-        working_state_file(output_dir),
+        active_attention_file(output_dir),
         concept_registry_file(output_dir),
         thread_trace_file(output_dir),
         reflective_frames_file(output_dir),

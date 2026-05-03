@@ -11,7 +11,7 @@ from src.attentional_v2.schemas import (
     build_empty_move_history,
     build_empty_reaction_records,
     build_empty_reflective_summaries,
-    build_empty_working_state,
+    build_empty_active_attention,
 )
 from src.attentional_v2.state_projection import (
     STATE_PACKET_VERSION,
@@ -38,12 +38,11 @@ def test_build_carry_forward_context_exposes_phase_c1_packet_shape():
     local_buffer["recent_sentences"] = [_sentence("c1-s1", "Alpha sentence.")]
     local_buffer["recent_meaning_units"] = [["c1-s1"]]
 
-    working_state = build_empty_working_state()
-    working_state["active_items"] = [
+    active_attention = build_empty_active_attention()
+    active_attention["active_items"] = [
         {
             "item_id": "question-1",
-            "bucket": "local_questions",
-            "kind": "question",
+            "attention_tags": ["question"],
             "statement": "Why does the chapter turn here?",
             "support_anchor_ids": [],
             "status": "open",
@@ -120,7 +119,7 @@ def test_build_carry_forward_context_exposes_phase_c1_packet_shape():
         chapter_ref="Chapter 1",
         current_unit_sentence_ids=["c1-s2"],
         local_buffer=local_buffer,
-        working_state=working_state,
+        active_attention=active_attention,
         anchor_memory=anchor_memory,
         reflective_summaries=reflective_summaries,
         move_history=move_history,
@@ -128,7 +127,8 @@ def test_build_carry_forward_context_exposes_phase_c1_packet_shape():
     )
 
     assert packet["packet_version"] == STATE_PACKET_VERSION
-    assert packet["working_state_digest"]["open_questions"][0]["item_id"] == "question-1"
+    assert packet["active_attention_digest"]["active_items"][0]["item_id"] == "question-1"
+    assert packet["active_attention_digest"]["active_items"][0]["attention_tags"] == ["question"]
     assert packet["chapter_reflective_frame"]["chapter_frames"][0]["item_id"] == "frame-1"
     assert packet["anchor_bank_digest"]["active_anchors"][0]["anchor_id"] == "a-1"
     assert packet["session_continuity_capsule"]["recent_sentence_ids"] == ["c1-s1"]
@@ -152,7 +152,7 @@ def test_build_navigation_context_exposes_state_packet_without_watch_metadata():
         chapter_ref="Chapter 1",
         current_sentence_id="c1-s2",
         local_buffer=build_empty_local_buffer(),
-        working_state=build_empty_working_state(),
+        active_attention=build_empty_active_attention(),
         anchor_memory=build_empty_anchor_memory(),
         reflective_summaries=build_empty_reflective_summaries(),
         move_history=build_empty_move_history(),
@@ -160,7 +160,7 @@ def test_build_navigation_context_exposes_state_packet_without_watch_metadata():
     )
 
     assert packet["packet_version"] == STATE_PACKET_VERSION
-    assert "working_state_digest" in packet
+    assert "active_attention_digest" in packet
     assert "concept_digest" in packet
     assert "thread_digest" in packet
     assert "anchor_bank_digest" in packet
@@ -174,12 +174,11 @@ def test_build_read_prompt_packet_projects_compact_always_carry_and_selective_ca
     local_buffer["recent_sentences"] = [_sentence("c1-s1", "Alpha sentence.")]
     local_buffer["recent_meaning_units"] = [["c1-s1"]]
 
-    working_state = build_empty_working_state()
-    working_state["active_items"] = [
+    active_attention = build_empty_active_attention()
+    active_attention["active_items"] = [
         {
             "item_id": "question-1",
-            "bucket": "local_questions",
-            "kind": "question",
+            "attention_tags": ["question"],
             "statement": "Why does the chapter turn here?",
             "support_anchor_ids": [],
             "status": "open",
@@ -229,7 +228,7 @@ def test_build_read_prompt_packet_projects_compact_always_carry_and_selective_ca
         chapter_ref="Chapter 1",
         current_unit_sentence_ids=["c1-s2"],
         local_buffer=local_buffer,
-        working_state=working_state,
+        active_attention=active_attention,
         anchor_memory=anchor_memory,
         reflective_summaries=reflective_summaries,
         move_history=move_history,
@@ -261,7 +260,7 @@ def test_build_read_prompt_packet_projects_compact_always_carry_and_selective_ca
     )
 
     assert prompt_packet["packet_version"] == STATE_PACKET_VERSION
-    assert prompt_packet["working_state"]["active_items"][0]["item_id"] == "question-1"
+    assert prompt_packet["active_attention"]["active_items"][0]["item_id"] == "question-1"
     assert prompt_packet["concept_digest"][0]["concept_key"] == "promise"
     assert prompt_packet["thread_digest"][0]["thread_key"]
     assert prompt_packet["reflective_digest"]["chapter_frames"][0]["item_id"] == "frame-1"
@@ -290,7 +289,7 @@ def test_navigate_unitize_prompt_receives_navigation_context(monkeypatch):
             "packet_version": STATE_PACKET_VERSION,
             "continuation_capsule": {"chapter_ref": "Chapter 1"},
             "session_continuity_capsule": {"recent_sentence_ids": ["c1-s0"]},
-            "working_state_digest": {"open_questions": []},
+            "active_attention_digest": {"active_items": []},
             "chapter_reflective_frame": {"chapter_frames": []},
             "active_focus_digest": {"recent_moves": []},
             "concept_digest": [{"concept_key": "promise"}],

@@ -30,7 +30,7 @@ from src.attentional_v2.storage import (
     survey_map_file,
     thread_trace_file,
     unitization_audit_file,
-    working_state_file,
+    active_attention_file,
 )
 from src.reading_core.runtime_contracts import ParseRequest, ReadRequest
 from src.reading_mechanisms.attentional_v2 import AttentionalV2Mechanism
@@ -450,10 +450,10 @@ def test_attentional_v2_initialization_writes_phase8_artifacts(tmp_path):
     manifest = json.loads(mechanism_manifest_file(output_dir, ATTENTIONAL_V2_MECHANISM_KEY).read_text(encoding="utf-8"))
     assert manifest["mechanism_key"] == ATTENTIONAL_V2_MECHANISM_KEY
 
-    working_state = json.loads(working_state_file(output_dir).read_text(encoding="utf-8"))
-    assert working_state["schema_version"] == ATTENTIONAL_V2_SCHEMA_VERSION
-    assert working_state["active_items"] == []
-    assert ("gate_" + "state") not in working_state
+    active_attention = json.loads(active_attention_file(output_dir).read_text(encoding="utf-8"))
+    assert active_attention["schema_version"] == ATTENTIONAL_V2_SCHEMA_VERSION
+    assert active_attention["active_items"] == []
+    assert ("gate_" + "state") not in active_attention
 
     local_buffer = json.loads(local_buffer_file(output_dir).read_text(encoding="utf-8"))
     assert local_buffer["recent_sentences"] == []
@@ -514,7 +514,7 @@ def test_attentional_v2_initialization_writes_phase8_artifacts(tmp_path):
     assert revisit["anchors"] == {}
 
     assert event_stream_file(output_dir).read_text(encoding="utf-8") == ""
-    assert result["artifact_map"]["working_state"].endswith("working_state.json")
+    assert result["artifact_map"]["active_attention"].endswith("active_attention.json")
 
 
 def test_attentional_v2_parse_book_creates_ready_artifacts_without_iterator_structure(tmp_path, monkeypatch):
@@ -576,7 +576,7 @@ def test_attentional_v2_runner_prefers_main_body_before_supporting_chapters(tmp_
         return {
             "chapter_consolidation": {"chapter_ref": kwargs["chapter"].get("reference", "")},
             "promotion_results": [],
-            "working_state": kwargs["working_state"],
+            "active_attention": kwargs["active_attention"],
             "concept_registry": kwargs["concept_registry"],
             "thread_trace": kwargs["thread_trace"],
             "anchor_bank": kwargs["anchor_bank"],
@@ -708,7 +708,7 @@ def test_attentional_v2_read_book_runs_live_loop_and_persists_compatibility_resu
         return {
             "chapter_consolidation": {"chapter_ref": kwargs["chapter"].get("reference", "")},
             "promotion_results": [],
-            "working_state": kwargs["working_state"],
+            "active_attention": kwargs["active_attention"],
             "concept_registry": kwargs["concept_registry"],
             "thread_trace": kwargs["thread_trace"],
             "anchor_bank": kwargs["anchor_bank"],
@@ -767,7 +767,7 @@ def test_attentional_v2_read_book_runs_live_loop_and_persists_compatibility_resu
     assert chapter_payload["visible_reaction_count"] >= 1
     assert captured_unit_reads == [["c1-s1"], ["c1-s2"]]
     assert captured_carry_forward_contexts[0]["packet_version"] == "attentional_v2.state_packet.v1"
-    assert "working_state_digest" in captured_carry_forward_contexts[0]
+    assert "active_attention_digest" in captured_carry_forward_contexts[0]
     assert captured_carry_forward_contexts[0]["continuity_digest"]["recent_reactions"] == []
     assert captured_carry_forward_contexts[1]["continuity_digest"]["recent_reactions"]
     assert len(unitize_lines) == 2
@@ -846,7 +846,7 @@ def test_attentional_v2_runner_persists_multiple_read_surface_reactions(tmp_path
         return {
             "chapter_consolidation": {"chapter_ref": kwargs["chapter"].get("reference", "")},
             "promotion_results": [],
-            "working_state": kwargs["working_state"],
+            "active_attention": kwargs["active_attention"],
             "concept_registry": kwargs["concept_registry"],
             "thread_trace": kwargs["thread_trace"],
             "anchor_bank": kwargs["anchor_bank"],
@@ -925,7 +925,7 @@ def test_attentional_v2_read_book_tolerates_missing_reaction_payload(tmp_path, m
         return {
             "chapter_consolidation": {"chapter_ref": kwargs["chapter"].get("reference", "")},
             "promotion_results": [],
-            "working_state": kwargs["working_state"],
+            "active_attention": kwargs["active_attention"],
             "concept_registry": kwargs["concept_registry"],
             "thread_trace": kwargs["thread_trace"],
             "anchor_bank": kwargs["anchor_bank"],
@@ -1002,7 +1002,7 @@ def test_attentional_v2_read_book_still_runs_formal_read_for_monitor_path(tmp_pa
         return {
             "chapter_consolidation": {"chapter_ref": kwargs["chapter"].get("reference", "")},
             "promotion_results": [],
-            "working_state": kwargs["working_state"],
+            "active_attention": kwargs["active_attention"],
             "concept_registry": kwargs["concept_registry"],
             "thread_trace": kwargs["thread_trace"],
             "anchor_bank": kwargs["anchor_bank"],
@@ -1178,7 +1178,7 @@ def test_attentional_v2_runner_executes_detour_search_and_returns_to_mainline(tm
         return {
             "chapter_consolidation": {"chapter_ref": kwargs["chapter"].get("reference", "")},
             "promotion_results": [],
-            "working_state": kwargs["working_state"],
+            "active_attention": kwargs["active_attention"],
             "concept_registry": kwargs["concept_registry"],
             "thread_trace": kwargs["thread_trace"],
             "anchor_bank": kwargs["anchor_bank"],
@@ -1320,7 +1320,7 @@ def test_attentional_v2_runner_drains_last_unit_detour_before_chapter_close(tmp_
         return {
             "chapter_consolidation": {"chapter_ref": kwargs["chapter"].get("reference", "")},
             "promotion_results": [],
-            "working_state": kwargs["working_state"],
+            "active_attention": kwargs["active_attention"],
             "concept_registry": kwargs["concept_registry"],
             "thread_trace": kwargs["thread_trace"],
             "anchor_bank": kwargs["anchor_bank"],

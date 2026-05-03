@@ -18,7 +18,7 @@ from src.attentional_v2.schemas import (
     build_empty_reaction_records,
     build_empty_reflective_frames,
     build_empty_thread_trace,
-    build_empty_working_state,
+    build_empty_active_attention,
 )
 from src.attentional_v2.storage import initialize_artifact_tree, memory_quality_probe_export_file
 
@@ -173,7 +173,7 @@ def test_persist_due_memory_quality_probe_snapshots_emits_once_per_threshold(tmp
         chapter_ref="Chapter 1",
         local_buffer=local_buffer,
         local_continuity=local_continuity,
-        working_state=build_empty_working_state(),
+        active_attention=build_empty_active_attention(),
         concept_registry=build_empty_concept_registry(),
         thread_trace=build_empty_thread_trace(),
         reflective_frames=build_empty_reflective_frames(),
@@ -194,7 +194,7 @@ def test_persist_due_memory_quality_probe_snapshots_emits_once_per_threshold(tmp
         chapter_ref="Chapter 1",
         local_buffer=local_buffer,
         local_continuity=local_continuity,
-        working_state=build_empty_working_state(),
+        active_attention=build_empty_active_attention(),
         concept_registry=build_empty_concept_registry(),
         thread_trace=build_empty_thread_trace(),
         reflective_frames=build_empty_reflective_frames(),
@@ -212,7 +212,7 @@ def test_persist_due_memory_quality_probe_snapshots_emits_once_per_threshold(tmp
         chapter_ref="Chapter 1",
         local_buffer=local_buffer,
         local_continuity=local_continuity,
-        working_state=build_empty_working_state(),
+        active_attention=build_empty_active_attention(),
         concept_registry=build_empty_concept_registry(),
         thread_trace=build_empty_thread_trace(),
         reflective_frames=build_empty_reflective_frames(),

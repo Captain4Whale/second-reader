@@ -45,13 +45,13 @@ from .schemas import (
     SearchIntent,
     SurfacedReaction,
     ThreadTraceState,
-    WorkingStateItem,
-    WorkingState,
+    ActiveAttentionItem,
+    ActiveAttention,
 )
 from .state_ops import (
     append_reaction_record,
     append_reconsolidation_record,
-    apply_working_state_operations,
+    apply_active_attention_operations,
     supersede_reflective_item,
     upsert_anchor_record,
     upsert_reflective_item,
@@ -73,12 +73,6 @@ _REFLECTIVE_BUCKETS = {
     "stabilized_motifs",
     "resolved_questions_of_record",
     "chapter_end_notes",
-}
-_ACTIVE_ITEM_BUCKETS = {
-    "local_hypotheses",
-    "local_questions",
-    "local_tensions",
-    "local_motifs",
 }
 _COMPAT_FAMILIES = {"highlight", "discern", "association", "retrospect", "curious", "silent"}
 
@@ -943,29 +937,22 @@ def apply_reconsolidation(
     )
 
 
-def _normalize_carry_forward_item(value: object) -> WorkingStateItem | None:
-    """Normalize one chapter-boundary carry-forward working-state item."""
+def _normalize_carry_forward_item(value: object) -> ActiveAttentionItem | None:
+    """Normalize one chapter-boundary carry-forward active-attention item."""
 
     if not isinstance(value, dict):
         return None
     statement = _clean_text(value.get("statement"))
     if not statement:
         return None
-    bucket = _clean_text(value.get("bucket"))
-    if bucket not in _ACTIVE_ITEM_BUCKETS:
-        kind = _clean_text(value.get("kind")).lower()
-        if "question" in kind:
-            bucket = "local_questions"
-        elif "motif" in kind or "theme" in kind:
-            bucket = "local_motifs"
-        elif "tension" in kind or "ambigu" in kind or "contradiction" in kind:
-            bucket = "local_tensions"
-        else:
-            bucket = "local_hypotheses"
+    attention_tags = [
+        _clean_text(item)
+        for item in value.get("attention_tags", [])
+        if _clean_text(item)
+    ] if isinstance(value.get("attention_tags"), list) else []
     return {
         "item_id": _clean_text(value.get("item_id")),
-        "bucket": bucket,
-        "kind": _clean_text(value.get("kind")) or bucket.removeprefix("local_"),
+        "attention_tags": attention_tags,
         "statement": statement,
         "support_anchor_ids": [
             _clean_text(item)
@@ -1043,7 +1030,7 @@ def chapter_consolidation(
     *,
     chapter_ref: str,
     meaning_units_in_chapter: list[dict[str, object]],
-    working_state_snapshot: WorkingState,
+    active_attention_snapshot: ActiveAttention,
     anchor_bank_chapter_slice: list[dict[str, object]],
     reflective_frames_snapshot: ReflectiveFramesState,
     knowledge_activations_snapshot: KnowledgeActivationsState,
@@ -1069,7 +1056,7 @@ def chapter_consolidation(
         structural_frame=_json_block(structural_frame),
         chapter_ref=chapter_ref,
         meaning_units_in_chapter=_json_block(meaning_units_in_chapter),
-        working_state_snapshot=_json_block(working_state_snapshot),
+        active_attention_snapshot=_json_block(active_attention_snapshot),
         anchor_bank_chapter_slice=_json_block(anchor_bank_chapter_slice),
         reflective_frames_snapshot=_json_block(reflective_frames_snapshot),
         knowledge_activations_snapshot=_json_block(knowledge_activations_snapshot),
@@ -1123,21 +1110,15 @@ def apply_anchor_status_updates(
 
 
 def apply_cross_chapter_carry_forward(
-    working_state: WorkingState,
-    carry_forward: list[WorkingStateItem],
-) -> WorkingState:
-    """Replace active working-state items with chapter-boundary carry-forward items."""
+    active_attention: ActiveAttention,
+    carry_forward: list[ActiveAttentionItem],
+) -> ActiveAttention:
+    """Replace active-attention items with chapter-boundary carry-forward items."""
 
-    next_items: list[WorkingStateItem] = []
-    for item in carry_forward:
-        bucket = _clean_text(item.get("bucket")) or "local_hypotheses"
-        if bucket not in _ACTIVE_ITEM_BUCKETS:
-            bucket = "local_hypotheses"
-        next_items.append({**dict(item), "bucket": bucket})
     return {
-        **dict(working_state),
+        **dict(active_attention),
         "updated_at": _timestamp(),
-        "active_items": next_items,
+        "active_items": [dict(item) for item in carry_forward],
     }
 
 
@@ -1147,7 +1128,7 @@ def run_phase6_chapter_cycle(
     chapter: BookChapter | dict[str, object],
     meaning_units_in_chapter: list[dict[str, object]],
     chapter_end_anchor: AnchorRecord | dict[str, object],
-    working_state: WorkingState,
+    active_attention: ActiveAttention,
     concept_registry: ConceptRegistryState,
     thread_trace: ThreadTraceState,
     reflective_frames: ReflectiveFramesState,
@@ -1179,7 +1160,7 @@ def run_phase6_chapter_cycle(
     consolidation = chapter_consolidation(
         chapter_ref=chapter_ref,
         meaning_units_in_chapter=meaning_units_in_chapter,
-        working_state_snapshot=working_state,
+        active_attention_snapshot=active_attention,
         anchor_bank_chapter_slice=anchor_bank_chapter_slice,
         reflective_frames_snapshot=reflective_frames,
         knowledge_activations_snapshot=knowledge_activations,
@@ -1192,9 +1173,9 @@ def run_phase6_chapter_cycle(
         chapter_title=chapter_title,
     )
 
-    next_working_state = apply_working_state_operations(working_state, consolidation.get("cooling_operations", []))
-    next_working_state = apply_cross_chapter_carry_forward(
-        next_working_state,
+    next_active_attention = apply_active_attention_operations(active_attention, consolidation.get("cooling_operations", []))
+    next_active_attention = apply_cross_chapter_carry_forward(
+        next_active_attention,
         consolidation.get("cross_chapter_carry_forward", []),
     )
     next_anchor_bank = apply_anchor_status_updates(
@@ -1259,7 +1240,7 @@ def run_phase6_chapter_cycle(
     return {
         "chapter_consolidation": consolidation,
         "promotion_results": promotion_results,
-        "working_state": next_working_state,
+        "active_attention": next_active_attention,
         "concept_registry": concept_registry,
         "thread_trace": thread_trace,
         "anchor_bank": next_anchor_bank,

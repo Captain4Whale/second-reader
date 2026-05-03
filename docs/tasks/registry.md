@@ -40,14 +40,14 @@ Last updated: `2026-05-03T08:37:27+08:00`
   - `Phase C.1` is now landed:
     - live prompt inputs now flow through a bounded internal `state_packet.v1` layer
     - `navigate.unitize` now receives a small `navigation_context`
-    - `read` now receives a packetized read context that explicitly separates continuity capsule, working-state digest, reflective frame, active focus, and anchor-bank digest
+    - `read` now receives a packetized read context that explicitly separates continuity capsule, active-attention digest, reflective frame, active focus, and anchor-bank digest
     - persisted runtime files and public/frontend compatibility surfaces remain unchanged
   - `Phase C.2` is now landed as the first state-territory slice:
     - live state packets now derive a bounded `concept_digest` from the current `motif_index + unresolved_reference_index`
     - live state packets now derive a bounded `thread_digest` from the current `trace_links + unresolved_reference_index`
     - `navigate.unitize` and `read` now both receive those small concept/thread digests without changing persisted runtime files or public surfaces
   - `Phase C.3` is now landed:
-    - new runs now treat `working_state / concept_registry / thread_trace / reflective_frames / anchor_bank` as the primary runtime and checkpoint truth
+    - new runs now treat `active_attention / concept_registry / thread_trace / reflective_frames / anchor_bank` as the primary runtime and checkpoint truth
     - old V2 state stores were demoted to cutover-only legacy territory during the cutover
     - `active_recall` now exposes first-class `concepts` and `threads` from the new state layers
     - checkpoint/resume temporarily accepted both old and new state territory during the cutover, while newly written checkpoints already used only the new primary keys
@@ -57,7 +57,8 @@ Last updated: `2026-05-03T08:37:27+08:00`
     - live runtime loading and resume now reject pre-`Phase C.3` runtime directories and checkpoints
     - public/frontend compatibility surfaces remain unchanged
   - legacy gate/pressure sidecar cleanup is now landed:
-    - current hot state is `working_state.active_items`
+    - current hot state is `active_attention.active_items[]`
+    - active items now carry lightweight `attention_tags[]`; old `working_state` naming and fixed lists are historical
     - old `gate_state`, `pressure_snapshot`, and working-pressure runtime artifacts are no longer current schema, prompt, runtime, checkpoint, or Memory Quality evidence fields
     - current `pressure_signals` remain live as one-step `Read -> Navigate.route` signals
   - `Phase D` is now landed:

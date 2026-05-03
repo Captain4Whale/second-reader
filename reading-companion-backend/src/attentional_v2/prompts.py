@@ -239,10 +239,15 @@ Rules:
   - `This answers anchor:a-1 directly.`
   - `Earlier the text said "..."` followed by a long pasted sentence from earlier material.
 - `implicit_uptake_ops` must stay explicit and bounded. Only target:
-  - `working_state`
+  - `active_attention`
   - `concept_registry`
   - `thread_trace`
   - `anchor_bank`
+- Write to `active_attention` only when an item will continue pulling on the next reads: an unresolved question, live tension, provisional interpretation, recurring motif, or near-term focus that should stay available.
+- Ordinary local understanding belongs in `unit_delta`, not in persistent active attention.
+- If the source text already states something plainly, do not repackage it as a new active-attention interpretation unless it will actively guide later reading.
+- Active-attention item payloads use `attention_tags` as lightweight labels. Suggested tags include `question`, `tension`, `interpretation`, `motif`, and `focus`, but these are examples, not fixed buckets.
+- Do not use legacy active-attention bucket/list fields in new state operations.
 - Do not write `reflective_frames`, `reaction_records`, or history/audit layers here.
 - Propose operations, not whole-object rewrites.
 - If the current understanding genuinely needs a detour into earlier material, emit `detour_need`. Do not secretly route or resolve it yourself.
@@ -292,10 +297,13 @@ Return JSON:
   "implicit_uptake_ops": [
     {
       "op": "append",
-      "target_store": "working_state",
+      "target_store": "active_attention",
       "target_key": "item-key",
       "reason": "<brief reason>",
-      "payload": {}
+      "payload": {
+        "statement": "<only if it will keep shaping later reading>",
+        "attention_tags": ["focus"]
+      }
     }
   ],
   "detour_need": null
@@ -322,8 +330,8 @@ Rules:
 Current local span:
 {current_span}
 
-Working state:
-{working_state}
+Active attention:
+{active_attention}
 
 Relevant anchors:
 {anchor_bank_context}
@@ -474,6 +482,7 @@ Your job is to perform a chapter-end backward sweep and propose the durable upda
 Rules:
 - Chapter end is a chance to cool, sweep backward, and prepare promotion; it is not permission for false closure.
 - Do not directly promote reflective summaries here; return promotion candidates instead.
+- If a live near-term item should carry across the chapter boundary, keep it in `cross_chapter_carry_forward` as an active-attention item with `attention_tags`; do not use legacy `kind` or `bucket`.
 - Do not rewrite earlier persisted reactions.
 - Do not let `optional_chapter_reaction` masquerade as a callback bridge; if it mentions earlier material, that material must stay concrete and attributable.
 - Do not read future chapter text or search.
@@ -487,8 +496,8 @@ Chapter reference:
 Meaning units in chapter:
 {meaning_units_in_chapter}
 
-Working state snapshot:
-{working_state_snapshot}
+Active attention snapshot:
+{active_attention_snapshot}
 
 Anchor-bank chapter slice:
 {anchor_bank_chapter_slice}

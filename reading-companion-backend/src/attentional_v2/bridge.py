@@ -39,7 +39,7 @@ from .schemas import (
     MoveHistoryState,
     ReaderPolicy,
     ThreadTraceState,
-    WorkingState,
+    ActiveAttention,
 )
 from .state_ops import (
     append_anchor_relation,
@@ -47,7 +47,7 @@ from .state_ops import (
     apply_anchor_bank_operations,
     apply_concept_registry_operations,
     apply_thread_trace_operations,
-    apply_working_state_operations,
+    apply_active_attention_operations,
     upsert_anchor_record,
 )
 
@@ -369,7 +369,7 @@ def bridge_resolution(
     *,
     current_span_sentences: list[dict[str, object]],
     candidate_set: dict[str, object],
-    working_state: WorkingState,
+    active_attention: ActiveAttention,
     anchor_bank: AnchorBankState,
     knowledge_activations: KnowledgeActivationsState,
     reader_policy: ReaderPolicy,
@@ -419,7 +419,7 @@ def bridge_resolution(
         prompts.bridge_resolution_prompt,
         structural_frame=_json_block(structural_frame),
         current_span=_json_block(current_span),
-        working_state=_json_block(working_state),
+        active_attention=_json_block(active_attention),
         anchor_bank_context=_json_block(_anchor_context(anchor_bank)),
         activation_context=_json_block(_activation_context(knowledge_activations)),
         candidate_set=_json_block(candidate_pool),
@@ -627,7 +627,7 @@ def run_phase5_bridge_cycle(
     *,
     current_span_sentences: list[dict[str, object]],
     candidate_set: dict[str, object],
-    working_state: WorkingState,
+    active_attention: ActiveAttention,
     concept_registry: ConceptRegistryState,
     thread_trace: ThreadTraceState,
     anchor_bank: AnchorBankState,
@@ -660,7 +660,7 @@ def run_phase5_bridge_cycle(
                 "search_trigger": "none",
                 "search_query": "",
             },
-            "working_state": working_state,
+            "active_attention": active_attention,
             "concept_registry": concept_registry,
             "thread_trace": thread_trace,
             "anchor_bank": anchor_bank,
@@ -687,7 +687,7 @@ def run_phase5_bridge_cycle(
     bridge_result = bridge_resolution(
         current_span_sentences=current_span_sentences,
         candidate_set=candidate_set,
-        working_state=working_state,
+        active_attention=active_attention,
         anchor_bank=anchor_bank,
         knowledge_activations=knowledge_activations,
         reader_policy=reader_policy,
@@ -713,8 +713,8 @@ def run_phase5_bridge_cycle(
         bridge_result.get("search_policy_mode", next_knowledge.get("search_policy_mode", "no_search")),  # type: ignore[arg-type]
     )
 
-    next_working_state = apply_working_state_operations(
-        working_state,
+    next_active_attention = apply_active_attention_operations(
+        active_attention,
         bridge_result.get("state_operations", []),
     )
     next_concept_registry = apply_concept_registry_operations(
@@ -760,7 +760,7 @@ def run_phase5_bridge_cycle(
             **bridge_result,
             "primary_bridge": materialized_primary,
         },
-        "working_state": next_working_state,
+        "active_attention": next_active_attention,
         "concept_registry": next_concept_registry,
         "thread_trace": next_thread_trace,
         "anchor_bank": next_anchor_bank,

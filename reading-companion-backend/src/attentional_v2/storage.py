@@ -27,7 +27,7 @@ from .schemas import (
     build_empty_reflective_summaries,
     build_empty_resume_metadata,
     build_empty_thread_trace,
-    build_empty_working_state,
+    build_empty_active_attention,
 )
 
 
@@ -82,10 +82,10 @@ def revisit_index_file(output_dir: Path) -> Path:
     return derived_dir(output_dir) / "revisit_index.json"
 
 
-def working_state_file(output_dir: Path) -> Path:
-    """Return the new primary working-state path."""
+def active_attention_file(output_dir: Path) -> Path:
+    """Return the primary active-attention path."""
 
-    return runtime_dir(output_dir) / "working_state.json"
+    return runtime_dir(output_dir) / "active_attention.json"
 
 
 def local_buffer_file(output_dir: Path) -> Path:
@@ -243,7 +243,7 @@ def artifact_map(output_dir: Path) -> dict[str, str]:
         "local_buffer": str(local_buffer_file(output_dir).relative_to(output_dir)),
         "local_continuity": str(local_continuity_file(output_dir).relative_to(output_dir)),
         "continuation_capsule": str(continuation_capsule_file(output_dir).relative_to(output_dir)),
-        "working_state": str(working_state_file(output_dir).relative_to(output_dir)),
+        "active_attention": str(active_attention_file(output_dir).relative_to(output_dir)),
         "concept_registry": str(concept_registry_file(output_dir).relative_to(output_dir)),
         "thread_trace": str(thread_trace_file(output_dir).relative_to(output_dir)),
         "reflective_frames": str(reflective_frames_file(output_dir).relative_to(output_dir)),
@@ -357,7 +357,7 @@ def initialize_artifact_tree(
         continuation_capsule_file(output_dir),
         build_empty_continuation_capsule(mechanism_version=mechanism_version),
     )
-    ensure_json(working_state_file(output_dir), build_empty_working_state(mechanism_version=mechanism_version))
+    ensure_json(active_attention_file(output_dir), build_empty_active_attention(mechanism_version=mechanism_version))
     ensure_json(concept_registry_file(output_dir), build_empty_concept_registry(mechanism_version=mechanism_version))
     ensure_json(thread_trace_file(output_dir), build_empty_thread_trace(mechanism_version=mechanism_version))
     ensure_json(anchor_bank_file(output_dir), build_empty_anchor_bank(mechanism_version=mechanism_version))

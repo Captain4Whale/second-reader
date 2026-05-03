@@ -11,14 +11,14 @@ from src.attentional_v2.schemas import (
     build_empty_reaction_records,
     build_empty_reconsolidation_records,
     build_empty_reflective_summaries,
-    build_empty_working_state,
+    build_empty_active_attention,
 )
 from src.attentional_v2.state_ops import (
     append_anchor_relation,
     append_move,
     append_reaction_record,
     append_reconsolidation_record,
-    apply_working_state_operations,
+    apply_active_attention_operations,
     close_local_meaning_unit,
     push_local_buffer_sentence,
     replace_policy_section,
@@ -29,21 +29,20 @@ from src.attentional_v2.state_ops import (
 )
 
 
-def test_apply_working_state_operations_handles_append_update_close_link_and_drop():
-    """Working-state helpers should update active_items without legacy bucket side effects."""
+def test_apply_active_attention_operations_handles_append_update_close_link_and_drop():
+    """Active-attention helpers should update tagged active_items without legacy bucket side effects."""
 
-    state = build_empty_working_state()
-    state = apply_working_state_operations(
+    state = build_empty_active_attention()
+    state = apply_active_attention_operations(
         state,
         [
             {
                 "operation_type": "append",
-                "target_store": "working_state",
+                "target_store": "active_attention",
                 "item_id": "m-1",
                 "reason": "motif became active",
                 "payload": {
-                    "bucket": "local_motifs",
-                    "kind": "motif",
+                    "attention_tags": ["motif"],
                     "statement": "value returns as a live motif",
                     "support_anchor_ids": ["a-1"],
                     "status": "active",
@@ -52,12 +51,12 @@ def test_apply_working_state_operations_handles_append_update_close_link_and_dro
         ],
     )
 
-    state = apply_working_state_operations(
+    state = apply_active_attention_operations(
         state,
         [
             {
                 "operation_type": "update",
-                "target_store": "working_state",
+                "target_store": "active_attention",
                 "item_id": "m-1",
                 "payload": {
                     "linked_concept_keys": ["concept:value"],
@@ -66,34 +65,33 @@ def test_apply_working_state_operations_handles_append_update_close_link_and_dro
             },
             {
                 "operation_type": "close",
-                "target_store": "working_state",
+                "target_store": "active_attention",
                 "item_id": "m-1",
                 "payload": {},
             },
         ],
     )
 
-    dropped = apply_working_state_operations(
+    dropped = apply_active_attention_operations(
         state,
         [
             {
                 "operation_type": "drop",
-                "target_store": "working_state",
+                "target_store": "active_attention",
                 "item_id": "m-1",
                 "reason": "motif cooled below the hot layer",
-                "payload": {
-                    "bucket": "local_motifs",
-                },
+                "payload": {},
             }
         ],
     )
 
     assert state["active_items"][0]["item_id"] == "m-1"
-    assert state["active_items"][0]["bucket"] == "local_motifs"
+    assert state["active_items"][0]["attention_tags"] == ["motif"]
     assert state["active_items"][0]["status"] == "closed"
     assert state["active_items"][0]["linked_concept_keys"] == ["concept:value"]
     assert state["active_items"][0]["linked_thread_keys"] == ["thread:value"]
-    assert "local_motifs" not in state
+    assert "bucket" not in state["active_items"][0]
+    assert "kind" not in state["active_items"][0]
     assert dropped["active_items"] == []
 
 

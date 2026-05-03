@@ -28,13 +28,12 @@ from .schemas import (
     ReflectiveSummariesState,
     ThreadTraceEntry,
     ThreadTraceState,
-    WorkingStateItem,
-    WorkingState,
+    ActiveAttentionItem,
+    ActiveAttention,
     StateOperation,
 )
 
 
-ActiveItemBucket = Literal["local_hypotheses", "local_questions", "local_tensions", "local_motifs"]
 ReflectiveBucket = Literal[
     "chapter_understandings",
     "book_level_frames",
@@ -88,39 +87,22 @@ def _remove_by_id(items: list[dict[str, object]], item_id: str, *, id_key: str) 
     return [item for item in items if str(item.get(id_key, "") or "") != selected]
 
 
-def _working_state_active_items(state: WorkingState) -> list[WorkingStateItem]:
-    """Return the normalized active-items view over the current working state."""
+def _active_attention_items(state: ActiveAttention) -> list[ActiveAttentionItem]:
+    """Return the normalized active-items view over active attention."""
 
     active_items = [dict(item) for item in state.get("active_items", []) if isinstance(item, dict)]
     return active_items  # type: ignore[return-value]
 
 
-def _classify_active_item_bucket(item: dict[str, object]) -> ActiveItemBucket:
-    """Infer a lightweight presentation bucket for one active item."""
-
-    explicit_bucket = str(item.get("bucket", "") or "").strip()
-    if explicit_bucket in {"local_hypotheses", "local_questions", "local_tensions", "local_motifs"}:
-        return explicit_bucket  # type: ignore[return-value]
-
-    kind = str(item.get("kind", "") or "").strip().lower()
-    if "question" in kind:
-        return "local_questions"
-    if any(token in kind for token in ("tension", "conflict", "contrast", "pressure")):
-        return "local_tensions"
-    if any(token in kind for token in ("motif", "image", "pattern", "callback", "echo")):
-        return "local_motifs"
-    return "local_hypotheses"
-
-
 def _with_active_items(
-    state: WorkingState,
+    state: ActiveAttention,
     *,
-    active_items: list[WorkingStateItem],
-) -> WorkingState:
+    active_items: list[ActiveAttentionItem],
+) -> ActiveAttention:
     """Return one state copy with normalized active items."""
 
     next_state = dict(state)
-    next_state["active_items"] = [{**dict(item), "bucket": _classify_active_item_bucket(item)} for item in active_items]
+    next_state["active_items"] = [dict(item) for item in active_items]
     return next_state  # type: ignore[return-value]
 
 
@@ -146,13 +128,12 @@ def _merge_active_item(
     payload: dict[str, object],
     *,
     item_id: str,
-) -> WorkingStateItem:
+) -> ActiveAttentionItem:
     """Merge one active-item payload on top of an existing entry."""
 
-    merged: WorkingStateItem = {
+    merged: ActiveAttentionItem = {
         "item_id": item_id,
-        "bucket": str(payload.get("bucket", "") or existing.get("bucket", "") or "").strip(),
-        "kind": str(payload.get("kind", "") or existing.get("kind", "") or "").strip(),
+        "attention_tags": _merge_unique_ids(existing.get("attention_tags"), payload.get("attention_tags")),
         "statement": str(payload.get("statement", "") or existing.get("statement", "") or "").strip(),
         "support_anchor_ids": _merge_unique_ids(existing.get("support_anchor_ids"), payload.get("support_anchor_ids")),
         "linked_concept_keys": _merge_unique_ids(existing.get("linked_concept_keys"), payload.get("linked_concept_keys")),
@@ -165,16 +146,16 @@ def _merge_active_item(
     return merged
 
 
-def _apply_working_state_operations(
-    state: WorkingState,
+def _apply_active_attention_operations(
+    state: ActiveAttention,
     operations: list[StateOperation],
     *,
     allowed_target_stores: set[str],
-) -> WorkingState:
-    """Apply explicit working-state mutations from node outputs."""
+) -> ActiveAttention:
+    """Apply explicit active-attention mutations from node outputs."""
 
     next_state = dict(state)
-    active_items = [dict(item) for item in _working_state_active_items(state)]
+    active_items = [dict(item) for item in _active_attention_items(state)]
     touched = False
     for operation in operations:
         if str(operation.get("target_store", "") or "") not in allowed_target_stores:
@@ -229,16 +210,16 @@ def _apply_working_state_operations(
     return _with_active_items(next_state, active_items=active_items)
 
 
-def apply_working_state_operations(
-    state: WorkingState,
+def apply_active_attention_operations(
+    state: ActiveAttention,
     operations: list[StateOperation],
-) -> WorkingState:
-    """Apply explicit working-state mutations from read outputs."""
+) -> ActiveAttention:
+    """Apply explicit active-attention mutations from read outputs."""
 
-    return _apply_working_state_operations(
+    return _apply_active_attention_operations(
         state,
         operations,
-        allowed_target_stores={"working_state"},
+        allowed_target_stores={"active_attention"},
     )  # type: ignore[return-value]
 
 

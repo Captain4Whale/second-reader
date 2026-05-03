@@ -254,7 +254,7 @@ Last verified: `2026-05-03T08:37:27+08:00`
     - `navigate.unitize` now receives a small `navigation_context`
     - `read` now receives a `state_packet.v1` read-context packet that explicitly separates:
       - `session continuity capsule`
-      - `working_state` digest
+      - `active_attention` digest
       - `chapter reflective frame`
       - `active focus` digest
       - `anchor bank` digest
@@ -265,11 +265,11 @@ Last verified: `2026-05-03T08:37:27+08:00`
     - `navigate.unitize` and `read` now both receive those small concept/thread digests through the packet layer
     - persisted runtime files and public compatibility surfaces still remain unchanged
   - `Phase C.3` is now landed as the direct main-state cutover:
-    - new runs now treat `working_state / concept_registry / thread_trace / reflective_frames / anchor_bank` as the primary runtime and checkpoint truth
+    - new runs now treat `active_attention / concept_registry / thread_trace / reflective_frames / anchor_bank` as the primary runtime and checkpoint truth
     - the old V2 state stores were demoted to cutover-only legacy territory
     - `active_recall` now surfaces first-class `concepts` and `threads` from the new state layers
     - `read` may now write explicit `implicit_uptake` into:
-      - `working_state`
+      - `active_attention`
       - `concept_registry`
       - `thread_trace`
       - `anchor_bank`
@@ -277,14 +277,15 @@ Last verified: `2026-05-03T08:37:27+08:00`
     - checkpoint/resume temporarily accepted both old and new state territory during the cutover, while newly written checkpoints already used only the new primary keys
     - public/frontend compatibility surfaces remain unchanged
   - `Phase C.4` is now landed as the helper-contract cutover and legacy-state retirement slice:
-    - sentence-intake now consumes `working_state / concept_registry / thread_trace / anchor_bank` directly
+    - sentence-intake now consumes `active_attention / concept_registry / thread_trace / anchor_bank` directly
     - bridge retrieval and live bridge-cycle updates now consume and write new-state ownership directly
-    - chapter slow-cycle now consumes and writes `working_state / concept_registry / thread_trace / reflective_frames / anchor_bank` directly
+    - chapter slow-cycle now consumes and writes `active_attention / concept_registry / thread_trace / reflective_frames / anchor_bank` directly
     - the live runner no longer projects new state into old V2 helper stores for execution
     - live runtime loading and resume now reject pre-`Phase C.3` runtime directories and checkpoints with explicit unsupported-format errors
     - public/frontend compatibility surfaces remain unchanged
   - legacy gate/pressure sidecar cleanup is now landed:
-    - `working_state.active_items` is the current hot-state contract
+    - `active_attention.active_items[]` is the current hot-state contract
+    - `attention_tags[]` are lightweight labels on active items; old fixed hot-state lists are historical only
     - old `gate_state`, `pressure_snapshot`, and working-pressure runtime artifacts are no longer schema, prompt, runtime, checkpoint, or Memory Quality evidence fields
     - current `pressure_signals` remain live as one-step `Read -> Navigate.route` signals and are not part of the old sidecar
   - `Phase D` is now landed as the continuity / recall / resume polish slice:
