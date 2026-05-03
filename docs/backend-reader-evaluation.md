@@ -277,6 +277,10 @@ Use `docs/backend-reading-mechanism.md` for shared mechanism-platform boundaries
     - old `gate_state`, `pressure_snapshot`, and working-pressure artifacts are not current evidence fields
   - New probe evidence generated after the Read naturalization cutover should use `reading_impression` for read-audit / probe-facing local interpretation, and `memory_uptake_ops` for the bounded memory-update operations that feed active attention, concept, thread, and anchor layers.
     - Older reports that show `unit_delta` or `implicit_uptake_ops` are historical artifacts from the pre-cutover contract, not current field names.
+  - Memory Quality evidence reports have a fixed writing contract:
+    - `reading-companion-backend/docs/evaluation/long_span/memory_quality_report_contract.md`
+    - each window should have one full source document with probe markers instead of repeated full source-so-far blocks
+    - `Recent Moves` should label route explanations as `move reason`, because they are projected from `move_history.moves[-3:]`, not generic memory `statement` fields
   - `overall_memory_quality_score` is derived from `salience_score`, `mainline_fidelity_score`, `organization_score`, and `fidelity_score` rather than trusted blindly from the judge response
   - reaction audit now treats `prior_link / outside_link / search_intent` as support while keeping visible reaction wording as the primary evidence; compat `type=retrospect` is not sufficient evidence by itself
   - this is usable phase-1 diagnostic evidence, but it is not yet a promoted formal long-span benchmark authority

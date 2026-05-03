@@ -47,6 +47,11 @@ MEMORY_QUALITY_PROBE_REVIEW_FOCUS: dict[tuple[str, int], dict[str, str]] = {
     }
 }
 
+RECENT_MOVES_NOTE = (
+    "_最近阅读动作；这里显示的是从 `move_history.moves[-3:]` 投影出的 "
+    "`move reason`，不是完整 raw `move_history`，也不等同于长期记忆。_"
+)
+
 
 @dataclass(frozen=True)
 class Probe:
@@ -250,7 +255,45 @@ def extract_probe_tail(old_window_text: str, probe_index: int) -> str:
         tail_start = block.find("### Working State Overview")
     if tail_start == -1:
         raise ValueError(f"Cannot find reusable probe state section for probe {probe_index}")
-    return block[tail_start:].rstrip()
+    return normalize_recent_moves_sections(block[tail_start:].rstrip())
+
+
+def normalize_recent_moves_sections(markdown: str) -> str:
+    """Make the reused historical Recent Moves block match the current report wording."""
+
+    lines = markdown.splitlines()
+    out: list[str] = []
+    in_recent_moves = False
+    skip_legacy_note = False
+
+    for line in lines:
+        if line.startswith("#### Recent Moves"):
+            in_recent_moves = True
+            skip_legacy_note = True
+            out.append(line)
+            out.append("")
+            out.append(RECENT_MOVES_NOTE)
+            continue
+
+        if in_recent_moves and line.startswith("#### "):
+            in_recent_moves = False
+            skip_legacy_note = False
+
+        if in_recent_moves and skip_legacy_note:
+            stripped = line.strip()
+            if not stripped:
+                continue
+            if stripped.startswith("_最近阅读动作；"):
+                skip_legacy_note = False
+                continue
+            skip_legacy_note = False
+
+        if in_recent_moves:
+            line = line.replace("- statement:", "- move reason:", 1)
+
+        out.append(line)
+
+    return "\n".join(out).rstrip()
 
 
 def render_probe_source_map(probes: list[Probe]) -> str:
@@ -374,6 +417,7 @@ def render_readme(grouped: dict[str, list[Probe]]) -> None:
         "- Capture rule: snapshot is captured after the first completed read step crossing each threshold; probe placement is not semantic target selection.",
         "- Previous audit version: [memory_quality_probe_audit_20260502](../memory_quality_probe_audit_20260502/README.md)",
         "- Post-eval action ledger: [post_eval_action_ledger_20260503/README.md](../post_eval_action_ledger_20260503/README.md)",
+        "- Report-writing contract: [memory_quality_report_contract.md](../../../../../../docs/evaluation/long_span/memory_quality_report_contract.md)",
         "",
         "## What Changed In This Edition",
         "",
@@ -480,6 +524,12 @@ def validate(grouped: dict[str, list[Probe]]) -> None:
         source_marker_link_count = len(re.findall(r"^- full window source marker: ", text, re.MULTILINE))
         if source_marker_link_count != 5:
             raise AssertionError(f"{window_file} does not link every probe to full source")
+        for section in re.split(r"^#### Recent Moves\n", text, flags=re.MULTILINE)[1:]:
+            recent_moves_block = re.split(r"^#### ", section, maxsplit=1, flags=re.MULTILINE)[0]
+            if "- statement:" in recent_moves_block:
+                raise AssertionError(f"{window_file} still labels Recent Moves reason as statement")
+            if "move reason" not in recent_moves_block:
+                raise AssertionError(f"{window_file} Recent Moves block does not explain move reason")
 
     expected_segments = set(grouped)
     actual_segments = {path.stem for path in source_files}

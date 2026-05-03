@@ -15,6 +15,7 @@ This directory now has three layers:
 - Use [../README.md](../README.md) as the narrative cross-surface entry point.
 - Use [../evidence_catalog.md](../evidence_catalog.md) as the durable evidence catalog across current, historical, superseded, audit, and diagnostic runs.
 - After a full root-level long-span merge/report completes, update the catalog through `scripts/update_evaluation_catalog.py`; shard-filtered recovery outputs must not own catalog updates.
+- Memory Quality evidence audits must follow the fixed authoring contract in [memory_quality_report_contract.md](./memory_quality_report_contract.md); do not let each rerun invent a new report shape.
 
 ## Current Active Direction
 
@@ -77,6 +78,9 @@ Current implementation posture:
     - source text alone cannot earn credit
     - a salient author-given structure that never enters the snapshot should be visible in the judge reason and reflected in the relevant dimension scores
     - `huochu_shengming_de_yiyi_private_zh__segment_1` Probe 1 now carries a review focus for the three-stage prisoner-response framework discovered during report review
+  - future Memory Quality evidence reports use the fixed report-writing contract:
+    - [memory_quality_report_contract.md](./memory_quality_report_contract.md)
+    - recent move evidence is labeled as `move reason` projected from `move_history`, not as generic `statement`
 
 ## Historical Durable Evidence
 

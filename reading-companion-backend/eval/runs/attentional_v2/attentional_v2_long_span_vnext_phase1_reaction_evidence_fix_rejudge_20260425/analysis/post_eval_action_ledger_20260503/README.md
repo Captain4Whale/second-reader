@@ -186,9 +186,40 @@ Each action should answer:
   - Complete for terminology/provenance cleanup.
   - Future work can still tune `attention_tags[]` quality, but should not reintroduce fixed hot-state bucket lists.
 
+### A6 — Memory Quality report contract
+
+- `action_id`: `A6_memory_quality_report_contract`
+- `status`: `landed`
+- `source finding`:
+  - While reviewing the Memory Quality source-map audit, the `Recent Moves` section labeled route explanations as `statement`, even though the data came from `move_history.moves[].reason`.
+  - The report-writing shape had also been improved several times by hand, which created a risk that the next evaluation report would drift back into unreadable or inconsistent evidence layout.
+- `decision`:
+  - Treat Memory Quality report writing as part of the fixed Long Span vNext evidence contract.
+  - Rename the report label for route explanations from `statement` to `move reason`.
+  - Keep `Recent Moves` explicitly scoped as a compact projection from `move_history.moves[-3:]`, not as raw move history and not as long-term memory.
+  - Persist the full evidence-report shape so future renderers reuse the same structure instead of reinventing it.
+- `implemented changes`:
+  - Added a stable Memory Quality evidence report contract under the Long Span evaluation docs.
+  - Updated the source-map audit renderer so regenerated reports normalize `Recent Moves` sections to use `move reason` and explain their source.
+  - Regenerated the current source-map audit docs so the visible report now uses the corrected label.
+  - Linked the report contract from current Long Span evaluation docs, backend reader evaluation docs, current-state, and task registry.
+- `validation`:
+  - Regenerated `memory_quality_probe_audit_20260503_source_map` without changing scores, judgments, or reading outputs.
+  - Checked that generated source-map reports contain 5 windows, 25 probes, 5 full source documents, and 25 raw snapshot links.
+  - Checked that `Recent Moves` blocks no longer label route reasons as `statement`.
+- `evidence links`:
+  - Report contract: `../../../../../../../reading-companion-backend/docs/evaluation/long_span/memory_quality_report_contract.md`
+  - Source-map renderer: `../../../../../../../reading-companion-backend/scripts/temporary/memory_quality_probe_audit_source_map_20260503.py`
+  - Regenerated source-map audit: `../memory_quality_probe_audit_20260503_source_map/README.md`
+  - Long Span evaluation docs: `../../../../../../../reading-companion-backend/docs/evaluation/long_span/README.md`
+  - Stable evaluation method: `../../../../../../../docs/backend-reader-evaluation.md`
+- `follow-up`:
+  - Complete for the current report-writing contract.
+  - Future Memory Quality report changes should update the contract first or in the same task as the renderer change.
+
 ## Next Actions Pending
 
-The first five post-eval actions are recorded above. Later actions should be appended here only after their finding, decision, and implementation boundary have been agreed.
+The first six post-eval actions are recorded above. Later actions should be appended here only after their finding, decision, and implementation boundary have been agreed.
 
 ### Action Template
 

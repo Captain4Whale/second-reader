@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-05-03T20:15:46+08:00`
+Last verified: `2026-05-03T20:31:44+08:00`
 
 ## Current Objective
 - Shift Long Span from the discontinued `target-centered accumulation v2` method to the new active design direction:
@@ -46,7 +46,10 @@ Last verified: `2026-05-03T20:15:46+08:00`
         - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_long_span_vnext_phase1_reaction_evidence_fix_rejudge_20260425/summary/report.md`
       - post-eval action ledger:
         - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_long_span_vnext_phase1_reaction_evidence_fix_rejudge_20260425/analysis/post_eval_action_ledger_20260503/README.md`
-        - recorded actions now include `A1_legacy_gate_pressure_cleanup`, `A2_active_attention_cutover`, `A3_read_naturalization_cutover`, `A4_memory_quality_structural_signal_supplement`, and `A5_local_hypothesis_provenance_cleanup`
+        - recorded actions now include `A1_legacy_gate_pressure_cleanup`, `A2_active_attention_cutover`, `A3_read_naturalization_cutover`, `A4_memory_quality_structural_signal_supplement`, `A5_local_hypothesis_provenance_cleanup`, and `A6_memory_quality_report_contract`
+      - Memory Quality evidence report contract:
+        - `reading-companion-backend/docs/evaluation/long_span/memory_quality_report_contract.md`
+        - future reports should use one full source document per window with probe markers, and label recent route explanations as `move reason` rather than generic `statement`
       - result:
         - `Memory Quality` average overall score: `3.48`
         - probe count: `25`
