@@ -772,7 +772,7 @@ def _normalize_detour_search_result(
     *,
     allowed_sentence_ids: set[str],
 ) -> DetourSearchResult:
-    """Normalize one detour-search result against the currently visible search space."""
+    """Normalize one Navigate.detour_search result against the currently visible search space."""
 
     if not isinstance(value, dict):
         return {
@@ -926,7 +926,7 @@ def navigate_detour_search(
     author: str = "",
     chapter_title: str = "",
 ) -> DetourSearchResult:
-    """Run one bounded detour-search step over a structured search scope."""
+    """Run one bounded Navigate.detour_search step over a structured search scope."""
 
     prompts = ATTENTIONAL_V2_PROMPTS
     structural_frame = _structural_frame(

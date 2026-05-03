@@ -322,6 +322,18 @@ def test_navigate_detour_search_normalizes_invalid_land_into_defer(tmp_path: Pat
         "start_sentence_id": "",
         "end_sentence_id": "",
     }
+    manifest = json.loads(
+        (
+            tmp_path
+            / "_mechanisms"
+            / "attentional_v2"
+            / "internal"
+            / "prompt_manifests"
+            / "navigate_detour_search.json"
+        ).read_text(encoding="utf-8")
+    )
+    assert manifest["prompt_version"] == "attentional_v2.navigate_detour_search.v2"
+    assert "Navigate.detour_search" in manifest["system_prompt"]
 
 
 def test_read_unit_filters_unanchored_surface_and_derives_pressure_from_legacy_move_hint(tmp_path: Path, monkeypatch):

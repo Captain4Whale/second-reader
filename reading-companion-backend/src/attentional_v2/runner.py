@@ -933,7 +933,7 @@ def _build_detour_chapter_scope(
     survey_map: dict[str, object],
     mainline_cursor: SharedRunCursor,
 ) -> dict[str, object]:
-    """Build the initial detour-search scope as chapter cards over already-read space."""
+    """Build the initial Navigate.detour_search scope as chapter cards over already-read space."""
 
     chapter_summaries = {
         int(entry.get("chapter_id", 0) or 0): dict(entry)
@@ -1040,7 +1040,7 @@ def _build_detour_paragraph_preview_scope(
     *,
     selected_sentences: list[dict[str, object]],
 ) -> dict[str, object]:
-    """Build the final detour-search layer as paragraph previews."""
+    """Build the final Navigate.detour_search layer as paragraph previews."""
 
     paragraphs: dict[int, list[dict[str, object]]] = {}
     for sentence in selected_sentences:
@@ -1097,7 +1097,7 @@ def _build_detour_navigation_packet(
     continuation_capsule: dict[str, object],
     local_continuity: LocalContinuityState,
 ) -> dict[str, object]:
-    """Build the compact packet used by the detour-search node."""
+    """Build the compact packet used by Navigate.detour_search."""
 
     carry_forward_context = build_carry_forward_context(
         chapter_ref=chapter_ref,
@@ -1192,7 +1192,7 @@ def _selected_detour_region(
     chapter_lookup: dict[int, dict[str, object]],
     search_result: DetourSearchResult,
 ) -> tuple[dict[str, object], list[dict[str, object]]] | None:
-    """Resolve one detour-search result into a concrete chapter plus sentence region."""
+    """Resolve one Navigate.detour_search result into a concrete chapter plus sentence region."""
 
     start_sentence_id = _clean_text(search_result.get("start_sentence_id"))
     end_sentence_id = _clean_text(search_result.get("end_sentence_id"))
@@ -1232,7 +1232,7 @@ def _run_detour_search_loop(
     book_title: str,
     author: str,
 ) -> DetourSearchResult:
-    """Run one bounded detour-search loop and return a landed region or deferral."""
+    """Run one bounded Navigate.detour_search loop and return a landed region or deferral."""
 
     mainline_cursor = (
         dict(local_continuity.get("mainline_cursor", {}))

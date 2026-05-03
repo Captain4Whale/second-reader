@@ -27,9 +27,9 @@ Update when: status changes, blockers appear, or phases complete.
     - trigger output no longer decides whether正文 text receives a formal read
     - the live control skeleton is now:
       - `sentence intake`
-      - `navigate.unitize`
+      - `Navigate.unitize`
       - `read`
-      - `navigate.route`
+      - `Navigate.route`
     - span authority is now tied to the exact chosen unit rather than hidden tail-window reconstruction
   - `Phase B` is now also landed in code under the existing `attentional_v2` mechanism key
   - landed behavior:
@@ -41,7 +41,7 @@ Update when: status changes, blockers appear, or phases complete.
   - `Phase C.1` is now landed in code under the existing `attentional_v2` mechanism key
   - landed behavior:
     - live prompt inputs now flow through a bounded internal `state_packet.v1` seam
-    - `navigate.unitize` now receives a packetized `navigation_context`
+    - `Navigate.unitize` now receives a packetized `navigation_context`
     - `read` now receives a packetized read-context view that explicitly separates:
       - `session continuity capsule`
       - `working_state` digest
@@ -53,7 +53,7 @@ Update when: status changes, blockers appear, or phases complete.
   - landed behavior:
     - live state packets now derive a bounded `concept_digest` from the current `motif_index + unresolved_reference_index`
     - live state packets now derive a bounded `thread_digest` from the current `trace_links + unresolved_reference_index`
-    - `navigate.unitize` and `read` now both receive those concept/thread digests through the packet layer
+    - `Navigate.unitize` and `read` now both receive those concept/thread digests through the packet layer
     - persisted runtime files and public compatibility surfaces still remain unchanged
   - `Phase C.3` is now landed as the direct main-state cutover under the existing `attentional_v2` mechanism key
   - landed behavior:
@@ -84,10 +84,10 @@ Update when: status changes, blockers appear, or phases complete.
   - when describing runtime behavior, prefer node and loop terms such as:
     - `sentence intake`
     - `watch-state update`
-    - `navigate.unitize`
+    - `Navigate.unitize`
     - `read`
     - optional `active recall / look-back`
-    - `navigate.route`
+    - `Navigate.route`
     - `bridge_resolution`
     - `chapter-end slow cycle`
 - Current side branch:

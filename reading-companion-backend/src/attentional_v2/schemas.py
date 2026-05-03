@@ -273,7 +273,7 @@ class CarryForwardContext(TypedDict, total=False):
 
 
 class NavigationContext(TypedDict, total=False):
-    """Small navigation packet used by navigate.unitize before the unit is chosen."""
+    """Small navigation packet used by Navigate.unitize before the unit is chosen."""
 
     packet_version: str
     continuation_capsule: ContinuationCapsule
@@ -370,7 +370,7 @@ class DetourTraceEntry(TypedDict, total=False):
 
 
 class DetourSearchResult(TypedDict, total=False):
-    """One bounded detour-search result emitted by the navigation search step."""
+    """One bounded Navigate.detour_search result emitted by the navigation search step."""
 
     decision: DetourSearchDecision
     reason: str

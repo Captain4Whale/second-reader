@@ -7,10 +7,10 @@ from dataclasses import dataclass
 from src.prompts.shared import LANGUAGE_OUTPUT_CONTRACT
 
 
-ATTENTIONAL_V2_PROMPTSET_VERSION = "attentional_v2-phase6-v22"
+ATTENTIONAL_V2_PROMPTSET_VERSION = "attentional_v2-phase6-v23"
 SURVEY_CHAPTER_ZONE_PROMPT_VERSION = "attentional_v2.survey_chapter_zone.v1"
 NAVIGATE_UNITIZE_PROMPT_VERSION = "attentional_v2.navigate_unitize.v4"
-NAVIGATE_DETOUR_SEARCH_PROMPT_VERSION = "attentional_v2.navigate_detour_search.v1"
+NAVIGATE_DETOUR_SEARCH_PROMPT_VERSION = "attentional_v2.navigate_detour_search.v2"
 READ_UNIT_PROMPT_VERSION = "attentional_v2.read.v13"
 BRIDGE_RESOLUTION_PROMPT_VERSION = "attentional_v2.bridge_resolution.v5"
 REFLECTIVE_PROMOTION_PROMPT_VERSION = "attentional_v2.reflective_promotion.v1"
@@ -145,7 +145,7 @@ Return JSON:
   "continuation_pressure": false
 }""",
     navigate_detour_search_version=NAVIGATE_DETOUR_SEARCH_PROMPT_VERSION,
-    navigate_detour_search_system="""You are the detour-search node for a text-grounded reading mechanism.
+    navigate_detour_search_system="""You are the Navigate.detour_search node for a text-grounded reading mechanism.
 
 Your job is to help navigation locate an earlier region worth reading in order to resolve a live detour need.
 

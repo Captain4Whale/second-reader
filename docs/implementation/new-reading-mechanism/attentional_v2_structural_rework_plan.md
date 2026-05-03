@@ -15,7 +15,7 @@ Implementation checkpoint:
 
 - `Phase A` is landed:
   - trigger output no longer gates whether正文 text gets formal reading
-  - the live control skeleton is now `navigate.unitize -> read -> navigate.route`
+  - the live control skeleton is now `Navigate.unitize -> read -> Navigate.route`
   - span authority now matches the exact chosen unit
 - `Phase B` is landed:
   - `read` now owns the authoritative unit packet on the live path
@@ -25,13 +25,13 @@ Implementation checkpoint:
   - this remains an intermediate baseline rather than the final ownership contract
 - `Phase C.1` is landed:
   - live prompt inputs now flow through a bounded internal `state_packet.v1` seam
-  - `navigate.unitize` now receives a packetized `navigation_context`
+  - `Navigate.unitize` now receives a packetized `navigation_context`
   - `read` now receives a packetized read-context view with explicit continuity / working-state / reflective / focus / anchor-bank separation
   - persisted runtime files and public compatibility surfaces remain unchanged
 - `Phase C.2` is landed as the first state-territory slice:
   - live state packets now derive a bounded `concept_digest` from the current `motif_index + unresolved_reference_index`
   - live state packets now derive a bounded `thread_digest` from the current `trace_links + unresolved_reference_index`
-  - `navigate.unitize` and `read` now both receive those small concept/thread digests through the packet layer
+  - `Navigate.unitize` and `read` now both receive those small concept/thread digests through the packet layer
   - persisted runtime files and public compatibility surfaces remain unchanged
 - `Phase C.3` is landed as the direct main-state cutover:
   - new runs now treat `active_attention / concept_registry / thread_trace / reflective_frames / anchor_bank` as the primary runtime and checkpoint truth
@@ -59,7 +59,7 @@ Implementation checkpoint:
   - persisted `reaction_records` now keep surfaced semantics first and old family labels survive only as compatibility projections
   - this branch remains valuable evidence, but it is no longer the approved end-state target for the mechanism
 - `Phase F1` is now landed as the first post-freeze cutover:
-  - the live per-unit loop is now `navigate.unitize -> read -> navigate.route`
+  - the live per-unit loop is now `Navigate.unitize -> read -> Navigate.route`
   - `Read` now directly owns `reading_impression`, surfaced reactions, memory uptake ops, pressure signals, and optional `detour_need`
   - the dedicated live `Express` node is no longer on the runner path
   - `Read` prompt packaging now follows compact `always carry / selective carry / not carry` projections
@@ -79,7 +79,7 @@ Implementation checkpoint:
     - `narrow_scope`
     - `land_region`
     - `defer_detour`
-  - landed detour regions now re-enter the same normal `navigate.unitize -> read -> navigate.route` reading loop
+  - landed detour regions now re-enter the same normal `Navigate.unitize -> read -> Navigate.route` reading loop
   - chapter-tail detours are now drained before chapter slow-cycle closes
 - `Phase F3` is now landed as the reaction-persistence and compatibility reconvergence slice:
   - persisted visible reactions now enter the system only through `Read.surfaced_reactions[]`
@@ -256,7 +256,7 @@ The mechanism can form local understanding that later becomes harder to see beca
 ### 5.1 In scope
 
 - replace heuristic semantic permission gating
-- replace the current fragmented local control shape with `navigate.unitize + read + navigate.route`
+- replace the current fragmented local control shape with `Navigate.unitize + read + Navigate.route`
 - align span visibility and span authority
 - make `read` carry forward prior context and expose prior-material use as an observational result rather than a separate mechanism action
 - restructure state and prompt packetization so long-distance continuity becomes more reliable
@@ -280,10 +280,10 @@ The rework should be understood as a controlled remap of current V2 responsibili
 
 | Current V2 element | Problem now | New home / treatment |
 | --- | --- | --- |
-| heuristic `trigger` | wrongly acts as permission gate over whether text deserves real LLM reading | remove its authority over正文 reading; replace with mandatory coverage read plus `navigate.unitize` boundary choice |
+| heuristic `trigger` | wrongly acts as permission gate over whether text deserves real LLM reading | remove its authority over正文 reading; replace with mandatory coverage read plus `Navigate.unitize` boundary choice |
 | `zoom_read` | currently carries too much of the real reading responsibility but only opens on gated cases | absorb its reading semantics into `read` |
-| `meaning_unit_closure` | closure authority is entangled with partial visibility windows | split into `read` boundary evidence plus `navigate.route` close / continue judgment |
-| `controller_decision` | one more control surface in an already over-fragmented chain | absorb into `navigate.route` |
+| `meaning_unit_closure` | closure authority is entangled with partial visibility windows | split into `read` boundary evidence plus `Navigate.route` close / continue judgment |
+| `controller_decision` | one more control surface in an already over-fragmented chain | absorb into `Navigate.route` |
 | `reaction_emission` | thins out already-formed reading truth | collapse surfaced reactions back into `read` and keep old family handling only as compatibility projection |
 | lazy bridge retrieval / `bridge_resolution` | useful in principle, but too downstream to carry continuity by itself | keep only as optional execution path beneath `carry-forward context` and `active recall / look-back` |
 | `working_pressure` | historical hot-state sidecar from the older local-cycle shape | retired; current hot state is `active_attention.active_items` |
@@ -300,9 +300,9 @@ Goal:
 
 - remove heuristic trigger authority over whether正文 text gets a real LLM reading turn
 - establish the new top-level control shape:
-  - `navigate.unitize`
+  - `Navigate.unitize`
   - `read`
-  - `navigate.route`
+  - `Navigate.route`
 
 This phase should land the minimum viable structural change that fixes the long-span "important text never truly got read" failure.
 
@@ -311,10 +311,10 @@ This phase should land the minimum viable structural change that fixes the long-
 The minimum viable loop after Phase A should be:
 
 1. canonical sentence stream defines position
-2. `navigate.unitize` looks ahead within bounded forward text
+2. `Navigate.unitize` looks ahead within bounded forward text
 3. one coverage unit is chosen
 4. `read` runs once on that coverage unit
-5. `navigate.route` decides:
+5. `Navigate.route` decides:
    - `commit`
    - `continue / extend`
    - `bridge_back`
@@ -325,7 +325,7 @@ This phase is not yet trying to perfect long-distance memory. It is trying to el
 
 #### Unitization policy that should already be respected in Phase A
 
-`navigate.unitize` should not degrade into "fixed sentence count" or "always stop at paragraph end."
+`Navigate.unitize` should not degrade into "fixed sentence count" or "always stop at paragraph end."
 
 The first viable unitization policy should already preserve the boundary discipline established in the after-eval review:
 
@@ -379,7 +379,7 @@ The coverage-unit policy should be:
 
 #### Minimum unitization audit contract
 
-Phase A does not need a full final artifact suite yet, but `navigate.unitize` should already emit enough information that later debugging can answer why it stopped where it stopped.
+Phase A does not need a full final artifact suite yet, but `Navigate.unitize` should already emit enough information that later debugging can answer why it stopped where it stopped.
 
 The minimum audit payload should include:
 
@@ -533,7 +533,7 @@ The later post-E3 review changed the conclusion again:
 - `B3. active recall / look-back`
   - add a narrower explicit path for cases where carry-forward context is insufficient
 - `B4. route integration`
-  - make `navigate.route` consume the new read packet instead of older closure/controller fragments
+  - make `Navigate.route` consume the new read packet instead of older closure/controller fragments
 
 #### Runtime discipline
 
@@ -562,7 +562,7 @@ Deterministic code should not hard-code a semantic taxonomy of "allowed reuse ty
   - `read`
   - optional budget-bounded supplemental looping through `active recall` or `look-back`
   - rerun `read` while supplemental budget remains and the current unit still explicitly asks for more context
-  - deterministic `navigate.route`
+  - deterministic `Navigate.route`
 - `read` now owns:
   - current-unit reading
   - `implicit_uptake`
@@ -683,7 +683,7 @@ Do not preserve as future main semantic entry points:
 - model-facing packet becomes query-aware and task-aware
 - detailed state should not be blindly injected in full
 - prompt input should be a derived view, not raw state dumped verbatim
-- `navigate.unitize`, `read`, and `navigate.route` should use distinct prompt families even if they share the same model target
+- `Navigate.unitize`, `read`, and `Navigate.route` should use distinct prompt families even if they share the same model target
 
 #### Load strategy target
 
@@ -714,7 +714,7 @@ The packetization layer should already assume an index-first loading policy.
     - `reflective_frames`
     - `anchor_bank`
 - `C2. prompt packet derivation`
-  - derive a small query-aware packet from those state layers for `navigate.unitize`, `read`, and `navigate.route`
+  - derive a small query-aware packet from those state layers for `Navigate.unitize`, `read`, and `Navigate.route`
 - `C3. knowledge activation narrowing`
   - restrict `knowledge_activations` to immediate in-read use
 - `C4. anchor-bank tightening`
@@ -726,7 +726,7 @@ The packetization layer should already assume an index-first loading policy.
 
 - live prompt inputs no longer need to assemble context ad hoc inside each caller
 - an internal `state_packet.v1` layer now derives bounded prompt inputs from current persisted stores
-- `navigate.unitize` now receives a packetized `navigation_context`
+- `Navigate.unitize` now receives a packetized `navigation_context`
 - `read` now receives a packetized read-context view that explicitly separates:
   - `session_continuity_capsule`
   - `working_state_digest`
@@ -760,7 +760,7 @@ Deterministic code should not continue to own:
 - semantic closure judgment
 - semantic bridge worthiness
 
-`navigate.unitize`, `read`, and `navigate.route` may decide what the mechanism believes, but durable state application should still happen through deterministic executors rather than turning one LLM call into an all-powerful state machine.
+`Navigate.unitize`, `read`, and `Navigate.route` may decide what the mechanism believes, but durable state application should still happen through deterministic executors rather than turning one LLM call into an all-powerful state machine.
 
 #### Validation target
 
@@ -855,9 +855,9 @@ Status: `first compatibility-first slice landed`
 Cut the live runner over to the new ownership split.
 
 - change the live path from:
-  - `read.raw_reaction -> navigate.route`
+  - `read.raw_reaction -> Navigate.route`
 - to:
-  - `read -> express(if needed) -> navigate.route`
+  - `read -> express(if needed) -> Navigate.route`
 - `Read` should stop returning the final visible reaction payload on the live path
 - `Navigate.route` should consume `pressure_signals` rather than a semantically over-decided `move_hint`
 - `Express` should not own:
@@ -909,7 +909,7 @@ The key conclusion is:
 - the dedicated live `Express` node was a useful compatibility-first experiment
 - but it should not remain the mechanism's steady-state center of gravity
 - the next implementation slices should simplify the per-unit loop back toward:
-  - `navigate.unitize -> read -> navigate.route`
+  - `Navigate.unitize -> read -> Navigate.route`
 
 Why this reset won:
 
@@ -1008,7 +1008,7 @@ Frozen node projections:
   - `status`
 - `Navigate` owns all detour search and return decisions
 - Detour is not a special side-channel retrieval action
-  - once `Navigate` lands a detour region, that region is read through the same normal `navigate.unitize -> read -> navigate.route` loop
+  - once `Navigate` lands a detour region, that region is read through the same normal `Navigate.unitize -> read -> Navigate.route` loop
 - `Navigate` should reason over:
   - book structure cards
   - compact long-distance-memory digests
@@ -1032,7 +1032,7 @@ Frozen node projections:
 
 ##### Phase F1 — Read contract and prompt-packaging cutover (`landed`)
 
-- live per-unit loop now runs `navigate.unitize -> read -> navigate.route`
+- live per-unit loop now runs `Navigate.unitize -> read -> Navigate.route`
 - `Read` now owns:
   - `reading_impression`
   - `surfaced_reactions`
@@ -1061,7 +1061,7 @@ Frozen node projections:
   - chapter / section structure cards
   - compact long-distance-memory digests
   - source-grounded anchor handles
-- one `detour-search` prompt family now returns:
+- one `Navigate.detour_search` prompt family now returns:
   - `narrow_scope`
   - `land_region`
   - `defer_detour`
@@ -1121,7 +1121,7 @@ Status: `in_progress`
   - `text_role` is now explicitly treated as an inherited block-level weak cue rather than sentence-level truth
 - the first special-content handling slice is now also landed on that cleaned baseline:
   - no new helper node, packet, schema, or parser layer was introduced
-  - `navigate.unitize` now treats heading roles as weak cues rather than automatic standalone units
+  - `Navigate.unitize` now treats heading roles as weak cues rather than automatic standalone units
   - meaningful headings may still stand alone, but label-like headings now prefer merging with the immediately following body paragraph when the preview allows
   - deterministic unitize fallback now widens `heading -> following body paragraph` instead of falling back to a bare heading when that body paragraph is already visible
   - `Read` now explicitly stays proportionate around thin heading-like units and may remain silent there

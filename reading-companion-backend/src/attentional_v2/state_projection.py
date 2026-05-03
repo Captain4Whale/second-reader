@@ -834,7 +834,7 @@ def build_navigation_context(
         reaction_records: ReactionRecordsState,
     continuation_capsule: ContinuationCapsule | None = None,
 ) -> NavigationContext:
-    """Build the bounded navigation packet used by navigate.unitize."""
+    """Build the bounded navigation packet used by Navigate.unitize."""
 
     carry_forward_context = build_carry_forward_context(
         chapter_ref=chapter_ref,

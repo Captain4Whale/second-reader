@@ -67,10 +67,10 @@ Use `docs/backend-sequential-lifecycle.md` for the job-level workflow over time.
   - The authoritative `Phase 0-9` sequence lives in the implementation workspace and tracker.
   - Mechanism runtime behavior should normally be described with runtime terms such as:
     - `sentence intake`
-    - `navigate.unitize`
+    - `Navigate.unitize`
     - `read`
-    - `navigate.route`
-    - `detour-search`
+    - `Navigate.route`
+    - `Navigate.detour_search`
     - `surfaced reactions`
     - `bridge_resolution`
     - `chapter-end slow cycle`

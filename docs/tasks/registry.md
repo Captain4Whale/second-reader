@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-05-03T20:15:46+08:00`
+Last updated: `2026-05-03T21:29:37+08:00`
 
 ## Status Values
 - `active`
@@ -31,7 +31,7 @@ Last updated: `2026-05-03T20:15:46+08:00`
   - keep the existing frontend lane active in parallel under `TASK-V2-NATIVE-READING-PRESENTATION`
   - `Phase A` is now landed:
     - heuristic trigger output no longer suppresses formal正文 reading
-    - the live control skeleton is now `navigate.unitize + read + navigate.route`
+    - the live control skeleton is now `Navigate.unitize + read + Navigate.route`
     - span authority now matches the exact chosen unit
   - `Phase B` is now landed:
     - `read` now owns the authoritative current-unit packet on the live path
@@ -39,13 +39,13 @@ Last updated: `2026-05-03T20:15:46+08:00`
     - mechanism-private `read_audit` records now capture carried refs plus supplemental-context use; the temporary `raw_reaction` shell from that slice was later retired by `Phase F3`
   - `Phase C.1` is now landed:
     - live prompt inputs now flow through a bounded internal `state_packet.v1` layer
-    - `navigate.unitize` now receives a small `navigation_context`
+    - `Navigate.unitize` now receives a small `navigation_context`
     - `read` now receives a packetized read context that explicitly separates continuity capsule, active-attention digest, reflective frame, active focus, and anchor-bank digest
     - persisted runtime files and public/frontend compatibility surfaces remain unchanged
   - `Phase C.2` is now landed as the first state-territory slice:
     - live state packets now derive a bounded `concept_digest` from the current `motif_index + unresolved_reference_index`
     - live state packets now derive a bounded `thread_digest` from the current `trace_links + unresolved_reference_index`
-    - `navigate.unitize` and `read` now both receive those small concept/thread digests without changing persisted runtime files or public surfaces
+    - `Navigate.unitize` and `read` now both receive those small concept/thread digests without changing persisted runtime files or public surfaces
   - `Phase C.3` is now landed:
     - new runs now treat `active_attention / concept_registry / thread_trace / reflective_frames / anchor_bank` as the primary runtime and checkpoint truth
     - old V2 state stores were demoted to cutover-only legacy territory during the cutover
@@ -73,7 +73,7 @@ Last updated: `2026-05-03T20:15:46+08:00`
     - slow-cycle compatibility projection and normalized eval export now derive old family labels through one compat helper instead of treating legacy `type` as the internal truth
     - this branch remains valuable evidence, but it is no longer the approved end-state target
   - `Phase F1` is now landed:
-    - the live per-unit loop is back to `navigate.unitize -> read -> navigate.route`
+    - the live per-unit loop is back to `Navigate.unitize -> read -> Navigate.route`
     - `Read` now owns `reading_impression`, surfaced reactions, memory uptake ops, pressure signals, and optional `detour_need`
     - the dedicated live `Express` node is no longer on the runner path
     - `Read` prompt packaging now follows compact `always carry / selective carry / not carry` projections
@@ -86,7 +86,7 @@ Last updated: `2026-05-03T20:15:46+08:00`
     - `Navigate` now owns bounded detour search over structure cards, memory digests, and source-grounded anchor handles
     - `local_continuity` now persists `mainline_cursor / active_detour_id / active_detour_need / detour_trace`
     - detour search uses one bounded prompt family with `narrow_scope / land_region / defer_detour`
-    - detour regions are now read through the same normal `navigate.unitize -> read -> navigate.route` loop
+    - detour regions are now read through the same normal `Navigate.unitize -> read -> Navigate.route` loop
     - chapter-tail detours are now drained before slow-cycle close
   - `Phase F3` is now landed:
     - persisted visible reactions now enter the system only through `Read.surfaced_reactions[]`
@@ -126,7 +126,7 @@ Last updated: `2026-05-03T20:15:46+08:00`
     - the dead `trigger -> zoom_read -> meaning_unit_closure -> controller_decision -> reaction_emission` path has been removed from live code
     - `text_role` is now explicitly documented as an inherited block-level weak cue
   - the first special-content handling slice is now also landed on that cleaned baseline:
-    - `navigate.unitize` now treats heading roles as weak cues rather than automatic standalone units
+    - `Navigate.unitize` now treats heading roles as weak cues rather than automatic standalone units
     - meaningful headings may still stand alone, but label-like headings now prefer merging with the immediately following body paragraph when the preview allows
     - deterministic fallback now widens `heading + first body paragraph` instead of returning a bare heading when that body paragraph is already visible
     - `Read` now explicitly stays proportionate around thin heading-like units and may remain silent there
