@@ -2347,3 +2347,32 @@ This new direction is design frozen but not yet implemented as a formal benchmar
 - `reading-companion-frontend/src/app/components/book-overview-page.tsx`
 - `reading-companion-frontend/src/app/lib/generated/api-schema.d.ts`
 - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_long_span_vnext_phase1_reaction_evidence_fix_rejudge_20260425/analysis/post_eval_action_ledger_20260503/README.md`
+
+## Entry 77
+**ID**: DEC-080
+**Status**: active
+
+**Decision / Inflection**: Make `Navigate.choose_next_unit` the current `attentional_v2` Navigator contract. Its mechanism-level meaning is **Choose Next Unit That Should Be Read**.
+
+**Period**: May 4, 2026, after `Navigate.route` and route-action vocabulary had been removed, and after the project reviewed whether mainline unitization and detour search should remain exposed as parallel current Navigator surfaces.
+
+**Problem**: Once route actions were gone, the runner still effectively had two selection shapes: ordinary mainline unitization and a separate detour episode branch that performed its own search, unitization, read, and settlement flow. That split made the current mechanism harder to reason about than its actual first-principles model: every turn needs one next unit to read, whether it comes from the mainline cursor or from an already-open detour need. Leaving `Navigate.unitize` and `Navigate.detour_search` as parallel architecture-level nodes also risked rebuilding another controller taxonomy after the route cleanup.
+
+**Alternatives considered**: Keep `Navigate.unitize` and `Navigate.detour_search` as two public mechanism nodes, rename the entrypoint to `prepare_next_unit`, or immediately introduce a tool/skill loop for source search. These were rejected for this slice. Keeping two public nodes preserved unnecessary ontology. `prepare_next_unit` sounded more like prompt packaging than selection. Tool/skill design may be useful later, but it would expand the scope beyond the current contract cleanup.
+
+**Why this path won**: `choose_next_unit` states the universal job directly: select the next readable unit that should be read now. Mainline forward reading and detour reading become two modes inside one selection contract, not two separate scheduling systems. The runner can then consume one `NavigateNextUnitResult` and send both mainline and landed-detour units through the same `Read -> runner settlement` path.
+
+**What changed in the system**: The current schema now includes `NavigateNextUnitResult` with `selection_mode = mainline | detour | deferred`, selected unit sentences, unitization decision, optional detour trace, and optional defer reason. The runner now calls `navigate_choose_next_unit(...)` each loop. Without an active detour it reuses the existing bounded preview and unitization helper; with an active detour it runs the existing bounded detour search, unitizes the landed region, and returns a normal read unit. Mainline and detour reads now share one settlement helper. The previous `_run_detour_episode(...)` duplicate read/settlement branch was removed.
+
+**Why it matters later**: Future navigation work should start from `Navigate.choose_next_unit`, not from reintroducing route actions or treating detour search as a second-class side channel. If later source-search skills or tool calls are added, they should be internal capabilities used by the choose-next-unit flow rather than a new competing mechanism ontology.
+
+**Primary evidence**:
+- `docs/backend-reading-mechanisms/attentional_v2.md`
+- `docs/implementation/new-reading-mechanism/attentional_v2_structural_rework_plan.md`
+- `docs/current-state.md`
+- `docs/tasks/registry.md`
+- `docs/tasks/registry.json`
+- `reading-companion-backend/src/attentional_v2/runner.py`
+- `reading-companion-backend/src/attentional_v2/schemas.py`
+- `reading-companion-backend/tests/test_attentional_v2_scaffold.py`
+- `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_long_span_vnext_phase1_reaction_evidence_fix_rejudge_20260425/analysis/post_eval_action_ledger_20260503/README.md`

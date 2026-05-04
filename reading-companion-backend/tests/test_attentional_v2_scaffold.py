@@ -9,7 +9,19 @@ import pytest
 
 from src.attentional_v2 import runner as runner_module
 from src.attentional_v2.slow_cycle import project_chapter_result_compatibility
-from src.attentional_v2.schemas import ATTENTIONAL_V2_MECHANISM_VERSION, ATTENTIONAL_V2_POLICY_VERSION, ATTENTIONAL_V2_SCHEMA_VERSION
+from src.attentional_v2.schemas import (
+    ATTENTIONAL_V2_MECHANISM_VERSION,
+    ATTENTIONAL_V2_POLICY_VERSION,
+    ATTENTIONAL_V2_SCHEMA_VERSION,
+    build_empty_active_attention,
+    build_empty_anchor_bank,
+    build_empty_concept_registry,
+    build_empty_local_buffer,
+    build_empty_local_continuity,
+    build_empty_reaction_records,
+    build_empty_reflective_frames,
+    build_empty_thread_trace,
+)
 from src.attentional_v2.storage import (
     ATTENTIONAL_V2_MECHANISM_KEY,
     anchor_bank_file,
@@ -649,6 +661,218 @@ def test_attentional_v2_chapter_selection_honors_explicit_request_over_reading_p
     )
 
     assert [chapter["title"] for chapter in chapters] == ["Afterword"]
+
+
+def _empty_choose_next_unit_state() -> dict[str, dict[str, object]]:
+    """Return the minimal live state required by Navigate.choose_next_unit."""
+
+    return {
+        "local_buffer": build_empty_local_buffer(),
+        "local_continuity": build_empty_local_continuity(),
+        "continuation_capsule": {},
+        "active_attention": build_empty_active_attention(),
+        "concept_registry": build_empty_concept_registry(),
+        "thread_trace": build_empty_thread_trace(),
+        "reflective_frames": build_empty_reflective_frames(),
+        "anchor_bank": build_empty_anchor_bank(),
+        "reaction_records": build_empty_reaction_records(),
+    }
+
+
+def test_navigate_choose_next_unit_selects_mainline_unit_without_active_detour(tmp_path, monkeypatch):
+    """The current Navigator contract should wrap mainline unitization as one next-unit decision."""
+
+    provisioned = _provisioned_book_with_detour()
+    document = provisioned.book_document
+    sentence_lookup, chapter_lookup = runner_module._build_sentence_lookup(document)  # noqa: SLF001
+    state = _empty_choose_next_unit_state()
+
+    monkeypatch.setattr(
+        runner_module,
+        "navigate_unitize",
+        lambda *, current_sentence, preview_sentences, **_kwargs: {
+            "start_sentence_id": current_sentence["sentence_id"],
+            "end_sentence_id": current_sentence["sentence_id"],
+            "preview_range": {
+                "start_sentence_id": preview_sentences[0]["sentence_id"],
+                "end_sentence_id": preview_sentences[-1]["sentence_id"],
+            },
+            "boundary_type": "paragraph_end",
+            "evidence_sentence_ids": [current_sentence["sentence_id"]],
+            "reason": "mainline_test",
+            "continuation_pressure": False,
+        },
+    )
+
+    result = runner_module.navigate_choose_next_unit(
+        document=document,
+        survey_map={},
+        sentence_lookup=sentence_lookup,
+        chapter_lookup=chapter_lookup,
+        current_chapter=document["chapters"][1],
+        current_cursor=0,
+        local_buffer=state["local_buffer"],  # type: ignore[arg-type]
+        continuation_capsule=state["continuation_capsule"],
+        active_attention=state["active_attention"],  # type: ignore[arg-type]
+        concept_registry=state["concept_registry"],  # type: ignore[arg-type]
+        thread_trace=state["thread_trace"],  # type: ignore[arg-type]
+        reflective_frames=state["reflective_frames"],  # type: ignore[arg-type]
+        anchor_bank=state["anchor_bank"],  # type: ignore[arg-type]
+        reaction_records=state["reaction_records"],  # type: ignore[arg-type]
+        local_continuity=state["local_continuity"],  # type: ignore[arg-type]
+        reader_policy=runner_module.build_default_reader_policy(),
+        output_language=provisioned.output_language,
+        output_dir=tmp_path,
+        book_title=provisioned.title,
+        author=provisioned.author,
+    )
+
+    assert result["selection_mode"] == "mainline"
+    assert result["chapter_id"] == 2
+    assert [sentence["sentence_id"] for sentence in result["selected_unit_sentences"]] == ["c2-s1"]
+
+
+def test_navigate_choose_next_unit_lands_detour_then_unitizes_inside_region(tmp_path, monkeypatch):
+    """An active detour should be located first, then unitized through the same next-unit contract."""
+
+    provisioned = _provisioned_book_with_detour()
+    document = provisioned.book_document
+    sentence_lookup, chapter_lookup = runner_module._build_sentence_lookup(document)  # noqa: SLF001
+    state = _empty_choose_next_unit_state()
+    local_continuity = state["local_continuity"]  # type: ignore[assignment]
+    local_continuity["mainline_cursor"] = {
+        "position_kind": "sentence",
+        "chapter_id": 2,
+        "chapter_ref": "Chapter 2",
+        "sentence_id": "c2-s1",
+        "sentence_index": 1,
+    }
+    local_continuity = runner_module._apply_detour_need(  # noqa: SLF001
+        local_continuity,
+        {
+            "reason": "Need the opening setup.",
+            "target_hint": "opening setup",
+            "status": "open",
+        },
+    )
+
+    def fake_detour_search(**kwargs):
+        assert kwargs["detour_need"]["target_hint"] == "opening setup"
+        return {
+            "decision": "land_region",
+            "reason": "Chapter 1 contains the setup.",
+            "start_sentence_id": "c1-s1",
+            "end_sentence_id": "c1-s2",
+        }
+
+    monkeypatch.setattr(runner_module, "navigate_detour_search", fake_detour_search)
+    monkeypatch.setattr(
+        runner_module,
+        "navigate_unitize",
+        lambda *, current_sentence, preview_sentences, **_kwargs: {
+            "start_sentence_id": current_sentence["sentence_id"],
+            "end_sentence_id": preview_sentences[-1]["sentence_id"],
+            "preview_range": {
+                "start_sentence_id": preview_sentences[0]["sentence_id"],
+                "end_sentence_id": preview_sentences[-1]["sentence_id"],
+            },
+            "boundary_type": "paragraph_end",
+            "evidence_sentence_ids": [current_sentence["sentence_id"], preview_sentences[-1]["sentence_id"]],
+            "reason": "detour_region_unitized",
+            "continuation_pressure": False,
+        },
+    )
+
+    result = runner_module.navigate_choose_next_unit(
+        document=document,
+        survey_map={},
+        sentence_lookup=sentence_lookup,
+        chapter_lookup=chapter_lookup,
+        current_chapter=document["chapters"][1],
+        current_cursor=0,
+        local_buffer=state["local_buffer"],  # type: ignore[arg-type]
+        continuation_capsule=state["continuation_capsule"],
+        active_attention=state["active_attention"],  # type: ignore[arg-type]
+        concept_registry=state["concept_registry"],  # type: ignore[arg-type]
+        thread_trace=state["thread_trace"],  # type: ignore[arg-type]
+        reflective_frames=state["reflective_frames"],  # type: ignore[arg-type]
+        anchor_bank=state["anchor_bank"],  # type: ignore[arg-type]
+        reaction_records=state["reaction_records"],  # type: ignore[arg-type]
+        local_continuity=local_continuity,
+        reader_policy=runner_module.build_default_reader_policy(),
+        output_language=provisioned.output_language,
+        output_dir=tmp_path,
+        book_title=provisioned.title,
+        author=provisioned.author,
+    )
+
+    assert result["selection_mode"] == "detour"
+    assert result["chapter_id"] == 1
+    assert [sentence["sentence_id"] for sentence in result["selected_unit_sentences"]] == ["c1-s1", "c1-s2"]
+    assert result["detour_search_trace"][0]["decision"] == "land_region"
+
+
+def test_navigate_choose_next_unit_defers_unlanded_detour(tmp_path, monkeypatch):
+    """A detour that cannot land should return a deferred next-unit result instead of running read."""
+
+    provisioned = _provisioned_book_with_detour()
+    document = provisioned.book_document
+    sentence_lookup, chapter_lookup = runner_module._build_sentence_lookup(document)  # noqa: SLF001
+    state = _empty_choose_next_unit_state()
+    local_continuity = state["local_continuity"]  # type: ignore[assignment]
+    local_continuity["mainline_cursor"] = {
+        "position_kind": "sentence",
+        "chapter_id": 2,
+        "chapter_ref": "Chapter 2",
+        "sentence_id": "c2-s1",
+        "sentence_index": 1,
+    }
+    local_continuity = runner_module._apply_detour_need(  # noqa: SLF001
+        local_continuity,
+        {
+            "reason": "Need the opening setup.",
+            "target_hint": "opening setup",
+            "status": "open",
+        },
+    )
+
+    monkeypatch.setattr(
+        runner_module,
+        "navigate_detour_search",
+        lambda **_kwargs: {
+            "decision": "defer_detour",
+            "reason": "not enough grounded evidence",
+            "start_sentence_id": "",
+            "end_sentence_id": "",
+        },
+    )
+
+    result = runner_module.navigate_choose_next_unit(
+        document=document,
+        survey_map={},
+        sentence_lookup=sentence_lookup,
+        chapter_lookup=chapter_lookup,
+        current_chapter=document["chapters"][1],
+        current_cursor=0,
+        local_buffer=state["local_buffer"],  # type: ignore[arg-type]
+        continuation_capsule=state["continuation_capsule"],
+        active_attention=state["active_attention"],  # type: ignore[arg-type]
+        concept_registry=state["concept_registry"],  # type: ignore[arg-type]
+        thread_trace=state["thread_trace"],  # type: ignore[arg-type]
+        reflective_frames=state["reflective_frames"],  # type: ignore[arg-type]
+        anchor_bank=state["anchor_bank"],  # type: ignore[arg-type]
+        reaction_records=state["reaction_records"],  # type: ignore[arg-type]
+        local_continuity=local_continuity,
+        reader_policy=runner_module.build_default_reader_policy(),
+        output_language=provisioned.output_language,
+        output_dir=tmp_path,
+        book_title=provisioned.title,
+        author=provisioned.author,
+    )
+
+    assert result["selection_mode"] == "deferred"
+    assert result["defer_reason"] == "not enough grounded evidence"
+    assert result["selected_unit_sentences"] == []
 
 
 def test_attentional_v2_read_book_runs_live_loop_and_persists_compatibility_results(tmp_path, monkeypatch):

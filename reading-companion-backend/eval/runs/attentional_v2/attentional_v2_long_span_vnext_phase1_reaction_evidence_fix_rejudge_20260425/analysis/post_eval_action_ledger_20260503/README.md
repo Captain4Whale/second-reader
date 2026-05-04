@@ -289,9 +289,44 @@ Each action should answer:
   - Public schema/frontend code: `../../../../../../../reading-companion-backend/src/api/schemas.py`, `../../../../../../../reading-companion-frontend/src/app/components/book-overview-page.tsx`
 - `follow-up`:
   - Complete for forward-settlement cutover.
-  - Future navigation work should start from `Navigate.unitize`, `Navigate.detour_search`, and runner settlement, not by reintroducing a route-action taxonomy.
+  - Superseded by `A9_navigate_choose_next_unit_cutover`, which makes `Navigate.choose_next_unit` the current architecture-level Navigator entrypoint.
 
-The first eight post-eval actions are recorded above. Later actions should be appended here only after their finding, decision, and implementation boundary have been agreed.
+### A9 — Navigate choose-next-unit cutover
+
+- `action_id`: `A9_navigate_choose_next_unit_cutover`
+- `status`: `landed`
+- `source finding`:
+  - After `Navigate.route` was removed, the current mechanism still described ordinary mainline unitization and detour search as two parallel Navigator-facing surfaces.
+  - That made the runner look like it owned two different read/settlement paths even though the intended mechanism was simpler: choose the next unit that should be read, then read and settle it normally.
+- `decision`:
+  - Make `Navigate.choose_next_unit` the current Navigator contract.
+  - Define its semantics as **Choose Next Unit That Should Be Read**.
+  - Keep mainline unitization and bounded detour search as private implementation helpers under that one entrypoint.
+  - Do not introduce tool/skill loops or a new route/forward action in this slice.
+- `implemented changes`:
+  - Added `NavigateNextUnitResult` with `selection_mode = mainline | detour | deferred`, selected sentences, unitization decision, optional detour trace, and optional defer reason.
+  - Added `navigate_choose_next_unit(...)` as the runner-facing Navigator entrypoint.
+  - Mainline selection reuses the existing bounded preview and unitization helper.
+  - Active detour selection reuses the existing bounded detour search, then unitizes the landed region before returning a normal read unit.
+  - Mainline and detour reads now share one runner settlement helper for read execution, memory uptake, surfaced reaction persistence, audit writing, runtime save, and probe capture.
+  - Removed the duplicated `_run_detour_episode(...)` read/settlement branch.
+- `validation`:
+  - Navigator scaffold tests cover mainline selection, landed detour selection, and detour deferral.
+  - Core `attentional_v2` node/state/resume/evaluation tests passed during implementation.
+  - Follow-up validation should keep checking that detour search never crosses `mainline_cursor`, detour reads do not advance the mainline cursor, and deferred detours cannot stall the loop.
+- `evidence links`:
+  - Current mechanism contract: `../../../../../../../docs/backend-reading-mechanisms/attentional_v2.md`
+  - Structural rework plan: `../../../../../../../docs/implementation/new-reading-mechanism/attentional_v2_structural_rework_plan.md`
+  - Current state: `../../../../../../../docs/current-state.md`
+  - Task registry: `../../../../../../../docs/tasks/registry.md`
+  - Decision history: `../../../../../../../docs/history/decision-log.md`
+  - Backend runner/schema code: `../../../../../../../reading-companion-backend/src/attentional_v2/runner.py`, `../../../../../../../reading-companion-backend/src/attentional_v2/schemas.py`
+  - Navigator scaffold tests: `../../../../../../../reading-companion-backend/tests/test_attentional_v2_scaffold.py`
+- `follow-up`:
+  - Complete for the contract cutover.
+  - Future Navigator work should start from `Navigate.choose_next_unit`; source-search skills/tool loops remain a separate future design, not part of this action.
+
+The first nine post-eval actions are recorded above. Later actions should be appended here only after their finding, decision, and implementation boundary have been agreed.
 
 ### Action Template
 

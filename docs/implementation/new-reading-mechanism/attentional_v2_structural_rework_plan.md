@@ -15,7 +15,7 @@ Implementation checkpoint:
 
 - `Phase A` is landed:
   - trigger output no longer gates whether正文 text gets formal reading
-  - the live control skeleton is now `Navigate.unitize -> read -> runner post-read settlement`
+  - this phase introduced the `Navigate.unitize -> read -> runner post-read settlement` control skeleton that later cutovers have now absorbed under `Navigate.choose_next_unit`
   - span authority now matches the exact chosen unit
 - `Phase B` is landed:
   - `read` now owns the authoritative unit packet on the live path
@@ -59,7 +59,7 @@ Implementation checkpoint:
   - persisted `reaction_records` now keep surfaced semantics first and old family labels survive only as compatibility projections
   - this branch remains valuable evidence, but it is no longer the approved end-state target for the mechanism
 - `Phase F1` is now landed as the first post-freeze cutover:
-  - the live per-unit loop is now `Navigate.unitize -> read -> runner post-read settlement`
+  - the live per-unit loop was cut back to `Navigate.unitize -> read -> runner post-read settlement`, which is now implemented through the higher-level `Navigate.choose_next_unit -> read -> runner post-read settlement` contract
   - `Read` now directly owns `reading_impression`, surfaced reactions, memory uptake ops, and optional `detour_need`
   - the dedicated live `Express` node is no longer on the runner path
   - `Read` prompt packaging now follows compact `always carry / selective carry / not carry` projections
@@ -79,7 +79,7 @@ Implementation checkpoint:
     - `narrow_scope`
     - `land_region`
     - `defer_detour`
-  - landed detour regions now re-enter the same normal `Navigate.unitize -> read -> runner post-read settlement` reading loop
+  - landed detour regions now re-enter the same normal `Navigate.choose_next_unit -> read -> runner post-read settlement` reading loop
   - chapter-tail detours are now drained before chapter slow-cycle closes
 - `Phase F3` is now landed as the reaction-persistence and compatibility reconvergence slice:
   - persisted visible reactions now enter the system only through `Read.surfaced_reactions[]`
@@ -91,8 +91,13 @@ Implementation checkpoint:
   - `Navigate.route`, `route_action`, `route_history`, and `pressure_signals` are no longer current live-path contracts
   - ordinary forward progression is runner-owned cursor advancement, not a semantic action
   - `Detour` remains the only current non-mainline scheduling mechanism
-- next after the forward-settlement cutover:
-  - validate quality and clean any remaining dead steady-state branches without reintroducing a route taxonomy
+- `Navigate.choose_next_unit` cutover is now landed:
+  - current Navigator contract is `Choose Next Unit That Should Be Read`
+  - runner calls one architecture-level Navigator entrypoint and receives one `NavigateNextUnitResult`
+  - mainline unitization and detour search remain private implementation helpers under that entrypoint
+  - mainline and landed-detour reads now share the same runner settlement path
+- next after the choose-next-unit cutover:
+  - validate quality and clean any remaining dead steady-state branches without reintroducing route taxonomy or parallel Navigator node ontology
 
 Primary upstream evidence:
 

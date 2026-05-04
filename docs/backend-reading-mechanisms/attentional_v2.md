@@ -72,7 +72,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - the live per-unit loop remains:
     - `Navigate.unitize -> read -> runner settlement`
   - `Read` now emits `detour_need` directly on the live path instead of the transitional `revisit_need`
-  - `Navigate` now owns detour localization and dispatch through one bounded `Navigate.detour_search` loop
+  - `Navigate` now owns detour localization and dispatch through the bounded detour-search helper inside `Navigate.choose_next_unit`
   - `local_continuity` now persists:
     - `mainline_cursor`
     - `active_detour_id`
@@ -134,6 +134,11 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - After `Read`, the runner deterministically applies memory uptake, persists surfaced reactions, writes audit records, closes the current unit, and advances the cursor to the unit end.
   - There is no replacement `forward` action.
   - `Detour` remains the only current non-mainline scheduling mechanism.
+- The `Navigate.choose_next_unit` cutover is now landed.
+  - The current Navigator contract is **Choose Next Unit That Should Be Read**.
+  - Runner calls one architecture-level Navigator entrypoint and consumes one `NavigateNextUnitResult`.
+  - Mainline unitization and detour localization are implementation strategies inside that entrypoint, not parallel live mechanism nodes.
+  - Landed detours and ordinary mainline reads now enter the same `Read -> runner settlement` path.
 - Phase D of the post-eval structural rework is now landed as preserved intermediate continuity / recall / resume evidence.
   - that branch added a budget-bounded multi-step supplemental loop around `read`.
   - Runtime state and full checkpoints now persist a lightweight `continuation capsule` with explicit `rehydration entrypoints`.
@@ -142,18 +147,18 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
 
 ## Naming Note
 - `Phase 3`, `Phase 4`, `Phase 5`, and `Phase 6` in this document refer to historical implementation-stage groupings, not to a user-facing or mechanism-intrinsic sequence of named runtime phases.
-- Navigator capability names use the architecture-facing form `Navigate.<capability>` in stable docs:
-  - `Navigate.unitize`
-  - `Navigate.detour_search`
+- The current Navigator capability name in stable docs is `Navigate.choose_next_unit`.
+  - It means: choose the next unit that should be read.
+  - Internal implementation helpers may still unitize mainline previews or run bounded detour search, but those helpers are not the mechanism ontology.
 - `Navigate.route` is historical route-layer vocabulary after the forward-settlement cutover.
 - Python functions, prompt manifest node names, and trace node ids remain implementation-facing `snake_case` identifiers such as `navigate_unitize` and `navigate_detour_search`.
 - The live runtime should be explained as a reading loop:
   - sentence intake as pure local-buffer maintenance
-  - `Navigate.unitize`
+  - `Navigate.choose_next_unit`
   - mandatory formal unit read with bounded carry-forward context
   - `read` directly surfaces zero-to-many reading-time reactions and emits bounded state ops
   - runner post-read settlement applies memory uptake, persists reactions, writes audit, closes the unit, and advances the cursor
-  - optional `detour_need` may redirect the next normal reading step through the live `Navigate`-owned detour loop
+  - optional `detour_need` may redirect the next normal `Navigate.choose_next_unit` call through the live Navigator-owned detour path
   - chapter-end slow-cycle work such as `chapter_consolidation`, `reflective_promotion`, and `reconsolidation`
 - The old `trigger -> zoom_read -> meaning_unit_closure -> controller_decision -> reaction_emission` chain is now historical implementation vocabulary, not live runtime behavior.
   - Those names may still appear in historical docs, old artifacts, or decision entries.
@@ -186,7 +191,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
 - `detour`
   - a normal reading redirection away from the mainline cursor
   - it is not a private supplemental fetch or a second-class side channel
-  - once a detour region is chosen, it is read through the same `Navigate.unitize -> read -> runner settlement` loop as any other unit
+  - once a detour region is chosen, it is read through the same `Navigate.choose_next_unit -> read -> runner settlement` loop as any other unit
 
 ## Reading Progression Logic
 - The mechanism starts with a survey pass.
@@ -207,21 +212,22 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - It does not emit `trigger_state`, `watch_state`, or any `no_zoom / monitor / zoom_now` gate packet.
 - The current live forward-settlement baseline now runs:
   - ingest the next unread sentence
-  - if an open detour exists, let `Navigate` run bounded detour search and choose the next detour region
-  - `Navigate.unitize` over a fixed preview window
+  - call `Navigate.choose_next_unit`
+    - without an open detour, it unitizes the bounded mainline preview
+    - with an open detour, it runs bounded detour search and then unitizes the landed region
   - build a small `carry-forward context` from persisted state
   - formally read the chosen coverage unit through `read`
   - let `read` directly surface zero-to-many reading-time reactions for that exact unit
   - persist any `detour_need` into `local_continuity` instead of privately resolving it inside `Read`
   - runner post-read settlement closes the exact unit and advances the cursor to the sentence after it
-- The live F2 follow-up after F1 now adds:
-  - one bounded Navigate.detour_search loop owned by `Navigate`
+- The live F2 follow-up after F1 added:
+  - one bounded detour-search helper owned by `Navigate.choose_next_unit`
   - detour-local state in `local_continuity`
   - detour reading that reuses the ordinary read path instead of a special helper path
-- `Navigate.unitize` is now the sole selector of the next coverage unit.
+- `Navigate.choose_next_unit` is now the sole current selector of the next coverage unit.
   - Boundary choice is prompt-led and semantic.
   - Runtime guardrails only keep the unit from running away.
-  - It now receives a bounded `navigation_context` packet built from continuity and state digests only.
+  - In the mainline case, its unitization helper receives a bounded `navigation_context` packet built from continuity and state digests only.
   - The fixed Phase A preview window is:
     - current paragraph remainder
     - plus the next paragraph in the same section
@@ -289,28 +295,29 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
 ## LLM Call Schedule
 - The main LLM is now called for every formal coverage unit, not for every sentence.
 - The current live node bundle is:
-  - `Navigate.unitize`
+  - `Navigate.choose_next_unit`
   - `read_unit`
   - `reflective_promotion`
   - `reconsolidation`
   - `chapter_consolidation`
 - The next follow-up node bundle after F1 is expected to remain:
-  - `Navigate.unitize`
+  - `Navigate.choose_next_unit`
   - `read_unit`
-  - optional later detour dispatch through `Navigate.detour_search`
   - `reflective_promotion`
   - `reconsolidation`
   - `chapter_consolidation`
 - The runtime schedule is intentionally narrower than the old node inventory:
   - sentence-level intake still runs without LLM
-  - `Navigate.unitize` decides the next coverage unit before formal reading begins
+  - `Navigate.choose_next_unit` decides the next coverage unit before formal reading begins
+  - ordinary mainline choice normally uses one unitization LLM call
+  - an active detour may add bounded detour-search calls before the unitization call
   - `read_unit` is now the only steady-state per-unit interpretation call
   - surfaced reactions now come from that same read call rather than from a follow-on wording node
   - ordinary forward progression is deterministic runner settlement rather than a route action
 - Under the approved next shape:
+  - `Navigate.choose_next_unit` owns next-unit selection across mainline and explicit detour cases
   - `read` owns current-unit reading impression, surfaced reactions, memory uptake, and detour signaling
   - `runner` owns post-read settlement and cursor advance
-  - `Navigate.detour_search` owns only explicit non-mainline detour localization
   - `slow cycle` owns chapter-end consolidation and promotion
 
 ## Frozen Next-Shape Contract
@@ -383,13 +390,13 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - It exists for slow-cycle aggregation, eval normalization, and UI adapter continuity.
   - It is now derived from persisted surfaced reaction records through one compat helper rather than treated as the persisted reaction truth.
   - It must not become the governing shape of the new `Read` prompt.
-- Default call types are:
-  - `unitize call`
-    - choose the next exact coverage unit from the current bounded preview
+- Default current call types are:
+  - `Navigate.choose_next_unit`
+    - choose the next exact coverage unit that should be read now
+    - in ordinary mainline mode, this uses the bounded preview and unitization helper
+    - when an explicit detour need is active, this may use bounded detour-search helper calls before unitizing the landed region
   - `formal read`
     - interpret the chosen unit with compact carry-forward context
-  - `Navigate.detour_search call`
-    - localize an earlier already-read region when a live detour need remains open
   - `chapter consolidation`
     - update broader hypotheses and unresolved tensions at a local milestone
 
@@ -585,8 +592,8 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
     - debug-only diagnostics stream once Phase 8 debug mode is enabled
   - `_mechanisms/attentional_v2/internal/prompt_manifests/*.json`
 - Current scaffolded prompt manifests now include:
-  - `navigate_unitize` (implementation id for `Navigate.unitize`)
-  - `navigate_detour_search` (implementation id for `Navigate.detour_search`)
+  - `navigate_unitize` (implementation helper used by `Navigate.choose_next_unit` for mainline and landed-detour unit boundaries)
+  - `navigate_detour_search` (implementation helper used by `Navigate.choose_next_unit` when an explicit `detour_need` is active)
   - `read_unit`
   - `reflective_promotion`
   - `reconsolidation`

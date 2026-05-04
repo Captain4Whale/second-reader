@@ -20,6 +20,7 @@ UnitizeBoundaryType = Literal[
 ContextRequestKind = Literal["active_recall", "look_back"]
 DetourStatus = Literal["open", "resolved", "abandoned"]
 DetourSearchDecision = Literal["narrow_scope", "land_region", "defer_detour"]
+NavigateSelectionMode = Literal["mainline", "detour", "deferred"]
 StateOperationType = Literal[
     "append",
     "update",
@@ -363,6 +364,19 @@ class DetourSearchResult(TypedDict, total=False):
     reason: str
     start_sentence_id: str
     end_sentence_id: str
+
+
+class NavigateNextUnitResult(TypedDict, total=False):
+    """One Navigator-selected unit that should be read next."""
+
+    selection_mode: NavigateSelectionMode
+    chapter_id: int
+    chapter_ref: str
+    selected_unit_sentences: list[dict[str, object]]
+    unitize_decision: UnitizeDecision
+    detour_search_trace: list[DetourSearchResult]
+    defer_reason: str
+    detour_context: dict[str, object] | None
 
 
 class BridgeCandidate(TypedDict, total=False):
