@@ -25,7 +25,6 @@ ReactionFilter = Literal[
     REACTION_FILTERS[5],
 ]
 MarkType = Literal[MARK_TYPES[0], MARK_TYPES[1], MARK_TYPES[2]]
-RouteAction = Literal["commit", "continue", "bridge_back", "reframe"]
 ResumeMode = Literal["warm_resume", "cold_resume", "reconstitution_resume"]
 StatusReason = Literal[
     "runtime_stale",
@@ -369,10 +368,6 @@ class CurrentReadingActivity(ApiModel):
         default=None,
         description="Additive span- or sentence-based reading locus projected from mechanism truth when available.",
     )
-    route_action: Optional[RouteAction] = Field(
-        default=None,
-        description="Current route action when the mechanism exposes it directly.",
-    )
     search_query: Optional[str] = Field(default=None, description="Search query being investigated when the reader is searching.")
     thought_family: Optional[ReactionType] = Field(
         default=None,
@@ -525,10 +520,6 @@ class ActivityEvent(ApiModel):
     reading_locus: Optional[ReadingLocus] = Field(
         default=None,
         description="Additive span- or sentence-based locus carried by the event when available.",
-    )
-    route_action: Optional[RouteAction] = Field(
-        default=None,
-        description="Current route action when the event represents a mechanism-authored route decision.",
     )
     active_reaction_id: Optional[int] = Field(
         default=None,

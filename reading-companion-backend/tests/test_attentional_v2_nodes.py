@@ -9,7 +9,6 @@ from src.attentional_v2 import nodes as nodes_module
 from src.attentional_v2.nodes import (
     build_unitize_preview,
     navigate_detour_search,
-    navigate_route,
     navigate_unitize,
     read_unit,
 )
@@ -40,7 +39,7 @@ def _navigation_context() -> dict[str, object]:
         "session_continuity_capsule": {"recent_sentence_ids": ["c0-s9"]},
         "active_attention_digest": {"active_items": []},
         "chapter_reflective_frame": {"chapter_frames": []},
-        "active_focus_digest": {"recent_routes": []},
+        "active_focus_digest": {"recent_reactions": []},
         "concept_digest": [],
         "thread_digest": [],
         "anchor_bank_digest": {"active_anchors": []},
@@ -336,7 +335,7 @@ def test_navigate_detour_search_normalizes_invalid_land_into_defer(tmp_path: Pat
     assert "Navigate.detour_search" in manifest["system_prompt"]
 
 
-def test_read_unit_filters_unanchored_surface_and_uses_pressure_signals(tmp_path: Path, monkeypatch):
+def test_read_unit_filters_unanchored_surface_and_uses_naturalized_contract(tmp_path: Path, monkeypatch):
     """Read should keep only reader-facing surfaced reactions and use the current naturalized contract."""
 
     captured: dict[str, str] = {}
@@ -346,11 +345,6 @@ def test_read_unit_filters_unanchored_surface_and_uses_pressure_signals(tmp_path
         captured["prompt"] = prompt
         return {
             "reading_impression": "The line flips the frame.",
-            "pressure_signals": {
-                "continuation_pressure": False,
-                "backward_pull": False,
-                "frame_shift_pressure": True,
-            },
             "surfaced_reactions": [
                 {
                     "anchor_quote": "Alpha hinge.",
@@ -405,11 +399,6 @@ def test_read_unit_filters_unanchored_surface_and_uses_pressure_signals(tmp_path
     manifest = json.loads((tmp_path / "_mechanisms" / "attentional_v2" / "internal" / "prompt_manifests" / "read_unit.json").read_text(encoding="utf-8"))
 
     assert result["reading_impression"] == "The line flips the frame."
-    assert result["pressure_signals"] == {
-        "continuation_pressure": False,
-        "backward_pull": False,
-        "frame_shift_pressure": True,
-    }
     assert result["surfaced_reactions"] == [
         {
             "anchor_quote": "Alpha hinge.",
@@ -452,7 +441,9 @@ def test_read_unit_filters_unanchored_surface_and_uses_pressure_signals(tmp_path
     assert "This answers anchor:a-1 directly." in captured["system_prompt"]
     assert "`unit_delta`" not in captured["system_prompt"]
     assert "`implicit_uptake_ops`" not in captured["system_prompt"]
-    assert manifest["prompt_version"] == "attentional_v2.read.v13"
+    assert "Do not decide or name the next route." in captured["system_prompt"]
+    assert "`pressure_signals`" not in captured["system_prompt"]
+    assert manifest["prompt_version"] == "attentional_v2.read.v14"
 
 
 def test_read_unit_contract_preserves_source_given_stage_model_as_memory_uptake(tmp_path: Path, monkeypatch):
@@ -465,11 +456,6 @@ def test_read_unit_contract_preserves_source_given_stage_model_as_memory_uptake(
         captured["prompt"] = prompt
         return {
             "reading_impression": "作者把集中营生活的精神反应先搭成三阶段框架，并开始进入第一阶段。",
-            "pressure_signals": {
-                "continuation_pressure": True,
-                "backward_pull": False,
-                "frame_shift_pressure": False,
-            },
             "surfaced_reactions": [],
             "memory_uptake_ops": [
                 {
@@ -515,26 +501,3 @@ def test_read_unit_contract_preserves_source_given_stage_model_as_memory_uptake(
     assert result["surfaced_reactions"] == []
     assert result["memory_uptake_ops"][0]["target_store"] == "thread_trace"
     assert "三个阶段" in result["memory_uptake_ops"][0]["payload"]["statement"]
-
-
-def test_navigate_route_uses_pressure_signals_only():
-    """Route decisions should be deterministic projections of the normalized read packet."""
-
-    decision = navigate_route(
-        read_result={
-            "reading_impression": "This section wants to keep unfolding.",
-            "pressure_signals": {
-                "continuation_pressure": True,
-                "backward_pull": False,
-                "frame_shift_pressure": False,
-            },
-        }
-    )
-
-    assert decision == {
-        "action": "continue",
-        "reason": "This section wants to keep unfolding.",
-        "close_current_unit": True,
-        "target_anchor_id": "",
-        "target_sentence_id": "",
-    }

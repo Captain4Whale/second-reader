@@ -22,9 +22,7 @@ from .schemas import (
     DetourSearchResult,
     KnowledgeActivationsState,
     NavigationContext,
-    NavigateRouteDecision,
     OutsideLink,
-    PressureSignals,
     PreviewRange,
     PriorLink,
     ReactionCandidate,
@@ -48,7 +46,6 @@ _REACTION_TYPES: set[ReactionType] = {
     "retrospect",
     "silent",
 }
-_ROUTE_ACTIONS = {"commit", "continue", "bridge_back", "reframe"}
 _OUTSIDE_LINK_KINDS = {"work", "person", "concept", "history", "analogy", "other"}
 _UNITIZE_BOUNDARY_TYPES: set[UnitizeBoundaryType] = {
     "paragraph_end",
@@ -602,22 +599,6 @@ def _normalize_reaction_candidate(value: object) -> ReactionCandidate | None:
     }
 
 
-def _normalize_pressure_signals(value: object) -> PressureSignals:
-    """Normalize one local post-read pressure packet."""
-
-    if not isinstance(value, dict):
-        return {
-            "continuation_pressure": False,
-            "backward_pull": False,
-            "frame_shift_pressure": False,
-        }
-    return {
-        "continuation_pressure": bool(value.get("continuation_pressure")),
-        "backward_pull": bool(value.get("backward_pull")),
-        "frame_shift_pressure": bool(value.get("frame_shift_pressure")),
-    }
-
-
 def _normalize_prior_link(
     value: object,
     *,
@@ -792,11 +773,6 @@ def _fallback_read_unit_result(
 
     return {
         "reading_impression": _clean_text(reason),
-        "pressure_signals": {
-            "continuation_pressure": bool(continuation_pressure),
-            "backward_pull": False,
-            "frame_shift_pressure": False,
-        },
         "surfaced_reactions": [],
         "memory_uptake_ops": [],
         "detour_need": None,
@@ -1064,7 +1040,6 @@ def read_unit(
             if isinstance(excerpt, dict) and _clean_text(excerpt.get("ref_id"))
         )
 
-    pressure_signals = _normalize_pressure_signals(payload.get("pressure_signals")) if isinstance(payload, dict) else {}
     surfaced_reactions = _normalize_surfaced_reactions(
         payload.get("surfaced_reactions") if isinstance(payload, dict) else None,
         current_unit_texts=current_unit_texts,
@@ -1073,7 +1048,6 @@ def read_unit(
     reading_impression = _clean_text(payload.get("reading_impression")) if isinstance(payload, dict) else ""
     result: ReadUnitResult = {
         "reading_impression": reading_impression,
-        "pressure_signals": pressure_signals,
         "surfaced_reactions": surfaced_reactions,
         "memory_uptake_ops": _normalize_state_operations(
             payload.get("memory_uptake_ops") if isinstance(payload, dict) else None
@@ -1081,28 +1055,3 @@ def read_unit(
         "detour_need": _normalize_detour_need(payload.get("detour_need")) if isinstance(payload, dict) else None,
     }
     return result
-
-
-def navigate_route(
-    *,
-    read_result: ReadUnitResult,
-) -> NavigateRouteDecision:
-    """Normalize the next-step route from the authoritative read packet."""
-
-    action = "commit"
-    pressure_signals = dict(read_result.get("pressure_signals") or {})
-    if bool(pressure_signals.get("backward_pull")):
-        action = "bridge_back"
-    elif bool(pressure_signals.get("frame_shift_pressure")):
-        action = "reframe"
-    elif bool(pressure_signals.get("continuation_pressure")):
-        action = "continue"
-    if action not in _ROUTE_ACTIONS:
-        action = "commit"
-    return {
-        "action": action,  # type: ignore[typeddict-item]
-        "reason": _clean_text(read_result.get("reading_impression")),
-        "close_current_unit": True,
-        "target_anchor_id": "",
-        "target_sentence_id": "",
-    }

@@ -1617,21 +1617,6 @@ function currentChapterId(detail: BookDetailResponse, analysis: AnalysisStateRes
   );
 }
 
-function routeActionLabel(routeAction: string): string {
-  switch (routeAction) {
-    case "commit":
-      return copy("overview.mindstream.meta.routeAction.commit");
-    case "continue":
-      return copy("overview.mindstream.meta.routeAction.continue");
-    case "bridge_back":
-      return copy("overview.mindstream.meta.routeAction.bridgeBack");
-    case "reframe":
-      return copy("overview.mindstream.meta.routeAction.reframe");
-    default:
-      return routeAction;
-  }
-}
-
 function buildReadingLocus(detail: BookDetailResponse, analysis: AnalysisStateResponse | null): ReadingLocus {
   const liveActivity = currentReadingActivity(analysis);
   const liveLocus = liveActivity?.reading_locus ?? null;
@@ -2188,14 +2173,13 @@ function MindstreamHeroCard({
   const runtimeState = describeRuntimeState(detail, analysis, { isParsing: isAnalysisParsing(analysis) });
   const quoteText = currentActivity ? formatMindstreamQuote(currentActivity) : null;
   const liveActivity = currentReadingActivity(analysis);
-  const currentRouteAction = String(liveActivity?.route_action ?? "").trim();
   const activeReactionId = liveActivity?.active_reaction_id ?? null;
   const activeThoughtChapterId = currentChapterId(detail, analysis);
   const activeThoughtUrl =
     activeReactionId != null && activeThoughtChapterId != null
       ? `${canonicalChapterPath(detail.book_id, activeThoughtChapterId)}?reaction=${activeReactionId}`
       : null;
-  const showLiveMeta = currentActivity?.mode !== "paused" && Boolean(currentRouteAction || activeReactionId != null);
+  const showLiveMeta = currentActivity?.mode !== "paused" && activeReactionId != null;
 
   return (
     <section className="mb-8 rounded-3xl border border-[var(--warm-300)]/30 bg-white px-6 py-6 shadow-sm md:px-10 md:py-9">
@@ -2252,15 +2236,6 @@ function MindstreamHeroCard({
 
           {showLiveMeta ? (
             <div className="mt-4 flex flex-wrap items-center gap-2">
-              {currentRouteAction ? (
-                <span
-                  className="inline-flex items-center gap-1.5 rounded-full border border-[var(--warm-300)]/55 bg-[var(--warm-50)] px-3 py-1.5 text-[var(--warm-700)]"
-                  style={uiTypography.captionMedium}
-                >
-                  <span className="text-[var(--warm-500)]">{copy("overview.mindstream.meta.routeAction.label")}</span>
-                  <span className="font-semibold text-[var(--warm-800)]">{routeActionLabel(currentRouteAction)}</span>
-                </span>
-              ) : null}
               {activeReactionId != null ? (
                 activeThoughtUrl ? (
                   <Link

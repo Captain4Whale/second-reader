@@ -20,7 +20,6 @@ from .schemas import (
     build_empty_local_continuity,
     build_empty_continuation_capsule,
     build_empty_knowledge_activations,
-    build_empty_route_history,
     build_empty_reaction_records,
     build_empty_reconsolidation_records,
     build_empty_reflective_frames,
@@ -148,12 +147,6 @@ def knowledge_activations_file(output_dir: Path) -> Path:
     return runtime_dir(output_dir) / "knowledge_activations.json"
 
 
-def route_history_file(output_dir: Path) -> Path:
-    """Return the route-history path."""
-
-    return runtime_dir(output_dir) / "route_history.json"
-
-
 def reaction_records_file(output_dir: Path) -> Path:
     """Return the durable anchored-reaction ledger path."""
 
@@ -249,7 +242,6 @@ def artifact_map(output_dir: Path) -> dict[str, str]:
         "reflective_frames": str(reflective_frames_file(output_dir).relative_to(output_dir)),
         "anchor_bank": str(anchor_bank_file(output_dir).relative_to(output_dir)),
         "knowledge_activations": str(knowledge_activations_file(output_dir).relative_to(output_dir)),
-        "route_history": str(route_history_file(output_dir).relative_to(output_dir)),
         "reaction_records": str(reaction_records_file(output_dir).relative_to(output_dir)),
         "reconsolidation_records": str(reconsolidation_records_file(output_dir).relative_to(output_dir)),
         "reader_policy": str(reader_policy_file(output_dir).relative_to(output_dir)),
@@ -369,7 +361,6 @@ def initialize_artifact_tree(
         knowledge_activations_file(output_dir),
         build_empty_knowledge_activations(mechanism_version=mechanism_version),
     )
-    ensure_json(route_history_file(output_dir), build_empty_route_history(mechanism_version=mechanism_version))
     ensure_json(reaction_records_file(output_dir), build_empty_reaction_records(mechanism_version=mechanism_version))
     ensure_json(
         reconsolidation_records_file(output_dir),

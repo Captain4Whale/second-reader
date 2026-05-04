@@ -2308,3 +2308,42 @@ This new direction is design frozen but not yet implemented as a formal benchmar
 - `reading-companion-backend/tests/test_attentional_v2_phase_b.py`
 - `reading-companion-backend/tests/test_attentional_v2_resume.py`
 - `reading-companion-backend/tests/test_attentional_v2_scaffold.py`
+
+## Entry 76
+**ID**: DEC-079
+**Status**: active
+
+**Decision / Inflection**: Retire `Navigate.route` and the `commit / continue / bridge_back / reframe` route-action taxonomy from current `attentional_v2`. Current forward reading is now settled by the runner after `Read`, while `Detour` remains the only non-mainline scheduling mechanism.
+
+**Period**: May 4, 2026, after the project re-examined whether the remaining route-action layer still had a first-principles role after Read naturalization, Active Attention cleanup, and Detour ownership had landed.
+
+**Problem**: The route-action layer survived several earlier cleanups because it was once a useful bridge away from older `advance / dwell / bridge / reframe` controller vocabulary. But after the mechanism stabilized around `Navigate.unitize -> read -> runner settlement`, the four current route actions no longer owned distinct behavior. Ordinary forward progress was already cursor progression performed by the runner. `Read` already owned memory uptake, surfaced reactions, and detour need. `Detour` already owned non-mainline scheduling. `bridge_back` and `reframe` had become historical controller echoes rather than meaningful current scheduling actions.
+
+**Alternatives considered**: Keep `route_action` as a public/eval explanation chip, collapse the taxonomy into a single `forward` action, or migrate `bridge_back` / `reframe` effects into `Read`. These were rejected because they would preserve a taxonomy for something that is now ordinary control flow. A single `forward` action would still make default cursor advancement look like a semantic decision, and migrating bridge/reframe would risk reintroducing low-value derived state updates that the current memory model no longer needs.
+
+**Why this path won**: The simplest true model is also the most universal: `Navigate` chooses the next unit or detour target, `Read` reads the chosen unit and emits memory/reaction/detour outputs, and the runner deterministically settles that read and advances the cursor. That model removes route labels that no longer change behavior, avoids confusing future agents with controller-era names, and keeps non-mainline movement concentrated in the explicit Detour mechanism.
+
+**What changed in the system**: The runner no longer calls `navigate_route`. `ReadResult` no longer emits `pressure_signals`. New runtime state no longer creates `route_history.json`, and old `route_history` / `move_history` runtime state fails fast on warm resume rather than being migrated. Public schemas, OpenAPI-generated frontend types, overview live-chip copy, normalized eval export, and Memory Quality probe support no longer expose `route_action` as current evidence. Stable mechanism/API/evaluation/current-state docs now describe post-read settlement as runner-owned deterministic behavior.
+
+**Why it matters later**: Future navigation work should not resurrect a generic route taxonomy unless it creates a real scheduling capability. If the mechanism needs to leave the mainline, use Detour. If it is simply done reading the chosen unit, the runner advances. If a reaction links backward, the surfaced reaction and anchor evidence should carry that linkage rather than a route action. This is the point where `attentional_v2` becomes cleaner than the intermediate controller shapes that helped it evolve.
+
+**Primary evidence**:
+- `docs/backend-reading-mechanisms/attentional_v2.md`
+- `docs/api-contract.md`
+- `docs/api-integration.md`
+- `docs/backend-reading-mechanism.md`
+- `docs/backend-state-aggregation.md`
+- `docs/backend-reader-evaluation.md`
+- `docs/current-state.md`
+- `docs/tasks/registry.md`
+- `docs/tasks/registry.json`
+- `reading-companion-backend/src/attentional_v2/runner.py`
+- `reading-companion-backend/src/attentional_v2/schemas.py`
+- `reading-companion-backend/src/attentional_v2/nodes.py`
+- `reading-companion-backend/src/attentional_v2/prompts.py`
+- `reading-companion-backend/src/attentional_v2/storage.py`
+- `reading-companion-backend/src/attentional_v2/resume.py`
+- `reading-companion-backend/src/api/schemas.py`
+- `reading-companion-frontend/src/app/components/book-overview-page.tsx`
+- `reading-companion-frontend/src/app/lib/generated/api-schema.d.ts`
+- `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_long_span_vnext_phase1_reaction_evidence_fix_rejudge_20260425/analysis/post_eval_action_ledger_20260503/README.md`

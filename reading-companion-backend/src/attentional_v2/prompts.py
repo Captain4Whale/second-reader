@@ -7,11 +7,11 @@ from dataclasses import dataclass
 from src.prompts.shared import LANGUAGE_OUTPUT_CONTRACT
 
 
-ATTENTIONAL_V2_PROMPTSET_VERSION = "attentional_v2-phase6-v23"
+ATTENTIONAL_V2_PROMPTSET_VERSION = "attentional_v2-phase6-v24"
 SURVEY_CHAPTER_ZONE_PROMPT_VERSION = "attentional_v2.survey_chapter_zone.v1"
 NAVIGATE_UNITIZE_PROMPT_VERSION = "attentional_v2.navigate_unitize.v4"
 NAVIGATE_DETOUR_SEARCH_PROMPT_VERSION = "attentional_v2.navigate_detour_search.v2"
-READ_UNIT_PROMPT_VERSION = "attentional_v2.read.v13"
+READ_UNIT_PROMPT_VERSION = "attentional_v2.read.v14"
 BRIDGE_RESOLUTION_PROMPT_VERSION = "attentional_v2.bridge_resolution.v5"
 REFLECTIVE_PROMOTION_PROMPT_VERSION = "attentional_v2.reflective_promotion.v1"
 RECONSOLIDATION_PROMPT_VERSION = "attentional_v2.reconsolidation.v1"
@@ -198,7 +198,6 @@ Rules:
 - Keep proportion around thin structural units. If the current unit is mostly a heading, label, or similarly slight structural cue, it is acceptable to emit no surfaced reaction.
 - Do not inflate a bare heading or structural cue into literary commentary, review voice, or a fake moment of depth.
 - Only surface a reaction to a very thin heading-like unit when the wording itself clearly carries real local force.
-- `pressure_signals` are local post-read signals only. They are not route decisions.
 - After forming the impression, surface only what naturally feels worth marking, underlining, or writing a margin note about.
 - Do not create a reaction just to fill the field.
 - A surfaced reaction may be a line that lands with force, a margin-note thought or question, a natural connection, or a distinction/turn that suddenly clarifies something.
@@ -265,7 +264,7 @@ Rules:
 - If you are currently reading inside an active detour and it no longer seems worth pursuing, set `detour_need.status` to `abandoned`.
 - Do not output broad chapter summary.
 - Do not explain whether you "used prior material".
-- Do not decide the next route.
+- Do not decide or name the next route. After this read, the runner will settle the unit and advance normally unless a detour need is present.
 - Return JSON only.""",
     read_unit_prompt="""Structural frame:
 {structural_frame}
@@ -290,11 +289,6 @@ Output language contract:
 Return JSON:
 {
   "reading_impression": "<brief natural impression after reading this unit>",
-  "pressure_signals": {
-    "continuation_pressure": false,
-    "backward_pull": false,
-    "frame_shift_pressure": false
-  },
   "surfaced_reactions": [
     {
       "anchor_quote": "<exact quote from current unit>",

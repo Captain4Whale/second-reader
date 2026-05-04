@@ -150,24 +150,6 @@
             "description": "Frontend result route associated with the event when available.",
             "title": "Result Url"
           },
-          "route_action": {
-            "anyOf": [
-              {
-                "enum": [
-                  "commit",
-                  "continue",
-                  "bridge_back",
-                  "reframe"
-                ],
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "Current route action when the event represents a mechanism-authored route decision.",
-            "title": "Route Action"
-          },
           "search_query": {
             "anyOf": [
               {
@@ -1810,24 +1792,6 @@
             ],
             "description": "Whether the mechanism rebuilt hot local state from persistence instead of continuing warm in-memory continuity.",
             "title": "Reconstructed Hot State"
-          },
-          "route_action": {
-            "anyOf": [
-              {
-                "enum": [
-                  "commit",
-                  "continue",
-                  "bridge_back",
-                  "reframe"
-                ],
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "Current route action when the mechanism exposes it directly.",
-            "title": "Route Action"
           },
           "search_query": {
             "anyOf": [

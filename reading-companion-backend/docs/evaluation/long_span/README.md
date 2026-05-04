@@ -80,7 +80,7 @@ Current implementation posture:
     - `huochu_shengming_de_yiyi_private_zh__segment_1` Probe 1 now carries a review focus for the three-stage prisoner-response framework discovered during report review
   - future Memory Quality evidence reports use the fixed report-writing contract:
     - [memory_quality_report_contract.md](./memory_quality_report_contract.md)
-    - recent route evidence is labeled as `route reason` projected from `route_history`, not as generic `statement`
+    - new reports no longer include `Recent Routes` / `route_action` evidence blocks, because forward progression is now runner settlement rather than a route-action taxonomy
 
 ## Historical Durable Evidence
 

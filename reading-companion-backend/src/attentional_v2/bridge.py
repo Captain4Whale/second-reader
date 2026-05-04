@@ -36,14 +36,12 @@ from .schemas import (
     BridgeResolutionResult,
     ConceptRegistryState,
     KnowledgeActivationsState,
-    RouteHistoryState,
     ReaderPolicy,
     ThreadTraceState,
     ActiveAttention,
 )
 from .state_ops import (
     append_anchor_relation,
-    append_route,
     apply_anchor_bank_operations,
     apply_concept_registry_operations,
     apply_thread_trace_operations,
@@ -632,7 +630,6 @@ def run_phase5_bridge_cycle(
     thread_trace: ThreadTraceState,
     anchor_bank: AnchorBankState,
     knowledge_activations: KnowledgeActivationsState,
-    route_history: RouteHistoryState,
     reader_policy: ReaderPolicy,
     output_language: str,
     current_anchor: AnchorRecord | None = None,
@@ -665,7 +662,6 @@ def run_phase5_bridge_cycle(
             "thread_trace": thread_trace,
             "anchor_bank": anchor_bank,
             "knowledge_activations": knowledge_activations,
-            "route_history": route_history,
         }
 
     last_sentence = current_span_sentences[-1]
@@ -740,21 +736,6 @@ def run_phase5_bridge_cycle(
         unresolved_reference_keys=unresolved_reference_keys,
     )
 
-    next_route_history = route_history
-    if bridge_result.get("decision") == "bridge" and materialized_primary is not None:
-        next_route_history = append_route(
-            route_history,
-            {
-                "route_id": f"route:{source_sentence_id}:bridge_back",
-                "route_action": "bridge_back",
-                "reason": _clean_text(bridge_result.get("reason")) or "bridge resolution selected an earlier anchor",
-                "source_sentence_id": source_sentence_id,
-                "target_anchor_id": _clean_text(materialized_primary.get("target_anchor_id")),
-                "target_sentence_id": _clean_text(materialized_primary.get("target_sentence_id")),
-                "created_at": _timestamp(),
-            },
-        )
-
     return {
         "bridge_result": {
             **bridge_result,
@@ -765,5 +746,4 @@ def run_phase5_bridge_cycle(
         "thread_trace": next_thread_trace,
         "anchor_bank": next_anchor_bank,
         "knowledge_activations": next_knowledge,
-        "route_history": next_route_history,
     }

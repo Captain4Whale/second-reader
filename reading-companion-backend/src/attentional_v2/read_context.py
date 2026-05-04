@@ -13,7 +13,6 @@ from .schemas import (
     ConceptRegistryState,
     ContinuationCapsule,
     ContextRequest,
-    RouteHistoryState,
     ReactionRecordsState,
     ReaderPolicy,
     ReflectiveFramesState,
@@ -193,7 +192,6 @@ def resolve_context_request(
     concept_registry: ConceptRegistryState,
     thread_trace: ThreadTraceState,
     reflective_frames: ReflectiveFramesState,
-    route_history: RouteHistoryState,
     reaction_records: ReactionRecordsState,
     reader_policy: ReaderPolicy | None = None,
     current_unit_sentence_ids: list[str] | None = None,
@@ -227,11 +225,6 @@ def resolve_context_request(
         clean_text(item.get("reaction_id"))
         for item in continuity_capsule.get("recent_reactions", [])
         if isinstance(item, dict) and clean_text(item.get("reaction_id"))
-    }
-    carry_route_ids = {
-        clean_text(item.get("route_id"))
-        for item in continuity_capsule.get("recent_routes", [])
-        if isinstance(item, dict) and clean_text(item.get("route_id"))
     }
     carry_concept_keys = _linked_keys_from_digest(
         carry_forward_context,
@@ -466,49 +459,6 @@ def resolve_context_request(
             if len(reactions) >= 3:
                 break
 
-        routes: list[dict[str, object]] = []
-        for route in list(route_history.get("routes", []))[-6:]:
-            if not isinstance(route, dict):
-                continue
-            route_id = clean_text(route.get("route_id"))
-            if not route_id or route_id in carry_route_ids:
-                continue
-            source_sentence_id = clean_text(route.get("source_sentence_id"))
-            target_anchor_id = clean_text(route.get("target_anchor_id"))
-            target_sentence_id = clean_text(route.get("target_sentence_id"))
-            if requested_anchor_ids or requested_sentence_ids:
-                if (
-                    target_anchor_id not in requested_anchor_ids
-                    and source_sentence_id not in requested_sentence_ids
-                    and target_sentence_id not in requested_sentence_ids
-                ):
-                    continue
-            ref_id = f"route:{route_id}"
-            routes.append(
-                {
-                    "ref_id": ref_id,
-                    "route_id": route_id,
-                    "route_action": clean_text(route.get("route_action")),
-                    "reason": clean_text(route.get("reason")),
-                    "source_sentence_id": source_sentence_id,
-                    "target_anchor_id": target_anchor_id,
-                    "target_sentence_id": target_sentence_id,
-                }
-            )
-            refs.append(
-                {
-                    "ref_id": ref_id,
-                    "kind": "route",
-                    "item_id": route_id,
-                    "summary": clean_text(route.get("reason")) or clean_text(route.get("route_action")),
-                    "route_id": route_id,
-                    "sentence_id": source_sentence_id,
-                    "anchor_id": target_anchor_id,
-                }
-            )
-            if len(routes) >= 3:
-                break
-
         reflective_items: list[dict[str, object]] = []
         for bucket, limit in (("chapter_understandings", 2), ("book_level_frames", 1)):
             for item in matching_chapter_items(
@@ -542,7 +492,7 @@ def resolve_context_request(
                     }
                 )
 
-        if not any((anchors, concepts, threads, reactions, routes, reflective_items)):
+        if not any((anchors, concepts, threads, reactions, reflective_items)):
             return None
         return {
             "kind": "active_recall",
@@ -552,7 +502,6 @@ def resolve_context_request(
             "concepts": concepts,
             "threads": threads,
             "reactions": reactions,
-            "routes": routes,
             "reflective_items": reflective_items,
         }
 
@@ -678,7 +627,6 @@ def persist_read_audit(
             "stop_reason": clean_text(stop_reason),
             "budget_exhausted": bool(budget_exhausted),
             "reading_impression": clean_text(read_result.get("reading_impression")),
-            "pressure_signals": dict(read_result.get("pressure_signals") or {}),
             "surfaced_reaction_count": len(surfaced_reactions),
             "surfaced_reactions": surfaced_reactions,
             "detour_need": dict(read_result.get("detour_need") or {})

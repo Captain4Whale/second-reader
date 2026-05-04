@@ -106,12 +106,12 @@ Use `docs/api-contract.md` for exact fields and routes. Use this file to underst
     - shared `book_document.json`
     before any iterator-era `segment_ref` structure lookup
   - When older iterator-era runtime snapshots contain a shortened `current_reading_activity.current_excerpt`, catalog may backfill the full normalized section text from `_mechanisms/iterator_v1/derived/structure.json` by matching `segment_ref`.
-  - Current public payloads may now additively expose `reading_locus`, `route_action`, `reconstructed_hot_state`, `last_resume_kind`, and `active_reaction_id` while keeping `segment_ref` as a compatibility sidecar.
+  - Current public payloads may now additively expose `reading_locus`, `reconstructed_hot_state`, `last_resume_kind`, and `active_reaction_id` while keeping `segment_ref` as a compatibility sidecar.
 - `GET /api/books/{book_id}/activity`
   - Reads `activity.jsonl` and normalizes each event into the public event shape.
   - The routed frontend overview now consumes the `stream=mindstream` view; `stream=system` remains available for diagnostics.
   - Adds canonical chapter result routes where the completed result is ready.
-  - Event payloads may now also carry additive `chapter_number`, `reading_locus`, `route_action`, and anchor-native reaction fields without changing the current compatibility route model.
+  - Event payloads may now also carry additive `chapter_number`, `reading_locus`, and anchor-native reaction fields without changing the current compatibility route model.
 - `GET /api/books/{book_id}/analysis-log`
   - Is the main exception to the catalog-driven view model.
   - It remains an internal diagnostic endpoint and is no longer part of the user-facing overview.

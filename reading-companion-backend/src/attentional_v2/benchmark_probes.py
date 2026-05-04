@@ -11,7 +11,6 @@ from .schemas import (
     ConceptRegistryState,
     LocalBufferState,
     LocalContinuityState,
-    RouteHistoryState,
     ReactionRecordsState,
     ReflectiveFramesState,
     ThreadTraceState,
@@ -173,7 +172,6 @@ def _build_probe_snapshot(
     thread_trace: ThreadTraceState,
     reflective_frames: ReflectiveFramesState,
     anchor_bank: AnchorBankState,
-    route_history: RouteHistoryState,
     reaction_records: ReactionRecordsState,
 ) -> dict[str, object]:
     """Build one normalized probe snapshot from the current persisted V2 state."""
@@ -187,7 +185,6 @@ def _build_probe_snapshot(
         thread_trace=thread_trace,
         reflective_frames=reflective_frames,
         anchor_bank=anchor_bank,
-        route_history=route_history,
         reaction_records=reaction_records,
     )
     return {
@@ -249,7 +246,6 @@ def persist_due_memory_quality_probe_snapshots(
     thread_trace: ThreadTraceState,
     reflective_frames: ReflectiveFramesState,
     anchor_bank: AnchorBankState,
-    route_history: RouteHistoryState,
     reaction_records: ReactionRecordsState,
 ) -> list[dict[str, object]]:
     """Persist any probe snapshots whose threshold is crossed by this completed read step."""
@@ -317,7 +313,6 @@ def persist_due_memory_quality_probe_snapshots(
             thread_trace=thread_trace,
             reflective_frames=reflective_frames,
             anchor_bank=anchor_bank,
-            route_history=route_history,
             reaction_records=reaction_records,
         )
         payload.setdefault("snapshots", []).append(snapshot)

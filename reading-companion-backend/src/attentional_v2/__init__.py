@@ -7,7 +7,6 @@ from .bridge import (
     candidate_pool_for_bridge_resolution,
     derive_anchor_id,
     index_anchor_memory,
-    run_phase5_bridge_cycle,
 )
 from .evaluation import (
     build_normalized_eval_bundle,
@@ -24,7 +23,6 @@ from .knowledge import (
 )
 from .nodes import (
     build_unitize_preview,
-    navigate_route,
     navigate_detour_search,
     navigate_unitize,
     persist_unitization_audit,
@@ -59,18 +57,16 @@ from .resume import (
     validate_resume_compatibility,
     write_full_checkpoint,
 )
-from .retrieval import bounded_lookback_source_space, flatten_sentence_inventory, generate_candidate_set
+from .retrieval import bounded_lookback_source_space, flatten_sentence_inventory
 from .schemas import (
     ATTENTIONAL_V2_MECHANISM_VERSION,
     ATTENTIONAL_V2_POLICY_VERSION,
     ATTENTIONAL_V2_SCHEMA_VERSION,
-    NavigateRouteDecision,
     build_default_reader_policy,
     build_empty_anchor_memory,
     build_empty_local_buffer,
     build_empty_local_continuity,
     build_empty_knowledge_activations,
-    build_empty_route_history,
     build_empty_reaction_records,
     build_empty_reconsolidation_records,
     build_empty_reflective_summaries,
@@ -98,7 +94,6 @@ from .slow_cycle import (
 )
 from .state_ops import (
     append_anchor_relation,
-    append_route,
     append_reaction_record,
     append_reconsolidation_record,
     apply_anchor_memory_operations,
@@ -131,7 +126,6 @@ __all__ = [
     "REFLECTIVE_PROMOTION_PROMPT_VERSION",
     "apply_activation_operations",
     "append_anchor_relation",
-    "append_route",
     "append_reaction_record",
     "append_reconsolidation_record",
     "apply_anchor_status_updates",
@@ -159,7 +153,6 @@ __all__ = [
     "build_empty_local_buffer",
     "build_empty_local_continuity",
     "build_empty_knowledge_activations",
-    "build_empty_route_history",
     "build_empty_reaction_records",
     "build_empty_reconsolidation_records",
     "build_empty_reflective_summaries",
@@ -179,16 +172,13 @@ __all__ = [
     "emit_checkpoint_observability",
     "emit_resume_observability",
     "flatten_sentence_inventory",
-    "generate_candidate_set",
     "initialize_artifact_tree",
     "index_anchor_memory",
     "live_activations",
     "load_full_checkpoint",
     "capture_local_continuity",
     "context_ref_ids",
-    "NavigateRouteDecision",
     "navigate_detour_search",
-    "navigate_route",
     "navigate_unitize",
     "persist_reading_position",
     "persist_normalized_eval_bundle",
@@ -206,7 +196,6 @@ __all__ = [
     "reflective_promotion",
     "resolve_search_policy_mode",
     "resolve_context_request",
-    "run_phase5_bridge_cycle",
     "run_phase6_chapter_cycle",
     "run_mechanism_integrity_checks",
     "set_knowledge_use_mode",

@@ -405,7 +405,7 @@ def test_resume_rejects_legacy_runtime_and_old_checkpoint_shapes(tmp_path: Path)
         "anchor_memory": legacy_anchor_memory,
         "reflective_summaries": legacy_reflective,
         "knowledge_activations": load_json(runtime_dir(output_dir) / "knowledge_activations.json"),
-        "route_history": load_json(runtime_dir(output_dir) / "route_history.json"),
+        "route_history": {"routes": []},
         "reaction_records": load_json(reaction_records_file(output_dir)),
         "reconsolidation_records": load_json(runtime_dir(output_dir) / "reconsolidation_records.json"),
         "reader_policy": load_json(reader_policy_file(output_dir)),

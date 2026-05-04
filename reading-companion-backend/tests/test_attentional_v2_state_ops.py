@@ -7,7 +7,6 @@ from src.attentional_v2.schemas import (
     build_empty_anchor_memory,
     build_empty_knowledge_activations,
     build_empty_local_buffer,
-    build_empty_route_history,
     build_empty_reaction_records,
     build_empty_reconsolidation_records,
     build_empty_reflective_summaries,
@@ -15,7 +14,6 @@ from src.attentional_v2.schemas import (
 )
 from src.attentional_v2.state_ops import (
     append_anchor_relation,
-    append_route,
     append_reaction_record,
     append_reconsolidation_record,
     apply_active_attention_operations,
@@ -215,7 +213,7 @@ def test_close_local_meaning_unit_tracks_recent_units():
     assert closed["last_meaning_unit_closed_at_sentence_id"] == "c1-s2"
 
 
-def test_reflective_move_reaction_reconsolidation_and_policy_helpers_append_cleanly():
+def test_reflective_reaction_reconsolidation_and_policy_helpers_append_cleanly():
     """The helper layer should support the remaining Phase 1 state stores."""
 
     reflective_state = upsert_reflective_item(
@@ -228,18 +226,6 @@ def test_reflective_move_reaction_reconsolidation_and_policy_helpers_append_clea
             "confidence_band": "working",
             "promoted_from": "active_attention_item",
             "status": "active",
-        },
-    )
-    route_state = append_route(
-        build_empty_route_history(),
-        {
-            "route_id": "m-1",
-            "route_action": "bridge_back",
-            "reason": "motif recurs after a new example",
-            "source_sentence_id": "c1-s4",
-            "target_anchor_id": "a-1",
-            "target_sentence_id": "c1-s2",
-            "created_at": "2026-03-23T00:00:00Z",
         },
     )
     reaction_state = append_reaction_record(
@@ -287,7 +273,6 @@ def test_reflective_move_reaction_reconsolidation_and_policy_helpers_append_clea
     )
 
     assert reflective_state["chapter_understandings"][0]["status"] == "superseded"
-    assert route_state["routes"][0]["route_action"] == "bridge_back"
     assert reaction_state["records"][0]["reaction_id"] == "rx-1"
     assert reconsolidation_state["records"][0]["record_id"] == "rc-1"
     assert policy["resume"]["cold_resume_target_sentences"] == 3

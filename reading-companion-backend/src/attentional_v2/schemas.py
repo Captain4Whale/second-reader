@@ -17,7 +17,6 @@ UnitizeBoundaryType = Literal[
     "section_end",
     "budget_cap",
 ]
-RouteAction = Literal["commit", "continue", "bridge_back", "reframe"]
 ContextRequestKind = Literal["active_recall", "look_back"]
 DetourStatus = Literal["open", "resolved", "abandoned"]
 DetourSearchDecision = Literal["narrow_scope", "land_region", "defer_detour"]
@@ -166,7 +165,6 @@ class SessionContinuityCapsule(TypedDict, total=False):
 
     recent_sentence_ids: list[str]
     recent_meaning_units: list[list[str]]
-    recent_routes: list[dict[str, object]]
     recent_reactions: list[dict[str, object]]
 
 
@@ -220,7 +218,6 @@ class ActiveFocusDigest(TypedDict, total=False):
     """Small digest of currently active attention plus recent moves and reactions."""
 
     active_items: list[dict[str, object]]
-    recent_routes: list[dict[str, object]]
     recent_reactions: list[dict[str, object]]
 
 
@@ -311,19 +308,10 @@ class ReadAnchorEvidence(TypedDict, total=False):
     why_it_matters: str
 
 
-class PressureSignals(TypedDict, total=False):
-    """Local post-read pressure signals consumed by route selection."""
-
-    continuation_pressure: bool
-    backward_pull: bool
-    frame_shift_pressure: bool
-
-
 class ReadUnitResult(TypedDict, total=False):
     """Structured record of one reader-like pass over a chosen coverage unit."""
 
     reading_impression: str
-    pressure_signals: PressureSignals
     surfaced_reactions: list["SurfacedReaction"]
     memory_uptake_ops: list["StateOperation"]
     detour_need: "DetourNeed" | None
@@ -465,16 +453,6 @@ class AnchoredReactionRecord(TypedDict, total=False):
     search_query: str
     search_results: list[SearchHit]
     created_at: str
-
-
-class NavigateRouteDecision(TypedDict, total=False):
-    """Normalized next-step routing result for one exact chosen coverage unit."""
-
-    action: RouteAction
-    reason: str
-    close_current_unit: bool
-    target_anchor_id: str
-    target_sentence_id: str
 
 
 class BridgeResolutionResult(TypedDict, total=False):
@@ -669,27 +647,6 @@ class KnowledgeActivationsState(TypedDict, total=False):
     activations: list[KnowledgeActivation]
 
 
-class RouteRecord(TypedDict, total=False):
-    """One recorded route decision."""
-
-    route_id: str
-    route_action: RouteAction
-    reason: str
-    source_sentence_id: str
-    target_anchor_id: str
-    target_sentence_id: str
-    created_at: str
-
-
-class RouteHistoryState(TypedDict, total=False):
-    """Ordered route-decision history."""
-
-    schema_version: int
-    mechanism_version: str
-    updated_at: str
-    routes: list[RouteRecord]
-
-
 class ReactionRecordsState(TypedDict, total=False):
     """Append-only mechanism-owned durable reaction history."""
 
@@ -814,7 +771,6 @@ class FullCheckpointState(TypedDict, total=False):
     anchor_memory: AnchorMemoryState
     reflective_summaries: ReflectiveSummariesState
     knowledge_activations: KnowledgeActivationsState
-    route_history: RouteHistoryState
     reaction_records: ReactionRecordsState
     reconsolidation_records: ReconsolidationRecordsState
     reader_policy: ReaderPolicy
@@ -900,7 +856,6 @@ def build_empty_continuation_capsule(
         "session_continuity_capsule": {
             "recent_sentence_ids": [],
             "recent_meaning_units": [],
-            "recent_routes": [],
             "recent_reactions": [],
         },
         "active_attention_digest": {
@@ -914,7 +869,6 @@ def build_empty_continuation_capsule(
         },
         "active_focus_digest": {
             "active_items": [],
-            "recent_routes": [],
             "recent_reactions": [],
         },
         "concept_digest": [],
@@ -1021,17 +975,6 @@ def build_empty_knowledge_activations(
         "knowledge_use_mode": "book_grounded_only",
         "search_policy_mode": "no_search",
         "activations": [],
-    }
-
-
-def build_empty_route_history(*, mechanism_version: str = ATTENTIONAL_V2_MECHANISM_VERSION) -> RouteHistoryState:
-    """Return the default route-history state."""
-
-    return {
-        "schema_version": ATTENTIONAL_V2_SCHEMA_VERSION,
-        "mechanism_version": mechanism_version,
-        "updated_at": _timestamp(),
-        "routes": [],
     }
 
 

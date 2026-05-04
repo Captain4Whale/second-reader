@@ -191,7 +191,6 @@ def _bundle() -> dict[str, Any]:
                 "kind": "thought",
                 "phase": "thinking",
                 "section_ref": "1.3",
-                "route_action": "bridge_back",
                 "message": "This connects back to the early setup.",
                 "current_excerpt": "late target",
             }
@@ -329,7 +328,6 @@ def test_build_target_evidence_bundle_keeps_pre_target_callbacks_audit_only() ->
                 "kind": "thought",
                 "phase": "thinking",
                 "section_ref": "1.1",
-                "route_action": "bridge_back",
                 "message": "This connects back to the early setup.",
                 "current_excerpt": "early setup",
             }

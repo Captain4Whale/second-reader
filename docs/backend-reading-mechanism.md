@@ -69,12 +69,11 @@ Use `docs/backend-sequential-lifecycle.md` for the job-level workflow over time.
     - `sentence intake`
     - `Navigate.unitize`
     - `read`
-    - `Navigate.route`
+    - `runner post-read settlement`
     - `Navigate.detour_search`
     - `surfaced reactions`
-    - `bridge_resolution`
     - `chapter-end slow cycle`
-  - If a mechanism doc mentions older labels such as `trigger`, `zoom_read`, `meaning_unit_closure`, or `controller_decision`, it should make clear whether those are historical module-family terms or still-live runtime concepts.
+  - If a mechanism doc mentions older labels such as `trigger`, `zoom_read`, `meaning_unit_closure`, `controller_decision`, `Navigate.route`, or `bridge_resolution`, it should make clear whether those are historical module-family terms or still-live runtime concepts.
 
 ## Mechanism Status Model
 - `default`

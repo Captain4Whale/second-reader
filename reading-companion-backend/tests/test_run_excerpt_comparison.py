@@ -146,7 +146,6 @@ def _unit_result(source_id: str, chapter_id: int) -> dict[str, Any]:
                             "kind": "thought",
                             "phase": "thinking",
                             "section_ref": f"{chapter_id}.1",
-                            "route_action": "continue",
                             "message": "The hinge matters here.",
                             "current_excerpt": "Alpha hinge line.",
                         }
@@ -178,7 +177,6 @@ def _unit_result(source_id: str, chapter_id: int) -> dict[str, Any]:
                             "kind": "thought",
                             "phase": "thinking",
                             "section_ref": f"{chapter_id}.1",
-                            "route_action": "continue",
                             "message": "The hinge matters here.",
                             "current_excerpt": "Alpha hinge line.",
                         }

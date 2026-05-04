@@ -44,7 +44,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - This did not change the mechanism key or public compatibility surface.
   - It did change the live control skeleton:
     - heuristic trigger output no longer decides whether正文 receives formal reading
-    - the live loop now routes through `Navigate.unitize -> read -> Navigate.route`
+    - the live loop now routes through `Navigate.unitize -> read -> runner settlement`
     - span authority is now tied to the exact chosen coverage unit rather than a reconstructed late tail
 - Phase B of the post-eval structural rework is now also landed.
   - `read` is now the canonical owner of the current-unit read packet on the live path.
@@ -58,20 +58,19 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - slow-cycle compatibility projection and normalized eval export now derive old family labels through one compat helper instead of treating legacy `type` as the internal truth
   - this branch is preserved as landed evidence, but it is no longer the approved end-state shape for the mechanism
 - Phase F1 of the post-E3 rework is now landed.
-  - the live per-unit loop has been cut back to:
-    - `Navigate.unitize -> read -> Navigate.route`
+  - the live per-unit loop was cut back to `Navigate.unitize -> read -> Navigate.route` at that point.
+  - the later forward-settlement cutover retired that route layer from the current live path.
   - `Read` now directly owns a naturalized reading-result contract:
     - `reading_impression`
     - `surfaced_reactions`
     - `memory_uptake_ops`
-    - `pressure_signals`
     - optional `detour_need`
   - the dedicated live `Express` node is no longer on the live runner path
   - `Read` prompt packaging now follows the compact `always carry / selective carry / not carry` contract instead of receiving the broader intermediate packet wholesale
   - this removed the last live dependence on the temporary `Express` step, but left detour routing as the next ownership cut
 - Phase F2 is now landed as the navigate-owned detour cutover.
   - the live per-unit loop remains:
-    - `Navigate.unitize -> read -> Navigate.route`
+    - `Navigate.unitize -> read -> runner settlement`
   - `Read` now emits `detour_need` directly on the live path instead of the transitional `revisit_need`
   - `Navigate` now owns detour localization and dispatch through one bounded `Navigate.detour_search` loop
   - `local_continuity` now persists:
@@ -83,7 +82,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
     - `narrow_scope`
     - `land_region`
     - `defer_detour`
-  - once a detour region lands, the mechanism reads it through the same normal `Navigate.unitize -> read -> Navigate.route` loop instead of inventing a second reading path
+  - once a detour region lands, the mechanism reads it through the same normal `Navigate.unitize -> read -> runner settlement` loop instead of inventing a second reading path
 - Phase F3 is now landed as the reaction-persistence and compatibility reconvergence slice.
   - persisted visible reactions now enter the system only through `Read.surfaced_reactions[]`
   - mainline and detour reading now share one surfaced-native reaction-record builder
@@ -128,7 +127,13 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - Each active item now carries lightweight `attention_tags[]` rather than the old fixed question/tension/hypothesis/motif digest lists.
   - `local_hypotheses` / `live_hypotheses` are historical names only. Hypothesis-like material is now just an `active_attention.active_items[]` entry with tags such as `interpretation`, `tension`, or another natural label; if it becomes stable and reusable, it should move into `concept_registry` or `thread_trace` instead of remaining as a separate hot-state list.
   - `gate_state`, `pressure_snapshot`, and the old working-pressure file are historical trigger/watch/zoom design artifacts, not current runtime or prompt inputs.
-  - Current `pressure_signals` are different: they are one-step `Read -> Navigate.route` signals and remain live.
+  - `pressure_signals` were the intermediate one-step `Read -> Navigate.route` signals; they are now historical after the forward-settlement cutover.
+- The forward-settlement cutover is now landed.
+  - `Navigate.route`, `route_action`, and `route_history` are no longer part of the current live mechanism.
+  - `Read` no longer emits `pressure_signals`.
+  - After `Read`, the runner deterministically applies memory uptake, persists surfaced reactions, writes audit records, closes the current unit, and advances the cursor to the unit end.
+  - There is no replacement `forward` action.
+  - `Detour` remains the only current non-mainline scheduling mechanism.
 - Phase D of the post-eval structural rework is now landed as preserved intermediate continuity / recall / resume evidence.
   - that branch added a budget-bounded multi-step supplemental loop around `read`.
   - Runtime state and full checkpoints now persist a lightweight `continuation capsule` with explicit `rehydration entrypoints`.
@@ -140,16 +145,15 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
 - Navigator capability names use the architecture-facing form `Navigate.<capability>` in stable docs:
   - `Navigate.unitize`
   - `Navigate.detour_search`
-  - `Navigate.route`
-- Python functions, prompt manifest node names, and trace node ids remain implementation-facing `snake_case` identifiers such as `navigate_unitize`, `navigate_detour_search`, and `navigate_route`.
+- `Navigate.route` is historical route-layer vocabulary after the forward-settlement cutover.
+- Python functions, prompt manifest node names, and trace node ids remain implementation-facing `snake_case` identifiers such as `navigate_unitize` and `navigate_detour_search`.
 - The live runtime should be explained as a reading loop:
   - sentence intake as pure local-buffer maintenance
   - `Navigate.unitize`
   - mandatory formal unit read with bounded carry-forward context
   - `read` directly surfaces zero-to-many reading-time reactions and emits bounded state ops
+  - runner post-read settlement applies memory uptake, persists reactions, writes audit, closes the unit, and advances the cursor
   - optional `detour_need` may redirect the next normal reading step through the live `Navigate`-owned detour loop
-  - `Navigate.route`
-  - optional `bridge_resolution`
   - chapter-end slow-cycle work such as `chapter_consolidation`, `reflective_promotion`, and `reconsolidation`
 - The old `trigger -> zoom_read -> meaning_unit_closure -> controller_decision -> reaction_emission` chain is now historical implementation vocabulary, not live runtime behavior.
   - Those names may still appear in historical docs, old artifacts, or decision entries.
@@ -182,7 +186,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
 - `detour`
   - a normal reading redirection away from the mainline cursor
   - it is not a private supplemental fetch or a second-class side channel
-  - once a detour region is chosen, it is read through the same `Navigate.unitize -> read -> Navigate.route` loop as any other unit
+  - once a detour region is chosen, it is read through the same `Navigate.unitize -> read -> runner settlement` loop as any other unit
 
 ## Reading Progression Logic
 - The mechanism starts with a survey pass.
@@ -201,7 +205,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
 - Sentence intake is now a pure rolling-buffer ingest step.
   - It maintains `local_buffer` only.
   - It does not emit `trigger_state`, `watch_state`, or any `no_zoom / monitor / zoom_now` gate packet.
-- The current live Phase F3 baseline now runs:
+- The current live forward-settlement baseline now runs:
   - ingest the next unread sentence
   - if an open detour exists, let `Navigate` run bounded detour search and choose the next detour region
   - `Navigate.unitize` over a fixed preview window
@@ -209,7 +213,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - formally read the chosen coverage unit through `read`
   - let `read` directly surface zero-to-many reading-time reactions for that exact unit
   - persist any `detour_need` into `local_continuity` instead of privately resolving it inside `Read`
-  - `Navigate.route` over that exact unit
+  - runner post-read settlement closes the exact unit and advances the cursor to the sentence after it
 - The live F2 follow-up after F1 now adds:
   - one bounded Navigate.detour_search loop owned by `Navigate`
   - detour-local state in `local_continuity`
@@ -240,14 +244,14 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
     - `runner` then reads them after the `main_body` queue drains
     - explicit chapter-targeted runs may still select them directly
 - `read` remains the current formal unit-read call, but its prompt role is now reader-first rather than node-first.
-  - On the current live baseline, it directly produces `reading_impression`, `surfaced_reactions`, `memory_uptake_ops`, `pressure_signals`, and optional `detour_need`.
+  - On the current live baseline, it directly produces `reading_impression`, `surfaced_reactions`, `memory_uptake_ops`, and optional `detour_need`.
   - It should not behave like a control super-node or a checklist-filling state updater.
   - Its intended order is:
     - read the current unit as a reader
     - form a brief natural `reading_impression`
     - surface any underline / margin-note style reactions that genuinely arise
     - let durable memory settle through bounded `memory_uptake_ops`
-    - emit only local pressure and detour signals that the runner / navigate layer can route later
+    - emit a `detour_need` only when the next reading step should leave the mainline path
   - Legacy compatibility fields such as `raw_reaction`, `move_hint`, `prior_material_use`, `express_signal`, and `context_request` are now historical territory, not the live F3 contract.
   - It now also carries an explicit proportion rule for thin structural units:
     - a bare heading, label, or similarly slight structural cue may legitimately produce no surfaced reaction
@@ -260,39 +264,23 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
 - `Express` is now best understood as historical intermediate compatibility-first territory rather than a live mechanism node.
   - It helped isolate visible wording while the system proved out surfaced-reaction persistence.
   - But the approved next shape no longer treats a dedicated `Express` step as the mechanism's stable center of gravity, and F1 has already removed it from the live runner path.
-- `Navigate.route` is now the sole next-step decision layer for that same chosen unit.
-  - In Phase B it deterministically consumes `ReadUnitResult`.
-  - Its main job is to keep close/continue/bridge decisions answerable to the exact unit that was just read.
-  - In the approved next shape it should consume `pressure_signals` plus detour state from `read`, not a semantic `move_hint`.
+- The runner now owns post-read settlement for that same chosen unit.
+  - It deterministically applies `memory_uptake_ops`, persists surfaced reactions, writes audit records, closes the current unit, and advances the cursor to the sentence after the chosen unit.
+  - It does not ask an LLM whether ordinary forward reading should continue.
+  - It does not record a replacement `forward` action; forward progression is the default program behavior.
 - Span visibility and authority are now aligned.
   - The span being read is the span being judged.
   - The span being judged is the only span that can be closed or extended.
   - The old runner behavior where a narrow late tail could implicitly close a larger hidden open span is no longer the live path.
-- The unitization decision now carries the exact boundary evidence used on the live path:
+- The unitization decision carries the exact boundary evidence used on the live path:
   - chosen unit start/end sentence ids
   - preview range
   - unit boundary type
   - unitization reason
-  - continuation-pressure flag
-- The current bridge path is now downstream of `read`.
-  - `Navigate.route` derives `bridge_back` from the final `ReadUnitResult`.
-  - If the route asks for `bridge_back`, the runtime then materializes the deterministic candidate set and enters `bridge_resolution`.
-- The bridge layer then adds bridge judgment after deterministic candidate generation when that pressure actually exists:
-  - `candidate_generation_if_needed -> bridge_resolution -> durable anchor / route-history updates`
-- The current `Navigate.route` action is one of:
-  - `commit`
-    - accept the current unit and advance the main reading cursor
-  - `continue`
-    - the current semantic movement still has forward continuation pressure, so keep reading the next normal unit
-  - `bridge_back`
-    - connect the just-read unit back to a source-grounded earlier anchor through the bridge-resolution helper
-  - `reframe`
-    - let the current unit change the active interpretive frame before continuing
-- The older `advance / dwell / bridge / reframe` controller vocabulary is historical.
-  - New runs do not persist `MoveType`, `move_type`, or `move_history`.
-  - There is no live `continue -> dwell` compatibility projection.
-  - Historical artifacts and archived reports may still contain the old names, but current code, prompts, runtime, public payloads, and eval exports use `route_action`.
-- Reading is pushed forward by unresolved interpretive pressure under coverage constraints.
+- `Navigate.route`, `route_action`, `route_history`, `commit`, `continue`, `bridge_back`, and `reframe` are historical route-layer vocabulary.
+  - New runs do not persist `RouteAction`, `route_action`, `route_history`, `MoveType`, `move_type`, or `move_history`.
+  - Historical artifacts and archived reports may still contain the old names, but current code, prompts, runtime, public payloads, and eval exports do not emit them.
+- Reading is pushed forward by runner settlement under coverage constraints.
   - Coverage prevents wandering forever.
   - Interpretive pressure prevents mechanical traversal.
 - The mechanism should not see future text beyond the current reading frontier.
@@ -303,7 +291,6 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
 - The current live node bundle is:
   - `Navigate.unitize`
   - `read_unit`
-  - `bridge_resolution`
   - `reflective_promotion`
   - `reconsolidation`
   - `chapter_consolidation`
@@ -311,7 +298,6 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - `Navigate.unitize`
   - `read_unit`
   - optional later detour dispatch through `Navigate.detour_search`
-  - `bridge_resolution`
   - `reflective_promotion`
   - `reconsolidation`
   - `chapter_consolidation`
@@ -320,11 +306,11 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - `Navigate.unitize` decides the next coverage unit before formal reading begins
   - `read_unit` is now the only steady-state per-unit interpretation call
   - surfaced reactions now come from that same read call rather than from a follow-on wording node
-  - `Navigate.route` remains deterministic and does not make another LLM call
-  - deterministic bridge retrieval is only paid when `Navigate.route` actually chooses `bridge_back`
+  - ordinary forward progression is deterministic runner settlement rather than a route action
 - Under the approved next shape:
   - `read` owns current-unit reading impression, surfaced reactions, memory uptake, and detour signaling
-  - `Navigate.route` owns next-move choice
+  - `runner` owns post-read settlement and cursor advance
+  - `Navigate.detour_search` owns only explicit non-mainline detour localization
   - `slow cycle` owns chapter-end consolidation and promotion
 
 ## Frozen Next-Shape Contract
@@ -359,8 +345,6 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
     - explicit patch/append/close/link operations against the durable state layers
     - these express what naturally needs to remain available after the unit, not a checklist of every local understanding
     - `read` should not rewrite whole state objects
-  - `pressure_signals`
-    - descriptive local pressure such as continuation, backward pull, or frame-shift pressure
   - optional `detour_need`
     - a bounded request for later detour handling by `navigate`
 - `detour_need` should minimally answer:
@@ -426,7 +410,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - `not carry`
     - large earlier source excerpts
     - full reaction history
-    - full route history
+    - historical route/move audit ledgers
     - audit/debug ledgers
 - `Read` should carry:
   - `always carry`
@@ -442,7 +426,6 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
     - sparse supporting refs
   - `not carry`
     - full `refs`
-    - full `route_history`
     - full `reaction_records`
     - full `read_audit`
     - full `anchor_bank`
@@ -479,7 +462,6 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
     - the grounding substrate for source-honest visible reactions, detour localization, and evaluation/audit evidence
   - `artifacts / history`
     - `reaction_records`
-    - `route_history`
     - `read_audit`
     - `refs`
     - `knowledge_activations` as helper territory rather than primary carried memory
@@ -508,9 +490,9 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - `Navigate` is the node that decides how to search, where to land, whether to continue detouring, and when to return to the mainline cursor.
 - Sentence intake no longer runs a parallel heuristic trigger layer.
   - Protection against missing a crucial single sentence now comes from bounded preview construction plus semantic unitization, not from a separate `zoom_now` gate.
-- The Phase 5 bridge helper still enforces source honesty.
-  - bridge targets must come from deterministic source candidates
-  - if no honest source target exists, bridge resolution declines instead of inventing one
+- Historical bridge-resolution helpers may still appear in old reports or archives.
+  - they are not part of the current live route layer
+  - current callback honesty is handled by surfaced reaction linkage, anchor grounding, and evaluation/audit evidence rather than by a post-read route action
 
 ## Detour Search
 - `Detour` search is intentionally different from ordinary mainline unitization.
@@ -575,10 +557,6 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - `_mechanisms/attentional_v2/runtime/reflective_frames.json`
   - `_mechanisms/attentional_v2/runtime/anchor_bank.json`
   - `_mechanisms/attentional_v2/runtime/knowledge_activations.json`
-  - `_mechanisms/attentional_v2/runtime/route_history.json`
-    - current route audit history
-    - records `route_action`, reason, source sentence, and optional target anchor/sentence
-    - replaces the historical `move_history.json` / `move_type` vocabulary for new runs
   - `_mechanisms/attentional_v2/runtime/reaction_records.json`
     - persisted visible reactions now store native surfaced semantics first:
       - `thought`
@@ -610,7 +588,6 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - `navigate_unitize` (implementation id for `Navigate.unitize`)
   - `navigate_detour_search` (implementation id for `Navigate.detour_search`)
   - `read_unit`
-  - `bridge_resolution`
   - `reflective_promotion`
   - `reconsolidation`
   - `chapter_consolidation`
@@ -631,7 +608,6 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
 - Phase D now adds persisted continuation capsules so warm resume can restore a bounded continuity seed instead of reconstructing context only from raw state files.
 - Phase 8 now lands the first additive public-surface projection layer:
   - `current_reading_activity.reading_locus`
-  - `current_reading_activity.route_action`
   - `current_reading_activity.reconstructed_hot_state`
   - `current_reading_activity.last_resume_kind`
   - `current_reading_activity.active_reaction_id`
@@ -672,10 +648,10 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - Does the mechanism preserve source-order intake and avoid future-text leakage while still remaining selective at the reasoning layer?
 - `coverage_unit_interpretation_quality`
   - Does the mechanism form strong coverage-unit interpretations instead of producing sentence-by-sentence sparks or vague paragraph blur?
-- `route_action_quality`
-  - Does the mechanism choose `commit`, `continue`, `bridge_back`, and `reframe` in a way that feels text-earned rather than procedural or arbitrary?
-- `bridge_resolution_honesty`
-  - When the mechanism links backward, are those links source-grounded and interpretively justified rather than merely suggestive?
+- `forward_settlement_integrity`
+  - After each read, does the runner settle the exact chosen unit, apply memory updates, persist visible reactions, and advance the cursor without inventing a second route taxonomy?
+- `callback_grounding_honesty`
+  - When the mechanism links backward through surfaced reactions or detour evidence, are those links source-grounded and interpretively justified rather than merely suggestive?
 - `reaction_selectivity_and_anchor_fidelity`
   - When the mechanism emits visible thoughts, are they selective, worthwhile, and honestly anchored to the text?
 - `reconsolidation_integrity`

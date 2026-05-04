@@ -46,10 +46,10 @@ Last verified: `2026-05-03T21:29:37+08:00`
         - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_long_span_vnext_phase1_reaction_evidence_fix_rejudge_20260425/summary/report.md`
       - post-eval action ledger:
         - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_long_span_vnext_phase1_reaction_evidence_fix_rejudge_20260425/analysis/post_eval_action_ledger_20260503/README.md`
-        - recorded actions now include `A1_legacy_gate_pressure_cleanup`, `A2_active_attention_cutover`, `A3_read_naturalization_cutover`, `A4_memory_quality_structural_signal_supplement`, `A5_local_hypothesis_provenance_cleanup`, `A6_memory_quality_report_contract`, and `A7_route_action_contract_cutover`
+        - recorded actions now include `A1_legacy_gate_pressure_cleanup`, `A2_active_attention_cutover`, `A3_read_naturalization_cutover`, `A4_memory_quality_structural_signal_supplement`, `A5_local_hypothesis_provenance_cleanup`, `A6_memory_quality_report_contract`, `A7_route_action_contract_cutover`, and `A8_forward_settlement_cutover`
       - Memory Quality evidence report contract:
         - `reading-companion-backend/docs/evaluation/long_span/memory_quality_report_contract.md`
-        - future reports should use one full source document per window with probe markers, and label recent route explanations as `route reason` rather than generic `statement`
+        - future reports should use one full source document per window with probe markers and should not include current `Recent Routes` / `route_action` evidence blocks
       - result:
         - `Memory Quality` average overall score: `3.48`
         - probe count: `25`
@@ -246,7 +246,7 @@ Last verified: `2026-05-03T21:29:37+08:00`
       - `sentence intake` as pure `local_buffer` maintenance
       - `Navigate.unitize`
       - `read`
-      - `Navigate.route`
+      - runner post-read settlement
     - span authority is now tied to the exact chosen unit
   - `Phase B` is now also landed:
     - `read` now owns the authoritative current-unit read packet on the live path
@@ -292,7 +292,7 @@ Last verified: `2026-05-03T21:29:37+08:00`
     - `attention_tags[]` are lightweight labels on active items; old fixed hot-state lists are historical only
     - residual `local_hypothesis` / `live_hypotheses` vocabulary is historical provenance only; current hypothesis-like material is a tagged `active_attention` item or, once stable, a `concept_registry` / `thread_trace` memory
     - old `gate_state`, `pressure_snapshot`, and working-pressure runtime artifacts are no longer schema, prompt, runtime, checkpoint, or Memory Quality evidence fields
-    - current `pressure_signals` remain live as one-step `Read -> Navigate.route` signals and are not part of the old sidecar
+    - old `pressure_signals` were removed with the forward-settlement cutover; current `Read` emits only reading impression, surfaced reactions, memory uptake, and optional detour need
   - `Phase D` is now landed as the continuity / recall / resume polish slice:
     - `read` now runs under a budget-bounded multi-step supplemental loop instead of a single extra pass
     - runtime and full checkpoints now persist a lightweight `continuation capsule` with explicit `rehydration entrypoints`
@@ -310,12 +310,12 @@ Last verified: `2026-05-03T21:29:37+08:00`
     - this branch remains valid historical evidence, but it is no longer the approved end-state shape
   - `Phase F1` is now landed as the read-contract and prompt-packaging cutover:
     - the live per-unit loop is now:
-      - `Navigate.unitize -> read -> Navigate.route`
+      - `Navigate.unitize -> read -> runner post-read settlement`
     - `Read` now directly owns the current naturalized read contract:
       - `reading_impression`
       - `surfaced_reactions`
       - `memory_uptake_ops`
-      - `pressure_signals`
+      - optional `detour_need`
       - optional `detour_need`
     - the dedicated live `Express` node is no longer on the live path
     - `Read` prompt packaging now uses compact `always carry / selective carry / not carry` projections instead of the broader intermediate packet
@@ -339,7 +339,7 @@ Last verified: `2026-05-03T21:29:37+08:00`
       - `narrow_scope`
       - `land_region`
       - `defer_detour`
-    - landed detour regions now flow back through the same normal `Navigate.unitize -> read -> Navigate.route` loop
+    - landed detour regions now flow back through the same normal `Navigate.unitize -> read -> runner post-read settlement` loop
     - chapter-tail detours are now drained before chapter slow-cycle closes, so a last-unit detour is not silently dropped
   - `Phase F3` is now landed as the reaction-persistence and compatibility reconvergence slice:
     - persisted visible reactions now enter the system only through `Read.surfaced_reactions[]`
@@ -527,7 +527,6 @@ Last verified: `2026-05-03T21:29:37+08:00`
     - `/books/:id` no longer falls back to obviously false live labels such as stale `Pending` when a book is actively reading
     - the overview mindstream now consumes more V2 live truth:
       - `reading_locus.excerpt`
-      - `route_action`
       - `active_reaction_id`
     - the recent trail no longer falsely renders as empty when the live activity stream is sparse but `current_state_panel.recent_reactions` is present
     - the chapter source reader now distinguishes:
@@ -692,7 +691,7 @@ Last verified: `2026-05-03T21:29:37+08:00`
       - warm resume now restores the latest usable continuation capsule together with new-format runtime state
       - the old budget-bounded supplemental recall loop is no longer the live F1 baseline
     - `Phase F1` is now the live baseline:
-      - live per-unit path is `Navigate.unitize -> read -> Navigate.route`
+      - live per-unit path is `Navigate.unitize -> read -> runner post-read settlement`
       - `Read` now owns surfaced reactions directly
       - the dedicated live `Express` node is off the main path
     - treat prior-material use as something that naturally happens inside `read`, not as a separate mechanism action

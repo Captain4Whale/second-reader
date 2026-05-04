@@ -253,10 +253,45 @@ Each action should answer:
   - Backend route/runtime code: `../../../../../../../reading-companion-backend/src/attentional_v2/runner.py`, `../../../../../../../reading-companion-backend/src/attentional_v2/schemas.py`, `../../../../../../../reading-companion-backend/src/attentional_v2/storage.py`
   - Public schema/frontend code: `../../../../../../../reading-companion-backend/src/api/schemas.py`, `../../../../../../../reading-companion-frontend/src/app/components/book-overview-page.tsx`
 - `follow-up`:
-  - Complete for the route-action contract cutover.
-  - `bridge_resolution` remains a source-grounded callback helper; it should not be confused with the old `bridge` move type.
+  - Superseded by `A8_forward_settlement_cutover`.
+  - This action remains useful history for why the project first separated old `move_type` vocabulary from current route naming, but new runs no longer emit `route_action` at all.
 
-The first seven post-eval actions are recorded above. Later actions should be appended here only after their finding, decision, and implementation boundary have been agreed.
+### A8 — Forward settlement cutover
+
+- `action_id`: `A8_forward_settlement_cutover`
+- `status`: `landed`
+- `source finding`:
+  - After the `A7_route_action_contract_cutover`, the project re-examined whether `commit / continue / bridge_back / reframe` had any remaining first-principles role in the current reading loop.
+  - The review found that ordinary forward progress was already runner-owned cursor progression, while memory/reaction effects were already owned by `Read` and detour remained the only meaningful non-mainline scheduling mechanism.
+  - Keeping `Navigate.route` therefore preserved a historical controller taxonomy without adding useful current behavior.
+- `decision`:
+  - Remove `Navigate.route` from the current live loop.
+  - Do not replace it with a single `forward` action; forward reading is the runner's default program behavior.
+  - Keep `Detour` as the only current non-mainline scheduling mechanism.
+  - Treat `route_action`, `route_history`, `bridge_back`, and `reframe` as historical mechanism vocabulary, not current runtime/public/eval truth.
+- `implemented changes`:
+  - Runner now settles each read deterministically: apply `memory_uptake_ops`, persist surfaced reactions, write audit records, close the current unit, and advance the cursor to the chosen unit end.
+  - `ReadResult` no longer emits `pressure_signals`.
+  - New runtime artifacts no longer create `route_history.json`; old `route_history` / `move_history` runtime state fails fast on warm resume.
+  - Public schemas, frontend generated types, overview live-chip copy, normalized eval export, and Memory Quality probe support no longer expose current `route_action`.
+  - Stable mechanism, API, state aggregation, evaluation, current-state, and task docs now describe runner post-read settlement as the current control shape.
+- `validation`:
+  - Backend `attentional_v2` contract and runner tests were updated to assert no current route-action path.
+  - Public schema and frontend type surfaces were updated to remove `route_action`.
+  - Static checks should confirm current source no longer contains active `Navigate.route`, `route_action`, `RouteHistory`, or `pressure_signals` references outside historical/fail-fast text.
+- `evidence links`:
+  - Current mechanism contract: `../../../../../../../docs/backend-reading-mechanisms/attentional_v2.md`
+  - Public API contract: `../../../../../../../docs/api-contract.md`
+  - Integration docs: `../../../../../../../docs/api-integration.md`
+  - State aggregation boundary: `../../../../../../../docs/backend-state-aggregation.md`
+  - Evaluation method docs: `../../../../../../../docs/backend-reader-evaluation.md`
+  - Backend runner/schema/storage code: `../../../../../../../reading-companion-backend/src/attentional_v2/runner.py`, `../../../../../../../reading-companion-backend/src/attentional_v2/schemas.py`, `../../../../../../../reading-companion-backend/src/attentional_v2/storage.py`
+  - Public schema/frontend code: `../../../../../../../reading-companion-backend/src/api/schemas.py`, `../../../../../../../reading-companion-frontend/src/app/components/book-overview-page.tsx`
+- `follow-up`:
+  - Complete for forward-settlement cutover.
+  - Future navigation work should start from `Navigate.unitize`, `Navigate.detour_search`, and runner settlement, not by reintroducing a route-action taxonomy.
+
+The first eight post-eval actions are recorded above. Later actions should be appended here only after their finding, decision, and implementation boundary have been agreed.
 
 ### Action Template
 

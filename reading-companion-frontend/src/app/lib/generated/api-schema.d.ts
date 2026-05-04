@@ -444,7 +444,6 @@ export interface components {
              * Route Action
              * @description Current route action when the event represents a mechanism-authored route decision.
              */
-            route_action?: ("commit" | "continue" | "bridge_back" | "reframe") | null;
             /**
              * Search Query
              * @description Search query attached to the event when applicable.
@@ -1359,7 +1358,6 @@ export interface components {
              * Route Action
              * @description Current route action when the mechanism exposes it directly.
              */
-            route_action?: ("commit" | "continue" | "bridge_back" | "reframe") | null;
             /**
              * Search Query
              * @description Search query being investigated when the reader is searching.

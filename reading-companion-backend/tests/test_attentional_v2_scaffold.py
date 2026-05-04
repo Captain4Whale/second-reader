@@ -19,7 +19,6 @@ from src.attentional_v2.storage import (
     knowledge_activations_file,
     local_buffer_file,
     local_continuity_file,
-    route_history_file,
     reaction_records_file,
     reader_policy_file,
     read_audit_file,
@@ -480,9 +479,6 @@ def test_attentional_v2_initialization_writes_phase8_artifacts(tmp_path):
     assert activations["knowledge_use_mode"] == "book_grounded_only"
     assert activations["search_policy_mode"] == "no_search"
 
-    route_history = json.loads(route_history_file(output_dir).read_text(encoding="utf-8"))
-    assert route_history["routes"] == []
-
     reaction_records = json.loads(reaction_records_file(output_dir).read_text(encoding="utf-8"))
     assert reaction_records["records"] == []
 
@@ -554,11 +550,6 @@ def test_attentional_v2_runner_prefers_main_body_before_supporting_chapters(tmp_
         chapter_read_order.append(str(kwargs["chapter_title"]))
         return {
             "reading_impression": f"Read {focal_sentence['sentence_id']}.",
-            "pressure_signals": {
-                "continuation_pressure": False,
-                "backward_pull": False,
-                "frame_shift_pressure": False,
-            },
             "surfaced_reactions": [],
             "memory_uptake_ops": [],
             "detour_need": None,
@@ -676,11 +667,6 @@ def test_attentional_v2_read_book_runs_live_loop_and_persists_compatibility_resu
         captured_carry_forward_contexts.append(dict(kwargs["carry_forward_context"]))
         return {
             "reading_impression": f"Meaning unit around {anchor_quote[:24]}",
-            "pressure_signals": {
-                "continuation_pressure": False,
-                "backward_pull": False,
-                "frame_shift_pressure": False,
-            },
             "surfaced_reactions": [
                 {
                     "anchor_quote": anchor_quote,
@@ -800,11 +786,6 @@ def test_attentional_v2_runner_persists_multiple_read_surface_reactions(tmp_path
         anchor_quote = str(focal_sentence.get("text", "") or "").strip()[:80]
         return {
             "reading_impression": f"Meaning unit around {anchor_quote[:24]}",
-            "pressure_signals": {
-                "continuation_pressure": False,
-                "backward_pull": False,
-                "frame_shift_pressure": False,
-            },
             "surfaced_reactions": [
                 {
                     "anchor_quote": anchor_quote,
@@ -903,11 +884,6 @@ def test_attentional_v2_read_book_tolerates_missing_reaction_payload(tmp_path, m
         anchor_quote = str(focal_sentence.get("text", "") or "").strip()[:80]
         return {
             "reading_impression": f"Meaning unit around {anchor_quote[:24]}",
-            "pressure_signals": {
-                "continuation_pressure": False,
-                "backward_pull": False,
-                "frame_shift_pressure": False,
-            },
             "surfaced_reactions": [],
             "memory_uptake_ops": [],
             "detour_need": None,
@@ -1034,11 +1010,6 @@ def test_attentional_v2_read_book_still_runs_formal_read_for_monitor_path(tmp_pa
         )
         return {
             "reading_impression": "single-sentence path still got read",
-            "pressure_signals": {
-                "continuation_pressure": False,
-                "backward_pull": False,
-                "frame_shift_pressure": False,
-            },
             "surfaced_reactions": [],
             "memory_uptake_ops": [],
             "detour_need": None,
@@ -1099,11 +1070,6 @@ def test_attentional_v2_runner_executes_detour_search_and_returns_to_mainline(tm
         if focal_sentence_id == "c2-s1" and not is_detour:
             return {
                 "reading_impression": "The later question clearly points back to the setup.",
-                "pressure_signals": {
-                    "continuation_pressure": False,
-                    "backward_pull": False,
-                    "frame_shift_pressure": False,
-                },
                 "surfaced_reactions": [
                     {
                         "anchor_quote": "Later question.",
@@ -1119,11 +1085,6 @@ def test_attentional_v2_runner_executes_detour_search_and_returns_to_mainline(tm
             }
         return {
             "reading_impression": f"Read {focal_sentence_id}.",
-            "pressure_signals": {
-                "continuation_pressure": False,
-                "backward_pull": False,
-                "frame_shift_pressure": False,
-            },
             "surfaced_reactions": [
                 {
                     "anchor_quote": str(kwargs["current_unit_sentences"][-1].get("text")),
@@ -1248,11 +1209,6 @@ def test_attentional_v2_runner_drains_last_unit_detour_before_chapter_close(tmp_
         if focal_sentence_id == "c2-s2" and not is_detour:
             return {
                 "reading_impression": "The chapter ending points back to the opening setup.",
-                "pressure_signals": {
-                    "continuation_pressure": False,
-                    "backward_pull": False,
-                    "frame_shift_pressure": False,
-                },
                 "surfaced_reactions": [
                     {
                         "anchor_quote": "Later answer.",
@@ -1268,11 +1224,6 @@ def test_attentional_v2_runner_drains_last_unit_detour_before_chapter_close(tmp_
             }
         return {
             "reading_impression": f"Read {focal_sentence_id}.",
-            "pressure_signals": {
-                "continuation_pressure": False,
-                "backward_pull": False,
-                "frame_shift_pressure": False,
-            },
             "surfaced_reactions": [
                 {
                     "anchor_quote": str(kwargs["current_unit_sentences"][-1].get("text")),
@@ -1387,11 +1338,6 @@ def test_attentional_v2_runner_stops_at_audit_window_cap_and_persists_partial_ou
         focal_sentence = kwargs["current_unit_sentences"][-1]
         return {
             "reading_impression": f"Read {sentence_ids[-1]}.",
-            "pressure_signals": {
-                "continuation_pressure": False,
-                "backward_pull": False,
-                "frame_shift_pressure": False,
-            },
             "surfaced_reactions": [
                 {
                     "anchor_quote": str(focal_sentence.get("text")),

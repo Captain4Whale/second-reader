@@ -36,7 +36,6 @@ from .schemas import (
     build_empty_knowledge_activations,
     build_empty_local_buffer,
     build_empty_local_continuity,
-    build_empty_route_history,
     build_empty_reaction_records,
     build_empty_reconsolidation_records,
     build_empty_reflective_frames,
@@ -56,7 +55,6 @@ from .storage import (
     load_json,
     local_buffer_file,
     local_continuity_file,
-    route_history_file,
     reaction_records_file,
     reader_policy_file,
     reconsolidation_records_file,
@@ -102,7 +100,6 @@ def _state_builders() -> dict[str, Callable[[], dict[str, object]]]:
         "reflective_frames": lambda: build_empty_reflective_frames(mechanism_version=ATTENTIONAL_V2_MECHANISM_VERSION),
         "anchor_bank": lambda: build_empty_anchor_bank(mechanism_version=ATTENTIONAL_V2_MECHANISM_VERSION),
         "knowledge_activations": lambda: build_empty_knowledge_activations(mechanism_version=ATTENTIONAL_V2_MECHANISM_VERSION),
-        "route_history": lambda: build_empty_route_history(mechanism_version=ATTENTIONAL_V2_MECHANISM_VERSION),
         "reaction_records": lambda: build_empty_reaction_records(mechanism_version=ATTENTIONAL_V2_MECHANISM_VERSION),
         "reconsolidation_records": lambda: build_empty_reconsolidation_records(mechanism_version=ATTENTIONAL_V2_MECHANISM_VERSION),
         "reader_policy": lambda: build_default_reader_policy(
@@ -129,7 +126,6 @@ def _state_paths(output_dir: Path) -> dict[str, Path]:
         "reflective_frames": reflective_frames_file(output_dir),
         "anchor_bank": anchor_bank_file(output_dir),
         "knowledge_activations": knowledge_activations_file(output_dir),
-        "route_history": route_history_file(output_dir),
         "reaction_records": reaction_records_file(output_dir),
         "reconsolidation_records": reconsolidation_records_file(output_dir),
         "reader_policy": reader_policy_file(output_dir),
@@ -294,7 +290,6 @@ def _build_runtime_continuation_capsule(
     thread_trace: dict[str, object],
     reflective_frames: dict[str, object],
     anchor_bank: dict[str, object],
-    route_history: dict[str, object],
     reaction_records: dict[str, object],
 ) -> ContinuationCapsule:
     """Build one persisted continuation capsule from the current new-format runtime state."""
@@ -308,7 +303,6 @@ def _build_runtime_continuation_capsule(
         thread_trace=thread_trace,
         reflective_frames=reflective_frames,
         anchor_bank=anchor_bank,
-        route_history=route_history,
         reaction_records=reaction_records,
     )
     capsule = carry_forward_context.get("continuation_capsule", {})
@@ -334,9 +328,13 @@ def _usable_continuation_capsule(
 def _load_runtime_bundle(output_dir: Path) -> dict[str, dict[str, object]]:
     """Load all Phase 7 runtime files with defaults for absent artifacts."""
 
-    if not route_history_file(output_dir).exists() and (runtime_dir(output_dir) / "move_history.json").exists():
+    legacy_route_paths = (
+        runtime_dir(output_dir) / "route_history.json",
+        runtime_dir(output_dir) / "move_history.json",
+    )
+    if any(path.exists() for path in legacy_route_paths):
         raise RuntimeError(
-            "Pre-route-action attentional_v2 runtime state is no longer supported; rerun from a route_history state directory."
+            "Pre-forward-settlement attentional_v2 route state is no longer supported; rerun from a fresh runtime directory."
         )
     builders = _state_builders()
     bundle: dict[str, dict[str, object]] = {
@@ -399,9 +397,9 @@ def load_full_checkpoint(output_dir: Path, checkpoint_id: str | None = None) -> 
         raise RuntimeError(
             "Pre-Phase C.3 attentional_v2 checkpoints are no longer supported; create a new-format checkpoint before resuming."
         )
-    if isinstance(checkpoint, dict) and "route_history" not in checkpoint and "move_history" in checkpoint:
+    if isinstance(checkpoint, dict) and ("route_history" in checkpoint or "move_history" in checkpoint):
         raise RuntimeError(
-            "Pre-route-action attentional_v2 checkpoints are no longer supported; rerun to create route_history checkpoints."
+            "Pre-forward-settlement attentional_v2 route checkpoints are no longer supported; rerun to create a current checkpoint."
         )
     return checkpoint  # type: ignore[return-value]
 
@@ -465,7 +463,6 @@ def write_full_checkpoint(
             thread_trace=bundle["thread_trace"],
             reflective_frames=bundle["reflective_frames"],
             anchor_bank=bundle["anchor_bank"],
-            route_history=bundle["route_history"],
             reaction_records=bundle["reaction_records"],
         ),  # type: ignore[typeddict-item]
         "active_attention": bundle["active_attention"],  # type: ignore[typeddict-item]
@@ -474,7 +471,6 @@ def write_full_checkpoint(
         "reflective_frames": bundle["reflective_frames"],  # type: ignore[typeddict-item]
         "anchor_bank": bundle["anchor_bank"],  # type: ignore[typeddict-item]
         "knowledge_activations": bundle["knowledge_activations"],  # type: ignore[typeddict-item]
-        "route_history": bundle["route_history"],  # type: ignore[typeddict-item]
         "reaction_records": reaction_records,  # type: ignore[typeddict-item]
         "reconsolidation_records": bundle["reconsolidation_records"],  # type: ignore[typeddict-item]
         "reader_policy": bundle["reader_policy"],  # type: ignore[typeddict-item]
@@ -779,7 +775,6 @@ def resume_from_checkpoint(
         "reflective_frames": live_bundle["reflective_frames"],
         "anchor_bank": live_bundle["anchor_bank"],
         "knowledge_activations": live_bundle["knowledge_activations"],
-        "route_history": live_bundle["route_history"],
         "reaction_records": live_bundle["reaction_records"],
         "reconsolidation_records": live_bundle["reconsolidation_records"],
         "reader_policy": live_bundle["reader_policy"],
@@ -815,7 +810,6 @@ def resume_from_checkpoint(
             thread_trace=dict(checkpoint_source.get("thread_trace", live_bundle["thread_trace"])),
             reflective_frames=dict(checkpoint_source.get("reflective_frames", live_bundle["reflective_frames"])),
             anchor_bank=dict(checkpoint_source.get("anchor_bank", live_bundle["anchor_bank"])),
-            route_history=dict(checkpoint_source.get("route_history", live_bundle["route_history"])),
             reaction_records=dict(checkpoint_source.get("reaction_records", live_bundle["reaction_records"])),
         )
 
@@ -872,7 +866,6 @@ def resume_from_checkpoint(
             thread_trace=dict(checkpoint_source.get("thread_trace", live_bundle["thread_trace"])),
             reflective_frames=dict(checkpoint_source.get("reflective_frames", live_bundle["reflective_frames"])),
             anchor_bank=dict(checkpoint_source.get("anchor_bank", live_bundle["anchor_bank"])),
-            route_history=dict(checkpoint_source.get("route_history", live_bundle["route_history"])),
             reaction_records=dict(checkpoint_source.get("reaction_records", live_bundle["reaction_records"])),
         )
 
@@ -886,7 +879,6 @@ def resume_from_checkpoint(
         "reflective_frames": dict(checkpoint_source.get("reflective_frames", live_bundle["reflective_frames"])),
         "anchor_bank": dict(checkpoint_source.get("anchor_bank", live_bundle["anchor_bank"])),
         "knowledge_activations": dict(checkpoint_source.get("knowledge_activations", live_bundle["knowledge_activations"])),
-        "route_history": dict(checkpoint_source.get("route_history", live_bundle["route_history"])),
         "reaction_records": dict(checkpoint_source.get("reaction_records", live_bundle["reaction_records"])),
         "reconsolidation_records": dict(checkpoint_source.get("reconsolidation_records", live_bundle["reconsolidation_records"])),
         "reader_policy": policy,

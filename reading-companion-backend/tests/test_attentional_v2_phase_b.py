@@ -6,14 +6,13 @@ import json
 
 from src.attentional_v2 import nodes as nodes_module
 from src.attentional_v2 import runner as runner_module
-from src.attentional_v2.nodes import navigate_route, read_unit
+from src.attentional_v2.nodes import read_unit
 from src.attentional_v2.read_context import build_carry_forward_context, resolve_context_request
 from src.attentional_v2.schemas import (
     build_default_reader_policy,
     build_empty_anchor_memory,
     build_empty_knowledge_activations,
     build_empty_local_buffer,
-    build_empty_route_history,
     build_empty_reaction_records,
     build_empty_reflective_summaries,
     build_empty_active_attention,
@@ -89,11 +88,6 @@ def test_read_unit_projects_compact_packet_and_returns_f1_surface_contract(tmp_p
         captured["prompt"] = prompt
         return {
             "reading_impression": "The second sentence sharpens the first one.",
-            "pressure_signals": {
-                "continuation_pressure": True,
-                "backward_pull": True,
-                "frame_shift_pressure": False,
-            },
             "surfaced_reactions": [
                 {
                     "anchor_quote": "Beta sentence.",
@@ -164,18 +158,6 @@ def test_read_unit_projects_compact_packet_and_returns_f1_surface_contract(tmp_p
         }
     ]
 
-    route_history = build_empty_route_history()
-    route_history["routes"] = [
-        {
-            "route_id": "move-1",
-            "route_action": "commit",
-            "reason": "follow the opening claim",
-            "source_sentence_id": "c1-s1",
-            "target_anchor_id": "",
-            "target_sentence_id": "",
-        }
-    ]
-
     reaction_records = build_empty_reaction_records()
     reaction_records["records"] = [
         {
@@ -194,7 +176,6 @@ def test_read_unit_projects_compact_packet_and_returns_f1_surface_contract(tmp_p
         active_attention=active_attention,
         anchor_memory=anchor_memory,
         reflective_summaries=reflective_summaries,
-        route_history=route_history,
         reaction_records=reaction_records,
     )
 
@@ -251,23 +232,13 @@ def test_read_unit_projects_compact_packet_and_returns_f1_surface_contract(tmp_p
     assert "\"earlier_excerpts\"" in captured["prompt"]
     assert "\"refs\": [" not in captured["prompt"]
     assert "\"anchor_bank_digest\"" not in captured["prompt"]
-    assert manifest["prompt_version"] == "attentional_v2.read.v13"
+    assert manifest["prompt_version"] == "attentional_v2.read.v14"
     assert result["reading_impression"] == "The second sentence sharpens the first one."
-    assert result["pressure_signals"] == {
-        "continuation_pressure": True,
-        "backward_pull": True,
-        "frame_shift_pressure": False,
-    }
     assert result["surfaced_reactions"][0]["anchor_quote"] == "Beta sentence."
     assert result["surfaced_reactions"][0]["prior_link"]["ref_ids"] == ["anchor:a-1", "lookback:sentence:c1-s1"]
     assert result["memory_uptake_ops"][0]["op"] == "update"
     assert result["memory_uptake_ops"][0]["target_store"] == "active_attention"
     assert result["detour_need"]["status"] == "open"
-
-    route = navigate_route(read_result=result)
-    assert route["action"] == "bridge_back"
-    assert route["target_anchor_id"] == ""
-    assert route["target_sentence_id"] == ""
 
 
 def test_resolve_context_request_returns_exact_look_back_excerpt_and_none_when_unresolved():
@@ -285,7 +256,6 @@ def test_resolve_context_request_returns_exact_look_back_excerpt_and_none_when_u
         active_attention=build_empty_active_attention(),
         anchor_memory=anchor_memory,
         reflective_summaries=build_empty_reflective_summaries(),
-        route_history=build_empty_route_history(),
         reaction_records=build_empty_reaction_records(),
     )
 
@@ -303,7 +273,6 @@ def test_resolve_context_request_returns_exact_look_back_excerpt_and_none_when_u
         concept_registry=concept_registry,
         thread_trace=thread_trace,
         reflective_frames=reflective_frames,
-        route_history=build_empty_route_history(),
         reaction_records=build_empty_reaction_records(),
     )
 
@@ -326,7 +295,6 @@ def test_resolve_context_request_returns_exact_look_back_excerpt_and_none_when_u
         concept_registry=concept_registry,
         thread_trace=thread_trace,
         reflective_frames=reflective_frames,
-        route_history=build_empty_route_history(),
         reaction_records=build_empty_reaction_records(),
     )
 
@@ -354,7 +322,6 @@ def test_resolve_context_request_active_recall_surfaces_concepts_and_threads():
         active_attention=build_empty_active_attention(),
         anchor_memory=anchor_memory,
         reflective_summaries=build_empty_reflective_summaries(),
-        route_history=build_empty_route_history(),
         reaction_records=build_empty_reaction_records(),
     )
 
@@ -372,7 +339,6 @@ def test_resolve_context_request_active_recall_surfaces_concepts_and_threads():
         concept_registry=concept_registry,
         thread_trace=thread_trace,
         reflective_frames=reflective_frames,
-        route_history=build_empty_route_history(),
         reaction_records=build_empty_reaction_records(),
         current_unit_sentence_ids=["c1-s2"],
     )
@@ -407,11 +373,6 @@ def test_run_read_with_context_loop_reads_once_and_persists_f1_audit(tmp_path, m
         )
         return {
             "reading_impression": "The unit becomes legible immediately.",
-            "pressure_signals": {
-                "continuation_pressure": False,
-                "backward_pull": False,
-                "frame_shift_pressure": False,
-            },
             "surfaced_reactions": [
                 {
                     "anchor_quote": "Beta sentence.",
@@ -455,7 +416,6 @@ def test_run_read_with_context_loop_reads_once_and_persists_f1_audit(tmp_path, m
         reflective_frames=reflective_frames,
         anchor_bank=anchor_bank,
         knowledge_activations=build_empty_knowledge_activations(),
-        route_history=build_empty_route_history(),
         reaction_records=build_empty_reaction_records(),
         reader_policy=build_default_reader_policy(),
         output_language="en",

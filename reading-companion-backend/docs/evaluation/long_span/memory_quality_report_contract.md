@@ -76,19 +76,20 @@ Each probe should show:
 - readable state digests
 - recent orientation context
 
-## Recent Routes Naming Rule
+## No Current Route Evidence
 
-`Recent Routes` is a compact projection from runtime `route_history`, not the raw full route history.
+Current Memory Quality reports must not generate a `Recent Routes` section.
 
-Current renderer behavior:
+`Navigate.route`, `route_action`, and runtime `route_history` are historical `attentional_v2` control vocabulary. New runs settle each read through deterministic runner post-read settlement rather than a route-action taxonomy.
 
-- source: `route_history.routes[-3:]` at the probe snapshot time
-- kept fields include route id, route action, route reason, source sentence, target anchor, and target sentence
-- dropped fields include full file-level metadata and older routes outside the recent window
-- the text should be labeled `route reason`, not `statement`
-- `Recent Routes` is local continuity / audit evidence, not long-term memory
+If a report needs local continuity evidence, it should use current artifacts such as:
 
-Do not label a route reason as `statement` in generated Memory Quality reports. `statement` is reserved for memory-like items such as active-attention items, concepts, threads, anchors, or reactions.
+- recent unitization evidence
+- recent read-audit entries
+- recent surfaced reactions
+- `local_continuity`
+
+Historical reports may still contain `Recent Routes`; they reflect the runtime that produced them and should not be rewritten as current evidence.
 
 ## Current-State Naming Rules
 
@@ -98,6 +99,7 @@ New reports should use current mechanism vocabulary:
 - `active_items[]` with `attention_tags[]`, not fixed `open_questions / live_tensions / live_hypotheses / live_motifs`
 - `reading_impression`, not `unit_delta`
 - `memory_uptake_ops`, not `implicit_uptake_ops`
+- no `Recent Routes`, `route_action`, or route-history block for new runs
 
 Historical reports may retain older field names because they reflect the code that produced them. New report generators should not reintroduce those names as current truth.
 
@@ -111,6 +113,6 @@ Before closing a generated Memory Quality evidence report, check:
 - Each full source document has 5 probe markers.
 - Probe sections do not repeat full source-so-far blocks.
 - Every probe links to raw snapshot JSON, source marker, source landmark, and runtime appendix.
-- `Recent Routes` blocks say `route reason`, not `statement`.
+- No new report contains a current `Recent Routes` / `route_action` evidence block.
 - The report states that probe placement is progress-based, not semantic.
 - The report states that final runtime dump cannot replace probe-time snapshot evidence.

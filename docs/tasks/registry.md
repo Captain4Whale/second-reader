@@ -31,7 +31,7 @@ Last updated: `2026-05-03T21:29:37+08:00`
   - keep the existing frontend lane active in parallel under `TASK-V2-NATIVE-READING-PRESENTATION`
   - `Phase A` is now landed:
     - heuristic trigger output no longer suppresses formal正文 reading
-    - the live control skeleton is now `Navigate.unitize + read + Navigate.route`
+    - the live control skeleton is now `Navigate.unitize + read + runner post-read settlement`
     - span authority now matches the exact chosen unit
   - `Phase B` is now landed:
     - `read` now owns the authoritative current-unit packet on the live path
@@ -61,7 +61,7 @@ Last updated: `2026-05-03T21:29:37+08:00`
     - active items now carry lightweight `attention_tags[]`; old `working_state` naming and fixed lists are historical
     - residual `local_hypothesis` / `live_hypotheses` vocabulary has been retired from current provenance; hypothesis-like material is a tagged active-attention item or later concept/thread memory
     - old `gate_state`, `pressure_snapshot`, and working-pressure runtime artifacts are no longer current schema, prompt, runtime, checkpoint, or Memory Quality evidence fields
-    - current `pressure_signals` remain live as one-step `Read -> Navigate.route` signals
+    - old `pressure_signals` were removed with the forward-settlement cutover; current `Read` emits reading impression, surfaced reactions, memory uptake, and optional detour need
   - `Phase D` is now landed:
     - `read` now supports a budget-bounded multi-step supplemental recall loop instead of a single extra pass
     - runtime state and full checkpoints now persist a lightweight `continuation capsule` with rehydration entrypoints
@@ -73,8 +73,8 @@ Last updated: `2026-05-03T21:29:37+08:00`
     - slow-cycle compatibility projection and normalized eval export now derive old family labels through one compat helper instead of treating legacy `type` as the internal truth
     - this branch remains valuable evidence, but it is no longer the approved end-state target
   - `Phase F1` is now landed:
-    - the live per-unit loop is back to `Navigate.unitize -> read -> Navigate.route`
-    - `Read` now owns `reading_impression`, surfaced reactions, memory uptake ops, pressure signals, and optional `detour_need`
+    - the live per-unit loop is now `Navigate.unitize -> read -> runner post-read settlement`
+    - `Read` now owns `reading_impression`, surfaced reactions, memory uptake ops, and optional `detour_need`
     - the dedicated live `Express` node is no longer on the runner path
     - `Read` prompt packaging now follows compact `always carry / selective carry / not carry` projections
   - Read naturalization is now landed on top of the F-line:
@@ -86,7 +86,7 @@ Last updated: `2026-05-03T21:29:37+08:00`
     - `Navigate` now owns bounded detour search over structure cards, memory digests, and source-grounded anchor handles
     - `local_continuity` now persists `mainline_cursor / active_detour_id / active_detour_need / detour_trace`
     - detour search uses one bounded prompt family with `narrow_scope / land_region / defer_detour`
-    - detour regions are now read through the same normal `Navigate.unitize -> read -> Navigate.route` loop
+    - detour regions are now read through the same normal `Navigate.unitize -> read -> runner post-read settlement` loop
     - chapter-tail detours are now drained before slow-cycle close
   - `Phase F3` is now landed:
     - persisted visible reactions now enter the system only through `Read.surfaced_reactions[]`
@@ -211,7 +211,6 @@ Last updated: `2026-05-03T21:29:37+08:00`
     - false-empty recent trail when `recent_reactions` exists but mindstream history is sparse
     - live V2 overview chips for:
       - `reading_locus`
-      - `route_action`
       - `active_reaction_id`
   - source-reader fixes completed:
     - honest slow-loading message
@@ -333,7 +332,7 @@ Last updated: `2026-05-03T21:29:37+08:00`
         - `attentional_v2_long_span_vnext_phase1_reaction_evidence_fix_rejudge_20260425`
       - post-eval action ledger:
         - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_long_span_vnext_phase1_reaction_evidence_fix_rejudge_20260425/analysis/post_eval_action_ledger_20260503/README.md`
-        - recorded actions now include `A1_legacy_gate_pressure_cleanup`, `A2_active_attention_cutover`, `A3_read_naturalization_cutover`, `A4_memory_quality_structural_signal_supplement`, `A5_local_hypothesis_provenance_cleanup`, `A6_memory_quality_report_contract`, and `A7_route_action_contract_cutover`
+        - recorded actions now include `A1_legacy_gate_pressure_cleanup`, `A2_active_attention_cutover`, `A3_read_naturalization_cutover`, `A4_memory_quality_structural_signal_supplement`, `A5_local_hypothesis_provenance_cleanup`, `A6_memory_quality_report_contract`, `A7_route_action_contract_cutover`, and `A8_forward_settlement_cutover`
       - Memory Quality evidence report contract:
         - `reading-companion-backend/docs/evaluation/long_span/memory_quality_report_contract.md`
         - future reports should use one full source document per window with probe markers, and label recent route explanations as `route reason` rather than generic `statement`

@@ -58,7 +58,6 @@ Frontend defaults can be overridden with:
 - In paused stale/interrupted states, the same excerpt field should be rendered as the last-known excerpt rather than as text being actively read now.
 - The backend now also additively emits richer mechanism-valued fields on those same surfaces:
   - `analysis-state.current_reading_activity.reading_locus`
-  - `analysis-state.current_reading_activity.route_action`
   - `analysis-state.current_reading_activity.reconstructed_hot_state`
   - `analysis-state.current_reading_activity.last_resume_kind`
   - `analysis-state.current_reading_activity.active_reaction_id`
@@ -66,7 +65,7 @@ Frontend defaults can be overridden with:
   - reaction/mark `primary_anchor` and related lineage sidecars
 - Current routed frontend surfaces still mostly consume the section-era compatibility layer, but the first frontend truth slice now depends on some of these additive fields directly:
   - the overview breadcrumb and live quote now prefer `reading_locus.excerpt` over the older `current_excerpt` fallback when both exist
-  - the overview live chips now surface `route_action` and `active_reaction_id` when the active mechanism provides them
+  - the overview live chips now surface `active_reaction_id` when the active mechanism provides it
   - the recent trail now falls back to `current_state_panel.recent_reactions` instead of falsely rendering empty when the historical mindstream feed is sparse
   - stale/interrupted paused books now use `status_reason` plus `resume_available` to switch from false-live wording to last-known wording on bookshelf and overview surfaces
 - For `attentional_v2`, chapter/detail routes now also tolerate older compatibility manifests that are missing `result_file` by resolving the mechanism-owned compatibility payloads directly; this keeps routed chapter review working during live reads and manifest rewrites.
