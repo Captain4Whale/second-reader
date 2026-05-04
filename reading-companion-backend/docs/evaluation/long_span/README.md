@@ -57,6 +57,7 @@ Current implementation posture:
     - output sourcing:
       - `attentional_v2` is freshly read or same-run resumed so `Memory Quality` probe snapshots exist
       - `Memory Quality` probe export requires explicit semantic `probe_targets`; missing targets fail fast instead of falling back to ratio probes
+      - mechanism-local diagnostic reruns can pass `--v2-only` so only `attentional_v2` is read and audited
       - unchanged `iterator_v1` windows reuse April 19 completed normalized outputs for reaction audit
       - `iterator_v1` is re-read only when the active window fingerprint differs from the reuse source
       - fingerprint checks cover `segment_id / start_sentence_id / end_sentence_id / source_chapter_ids / source_text_sha256`

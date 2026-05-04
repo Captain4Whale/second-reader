@@ -1432,6 +1432,7 @@ def _render_report(
     memory_quality_results: list[dict[str, Any]],
     reaction_window_summaries: list[dict[str, Any]],
 ) -> str:
+    mechanism_keys = tuple(str(item) for item in aggregate.get("mechanism_keys") or MECHANISM_KEYS)
     memory_quality = dict(aggregate.get("memory_quality") or {})
     reaction_audit = dict(aggregate.get("reaction_audit") or {})
     lines = [
@@ -1493,7 +1494,7 @@ def _render_report(
         lines.extend(["Reaction-audit results are copied unchanged from the source run for this Memory Quality rejudge.", ""])
 
     lines.extend(["## Spontaneous Callback", ""])
-    for mechanism_key in MECHANISM_KEYS:
+    for mechanism_key in mechanism_keys:
         mechanism_summary = dict((reaction_audit.get("mechanisms") or {}).get(mechanism_key) or {})
         if not mechanism_summary:
             continue
@@ -1530,7 +1531,7 @@ def _render_report(
             lines.append("")
 
     lines.extend(["## False Visible Integration", ""])
-    for mechanism_key in MECHANISM_KEYS:
+    for mechanism_key in mechanism_keys:
         mechanism_summary = dict((reaction_audit.get("mechanisms") or {}).get(mechanism_key) or {})
         if not mechanism_summary:
             continue
@@ -1604,8 +1605,15 @@ def run_long_span_vnext(
     memory_quality_source_run_root: Path | None = None,
     memory_quality_results_source_run_root: Path | None = None,
     copy_reaction_audit_from_source: bool = True,
+    mechanism_keys: tuple[str, ...] = MECHANISM_KEYS,
 ) -> dict[str, Any]:
     worker_count = max(1, int(workers or 1))
+    mechanism_keys = tuple(str(item).strip() for item in mechanism_keys if str(item).strip())
+    unsupported = sorted(set(mechanism_keys) - set(MECHANISM_KEYS))
+    if unsupported:
+        raise ValueError(f"unsupported mechanism keys: {', '.join(unsupported)}")
+    if "attentional_v2" not in mechanism_keys:
+        raise ValueError("Long Span vNext Memory Quality requires attentional_v2.")
     dataset_dir = _resolve_dataset_dir(manifest_path)
     memory_quality_probe_plan_path = memory_quality_probe_plan_path.resolve()
     memory_quality_probe_plan = load_memory_quality_probe_plan(memory_quality_probe_plan_path)
@@ -1635,6 +1643,7 @@ def run_long_span_vnext(
             "memory_quality_source_run_root": str(memory_quality_source_run_root) if memory_quality_source_run_root else "",
             "memory_quality_results_source_run_root": str(memory_quality_results_source_run_root) if memory_quality_results_source_run_root else "",
             "copy_reaction_audit_from_source": copy_reaction_audit_from_source,
+            "mechanism_keys": list(mechanism_keys),
             "windows": [asdict(window) for window in windows],
             "window_fingerprints": [_window_fingerprint(dataset_dir, window) for window in windows],
         },
@@ -1663,7 +1672,7 @@ def run_long_span_vnext(
         )
     for window in windows:
         if memory_quality_source_run_root:
-            source_mechanism_keys = ("attentional_v2",) if copied_reaction_audit else MECHANISM_KEYS
+            source_mechanism_keys = ("attentional_v2",) if copied_reaction_audit else mechanism_keys
             for mechanism_key in source_mechanism_keys:
                 source_output_dir = _source_run_output_dir(
                     source_run_root=memory_quality_source_run_root,
@@ -1689,6 +1698,8 @@ def run_long_span_vnext(
             continue
 
         output_tasks.append((window, "attentional_v2"))
+        if "iterator_v1" not in mechanism_keys:
+            continue
         reuse_payload = find_reaction_reuse_output(
             current_dataset_dir=dataset_dir,
             window=window,
@@ -1741,6 +1752,7 @@ def run_long_span_vnext(
             "memory_quality_source_run_root": str(memory_quality_source_run_root) if memory_quality_source_run_root else "",
             "memory_quality_results_source_run_root": str(memory_quality_results_source_run_root) if memory_quality_results_source_run_root else "",
             "copy_reaction_audit_from_source": copy_reaction_audit_from_source,
+            "mechanism_keys": list(mechanism_keys),
             "fresh_task_count": len(output_tasks),
             "fresh_tasks": [
                 {
@@ -1822,13 +1834,21 @@ def run_long_span_vnext(
         memory_quality_results = _run_in_parallel(memory_quality_tasks, worker_count, _judge_probe)
 
     if copied_reaction_audit and source_summary_dir:
-        reaction_audit_results = _jsonl_load(source_summary_dir / "reaction_audit_results.jsonl")
-        reaction_window_summaries = _jsonl_load(source_summary_dir / "reaction_window_summaries.jsonl")
+        reaction_audit_results = [
+            row
+            for row in _jsonl_load(source_summary_dir / "reaction_audit_results.jsonl")
+            if str(row.get("mechanism_key")) in mechanism_keys
+        ]
+        reaction_window_summaries = [
+            row
+            for row in _jsonl_load(source_summary_dir / "reaction_window_summaries.jsonl")
+            if str(row.get("mechanism_key")) in mechanism_keys
+        ]
     else:
         reaction_tasks = [
             (window, mechanism_key)
             for window in windows
-            for mechanism_key in MECHANISM_KEYS
+            for mechanism_key in mechanism_keys
         ]
 
         def _audit_reactions(task: tuple[ReadingWindow, str]) -> tuple[list[dict[str, Any]], dict[str, Any]]:
@@ -1870,6 +1890,7 @@ def run_long_span_vnext(
         "memory_quality_judge_contract": MEMORY_QUALITY_JUDGE_CONTRACT,
         "reaction_audit_judge_contract": REACTION_AUDIT_JUDGE_CONTRACT,
         "metric_slugs": ["memory_quality", "spontaneous_callback", "false_visible_integration"],
+        "mechanism_keys": list(mechanism_keys),
         "memory_quality": _aggregate_memory_quality(memory_quality_results),
         "reaction_audit": _aggregate_reaction_audit(reaction_window_summaries),
         "memory_quality_source": "copied_from_results_source_run" if copied_memory_quality_results else "fresh_judge",
@@ -1943,6 +1964,11 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="When reusing a source run root, rerun reaction audit instead of copying source reaction-audit outputs.",
     )
+    parser.add_argument(
+        "--v2-only",
+        action="store_true",
+        help="Run and report only attentional_v2. Use for mechanism-quality diagnostic reruns where V1 comparison is out of scope.",
+    )
     args = parser.parse_args(argv)
 
     run_root = args.runs_root / args.run_id
@@ -1970,6 +1996,7 @@ def main(argv: list[str] | None = None) -> int:
         memory_quality_source_run_root=memory_quality_source_run_root,
         memory_quality_results_source_run_root=memory_quality_results_source_run_root,
         copy_reaction_audit_from_source=not bool(args.rerun_reaction_audit),
+        mechanism_keys=("attentional_v2",) if args.v2_only else MECHANISM_KEYS,
     )
     print(json.dumps(aggregate, ensure_ascii=False, indent=2))
     return 0

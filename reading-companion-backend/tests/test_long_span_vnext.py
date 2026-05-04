@@ -665,6 +665,83 @@ def test_run_long_span_vnext_writes_separated_memory_and_reaction_outputs(tmp_pa
     assert v2_row["prior_link"] == {"ref_ids": ["anchor:a-1"]}
 
 
+def test_run_long_span_vnext_can_run_attentional_v2_only(tmp_path: Path, monkeypatch) -> None:
+    run_root = tmp_path / "run"
+    dataset_dir = tmp_path / "dataset"
+    window = _window()
+    output_dir_v2 = run_root / "outputs" / window.segment_id / "attentional_v2"
+    (output_dir_v2 / "public").mkdir(parents=True, exist_ok=True)
+    (output_dir_v2 / "public" / "book_document.json").write_text(json.dumps(_book_document()), encoding="utf-8")
+    memory_quality_probe_export_file(output_dir_v2).parent.mkdir(parents=True, exist_ok=True)
+    memory_quality_probe_export_file(output_dir_v2).write_text(
+        json.dumps({"snapshots": [{"probe_index": 1, "capture_sentence_id": "c1-s2"}]}),
+        encoding="utf-8",
+    )
+
+    fresh_calls: list[str] = []
+    monkeypatch.setattr(runner, "_resolve_dataset_dir", lambda manifest_path: dataset_dir)
+    monkeypatch.setattr(runner, "_load_windows", lambda dataset_dir: [window])
+
+    def _fake_output(**kwargs):
+        fresh_calls.append(kwargs["mechanism_key"])
+        return {
+            "status": "completed",
+            "mechanism_key": kwargs["mechanism_key"],
+            "mechanism_label": kwargs["mechanism_key"],
+            "output_dir": str(output_dir_v2),
+            "normalized_eval_bundle": {
+                "reactions": [
+                    {
+                        "reaction_id": "attentional_v2-r1",
+                        "type": "highlight",
+                        "anchor_quote": "Anchor",
+                        "content": "Reaction content",
+                    }
+                ],
+            },
+            "run_mode": "fresh",
+        }
+
+    monkeypatch.setattr(runner, "ensure_window_output_with_retries", _fake_output)
+    monkeypatch.setattr(
+        runner,
+        "judge_memory_quality_probe",
+        lambda **kwargs: {
+            "salience_score": 4,
+            "mainline_fidelity_score": 4,
+            "organization_score": 3,
+            "fidelity_score": 4,
+            "overall_memory_quality_score": 4,
+            "reason": "Retained the mainline clearly.",
+        },
+    )
+    monkeypatch.setattr(
+        runner,
+        "audit_window_reactions",
+        lambda **kwargs: [{"reaction_id": "attentional_v2-r1", "label": "local_only", "reason": "classified in test"}],
+    )
+    monkeypatch.setattr(runner, "write_llm_usage_summary", lambda *args, **kwargs: None)
+
+    aggregate = runner.run_long_span_vnext(
+        run_root=run_root,
+        manifest_path=tmp_path / "unused.json",
+        judge_mode="llm",
+        mechanism_keys=("attentional_v2",),
+    )
+
+    assert fresh_calls == ["attentional_v2"]
+    assert aggregate["mechanism_keys"] == ["attentional_v2"]
+    assert set(aggregate["reaction_audit"]["mechanisms"].keys()) == {"attentional_v2"}
+    sourcing = json.loads((run_root / "meta" / "output_sourcing.json").read_text(encoding="utf-8"))
+    assert sourcing["fresh_tasks"] == [{"segment_id": window.segment_id, "mechanism_key": "attentional_v2"}]
+    rows = [
+        json.loads(line)
+        for line in (run_root / "summary" / "reaction_audit_results.jsonl").read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    ]
+    assert {row["mechanism_key"] for row in rows} == {"attentional_v2"}
+
+
 def test_run_long_span_vnext_memory_quality_rejudge_reuses_source_run(tmp_path: Path, monkeypatch) -> None:
     run_root = tmp_path / "rejudge_run"
     source_root = tmp_path / "source_run"
