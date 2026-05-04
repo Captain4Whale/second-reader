@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-05-04T16:32:40+08:00`
+Last verified: `2026-05-04T19:13:31+08:00`
 
 ## Current Objective
 - Shift Long Span from the discontinued `target-centered accumulation v2` method to the new active design direction:
@@ -46,13 +46,13 @@ Last verified: `2026-05-04T16:32:40+08:00`
         - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_long_span_vnext_phase1_reaction_evidence_fix_rejudge_20260425/summary/report.md`
       - post-eval action ledger:
         - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_long_span_vnext_phase1_reaction_evidence_fix_rejudge_20260425/analysis/post_eval_action_ledger_20260503/README.md`
-        - recorded actions now include `A1_legacy_gate_pressure_cleanup`, `A2_active_attention_cutover`, `A3_read_naturalization_cutover`, `A4_memory_quality_structural_signal_supplement`, `A5_local_hypothesis_provenance_cleanup`, `A6_memory_quality_report_contract`, `A7_route_action_contract_cutover`, `A8_forward_settlement_cutover`, `A9_navigate_choose_next_unit_cutover`, `A10_reading_runner_naming_boundary`, and `A11_navigate_book_local_skill_runtime`
+        - recorded actions now include `A1_legacy_gate_pressure_cleanup`, `A2_active_attention_cutover`, `A3_read_naturalization_cutover`, `A4_memory_quality_structural_signal_supplement`, `A5_local_hypothesis_provenance_cleanup`, `A6_memory_quality_report_contract`, `A7_route_action_contract_cutover`, `A8_forward_settlement_cutover`, `A9_navigate_choose_next_unit_cutover`, `A10_reading_runner_naming_boundary`, `A11_navigate_book_local_skill_runtime`, and `A12_navigate_unified_agent_loop_cutover`
       - Memory Quality evidence report contract:
         - `reading-companion-backend/docs/evaluation/long_span/memory_quality_report_contract.md`
         - future reports should use one full source document per window with probe markers and should not include current `Recent Routes` / `route_action` evidence blocks
       - current Navigator source-skill posture:
-        - `Navigate.choose_next_unit` remains the single Navigator entrypoint
-        - first-phase Skill Runtime is mechanism-private and currently serves detour search only
+        - `Navigate.choose_next_unit` is now one unified Navigator act loop, not a Python-level dispatch between separate mainline unitize and detour-search prompt families
+        - first-phase Skill Runtime is mechanism-private and currently serves active-detour Navigate acts only
         - supported book-local skills are `source_map_overview`, `source_scope_drilldown`, `source_window_fetch`, and `anchor_resolve`
         - `Reading Runner` dispatches skill requests and returns `skill_result` evidence to Navigate; skills do not choose the detour target and do not read future text past `mainline_cursor`
       - result:
@@ -333,19 +333,13 @@ Last verified: `2026-05-04T16:32:40+08:00`
     - `memory_uptake_ops` should capture what naturally needs to remain available after the unit, including explicit source structures such as stage models, classifications, definitions, distinctions, and chapter roadmaps when they matter
   - `Phase F2` is now landed as the navigate-owned detour cutover:
     - the live `Read` contract now emits `detour_need` instead of the transitional `revisit_need`
-    - `Navigate` now owns bounded detour search over:
-      - structure cards
-      - long-distance-memory digests
-      - source-grounded anchor handles
+    - `Navigate.choose_next_unit` now owns detour localization as one mode inside the unified Navigator act loop
     - `local_continuity` now persists:
       - `mainline_cursor`
       - `active_detour_id`
       - `active_detour_need`
       - `detour_trace`
-    - detour search now uses one bounded prompt family with:
-      - `narrow_scope`
-      - `land_region`
-      - `defer_detour`
+    - active-detour Navigate acts can choose a source-grounded unit, request bounded source-evidence skills, or defer the detour
     - landed detour regions now flow back through the same normal `Navigate.choose_next_unit -> read -> Reading Runner post-read settlement` loop
     - chapter-tail detours are now drained before chapter slow-cycle closes, so a last-unit detour is not silently dropped
   - `Phase F3` is now landed as the reaction-persistence and compatibility reconvergence slice:

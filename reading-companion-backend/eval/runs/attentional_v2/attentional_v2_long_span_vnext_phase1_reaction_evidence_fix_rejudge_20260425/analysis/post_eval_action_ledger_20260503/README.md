@@ -392,7 +392,41 @@ Each action should answer:
   - Complete for first-phase book-local detour skills.
   - Future work may add Read-owned skills, WebSearch, richer source-access skills, or a more agentic tool loop, but those should be designed as separate mechanism decisions rather than quietly folded into this slice.
 
-The first eleven post-eval actions are recorded above. Later actions should be appended here only after their finding, decision, and implementation boundary have been agreed.
+### A12 — Navigate unified agent loop cutover
+
+- `action_id`: `A12_navigate_unified_agent_loop_cutover`
+- `status`: `landed`
+- `source finding`:
+  - After the first Skill Runtime slice, `Navigate.choose_next_unit` was still implemented as Python-level semantic dispatch: ordinary mainline reading called one helper path, while active detours called a separate detour-search helper path.
+  - This made the Navigator harder to reason about and kept the older `navigate_unitize / navigate_detour_search` split alive as current implementation shape.
+- `decision`:
+  - Keep the conceptual node name `Navigate`, with the code/prompt contract `navigate_choose_next_unit`.
+  - Make `Navigate.choose_next_unit` a unified agent act loop whose single task is choosing the next readable unit that should be read.
+  - Allow only three act decisions: `choose_unit`, `request_skill`, and `defer_detour`.
+  - Keep skills as bounded source-evidence access; skill results are evidence, not answers.
+- `implemented changes`:
+  - Added `NavigateActResult` and `NavigateActTraceEntry` for one Navigate act and its source-skill trace.
+  - Replaced live calls to separate `navigate_unitize(...)` and `navigate_detour_search(...)` with `navigate_choose_next_unit_act(...)`.
+  - Mainline mode now uses the unified act with `skills_allowed=false`; invalid mainline skill/defer outputs fall back to a safe unit.
+  - Active-detour mode now uses the same act loop, can request book-local source skills within budget, can choose a detour unit from source-grounded evidence, or can defer.
+  - Reading Runner now consumes one `NavigateNextUnitResult` with a compact `navigate_trace`; both mainline and detour units still flow through the same `Read -> Reading Runner settlement` path.
+- `validation`:
+  - `reading-companion-backend/.venv/bin/python -m pytest reading-companion-backend/tests/test_attentional_v2_nodes.py reading-companion-backend/tests/test_attentional_v2_state_projection.py reading-companion-backend/tests/test_attentional_v2_scaffold.py -q`
+  - `reading-companion-backend/.venv/bin/python -m pytest reading-companion-backend/tests/test_long_span_vnext.py -q`
+  - `reading-companion-backend/.venv/bin/python -m pytest reading-companion-backend/tests/test_attentional_v2_*.py -q`
+  - Final task closeout records the repository-wide static checks.
+- `evidence links`:
+  - Current mechanism contract: `../../../../../../../docs/backend-reading-mechanisms/attentional_v2.md`
+  - Current state / task routing: `../../../../../../../docs/current-state.md`, `../../../../../../../docs/tasks/registry.md`
+  - Decision history: `../../../../../../../docs/history/decision-log.md`
+  - Prompt and node contract: `../../../../../../../reading-companion-backend/src/attentional_v2/prompts.py`, `../../../../../../../reading-companion-backend/src/attentional_v2/nodes.py`, `../../../../../../../reading-companion-backend/src/attentional_v2/schemas.py`
+  - Reading Runner integration: `../../../../../../../reading-companion-backend/src/attentional_v2/runner.py`
+  - Tests: `../../../../../../../reading-companion-backend/tests/test_attentional_v2_nodes.py`, `../../../../../../../reading-companion-backend/tests/test_attentional_v2_scaffold.py`
+- `follow-up`:
+  - Complete for unifying the current Navigate act loop.
+  - Future work may make the skill loop richer, but it should extend the unified `Navigate.choose_next_unit` act instead of reintroducing separate live prompt families.
+
+The first twelve post-eval actions are recorded above. Later actions should be appended here only after their finding, decision, and implementation boundary have been agreed.
 
 ### Action Template
 

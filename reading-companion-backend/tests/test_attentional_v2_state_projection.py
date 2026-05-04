@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from src.attentional_v2 import nodes as nodes_module
-from src.attentional_v2.nodes import navigate_unitize
+from src.attentional_v2.nodes import navigate_choose_next_unit_act
 from src.attentional_v2.schemas import (
     build_default_reader_policy,
     build_empty_anchor_memory,
@@ -254,8 +254,8 @@ def test_build_read_prompt_packet_projects_compact_always_carry_and_selective_ca
     assert prompt_packet["local_continuity"]["recent_reactions"][0]["reaction_id"] == "reaction-1"
 
 
-def test_navigate_unitize_prompt_receives_navigation_context(monkeypatch):
-    """navigate_unitize should render the Phase C.1 navigation packet into its prompt."""
+def test_navigate_choose_next_unit_prompt_receives_navigation_context(monkeypatch):
+    """Navigate.choose_next_unit should render the navigation packet into its prompt."""
 
     captured: dict[str, str] = {}
 
@@ -265,9 +265,15 @@ def test_navigate_unitize_prompt_receives_navigation_context(monkeypatch):
 
     monkeypatch.setattr(nodes_module, "invoke_json", fake_invoke_json)
 
-    navigate_unitize(
-        current_sentence=_sentence("c1-s1", "Alpha sentence."),
-        preview_sentences=[_sentence("c1-s1", "Alpha sentence.")],
+    navigate_choose_next_unit_act(
+        reading_position={"mode": "mainline", "current_sentence_id": "c1-s1"},
+        mainline_preview={
+            "current_sentence": _sentence("c1-s1", "Alpha sentence."),
+            "preview_range": {"start_sentence_id": "c1-s1", "end_sentence_id": "c1-s1"},
+            "preview_sentences": [_sentence("c1-s1", "Alpha sentence.")],
+        },
+        active_detour_need=None,
+        mainline_cursor={},
         navigation_context={
             "packet_version": STATE_PACKET_VERSION,
             "continuation_capsule": {"chapter_ref": "Chapter 1"},
@@ -280,8 +286,16 @@ def test_navigate_unitize_prompt_receives_navigation_context(monkeypatch):
             "anchor_bank_digest": {"active_anchors": []},
             "refs": [],
         },
+        source_evidence={},
+        skill_catalog=[],
+        skill_results_so_far=[],
+        budget_state={"skills_allowed": False},
         reader_policy=build_default_reader_policy(),
         output_language="en",
+        available_sentences=[_sentence("c1-s1", "Alpha sentence.")],
+        allowed_sentence_ids={"c1-s1"},
+        default_selection_mode="mainline",
+        skills_allowed=False,
     )
 
     assert "Navigation context" in captured["prompt"]

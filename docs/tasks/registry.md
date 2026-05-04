@@ -83,9 +83,9 @@ Last updated: `2026-05-04T16:32:40+08:00`
     - explicit source structures that matter later, such as stage models or classifications, can settle into memory even without a visible reaction
   - `Phase F2` is now landed:
     - the live `Read` contract now emits `detour_need`
-    - `Navigate` now owns bounded detour search over structure cards, memory digests, and source-grounded anchor handles
+    - `Navigate.choose_next_unit` now owns detour localization as one mode inside the unified Navigator act loop
     - `local_continuity` now persists `mainline_cursor / active_detour_id / active_detour_need / detour_trace`
-    - detour search uses one bounded prompt family with `narrow_scope / land_region / defer_detour`
+    - active-detour Navigate acts can choose a source-grounded unit, request bounded source-evidence skills, or defer the detour
     - detour regions are now read through the same normal `Navigate.choose_next_unit -> read -> Reading Runner post-read settlement` loop
     - chapter-tail detours are now drained before slow-cycle close
   - `Phase F3` is now landed:
@@ -332,13 +332,13 @@ Last updated: `2026-05-04T16:32:40+08:00`
         - `attentional_v2_long_span_vnext_phase1_reaction_evidence_fix_rejudge_20260425`
       - post-eval action ledger:
         - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_long_span_vnext_phase1_reaction_evidence_fix_rejudge_20260425/analysis/post_eval_action_ledger_20260503/README.md`
-        - recorded actions now include `A1_legacy_gate_pressure_cleanup`, `A2_active_attention_cutover`, `A3_read_naturalization_cutover`, `A4_memory_quality_structural_signal_supplement`, `A5_local_hypothesis_provenance_cleanup`, `A6_memory_quality_report_contract`, `A7_route_action_contract_cutover`, `A8_forward_settlement_cutover`, `A9_navigate_choose_next_unit_cutover`, `A10_reading_runner_naming_boundary`, and `A11_navigate_book_local_skill_runtime`
+        - recorded actions now include `A1_legacy_gate_pressure_cleanup`, `A2_active_attention_cutover`, `A3_read_naturalization_cutover`, `A4_memory_quality_structural_signal_supplement`, `A5_local_hypothesis_provenance_cleanup`, `A6_memory_quality_report_contract`, `A7_route_action_contract_cutover`, `A8_forward_settlement_cutover`, `A9_navigate_choose_next_unit_cutover`, `A10_reading_runner_naming_boundary`, `A11_navigate_book_local_skill_runtime`, and `A12_navigate_unified_agent_loop_cutover`
       - Memory Quality evidence report contract:
         - `reading-companion-backend/docs/evaluation/long_span/memory_quality_report_contract.md`
         - future reports should use one full source document per window with probe markers, and label recent route explanations as `route reason` rather than generic `statement`
       - current Navigator source-skill posture:
-        - `Navigate.choose_next_unit` remains the single Navigator entrypoint
-        - first-phase Skill Runtime is mechanism-private and currently serves detour search only
+        - `Navigate.choose_next_unit` is now one unified Navigator act loop, not a Python-level dispatch between separate mainline unitize and detour-search prompt families
+        - first-phase Skill Runtime is mechanism-private and currently serves active-detour Navigate acts only
         - supported book-local skills are `source_map_overview`, `source_scope_drilldown`, `source_window_fetch`, and `anchor_resolve`
         - `Reading Runner` dispatches skill requests and returns `skill_result` evidence to Navigate; skills do not choose the detour target and do not read future text past `mainline_cursor`
       - result:

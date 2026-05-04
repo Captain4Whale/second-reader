@@ -599,22 +599,7 @@ def test_attentional_v2_runner_prefers_main_body_before_supporting_chapters(tmp_
             "seen_sentence_ids": [*local_buffer.get("seen_sentence_ids", []), sentence["sentence_id"]],
         }
 
-    monkeypatch.setattr(
-        runner_module,
-        "navigate_unitize",
-        lambda *, current_sentence, preview_sentences, **_kwargs: {
-            "start_sentence_id": current_sentence["sentence_id"],
-            "end_sentence_id": current_sentence["sentence_id"],
-            "preview_range": {
-                "start_sentence_id": preview_sentences[0]["sentence_id"],
-                "end_sentence_id": preview_sentences[-1]["sentence_id"],
-            },
-            "boundary_type": "paragraph_end",
-            "evidence_sentence_ids": [current_sentence["sentence_id"]],
-            "reason": "test_unitize_single_sentence",
-            "continuation_pressure": False,
-        },
-    )
+    monkeypatch.setattr(runner_module, "navigate_choose_next_unit_act", _fake_single_sentence_navigate_act)
     monkeypatch.setattr(runner_module, "process_sentence_intake", fake_process_sentence_intake)
     monkeypatch.setattr(runner_module, "read_unit", fake_read_unit)
     monkeypatch.setattr(runner_module, "run_phase6_chapter_cycle", fake_phase6_chapter_cycle)
@@ -679,6 +664,46 @@ def _empty_choose_next_unit_state() -> dict[str, dict[str, object]]:
     }
 
 
+def _fake_single_sentence_navigate_act(**kwargs):
+    """Return one safe single-sentence choose-unit act for runner smoke tests."""
+
+    available_sentences = [
+        dict(sentence)
+        for sentence in kwargs.get("available_sentences", [])
+        if isinstance(sentence, dict)
+    ]
+    if not available_sentences:
+        preview = kwargs.get("mainline_preview", {})
+        if isinstance(preview, dict):
+            available_sentences = [
+                dict(sentence)
+                for sentence in preview.get("preview_sentences", [])
+                if isinstance(sentence, dict)
+            ]
+    reading_position = kwargs.get("reading_position", {})
+    current_sentence_id = str(reading_position.get("current_sentence_id", "") if isinstance(reading_position, dict) else "")
+    chosen = next(
+        (sentence for sentence in available_sentences if str(sentence.get("sentence_id", "")) == current_sentence_id),
+        available_sentences[0] if available_sentences else {"sentence_id": ""},
+    )
+    sentence_id = str(chosen.get("sentence_id", ""))
+    preview_range = {
+        "start_sentence_id": str(available_sentences[0].get("sentence_id", "")) if available_sentences else sentence_id,
+        "end_sentence_id": str(available_sentences[-1].get("sentence_id", "")) if available_sentences else sentence_id,
+    }
+    return {
+        "decision": "choose_unit",
+        "selection_mode": kwargs.get("default_selection_mode", "mainline"),
+        "start_sentence_id": sentence_id,
+        "end_sentence_id": sentence_id,
+        "preview_range": preview_range,
+        "boundary_type": "paragraph_end",
+        "evidence_sentence_ids": [sentence_id] if sentence_id else [],
+        "reason": "test_choose_single_sentence",
+        "continuation_pressure": False,
+    }
+
+
 def test_navigate_choose_next_unit_selects_mainline_unit_without_active_detour(tmp_path, monkeypatch):
     """The current Navigator contract should wrap mainline unitization as one next-unit decision."""
 
@@ -687,22 +712,7 @@ def test_navigate_choose_next_unit_selects_mainline_unit_without_active_detour(t
     sentence_lookup, chapter_lookup = runner_module._build_sentence_lookup(document)  # noqa: SLF001
     state = _empty_choose_next_unit_state()
 
-    monkeypatch.setattr(
-        runner_module,
-        "navigate_unitize",
-        lambda *, current_sentence, preview_sentences, **_kwargs: {
-            "start_sentence_id": current_sentence["sentence_id"],
-            "end_sentence_id": current_sentence["sentence_id"],
-            "preview_range": {
-                "start_sentence_id": preview_sentences[0]["sentence_id"],
-                "end_sentence_id": preview_sentences[-1]["sentence_id"],
-            },
-            "boundary_type": "paragraph_end",
-            "evidence_sentence_ids": [current_sentence["sentence_id"]],
-            "reason": "mainline_test",
-            "continuation_pressure": False,
-        },
-    )
+    monkeypatch.setattr(runner_module, "navigate_choose_next_unit_act", _fake_single_sentence_navigate_act)
 
     result = runner_module.navigate_choose_next_unit(
         document=document,
@@ -756,32 +766,20 @@ def test_navigate_choose_next_unit_lands_detour_then_unitizes_inside_region(tmp_
         },
     )
 
-    def fake_detour_search(**kwargs):
-        assert kwargs["detour_need"]["target_hint"] == "opening setup"
+    def fake_choose_next_unit_act(**kwargs):
+        assert kwargs["active_detour_need"]["target_hint"] == "opening setup"
         return {
-            "decision": "land_region",
+            "decision": "choose_unit",
+            "selection_mode": "detour",
             "reason": "Chapter 1 contains the setup.",
             "start_sentence_id": "c1-s1",
             "end_sentence_id": "c1-s2",
+            "boundary_type": "paragraph_end",
+            "evidence_sentence_ids": ["c1-s1", "c1-s2"],
+            "continuation_pressure": False,
         }
 
-    monkeypatch.setattr(runner_module, "navigate_detour_search", fake_detour_search)
-    monkeypatch.setattr(
-        runner_module,
-        "navigate_unitize",
-        lambda *, current_sentence, preview_sentences, **_kwargs: {
-            "start_sentence_id": current_sentence["sentence_id"],
-            "end_sentence_id": preview_sentences[-1]["sentence_id"],
-            "preview_range": {
-                "start_sentence_id": preview_sentences[0]["sentence_id"],
-                "end_sentence_id": preview_sentences[-1]["sentence_id"],
-            },
-            "boundary_type": "paragraph_end",
-            "evidence_sentence_ids": [current_sentence["sentence_id"], preview_sentences[-1]["sentence_id"]],
-            "reason": "detour_region_unitized",
-            "continuation_pressure": False,
-        },
-    )
+    monkeypatch.setattr(runner_module, "navigate_choose_next_unit_act", fake_choose_next_unit_act)
 
     result = runner_module.navigate_choose_next_unit(
         document=document,
@@ -809,7 +807,7 @@ def test_navigate_choose_next_unit_lands_detour_then_unitizes_inside_region(tmp_
     assert result["selection_mode"] == "detour"
     assert result["chapter_id"] == 1
     assert [sentence["sentence_id"] for sentence in result["selected_unit_sentences"]] == ["c1-s1", "c1-s2"]
-    assert result["detour_search_trace"][0]["decision"] == "land_region"
+    assert result["navigate_trace"][0]["decision"] == "choose_unit"
 
 
 def test_navigate_choose_next_unit_uses_one_detour_skill_before_landing(tmp_path, monkeypatch):
@@ -837,15 +835,14 @@ def test_navigate_choose_next_unit_uses_one_detour_skill_before_landing(tmp_path
     )
     saw_skill_result: list[bool] = []
 
-    def fake_detour_search(**kwargs):
-        skill_result = kwargs.get("skill_result")
-        saw_skill_result.append(bool(skill_result))
-        if not skill_result:
+    def fake_choose_next_unit_act(**kwargs):
+        skill_results = kwargs.get("skill_results_so_far") or []
+        saw_skill_result.append(bool(skill_results))
+        if not skill_results:
             return {
                 "decision": "request_skill",
+                "selection_mode": "detour",
                 "reason": "Need exact opening text before landing.",
-                "start_sentence_id": "",
-                "end_sentence_id": "",
                 "skill_request": {
                     "skill_name": "source_window_fetch",
                     "reason": "Fetch the candidate opening.",
@@ -855,32 +852,18 @@ def test_navigate_choose_next_unit_uses_one_detour_skill_before_landing(tmp_path
                     },
                 },
             }
-        assert skill_result["status"] == "ok"
-        assert skill_result["result"]["start_sentence_id"] == "c1-s1"
         return {
-            "decision": "land_region",
+            "decision": "choose_unit",
+            "selection_mode": "detour",
             "reason": "Fetched source confirms the setup.",
             "start_sentence_id": "c1-s1",
             "end_sentence_id": "c1-s2",
+            "boundary_type": "paragraph_end",
+            "evidence_sentence_ids": ["c1-s1", "c1-s2"],
+            "continuation_pressure": False,
         }
 
-    monkeypatch.setattr(runner_module, "navigate_detour_search", fake_detour_search)
-    monkeypatch.setattr(
-        runner_module,
-        "navigate_unitize",
-        lambda *, current_sentence, preview_sentences, **_kwargs: {
-            "start_sentence_id": current_sentence["sentence_id"],
-            "end_sentence_id": preview_sentences[-1]["sentence_id"],
-            "preview_range": {
-                "start_sentence_id": preview_sentences[0]["sentence_id"],
-                "end_sentence_id": preview_sentences[-1]["sentence_id"],
-            },
-            "boundary_type": "paragraph_end",
-            "evidence_sentence_ids": [current_sentence["sentence_id"], preview_sentences[-1]["sentence_id"]],
-            "reason": "detour_region_unitized",
-            "continuation_pressure": False,
-        },
-    )
+    monkeypatch.setattr(runner_module, "navigate_choose_next_unit_act", fake_choose_next_unit_act)
 
     result = runner_module.navigate_choose_next_unit(
         document=document,
@@ -907,9 +890,9 @@ def test_navigate_choose_next_unit_uses_one_detour_skill_before_landing(tmp_path
 
     assert saw_skill_result == [False, True]
     assert result["selection_mode"] == "detour"
-    assert result["detour_search_trace"][0]["decision"] == "request_skill"
-    assert result["detour_search_trace"][0]["skill_result"]["status"] == "ok"
-    assert result["detour_search_trace"][1]["decision"] == "land_region"
+    assert result["navigate_trace"][0]["decision"] == "request_skill"
+    assert result["navigate_trace"][0]["skill_result"]["status"] == "ok"
+    assert result["navigate_trace"][1]["decision"] == "choose_unit"
 
 
 def test_navigate_choose_next_unit_defers_repeated_detour_skill_request(tmp_path, monkeypatch):
@@ -938,12 +921,11 @@ def test_navigate_choose_next_unit_defers_repeated_detour_skill_request(tmp_path
 
     monkeypatch.setattr(
         runner_module,
-        "navigate_detour_search",
+        "navigate_choose_next_unit_act",
         lambda **_kwargs: {
             "decision": "request_skill",
+            "selection_mode": "detour",
             "reason": "Still asking for more source.",
-            "start_sentence_id": "",
-            "end_sentence_id": "",
             "skill_request": {
                 "skill_name": "source_window_fetch",
                 "reason": "Fetch opening.",
@@ -979,10 +961,10 @@ def test_navigate_choose_next_unit_defers_repeated_detour_skill_request(tmp_path
     )
 
     assert result["selection_mode"] == "deferred"
-    assert result["defer_reason"] == "detour_skill_request_budget_exhausted"
-    assert result["detour_search_trace"][0]["decision"] == "request_skill"
-    assert result["detour_search_trace"][0]["skill_result"]["status"] == "ok"
-    assert result["detour_search_trace"][1]["decision"] == "request_skill"
+    assert result["defer_reason"] == "navigate_choose_next_unit_budget_exhausted"
+    assert result["navigate_trace"][0]["decision"] == "request_skill"
+    assert result["navigate_trace"][0]["skill_result"]["status"] == "ok"
+    assert result["navigate_trace"][-1]["decision"] == "request_skill"
 
 
 def test_navigate_choose_next_unit_defers_unlanded_detour(tmp_path, monkeypatch):
@@ -1011,12 +993,11 @@ def test_navigate_choose_next_unit_defers_unlanded_detour(tmp_path, monkeypatch)
 
     monkeypatch.setattr(
         runner_module,
-        "navigate_detour_search",
+        "navigate_choose_next_unit_act",
         lambda **_kwargs: {
             "decision": "defer_detour",
+            "selection_mode": "detour",
             "reason": "not enough grounded evidence",
-            "start_sentence_id": "",
-            "end_sentence_id": "",
         },
     )
 
@@ -1112,22 +1093,7 @@ def test_attentional_v2_read_book_runs_live_loop_and_persists_compatibility_resu
         }
         return next_buffer
 
-    monkeypatch.setattr(
-        runner_module,
-        "navigate_unitize",
-        lambda *, current_sentence, preview_sentences, **_kwargs: {
-            "start_sentence_id": current_sentence["sentence_id"],
-            "end_sentence_id": current_sentence["sentence_id"],
-            "preview_range": {
-                "start_sentence_id": preview_sentences[0]["sentence_id"],
-                "end_sentence_id": preview_sentences[-1]["sentence_id"],
-            },
-            "boundary_type": "paragraph_end",
-            "evidence_sentence_ids": [current_sentence["sentence_id"]],
-            "reason": "test_unitize_single_sentence",
-            "continuation_pressure": False,
-        },
-    )
+    monkeypatch.setattr(runner_module, "navigate_choose_next_unit_act", _fake_single_sentence_navigate_act)
     monkeypatch.setattr(runner_module, "process_sentence_intake", fake_process_sentence_intake)
     monkeypatch.setattr(runner_module, "read_unit", fake_read_unit)
     monkeypatch.setattr(runner_module, "run_phase6_chapter_cycle", fake_phase6_chapter_cycle)
@@ -1234,22 +1200,7 @@ def test_attentional_v2_runner_persists_multiple_read_surface_reactions(tmp_path
             "compatibility_payload": compatibility_payload,
         }
 
-    monkeypatch.setattr(
-        runner_module,
-        "navigate_unitize",
-        lambda *, current_sentence, preview_sentences, **_kwargs: {
-            "start_sentence_id": current_sentence["sentence_id"],
-            "end_sentence_id": current_sentence["sentence_id"],
-            "preview_range": {
-                "start_sentence_id": preview_sentences[0]["sentence_id"],
-                "end_sentence_id": preview_sentences[-1]["sentence_id"],
-            },
-            "boundary_type": "paragraph_end",
-            "evidence_sentence_ids": [current_sentence["sentence_id"]],
-            "reason": "test_unitize_single_sentence",
-            "continuation_pressure": False,
-        },
-    )
+    monkeypatch.setattr(runner_module, "navigate_choose_next_unit_act", _fake_single_sentence_navigate_act)
     monkeypatch.setattr(runner_module, "process_sentence_intake", fake_process_sentence_intake)
     monkeypatch.setattr(runner_module, "read_unit", fake_read_unit)
     monkeypatch.setattr(runner_module, "run_phase6_chapter_cycle", fake_phase6_chapter_cycle)
@@ -1319,22 +1270,7 @@ def test_attentional_v2_read_book_tolerates_missing_reaction_payload(tmp_path, m
         }
         return next_buffer
 
-    monkeypatch.setattr(
-        runner_module,
-        "navigate_unitize",
-        lambda *, current_sentence, preview_sentences, **_kwargs: {
-            "start_sentence_id": current_sentence["sentence_id"],
-            "end_sentence_id": current_sentence["sentence_id"],
-            "preview_range": {
-                "start_sentence_id": preview_sentences[0]["sentence_id"],
-                "end_sentence_id": preview_sentences[-1]["sentence_id"],
-            },
-            "boundary_type": "paragraph_end",
-            "evidence_sentence_ids": [current_sentence["sentence_id"]],
-            "reason": "test_unitize_single_sentence",
-            "continuation_pressure": False,
-        },
-    )
+    monkeypatch.setattr(runner_module, "navigate_choose_next_unit_act", _fake_single_sentence_navigate_act)
     monkeypatch.setattr(runner_module, "process_sentence_intake", fake_process_sentence_intake)
     monkeypatch.setattr(runner_module, "read_unit", fake_read_unit)
     monkeypatch.setattr(runner_module, "run_phase6_chapter_cycle", fake_phase6_chapter_cycle)
@@ -1412,22 +1348,7 @@ def test_attentional_v2_read_book_still_runs_formal_read_for_monitor_path(tmp_pa
             "detour_need": None,
         }
 
-    monkeypatch.setattr(
-        runner_module,
-        "navigate_unitize",
-        lambda *, current_sentence, preview_sentences, **_kwargs: {
-            "start_sentence_id": current_sentence["sentence_id"],
-            "end_sentence_id": current_sentence["sentence_id"],
-            "preview_range": {
-                "start_sentence_id": preview_sentences[0]["sentence_id"],
-                "end_sentence_id": preview_sentences[-1]["sentence_id"],
-            },
-            "boundary_type": "paragraph_end",
-            "evidence_sentence_ids": [current_sentence["sentence_id"]],
-            "reason": "single-sentence path",
-            "continuation_pressure": False,
-        },
-    )
+    monkeypatch.setattr(runner_module, "navigate_choose_next_unit_act", _fake_single_sentence_navigate_act)
     monkeypatch.setattr(runner_module, "process_sentence_intake", fake_process_sentence_intake)
     monkeypatch.setattr(runner_module, "read_unit", fake_read_unit)
     monkeypatch.setattr(runner_module, "run_phase6_chapter_cycle", fake_phase6_chapter_cycle)
@@ -1457,7 +1378,7 @@ def test_attentional_v2_runner_executes_detour_search_and_returns_to_mainline(tm
     monkeypatch.chdir(tmp_path)
     monkeypatch.setattr(runner_module, "ensure_canonical_parse", lambda *args, **kwargs: _provisioned_book_with_detour())
     read_sequence: list[tuple[list[str], bool]] = []
-    detour_search_calls: list[dict[str, object]] = []
+    navigate_detour_calls: list[dict[str, object]] = []
 
     def fake_read_unit(**kwargs):
         sentence_ids = [str(sentence.get("sentence_id")) for sentence in kwargs["current_unit_sentences"]]
@@ -1503,25 +1424,23 @@ def test_attentional_v2_runner_executes_detour_search_and_returns_to_mainline(tm
         }
         return next_buffer
 
-    def fake_detour_search(**kwargs):
-        detour_search_calls.append(
+    def fake_choose_next_unit_act(**kwargs):
+        if kwargs.get("default_selection_mode") != "detour":
+            return _fake_single_sentence_navigate_act(**kwargs)
+        navigate_detour_calls.append(
             {
-                "scope_kind": kwargs["search_scope"]["scope_kind"],
-                "target_hint": kwargs["detour_need"]["target_hint"],
+                "target_hint": kwargs["active_detour_need"]["target_hint"],
             }
         )
-        if len(detour_search_calls) == 1:
-            return {
-                "decision": "narrow_scope",
-                "reason": "Chapter 1 is the right corridor.",
-                "start_sentence_id": "c1-s1",
-                "end_sentence_id": "c1-s2",
-            }
         return {
-            "decision": "land_region",
+            "decision": "choose_unit",
+            "selection_mode": "detour",
             "reason": "The opening setup is the right earlier region.",
             "start_sentence_id": "c1-s1",
-            "end_sentence_id": "c1-s2",
+            "end_sentence_id": "c1-s1",
+            "boundary_type": "paragraph_end",
+            "evidence_sentence_ids": ["c1-s1"],
+            "continuation_pressure": False,
         }
 
     def fake_phase6_chapter_cycle(**kwargs):
@@ -1546,25 +1465,9 @@ def test_attentional_v2_runner_executes_detour_search_and_returns_to_mainline(tm
             "compatibility_payload": compatibility_payload,
         }
 
-    monkeypatch.setattr(
-        runner_module,
-        "navigate_unitize",
-        lambda *, current_sentence, preview_sentences, **_kwargs: {
-            "start_sentence_id": current_sentence["sentence_id"],
-            "end_sentence_id": current_sentence["sentence_id"],
-            "preview_range": {
-                "start_sentence_id": preview_sentences[0]["sentence_id"],
-                "end_sentence_id": preview_sentences[-1]["sentence_id"],
-            },
-            "boundary_type": "paragraph_end",
-            "evidence_sentence_ids": [current_sentence["sentence_id"]],
-            "reason": "test_unitize_single_sentence",
-            "continuation_pressure": False,
-        },
-    )
+    monkeypatch.setattr(runner_module, "navigate_choose_next_unit_act", fake_choose_next_unit_act)
     monkeypatch.setattr(runner_module, "process_sentence_intake", fake_process_sentence_intake)
     monkeypatch.setattr(runner_module, "read_unit", fake_read_unit)
-    monkeypatch.setattr(runner_module, "navigate_detour_search", fake_detour_search)
     monkeypatch.setattr(runner_module, "run_phase6_chapter_cycle", fake_phase6_chapter_cycle)
 
     mechanism = AttentionalV2Mechanism()
@@ -1584,7 +1487,7 @@ def test_attentional_v2_runner_executes_detour_search_and_returns_to_mainline(tm
         (["c1-s1"], True),
         (["c2-s2"], False),
     ]
-    assert [call["scope_kind"] for call in detour_search_calls] == ["chapter_cards", "paragraph_window_cards"]
+    assert [call["target_hint"] for call in navigate_detour_calls] == ["opening setup"]
     continuity = json.loads(local_continuity_file(result.output_dir).read_text(encoding="utf-8"))
     assert continuity["active_detour_id"] == ""
     assert continuity["detour_trace"][-1]["status"] == "resolved"
@@ -1596,7 +1499,7 @@ def test_attentional_v2_runner_drains_last_unit_detour_before_chapter_close(tmp_
     monkeypatch.chdir(tmp_path)
     monkeypatch.setattr(runner_module, "ensure_canonical_parse", lambda *args, **kwargs: _provisioned_book_with_detour())
     read_sequence: list[tuple[list[str], bool]] = []
-    detour_search_calls: list[dict[str, object]] = []
+    navigate_detour_calls: list[dict[str, object]] = []
 
     def fake_read_unit(**kwargs):
         sentence_ids = [str(sentence.get("sentence_id")) for sentence in kwargs["current_unit_sentences"]]
@@ -1642,18 +1545,19 @@ def test_attentional_v2_runner_drains_last_unit_detour_before_chapter_close(tmp_
         }
         return next_buffer
 
-    def fake_detour_search(**kwargs):
-        detour_search_calls.append(
-            {
-                "scope_kind": kwargs["search_scope"]["scope_kind"],
-                "target_hint": kwargs["detour_need"]["target_hint"],
-            }
-        )
+    def fake_choose_next_unit_act(**kwargs):
+        if kwargs.get("default_selection_mode") != "detour":
+            return _fake_single_sentence_navigate_act(**kwargs)
+        navigate_detour_calls.append({"target_hint": kwargs["active_detour_need"]["target_hint"]})
         return {
-            "decision": "land_region",
+            "decision": "choose_unit",
+            "selection_mode": "detour",
             "reason": "The opening setup is the right earlier region.",
             "start_sentence_id": "c1-s1",
-            "end_sentence_id": "c1-s2",
+            "end_sentence_id": "c1-s1",
+            "boundary_type": "paragraph_end",
+            "evidence_sentence_ids": ["c1-s1"],
+            "continuation_pressure": False,
         }
 
     def fake_phase6_chapter_cycle(**kwargs):
@@ -1678,25 +1582,9 @@ def test_attentional_v2_runner_drains_last_unit_detour_before_chapter_close(tmp_
             "compatibility_payload": compatibility_payload,
         }
 
-    monkeypatch.setattr(
-        runner_module,
-        "navigate_unitize",
-        lambda *, current_sentence, preview_sentences, **_kwargs: {
-            "start_sentence_id": current_sentence["sentence_id"],
-            "end_sentence_id": current_sentence["sentence_id"],
-            "preview_range": {
-                "start_sentence_id": preview_sentences[0]["sentence_id"],
-                "end_sentence_id": preview_sentences[-1]["sentence_id"],
-            },
-            "boundary_type": "paragraph_end",
-            "evidence_sentence_ids": [current_sentence["sentence_id"]],
-            "reason": "test_unitize_single_sentence",
-            "continuation_pressure": False,
-        },
-    )
+    monkeypatch.setattr(runner_module, "navigate_choose_next_unit_act", fake_choose_next_unit_act)
     monkeypatch.setattr(runner_module, "process_sentence_intake", fake_process_sentence_intake)
     monkeypatch.setattr(runner_module, "read_unit", fake_read_unit)
-    monkeypatch.setattr(runner_module, "navigate_detour_search", fake_detour_search)
     monkeypatch.setattr(runner_module, "run_phase6_chapter_cycle", fake_phase6_chapter_cycle)
 
     mechanism = AttentionalV2Mechanism()
@@ -1716,7 +1604,7 @@ def test_attentional_v2_runner_drains_last_unit_detour_before_chapter_close(tmp_
         (["c2-s2"], False),
         (["c1-s1"], True),
     ]
-    assert [call["scope_kind"] for call in detour_search_calls] == ["chapter_cards"]
+    assert [call["target_hint"] for call in navigate_detour_calls] == ["opening setup"]
     continuity = json.loads(local_continuity_file(result.output_dir).read_text(encoding="utf-8"))
     assert continuity["active_detour_id"] == ""
     assert continuity["detour_trace"][-1]["status"] == "resolved"
@@ -1756,22 +1644,7 @@ def test_attentional_v2_runner_stops_at_audit_window_cap_and_persists_partial_ou
         }
         return next_buffer
 
-    monkeypatch.setattr(
-        runner_module,
-        "navigate_unitize",
-        lambda *, current_sentence, preview_sentences, **_kwargs: {
-            "start_sentence_id": current_sentence["sentence_id"],
-            "end_sentence_id": current_sentence["sentence_id"],
-            "preview_range": {
-                "start_sentence_id": preview_sentences[0]["sentence_id"],
-                "end_sentence_id": preview_sentences[-1]["sentence_id"],
-            },
-            "boundary_type": "paragraph_end",
-            "evidence_sentence_ids": [current_sentence["sentence_id"]],
-            "reason": "test_unitize_single_sentence",
-            "continuation_pressure": False,
-        },
-    )
+    monkeypatch.setattr(runner_module, "navigate_choose_next_unit_act", _fake_single_sentence_navigate_act)
     monkeypatch.setattr(runner_module, "process_sentence_intake", fake_process_sentence_intake)
     monkeypatch.setattr(runner_module, "read_unit", fake_read_unit)
     monkeypatch.setattr(

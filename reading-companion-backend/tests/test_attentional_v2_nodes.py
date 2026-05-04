@@ -8,8 +8,7 @@ from pathlib import Path
 from src.attentional_v2 import nodes as nodes_module
 from src.attentional_v2.nodes import (
     build_unitize_preview,
-    navigate_detour_search,
-    navigate_unitize,
+    navigate_choose_next_unit_act,
     read_unit,
 )
 from src.attentional_v2.schemas import build_default_reader_policy
@@ -47,6 +46,45 @@ def _navigation_context() -> dict[str, object]:
     }
 
 
+def _navigate_act(
+    *,
+    tmp_path: Path,
+    preview_sentences: list[dict[str, object]],
+    output_language: str = "en",
+    active_detour_need: dict[str, object] | None = None,
+    skills_allowed: bool = False,
+    allowed_sentence_ids: set[str] | None = None,
+) -> dict[str, object]:
+    return navigate_choose_next_unit_act(
+        reading_position={
+            "mode": "detour" if active_detour_need else "mainline",
+            "current_sentence_id": preview_sentences[0]["sentence_id"] if preview_sentences else "",
+        },
+        mainline_preview={
+            "current_sentence": preview_sentences[0] if preview_sentences else {},
+            "preview_range": {
+                "start_sentence_id": preview_sentences[0]["sentence_id"] if preview_sentences else "",
+                "end_sentence_id": preview_sentences[-1]["sentence_id"] if preview_sentences else "",
+            },
+            "preview_sentences": preview_sentences,
+        },
+        active_detour_need=active_detour_need,
+        mainline_cursor={"chapter_id": 2, "sentence_id": "c2-s1"},
+        navigation_context=_navigation_context(),
+        source_evidence={},
+        skill_catalog=[{"skill_name": "source_window_fetch"}] if skills_allowed else [],
+        skill_results_so_far=[],
+        budget_state={"skills_allowed": skills_allowed},
+        reader_policy=build_default_reader_policy(),
+        output_language=output_language,
+        output_dir=tmp_path,
+        available_sentences=preview_sentences,
+        allowed_sentence_ids=allowed_sentence_ids or {str(sentence["sentence_id"]) for sentence in preview_sentences},
+        default_selection_mode="detour" if active_detour_need else "mainline",
+        skills_allowed=skills_allowed,
+    )
+
+
 def test_build_unitize_preview_stays_within_current_and_next_non_heading_paragraph():
     """Preview should start at the current sentence, finish the paragraph, then include one following body paragraph."""
 
@@ -71,8 +109,8 @@ def test_build_unitize_preview_stays_within_current_and_next_non_heading_paragra
     }
 
 
-def test_navigate_unitize_writes_manifest_and_applies_sentence_cap(tmp_path: Path, monkeypatch):
-    """Unitize should honor the prompt result, then clamp it to the emergency coverage ceiling."""
+def test_navigate_choose_next_unit_writes_manifest_and_applies_sentence_cap(tmp_path: Path, monkeypatch):
+    """Navigate should honor the prompt result, then clamp it to the emergency coverage ceiling."""
 
     captured: dict[str, str] = {}
 
@@ -97,17 +135,32 @@ def test_navigate_unitize_writes_manifest_and_applies_sentence_cap(tmp_path: Pat
         _sentence("c1-s2", "Beta.", sentence_index=2, paragraph_index=1),
     ]
 
-    decision = navigate_unitize(
-        current_sentence=preview_sentences[0],
-        preview_sentences=preview_sentences,
+    decision = navigate_choose_next_unit_act(
+        reading_position={"mode": "mainline", "current_sentence_id": "c1-s1"},
+        mainline_preview={
+            "current_sentence": preview_sentences[0],
+            "preview_range": {"start_sentence_id": "c1-s1", "end_sentence_id": "c1-s2"},
+            "preview_sentences": preview_sentences,
+        },
+        active_detour_need=None,
+        mainline_cursor={},
         navigation_context=_navigation_context(),
+        source_evidence={},
+        skill_catalog=[],
+        skill_results_so_far=[],
+        budget_state={"skills_allowed": False},
         reader_policy=reader_policy,
         output_language="en",
         output_dir=tmp_path,
+        available_sentences=preview_sentences,
+        allowed_sentence_ids={"c1-s1", "c1-s2"},
+        default_selection_mode="mainline",
+        skills_allowed=False,
     )
 
-    manifest = json.loads((tmp_path / "_mechanisms" / "attentional_v2" / "internal" / "prompt_manifests" / "navigate_unitize.json").read_text(encoding="utf-8"))
+    manifest = json.loads((tmp_path / "_mechanisms" / "attentional_v2" / "internal" / "prompt_manifests" / "navigate_choose_next_unit.json").read_text(encoding="utf-8"))
 
+    assert decision["decision"] == "choose_unit"
     assert decision["start_sentence_id"] == "c1-s1"
     assert decision["end_sentence_id"] == "c1-s1"
     assert decision["preview_range"]["end_sentence_id"] == "c1-s2"
@@ -117,12 +170,12 @@ def test_navigate_unitize_writes_manifest_and_applies_sentence_cap(tmp_path: Pat
     assert "purely non-lexical residue" in captured["system_prompt"]
     assert "Use them as structural cues, not content" in captured["system_prompt"]
     assert "Never trim symbols or unusual characters that belong to a substantive sentence" in captured["system_prompt"]
-    assert "may move forward only to trim leading purely non-lexical boundary residue" in captured["prompt"]
-    assert manifest["prompt_version"] == "attentional_v2.navigate_unitize.v4"
+    assert "Mainline preview" in captured["prompt"]
+    assert manifest["prompt_version"] == "attentional_v2.navigate_choose_next_unit.v1"
 
 
-def test_navigate_unitize_can_trim_leading_boundary_residue(tmp_path: Path, monkeypatch):
-    """Unitize may start after a pure separator when the LLM treats it as boundary residue."""
+def test_navigate_choose_next_unit_can_trim_leading_boundary_residue(tmp_path: Path, monkeypatch):
+    """Navigate may start after a pure separator when the LLM treats it as boundary residue."""
 
     def fake_invoke_json(_system_prompt: str, _prompt: str, default: object) -> object:
         return {
@@ -141,14 +194,7 @@ def test_navigate_unitize_can_trim_leading_boundary_residue(tmp_path: Path, monk
         _sentence("c1-s2", "运用专长，发挥杠杆效应，最终你会得到自己应得的。", sentence_index=2, paragraph_index=2),
     ]
 
-    decision = navigate_unitize(
-        current_sentence=preview_sentences[0],
-        preview_sentences=preview_sentences,
-        navigation_context=_navigation_context(),
-        reader_policy=build_default_reader_policy(),
-        output_language="zh",
-        output_dir=tmp_path,
-    )
+    decision = _navigate_act(tmp_path=tmp_path, preview_sentences=preview_sentences, output_language="zh")
 
     assert decision["preview_range"]["start_sentence_id"] == "c1-s1"
     assert decision["start_sentence_id"] == "c1-s2"
@@ -156,7 +202,7 @@ def test_navigate_unitize_can_trim_leading_boundary_residue(tmp_path: Path, monk
     assert decision["evidence_sentence_ids"] == ["c1-s2"]
 
 
-def test_navigate_unitize_refuses_to_trim_leading_lexical_content(tmp_path: Path, monkeypatch):
+def test_navigate_choose_next_unit_refuses_to_trim_leading_lexical_content(tmp_path: Path, monkeypatch):
     """A shifted start is accepted only when skipped leading sentences are pure residue."""
 
     def fake_invoke_json(_system_prompt: str, _prompt: str, default: object) -> object:
@@ -176,21 +222,14 @@ def test_navigate_unitize_refuses_to_trim_leading_lexical_content(tmp_path: Path
         _sentence("c1-s2", "Other people are typically a problem until they prove otherwise.", sentence_index=2, paragraph_index=1),
     ]
 
-    decision = navigate_unitize(
-        current_sentence=preview_sentences[0],
-        preview_sentences=preview_sentences,
-        navigation_context=_navigation_context(),
-        reader_policy=build_default_reader_policy(),
-        output_language="en",
-        output_dir=tmp_path,
-    )
+    decision = _navigate_act(tmp_path=tmp_path, preview_sentences=preview_sentences)
 
     assert decision["start_sentence_id"] == "c1-s1"
     assert decision["end_sentence_id"] == "c1-s2"
     assert decision["evidence_sentence_ids"] == ["c1-s1", "c1-s2"]
 
 
-def test_navigate_unitize_fallback_merges_heading_with_following_body(tmp_path: Path, monkeypatch):
+def test_navigate_choose_next_unit_fallback_merges_heading_with_following_body(tmp_path: Path, monkeypatch):
     """Heading-only fallback should widen to heading plus the next body paragraph when available."""
 
     monkeypatch.setattr(
@@ -207,14 +246,7 @@ def test_navigate_unitize_fallback_merges_heading_with_following_body(tmp_path: 
         _sentence("c1-s3", "而且值得学。", sentence_index=3, paragraph_index=2),
     ]
 
-    decision = navigate_unitize(
-        current_sentence=preview_sentences[0],
-        preview_sentences=preview_sentences,
-        navigation_context=_navigation_context(),
-        reader_policy=build_default_reader_policy(),
-        output_language="zh",
-        output_dir=tmp_path,
-    )
+    decision = _navigate_act(tmp_path=tmp_path, preview_sentences=preview_sentences, output_language="zh")
 
     assert decision["start_sentence_id"] == "c1-s1"
     assert decision["end_sentence_id"] == "c1-s3"
@@ -222,7 +254,7 @@ def test_navigate_unitize_fallback_merges_heading_with_following_body(tmp_path: 
     assert decision["reason"] == "unitize_fallback_heading_with_body"
 
 
-def test_navigate_unitize_fallback_keeps_body_paragraph_behavior(tmp_path: Path, monkeypatch):
+def test_navigate_choose_next_unit_fallback_keeps_body_paragraph_behavior(tmp_path: Path, monkeypatch):
     """Ordinary body fallback should still stop at the current paragraph end."""
 
     monkeypatch.setattr(
@@ -239,21 +271,14 @@ def test_navigate_unitize_fallback_keeps_body_paragraph_behavior(tmp_path: Path,
         _sentence("c1-s3", "Gamma.", sentence_index=3, paragraph_index=2),
     ]
 
-    decision = navigate_unitize(
-        current_sentence=preview_sentences[0],
-        preview_sentences=preview_sentences,
-        navigation_context=_navigation_context(),
-        reader_policy=build_default_reader_policy(),
-        output_language="en",
-        output_dir=tmp_path,
-    )
+    decision = _navigate_act(tmp_path=tmp_path, preview_sentences=preview_sentences)
 
     assert decision["end_sentence_id"] == "c1-s2"
     assert decision["evidence_sentence_ids"] == ["c1-s1", "c1-s2"]
     assert decision["reason"] == "unitize_fallback_current_paragraph"
 
 
-def test_navigate_unitize_fallback_allows_heading_only_when_no_body_follows(tmp_path: Path, monkeypatch):
+def test_navigate_choose_next_unit_fallback_allows_heading_only_when_no_body_follows(tmp_path: Path, monkeypatch):
     """Heading fallback may remain isolated when the preview does not contain a following body paragraph."""
 
     monkeypatch.setattr(
@@ -268,58 +293,43 @@ def test_navigate_unitize_fallback_allows_heading_only_when_no_body_follows(tmp_
         _sentence("c1-s1", "Chapter 2", sentence_index=1, paragraph_index=1, text_role="chapter_heading"),
     ]
 
-    decision = navigate_unitize(
-        current_sentence=preview_sentences[0],
-        preview_sentences=preview_sentences,
-        navigation_context=_navigation_context(),
-        reader_policy=build_default_reader_policy(),
-        output_language="en",
-        output_dir=tmp_path,
-    )
+    decision = _navigate_act(tmp_path=tmp_path, preview_sentences=preview_sentences)
 
     assert decision["end_sentence_id"] == "c1-s1"
     assert decision["evidence_sentence_ids"] == ["c1-s1"]
     assert decision["reason"] == "unitize_fallback_current_paragraph"
 
 
-def test_navigate_detour_search_normalizes_invalid_land_into_defer(tmp_path: Path, monkeypatch):
-    """Detour search should refuse to land outside the visible search space."""
+def test_navigate_choose_next_unit_detour_refuses_out_of_scope_unit(tmp_path: Path, monkeypatch):
+    """Detour Navigate should refuse to choose outside current source evidence."""
 
     monkeypatch.setattr(
         nodes_module,
         "invoke_json",
         lambda *_args, **_kwargs: {
-            "decision": "land_region",
+            "decision": "choose_unit",
+            "selection_mode": "detour",
             "reason": "Try a sentence that was not offered.",
             "start_sentence_id": "missing-s1",
             "end_sentence_id": "missing-s2",
         },
     )
 
-    result = navigate_detour_search(
-        search_scope={
-            "scope_kind": "chapter_cards",
-            "reason": "search earlier setup",
-            "cards": [
-                {
-                    "start_sentence_id": "c1-s1",
-                    "end_sentence_id": "c1-s2",
-                    "card_summary": "Opening setup",
-                }
-            ],
-        },
-        detour_need={"reason": "Need the setup again.", "target_hint": "opening setup", "status": "open"},
-        navigation_context={"packet_version": STATE_PACKET_VERSION},
-        reader_policy=build_default_reader_policy(),
-        output_language="en",
-        output_dir=tmp_path,
+    result = _navigate_act(
+        tmp_path=tmp_path,
+        preview_sentences=[
+            _sentence("c1-s1", "Opening setup.", sentence_index=1, paragraph_index=1),
+            _sentence("c1-s2", "More setup.", sentence_index=2, paragraph_index=1),
+        ],
+        active_detour_need={"reason": "Need the setup again.", "target_hint": "opening setup", "status": "open"},
+        allowed_sentence_ids={"c1-s1", "c1-s2"},
+        skills_allowed=True,
     )
 
     assert result == {
         "decision": "defer_detour",
-        "reason": "Try a sentence that was not offered.",
-        "start_sentence_id": "",
-        "end_sentence_id": "",
+        "selection_mode": "detour",
+        "reason": "chosen_unit_outside_allowed_source_evidence",
     }
     manifest = json.loads(
         (
@@ -328,18 +338,18 @@ def test_navigate_detour_search_normalizes_invalid_land_into_defer(tmp_path: Pat
             / "attentional_v2"
             / "internal"
             / "prompt_manifests"
-            / "navigate_detour_search.json"
+            / "navigate_choose_next_unit.json"
         ).read_text(encoding="utf-8")
     )
-    assert manifest["prompt_version"] == "attentional_v2.navigate_detour_search.v3"
-    assert "Navigate.detour_search" in manifest["system_prompt"]
-    assert "Available skills" in manifest["system_prompt"]
+    assert manifest["prompt_version"] == "attentional_v2.navigate_choose_next_unit.v1"
+    assert "choose the next readable unit" in manifest["system_prompt"]
+    assert "Available skills in detour mode only" in manifest["system_prompt"]
     assert "source_window_fetch" in manifest["system_prompt"]
-    assert "Skill result, if any" in manifest["user_prompt"]
+    assert "Skill results so far" in manifest["user_prompt"]
 
 
-def test_navigate_detour_search_can_request_one_skill(tmp_path: Path, monkeypatch):
-    """Detour search may request one bounded book-local source skill."""
+def test_navigate_choose_next_unit_detour_can_request_one_skill(tmp_path: Path, monkeypatch):
+    """Detour Navigate may request one bounded book-local source skill."""
 
     monkeypatch.setattr(
         nodes_module,
@@ -358,23 +368,14 @@ def test_navigate_detour_search_can_request_one_skill(tmp_path: Path, monkeypatc
         },
     )
 
-    result = navigate_detour_search(
-        search_scope={
-            "scope_kind": "chapter_cards",
-            "reason": "search earlier setup",
-            "cards": [
-                {
-                    "start_sentence_id": "c1-s1",
-                    "end_sentence_id": "c1-s2",
-                    "card_summary": "Opening setup",
-                }
-            ],
-        },
-        detour_need={"reason": "Need the setup again.", "target_hint": "opening setup", "status": "open"},
-        navigation_context={"packet_version": STATE_PACKET_VERSION},
-        reader_policy=build_default_reader_policy(),
-        output_language="en",
-        output_dir=tmp_path,
+    result = _navigate_act(
+        tmp_path=tmp_path,
+        preview_sentences=[
+            _sentence("c1-s1", "Opening setup.", sentence_index=1, paragraph_index=1),
+            _sentence("c1-s2", "More setup.", sentence_index=2, paragraph_index=1),
+        ],
+        active_detour_need={"reason": "Need the setup again.", "target_hint": "opening setup", "status": "open"},
+        skills_allowed=True,
     )
 
     assert result["decision"] == "request_skill"

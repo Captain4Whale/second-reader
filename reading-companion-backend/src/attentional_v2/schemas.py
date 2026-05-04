@@ -19,7 +19,7 @@ UnitizeBoundaryType = Literal[
 ]
 ContextRequestKind = Literal["active_recall", "look_back"]
 DetourStatus = Literal["open", "resolved", "abandoned"]
-DetourSearchDecision = Literal["narrow_scope", "land_region", "defer_detour", "request_skill"]
+NavigateActDecision = Literal["choose_unit", "request_skill", "defer_detour"]
 NavigateSelectionMode = Literal["mainline", "detour", "deferred"]
 StateOperationType = Literal[
     "append",
@@ -357,15 +357,33 @@ class DetourTraceEntry(TypedDict, total=False):
     status: DetourStatus
 
 
-class DetourSearchResult(TypedDict, total=False):
-    """One bounded Navigate.detour_search result emitted by the navigation search step."""
+class NavigateActResult(TypedDict, total=False):
+    """One bounded Navigate.choose_next_unit agent act result."""
 
-    decision: DetourSearchDecision
+    decision: NavigateActDecision
+    selection_mode: NavigateSelectionMode
+    reason: str
+    start_sentence_id: str
+    end_sentence_id: str
+    boundary_type: UnitizeBoundaryType
+    evidence_sentence_ids: list[str]
+    continuation_pressure: bool
+    skill_request: dict[str, object]
+    skill_result: dict[str, object]
+
+
+class NavigateActTraceEntry(TypedDict, total=False):
+    """One compact trace entry for a Navigate.choose_next_unit act loop."""
+
+    decision: NavigateActDecision
+    selection_mode: NavigateSelectionMode
     reason: str
     start_sentence_id: str
     end_sentence_id: str
     skill_request: dict[str, object]
     skill_result: dict[str, object]
+    error: str
+    budget_state: dict[str, object]
 
 
 class NavigateNextUnitResult(TypedDict, total=False):
@@ -376,7 +394,7 @@ class NavigateNextUnitResult(TypedDict, total=False):
     chapter_ref: str
     selected_unit_sentences: list[dict[str, object]]
     unitize_decision: UnitizeDecision
-    detour_search_trace: list[DetourSearchResult]
+    navigate_trace: list[NavigateActTraceEntry]
     defer_reason: str
     detour_context: dict[str, object] | None
 

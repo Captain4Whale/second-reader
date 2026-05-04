@@ -52,7 +52,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - This did not change the mechanism key or public compatibility surface.
   - It did change the live control skeleton:
     - heuristic trigger output no longer decides whether正文 receives formal reading
-    - the live loop now routes through `Navigate.unitize -> read -> Reading Runner settlement`
+    - at that point, the live loop routed through `Navigate.unitize -> read -> Reading Runner settlement`; the current loop routes through `Navigate.choose_next_unit -> read -> Reading Runner settlement`
     - span authority is now tied to the exact chosen coverage unit rather than a reconstructed late tail
 - Phase B of the post-eval structural rework is now also landed.
   - `read` is now the canonical owner of the current-unit read packet on the live path.
@@ -77,21 +77,15 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - `Read` prompt packaging now follows the compact `always carry / selective carry / not carry` contract instead of receiving the broader intermediate packet wholesale
   - this removed the last live dependence on the temporary `Express` step, but left detour routing as the next ownership cut
 - Phase F2 is now landed as the navigate-owned detour cutover.
-  - the live per-unit loop remains:
-    - `Navigate.unitize -> read -> Reading Runner settlement`
+  - its original implementation used separate unitize and detour-search helpers, but those have since been absorbed into the unified `Navigate.choose_next_unit` act loop.
   - `Read` now emits `detour_need` directly on the live path instead of the transitional `revisit_need`
-  - `Navigate` now owns detour localization and dispatch through the bounded detour-search helper inside `Navigate.choose_next_unit`
+  - `Navigate` owns detour localization and dispatch through `Navigate.choose_next_unit`
   - `local_continuity` now persists:
     - `mainline_cursor`
     - `active_detour_id`
     - `active_detour_need`
     - `detour_trace`
-  - detour search now uses one prompt family whose legal outcomes are:
-    - `narrow_scope`
-    - `land_region`
-    - `defer_detour`
-    - `request_skill`
-  - once a detour region lands, the mechanism reads it through the same normal `Navigate.unitize -> read -> Reading Runner settlement` loop instead of inventing a second reading path
+  - once a detour unit is chosen, the mechanism reads it through the same normal `Navigate.choose_next_unit -> read -> Reading Runner settlement` loop instead of inventing a second reading path
 - Phase F3 is now landed as the reaction-persistence and compatibility reconvergence slice.
   - persisted visible reactions now enter the system only through `Read.surfaced_reactions[]`
   - mainline and detour reading now share one surfaced-native reaction-record builder
@@ -114,13 +108,13 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - `parse` still preserves the original chapter order as source truth, and `Navigate` still does not own book-level chapter ordering
 - Phase C.1 of the post-eval structural rework is now landed.
   - Live prompt inputs now flow through a bounded internal `state_packet.v1` seam.
-  - `Navigate.unitize` now receives packetized `navigation_context`.
+  - The then-current unitization helper began receiving packetized `navigation_context`; the current live Navigator prompt is `Navigate.choose_next_unit`.
   - `read` now receives packetized read-context views that explicitly separate continuity, active-attention, reflective, active-focus, and anchor-bank digests.
   - Persisted runtime files and public compatibility surfaces remain unchanged in this slice.
 - Phase C.2 of the post-eval structural rework is now also landed as the first state-territory slice.
   - Live state packets now derive a bounded `concept_digest` from the current `motif_index + unresolved_reference_index`.
   - Live state packets now derive a bounded `thread_digest` from the current `trace_links + unresolved_reference_index`.
-  - `Navigate.unitize` and `read` now both receive those concept/thread digests through the packet layer.
+  - The Navigator and `read` both receive those concept/thread digests through the packet layer.
   - Persisted runtime files and public compatibility surfaces remain unchanged in this slice too.
 - Phase C.3 of the post-eval structural rework is now landed as the direct main-state cutover.
   - New runs now treat `active_attention / concept_registry / thread_trace / reflective_frames / anchor_bank` as the primary runtime and checkpoint truth.
@@ -158,9 +152,11 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
 - `Phase 3`, `Phase 4`, `Phase 5`, and `Phase 6` in this document refer to historical implementation-stage groupings, not to a user-facing or mechanism-intrinsic sequence of named runtime phases.
 - The current Navigator capability name in stable docs is `Navigate.choose_next_unit`.
   - It means: choose the next unit that should be read.
-  - Internal implementation helpers may still unitize mainline previews or run bounded detour search, but those helpers are not the mechanism ontology.
+  - It is now one unified Navigator agent act loop, not a Python semantic dispatch between separate live prompt families.
+  - Mainline forward reading and active detour reading are modes inside this one act.
+  - The historical `navigate_unitize` and `navigate_detour_search` prompt families are no longer current live prompt families.
 - `Navigate.route` is historical route-layer vocabulary after the forward-settlement cutover.
-- Python functions, prompt manifest node names, and trace node ids remain implementation-facing `snake_case` identifiers such as `navigate_unitize` and `navigate_detour_search`.
+- The current prompt manifest node name and trace node id for Navigator selection are `navigate_choose_next_unit`.
 - The live runtime should be explained as a reading loop:
   - sentence intake as pure local-buffer maintenance
   - `Navigate.choose_next_unit`
@@ -222,20 +218,17 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
 - The current live forward-settlement baseline now runs:
   - ingest the next unread sentence
   - call `Navigate.choose_next_unit`
-    - without an open detour, it unitizes the bounded mainline preview
-    - with an open detour, it runs bounded detour search and then unitizes the landed region
+    - without an open detour, the single Navigate act chooses a unit from the bounded mainline preview
+    - with an open detour, the same Navigate act loop may request bounded source evidence, choose a detour unit, or defer the detour
   - build a small `carry-forward context` from persisted state
   - formally read the chosen coverage unit through `read`
   - let `read` directly surface zero-to-many reading-time reactions for that exact unit
   - persist any `detour_need` into `local_continuity` instead of privately resolving it inside `Read`
   - `Reading Runner` post-read settlement closes the exact unit and advances the cursor to the sentence after it
-- The live F2 follow-up after F1 added:
-  - one bounded detour-search helper owned by `Navigate.choose_next_unit`
-  - detour-local state in `local_continuity`
-  - detour reading that reuses the ordinary read path instead of a special helper path
+- Current detour state remains in `local_continuity`, but detour localization is no longer a separate live prompt family beside mainline unitization.
 - The current book-local Skill Runtime is a controlled source-evidence layer under `Navigate.choose_next_unit`.
   - It is not a generic tool loop and does not add WebSearch or Read-owned skills yet.
-  - In this first slice, only the detour branch may request skills, and only when the current search scope is not enough to make a grounded detour decision.
+  - In this first slice, only active-detour Navigate acts may request skills, and only when the current source evidence is not enough to choose a grounded detour unit.
   - Legal first-phase skills are:
     - `source_map_overview`: return already-read book/chapter cards inside the mainline boundary
     - `source_scope_drilldown`: expand the current bounded scope into finer source cards
@@ -245,14 +238,14 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
     - They do not read future text beyond `mainline_cursor`.
     - They do not make semantic relevance judgments.
     - They do not call external network services.
-  - `Navigate.detour_search` may output `request_skill` with one `skill_request`.
-    - `Reading Runner` executes that request through the Skill Runtime and feeds the `skill_result` back to `Navigate.detour_search`.
-    - The final `land_region`, `narrow_scope`, or `defer_detour` decision remains Navigate's LLM judgment over source-grounded evidence.
-    - Each detour search attempt may execute at most one skill request, and the whole detour localization loop keeps the existing three-attempt cap.
+  - `Navigate.choose_next_unit` may output `request_skill` with one `skill_request`.
+    - `Reading Runner` executes that request through the Skill Runtime and feeds the `skill_result` back to the same Navigate act loop.
+    - Skill results are evidence, not answers; the final `choose_unit` or `defer_detour` decision remains Navigate's LLM judgment over source-grounded evidence.
+    - Each `Navigate.choose_next_unit` call has a bounded act/skill budget so skill failures or weak evidence cannot stall the reading loop.
 - `Navigate.choose_next_unit` is now the sole current selector of the next coverage unit.
   - Boundary choice is prompt-led and semantic.
   - Runtime guardrails only keep the unit from running away.
-  - In the mainline case, its unitization helper receives a bounded `navigation_context` packet built from continuity and state digests only.
+  - In the mainline case, it receives a bounded preview plus compact navigation context built from continuity and state digests.
   - The fixed Phase A preview window is:
     - current paragraph remainder
     - plus the next paragraph in the same section
@@ -261,10 +254,10 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - Heading handling is now deliberately conservative:
     - `chapter_heading` and `section_heading` may stand alone when their visible wording already forms a complete local move
     - but they are not automatic standalone units just because their `text_role` says `heading`
-    - if a heading reads more like a label, lead-in, or structural setup, `Navigate.unitize` should prefer merging it with the immediately following body paragraph when the preview allows
+    - if a heading reads more like a label, lead-in, or structural setup, `Navigate.choose_next_unit` should prefer merging it with the immediately following body paragraph when the preview allows
   - Boundary residue handling is also conservative:
     - purely non-lexical ornament / divider / separator lines at a proposed unit boundary are structure cues, not content
-    - `Navigate.unitize` should trim those boundary sentences out of the chosen unit when they are not part of a substantive sentence, formula, quotation, poem, list item, or authorial expression
+    - `Navigate.choose_next_unit` should trim those boundary sentences out of the chosen unit when they are not part of a substantive sentence, formula, quotation, poem, list item, or authorial expression
     - this is a unit-boundary choice only; it does not rewrite, delete, or replace source text in the parse/substrate layer
   - The deterministic fallback now follows the same posture:
     - ordinary body paragraphs still fall back to the current paragraph end
@@ -334,8 +327,8 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
 - The runtime schedule is intentionally narrower than the old node inventory:
   - sentence-level intake still runs without LLM
   - `Navigate.choose_next_unit` decides the next coverage unit before formal reading begins
-  - ordinary mainline choice normally uses one unitization LLM call
-  - an active detour may add bounded detour-search calls before the unitization call
+  - ordinary mainline choice normally uses one Navigate LLM act and cannot request skills
+  - an active detour uses the same Navigate act loop and may request bounded source-evidence skills before choosing or deferring
   - `read_unit` is now the only steady-state per-unit interpretation call
   - surfaced reactions now come from that same read call rather than from a follow-on wording node
   - ordinary forward progression is deterministic Reading Runner settlement rather than a route action
@@ -418,8 +411,8 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
 - Default current call types are:
   - `Navigate.choose_next_unit`
     - choose the next exact coverage unit that should be read now
-    - in ordinary mainline mode, this uses the bounded preview and unitization helper
-    - when an explicit detour need is active, this may use bounded detour-search helper calls before unitizing the landed region
+    - in ordinary mainline mode, this chooses from the bounded preview without skill use
+    - when an explicit detour need is active, this may request bounded book-local source evidence before choosing a detour unit or deferring
   - `formal read`
     - interpret the chosen unit with compact carry-forward context
   - `chapter consolidation`
@@ -532,21 +525,19 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - detour search must localize a semantically motivated non-mainline region
 - The live F2 shape is:
   - `Read` emits `detour_need`
-  - `Navigate` performs a bounded hierarchical semantic search
+- For active detours, `Navigate.choose_next_unit` performs a bounded source-grounded semantic search through its own act loop.
   - if a detour region is found, `Navigate` redirects the next normal reading step there
 - The search posture is:
   - semantic and LLM-led, not program-led candidate recall
-  - bounded and layered, not one unbounded global hunt
+  - bounded by act/skill budgets, not one unbounded global hunt
   - allowed to fail honestly and return to the mainline
-- Program logic should supply only the search substrate:
-  - chapter / section / paragraph structure cards
+- Program logic and skills should supply only the source-evidence substrate:
+  - bounded preview / source evidence packets
   - compact long-distance-memory digests
   - source-grounded anchor handles
   - detour-trace state
 - `Navigate` should do the semantic work of:
-  - choosing a search corridor
-  - narrowing from chapter -> section -> local preview when needed
-  - deciding whether the current scope is still too broad (`narrow_scope`) or already good enough to read (`land_region`)
+  - deciding whether the current evidence is enough to choose a readable unit
   - deferring a detour when the current evidence is too weak (`defer_detour`)
   - requesting one bounded book-local source skill when the current source evidence is not enough (`request_skill`)
 - In the current skill-enabled slice, the available detour-search source skills are:
@@ -624,8 +615,11 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
     - debug-only diagnostics stream once Phase 8 debug mode is enabled
   - `_mechanisms/attentional_v2/internal/prompt_manifests/*.json`
 - Current scaffolded prompt manifests now include:
-  - `navigate_unitize` (implementation helper used by `Navigate.choose_next_unit` for mainline and landed-detour unit boundaries)
-  - `navigate_detour_search` (implementation helper used by `Navigate.choose_next_unit` when an explicit `detour_need` is active)
+  - `navigate_choose_next_unit`
+    - current unified Navigator agent act
+    - outputs `choose_unit`, `request_skill`, or `defer_detour`
+    - mainline calls normally choose a unit from the bounded preview without skill use
+    - active-detour calls may request bounded book-local source evidence before choosing or deferring
   - `read_unit`
   - `reflective_promotion`
   - `reconsolidation`

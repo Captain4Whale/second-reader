@@ -33,8 +33,7 @@ from .intake import process_sentence_intake
 from .knowledge import apply_activation_operations
 from .nodes import (
     build_unitize_preview,
-    navigate_detour_search,
-    navigate_unitize,
+    navigate_choose_next_unit_act,
     persist_unitization_audit,
     read_unit,
 )
@@ -44,7 +43,7 @@ from .read_context import (
 )
 from .resume import persist_reading_position, resume_from_checkpoint, write_full_checkpoint
 from .skills.runtime import execute_skill_request
-from .skills.source_skills import build_source_map_overview, drilldown_source_scope
+from .skills.source_skills import resolve_visible_sentence_range
 from .schemas import (
     ATTENTIONAL_V2_MECHANISM_VERSION,
     ATTENTIONAL_V2_POLICY_VERSION,
@@ -52,10 +51,11 @@ from .schemas import (
     AnchoredReactionRecord,
     ConceptRegistryState,
     DetourNeed,
-    DetourSearchResult,
     KnowledgeActivationsState,
     LocalBufferState,
     LocalContinuityState,
+    NavigateActResult,
+    NavigateActTraceEntry,
     NavigateNextUnitResult,
     ReactionRecordsState,
     ReaderPolicy,
@@ -806,6 +806,21 @@ def _sentence_id(sentence: dict[str, object]) -> str:
     return _clean_text(sentence.get("sentence_id"))
 
 
+def _sentence_paragraph_index(sentence: dict[str, object]) -> int:
+    """Return the best-effort paragraph index for one sentence-like mapping."""
+
+    locator = sentence.get("locator")
+    raw_value: object = None
+    if isinstance(locator, dict):
+        raw_value = locator.get("paragraph_index") or locator.get("paragraph_start")
+    if raw_value is None:
+        raw_value = sentence.get("paragraph_index")
+    try:
+        return max(0, int(raw_value or 0))
+    except (TypeError, ValueError):
+        return 0
+
+
 def _ordered_sentence_ids(chapters: list[dict[str, object]]) -> list[str]:
     """Return the stable sentence order across one selected chapter sequence."""
 
@@ -870,38 +885,6 @@ def _build_sentence_lookup(
                 "sentence": dict(sentence),
             }
     return sentence_lookup, chapter_lookup
-
-
-def _build_detour_chapter_scope(
-    *,
-    document: BookDocument,
-    survey_map: dict[str, object],
-    mainline_cursor: SharedRunCursor,
-) -> dict[str, object]:
-    """Build the initial Navigate.detour_search scope as chapter cards over already-read space."""
-
-    scope = build_source_map_overview(
-        document=document,
-        survey_map=survey_map,
-        mainline_cursor=mainline_cursor,
-    )
-    scope["reason"] = "initial_detour_scope"
-    return scope
-
-
-def _expand_detour_scope(
-    *,
-    current_scope: dict[str, object],
-    selected_sentences: list[dict[str, object]],
-    chapter: dict[str, object],
-) -> dict[str, object] | None:
-    """Expand one detour scope into its next finer-grained layer."""
-
-    return drilldown_source_scope(
-        current_scope=current_scope,
-        selected_sentences=selected_sentences,
-        chapter=chapter,
-    )
 
 
 def _build_detour_navigation_packet(
@@ -1039,164 +1022,257 @@ def _skill_result_trace(skill_result: dict[str, object]) -> dict[str, object]:
     }
 
 
-def _selected_detour_region(
-    *,
-    sentence_lookup: dict[str, dict[str, object]],
-    chapter_lookup: dict[int, dict[str, object]],
-    search_result: DetourSearchResult,
-) -> tuple[dict[str, object], list[dict[str, object]]] | None:
-    """Resolve one Navigate.detour_search result into a concrete chapter plus sentence region."""
+def _navigate_skill_catalog() -> list[dict[str, object]]:
+    """Return the source-only skill catalog exposed to detour Navigate acts."""
 
-    start_sentence_id = _clean_text(search_result.get("start_sentence_id"))
-    end_sentence_id = _clean_text(search_result.get("end_sentence_id"))
-    start_entry = sentence_lookup.get(start_sentence_id, {})
-    end_entry = sentence_lookup.get(end_sentence_id, {})
-    start_chapter_id = int(start_entry.get("chapter_id", 0) or 0)
-    end_chapter_id = int(end_entry.get("chapter_id", 0) or 0)
-    if start_chapter_id <= 0 or start_chapter_id != end_chapter_id:
-        return None
-    chapter = chapter_lookup.get(start_chapter_id)
-    if not isinstance(chapter, dict):
-        return None
-    selected_sentences = _resolve_unit_sentences(
-        [dict(sentence) for sentence in chapter.get("sentences", []) if isinstance(sentence, dict)],
-        unitize_decision={
-            "start_sentence_id": start_sentence_id,
-            "end_sentence_id": end_sentence_id,
+    return [
+        {
+            "skill_name": "source_map_overview",
+            "purpose": "Inspect already-read chapter cards within the mainline boundary.",
+            "arguments": {},
         },
-    )
-    if not selected_sentences:
-        return None
-    return chapter, selected_sentences
+        {
+            "skill_name": "source_scope_drilldown",
+            "purpose": "Expand a current source card or sentence range into smaller source cards.",
+            "arguments": {"card_id": "optional", "start_sentence_id": "optional", "end_sentence_id": "optional"},
+        },
+        {
+            "skill_name": "source_window_fetch",
+            "purpose": "Fetch visible source text for a bounded sentence range.",
+            "arguments": {"card_id": "optional", "start_sentence_id": "optional", "end_sentence_id": "optional"},
+        },
+        {
+            "skill_name": "anchor_resolve",
+            "purpose": "Resolve a known anchor or sentence handle into source-grounded context.",
+            "arguments": {"anchor_id": "optional", "sentence_id": "optional", "ref_id": "optional"},
+        },
+    ]
 
 
-def _run_detour_search_loop(
-    *,
-    document: BookDocument,
-    survey_map: dict[str, object],
-    sentence_lookup: dict[str, dict[str, object]],
-    chapter_lookup: dict[int, dict[str, object]],
-    local_continuity: LocalContinuityState,
-    detour_need: DetourNeed,
-    navigation_packet: dict[str, object],
-    anchor_bank: AnchorBankState,
-    reader_policy: ReaderPolicy,
-    output_language: str,
-    output_dir: Path | None,
-    book_title: str,
-    author: str,
-) -> tuple[DetourSearchResult, list[DetourSearchResult]]:
-    """Run one bounded Navigate.detour_search loop and return a landed region or deferral."""
+def _mainline_cursor_from_continuity(local_continuity: LocalContinuityState) -> dict[str, object]:
+    """Return the active mainline cursor packet."""
 
-    mainline_cursor = (
+    return (
         dict(local_continuity.get("mainline_cursor", {}))
         if isinstance(local_continuity.get("mainline_cursor"), dict)
         else {}
     )
-    scope = _build_detour_chapter_scope(
-        document=document,
-        survey_map=survey_map,
-        mainline_cursor=mainline_cursor,  # type: ignore[arg-type]
-    )
-    if not scope.get("cards"):
-        return {
-            "decision": "defer_detour",
-            "reason": "no_visible_detour_scope",
-            "start_sentence_id": "",
-            "end_sentence_id": "",
-        }, []
 
-    last_narrow: DetourSearchResult | None = None
-    last_selected_region: tuple[dict[str, object], list[dict[str, object]]] | None = None
-    search_trace: list[DetourSearchResult] = []
-    for _attempt in range(3):
-        search_result = navigate_detour_search(
-            search_scope=scope,
-            detour_need=detour_need,
-            navigation_context=navigation_packet,  # type: ignore[arg-type]
-            reader_policy=reader_policy,
-            output_language=output_language,
-            output_dir=output_dir,
-            book_title=book_title,
-            author=author,
-        )
-        if _clean_text(search_result.get("decision")) == "request_skill":
-            skill_result = execute_skill_request(
-                search_result.get("skill_request", {}),
-                document=document,
-                survey_map=survey_map,
-                sentence_lookup=sentence_lookup,
-                chapter_lookup=chapter_lookup,
-                mainline_cursor=mainline_cursor,  # type: ignore[arg-type]
-                anchor_bank=anchor_bank,
-                current_scope=scope,
-            )
-            search_trace.append(
-                {
-                    **dict(search_result),
-                    "skill_result": _skill_result_trace(skill_result),
-                }
-            )
-            search_result = navigate_detour_search(
-                search_scope=scope,
-                detour_need=detour_need,
-                navigation_context=navigation_packet,  # type: ignore[arg-type]
-                reader_policy=reader_policy,
-                output_language=output_language,
-                output_dir=output_dir,
-                book_title=book_title,
-                author=author,
-                skill_result=skill_result,
-            )
-            if _clean_text(search_result.get("decision")) == "request_skill":
-                search_trace.append(dict(search_result))
-                return {
-                    "decision": "defer_detour",
-                    "reason": "detour_skill_request_budget_exhausted",
-                    "start_sentence_id": "",
-                    "end_sentence_id": "",
-                }, search_trace
-        search_trace.append(dict(search_result))
-        if _clean_text(search_result.get("decision")) == "defer_detour":
-            return search_result, search_trace
-        selected_region = _selected_detour_region(
-            sentence_lookup=sentence_lookup,
-            chapter_lookup=chapter_lookup,
-            search_result=search_result,
-        )
-        if selected_region is None:
-            return {
-                "decision": "defer_detour",
-                "reason": "detour_scope_resolution_failed",
-                "start_sentence_id": "",
-                "end_sentence_id": "",
-            }, search_trace
-        if _clean_text(search_result.get("decision")) == "land_region":
-            return search_result, search_trace
-        last_narrow = search_result
-        last_selected_region = selected_region
-        next_scope = _expand_detour_scope(
-            current_scope=scope,
-            selected_sentences=selected_region[1],
-            chapter=selected_region[0],
-        )
-        if next_scope is None or not next_scope.get("cards"):
-            break
-        scope = next_scope
 
-    if last_narrow is not None and last_selected_region is not None:
-        return {
-            "decision": "land_region",
-            "reason": _clean_text(last_narrow.get("reason")) or "best_effort_land_after_bounded_detour_search",
-            "start_sentence_id": _clean_text(last_narrow.get("start_sentence_id")),
-            "end_sentence_id": _clean_text(last_narrow.get("end_sentence_id")),
-        }, search_trace
+def _mainline_preview_packet(
+    *,
+    current_sentence: dict[str, object],
+    preview_sentences: list[dict[str, object]],
+    preview_range: dict[str, object],
+) -> dict[str, object]:
+    """Build the source preview packet for one Navigate act."""
+
     return {
-        "decision": "defer_detour",
-        "reason": "detour_search_exhausted",
-        "start_sentence_id": "",
-        "end_sentence_id": "",
-    }, search_trace
+        "current_sentence": {
+            "sentence_id": _sentence_id(current_sentence),
+            "text": _clean_text(current_sentence.get("text")),
+            "text_role": _clean_text(current_sentence.get("text_role")),
+            "paragraph_index": _sentence_paragraph_index(current_sentence),
+        },
+        "preview_range": dict(preview_range),
+        "preview_sentences": [
+            {
+                "sentence_id": _sentence_id(sentence),
+                "text": _clean_text(sentence.get("text")),
+                "text_role": _clean_text(sentence.get("text_role")),
+                "paragraph_index": _sentence_paragraph_index(sentence),
+            }
+            for sentence in preview_sentences
+        ],
+    }
+
+
+def _skill_results_prompt_summary(skill_results: list[dict[str, object]]) -> list[dict[str, object]]:
+    """Return compact but evidence-bearing skill results for the next Navigate act."""
+
+    summary: list[dict[str, object]] = []
+    for skill_result in skill_results[-3:]:
+        if not isinstance(skill_result, dict):
+            continue
+        result = skill_result.get("result")
+        compact_result: dict[str, object] = {}
+        if isinstance(result, dict):
+            if isinstance(result.get("cards"), list):
+                compact_result["scope_kind"] = _clean_text(result.get("scope_kind"))
+                compact_result["reason"] = _clean_text(result.get("reason"))
+                compact_result["cards"] = [
+                    {
+                        "card_id": _clean_text(card.get("card_id")),
+                        "label": _clean_text(card.get("label")),
+                        "summary": _clean_text(card.get("summary")),
+                        "start_sentence_id": _clean_text(card.get("start_sentence_id")),
+                        "end_sentence_id": _clean_text(card.get("end_sentence_id")),
+                    }
+                    for card in result.get("cards", [])[:8]
+                    if isinstance(card, dict)
+                ]
+            if isinstance(result.get("sentences"), list):
+                compact_result["chapter_id"] = result.get("chapter_id")
+                compact_result["chapter_ref"] = _clean_text(result.get("chapter_ref"))
+                compact_result["start_sentence_id"] = _clean_text(result.get("start_sentence_id"))
+                compact_result["end_sentence_id"] = _clean_text(result.get("end_sentence_id"))
+                compact_result["sentences"] = [
+                    {
+                        "sentence_id": _clean_text(sentence.get("sentence_id")),
+                        "text": _clean_text(sentence.get("text")),
+                        "text_role": _clean_text(sentence.get("text_role")),
+                        "paragraph_index": sentence.get("paragraph_index"),
+                    }
+                    for sentence in result.get("sentences", [])[:24]
+                    if isinstance(sentence, dict)
+                ]
+            if isinstance(result.get("source_window"), dict):
+                compact_result["source_window"] = result.get("source_window")
+            if result.get("anchor_id"):
+                compact_result["anchor_id"] = _clean_text(result.get("anchor_id"))
+                compact_result["quote"] = _clean_text(result.get("quote"))
+        summary.append(
+            {
+                "skill_name": _clean_text(skill_result.get("skill_name")),
+                "status": _clean_text(skill_result.get("status")),
+                "error": _clean_text(skill_result.get("error")),
+                "result": compact_result,
+                "provenance": dict(skill_result.get("provenance", {})) if isinstance(skill_result.get("provenance"), dict) else {},
+            }
+        )
+    return summary
+
+
+def _latest_scope_from_skill_results(skill_results: list[dict[str, object]]) -> dict[str, object] | None:
+    """Return the most recent scope-like skill result for scope drilldown arguments."""
+
+    for skill_result in reversed(skill_results):
+        result = skill_result.get("result") if isinstance(skill_result, dict) else None
+        if isinstance(result, dict) and isinstance(result.get("cards"), list):
+            return dict(result)
+    return None
+
+
+def _allowed_detour_sentence_ids(skill_results: list[dict[str, object]]) -> set[str]:
+    """Return sentence ids that Navigate can currently choose from as detour evidence."""
+
+    allowed: set[str] = set()
+    for skill_result in skill_results:
+        result = skill_result.get("result") if isinstance(skill_result, dict) else None
+        if not isinstance(result, dict):
+            continue
+        cards = result.get("cards")
+        if isinstance(cards, list):
+            for card in cards:
+                if not isinstance(card, dict):
+                    continue
+                for key in ("start_sentence_id", "end_sentence_id"):
+                    sentence_id = _clean_text(card.get(key))
+                    if sentence_id:
+                        allowed.add(sentence_id)
+        sentences = result.get("sentences")
+        if isinstance(sentences, list):
+            for sentence in sentences:
+                if not isinstance(sentence, dict):
+                    continue
+                sentence_id = _clean_text(sentence.get("sentence_id"))
+                if sentence_id:
+                    allowed.add(sentence_id)
+        source_window = result.get("source_window")
+        if isinstance(source_window, dict):
+            for key in ("start_sentence_id", "end_sentence_id"):
+                sentence_id = _clean_text(source_window.get(key))
+                if sentence_id:
+                    allowed.add(sentence_id)
+            for sentence in source_window.get("sentences", []):
+                if isinstance(sentence, dict) and _clean_text(sentence.get("sentence_id")):
+                    allowed.add(_clean_text(sentence.get("sentence_id")))
+    return allowed
+
+
+def _detour_available_sentences(skill_results: list[dict[str, object]]) -> list[dict[str, object]]:
+    """Return the most specific fetched source text available to guard a detour unit."""
+
+    for skill_result in reversed(skill_results):
+        result = skill_result.get("result") if isinstance(skill_result, dict) else None
+        if not isinstance(result, dict):
+            continue
+        sentences = result.get("sentences")
+        if isinstance(sentences, list) and sentences:
+            return [dict(sentence) for sentence in sentences if isinstance(sentence, dict)]
+        source_window = result.get("source_window")
+        if isinstance(source_window, dict) and isinstance(source_window.get("sentences"), list):
+            return [dict(sentence) for sentence in source_window.get("sentences", []) if isinstance(sentence, dict)]
+    return []
+
+
+def _navigate_trace_entry(
+    act_result: NavigateActResult,
+    *,
+    budget_state: dict[str, object],
+    skill_result: dict[str, object] | None = None,
+    error: str = "",
+) -> NavigateActTraceEntry:
+    """Return a compact trace entry for the unified Navigate loop."""
+
+    entry: NavigateActTraceEntry = {
+        "decision": _clean_text(act_result.get("decision")),  # type: ignore[typeddict-item]
+        "selection_mode": _clean_text(act_result.get("selection_mode")),  # type: ignore[typeddict-item]
+        "reason": _clean_text(act_result.get("reason")),
+        "start_sentence_id": _clean_text(act_result.get("start_sentence_id")),
+        "end_sentence_id": _clean_text(act_result.get("end_sentence_id")),
+        "budget_state": dict(budget_state),
+    }
+    if isinstance(act_result.get("skill_request"), dict):
+        entry["skill_request"] = dict(act_result["skill_request"])
+    if isinstance(skill_result, dict):
+        entry["skill_result"] = _skill_result_trace(skill_result)
+    if error:
+        entry["error"] = error
+    return entry
+
+
+def _resolve_detour_act_region(
+    *,
+    sentence_lookup: dict[str, dict[str, object]],
+    chapter_lookup: dict[int, dict[str, object]],
+    mainline_cursor: dict[str, object],
+    act_result: NavigateActResult,
+    reader_policy: ReaderPolicy,
+) -> tuple[dict[str, object], list[dict[str, object]], UnitizeDecision] | None:
+    """Resolve a Navigate choose-unit act into a visible detour unit."""
+
+    start_sentence_id = _clean_text(act_result.get("start_sentence_id"))
+    end_sentence_id = _clean_text(act_result.get("end_sentence_id"))
+    chapter, selected_sentences, error = resolve_visible_sentence_range(
+        sentence_lookup=sentence_lookup,
+        chapter_lookup=chapter_lookup,
+        mainline_cursor=mainline_cursor,  # type: ignore[arg-type]
+        start_sentence_id=start_sentence_id,
+        end_sentence_id=end_sentence_id,
+    )
+    if error or not isinstance(chapter, dict) or not selected_sentences:
+        return None
+    max_sentences = int(reader_policy.get("unitize", {}).get("max_coverage_unit_sentences", 12) or 12)
+    if max_sentences <= 0:
+        max_sentences = 12
+    capped = [dict(sentence) for sentence in selected_sentences[:max_sentences]]
+    boundary_type = _clean_text(act_result.get("boundary_type")) or "paragraph_end"
+    if len(selected_sentences) > max_sentences:
+        boundary_type = "budget_cap"
+    unitize_decision: UnitizeDecision = {
+        "start_sentence_id": _sentence_id(capped[0]),
+        "end_sentence_id": _sentence_id(capped[-1]),
+        "preview_range": {
+            "start_sentence_id": _sentence_id(selected_sentences[0]),
+            "end_sentence_id": _sentence_id(selected_sentences[-1]),
+        },
+        "boundary_type": boundary_type,  # type: ignore[typeddict-item]
+        "evidence_sentence_ids": [_sentence_id(sentence) for sentence in capped if _sentence_id(sentence)],
+        "reason": _clean_text(act_result.get("reason")),
+        "continuation_pressure": bool(act_result.get("continuation_pressure")) or len(selected_sentences) > max_sentences,
+    }
+    return chapter, capped, unitize_decision
 
 
 def navigate_choose_next_unit(
@@ -1225,110 +1301,6 @@ def navigate_choose_next_unit(
     """Choose the next unit that should be read, whether mainline or detour."""
 
     active_detour_need = _active_detour_need(local_continuity)
-    if active_detour_need is not None:
-        chapter_ref = _chapter_ref(current_chapter)
-        navigation_packet = _build_detour_navigation_packet(
-            chapter_ref=chapter_ref,
-            local_buffer=local_buffer,
-            active_attention=active_attention,
-            concept_registry=concept_registry,
-            thread_trace=thread_trace,
-            reflective_frames=reflective_frames,
-            anchor_bank=anchor_bank,
-            reaction_records=reaction_records,
-            continuation_capsule=continuation_capsule,
-            local_continuity=local_continuity,
-        )
-        search_result, search_trace = _run_detour_search_loop(
-            document=document,
-            survey_map=survey_map,
-            sentence_lookup=sentence_lookup,
-            chapter_lookup=chapter_lookup,
-            local_continuity=local_continuity,
-            detour_need=active_detour_need,
-            navigation_packet=navigation_packet,
-            anchor_bank=anchor_bank,
-            reader_policy=reader_policy,
-            output_language=output_language,
-            output_dir=output_dir,
-            book_title=book_title,
-            author=author,
-        )
-        if _clean_text(search_result.get("decision")) == "defer_detour":
-            return {
-                "selection_mode": "deferred",
-                "selected_unit_sentences": [],
-                "unitize_decision": {},
-                "defer_reason": _clean_text(search_result.get("reason")),
-                "detour_search_trace": search_trace,
-                "detour_context": None,
-            }
-        selected_region = _selected_detour_region(
-            sentence_lookup=sentence_lookup,
-            chapter_lookup=chapter_lookup,
-            search_result=search_result,
-        )
-        if selected_region is None:
-            return {
-                "selection_mode": "deferred",
-                "selected_unit_sentences": [],
-                "unitize_decision": {},
-                "defer_reason": "detour_region_resolution_failed",
-                "detour_search_trace": search_trace,
-                "detour_context": None,
-            }
-        selected_chapter, selected_region_sentences = selected_region
-        selected_chapter_id = int(selected_chapter.get("id", 0) or 0)
-        selected_chapter_ref = _chapter_ref(selected_chapter)
-        navigation_context = build_navigation_context(
-            chapter_ref=selected_chapter_ref,
-            current_sentence_id=_sentence_id(selected_region_sentences[0]),
-            local_buffer=local_buffer,
-            active_attention=active_attention,
-            concept_registry=concept_registry,
-            thread_trace=thread_trace,
-            reflective_frames=reflective_frames,
-            anchor_bank=anchor_bank,
-            reaction_records=reaction_records,
-            continuation_capsule=continuation_capsule,
-        )
-        unitize_decision = navigate_unitize(
-            current_sentence=selected_region_sentences[0],
-            preview_sentences=selected_region_sentences,
-            navigation_context=navigation_context,
-            reader_policy=reader_policy,
-            output_language=output_language,
-            output_dir=output_dir,
-            book_title=book_title,
-            author=author,
-            chapter_title=_clean_text(selected_chapter.get("title")),
-        )
-        selected_unit_sentences = _resolve_unit_sentences(selected_region_sentences, unitize_decision=unitize_decision)
-        if not selected_unit_sentences:
-            fallback_sentence_id = _sentence_id(selected_region_sentences[0])
-            selected_unit_sentences = [dict(selected_region_sentences[0])]
-            unitize_decision = {
-                "start_sentence_id": fallback_sentence_id,
-                "end_sentence_id": fallback_sentence_id,
-                "preview_range": {
-                    "start_sentence_id": _sentence_id(selected_region_sentences[0]),
-                    "end_sentence_id": _sentence_id(selected_region_sentences[-1]),
-                },
-                "boundary_type": "paragraph_end",
-                "evidence_sentence_ids": [fallback_sentence_id],
-                "reason": "detour_unitize_fallback",
-                "continuation_pressure": False,
-            }
-        return {
-            "selection_mode": "detour",
-            "chapter_id": selected_chapter_id,
-            "chapter_ref": selected_chapter_ref,
-            "selected_unit_sentences": selected_unit_sentences,
-            "unitize_decision": unitize_decision,
-            "detour_search_trace": search_trace,
-            "detour_context": _build_detour_read_context(local_continuity),
-        }
-
     current_sentences = [dict(sentence) for sentence in current_chapter.get("sentences", []) if isinstance(sentence, dict)]
     sentence = current_sentences[current_cursor]
     sentence_id = _sentence_id(sentence)
@@ -1338,9 +1310,96 @@ def navigate_choose_next_unit(
     )
     current_chapter_id = int(current_chapter.get("id", 0) or 0)
     current_chapter_ref = _chapter_ref(current_chapter)
-    navigation_context = build_navigation_context(
+    mainline_preview = _mainline_preview_packet(
+        current_sentence=sentence,
+        preview_sentences=preview_sentences,
+        preview_range=preview_range,
+    )
+    mainline_cursor = _mainline_cursor_from_continuity(local_continuity)
+
+    if active_detour_need is None:
+        navigation_context = build_navigation_context(
+            chapter_ref=current_chapter_ref,
+            current_sentence_id=sentence_id,
+            local_buffer=local_buffer,
+            active_attention=active_attention,
+            concept_registry=concept_registry,
+            thread_trace=thread_trace,
+            reflective_frames=reflective_frames,
+            anchor_bank=anchor_bank,
+            reaction_records=reaction_records,
+        )
+        budget_state = {
+            "mode": "mainline",
+            "skills_allowed": False,
+            "act_index": 1,
+            "max_acts": 1,
+            "skill_requests_used": 0,
+            "max_skill_requests": 0,
+        }
+        act_result = navigate_choose_next_unit_act(
+            reading_position={
+                "mode": "mainline",
+                "current_chapter_id": current_chapter_id,
+                "current_chapter_ref": current_chapter_ref,
+                "current_sentence_id": sentence_id,
+            },
+            mainline_preview=mainline_preview,
+            active_detour_need=None,
+            mainline_cursor=mainline_cursor,
+            navigation_context=navigation_context,
+            source_evidence={},
+            skill_catalog=[],
+            skill_results_so_far=[],
+            budget_state=budget_state,
+            reader_policy=reader_policy,
+            output_language=output_language,
+            output_dir=output_dir,
+            book_title=book_title,
+            author=author,
+            chapter_title=_clean_text(current_chapter.get("title")),
+            available_sentences=preview_sentences,
+            allowed_sentence_ids={_sentence_id(item) for item in preview_sentences if _sentence_id(item)},
+            default_selection_mode="mainline",
+            skills_allowed=False,
+        )
+        unitize_decision = {
+            key: act_result[key]
+            for key in (
+                "start_sentence_id",
+                "end_sentence_id",
+                "preview_range",
+                "boundary_type",
+                "evidence_sentence_ids",
+                "reason",
+                "continuation_pressure",
+            )
+            if key in act_result
+        }
+        selected_unit_sentences = _resolve_unit_sentences(current_sentences, unitize_decision=unitize_decision)
+        if not selected_unit_sentences:
+            selected_unit_sentences = [dict(sentence)]
+            unitize_decision = {
+                "start_sentence_id": sentence_id,
+                "end_sentence_id": sentence_id,
+                "preview_range": preview_range,
+                "boundary_type": "paragraph_end",
+                "evidence_sentence_ids": [sentence_id],
+                "reason": "choose_next_unit_resolve_fallback",
+                "continuation_pressure": False,
+            }
+        return {
+            "selection_mode": "mainline",
+            "chapter_id": current_chapter_id,
+            "chapter_ref": current_chapter_ref,
+            "selected_unit_sentences": selected_unit_sentences,
+            "unitize_decision": unitize_decision,  # type: ignore[typeddict-item]
+            "navigate_trace": [_navigate_trace_entry(act_result, budget_state=budget_state)],
+            "detour_context": None,
+        }
+
+    navigation_packet = _build_detour_navigation_packet(
         chapter_ref=current_chapter_ref,
-        current_sentence_id=sentence_id,
         local_buffer=local_buffer,
         active_attention=active_attention,
         concept_registry=concept_registry,
@@ -1348,37 +1407,119 @@ def navigate_choose_next_unit(
         reflective_frames=reflective_frames,
         anchor_bank=anchor_bank,
         reaction_records=reaction_records,
+        continuation_capsule=continuation_capsule,
+        local_continuity=local_continuity,
     )
-    unitize_decision = navigate_unitize(
-        current_sentence=sentence,
-        preview_sentences=preview_sentences,
-        navigation_context=navigation_context,
-        reader_policy=reader_policy,
-        output_language=output_language,
-        output_dir=output_dir,
-        book_title=book_title,
-        author=author,
-        chapter_title=_clean_text(current_chapter.get("title")),
-    )
-    selected_unit_sentences = _resolve_unit_sentences(current_sentences, unitize_decision=unitize_decision)
-    if not selected_unit_sentences:
-        selected_unit_sentences = [dict(sentence)]
-        unitize_decision = {
-            "start_sentence_id": sentence_id,
-            "end_sentence_id": sentence_id,
-            "preview_range": preview_range,
-            "boundary_type": "paragraph_end",
-            "evidence_sentence_ids": [sentence_id],
-            "reason": "unitize_resolve_fallback",
-            "continuation_pressure": False,
+    navigate_trace: list[NavigateActTraceEntry] = []
+    skill_results_so_far: list[dict[str, object]] = []
+    max_acts = 4
+    max_skill_requests = 3
+    skill_requests_used = 0
+    for act_index in range(1, max_acts + 1):
+        allowed_detour_ids = _allowed_detour_sentence_ids(skill_results_so_far)
+        detour_available_sentences = _detour_available_sentences(skill_results_so_far)
+        budget_state = {
+            "mode": "detour",
+            "skills_allowed": skill_requests_used < max_skill_requests,
+            "act_index": act_index,
+            "max_acts": max_acts,
+            "skill_requests_used": skill_requests_used,
+            "max_skill_requests": max_skill_requests,
         }
+        act_result = navigate_choose_next_unit_act(
+            reading_position={
+                "mode": "detour",
+                "current_chapter_id": current_chapter_id,
+                "current_chapter_ref": current_chapter_ref,
+                "current_sentence_id": sentence_id,
+            },
+            mainline_preview=mainline_preview,
+            active_detour_need=active_detour_need,
+            mainline_cursor=mainline_cursor,
+            navigation_context=navigation_packet,
+            source_evidence={
+                "already_read_boundary": mainline_cursor,
+                "latest_scope_kind": _clean_text((_latest_scope_from_skill_results(skill_results_so_far) or {}).get("scope_kind")),
+            },
+            skill_catalog=_navigate_skill_catalog(),
+            skill_results_so_far=_skill_results_prompt_summary(skill_results_so_far),
+            budget_state=budget_state,
+            reader_policy=reader_policy,
+            output_language=output_language,
+            output_dir=output_dir,
+            book_title=book_title,
+            author=author,
+            chapter_title=_clean_text(current_chapter.get("title")),
+            available_sentences=detour_available_sentences,
+            allowed_sentence_ids=allowed_detour_ids,
+            default_selection_mode="detour",
+            skills_allowed=skill_requests_used < max_skill_requests,
+        )
+        decision = _clean_text(act_result.get("decision"))
+        if decision == "request_skill":
+            if skill_requests_used >= max_skill_requests:
+                navigate_trace.append(
+                    _navigate_trace_entry(
+                        act_result,
+                        budget_state=budget_state,
+                        error="navigate_skill_budget_exhausted",
+                    )
+                )
+                break
+            current_scope = _latest_scope_from_skill_results(skill_results_so_far)
+            skill_result = execute_skill_request(
+                act_result.get("skill_request", {}),
+                document=document,
+                survey_map=survey_map,
+                sentence_lookup=sentence_lookup,
+                chapter_lookup=chapter_lookup,
+                mainline_cursor=mainline_cursor,  # type: ignore[arg-type]
+                anchor_bank=anchor_bank,
+                current_scope=current_scope,
+            )
+            skill_results_so_far.append(dict(skill_result))
+            skill_requests_used += 1
+            navigate_trace.append(_navigate_trace_entry(act_result, budget_state=budget_state, skill_result=skill_result))
+            continue
+        navigate_trace.append(_navigate_trace_entry(act_result, budget_state=budget_state))
+        if decision == "defer_detour":
+            return {
+                "selection_mode": "deferred",
+                "selected_unit_sentences": [],
+                "unitize_decision": {},
+                "defer_reason": _clean_text(act_result.get("reason")),
+                "navigate_trace": navigate_trace,
+                "detour_context": None,
+            }
+        if decision == "choose_unit":
+            resolved_region = _resolve_detour_act_region(
+                sentence_lookup=sentence_lookup,
+                chapter_lookup=chapter_lookup,
+                mainline_cursor=mainline_cursor,
+                act_result=act_result,
+                reader_policy=reader_policy,
+            )
+            if resolved_region is None:
+                continue
+            selected_chapter, selected_unit_sentences, unitize_decision = resolved_region
+            selected_chapter_id = int(selected_chapter.get("id", 0) or 0)
+            selected_chapter_ref = _chapter_ref(selected_chapter)
+            return {
+                "selection_mode": "detour",
+                "chapter_id": selected_chapter_id,
+                "chapter_ref": selected_chapter_ref,
+                "selected_unit_sentences": selected_unit_sentences,
+                "unitize_decision": unitize_decision,
+                "navigate_trace": navigate_trace,
+                "detour_context": _build_detour_read_context(local_continuity),
+            }
+
     return {
-        "selection_mode": "mainline",
-        "chapter_id": current_chapter_id,
-        "chapter_ref": current_chapter_ref,
-        "selected_unit_sentences": selected_unit_sentences,
-        "unitize_decision": unitize_decision,
-        "detour_search_trace": [],
+        "selection_mode": "deferred",
+        "selected_unit_sentences": [],
+        "unitize_decision": {},
+        "defer_reason": "navigate_choose_next_unit_budget_exhausted",
+        "navigate_trace": navigate_trace,
         "detour_context": None,
     }
 

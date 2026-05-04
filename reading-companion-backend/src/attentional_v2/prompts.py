@@ -9,8 +9,7 @@ from src.prompts.shared import LANGUAGE_OUTPUT_CONTRACT
 
 ATTENTIONAL_V2_PROMPTSET_VERSION = "attentional_v2-phase6-v25"
 SURVEY_CHAPTER_ZONE_PROMPT_VERSION = "attentional_v2.survey_chapter_zone.v1"
-NAVIGATE_UNITIZE_PROMPT_VERSION = "attentional_v2.navigate_unitize.v4"
-NAVIGATE_DETOUR_SEARCH_PROMPT_VERSION = "attentional_v2.navigate_detour_search.v3"
+NAVIGATE_CHOOSE_NEXT_UNIT_PROMPT_VERSION = "attentional_v2.navigate_choose_next_unit.v1"
 READ_UNIT_PROMPT_VERSION = "attentional_v2.read.v14"
 BRIDGE_RESOLUTION_PROMPT_VERSION = "attentional_v2.bridge_resolution.v5"
 REFLECTIVE_PROMOTION_PROMPT_VERSION = "attentional_v2.reflective_promotion.v1"
@@ -27,12 +26,9 @@ class AttentionalV2PromptSet:
     survey_chapter_zone_version: str
     survey_chapter_zone_system: str
     survey_chapter_zone_prompt: str
-    navigate_unitize_version: str
-    navigate_unitize_system: str
-    navigate_unitize_prompt: str
-    navigate_detour_search_version: str
-    navigate_detour_search_system: str
-    navigate_detour_search_prompt: str
+    navigate_choose_next_unit_version: str
+    navigate_choose_next_unit_system: str
+    navigate_choose_next_unit_prompt: str
     read_unit_version: str
     read_unit_system: str
     read_unit_prompt: str
@@ -90,96 +86,68 @@ Return JSON:
   "confidence": "medium",
   "reason": "<short structural reason>"
 }""",
-    navigate_unitize_version=NAVIGATE_UNITIZE_PROMPT_VERSION,
-    navigate_unitize_system="""You are the navigation-unitization node for a text-grounded reading mechanism.
+    navigate_choose_next_unit_version=NAVIGATE_CHOOSE_NEXT_UNIT_PROMPT_VERSION,
+    navigate_choose_next_unit_system="""You are Navigate for a text-grounded reading mechanism.
 
-Your job is to choose the next exact coverage unit that the reader will formally read.
+Your single job is to choose the next readable unit that should be read now.
 
 Rules:
+- Return exactly one act: `choose_unit`, `request_skill`, or `defer_detour`.
+- In mainline mode, choose directly from the provided mainline preview. Do not request skills and do not defer.
+- In detour mode, choose a source-grounded already-read unit, request one source skill if evidence is insufficient, or defer the detour honestly.
 - Respect author structure first.
 - Choose the smallest complete local move that can honestly be read as one unit.
 - Prefer ending within the current paragraph.
 - Only continue into the next paragraph when the same local move is clearly continuing.
 - `chapter_heading` and `section_heading` are weak structure cues, not automatic permission to cut a standalone unit.
 - A heading may stand alone only when its visible wording already forms a complete, meaningful local move.
-- If a heading reads more like a label, lead-in, or structural setup, prefer merging it with the immediately following body paragraph when the preview allows.
+- If a heading reads more like a label, lead-in, or structural setup, prefer merging it with the immediately following body paragraph when the available text allows.
 - Stay proportionate around thin structural text. Do not carve out a very short unit just because the text is marked as a heading.
 - Before finalizing the unit boundary, trim only boundary sentences that are purely non-lexical residue, such as ornament/divider/separator lines. Use them as structural cues, not content. Never trim symbols or unusual characters that belong to a substantive sentence, formula, quotation, poem, list item, or authorial expression.
-- Use navigation context only as secondary support; it may clarify what is currently live, but it must not override the author-structure skeleton or the visible preview text.
+- Use navigation context only as secondary support; it may clarify what is currently live, but it must not override the author-structure skeleton or the visible source text.
 - Judge from the visible text first. `text_role` may help orient you, but it must not decide the boundary by itself.
-- Do not cross the provided preview boundary.
+- Do not cross the provided mainline preview boundary in mainline mode.
+- Do not choose detour text outside already-read source evidence or beyond `mainline_cursor`.
 - Do not pretend a move is finished when it is still unfolding; preserve continuation pressure instead.
-- If you think the move is still unfinished at the preview boundary, choose the best honest end point you have and set `continuation_pressure` to true.
-- Cite exact sentence ids from the preview as evidence.
-- Return JSON only.""",
-    navigate_unitize_prompt="""Structural frame:
-{structural_frame}
-
-Current sentence:
-{current_sentence}
-
-Preview boundary:
-{preview_range}
-
-Preview sentences:
-{preview_sentences}
-
-Navigation context:
-{navigation_context}
-
-Policy snapshot:
-{policy_snapshot}
-
-Output language contract:
-"""
-    + LANGUAGE_OUTPUT_CONTRACT
-    + """
-
-Return JSON:
-{
-  "start_sentence_id": "<normally the first preview sentence id; may move forward only to trim leading purely non-lexical boundary residue>",
-  "end_sentence_id": "<chosen final sentence id from the preview>",
-  "boundary_type": "paragraph_end",
-  "evidence_sentence_ids": ["<sentence id>"],
-  "reason": "<brief reason>",
-  "continuation_pressure": false
-}""",
-    navigate_detour_search_version=NAVIGATE_DETOUR_SEARCH_PROMPT_VERSION,
-    navigate_detour_search_system="""You are the Navigate.detour_search node for a text-grounded reading mechanism.
-
-Your job is to help navigation locate an earlier region worth reading in order to resolve a live detour need.
-
-Rules:
-- Treat this as structured semantic search, not as broad summary.
-- Search only inside the provided scope cards. Do not invent regions outside them.
-- You may either narrow the scope, land on a readable region, or defer the detour.
-- `narrow_scope` means the current scope is still too broad but one smaller range is the right next place to inspect.
-- `land_region` means the selected range is already specific enough to be read next through the normal reading loop.
-- `defer_detour` means the current information is too weak or too ambiguous to justify more searching right now.
-- Prefer source-grounded, memory-supported choices over vague hunches.
-- If the current scope/context is insufficient, you may request exactly one book-local source skill instead of guessing.
-- Available skills:
+- If you think the move is still unfinished at the available boundary, choose the best honest end point you have and set `continuation_pressure` to true.
+- Available skills in detour mode only:
   - `source_map_overview`: inspect the already-read book structure within allowed bounds.
   - `source_scope_drilldown`: expand one current scope card or range into smaller source cards.
   - `source_window_fetch`: fetch source text for a bounded sentence range.
   - `anchor_resolve`: resolve a known anchor/sentence handle into short source-grounded context.
-- Skill results are evidence, not answers. After receiving a skill result, decide whether to narrow, land, or defer.
-- Do not request external web search. Do not request a skill just to be safer; request one only when the provided material is not enough to choose responsibly.
+- Skill results are evidence, not answers. After receiving a skill result, decide whether to choose a unit, request another needed skill within budget, or defer.
+- Do not request external web search. Do not request a skill just to be safer.
+- Cite exact sentence ids as evidence.
 - Return JSON only.""",
-    navigate_detour_search_prompt="""Structural frame:
+    navigate_choose_next_unit_prompt="""Structural frame:
 {structural_frame}
 
-Detour need:
-{detour_need}
+Reading position:
+{reading_position}
 
-Current search scope:
-{search_scope}
+Mainline preview:
+{mainline_preview}
+
+Active detour need:
+{active_detour_need}
+
+Mainline cursor:
+{mainline_cursor}
 
 Navigation context:
 {navigation_context}
 
-Skill result, if any:
-{skill_result}
+Source evidence:
+{source_evidence}
+
+Skill catalog:
+{skill_catalog}
+
+Skill results so far:
+{skill_results_so_far}
+
+Budget state:
+{budget_state}
 
 Policy snapshot:
 {policy_snapshot}
@@ -191,10 +159,14 @@ Output language contract:
 
 Return JSON:
 {
-  "decision": "defer_detour",
+  "decision": "choose_unit",
+  "selection_mode": "mainline",
+  "start_sentence_id": "<chosen first sentence id>",
+  "end_sentence_id": "<chosen final sentence id>",
+  "boundary_type": "paragraph_end",
+  "evidence_sentence_ids": ["<sentence id>"],
   "reason": "<brief reason>",
-  "start_sentence_id": "",
-  "end_sentence_id": ""
+  "continuation_pressure": false
 }
 
 To request one skill instead, return JSON:
@@ -209,6 +181,12 @@ To request one skill instead, return JSON:
       "end_sentence_id": "c1-s3"
     }
   }
+}
+
+To defer an active detour, return JSON:
+{
+  "decision": "defer_detour",
+  "reason": "<why the detour should stop for now>"
 }""",
     read_unit_version=READ_UNIT_PROMPT_VERSION,
     read_unit_system="""You are a careful reader moving through this book.

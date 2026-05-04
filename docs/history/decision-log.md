@@ -2437,3 +2437,34 @@ This new direction is design frozen but not yet implemented as a formal benchmar
 - `reading-companion-backend/tests/test_attentional_v2_nodes.py`
 - `reading-companion-backend/tests/test_attentional_v2_scaffold.py`
 - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_long_span_vnext_phase1_reaction_evidence_fix_rejudge_20260425/analysis/post_eval_action_ledger_20260503/README.md`
+
+## Entry 80
+**ID**: DEC-083
+**Status**: active
+
+**Decision / Inflection**: Collapse current Navigate execution into one unified `Navigate.choose_next_unit` agent act loop.
+
+**Period**: May 4, 2026, after the first book-local Skill Runtime slice and after the project reviewed whether the remaining Navigator implementation still carried a historical mainline-vs-detour split.
+
+**Problem**: `Navigate.choose_next_unit` had become the conceptual Navigator contract, but its implementation still acted like a Python dispatcher between two live prompt families: a mainline unitization helper and a detour-search helper. That kept the older `navigate_unitize / navigate_detour_search` split alive as current mechanism shape, made Detour feel like a side-channel, and obscured the simpler first-principles model: Navigate should choose the next readable unit that should be read.
+
+**Alternatives considered**: Keep the current dispatcher and treat the two helper prompts as implementation details, rename the entrypoint again, or introduce a full generic native tool loop immediately. These were rejected for this slice. The dispatcher preserved too much old ontology, another rename would not fix the execution model, and a generic tool loop would add scope before the current source-skill boundary has earned it.
+
+**Why this path won**: One Navigate act loop matches the mechanism's natural division of labor: Navigate chooses the next readable unit, Skills provide bounded source evidence when requested, and the Reading Runner executes and settles the chosen unit. Mainline and detour reading become modes inside one selection act rather than two competing navigation systems.
+
+**What changed in the system**: The live path no longer calls separate `navigate_unitize(...)` or `navigate_detour_search(...)` nodes. `navigate_choose_next_unit_act(...)` is the current prompt/trace node and can return only `choose_unit`, `request_skill`, or `defer_detour`. Mainline calls run with `skills_allowed=false` and fall back safely if the model requests a skill or defer. Active-detour calls use the same act loop, can request bounded book-local source skills within budget, and then either choose a source-grounded unit or defer. `NavigateNextUnitResult` now carries a compact `navigate_trace`, while the Reading Runner still sends both mainline and detour units through the same `Read -> Reading Runner settlement` path.
+
+**Why it matters later**: Future source-skill and tool work should extend this single Navigate act loop rather than creating new peer prompt families. This keeps the agent loop legible: Reading Runner orchestrates execution, Navigate decides the next unit, Skills expose evidence, and Read interprets the chosen unit.
+
+**Primary evidence**:
+- `docs/backend-reading-mechanisms/attentional_v2.md`
+- `docs/current-state.md`
+- `docs/tasks/registry.md`
+- `docs/tasks/registry.json`
+- `reading-companion-backend/src/attentional_v2/prompts.py`
+- `reading-companion-backend/src/attentional_v2/nodes.py`
+- `reading-companion-backend/src/attentional_v2/runner.py`
+- `reading-companion-backend/src/attentional_v2/schemas.py`
+- `reading-companion-backend/tests/test_attentional_v2_nodes.py`
+- `reading-companion-backend/tests/test_attentional_v2_scaffold.py`
+- `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_long_span_vnext_phase1_reaction_evidence_fix_rejudge_20260425/analysis/post_eval_action_ledger_20260503/README.md`
