@@ -280,7 +280,7 @@ Use `docs/backend-reading-mechanism.md` for shared mechanism-platform boundaries
   - Memory Quality evidence reports have a fixed writing contract:
     - `reading-companion-backend/docs/evaluation/long_span/memory_quality_report_contract.md`
     - each window should have one full source document with probe markers instead of repeated full source-so-far blocks
-    - new reports should not include current `Recent Routes` / `route_action` blocks, because the current mechanism advances through runner post-read settlement rather than a route-action taxonomy
+    - new reports should not include current `Recent Routes` / `route_action` blocks, because the current mechanism advances through Reading Runner post-read settlement rather than a route-action taxonomy
   - `overall_memory_quality_score` is derived from `salience_score`, `mainline_fidelity_score`, `organization_score`, and `fidelity_score` rather than trusted blindly from the judge response
   - reaction audit now treats `prior_link / outside_link / search_intent` as support while keeping visible reaction wording as the primary evidence; compat `type=retrospect` is not sufficient evidence by itself
   - this is usable phase-1 diagnostic evidence, but it is not yet a promoted formal long-span benchmark authority

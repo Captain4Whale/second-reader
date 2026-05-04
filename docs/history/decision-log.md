@@ -2313,19 +2313,19 @@ This new direction is design frozen but not yet implemented as a formal benchmar
 **ID**: DEC-079
 **Status**: active
 
-**Decision / Inflection**: Retire `Navigate.route` and the `commit / continue / bridge_back / reframe` route-action taxonomy from current `attentional_v2`. Current forward reading is now settled by the runner after `Read`, while `Detour` remains the only non-mainline scheduling mechanism.
+**Decision / Inflection**: Retire `Navigate.route` and the `commit / continue / bridge_back / reframe` route-action taxonomy from current `attentional_v2`. Current forward reading is now settled by the Reading Runner after `Read`, while `Detour` remains the only non-mainline scheduling mechanism.
 
 **Period**: May 4, 2026, after the project re-examined whether the remaining route-action layer still had a first-principles role after Read naturalization, Active Attention cleanup, and Detour ownership had landed.
 
-**Problem**: The route-action layer survived several earlier cleanups because it was once a useful bridge away from older `advance / dwell / bridge / reframe` controller vocabulary. But after the mechanism stabilized around `Navigate.unitize -> read -> runner settlement`, the four current route actions no longer owned distinct behavior. Ordinary forward progress was already cursor progression performed by the runner. `Read` already owned memory uptake, surfaced reactions, and detour need. `Detour` already owned non-mainline scheduling. `bridge_back` and `reframe` had become historical controller echoes rather than meaningful current scheduling actions.
+**Problem**: The route-action layer survived several earlier cleanups because it was once a useful bridge away from older `advance / dwell / bridge / reframe` controller vocabulary. But after the mechanism stabilized around `Navigate.unitize -> read -> Reading Runner settlement`, the four current route actions no longer owned distinct behavior. Ordinary forward progress was already cursor progression performed by the Reading Runner. `Read` already owned memory uptake, surfaced reactions, and detour need. `Detour` already owned non-mainline scheduling. `bridge_back` and `reframe` had become historical controller echoes rather than meaningful current scheduling actions.
 
 **Alternatives considered**: Keep `route_action` as a public/eval explanation chip, collapse the taxonomy into a single `forward` action, or migrate `bridge_back` / `reframe` effects into `Read`. These were rejected because they would preserve a taxonomy for something that is now ordinary control flow. A single `forward` action would still make default cursor advancement look like a semantic decision, and migrating bridge/reframe would risk reintroducing low-value derived state updates that the current memory model no longer needs.
 
-**Why this path won**: The simplest true model is also the most universal: `Navigate` chooses the next unit or detour target, `Read` reads the chosen unit and emits memory/reaction/detour outputs, and the runner deterministically settles that read and advances the cursor. That model removes route labels that no longer change behavior, avoids confusing future agents with controller-era names, and keeps non-mainline movement concentrated in the explicit Detour mechanism.
+**Why this path won**: The simplest true model is also the most universal: `Navigate` chooses the next unit or detour target, `Read` reads the chosen unit and emits memory/reaction/detour outputs, and the Reading Runner deterministically settles that read and advances the cursor. That model removes route labels that no longer change behavior, avoids confusing future agents with controller-era names, and keeps non-mainline movement concentrated in the explicit Detour mechanism.
 
-**What changed in the system**: The runner no longer calls `navigate_route`. `ReadResult` no longer emits `pressure_signals`. New runtime state no longer creates `route_history.json`, and old `route_history` / `move_history` runtime state fails fast on warm resume rather than being migrated. Public schemas, OpenAPI-generated frontend types, overview live-chip copy, normalized eval export, and Memory Quality probe support no longer expose `route_action` as current evidence. Stable mechanism/API/evaluation/current-state docs now describe post-read settlement as runner-owned deterministic behavior.
+**What changed in the system**: The Reading Runner no longer calls `navigate_route`. `ReadResult` no longer emits `pressure_signals`. New runtime state no longer creates `route_history.json`, and old `route_history` / `move_history` runtime state fails fast on warm resume rather than being migrated. Public schemas, OpenAPI-generated frontend types, overview live-chip copy, normalized eval export, and Memory Quality probe support no longer expose `route_action` as current evidence. Stable mechanism/API/evaluation/current-state docs now describe post-read settlement as Reading Runner-owned deterministic behavior.
 
-**Why it matters later**: Future navigation work should not resurrect a generic route taxonomy unless it creates a real scheduling capability. If the mechanism needs to leave the mainline, use Detour. If it is simply done reading the chosen unit, the runner advances. If a reaction links backward, the surfaced reaction and anchor evidence should carry that linkage rather than a route action. This is the point where `attentional_v2` becomes cleaner than the intermediate controller shapes that helped it evolve.
+**Why it matters later**: Future navigation work should not resurrect a generic route taxonomy unless it creates a real scheduling capability. If the mechanism needs to leave the mainline, use Detour. If it is simply done reading the chosen unit, the Reading Runner advances. If a reaction links backward, the surfaced reaction and anchor evidence should carry that linkage rather than a route action. This is the point where `attentional_v2` becomes cleaner than the intermediate controller shapes that helped it evolve.
 
 **Primary evidence**:
 - `docs/backend-reading-mechanisms/attentional_v2.md`
@@ -2356,13 +2356,13 @@ This new direction is design frozen but not yet implemented as a formal benchmar
 
 **Period**: May 4, 2026, after `Navigate.route` and route-action vocabulary had been removed, and after the project reviewed whether mainline unitization and detour search should remain exposed as parallel current Navigator surfaces.
 
-**Problem**: Once route actions were gone, the runner still effectively had two selection shapes: ordinary mainline unitization and a separate detour episode branch that performed its own search, unitization, read, and settlement flow. That split made the current mechanism harder to reason about than its actual first-principles model: every turn needs one next unit to read, whether it comes from the mainline cursor or from an already-open detour need. Leaving `Navigate.unitize` and `Navigate.detour_search` as parallel architecture-level nodes also risked rebuilding another controller taxonomy after the route cleanup.
+**Problem**: Once route actions were gone, the Reading Runner still effectively had two selection shapes: ordinary mainline unitization and a separate detour episode branch that performed its own search, unitization, read, and settlement flow. That split made the current mechanism harder to reason about than its actual first-principles model: every turn needs one next unit to read, whether it comes from the mainline cursor or from an already-open detour need. Leaving `Navigate.unitize` and `Navigate.detour_search` as parallel architecture-level nodes also risked rebuilding another controller taxonomy after the route cleanup.
 
 **Alternatives considered**: Keep `Navigate.unitize` and `Navigate.detour_search` as two public mechanism nodes, rename the entrypoint to `prepare_next_unit`, or immediately introduce a tool/skill loop for source search. These were rejected for this slice. Keeping two public nodes preserved unnecessary ontology. `prepare_next_unit` sounded more like prompt packaging than selection. Tool/skill design may be useful later, but it would expand the scope beyond the current contract cleanup.
 
-**Why this path won**: `choose_next_unit` states the universal job directly: select the next readable unit that should be read now. Mainline forward reading and detour reading become two modes inside one selection contract, not two separate scheduling systems. The runner can then consume one `NavigateNextUnitResult` and send both mainline and landed-detour units through the same `Read -> runner settlement` path.
+**Why this path won**: `choose_next_unit` states the universal job directly: select the next readable unit that should be read now. Mainline forward reading and detour reading become two modes inside one selection contract, not two separate scheduling systems. The Reading Runner can then consume one `NavigateNextUnitResult` and send both mainline and landed-detour units through the same `Read -> Reading Runner settlement` path.
 
-**What changed in the system**: The current schema now includes `NavigateNextUnitResult` with `selection_mode = mainline | detour | deferred`, selected unit sentences, unitization decision, optional detour trace, and optional defer reason. The runner now calls `navigate_choose_next_unit(...)` each loop. Without an active detour it reuses the existing bounded preview and unitization helper; with an active detour it runs the existing bounded detour search, unitizes the landed region, and returns a normal read unit. Mainline and detour reads now share one settlement helper. The previous `_run_detour_episode(...)` duplicate read/settlement branch was removed.
+**What changed in the system**: The current schema now includes `NavigateNextUnitResult` with `selection_mode = mainline | detour | deferred`, selected unit sentences, unitization decision, optional detour trace, and optional defer reason. The Reading Runner now calls `navigate_choose_next_unit(...)` each loop. Without an active detour it reuses the existing bounded preview and unitization helper; with an active detour it runs the existing bounded detour search, unitizes the landed region, and returns a normal read unit. Mainline and detour reads now share one settlement helper. The previous `_run_detour_episode(...)` duplicate read/settlement branch was removed.
 
 **Why it matters later**: Future navigation work should start from `Navigate.choose_next_unit`, not from reintroducing route actions or treating detour search as a second-class side channel. If later source-search skills or tool calls are added, they should be internal capabilities used by the choose-next-unit flow rather than a new competing mechanism ontology.
 
@@ -2375,4 +2375,33 @@ This new direction is design frozen but not yet implemented as a formal benchmar
 - `reading-companion-backend/src/attentional_v2/runner.py`
 - `reading-companion-backend/src/attentional_v2/schemas.py`
 - `reading-companion-backend/tests/test_attentional_v2_scaffold.py`
+- `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_long_span_vnext_phase1_reaction_evidence_fix_rejudge_20260425/analysis/post_eval_action_ledger_20260503/README.md`
+
+## Entry 78
+**ID**: DEC-081
+**Status**: active
+
+**Decision / Inflection**: Name the current `attentional_v2` mechanism-internal read-progress executor `Reading Runner`.
+
+**Period**: May 4, 2026, after the project clarified that this naming work is scoped to the current mechanism internals rather than to the shared runtime shell or mechanism registry.
+
+**Problem**: The word `runner` was doing too much work. The shared runtime shell, mechanism adapters, evaluation runners, and the current mechanism's live read loop all used runner-like language. That made it easy to mistake `reading-companion-backend/src/attentional_v2/runner.py` for the whole product runtime or to keep describing current behavior through rollout-era `V2` / phase labels instead of through stable reading roles.
+
+**Alternatives considered**: Rename the shared runtime layer, rename the `attentional_v2` package/key, or split/rename the whole mechanism directory immediately. These were rejected because the current issue is narrower: the project only needs a clear name for the current mechanism's internal read-progress executor. Shared `reading_runtime`, mechanism registration, adapter keys, historical artifacts, and old reports should remain stable.
+
+**Why this path won**: `Reading Runner` says what this layer actually does: it executes the live reading loop for the current mechanism by calling `Navigate.choose_next_unit`, invoking `Read`, settling memory/reactions/audit, advancing the cursor, and handing off detour state. The name clarifies the mechanism without making `V2` a node name and without disturbing the shared multi-mechanism architecture.
+
+**What changed in the system**: The mechanism adapter now calls `run_reading_runner(...)` for reads. The current mechanism label no longer says `Attentional V2 scaffold (Phase 1-8)`. Stable mechanism/current-state/task docs now define `Reading Runner` as an `attentional_v2`-internal role rather than the shared runtime shell.
+
+**Why it matters later**: Future SQL/tool/skill-loop work should not start by overloading `runner` again. If it concerns the current mechanism's live read loop, it belongs to the Reading Runner boundary. If it concerns shared product job lifecycle, mechanism registration, or cross-mechanism routing, it belongs to `reading_runtime` or the adapter layer.
+
+**Primary evidence**:
+- `docs/backend-reading-mechanisms/attentional_v2.md`
+- `docs/current-state.md`
+- `docs/tasks/registry.md`
+- `docs/tasks/registry.json`
+- `reading-companion-backend/src/reading_mechanisms/attentional_v2.py`
+- `reading-companion-backend/src/attentional_v2/runner.py`
+- `reading-companion-backend/src/attentional_v2/evaluation.py`
+- `reading-companion-backend/tests/test_long_span_vnext.py`
 - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_long_span_vnext_phase1_reaction_evidence_fix_rejudge_20260425/analysis/post_eval_action_ledger_20260503/README.md`

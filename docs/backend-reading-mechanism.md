@@ -69,7 +69,7 @@ Use `docs/backend-sequential-lifecycle.md` for the job-level workflow over time.
     - `sentence intake`
     - `Navigate.unitize`
     - `read`
-    - `runner post-read settlement`
+    - `Reading Runner post-read settlement`
     - `Navigate.detour_search`
     - `surfaced reactions`
     - `chapter-end slow cycle`

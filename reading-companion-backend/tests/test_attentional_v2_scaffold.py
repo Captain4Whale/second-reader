@@ -436,8 +436,8 @@ def _stub_survey_artifacts(monkeypatch):
     monkeypatch.setattr(runner_module, "write_book_survey_artifacts", fake_write_book_survey_artifacts)
 
 
-def test_attentional_v2_initialization_writes_phase8_artifacts(tmp_path):
-    """The Phase 1-8 scaffold should write the shared shell and private state files."""
+def test_attentional_v2_initialization_writes_mechanism_artifacts(tmp_path):
+    """The mechanism should write the shared shell and private state files."""
 
     output_dir = tmp_path / "output" / "demo-book"
 

@@ -379,7 +379,7 @@ def test_ensure_window_output_reuses_completed_v2_with_probe_export(tmp_path: Pa
         runner,
         "rebuild_normalized_bundle_from_completed_output",
         lambda **_: {
-            "mechanism_label": "Attentional V2 scaffold (Phase 1-8)",
+            "mechanism_label": "Default deep reading mechanism",
             "normalized_eval_bundle": {"reactions": [], "memory_summaries": []},
         },
     )

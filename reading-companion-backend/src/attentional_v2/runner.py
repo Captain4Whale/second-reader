@@ -1,4 +1,4 @@
-"""Live parse/read runner integration for attentional_v2."""
+"""Reading Runner integration for the attentional_v2 mechanism."""
 
 from __future__ import annotations
 
@@ -747,7 +747,7 @@ def _chapter_selection(
     continue_mode: bool,
     resume_chapter_id: int | None,
 ) -> list[dict[str, object]]:
-    """Select chapters for the current live runner invocation."""
+    """Select chapters for the current Reading Runner invocation."""
 
     chapters = [dict(chapter) for chapter in document.get("chapters", []) if isinstance(chapter, dict)]
     if chapter_number is not None:
@@ -2061,7 +2061,7 @@ def parse_attentional_v2(request: ParseRequest, mechanism: MechanismInfo) -> Par
             provisioned.output_dir,
             {
                 "type": "structure_ready",
-                "message": "Attentional V2 parse is ready; the shared sentence substrate and survey artifacts are available.",
+                "message": "Default deep-reading parse is ready; the shared sentence substrate and survey artifacts are available.",
             },
         )
         return ParseResult(
@@ -2078,8 +2078,8 @@ def parse_attentional_v2(request: ParseRequest, mechanism: MechanismInfo) -> Par
         )
 
 
-def read_attentional_v2(request: ReadRequest, mechanism: MechanismInfo) -> ReadResult:
-    """Run the live attentional_v2 sequential reading loop."""
+def run_reading_runner(request: ReadRequest, mechanism: MechanismInfo) -> ReadResult:
+    """Run the mechanism-internal Reading Runner loop."""
 
     if request.task_mode == "book_analysis":
         raise ValueError("attentional_v2 does not support the retired legacy book_analysis mode.")
@@ -2539,7 +2539,7 @@ def read_attentional_v2(request: ReadRequest, mechanism: MechanismInfo) -> ReadR
                 output_dir,
                 {
                     "type": "audit_window_stopped",
-                    "message": f"Stopped attentional_v2 audit window after {audit_window_units_read} formal units.",
+                    "message": f"Stopped Reading Runner audit window after {audit_window_units_read} formal units.",
                     "details": {
                         "audit_window_max_units": audit_window_max_units,
                         "formal_units_read": audit_window_units_read,
@@ -2565,7 +2565,7 @@ def read_attentional_v2(request: ReadRequest, mechanism: MechanismInfo) -> ReadR
             output_dir,
             {
                 "type": "run_completed",
-                "message": "Attentional V2 sequential reading completed.",
+                "message": "Reading Runner completed sequential reading.",
                 "details": {
                     "started_at": run_started_at,
                     "finished_at": _timestamp(),

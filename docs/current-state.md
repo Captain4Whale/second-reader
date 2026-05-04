@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-05-04T12:50:44+08:00`
+Last verified: `2026-05-04T15:40:07+08:00`
 
 ## Current Objective
 - Shift Long Span from the discontinued `target-centered accumulation v2` method to the new active design direction:
@@ -46,7 +46,7 @@ Last verified: `2026-05-04T12:50:44+08:00`
         - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_long_span_vnext_phase1_reaction_evidence_fix_rejudge_20260425/summary/report.md`
       - post-eval action ledger:
         - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_long_span_vnext_phase1_reaction_evidence_fix_rejudge_20260425/analysis/post_eval_action_ledger_20260503/README.md`
-        - recorded actions now include `A1_legacy_gate_pressure_cleanup`, `A2_active_attention_cutover`, `A3_read_naturalization_cutover`, `A4_memory_quality_structural_signal_supplement`, `A5_local_hypothesis_provenance_cleanup`, `A6_memory_quality_report_contract`, `A7_route_action_contract_cutover`, `A8_forward_settlement_cutover`, and `A9_navigate_choose_next_unit_cutover`
+        - recorded actions now include `A1_legacy_gate_pressure_cleanup`, `A2_active_attention_cutover`, `A3_read_naturalization_cutover`, `A4_memory_quality_structural_signal_supplement`, `A5_local_hypothesis_provenance_cleanup`, `A6_memory_quality_report_contract`, `A7_route_action_contract_cutover`, `A8_forward_settlement_cutover`, `A9_navigate_choose_next_unit_cutover`, and `A10_reading_runner_naming_boundary`
       - Memory Quality evidence report contract:
         - `reading-companion-backend/docs/evaluation/long_span/memory_quality_report_contract.md`
         - future reports should use one full source document per window with probe markers and should not include current `Recent Routes` / `route_action` evidence blocks
@@ -246,7 +246,7 @@ Last verified: `2026-05-04T12:50:44+08:00`
       - `sentence intake` as pure `local_buffer` maintenance
       - `Navigate.choose_next_unit`
       - `read`
-      - runner post-read settlement
+      - Reading Runner post-read settlement
     - span authority is now tied to the exact chosen unit
   - `Phase B` is now also landed:
     - `read` now owns the authoritative current-unit read packet on the live path
@@ -310,9 +310,9 @@ Last verified: `2026-05-04T12:50:44+08:00`
     - this branch remains valid historical evidence, but it is no longer the approved end-state shape
   - `Phase F1` is now landed as the read-contract and prompt-packaging cutover:
     - the live per-unit loop was cut back to:
-      - `Navigate.unitize -> read -> runner post-read settlement`
+      - `Navigate.unitize -> read -> Reading Runner post-read settlement`
     - current code now exposes that selection step through:
-      - `Navigate.choose_next_unit -> read -> runner post-read settlement`
+      - `Navigate.choose_next_unit -> read -> Reading Runner post-read settlement`
     - `Read` now directly owns the current naturalized read contract:
       - `reading_impression`
       - `surfaced_reactions`
@@ -341,7 +341,7 @@ Last verified: `2026-05-04T12:50:44+08:00`
       - `narrow_scope`
       - `land_region`
       - `defer_detour`
-    - landed detour regions now flow back through the same normal `Navigate.choose_next_unit -> read -> runner post-read settlement` loop
+    - landed detour regions now flow back through the same normal `Navigate.choose_next_unit -> read -> Reading Runner post-read settlement` loop
     - chapter-tail detours are now drained before chapter slow-cycle closes, so a last-unit detour is not silently dropped
   - `Phase F3` is now landed as the reaction-persistence and compatibility reconvergence slice:
     - persisted visible reactions now enter the system only through `Read.surfaced_reactions[]`
@@ -693,7 +693,7 @@ Last verified: `2026-05-04T12:50:44+08:00`
       - warm resume now restores the latest usable continuation capsule together with new-format runtime state
       - the old budget-bounded supplemental recall loop is no longer the live F1 baseline
     - `Phase F1` is now the live baseline:
-      - live per-unit path is `Navigate.choose_next_unit -> read -> runner post-read settlement`
+      - live per-unit path is `Navigate.choose_next_unit -> read -> Reading Runner post-read settlement`
       - `Read` now owns surfaced reactions directly
       - the dedicated live `Express` node is off the main path
     - treat prior-material use as something that naturally happens inside `read`, not as a separate mechanism action

@@ -326,7 +326,37 @@ Each action should answer:
   - Complete for the contract cutover.
   - Future Navigator work should start from `Navigate.choose_next_unit`; source-search skills/tool loops remain a separate future design, not part of this action.
 
-The first nine post-eval actions are recorded above. Later actions should be appended here only after their finding, decision, and implementation boundary have been agreed.
+### A10 — Reading Runner naming boundary
+
+- `action_id`: `A10_reading_runner_naming_boundary`
+- `status`: `landed`
+- `source finding`:
+  - After the `A9_navigate_choose_next_unit_cutover`, the project reviewed whether the remaining `runner` wording clearly described the current mechanism.
+  - The review clarified that the current concern is not the shared runtime shell or mechanism registry, but the `attentional_v2`-internal layer that pushes reading forward.
+  - Generic `runner` language and rollout-era `V2 scaffold / Phase 1-8` labels could mislead future work into treating implementation history as mechanism ontology.
+- `decision`:
+  - Name the current mechanism-internal read-progress executor `Reading Runner`.
+  - Keep the `attentional_v2` mechanism key, package, and artifact territory for continuity.
+  - Do not rename the shared `reading_runtime`, mechanism adapter framework, or historical run artifacts.
+- `implemented changes`:
+  - The mechanism adapter now calls `run_reading_runner(...)` for the read path.
+  - The mechanism label is now `Default deep reading mechanism` instead of the old rollout-stage scaffold label.
+  - Stable mechanism docs now define `Reading Runner` as the `attentional_v2`-internal executor that calls `Navigate.choose_next_unit`, invokes `Read`, settles memory/reactions/audit, advances cursor, and hands off detour state.
+  - Current-state, task registry, and decision log now use `Reading Runner` for current forward settlement wording.
+- `validation`:
+  - `cd reading-companion-backend && .venv/bin/python -m pytest tests/test_long_span_vnext.py tests/test_attentional_v2_scaffold.py -q`
+  - `python3 -m json.tool docs/tasks/registry.json >/dev/null`
+  - `git diff --check`
+- `evidence links`:
+  - Current mechanism contract: `../../../../../../../docs/backend-reading-mechanisms/attentional_v2.md`
+  - Current state / task routing: `../../../../../../../docs/current-state.md`, `../../../../../../../docs/tasks/registry.md`
+  - Decision history: `../../../../../../../docs/history/decision-log.md`
+  - Adapter and Reading Runner code: `../../../../../../../reading-companion-backend/src/reading_mechanisms/attentional_v2.py`, `../../../../../../../reading-companion-backend/src/attentional_v2/runner.py`
+- `follow-up`:
+  - Complete for naming boundary and current symbols.
+  - Larger module/file splitting remains intentionally deferred until a real implementation need appears.
+
+The first ten post-eval actions are recorded above. Later actions should be appended here only after their finding, decision, and implementation boundary have been agreed.
 
 ### Action Template
 

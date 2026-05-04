@@ -174,7 +174,7 @@ def _build_probe_snapshot(
     anchor_bank: AnchorBankState,
     reaction_records: ReactionRecordsState,
 ) -> dict[str, object]:
-    """Build one normalized probe snapshot from the current persisted V2 state."""
+    """Build one normalized probe snapshot from the current persisted mechanism state."""
 
     carry_forward_context = build_carry_forward_context(
         chapter_ref=chapter_ref,

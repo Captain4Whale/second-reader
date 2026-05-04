@@ -367,7 +367,7 @@ def build_normalized_eval_bundle(
     reaction_sections = _reaction_section_index(output_dir, document)
     return {
         "mechanism_key": ATTENTIONAL_V2_MECHANISM_KEY,
-        "mechanism_label": "Attentional V2 scaffold (Phase 1-8)",
+        "mechanism_label": "Default deep reading mechanism",
         "generated_at": _timestamp(),
         "output_dir": str(output_dir),
         "config_fingerprint": stable_config_fingerprint(
