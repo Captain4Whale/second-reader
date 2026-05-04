@@ -90,6 +90,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
     - `narrow_scope`
     - `land_region`
     - `defer_detour`
+    - `request_skill`
   - once a detour region lands, the mechanism reads it through the same normal `Navigate.unitize -> read -> Reading Runner settlement` loop instead of inventing a second reading path
 - Phase F3 is now landed as the reaction-persistence and compatibility reconvergence slice.
   - persisted visible reactions now enter the system only through `Read.surfaced_reactions[]`
@@ -232,6 +233,22 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - one bounded detour-search helper owned by `Navigate.choose_next_unit`
   - detour-local state in `local_continuity`
   - detour reading that reuses the ordinary read path instead of a special helper path
+- The current book-local Skill Runtime is a controlled source-evidence layer under `Navigate.choose_next_unit`.
+  - It is not a generic tool loop and does not add WebSearch or Read-owned skills yet.
+  - In this first slice, only the detour branch may request skills, and only when the current search scope is not enough to make a grounded detour decision.
+  - Legal first-phase skills are:
+    - `source_map_overview`: return already-read book/chapter cards inside the mainline boundary
+    - `source_scope_drilldown`: expand the current bounded scope into finer source cards
+    - `source_window_fetch`: fetch a bounded already-read sentence window by source ids
+    - `anchor_resolve`: resolve an anchor/sentence handle into source-grounded local context
+  - Skills only read the book substrate and current runtime state.
+    - They do not read future text beyond `mainline_cursor`.
+    - They do not make semantic relevance judgments.
+    - They do not call external network services.
+  - `Navigate.detour_search` may output `request_skill` with one `skill_request`.
+    - `Reading Runner` executes that request through the Skill Runtime and feeds the `skill_result` back to `Navigate.detour_search`.
+    - The final `land_region`, `narrow_scope`, or `defer_detour` decision remains Navigate's LLM judgment over source-grounded evidence.
+    - Each detour search attempt may execute at most one skill request, and the whole detour localization loop keeps the existing three-attempt cap.
 - `Navigate.choose_next_unit` is now the sole current selector of the next coverage unit.
   - Boundary choice is prompt-led and semantic.
   - Runtime guardrails only keep the unit from running away.
@@ -531,6 +548,13 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - narrowing from chapter -> section -> local preview when needed
   - deciding whether the current scope is still too broad (`narrow_scope`) or already good enough to read (`land_region`)
   - deferring a detour when the current evidence is too weak (`defer_detour`)
+  - requesting one bounded book-local source skill when the current source evidence is not enough (`request_skill`)
+- In the current skill-enabled slice, the available detour-search source skills are:
+  - `source_map_overview`
+  - `source_scope_drilldown`
+  - `source_window_fetch`
+  - `anchor_resolve`
+  - their results are provenance-bearing evidence, not route decisions
 - Search calls should be bounded.
   - the target is one call when memory and structure make the target obvious
   - two calls are normal for ambiguous cases

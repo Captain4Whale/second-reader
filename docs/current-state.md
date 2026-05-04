@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-05-04T15:40:07+08:00`
+Last verified: `2026-05-04T16:32:40+08:00`
 
 ## Current Objective
 - Shift Long Span from the discontinued `target-centered accumulation v2` method to the new active design direction:
@@ -46,10 +46,15 @@ Last verified: `2026-05-04T15:40:07+08:00`
         - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_long_span_vnext_phase1_reaction_evidence_fix_rejudge_20260425/summary/report.md`
       - post-eval action ledger:
         - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_long_span_vnext_phase1_reaction_evidence_fix_rejudge_20260425/analysis/post_eval_action_ledger_20260503/README.md`
-        - recorded actions now include `A1_legacy_gate_pressure_cleanup`, `A2_active_attention_cutover`, `A3_read_naturalization_cutover`, `A4_memory_quality_structural_signal_supplement`, `A5_local_hypothesis_provenance_cleanup`, `A6_memory_quality_report_contract`, `A7_route_action_contract_cutover`, `A8_forward_settlement_cutover`, `A9_navigate_choose_next_unit_cutover`, and `A10_reading_runner_naming_boundary`
+        - recorded actions now include `A1_legacy_gate_pressure_cleanup`, `A2_active_attention_cutover`, `A3_read_naturalization_cutover`, `A4_memory_quality_structural_signal_supplement`, `A5_local_hypothesis_provenance_cleanup`, `A6_memory_quality_report_contract`, `A7_route_action_contract_cutover`, `A8_forward_settlement_cutover`, `A9_navigate_choose_next_unit_cutover`, `A10_reading_runner_naming_boundary`, and `A11_navigate_book_local_skill_runtime`
       - Memory Quality evidence report contract:
         - `reading-companion-backend/docs/evaluation/long_span/memory_quality_report_contract.md`
         - future reports should use one full source document per window with probe markers and should not include current `Recent Routes` / `route_action` evidence blocks
+      - current Navigator source-skill posture:
+        - `Navigate.choose_next_unit` remains the single Navigator entrypoint
+        - first-phase Skill Runtime is mechanism-private and currently serves detour search only
+        - supported book-local skills are `source_map_overview`, `source_scope_drilldown`, `source_window_fetch`, and `anchor_resolve`
+        - `Reading Runner` dispatches skill requests and returns `skill_result` evidence to Navigate; skills do not choose the detour target and do not read future text past `mainline_cursor`
       - result:
         - `Memory Quality` average overall score: `3.48`
         - probe count: `25`

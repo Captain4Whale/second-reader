@@ -43,6 +43,8 @@ from .read_context import (
     persist_read_audit,
 )
 from .resume import persist_reading_position, resume_from_checkpoint, write_full_checkpoint
+from .skills.runtime import execute_skill_request
+from .skills.source_skills import build_source_map_overview, drilldown_source_scope
 from .schemas import (
     ATTENTIONAL_V2_MECHANISM_VERSION,
     ATTENTIONAL_V2_POLICY_VERSION,
@@ -870,60 +872,6 @@ def _build_sentence_lookup(
     return sentence_lookup, chapter_lookup
 
 
-def _sentences_visible_to_detour(
-    chapter: dict[str, object],
-    *,
-    mainline_cursor: SharedRunCursor,
-) -> list[dict[str, object]]:
-    """Return the earlier-in-book sentence slice currently visible to detour search."""
-
-    chapter_id = int(chapter.get("id", 0) or 0)
-    mainline_chapter_id = int(mainline_cursor.get("chapter_id", 0) or 0)
-    sentences = [dict(sentence) for sentence in chapter.get("sentences", []) if isinstance(sentence, dict)]
-    if chapter_id <= 0 or not sentences or mainline_chapter_id <= 0:
-        return []
-    if chapter_id < mainline_chapter_id:
-        return sentences
-    if chapter_id > mainline_chapter_id:
-        return []
-    mainline_sentence_id = _clean_text(mainline_cursor.get("sentence_id"))
-    if not mainline_sentence_id:
-        return []
-    cutoff = next((index for index, sentence in enumerate(sentences) if _sentence_id(sentence) == mainline_sentence_id), -1)
-    if cutoff < 0:
-        return sentences
-    return sentences[:cutoff]
-
-
-def _paragraph_index(sentence: dict[str, object]) -> int:
-    """Return the best-effort paragraph index for one sentence."""
-
-    locator = sentence.get("locator")
-    if isinstance(locator, dict):
-        value = int(locator.get("paragraph_index", 0) or locator.get("paragraph_start", 0) or 0)
-        if value > 0:
-            return value
-    return int(sentence.get("paragraph_index", 0) or 0)
-
-
-def _scope_card(
-    *,
-    card_id: str,
-    label: str,
-    summary: str,
-    sentences: list[dict[str, object]],
-) -> dict[str, object]:
-    """Build one structured detour-scope card from a bounded sentence slice."""
-
-    return {
-        "card_id": card_id,
-        "label": label,
-        "summary": summary,
-        "start_sentence_id": _sentence_id(sentences[0]) if sentences else "",
-        "end_sentence_id": _sentence_id(sentences[-1]) if sentences else "",
-    }
-
-
 def _build_detour_chapter_scope(
     *,
     document: BookDocument,
@@ -932,136 +880,13 @@ def _build_detour_chapter_scope(
 ) -> dict[str, object]:
     """Build the initial Navigate.detour_search scope as chapter cards over already-read space."""
 
-    chapter_summaries = {
-        int(entry.get("chapter_id", 0) or 0): dict(entry)
-        for entry in survey_map.get("chapter_map", [])
-        if isinstance(entry, dict)
-    } if isinstance(survey_map.get("chapter_map"), list) else {}
-    cards: list[dict[str, object]] = []
-    for raw_chapter in document.get("chapters", []):
-        if not isinstance(raw_chapter, dict):
-            continue
-        chapter = dict(raw_chapter)
-        chapter_id = int(chapter.get("id", 0) or 0)
-        visible_sentences = _sentences_visible_to_detour(chapter, mainline_cursor=mainline_cursor)
-        if chapter_id <= 0 or not visible_sentences:
-            continue
-        chapter_summary = chapter_summaries.get(chapter_id, {})
-        opening_sentences = chapter_summary.get("opening_sentences", [])
-        summary = ""
-        if isinstance(opening_sentences, list) and opening_sentences:
-            first_opening = opening_sentences[0]
-            if isinstance(first_opening, dict):
-                summary = _clean_text(first_opening.get("text"))
-        if not summary:
-            summary = _clean_text(visible_sentences[0].get("text"))[:180]
-        cards.append(
-            _scope_card(
-                card_id=f"chapter:{chapter_id}",
-                label=_clean_text(chapter.get("title")) or _chapter_ref(chapter),
-                summary=summary,
-                sentences=visible_sentences,
-            )
-        )
-    return {
-        "scope_kind": "chapter_cards",
-        "reason": "initial_detour_scope",
-        "cards": cards,
-    }
-
-
-def _build_detour_section_or_window_scope(
-    *,
-    chapter: dict[str, object],
-    selected_sentences: list[dict[str, object]],
-) -> dict[str, object]:
-    """Build the second-layer detour scope from one landed chapter region."""
-
-    heading_indexes = [
-        index
-        for index, sentence in enumerate(selected_sentences)
-        if _clean_text(sentence.get("text_role")) == "section_heading"
-    ]
-    if heading_indexes:
-        cards: list[dict[str, object]] = []
-        for offset, start_index in enumerate(heading_indexes):
-            end_index = heading_indexes[offset + 1] - 1 if offset + 1 < len(heading_indexes) else len(selected_sentences) - 1
-            scope_sentences = selected_sentences[start_index : end_index + 1]
-            if not scope_sentences:
-                continue
-            cards.append(
-                _scope_card(
-                    card_id=f"section:{_sentence_id(scope_sentences[0])}",
-                    label=_clean_text(scope_sentences[0].get("text")) or f"Section {offset + 1}",
-                    summary=_clean_text(scope_sentences[min(1, len(scope_sentences) - 1)].get("text"))[:180],
-                    sentences=scope_sentences,
-                )
-            )
-        if cards:
-            return {
-                "scope_kind": "section_cards",
-                "reason": f"expand_{int(chapter.get('id', 0) or 0)}_sections",
-                "cards": cards,
-            }
-
-    paragraphs: dict[int, list[dict[str, object]]] = {}
-    for sentence in selected_sentences:
-        paragraph_index = _paragraph_index(sentence)
-        paragraphs.setdefault(paragraph_index, []).append(sentence)
-    ordered_paragraphs = [paragraphs[index] for index in sorted(paragraphs) if paragraphs[index]]
-    window_size = 3
-    cards = []
-    for window_index in range(0, len(ordered_paragraphs), window_size):
-        paragraph_window = ordered_paragraphs[window_index : window_index + window_size]
-        scope_sentences = [sentence for paragraph in paragraph_window for sentence in paragraph]
-        if not scope_sentences:
-            continue
-        first_paragraph = _paragraph_index(scope_sentences[0])
-        last_paragraph = _paragraph_index(scope_sentences[-1])
-        cards.append(
-            _scope_card(
-                card_id=f"paragraph_window:{_sentence_id(scope_sentences[0])}",
-                label=f"Paragraphs {first_paragraph}-{last_paragraph}",
-                summary=_clean_text(scope_sentences[0].get("text"))[:180],
-                sentences=scope_sentences,
-            )
-        )
-    return {
-        "scope_kind": "paragraph_window_cards",
-        "reason": f"expand_{int(chapter.get('id', 0) or 0)}_paragraph_windows",
-        "cards": cards,
-    }
-
-
-def _build_detour_paragraph_preview_scope(
-    *,
-    selected_sentences: list[dict[str, object]],
-) -> dict[str, object]:
-    """Build the final Navigate.detour_search layer as paragraph previews."""
-
-    paragraphs: dict[int, list[dict[str, object]]] = {}
-    for sentence in selected_sentences:
-        paragraph_index = _paragraph_index(sentence)
-        paragraphs.setdefault(paragraph_index, []).append(sentence)
-    cards: list[dict[str, object]] = []
-    for paragraph_index in sorted(paragraphs):
-        paragraph_sentences = paragraphs[paragraph_index]
-        if not paragraph_sentences:
-            continue
-        preview = " ".join(_clean_text(sentence.get("text")) for sentence in paragraph_sentences[:2]).strip()
-        cards.append(
-            _scope_card(
-                card_id=f"paragraph:{_sentence_id(paragraph_sentences[0])}",
-                label=f"Paragraph {paragraph_index}",
-                summary=preview[:220],
-                sentences=paragraph_sentences,
-            )
-        )
-    return {
-        "scope_kind": "paragraph_preview_cards",
-        "reason": "paragraph_preview_scope",
-        "cards": cards,
-    }
+    scope = build_source_map_overview(
+        document=document,
+        survey_map=survey_map,
+        mainline_cursor=mainline_cursor,
+    )
+    scope["reason"] = "initial_detour_scope"
+    return scope
 
 
 def _expand_detour_scope(
@@ -1072,12 +897,11 @@ def _expand_detour_scope(
 ) -> dict[str, object] | None:
     """Expand one detour scope into its next finer-grained layer."""
 
-    scope_kind = _clean_text(current_scope.get("scope_kind"))
-    if scope_kind == "chapter_cards":
-        return _build_detour_section_or_window_scope(chapter=chapter, selected_sentences=selected_sentences)
-    if scope_kind in {"section_cards", "paragraph_window_cards"}:
-        return _build_detour_paragraph_preview_scope(selected_sentences=selected_sentences)
-    return None
+    return drilldown_source_scope(
+        current_scope=current_scope,
+        selected_sentences=selected_sentences,
+        chapter=chapter,
+    )
 
 
 def _build_detour_navigation_packet(
@@ -1181,6 +1005,40 @@ def _build_detour_read_context(local_continuity: LocalContinuityState) -> dict[s
     }
 
 
+def _skill_result_trace(skill_result: dict[str, object]) -> dict[str, object]:
+    """Return a compact, audit-safe skill result summary."""
+
+    result = skill_result.get("result") if isinstance(skill_result, dict) else {}
+    result_summary: dict[str, object] = {}
+    if isinstance(result, dict):
+        cards = result.get("cards")
+        sentences = result.get("sentences")
+        if isinstance(cards, list):
+            result_summary["card_count"] = len(cards)
+            result_summary["cards"] = [
+                {
+                    "card_id": _clean_text(card.get("card_id")),
+                    "start_sentence_id": _clean_text(card.get("start_sentence_id")),
+                    "end_sentence_id": _clean_text(card.get("end_sentence_id")),
+                }
+                for card in cards[:5]
+                if isinstance(card, dict)
+            ]
+        if isinstance(sentences, list):
+            result_summary["sentence_count"] = len(sentences)
+            result_summary["start_sentence_id"] = _clean_text(result.get("start_sentence_id"))
+            result_summary["end_sentence_id"] = _clean_text(result.get("end_sentence_id"))
+        if result.get("anchor_id"):
+            result_summary["anchor_id"] = _clean_text(result.get("anchor_id"))
+    return {
+        "skill_name": _clean_text(skill_result.get("skill_name")) if isinstance(skill_result, dict) else "",
+        "status": _clean_text(skill_result.get("status")) if isinstance(skill_result, dict) else "error",
+        "error": _clean_text(skill_result.get("error")) if isinstance(skill_result, dict) else "",
+        "result_summary": result_summary,
+        "provenance": dict(skill_result.get("provenance", {})) if isinstance(skill_result.get("provenance"), dict) else {},
+    }
+
+
 def _selected_detour_region(
     *,
     sentence_lookup: dict[str, dict[str, object]],
@@ -1221,6 +1079,7 @@ def _run_detour_search_loop(
     local_continuity: LocalContinuityState,
     detour_need: DetourNeed,
     navigation_packet: dict[str, object],
+    anchor_bank: AnchorBankState,
     reader_policy: ReaderPolicy,
     output_language: str,
     output_dir: Path | None,
@@ -1261,6 +1120,42 @@ def _run_detour_search_loop(
             book_title=book_title,
             author=author,
         )
+        if _clean_text(search_result.get("decision")) == "request_skill":
+            skill_result = execute_skill_request(
+                search_result.get("skill_request", {}),
+                document=document,
+                survey_map=survey_map,
+                sentence_lookup=sentence_lookup,
+                chapter_lookup=chapter_lookup,
+                mainline_cursor=mainline_cursor,  # type: ignore[arg-type]
+                anchor_bank=anchor_bank,
+                current_scope=scope,
+            )
+            search_trace.append(
+                {
+                    **dict(search_result),
+                    "skill_result": _skill_result_trace(skill_result),
+                }
+            )
+            search_result = navigate_detour_search(
+                search_scope=scope,
+                detour_need=detour_need,
+                navigation_context=navigation_packet,  # type: ignore[arg-type]
+                reader_policy=reader_policy,
+                output_language=output_language,
+                output_dir=output_dir,
+                book_title=book_title,
+                author=author,
+                skill_result=skill_result,
+            )
+            if _clean_text(search_result.get("decision")) == "request_skill":
+                search_trace.append(dict(search_result))
+                return {
+                    "decision": "defer_detour",
+                    "reason": "detour_skill_request_budget_exhausted",
+                    "start_sentence_id": "",
+                    "end_sentence_id": "",
+                }, search_trace
         search_trace.append(dict(search_result))
         if _clean_text(search_result.get("decision")) == "defer_detour":
             return search_result, search_trace
@@ -1352,6 +1247,7 @@ def navigate_choose_next_unit(
             local_continuity=local_continuity,
             detour_need=active_detour_need,
             navigation_packet=navigation_packet,
+            anchor_bank=anchor_bank,
             reader_policy=reader_policy,
             output_language=output_language,
             output_dir=output_dir,

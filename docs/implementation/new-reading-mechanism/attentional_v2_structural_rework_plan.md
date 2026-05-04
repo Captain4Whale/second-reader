@@ -79,6 +79,7 @@ Implementation checkpoint:
     - `narrow_scope`
     - `land_region`
     - `defer_detour`
+    - `request_skill`
   - landed detour regions now re-enter the same normal `Navigate.choose_next_unit -> read -> Reading Runner post-read settlement` reading loop
   - chapter-tail detours are now drained before chapter slow-cycle closes
 - `Phase F3` is now landed as the reaction-persistence and compatibility reconvergence slice:
@@ -100,8 +101,14 @@ Implementation checkpoint:
   - `Reading Runner` is the current name for the `attentional_v2`-internal read-progress executor
   - this does not rename the shared runtime shell, mechanism registry, or `attentional_v2` mechanism key/package
   - implementation-stage and `V2` labels remain history/artifact vocabulary rather than current node names
-- next after the choose-next-unit cutover:
-  - validate quality and clean any remaining dead steady-state branches without reintroducing route taxonomy or parallel Navigator node ontology
+- Navigate book-local Skill Runtime is now landed as the first controlled source-skill slice:
+  - `Navigate.choose_next_unit` remains the single Navigator entrypoint
+  - only the active detour branch can request skills in this slice
+  - `Reading Runner` executes one requested book-local skill through the mechanism-private Skill Runtime and feeds the result back to `Navigate.detour_search`
+  - the first supported skills are `source_map_overview`, `source_scope_drilldown`, `source_window_fetch`, and `anchor_resolve`
+  - skills provide bounded source evidence only; final `land_region / narrow_scope / defer_detour` decisions remain Navigate-owned
+- next after the source-skill slice:
+  - validate detour quality with real examples before deciding whether Read or future WebSearch should join the same skill framework
 
 Primary upstream evidence:
 
@@ -1029,10 +1036,15 @@ Frozen node projections:
   - current `detour_trace`
   - `mainline_cursor`
 - Detour localization should be semantic and LLM-led, not a program-led candidate-recall subsystem
-- Detour search should use one prompt family with three legal outcomes:
+- Detour search should use one prompt family with four legal outcomes after the book-local skill slice:
   - `narrow_scope`
   - `land_region`
   - `defer_detour`
+  - `request_skill`
+- `request_skill` is a controlled evidence request, not a landing decision:
+  - the Reading Runner dispatches one requested book-local skill through the Skill Runtime
+  - the skill result is fed back to `Navigate.detour_search`
+  - final `narrow_scope / land_region / defer_detour` judgment remains Navigate-owned
 - Detour search should be bounded:
   - one call when the target is already obvious from memory and structure
   - two calls for ordinary ambiguity
@@ -1078,6 +1090,7 @@ Frozen node projections:
   - `narrow_scope`
   - `land_region`
   - `defer_detour`
+  - `request_skill`
 - once a detour region is landed, the runner routes back into normal reading for that region rather than inventing a second reading system
 - detour episodes may chain semantically rather than forcing strict stack-style returns
 - search remains bounded and honest:

@@ -2405,3 +2405,35 @@ This new direction is design frozen but not yet implemented as a formal benchmar
 - `reading-companion-backend/src/attentional_v2/evaluation.py`
 - `reading-companion-backend/tests/test_long_span_vnext.py`
 - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_long_span_vnext_phase1_reaction_evidence_fix_rejudge_20260425/analysis/post_eval_action_ledger_20260503/README.md`
+
+## Entry 79
+**ID**: DEC-082
+**Status**: active
+
+**Decision / Inflection**: Add a mechanism-private book-local Skill Runtime for `Navigate.choose_next_unit`, first used only by detour search.
+
+**Period**: May 4, 2026, after the current mechanism had been reduced to `Navigate.choose_next_unit -> Read -> Reading Runner settlement`, and after the project clarified that future source-search capability should support the Navigator without turning the Reading Runner into the semantic owner.
+
+**Problem**: Detour search needs source-grounded evidence beyond the current coarse scope, but the project does not want to push semantic search ownership into the Reading Runner. The Reading Runner should keep executing the loop and maintaining cursor/runtime state. Navigate should decide where to read next. At the same time, asking Navigate to hallucinate locations from memory alone would make detour localization brittle, while adding a broad generic tool loop or WebSearch now would over-expand the mechanism.
+
+**Alternatives considered**: Keep detour search limited to prebuilt scope cards, let the Reading Runner perform programmatic semantic retrieval, add a generic native tool loop for all LLM nodes immediately, or let `Read` call source/web skills in the same slice. These were rejected because they either underpower Navigate, give semantic choice to the wrong layer, or make the first skill slice too large. The project deliberately starts with book-local source evidence for Navigate detours only.
+
+**Why this path won**: The Skill Runtime preserves the clean responsibilities from the recent loop cleanup. Navigate can request bounded evidence; the Reading Runner dispatches the request and feeds back the result; the Skill Runtime enforces known skill names, argument boundaries, source visibility, errors, and provenance. Skills never choose the answer, never read future text, and never call external services. That keeps `Navigate.choose_next_unit` universal while giving detour search a controlled way to inspect the already-read book.
+
+**What changed in the system**: `attentional_v2/skills/` now defines `SkillRequest`, `SkillResult`, the skill dispatcher, and four first-phase book-local skills: `source_map_overview`, `source_scope_drilldown`, `source_window_fetch`, and `anchor_resolve`. `Navigate.detour_search` may now return `decision=request_skill` with one `skill_request`. The detour search loop executes at most one skill request per search attempt, passes the result back into the same prompt family, and still enforces the existing three-attempt cap. Final `land_region`, `narrow_scope`, or `defer_detour` decisions remain Navigate-owned. Mainline unitization and `Read` do not call skills in this slice.
+
+**Why it matters later**: This is the first step toward a richer source-skill and possibly web-skill architecture without compromising the current loop. Future tool work should extend the Skill Runtime deliberately and keep the same ownership split: LLM nodes request evidence, the Reading Runner dispatches, skills enforce boundaries and provenance, and semantic decisions stay with the requesting node.
+
+**Primary evidence**:
+- `docs/backend-reading-mechanisms/attentional_v2.md`
+- `docs/implementation/new-reading-mechanism/attentional_v2_structural_rework_plan.md`
+- `docs/current-state.md`
+- `docs/tasks/registry.md`
+- `docs/tasks/registry.json`
+- `reading-companion-backend/src/attentional_v2/skills/`
+- `reading-companion-backend/src/attentional_v2/nodes.py`
+- `reading-companion-backend/src/attentional_v2/runner.py`
+- `reading-companion-backend/tests/test_attentional_v2_skills.py`
+- `reading-companion-backend/tests/test_attentional_v2_nodes.py`
+- `reading-companion-backend/tests/test_attentional_v2_scaffold.py`
+- `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_long_span_vnext_phase1_reaction_evidence_fix_rejudge_20260425/analysis/post_eval_action_ledger_20260503/README.md`

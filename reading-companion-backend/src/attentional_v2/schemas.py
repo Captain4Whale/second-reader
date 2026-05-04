@@ -19,7 +19,7 @@ UnitizeBoundaryType = Literal[
 ]
 ContextRequestKind = Literal["active_recall", "look_back"]
 DetourStatus = Literal["open", "resolved", "abandoned"]
-DetourSearchDecision = Literal["narrow_scope", "land_region", "defer_detour"]
+DetourSearchDecision = Literal["narrow_scope", "land_region", "defer_detour", "request_skill"]
 NavigateSelectionMode = Literal["mainline", "detour", "deferred"]
 StateOperationType = Literal[
     "append",
@@ -364,6 +364,8 @@ class DetourSearchResult(TypedDict, total=False):
     reason: str
     start_sentence_id: str
     end_sentence_id: str
+    skill_request: dict[str, object]
+    skill_result: dict[str, object]
 
 
 class NavigateNextUnitResult(TypedDict, total=False):

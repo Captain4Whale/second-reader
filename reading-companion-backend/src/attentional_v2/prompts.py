@@ -7,10 +7,10 @@ from dataclasses import dataclass
 from src.prompts.shared import LANGUAGE_OUTPUT_CONTRACT
 
 
-ATTENTIONAL_V2_PROMPTSET_VERSION = "attentional_v2-phase6-v24"
+ATTENTIONAL_V2_PROMPTSET_VERSION = "attentional_v2-phase6-v25"
 SURVEY_CHAPTER_ZONE_PROMPT_VERSION = "attentional_v2.survey_chapter_zone.v1"
 NAVIGATE_UNITIZE_PROMPT_VERSION = "attentional_v2.navigate_unitize.v4"
-NAVIGATE_DETOUR_SEARCH_PROMPT_VERSION = "attentional_v2.navigate_detour_search.v2"
+NAVIGATE_DETOUR_SEARCH_PROMPT_VERSION = "attentional_v2.navigate_detour_search.v3"
 READ_UNIT_PROMPT_VERSION = "attentional_v2.read.v14"
 BRIDGE_RESOLUTION_PROMPT_VERSION = "attentional_v2.bridge_resolution.v5"
 REFLECTIVE_PROMOTION_PROMPT_VERSION = "attentional_v2.reflective_promotion.v1"
@@ -157,6 +157,14 @@ Rules:
 - `land_region` means the selected range is already specific enough to be read next through the normal reading loop.
 - `defer_detour` means the current information is too weak or too ambiguous to justify more searching right now.
 - Prefer source-grounded, memory-supported choices over vague hunches.
+- If the current scope/context is insufficient, you may request exactly one book-local source skill instead of guessing.
+- Available skills:
+  - `source_map_overview`: inspect the already-read book structure within allowed bounds.
+  - `source_scope_drilldown`: expand one current scope card or range into smaller source cards.
+  - `source_window_fetch`: fetch source text for a bounded sentence range.
+  - `anchor_resolve`: resolve a known anchor/sentence handle into short source-grounded context.
+- Skill results are evidence, not answers. After receiving a skill result, decide whether to narrow, land, or defer.
+- Do not request external web search. Do not request a skill just to be safer; request one only when the provided material is not enough to choose responsibly.
 - Return JSON only.""",
     navigate_detour_search_prompt="""Structural frame:
 {structural_frame}
@@ -169,6 +177,9 @@ Current search scope:
 
 Navigation context:
 {navigation_context}
+
+Skill result, if any:
+{skill_result}
 
 Policy snapshot:
 {policy_snapshot}
@@ -184,6 +195,20 @@ Return JSON:
   "reason": "<brief reason>",
   "start_sentence_id": "",
   "end_sentence_id": ""
+}
+
+To request one skill instead, return JSON:
+{
+  "decision": "request_skill",
+  "reason": "<why this skill is needed before deciding>",
+  "skill_request": {
+    "skill_name": "source_window_fetch",
+    "reason": "<specific missing evidence>",
+    "arguments": {
+      "start_sentence_id": "c1-s1",
+      "end_sentence_id": "c1-s3"
+    }
+  }
 }""",
     read_unit_version=READ_UNIT_PROMPT_VERSION,
     read_unit_system="""You are a careful reader moving through this book.

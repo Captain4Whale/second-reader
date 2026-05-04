@@ -356,7 +356,43 @@ Each action should answer:
   - Complete for naming boundary and current symbols.
   - Larger module/file splitting remains intentionally deferred until a real implementation need appears.
 
-The first ten post-eval actions are recorded above. Later actions should be appended here only after their finding, decision, and implementation boundary have been agreed.
+### A11 — Navigate book-local skill runtime
+
+- `action_id`: `A11_navigate_book_local_skill_runtime`
+- `status`: `landed`
+- `source finding`:
+  - After `A9_navigate_choose_next_unit_cutover` and `A10_reading_runner_naming_boundary`, detour search still depended on bounded scope cards prepared by the Reading Runner.
+  - The project wanted Navigate to own semantic detour localization more fully while still preserving source truth, budget limits, and the simplicity of one current Navigator entrypoint.
+- `decision`:
+  - Add a mechanism-private Skill Runtime for book-local source evidence.
+  - Keep `Navigate.choose_next_unit` as the only current Navigator entrypoint.
+  - In the first slice, allow only the detour branch to request skills.
+  - Keep `Reading Runner` as the dispatcher: it executes the requested skill and returns the `skill_result` to Navigate, but it does not own the semantic detour decision.
+  - Do not implement WebSearch, Read-owned skills, or a generic native tool loop in this action.
+- `implemented changes`:
+  - Added `attentional_v2/skills/` with shared skill schemas, a bounded dispatcher, and book-local source skills.
+  - Implemented `source_map_overview`, `source_scope_drilldown`, `source_window_fetch`, and `anchor_resolve`.
+  - Extended `Navigate.detour_search` so it may output `decision=request_skill` with one `skill_request`.
+  - Updated the detour search loop so each attempt can execute at most one skill request, feed the result back to Navigate, and still respect the existing three-attempt hard cap.
+  - Skill results are evidence only: final `land_region / narrow_scope / defer_detour` decisions remain Navigate-owned.
+  - All source skills are bounded to already-read source space and cannot read future text beyond `mainline_cursor`.
+- `validation`:
+  - `cd reading-companion-backend && .venv/bin/python -m pytest tests/test_attentional_v2_skills.py tests/test_attentional_v2_nodes.py tests/test_attentional_v2_scaffold.py -q`
+  - `python3 -m compileall -q reading-companion-backend/src/attentional_v2`
+  - Follow-up task closeout records the final repository checks for this action.
+- `evidence links`:
+  - Current mechanism contract: `../../../../../../../docs/backend-reading-mechanisms/attentional_v2.md`
+  - Structural rework plan: `../../../../../../../docs/implementation/new-reading-mechanism/attentional_v2_structural_rework_plan.md`
+  - Current state / task routing: `../../../../../../../docs/current-state.md`, `../../../../../../../docs/tasks/registry.md`
+  - Decision history: `../../../../../../../docs/history/decision-log.md`
+  - Skill runtime code: `../../../../../../../reading-companion-backend/src/attentional_v2/skills/`
+  - Navigate/Reading Runner integration: `../../../../../../../reading-companion-backend/src/attentional_v2/nodes.py`, `../../../../../../../reading-companion-backend/src/attentional_v2/runner.py`
+  - Tests: `../../../../../../../reading-companion-backend/tests/test_attentional_v2_skills.py`, `../../../../../../../reading-companion-backend/tests/test_attentional_v2_nodes.py`, `../../../../../../../reading-companion-backend/tests/test_attentional_v2_scaffold.py`
+- `follow-up`:
+  - Complete for first-phase book-local detour skills.
+  - Future work may add Read-owned skills, WebSearch, richer source-access skills, or a more agentic tool loop, but those should be designed as separate mechanism decisions rather than quietly folded into this slice.
+
+The first eleven post-eval actions are recorded above. Later actions should be appended here only after their finding, decision, and implementation boundary have been agreed.
 
 ### Action Template
 

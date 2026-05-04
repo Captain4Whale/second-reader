@@ -812,6 +812,179 @@ def test_navigate_choose_next_unit_lands_detour_then_unitizes_inside_region(tmp_
     assert result["detour_search_trace"][0]["decision"] == "land_region"
 
 
+def test_navigate_choose_next_unit_uses_one_detour_skill_before_landing(tmp_path, monkeypatch):
+    """Navigate can request one book-local skill result before landing a detour region."""
+
+    provisioned = _provisioned_book_with_detour()
+    document = provisioned.book_document
+    sentence_lookup, chapter_lookup = runner_module._build_sentence_lookup(document)  # noqa: SLF001
+    state = _empty_choose_next_unit_state()
+    local_continuity = state["local_continuity"]  # type: ignore[assignment]
+    local_continuity["mainline_cursor"] = {
+        "position_kind": "sentence",
+        "chapter_id": 2,
+        "chapter_ref": "Chapter 2",
+        "sentence_id": "c2-s1",
+        "sentence_index": 1,
+    }
+    local_continuity = runner_module._apply_detour_need(  # noqa: SLF001
+        local_continuity,
+        {
+            "reason": "Need the opening setup.",
+            "target_hint": "opening setup",
+            "status": "open",
+        },
+    )
+    saw_skill_result: list[bool] = []
+
+    def fake_detour_search(**kwargs):
+        skill_result = kwargs.get("skill_result")
+        saw_skill_result.append(bool(skill_result))
+        if not skill_result:
+            return {
+                "decision": "request_skill",
+                "reason": "Need exact opening text before landing.",
+                "start_sentence_id": "",
+                "end_sentence_id": "",
+                "skill_request": {
+                    "skill_name": "source_window_fetch",
+                    "reason": "Fetch the candidate opening.",
+                    "arguments": {
+                        "start_sentence_id": "c1-s1",
+                        "end_sentence_id": "c1-s2",
+                    },
+                },
+            }
+        assert skill_result["status"] == "ok"
+        assert skill_result["result"]["start_sentence_id"] == "c1-s1"
+        return {
+            "decision": "land_region",
+            "reason": "Fetched source confirms the setup.",
+            "start_sentence_id": "c1-s1",
+            "end_sentence_id": "c1-s2",
+        }
+
+    monkeypatch.setattr(runner_module, "navigate_detour_search", fake_detour_search)
+    monkeypatch.setattr(
+        runner_module,
+        "navigate_unitize",
+        lambda *, current_sentence, preview_sentences, **_kwargs: {
+            "start_sentence_id": current_sentence["sentence_id"],
+            "end_sentence_id": preview_sentences[-1]["sentence_id"],
+            "preview_range": {
+                "start_sentence_id": preview_sentences[0]["sentence_id"],
+                "end_sentence_id": preview_sentences[-1]["sentence_id"],
+            },
+            "boundary_type": "paragraph_end",
+            "evidence_sentence_ids": [current_sentence["sentence_id"], preview_sentences[-1]["sentence_id"]],
+            "reason": "detour_region_unitized",
+            "continuation_pressure": False,
+        },
+    )
+
+    result = runner_module.navigate_choose_next_unit(
+        document=document,
+        survey_map={},
+        sentence_lookup=sentence_lookup,
+        chapter_lookup=chapter_lookup,
+        current_chapter=document["chapters"][1],
+        current_cursor=0,
+        local_buffer=state["local_buffer"],  # type: ignore[arg-type]
+        continuation_capsule=state["continuation_capsule"],
+        active_attention=state["active_attention"],  # type: ignore[arg-type]
+        concept_registry=state["concept_registry"],  # type: ignore[arg-type]
+        thread_trace=state["thread_trace"],  # type: ignore[arg-type]
+        reflective_frames=state["reflective_frames"],  # type: ignore[arg-type]
+        anchor_bank=state["anchor_bank"],  # type: ignore[arg-type]
+        reaction_records=state["reaction_records"],  # type: ignore[arg-type]
+        local_continuity=local_continuity,
+        reader_policy=runner_module.build_default_reader_policy(),
+        output_language=provisioned.output_language,
+        output_dir=tmp_path,
+        book_title=provisioned.title,
+        author=provisioned.author,
+    )
+
+    assert saw_skill_result == [False, True]
+    assert result["selection_mode"] == "detour"
+    assert result["detour_search_trace"][0]["decision"] == "request_skill"
+    assert result["detour_search_trace"][0]["skill_result"]["status"] == "ok"
+    assert result["detour_search_trace"][1]["decision"] == "land_region"
+
+
+def test_navigate_choose_next_unit_defers_repeated_detour_skill_request(tmp_path, monkeypatch):
+    """A second skill request in one search attempt should defer instead of deadlocking."""
+
+    provisioned = _provisioned_book_with_detour()
+    document = provisioned.book_document
+    sentence_lookup, chapter_lookup = runner_module._build_sentence_lookup(document)  # noqa: SLF001
+    state = _empty_choose_next_unit_state()
+    local_continuity = state["local_continuity"]  # type: ignore[assignment]
+    local_continuity["mainline_cursor"] = {
+        "position_kind": "sentence",
+        "chapter_id": 2,
+        "chapter_ref": "Chapter 2",
+        "sentence_id": "c2-s1",
+        "sentence_index": 1,
+    }
+    local_continuity = runner_module._apply_detour_need(  # noqa: SLF001
+        local_continuity,
+        {
+            "reason": "Need the opening setup.",
+            "target_hint": "opening setup",
+            "status": "open",
+        },
+    )
+
+    monkeypatch.setattr(
+        runner_module,
+        "navigate_detour_search",
+        lambda **_kwargs: {
+            "decision": "request_skill",
+            "reason": "Still asking for more source.",
+            "start_sentence_id": "",
+            "end_sentence_id": "",
+            "skill_request": {
+                "skill_name": "source_window_fetch",
+                "reason": "Fetch opening.",
+                "arguments": {
+                    "start_sentence_id": "c1-s1",
+                    "end_sentence_id": "c1-s2",
+                },
+            },
+        },
+    )
+
+    result = runner_module.navigate_choose_next_unit(
+        document=document,
+        survey_map={},
+        sentence_lookup=sentence_lookup,
+        chapter_lookup=chapter_lookup,
+        current_chapter=document["chapters"][1],
+        current_cursor=0,
+        local_buffer=state["local_buffer"],  # type: ignore[arg-type]
+        continuation_capsule=state["continuation_capsule"],
+        active_attention=state["active_attention"],  # type: ignore[arg-type]
+        concept_registry=state["concept_registry"],  # type: ignore[arg-type]
+        thread_trace=state["thread_trace"],  # type: ignore[arg-type]
+        reflective_frames=state["reflective_frames"],  # type: ignore[arg-type]
+        anchor_bank=state["anchor_bank"],  # type: ignore[arg-type]
+        reaction_records=state["reaction_records"],  # type: ignore[arg-type]
+        local_continuity=local_continuity,
+        reader_policy=runner_module.build_default_reader_policy(),
+        output_language=provisioned.output_language,
+        output_dir=tmp_path,
+        book_title=provisioned.title,
+        author=provisioned.author,
+    )
+
+    assert result["selection_mode"] == "deferred"
+    assert result["defer_reason"] == "detour_skill_request_budget_exhausted"
+    assert result["detour_search_trace"][0]["decision"] == "request_skill"
+    assert result["detour_search_trace"][0]["skill_result"]["status"] == "ok"
+    assert result["detour_search_trace"][1]["decision"] == "request_skill"
+
+
 def test_navigate_choose_next_unit_defers_unlanded_detour(tmp_path, monkeypatch):
     """A detour that cannot land should return a deferred next-unit result instead of running read."""
 

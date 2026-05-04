@@ -331,8 +331,58 @@ def test_navigate_detour_search_normalizes_invalid_land_into_defer(tmp_path: Pat
             / "navigate_detour_search.json"
         ).read_text(encoding="utf-8")
     )
-    assert manifest["prompt_version"] == "attentional_v2.navigate_detour_search.v2"
+    assert manifest["prompt_version"] == "attentional_v2.navigate_detour_search.v3"
     assert "Navigate.detour_search" in manifest["system_prompt"]
+    assert "Available skills" in manifest["system_prompt"]
+    assert "source_window_fetch" in manifest["system_prompt"]
+    assert "Skill result, if any" in manifest["user_prompt"]
+
+
+def test_navigate_detour_search_can_request_one_skill(tmp_path: Path, monkeypatch):
+    """Detour search may request one bounded book-local source skill."""
+
+    monkeypatch.setattr(
+        nodes_module,
+        "invoke_json",
+        lambda *_args, **_kwargs: {
+            "decision": "request_skill",
+            "reason": "Need exact source text before landing.",
+            "skill_request": {
+                "skill_name": "source_window_fetch",
+                "reason": "Fetch the candidate range.",
+                "arguments": {
+                    "start_sentence_id": "c1-s1",
+                    "end_sentence_id": "c1-s2",
+                },
+            },
+        },
+    )
+
+    result = navigate_detour_search(
+        search_scope={
+            "scope_kind": "chapter_cards",
+            "reason": "search earlier setup",
+            "cards": [
+                {
+                    "start_sentence_id": "c1-s1",
+                    "end_sentence_id": "c1-s2",
+                    "card_summary": "Opening setup",
+                }
+            ],
+        },
+        detour_need={"reason": "Need the setup again.", "target_hint": "opening setup", "status": "open"},
+        navigation_context={"packet_version": STATE_PACKET_VERSION},
+        reader_policy=build_default_reader_policy(),
+        output_language="en",
+        output_dir=tmp_path,
+    )
+
+    assert result["decision"] == "request_skill"
+    assert result["skill_request"]["skill_name"] == "source_window_fetch"
+    assert result["skill_request"]["arguments"] == {
+        "start_sentence_id": "c1-s1",
+        "end_sentence_id": "c1-s2",
+    }
 
 
 def test_read_unit_filters_unanchored_surface_and_uses_naturalized_contract(tmp_path: Path, monkeypatch):

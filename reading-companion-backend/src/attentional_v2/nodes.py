@@ -12,6 +12,7 @@ from src.iterator_reader.language import language_name
 from src.iterator_reader.llm_utils import LLMTraceContext, ReaderLLMError, invoke_json, llm_invocation_scope
 
 from .prompts import ATTENTIONAL_V2_PROMPTS
+from .skills.schemas import SkillRequest, SkillResult
 from .state_projection import build_read_prompt_packet
 from .schemas import (
     AnchorBankState,
@@ -69,7 +70,7 @@ _STATE_OPERATION_TYPES = {
     "reactivate",
 }
 _DETOUR_STATUSES = {"open", "resolved", "abandoned"}
-_DETOUR_SEARCH_DECISIONS = {"narrow_scope", "land_region", "defer_detour"}
+_DETOUR_SEARCH_DECISIONS = {"narrow_scope", "land_region", "defer_detour", "request_skill"}
 _LEXICAL_CONTENT_RE = re.compile(r"[A-Za-z0-9\u4e00-\u9fff]")
 _VISIBLE_INTERNAL_REFERENCE_PATTERNS = (
     re.compile(r"\bc\d+-s\d+(?:-\d+)?(?:-c\d+-s\d+(?:-\d+)?)?\b", re.IGNORECASE),
@@ -748,6 +749,30 @@ def _normalize_detour_search_result(
     decision = _clean_text(value.get("decision")).lower().replace("-", "_")
     if decision not in _DETOUR_SEARCH_DECISIONS:
         decision = "defer_detour"
+    if decision == "request_skill":
+        raw_request = value.get("skill_request")
+        skill_request: SkillRequest = {}
+        if isinstance(raw_request, dict):
+            arguments = raw_request.get("arguments")
+            skill_request = {
+                "skill_name": _clean_text(raw_request.get("skill_name")),
+                "reason": _clean_text(raw_request.get("reason")),
+                "arguments": dict(arguments) if isinstance(arguments, dict) else {},
+            }
+        if not _clean_text(skill_request.get("skill_name")):
+            return {
+                "decision": "defer_detour",
+                "reason": "skill_request_missing_skill_name",
+                "start_sentence_id": "",
+                "end_sentence_id": "",
+            }
+        return {
+            "decision": "request_skill",
+            "reason": _clean_text(value.get("reason")) or _clean_text(skill_request.get("reason")),
+            "start_sentence_id": "",
+            "end_sentence_id": "",
+            "skill_request": dict(skill_request),
+        }
     start_sentence_id = _clean_text(value.get("start_sentence_id"))
     end_sentence_id = _clean_text(value.get("end_sentence_id"))
     if decision != "defer_detour":
@@ -884,6 +909,7 @@ def navigate_detour_search(
     book_title: str = "",
     author: str = "",
     chapter_title: str = "",
+    skill_result: SkillResult | None = None,
 ) -> DetourSearchResult:
     """Run one bounded Navigate.detour_search step over a structured search scope."""
 
@@ -917,6 +943,7 @@ def navigate_detour_search(
             }
         ),
         navigation_context=_json_block(dict(navigation_context or {})),
+        skill_result=_json_block(dict(skill_result or {})),
         policy_snapshot=_json_block(reader_policy),
         output_language_name=language_name(output_language),
     )
