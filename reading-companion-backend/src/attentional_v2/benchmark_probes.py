@@ -20,7 +20,6 @@ from .state_projection import build_carry_forward_context
 from .storage import load_json, memory_quality_probe_export_file, save_json
 
 
-DEFAULT_MEMORY_QUALITY_PROBE_RATIOS = (0.2, 0.4, 0.6, 0.8, 1.0)
 MEMORY_QUALITY_PROBE_EXPORT_SCHEMA_VERSION = 1
 
 
@@ -36,38 +35,31 @@ def _clean_text(value: object) -> str:
     return str(value or "").strip()
 
 
-def _normalize_threshold_ratios(raw_ratios: object) -> list[float]:
-    """Return a bounded ordered probe-threshold list."""
-
-    if not isinstance(raw_ratios, list):
-        return list(DEFAULT_MEMORY_QUALITY_PROBE_RATIOS)
-    normalized: list[float] = []
-    for item in raw_ratios:
-        try:
-            ratio = float(item)
-        except (TypeError, ValueError):
-            continue
-        ratio = max(0.0, min(1.0, ratio))
-        if ratio <= 0.0:
-            continue
-        if ratio not in normalized:
-            normalized.append(ratio)
-    return normalized or list(DEFAULT_MEMORY_QUALITY_PROBE_RATIOS)
-
-
 def memory_quality_probe_settings(mechanism_config: dict[str, object] | None) -> dict[str, object] | None:
     """Return normalized benchmark-only probe settings from mechanism config."""
 
     raw = dict(mechanism_config or {}).get("memory_quality_probe_export")
     if not isinstance(raw, dict) or not bool(raw.get("enabled")):
         return None
+    probe_targets = raw.get("probe_targets")
+    if not isinstance(probe_targets, list) or not probe_targets:
+        raise ValueError(
+            "memory_quality_probe_export now requires explicit probe_targets; "
+            "ratio-based Memory Quality probes were retired."
+        )
+    normalized_targets = [dict(item) for item in probe_targets if isinstance(item, dict)]
+    if not normalized_targets:
+        raise ValueError("memory_quality_probe_export probe_targets must contain target objects")
     return {
         "enabled": True,
         "segment_id": _clean_text(raw.get("segment_id")),
         "source_id": _clean_text(raw.get("source_id")),
         "book_title": _clean_text(raw.get("book_title")),
         "language_track": _clean_text(raw.get("language_track")),
-        "threshold_ratios": _normalize_threshold_ratios(raw.get("threshold_ratios")),
+        "probe_plan_id": _clean_text(raw.get("probe_plan_id")),
+        "probe_plan_path": _clean_text(raw.get("probe_plan_path")),
+        "probe_selection_method": _clean_text(raw.get("probe_selection_method")),
+        "probe_targets": normalized_targets,
     }
 
 
@@ -101,28 +93,48 @@ def is_memory_quality_probe_export_complete(output_dir: Path) -> bool:
     return bool(target_indexes) and completed_indexes.issuperset(target_indexes)
 
 
-def _build_probe_targets(
+def _normalize_probe_targets(
     *,
     ordered_sentence_ids: list[str],
-    threshold_ratios: list[float],
+    configured_targets: object,
 ) -> list[dict[str, object]]:
-    """Build the deterministic sentence-threshold targets for probe capture."""
+    """Normalize explicit semantic probe targets against the current window sentence ids."""
 
     total_sentences = len(ordered_sentence_ids)
     if total_sentences <= 0:
         return []
-    targets: list[dict[str, object]] = []
-    for probe_index, ratio in enumerate(threshold_ratios, start=1):
-        target_ordinal = max(1, min(total_sentences, int(round(total_sentences * ratio))))
-        target_sentence_id = _clean_text(ordered_sentence_ids[target_ordinal - 1])
-        targets.append(
-            {
-                "probe_index": probe_index,
-                "threshold_ratio": ratio,
-                "target_sentence_ordinal": target_ordinal,
-                "target_sentence_id": target_sentence_id,
-            }
+    if not isinstance(configured_targets, list) or not configured_targets:
+        raise ValueError(
+            "memory_quality_probe_export requires explicit probe_targets; "
+            "hard-ratio probe construction is no longer supported."
         )
+    sentence_ordinals = {sentence_id: index + 1 for index, sentence_id in enumerate(ordered_sentence_ids)}
+    targets: list[dict[str, object]] = []
+    previous_ordinal = 0
+    for index, raw_target in enumerate(configured_targets, start=1):
+        if not isinstance(raw_target, dict):
+            raise ValueError(f"invalid memory-quality probe target at index {index}: expected object")
+        target_sentence_id = _clean_text(raw_target.get("target_sentence_id"))
+        if not target_sentence_id:
+            raw_ordinal = raw_target.get("target_sentence_ordinal")
+            try:
+                target_ordinal = int(raw_ordinal)
+            except (TypeError, ValueError) as exc:
+                raise ValueError(f"probe target {index} is missing target_sentence_id") from exc
+            if target_ordinal < 1 or target_ordinal > total_sentences:
+                raise ValueError(f"probe target {index} ordinal is outside the window: {target_ordinal}")
+            target_sentence_id = ordered_sentence_ids[target_ordinal - 1]
+        if target_sentence_id not in sentence_ordinals:
+            raise ValueError(f"probe target {index} sentence is outside the window: {target_sentence_id}")
+        target_ordinal = sentence_ordinals[target_sentence_id]
+        if target_ordinal <= previous_ordinal:
+            raise ValueError("memory-quality probe targets must be in strictly increasing sentence order")
+        previous_ordinal = target_ordinal
+        target = dict(raw_target)
+        target["probe_index"] = int(target.get("probe_index") or index)
+        target["target_sentence_id"] = target_sentence_id
+        target["target_sentence_ordinal"] = target_ordinal
+        targets.append(target)
     return targets
 
 
@@ -189,7 +201,17 @@ def _build_probe_snapshot(
     )
     return {
         "probe_index": int(probe_target.get("probe_index", 0) or 0),
-        "threshold_ratio": float(probe_target.get("threshold_ratio", 0.0) or 0.0),
+        "estimated_ratio": float(probe_target.get("estimated_ratio", 0.0) or 0.0),
+        "rough_position_target": _clean_text(probe_target.get("rough_position_target")),
+        "boundary_kind": _clean_text(probe_target.get("boundary_kind")),
+        "why_this_probe_point": _clean_text(probe_target.get("why_this_probe_point")),
+        "structural_signals_to_check": [
+            _clean_text(item)
+            for item in probe_target.get("structural_signals_to_check", [])
+            if _clean_text(item)
+        ]
+        if isinstance(probe_target.get("structural_signals_to_check"), list)
+        else [],
         "target_sentence_ordinal": int(probe_target.get("target_sentence_ordinal", 0) or 0),
         "target_sentence_id": _clean_text(probe_target.get("target_sentence_id")),
         "captured_at": _timestamp(),
@@ -271,14 +293,12 @@ def persist_due_memory_quality_probe_snapshots(
             "book_title": _clean_text(settings.get("book_title")),
             "language_track": _clean_text(settings.get("language_track")),
             "total_sentence_count": len(cleaned_sentence_ids),
-            "probe_targets": _build_probe_targets(
+            "probe_plan_id": _clean_text(settings.get("probe_plan_id")),
+            "probe_plan_path": _clean_text(settings.get("probe_plan_path")),
+            "probe_selection_method": _clean_text(settings.get("probe_selection_method")),
+            "probe_targets": _normalize_probe_targets(
                 ordered_sentence_ids=cleaned_sentence_ids,
-                threshold_ratios=[
-                    float(item)
-                    for item in settings.get("threshold_ratios", DEFAULT_MEMORY_QUALITY_PROBE_RATIOS)
-                    if isinstance(item, (int, float))
-                ]
-                or list(DEFAULT_MEMORY_QUALITY_PROBE_RATIOS),
+                configured_targets=settings.get("probe_targets"),
             ),
             "snapshots": [],
             "updated_at": _timestamp(),

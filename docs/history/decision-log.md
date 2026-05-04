@@ -2468,3 +2468,35 @@ This new direction is design frozen but not yet implemented as a formal benchmar
 - `reading-companion-backend/tests/test_attentional_v2_nodes.py`
 - `reading-companion-backend/tests/test_attentional_v2_scaffold.py`
 - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_long_span_vnext_phase1_reaction_evidence_fix_rejudge_20260425/analysis/post_eval_action_ledger_20260503/README.md`
+
+## Entry 81
+**ID**: DEC-084
+**Status**: active
+
+**Decision / Inflection**: Make Long Span vNext `Memory Quality` probes semantic-manifest-driven instead of hard-ratio-driven.
+
+**Period**: May 4, 2026, after reviewing the first Memory Quality report and noticing that the old probe map selected `20% / 40% / 60% / 80% / end` checkpoints mechanically.
+
+**Problem**: Hard ratio checkpoints are easy to automate but not always fair to a reading-memory audit. A probe can land in the middle of a semantic movement, forcing the judge to inspect a snapshot at an awkward point. The project only has five active windows, so one-time semantic probe selection is cheap and produces a better durable evaluation contract.
+
+**Alternatives considered**: Keep the fixed ratio schedule, keep ratio targets but round to the next paragraph boundary, or let the runtime pick probes dynamically during reading. These were rejected. Fixed ratios were the problem. Paragraph-only rounding still ignores semantic structure. Runtime-dynamic probe selection would mix reading behavior and evaluation design, making runs harder to compare.
+
+**Why this path won**: A versioned semantic probe manifest gives stable, reviewable probe points while preserving the runtime rule that reading is not interrupted for probes. Distance remains a distribution reference, but the selected sentence must be a meaningful semantic boundary with a rationale and structural signals to check.
+
+**What changed in the system**: `memory_quality_semantic_probe_plan_20260504.json` now records five semantic probe targets for each active window. `benchmark_probes.py` requires explicit `probe_targets` when Memory Quality probe export is enabled and fails fast if they are missing. `run_long_span_vnext.py` loads the semantic manifest, injects targets into V2 reading config, and records `probe_plan_id`, `probe_plan_path`, and `probe_selection_method` in run metadata and summary output. The Memory Quality report contract and Long Span evaluation docs now describe probe placement as semantic-manifest-driven.
+
+**Why it matters later**: The next complete Memory Quality run must use this manifest. Old April hard-ratio probe reports remain historical evidence, but they should not be treated as the current probe-placement contract.
+
+**Primary evidence**:
+- `docs/backend-reader-evaluation.md`
+- `docs/current-state.md`
+- `docs/tasks/registry.md`
+- `docs/tasks/registry.json`
+- `reading-companion-backend/docs/evaluation/README.md`
+- `reading-companion-backend/docs/evaluation/long_span/README.md`
+- `reading-companion-backend/docs/evaluation/long_span/memory_quality_report_contract.md`
+- `reading-companion-backend/eval/manifests/probes/README.md`
+- `reading-companion-backend/eval/manifests/probes/memory_quality_semantic_probe_plan_20260504.json`
+- `reading-companion-backend/eval/attentional_v2/run_long_span_vnext.py`
+- `reading-companion-backend/src/attentional_v2/benchmark_probes.py`
+- `reading-companion-backend/tests/test_long_span_vnext.py`

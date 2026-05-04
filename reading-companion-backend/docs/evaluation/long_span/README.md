@@ -24,11 +24,12 @@ The current active Long Span direction is no longer `target-centered accumulatio
 The active direction is now a design-frozen three-metric line:
 
 - `Memory Quality`
-  - sample probe points inside one continuous reading window
+  - sample semantic probe points inside one continuous reading window
   - judge the current memory/state snapshot holistically
   - do not predeclare gold sentences or hard-bind human notes into the contract
   - do check whether salient source-given structures, such as stage models, classifications, core definitions, roadmaps, or named distinctions, are retained in the snapshot when they matter
   - optional `probe_review_focus` notes may mark known high-risk structural signals for a probe; they are audit aids, not exact-match gold answers
+  - current probe placement is driven by a versioned semantic manifest, not hard `20% / 40% / 60% / 80% / end` ratios
 - `Spontaneous Callback`
   - audit all visible reactions in a completed reading window
   - count and interpret reactions that naturally recall or connect prior material
@@ -47,11 +48,15 @@ Current implementation posture:
       - [run_long_span_vnext.py](../../../eval/attentional_v2/run_long_span_vnext.py)
     - V2 probe export:
       - [benchmark_probes.py](../../../src/attentional_v2/benchmark_probes.py)
+    - current semantic probe manifest:
+      - [memory_quality_semantic_probe_plan_20260504.json](../../../eval/manifests/probes/memory_quality_semantic_probe_plan_20260504.json)
+      - [probe manifest README](../../../eval/manifests/probes/README.md)
     - phase-1 scope:
       - `Memory Quality`: `attentional_v2` only
       - reaction audit: `attentional_v2` vs `iterator_v1`
     - output sourcing:
       - `attentional_v2` is freshly read or same-run resumed so `Memory Quality` probe snapshots exist
+      - `Memory Quality` probe export requires explicit semantic `probe_targets`; missing targets fail fast instead of falling back to ratio probes
       - unchanged `iterator_v1` windows reuse April 19 completed normalized outputs for reaction audit
       - `iterator_v1` is re-read only when the active window fingerprint differs from the reuse source
       - fingerprint checks cover `segment_id / start_sentence_id / end_sentence_id / source_chapter_ids / source_text_sha256`

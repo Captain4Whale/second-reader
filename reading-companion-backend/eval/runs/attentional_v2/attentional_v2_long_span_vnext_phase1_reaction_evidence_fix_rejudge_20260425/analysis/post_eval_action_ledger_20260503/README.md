@@ -426,7 +426,39 @@ Each action should answer:
   - Complete for unifying the current Navigate act loop.
   - Future work may make the skill loop richer, but it should extend the unified `Navigate.choose_next_unit` act instead of reintroducing separate live prompt families.
 
-The first twelve post-eval actions are recorded above. Later actions should be appended here only after their finding, decision, and implementation boundary have been agreed.
+### A13 — Memory Quality semantic probe plan
+
+- `action_id`: `A13_memory_quality_semantic_probe_plan`
+- `status`: `landed`
+- `source finding`:
+  - While reviewing the Memory Quality report, the probe source map made it clear that probe points were selected by hard progress ratios (`20% / 40% / 60% / 80% / end`).
+  - This was too mechanical for human review: a probe can land in the middle of a semantic movement, making the state snapshot harder to judge fairly.
+- `decision`:
+  - Retire hard-ratio probe generation for current Memory Quality runs.
+  - Adopt a versioned semantic probe manifest for the five active user-level reading windows.
+  - Keep distance as a distribution reference only; the selected sentence must be a meaningful semantic boundary.
+  - Preserve old hard-ratio reports and snapshots as historical evidence instead of rewriting them.
+- `implemented changes`:
+  - Added `memory_quality_semantic_probe_plan_20260504.json` under `eval/manifests/probes/` with five semantic probe targets per active window.
+  - Updated `benchmark_probes.py` so enabled Memory Quality probe export requires explicit `probe_targets` and fails fast when they are missing.
+  - Updated the Long Span vNext runner to load the semantic probe manifest, inject per-window targets into V2 reads, and record `probe_plan_id`, `probe_plan_path`, and `probe_selection_method` in run metadata and summaries.
+  - Updated the Memory Quality report contract and current evaluation docs so future reports describe probe placement as semantic-manifest-driven.
+- `validation`:
+  - `reading-companion-backend/.venv/bin/python -m pytest reading-companion-backend/tests/test_long_span_vnext.py -q`
+  - `python3 -m json.tool docs/tasks/registry.json >/dev/null`
+  - `python3 -m json.tool reading-companion-backend/eval/manifests/probes/memory_quality_semantic_probe_plan_20260504.json >/dev/null`
+  - `git diff --check`
+- `evidence links`:
+  - Probe manifest: `../../../../../../../reading-companion-backend/eval/manifests/probes/memory_quality_semantic_probe_plan_20260504.json`
+  - Probe manifest README: `../../../../../../../reading-companion-backend/eval/manifests/probes/README.md`
+  - Probe export code: `../../../../../../../reading-companion-backend/src/attentional_v2/benchmark_probes.py`
+  - Long Span vNext runner: `../../../../../../../reading-companion-backend/eval/attentional_v2/run_long_span_vnext.py`
+  - Memory Quality report contract: `../../../../../../../reading-companion-backend/docs/evaluation/long_span/memory_quality_report_contract.md`
+- `follow-up`:
+  - Next complete Memory Quality rerun must use this manifest.
+  - Old `memory_quality_probe_audit_20260502` and `memory_quality_probe_audit_20260503_source_map` remain historical hard-ratio reports.
+
+The first thirteen post-eval actions are recorded above. Later actions should be appended here only after their finding, decision, and implementation boundary have been agreed.
 
 ### Action Template
 

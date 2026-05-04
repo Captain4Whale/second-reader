@@ -137,7 +137,7 @@ def _book_document() -> dict[str, object]:
     }
 
 
-def test_persist_due_memory_quality_probe_snapshots_emits_once_per_threshold(tmp_path: Path) -> None:
+def test_persist_due_memory_quality_probe_snapshots_emits_once_per_semantic_target(tmp_path: Path) -> None:
     output_dir = tmp_path / "output"
     initialize_artifact_tree(output_dir)
 
@@ -160,7 +160,20 @@ def test_persist_due_memory_quality_probe_snapshots_emits_once_per_threshold(tmp
         "source_id": "source_a",
         "book_title": "Book A",
         "language_track": "en",
-        "threshold_ratios": [0.2, 0.4, 0.6, 0.8, 1.0],
+        "probe_plan_id": "test_semantic_plan",
+        "probe_selection_method": runner.PROBE_SELECTION_METHOD,
+        "probe_targets": [
+            {
+                "probe_index": index,
+                "target_sentence_id": f"c1-s{index}",
+                "rough_position_target": f"probe {index}",
+                "estimated_ratio": index / 5,
+                "boundary_kind": "test boundary",
+                "why_this_probe_point": "A semantic boundary in the fixture.",
+                "structural_signals_to_check": ["fixture structure"],
+            }
+            for index in range(1, 6)
+        ],
     }
     ordered_sentence_ids = ["c1-s1", "c1-s2", "c1-s3", "c1-s4", "c1-s5"]
 
@@ -183,6 +196,9 @@ def test_persist_due_memory_quality_probe_snapshots_emits_once_per_threshold(tmp
     assert len(first) == 4
     payload = load_memory_quality_probe_export(output_dir)
     assert len(payload["snapshots"]) == 4
+    assert payload["probe_plan_id"] == "test_semantic_plan"
+    assert payload["probe_selection_method"] == runner.PROBE_SELECTION_METHOD
+    assert payload["snapshots"][0]["why_this_probe_point"] == "A semantic boundary in the fixture."
 
     second = persist_due_memory_quality_probe_snapshots(
         output_dir=output_dir,
@@ -218,6 +234,38 @@ def test_persist_due_memory_quality_probe_snapshots_emits_once_per_threshold(tmp
     )
     assert len(final) == 1
     assert is_memory_quality_probe_export_complete(output_dir)
+
+
+def test_memory_quality_probe_export_requires_explicit_targets(tmp_path: Path) -> None:
+    output_dir = tmp_path / "output"
+    initialize_artifact_tree(output_dir)
+
+    try:
+        persist_due_memory_quality_probe_snapshots(
+            output_dir=output_dir,
+            settings={
+                "enabled": True,
+                "segment_id": "segment_a",
+                "source_id": "source_a",
+                "book_title": "Book A",
+                "language_track": "en",
+            },
+            ordered_sentence_ids=["c1-s1"],
+            actual_sentence_id="c1-s1",
+            chapter_ref="Chapter 1",
+            local_buffer=build_empty_local_buffer(),
+            local_continuity=build_empty_local_continuity(),
+            active_attention=build_empty_active_attention(),
+            concept_registry=build_empty_concept_registry(),
+            thread_trace=build_empty_thread_trace(),
+            reflective_frames=build_empty_reflective_frames(),
+            anchor_bank=build_empty_anchor_bank(),
+            reaction_records=build_empty_reaction_records(),
+        )
+    except ValueError as exc:
+        assert "explicit probe_targets" in str(exc)
+    else:  # pragma: no cover - guard path
+        raise AssertionError("missing explicit probe targets should fail fast")
 
 
 def test_build_read_so_far_source_text_cuts_at_capture_sentence() -> None:
@@ -288,6 +336,20 @@ def test_memory_quality_review_focus_marks_huochu_probe_one() -> None:
         segment_id="huochu_shengming_de_yiyi_private_zh__segment_1",
         probe_index=2,
     ) is None
+
+
+def test_default_memory_quality_probe_plan_covers_five_windows() -> None:
+    plan = runner.load_memory_quality_probe_plan(runner.DEFAULT_MEMORY_QUALITY_PROBE_PLAN_PATH)
+
+    assert plan["probe_plan_id"] == "memory_quality_semantic_probe_plan_20260504"
+    assert plan["selection_method"] == runner.PROBE_SELECTION_METHOD
+    assert len(plan["windows"]) == 5
+    assert all(len(window["probe_targets"]) == 5 for window in plan["windows"])
+    huochu = next(
+        window for window in plan["windows"] if window["segment_id"] == "huochu_shengming_de_yiyi_private_zh__segment_1"
+    )
+    assert huochu["probe_targets"][0]["target_sentence_id"] == "c1-s261"
+    assert "三阶段" in " ".join(huochu["probe_targets"][0]["structural_signals_to_check"])
 
 
 def test_memory_quality_report_surfaces_probe_review_focus() -> None:
@@ -583,9 +645,13 @@ def test_run_long_span_vnext_writes_separated_memory_and_reaction_outputs(tmp_pa
     )
 
     assert aggregate["memory_quality"]["mechanism_key"] == "attentional_v2"
+    assert aggregate["probe_plan_id"] == "memory_quality_semantic_probe_plan_20260504"
+    assert aggregate["probe_selection_method"] == runner.PROBE_SELECTION_METHOD
     assert set(aggregate["reaction_audit"]["mechanisms"].keys()) == {"attentional_v2", "iterator_v1"}
     report = (run_root / "summary" / "report.md").read_text(encoding="utf-8")
     assert "## Memory Quality (V2 only)" in report
+    assert "Probe selection" in report
+    assert "semantic boundaries" in report
     assert "Structural-signal supplement" in report
     assert "## Reaction Audit Method" in report
     assert "## Spontaneous Callback" in report

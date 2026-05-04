@@ -40,15 +40,18 @@ Each Memory Quality evidence audit should include:
 
 ## Probe Placement Explanation
 
-Probe positions are fixed progress checkpoints, not semantic target selections.
+Probe positions are semantic boundary selections recorded in a versioned probe manifest. Distance across the window is a distribution reference, not the main placement rule.
 
 Each report must explain:
 
-- schedule: `20% / 40% / 60% / 80% / window end`
-- `target_sentence`: the mathematical target by sentence count
-- `actual_captured_sentence`: the end of the first completed read unit that crossed the threshold
+- active probe plan id and manifest path, for example `memory_quality_semantic_probe_plan_20260504`
+- selection method: `semantic_boundary_with_distance_reference`
+- `target_sentence`: the semantic boundary sentence selected by the manifest
+- `rough ratio`: approximate progress position for distribution sanity only
+- `actual_captured_sentence`: the end of the first completed read unit that crossed the semantic target
+- why each probe point was selected, including semantic boundary rationale and structural signals to check
 - no probe-only read step is inserted
-- the probe may be slightly later than the mathematical target because reading units are indivisible for capture
+- the probe may be slightly later than the selected target because reading units are indivisible for capture
 
 ## Source Evidence Rules
 
@@ -57,6 +60,7 @@ Each report must explain:
 - In each probe section, show only a short deterministic orientation excerpt plus a link to the source marker.
 - Do not repeat the full source-so-far slice in every probe section.
 - If a structural signal is known to be high risk for review, show it under `Structural Signals To Check`; make clear it is an audit focus, not a hard gold answer.
+- The source marker should make clear that probe placement came from the manifest, not from an automatic ratio schedule.
 
 ## State Evidence Rules
 
@@ -114,5 +118,5 @@ Before closing a generated Memory Quality evidence report, check:
 - Probe sections do not repeat full source-so-far blocks.
 - Every probe links to raw snapshot JSON, source marker, source landmark, and runtime appendix.
 - No new report contains a current `Recent Routes` / `route_action` evidence block.
-- The report states that probe placement is progress-based, not semantic.
+- The report states that probe placement is semantic-manifest-driven, with distance only as a reference.
 - The report states that final runtime dump cannot replace probe-time snapshot evidence.

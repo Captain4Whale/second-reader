@@ -312,6 +312,10 @@ Last updated: `2026-05-04T16:32:40+08:00`
     - `reading-companion-backend/eval/attentional_v2/run_long_span_vnext.py`
   - landed `Memory Quality` implementation:
     - benchmark-only V2 probe snapshots during continuous reading
+    - current probe placement is semantic-manifest-driven, not hard-ratio-driven
+    - current probe plan:
+      - `reading-companion-backend/eval/manifests/probes/memory_quality_semantic_probe_plan_20260504.json`
+      - selection method: `semantic_boundary_with_distance_reference`
     - no gold-sentence requirement
     - no hard dependency on human notes
   - landed reaction-audit implementation:
@@ -332,7 +336,7 @@ Last updated: `2026-05-04T16:32:40+08:00`
         - `attentional_v2_long_span_vnext_phase1_reaction_evidence_fix_rejudge_20260425`
       - post-eval action ledger:
         - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_long_span_vnext_phase1_reaction_evidence_fix_rejudge_20260425/analysis/post_eval_action_ledger_20260503/README.md`
-        - recorded actions now include `A1_legacy_gate_pressure_cleanup`, `A2_active_attention_cutover`, `A3_read_naturalization_cutover`, `A4_memory_quality_structural_signal_supplement`, `A5_local_hypothesis_provenance_cleanup`, `A6_memory_quality_report_contract`, `A7_route_action_contract_cutover`, `A8_forward_settlement_cutover`, `A9_navigate_choose_next_unit_cutover`, `A10_reading_runner_naming_boundary`, `A11_navigate_book_local_skill_runtime`, and `A12_navigate_unified_agent_loop_cutover`
+        - recorded actions now include `A1_legacy_gate_pressure_cleanup`, `A2_active_attention_cutover`, `A3_read_naturalization_cutover`, `A4_memory_quality_structural_signal_supplement`, `A5_local_hypothesis_provenance_cleanup`, `A6_memory_quality_report_contract`, `A7_route_action_contract_cutover`, `A8_forward_settlement_cutover`, `A9_navigate_choose_next_unit_cutover`, `A10_reading_runner_naming_boundary`, `A11_navigate_book_local_skill_runtime`, `A12_navigate_unified_agent_loop_cutover`, and `A13_memory_quality_semantic_probe_plan`
       - Memory Quality evidence report contract:
         - `reading-companion-backend/docs/evaluation/long_span/memory_quality_report_contract.md`
         - future reports should use one full source document per window with probe markers, and label recent route explanations as `route reason` rather than generic `statement`
@@ -344,6 +348,7 @@ Last updated: `2026-05-04T16:32:40+08:00`
       - result:
         - `Memory Quality` average overall score: `3.48`
         - probe count: `25`
+        - the April 25 Memory Quality result belongs to the historical hard-ratio probe era; future runs use the semantic probe manifest
         - next Memory Quality judgments will use `scale_v3_structural_signal_aware`, adding structural-signal-aware scoring for salient source-given stage models, classifications, definitions, roadmaps, and named distinctions
         - `Spontaneous Callback`: `attentional_v2` has `152` grounded callbacks and `84` weak callbacks over `1282` visible reactions; `iterator_v1` has `51` grounded callbacks and `13` weak callbacks over `375` visible reactions
         - `False Visible Integration`: `attentional_v2` has `2`; `iterator_v1` has `0`

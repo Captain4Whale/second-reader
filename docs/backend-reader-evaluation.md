@@ -114,6 +114,7 @@ Use `docs/backend-reading-mechanism.md` for shared mechanism-platform boundaries
 - the current active long-span direction is now a design-frozen three-metric line:
   - `Memory Quality`
     - judge probe-point memory/state snapshots holistically during continuous reading
+    - current probe targets come from a versioned semantic probe manifest, not fixed ratio checkpoints
   - `Spontaneous Callback`
     - audit complete-window visible reactions for natural recalls or links to prior material
   - `False Visible Integration`
@@ -130,6 +131,10 @@ Use `docs/backend-reading-mechanism.md` for shared mechanism-platform boundaries
       - `iterator_v1`: `51` grounded callbacks, `13` weak callbacks, `0` false visible integrations over `375` visible reactions
       - judge unavailable count: `0` for both mechanisms
   - the Phase-1 substrate remains the active user-level selective reading windows unless later evidence requires a different window family
+  - current Memory Quality probe placement is controlled by:
+    - `reading-companion-backend/eval/manifests/probes/memory_quality_semantic_probe_plan_20260504.json`
+    - selection method: `semantic_boundary_with_distance_reference`
+    - hard `20% / 40% / 60% / 80% / end` ratio probes are retired for new runs
 - `reader_value.insight_and_clarification` remains an orthogonal output-value axis, but it is not part of the first release of the new long-span `Memory Quality / Spontaneous Callback / False Visible Integration` direction.
 - `excerpt surface` is now a historical chapter-scoped local-text surface name used by older formal runs.
 - the current active local benchmark meaning is `user-level selective`.
@@ -240,6 +245,7 @@ Use `docs/backend-reading-mechanism.md` for shared mechanism-platform boundaries
   - add probe-based state snapshots for `Memory Quality`
     - phase-1 scope is `attentional_v2` only
     - `attentional_v2` windows are freshly read or same-run resumed so probe snapshots exist
+    - current snapshots use explicit semantic `probe_targets` from `memory_quality_semantic_probe_plan_20260504.json`; missing targets fail fast instead of falling back to ratio probes
   - add full-window reaction audit for `Spontaneous Callback` and `False Visible Integration`
     - phase-1 comparison scope is `attentional_v2` vs `iterator_v1`
     - unchanged `iterator_v1` windows may reuse prior completed normalized reading outputs because reaction audit only consumes visible reactions
@@ -268,6 +274,10 @@ Use `docs/backend-reading-mechanism.md` for shared mechanism-platform boundaries
     - this is not an exact-match gold case and does not turn Memory Quality into sentence-hit recall
     - if a salient source-given structure appears only in the source text and not in the snapshot, it should affect `salience_score` and `organization_score`, and sometimes `mainline_fidelity_score`
     - individual probes may carry a small `probe_review_focus` note for high-risk structural signals; the focus sharpens the audit but the judgment remains holistic
+  - Memory Quality probe placement is now semantic-manifest-driven:
+    - the manifest records `target_sentence_id`, rough distance reference, semantic rationale, and structural signals to check for each probe
+    - the runtime still captures a snapshot only after the first completed read step that crosses the target; it does not insert probe-only reading steps
+    - old hard-ratio probe reports remain historical evidence and are not rewritten
   - Memory Quality probe snapshots should expose current prompt-facing state only:
     - `active_attention.active_items[]`
     - each active item uses lightweight `attention_tags[]`; old `working_state` and fixed `open_questions / live_tensions / live_hypotheses / live_motifs` views belong to historical reports only

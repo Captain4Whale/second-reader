@@ -35,7 +35,11 @@ from src.reading_runtime.output_dir_overrides import override_output_dir
 ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_RUNS_ROOT = ROOT / "eval" / "runs" / "attentional_v2"
 DEFAULT_REACTION_REUSE_RUN_ROOT = DEFAULT_RUNS_ROOT / "attentional_v2_user_level_selective_v1_active_rerun_20260419"
+DEFAULT_MEMORY_QUALITY_PROBE_PLAN_PATH = (
+    ROOT / "eval" / "manifests" / "probes" / "memory_quality_semantic_probe_plan_20260504.json"
+)
 DEFAULT_TARGET = "long_span_vnext_phase1"
+PROBE_SELECTION_METHOD = "semantic_boundary_with_distance_reference"
 DEFAULT_USER_INTENT = (
     "Read as a thoughtful co-reader, maintain meaningful memory continuity, and surface visible reactions when earlier material naturally comes back into view."
 )
@@ -113,6 +117,62 @@ def _output_dir_for(run_root: Path, segment_id: str, mechanism_key: str) -> Path
 def memory_quality_probe_review_focus(*, segment_id: str, probe_index: int) -> dict[str, str] | None:
     focus = MEMORY_QUALITY_PROBE_REVIEW_FOCUS.get((segment_id, probe_index))
     return dict(focus) if focus else None
+
+
+def load_memory_quality_probe_plan(path: Path) -> dict[str, Any]:
+    """Load the current semantic probe manifest for Memory Quality."""
+
+    if not path.exists():
+        raise FileNotFoundError(f"missing Memory Quality probe plan: {path}")
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(payload, dict):
+        raise ValueError(f"invalid Memory Quality probe plan: {path}")
+    if _clean_text(payload.get("selection_method")) != PROBE_SELECTION_METHOD:
+        raise ValueError(
+            "Memory Quality probe plan must use "
+            f"`{PROBE_SELECTION_METHOD}` selection_method: {path}"
+        )
+    windows = payload.get("windows")
+    if not isinstance(windows, list) or not windows:
+        raise ValueError(f"Memory Quality probe plan has no windows: {path}")
+    seen: set[str] = set()
+    for window in windows:
+        if not isinstance(window, dict):
+            raise ValueError(f"invalid window entry in Memory Quality probe plan: {path}")
+        segment_id = _clean_text(window.get("segment_id"))
+        if not segment_id:
+            raise ValueError(f"probe-plan window is missing segment_id: {path}")
+        if segment_id in seen:
+            raise ValueError(f"duplicate probe-plan window: {segment_id}")
+        seen.add(segment_id)
+        targets = window.get("probe_targets")
+        if not isinstance(targets, list) or len(targets) != 5:
+            raise ValueError(f"probe-plan window must contain exactly 5 targets: {segment_id}")
+        previous_ordinal = 0
+        for target in targets:
+            if not isinstance(target, dict):
+                raise ValueError(f"invalid probe target in window: {segment_id}")
+            ordinal = int(target.get("target_sentence_ordinal", 0) or 0)
+            if ordinal <= previous_ordinal:
+                raise ValueError(f"probe targets must be strictly increasing for {segment_id}")
+            previous_ordinal = ordinal
+            if not _clean_text(target.get("target_sentence_id")):
+                raise ValueError(f"probe target is missing target_sentence_id for {segment_id}")
+            if not _clean_text(target.get("why_this_probe_point")):
+                raise ValueError(f"probe target is missing why_this_probe_point for {segment_id}")
+            signals = target.get("structural_signals_to_check")
+            if not isinstance(signals, list) or not any(_clean_text(item) for item in signals):
+                raise ValueError(f"probe target is missing structural_signals_to_check for {segment_id}")
+    return payload
+
+
+def _probe_plan_window(probe_plan: dict[str, Any] | None, segment_id: str) -> dict[str, Any]:
+    if not isinstance(probe_plan, dict):
+        raise ValueError("Memory Quality probe export requires a loaded semantic probe plan")
+    for window in probe_plan.get("windows", []):
+        if isinstance(window, dict) and _clean_text(window.get("segment_id")) == segment_id:
+            return window
+    raise ValueError(f"Memory Quality semantic probe plan has no window for segment: {segment_id}")
 
 
 def _runtime_error_text(output_dir: Path) -> str:
@@ -454,13 +514,23 @@ def _bundle_summary(bundle: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def _v2_probe_config(window: ReadingWindow) -> dict[str, object]:
+def _v2_probe_config(
+    window: ReadingWindow,
+    *,
+    probe_plan: dict[str, Any] | None,
+    probe_plan_path: Path,
+) -> dict[str, object]:
+    plan_window = _probe_plan_window(probe_plan, window.segment_id)
     return {
         "enabled": True,
         "segment_id": window.segment_id,
         "source_id": window.source_id,
         "book_title": window.book_title,
         "language_track": window.language_track,
+        "probe_plan_id": _clean_text(probe_plan.get("probe_plan_id")) if isinstance(probe_plan, dict) else "",
+        "probe_plan_path": str(probe_plan_path),
+        "probe_selection_method": _clean_text(probe_plan.get("selection_method")) if isinstance(probe_plan, dict) else "",
+        "probe_targets": [dict(item) for item in plan_window.get("probe_targets", []) if isinstance(item, dict)],
     }
 
 
@@ -493,6 +563,8 @@ def ensure_window_output(
     mechanism_key: str,
     run_root: Path,
     require_probe_export: bool,
+    probe_plan: dict[str, Any] | None = None,
+    probe_plan_path: Path = DEFAULT_MEMORY_QUALITY_PROBE_PLAN_PATH,
 ) -> dict[str, Any]:
     output_dir = _output_dir_for(run_root, window.segment_id, mechanism_key)
     status = run_state_status(output_dir) if output_dir.exists() else ""
@@ -524,7 +596,11 @@ def ensure_window_output(
     segment_path = dataset_dir / window.segment_source_path
     mechanism_config: dict[str, object] = {"persist_normalized_eval_bundle": True}
     if mechanism_key == "attentional_v2" and require_probe_export:
-        mechanism_config["memory_quality_probe_export"] = _v2_probe_config(window)
+        mechanism_config["memory_quality_probe_export"] = _v2_probe_config(
+            window,
+            probe_plan=probe_plan,
+            probe_plan_path=probe_plan_path,
+        )
 
     with _isolated_output_dir(output_dir):
         mechanism.read_book(
@@ -558,6 +634,8 @@ def ensure_window_output_with_retries(
     require_probe_export: bool,
     max_attempts: int,
     retry_sleep_seconds: int,
+    probe_plan: dict[str, Any] | None = None,
+    probe_plan_path: Path = DEFAULT_MEMORY_QUALITY_PROBE_PLAN_PATH,
 ) -> dict[str, Any]:
     output_dir = _output_dir_for(run_root, window.segment_id, mechanism_key)
     attempts = max(1, int(max_attempts or 1))
@@ -572,6 +650,8 @@ def ensure_window_output_with_retries(
                 mechanism_key=mechanism_key,
                 run_root=run_root,
                 require_probe_export=require_probe_export,
+                probe_plan=probe_plan,
+                probe_plan_path=probe_plan_path,
             )
             payload["output_attempt"] = attempt
             return payload
@@ -1338,6 +1418,14 @@ def _append_examples(lines: list[str], examples: list[dict[str, Any]]) -> None:
         )
 
 
+def _probe_position_label(row: dict[str, Any]) -> str:
+    rough = _clean_text(row.get("rough_position_target"))
+    if rough:
+        return rough
+    ratio = float(row.get("estimated_ratio", row.get("threshold_ratio", 0.0)) or 0.0)
+    return f"{ratio:.1%}" if ratio > 0 else "semantic target"
+
+
 def _render_report(
     *,
     aggregate: dict[str, Any],
@@ -1352,6 +1440,8 @@ def _render_report(
         "## Memory Quality (V2 only)",
         "",
         f"- Judge contract: `{memory_quality.get('memory_quality_judge_contract') or aggregate.get('memory_quality_judge_contract') or MEMORY_QUALITY_JUDGE_CONTRACT}`",
+        f"- Probe plan: `{aggregate.get('probe_plan_id') or 'unspecified'}`.",
+        f"- Probe selection: `{aggregate.get('probe_selection_method') or PROBE_SELECTION_METHOD}`; probe targets are semantic boundaries with distance only as a distribution reference, not hard ratio checkpoints.",
         "- Scoring scale: `1 = poor / absent`, `3 = adequate / useful`, `5 = excellent`; higher is better.",
         "- Overall memory quality is derived from salience, mainline fidelity, organization, and fidelity scores.",
         "- Structural-signal supplement: when source-so-far explicitly introduces a stage model, classification, core definition, roadmap, or named distinction, the judge checks whether the snapshot retains it; probe-specific review focus is an audit aid, not an exact-match gold answer.",
@@ -1374,8 +1464,10 @@ def _render_report(
         probe_rows = [row for row in memory_quality_results if row["segment_id"] == window_summary["segment_id"]]
         for row in probe_rows:
             lines.append(
-                f"- Probe `{row['probe_index']}` (`{row['threshold_ratio']:.1%}`): overall `{float(row['overall_memory_quality_score']):.3f}`. {row['reason']}"
+                f"- Probe `{row['probe_index']}` (`{_probe_position_label(row)}`): overall `{float(row['overall_memory_quality_score']):.3f}`. {row['reason']}"
             )
+            if _clean_text(row.get("why_this_probe_point")):
+                lines.append(f"  - Probe placement: {_clean_text(row.get('why_this_probe_point'))}")
             review_focus = row.get("probe_review_focus")
             if isinstance(review_focus, dict) and review_focus:
                 lines.append(
@@ -1501,6 +1593,7 @@ def run_long_span_vnext(
     *,
     run_root: Path,
     manifest_path: Path = MANIFEST_PATH,
+    memory_quality_probe_plan_path: Path = DEFAULT_MEMORY_QUALITY_PROBE_PLAN_PATH,
     judge_mode: str = "llm",
     segment_ids: set[str] | None = None,
     window_limit: int | None = None,
@@ -1514,6 +1607,8 @@ def run_long_span_vnext(
 ) -> dict[str, Any]:
     worker_count = max(1, int(workers or 1))
     dataset_dir = _resolve_dataset_dir(manifest_path)
+    memory_quality_probe_plan_path = memory_quality_probe_plan_path.resolve()
+    memory_quality_probe_plan = load_memory_quality_probe_plan(memory_quality_probe_plan_path)
     memory_quality_source_run_root = memory_quality_source_run_root.resolve() if memory_quality_source_run_root else None
     memory_quality_results_source_run_root = (
         memory_quality_results_source_run_root.resolve() if memory_quality_results_source_run_root else None
@@ -1533,6 +1628,9 @@ def run_long_span_vnext(
             "generated_at": _timestamp(),
             "dataset_dir": str(dataset_dir),
             "manifest_path": str(manifest_path),
+            "probe_plan_id": _clean_text(memory_quality_probe_plan.get("probe_plan_id")),
+            "probe_plan_path": str(memory_quality_probe_plan_path),
+            "probe_selection_method": _clean_text(memory_quality_probe_plan.get("selection_method")),
             "reaction_reuse_run_root": str(reaction_reuse_run_root) if reaction_reuse_run_root else "",
             "memory_quality_source_run_root": str(memory_quality_source_run_root) if memory_quality_source_run_root else "",
             "memory_quality_results_source_run_root": str(memory_quality_results_source_run_root) if memory_quality_results_source_run_root else "",
@@ -1629,6 +1727,8 @@ def run_long_span_vnext(
             require_probe_export=mechanism_key == "attentional_v2",
             max_attempts=output_attempts,
             retry_sleep_seconds=output_retry_sleep_seconds,
+            probe_plan=memory_quality_probe_plan,
+            probe_plan_path=memory_quality_probe_plan_path,
         )
         return (window.segment_id, mechanism_key), payload
 
@@ -1649,6 +1749,9 @@ def run_long_span_vnext(
                 }
                 for window, mechanism_key in output_tasks
             ],
+            "probe_plan_id": _clean_text(memory_quality_probe_plan.get("probe_plan_id")),
+            "probe_plan_path": str(memory_quality_probe_plan_path),
+            "probe_selection_method": _clean_text(memory_quality_probe_plan.get("selection_method")),
             "reuse_decisions": reuse_decisions,
             "output_modes": {
                 f"{segment_id}:{mechanism_key}": payload.get("run_mode")
@@ -1670,7 +1773,11 @@ def run_long_span_vnext(
                 capture_sentence_id = _clean_text(snapshot.get("capture_sentence_id"))
                 probe_payload = {
                     "probe_index": int(snapshot.get("probe_index", 0) or 0),
-                    "threshold_ratio": float(snapshot.get("threshold_ratio", 0.0) or 0.0),
+                    "estimated_ratio": float(snapshot.get("estimated_ratio", 0.0) or 0.0),
+                    "rough_position_target": _clean_text(snapshot.get("rough_position_target")),
+                    "boundary_kind": _clean_text(snapshot.get("boundary_kind")),
+                    "why_this_probe_point": _clean_text(snapshot.get("why_this_probe_point")),
+                    "structural_signals_to_check": snapshot.get("structural_signals_to_check", []),
                     "read_so_far_source_text": build_read_so_far_source_text(book_document, capture_sentence_id),
                     "memory_snapshot": snapshot,
                 }
@@ -1697,7 +1804,11 @@ def run_long_span_vnext(
             "book_title": window.book_title,
             "mechanism_key": "attentional_v2",
             "probe_index": int(snapshot.get("probe_index", 0) or 0),
-            "threshold_ratio": float(snapshot.get("threshold_ratio", 0.0) or 0.0),
+            "estimated_ratio": float(snapshot.get("estimated_ratio", 0.0) or 0.0),
+            "rough_position_target": _clean_text(snapshot.get("rough_position_target")),
+            "boundary_kind": _clean_text(snapshot.get("boundary_kind")),
+            "why_this_probe_point": _clean_text(snapshot.get("why_this_probe_point")),
+            "structural_signals_to_check": snapshot.get("structural_signals_to_check", []),
             "capture_sentence_id": capture_sentence_id,
             "probe_review_focus": probe_payload.get("probe_review_focus"),
             **judgment,
@@ -1753,6 +1864,9 @@ def run_long_span_vnext(
         "target": DEFAULT_TARGET,
         "generated_at": _timestamp(),
         "dataset_dir": str(dataset_dir),
+        "probe_plan_id": _clean_text(memory_quality_probe_plan.get("probe_plan_id")),
+        "probe_plan_path": str(memory_quality_probe_plan_path),
+        "probe_selection_method": _clean_text(memory_quality_probe_plan.get("selection_method")),
         "memory_quality_judge_contract": MEMORY_QUALITY_JUDGE_CONTRACT,
         "reaction_audit_judge_contract": REACTION_AUDIT_JUDGE_CONTRACT,
         "metric_slugs": ["memory_quality", "spontaneous_callback", "false_visible_integration"],
@@ -1793,6 +1907,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--run-id", default=_default_run_id())
     parser.add_argument("--runs-root", type=Path, default=DEFAULT_RUNS_ROOT)
     parser.add_argument("--manifest-path", type=Path, default=MANIFEST_PATH)
+    parser.add_argument("--memory-quality-probe-plan", type=Path, default=DEFAULT_MEMORY_QUALITY_PROBE_PLAN_PATH)
     parser.add_argument("--judge-mode", choices=JUDGE_MODE_VALUES, default="llm")
     parser.add_argument("--segment-id", action="append", default=[])
     parser.add_argument("--window-limit", type=int, default=None)
@@ -1844,6 +1959,7 @@ def main(argv: list[str] | None = None) -> int:
     aggregate = run_long_span_vnext(
         run_root=run_root,
         manifest_path=args.manifest_path,
+        memory_quality_probe_plan_path=args.memory_quality_probe_plan,
         judge_mode=args.judge_mode,
         segment_ids={str(item) for item in args.segment_id if str(item).strip()} or None,
         window_limit=args.window_limit,

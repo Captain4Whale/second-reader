@@ -1,0 +1,420 @@
+{
+  "probe_plan_id": "memory_quality_semantic_probe_plan_20260504",
+  "schema_version": 1,
+  "selection_method": "semantic_boundary_with_distance_reference",
+  "dataset_id": "attentional_v2_user_level_selective_v1_repaired_20260422",
+  "created_at": "2026-05-04",
+  "description": "Current Memory Quality probe contract for the five active user-level reading windows. Probe points are semantic boundaries selected with distance used only as a distribution reference.",
+  "windows": [
+    {
+      "segment_id": "huochu_shengming_de_yiyi_private_zh__segment_1",
+      "source_id": "huochu_shengming_de_yiyi_private_zh",
+      "book_title": "活出生命的意义",
+      "probe_targets": [
+        {
+          "probe_index": 1,
+          "rough_position_target": "near 20%",
+          "target_sentence_id": "c1-s261",
+          "target_sentence_ordinal": 261,
+          "selected_original_sentence_id": "c8-s261",
+          "estimated_ratio": 0.201,
+          "boundary_kind": "phase transition",
+          "why_this_probe_point": "Ends the first-stage camp-arrival arc and crosses into the second stage, so the snapshot can be checked after the book has introduced the explicit three-stage prisoner-response structure and completed the first transition.",
+          "structural_signals_to_check": [
+            "囚徒精神反应三阶段：收容阶段、适应阶段、释放与解放阶段",
+            "第一阶段向第二阶段过渡",
+            "恐惧、休克、情感麻木作为集中营心理反应框架"
+          ]
+        },
+        {
+          "probe_index": 2,
+          "rough_position_target": "near 40%",
+          "target_sentence_id": "c1-s528",
+          "target_sentence_ordinal": 528,
+          "selected_original_sentence_id": "c8-s528",
+          "estimated_ratio": 0.407,
+          "boundary_kind": "inner-life episode closure",
+          "why_this_probe_point": "Closes the wife/nature/beauty inner-life sequence before the text turns again, so it can test whether the reader retains spiritual survival rather than only external camp events.",
+          "structural_signals_to_check": [
+            "爱与妻子的形象作为精神生存资源",
+            "自然与美感在极端处境中的支撑作用",
+            "从外部苦难转向内在自由的主线"
+          ]
+        },
+        {
+          "probe_index": 3,
+          "rough_position_target": "near 60%",
+          "target_sentence_id": "c1-s794",
+          "target_sentence_ordinal": 794,
+          "selected_original_sentence_id": "c8-s794",
+          "estimated_ratio": 0.613,
+          "boundary_kind": "moral-decision episode closure",
+          "why_this_probe_point": "Closes the decision-not-to-escape episode, giving a clean semantic checkpoint for active choice, responsibility, and care under captivity.",
+          "structural_signals_to_check": [
+            "被囚禁处境中的主动选择",
+            "照顾病友与责任感",
+            "命运、选择和平静之间的关系"
+          ]
+        },
+        {
+          "probe_index": 4,
+          "rough_position_target": "near 80%",
+          "target_sentence_id": "c1-s1059",
+          "target_sentence_ordinal": 1059,
+          "selected_original_sentence_id": "c8-s1059",
+          "estimated_ratio": 0.817,
+          "boundary_kind": "argument turn",
+          "why_this_probe_point": "Captures the argument that loss of future orientation weakens the body, just before the text deepens the life-purpose frame.",
+          "structural_signals_to_check": [
+            "未来感、希望和生命力的关系",
+            "精神状态影响身体抵抗力",
+            "尼采命题和意义治疗主线的准备"
+          ]
+        },
+        {
+          "probe_index": 5,
+          "rough_position_target": "window end",
+          "target_sentence_id": "c1-s1292",
+          "target_sentence_ordinal": 1292,
+          "selected_original_sentence_id": "c8-s1292",
+          "estimated_ratio": 0.997,
+          "boundary_kind": "main-text ending",
+          "why_this_probe_point": "Ends the meaningful main-text window before citation-only tail material, so the final snapshot reflects the whole selected chapter rather than footnote residue.",
+          "structural_signals_to_check": [
+            "释放与解放阶段",
+            "人格恢复、苦涩和幻灭",
+            "最终自由与不再畏惧的结尾框架"
+          ]
+        }
+      ]
+    },
+    {
+      "segment_id": "mangge_zhi_dao_private_zh__segment_1",
+      "source_id": "mangge_zhi_dao_private_zh",
+      "book_title": "芒格之道",
+      "probe_targets": [
+        {
+          "probe_index": 1,
+          "rough_position_target": "near 20%",
+          "target_sentence_id": "c1-s411",
+          "target_sentence_ordinal": 411,
+          "selected_original_sentence_id": "c5-s180",
+          "estimated_ratio": 0.234,
+          "boundary_kind": "annual chapter close",
+          "why_this_probe_point": "Closes the 1988 discussion before the 1989 turn, giving a semantically complete checkpoint for the early management-trust and valuation discipline material.",
+          "structural_signals_to_check": [
+            "1988 annual discussion closure",
+            "management trust and reputation",
+            "valuation discipline before the 1989 shift"
+          ]
+        },
+        {
+          "probe_index": 2,
+          "rough_position_target": "near 40%",
+          "target_sentence_id": "c1-s710",
+          "target_sentence_ordinal": 710,
+          "selected_original_sentence_id": "c6-s295",
+          "estimated_ratio": 0.405,
+          "boundary_kind": "major argument turn",
+          "why_this_probe_point": "Ends the anti-forecasting and cash-optionality argument before the Mutual Savings topic expands the 1989 material.",
+          "structural_signals_to_check": [
+            "anti-forecasting investment posture",
+            "cash optionality",
+            "disclosure boundary and Mutual Savings transition"
+          ]
+        },
+        {
+          "probe_index": 3,
+          "rough_position_target": "near 60%",
+          "target_sentence_id": "c1-s1052",
+          "target_sentence_ordinal": 1052,
+          "selected_original_sentence_id": "c6-s637",
+          "estimated_ratio": 0.599,
+          "boundary_kind": "crisis appendix argument turn",
+          "why_this_probe_point": "Completes the causal explanation of policy changes in the S&L crisis before the text moves into broader judgment.",
+          "structural_signals_to_check": [
+            "S&L crisis mechanics",
+            "regulatory incentives and unintended consequences",
+            "causal explanation before normative judgment"
+          ]
+        },
+        {
+          "probe_index": 4,
+          "rough_position_target": "near 80%",
+          "target_sentence_id": "c1-s1418",
+          "target_sentence_ordinal": 1418,
+          "selected_original_sentence_id": "c7-s123",
+          "estimated_ratio": 0.808,
+          "boundary_kind": "section close",
+          "why_this_probe_point": "Closes the 1990 S&L crisis section before the text shifts toward Graham and risk-arbitrage lessons.",
+          "structural_signals_to_check": [
+            "1990 crisis recap",
+            "regulator exhaustion",
+            "transition from crisis diagnosis to investing doctrine"
+          ]
+        },
+        {
+          "probe_index": 5,
+          "rough_position_target": "window end",
+          "target_sentence_id": "c1-s1755",
+          "target_sentence_ordinal": 1755,
+          "selected_original_sentence_id": "c7-s460",
+          "estimated_ratio": 1.0,
+          "boundary_kind": "window end",
+          "why_this_probe_point": "Ends the active window, allowing the final snapshot to cover the full selected annual-letter span.",
+          "structural_signals_to_check": [
+            "full-window investment doctrine continuity",
+            "crisis-to-risk-arbitrage arc",
+            "Munger/Buffett operating principles across the window"
+          ]
+        }
+      ]
+    },
+    {
+      "segment_id": "nawaer_baodian_private_zh__segment_1",
+      "source_id": "nawaer_baodian_private_zh",
+      "book_title": "纳瓦尔宝典",
+      "probe_targets": [
+        {
+          "probe_index": 1,
+          "rough_position_target": "near 20%",
+          "target_sentence_id": "c1-s35",
+          "target_sentence_ordinal": 35,
+          "selected_original_sentence_id": "c13-s35",
+          "estimated_ratio": 0.21,
+          "boundary_kind": "foundational thesis cluster close",
+          "why_this_probe_point": "Closes the opening wealth thesis cluster, where the text distinguishes wealth from money/status and introduces scale.",
+          "structural_signals_to_check": [
+            "wealth vs money vs status",
+            "renting time vs owning equity/assets",
+            "unmet demand and scale"
+          ]
+        },
+        {
+          "probe_index": 2,
+          "rough_position_target": "near 40%",
+          "target_sentence_id": "c1-s62",
+          "target_sentence_ordinal": 62,
+          "selected_original_sentence_id": "c13-s62",
+          "estimated_ratio": 0.37,
+          "boundary_kind": "specific-knowledge cluster close",
+          "why_this_probe_point": "Closes the specific-knowledge discussion before leverage becomes the dominant frame.",
+          "structural_signals_to_check": [
+            "specific knowledge definition",
+            "sales/build pairing",
+            "interest, apprenticeship, and non-outsourcable skill"
+          ]
+        },
+        {
+          "probe_index": 3,
+          "rough_position_target": "near 55%",
+          "target_sentence_id": "c1-s92",
+          "target_sentence_ordinal": 92,
+          "selected_original_sentence_id": "c13-s92",
+          "estimated_ratio": 0.55,
+          "boundary_kind": "leverage taxonomy close",
+          "why_this_probe_point": "Closes the leverage taxonomy, including permissioned and permissionless leverage.",
+          "structural_signals_to_check": [
+            "capital, labor, code, and media as leverage",
+            "permissioned vs permissionless leverage",
+            "robots, code, media, and data centers"
+          ]
+        },
+        {
+          "probe_index": 4,
+          "rough_position_target": "near 80%",
+          "target_sentence_id": "c1-s138",
+          "target_sentence_ordinal": 138,
+          "selected_original_sentence_id": "c13-s138",
+          "estimated_ratio": 0.82,
+          "boundary_kind": "synthesis close",
+          "why_this_probe_point": "Closes the self-productization synthesis that combines uniqueness, responsibility, and leverage.",
+          "structural_signals_to_check": [
+            "productize yourself",
+            "uniqueness, responsibility, and leverage",
+            "long-term self-inquiry"
+          ]
+        },
+        {
+          "probe_index": 5,
+          "rough_position_target": "window end",
+          "target_sentence_id": "c1-s168",
+          "target_sentence_ordinal": 168,
+          "selected_original_sentence_id": "c13-s168",
+          "estimated_ratio": 1.0,
+          "boundary_kind": "meaningful window end",
+          "why_this_probe_point": "Ends the meaningful body window before citation-only tail material.",
+          "structural_signals_to_check": [
+            "wealth-building body chapter frame",
+            "assets, technology, unmet needs, and scale",
+            "chapter-level synthesis without citation tail"
+          ]
+        }
+      ]
+    },
+    {
+      "segment_id": "value_of_others_private_en__segment_1",
+      "source_id": "value_of_others_private_en",
+      "book_title": "The Value of Others",
+      "probe_targets": [
+        {
+          "probe_index": 1,
+          "rough_position_target": "near 20%",
+          "target_sentence_id": "c1-s90",
+          "target_sentence_ordinal": 90,
+          "selected_original_sentence_id": "",
+          "estimated_ratio": 0.23,
+          "boundary_kind": "early argument-block closure",
+          "why_this_probe_point": "Closes the opening relationship-as-value-transaction frame before the argument turns more explicitly toward mating and dating.",
+          "structural_signals_to_check": [
+            "three approaches to other people",
+            "prosocial vs antisocial framing",
+            "relationships as games and value transactions"
+          ]
+        },
+        {
+          "probe_index": 2,
+          "rough_position_target": "near 35%",
+          "target_sentence_id": "c1-s136",
+          "target_sentence_ordinal": 136,
+          "selected_original_sentence_id": "",
+          "estimated_ratio": 0.348,
+          "boundary_kind": "section pivot",
+          "why_this_probe_point": "Captures the pivot into sexual relationships and the economic model of mating/dating before the calculator model expands.",
+          "structural_signals_to_check": [
+            "sexual relationship definition",
+            "mating and dating as a game",
+            "perceived best options and economic modeling"
+          ]
+        },
+        {
+          "probe_index": 3,
+          "rough_position_target": "near 60%",
+          "target_sentence_id": "c1-s243",
+          "target_sentence_ordinal": 243,
+          "selected_original_sentence_id": "",
+          "estimated_ratio": 0.622,
+          "boundary_kind": "section closure",
+          "why_this_probe_point": "Closes the covert-calculator section, giving a strong checkpoint for subjective value and emotion-as-valuation.",
+          "structural_signals_to_check": [
+            "covert calculator model",
+            "subjective and fluctuating value",
+            "emotion as valuation output"
+          ]
+        },
+        {
+          "probe_index": 4,
+          "rough_position_target": "near 75%",
+          "target_sentence_id": "c1-s293",
+          "target_sentence_ordinal": 293,
+          "selected_original_sentence_id": "",
+          "estimated_ratio": 0.749,
+          "boundary_kind": "late hinge before complication",
+          "why_this_probe_point": "Captures the goal-relative human value frame before the text complicates the model with revealed preferences and red flags.",
+          "structural_signals_to_check": [
+            "goal-relative human value",
+            "problem-of-living inference",
+            "selection thresholds and mating/dating as genetic-survival game"
+          ]
+        },
+        {
+          "probe_index": 5,
+          "rough_position_target": "window end",
+          "target_sentence_id": "c1-s391",
+          "target_sentence_ordinal": 391,
+          "selected_original_sentence_id": "",
+          "estimated_ratio": 1.0,
+          "boundary_kind": "window end",
+          "why_this_probe_point": "Ends the active window after the model has expanded into desire, disgust, red flags, and revealed preferences.",
+          "structural_signals_to_check": [
+            "goal conflation",
+            "desire, disgust, conflict, and red flags",
+            "revealed preferences, culture, and valuation algorithm"
+          ]
+        }
+      ]
+    },
+    {
+      "segment_id": "xidaduo_private_zh__segment_1",
+      "source_id": "xidaduo_private_zh",
+      "book_title": "悉达多",
+      "probe_targets": [
+        {
+          "probe_index": 1,
+          "rough_position_target": "near 20%",
+          "target_sentence_id": "c1-s436",
+          "target_sentence_ordinal": 436,
+          "selected_original_sentence_id": "",
+          "estimated_ratio": 0.18,
+          "boundary_kind": "chapter close",
+          "why_this_probe_point": "Ends the 沙门 chapter before 乔达摩, closing Siddhartha's ascetic self-denial phase and its limits.",
+          "structural_signals_to_check": [
+            "initial dissatisfaction",
+            "ascetic self-denial and Samana path",
+            "failure of escape-through-self-erasure before Buddha encounter"
+          ]
+        },
+        {
+          "probe_index": 2,
+          "rough_position_target": "near 30%",
+          "target_sentence_id": "c1-s752",
+          "target_sentence_ordinal": 752,
+          "selected_original_sentence_id": "",
+          "estimated_ratio": 0.31,
+          "boundary_kind": "part-one close",
+          "why_this_probe_point": "Ends the first major movement through 乔达摩 and 觉醒, where Siddhartha refuses borrowed doctrine and turns toward self-experience.",
+          "structural_signals_to_check": [
+            "teacher refusal",
+            "self-experience over doctrine",
+            "leaving inherited teachings"
+          ]
+        },
+        {
+          "probe_index": 3,
+          "rough_position_target": "near 60%",
+          "target_sentence_id": "c1-s1532",
+          "target_sentence_ordinal": 1532,
+          "selected_original_sentence_id": "",
+          "estimated_ratio": 0.63,
+          "boundary_kind": "worldly-life collapse",
+          "why_this_probe_point": "Ends 轮回 before 在河边, closing Kamala/Kamaswami/worldly life and the crisis that prepares river rebirth.",
+          "structural_signals_to_check": [
+            "Kamala and Kamaswami worldly life",
+            "disgust, despair, and collapse of worldly pursuit",
+            "transition toward river rebirth"
+          ]
+        },
+        {
+          "probe_index": 4,
+          "rough_position_target": "near 85%",
+          "target_sentence_id": "c1-s2067",
+          "target_sentence_ordinal": 2067,
+          "selected_original_sentence_id": "",
+          "estimated_ratio": 0.855,
+          "boundary_kind": "chapter close",
+          "why_this_probe_point": "Ends 船夫 before 儿子, after the river/Vasudeva listening frame and Kamala's death introduce fatherhood.",
+          "structural_signals_to_check": [
+            "river and Vasudeva listening",
+            "Kamala death",
+            "son emergence and fatherhood transition"
+          ]
+        },
+        {
+          "probe_index": 5,
+          "rough_position_target": "window end",
+          "target_sentence_id": "c1-s2417",
+          "target_sentence_ordinal": 2417,
+          "selected_original_sentence_id": "",
+          "estimated_ratio": 1.0,
+          "boundary_kind": "window end",
+          "why_this_probe_point": "Ends the full active window at the final integration, where the river voices, unity, reconciliation, and final transmission come together.",
+          "structural_signals_to_check": [
+            "唵 and final integration",
+            "river voices and unity",
+            "reconciliation and final transmission"
+          ]
+        }
+      ]
+    }
+  ]
+}

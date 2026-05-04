@@ -237,7 +237,10 @@
           "probe_count": 25,
           "window_count": 5,
           "judge_contract": "scale_v2_1_low_5_high",
-          "source": "copied_from_scale_fix_rejudge"
+          "source": "copied_from_scale_fix_rejudge",
+          "probe_placement_note": "This score was produced under the historical hard-ratio probe schedule; new Memory Quality runs use the semantic probe manifest.",
+          "current_probe_plan_id": "memory_quality_semantic_probe_plan_20260504",
+          "current_probe_selection_method": "semantic_boundary_with_distance_reference"
         },
         "reaction_audit": {
           "judge_contract": "visible_reaction_audit_v2_native_evidence",
@@ -263,12 +266,13 @@
         "report": "eval/runs/attentional_v2/attentional_v2_long_span_vnext_phase1_reaction_evidence_fix_rejudge_20260425/summary/report.md",
         "llm_usage": "eval/runs/attentional_v2/attentional_v2_long_span_vnext_phase1_reaction_evidence_fix_rejudge_20260425/summary/llm_usage.json",
         "analysis_docs": {
-          "post_eval_action_ledger": "eval/runs/attentional_v2/attentional_v2_long_span_vnext_phase1_reaction_evidence_fix_rejudge_20260425/analysis/post_eval_action_ledger_20260503/README.md"
+          "post_eval_action_ledger": "eval/runs/attentional_v2/attentional_v2_long_span_vnext_phase1_reaction_evidence_fix_rejudge_20260425/analysis/post_eval_action_ledger_20260503/README.md",
+          "current_semantic_probe_plan": "eval/manifests/probes/memory_quality_semantic_probe_plan_20260504.json"
         }
       },
       "job_ids": [],
-      "one_line_conclusion": "Phase-1 Long Span vNext diagnostic evidence with corrected Memory Quality scale and freshly rejudged reaction-audit evidence surface; V2 shows 152 grounded spontaneous callbacks, 84 weak callbacks, and 2 false visible integrations across 1282 visible reactions, while V1 shows 51 grounded callbacks and 13 weak callbacks across 375 visible reactions. No books were reread.",
-      "updated_at": "2026-05-03T00:00:00Z"
+      "one_line_conclusion": "Phase-1 Long Span vNext diagnostic evidence with corrected Memory Quality scale and freshly rejudged reaction-audit evidence surface; V2 shows 152 grounded spontaneous callbacks, 84 weak callbacks, and 2 false visible integrations across 1282 visible reactions, while V1 shows 51 grounded callbacks and 13 weak callbacks across 375 visible reactions. No books were reread. The Memory Quality score belongs to the historical hard-ratio probe era; future Memory Quality runs use the semantic probe manifest.",
+      "updated_at": "2026-05-04T19:13:31Z"
     },
     {
       "run_id": "attentional_v2_accumulation_benchmark_v2_frozen_active_rerun_20260419",
