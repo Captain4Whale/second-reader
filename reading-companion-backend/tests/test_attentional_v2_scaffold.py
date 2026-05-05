@@ -38,6 +38,7 @@ from src.attentional_v2.storage import (
     reconsolidation_records_file,
     revisit_index_file,
     resume_metadata_file,
+    settlement_audit_file,
     survey_map_file,
     thread_trace_file,
     unitization_audit_file,
@@ -523,6 +524,7 @@ def test_attentional_v2_initialization_writes_mechanism_artifacts(tmp_path):
 
     assert event_stream_file(output_dir).read_text(encoding="utf-8") == ""
     assert result["artifact_map"]["active_attention"].endswith("active_attention.json")
+    assert result["artifact_map"]["settlement_audit"].endswith("settlement_audit.jsonl")
 
 
 def test_attentional_v2_parse_book_creates_ready_artifacts_without_iterator_structure(tmp_path, monkeypatch):
@@ -1056,7 +1058,18 @@ def test_attentional_v2_read_book_runs_live_loop_and_persists_compatibility_resu
                     },
                 }
             ],
-            "memory_uptake_ops": [],
+            "memory_uptake_ops": [
+                {
+                    "operation_type": "append",
+                    "target_store": "active_attention",
+                    "target_key": f"hot-{focal_sentence.get('sentence_id')}",
+                    "payload": {
+                        "statement": f"Keep tracking {anchor_quote[:24]}",
+                        "attention_tags": ["motif"],
+                        "last_touched_sentence_id": focal_sentence.get("sentence_id"),
+                    },
+                }
+            ],
             "detour_need": None,
         }
 
@@ -1112,7 +1125,9 @@ def test_attentional_v2_read_book_runs_live_loop_and_persists_compatibility_resu
     chapter_payload = json.loads(chapter_result_compatibility_file(result.output_dir, 1).read_text(encoding="utf-8"))
     unitize_lines = unitization_audit_file(result.output_dir).read_text(encoding="utf-8").strip().splitlines()
     read_audit_lines = read_audit_file(result.output_dir).read_text(encoding="utf-8").strip().splitlines()
+    settlement_audit_lines = settlement_audit_file(result.output_dir).read_text(encoding="utf-8").strip().splitlines()
     read_audits = [json.loads(line) for line in read_audit_lines]
+    settlement_audits = [json.loads(line) for line in settlement_audit_lines]
     assert chapter_payload["visible_reaction_count"] >= 1
     assert captured_unit_reads == [["c1-s1"], ["c1-s2"]]
     assert captured_carry_forward_contexts[0]["packet_version"] == "attentional_v2.state_packet.v1"
@@ -1121,8 +1136,13 @@ def test_attentional_v2_read_book_runs_live_loop_and_persists_compatibility_resu
     assert captured_carry_forward_contexts[1]["continuity_digest"]["recent_reactions"]
     assert len(unitize_lines) == 2
     assert len(read_audit_lines) == 2
+    assert len(settlement_audit_lines) == 2
     assert all(audit["surfaced_reaction_count"] == 1 for audit in read_audits)
     assert read_audits[1]["carry_forward_ref_ids"]
+    assert settlement_audits[0]["memory_uptake_ops_by_target_store"] == {"active_attention": 1}
+    assert settlement_audits[0]["state_deltas"]["active_attention"]["added_ids"] == ["hot-c1-s1"]
+    assert settlement_audits[0]["state_deltas"]["reaction_records"]["added_ids"]
+    assert settlement_audits[0]["state_deltas"]["anchor_bank"]["added_anchor_ids"]
     shell = load_runtime_shell(runtime_shell_file(result.output_dir))
     assert shell["mechanism_key"] == ATTENTIONAL_V2_MECHANISM_KEY
     assert shell["status"] == "completed"

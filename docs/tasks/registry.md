@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-05-05T16:40:55+08:00`
+Last updated: `2026-05-05T17:03:09+08:00`
 
 ## Status Values
 - `active`
@@ -314,6 +314,7 @@ Last updated: `2026-05-05T16:40:55+08:00`
     - benchmark-only V2 probe snapshots during continuous reading
     - probe snapshot capture now hangs off the `attentional_v2` runtime observability layer rather than a direct Reading Runner benchmark call
     - product runs without explicit `memory_quality_probe_export.enabled` plus semantic `probe_targets` do not build probe snapshots
+    - standard runtime audit now includes `settlement_audit.jsonl`, a compact deterministic before/after transaction summary for `Read -> Reading Runner settlement`
     - current probe placement is semantic-manifest-driven, not hard-ratio-driven
   - current probe plan:
     - `reading-companion-backend/eval/manifests/probes/memory_quality_semantic_probe_plan_20260504.json`

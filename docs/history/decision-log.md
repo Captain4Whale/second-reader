@@ -2530,3 +2530,33 @@ This new direction is design frozen but not yet implemented as a formal benchmar
 - `reading-companion-backend/src/attentional_v2/benchmark_probes.py`
 - `reading-companion-backend/tests/test_attentional_v2_phase_b.py`
 - `reading-companion-backend/tests/test_long_span_vnext.py`
+
+## Entry 83
+**ID**: DEC-086
+**Status**: active
+
+**Decision / Inflection**: Add lightweight per-unit settlement audit for `attentional_v2`.
+
+**Period**: May 5, 2026, immediately after the runtime observability boundary refactor.
+
+**Problem**: `read_audit.jsonl` now exposes the `memory_uptake_ops` proposed by `Read`, but that still leaves a missing link between proposed memory updates and actual runtime state changes. Without a settlement transaction record, durable-memory debugging still has to infer whether a weak final `concept_registry`, `thread_trace`, or `anchor_bank` came from absent Read ops, state-op filtering, reaction persistence, or later bundle persistence.
+
+**Alternatives considered**: Save full per-unit state snapshots, instrument `state_ops` to return per-op accepted/skipped/invalid classifications, or keep relying on sparse Memory Quality probe snapshots. These were rejected for this slice. Full snapshots would bloat standard runtime artifacts, per-op instrumentation would change the state-op interface before the first transaction audit is proven useful, and probe snapshots are evaluation samples rather than a per-unit runtime audit trail.
+
+**Why this path won**: A compact deterministic before/after diff gives enough evidence to trace state movement without adding LLM interpretation, full-state storage, or new reader semantics. It fits the existing observability boundary: Reading Runner owns the exact settlement timing, while `observability.py` owns the audit schema and persistence.
+
+**What changed in the system**: `_mechanisms/attentional_v2/runtime/settlement_audit.jsonl` is now a canonical runtime audit artifact. Each row records the unit location, memory-op count and target-store distribution, and compact before/after deltas for active attention items, concept entries, thread entries, anchor records/relations, and reaction records. The audit does not persist raw prompt/response payloads, full state snapshots, or per-op accepted/skipped judgments.
+
+**Why it matters later**: Future durable-memory investigations can line up `read_audit.jsonl`, `settlement_audit.jsonl`, and Memory Quality probe snapshots to distinguish “Read did not propose memory,” “settlement did not materialize it,” and “prompt-facing sampled state lost or failed to expose it.” If exact per-op filtering becomes necessary, it should be a later state-op instrumentation pass rather than hidden inside the first transaction audit.
+
+**Primary evidence**:
+- `docs/backend-reading-mechanisms/attentional_v2.md`
+- `docs/backend-reader-evaluation.md`
+- `docs/current-state.md`
+- `docs/tasks/registry.md`
+- `docs/tasks/registry.json`
+- `reading-companion-backend/src/attentional_v2/observability.py`
+- `reading-companion-backend/src/attentional_v2/runner.py`
+- `reading-companion-backend/src/attentional_v2/storage.py`
+- `reading-companion-backend/tests/test_attentional_v2_observability.py`
+- `reading-companion-backend/tests/test_attentional_v2_scaffold.py`

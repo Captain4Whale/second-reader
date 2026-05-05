@@ -584,6 +584,10 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
     - canonical runtime audit for each formal `Read`
     - records carry-forward refs, supplemental-context use, surfaced reactions, `reading_impression`, and the normalized `memory_uptake_ops` returned by `Read`
     - also records memory-op counts by target store so durable-memory settlement can be diagnosed without replaying raw model output
+  - `_mechanisms/attentional_v2/runtime/settlement_audit.jsonl`
+    - canonical runtime audit for each completed `Read -> Reading Runner settlement` transaction
+    - records compact before/after counts and changed ids for active attention, concepts, threads, anchors, and reactions
+    - does not persist full state snapshots, raw prompt/response payloads, or per-op accepted/skipped judgments
   - `_mechanisms/attentional_v2/runtime/active_attention.json`
   - `_mechanisms/attentional_v2/runtime/concept_registry.json`
   - `_mechanisms/attentional_v2/runtime/thread_trace.json`
@@ -662,6 +666,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
 - Current runtime observability boundary:
   - `attentional_v2/observability.py` owns mechanism-private runtime audit writers and standard/debug activity hooks
   - Reading Runner announces lifecycle moments such as unitization, read completion, checkpoint/resume, and optional probe capture; it should not own audit schema details
+  - the settlement audit is produced as deterministic before/after runtime-state diff, not as an LLM-authored summary
   - Memory Quality probe capture is an optional observability consumer for evaluation runs, not a product-path Reading Runner responsibility
   - normal product runs do not build Memory Quality probe snapshots unless `memory_quality_probe_export` is explicitly enabled with semantic `probe_targets`
 - Phase 8 now also lands the first evaluation-export slice:
@@ -712,8 +717,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - redesign chapter/detail around chapter text plus anchored reactions instead of semantic sections as the primary container
   - retire section-first requirements from the stable API/frontend contract once the frontend has switched to locus/anchor-native rendering
 - Future observability work still needed:
-  - add a compact settlement audit if durable-memory debugging needs per-unit transaction evidence after `Read -> Runner settlement`
-  - keep any settlement audit under the same observability boundary rather than mixing it into Read prompts, state ops, or evaluation judges
+  - add deeper per-op state-operation instrumentation if durable-memory debugging needs accepted/skipped/invalid classification for individual `memory_uptake_ops`
   - deepen standard/debug node-level traces now that the live parse/read path exists
   - keep debug mode optional rather than making deep diagnostics the baseline requirement for normal evaluation runs
 - Current evaluation note:

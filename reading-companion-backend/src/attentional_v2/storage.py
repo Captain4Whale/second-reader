@@ -14,7 +14,6 @@ from .schemas import (
     ATTENTIONAL_V2_SCHEMA_VERSION,
     build_empty_anchor_bank,
     build_default_reader_policy,
-    build_empty_anchor_memory,
     build_empty_concept_registry,
     build_empty_local_buffer,
     build_empty_local_continuity,
@@ -23,7 +22,6 @@ from .schemas import (
     build_empty_reaction_records,
     build_empty_reconsolidation_records,
     build_empty_reflective_frames,
-    build_empty_reflective_summaries,
     build_empty_resume_metadata,
     build_empty_thread_trace,
     build_empty_active_attention,
@@ -196,6 +194,12 @@ def read_audit_file(output_dir: Path) -> Path:
     return runtime_dir(output_dir) / "read_audit.jsonl"
 
 
+def settlement_audit_file(output_dir: Path) -> Path:
+    """Return the mechanism-private settlement-audit stream path."""
+
+    return runtime_dir(output_dir) / "settlement_audit.jsonl"
+
+
 def prompt_manifest_file(output_dir: Path, node_name: str) -> Path:
     """Return one node-level prompt-manifest path."""
 
@@ -253,6 +257,7 @@ def artifact_map(output_dir: Path) -> dict[str, str]:
         "event_stream": str(event_stream_file(output_dir).relative_to(output_dir)),
         "debug_event_stream": str(event_stream_file(output_dir).relative_to(output_dir)),
         "read_audit": str(read_audit_file(output_dir).relative_to(output_dir)),
+        "settlement_audit": str(settlement_audit_file(output_dir).relative_to(output_dir)),
         "prompt_manifests": str(prompt_manifests_dir(output_dir).relative_to(output_dir)),
     }
 

@@ -36,6 +36,7 @@ from .observability import (
     observability_mode,
     reading_locus_from_cursor,
     record_read,
+    record_settlement,
     record_unitization,
 )
 from .prompts import (
@@ -187,6 +188,7 @@ __all__ = [
     "read_unit",
     "reading_locus_from_cursor",
     "record_read",
+    "record_settlement",
     "record_unitization",
     "reconsolidation",
     "resume_from_checkpoint",

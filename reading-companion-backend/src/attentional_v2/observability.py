@@ -31,7 +31,7 @@ from .schemas import (
     UnitizeDecision,
 )
 from .state_projection import context_ref_ids
-from .storage import append_jsonl, event_stream_file, read_audit_file, unitization_audit_file
+from .storage import append_jsonl, event_stream_file, read_audit_file, settlement_audit_file, unitization_audit_file
 
 
 def _timestamp() -> str:
@@ -113,13 +113,18 @@ def record_unitization(
     )
 
 
+def _normalized_operations(value: object) -> list[dict[str, object]]:
+    """Return normalized operation dictionaries for audit persistence."""
+
+    if not isinstance(value, list):
+        return []
+    return [dict(item) for item in value if isinstance(item, Mapping)]
+
+
 def _memory_uptake_ops(read_result: Mapping[str, object]) -> list[dict[str, object]]:
     """Return normalized read memory operations for audit persistence."""
 
-    raw_ops = read_result.get("memory_uptake_ops")
-    if not isinstance(raw_ops, list):
-        return []
-    return [dict(item) for item in raw_ops if isinstance(item, Mapping)]
+    return _normalized_operations(read_result.get("memory_uptake_ops"))
 
 
 def _memory_uptake_ops_by_target_store(memory_uptake_ops: list[dict[str, object]]) -> dict[str, int]:
@@ -130,6 +135,56 @@ def _memory_uptake_ops_by_target_store(memory_uptake_ops: list[dict[str, object]
         target_store = _clean_text(operation.get("target_store")) or "unspecified"
         counts[target_store] += 1
     return dict(sorted(counts.items()))
+
+
+def _items_by_id(items: object, id_key: str) -> dict[str, dict[str, object]]:
+    """Return mapping-friendly items keyed by a stable id field."""
+
+    if not isinstance(items, list):
+        return {}
+    indexed: dict[str, dict[str, object]] = {}
+    for item in items:
+        if not isinstance(item, Mapping):
+            continue
+        item_id = _clean_text(item.get(id_key))
+        if item_id:
+            indexed[item_id] = dict(item)
+    return indexed
+
+
+def _id_delta(before_items: object, after_items: object, *, id_key: str) -> dict[str, object]:
+    """Return a compact before/after id diff without persisting full item payloads."""
+
+    before = _items_by_id(before_items, id_key)
+    after = _items_by_id(after_items, id_key)
+    before_ids = set(before)
+    after_ids = set(after)
+    return {
+        "before_count": len(before),
+        "after_count": len(after),
+        "added_ids": sorted(after_ids - before_ids),
+        "updated_ids": sorted(item_id for item_id in before_ids & after_ids if before[item_id] != after[item_id]),
+        "removed_ids": sorted(before_ids - after_ids),
+    }
+
+
+def _anchor_bank_delta(before: AnchorBankState, after: AnchorBankState) -> dict[str, object]:
+    """Return compact anchor-bank deltas across anchors and relations."""
+
+    anchor_delta = _id_delta(before.get("anchor_records", []), after.get("anchor_records", []), id_key="anchor_id")
+    relation_delta = _id_delta(before.get("anchor_relations", []), after.get("anchor_relations", []), id_key="relation_id")
+    return {
+        "before_anchor_count": anchor_delta["before_count"],
+        "after_anchor_count": anchor_delta["after_count"],
+        "added_anchor_ids": anchor_delta["added_ids"],
+        "updated_anchor_ids": anchor_delta["updated_ids"],
+        "removed_anchor_ids": anchor_delta["removed_ids"],
+        "before_relation_count": relation_delta["before_count"],
+        "after_relation_count": relation_delta["after_count"],
+        "added_relation_ids": relation_delta["added_ids"],
+        "updated_relation_ids": relation_delta["updated_ids"],
+        "removed_relation_ids": relation_delta["removed_ids"],
+    }
 
 
 def record_read(
@@ -181,6 +236,71 @@ def record_read(
             if isinstance(read_result.get("detour_need"), Mapping)
             else {},
             "llm_fallbacks": [dict(item) for item in (llm_fallbacks or []) if isinstance(item, Mapping)],
+        },
+    )
+
+
+def record_settlement(
+    output_dir: Path | None,
+    *,
+    chapter_id: int,
+    chapter_ref: str,
+    unit_sentence_ids: list[str],
+    focal_sentence_id: str,
+    memory_uptake_ops: object,
+    before_active_attention: ActiveAttention,
+    after_active_attention: ActiveAttention,
+    before_concept_registry: ConceptRegistryState,
+    after_concept_registry: ConceptRegistryState,
+    before_thread_trace: ThreadTraceState,
+    after_thread_trace: ThreadTraceState,
+    before_anchor_bank: AnchorBankState,
+    after_anchor_bank: AnchorBankState,
+    before_reaction_records: ReactionRecordsState,
+    after_reaction_records: ReactionRecordsState,
+    emitted_reaction_ids: list[str] | None = None,
+) -> None:
+    """Append one compact transaction summary for a completed unit settlement."""
+
+    if output_dir is None:
+        return
+    normalized_ops = _normalized_operations(memory_uptake_ops)
+    append_jsonl(
+        settlement_audit_file(output_dir),
+        {
+            "recorded_at": _timestamp(),
+            "chapter_id": chapter_id,
+            "chapter_ref": chapter_ref,
+            "unit_sentence_ids": [_clean_text(item) for item in unit_sentence_ids if _clean_text(item)],
+            "focal_sentence_id": _clean_text(focal_sentence_id),
+            "memory_uptake_op_count": len(normalized_ops),
+            "memory_uptake_ops_by_target_store": _memory_uptake_ops_by_target_store(normalized_ops),
+            "state_deltas": {
+                "active_attention": _id_delta(
+                    before_active_attention.get("active_items", []),
+                    after_active_attention.get("active_items", []),
+                    id_key="item_id",
+                ),
+                "concept_registry": _id_delta(
+                    before_concept_registry.get("entries", []),
+                    after_concept_registry.get("entries", []),
+                    id_key="concept_key",
+                ),
+                "thread_trace": _id_delta(
+                    before_thread_trace.get("entries", []),
+                    after_thread_trace.get("entries", []),
+                    id_key="thread_key",
+                ),
+                "anchor_bank": _anchor_bank_delta(before_anchor_bank, after_anchor_bank),
+                "reaction_records": {
+                    **_id_delta(
+                        before_reaction_records.get("records", []),
+                        after_reaction_records.get("records", []),
+                        id_key="reaction_id",
+                    ),
+                    "emitted_reaction_ids": [_clean_text(item) for item in (emitted_reaction_ids or []) if _clean_text(item)],
+                },
+            },
         },
     )
 

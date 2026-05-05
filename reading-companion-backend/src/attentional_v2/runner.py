@@ -38,6 +38,7 @@ from .observability import (
     maybe_capture_memory_quality_probe,
     memory_quality_probe_observability_settings,
     record_read,
+    record_settlement,
     record_unitization,
 )
 from .read_context import build_carry_forward_context
@@ -115,6 +116,7 @@ from .storage import (
     resume_metadata_file,
     runtime_dir,
     save_json,
+    settlement_audit_file,
     survey_map_file,
     thread_trace_file,
     read_audit_file,
@@ -721,6 +723,7 @@ def _reset_live_runtime(output_dir: Path) -> None:
         reconsolidation_records_file(output_dir),
         resume_metadata_file(output_dir),
         read_audit_file(output_dir),
+        settlement_audit_file(output_dir),
         unitization_audit_file(output_dir),
         memory_quality_probe_export_file(output_dir),
         runtime_artifacts.runtime_shell_file(output_dir),
@@ -1900,19 +1903,25 @@ def _settle_next_unit(
             },
         )
 
+    memory_uptake_ops = read_result.get("memory_uptake_ops", [])
+    before_active_attention = active_attention
+    before_concept_registry = concept_registry
+    before_thread_trace = thread_trace
+    before_anchor_bank = anchor_bank
+    before_reaction_records = reaction_records
     active_attention = apply_active_attention_operations(
         active_attention,
-        read_result.get("memory_uptake_ops", []),
+        memory_uptake_ops,
     )
     concept_registry = apply_concept_registry_operations(
         concept_registry,
-        read_result.get("memory_uptake_ops", []),
+        memory_uptake_ops,
     )
     thread_trace = apply_thread_trace_operations(
         thread_trace,
-        read_result.get("memory_uptake_ops", []),
+        memory_uptake_ops,
     )
-    anchor_bank = apply_anchor_bank_operations(anchor_bank, read_result.get("memory_uptake_ops", []))
+    anchor_bank = apply_anchor_bank_operations(anchor_bank, memory_uptake_ops)
     emitted_detour_need = isinstance(read_result.get("detour_need"), dict)
     if emitted_detour_need:
         local_continuity = _apply_detour_need(local_continuity, read_result.get("detour_need"))  # type: ignore[arg-type]
@@ -1927,6 +1936,27 @@ def _settle_next_unit(
         reaction_records=reaction_records,
         anchor_bank=anchor_bank,
         output_dir=output_dir,
+    )
+    record_settlement(
+        output_dir,
+        chapter_id=chapter_id,
+        chapter_ref=chapter_ref,
+        unit_sentence_ids=[
+            _clean_text(item.get("sentence_id")) for item in chosen_unit_sentences if _clean_text(item.get("sentence_id"))
+        ],
+        focal_sentence_id=focal_sentence_id,
+        memory_uptake_ops=memory_uptake_ops,
+        before_active_attention=before_active_attention,
+        after_active_attention=active_attention,
+        before_concept_registry=before_concept_registry,
+        after_concept_registry=concept_registry,
+        before_thread_trace=before_thread_trace,
+        after_thread_trace=thread_trace,
+        before_anchor_bank=before_anchor_bank,
+        after_anchor_bank=anchor_bank,
+        before_reaction_records=before_reaction_records,
+        after_reaction_records=reaction_records,
+        emitted_reaction_ids=[_clean_text(item.get("reaction_id")) for item in emitted_reactions],
     )
     if meaning_units_in_chapter is not None:
         meaning_units_in_chapter.append(

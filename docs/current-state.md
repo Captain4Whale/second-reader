@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-05-05T16:40:55+08:00`
+Last verified: `2026-05-05T17:03:09+08:00`
 
 ## Current Objective
 - Shift Long Span from the discontinued `target-centered accumulation v2` method to the new active design direction:
@@ -26,6 +26,7 @@ Last verified: `2026-05-05T16:40:55+08:00`
         - benchmark-only V2 probe snapshot export now uses explicit semantic probe targets from a versioned manifest, not hard `20% / 40% / 60% / 80% / window end` ratios
         - probe snapshot capture now runs through the `attentional_v2` runtime observability layer instead of being a direct Reading Runner benchmark call
         - normal product runs do not build Memory Quality snapshots unless `memory_quality_probe_export.enabled` and explicit semantic `probe_targets` are present
+        - standard runtime audit now links `Read` memory uptake to deterministic `Read -> Reading Runner settlement` transaction deltas through `read_audit.jsonl` and `settlement_audit.jsonl`
         - current probe plan:
           - `reading-companion-backend/eval/manifests/probes/memory_quality_semantic_probe_plan_20260504.json`
           - selection method: `semantic_boundary_with_distance_reference`
