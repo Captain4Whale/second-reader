@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-05-05T17:03:09+08:00`
+Last verified: `2026-05-05T22:11:51+08:00`
 
 ## Current Objective
 - Shift Long Span from the discontinued `target-centered accumulation v2` method to the new active design direction:
@@ -27,6 +27,32 @@ Last verified: `2026-05-05T17:03:09+08:00`
         - probe snapshot capture now runs through the `attentional_v2` runtime observability layer instead of being a direct Reading Runner benchmark call
         - normal product runs do not build Memory Quality snapshots unless `memory_quality_probe_export.enabled` and explicit semantic `probe_targets` are present
         - standard runtime audit now links `Read` memory uptake to deterministic `Read -> Reading Runner settlement` transaction deltas through `read_audit.jsonl` and `settlement_audit.jsonl`
+        - current `attentional_v2` mainline cursor semantics have now shifted from sentence-id traversal to paragraph-offset source spans:
+          - `SourceCursor`: `chapter_id`, `chapter_ref`, `paragraph_index`, `char_offset`
+          - `SourceSpan`: end-exclusive `[start_cursor, end_cursor)`
+          - `Navigate.choose_next_unit` sees an adaptive paragraph-offset preview and returns `end_anchor_text`
+          - `Reading Runner` resolves that anchor into an accepted unit span, advances the source cursor, and appends `_mechanisms/attentional_v2/runtime/unit_span_ledger.jsonl`
+          - sentence ids remain in legacy/eval/detour compatibility territory, not the mainline reading lattice
+          - remaining follow-up: migrate memory/reaction/source-anchor and probe locator semantics from sentence-shaped payloads toward source-span payloads without disturbing the just-landed mainline cursor path
+        - first no-judge settlement-audit diagnostic:
+          - run id:
+            - `attentional_v2_settlement_audit_nawaer_diagnostic_20260505`
+          - job id:
+            - `bgjob_settlement_audit_nawaer_diagnostic_20260505`
+          - window:
+            - `nawaer_baodian_private_zh__segment_1`
+          - result:
+            - `59` read-audit rows and `59` settlement-audit rows completed
+            - `29 / 59` read units emitted memory ops, with `31` total ops
+            - target-store distribution: `active_attention = 12`, `concept_registry = 18`, `thread_trace = 1`
+            - settlement deltas materialized those ops into `active_attention`, `concept_registry`, and `thread_trace`; anchors and reactions were also persisted through normal reaction anchoring
+          - diagnostic finding:
+            - the earlier suspicion that `Read` emitted no `memory_uptake_ops` is not supported on this fresh run
+            - the current break is field-shape alignment for durable stores: `Read` emits concept/thread payloads with fields such as `statement`, `source_sentence_id`, `linked_anchor_ids`, and `attention_tags`, while `state_ops` persists concept/thread fields such as `summary`, `support_anchor_ids`, `linked_thread_ids`, and `last_touched_sentence_id`
+            - as a result, `concept_registry` and `thread_trace` entries are created but carry weak/empty durable content; `active_attention` fares better because it already consumes `statement`
+            - final `active_attention` dropping from `11` post-unit-settlement items to `4` runtime items is explained by chapter-end consolidation / cross-chapter carry-forward, not by per-unit settlement loss
+          - next implementation target:
+            - repair `Read` memory-op schema guidance and/or normalization for `concept_registry` and `thread_trace` before spending a full rerun on `huochu` or all five windows
         - current probe plan:
           - `reading-companion-backend/eval/manifests/probes/memory_quality_semantic_probe_plan_20260504.json`
           - selection method: `semantic_boundary_with_distance_reference`

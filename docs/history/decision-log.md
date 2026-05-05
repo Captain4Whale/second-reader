@@ -2560,3 +2560,39 @@ This new direction is design frozen but not yet implemented as a formal benchmar
 - `reading-companion-backend/src/attentional_v2/storage.py`
 - `reading-companion-backend/tests/test_attentional_v2_observability.py`
 - `reading-companion-backend/tests/test_attentional_v2_scaffold.py`
+
+## Entry 84
+**ID**: DEC-087
+**Status**: active
+
+**Decision / Inflection**: Move `attentional_v2` mainline progress from sentence-id traversal to paragraph-offset source spans.
+
+**Period**: May 5, 2026, after the project clarified that the reading unit should be chosen during reading by `Navigate.choose_next_unit`, while paragraph text provides the stable source substrate and character offsets provide exact coordinates.
+
+**Problem**: The earlier V2 implementation had escaped V1's section/subsection pre-cutting, but still kept sentence ids as the mainline cursor and preview lattice. That risked turning sentence splitting into a hidden pre-reading segmentation step and made boundary quality depend on a preprocessing decision that is not the essence of reading. The mechanism needed ordered coverage, exact resume, and source-reference coordinates without making sentences the unit of reading.
+
+**Alternatives considered**: Keep sentence ids as the mainline cursor, introduce smaller micro-spans or boundary handles, or ask the LLM to return raw numeric offsets. These were rejected. Sentence ids preserved too much of the old pre-cut lattice. Micro-spans and boundary handles would add new substrate complexity. Raw LLM offsets would be brittle and would make cursor correctness depend on model arithmetic.
+
+**Why this path won**: Paragraph + char offset is simple, universal, and source-native. The book is already made of ordered paragraphs and character positions. `Navigate` can choose a natural unit by quoting exact end-anchor text from a bounded preview, while the Reading Runner deterministically resolves that quote to an end cursor. This keeps the semantic boundary decision with `Navigate` and the coordinate correctness with program logic.
+
+**What changed in the system**: `attentional_v2` now has `SourceCursor` / `SourceSpan` helpers and an adaptive paragraph-offset preview builder. Mainline `Navigate.choose_next_unit` receives source text and paragraph slices and returns `end_anchor_text`. The Reading Runner resolves that anchor, reads `current_unit_source`, advances the mainline cursor to `end_cursor`, and appends `_mechanisms/attentional_v2/runtime/unit_span_ledger.jsonl` for accepted mainline units. Shared cursor payloads now support `position_kind = "span"` with paragraph-offset cursor data. Sentence records remain available for legacy/eval/detour compatibility, but they no longer define the `attentional_v2` mainline reading lattice.
+
+**Why it matters later**: Future memory, reaction, source-anchor, and probe locator work should move toward source-span coordinates instead of reinforcing sentence-shaped payloads. Old sentence-target manifests and public compatibility projections can stay isolated, but they should not steer new mechanism design. The Unit Span Ledger is the durable reading-history fact to use for resume validation, coverage checks, and later source-grounding migrations.
+
+**Primary evidence**:
+- `docs/backend-reading-mechanisms/attentional_v2.md`
+- `docs/backend-reading-mechanism.md`
+- `docs/backend-reader-evaluation.md`
+- `docs/current-state.md`
+- `docs/tasks/registry.md`
+- `docs/tasks/registry.json`
+- `reading-companion-backend/src/attentional_v2/source_spans.py`
+- `reading-companion-backend/src/attentional_v2/unit_span_ledger.py`
+- `reading-companion-backend/src/attentional_v2/runner.py`
+- `reading-companion-backend/src/attentional_v2/nodes.py`
+- `reading-companion-backend/src/attentional_v2/prompts.py`
+- `reading-companion-backend/src/attentional_v2/resume.py`
+- `reading-companion-backend/src/attentional_v2/storage.py`
+- `reading-companion-backend/src/reading_core/runtime_contracts.py`
+- `reading-companion-backend/tests/test_attentional_v2_source_spans.py`
+- `reading-companion-backend/tests/test_attentional_v2_scaffold.py`

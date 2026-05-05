@@ -134,6 +134,8 @@ class PreviewRange(TypedDict, total=False):
 
     start_sentence_id: str
     end_sentence_id: str
+    start_cursor: dict[str, object]
+    end_cursor: dict[str, object]
 
 
 class UnitizeDecision(TypedDict, total=False):
@@ -141,6 +143,10 @@ class UnitizeDecision(TypedDict, total=False):
 
     start_sentence_id: str
     end_sentence_id: str
+    end_anchor_text: str
+    source_span: dict[str, object]
+    source_span_id: str
+    resolution: dict[str, object]
     preview_range: PreviewRange
     boundary_type: UnitizeBoundaryType
     evidence_sentence_ids: list[str]
@@ -363,8 +369,12 @@ class NavigateActResult(TypedDict, total=False):
     decision: NavigateActDecision
     selection_mode: NavigateSelectionMode
     reason: str
+    end_anchor_text: str
     start_sentence_id: str
     end_sentence_id: str
+    source_span: dict[str, object]
+    source_span_id: str
+    resolution: dict[str, object]
     boundary_type: UnitizeBoundaryType
     evidence_sentence_ids: list[str]
     continuation_pressure: bool
@@ -378,8 +388,11 @@ class NavigateActTraceEntry(TypedDict, total=False):
     decision: NavigateActDecision
     selection_mode: NavigateSelectionMode
     reason: str
+    end_anchor_text: str
     start_sentence_id: str
     end_sentence_id: str
+    source_span_id: str
+    resolution: dict[str, object]
     skill_request: dict[str, object]
     skill_result: dict[str, object]
     error: str
@@ -393,6 +406,8 @@ class NavigateNextUnitResult(TypedDict, total=False):
     chapter_id: int
     chapter_ref: str
     selected_unit_sentences: list[dict[str, object]]
+    selected_source_unit: dict[str, object]
+    preview: dict[str, object]
     unitize_decision: UnitizeDecision
     navigate_trace: list[NavigateActTraceEntry]
     defer_reason: str
@@ -1054,6 +1069,9 @@ def build_default_reader_policy(
         "updated_at": _timestamp(),
         "unitize": {
             "max_coverage_unit_sentences": 12,
+            "preview_soft_min_chars": 1500,
+            "preview_hard_max_chars": 4000,
+            "max_lookahead_paragraphs": 4,
         },
         "read": {
             "supplemental_context_budget": 4,

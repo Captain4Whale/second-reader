@@ -139,6 +139,12 @@ def reflective_frames_file(output_dir: Path) -> Path:
     return runtime_dir(output_dir) / "reflective_frames.json"
 
 
+def unit_span_ledger_file(output_dir: Path) -> Path:
+    """Return the core accepted-unit span ledger path."""
+
+    return runtime_dir(output_dir) / "unit_span_ledger.jsonl"
+
+
 def knowledge_activations_file(output_dir: Path) -> Path:
     """Return the knowledge-activations path."""
 
@@ -244,6 +250,7 @@ def artifact_map(output_dir: Path) -> dict[str, str]:
         "concept_registry": str(concept_registry_file(output_dir).relative_to(output_dir)),
         "thread_trace": str(thread_trace_file(output_dir).relative_to(output_dir)),
         "reflective_frames": str(reflective_frames_file(output_dir).relative_to(output_dir)),
+        "unit_span_ledger": str(unit_span_ledger_file(output_dir).relative_to(output_dir)),
         "anchor_bank": str(anchor_bank_file(output_dir).relative_to(output_dir)),
         "knowledge_activations": str(knowledge_activations_file(output_dir).relative_to(output_dir)),
         "reaction_records": str(reaction_records_file(output_dir).relative_to(output_dir)),
@@ -385,6 +392,9 @@ def initialize_artifact_tree(
     event_stream_file(output_dir).parent.mkdir(parents=True, exist_ok=True)
     if not event_stream_file(output_dir).exists():
         event_stream_file(output_dir).write_text("", encoding="utf-8")
+    unit_span_ledger_file(output_dir).parent.mkdir(parents=True, exist_ok=True)
+    if not unit_span_ledger_file(output_dir).exists():
+        unit_span_ledger_file(output_dir).write_text("", encoding="utf-8")
     return {
         "mechanism_key": ATTENTIONAL_V2_MECHANISM_KEY,
         "mechanism_version": mechanism_version,

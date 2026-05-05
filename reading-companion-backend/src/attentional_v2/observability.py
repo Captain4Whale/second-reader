@@ -194,6 +194,7 @@ def record_read(
     chapter_ref: str,
     unitize_decision: UnitizeDecision,
     carry_forward_context: CarryForwardContext,
+    source_unit: Mapping[str, object] | None = None,
     context_request: ContextRequest | None = None,
     supplemental_context: dict[str, object] | None = None,
     supplemental_satisfied: bool = False,
@@ -219,6 +220,18 @@ def record_read(
             "chapter_id": chapter_id,
             "chapter_ref": chapter_ref,
             "unitize_decision": dict(unitize_decision),
+            "source_span": dict(source_unit.get("source_span", {}))
+            if isinstance(source_unit, Mapping) and isinstance(source_unit.get("source_span"), Mapping)
+            else {},
+            "source_span_id": _clean_text(source_unit.get("source_span_id"))
+            if isinstance(source_unit, Mapping)
+            else "",
+            "unit_char_count": int(source_unit.get("char_count", 0) or 0)
+            if isinstance(source_unit, Mapping)
+            else 0,
+            "unit_paragraph_count": int(source_unit.get("paragraph_count", 0) or 0)
+            if isinstance(source_unit, Mapping)
+            else 0,
             "carry_forward_ref_ids": sorted(context_ref_ids(carry_forward_context)),
             "context_request": dict(context_request or {}),
             "supplemental_ref_ids": sorted(context_ref_ids(supplemental_context)),
@@ -259,6 +272,8 @@ def record_settlement(
     before_reaction_records: ReactionRecordsState,
     after_reaction_records: ReactionRecordsState,
     emitted_reaction_ids: list[str] | None = None,
+    source_span: Mapping[str, object] | None = None,
+    source_span_id: str = "",
 ) -> None:
     """Append one compact transaction summary for a completed unit settlement."""
 
@@ -273,6 +288,8 @@ def record_settlement(
             "chapter_ref": chapter_ref,
             "unit_sentence_ids": [_clean_text(item) for item in unit_sentence_ids if _clean_text(item)],
             "focal_sentence_id": _clean_text(focal_sentence_id),
+            "source_span": dict(source_span or {}),
+            "source_span_id": _clean_text(source_span_id),
             "memory_uptake_op_count": len(normalized_ops),
             "memory_uptake_ops_by_target_store": _memory_uptake_ops_by_target_store(normalized_ops),
             "state_deltas": {
@@ -366,6 +383,24 @@ def reading_locus_from_cursor(cursor: Mapping[str, object] | None) -> dict[str, 
     chapter_ref = _clean_text(cursor.get("chapter_ref"))
     if chapter_ref:
         locus["chapter_ref"] = chapter_ref
+    span_start_cursor = cursor.get("span_start_cursor")
+    span_end_cursor = cursor.get("span_end_cursor")
+    if isinstance(span_start_cursor, Mapping) or isinstance(span_end_cursor, Mapping) or cursor.get("paragraph_index") is not None:
+        locus["kind"] = "source_span" if kind == "span" else "source_cursor"
+        if isinstance(span_start_cursor, Mapping):
+            locus["start_cursor"] = dict(span_start_cursor)
+        else:
+            locus["start_cursor"] = {
+                "chapter_id": chapter_id,
+                "chapter_ref": chapter_ref,
+                "paragraph_index": cursor.get("paragraph_index"),
+                "char_offset": cursor.get("char_offset"),
+            }
+        if isinstance(span_end_cursor, Mapping):
+            locus["end_cursor"] = dict(span_end_cursor)
+        if len(locus) == 1 and kind == "chapter":
+            return None
+        return locus
     sentence_id = _clean_text(cursor.get("sentence_id"))
     start_id = _clean_text(cursor.get("span_start_sentence_id")) or sentence_id
     end_id = _clean_text(cursor.get("span_end_sentence_id")) or sentence_id or start_id

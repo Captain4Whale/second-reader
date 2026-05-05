@@ -1,6 +1,6 @@
 # Attentional V2 Mechanism
 
-Purpose: define the current default attention-frontier reading mechanism that reads every sentence, reasons mainly over meaning units, and moves forward through unresolved interpretive pressure rather than fixed section traversal.
+Purpose: define the current default attention-frontier reading mechanism that reads from a paragraph-offset source cursor, lets `Navigate.choose_next_unit` choose the next source span, reasons mainly over meaning units, and moves forward through deterministic post-read settlement rather than fixed section traversal.
 Use when: changing the live `attentional_v2` parse/read path, clarifying its ontology, or updating its mechanism-private runtime behavior.
 Not for: shared mechanism-platform rules or the internals of `iterator_v1`.
 Update when: the live ontology, progression logic, LLM schedule, memory model, unsupported modes, or artifact design for `attentional_v2` materially changes.
@@ -31,7 +31,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - They still appear in code and docs because some landed module families kept their rollout-era names.
   - When describing live reading behavior, prefer the runtime loop and node names below over the `Phase N` shorthand.
   - The landed implementation includes:
-  - shared sentence substrate
+  - shared chapter / paragraph substrate, with parse-time sentence records retained as compatibility and detour-evidence handles rather than the mainline reading lattice
   - shared canonical parse/provisioning and shared manifest/run-state shells
   - orientation-only survey artifacts
   - deterministic intake/retrieval helpers
@@ -47,7 +47,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - job/resume mechanism-key propagation
   - compatibility chapter-result outputs without requiring `iterator_v1`-style `structure.json`
 - It is still intentionally unsupported for the retired legacy `book_analysis` mode in this slice.
-- Its goal is to preserve sentence-level fidelity while shifting the main reasoning unit from fixed sections toward dynamic meaning units and an explicit attention frontier.
+- Its goal is to preserve source-span fidelity while shifting the main reasoning unit from fixed sections or pre-cut sentences toward dynamic meaning units and an explicit attention frontier.
 - Phase A of the post-eval structural rework is now landed.
   - This did not change the mechanism key or public compatibility surface.
   - It did change the live control skeleton:
@@ -158,11 +158,13 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
 - `Navigate.route` is historical route-layer vocabulary after the forward-settlement cutover.
 - The current prompt manifest node name and trace node id for Navigator selection are `navigate_choose_next_unit`.
 - The live runtime should be explained as a reading loop:
-  - sentence intake as pure local-buffer maintenance
+  - `Reading Runner` maintains a paragraph-offset `SourceCursor` over the current chapter
   - `Navigate.choose_next_unit`
+    - receives an adaptive source preview from the current cursor
+    - returns an exact `end_anchor_text` rather than sentence ids or raw numeric offsets
   - mandatory formal unit read with bounded carry-forward context
   - `read` directly surfaces zero-to-many reading-time reactions and emits bounded state ops
-  - `Reading Runner` post-read settlement applies memory uptake, persists reactions, writes audit, closes the unit, and advances the cursor
+  - `Reading Runner` resolves the returned anchor into an end-exclusive `SourceSpan`, invokes `Read` on that accepted source unit, applies memory uptake, persists reactions, writes audit, records the accepted unit span, and advances the cursor
   - optional `detour_need` may redirect the next normal `Navigate.choose_next_unit` call through the live Navigator-owned detour path
   - chapter-end slow-cycle work such as `chapter_consolidation`, `reflective_promotion`, and `reconsolidation`
 - The old `trigger -> zoom_read -> meaning_unit_closure -> controller_decision -> reaction_emission` chain is now historical implementation vocabulary, not live runtime behavior.
@@ -170,9 +172,21 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - They should not be read as active helper territory inside the current Reading Runner.
 
 ## Core Primitives / Ontology
-- `sentence stream`
-  - the ingestion stream of source-order sentences
-  - every sentence is seen in order; none are skipped at intake
+- `paragraph substrate`
+  - the mainline source substrate for the current mechanism
+  - produced by the shared parse as `chapters[].paragraphs[]`
+  - `attentional_v2` treats it as the stable reading lattice for forward progress; parse-time sentence records are compatibility / detour-evidence handles, not the mainline cursor system
+- `SourceCursor`
+  - the mechanism-internal mainline coordinate
+  - shape: `chapter_id`, `chapter_ref`, `paragraph_index`, `char_offset`
+  - offsets are character offsets inside one source paragraph
+- `SourceSpan`
+  - the accepted unit range read by `Read`
+  - shape: `start_cursor`, `end_cursor`
+  - ranges are end-exclusive: `[start, end)`
+- `Unit Span Ledger`
+  - the append-only runtime fact recording accepted mainline units
+  - used for reading-history continuity and resume validation, not merely for debugging
 - `meaning unit`
   - the primary reasoning unit
   - usually one paragraph or a short paragraph span
@@ -206,25 +220,27 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
     - it does not produce user-visible reactions
     - it does not write durable reading memory
   - It now also emits a machine-readable `reading_plan` whose default mode is `body_first`.
-- It then reads through the text in scheduled sentence order.
+- It then reads through scheduled chapters by paragraph-offset source cursor.
   - The chapter queue now defaults to:
     - `main_body` chapters first
     - then `front_support` and `back_support`
-  - Within whichever chapter is currently active, sentence order is still the intake discipline.
-  - Coverage-unit selection is now the reasoning-entry discipline.
-- Sentence intake is now a pure rolling-buffer ingest step.
-  - It maintains `local_buffer` only.
-  - It does not emit `trigger_state`, `watch_state`, or any `no_zoom / monitor / zoom_now` gate packet.
+  - Within whichever chapter is currently active, the cursor is `paragraph_index + char_offset`.
+  - Coverage-unit selection is the reasoning-entry discipline; the cursor only guarantees ordered coverage and exact resume position.
+  - The mainline loop no longer pre-ingests every sentence as the progress primitive.
+  - Legacy sentence records may still support detour source skills, compatibility projection, old eval manifests, or old public surfaces, but they do not define mainline progress.
 - The current live forward-settlement baseline now runs:
-  - ingest the next unread sentence
+  - build an adaptive paragraph-offset preview from the current `SourceCursor`
   - call `Navigate.choose_next_unit`
-    - without an open detour, the single Navigate act chooses a unit from the bounded mainline preview
+    - without an open detour, the single Navigate act chooses a source unit by returning `end_anchor_text`
     - with an open detour, the same Navigate act loop may request bounded source evidence, choose a detour unit, or defer the detour
+  - deterministically resolve `end_anchor_text` against the preview and map it to an end-exclusive `end_cursor`
+    - if the anchor cannot be resolved, retry Navigate once with the failed resolution as source evidence
+    - if retry still fails, fall back conservatively to the current paragraph end or preview boundary and record the resolution status
   - build a small `carry-forward context` from persisted state
-  - formally read the chosen coverage unit through `read`
+  - formally read the accepted source unit through `read`
   - let `read` directly surface zero-to-many reading-time reactions for that exact unit
   - persist any `detour_need` into `local_continuity` instead of privately resolving it inside `Read`
-  - `Reading Runner` post-read settlement closes the exact unit and advances the cursor to the sentence after it
+  - `Reading Runner` post-read settlement closes the exact source unit, appends it to the Unit Span Ledger, and advances the cursor to `end_cursor`
 - Current detour state remains in `local_continuity`, but detour localization is no longer a separate live prompt family beside mainline unitization.
 - The current book-local Skill Runtime is a controlled source-evidence layer under `Navigate.choose_next_unit`.
   - It is not a generic tool loop and does not add WebSearch or Read-owned skills yet.
@@ -246,10 +262,13 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - Boundary choice is prompt-led and semantic.
   - Runtime guardrails only keep the unit from running away.
   - In the mainline case, it receives a bounded preview plus compact navigation context built from continuity and state digests.
-  - The fixed Phase A preview window is:
-    - current paragraph remainder
-    - plus the next paragraph in the same section
-  - Because the current canonical substrate does not expose stable section ids, "same section" is implemented conservatively by refusing to cross into heading paragraphs during preview construction.
+  - The current mainline preview window is paragraph-offset and adaptive:
+    - always starts at the exact current cursor
+    - includes at least the current paragraph remainder
+    - appends following paragraphs when the visible remainder is short
+    - does not cross chapter boundaries
+    - defaults live in `reader_policy.unitize`: `preview_soft_min_chars = 1500`, `preview_hard_max_chars = 4000`, `max_lookahead_paragraphs = 4`
+  - Navigate does not return raw offsets. It returns `end_anchor_text`, an exact quote from the visible preview near the selected unit boundary.
   - Parse-time `text_role` is still available during this step, but only as an inherited block-level weak cue rather than a sentence-level truth packet.
   - Heading handling is now deliberately conservative:
     - `chapter_heading` and `section_heading` may stand alone when their visible wording already forms a complete local move
@@ -289,7 +308,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - It helped isolate visible wording while the system proved out surfaced-reaction persistence.
   - But the approved next shape no longer treats a dedicated `Express` step as the mechanism's stable center of gravity, and F1 has already removed it from the live Reading Runner path.
 - The Reading Runner now owns post-read settlement for that same chosen unit.
-  - It deterministically applies `memory_uptake_ops`, persists surfaced reactions, writes audit records, closes the current unit, and advances the cursor to the sentence after the chosen unit.
+  - It deterministically applies `memory_uptake_ops`, persists surfaced reactions, writes audit records, closes the current unit, appends the accepted mainline unit to the Unit Span Ledger, and advances the paragraph-offset cursor to the unit's `end_cursor`.
   - It does not ask an LLM whether ordinary forward reading should continue.
   - It does not record a replacement `forward` action; forward progression is the default program behavior.
 - Span visibility and authority are now aligned.
@@ -297,8 +316,10 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - The span being judged is the only span that can be closed or extended.
   - The old Reading Runner behavior where a narrow late tail could implicitly close a larger hidden open span is no longer the live path.
 - The unitization decision carries the exact boundary evidence used on the live path:
-  - chosen unit start/end sentence ids
-  - preview range
+  - source span start/end cursors
+  - preview start/end cursors
+  - exact `end_anchor_text`
+  - resolver status and method
   - unit boundary type
   - unitization reason
 - `Navigate.route`, `route_action`, `route_history`, `commit`, `continue`, `bridge_back`, and `reframe` are historical route-layer vocabulary.
@@ -325,7 +346,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - `reconsolidation`
   - `chapter_consolidation`
 - The runtime schedule is intentionally narrower than the old node inventory:
-  - sentence-level intake still runs without LLM
+  - paragraph-offset preview construction and cursor advancement run without LLM
   - `Navigate.choose_next_unit` decides the next coverage unit before formal reading begins
   - ordinary mainline choice normally uses one Navigate LLM act and cannot request skills
   - an active detour uses the same Navigate act loop and may request bounded source-evidence skills before choosing or deferring
@@ -458,10 +479,11 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
 - Default carried context must stay small and stable.
   - long-distance memory should travel as compact digests, not as full registries
   - source-grounded earlier text should be injected only through bounded selective carry
-- Phase A unitization preview is intentionally narrow and deterministic.
-  - It previews only the current paragraph remainder and the next paragraph in the same section.
-  - The semantic choice of where to stop inside that preview is prompt-led.
-  - Runtime only imposes an emergency hard guardrail through `reader_policy.unitize.max_coverage_unit_sentences` so unitization cannot silently expand without bound.
+- Mainline unitization preview is intentionally source-local and deterministic.
+  - It previews from the exact paragraph-offset cursor, not from a precomputed sentence index.
+  - It always includes the current paragraph remainder and may append a small number of following paragraphs when the remainder is too short to support a natural unit decision.
+  - The semantic choice of where to stop inside that preview is prompt-led through `end_anchor_text`.
+  - Runtime imposes deterministic guardrails through `reader_policy.unitize.preview_soft_min_chars`, `preview_hard_max_chars`, and `max_lookahead_paragraphs`.
 - Search posture is separate from prior-knowledge posture.
   - Version-one search states are:
     - `no_search`
@@ -474,7 +496,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
 ## State Layers, Ownership, And Detour Logic
 - The mechanism now distinguishes five state territories:
   - `local_continuity`
-    - reading-flow position, recent unit boundaries, `mainline_cursor`, active detour trace, and return semantics
+    - reading-flow position, paragraph-offset `mainline_cursor`, recent unit boundaries, active detour trace, and return semantics
   - `active_attention`
     - the current unresolved hot items that may still shape the next reads
     - native truth is `active_attention.active_items[]`
@@ -557,9 +579,9 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
 ## Runtime Artifacts
 - Shared substrate dependency
   - `public/book_document.json`
-  - The shared substrate now includes parse-time sentence records with stable ids and sentence-span locators.
-  - `text_role` on those sentence records is an inherited block/paragraph cue and should be treated as weak structure guidance, not sentence-level truth.
-  - `auxiliary` paragraphs are filtered before sentence-layer reading, so footnote-like or apparatus-like content that survives only as `auxiliary` never reaches `Navigate` on the live path.
+  - The shared substrate includes canonical chapter order and paragraph records. Those paragraphs are the current `attentional_v2` mainline substrate.
+  - Parse-time sentence records with stable ids and locators may still exist in the same document, but for this mechanism they are compatibility and detour-evidence handles, not the mainline reading lattice.
+  - `text_role` on paragraph records is a weak structure cue. `auxiliary` paragraphs are filtered before mainline preview construction, so footnote-like or apparatus-like content that survives only as `auxiliary` never reaches `Navigate` on the live mainline path.
 - Current scaffolded mechanism-private derived artifacts
   - `_mechanisms/attentional_v2/derived/survey_map.json`
     - now includes:
@@ -577,16 +599,24 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
     - rolling intake buffer only
   - `_mechanisms/attentional_v2/runtime/local_continuity.json`
     - compact continuity plus detour ownership state
+    - persists the paragraph-offset `mainline_cursor` for current runs
     - also carries the current `reading_queue_stage` (`mainline` or `deferred_support`) for resume/observability
   - `_mechanisms/attentional_v2/runtime/continuation_capsule.json`
   - `_mechanisms/attentional_v2/runtime/unitization_audit.jsonl`
+    - canonical runtime audit for Navigate's raw selection and resolver outcome
+  - `_mechanisms/attentional_v2/runtime/unit_span_ledger.jsonl`
+    - canonical runtime fact for accepted mainline source units
+    - records `unit_id`, sequence index, start/end source cursors, preview cursors, char/paragraph counts, end anchor text, and resolution status
+    - used for reading-history continuity and resume validation rather than treated as a debug-only stream
   - `_mechanisms/attentional_v2/runtime/read_audit.jsonl`
     - canonical runtime audit for each formal `Read`
     - records carry-forward refs, supplemental-context use, surfaced reactions, `reading_impression`, and the normalized `memory_uptake_ops` returned by `Read`
+    - also records the current source span when the read is mainline paragraph-offset reading
     - also records memory-op counts by target store so durable-memory settlement can be diagnosed without replaying raw model output
   - `_mechanisms/attentional_v2/runtime/settlement_audit.jsonl`
     - canonical runtime audit for each completed `Read -> Reading Runner settlement` transaction
     - records compact before/after counts and changed ids for active attention, concepts, threads, anchors, and reactions
+    - also records the current source span when the settlement belongs to mainline paragraph-offset reading
     - does not persist full state snapshots, raw prompt/response payloads, or per-op accepted/skipped judgments
   - `_mechanisms/attentional_v2/runtime/active_attention.json`
   - `_mechanisms/attentional_v2/runtime/concept_registry.json`
@@ -614,6 +644,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
 - Current scaffolded shared runtime resume artifacts
   - `_runtime/runtime_shell.json`
     - shared cursor, last-checkpoint pointer, and observability mode
+    - for current `attentional_v2` mainline progress, the shared cursor uses `position_kind = "span"` with paragraph-offset start/end cursor data
   - `_runtime/checkpoint_summaries/*.json`
     - thin resume-kind, observability mode, and visible-reaction checkpoint summaries
 - Later mechanism-private runtime artifacts may still add further controller-facing state if implementation proves they are needed.

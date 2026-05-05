@@ -41,6 +41,7 @@ from src.attentional_v2.storage import (
     settlement_audit_file,
     survey_map_file,
     thread_trace_file,
+    unit_span_ledger_file,
     unitization_audit_file,
     active_attention_file,
 )
@@ -525,6 +526,8 @@ def test_attentional_v2_initialization_writes_mechanism_artifacts(tmp_path):
     assert event_stream_file(output_dir).read_text(encoding="utf-8") == ""
     assert result["artifact_map"]["active_attention"].endswith("active_attention.json")
     assert result["artifact_map"]["settlement_audit"].endswith("settlement_audit.jsonl")
+    assert result["artifact_map"]["unit_span_ledger"].endswith("unit_span_ledger.jsonl")
+    assert unit_span_ledger_file(output_dir).read_text(encoding="utf-8") == ""
 
 
 def test_attentional_v2_parse_book_creates_ready_artifacts_without_iterator_structure(tmp_path, monkeypatch):
@@ -667,41 +670,25 @@ def _empty_choose_next_unit_state() -> dict[str, dict[str, object]]:
 
 
 def _fake_single_sentence_navigate_act(**kwargs):
-    """Return one safe single-sentence choose-unit act for runner smoke tests."""
+    """Return one small source-anchor unit for runner smoke tests."""
 
-    available_sentences = [
-        dict(sentence)
-        for sentence in kwargs.get("available_sentences", [])
-        if isinstance(sentence, dict)
-    ]
-    if not available_sentences:
-        preview = kwargs.get("mainline_preview", {})
-        if isinstance(preview, dict):
-            available_sentences = [
-                dict(sentence)
-                for sentence in preview.get("preview_sentences", [])
-                if isinstance(sentence, dict)
-            ]
-    reading_position = kwargs.get("reading_position", {})
-    current_sentence_id = str(reading_position.get("current_sentence_id", "") if isinstance(reading_position, dict) else "")
-    chosen = next(
-        (sentence for sentence in available_sentences if str(sentence.get("sentence_id", "")) == current_sentence_id),
-        available_sentences[0] if available_sentences else {"sentence_id": ""},
-    )
-    sentence_id = str(chosen.get("sentence_id", ""))
-    preview_range = {
-        "start_sentence_id": str(available_sentences[0].get("sentence_id", "")) if available_sentences else sentence_id,
-        "end_sentence_id": str(available_sentences[-1].get("sentence_id", "")) if available_sentences else sentence_id,
-    }
+    preview = kwargs.get("mainline_preview", {})
+    source_text = str(preview.get("source_text", "") if isinstance(preview, dict) else "")
+    stripped = source_text.lstrip()
+    if "." in stripped:
+        end_anchor_text = stripped[: stripped.index(".") + 1]
+    else:
+        end_anchor_text = stripped
     return {
         "decision": "choose_unit",
         "selection_mode": kwargs.get("default_selection_mode", "mainline"),
-        "start_sentence_id": sentence_id,
-        "end_sentence_id": sentence_id,
-        "preview_range": preview_range,
+        "end_anchor_text": end_anchor_text,
+        "preview_range": {
+            "start_cursor": dict(preview.get("preview_start_cursor", {})) if isinstance(preview, dict) else {},
+            "end_cursor": dict(preview.get("preview_end_cursor", {})) if isinstance(preview, dict) else {},
+        },
         "boundary_type": "paragraph_end",
-        "evidence_sentence_ids": [sentence_id] if sentence_id else [],
-        "reason": "test_choose_single_sentence",
+        "reason": "test_choose_source_anchor_unit",
         "continuation_pressure": False,
     }
 
@@ -1126,8 +1113,10 @@ def test_attentional_v2_read_book_runs_live_loop_and_persists_compatibility_resu
     unitize_lines = unitization_audit_file(result.output_dir).read_text(encoding="utf-8").strip().splitlines()
     read_audit_lines = read_audit_file(result.output_dir).read_text(encoding="utf-8").strip().splitlines()
     settlement_audit_lines = settlement_audit_file(result.output_dir).read_text(encoding="utf-8").strip().splitlines()
+    unit_span_lines = unit_span_ledger_file(result.output_dir).read_text(encoding="utf-8").strip().splitlines()
     read_audits = [json.loads(line) for line in read_audit_lines]
     settlement_audits = [json.loads(line) for line in settlement_audit_lines]
+    unit_spans = [json.loads(line) for line in unit_span_lines]
     assert chapter_payload["visible_reaction_count"] >= 1
     assert captured_unit_reads == [["c1-s1"], ["c1-s2"]]
     assert captured_carry_forward_contexts[0]["packet_version"] == "attentional_v2.state_packet.v1"
@@ -1137,9 +1126,20 @@ def test_attentional_v2_read_book_runs_live_loop_and_persists_compatibility_resu
     assert len(unitize_lines) == 2
     assert len(read_audit_lines) == 2
     assert len(settlement_audit_lines) == 2
+    assert len(unit_span_lines) == 2
+    assert [record["start_cursor"]["char_offset"] for record in unit_spans] == [0, 15]
+    assert [record["end_cursor"]["char_offset"] for record in unit_spans] == [15, 30]
+    paragraph_text = result.book_document["chapters"][0]["paragraphs"][0]["text"]
+    reconstructed = "".join(
+        paragraph_text[record["start_cursor"]["char_offset"] : record["end_cursor"]["char_offset"]]
+        for record in unit_spans
+    )
+    assert reconstructed == paragraph_text
     assert all(audit["surfaced_reaction_count"] == 1 for audit in read_audits)
+    assert all(audit["source_span_id"] for audit in read_audits)
     assert read_audits[1]["carry_forward_ref_ids"]
     assert settlement_audits[0]["memory_uptake_ops_by_target_store"] == {"active_attention": 1}
+    assert settlement_audits[0]["source_span_id"] == unit_spans[0]["source_span_id"]
     assert settlement_audits[0]["state_deltas"]["active_attention"]["added_ids"] == ["hot-c1-s1"]
     assert settlement_audits[0]["state_deltas"]["reaction_records"]["added_ids"]
     assert settlement_audits[0]["state_deltas"]["anchor_bank"]["added_anchor_ids"]
@@ -1313,8 +1313,8 @@ def test_attentional_v2_read_book_tolerates_missing_reaction_payload(tmp_path, m
     assert shell["status"] == "completed"
 
 
-def test_attentional_v2_read_book_still_runs_formal_read_for_monitor_path(tmp_path, monkeypatch):
-    """Monitor-path sentences should still enter one formal unitized read in Phase A."""
+def test_attentional_v2_read_book_runs_source_anchor_units_without_sentence_cursor(tmp_path, monkeypatch):
+    """Source-anchor units should enter formal reads without sentence-intake cursor state."""
 
     monkeypatch.chdir(tmp_path)
     monkeypatch.setattr(runner_module, "ensure_canonical_parse", lambda *args, **kwargs: _provisioned_book())
@@ -1383,10 +1383,20 @@ def test_attentional_v2_read_book_still_runs_formal_read_for_monitor_path(tmp_pa
     )
 
     local_buffer = json.loads(local_buffer_file(result.output_dir).read_text(encoding="utf-8"))
+    local_continuity = json.loads(local_continuity_file(result.output_dir).read_text(encoding="utf-8"))
     chapter_payload = json.loads(chapter_result_compatibility_file(result.output_dir, 1).read_text(encoding="utf-8"))
+    unit_span_records = [
+        json.loads(line)
+        for line in unit_span_ledger_file(result.output_dir).read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    ]
     shell = load_runtime_shell(runtime_shell_file(result.output_dir))
 
-    assert local_buffer["current_sentence_id"] == "c1-s2"
+    assert local_buffer["current_sentence_id"] == ""
+    assert local_continuity["mainline_cursor"]["position_kind"] == "span"
+    assert local_continuity["mainline_cursor"]["paragraph_index"] == 1
+    assert local_continuity["mainline_cursor"]["char_offset"] == 30
+    assert [record["end_cursor"]["char_offset"] for record in unit_span_records] == [15, 30]
     assert chapter_payload["visible_reaction_count"] == 0
     assert shell["status"] == "completed"
     assert read_calls == [["c1-s1"], ["c1-s2"]]

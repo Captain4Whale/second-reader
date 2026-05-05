@@ -28,7 +28,6 @@ from .schemas import (
     LocalBufferSentence,
     LocalBufferState,
     LocalContinuityState,
-    ReaderPolicy,
     ResumeMetadataState,
     build_empty_anchor_bank,
     build_empty_concept_registry,
@@ -139,6 +138,8 @@ def build_shared_cursor(
     chapter_ref: str,
     current_sentence_id: str = "",
     open_meaning_unit_sentence_ids: list[str] | None = None,
+    source_cursor: dict[str, object] | None = None,
+    source_span: dict[str, object] | None = None,
 ) -> SharedRunCursor:
     """Build one mechanism-neutral shared cursor from the local continuity state."""
 
@@ -147,6 +148,22 @@ def build_shared_cursor(
         "chapter_id": chapter_id,
         "chapter_ref": _clean_text(chapter_ref),
     }
+    if isinstance(source_cursor, dict):
+        cursor["position_kind"] = "span"
+        cursor["paragraph_index"] = int(source_cursor.get("paragraph_index", 0) or 0)
+        cursor["char_offset"] = int(source_cursor.get("char_offset", 0) or 0)
+        cursor["span_start_cursor"] = dict(source_cursor)
+        cursor["span_end_cursor"] = dict(source_cursor)
+        return cursor
+    if isinstance(source_span, dict) and isinstance(source_span.get("start_cursor"), dict):
+        cursor["position_kind"] = "span"
+        start = dict(source_span.get("start_cursor", {}))
+        end = dict(source_span.get("end_cursor", start)) if isinstance(source_span.get("end_cursor"), dict) else start
+        cursor["paragraph_index"] = int(end.get("paragraph_index", 0) or 0)
+        cursor["char_offset"] = int(end.get("char_offset", 0) or 0)
+        cursor["span_start_cursor"] = start
+        cursor["span_end_cursor"] = end
+        return cursor
     current_sentence_id = _clean_text(current_sentence_id)
     if not current_sentence_id:
         return cursor
@@ -238,6 +255,8 @@ def persist_reading_position(
     local_buffer: LocalBufferState,
     local_continuity: LocalContinuityState | None = None,
     active_artifact_refs: RuntimeArtifactRefs | None = None,
+    source_cursor: dict[str, object] | None = None,
+    source_span: dict[str, object] | None = None,
     status: str | None = None,
     phase: str | None = None,
 ) -> dict[str, object]:
@@ -264,7 +283,14 @@ def persist_reading_position(
         chapter_ref=chapter_ref,
         current_sentence_id=str(continuity.get("current_sentence_id", "") or ""),
         open_meaning_unit_sentence_ids=list(continuity.get("open_meaning_unit_sentence_ids", [])),
+        source_cursor=source_cursor,
+        source_span=source_span,
     )
+    if source_cursor is not None:
+        continuity["mainline_cursor"] = dict(shell["cursor"])
+    elif source_span is not None:
+        continuity["mainline_cursor"] = dict(shell["cursor"])
+    save_json(local_continuity_file(output_dir), continuity)
     if active_artifact_refs is not None:
         shell["active_artifact_refs"] = dict(active_artifact_refs)
     if status is not None:

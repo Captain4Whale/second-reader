@@ -17,7 +17,9 @@ Use `docs/backend-sequential-lifecycle.md` for the job-level workflow over time.
 - Shared substrate
   - `public/book_document.json` is the only shared parsed-book truth.
   - It contains canonical chapter order, paragraph records, sentence records, and locators.
-  - The sentence layer is a parse-time, source-order, mechanism-neutral substrate, not a mechanism-private traversal plan.
+  - The paragraph layer is the stable shared source substrate available to all mechanisms.
+  - The sentence layer is a parse-time, source-order, mechanism-neutral helper substrate, not a mechanism-private traversal plan.
+  - A mechanism may choose its own cursor semantics over that substrate. Current `attentional_v2` mainline reading uses paragraph + char offset source cursors; `iterator_v1` and older eval/compatibility code may still use sentence or section-oriented coordinates.
   - It must not embed one mechanism's traversal ontology.
 - Shared runtime shell
   - `src/reading_runtime/` owns mechanism registration, runtime routing, and shared artifact layout authority.
@@ -66,11 +68,12 @@ Use `docs/backend-sequential-lifecycle.md` for the job-level workflow over time.
 - Shared and mechanism docs should treat `Phase N` labels as implementation-stage labels first.
   - The authoritative `Phase 0-9` sequence lives in the implementation workspace and tracker.
   - Mechanism runtime behavior should normally be described with runtime terms such as:
-    - `sentence intake`
-    - `Navigate.unitize`
+    - source cursor / source span
+    - adaptive preview
+    - `Navigate.choose_next_unit`
     - `read`
     - `Reading Runner post-read settlement`
-    - `Navigate.detour_search`
+    - active-detour mode
     - `surfaced reactions`
     - `chapter-end slow cycle`
   - If a mechanism doc mentions older labels such as `trigger`, `zoom_read`, `meaning_unit_closure`, `controller_decision`, `Navigate.route`, or `bridge_resolution`, it should make clear whether those are historical module-family terms or still-live runtime concepts.

@@ -107,6 +107,10 @@ Rules:
 - Use navigation context only as secondary support; it may clarify what is currently live, but it must not override the author-structure skeleton or the visible source text.
 - Judge from the visible text first. `text_role` may help orient you, but it must not decide the boundary by itself.
 - Do not cross the provided mainline preview boundary in mainline mode.
+- In mainline mode, the unit always starts at the current source cursor. Do not invent a start id.
+- In mainline mode, return `end_anchor_text`: an exact quote from the visible preview at the end of the unit you choose.
+- `end_anchor_text` must be copied character-for-character from the preview source text. Do not paraphrase, omit punctuation, or add ellipses.
+- Choose a sufficiently unique tail anchor, usually 20-80 Chinese characters or 8-25 English words. If the unit is very short, the full unit tail is acceptable.
 - Do not choose detour text outside already-read source evidence or beyond `mainline_cursor`.
 - Do not pretend a move is finished when it is still unfolding; preserve continuation pressure instead.
 - If you think the move is still unfinished at the available boundary, choose the best honest end point you have and set `continuation_pressure` to true.
@@ -117,7 +121,7 @@ Rules:
   - `anchor_resolve`: resolve a known anchor/sentence handle into short source-grounded context.
 - Skill results are evidence, not answers. After receiving a skill result, decide whether to choose a unit, request another needed skill within budget, or defer.
 - Do not request external web search. Do not request a skill just to be safer.
-- Cite exact sentence ids as evidence.
+- In detour mode, cite exact sentence ids as evidence because detour source skills still expose already-read evidence through legacy sentence handles.
 - Return JSON only.""",
     navigate_choose_next_unit_prompt="""Structural frame:
 {structural_frame}
@@ -161,10 +165,8 @@ Return JSON:
 {
   "decision": "choose_unit",
   "selection_mode": "mainline",
-  "start_sentence_id": "<chosen first sentence id>",
-  "end_sentence_id": "<chosen final sentence id>",
+  "end_anchor_text": "<exact text from the end of the chosen unit>",
   "boundary_type": "paragraph_end",
-  "evidence_sentence_ids": ["<sentence id>"],
   "reason": "<brief reason>",
   "continuation_pressure": false
 }

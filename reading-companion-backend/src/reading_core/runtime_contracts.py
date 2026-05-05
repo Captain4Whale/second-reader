@@ -84,6 +84,10 @@ class SharedRunCursor(TypedDict, total=False):
     sentence_id: str
     span_start_sentence_id: str
     span_end_sentence_id: str
+    paragraph_index: int
+    char_offset: int
+    span_start_cursor: dict[str, object]
+    span_end_cursor: dict[str, object]
 
 
 class RuntimeArtifactRefs(TypedDict, total=False):

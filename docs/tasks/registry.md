@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-05-05T17:03:09+08:00`
+Last updated: `2026-05-05T22:11:51+08:00`
 
 ## Status Values
 - `active`
@@ -88,6 +88,12 @@ Last updated: `2026-05-05T17:03:09+08:00`
     - active-detour Navigate acts can choose a source-grounded unit, request bounded source-evidence skills, or defer the detour
     - detour regions are now read through the same normal `Navigate.choose_next_unit -> read -> Reading Runner post-read settlement` loop
     - chapter-tail detours are now drained before slow-cycle close
+  - Paragraph-offset mainline cursor cutover is now landed:
+    - `SourceCursor` uses `chapter_id`, `chapter_ref`, `paragraph_index`, and `char_offset`
+    - `Navigate.choose_next_unit` receives an adaptive paragraph-offset preview and returns exact `end_anchor_text`
+    - `Reading Runner` resolves that source anchor into an end-exclusive `SourceSpan`, advances to `end_cursor`, and records accepted units in `_mechanisms/attentional_v2/runtime/unit_span_ledger.jsonl`
+    - sentence ids remain available for legacy/eval/detour compatibility, but no longer define the `attentional_v2` mainline cursor
+    - next migration target: align memory/reaction/source-anchor/probe locator payloads to source-span coordinates after the mainline cursor path settles
   - `Phase F3` is now landed:
     - persisted visible reactions now enter the system only through `Read.surfaced_reactions[]`
     - mainline and detour reading now share one surfaced-native reaction-record builder
@@ -316,6 +322,9 @@ Last updated: `2026-05-05T17:03:09+08:00`
     - product runs without explicit `memory_quality_probe_export.enabled` plus semantic `probe_targets` do not build probe snapshots
     - standard runtime audit now includes `settlement_audit.jsonl`, a compact deterministic before/after transaction summary for `Read -> Reading Runner settlement`
     - current probe placement is semantic-manifest-driven, not hard-ratio-driven
+    - settlement-audit diagnostic run `attentional_v2_settlement_audit_nawaer_diagnostic_20260505` completed for `nawaer_baodian_private_zh__segment_1` with `judge-mode none`
+    - diagnostic finding: fresh `Read` output does emit memory ops and Runner settlement materializes them, but `concept_registry` / `thread_trace` durable content is weak because Read payload fields (`statement`, `source_sentence_id`, `linked_anchor_ids`) do not align with the fields persisted by `state_ops` (`summary`, `support_anchor_ids`, `last_touched_sentence_id`)
+    - next implementation target: repair durable-store memory-op schema guidance and/or normalization before running `huochu` or all five windows again
   - current probe plan:
     - `reading-companion-backend/eval/manifests/probes/memory_quality_semantic_probe_plan_20260504.json`
     - selection method: `semantic_boundary_with_distance_reference`

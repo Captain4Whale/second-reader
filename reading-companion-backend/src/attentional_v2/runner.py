@@ -28,9 +28,8 @@ from src.iterator_reader.llm_utils import ReaderLLMError, llm_invocation_scope, 
 
 from .bridge import build_anchor_record
 from .evaluation import build_normalized_eval_bundle, persist_normalized_eval_bundle
-from .intake import process_sentence_intake
+from .intake import process_sentence_intake  # noqa: F401 - legacy monkeypatch seam for older tests
 from .nodes import (
-    build_unitize_preview,
     navigate_choose_next_unit_act,
     read_unit,
 )
@@ -45,6 +44,20 @@ from .read_context import build_carry_forward_context
 from .resume import persist_reading_position, resume_from_checkpoint, write_full_checkpoint
 from .skills.runtime import execute_skill_request
 from .skills.source_skills import resolve_visible_sentence_range
+from .source_spans import (
+    build_paragraph_offset_preview,
+    chapter_end_cursor,
+    cursor_at_or_after_chapter_end,
+    cursor_less_than,
+    fallback_end_cursor_for_preview,
+    first_cursor_for_chapter,
+    normalize_cursor_for_chapter,
+    readable_paragraphs,
+    resolve_end_anchor_text,
+    source_locus_from_unit,
+    source_span_id,
+    source_unit_from_span,
+)
 from .schemas import (
     ATTENTIONAL_V2_MECHANISM_VERSION,
     ATTENTIONAL_V2_POLICY_VERSION,
@@ -124,6 +137,7 @@ from .storage import (
     active_attention_file,
 )
 from .survey import write_book_survey_artifacts
+from .unit_span_ledger import append_unit_span_record, latest_unit_span
 
 
 def _timestamp() -> str:
@@ -179,6 +193,80 @@ def _shared_cursor_for_sentence(
         "chapter_ref": chapter_ref,
         "sentence_id": sentence_id,
     }
+
+
+def _shared_cursor_for_source_cursor(
+    cursor: dict[str, object] | None,
+) -> SharedRunCursor:
+    """Build one shared cursor for a paragraph-offset source position."""
+
+    if not isinstance(cursor, dict):
+        return {
+            "position_kind": "chapter",
+            "chapter_id": None,
+            "chapter_ref": "",
+        }
+    return {
+        "position_kind": "span",
+        "chapter_id": int(cursor.get("chapter_id", 0) or 0) or None,
+        "chapter_ref": _clean_text(cursor.get("chapter_ref")),
+        "paragraph_index": int(cursor.get("paragraph_index", 0) or 0),
+        "char_offset": int(cursor.get("char_offset", 0) or 0),
+        "span_start_cursor": dict(cursor),
+        "span_end_cursor": dict(cursor),
+    }
+
+
+def _shared_cursor_for_source_span(source_span: dict[str, object] | None) -> SharedRunCursor:
+    """Build one shared cursor for an accepted paragraph-offset source span."""
+
+    if not isinstance(source_span, dict):
+        return _shared_cursor_for_source_cursor(None)
+    start = source_span.get("start_cursor")
+    end = source_span.get("end_cursor")
+    if not isinstance(start, dict):
+        return _shared_cursor_for_source_cursor(None)
+    cursor = _shared_cursor_for_source_cursor(end if isinstance(end, dict) else start)
+    cursor["span_start_cursor"] = dict(start)
+    if isinstance(end, dict):
+        cursor["span_end_cursor"] = dict(end)
+    return cursor
+
+
+def _compat_sentence_cursor_for_source_cursor(
+    *,
+    chapter: dict[str, object],
+    source_cursor: dict[str, object],
+    fallback_cursor: dict[str, object],
+) -> dict[str, object]:
+    """Project a paragraph-offset cursor to the last visible sentence for legacy detour skills."""
+
+    if _clean_text(fallback_cursor.get("sentence_id")):
+        return dict(fallback_cursor)
+    sentences = [dict(sentence) for sentence in chapter.get("sentences", []) if isinstance(sentence, dict)]
+    selected: dict[str, object] | None = None
+    cursor_paragraph = int(source_cursor.get("paragraph_index", 0) or 0)
+    cursor_offset = int(source_cursor.get("char_offset", 0) or 0)
+    for sentence in sentences:
+        locator = sentence.get("locator")
+        paragraph_index = 0
+        char_end = 0
+        if isinstance(locator, dict):
+            paragraph_index = int(locator.get("paragraph_index", 0) or locator.get("paragraph_start", 0) or 0)
+            char_end = int(locator.get("char_end", 0) or 0)
+        if paragraph_index < cursor_paragraph or (paragraph_index == cursor_paragraph and char_end <= cursor_offset):
+            selected = sentence
+            continue
+        break
+    if selected is None and sentences:
+        selected = sentences[0]
+    return dict(
+        _shared_cursor_for_sentence(
+            chapter_id=int(chapter.get("id", 0) or 0),
+            chapter_ref=_chapter_ref(chapter),
+            sentence=selected,
+        )
+    )
 
 
 def _local_continuity_detour_trace(local_continuity: LocalContinuityState) -> list[dict[str, object]]:
@@ -695,6 +783,45 @@ def _current_activity(
     return activity
 
 
+def _compatibility_section_ref_for_source(chapter_id: int, source_unit: dict[str, object]) -> str:
+    """Return the paragraph-based compatibility segment ref for one source unit."""
+
+    source_span = source_unit.get("source_span")
+    if isinstance(source_span, dict) and isinstance(source_span.get("start_cursor"), dict):
+        paragraph_index = int(source_span["start_cursor"].get("paragraph_index", 0) or 0)
+        if paragraph_index > 0:
+            return f"{chapter_id}.{paragraph_index}"
+    return f"{chapter_id}.1"
+
+
+def _current_activity_from_source_unit(
+    *,
+    chapter_id: int,
+    chapter_ref: str,
+    source_unit: dict[str, object],
+    local_buffer: LocalBufferState,
+    active_reaction_id: str | None = None,
+) -> dict[str, object]:
+    """Build the shared current-reading-activity snapshot for a source span."""
+
+    activity: dict[str, object] = {
+        "phase": "reading",
+        "updated_at": _timestamp(),
+        "segment_ref": _compatibility_section_ref_for_source(chapter_id, source_unit),
+        "current_excerpt": _clean_text(source_unit.get("source_text"))[:220],
+        "reading_locus": {
+            **source_locus_from_unit(source_unit),
+            "chapter_id": chapter_id,
+            "chapter_ref": chapter_ref,
+        },
+        "reconstructed_hot_state": bool(local_buffer.get("is_reconstructed")),
+        "last_resume_kind": local_buffer.get("last_resume_kind"),
+    }
+    if active_reaction_id:
+        activity["active_reaction_id"] = active_reaction_id
+    return activity
+
+
 def _update_shell_phase(output_dir: Path, *, status: str, phase: str) -> None:
     """Update the thin shared runtime shell status/phase."""
 
@@ -800,6 +927,31 @@ def _chapter_start_index(chapter: dict[str, object], current_sentence_id: str) -
     return 0
 
 
+def _chapter_start_source_cursor(
+    *,
+    chapter: dict[str, object],
+    local_continuity: LocalContinuityState,
+    output_dir: Path,
+    continue_mode: bool,
+) -> dict[str, object]:
+    """Return the source cursor where mainline reading should start."""
+
+    if continue_mode:
+        cursor = local_continuity.get("mainline_cursor")
+        if isinstance(cursor, dict):
+            end_cursor = cursor.get("span_end_cursor")
+            if isinstance(end_cursor, dict) and int(end_cursor.get("chapter_id", 0) or 0) == int(chapter.get("id", 0) or 0):
+                return normalize_cursor_for_chapter(chapter, end_cursor)
+            if int(cursor.get("chapter_id", 0) or 0) == int(chapter.get("id", 0) or 0) and cursor.get("paragraph_index") is not None:
+                return normalize_cursor_for_chapter(chapter, cursor)
+        latest = latest_unit_span(output_dir)
+        if isinstance(latest, dict) and int(latest.get("chapter_id", 0) or 0) == int(chapter.get("id", 0) or 0):
+            end_cursor = latest.get("end_cursor")
+            if isinstance(end_cursor, dict):
+                return normalize_cursor_for_chapter(chapter, end_cursor)
+    return first_cursor_for_chapter(chapter)
+
+
 def _sentence_id(sentence: dict[str, object]) -> str:
     """Return the normalized sentence id for one sentence-like mapping."""
 
@@ -854,6 +1006,40 @@ def _resolve_unit_sentences(
     if start_index < 0 or end_index < start_index:
         return []
     return [dict(sentence) for sentence in sentences[start_index : end_index + 1]]
+
+
+def _compat_unit_sentences_for_source_span(
+    chapter: dict[str, object],
+    source_span: dict[str, object],
+) -> list[dict[str, object]]:
+    """Return overlapping sentence records for legacy consumers only."""
+
+    start = source_span.get("start_cursor")
+    end = source_span.get("end_cursor")
+    if not isinstance(start, dict) or not isinstance(end, dict):
+        return []
+    start_paragraph = int(start.get("paragraph_index", 0) or 0)
+    start_offset = int(start.get("char_offset", 0) or 0)
+    end_paragraph = int(end.get("paragraph_index", 0) or 0)
+    end_offset = int(end.get("char_offset", 0) or 0)
+    selected: list[dict[str, object]] = []
+    for sentence in chapter.get("sentences", []):
+        if not isinstance(sentence, dict):
+            continue
+        locator = sentence.get("locator")
+        if not isinstance(locator, dict):
+            continue
+        paragraph_index = int(locator.get("paragraph_index", 0) or locator.get("paragraph_start", 0) or 0)
+        char_start = int(locator.get("char_start", 0) or 0)
+        char_end = int(locator.get("char_end", 0) or 0)
+        if paragraph_index < start_paragraph or paragraph_index > end_paragraph:
+            continue
+        if paragraph_index == start_paragraph and char_end <= start_offset:
+            continue
+        if paragraph_index == end_paragraph and char_start >= end_offset:
+            continue
+        selected.append(dict(sentence))
+    return selected
 
 
 def _build_sentence_lookup(
@@ -1087,6 +1273,34 @@ def _mainline_preview_packet(
     }
 
 
+def _mainline_source_preview_packet(preview: dict[str, object]) -> dict[str, object]:
+    """Build the paragraph-offset source preview packet for Navigate."""
+
+    return {
+        "preview_start_cursor": dict(preview.get("preview_start_cursor", {}))
+        if isinstance(preview.get("preview_start_cursor"), dict)
+        else {},
+        "preview_end_cursor": dict(preview.get("preview_end_cursor", {}))
+        if isinstance(preview.get("preview_end_cursor"), dict)
+        else {},
+        "source_text": str(preview.get("source_text", "") or ""),
+        "paragraph_slices": [
+            {
+                "paragraph_index": item.get("paragraph_index"),
+                "text_role": _clean_text(item.get("text_role")),
+                "start_char": item.get("start_char"),
+                "end_char": item.get("end_char"),
+                "text": str(item.get("text", "") or ""),
+            }
+            for item in preview.get("paragraph_slices", [])
+            if isinstance(item, dict)
+        ],
+        "truncated": bool(preview.get("truncated")),
+        "char_count": int(preview.get("char_count", 0) or 0),
+        "paragraph_count": int(preview.get("paragraph_count", 0) or 0),
+    }
+
+
 def _skill_results_prompt_summary(skill_results: list[dict[str, object]]) -> list[dict[str, object]]:
     """Return compact but evidence-bearing skill results for the next Navigate act."""
 
@@ -1219,8 +1433,11 @@ def _navigate_trace_entry(
         "decision": _clean_text(act_result.get("decision")),  # type: ignore[typeddict-item]
         "selection_mode": _clean_text(act_result.get("selection_mode")),  # type: ignore[typeddict-item]
         "reason": _clean_text(act_result.get("reason")),
+        "end_anchor_text": _clean_text(act_result.get("end_anchor_text")),
         "start_sentence_id": _clean_text(act_result.get("start_sentence_id")),
         "end_sentence_id": _clean_text(act_result.get("end_sentence_id")),
+        "source_span_id": _clean_text(act_result.get("source_span_id")),
+        "resolution": dict(act_result.get("resolution", {})) if isinstance(act_result.get("resolution"), dict) else {},
         "budget_state": dict(budget_state),
     }
     if isinstance(act_result.get("skill_request"), dict):
@@ -1275,6 +1492,127 @@ def _resolve_detour_act_region(
     return chapter, capped, unitize_decision
 
 
+def _resolve_mainline_source_unit(
+    *,
+    chapter: dict[str, object],
+    start_cursor: dict[str, object],
+    preview: dict[str, object],
+    act_result: NavigateActResult,
+    retry_act_result: NavigateActResult | None = None,
+) -> tuple[dict[str, object], UnitizeDecision]:
+    """Resolve Navigate's source-text tail anchor into an accepted unit span."""
+
+    selected_result = dict(retry_act_result or act_result)
+    legacy_end_sentence_id = _clean_text(selected_result.get("end_sentence_id"))
+    if legacy_end_sentence_id:
+        legacy_sentences = [
+            dict(sentence)
+            for sentence in chapter.get("sentences", [])
+            if isinstance(sentence, dict)
+        ]
+        end_sentence = next((sentence for sentence in legacy_sentences if _sentence_id(sentence) == legacy_end_sentence_id), None)
+        locator = end_sentence.get("locator") if isinstance(end_sentence, dict) else None
+        if isinstance(locator, dict):
+            end_cursor = {
+                "chapter_id": int(chapter.get("id", 0) or 0),
+                "chapter_ref": _chapter_ref(chapter),
+                "paragraph_index": int(locator.get("paragraph_index", 0) or locator.get("paragraph_start", 0) or 0),
+                "char_offset": int(locator.get("char_end", 0) or 0),
+            }
+            source_span = {
+                "start_cursor": dict(start_cursor),
+                "end_cursor": end_cursor,
+            }
+            source_unit = source_unit_from_span(chapter=chapter, source_span=source_span)
+            source_id = source_span_id(source_span)
+            resolution = {
+                "status": "matched",
+                "method": "legacy_sentence_compat",
+                "end_cursor": end_cursor,
+                "end_sentence_id": legacy_end_sentence_id,
+            }
+            unitize_decision: UnitizeDecision = {
+                "end_anchor_text": _clean_text(selected_result.get("end_anchor_text")),
+                "source_span": source_span,
+                "source_span_id": source_id,
+                "preview_range": {
+                    "start_cursor": dict(preview.get("preview_start_cursor", {}))
+                    if isinstance(preview.get("preview_start_cursor"), dict)
+                    else {},
+                    "end_cursor": dict(preview.get("preview_end_cursor", {}))
+                    if isinstance(preview.get("preview_end_cursor"), dict)
+                    else {},
+                },
+                "boundary_type": _clean_text(selected_result.get("boundary_type")) or "paragraph_end",  # type: ignore[typeddict-item]
+                "reason": _clean_text(selected_result.get("reason")),
+                "continuation_pressure": bool(selected_result.get("continuation_pressure")),
+                "resolution": resolution,
+                "start_sentence_id": _clean_text(selected_result.get("start_sentence_id")),
+                "end_sentence_id": legacy_end_sentence_id,
+                "evidence_sentence_ids": [
+                    _clean_text(item)
+                    for item in selected_result.get("evidence_sentence_ids", [])
+                    if _clean_text(item)
+                ] if isinstance(selected_result.get("evidence_sentence_ids"), list) else [],
+            }
+            source_unit["unitize_decision"] = dict(unitize_decision)
+            return source_unit, unitize_decision
+
+    end_anchor_text = _clean_text(selected_result.get("end_anchor_text"))
+    resolution = resolve_end_anchor_text(
+        preview=preview,
+        end_anchor_text=end_anchor_text,
+    )
+    if _clean_text(resolution.get("status")) == "matched":
+        end_cursor = dict(resolution.get("end_cursor", {}))
+    else:
+        end_cursor = fallback_end_cursor_for_preview(preview)
+        resolution = {
+            **dict(resolution),
+            "status": "fallback",
+            "method": _clean_text(resolution.get("method")) or "fallback_current_paragraph_or_preview",
+            "end_cursor": end_cursor,
+            "fallback_reason": _clean_text(resolution.get("status")) or "unresolved_anchor",
+        }
+
+    if not cursor_less_than(start_cursor, end_cursor):
+        preview_end = preview.get("preview_end_cursor")
+        end_cursor = dict(preview_end) if isinstance(preview_end, dict) else dict(start_cursor)
+        resolution = {
+            **dict(resolution),
+            "status": "fallback",
+            "method": "fallback_preview_end",
+            "end_cursor": end_cursor,
+            "fallback_reason": "resolved_end_cursor_did_not_advance",
+        }
+
+    source_span = {
+        "start_cursor": dict(start_cursor),
+        "end_cursor": dict(end_cursor),
+    }
+    source_unit = source_unit_from_span(chapter=chapter, source_span=source_span)
+    source_id = source_span_id(source_span)
+    unitize_decision: UnitizeDecision = {
+        "end_anchor_text": end_anchor_text,
+        "source_span": source_span,
+        "source_span_id": source_id,
+        "preview_range": {
+            "start_cursor": dict(preview.get("preview_start_cursor", {}))
+            if isinstance(preview.get("preview_start_cursor"), dict)
+            else {},
+            "end_cursor": dict(preview.get("preview_end_cursor", {}))
+            if isinstance(preview.get("preview_end_cursor"), dict)
+            else {},
+        },
+        "boundary_type": _clean_text(selected_result.get("boundary_type")) or "paragraph_end",  # type: ignore[typeddict-item]
+        "reason": _clean_text(selected_result.get("reason")),
+        "continuation_pressure": bool(selected_result.get("continuation_pressure")),
+        "resolution": resolution,
+    }
+    source_unit["unitize_decision"] = dict(unitize_decision)
+    return source_unit, unitize_decision
+
+
 def navigate_choose_next_unit(
     *,
     document: BookDocument,
@@ -1282,7 +1620,7 @@ def navigate_choose_next_unit(
     sentence_lookup: dict[str, dict[str, object]],
     chapter_lookup: dict[int, dict[str, object]],
     current_chapter: dict[str, object],
-    current_cursor: int,
+    current_cursor: dict[str, object],
     local_buffer: LocalBufferState,
     continuation_capsule: dict[str, object],
     active_attention: ActiveAttention,
@@ -1301,26 +1639,26 @@ def navigate_choose_next_unit(
     """Choose the next unit that should be read, whether mainline or detour."""
 
     active_detour_need = _active_detour_need(local_continuity)
-    current_sentences = [dict(sentence) for sentence in current_chapter.get("sentences", []) if isinstance(sentence, dict)]
-    sentence = current_sentences[current_cursor]
-    sentence_id = _sentence_id(sentence)
-    preview_sentences, preview_range = build_unitize_preview(
-        chapter_sentences=current_sentences,
-        current_sentence_id=sentence_id,
+    source_cursor = normalize_cursor_for_chapter(current_chapter, current_cursor)
+    preview = build_paragraph_offset_preview(
+        chapter=current_chapter,
+        current_cursor=source_cursor,
+        reader_policy=reader_policy,
     )
     current_chapter_id = int(current_chapter.get("id", 0) or 0)
     current_chapter_ref = _chapter_ref(current_chapter)
-    mainline_preview = _mainline_preview_packet(
-        current_sentence=sentence,
-        preview_sentences=preview_sentences,
-        preview_range=preview_range,
-    )
+    mainline_preview = _mainline_source_preview_packet(dict(preview))
     mainline_cursor = _mainline_cursor_from_continuity(local_continuity)
+    legacy_skill_cursor = _compat_sentence_cursor_for_source_cursor(
+        chapter=current_chapter,
+        source_cursor=dict(source_cursor),
+        fallback_cursor=mainline_cursor,
+    )
 
     if active_detour_need is None:
         navigation_context = build_navigation_context(
             chapter_ref=current_chapter_ref,
-            current_sentence_id=sentence_id,
+            current_sentence_id="",
             local_buffer=local_buffer,
             active_attention=active_attention,
             concept_registry=concept_registry,
@@ -1342,7 +1680,7 @@ def navigate_choose_next_unit(
                 "mode": "mainline",
                 "current_chapter_id": current_chapter_id,
                 "current_chapter_ref": current_chapter_ref,
-                "current_sentence_id": sentence_id,
+                "current_cursor": dict(source_cursor),
             },
             mainline_preview=mainline_preview,
             active_detour_need=None,
@@ -1358,43 +1696,75 @@ def navigate_choose_next_unit(
             book_title=book_title,
             author=author,
             chapter_title=_clean_text(current_chapter.get("title")),
-            available_sentences=preview_sentences,
-            allowed_sentence_ids={_sentence_id(item) for item in preview_sentences if _sentence_id(item)},
+            available_sentences=[],
+            allowed_sentence_ids=set(),
             default_selection_mode="mainline",
             skills_allowed=False,
         )
-        unitize_decision = {
-            key: act_result[key]
-            for key in (
-                "start_sentence_id",
-                "end_sentence_id",
-                "preview_range",
-                "boundary_type",
-                "evidence_sentence_ids",
-                "reason",
-                "continuation_pressure",
+        resolution = resolve_end_anchor_text(
+            preview=preview,
+            end_anchor_text=_clean_text(act_result.get("end_anchor_text")),
+        )
+        retry_result: NavigateActResult | None = None
+        if _clean_text(resolution.get("status")) != "matched":
+            retry_result = navigate_choose_next_unit_act(
+                reading_position={
+                    "mode": "mainline",
+                    "current_chapter_id": current_chapter_id,
+                    "current_chapter_ref": current_chapter_ref,
+                    "current_cursor": dict(source_cursor),
+                    "retry": True,
+                },
+                mainline_preview=mainline_preview,
+                active_detour_need=None,
+                mainline_cursor=mainline_cursor,
+                navigation_context=navigation_context,
+                source_evidence={
+                    "previous_end_anchor_text": _clean_text(act_result.get("end_anchor_text")),
+                    "previous_resolution": dict(resolution),
+                    "retry_instruction": "Return a longer, unique end_anchor_text copied exactly from the end of the chosen unit.",
+                },
+                skill_catalog=[],
+                skill_results_so_far=[],
+                budget_state={**budget_state, "act_index": 2, "max_acts": 2},
+                reader_policy=reader_policy,
+                output_language=output_language,
+                output_dir=output_dir,
+                book_title=book_title,
+                author=author,
+                chapter_title=_clean_text(current_chapter.get("title")),
+                available_sentences=[],
+                allowed_sentence_ids=set(),
+                default_selection_mode="mainline",
+                skills_allowed=False,
             )
-            if key in act_result
-        }
-        selected_unit_sentences = _resolve_unit_sentences(current_sentences, unitize_decision=unitize_decision)
-        if not selected_unit_sentences:
-            selected_unit_sentences = [dict(sentence)]
-            unitize_decision = {
-                "start_sentence_id": sentence_id,
-                "end_sentence_id": sentence_id,
-                "preview_range": preview_range,
-                "boundary_type": "paragraph_end",
-                "evidence_sentence_ids": [sentence_id],
-                "reason": "choose_next_unit_resolve_fallback",
-                "continuation_pressure": False,
-            }
+        selected_source_unit, unitize_decision = _resolve_mainline_source_unit(
+            chapter=current_chapter,
+            start_cursor=dict(source_cursor),
+            preview=dict(preview),
+            act_result=act_result,
+            retry_act_result=retry_result,
+        )
+        compat_selected_sentences = _compat_unit_sentences_for_source_span(
+            current_chapter,
+            dict(unitize_decision.get("source_span", {})) if isinstance(unitize_decision.get("source_span"), dict) else {},
+        )
+        trace_target = retry_result if retry_result is not None else act_result
+        trace_target["source_span_id"] = _clean_text(unitize_decision.get("source_span_id"))
+        trace_target["source_span"] = dict(unitize_decision.get("source_span", {}))
+        trace_target["resolution"] = dict(unitize_decision.get("resolution", {}))
+        navigate_trace = [_navigate_trace_entry(act_result, budget_state=budget_state)]
+        if retry_result is not None:
+            navigate_trace.append(_navigate_trace_entry(retry_result, budget_state={**budget_state, "act_index": 2, "max_acts": 2}))
         return {
             "selection_mode": "mainline",
             "chapter_id": current_chapter_id,
             "chapter_ref": current_chapter_ref,
-            "selected_unit_sentences": selected_unit_sentences,
+            "selected_unit_sentences": compat_selected_sentences,
+            "selected_source_unit": selected_source_unit,
+            "preview": dict(preview),
             "unitize_decision": unitize_decision,  # type: ignore[typeddict-item]
-            "navigate_trace": [_navigate_trace_entry(act_result, budget_state=budget_state)],
+            "navigate_trace": navigate_trace,
             "detour_context": None,
         }
 
@@ -1431,7 +1801,7 @@ def navigate_choose_next_unit(
                 "mode": "detour",
                 "current_chapter_id": current_chapter_id,
                 "current_chapter_ref": current_chapter_ref,
-                "current_sentence_id": sentence_id,
+                "current_cursor": dict(source_cursor),
             },
             mainline_preview=mainline_preview,
             active_detour_need=active_detour_need,
@@ -1439,6 +1809,7 @@ def navigate_choose_next_unit(
             navigation_context=navigation_packet,
             source_evidence={
                 "already_read_boundary": mainline_cursor,
+                "legacy_skill_boundary": legacy_skill_cursor,
                 "latest_scope_kind": _clean_text((_latest_scope_from_skill_results(skill_results_so_far) or {}).get("scope_kind")),
             },
             skill_catalog=_navigate_skill_catalog(),
@@ -1473,7 +1844,7 @@ def navigate_choose_next_unit(
                 survey_map=survey_map,
                 sentence_lookup=sentence_lookup,
                 chapter_lookup=chapter_lookup,
-                mainline_cursor=mainline_cursor,  # type: ignore[arg-type]
+                mainline_cursor=legacy_skill_cursor,  # type: ignore[arg-type]
                 anchor_bank=anchor_bank,
                 current_scope=current_scope,
             )
@@ -1495,7 +1866,7 @@ def navigate_choose_next_unit(
             resolved_region = _resolve_detour_act_region(
                 sentence_lookup=sentence_lookup,
                 chapter_lookup=chapter_lookup,
-                mainline_cursor=mainline_cursor,
+                mainline_cursor=legacy_skill_cursor,
                 act_result=act_result,
                 reader_policy=reader_policy,
             )
@@ -1529,14 +1900,37 @@ def _build_current_anchor_from_read_result(
     surfaced_reaction: dict[str, object] | None,
     chosen_unit_sentences: list[dict[str, object]],
     focal_sentence: dict[str, object],
+    source_unit: dict[str, object] | None = None,
     reading_impression: str = "",
 ) -> dict[str, object]:
     """Build one deterministic current anchor from a read-owned surfaced reaction."""
 
     anchor_quote = _clean_text((surfaced_reaction or {}).get("anchor_quote"))
-    anchor_sentence = None
     why_it_mattered = _clean_text((surfaced_reaction or {}).get("content")) or _clean_text(reading_impression)
+    if isinstance(source_unit, dict) and source_unit:
+        source_text = _clean_text(source_unit.get("source_text"))
+        if not anchor_quote:
+            anchor_quote = source_text[:220]
+        source_span = source_unit.get("source_span")
+        locator = {
+            "source_span": dict(source_span) if isinstance(source_span, dict) else {},
+            "paragraph_slices": [
+                dict(item)
+                for item in source_unit.get("paragraph_slices", [])
+                if isinstance(item, dict)
+            ],
+        }
+        return build_anchor_record(
+            sentence_start_id="",
+            sentence_end_id="",
+            quote=anchor_quote,
+            locator=locator,
+            anchor_kind="unit_evidence",
+            why_it_mattered=why_it_mattered,
+            anchor_id=f"anchor:{_clean_text(source_unit.get('source_span_id')) or source_span_id(locator.get('source_span'))}",
+        )
 
+    anchor_sentence = None
     if anchor_quote:
         for sentence in chosen_unit_sentences:
             sentence_text = _clean_text(sentence.get("text"))
@@ -1570,6 +1964,7 @@ def _persist_surfaced_reactions(
     reaction_records: ReactionRecordsState,
     anchor_bank: AnchorBankState,
     output_dir: Path,
+    source_unit: dict[str, object] | None = None,
 ) -> tuple[ReactionRecordsState, AnchorBankState, list[AnchoredReactionRecord], dict[str, object] | None]:
     """Persist read-owned surfaced reactions through one canonical builder path."""
 
@@ -1586,15 +1981,19 @@ def _persist_surfaced_reactions(
             surfaced_reaction=surfaced_reaction,
             chosen_unit_sentences=chosen_unit_sentences,
             focal_sentence=focal_sentence,
+            source_unit=source_unit,
             reading_impression=_clean_text(read_result.get("reading_impression")),
         )
+        emitted_at = _clean_text(source_unit.get("source_span_id")) if isinstance(source_unit, dict) else ""
         emitted_reaction = build_reaction_record_from_surfaced_reaction(
             reaction=surfaced_reaction,
             primary_anchor=current_anchor,
             chapter_id=chapter_id,
             chapter_ref=chapter_ref,
-            emitted_at_sentence_id=_sentence_id(focal_sentence),
-            compatibility_section_ref=_compatibility_section_ref(chapter_id, focal_sentence),
+            emitted_at_sentence_id=emitted_at or _sentence_id(focal_sentence),
+            compatibility_section_ref=_compatibility_section_ref_for_source(chapter_id, source_unit)
+            if isinstance(source_unit, dict) and source_unit
+            else _compatibility_section_ref(chapter_id, focal_sentence),
             ordinal=chapter_reaction_count + index,
         )
         if emitted_reaction is None:
@@ -1612,12 +2011,20 @@ def _persist_surfaced_reactions(
                 "message": _clean_text(emitted_reaction.get("thought")),
                 "chapter_id": chapter_id,
                 "chapter_ref": chapter_ref,
-                "segment_ref": _compatibility_section_ref(chapter_id, focal_sentence),
+                "segment_ref": _compatibility_section_ref_for_source(chapter_id, source_unit)
+                if isinstance(source_unit, dict) and source_unit
+                else _compatibility_section_ref(chapter_id, focal_sentence),
                 "anchor_quote": _clean_text(emitted_reaction.get("primary_anchor", {}).get("quote")),
-                "reading_locus": _reading_locus(chapter_id, chapter_ref, focal_sentence, local_buffer),
+                "reading_locus": {
+                    **source_locus_from_unit(source_unit),
+                    "chapter_id": chapter_id,
+                    "chapter_ref": chapter_ref,
+                }
+                if isinstance(source_unit, dict) and source_unit
+                else _reading_locus(chapter_id, chapter_ref, focal_sentence, local_buffer),
                 "active_reaction_id": _clean_text(emitted_reaction.get("reaction_id")),
                 "reaction_types": [compat_reaction_family(emitted_reaction)],
-                "current_excerpt": _clean_text(focal_sentence.get("text"))[:220],
+                "current_excerpt": _clean_text(source_unit.get("source_text") if isinstance(source_unit, dict) else focal_sentence.get("text"))[:220],
             },
         )
     return reaction_records, anchor_bank, emitted_reactions, current_anchor
@@ -1654,8 +2061,9 @@ def _build_runtime_continuation_capsule(
 def _run_read_with_context_loop(
     *,
     chapter: dict[str, object],
-    chosen_unit_sentences: list[dict[str, object]],
     unitize_decision: UnitizeDecision,
+    chosen_unit_sentences: list[dict[str, object]] | None = None,
+    current_unit_source: dict[str, object] | None = None,
     local_buffer: LocalBufferState,
     continuation_capsule: dict[str, object],
     active_attention: ActiveAttention,
@@ -1676,6 +2084,8 @@ def _run_read_with_context_loop(
 ) -> tuple[ReadUnitResult, list[dict[str, str]]]:
     """Run one authoritative read for the chosen unit and persist its private audit."""
 
+    chosen_unit_sentences = [dict(sentence) for sentence in (chosen_unit_sentences or []) if isinstance(sentence, dict)]
+    current_unit_source = dict(current_unit_source or {}) if isinstance(current_unit_source, dict) else None
     carry_forward_context = build_carry_forward_context(
         chapter_ref=chapter_ref,
         current_unit_sentence_ids=[
@@ -1695,6 +2105,7 @@ def _run_read_with_context_loop(
     llm_fallbacks: list[dict[str, str]] = []
     try:
         read_result = read_unit(
+            current_unit_source=current_unit_source,
             current_unit_sentences=chosen_unit_sentences,
             carry_forward_context=carry_forward_context,
             reader_policy=reader_policy,
@@ -1720,6 +2131,7 @@ def _run_read_with_context_loop(
         chapter_id=chapter_id,
         chapter_ref=chapter_ref,
         unitize_decision=unitize_decision,
+        source_unit=current_unit_source,
         carry_forward_context=carry_forward_context,
         read_result=read_result,
         stop_reason="read_complete",
@@ -1787,7 +2199,13 @@ def _settle_next_unit(
         for sentence in selection_result.get("selected_unit_sentences", [])
         if isinstance(sentence, dict)
     ]
-    if not chosen_unit_sentences:
+    selected_source_unit = (
+        dict(selection_result.get("selected_source_unit", {}))
+        if isinstance(selection_result.get("selected_source_unit"), dict)
+        else {}
+    )
+    is_source_mainline = _clean_text(selection_result.get("selection_mode")) == "mainline" and bool(selected_source_unit)
+    if not chosen_unit_sentences and not is_source_mainline:
         return {
             "local_buffer": local_buffer,
             "local_continuity": local_continuity,
@@ -1807,19 +2225,22 @@ def _settle_next_unit(
             "touched_chapter_ids": [],
         }
 
-    already_ingested = set(already_ingested_sentence_ids or set())
-    for selected_sentence in chosen_unit_sentences:
-        selected_sentence_id = _sentence_id(selected_sentence)
-        if selected_sentence_id in already_ingested:
-            continue
-        local_buffer = process_sentence_intake(
-            selected_sentence,
-            local_buffer=local_buffer,
-        )
-
     unitize_decision = dict(selection_result.get("unitize_decision", {}))
-    focal_sentence = chosen_unit_sentences[-1]
-    focal_sentence_id = _sentence_id(focal_sentence)
+    focal_sentence = chosen_unit_sentences[-1] if chosen_unit_sentences else {}
+    focal_sentence_id = _sentence_id(focal_sentence) if focal_sentence else ""
+    source_span = (
+        dict(selected_source_unit.get("source_span", {}))
+        if isinstance(selected_source_unit.get("source_span"), dict)
+        else {}
+    )
+    source_id = _clean_text(selected_source_unit.get("source_span_id")) or source_span_id(source_span)
+    if is_source_mainline:
+        chosen_unit_sentences = _compat_unit_sentences_for_source_span(chapter, source_span)
+        focal_sentence = chosen_unit_sentences[-1] if chosen_unit_sentences else {}
+        focal_sentence_id = _sentence_id(focal_sentence) if focal_sentence else ""
+        local_continuity["mainline_cursor"] = _shared_cursor_for_source_span(source_span)
+        local_continuity["current_source_span"] = dict(source_span)
+        local_continuity["current_source_span_id"] = source_id
     record_unitization(
         output_dir,
         chapter_id=chapter_id,
@@ -1827,23 +2248,39 @@ def _settle_next_unit(
         unitize_decision=unitize_decision,
     )
 
-    current_activity = _current_activity(
-        chapter_id=chapter_id,
-        chapter_ref=chapter_ref,
-        sentence=focal_sentence,
-        local_buffer=local_buffer,
+    current_activity = (
+        _current_activity_from_source_unit(
+            chapter_id=chapter_id,
+            chapter_ref=chapter_ref,
+            source_unit=selected_source_unit,
+            local_buffer=local_buffer,
+        )
+        if is_source_mainline
+        else _current_activity(
+            chapter_id=chapter_id,
+            chapter_ref=chapter_ref,
+            sentence=focal_sentence,
+            local_buffer=local_buffer,
+        )
     )
     if reading_queue_stage:
         current_activity["reading_queue_stage"] = reading_queue_stage
-    persist_reading_position(
+    position_payload = persist_reading_position(
         output_dir,
         chapter_id=chapter_id,
         chapter_ref=chapter_ref,
         local_buffer=local_buffer,
         local_continuity=local_continuity,
+        source_cursor=dict(source_span.get("end_cursor", {}))
+        if is_source_mainline and isinstance(source_span.get("end_cursor"), dict)
+        else None,
         status="running",
         phase="reading",
     )
+    if isinstance(position_payload.get("local_continuity"), dict):
+        local_continuity = position_payload["local_continuity"]  # type: ignore[assignment]
+        bundle["local_continuity"] = local_continuity
+        _save_runtime_bundle(output_dir, bundle)
     write_run_state(
         output_dir,
         build_run_state(
@@ -1853,7 +2290,9 @@ def _settle_next_unit(
             completed_chapters=completed_chapters,
             current_chapter_id=chapter_id,
             current_chapter_ref=chapter_ref,
-            current_segment_ref=_compatibility_section_ref(chapter_id, focal_sentence),
+            current_segment_ref=_compatibility_section_ref_for_source(chapter_id, selected_source_unit)
+            if is_source_mainline
+            else _compatibility_section_ref(chapter_id, focal_sentence),
             current_reading_activity=current_activity,
             current_phase_step="reading",
             resume_available=True,
@@ -1864,6 +2303,7 @@ def _settle_next_unit(
     read_result, read_fallbacks = _run_read_with_context_loop(
         chapter=chapter,
         chosen_unit_sentences=chosen_unit_sentences,
+        current_unit_source=selected_source_unit if is_source_mainline else None,
         unitize_decision=unitize_decision,  # type: ignore[arg-type]
         local_buffer=local_buffer,
         continuation_capsule=continuation_capsule,
@@ -1896,9 +2336,17 @@ def _settle_next_unit(
                 "message": f"Read fallback for {_clean_text(fallback.get('node')) or 'unknown_node'}.",
                 "chapter_id": chapter_id,
                 "chapter_ref": chapter_ref,
-                "segment_ref": _compatibility_section_ref(chapter_id, focal_sentence),
-                "reading_locus": _reading_locus(chapter_id, chapter_ref, focal_sentence, local_buffer),
-                "current_excerpt": _clean_text(focal_sentence.get("text"))[:220],
+                "segment_ref": _compatibility_section_ref_for_source(chapter_id, selected_source_unit)
+                if is_source_mainline
+                else _compatibility_section_ref(chapter_id, focal_sentence),
+                "reading_locus": {
+                    **source_locus_from_unit(selected_source_unit),
+                    "chapter_id": chapter_id,
+                    "chapter_ref": chapter_ref,
+                }
+                if is_source_mainline
+                else _reading_locus(chapter_id, chapter_ref, focal_sentence, local_buffer),
+                "current_excerpt": _clean_text(selected_source_unit.get("source_text") if is_source_mainline else focal_sentence.get("text"))[:220],
                 "problem_code": _clean_text(fallback.get("problem_code")),
             },
         )
@@ -1930,6 +2378,7 @@ def _settle_next_unit(
         read_result=read_result,
         chosen_unit_sentences=chosen_unit_sentences,
         focal_sentence=focal_sentence,
+        source_unit=selected_source_unit if is_source_mainline else None,
         chapter_id=chapter_id,
         chapter_ref=chapter_ref,
         local_buffer=local_buffer,
@@ -1945,6 +2394,8 @@ def _settle_next_unit(
             _clean_text(item.get("sentence_id")) for item in chosen_unit_sentences if _clean_text(item.get("sentence_id"))
         ],
         focal_sentence_id=focal_sentence_id,
+        source_span=source_span if is_source_mainline else None,
+        source_span_id=source_id if is_source_mainline else "",
         memory_uptake_ops=memory_uptake_ops,
         before_active_attention=before_active_attention,
         after_active_attention=active_attention,
@@ -1958,9 +2409,23 @@ def _settle_next_unit(
         after_reaction_records=reaction_records,
         emitted_reaction_ids=[_clean_text(item.get("reaction_id")) for item in emitted_reactions],
     )
+    if is_source_mainline:
+        unit_record = append_unit_span_record(
+            output_dir,
+            chapter_id=chapter_id,
+            chapter_ref=chapter_ref,
+            source_unit=selected_source_unit,
+            preview=dict(selection_result.get("preview", {})) if isinstance(selection_result.get("preview"), dict) else {},
+            end_anchor_text=_clean_text(unitize_decision.get("end_anchor_text")),
+            resolution=dict(unitize_decision.get("resolution", {})) if isinstance(unitize_decision.get("resolution"), dict) else {},
+        )
+        selected_source_unit["unit_id"] = _clean_text(unit_record.get("unit_id"))
+        selected_source_unit["sequence_index"] = int(unit_record.get("sequence_index", 0) or 0)
     if meaning_units_in_chapter is not None:
         meaning_units_in_chapter.append(
             {
+                "source_span_id": source_id,
+                "source_span": source_span,
                 "sentence_ids": [_clean_text(item.get("sentence_id")) for item in chosen_unit_sentences if _clean_text(item.get("sentence_id"))],
                 "summary": _clean_text(read_result.get("reading_impression")),
             }
@@ -2046,6 +2511,7 @@ def _settle_next_unit(
         local_buffer=local_buffer,
         local_continuity=local_continuity,
         active_artifact_refs={key: value for key, value in active_refs.items() if value},
+        source_span=source_span if is_source_mainline else None,
         status="running",
         phase="reading",
     )
@@ -2064,6 +2530,9 @@ def _settle_next_unit(
         "emitted_reactions": emitted_reactions,
         "current_anchor": current_anchor,
         "focal_sentence": focal_sentence,
+        "source_cursor": dict(source_span.get("end_cursor", {})) if is_source_mainline and isinstance(source_span.get("end_cursor"), dict) else {},
+        "source_span": source_span if is_source_mainline else {},
+        "selected_source_unit": selected_source_unit if is_source_mainline else {},
         "units_read_delta": 1,
         "touched_chapter_ids": [chapter_id],
     }
@@ -2276,11 +2745,8 @@ def run_reading_runner(request: ReadRequest, mechanism: MechanismInfo) -> ReadRe
             )
 
             meaning_units_in_chapter: list[dict[str, object]] = []
-            sentences = [dict(sentence) for sentence in chapter.get("sentences", []) if isinstance(sentence, dict)]
-            start_index = 0
-            if request.continue_mode and resume_chapter_id == chapter_id:
-                start_index = _chapter_start_index(chapter, _clean_text(local_buffer.get("current_sentence_id")))
-            if start_index >= len(sentences):
+            readable = readable_paragraphs(chapter)
+            if not readable:
                 chapter_statuses[chapter_id] = "done"
                 completed_chapters = _completed_scheduled_chapters(
                     chapter_statuses,
@@ -2288,23 +2754,16 @@ def run_reading_runner(request: ReadRequest, mechanism: MechanismInfo) -> ReadRe
                 )
                 continue
 
-            cursor = start_index
-            while cursor < len(sentences):
-                local_continuity["mainline_cursor"] = _shared_cursor_for_sentence(
-                    chapter_id=chapter_id,
-                    chapter_ref=chapter_ref,
-                    sentence=sentences[cursor],
-                )
+            cursor = _chapter_start_source_cursor(
+                chapter=chapter,
+                local_continuity=local_continuity,
+                output_dir=output_dir,
+                continue_mode=bool(request.continue_mode and resume_chapter_id == chapter_id),
+            )
+            while not cursor_at_or_after_chapter_end(chapter, cursor):
+                local_continuity["mainline_cursor"] = _shared_cursor_for_source_cursor(cursor)
                 bundle["local_continuity"] = local_continuity
-                already_ingested_sentence_ids: set[str] = set()
                 while True:
-                    if _active_detour_need(local_continuity) is None:
-                        sentence = sentences[cursor]
-                        sentence_id = _sentence_id(sentence)
-                        local_buffer = process_sentence_intake(sentence, local_buffer=local_buffer)
-                        already_ingested_sentence_ids = {sentence_id}
-                    else:
-                        already_ingested_sentence_ids = set()
                     selection_result = navigate_choose_next_unit(
                         document=provisioned.book_document,
                         survey_map=survey_map,
@@ -2366,7 +2825,7 @@ def run_reading_runner(request: ReadRequest, mechanism: MechanismInfo) -> ReadRe
                     memory_quality_probe_config=memory_quality_probe_config,
                     ordered_probe_sentence_ids=ordered_probe_sentence_ids,
                     meaning_units_in_chapter=meaning_units_in_chapter if is_mainline_selection else None,
-                    already_ingested_sentence_ids=already_ingested_sentence_ids,
+                    already_ingested_sentence_ids=set(),
                     capture_memory_probe=is_mainline_selection,
                 )
                 local_buffer = settled_unit["local_buffer"]  # type: ignore[assignment]
@@ -2387,18 +2846,11 @@ def run_reading_runner(request: ReadRequest, mechanism: MechanismInfo) -> ReadRe
                         audit_window_stop_reason = "audit_window_max_units_reached"
                         break
                     continue
-                focal_sentence = settled_unit["focal_sentence"] if isinstance(settled_unit.get("focal_sentence"), dict) else {}
-                chosen_unit_sentences = [
-                    dict(sentence)
-                    for sentence in selection_result.get("selected_unit_sentences", [])
-                    if isinstance(sentence, dict)
-                ]
-                focal_sentence_id = _sentence_id(focal_sentence)
-                focal_index = next(
-                    (index for index, candidate in enumerate(sentences) if _sentence_id(candidate) == focal_sentence_id),
-                    cursor + len(chosen_unit_sentences) - 1,
-                )
-                cursor = max(cursor + 1, focal_index + 1)
+                next_cursor = settled_unit.get("source_cursor")
+                if isinstance(next_cursor, dict) and cursor_less_than(cursor, next_cursor):
+                    cursor = normalize_cursor_for_chapter(chapter, next_cursor)
+                else:
+                    cursor = chapter_end_cursor(chapter)
                 if audit_window_max_units and audit_window_units_read >= audit_window_max_units:
                     audit_window_stop_reason = "audit_window_max_units_reached"
                     break
@@ -2413,7 +2865,7 @@ def run_reading_runner(request: ReadRequest, mechanism: MechanismInfo) -> ReadRe
                     sentence_lookup=sentence_lookup,
                     chapter_lookup=chapter_lookup,
                     current_chapter=chapter,
-                    current_cursor=max(0, len(sentences) - 1),
+                    current_cursor=chapter_end_cursor(chapter),
                     local_buffer=local_buffer,
                     continuation_capsule=dict(bundle.get("continuation_capsule", {})),
                     active_attention=active_attention,
@@ -2491,13 +2943,27 @@ def run_reading_runner(request: ReadRequest, mechanism: MechanismInfo) -> ReadRe
             if audit_window_stop_reason:
                 break
 
+            end_cursor = chapter_end_cursor(chapter)
+            end_source_unit = source_unit_from_span(
+                chapter=chapter,
+                source_span={
+                    "start_cursor": dict(end_cursor),
+                    "end_cursor": dict(end_cursor),
+                },
+            )
+            last_paragraph = readable[-1] if readable else {}
+            chapter_end_source_id = f"src:c{chapter_id}:chapter-end"
             chapter_end_anchor = build_anchor_record(
-                sentence_start_id=_clean_text(sentences[-1].get("sentence_id")) if sentences else f"c{chapter_id}-end",
-                sentence_end_id=_clean_text(sentences[-1].get("sentence_id")) if sentences else f"c{chapter_id}-end",
-                quote=_clean_text(sentences[-1].get("text")) if sentences else chapter_ref,
-                locator=dict(sentences[-1].get("locator", {})) if sentences and isinstance(sentences[-1].get("locator"), dict) else {},
+                sentence_start_id="",
+                sentence_end_id="",
+                quote=_clean_text(last_paragraph.get("text"))[-220:] if isinstance(last_paragraph, dict) else chapter_ref,
+                locator={
+                    "source_cursor": dict(end_cursor),
+                    "source_span": dict(end_source_unit.get("source_span", {})),
+                },
                 anchor_kind="chapter_end",
                 why_it_mattered="chapter-end consolidation anchor",
+                anchor_id=f"anchor:{chapter_end_source_id}",
             )
             phase6 = run_phase6_chapter_cycle(
                 book_id=runtime_artifacts.book_id_from_output_dir(output_dir),

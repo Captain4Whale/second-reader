@@ -246,6 +246,7 @@ Use `docs/backend-reading-mechanism.md` for shared mechanism-platform boundaries
     - phase-1 scope is `attentional_v2` only
     - `attentional_v2` windows are freshly read or same-run resumed so probe snapshots exist
     - current snapshots use explicit semantic `probe_targets` from `memory_quality_semantic_probe_plan_20260504.json`; missing targets fail fast instead of falling back to ratio probes
+    - older sentence-target probe manifests and sentence ids are compatibility/eval locator metadata after the paragraph-offset cursor cutover; they are not the current `attentional_v2` mainline reading coordinate
   - add full-window reaction audit for `Spontaneous Callback` and `False Visible Integration`
     - phase-1 comparison scope is `attentional_v2` vs `iterator_v1`
     - unchanged `iterator_v1` windows may reuse prior completed normalized reading outputs because reaction audit only consumes visible reactions
@@ -255,6 +256,7 @@ Use `docs/backend-reading-mechanism.md` for shared mechanism-platform boundaries
   - landed benchmark-only V2 probe export:
     - `reading-companion-backend/src/attentional_v2/benchmark_probes.py`
     - runtime capture is invoked through the `attentional_v2` observability layer, so `benchmark_probes.py` remains the Memory Quality export implementation while Reading Runner does not own probe manifest or snapshot-persistence details
+    - `unit_span_ledger.jsonl`, `read_audit.jsonl`, and `settlement_audit.jsonl` are runtime evidence used to diagnose whether a run covered and settled source spans correctly; they are not new benchmark targets or score inputs by themselves
 - The first Phase-1 diagnostic run has been corrected in two steps:
   - corrected run:
     - `attentional_v2_long_span_vnext_phase1_memory_quality_scale_fix_rejudge_20260425`

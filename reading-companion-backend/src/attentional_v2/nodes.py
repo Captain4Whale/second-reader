@@ -780,19 +780,61 @@ def _normalize_navigate_act_result(
 ) -> NavigateActResult:
     """Normalize one Navigate.choose_next_unit act result against the current visible space."""
 
-    if not isinstance(value, dict):
-        if default_selection_mode == "mainline":
-            decision = _unitize_decision_from_navigate_act(
-                {},
+    if default_selection_mode == "mainline":
+        if not isinstance(value, dict):
+            if available_sentences:
+                decision = _unitize_decision_from_navigate_act(
+                    {},
+                    preview_sentences=available_sentences,
+                    reader_policy=reader_policy,
+                    fallback_reason="navigate_choose_next_unit_llm_empty_fallback",
+                )
+                return {
+                    "decision": "choose_unit",
+                    "selection_mode": "mainline",
+                    **decision,
+                }
+            return {
+                "decision": "choose_unit",
+                "selection_mode": "mainline",
+                "reason": "navigate_choose_next_unit_empty_source_anchor",
+                "end_anchor_text": "",
+                "boundary_type": "paragraph_end",
+                "continuation_pressure": False,
+            }
+        decision = _clean_text(value.get("decision")).lower().replace("-", "_")
+        if decision not in _NAVIGATE_ACT_DECISIONS or decision != "choose_unit":
+            decision = "choose_unit"
+        if (
+            available_sentences
+            and _clean_text(value.get("start_sentence_id"))
+            and _clean_text(value.get("end_sentence_id"))
+        ):
+            unitize_decision = _unitize_decision_from_navigate_act(
+                value,
                 preview_sentences=available_sentences,
                 reader_policy=reader_policy,
-                fallback_reason="navigate_choose_next_unit_llm_empty_fallback",
+                fallback_reason="navigate_choose_next_unit_sentence_compat_fallback",
             )
             return {
                 "decision": "choose_unit",
                 "selection_mode": "mainline",
-                **decision,
+                **unitize_decision,
             }
+        return {
+            "decision": "choose_unit",
+            "selection_mode": "mainline",
+            "reason": _clean_text(value.get("reason")),
+            "end_anchor_text": _clean_text(
+                value.get("end_anchor_text")
+                or value.get("end_after_text")
+                or value.get("unit_text_tail")
+            ),
+            "boundary_type": _normalize_unitize_boundary_type(value.get("boundary_type")),
+            "continuation_pressure": bool(value.get("continuation_pressure")),
+        }
+
+    if not isinstance(value, dict):
         return {
             "decision": "defer_detour",
             "selection_mode": "detour",
@@ -811,7 +853,7 @@ def _normalize_navigate_act_result(
 
     if decision == "request_skill":
         if not skills_allowed:
-            decision = "choose_unit" if default_selection_mode == "mainline" else "defer_detour"
+            decision = "defer_detour"
         else:
             skill_request = _normalize_skill_request(value.get("skill_request"))
             if skill_request is None:
@@ -828,14 +870,11 @@ def _normalize_navigate_act_result(
             }
 
     if decision == "defer_detour":
-        if default_selection_mode == "mainline":
-            decision = "choose_unit"
-        else:
-            return {
-                "decision": "defer_detour",
-                "selection_mode": "detour",
-                "reason": _clean_text(value.get("reason")),
-            }
+        return {
+            "decision": "defer_detour",
+            "selection_mode": "detour",
+            "reason": _clean_text(value.get("reason")),
+        }
 
     raw_start_sentence_id = _clean_text(value.get("start_sentence_id"))
     raw_end_sentence_id = _clean_text(value.get("end_sentence_id"))
@@ -860,18 +899,6 @@ def _normalize_navigate_act_result(
     start_sentence_id = _clean_text(unitize_decision.get("start_sentence_id"))
     end_sentence_id = _clean_text(unitize_decision.get("end_sentence_id"))
     if not allowed_sentence_ids or start_sentence_id not in allowed_sentence_ids or end_sentence_id not in allowed_sentence_ids:
-        if default_selection_mode == "mainline":
-            fallback = _unitize_decision_from_navigate_act(
-                {},
-                preview_sentences=available_sentences,
-                reader_policy=reader_policy,
-                fallback_reason="navigate_choose_next_unit_mainline_boundary_fallback",
-            )
-            return {
-                "decision": "choose_unit",
-                "selection_mode": "mainline",
-                **fallback,
-            }
         return {
             "decision": "defer_detour",
             "selection_mode": "detour",
@@ -970,16 +997,25 @@ def navigate_choose_next_unit_act(
         )
     except ReaderLLMError:
         if default_selection_mode == "mainline":
-            fallback = _unitize_decision_from_navigate_act(
-                {},
-                preview_sentences=available,
-                reader_policy=reader_policy,
-                fallback_reason="navigate_choose_next_unit_llm_error_fallback",
-            )
+            if available:
+                fallback = _unitize_decision_from_navigate_act(
+                    {},
+                    preview_sentences=available,
+                    reader_policy=reader_policy,
+                    fallback_reason="navigate_choose_next_unit_llm_error_fallback",
+                )
+                return {
+                    "decision": "choose_unit",
+                    "selection_mode": "mainline",
+                    **fallback,
+                }
             return {
                 "decision": "choose_unit",
                 "selection_mode": "mainline",
-                **fallback,
+                "reason": "navigate_choose_next_unit_llm_error",
+                "end_anchor_text": "",
+                "boundary_type": "paragraph_end",
+                "continuation_pressure": False,
             }
         return {
             "decision": "defer_detour",
@@ -1010,10 +1046,11 @@ def _route_targets_from_ref_ids(
 
 def read_unit(
     *,
-    current_unit_sentences: list[dict[str, object]],
     carry_forward_context: CarryForwardContext,
     reader_policy: ReaderPolicy,
     output_language: str,
+    current_unit_source: dict[str, object] | None = None,
+    current_unit_sentences: list[dict[str, object]] | None = None,
     supplemental_context: dict[str, object] | None = None,
     detour_context: dict[str, object] | None = None,
     output_dir: Path | None = None,
@@ -1024,6 +1061,41 @@ def read_unit(
     """Run the authoritative formal read for one chosen unit."""
 
     prompts = ATTENTIONAL_V2_PROMPTS
+    sentence_unit = [dict(sentence) for sentence in (current_unit_sentences or []) if isinstance(sentence, dict)]
+    source_unit = dict(current_unit_source or {}) if isinstance(current_unit_source, dict) else {}
+    if source_unit:
+        current_unit_payload: object = {
+            "source_span": dict(source_unit.get("source_span", {}))
+            if isinstance(source_unit.get("source_span"), dict)
+            else {},
+            "source_text": str(source_unit.get("source_text", "") or ""),
+            "paragraph_slices": [
+                {
+                    "paragraph_index": item.get("paragraph_index"),
+                    "text_role": _clean_text(item.get("text_role")),
+                    "start_char": item.get("start_char"),
+                    "end_char": item.get("end_char"),
+                    "text": str(item.get("text", "") or ""),
+                }
+                for item in source_unit.get("paragraph_slices", [])
+                if isinstance(item, dict)
+            ],
+        }
+        current_unit_texts = [str(source_unit.get("source_text", "") or "")]
+    else:
+        current_unit_payload = [
+            {
+                "sentence_id": _clean_text(sentence.get("sentence_id")),
+                "text": _clean_text(sentence.get("text")),
+                "text_role": _clean_text(sentence.get("text_role")),
+            }
+            for sentence in sentence_unit
+        ]
+        current_unit_texts = [
+            _clean_text(sentence.get("text"))
+            for sentence in sentence_unit
+            if _clean_text(sentence.get("text"))
+        ]
     prompt_packet = build_read_prompt_packet(
         carry_forward_context=carry_forward_context,
         supplemental_context=supplemental_context,
@@ -1038,16 +1110,7 @@ def read_unit(
     user_prompt = _render_prompt(
         prompts.read_unit_prompt,
         structural_frame=_json_block(structural_frame),
-        current_unit=_json_block(
-            [
-                {
-                    "sentence_id": _clean_text(sentence.get("sentence_id")),
-                    "text": _clean_text(sentence.get("text")),
-                    "text_role": _clean_text(sentence.get("text_role")),
-                }
-                for sentence in current_unit_sentences
-            ]
-        ),
+        current_unit=_json_block(current_unit_payload),
         carry_forward_context=_json_block(prompt_packet),
         supplemental_context=_json_block(dict(prompt_packet.get("selective_carry", {}))),
         policy_snapshot=_json_block(reader_policy),
@@ -1064,11 +1127,6 @@ def read_unit(
     with llm_invocation_scope(trace_context=LLMTraceContext(stage="phase4", node="read_unit")):
         payload = invoke_json(prompts.read_unit_system, user_prompt, default={})
 
-    current_unit_texts = [
-        _clean_text(sentence.get("text"))
-        for sentence in current_unit_sentences
-        if _clean_text(sentence.get("text"))
-    ]
     allowed_ref_ids = {
         _clean_text(ref.get("ref_id"))
         for ref in carry_forward_context.get("refs", [])

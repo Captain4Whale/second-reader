@@ -1,0 +1,120 @@
+from __future__ import annotations
+
+import json
+
+from src.attentional_v2.source_spans import (
+    build_paragraph_offset_preview,
+    first_cursor_for_chapter,
+    resolve_end_anchor_text,
+    source_unit_from_span,
+)
+from src.attentional_v2.storage import initialize_artifact_tree, unit_span_ledger_file
+from src.attentional_v2.unit_span_ledger import append_unit_span_record
+
+
+def _chapter() -> dict[str, object]:
+    return {
+        "id": 1,
+        "title": "Chapter 1",
+        "paragraphs": [
+            {"paragraph_index": 1, "text": "Alpha " * 20, "text_role": "body"},
+            {"paragraph_index": 2, "text": "Beta bridge.", "text_role": "body"},
+            {"paragraph_index": 3, "text": "Gamma closing.", "text_role": "body"},
+        ],
+    }
+
+
+def test_preview_keeps_long_current_paragraph_only() -> None:
+    chapter = _chapter()
+    preview = build_paragraph_offset_preview(
+        chapter=chapter,
+        current_cursor={"chapter_id": 1, "chapter_ref": "Chapter 1", "paragraph_index": 1, "char_offset": 0},
+        reader_policy={"unitize": {"preview_soft_min_chars": 20, "preview_hard_max_chars": 200, "max_lookahead_paragraphs": 4}},
+    )
+
+    assert preview["paragraph_count"] == 1
+    assert preview["preview_end_cursor"]["paragraph_index"] == 1
+    assert preview["truncated"] is False
+
+
+def test_preview_appends_following_paragraphs_when_current_remainder_is_short() -> None:
+    chapter = _chapter()
+    preview = build_paragraph_offset_preview(
+        chapter=chapter,
+        current_cursor={"chapter_id": 1, "chapter_ref": "Chapter 1", "paragraph_index": 2, "char_offset": 5},
+        reader_policy={"unitize": {"preview_soft_min_chars": 50, "preview_hard_max_chars": 200, "max_lookahead_paragraphs": 4}},
+    )
+
+    assert preview["paragraph_count"] == 2
+    assert preview["paragraph_slices"][0]["text"] == "bridge."
+    assert preview["preview_end_cursor"]["paragraph_index"] == 3
+
+
+def test_preview_truncates_at_hard_max_with_end_exclusive_cursor() -> None:
+    chapter = _chapter()
+    preview = build_paragraph_offset_preview(
+        chapter=chapter,
+        current_cursor=first_cursor_for_chapter(chapter),
+        reader_policy={"unitize": {"preview_soft_min_chars": 1, "preview_hard_max_chars": 10, "max_lookahead_paragraphs": 4}},
+    )
+
+    assert preview["source_text"] == "Alpha Alph"
+    assert preview["preview_end_cursor"]["char_offset"] == 10
+    assert preview["truncated"] is True
+
+
+def test_resolver_maps_end_anchor_to_paragraph_offset_cursor() -> None:
+    chapter = _chapter()
+    preview = build_paragraph_offset_preview(
+        chapter=chapter,
+        current_cursor={"chapter_id": 1, "chapter_ref": "Chapter 1", "paragraph_index": 2, "char_offset": 0},
+        reader_policy={"unitize": {"preview_soft_min_chars": 50, "preview_hard_max_chars": 200, "max_lookahead_paragraphs": 4}},
+    )
+
+    resolution = resolve_end_anchor_text(preview=preview, end_anchor_text="Beta bridge.")
+
+    assert resolution["status"] == "matched"
+    assert resolution["end_cursor"]["paragraph_index"] == 2
+    assert resolution["end_cursor"]["char_offset"] == len("Beta bridge.")
+
+
+def test_resolver_reports_ambiguous_and_missing_anchor() -> None:
+    preview = {
+        "chapter_id": 1,
+        "chapter_ref": "Chapter 1",
+        "preview_start_cursor": {"chapter_id": 1, "chapter_ref": "Chapter 1", "paragraph_index": 1, "char_offset": 0},
+        "preview_end_cursor": {"chapter_id": 1, "chapter_ref": "Chapter 1", "paragraph_index": 1, "char_offset": 10},
+        "source_text": "echo echo",
+        "paragraph_slices": [{"paragraph_index": 1, "start_char": 0, "end_char": 9, "flat_start": 0, "flat_end": 9}],
+    }
+
+    assert resolve_end_anchor_text(preview=preview, end_anchor_text="echo")["status"] == "ambiguous"
+    assert resolve_end_anchor_text(preview=preview, end_anchor_text="missing")["status"] == "not_found"
+
+
+def test_unit_span_ledger_records_core_runtime_fact(tmp_path) -> None:
+    output_dir = tmp_path / "out" / "book"
+    initialize_artifact_tree(output_dir)
+    chapter = _chapter()
+    span = {
+        "start_cursor": {"chapter_id": 1, "chapter_ref": "Chapter 1", "paragraph_index": 2, "char_offset": 0},
+        "end_cursor": {"chapter_id": 1, "chapter_ref": "Chapter 1", "paragraph_index": 2, "char_offset": len("Beta bridge.")},
+    }
+    source_unit = source_unit_from_span(chapter=chapter, source_span=span)
+    preview = build_paragraph_offset_preview(chapter=chapter, current_cursor=span["start_cursor"])
+
+    append_unit_span_record(
+        output_dir,
+        chapter_id=1,
+        chapter_ref="Chapter 1",
+        source_unit=source_unit,
+        preview=preview,
+        end_anchor_text="Beta bridge.",
+        resolution={"status": "matched", "method": "exact_text"},
+    )
+
+    record = json.loads(unit_span_ledger_file(output_dir).read_text(encoding="utf-8").strip())
+    assert record["unit_id"] == "u000001"
+    assert record["start_cursor"] == span["start_cursor"]
+    assert record["end_cursor"] == span["end_cursor"]
+    assert record["source_span_id"].startswith("src:c1:p2@0-p2@")
