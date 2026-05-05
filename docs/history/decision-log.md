@@ -2500,3 +2500,33 @@ This new direction is design frozen but not yet implemented as a formal benchmar
 - `reading-companion-backend/eval/attentional_v2/run_long_span_vnext.py`
 - `reading-companion-backend/src/attentional_v2/benchmark_probes.py`
 - `reading-companion-backend/tests/test_long_span_vnext.py`
+
+## Entry 82
+**ID**: DEC-085
+**Status**: active
+
+**Decision / Inflection**: Route `attentional_v2` runtime audit and Memory Quality probe capture through one observability boundary.
+
+**Period**: May 5, 2026, after the V2-only semantic-probe evaluation exposed a visibility gap between `Read` memory uptake and durable runtime state.
+
+**Problem**: `read_audit.jsonl` already recorded the naturalized Read output, but it did not persist `memory_uptake_ops`, so the project could not tell from audit artifacts whether durable memory weakness came from Read output, operation normalization, settlement, or later persistence. At the same time, Reading Runner directly called the Memory Quality probe exporter, leaving an evaluation concern visibly wired into the main reading loop.
+
+**Alternatives considered**: Keep the current local audit helpers and only add the missing field, move all probe code entirely into the eval runner, or introduce a heavy per-unit settlement snapshot immediately. These were rejected for this slice. A field-only patch would leave the boundary messy, eval-only capture would lose the precise post-settlement runtime moment, and full settlement snapshots would add storage and design scope before the first observability cleanup had landed.
+
+**Why this path won**: Reading Runner is the right owner of lifecycle timing, but not of audit schema details or benchmark semantics. A runtime observability layer can receive lifecycle events, write canonical audit artifacts, and expose optional eval consumers while preserving the product path's low-overhead standard mode.
+
+**What changed in the system**: `attentional_v2/observability.py` now owns the runtime audit writers for unitization/read audit and the optional Memory Quality probe capture hook. `read_audit.jsonl` remains the canonical read audit artifact and now records normalized `memory_uptake_ops`, their count, and counts by target store. `unitization_audit.jsonl` remains the canonical unitization audit artifact. Reading Runner now calls `record_unitization`, `record_read`, and `maybe_capture_memory_quality_probe` instead of directly calling scattered audit writers or the benchmark probe persistence function. `benchmark_probes.py` still implements the Memory Quality export, but it is now an observability consumer rather than a Runner-owned concern.
+
+**Why it matters later**: Future settlement audit work should attach to this observability boundary as compact transaction evidence, not by mixing diagnostic fields into Read prompts, state operations, or judge code. Normal product runs should keep avoiding Memory Quality snapshot construction unless the probe export is explicitly enabled with semantic targets.
+
+**Primary evidence**:
+- `docs/backend-reading-mechanisms/attentional_v2.md`
+- `docs/backend-reader-evaluation.md`
+- `docs/current-state.md`
+- `docs/tasks/registry.md`
+- `docs/tasks/registry.json`
+- `reading-companion-backend/src/attentional_v2/observability.py`
+- `reading-companion-backend/src/attentional_v2/runner.py`
+- `reading-companion-backend/src/attentional_v2/benchmark_probes.py`
+- `reading-companion-backend/tests/test_attentional_v2_phase_b.py`
+- `reading-companion-backend/tests/test_long_span_vnext.py`

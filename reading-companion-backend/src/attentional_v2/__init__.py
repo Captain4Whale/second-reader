@@ -24,7 +24,6 @@ from .knowledge import (
 from .nodes import (
     build_unitize_preview,
     navigate_choose_next_unit_act,
-    persist_unitization_audit,
     read_unit,
 )
 from .observability import (
@@ -32,8 +31,12 @@ from .observability import (
     append_standard_activity_event,
     emit_checkpoint_observability,
     emit_resume_observability,
+    maybe_capture_memory_quality_probe,
+    memory_quality_probe_observability_settings,
     observability_mode,
     reading_locus_from_cursor,
+    record_read,
+    record_unitization,
 )
 from .prompts import (
     ATTENTIONAL_V2_PROMPTS,
@@ -45,7 +48,7 @@ from .prompts import (
     RECONSOLIDATION_PROMPT_VERSION,
     REFLECTIVE_PROMOTION_PROMPT_VERSION,
 )
-from .read_context import build_carry_forward_context, persist_read_audit, resolve_context_request
+from .read_context import build_carry_forward_context, resolve_context_request
 from .resume import (
     build_shared_cursor,
     capture_local_continuity,
@@ -178,13 +181,13 @@ __all__ = [
     "navigate_choose_next_unit_act",
     "persist_reading_position",
     "persist_normalized_eval_bundle",
-    "persist_read_audit",
-    "persist_unitization_audit",
     "project_chapter_result_compatibility",
     "push_local_buffer_sentence",
     "reaction_records_for_chapter",
     "read_unit",
     "reading_locus_from_cursor",
+    "record_read",
+    "record_unitization",
     "reconsolidation",
     "resume_from_checkpoint",
     "refresh_knowledge_modes",
@@ -204,5 +207,7 @@ __all__ = [
     "validate_resume_compatibility",
     "write_full_checkpoint",
     "write_book_survey_artifacts",
+    "maybe_capture_memory_quality_probe",
+    "memory_quality_probe_observability_settings",
     "observability_mode",
 ]

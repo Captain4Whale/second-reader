@@ -9,6 +9,7 @@ from src.attentional_v2.benchmark_probes import (
     load_memory_quality_probe_export,
     persist_due_memory_quality_probe_snapshots,
 )
+from src.attentional_v2.observability import maybe_capture_memory_quality_probe
 from src.attentional_v2.schemas import (
     build_empty_anchor_bank,
     build_empty_concept_registry,
@@ -38,6 +39,30 @@ def _window() -> runner.ReadingWindow:
         termination_reason="chapter_end_after_target_notes",
         segment_source_path="segment_sources/segment_a.txt",
     )
+
+
+def _semantic_probe_settings() -> dict[str, object]:
+    return {
+        "enabled": True,
+        "segment_id": "segment_a",
+        "source_id": "source_a",
+        "book_title": "Book A",
+        "language_track": "en",
+        "probe_plan_id": "test_semantic_plan",
+        "probe_selection_method": runner.PROBE_SELECTION_METHOD,
+        "probe_targets": [
+            {
+                "probe_index": index,
+                "target_sentence_id": f"c1-s{index}",
+                "rough_position_target": f"probe {index}",
+                "estimated_ratio": index / 5,
+                "boundary_kind": "test boundary",
+                "why_this_probe_point": "A semantic boundary in the fixture.",
+                "structural_signals_to_check": ["fixture structure"],
+            }
+            for index in range(1, 6)
+        ],
+    }
 
 
 def _window_b() -> runner.ReadingWindow:
@@ -154,27 +179,7 @@ def test_persist_due_memory_quality_probe_snapshots_emits_once_per_semantic_targ
     local_continuity["current_sentence_id"] = "c1-s4"
     local_continuity["reading_queue_stage"] = "mainline"
 
-    settings = {
-        "enabled": True,
-        "segment_id": "segment_a",
-        "source_id": "source_a",
-        "book_title": "Book A",
-        "language_track": "en",
-        "probe_plan_id": "test_semantic_plan",
-        "probe_selection_method": runner.PROBE_SELECTION_METHOD,
-        "probe_targets": [
-            {
-                "probe_index": index,
-                "target_sentence_id": f"c1-s{index}",
-                "rough_position_target": f"probe {index}",
-                "estimated_ratio": index / 5,
-                "boundary_kind": "test boundary",
-                "why_this_probe_point": "A semantic boundary in the fixture.",
-                "structural_signals_to_check": ["fixture structure"],
-            }
-            for index in range(1, 6)
-        ],
-    }
+    settings = _semantic_probe_settings()
     ordered_sentence_ids = ["c1-s1", "c1-s2", "c1-s3", "c1-s4", "c1-s5"]
 
     first = persist_due_memory_quality_probe_snapshots(
@@ -234,6 +239,77 @@ def test_persist_due_memory_quality_probe_snapshots_emits_once_per_semantic_targ
     )
     assert len(final) == 1
     assert is_memory_quality_probe_export_complete(output_dir)
+
+
+def test_memory_quality_probe_observability_hook_is_disabled_by_default(tmp_path: Path) -> None:
+    output_dir = tmp_path / "output"
+    initialize_artifact_tree(output_dir)
+
+    captured = maybe_capture_memory_quality_probe(
+        capture_enabled=False,
+        output_dir=output_dir,
+        settings=_semantic_probe_settings(),
+        ordered_sentence_ids=["c1-s1"],
+        actual_sentence_id="c1-s1",
+        chapter_ref="Chapter 1",
+        local_buffer=build_empty_local_buffer(),
+        local_continuity=build_empty_local_continuity(),
+        active_attention=build_empty_active_attention(),
+        concept_registry=build_empty_concept_registry(),
+        thread_trace=build_empty_thread_trace(),
+        reflective_frames=build_empty_reflective_frames(),
+        anchor_bank=build_empty_anchor_bank(),
+        reaction_records=build_empty_reaction_records(),
+    )
+
+    assert captured == []
+    assert not memory_quality_probe_export_file(output_dir).exists()
+
+    default_product_path = maybe_capture_memory_quality_probe(
+        capture_enabled=True,
+        output_dir=output_dir,
+        settings=None,
+        ordered_sentence_ids=["c1-s1"],
+        actual_sentence_id="c1-s1",
+        chapter_ref="Chapter 1",
+        local_buffer=build_empty_local_buffer(),
+        local_continuity=build_empty_local_continuity(),
+        active_attention=build_empty_active_attention(),
+        concept_registry=build_empty_concept_registry(),
+        thread_trace=build_empty_thread_trace(),
+        reflective_frames=build_empty_reflective_frames(),
+        anchor_bank=build_empty_anchor_bank(),
+        reaction_records=build_empty_reaction_records(),
+    )
+    assert default_product_path == []
+    assert not memory_quality_probe_export_file(output_dir).exists()
+
+
+def test_memory_quality_probe_observability_hook_captures_when_enabled(tmp_path: Path) -> None:
+    output_dir = tmp_path / "output"
+    initialize_artifact_tree(output_dir)
+
+    captured = maybe_capture_memory_quality_probe(
+        capture_enabled=True,
+        output_dir=output_dir,
+        settings=_semantic_probe_settings(),
+        ordered_sentence_ids=["c1-s1", "c1-s2", "c1-s3", "c1-s4", "c1-s5"],
+        actual_sentence_id="c1-s1",
+        chapter_ref="Chapter 1",
+        local_buffer=build_empty_local_buffer(),
+        local_continuity=build_empty_local_continuity(),
+        active_attention=build_empty_active_attention(),
+        concept_registry=build_empty_concept_registry(),
+        thread_trace=build_empty_thread_trace(),
+        reflective_frames=build_empty_reflective_frames(),
+        anchor_bank=build_empty_anchor_bank(),
+        reaction_records=build_empty_reaction_records(),
+    )
+
+    assert len(captured) == 1
+    payload = load_memory_quality_probe_export(output_dir)
+    assert len(payload["snapshots"]) == 1
+    assert payload["probe_plan_id"] == "test_semantic_plan"
 
 
 def test_memory_quality_probe_export_requires_explicit_targets(tmp_path: Path) -> None:

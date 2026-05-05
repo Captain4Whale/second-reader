@@ -1,8 +1,6 @@
-"""Deterministic carry-forward, supplemental-context, and read-audit helpers."""
+"""Deterministic carry-forward and supplemental-context helpers."""
 
 from __future__ import annotations
-
-from pathlib import Path
 
 from src.reading_core import BookDocument
 
@@ -17,10 +15,8 @@ from .schemas import (
     ReaderPolicy,
     ReflectiveFramesState,
     ThreadTraceState,
-    UnitizeDecision,
 )
-from .state_projection import build_carry_forward_context, clean_text, context_ref_ids, matching_chapter_items
-from .storage import append_jsonl, read_audit_file
+from .state_projection import build_carry_forward_context, clean_text, matching_chapter_items  # noqa: F401
 
 
 def _sentence_inventory(book_document: BookDocument) -> dict[str, dict[str, object]]:
@@ -586,52 +582,3 @@ def resolve_context_request(
         "refs": refs,
         "excerpts": excerpts,
     }
-
-
-def persist_read_audit(
-    output_dir: Path | None,
-    *,
-    chapter_id: int,
-    chapter_ref: str,
-    unitize_decision: UnitizeDecision,
-    carry_forward_context: CarryForwardContext,
-    context_request: ContextRequest | None = None,
-    supplemental_context: dict[str, object] | None = None,
-    supplemental_satisfied: bool = False,
-    supplemental_steps: list[dict[str, object]] | None = None,
-    stop_reason: str = "",
-    budget_exhausted: bool = False,
-    read_result: dict[str, object],
-    llm_fallbacks: list[dict[str, str]] | None = None,
-) -> None:
-    """Append one mechanism-private read audit record."""
-
-    if output_dir is None:
-        return
-    surfaced_reactions = (
-        [dict(item) for item in read_result.get("surfaced_reactions", []) if isinstance(item, dict)]
-        if isinstance(read_result.get("surfaced_reactions"), list)
-        else []
-    )
-    append_jsonl(
-        read_audit_file(output_dir),
-        {
-            "chapter_id": chapter_id,
-            "chapter_ref": chapter_ref,
-            "unitize_decision": dict(unitize_decision),
-            "carry_forward_ref_ids": sorted(context_ref_ids(carry_forward_context)),
-            "context_request": dict(context_request or {}),
-            "supplemental_ref_ids": sorted(context_ref_ids(supplemental_context)),
-            "supplemental_satisfied": supplemental_satisfied,
-            "supplemental_steps": [dict(step) for step in (supplemental_steps or []) if isinstance(step, dict)],
-            "stop_reason": clean_text(stop_reason),
-            "budget_exhausted": bool(budget_exhausted),
-            "reading_impression": clean_text(read_result.get("reading_impression")),
-            "surfaced_reaction_count": len(surfaced_reactions),
-            "surfaced_reactions": surfaced_reactions,
-            "detour_need": dict(read_result.get("detour_need") or {})
-            if isinstance(read_result.get("detour_need"), dict)
-            else {},
-            "llm_fallbacks": [dict(item) for item in (llm_fallbacks or []) if isinstance(item, dict)],
-        },
-    )

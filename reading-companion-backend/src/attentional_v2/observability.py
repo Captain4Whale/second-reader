@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from collections import Counter
 from collections.abc import Mapping
 from datetime import datetime, timezone
 from pathlib import Path
@@ -10,8 +11,27 @@ from pathlib import Path
 from src.reading_core.runtime_contracts import ObservabilityMode, RuntimeArtifactRefs
 from src.reading_runtime import artifacts as runtime_artifacts
 
-from .schemas import FullCheckpointState, ReaderPolicy
-from .storage import append_jsonl, event_stream_file
+from .benchmark_probes import (
+    memory_quality_probe_settings as _memory_quality_probe_settings,
+    persist_due_memory_quality_probe_snapshots,
+)
+from .schemas import (
+    ActiveAttention,
+    AnchorBankState,
+    CarryForwardContext,
+    ConceptRegistryState,
+    ContextRequest,
+    FullCheckpointState,
+    LocalBufferState,
+    LocalContinuityState,
+    ReactionRecordsState,
+    ReaderPolicy,
+    ReflectiveFramesState,
+    ThreadTraceState,
+    UnitizeDecision,
+)
+from .state_projection import context_ref_ids
+from .storage import append_jsonl, event_stream_file, read_audit_file, unitization_audit_file
 
 
 def _timestamp() -> str:
@@ -69,6 +89,146 @@ def _append_shared_jsonl(path: Path, payload: object) -> None:
     with path.open("a", encoding="utf-8") as file:
         file.write(json.dumps(payload, ensure_ascii=False))
         file.write("\n")
+
+
+def record_unitization(
+    output_dir: Path | None,
+    *,
+    chapter_id: int,
+    chapter_ref: str,
+    unitize_decision: UnitizeDecision,
+) -> None:
+    """Append one mechanism-private unitization audit record."""
+
+    if output_dir is None:
+        return
+    append_jsonl(
+        unitization_audit_file(output_dir),
+        {
+            "recorded_at": _timestamp(),
+            "chapter_id": chapter_id,
+            "chapter_ref": chapter_ref,
+            "unitize_decision": dict(unitize_decision),
+        },
+    )
+
+
+def _memory_uptake_ops(read_result: Mapping[str, object]) -> list[dict[str, object]]:
+    """Return normalized read memory operations for audit persistence."""
+
+    raw_ops = read_result.get("memory_uptake_ops")
+    if not isinstance(raw_ops, list):
+        return []
+    return [dict(item) for item in raw_ops if isinstance(item, Mapping)]
+
+
+def _memory_uptake_ops_by_target_store(memory_uptake_ops: list[dict[str, object]]) -> dict[str, int]:
+    """Count read memory operations by their declared target store."""
+
+    counts: Counter[str] = Counter()
+    for operation in memory_uptake_ops:
+        target_store = _clean_text(operation.get("target_store")) or "unspecified"
+        counts[target_store] += 1
+    return dict(sorted(counts.items()))
+
+
+def record_read(
+    output_dir: Path | None,
+    *,
+    chapter_id: int,
+    chapter_ref: str,
+    unitize_decision: UnitizeDecision,
+    carry_forward_context: CarryForwardContext,
+    context_request: ContextRequest | None = None,
+    supplemental_context: dict[str, object] | None = None,
+    supplemental_satisfied: bool = False,
+    supplemental_steps: list[dict[str, object]] | None = None,
+    stop_reason: str = "",
+    budget_exhausted: bool = False,
+    read_result: Mapping[str, object],
+    llm_fallbacks: list[dict[str, str]] | None = None,
+) -> None:
+    """Append one mechanism-private read audit record."""
+
+    if output_dir is None:
+        return
+    surfaced_reactions = (
+        [dict(item) for item in read_result.get("surfaced_reactions", []) if isinstance(item, Mapping)]
+        if isinstance(read_result.get("surfaced_reactions"), list)
+        else []
+    )
+    memory_uptake_ops = _memory_uptake_ops(read_result)
+    append_jsonl(
+        read_audit_file(output_dir),
+        {
+            "chapter_id": chapter_id,
+            "chapter_ref": chapter_ref,
+            "unitize_decision": dict(unitize_decision),
+            "carry_forward_ref_ids": sorted(context_ref_ids(carry_forward_context)),
+            "context_request": dict(context_request or {}),
+            "supplemental_ref_ids": sorted(context_ref_ids(supplemental_context)),
+            "supplemental_satisfied": supplemental_satisfied,
+            "supplemental_steps": [dict(step) for step in (supplemental_steps or []) if isinstance(step, Mapping)],
+            "stop_reason": _clean_text(stop_reason),
+            "budget_exhausted": bool(budget_exhausted),
+            "reading_impression": _clean_text(read_result.get("reading_impression")),
+            "surfaced_reaction_count": len(surfaced_reactions),
+            "surfaced_reactions": surfaced_reactions,
+            "memory_uptake_ops": memory_uptake_ops,
+            "memory_uptake_op_count": len(memory_uptake_ops),
+            "memory_uptake_ops_by_target_store": _memory_uptake_ops_by_target_store(memory_uptake_ops),
+            "detour_need": dict(read_result.get("detour_need") or {})
+            if isinstance(read_result.get("detour_need"), Mapping)
+            else {},
+            "llm_fallbacks": [dict(item) for item in (llm_fallbacks or []) if isinstance(item, Mapping)],
+        },
+    )
+
+
+def memory_quality_probe_observability_settings(
+    mechanism_config: dict[str, object] | None,
+) -> dict[str, object] | None:
+    """Return normalized benchmark-only probe settings for observability hooks."""
+
+    return _memory_quality_probe_settings(mechanism_config)
+
+
+def maybe_capture_memory_quality_probe(
+    *,
+    capture_enabled: bool,
+    output_dir: Path,
+    settings: dict[str, object] | None,
+    ordered_sentence_ids: list[str],
+    actual_sentence_id: str,
+    chapter_ref: str,
+    local_buffer: LocalBufferState,
+    local_continuity: LocalContinuityState,
+    active_attention: ActiveAttention,
+    concept_registry: ConceptRegistryState,
+    thread_trace: ThreadTraceState,
+    reflective_frames: ReflectiveFramesState,
+    anchor_bank: AnchorBankState,
+    reaction_records: ReactionRecordsState,
+) -> list[dict[str, object]]:
+    """Capture benchmark probe snapshots through the runtime observability boundary."""
+
+    if not capture_enabled:
+        return []
+    return persist_due_memory_quality_probe_snapshots(
+        output_dir=output_dir,
+        settings=settings,
+        ordered_sentence_ids=ordered_sentence_ids,
+        actual_sentence_id=actual_sentence_id,
+        chapter_ref=chapter_ref,
+        local_buffer=local_buffer,
+        local_continuity=local_continuity,
+        active_attention=active_attention,
+        concept_registry=concept_registry,
+        thread_trace=thread_trace,
+        reflective_frames=reflective_frames,
+        anchor_bank=anchor_bank,
+        reaction_records=reaction_records,
+    )
 
 
 def reading_locus_from_cursor(cursor: Mapping[str, object] | None) -> dict[str, object] | None:

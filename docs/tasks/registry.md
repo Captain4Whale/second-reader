@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-05-04T16:32:40+08:00`
+Last updated: `2026-05-05T16:40:55+08:00`
 
 ## Status Values
 - `active`
@@ -312,10 +312,12 @@ Last updated: `2026-05-04T16:32:40+08:00`
     - `reading-companion-backend/eval/attentional_v2/run_long_span_vnext.py`
   - landed `Memory Quality` implementation:
     - benchmark-only V2 probe snapshots during continuous reading
+    - probe snapshot capture now hangs off the `attentional_v2` runtime observability layer rather than a direct Reading Runner benchmark call
+    - product runs without explicit `memory_quality_probe_export.enabled` plus semantic `probe_targets` do not build probe snapshots
     - current probe placement is semantic-manifest-driven, not hard-ratio-driven
-    - current probe plan:
-      - `reading-companion-backend/eval/manifests/probes/memory_quality_semantic_probe_plan_20260504.json`
-      - selection method: `semantic_boundary_with_distance_reference`
+  - current probe plan:
+    - `reading-companion-backend/eval/manifests/probes/memory_quality_semantic_probe_plan_20260504.json`
+    - selection method: `semantic_boundary_with_distance_reference`
     - no gold-sentence requirement
     - no hard dependency on human notes
   - landed reaction-audit implementation:

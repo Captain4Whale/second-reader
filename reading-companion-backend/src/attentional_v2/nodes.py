@@ -34,7 +34,7 @@ from .schemas import (
     UnitizeBoundaryType,
     UnitizeDecision,
 )
-from .storage import append_jsonl, prompt_manifest_file, save_json, unitization_audit_file
+from .storage import prompt_manifest_file, save_json
 
 
 _REACTION_TYPES: set[ReactionType] = {
@@ -478,28 +478,6 @@ def _fallback_unitize_decision(preview_sentences: list[dict[str, object]]) -> Un
         "reason": fallback_reason,
         "continuation_pressure": False,
     }
-
-
-def persist_unitization_audit(
-    output_dir: Path | None,
-    *,
-    chapter_id: int,
-    chapter_ref: str,
-    unitize_decision: UnitizeDecision,
-) -> None:
-    """Append one mechanism-private unitization audit record."""
-
-    if output_dir is None:
-        return
-    append_jsonl(
-        unitization_audit_file(output_dir),
-        {
-            "recorded_at": _timestamp(),
-            "chapter_id": chapter_id,
-            "chapter_ref": chapter_ref,
-            "unitize_decision": dict(unitize_decision),
-        },
-    )
 
 
 def _normalize_state_operations(value: object) -> list[StateOperation]:

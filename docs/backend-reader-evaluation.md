@@ -254,6 +254,7 @@ Use `docs/backend-reading-mechanism.md` for shared mechanism-platform boundaries
     - `reading-companion-backend/eval/attentional_v2/run_long_span_vnext.py`
   - landed benchmark-only V2 probe export:
     - `reading-companion-backend/src/attentional_v2/benchmark_probes.py`
+    - runtime capture is invoked through the `attentional_v2` observability layer, so `benchmark_probes.py` remains the Memory Quality export implementation while Reading Runner does not own probe manifest or snapshot-persistence details
 - The first Phase-1 diagnostic run has been corrected in two steps:
   - corrected run:
     - `attentional_v2_long_span_vnext_phase1_memory_quality_scale_fix_rejudge_20260425`
@@ -277,6 +278,7 @@ Use `docs/backend-reading-mechanism.md` for shared mechanism-platform boundaries
   - Memory Quality probe placement is now semantic-manifest-driven:
     - the manifest records `target_sentence_id`, rough distance reference, semantic rationale, and structural signals to check for each probe
     - the runtime still captures a snapshot only after the first completed read step that crosses the target; it does not insert probe-only reading steps
+    - capture is an opt-in observability consumer: product runs without `memory_quality_probe_export.enabled` and explicit `probe_targets` do not build probe snapshots
     - old hard-ratio probe reports remain historical evidence and are not rewritten
   - Memory Quality probe snapshots should expose current prompt-facing state only:
     - `active_attention.active_items[]`

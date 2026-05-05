@@ -438,5 +438,8 @@ def test_run_read_with_context_loop_reads_once_and_persists_f1_audit(tmp_path, m
     assert audit_line["stop_reason"] == "read_complete"
     assert audit_line["surfaced_reaction_count"] == 1
     assert audit_line["surfaced_reactions"][0]["anchor_quote"] == "Beta sentence."
+    assert audit_line["memory_uptake_op_count"] == 1
+    assert audit_line["memory_uptake_ops"][0]["target_store"] == "active_attention"
+    assert audit_line["memory_uptake_ops_by_target_store"] == {"active_attention": 1}
     assert audit_line["detour_need"]["target_hint"] == "the opening sentence"
     assert audit_line["supplemental_satisfied"] is False
