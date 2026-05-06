@@ -15,6 +15,7 @@ from src.attentional_v2.schemas import (
     build_empty_active_attention,
 )
 from src.attentional_v2.slow_cycle import (
+    apply_cross_chapter_carry_forward,
     apply_reconsolidation,
     build_reaction_record,
     build_reaction_record_from_surfaced_reaction,
@@ -79,6 +80,108 @@ def _source_ref(quote: str, paragraph_index: int, *, role: str = "primary") -> d
         "quote": quote,
         "role": role,
     }
+
+
+def test_apply_cross_chapter_carry_forward_preserves_existing_source_refs():
+    """Chapter carry-forward should not erase source evidence for the same active item."""
+
+    existing_ref = _source_ref("Markets begin as relations among people.", 1, role="support")
+    active_attention = {
+        **build_empty_active_attention(),
+        "active_items": [
+            {
+                "item_id": "q-1",
+                "attention_tags": ["question"],
+                "statement": "What does value mean here?",
+                "source_refs": [existing_ref],
+                "status": "open",
+            }
+        ],
+    }
+
+    result = apply_cross_chapter_carry_forward(
+        active_attention,
+        [
+            {
+                "item_id": "q-1",
+                "attention_tags": ["focus"],
+                "statement": "How narrow will the later book make value?",
+                "source_refs": [],
+                "status": "open",
+            }
+        ],
+    )
+
+    carried = result["active_items"][0]
+    assert carried["statement"] == "How narrow will the later book make value?"
+    assert carried["attention_tags"] == ["focus"]
+    assert carried["source_refs"] == [existing_ref]
+
+
+def test_apply_cross_chapter_carry_forward_merges_and_dedupes_source_refs():
+    """LLM-returned refs should be additive, while repeated refs stay singular."""
+
+    existing_ref = _source_ref("Markets begin as relations among people.", 1, role="support")
+    new_ref = _source_ref("Later the author narrows what counts as value.", 2, role="support")
+    active_attention = {
+        **build_empty_active_attention(),
+        "active_items": [
+            {
+                "item_id": "q-1",
+                "attention_tags": ["question"],
+                "statement": "What does value mean here?",
+                "source_refs": [existing_ref],
+                "status": "open",
+            }
+        ],
+    }
+
+    result = apply_cross_chapter_carry_forward(
+        active_attention,
+        [
+            {
+                "item_id": "q-1",
+                "attention_tags": ["focus"],
+                "statement": "How narrow will the later book make value?",
+                "source_refs": [existing_ref, new_ref],
+                "status": "open",
+            }
+        ],
+    )
+
+    assert result["active_items"][0]["source_refs"] == [existing_ref, new_ref]
+
+
+def test_apply_cross_chapter_carry_forward_does_not_invent_refs_for_new_items():
+    """New carry-forward items without source refs should remain unsupported instead of borrowing by text."""
+
+    active_attention = {
+        **build_empty_active_attention(),
+        "active_items": [
+            {
+                "item_id": "q-1",
+                "attention_tags": ["question"],
+                "statement": "What does value mean here?",
+                "source_refs": [_source_ref("Markets begin as relations among people.", 1, role="support")],
+                "status": "open",
+            }
+        ],
+    }
+
+    result = apply_cross_chapter_carry_forward(
+        active_attention,
+        [
+            {
+                "item_id": "q-2",
+                "attention_tags": ["focus"],
+                "statement": "A different item carries forward.",
+                "source_refs": [],
+                "status": "open",
+            }
+        ],
+    )
+
+    assert result["active_items"][0]["source_refs"] == []
 
 
 def test_project_chapter_result_compatibility_groups_reactions_by_paragraph(tmp_path):
@@ -429,5 +532,5 @@ def test_run_phase6_chapter_cycle_applies_cooling_promotion_and_optional_reactio
     assert result["reflective_frames"]["chapter_understandings"][0]["item_id"] == "ru-1"
     assert result["reaction_records"]["records"][0]["type"] == "retrospect"
     assert result["compatibility_payload"]["visible_reaction_count"] == 1
-    assert chapter_manifest["prompt_version"] == "attentional_v2.chapter_consolidation.v3"
+    assert chapter_manifest["prompt_version"] == "attentional_v2.chapter_consolidation.v4"
     assert promotion_manifest["prompt_version"] == "attentional_v2.reflective_promotion.v1"

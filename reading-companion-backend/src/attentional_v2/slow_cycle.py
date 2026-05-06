@@ -56,7 +56,7 @@ from .state_ops import (
     upsert_reflective_item,
 )
 from .storage import chapter_result_compatibility_file, save_json
-from .source_spans import source_ref_from_span
+from .source_spans import dedupe_source_refs, source_ref_from_span
 
 
 _FEATURED_PRIORITY = {
@@ -1112,12 +1112,38 @@ def apply_cross_chapter_carry_forward(
     active_attention: ActiveAttention,
     carry_forward: list[ActiveAttentionItem],
 ) -> ActiveAttention:
-    """Replace active-attention items with chapter-boundary carry-forward items."""
+    """Replace active-attention items while preserving evidence for carried items."""
+
+    existing_by_id = {
+        _clean_text(item.get("item_id")): item
+        for item in active_attention.get("active_items", [])
+        if isinstance(item, dict) and _clean_text(item.get("item_id"))
+    }
+    carried_items: list[ActiveAttentionItem] = []
+    for item in carry_forward:
+        carried_item = dict(item)
+        item_id = _clean_text(carried_item.get("item_id"))
+        existing = existing_by_id.get(item_id, {})
+        carried_item["source_refs"] = dedupe_source_refs(
+            [
+                *(
+                    existing.get("source_refs", [])
+                    if isinstance(existing.get("source_refs"), list)
+                    else []
+                ),
+                *(
+                    carried_item.get("source_refs", [])
+                    if isinstance(carried_item.get("source_refs"), list)
+                    else []
+                ),
+            ]
+        )
+        carried_items.append(carried_item)
 
     return {
         **dict(active_attention),
         "updated_at": _timestamp(),
-        "active_items": [dict(item) for item in carry_forward],
+        "active_items": carried_items,
     }
 
 

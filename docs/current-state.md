@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-05-05T22:11:51+08:00`
+Last verified: `2026-05-06T20:22:35+08:00`
 
 ## Current Objective
 - Shift Long Span from the discontinued `target-centered accumulation v2` method to the new active design direction:
@@ -51,8 +51,19 @@ Last verified: `2026-05-05T22:11:51+08:00`
             - the concrete break was field-shape alignment for durable stores: fresh `Read` output proposed concept/thread payloads in a shape that did not line up with the fields persisted by `state_ops`
             - the current implementation has repaired the active schema path so memory ops normalize inline `source_refs[]` from unit-local source quotes before settlement
             - final `active_attention` dropping from `11` post-unit-settlement items to `4` runtime items is explained by chapter-end consolidation / cross-chapter carry-forward, not by per-unit settlement loss
+            - follow-up SourceRef smoke run `attentional_v2_source_ref_nawaer_smoke_20260506` proved the Read -> settlement -> concept/thread/reaction/probe SourceRef chain, but exposed that `active_attention` source refs could be erased at chapter-end carry-forward
+            - the current repair preserves carried `active_attention` source refs by deterministic `item_id` merge after cooling; `chapter_consolidation` still chooses what carries forward, but an omitted `source_refs` field no longer erases existing evidence coordinates
+          - active verification job:
+            - job id:
+              - `bgjob_attentional_v2_source_ref_nawaer_active_attention_fix_20260506`
+            - run id:
+              - `attentional_v2_source_ref_nawaer_active_attention_fix_20260506`
+            - scope:
+              - V2-only `nawaer_baodian_private_zh__segment_1`, `judge-mode none`
+            - check:
+              - verify no `anchor_bank.json`, non-empty read/settlement/ledger rows, non-zero `memory_uptake_ops`, final `active_attention / concept_registry / thread_trace / reaction_records` source refs, and probe `source_ref_digest` without `anchor_bank_digest`
           - next implementation target:
-            - rerun the cheap `nawaer` and focused `huochu` diagnostics before spending a full all-window rerun
+            - if the active `nawaer` SourceRef repair smoke passes, run focused `huochu` before spending a full all-window rerun
         - current probe plan:
           - `reading-companion-backend/eval/manifests/probes/memory_quality_semantic_probe_plan_20260504.json`
           - selection method: `semantic_boundary_with_distance_reference`

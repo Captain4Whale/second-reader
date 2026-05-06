@@ -512,6 +512,8 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - A `SourceRef` is an inline citation shape, not a registry entry.
   - Its id is deterministically derived from the paragraph-offset span, for example `src:c1:p3@12-p3@48`.
   - New runtime truth does not write or require an `anchor_bank.json` artifact.
+  - Chapter-end carry-forward preserves existing `active_attention` source refs by deterministic `item_id` merge after cooling, so a `chapter_consolidation` omission cannot erase evidence coordinates for a carried item.
+  - Carry-forward does not fuzzy-match by statement and does not invent source refs for newly introduced items.
 - Ownership is now:
   - `Navigate`
     - owns `local_continuity`

@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-05-06T00:00:00+08:00`
+Last updated: `2026-05-06T20:22:35+08:00`
 
 ## Status Values
 - `active`
@@ -95,6 +95,8 @@ Last updated: `2026-05-06T00:00:00+08:00`
     - sentence ids remain available for legacy/eval/detour compatibility, but no longer define the `attentional_v2` mainline cursor
     - memory/reaction/probe-facing source evidence now uses inline `SourceRef` values (`source_span_id`, `source_span`, `quote`, `role`)
     - `anchor_bank.json` is no longer a canonical runtime artifact or checkpoint key for new runs; old anchor-bank runtimes must be rerun
+    - chapter-end `active_attention` carry-forward now preserves inline `source_refs[]` by deterministic `item_id` merge after cooling; `chapter_consolidation` still decides what carries forward, but omission of `source_refs` no longer erases existing evidence coordinates
+    - active verification job `bgjob_attentional_v2_source_ref_nawaer_active_attention_fix_20260506` is running `attentional_v2_source_ref_nawaer_active_attention_fix_20260506` as a V2-only no-judge `nawaer` smoke; if it passes, run focused `huochu` before any all-window rerun
   - `Phase F3` is now landed:
     - persisted visible reactions now enter the system only through `Read.surfaced_reactions[]`
     - mainline and detour reading now share one surfaced-native reaction-record builder
@@ -325,7 +327,8 @@ Last updated: `2026-05-06T00:00:00+08:00`
     - current probe placement is semantic-manifest-driven, not hard-ratio-driven
     - settlement-audit diagnostic run `attentional_v2_settlement_audit_nawaer_diagnostic_20260505` completed for `nawaer_baodian_private_zh__segment_1` with `judge-mode none`
     - diagnostic finding: fresh `Read` output does emit memory ops and Runner settlement materializes them, but durable-store field-shape alignment needed repair; the active path now normalizes unit-local source quotes into inline `source_refs[]` before settlement
-    - next implementation target: rerun the cheap `nawaer` and focused `huochu` diagnostics before running all five windows again
+    - follow-up SourceRef smoke `attentional_v2_source_ref_nawaer_smoke_20260506` exposed a narrower chapter-end issue: `active_attention` source refs could be lost when `chapter_consolidation` returned carry-forward items without refs
+    - active verification job `bgjob_attentional_v2_source_ref_nawaer_active_attention_fix_20260506` checks the deterministic carry-forward SourceRef preservation fix on `nawaer`; if it passes, run focused `huochu` before running all five windows again
   - current probe plan:
     - `reading-companion-backend/eval/manifests/probes/memory_quality_semantic_probe_plan_20260504.json`
     - selection method: `semantic_boundary_with_distance_reference`

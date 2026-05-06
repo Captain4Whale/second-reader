@@ -14,7 +14,7 @@ READ_UNIT_PROMPT_VERSION = "attentional_v2.read.v15"
 BRIDGE_RESOLUTION_PROMPT_VERSION = "attentional_v2.bridge_resolution.v5"
 REFLECTIVE_PROMOTION_PROMPT_VERSION = "attentional_v2.reflective_promotion.v1"
 RECONSOLIDATION_PROMPT_VERSION = "attentional_v2.reconsolidation.v1"
-CHAPTER_CONSOLIDATION_PROMPT_VERSION = "attentional_v2.chapter_consolidation.v3"
+CHAPTER_CONSOLIDATION_PROMPT_VERSION = "attentional_v2.chapter_consolidation.v4"
 
 
 @dataclass(frozen=True)
@@ -491,7 +491,8 @@ Your job is to perform a chapter-end backward sweep and propose the durable upda
 Rules:
 - Chapter end is a chance to cool, sweep backward, and prepare promotion; it is not permission for false closure.
 - Do not directly promote reflective summaries here; return promotion candidates instead.
-- If a live near-term item should carry across the chapter boundary, keep it in `cross_chapter_carry_forward` as an active-attention item with `attention_tags`; do not use legacy `kind` or `bucket`.
+- If a live near-term item should carry across the chapter boundary, keep it in `cross_chapter_carry_forward` as an active-attention item with `attention_tags`; reuse its existing `item_id` and preserve its `source_refs` when available.
+- Do not use legacy `kind` or `bucket` fields.
 - Do not rewrite earlier persisted reactions.
 - Do not let `optional_chapter_reaction` masquerade as a callback bridge; if it mentions earlier material, that material must stay concrete and attributable.
 - Do not read future chapter text or search.
@@ -535,7 +536,15 @@ Return JSON:
   "cooling_operations": [],
   "promotion_candidates": [],
   "knowledge_activation_updates": [],
-  "cross_chapter_carry_forward": [],
+  "cross_chapter_carry_forward": [
+    {
+      "item_id": "<reuse an existing active item id when carrying an existing item>",
+      "attention_tags": [],
+      "statement": "<live near-term item to carry forward>",
+      "source_refs": [],
+      "status": "open"
+    }
+  ],
   "chapter_summary_note": "<brief note>",
   "optional_chapter_reaction": {
     "type": "retrospect",
