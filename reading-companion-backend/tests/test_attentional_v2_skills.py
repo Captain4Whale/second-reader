@@ -106,7 +106,6 @@ def test_execute_skill_request_dispatches_source_window_fetch():
         sentence_lookup=sentence_lookup,
         chapter_lookup=chapter_lookup,
         mainline_cursor=_mainline_cursor(),  # type: ignore[arg-type]
-        anchor_bank={"anchor_records": [], "anchor_relations": []},
         current_scope={},
     )
 
@@ -130,7 +129,6 @@ def test_execute_skill_request_reports_unknown_skill():
         sentence_lookup=sentence_lookup,
         chapter_lookup=chapter_lookup,
         mainline_cursor=_mainline_cursor(),  # type: ignore[arg-type]
-        anchor_bank={"anchor_records": [], "anchor_relations": []},
         current_scope={},
     )
 
@@ -151,7 +149,6 @@ def test_source_map_overview_returns_visible_chapter_cards():
         sentence_lookup=sentence_lookup,
         chapter_lookup=chapter_lookup,
         mainline_cursor=_mainline_cursor(),  # type: ignore[arg-type]
-        anchor_bank={"anchor_records": [], "anchor_relations": []},
         current_scope={},
     )
 
@@ -178,7 +175,6 @@ def test_source_scope_drilldown_expands_current_scope_card():
         sentence_lookup=sentence_lookup,
         chapter_lookup=chapter_lookup,
         mainline_cursor=_mainline_cursor(),  # type: ignore[arg-type]
-        anchor_bank={"anchor_records": [], "anchor_relations": []},
         current_scope={
             "scope_kind": "chapter_cards",
             "cards": [
@@ -197,8 +193,8 @@ def test_source_scope_drilldown_expands_current_scope_card():
     assert result["result"]["cards"][0]["end_sentence_id"] == "c1-s2"
 
 
-def test_anchor_resolve_returns_source_grounded_context():
-    """Anchor resolution should return quote plus bounded source context."""
+def test_anchor_resolve_is_not_a_supported_source_skill():
+    """Anchor Bank resolution is retired from the skill runtime."""
 
     document = _book_document()
     sentence_lookup, chapter_lookup = _lookups(document)
@@ -214,21 +210,8 @@ def test_anchor_resolve_returns_source_grounded_context():
         sentence_lookup=sentence_lookup,
         chapter_lookup=chapter_lookup,
         mainline_cursor=_mainline_cursor(),  # type: ignore[arg-type]
-        anchor_bank={
-            "anchor_records": [
-                {
-                    "anchor_id": "anchor:1",
-                    "sentence_start_id": "c1-s1",
-                    "sentence_end_id": "c1-s1",
-                    "quote": "Opening setup.",
-                    "why_it_mattered": "It sets up the later question.",
-                }
-            ],
-            "anchor_relations": [],
-        },
         current_scope={},
     )
 
-    assert result["status"] == "ok"
-    assert result["result"]["quote"] == "Opening setup."
-    assert result["result"]["source_window"]["sentences"][0]["sentence_id"] == "c1-s1"
+    assert result["status"] == "error"
+    assert result["error"] == "unknown_skill"

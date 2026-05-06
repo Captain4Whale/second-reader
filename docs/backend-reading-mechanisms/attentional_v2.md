@@ -36,8 +36,8 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - orientation-only survey artifacts
   - deterministic intake/retrieval helpers
   - Phase 4 interpretive nodes with prompt-version manifests
-  - Phase 5 knowledge, bridge, and retained-evidence state helpers
-  - Phase 6 slow-cycle helpers for durable anchored reaction truth, reflective promotion, reconsolidation, chapter consolidation, and mechanism-private compatibility projection
+      - Phase 5 knowledge and retained-evidence helper history, with the old Bridge path now paused from the live Runner
+      - Phase 6 slow-cycle helpers for durable source-referenced reaction truth, reflective promotion, reconsolidation, chapter consolidation, and mechanism-private compatibility projection
   - Phase 7 checkpointing and resume helpers for compact local continuity, full checkpoints, shared checkpoint summaries, and bounded warm/cold/reconstitution resume reconstruction
   - Phase 8 normalized eval export and structural integrity checks over persisted artifacts
 - Phase 8.5 live Reading Runner integration now adds:
@@ -109,7 +109,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
 - Phase C.1 of the post-eval structural rework is now landed.
   - Live prompt inputs now flow through a bounded internal `state_packet.v1` seam.
   - The then-current unitization helper began receiving packetized `navigation_context`; the current live Navigator prompt is `Navigate.choose_next_unit`.
-  - `read` now receives packetized read-context views that explicitly separate continuity, active-attention, reflective, active-focus, and anchor-bank digests.
+  - `read` now receives packetized read-context views that explicitly separate continuity, active-attention, reflective, active-focus, and source-ref digests.
   - Persisted runtime files and public compatibility surfaces remain unchanged in this slice.
 - Phase C.2 of the post-eval structural rework is now also landed as the first state-territory slice.
   - Live state packets now derive a bounded `concept_digest` from the current `motif_index + unresolved_reference_index`.
@@ -117,11 +117,11 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - The Navigator and `read` both receive those concept/thread digests through the packet layer.
   - Persisted runtime files and public compatibility surfaces remain unchanged in this slice too.
 - Phase C.3 of the post-eval structural rework is now landed as the direct main-state cutover.
-  - New runs now treat `active_attention / concept_registry / thread_trace / reflective_frames / anchor_bank` as the primary runtime and checkpoint truth.
+  - Newer runs first treated `active_attention / concept_registry / thread_trace / reflective_frames / anchor_bank` as the primary runtime and checkpoint truth; the current source-ref cutover retires `anchor_bank` from that truth set.
   - `active_recall` now exposes first-class `concepts` and `threads` from those new layers.
   - Newly written checkpoints use only the new primary state keys.
 - Phase C.4 of the post-eval structural rework is now also landed as the helper-contract cutover.
-  - Sentence-intake, bridge, and chapter slow-cycle now execute directly on the new primary state layers.
+  - Sentence-intake and chapter slow-cycle now execute directly on the new primary state layers; the old bridge helper is paused after the SourceRef cutover instead of being carried forward as an Anchor Bank relation writer.
   - The live Reading Runner no longer projects into legacy state stores in order to execute helpers.
   - Live runtime loading and resume now reject pre-`Phase C.3` runtime/checkpoint shapes instead of migrating them on the live path.
 - The post-F4 cleanup has also retired the old gate/pressure sidecar from current state.
@@ -248,8 +248,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - Legal first-phase skills are:
     - `source_map_overview`: return already-read book/chapter cards inside the mainline boundary
     - `source_scope_drilldown`: expand the current bounded scope into finer source cards
-    - `source_window_fetch`: fetch a bounded already-read sentence window by source ids
-    - `anchor_resolve`: resolve an anchor/sentence handle into source-grounded local context
+    - `source_window_fetch`: fetch a bounded already-read source window
   - Skills only read the book substrate and current runtime state.
     - They do not read future text beyond `mainline_cursor`.
     - They do not make semantic relevance judgments.
@@ -368,12 +367,12 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - `surfaced_reactions`
     - zero to many visible reading-time reactions surfaced directly by `read`
     - each surfaced reaction should carry:
-      - `anchor_quote`
+      - `source_quote`
       - `content`
       - optional `prior_link`
       - optional `outside_link`
       - optional `search_intent`
-    - `read` still understands the whole `unit`, but each `anchor_quote` should be chosen as the smallest self-sufficient span that can honestly carry that surfaced reaction
+    - `read` still understands the whole `unit`, but each `source_quote` should be chosen as the smallest self-sufficient span that can honestly carry that surfaced reaction
       - if one sentence already stands on its own, it may anchor a surfaced reaction by itself
       - if a sentence would lose meaning when isolated, `read` should use the smallest multi-sentence span that keeps the meaning intact
       - a larger paragraph-sized anchor is allowed only when that larger span is genuinely the smallest complete footing, not as a lazy default
@@ -420,11 +419,11 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - `curious`
     - compatibility adapter uses it when surfaced `search_intent` must be rendered into older family-based outputs
   - `highlight / discern`
-    - compatibility adapter may still use these for bounded local anchored reactions that remain fully inside the current unit
+    - compatibility adapter may still use these for bounded local source-referenced reactions that remain fully inside the current unit
     - they are no longer prompt-time native generation families for `attentional_v2`
-    - `highlight` now means a compat-projected local anchored reaction whose surfaced payload stays inside the current unit and does not explicitly surface `prior_link`, `outside_link`, or `search_intent`
+    - `highlight` now means a compat-projected local source-referenced reaction whose surfaced payload stays inside the current unit and does not explicitly surface `prior_link`, `outside_link`, or `search_intent`
     - `highlight` therefore may still contain real visible wording; it no longer means "only saved, nothing to say"
-    - `discern` remains a compat-side split for a more interpretively explicit local anchored reaction, not a native `Read`-time type field
+    - `discern` remains a compat-side split for a more interpretively explicit local source-referenced reaction, not a native `Read`-time type field
 - This mapping is transitional.
   - It exists for slow-cycle aggregation, eval normalization, and UI adapter continuity.
   - It is now derived from persisted surfaced reaction records through one compat helper rather than treated as the persisted reaction truth.
@@ -452,7 +451,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
     - one thin routing digest from `active_attention`
   - `selective carry`
     - structure-map cards
-    - minimal anchor/thread/concept handles only when needed to localize a detour target
+    - minimal source-ref/thread/concept handles only when needed to localize a detour target
   - `not carry`
     - large earlier source excerpts
     - full reaction history
@@ -467,14 +466,14 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
     - compact `thread_digest`
     - compact `reflective_digest`
   - `selective carry`
-    - one bounded detour-context excerpt or anchor detail when the current unit has been redirected by `Navigate`
-    - specific anchor detail
+    - one bounded detour-context excerpt or source-ref detail when the current unit has been redirected by `Navigate`
+    - specific source-ref detail
     - sparse supporting refs
   - `not carry`
     - full `refs`
     - full `reaction_records`
     - full `read_audit`
-    - full `anchor_bank`
+    - full source-reference history
 - `slow cycle` may carry a broader chapter slice because it is the dedicated chapter-end maintenance pass.
 - Default carried context must stay small and stable.
   - long-distance memory should travel as compact digests, not as full registries
@@ -494,7 +493,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - `search_now` is a rare escape hatch for interpretation-blocking references or allusions rather than a normal reading behavior.
 
 ## State Layers, Ownership, And Detour Logic
-- The mechanism now distinguishes five state territories:
+- The mechanism now distinguishes four state territories plus inline source evidence:
   - `local_continuity`
     - reading-flow position, paragraph-offset `mainline_cursor`, recent unit boundaries, active detour trace, and return semantics
   - `active_attention`
@@ -505,13 +504,14 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
     - `concept_registry`
     - `thread_trace`
     - `reflective_frames`
-  - `anchor_bank`
-    - the grounding substrate for source-honest visible reactions, detour localization, and evaluation/audit evidence
   - `artifacts / history`
     - `reaction_records`
     - `read_audit`
-    - `refs`
     - `knowledge_activations` as helper territory rather than primary carried memory
+- Source evidence now travels as inline `source_refs[]` on the state objects that need it.
+  - A `SourceRef` is an inline citation shape, not a registry entry.
+  - Its id is deterministically derived from the paragraph-offset span, for example `src:c1:p3@12-p3@48`.
+  - New runtime truth does not write or require an `anchor_bank.json` artifact.
 - Ownership is now:
   - `Navigate`
     - owns `local_continuity`
@@ -526,9 +526,9 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - `Reading Runner`
     - owns deterministic orchestration, apply, and persistence only
     - it does not own semantic reading decisions
-- `anchor_bank` is necessary, but narrow.
-  - It is not a second giant memory layer.
-  - It exists so surfaced reactions, detour localization, and evaluation stay source-grounded.
+- `Anchor Bank` is historical after the source-ref cutover.
+  - Older reports and older runtime trees may still contain anchor wording.
+  - New `attentional_v2` runs cite source through paragraph-offset `SourceRef` fields embedded directly in `active_attention`, `concept_registry`, `thread_trace`, `reflective_frames`, `knowledge_activations`, and `reaction_records`.
 - `Detour` is the approved stable concept for non-mainline jump reading.
   - It replaces the narrower planned `revisit` vocabulary in the approved next shape.
   - A detour is still normal reading, not a side-channel retrieval action.
@@ -539,7 +539,8 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - Protection against missing a crucial single sentence now comes from bounded preview construction plus semantic unitization, not from a separate `zoom_now` gate.
 - Historical bridge-resolution helpers may still appear in old reports or archives.
   - they are not part of the current live route layer
-  - current callback honesty is handled by surfaced reaction linkage, anchor grounding, and evaluation/audit evidence rather than by a post-read route action
+  - the current live Runner no longer invokes the old Anchor Bank relation-writing Bridge path
+  - current callback honesty is handled by surfaced reaction linkage, inline source refs, and evaluation/audit evidence rather than by a post-read route action
 
 ## Detour Search
 - `Detour` search is intentionally different from ordinary mainline unitization.
@@ -556,7 +557,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
 - Program logic and skills should supply only the source-evidence substrate:
   - bounded preview / source evidence packets
   - compact long-distance-memory digests
-  - source-grounded anchor handles
+  - source-grounded `SourceRef` handles
   - detour-trace state
 - `Navigate` should do the semantic work of:
   - deciding whether the current evidence is enough to choose a readable unit
@@ -566,7 +567,6 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - `source_map_overview`
   - `source_scope_drilldown`
   - `source_window_fetch`
-  - `anchor_resolve`
   - their results are provenance-bearing evidence, not route decisions
 - Search calls should be bounded.
   - the target is one call when memory and structure make the target obvious
@@ -615,18 +615,20 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
     - also records memory-op counts by target store so durable-memory settlement can be diagnosed without replaying raw model output
   - `_mechanisms/attentional_v2/runtime/settlement_audit.jsonl`
     - canonical runtime audit for each completed `Read -> Reading Runner settlement` transaction
-    - records compact before/after counts and changed ids for active attention, concepts, threads, anchors, and reactions
+    - records compact before/after counts and changed ids for active attention, concepts, threads, and reactions
     - also records the current source span when the settlement belongs to mainline paragraph-offset reading
     - does not persist full state snapshots, raw prompt/response payloads, or per-op accepted/skipped judgments
   - `_mechanisms/attentional_v2/runtime/active_attention.json`
   - `_mechanisms/attentional_v2/runtime/concept_registry.json`
   - `_mechanisms/attentional_v2/runtime/thread_trace.json`
   - `_mechanisms/attentional_v2/runtime/reflective_frames.json`
-  - `_mechanisms/attentional_v2/runtime/anchor_bank.json`
   - `_mechanisms/attentional_v2/runtime/knowledge_activations.json`
   - `_mechanisms/attentional_v2/runtime/reaction_records.json`
     - persisted visible reactions now store native surfaced semantics first:
       - `thought`
+      - `source_quote`
+      - `primary_source_ref`
+      - `related_source_refs`
       - `prior_link`
       - `outside_link`
       - `search_intent`
@@ -638,8 +640,9 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
 - Legacy load/projection artifacts may still appear in older output trees:
   - `_mechanisms/attentional_v2/runtime/working_pressure.json`
   - `_mechanisms/attentional_v2/runtime/anchor_memory.json`
+  - `_mechanisms/attentional_v2/runtime/anchor_bank.json`
   - `_mechanisms/attentional_v2/runtime/reflective_summaries.json`
-  - these are no longer accepted by the live `attentional_v2` runtime/resume path after the legacy gate/pressure cleanup
+  - these are no longer accepted by the live `attentional_v2` runtime/resume path after the legacy gate/pressure and SourceRef cleanup
   - they remain historical evidence from older runs, not a supported live-state format
 - Current scaffolded shared runtime resume artifacts
   - `_runtime/runtime_shell.json`
@@ -674,7 +677,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - `current_excerpt`
   - `search_query` when applicable
 - Live parse/read integration now means those surfaces can be populated by `attentional_v2` through the same upload/start/resume flows as other mechanisms, without requiring `_mechanisms/iterator_v1/derived/structure.json`.
-- Phase 6 now adds a mechanism-private compatibility projector that can shape durable anchored reactions into the current chapter-result envelope while keeping the anchored reaction record as the source of truth.
+- Phase 6 now adds a mechanism-private compatibility projector that can shape durable source-referenced reactions into the current chapter-result envelope while keeping the reaction record as the source of truth.
 - Phase 7 now adds bounded resume helpers that keep non-warm rereads chapter-local, preserve durable state, and explicitly mark reconstructed hot state instead of presenting it as warm continuity.
 - Phase D now adds persisted continuation capsules so warm resume can restore a bounded continuity seed instead of reconstructing context only from raw state files.
 - Phase 8 now lands the first additive public-surface projection layer:
@@ -682,8 +685,8 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - `current_reading_activity.reconstructed_hot_state`
   - `current_reading_activity.last_resume_kind`
   - `current_reading_activity.active_reaction_id`
-  - reaction/mark `primary_anchor`
-  - `related_anchors`
+  - reaction/mark `primary_source_ref`
+  - `related_source_refs`
   - reconsolidation lineage via `supersedes_reaction_id`
 - Phase 8 now also resolves the first observability split:
   - shared `standard` mode keeps:
@@ -704,7 +707,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - `_mechanisms/attentional_v2/exports/normalized_eval_bundle.json` can now be built from persisted runtime, reaction, compatibility, and reflective artifacts for explicit eval-mode runs
   - structural integrity checks now validate:
     - shared cursor sentence resolution
-    - anchor locator fidelity
+    - source-ref locator fidelity
     - reconsolidation append-and-link integrity
     - Q7 resume-policy bounds
     - compatibility projection fidelity
@@ -712,7 +715,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - Adapters must project the current focal span and reading phase into shared public fields without claiming that the private ontology is section-based.
 - The Phase 8 rule is:
   - keep `section_ref` / `segment_ref` only as compatibility sidecars
-  - treat locus- and anchor-native fields as the long-term public direction
+  - treat locus- and source-ref-native fields as the long-term public direction
 - When possible, the projected live attention text should reflect:
   - the current focal span
   - or the current interpretive question if that better explains what the mechanism is doing now
@@ -741,12 +744,12 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
 ## Known Limits / Drift Notes
 - `attentional_v2` is now the default deep-reading mechanism, but the product is still in a compatibility-first cutover posture rather than a fully V2-native presentation posture.
 - The retired legacy `book_analysis` mode is intentionally unsupported for `attentional_v2` in this slice.
-- The current compatibility projector is still intentionally temporary and section-shaped, even though Phase 8 now exposes additive anchor/locus fields on shared public surfaces.
+- The current compatibility projector is still intentionally temporary and section-shaped, even though Phase 8 now exposes additive source-ref/locus fields on shared public surfaces.
 - Shared public-surface adapter work is now partially landed, but the frontend and stable API are still section-first in chapter/detail and marks views.
 - `iterator_v1` remains supported as an explicit fallback and as a legacy-resume continuity path for older runs that predate runtime-shell mechanism metadata.
 - Future migration still needed:
-  - redesign chapter/detail around chapter text plus anchored reactions instead of semantic sections as the primary container
-  - retire section-first requirements from the stable API/frontend contract once the frontend has switched to locus/anchor-native rendering
+  - redesign chapter/detail around chapter text plus source-referenced reactions instead of semantic sections as the primary container
+  - retire section-first requirements from the stable API/frontend contract once the frontend has switched to locus/source-ref-native rendering
 - Future observability work still needed:
   - add deeper per-op state-operation instrumentation if durable-memory debugging needs accepted/skipped/invalid classification for individual `memory_uptake_ops`
   - deepen standard/debug node-level traces now that the live parse/read path exists

@@ -62,7 +62,7 @@ Frontend defaults can be overridden with:
   - `analysis-state.current_reading_activity.last_resume_kind`
   - `analysis-state.current_reading_activity.active_reaction_id`
   - activity-event `reading_locus`
-  - reaction/mark `primary_anchor` and related lineage sidecars
+  - reaction/mark `primary_source_ref`, `related_source_refs`, and related lineage sidecars
 - Current routed frontend surfaces still mostly consume the section-era compatibility layer, but the first frontend truth slice now depends on some of these additive fields directly:
   - the overview breadcrumb and live quote now prefer `reading_locus.excerpt` over the older `current_excerpt` fallback when both exist
   - the overview live chips now surface `active_reaction_id` when the active mechanism provides it
@@ -85,8 +85,8 @@ Frontend defaults can be overridden with:
   - stalled or failed EPUB boot now times out into a controlled unavailable state instead of indefinite loading
 - `WS /api/ws/jobs/{job_id}` still exists in the backend API and older upload/status surfaces, but it is not part of the current routed frontend integration.
 - Future migration still planned:
-  - redesign chapter/detail and marks surfaces around chapter text plus anchored reactions
-  - remove section-first frontend/API requirements once the routed frontend has switched to locus/anchor-native rendering
+  - redesign chapter/detail and marks surfaces around chapter text plus source-referenced reactions
+  - remove section-first frontend/API requirements once the routed frontend has switched to locus/source-ref-native rendering
 
 ## Machine-Readable Appendix
 The JSON block below is the machine-readable appendix used by the integration drift checks.

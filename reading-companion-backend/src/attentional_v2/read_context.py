@@ -2,92 +2,23 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
+
 from src.reading_core import BookDocument
 
 from .schemas import (
-    AnchorBankState,
     CarryForwardContext,
     CarryForwardRef,
     ConceptRegistryState,
-    ContinuationCapsule,
     ContextRequest,
     ReactionRecordsState,
     ReaderPolicy,
     ReflectiveFramesState,
+    SourceRef,
     ThreadTraceState,
 )
+from .source_spans import dedupe_source_refs, source_unit_from_span
 from .state_projection import build_carry_forward_context, clean_text, matching_chapter_items  # noqa: F401
-
-
-def _sentence_inventory(book_document: BookDocument) -> dict[str, dict[str, object]]:
-    """Return a sentence-id keyed inventory over the whole book document."""
-
-    inventory: dict[str, dict[str, object]] = {}
-    for chapter in book_document.get("chapters", []):
-        if not isinstance(chapter, dict):
-            continue
-        chapter_ref = clean_text(chapter.get("reference")) or clean_text(chapter.get("title"))
-        for sentence in chapter.get("sentences", []):
-            if not isinstance(sentence, dict):
-                continue
-            sentence_id = clean_text(sentence.get("sentence_id"))
-            if not sentence_id:
-                continue
-            inventory[sentence_id] = {
-                **dict(sentence),
-                "_chapter_ref": chapter_ref,
-            }
-    return inventory
-
-
-def _sentence_span_text(
-    sentence_inventory: dict[str, dict[str, object]],
-    *,
-    start_sentence_id: str,
-    end_sentence_id: str,
-    max_sentences: int | None = None,
-) -> tuple[list[str], str, str]:
-    """Return one bounded sentence span from the global sentence inventory."""
-
-    ordered = list(sentence_inventory.keys())
-    clean_start = clean_text(start_sentence_id)
-    clean_end = clean_text(end_sentence_id) or clean_start
-    if clean_start not in sentence_inventory or clean_end not in sentence_inventory:
-        return [], "", ""
-    try:
-        start_index = ordered.index(clean_start)
-        end_index = ordered.index(clean_end)
-    except ValueError:
-        return [], "", ""
-    if end_index < start_index:
-        start_index, end_index = end_index, start_index
-    if max_sentences is not None and max_sentences > 0:
-        end_index = min(end_index, start_index + max_sentences - 1)
-    selected_ids = ordered[start_index : end_index + 1]
-    texts = [clean_text(sentence_inventory[sentence_id].get("text")) for sentence_id in selected_ids]
-    chapter_ref = clean_text(sentence_inventory[selected_ids[0]].get("_chapter_ref"))
-    return selected_ids, " ".join(text for text in texts if text), chapter_ref
-
-
-def _anchor_records(anchor_bank: AnchorBankState) -> list[dict[str, object]]:
-    """Return normalized anchor records from the primary anchor bank."""
-
-    return [dict(anchor) for anchor in anchor_bank.get("anchor_records", []) if isinstance(anchor, dict)]
-
-
-def _linked_keys_from_digest(
-    carry_forward_context: CarryForwardContext,
-    *,
-    digest_key: str,
-    id_key: str,
-) -> set[str]:
-    """Return ids already present in the carried-forward digest."""
-
-    return {
-        clean_text(item.get(id_key))
-        for item in carry_forward_context.get(digest_key, [])
-        if isinstance(item, dict) and clean_text(item.get(id_key))
-    }
 
 
 def _dedupe_ref_items(items: list[dict[str, object]], *, id_key: str) -> list[dict[str, object]]:
@@ -131,11 +62,10 @@ def merge_supplemental_contexts(
         ),
     }
     for key, id_key in (
-        ("anchors", "anchor_id"),
+        ("source_refs", "source_span_id"),
         ("concepts", "concept_key"),
         ("threads", "thread_key"),
         ("reactions", "reaction_id"),
-        ("routes", "route_id"),
         ("reflective_items", "item_id"),
         ("excerpts", "ref_id"),
     ):
@@ -149,33 +79,80 @@ def merge_supplemental_contexts(
     return merged
 
 
-def _current_unit_anchor_ids(
-    anchor_bank: AnchorBankState,
-    *,
-    current_unit_sentence_ids: list[str] | None,
-) -> set[str]:
-    """Return anchor ids whose evidence overlaps the current chosen unit."""
-
-    unit_ids = {clean_text(sentence_id) for sentence_id in current_unit_sentence_ids or [] if clean_text(sentence_id)}
-    if not unit_ids:
-        return set()
-    matched: set[str] = set()
-    for anchor in _anchor_records(anchor_bank):
-        anchor_id = clean_text(anchor.get("anchor_id"))
-        start_id = clean_text(anchor.get("sentence_start_id"))
-        end_id = clean_text(anchor.get("sentence_end_id"))
-        if anchor_id and (start_id in unit_ids or end_id in unit_ids):
-            matched.add(anchor_id)
-    return matched
-
-
-def _continuation_capsule(
+def _linked_keys_from_digest(
     carry_forward_context: CarryForwardContext,
-) -> ContinuationCapsule:
-    """Return the carried continuation capsule when present."""
+    *,
+    digest_key: str,
+    id_key: str,
+) -> set[str]:
+    """Return ids already present in the carried-forward digest."""
 
-    capsule = carry_forward_context.get("continuation_capsule", {})
-    return dict(capsule) if isinstance(capsule, dict) else {}
+    return {
+        clean_text(item.get(id_key))
+        for item in carry_forward_context.get(digest_key, [])
+        if isinstance(item, dict) and clean_text(item.get(id_key))
+    }
+
+
+def _source_refs(value: object) -> list[SourceRef]:
+    return dedupe_source_refs(value)
+
+
+def _chapter_for_source_span(book_document: BookDocument, source_span: Mapping[str, object]) -> dict[str, object] | None:
+    start = source_span.get("start_cursor")
+    if not isinstance(start, Mapping):
+        return None
+    chapter_id = int(start.get("chapter_id", 0) or 0)
+    chapter_ref = clean_text(start.get("chapter_ref"))
+    for chapter in book_document.get("chapters", []):
+        if not isinstance(chapter, dict):
+            continue
+        if chapter_id and int(chapter.get("id", 0) or 0) == chapter_id:
+            return chapter
+        if chapter_ref and clean_text(chapter.get("reference") or chapter.get("title")) == chapter_ref:
+            return chapter
+    return None
+
+
+def _excerpt_for_source_ref(book_document: BookDocument, source_ref: Mapping[str, object]) -> dict[str, object] | None:
+    source_span = source_ref.get("source_span")
+    if not isinstance(source_span, Mapping):
+        return None
+    chapter = _chapter_for_source_span(book_document, source_span)
+    if chapter is None:
+        return None
+    source_unit = source_unit_from_span(chapter=chapter, source_span=source_span)
+    if not clean_text(source_unit.get("source_text")):
+        return None
+    source_span_id = clean_text(source_ref.get("source_span_id") or source_unit.get("source_span_id"))
+    return {
+        "ref_id": f"source:{source_span_id}",
+        "source_span_id": source_span_id,
+        "source_span": dict(source_unit.get("source_span", {})),
+        "quote": clean_text(source_ref.get("quote")) or clean_text(source_unit.get("source_text")),
+        "text": clean_text(source_unit.get("source_text")),
+        "chapter_ref": clean_text(chapter.get("reference") or chapter.get("title")),
+    }
+
+
+def _requested_source_refs(context_request: ContextRequest, carry_forward_context: CarryForwardContext) -> list[SourceRef]:
+    requested_ids = {
+        clean_text(item)
+        for item in context_request.get("source_ref_ids", [])
+        if clean_text(item)
+    }
+    refs: list[dict[str, object]] = []
+    for ref in carry_forward_context.get("refs", []):
+        if not isinstance(ref, dict) or not isinstance(ref.get("source_ref"), dict):
+            continue
+        source_ref = dict(ref["source_ref"])
+        source_span_id = clean_text(source_ref.get("source_span_id"))
+        if not requested_ids or source_span_id in requested_ids or clean_text(ref.get("ref_id")) in requested_ids:
+            refs.append(source_ref)
+    for span in context_request.get("source_spans", []):
+        if isinstance(span, dict):
+            refs.append({"source_span": dict(span), "source_span_id": clean_text(span.get("source_span_id")), "quote": "", "role": "look_back"})
+    return dedupe_source_refs(refs)[:4]
 
 
 def resolve_context_request(
@@ -184,7 +161,6 @@ def resolve_context_request(
     carry_forward_context: CarryForwardContext,
     book_document: BookDocument,
     chapter_ref: str,
-    anchor_bank: AnchorBankState,
     concept_registry: ConceptRegistryState,
     thread_trace: ThreadTraceState,
     reflective_frames: ReflectiveFramesState,
@@ -194,391 +170,135 @@ def resolve_context_request(
 ) -> dict[str, object] | None:
     """Resolve one bounded supplemental-context request against persisted state."""
 
+    _ = (reader_policy, current_unit_sentence_ids, reflective_frames, chapter_ref)
     kind = clean_text(context_request.get("kind"))
     reason = clean_text(context_request.get("reason"))
-    requested_anchor_ids = [
-        clean_text(item)
-        for item in context_request.get("anchor_ids", [])
-        if clean_text(item)
-    ][:4]
-    requested_sentence_ids = [
-        clean_text(item)
-        for item in context_request.get("sentence_ids", [])
-        if clean_text(item)
-    ][:4]
-    anchor_records = carry_forward_context.get("anchor_bank_digest", {}).get("active_anchors", [])
-    if not isinstance(anchor_records, list):
-        anchor_records = carry_forward_context.get("anchor_digest", [])
-    carry_anchor_ids = {
-        clean_text(item.get("anchor_id"))
-        for item in anchor_records
-        if isinstance(item, dict) and clean_text(item.get("anchor_id"))
-    }
-    continuity_capsule = carry_forward_context.get("session_continuity_capsule", {})
-    if not isinstance(continuity_capsule, dict):
-        continuity_capsule = carry_forward_context.get("continuity_digest", {})
-    carry_reaction_ids = {
-        clean_text(item.get("reaction_id"))
-        for item in continuity_capsule.get("recent_reactions", [])
-        if isinstance(item, dict) and clean_text(item.get("reaction_id"))
-    }
-    carry_concept_keys = _linked_keys_from_digest(
-        carry_forward_context,
-        digest_key="concept_digest",
-        id_key="concept_key",
-    )
-    carry_thread_keys = _linked_keys_from_digest(
-        carry_forward_context,
-        digest_key="thread_digest",
-        id_key="thread_key",
-    )
-    continuation_capsule = _continuation_capsule(carry_forward_context)
-    capsule_anchor_ids = {
-        clean_text(item.get("anchor_id"))
-        for item in continuation_capsule.get("rehydration_entrypoints", [])
-        if isinstance(item, dict) and clean_text(item.get("anchor_id"))
-    }
-    capsule_concept_keys = {
-        clean_text(item.get("concept_key"))
-        for item in continuation_capsule.get("concept_digest", [])
-        if isinstance(item, dict) and clean_text(item.get("concept_key"))
-    }
-    capsule_thread_keys = {
-        clean_text(item.get("thread_key"))
-        for item in continuation_capsule.get("thread_digest", [])
-        if isinstance(item, dict) and clean_text(item.get("thread_key"))
-    }
-    unit_anchor_ids = _current_unit_anchor_ids(
-        anchor_bank,
-        current_unit_sentence_ids=current_unit_sentence_ids,
-    )
 
-    if kind == "active_recall":
-        refs: list[CarryForwardRef] = []
-        anchors: list[dict[str, object]] = []
-        anchor_records = _anchor_records(anchor_bank)
-        selected_anchors = [
-            dict(anchor)
-            for anchor in anchor_records
-            if isinstance(anchor, dict)
-            and (
-                (clean_text(anchor.get("anchor_id")) in requested_anchor_ids)
-                or (
-                    not requested_anchor_ids
-                    and (
-                        clean_text(anchor.get("anchor_id")) not in carry_anchor_ids
-                        or clean_text(anchor.get("anchor_id")) in unit_anchor_ids
-                    )
-                )
-            )
+    if kind == "look_back":
+        source_refs = _requested_source_refs(context_request, carry_forward_context)
+        excerpts = [
+            excerpt
+            for excerpt in (_excerpt_for_source_ref(book_document, source_ref) for source_ref in source_refs)
+            if excerpt is not None
         ]
-        if not requested_anchor_ids:
-            selected_anchors.sort(
-                key=lambda anchor: (
-                    clean_text(anchor.get("anchor_id")) not in unit_anchor_ids,
-                    clean_text(anchor.get("anchor_id")) not in capsule_anchor_ids,
-                    clean_text(anchor.get("anchor_id")) in carry_anchor_ids,
-                    clean_text(anchor.get("anchor_id")),
-                )
-            )
-            selected_anchors = selected_anchors[:4]
-        for anchor in selected_anchors[:4]:
-            anchor_id = clean_text(anchor.get("anchor_id"))
-            if not anchor_id:
-                continue
-            ref_id = f"anchor:{anchor_id}"
-            anchors.append(
-                {
-                    "ref_id": ref_id,
-                    "anchor_id": anchor_id,
-                    "quote": clean_text(anchor.get("quote")),
-                    "anchor_kind": clean_text(anchor.get("anchor_kind")),
-                    "status": clean_text(anchor.get("status")),
-                    "sentence_start_id": clean_text(anchor.get("sentence_start_id")),
-                    "sentence_end_id": clean_text(anchor.get("sentence_end_id")),
-                    "why_it_mattered": clean_text(anchor.get("why_it_mattered")),
-                }
-            )
-            refs.append(
-                {
-                    "ref_id": ref_id,
-                    "kind": "anchor",
-                    "item_id": anchor_id,
-                    "summary": clean_text(anchor.get("quote")) or clean_text(anchor.get("why_it_mattered")),
-                    "anchor_id": anchor_id,
-                    "sentence_id": clean_text(anchor.get("sentence_end_id") or anchor.get("sentence_start_id")),
-                }
-            )
-
-        concepts: list[dict[str, object]] = []
-        concept_candidates = [dict(entry) for entry in concept_registry.get("entries", []) if isinstance(entry, dict)]
-        if not requested_anchor_ids and not requested_sentence_ids:
-            concept_candidates.sort(
-                key=lambda entry: (
-                    clean_text(entry.get("concept_key")) not in carry_concept_keys,
-                    clean_text(entry.get("concept_key")) not in capsule_concept_keys,
-                    not unit_anchor_ids.intersection(
-                        {clean_text(anchor_id) for anchor_id in entry.get("support_anchor_ids", []) if clean_text(anchor_id)}
-                    ),
-                    clean_text(entry.get("status")) != "open",
-                    clean_text(entry.get("concept_key")),
-                )
-            )
-        for entry in concept_candidates:
-            concept_key = clean_text(entry.get("concept_key"))
-            support_anchor_ids = [
-                clean_text(anchor_id)
-                for anchor_id in entry.get("support_anchor_ids", [])
-                if clean_text(anchor_id)
-            ]
-            if not concept_key or (requested_anchor_ids and not set(support_anchor_ids).intersection(requested_anchor_ids)):
-                continue
-            ref_id = f"concept:{concept_key}"
-            concepts.append(
-                {
-                    "ref_id": ref_id,
-                    "concept_key": concept_key,
-                    "concept_type": clean_text(entry.get("concept_type")),
-                    "status": clean_text(entry.get("status")),
-                    "summary": clean_text(entry.get("summary")),
-                    "support_anchor_ids": support_anchor_ids[:4],
-                    "linked_thread_ids": [
-                        clean_text(thread_id)
-                        for thread_id in entry.get("linked_thread_ids", [])
-                        if clean_text(thread_id)
-                    ][:4],
-                    "last_touched_sentence_id": clean_text(entry.get("last_touched_sentence_id")),
-                }
-            )
-            refs.append(
-                {
-                    "ref_id": ref_id,
-                    "kind": "concept",
-                    "item_id": concept_key,
-                    "summary": clean_text(entry.get("summary")) or clean_text(entry.get("concept_type")),
-                    "anchor_id": support_anchor_ids[0] if support_anchor_ids else "",
-                    "sentence_id": clean_text(entry.get("last_touched_sentence_id")),
-                }
-            )
-            if len(concepts) >= 3:
-                break
-
-        threads: list[dict[str, object]] = []
-        thread_candidates = [dict(entry) for entry in thread_trace.get("entries", []) if isinstance(entry, dict)]
-        if not requested_anchor_ids and not requested_sentence_ids:
-            thread_candidates.sort(
-                key=lambda entry: (
-                    clean_text(entry.get("thread_key")) not in carry_thread_keys,
-                    clean_text(entry.get("thread_key")) not in capsule_thread_keys,
-                    not unit_anchor_ids.intersection(
-                        {clean_text(anchor_id) for anchor_id in entry.get("support_anchor_ids", []) if clean_text(anchor_id)}
-                    ),
-                    clean_text(entry.get("status")) != "open",
-                    clean_text(entry.get("thread_key")),
-                )
-            )
-        for entry in thread_candidates:
-            thread_key = clean_text(entry.get("thread_key"))
-            support_anchor_ids = [
-                clean_text(anchor_id)
-                for anchor_id in entry.get("support_anchor_ids", [])
-                if clean_text(anchor_id)
-            ]
-            if not thread_key or (requested_anchor_ids and not set(support_anchor_ids).intersection(requested_anchor_ids)):
-                continue
-            ref_id = f"thread:{thread_key}"
-            threads.append(
-                {
-                    "ref_id": ref_id,
-                    "thread_key": thread_key,
-                    "thread_type": clean_text(entry.get("thread_type")),
-                    "status": clean_text(entry.get("status")),
-                    "summary": clean_text(entry.get("summary")),
-                    "support_anchor_ids": support_anchor_ids[:4],
-                    "linked_concept_keys": [
-                        clean_text(concept_key)
-                        for concept_key in entry.get("linked_concept_keys", [])
-                        if clean_text(concept_key)
-                    ][:4],
-                    "last_touched_sentence_id": clean_text(entry.get("last_touched_sentence_id")),
-                }
-            )
-            refs.append(
-                {
-                    "ref_id": ref_id,
-                    "kind": "thread",
-                    "item_id": thread_key,
-                    "summary": clean_text(entry.get("summary")) or clean_text(entry.get("thread_type")),
-                    "anchor_id": support_anchor_ids[0] if support_anchor_ids else "",
-                    "sentence_id": clean_text(entry.get("last_touched_sentence_id")),
-                }
-            )
-            if len(threads) >= 3:
-                break
-
-        reactions: list[dict[str, object]] = []
-        for record in list(reaction_records.get("records", []))[-6:]:
-            if not isinstance(record, dict):
-                continue
-            reaction_id = clean_text(record.get("reaction_id"))
-            if not reaction_id or reaction_id in carry_reaction_ids:
-                continue
-            primary_anchor = dict(record.get("primary_anchor", {})) if isinstance(record.get("primary_anchor"), dict) else {}
-            primary_anchor_id = clean_text(primary_anchor.get("anchor_id"))
-            emitted_at_sentence_id = clean_text(record.get("emitted_at_sentence_id"))
-            if requested_anchor_ids or requested_sentence_ids:
-                if primary_anchor_id not in requested_anchor_ids and emitted_at_sentence_id not in requested_sentence_ids:
-                    continue
-            ref_id = f"reaction:{reaction_id}"
-            reactions.append(
-                {
-                    "ref_id": ref_id,
-                    "reaction_id": reaction_id,
-                    "type": clean_text(record.get("type")),
-                    "thought": clean_text(record.get("thought")),
-                    "emitted_at_sentence_id": emitted_at_sentence_id,
-                    "primary_anchor_id": primary_anchor_id,
-                    "primary_anchor_quote": clean_text(primary_anchor.get("quote")),
-                }
-            )
-            refs.append(
-                {
-                    "ref_id": ref_id,
-                    "kind": "reaction",
-                    "item_id": reaction_id,
-                    "summary": clean_text(record.get("thought")) or clean_text(record.get("type")),
-                    "reaction_id": reaction_id,
-                    "sentence_id": emitted_at_sentence_id,
-                    "anchor_id": primary_anchor_id,
-                }
-            )
-            if len(reactions) >= 3:
-                break
-
-        reflective_items: list[dict[str, object]] = []
-        for bucket, limit in (("chapter_understandings", 2), ("book_level_frames", 1)):
-            for item in matching_chapter_items(
-                [entry for entry in reflective_frames.get(bucket, []) if isinstance(entry, dict)],
-                chapter_ref=chapter_ref,
-                limit=limit,
-            ):
-                item_id = clean_text(item.get("item_id"))
-                if not item_id:
-                    continue
-                ref_id = f"reflective:{item_id}"
-                reflective_items.append(
-                    {
-                        "ref_id": ref_id,
-                        "item_id": item_id,
-                        "bucket": bucket,
-                        "statement": clean_text(item.get("statement")),
-                        "chapter_ref": clean_text(item.get("chapter_ref")),
-                        "confidence_band": clean_text(item.get("confidence_band")),
-                        "support_anchor_ids": list(item.get("support_anchor_ids", []))
-                        if isinstance(item.get("support_anchor_ids"), list)
-                        else [],
-                    }
-                )
-                refs.append(
-                    {
-                        "ref_id": ref_id,
-                        "kind": "reflective",
-                        "item_id": item_id,
-                        "summary": clean_text(item.get("statement")),
-                    }
-                )
-
-        if not any((anchors, concepts, threads, reactions, reflective_items)):
+        if not excerpts:
             return None
         return {
-            "kind": "active_recall",
+            "kind": "look_back",
             "reason": reason,
-            "refs": refs,
-            "anchors": anchors,
-            "concepts": concepts,
-            "threads": threads,
-            "reactions": reactions,
-            "reflective_items": reflective_items,
+            "source_refs": [dict(ref) for ref in source_refs],
+            "excerpts": excerpts,
+            "refs": [
+                {
+                    "ref_id": excerpt["ref_id"],
+                    "kind": "source",
+                    "source_span_id": excerpt["source_span_id"],
+                    "summary": clean_text(excerpt.get("quote")),
+                }
+                for excerpt in excerpts
+            ],
         }
 
-    if kind != "look_back":
+    if kind != "active_recall":
         return None
 
-    sentence_inventory = _sentence_inventory(book_document)
-    read_policy = dict(reader_policy.get("read", {})) if isinstance(reader_policy, dict) else {}
-    look_back_max_sentences = max(1, int(read_policy.get("look_back_max_sentences", 8) or 8))
-    excerpts: list[dict[str, object]] = []
+    carry_concept_keys = _linked_keys_from_digest(carry_forward_context, digest_key="concept_digest", id_key="concept_key")
+    carry_thread_keys = _linked_keys_from_digest(carry_forward_context, digest_key="thread_digest", id_key="thread_key")
+    concepts = [
+        {
+            "ref_id": f"concept:{clean_text(entry.get('concept_key'))}",
+            "concept_key": clean_text(entry.get("concept_key")),
+            "concept_type": clean_text(entry.get("concept_type")),
+            "status": clean_text(entry.get("status")),
+            "summary": clean_text(entry.get("summary")),
+            "source_refs": _source_refs(entry.get("source_refs"))[:4],
+            "linked_thread_ids": [
+                clean_text(thread_id)
+                for thread_id in entry.get("linked_thread_ids", [])
+                if clean_text(thread_id)
+            ][:4],
+        }
+        for entry in concept_registry.get("entries", [])
+        if isinstance(entry, dict)
+        and clean_text(entry.get("concept_key"))
+        and clean_text(entry.get("concept_key")) not in carry_concept_keys
+    ][:4]
+    threads = [
+        {
+            "ref_id": f"thread:{clean_text(entry.get('thread_key'))}",
+            "thread_key": clean_text(entry.get("thread_key")),
+            "thread_type": clean_text(entry.get("thread_type")),
+            "status": clean_text(entry.get("status")),
+            "summary": clean_text(entry.get("summary")),
+            "source_refs": _source_refs(entry.get("source_refs"))[:4],
+            "linked_concept_keys": [
+                clean_text(concept_key)
+                for concept_key in entry.get("linked_concept_keys", [])
+                if clean_text(concept_key)
+            ][:4],
+        }
+        for entry in thread_trace.get("entries", [])
+        if isinstance(entry, dict)
+        and clean_text(entry.get("thread_key"))
+        and clean_text(entry.get("thread_key")) not in carry_thread_keys
+    ][:4]
+    reactions = [
+        {
+            "ref_id": f"reaction:{clean_text(record.get('reaction_id'))}",
+            "reaction_id": clean_text(record.get("reaction_id")),
+            "type": clean_text(record.get("type")),
+            "thought": clean_text(record.get("thought")),
+            "primary_source_ref": dict(record.get("primary_source_ref", {}))
+            if isinstance(record.get("primary_source_ref"), dict)
+            else {},
+            "source_quote": clean_text(record.get("source_quote")),
+        }
+        for record in reaction_records.get("records", [])[-4:]
+        if isinstance(record, dict) and clean_text(record.get("reaction_id"))
+    ]
+    if not any((concepts, threads, reactions)):
+        return None
     refs: list[CarryForwardRef] = []
-
-    for anchor in _anchor_records(anchor_bank):
-        if not isinstance(anchor, dict):
-            continue
-        anchor_id = clean_text(anchor.get("anchor_id"))
-        if anchor_id not in requested_anchor_ids:
-            continue
-        sentence_ids, excerpt_text, source_chapter_ref = _sentence_span_text(
-            sentence_inventory,
-            start_sentence_id=clean_text(anchor.get("sentence_start_id")),
-            end_sentence_id=clean_text(anchor.get("sentence_end_id")),
-            max_sentences=look_back_max_sentences,
-        )
-        if not sentence_ids or not excerpt_text:
-            continue
-        ref_id = f"lookback:anchor:{anchor_id}"
-        excerpts.append(
-            {
-                "ref_id": ref_id,
-                "source_kind": "anchor",
-                "anchor_id": anchor_id,
-                "sentence_ids": sentence_ids,
-                "chapter_ref": source_chapter_ref,
-                "excerpt_text": excerpt_text,
-            }
-        )
-        refs.append(
-            {
-                "ref_id": ref_id,
-                "kind": "look_back_excerpt",
-                "item_id": anchor_id,
-                "summary": excerpt_text[:180],
-                "anchor_id": anchor_id,
-                "sentence_id": sentence_ids[-1],
-            }
-        )
-        break
-
-    for sentence_id in requested_sentence_ids:
-        if excerpts:
-            break
-        sentence = sentence_inventory.get(sentence_id)
-        if not isinstance(sentence, dict):
-            continue
-        ref_id = f"lookback:sentence:{sentence_id}"
-        excerpts.append(
-            {
-                "ref_id": ref_id,
-                "source_kind": "sentence",
-                "anchor_id": "",
-                "sentence_ids": [sentence_id],
-                "chapter_ref": clean_text(sentence.get("_chapter_ref")),
-                "excerpt_text": clean_text(sentence.get("text")),
-            }
-        )
-        refs.append(
-            {
-                "ref_id": ref_id,
-                "kind": "look_back_excerpt",
-                "item_id": sentence_id,
-                "summary": clean_text(sentence.get("text"))[:180],
-                "sentence_id": sentence_id,
-            }
-        )
-
-    if not excerpts:
-        return None
+    refs.extend(
+        {
+            "ref_id": clean_text(item.get("ref_id")),
+            "kind": "concept",
+            "item_id": clean_text(item.get("concept_key")),
+            "summary": clean_text(item.get("summary")),
+            "source_ref": (_source_refs(item.get("source_refs")) or [{}])[0],
+            "source_span_id": clean_text((_source_refs(item.get("source_refs")) or [{}])[0].get("source_span_id")),
+        }
+        for item in concepts
+    )
+    refs.extend(
+        {
+            "ref_id": clean_text(item.get("ref_id")),
+            "kind": "thread",
+            "item_id": clean_text(item.get("thread_key")),
+            "summary": clean_text(item.get("summary")),
+            "source_ref": (_source_refs(item.get("source_refs")) or [{}])[0],
+            "source_span_id": clean_text((_source_refs(item.get("source_refs")) or [{}])[0].get("source_span_id")),
+        }
+        for item in threads
+    )
+    refs.extend(
+        {
+            "ref_id": clean_text(item.get("ref_id")),
+            "kind": "reaction",
+            "item_id": clean_text(item.get("reaction_id")),
+            "summary": clean_text(item.get("thought")),
+            "source_ref": dict(item.get("primary_source_ref", {})) if isinstance(item.get("primary_source_ref"), dict) else {},
+            "source_span_id": clean_text((item.get("primary_source_ref") or {}).get("source_span_id"))
+            if isinstance(item.get("primary_source_ref"), dict)
+            else "",
+        }
+        for item in reactions
+    )
     return {
-        "kind": "look_back",
+        "kind": "active_recall",
         "reason": reason,
-        "refs": refs,
-        "excerpts": excerpts,
+        "concepts": concepts,
+        "threads": threads,
+        "reactions": reactions,
+        "refs": [dict(ref) for ref in refs if isinstance(ref, dict)],
     }

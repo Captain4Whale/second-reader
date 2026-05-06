@@ -12,7 +12,6 @@ from .schemas import (
     ATTENTIONAL_V2_MECHANISM_VERSION,
     ATTENTIONAL_V2_POLICY_VERSION,
     ATTENTIONAL_V2_SCHEMA_VERSION,
-    build_empty_anchor_bank,
     build_default_reader_policy,
     build_empty_concept_registry,
     build_empty_local_buffer,
@@ -107,12 +106,6 @@ def anchor_memory_file(output_dir: Path) -> Path:
     """Return the anchor-memory path."""
 
     return runtime_dir(output_dir) / "anchor_memory.json"
-
-
-def anchor_bank_file(output_dir: Path) -> Path:
-    """Return the new primary anchor-bank path."""
-
-    return runtime_dir(output_dir) / "anchor_bank.json"
 
 
 def reflective_summaries_file(output_dir: Path) -> Path:
@@ -251,7 +244,6 @@ def artifact_map(output_dir: Path) -> dict[str, str]:
         "thread_trace": str(thread_trace_file(output_dir).relative_to(output_dir)),
         "reflective_frames": str(reflective_frames_file(output_dir).relative_to(output_dir)),
         "unit_span_ledger": str(unit_span_ledger_file(output_dir).relative_to(output_dir)),
-        "anchor_bank": str(anchor_bank_file(output_dir).relative_to(output_dir)),
         "knowledge_activations": str(knowledge_activations_file(output_dir).relative_to(output_dir)),
         "reaction_records": str(reaction_records_file(output_dir).relative_to(output_dir)),
         "reconsolidation_records": str(reconsolidation_records_file(output_dir).relative_to(output_dir)),
@@ -364,7 +356,6 @@ def initialize_artifact_tree(
     ensure_json(active_attention_file(output_dir), build_empty_active_attention(mechanism_version=mechanism_version))
     ensure_json(concept_registry_file(output_dir), build_empty_concept_registry(mechanism_version=mechanism_version))
     ensure_json(thread_trace_file(output_dir), build_empty_thread_trace(mechanism_version=mechanism_version))
-    ensure_json(anchor_bank_file(output_dir), build_empty_anchor_bank(mechanism_version=mechanism_version))
     ensure_json(
         reflective_frames_file(output_dir),
         build_empty_reflective_frames(mechanism_version=mechanism_version),

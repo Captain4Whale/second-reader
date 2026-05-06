@@ -8,14 +8,9 @@ from pathlib import Path
 import pytest
 
 from src.attentional_v2.resume import persist_reading_position, resume_from_checkpoint, write_full_checkpoint
-from src.attentional_v2.schemas import (
-    build_empty_anchor_memory,
-    build_empty_local_buffer,
-    build_empty_reflective_summaries,
-)
+from src.attentional_v2.schemas import build_empty_local_buffer
 from src.attentional_v2.state_ops import close_local_meaning_unit, push_local_buffer_sentence
 from src.attentional_v2.storage import (
-    anchor_bank_file,
     concept_registry_file,
     continuation_capsule_file,
     event_stream_file,
@@ -176,7 +171,7 @@ def test_checkpoint_and_warm_resume_restore_exact_hot_state(tmp_path: Path):
     assert event_stream_file(output_dir).read_text(encoding="utf-8") == ""
 
 
-def test_persist_reading_position_recreates_missing_runtime_shell(tmp_path: Path):
+def test_persist_reading_position_recreates_missing_runtime_shell_with_default_status(tmp_path: Path):
     """Persist should recreate the thin runtime shell if a local eval run deleted it."""
 
     output_dir = tmp_path / "output" / "demo-book"
@@ -349,43 +344,17 @@ def test_resume_rejects_legacy_runtime_and_old_checkpoint_shapes(tmp_path: Path)
         }
         ],
     }
-    legacy_anchor_memory = build_empty_anchor_memory()
-    legacy_anchor_memory["anchor_records"] = [
-        {
-            "anchor_id": "a-1",
-            "sentence_start_id": "c1-s1",
-            "sentence_end_id": "c1-s1",
-            "quote": "Sentence 1.",
-            "anchor_kind": "unit_evidence",
-            "why_it_mattered": "legacy checkpoint seed",
-            "status": "active",
-            "locator": {},
-        }
-    ]
-    legacy_anchor_memory["motif_index"] = {"sentence": ["a-1"]}
-    legacy_reflective = build_empty_reflective_summaries()
-    legacy_reflective["chapter_understandings"] = [
-        {
-            "item_id": "frame-1",
-            "statement": "Legacy reflective frame.",
-            "chapter_ref": "Chapter 1",
-            "confidence_band": "working",
-            "support_anchor_ids": ["a-1"],
-        }
-    ]
-
     for path in (
         active_attention_file(output_dir),
         concept_registry_file(output_dir),
         thread_trace_file(output_dir),
         reflective_frames_file(output_dir),
-        anchor_bank_file(output_dir),
+        runtime_dir(output_dir) / "anchor_bank.json",
     ):
         path.unlink(missing_ok=True)
 
     save_json(runtime_dir(output_dir) / ("working_" + "pressure.json"), legacy_hot_state)
-    save_json(runtime_dir(output_dir) / "anchor_memory.json", legacy_anchor_memory)
-    save_json(runtime_dir(output_dir) / "reflective_summaries.json", legacy_reflective)
+    save_json(runtime_dir(output_dir) / "anchor_bank.json", {"anchor_records": [], "anchor_relations": []})
 
     shell = load_runtime_shell(runtime_shell_file(output_dir))
     legacy_checkpoint = {
@@ -402,8 +371,7 @@ def test_resume_rejects_legacy_runtime_and_old_checkpoint_shapes(tmp_path: Path)
         "local_buffer": load_json(local_buffer_file(output_dir)),
         "local_continuity": load_json(runtime_dir(output_dir) / "local_continuity.json"),
         "legacy_hot_state": legacy_hot_state,
-        "anchor_memory": legacy_anchor_memory,
-        "reflective_summaries": legacy_reflective,
+        "anchor_bank": {"anchor_records": [], "anchor_relations": []},
         "knowledge_activations": load_json(runtime_dir(output_dir) / "knowledge_activations.json"),
         "route_history": {"routes": []},
         "reaction_records": load_json(reaction_records_file(output_dir)),
@@ -417,7 +385,7 @@ def test_resume_rejects_legacy_runtime_and_old_checkpoint_shapes(tmp_path: Path)
 
     with pytest.raises(
         RuntimeError,
-        match=r"Pre-Phase C\.3 attentional_v2 (runtime state is|checkpoints are) no longer supported",
+        match=r"(Pre-Phase C\.3|Anchor-bank) attentional_v2 (runtime state is|checkpoints are|checkpoints are no longer supported)",
     ):
         resume_from_checkpoint(output_dir, book_document=book_document, requested_resume_kind="warm_resume")
 

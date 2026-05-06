@@ -11,7 +11,6 @@ from src.attentional_v2.benchmark_probes import (
 )
 from src.attentional_v2.observability import maybe_capture_memory_quality_probe
 from src.attentional_v2.schemas import (
-    build_empty_anchor_bank,
     build_empty_concept_registry,
     build_empty_local_buffer,
     build_empty_local_continuity,
@@ -194,7 +193,6 @@ def test_persist_due_memory_quality_probe_snapshots_emits_once_per_semantic_targ
         concept_registry=build_empty_concept_registry(),
         thread_trace=build_empty_thread_trace(),
         reflective_frames=build_empty_reflective_frames(),
-        anchor_bank=build_empty_anchor_bank(),
         reaction_records=build_empty_reaction_records(),
     )
 
@@ -217,7 +215,6 @@ def test_persist_due_memory_quality_probe_snapshots_emits_once_per_semantic_targ
         concept_registry=build_empty_concept_registry(),
         thread_trace=build_empty_thread_trace(),
         reflective_frames=build_empty_reflective_frames(),
-        anchor_bank=build_empty_anchor_bank(),
         reaction_records=build_empty_reaction_records(),
     )
     assert second == []
@@ -234,7 +231,6 @@ def test_persist_due_memory_quality_probe_snapshots_emits_once_per_semantic_targ
         concept_registry=build_empty_concept_registry(),
         thread_trace=build_empty_thread_trace(),
         reflective_frames=build_empty_reflective_frames(),
-        anchor_bank=build_empty_anchor_bank(),
         reaction_records=build_empty_reaction_records(),
     )
     assert len(final) == 1
@@ -258,7 +254,6 @@ def test_memory_quality_probe_observability_hook_is_disabled_by_default(tmp_path
         concept_registry=build_empty_concept_registry(),
         thread_trace=build_empty_thread_trace(),
         reflective_frames=build_empty_reflective_frames(),
-        anchor_bank=build_empty_anchor_bank(),
         reaction_records=build_empty_reaction_records(),
     )
 
@@ -278,7 +273,6 @@ def test_memory_quality_probe_observability_hook_is_disabled_by_default(tmp_path
         concept_registry=build_empty_concept_registry(),
         thread_trace=build_empty_thread_trace(),
         reflective_frames=build_empty_reflective_frames(),
-        anchor_bank=build_empty_anchor_bank(),
         reaction_records=build_empty_reaction_records(),
     )
     assert default_product_path == []
@@ -302,7 +296,6 @@ def test_memory_quality_probe_observability_hook_captures_when_enabled(tmp_path:
         concept_registry=build_empty_concept_registry(),
         thread_trace=build_empty_thread_trace(),
         reflective_frames=build_empty_reflective_frames(),
-        anchor_bank=build_empty_anchor_bank(),
         reaction_records=build_empty_reaction_records(),
     )
 
@@ -335,7 +328,6 @@ def test_memory_quality_probe_export_requires_explicit_targets(tmp_path: Path) -
             concept_registry=build_empty_concept_registry(),
             thread_trace=build_empty_thread_trace(),
             reflective_frames=build_empty_reflective_frames(),
-            anchor_bank=build_empty_anchor_bank(),
             reaction_records=build_empty_reaction_records(),
         )
     except ValueError as exc:

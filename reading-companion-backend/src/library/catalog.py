@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import re
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterable
 
@@ -26,9 +27,6 @@ from src.api.contract import (
 )
 from src.attentional_v2.storage import chapter_result_compatibility_file
 from src.iterator_reader.storage import (
-    activity_file,
-    book_manifest_file,
-    chapter_result_file,
     existing_chapter_result_file,
     existing_cover_asset_file,
     existing_activity_file,
@@ -37,7 +35,6 @@ from src.iterator_reader.storage import (
     existing_run_state_file,
     existing_structure_file,
     resolve_output_relative_file,
-    run_state_file,
 )
 from src.iterator_reader.frontend_artifacts import normalize_activity_event
 from src.iterator_reader.language import runtime_label
@@ -58,6 +55,12 @@ def output_root(root: Path | None = None) -> Path:
 def _load_json(path: Path) -> dict:
     """Load one JSON object if it exists."""
     return json.loads(path.read_text(encoding="utf-8"))
+
+
+def _timestamp() -> str:
+    """Return a compact UTC timestamp for synthesized live activity."""
+
+    return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
 
 def _excerpt_text(value: str, *, max_length: int = 132) -> str:
@@ -120,50 +123,54 @@ def _normalize_text_span_locator(payload: object) -> dict[str, object] | None:
     return locator
 
 
-def _normalize_reaction_anchor(
+def _normalize_source_ref(
     payload: object,
     *,
     fallback_quote: str = "",
-    fallback_locator: object = None,
 ) -> dict[str, object] | None:
-    """Normalize one public-facing reaction anchor."""
+    """Normalize one public-facing inline source reference."""
 
-    anchor = payload if isinstance(payload, dict) else {}
-    quote = _clean_text(anchor.get("quote")) or _clean_text(fallback_quote)
+    source_ref = payload if isinstance(payload, dict) else {}
+    quote = _clean_text(source_ref.get("quote")) or _clean_text(fallback_quote)
     if not quote:
         return None
-    normalized: dict[str, object] = {"quote": quote}
-    sentence_start_id = _clean_text(anchor.get("sentence_start_id"))
-    sentence_end_id = _clean_text(anchor.get("sentence_end_id")) or sentence_start_id
-    if sentence_start_id:
-        normalized["sentence_start_id"] = sentence_start_id
-    if sentence_end_id:
-        normalized["sentence_end_id"] = sentence_end_id
-    locator = _normalize_text_span_locator(anchor.get("locator")) or _normalize_text_span_locator(fallback_locator)
-    if locator is not None:
-        normalized["locator"] = locator
+    source_span = source_ref.get("source_span")
+    source_span_id = _clean_text(source_ref.get("source_span_id"))
+    if not source_span_id and isinstance(source_span, dict):
+        source_span_id = _clean_text(source_span.get("source_span_id"))
+    if not source_span_id:
+        return None
+    normalized: dict[str, object] = {
+        "source_span_id": source_span_id,
+        "quote": quote,
+        "role": _clean_text(source_ref.get("role")) or "primary",
+    }
+    if isinstance(source_span, dict):
+        normalized["source_span"] = dict(source_span)
+    if isinstance(source_ref.get("resolution"), dict):
+        normalized["resolution"] = dict(source_ref.get("resolution", {}))
     return normalized
 
 
-def _normalize_related_anchors(
+def _normalize_related_source_refs(
     payload: object,
     *,
     fallback_quotes: list[str] | None = None,
 ) -> list[dict[str, object]]:
-    """Normalize one related-anchor list without inventing locator detail."""
+    """Normalize one related-source-ref list without inventing source detail."""
 
     items: list[dict[str, object]] = []
     raw_items = payload if isinstance(payload, list) else []
     for item in raw_items:
         if isinstance(item, dict):
-            normalized = _normalize_reaction_anchor(item)
+            normalized = _normalize_source_ref(item)
         else:
-            normalized = _normalize_reaction_anchor({}, fallback_quote=str(item or ""))
+            normalized = _normalize_source_ref({}, fallback_quote=str(item or ""))
         if normalized is not None:
             items.append(normalized)
     if not items:
         for quote in fallback_quotes or []:
-            normalized = _normalize_reaction_anchor({}, fallback_quote=quote)
+            normalized = _normalize_source_ref({}, fallback_quote=quote)
             if normalized is not None:
                 items.append(normalized)
     return items
@@ -422,25 +429,30 @@ def _normalize_target_locator(payload: object) -> dict | None:
     }
 
 
-def _reaction_primary_anchor(item: dict[str, object]) -> dict[str, object] | None:
-    """Return one normalized primary anchor for a reaction-like payload."""
+def _reaction_source_quote(item: dict[str, object]) -> str:
+    """Return the source quote from a reaction-like payload."""
 
-    return _normalize_reaction_anchor(
-        item.get("primary_anchor"),
-        fallback_quote=_clean_text(item.get("anchor_quote")),
-        fallback_locator=item.get("target_locator"),
+    return _clean_text(item.get("source_quote") or item.get("anchor_quote"))
+
+
+def _reaction_primary_source_ref(item: dict[str, object]) -> dict[str, object] | None:
+    """Return one normalized primary source reference for a reaction-like payload."""
+
+    return _normalize_source_ref(
+        item.get("primary_source_ref") or item.get("primary_anchor"),
+        fallback_quote=_reaction_source_quote(item),
     )
 
 
-def _reaction_related_anchors(item: dict[str, object]) -> list[dict[str, object]]:
-    """Return normalized related anchors for a reaction-like payload."""
+def _reaction_related_source_refs(item: dict[str, object]) -> list[dict[str, object]]:
+    """Return normalized related source refs for a reaction-like payload."""
 
     fallback_quotes = [
         _clean_text(value)
-        for value in item.get("related_anchor_quotes", [])
+        for value in item.get("related_source_quotes", item.get("related_anchor_quotes", []))
         if _clean_text(value)
-    ] if isinstance(item.get("related_anchor_quotes"), list) else []
-    return _normalize_related_anchors(item.get("related_anchors"), fallback_quotes=fallback_quotes)
+    ] if isinstance(item.get("related_source_quotes", item.get("related_anchor_quotes", [])), list) else []
+    return _normalize_related_source_refs(item.get("related_source_refs") or item.get("related_anchors"), fallback_quotes=fallback_quotes)
 
 
 def _public_optional_reaction_id(book_id: str, reaction_id: object) -> int | None:
@@ -644,11 +656,11 @@ def _featured_reaction_preview(
 ) -> dict:
     """Normalize one compact featured reaction payload."""
     internal_reaction_id = str(item.get("reaction_id", ""))
-    primary_anchor = _reaction_primary_anchor(item)
+    primary_source_ref = _reaction_primary_source_ref(item)
     return {
         "reaction_id": to_api_reaction_id(book_id=book_id, reaction_id=internal_reaction_id),
         "type": to_api_reaction_type(str(item.get("type", ""))),
-        "anchor_quote": str(item.get("anchor_quote", "")),
+        "source_quote": _reaction_source_quote(item),
         "content": str(item.get("content", "")),
         "book_id": to_api_book_id(book_id),
         "chapter_id": chapter_id,
@@ -656,8 +668,8 @@ def _featured_reaction_preview(
         "chapter_ref": chapter_ref,
         "section_ref": str(item.get("segment_ref", item.get("section_ref", ""))),
         "target_locator": _normalize_target_locator(item.get("target_locator")),
-        "primary_anchor": primary_anchor,
-        "related_anchors": _reaction_related_anchors(item),
+        "primary_source_ref": primary_source_ref,
+        "related_source_refs": _reaction_related_source_refs(item),
         "supersedes_reaction_id": _public_optional_reaction_id(book_id, item.get("supersedes_reaction_id")),
     }
 
@@ -674,11 +686,11 @@ def _activity_reaction_preview(
     return {
         "reaction_id": to_api_reaction_id(book_id=book_id, reaction_id=raw_reaction_id),
         "type": to_api_reaction_type(str(item.get("type", ""))),
-        "anchor_quote": str(item.get("anchor_quote", "")),
+        "source_quote": _reaction_source_quote(item),
         "content": str(item.get("content", "")),
         "section_ref": section_ref,
         "search_query": str(item.get("search_query", "") or "") or None,
-        "primary_anchor": _reaction_primary_anchor(item),
+        "primary_source_ref": _reaction_primary_source_ref(item),
         "supersedes_reaction_id": _public_optional_reaction_id(book_id, item.get("supersedes_reaction_id")),
     }
 
@@ -731,7 +743,7 @@ def _decorate_activity_event(
         fallback_chapter_id=chapter_id,
         fallback_chapter_number=chapter_number,
         fallback_chapter_ref=chapter_ref,
-        fallback_excerpt=_clean_text(event.get("highlight_quote") or event.get("anchor_quote")),
+        fallback_excerpt=_clean_text(event.get("highlight_quote") or event.get("source_quote") or event.get("anchor_quote")),
         fallback_locator=(
             _segment_locator_for_ref(
                 book_id,
@@ -749,7 +761,7 @@ def _decorate_activity_event(
         chapter_id=chapter_id,
         chapter_number=chapter_number,
         chapter_ref=chapter_ref,
-        excerpt=_clean_text(event.get("highlight_quote") or event.get("anchor_quote")),
+        excerpt=_clean_text(event.get("highlight_quote") or event.get("source_quote") or event.get("anchor_quote")),
         root=root,
     )
     return {
@@ -766,7 +778,7 @@ def _decorate_activity_event(
         "section_ref": section_ref,
         "reading_locus": reading_locus,
         "active_reaction_id": _public_optional_reaction_id(book_id, event.get("active_reaction_id")),
-        "anchor_quote": str(event.get("anchor_quote", "") or "") or None,
+        "source_quote": str(event.get("source_quote", event.get("anchor_quote", "")) or "") or None,
         "highlight_quote": str(event.get("highlight_quote", "") or "") or None,
         "reaction_types": [to_api_reaction_type(str(item)) for item in event.get("reaction_types", []) if str(item).strip()],
         "search_query": str(event.get("search_query", "") or "") or None,
@@ -859,15 +871,15 @@ def _reaction_card(section: dict, reaction: dict, mark_index: dict[str, str]) ->
     return {
         "reaction_id": to_api_reaction_id(book_id=book_id, reaction_id=reaction_id),
         "type": to_api_reaction_type(str(reaction.get("type", ""))),
-        "anchor_quote": str(reaction.get("anchor_quote", "")),
+        "source_quote": _reaction_source_quote(reaction),
         "content": str(reaction.get("content", "")),
         "search_query": str(reaction.get("search_query", "") or "") or None,
         "search_results": list(reaction.get("search_results", [])),
         "target_locator": _normalize_target_locator(reaction.get("target_locator")),
         "section_ref": str(section.get("segment_ref", "")),
         "section_summary": str(section.get("summary", "")),
-        "primary_anchor": _reaction_primary_anchor(reaction),
-        "related_anchors": _reaction_related_anchors(reaction),
+        "primary_source_ref": _reaction_primary_source_ref(reaction),
+        "related_source_refs": _reaction_related_source_refs(reaction),
         "supersedes_reaction_id": _public_optional_reaction_id(book_id, reaction.get("supersedes_reaction_id")),
         "mark_type": mark_index.get(reaction_id),
     }
@@ -877,9 +889,9 @@ def _outline_preview_text(section: dict) -> str:
     """Choose one short section preview line for the outline pane."""
     reactions = [reaction for reaction in section.get("reactions", []) if isinstance(reaction, dict)]
     for reaction in reactions:
-        anchor_quote = _excerpt_text(str(reaction.get("anchor_quote", "")))
-        if anchor_quote:
-            return anchor_quote
+        source_quote = _excerpt_text(_reaction_source_quote(reaction))
+        if source_quote:
+            return source_quote
     for reaction in reactions:
         content_preview = _excerpt_text(str(reaction.get("content", "")))
         if content_preview:

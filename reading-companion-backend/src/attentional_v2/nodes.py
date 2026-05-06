@@ -73,7 +73,7 @@ _NAVIGATE_SELECTION_MODES = {"mainline", "detour"}
 _LEXICAL_CONTENT_RE = re.compile(r"[A-Za-z0-9\u4e00-\u9fff]")
 _VISIBLE_INTERNAL_REFERENCE_PATTERNS = (
     re.compile(r"\bc\d+-s\d+(?:-\d+)?(?:-c\d+-s\d+(?:-\d+)?)?\b", re.IGNORECASE),
-    re.compile(r"\b(?:anchor|thread|concept|reaction|move|ref):[A-Za-z0-9._-]+\b", re.IGNORECASE),
+    re.compile(r"\b(?:anchor|thread|concept|reaction|move|ref|source):[A-Za-z0-9._:@-]+\b", re.IGNORECASE),
 )
 
 
@@ -557,21 +557,21 @@ def _normalize_reaction_candidate(value: object) -> ReactionCandidate | None:
     reaction_type = _clean_text(value.get("type")).lower()
     if reaction_type not in _REACTION_TYPES:
         return None
-    anchor_quote = _clean_text(value.get("anchor_quote"))
+    source_quote = _clean_text(value.get("source_quote") or value.get("anchor_quote"))
     content = _clean_text(value.get("content"))
-    if reaction_type != "silent" and (not anchor_quote or not content):
+    if reaction_type != "silent" and (not source_quote or not content):
         return None
-    related_anchor_quotes = [
+    related_source_quotes = [
         _clean_text(item)
-        for item in value.get("related_anchor_quotes", [])
+        for item in value.get("related_source_quotes", value.get("related_anchor_quotes", []))
         if _clean_text(item)
-    ] if isinstance(value.get("related_anchor_quotes"), list) else []
+    ] if isinstance(value.get("related_source_quotes", value.get("related_anchor_quotes", [])), list) else []
     search_results = [dict(item) for item in value.get("search_results", []) if isinstance(item, dict)] if isinstance(value.get("search_results"), list) else []
     return {
         "type": reaction_type,  # type: ignore[typeddict-item]
-        "anchor_quote": anchor_quote,
+        "source_quote": source_quote,
         "content": content,
-        "related_anchor_quotes": related_anchor_quotes,
+        "related_source_quotes": related_source_quotes,
         "search_query": _clean_text(value.get("search_query")),
         "search_results": search_results,
     }
@@ -650,16 +650,16 @@ def _normalize_surfaced_reaction(
 
     if not isinstance(value, dict):
         return None
-    anchor_quote = _clean_text(value.get("anchor_quote"))
+    source_quote = _clean_text(value.get("source_quote") or value.get("anchor_quote"))
     content = _clean_text(value.get("content"))
-    if not anchor_quote or not content:
+    if not source_quote or not content:
         return None
-    if current_unit_texts and not any(anchor_quote in text for text in current_unit_texts):
+    if current_unit_texts and not any(source_quote in text for text in current_unit_texts):
         return None
     if _contains_internal_reference_markup(content):
         return None
     return {
-        "anchor_quote": anchor_quote,
+        "source_quote": source_quote,
         "content": content,
         "prior_link": _normalize_prior_link(value.get("prior_link"), allowed_ref_ids=allowed_ref_ids),
         "outside_link": _normalize_outside_link(value.get("outside_link")),

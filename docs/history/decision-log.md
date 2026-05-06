@@ -2596,3 +2596,47 @@ This new direction is design frozen but not yet implemented as a formal benchmar
 - `reading-companion-backend/src/reading_core/runtime_contracts.py`
 - `reading-companion-backend/tests/test_attentional_v2_source_spans.py`
 - `reading-companion-backend/tests/test_attentional_v2_scaffold.py`
+
+## Entry 85
+**ID**: DEC-088
+**Status**: active
+
+**Decision / Inflection**: Retire `Anchor Bank` from new `attentional_v2` runtime truth and unify source citation around inline paragraph-offset `SourceRef`.
+
+**Period**: May 6, 2026, immediately after the paragraph-offset cursor and Unit Span Ledger cutover.
+
+**Problem**: Once the mechanism's source coordinate became paragraph + char offset, `anchor_bank` stopped being necessary as a separate evidence registry. The earlier anchor layer existed partly because sentence ids were too coarse for precise quotes and partly because bridge/relation experiments wanted an evidence store. Keeping a central Anchor Bank after SourceCursor/SourceSpan landed would add a second source-coordinate truth, reintroduce compatibility drag, and obscure which state object actually owns a memory or reaction's evidence.
+
+**Alternatives considered**: Keep Anchor Bank as a narrow evidence registry, introduce a new `SourceRef Bank`, or migrate old runtime/report artifacts into the new shape. These were rejected. A retained bank would preserve the extra registry problem under a different rationale. A `SourceRef Bank` would repeat the same centralization under a new name. Migrating old artifacts would spend effort on historical outputs rather than simplifying the live mechanism.
+
+**Why this path won**: Inline `SourceRef` keeps the coordinate model simple and universal. The cited state object carries its own source evidence as `source_refs[]`; `source_span_id` is derived deterministically from the paragraph-offset span rather than registered elsewhere. Reading Runner can resolve Read-provided exact quotes against the accepted unit source text, normalize them into SourceRefs, and persist those refs directly on active attention, concepts, threads, reflective frames, knowledge activations, and reaction records.
+
+**What changed in the system**: New `attentional_v2` runtime/checkpoint truth no longer includes `anchor_bank.json` or checkpoint `anchor_bank`. Read memory ops may provide `source_quote` / `source_role`, which the Runner resolves into inline `source_refs[]` before settlement. Reaction records now persist `source_quote`, `primary_source_ref`, and `related_source_refs`. Carry-forward context, Memory Quality probe snapshots, read/settlement audit, normalized eval exports, marks, and public API schemas now use source-ref naming. The old Bridge path that wrote Anchor Bank relations is paused rather than migrated into a new relation graph. Old runtimes with anchor-bank truth are rejected and should be rerun.
+
+**Why it matters later**: Future source-grounding work should not recreate a central source registry unless a real product need appears. If callbacks or bridge-like behavior return, they should be designed source-span-native and should use inline citations or a deliberately justified relation mechanism, not revive Anchor Bank by inertia.
+
+**Primary evidence**:
+- `docs/backend-reading-mechanisms/attentional_v2.md`
+- `docs/backend-reading-mechanism.md`
+- `docs/backend-reader-evaluation.md`
+- `docs/current-state.md`
+- `docs/tasks/registry.md`
+- `docs/tasks/registry.json`
+- `contract/openapi.public.snapshot.json`
+- `reading-companion-backend/src/attentional_v2/source_spans.py`
+- `reading-companion-backend/src/attentional_v2/runner.py`
+- `reading-companion-backend/src/attentional_v2/state_ops.py`
+- `reading-companion-backend/src/attentional_v2/state_projection.py`
+- `reading-companion-backend/src/attentional_v2/read_context.py`
+- `reading-companion-backend/src/attentional_v2/observability.py`
+- `reading-companion-backend/src/attentional_v2/benchmark_probes.py`
+- `reading-companion-backend/src/attentional_v2/storage.py`
+- `reading-companion-backend/src/attentional_v2/resume.py`
+- `reading-companion-backend/src/api/schemas.py`
+- `reading-companion-backend/src/library/catalog.py`
+- `reading-companion-backend/src/library/user_marks.py`
+- `reading-companion-backend/tests/test_attentional_v2_source_spans.py`
+- `reading-companion-backend/tests/test_attentional_v2_state_ops.py`
+- `reading-companion-backend/tests/test_attentional_v2_state_projection.py`
+- `reading-companion-backend/tests/test_public_contract.py`
+- `reading-companion-backend/tests/test_library_api.py`

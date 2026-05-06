@@ -20,6 +20,7 @@ Use `docs/backend-sequential-lifecycle.md` for the job-level workflow over time.
   - The paragraph layer is the stable shared source substrate available to all mechanisms.
   - The sentence layer is a parse-time, source-order, mechanism-neutral helper substrate, not a mechanism-private traversal plan.
   - A mechanism may choose its own cursor semantics over that substrate. Current `attentional_v2` mainline reading uses paragraph + char offset source cursors; `iterator_v1` and older eval/compatibility code may still use sentence or section-oriented coordinates.
+  - Current `attentional_v2` source citations use inline paragraph-offset `SourceRef` payloads. There is no shared Anchor Bank or SourceRef registry at the platform layer.
   - It must not embed one mechanism's traversal ontology.
 - Shared runtime shell
   - `src/reading_runtime/` owns mechanism registration, runtime routing, and shared artifact layout authority.

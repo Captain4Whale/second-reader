@@ -102,33 +102,38 @@ def _normalize_text_span_locator(payload: object) -> dict[str, object] | None:
     return locator
 
 
-def _normalize_primary_anchor(reaction: dict[str, object]) -> dict[str, object] | None:
-    """Return one persisted primary-anchor payload from a reaction-like object."""
+def _reaction_source_quote(reaction: dict[str, object]) -> str:
+    """Return the source quote from a reaction-like object."""
 
-    explicit_anchor = reaction.get("primary_anchor")
-    if isinstance(explicit_anchor, dict):
-        quote = _clean_text(explicit_anchor.get("quote"))
-        if quote:
-            payload: dict[str, object] = {"quote": quote}
-            sentence_start_id = _clean_text(explicit_anchor.get("sentence_start_id"))
-            sentence_end_id = _clean_text(explicit_anchor.get("sentence_end_id")) or sentence_start_id
-            if sentence_start_id:
-                payload["sentence_start_id"] = sentence_start_id
-            if sentence_end_id:
-                payload["sentence_end_id"] = sentence_end_id
-            locator = _normalize_text_span_locator(explicit_anchor.get("locator"))
-            if locator is not None:
-                payload["locator"] = locator
+    return _clean_text(reaction.get("source_quote") or reaction.get("anchor_quote"))
+
+
+def _normalize_primary_source_ref(reaction: dict[str, object]) -> dict[str, object] | None:
+    """Return one persisted primary source-ref payload from a reaction-like object."""
+
+    explicit_ref = reaction.get("primary_source_ref") or reaction.get("primary_anchor")
+    if isinstance(explicit_ref, dict):
+        quote = _clean_text(explicit_ref.get("quote"))
+        source_span = explicit_ref.get("source_span")
+        source_span_id = _clean_text(explicit_ref.get("source_span_id"))
+        if not source_span_id and isinstance(source_span, dict):
+            source_span_id = _clean_text(source_span.get("source_span_id"))
+        if quote and source_span_id:
+            payload: dict[str, object] = {
+                "source_span_id": source_span_id,
+                "quote": quote,
+                "role": _clean_text(explicit_ref.get("role")) or "primary",
+            }
+            if isinstance(source_span, dict):
+                payload["source_span"] = dict(source_span)
+            if isinstance(explicit_ref.get("resolution"), dict):
+                payload["resolution"] = dict(explicit_ref.get("resolution", {}))
             return payload
 
-    quote = _clean_text(reaction.get("anchor_quote"))
+    quote = _reaction_source_quote(reaction)
     if not quote:
         return None
-    payload = {"quote": quote}
-    locator = _normalize_text_span_locator(reaction.get("target_locator"))
-    if locator is not None:
-        payload["locator"] = locator
-    return payload
+    return None
 
 
 def _iter_chapter_reactions(payload: dict[str, object]) -> list[tuple[dict[str, object], str]]:
@@ -267,13 +272,13 @@ def put_mark(*, book_id: str, reaction_id: str, mark_type: str, root: Path | Non
         "reaction_type": reaction.get("type", "association"),
         "mark_type": normalized_mark_type,  # type: ignore[assignment]
         "reaction_excerpt": str(reaction.get("content", ""))[:180],
-        "anchor_quote": str(reaction.get("anchor_quote", "")),
+        "source_quote": _reaction_source_quote(reaction),
         "created_at": created_at,
         "updated_at": now,
     }
-    primary_anchor = _normalize_primary_anchor(reaction)
-    if primary_anchor is not None:
-        payload["primary_anchor"] = primary_anchor
+    primary_source_ref = _normalize_primary_source_ref(reaction)
+    if primary_source_ref is not None:
+        payload["primary_source_ref"] = primary_source_ref
     supersedes_reaction_id = _clean_text(reaction.get("supersedes_reaction_id"))
     if supersedes_reaction_id:
         payload["supersedes_reaction_id"] = supersedes_reaction_id

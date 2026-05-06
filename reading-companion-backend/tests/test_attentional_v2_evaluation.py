@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-from pathlib import Path
 
 from src.attentional_v2.runner import _chapter_ref
 from src.attentional_v2.evaluation import normalized_eval_bundle_file
@@ -109,22 +108,25 @@ def test_runner_chapter_ref_uses_shared_user_facing_reference() -> None:
     assert _chapter_ref({"id": 7, "title": "Visitors"}) == "Visitors"
 
 
-def _anchor(anchor_id: str, sentence_id: str, quote: str, paragraph_index: int) -> dict[str, object]:
+def _source_ref(quote: str, paragraph_index: int) -> dict[str, object]:
     return {
-        "anchor_id": anchor_id,
-        "sentence_start_id": sentence_id,
-        "sentence_end_id": sentence_id,
-        "quote": quote,
-        "locator": {
-            "href": "chapter-1.xhtml",
-            "start_cfi": f"/6/2[chapter1]!/4/{paragraph_index * 2}/2",
-            "end_cfi": f"/6/2[chapter1]!/4/{paragraph_index * 2}/12",
-            "paragraph_index": paragraph_index,
-            "paragraph_start": paragraph_index,
-            "paragraph_end": paragraph_index,
-            "char_start": 0,
-            "char_end": len(quote),
+        "source_span_id": f"src:c1:p{paragraph_index}@0-p{paragraph_index}@{len(quote)}",
+        "source_span": {
+            "start_cursor": {
+                "chapter_id": 1,
+                "chapter_ref": "Chapter 1",
+                "paragraph_index": paragraph_index,
+                "char_offset": 0,
+            },
+            "end_cursor": {
+                "chapter_id": 1,
+                "chapter_ref": "Chapter 1",
+                "paragraph_index": paragraph_index,
+                "char_offset": len(quote),
+            },
         },
+        "quote": quote,
+        "role": "primary",
     }
 
 
@@ -143,9 +145,8 @@ def test_attentional_v2_can_build_and_persist_normalized_eval_bundle(tmp_path):
         "position_kind": "span",
         "chapter_id": 1,
         "chapter_ref": "Chapter 1",
-        "sentence_id": "c1-s2",
-        "span_start_sentence_id": "c1-s1",
-        "span_end_sentence_id": "c1-s2",
+        "span_start_cursor": {"chapter_id": 1, "chapter_ref": "Chapter 1", "paragraph_index": 1, "char_offset": 0},
+        "span_end_cursor": {"chapter_id": 1, "chapter_ref": "Chapter 1", "paragraph_index": 2, "char_offset": 45},
     }
     shell["active_artifact_refs"] = {"reaction_id": "rx:Chapter_1:c1-s1:highlight"}
     shell["resume_available"] = True
@@ -157,17 +158,17 @@ def test_attentional_v2_can_build_and_persist_normalized_eval_bundle(tmp_path):
         build_reaction_record(
             reaction={
                 "type": "highlight",
-                "anchor_quote": "Markets begin as relations among people.",
+                "source_quote": "Markets begin as relations among people.",
                 "content": "The opening sentence frames value as social relation.",
-                "related_anchor_quotes": ["Later the author narrows what counts as value."],
+                "related_source_quotes": ["Later the author narrows what counts as value."],
                 "search_query": "",
                 "search_results": [],
             },
-            primary_anchor=_anchor("a-1", "c1-s1", "Markets begin as relations among people.", 1),
-            related_anchors=[_anchor("a-2", "c1-s2", "Later the author narrows what counts as value.", 2)],
+            primary_source_ref=_source_ref("Markets begin as relations among people.", 1),
+            related_source_refs=[_source_ref("Later the author narrows what counts as value.", 2)],
             chapter_id=1,
             chapter_ref="Chapter 1",
-            emitted_at_sentence_id="c1-s1",
+            emitted_at_source_span_id="src:c1:p1@0-p1@40",
         )
     ]
     save_json(reaction_records_file(output_dir), reaction_records)
@@ -177,7 +178,7 @@ def test_attentional_v2_can_build_and_persist_normalized_eval_bundle(tmp_path):
         {
             "item_id": "ru-1",
             "statement": "The chapter opens socially and then narrows its claim.",
-            "support_anchor_ids": ["a-1", "a-2"],
+            "source_refs": [_source_ref("Markets begin as relations among people.", 1), _source_ref("Later the author narrows what counts as value.", 2)],
             "confidence_band": "stable",
             "promoted_from": "chapter_sweep",
             "status": "active",
@@ -207,14 +208,14 @@ def test_attentional_v2_can_build_and_persist_normalized_eval_bundle(tmp_path):
                 "message": "The opening line sets the social frame.",
                 "chapter_ref": "Chapter 1",
                 "segment_ref": "1.1",
-                "anchor_quote": "Markets begin as relations among people.",
+                "source_quote": "Markets begin as relations among people.",
                 "active_reaction_id": "rx:Chapter_1:c1-s1:highlight",
                 "reading_locus": {
                     "kind": "span",
                     "chapter_id": 1,
                     "chapter_ref": "Chapter 1",
-                    "sentence_start_id": "c1-s1",
-                    "sentence_end_id": "c1-s2",
+                    "span_start_cursor": {"chapter_id": 1, "chapter_ref": "Chapter 1", "paragraph_index": 1, "char_offset": 0},
+                    "span_end_cursor": {"chapter_id": 1, "chapter_ref": "Chapter 1", "paragraph_index": 1, "char_offset": 40},
                 },
             },
             ensure_ascii=False,
@@ -227,10 +228,12 @@ def test_attentional_v2_can_build_and_persist_normalized_eval_bundle(tmp_path):
 
     assert bundle["mechanism_key"] == "attentional_v2"
     assert bundle["run_snapshot"]["current_chapter_ref"] == "Chapter 1"
-    assert bundle["run_snapshot"]["current_reading_locus"]["sentence_start_id"] == "c1-s1"
+    assert bundle["run_snapshot"]["current_reading_locus"]["kind"] == "source_span"
+    assert bundle["run_snapshot"]["current_reading_locus"]["start_cursor"]["paragraph_index"] == 1
+    assert bundle["run_snapshot"]["current_reading_locus"]["end_cursor"]["paragraph_index"] == 2
     assert "route_action" not in bundle["attention_events"][0]
-    assert bundle["reactions"][0]["primary_anchor"]["quote"] == "Markets begin as relations among people."
-    assert bundle["reactions"][0]["related_anchors"][0]["sentence_start_id"] == "c1-s2"
+    assert bundle["reactions"][0]["primary_source_ref"]["quote"] == "Markets begin as relations among people."
+    assert bundle["reactions"][0]["related_source_refs"][0]["source_span_id"].startswith("src:c1:p2@")
     assert bundle["chapters"][0]["visible_reaction_count"] == 1
     assert bundle["memory_summaries"] == ["The chapter opens socially and then narrows its claim."]
 
@@ -251,7 +254,7 @@ def test_normalized_eval_bundle_projects_compat_fields_from_native_reaction_reco
     reaction_records["records"] = [
         build_reaction_record_from_surfaced_reaction(
             reaction={
-                "anchor_quote": "Markets begin as relations among people.",
+                "source_quote": "Markets begin as relations among people.",
                 "content": "The social frame opens a question worth following.",
                 "prior_link": None,
                 "outside_link": None,
@@ -260,10 +263,10 @@ def test_normalized_eval_bundle_projects_compat_fields_from_native_reaction_reco
                     "rationale": "Useful follow-up for later comparison.",
                 },
             },
-            primary_anchor=_anchor("a-1", "c1-s1", "Markets begin as relations among people.", 1),
+            primary_source_ref=_source_ref("Markets begin as relations among people.", 1),
             chapter_id=1,
             chapter_ref="Chapter 1",
-            emitted_at_sentence_id="c1-s1",
+            emitted_at_source_span_id="src:c1:p1@0-p1@40",
         )
     ]
     save_json(reaction_records_file(output_dir), reaction_records)
@@ -288,7 +291,7 @@ def test_normalized_eval_bundle_projects_compat_fields_from_native_reaction_reco
     assert bundle["reactions"][0]["search_query"] == "social marketplace framing"
 
 
-def test_attentional_v2_integrity_checks_flag_cursor_anchor_and_reconsolidation_drift(tmp_path):
+def test_attentional_v2_integrity_checks_flag_cursor_source_ref_and_reconsolidation_drift(tmp_path):
     """The integrity report should surface structural artifact problems as hard failures."""
 
     output_dir = tmp_path / "output" / "demo-book"
@@ -298,10 +301,11 @@ def test_attentional_v2_integrity_checks_flag_cursor_anchor_and_reconsolidation_
 
     shell = load_runtime_shell(runtime_shell_file(output_dir))
     shell["cursor"] = {
-        "position_kind": "sentence",
+        "position_kind": "span",
         "chapter_id": 1,
         "chapter_ref": "Chapter 1",
-        "sentence_id": "missing-sentence",
+        "span_start_cursor": {"chapter_id": 1, "chapter_ref": "Chapter 1", "paragraph_index": 99, "char_offset": 0},
+        "span_end_cursor": {"chapter_id": 1, "chapter_ref": "Chapter 1", "paragraph_index": 99, "char_offset": 1},
     }
     save_runtime_shell(runtime_shell_file(output_dir), shell)
 
@@ -309,20 +313,19 @@ def test_attentional_v2_integrity_checks_flag_cursor_anchor_and_reconsolidation_
     broken_record = build_reaction_record(
         reaction={
             "type": "discern",
-            "anchor_quote": "Markets begin as relations among people.",
+            "source_quote": "Markets begin as relations among people.",
             "content": "The social framing is unstable.",
-            "related_anchor_quotes": [],
+            "related_source_quotes": [],
             "search_query": "",
             "search_results": [],
         },
-        primary_anchor=_anchor("a-1", "c1-s1", "Markets begin as relations among people.", 1),
+        primary_source_ref=_source_ref("Markets begin as relations among people.", 1),
         chapter_id=1,
         chapter_ref="Chapter 1",
-        emitted_at_sentence_id="c1-s1",
+        emitted_at_source_span_id="src:c1:p1@0-p1@40",
     )
-    broken_record["primary_anchor"]["sentence_start_id"] = "missing-anchor"
-    broken_record["primary_anchor"]["sentence_end_id"] = "missing-anchor"
-    broken_record["primary_anchor"]["locator"]["href"] = ""
+    broken_record["primary_source_ref"]["source_span"]["start_cursor"]["paragraph_index"] = 99
+    broken_record["primary_source_ref"]["source_span"]["end_cursor"]["paragraph_index"] = 99
     broken_reactions["records"] = [broken_record]
     save_json(reaction_records_file(output_dir), broken_reactions)
 
@@ -344,7 +347,6 @@ def test_attentional_v2_integrity_checks_flag_cursor_anchor_and_reconsolidation_
     by_code = {check["code"]: check for check in report["checks"]}
 
     assert report["passed"] is False
-    assert by_code["runtime_cursor_sentence_ids_resolve"]["status"] == "fail"
-    assert by_code["anchors_reference_shared_sentences"]["status"] == "fail"
-    assert by_code["anchors_have_usable_locators"]["status"] == "fail"
+    assert by_code["runtime_cursor_source_span_resolves"]["status"] == "fail"
+    assert by_code["reactions_have_resolvable_source_refs"]["status"] == "fail"
     assert by_code["reconsolidation_links_are_append_only"]["status"] == "fail"

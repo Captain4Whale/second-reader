@@ -43,10 +43,10 @@ class UserMark(TypedDict):
     reaction_type: ReactionType
     mark_type: MarkType
     reaction_excerpt: str
-    anchor_quote: str
+    source_quote: str
     created_at: str
     updated_at: str
-    primary_anchor: NotRequired[dict[str, object]]
+    primary_source_ref: NotRequired[dict[str, object]]
     supersedes_reaction_id: NotRequired[str]
 
 
@@ -95,7 +95,7 @@ class RuntimeArtifactRefs(TypedDict, total=False):
 
     reaction_id: str
     thought_id: str
-    anchor_id: str
+    source_span_id: str
     move_id: str
 
 

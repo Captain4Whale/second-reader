@@ -111,7 +111,7 @@ Use `docs/api-contract.md` for exact fields and routes. Use this file to underst
   - Reads `activity.jsonl` and normalizes each event into the public event shape.
   - The routed frontend overview now consumes the `stream=mindstream` view; `stream=system` remains available for diagnostics.
   - Adds canonical chapter result routes where the completed result is ready.
-  - Event payloads may now also carry additive `chapter_number`, `reading_locus`, and anchor-native reaction fields without changing the current compatibility route model.
+  - Event payloads may now also carry additive `chapter_number`, `reading_locus`, and source-ref-native reaction fields without changing the current compatibility route model.
 - `GET /api/books/{book_id}/analysis-log`
   - Is the main exception to the catalog-driven view model.
   - It remains an internal diagnostic endpoint and is no longer part of the user-facing overview.
@@ -121,7 +121,7 @@ Use `docs/api-contract.md` for exact fields and routes. Use this file to underst
   - Uses `user_marks` to attach the current mark state to each returned reaction card.
   - This surface no longer hard-requires `iterator_v1` structure as long as the manifest points at a valid mechanism-owned chapter result file.
   - When older compatibility manifests are missing `result_file`, aggregation now also falls back directly to `attentional_v2` chapter compatibility payloads under `_mechanisms/attentional_v2/derived/chapter_result_compatibility/`.
-  - Reaction cards and featured reaction previews may now additively expose `primary_anchor`, `related_anchors`, and reconsolidation lineage sidecars while the page still remains section-shaped for compatibility.
+  - Reaction cards and featured reaction previews may now additively expose `primary_source_ref`, `related_source_refs`, and reconsolidation lineage sidecars while the page still remains section-shaped for compatibility.
   - Chapter detail and outline payloads may now additively expose `chapter_number`, but their route key remains the stable `chapter_id`.
 - `GET /api/books/{book_id}/chapters/{chapter_id}/outline`
   - Starts from the manifest chapter tree, then enriches the outline with section previews from the chapter result file when that result exists.
@@ -129,7 +129,7 @@ Use `docs/api-contract.md` for exact fields and routes. Use this file to underst
 - `GET /api/marks` and `GET /api/books/{book_id}/marks`
   - Read from `state/user_marks.json`.
   - Rely on previously persisted book/chapter metadata and reaction lookup against chapter results to keep marks anchored to real reading artifacts.
-  - Marks may now persist additive `chapter_number` and `primary_anchor` data even while they still expose `section_ref` for the current routed frontend.
+  - Marks may now persist additive `chapter_number` and `primary_source_ref` data even while they still expose `section_ref` for the current routed frontend.
 
 ## Aggregation Responsibilities
 - `reading-companion-backend/src/library/catalog.py`
@@ -185,10 +185,10 @@ Use `docs/api-contract.md` for exact fields and routes. Use this file to underst
   - Top-level `_runtime/` contains only cross-mechanism live shell state.
   - `_mechanisms/<mechanism_key>/` contains mechanism-private derived structures, runtime memory/checkpoints, diagnostics, and optional eval exports.
   - `_mechanisms/iterator_v1/derived/structure.json` remains a current-mechanism artifact that aggregation may still consult for `iterator_v1`-shaped section views and compatibility backfill.
-- Additive locus/anchor fields vs section compatibility
-  - Public aggregation may now expose richer additive fields such as `reading_locus`, `primary_anchor`, `related_anchors`, and `supersedes_reaction_id`.
+- Additive locus/source-ref fields vs section compatibility
+  - Public aggregation may now expose richer additive fields such as `reading_locus`, `primary_source_ref`, `related_source_refs`, and `supersedes_reaction_id`.
   - Existing `segment_ref` / `section_ref` fields remain temporary compatibility sidecars for current frontend surfaces.
-  - The later planned migration is to redesign chapter/detail and marks around chapter text plus anchored reactions instead of section-first containers.
+  - The later planned migration is to redesign chapter/detail and marks around chapter text plus source-referenced reactions instead of section-first containers.
 - Standard observability vs debug diagnostics
   - Shared `_runtime/runtime_shell.json`, `_runtime/activity.jsonl`, and `_runtime/checkpoint_summaries/*.json` are the standard-mode observability layer.
   - Mechanism-private full checkpoints remain standard-private because they are required for honest resume and baseline evaluation, even though they are not public API surfaces.

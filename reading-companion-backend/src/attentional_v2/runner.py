@@ -26,7 +26,6 @@ from src.reading_runtime.sequential_state import (
 from src.reading_runtime.shell_state import load_runtime_shell, save_runtime_shell
 from src.iterator_reader.llm_utils import ReaderLLMError, llm_invocation_scope, runtime_trace_context
 
-from .bridge import build_anchor_record
 from .evaluation import build_normalized_eval_bundle, persist_normalized_eval_bundle
 from .intake import process_sentence_intake  # noqa: F401 - legacy monkeypatch seam for older tests
 from .nodes import (
@@ -55,13 +54,14 @@ from .source_spans import (
     readable_paragraphs,
     resolve_end_anchor_text,
     source_locus_from_unit,
+    source_ref_from_span,
+    source_ref_from_unit,
     source_span_id,
     source_unit_from_span,
 )
 from .schemas import (
     ATTENTIONAL_V2_MECHANISM_VERSION,
     ATTENTIONAL_V2_POLICY_VERSION,
-    AnchorBankState,
     AnchoredReactionRecord,
     ConceptRegistryState,
     DetourNeed,
@@ -78,7 +78,6 @@ from .schemas import (
     UnitizeDecision,
     ReadUnitResult,
     ActiveAttention,
-    build_empty_anchor_bank,
     build_empty_continuation_capsule,
     build_empty_concept_registry,
     build_default_reader_policy,
@@ -101,16 +100,13 @@ from .slow_cycle import (
 )
 from .state_ops import (
     append_reaction_record,
-    apply_anchor_bank_operations,
     apply_concept_registry_operations,
     apply_thread_trace_operations,
     close_local_meaning_unit,
     apply_active_attention_operations,
-    upsert_anchor_record,
 )
 from .state_projection import build_navigation_context
 from .storage import (
-    anchor_bank_file,
     chapter_result_compatibility_file,
     checkpoints_dir,
     concept_registry_file,
@@ -627,7 +623,6 @@ def _default_builder(name: str) -> Callable[[], dict[str, object]]:
         "concept_registry": lambda: build_empty_concept_registry(mechanism_version=ATTENTIONAL_V2_MECHANISM_VERSION),
         "thread_trace": lambda: build_empty_thread_trace(mechanism_version=ATTENTIONAL_V2_MECHANISM_VERSION),
         "reflective_frames": lambda: build_empty_reflective_frames(mechanism_version=ATTENTIONAL_V2_MECHANISM_VERSION),
-        "anchor_bank": lambda: build_empty_anchor_bank(mechanism_version=ATTENTIONAL_V2_MECHANISM_VERSION),
         "knowledge_activations": lambda: build_empty_knowledge_activations(mechanism_version=ATTENTIONAL_V2_MECHANISM_VERSION),
         "reaction_records": lambda: build_empty_reaction_records(mechanism_version=ATTENTIONAL_V2_MECHANISM_VERSION),
         "reconsolidation_records": lambda: build_empty_reconsolidation_records(mechanism_version=ATTENTIONAL_V2_MECHANISM_VERSION),
@@ -681,6 +676,7 @@ def _load_runtime_bundle(output_dir: Path) -> dict[str, dict[str, object]]:
     legacy_paths = {
         "legacy_hot_state": runtime_dir(output_dir) / ("working_" + "pressure.json"),
         "anchor_memory": runtime_dir(output_dir) / "anchor_memory.json",
+        "anchor_bank": runtime_dir(output_dir) / "anchor_bank.json",
         "reflective_summaries": runtime_dir(output_dir) / "reflective_summaries.json",
     }
     new_state_paths = {
@@ -688,14 +684,13 @@ def _load_runtime_bundle(output_dir: Path) -> dict[str, dict[str, object]]:
         "concept_registry": concept_registry_file(output_dir),
         "thread_trace": thread_trace_file(output_dir),
         "reflective_frames": reflective_frames_file(output_dir),
-        "anchor_bank": anchor_bank_file(output_dir),
     }
     loaded_new = {name: load_json(path) for name, path in new_state_paths.items() if path.exists()}
     if not loaded_new and any(path.exists() for path in legacy_paths.values()):
         raise RuntimeError(
             "Pre-Phase C.3 attentional_v2 runtime state is no longer supported; rerun from a new-format state directory."
         )
-    for name in ("active_attention", "concept_registry", "thread_trace", "reflective_frames", "anchor_bank"):
+    for name in ("active_attention", "concept_registry", "thread_trace", "reflective_frames"):
         bundle[name] = loaded_new.get(name) or _default_builder(name)()
     return bundle
 
@@ -710,7 +705,6 @@ def _save_runtime_bundle(output_dir: Path, bundle: dict[str, dict[str, object]])
     save_json(concept_registry_file(output_dir), bundle["concept_registry"])
     save_json(thread_trace_file(output_dir), bundle["thread_trace"])
     save_json(reflective_frames_file(output_dir), bundle["reflective_frames"])
-    save_json(anchor_bank_file(output_dir), bundle["anchor_bank"])
     save_json(knowledge_activations_file(output_dir), bundle["knowledge_activations"])
     save_json(reaction_records_file(output_dir), bundle["reaction_records"])
     save_json(reconsolidation_records_file(output_dir), bundle["reconsolidation_records"])
@@ -843,7 +837,6 @@ def _reset_live_runtime(output_dir: Path) -> None:
         local_buffer_file(output_dir),
         local_continuity_file(output_dir),
         continuation_capsule_file(output_dir),
-        anchor_bank_file(output_dir),
         reflective_frames_file(output_dir),
         knowledge_activations_file(output_dir),
         reaction_records_file(output_dir),
@@ -856,6 +849,7 @@ def _reset_live_runtime(output_dir: Path) -> None:
         runtime_artifacts.runtime_shell_file(output_dir),
         runtime_artifacts.run_state_file(output_dir),
         runtime_artifacts.parse_state_file(output_dir),
+        runtime_dir(output_dir) / "anchor_bank.json",
         runtime_dir(output_dir) / "route_history.json",
         runtime_dir(output_dir) / "move_history.json",
     ):
@@ -1081,7 +1075,6 @@ def _build_detour_navigation_packet(
     concept_registry: ConceptRegistryState,
     thread_trace: ThreadTraceState,
     reflective_frames: ReflectiveFramesState,
-    anchor_bank: AnchorBankState,
     reaction_records: ReactionRecordsState,
     continuation_capsule: dict[str, object],
     local_continuity: LocalContinuityState,
@@ -1096,14 +1089,13 @@ def _build_detour_navigation_packet(
         concept_registry=concept_registry,
         thread_trace=thread_trace,
         reflective_frames=reflective_frames,
-        anchor_bank=anchor_bank,
         reaction_records=reaction_records,
         continuation_capsule=continuation_capsule,
     )
     refs = [
         dict(ref)
         for ref in carry_forward_context.get("refs", [])
-        if isinstance(ref, dict) and _clean_text(ref.get("kind")) in {"anchor", "concept", "thread"}
+        if isinstance(ref, dict) and _clean_text(ref.get("kind")) in {"source", "concept", "thread", "reaction"}
     ][:8]
     detour_trace_summary = [
         {
@@ -1197,8 +1189,6 @@ def _skill_result_trace(skill_result: dict[str, object]) -> dict[str, object]:
             result_summary["sentence_count"] = len(sentences)
             result_summary["start_sentence_id"] = _clean_text(result.get("start_sentence_id"))
             result_summary["end_sentence_id"] = _clean_text(result.get("end_sentence_id"))
-        if result.get("anchor_id"):
-            result_summary["anchor_id"] = _clean_text(result.get("anchor_id"))
     return {
         "skill_name": _clean_text(skill_result.get("skill_name")) if isinstance(skill_result, dict) else "",
         "status": _clean_text(skill_result.get("status")) if isinstance(skill_result, dict) else "error",
@@ -1226,11 +1216,6 @@ def _navigate_skill_catalog() -> list[dict[str, object]]:
             "skill_name": "source_window_fetch",
             "purpose": "Fetch visible source text for a bounded sentence range.",
             "arguments": {"card_id": "optional", "start_sentence_id": "optional", "end_sentence_id": "optional"},
-        },
-        {
-            "skill_name": "anchor_resolve",
-            "purpose": "Resolve a known anchor or sentence handle into source-grounded context.",
-            "arguments": {"anchor_id": "optional", "sentence_id": "optional", "ref_id": "optional"},
         },
     ]
 
@@ -1342,9 +1327,6 @@ def _skill_results_prompt_summary(skill_results: list[dict[str, object]]) -> lis
                 ]
             if isinstance(result.get("source_window"), dict):
                 compact_result["source_window"] = result.get("source_window")
-            if result.get("anchor_id"):
-                compact_result["anchor_id"] = _clean_text(result.get("anchor_id"))
-                compact_result["quote"] = _clean_text(result.get("quote"))
         summary.append(
             {
                 "skill_name": _clean_text(skill_result.get("skill_name")),
@@ -1627,7 +1609,6 @@ def navigate_choose_next_unit(
     concept_registry: ConceptRegistryState,
     thread_trace: ThreadTraceState,
     reflective_frames: ReflectiveFramesState,
-    anchor_bank: AnchorBankState,
     reaction_records: ReactionRecordsState,
     local_continuity: LocalContinuityState,
     reader_policy: ReaderPolicy,
@@ -1664,7 +1645,6 @@ def navigate_choose_next_unit(
             concept_registry=concept_registry,
             thread_trace=thread_trace,
             reflective_frames=reflective_frames,
-            anchor_bank=anchor_bank,
             reaction_records=reaction_records,
         )
         budget_state = {
@@ -1775,7 +1755,6 @@ def navigate_choose_next_unit(
         concept_registry=concept_registry,
         thread_trace=thread_trace,
         reflective_frames=reflective_frames,
-        anchor_bank=anchor_bank,
         reaction_records=reaction_records,
         continuation_capsule=continuation_capsule,
         local_continuity=local_continuity,
@@ -1845,7 +1824,6 @@ def navigate_choose_next_unit(
                 sentence_lookup=sentence_lookup,
                 chapter_lookup=chapter_lookup,
                 mainline_cursor=legacy_skill_cursor,  # type: ignore[arg-type]
-                anchor_bank=anchor_bank,
                 current_scope=current_scope,
             )
             skill_results_so_far.append(dict(skill_result))
@@ -1895,62 +1873,51 @@ def navigate_choose_next_unit(
     }
 
 
-def _build_current_anchor_from_read_result(
+def _source_ref_from_surfaced_reaction(
     *,
     surfaced_reaction: dict[str, object] | None,
-    chosen_unit_sentences: list[dict[str, object]],
-    focal_sentence: dict[str, object],
     source_unit: dict[str, object] | None = None,
     reading_impression: str = "",
 ) -> dict[str, object]:
-    """Build one deterministic current anchor from a read-owned surfaced reaction."""
+    """Build one deterministic source ref from a read-owned surfaced reaction."""
 
-    anchor_quote = _clean_text((surfaced_reaction or {}).get("anchor_quote"))
-    why_it_mattered = _clean_text((surfaced_reaction or {}).get("content")) or _clean_text(reading_impression)
+    source_quote = _clean_text((surfaced_reaction or {}).get("source_quote") or (surfaced_reaction or {}).get("anchor_quote"))
     if isinstance(source_unit, dict) and source_unit:
-        source_text = _clean_text(source_unit.get("source_text"))
-        if not anchor_quote:
-            anchor_quote = source_text[:220]
-        source_span = source_unit.get("source_span")
-        locator = {
-            "source_span": dict(source_span) if isinstance(source_span, dict) else {},
-            "paragraph_slices": [
-                dict(item)
-                for item in source_unit.get("paragraph_slices", [])
-                if isinstance(item, dict)
-            ],
-        }
-        return build_anchor_record(
-            sentence_start_id="",
-            sentence_end_id="",
-            quote=anchor_quote,
-            locator=locator,
-            anchor_kind="unit_evidence",
-            why_it_mattered=why_it_mattered,
-            anchor_id=f"anchor:{_clean_text(source_unit.get('source_span_id')) or source_span_id(locator.get('source_span'))}",
-        )
-
-    anchor_sentence = None
-    if anchor_quote:
-        for sentence in chosen_unit_sentences:
-            sentence_text = _clean_text(sentence.get("text"))
-            if anchor_quote in sentence_text:
-                anchor_sentence = sentence
-                break
-
-    if anchor_sentence is None:
-        anchor_sentence = focal_sentence
-        if not anchor_quote:
-            anchor_quote = _clean_text(focal_sentence.get("text"))
-
-    return build_anchor_record(
-        sentence_start_id=_clean_text(anchor_sentence.get("sentence_id")),
-        sentence_end_id=_clean_text(anchor_sentence.get("sentence_id")),
-        quote=anchor_quote or _clean_text(anchor_sentence.get("text")),
-        locator=dict(anchor_sentence.get("locator", {})) if isinstance(anchor_sentence.get("locator"), dict) else {},
-        anchor_kind="unit_evidence",
-        why_it_mattered=why_it_mattered,
+        return source_ref_from_unit(source_unit, quote=source_quote, role="reaction_anchor")
+    return source_ref_from_span(
+        {},
+        quote=source_quote or _clean_text(reading_impression),
+        role="reaction_anchor",
+        resolution={"status": "missing_source_unit"},
     )
+
+
+def _normalize_memory_uptake_ops_source_refs(
+    memory_uptake_ops: object,
+    *,
+    source_unit: dict[str, object] | None,
+) -> list[dict[str, object]]:
+    """Resolve read-proposed source quotes into inline source refs before settlement."""
+
+    if not isinstance(memory_uptake_ops, list):
+        return []
+    normalized: list[dict[str, object]] = []
+    for item in memory_uptake_ops:
+        if not isinstance(item, dict):
+            continue
+        operation = dict(item)
+        payload = dict(operation.get("payload", {})) if isinstance(operation.get("payload"), dict) else {}
+        if isinstance(payload.get("source_refs"), list):
+            operation["payload"] = payload
+            normalized.append(operation)
+            continue
+        source_quote = _clean_text(payload.get("source_quote") or payload.get("quote") or payload.get("evidence_quote"))
+        source_role = _clean_text(payload.get("source_role")) or "support"
+        if isinstance(source_unit, dict) and source_unit:
+            payload["source_refs"] = [source_ref_from_unit(source_unit, quote=source_quote, role=source_role)]
+        operation["payload"] = payload
+        normalized.append(operation)
+    return normalized
 
 
 def _persist_surfaced_reactions(
@@ -1962,14 +1929,13 @@ def _persist_surfaced_reactions(
     chapter_ref: str,
     local_buffer: LocalBufferState,
     reaction_records: ReactionRecordsState,
-    anchor_bank: AnchorBankState,
     output_dir: Path,
     source_unit: dict[str, object] | None = None,
-) -> tuple[ReactionRecordsState, AnchorBankState, list[AnchoredReactionRecord], dict[str, object] | None]:
+) -> tuple[ReactionRecordsState, list[AnchoredReactionRecord], dict[str, object] | None]:
     """Persist read-owned surfaced reactions through one canonical builder path."""
 
     emitted_reactions: list[AnchoredReactionRecord] = []
-    current_anchor = None
+    current_source_ref = None
     surfaced_reactions = [
         dict(item)
         for item in read_result.get("surfaced_reactions", [])
@@ -1977,20 +1943,18 @@ def _persist_surfaced_reactions(
     ]
     chapter_reaction_count = len(reaction_records_for_chapter(reaction_records, chapter_ref=chapter_ref))
     for index, surfaced_reaction in enumerate(surfaced_reactions, start=1):
-        current_anchor = _build_current_anchor_from_read_result(
+        current_source_ref = _source_ref_from_surfaced_reaction(
             surfaced_reaction=surfaced_reaction,
-            chosen_unit_sentences=chosen_unit_sentences,
-            focal_sentence=focal_sentence,
             source_unit=source_unit,
             reading_impression=_clean_text(read_result.get("reading_impression")),
         )
         emitted_at = _clean_text(source_unit.get("source_span_id")) if isinstance(source_unit, dict) else ""
         emitted_reaction = build_reaction_record_from_surfaced_reaction(
             reaction=surfaced_reaction,
-            primary_anchor=current_anchor,
+            primary_source_ref=current_source_ref,
             chapter_id=chapter_id,
             chapter_ref=chapter_ref,
-            emitted_at_sentence_id=emitted_at or _sentence_id(focal_sentence),
+            emitted_at_source_span_id=emitted_at or _sentence_id(focal_sentence),
             compatibility_section_ref=_compatibility_section_ref_for_source(chapter_id, source_unit)
             if isinstance(source_unit, dict) and source_unit
             else _compatibility_section_ref(chapter_id, focal_sentence),
@@ -1998,7 +1962,6 @@ def _persist_surfaced_reactions(
         )
         if emitted_reaction is None:
             continue
-        anchor_bank = upsert_anchor_record(anchor_bank, current_anchor)  # type: ignore[assignment]
         reaction_records = append_reaction_record(reaction_records, emitted_reaction)
         emitted_reactions.append(emitted_reaction)
         append_activity_event(
@@ -2014,7 +1977,7 @@ def _persist_surfaced_reactions(
                 "segment_ref": _compatibility_section_ref_for_source(chapter_id, source_unit)
                 if isinstance(source_unit, dict) and source_unit
                 else _compatibility_section_ref(chapter_id, focal_sentence),
-                "anchor_quote": _clean_text(emitted_reaction.get("primary_anchor", {}).get("quote")),
+                "source_quote": _clean_text(emitted_reaction.get("source_quote")),
                 "reading_locus": {
                     **source_locus_from_unit(source_unit),
                     "chapter_id": chapter_id,
@@ -2027,7 +1990,7 @@ def _persist_surfaced_reactions(
                 "current_excerpt": _clean_text(source_unit.get("source_text") if isinstance(source_unit, dict) else focal_sentence.get("text"))[:220],
             },
         )
-    return reaction_records, anchor_bank, emitted_reactions, current_anchor
+    return reaction_records, emitted_reactions, current_source_ref
 
 
 def _build_runtime_continuation_capsule(
@@ -2038,7 +2001,6 @@ def _build_runtime_continuation_capsule(
     concept_registry: ConceptRegistryState,
     thread_trace: ThreadTraceState,
     reflective_frames: ReflectiveFramesState,
-    anchor_bank: AnchorBankState,
     reaction_records: ReactionRecordsState,
 ) -> dict[str, object]:
     """Build the persisted continuation capsule from the current live primary state."""
@@ -2051,7 +2013,6 @@ def _build_runtime_continuation_capsule(
         concept_registry=concept_registry,
         thread_trace=thread_trace,
         reflective_frames=reflective_frames,
-        anchor_bank=anchor_bank,
         reaction_records=reaction_records,
     )
     capsule = carry_forward_context.get("continuation_capsule", {})
@@ -2070,7 +2031,6 @@ def _run_read_with_context_loop(
     concept_registry: ConceptRegistryState,
     thread_trace: ThreadTraceState,
     reflective_frames: ReflectiveFramesState,
-    anchor_bank: AnchorBankState,
     knowledge_activations: KnowledgeActivationsState,
     reaction_records: ReactionRecordsState,
     reader_policy: ReaderPolicy,
@@ -2098,7 +2058,6 @@ def _run_read_with_context_loop(
         concept_registry=concept_registry,
         thread_trace=thread_trace,
         reflective_frames=reflective_frames,
-        anchor_bank=anchor_bank,
         reaction_records=reaction_records,
         continuation_capsule=continuation_capsule,
     )
@@ -2125,6 +2084,10 @@ def _run_read_with_context_loop(
             "memory_uptake_ops": [],
             "detour_need": None,
         }
+    read_result["memory_uptake_ops"] = _normalize_memory_uptake_ops_source_refs(
+        read_result.get("memory_uptake_ops", []),
+        source_unit=current_unit_source,
+    )
 
     record_read(
         output_dir,
@@ -2151,7 +2114,6 @@ def _settle_next_unit(
     concept_registry: ConceptRegistryState,
     thread_trace: ThreadTraceState,
     reflective_frames: ReflectiveFramesState,
-    anchor_bank: AnchorBankState,
     knowledge_activations: KnowledgeActivationsState,
     reaction_records: ReactionRecordsState,
     reconsolidation_records: dict[str, object],
@@ -2181,13 +2143,12 @@ def _settle_next_unit(
             "concept_registry": concept_registry,
             "thread_trace": thread_trace,
             "reflective_frames": reflective_frames,
-            "anchor_bank": anchor_bank,
             "knowledge_activations": knowledge_activations,
             "reaction_records": reaction_records,
             "reconsolidation_records": reconsolidation_records,
             "bundle": bundle,
             "emitted_reactions": [],
-            "current_anchor": None,
+            "current_source_ref": None,
             "focal_sentence": {},
             "units_read_delta": 0,
             "touched_chapter_ids": [],
@@ -2213,13 +2174,12 @@ def _settle_next_unit(
             "concept_registry": concept_registry,
             "thread_trace": thread_trace,
             "reflective_frames": reflective_frames,
-            "anchor_bank": anchor_bank,
             "knowledge_activations": knowledge_activations,
             "reaction_records": reaction_records,
             "reconsolidation_records": reconsolidation_records,
             "bundle": bundle,
             "emitted_reactions": [],
-            "current_anchor": None,
+            "current_source_ref": None,
             "focal_sentence": {},
             "units_read_delta": 0,
             "touched_chapter_ids": [],
@@ -2311,7 +2271,6 @@ def _settle_next_unit(
         concept_registry=concept_registry,
         thread_trace=thread_trace,
         reflective_frames=reflective_frames,
-        anchor_bank=anchor_bank,
         knowledge_activations=knowledge_activations,
         reaction_records=reaction_records,
         reader_policy=reader_policy,
@@ -2355,7 +2314,6 @@ def _settle_next_unit(
     before_active_attention = active_attention
     before_concept_registry = concept_registry
     before_thread_trace = thread_trace
-    before_anchor_bank = anchor_bank
     before_reaction_records = reaction_records
     active_attention = apply_active_attention_operations(
         active_attention,
@@ -2369,12 +2327,11 @@ def _settle_next_unit(
         thread_trace,
         memory_uptake_ops,
     )
-    anchor_bank = apply_anchor_bank_operations(anchor_bank, memory_uptake_ops)
     emitted_detour_need = isinstance(read_result.get("detour_need"), dict)
     if emitted_detour_need:
         local_continuity = _apply_detour_need(local_continuity, read_result.get("detour_need"))  # type: ignore[arg-type]
 
-    reaction_records, anchor_bank, emitted_reactions, current_anchor = _persist_surfaced_reactions(
+    reaction_records, emitted_reactions, current_source_ref = _persist_surfaced_reactions(
         read_result=read_result,
         chosen_unit_sentences=chosen_unit_sentences,
         focal_sentence=focal_sentence,
@@ -2383,7 +2340,6 @@ def _settle_next_unit(
         chapter_ref=chapter_ref,
         local_buffer=local_buffer,
         reaction_records=reaction_records,
-        anchor_bank=anchor_bank,
         output_dir=output_dir,
     )
     record_settlement(
@@ -2403,8 +2359,6 @@ def _settle_next_unit(
         after_concept_registry=concept_registry,
         before_thread_trace=before_thread_trace,
         after_thread_trace=thread_trace,
-        before_anchor_bank=before_anchor_bank,
-        after_anchor_bank=anchor_bank,
         before_reaction_records=before_reaction_records,
         after_reaction_records=reaction_records,
         emitted_reaction_ids=[_clean_text(item.get("reaction_id")) for item in emitted_reactions],
@@ -2468,14 +2422,12 @@ def _settle_next_unit(
                 concept_registry=concept_registry,
                 thread_trace=thread_trace,
                 reflective_frames=reflective_frames,
-                anchor_bank=anchor_bank,
                 reaction_records=reaction_records,
             ),
             "active_attention": active_attention,
             "concept_registry": concept_registry,
             "thread_trace": thread_trace,
             "reflective_frames": reflective_frames,
-            "anchor_bank": anchor_bank,
             "knowledge_activations": knowledge_activations,
             "reaction_records": reaction_records,
             "reconsolidation_records": reconsolidation_records,
@@ -2497,12 +2449,11 @@ def _settle_next_unit(
         concept_registry=concept_registry,
         thread_trace=thread_trace,
         reflective_frames=reflective_frames,
-        anchor_bank=anchor_bank,
         reaction_records=reaction_records,
     )
     active_refs = {
         "reaction_id": _clean_text(emitted_reactions[-1].get("reaction_id")) if emitted_reactions else "",
-        "anchor_id": _clean_text(current_anchor.get("anchor_id")) if isinstance(current_anchor, dict) else "",
+        "source_span_id": _clean_text(current_source_ref.get("source_span_id")) if isinstance(current_source_ref, dict) else "",
     }
     persist_reading_position(
         output_dir,
@@ -2522,13 +2473,12 @@ def _settle_next_unit(
         "concept_registry": concept_registry,
         "thread_trace": thread_trace,
         "reflective_frames": reflective_frames,
-        "anchor_bank": anchor_bank,
         "knowledge_activations": knowledge_activations,
         "reaction_records": reaction_records,
         "reconsolidation_records": reconsolidation_records,
         "bundle": bundle,
         "emitted_reactions": emitted_reactions,
-        "current_anchor": current_anchor,
+        "current_source_ref": current_source_ref,
         "focal_sentence": focal_sentence,
         "source_cursor": dict(source_span.get("end_cursor", {})) if is_source_mainline and isinstance(source_span.get("end_cursor"), dict) else {},
         "source_span": source_span if is_source_mainline else {},
@@ -2661,7 +2611,6 @@ def run_reading_runner(request: ReadRequest, mechanism: MechanismInfo) -> ReadRe
         concept_registry: ConceptRegistryState = bundle["concept_registry"]  # type: ignore[assignment]
         thread_trace: ThreadTraceState = bundle["thread_trace"]  # type: ignore[assignment]
         reflective_frames: ReflectiveFramesState = bundle["reflective_frames"]  # type: ignore[assignment]
-        anchor_bank: AnchorBankState = bundle["anchor_bank"]  # type: ignore[assignment]
         knowledge_activations: KnowledgeActivationsState = bundle["knowledge_activations"]  # type: ignore[assignment]
         reaction_records: ReactionRecordsState = bundle["reaction_records"]  # type: ignore[assignment]
         reconsolidation_records = bundle["reconsolidation_records"]
@@ -2777,7 +2726,6 @@ def run_reading_runner(request: ReadRequest, mechanism: MechanismInfo) -> ReadRe
                         concept_registry=concept_registry,
                         thread_trace=thread_trace,
                         reflective_frames=reflective_frames,
-                        anchor_bank=anchor_bank,
                         reaction_records=reaction_records,
                         local_continuity=local_continuity,
                         reader_policy=reader_policy,
@@ -2810,7 +2758,6 @@ def run_reading_runner(request: ReadRequest, mechanism: MechanismInfo) -> ReadRe
                     concept_registry=concept_registry,
                     thread_trace=thread_trace,
                     reflective_frames=reflective_frames,
-                    anchor_bank=anchor_bank,
                     knowledge_activations=knowledge_activations,
                     reaction_records=reaction_records,
                     reconsolidation_records=reconsolidation_records,
@@ -2834,7 +2781,6 @@ def run_reading_runner(request: ReadRequest, mechanism: MechanismInfo) -> ReadRe
                 concept_registry = settled_unit["concept_registry"]  # type: ignore[assignment]
                 thread_trace = settled_unit["thread_trace"]  # type: ignore[assignment]
                 reflective_frames = settled_unit["reflective_frames"]  # type: ignore[assignment]
-                anchor_bank = settled_unit["anchor_bank"]  # type: ignore[assignment]
                 knowledge_activations = settled_unit["knowledge_activations"]  # type: ignore[assignment]
                 reaction_records = settled_unit["reaction_records"]  # type: ignore[assignment]
                 reconsolidation_records = settled_unit["reconsolidation_records"]  # type: ignore[assignment]
@@ -2872,7 +2818,6 @@ def run_reading_runner(request: ReadRequest, mechanism: MechanismInfo) -> ReadRe
                     concept_registry=concept_registry,
                     thread_trace=thread_trace,
                     reflective_frames=reflective_frames,
-                    anchor_bank=anchor_bank,
                     reaction_records=reaction_records,
                     local_continuity=local_continuity,
                     reader_policy=reader_policy,
@@ -2903,7 +2848,6 @@ def run_reading_runner(request: ReadRequest, mechanism: MechanismInfo) -> ReadRe
                     concept_registry=concept_registry,
                     thread_trace=thread_trace,
                     reflective_frames=reflective_frames,
-                    anchor_bank=anchor_bank,
                     knowledge_activations=knowledge_activations,
                     reaction_records=reaction_records,
                     reconsolidation_records=reconsolidation_records,
@@ -2927,7 +2871,6 @@ def run_reading_runner(request: ReadRequest, mechanism: MechanismInfo) -> ReadRe
                 concept_registry = detour_result["concept_registry"]  # type: ignore[assignment]
                 thread_trace = detour_result["thread_trace"]  # type: ignore[assignment]
                 reflective_frames = detour_result["reflective_frames"]  # type: ignore[assignment]
-                anchor_bank = detour_result["anchor_bank"]  # type: ignore[assignment]
                 knowledge_activations = detour_result["knowledge_activations"]  # type: ignore[assignment]
                 reaction_records = detour_result["reaction_records"]  # type: ignore[assignment]
                 reconsolidation_records = detour_result["reconsolidation_records"]  # type: ignore[assignment]
@@ -2952,29 +2895,21 @@ def run_reading_runner(request: ReadRequest, mechanism: MechanismInfo) -> ReadRe
                 },
             )
             last_paragraph = readable[-1] if readable else {}
-            chapter_end_source_id = f"src:c{chapter_id}:chapter-end"
-            chapter_end_anchor = build_anchor_record(
-                sentence_start_id="",
-                sentence_end_id="",
+            chapter_end_source_ref = source_ref_from_span(
+                end_source_unit.get("source_span") if isinstance(end_source_unit.get("source_span"), dict) else {},
                 quote=_clean_text(last_paragraph.get("text"))[-220:] if isinstance(last_paragraph, dict) else chapter_ref,
-                locator={
-                    "source_cursor": dict(end_cursor),
-                    "source_span": dict(end_source_unit.get("source_span", {})),
-                },
-                anchor_kind="chapter_end",
-                why_it_mattered="chapter-end consolidation anchor",
-                anchor_id=f"anchor:{chapter_end_source_id}",
+                role="chapter_end",
+                resolution={"status": "chapter_end"},
             )
             phase6 = run_phase6_chapter_cycle(
                 book_id=runtime_artifacts.book_id_from_output_dir(output_dir),
                 chapter=chapter,
                 meaning_units_in_chapter=meaning_units_in_chapter,
-                chapter_end_anchor=chapter_end_anchor,
+                chapter_end_source_ref=chapter_end_source_ref,
                 active_attention=active_attention,
                 concept_registry=concept_registry,
                 thread_trace=thread_trace,
                 reflective_frames=reflective_frames,
-                anchor_bank=anchor_bank,
                 knowledge_activations=knowledge_activations,
                 reaction_records=reaction_records,
                 reader_policy=reader_policy,
@@ -2988,7 +2923,6 @@ def run_reading_runner(request: ReadRequest, mechanism: MechanismInfo) -> ReadRe
             concept_registry = phase6["concept_registry"]  # type: ignore[assignment]
             thread_trace = phase6["thread_trace"]  # type: ignore[assignment]
             reflective_frames = phase6["reflective_frames"]  # type: ignore[assignment]
-            anchor_bank = phase6["anchor_bank"]  # type: ignore[assignment]
             knowledge_activations = phase6["knowledge_activations"]  # type: ignore[assignment]
             reaction_records = phase6["reaction_records"]  # type: ignore[assignment]
             bundle.update(
@@ -3002,14 +2936,12 @@ def run_reading_runner(request: ReadRequest, mechanism: MechanismInfo) -> ReadRe
                         concept_registry=concept_registry,
                         thread_trace=thread_trace,
                         reflective_frames=reflective_frames,
-                        anchor_bank=anchor_bank,
                         reaction_records=reaction_records,
                     ),
                     "active_attention": active_attention,
                     "concept_registry": concept_registry,
                     "thread_trace": thread_trace,
                     "reflective_frames": reflective_frames,
-                    "anchor_bank": anchor_bank,
                     "knowledge_activations": knowledge_activations,
                     "reaction_records": reaction_records,
                     "reconsolidation_records": reconsolidation_records,

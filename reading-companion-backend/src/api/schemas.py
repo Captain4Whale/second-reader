@@ -133,19 +133,41 @@ class TextSpanLocator(ApiModel):
     char_end: Optional[int] = Field(default=None, description="Character offset where the anchored text span ends when known.")
 
 
-class ReactionAnchor(ApiModel):
-    """Anchor payload that preserves the mechanism-authored focal source span."""
+class SourceCursor(ApiModel):
+    """Paragraph-offset cursor in the canonical book substrate."""
 
-    quote: str = Field(description="Quoted source text used as the anchor for this thought.")
-    sentence_start_id: Optional[str] = Field(default=None, description="Shared sentence id where the anchor span begins when known.")
-    sentence_end_id: Optional[str] = Field(default=None, description="Shared sentence id where the anchor span ends when known.")
-    locator: Optional[TextSpanLocator] = Field(default=None, description="Shared text-span locator for the anchor when known.")
+    chapter_id: Optional[int] = Field(default=None, description="Stable parsed-book chapter key.")
+    chapter_ref: str = Field(default="", description="Human-readable chapter reference.")
+    paragraph_index: int = Field(description="Zero-based paragraph index inside the chapter.")
+    char_offset: int = Field(description="Zero-based character offset inside the paragraph.")
+
+
+class SourceSpan(ApiModel):
+    """End-exclusive source span addressed by paragraph-offset cursors."""
+
+    source_span_id: Optional[str] = Field(default=None, description="Deterministic id derived from the source span coordinates.")
+    chapter_id: Optional[int] = Field(default=None, description="Stable parsed-book chapter key.")
+    chapter_ref: str = Field(default="", description="Human-readable chapter reference.")
+    start_cursor: SourceCursor = Field(description="Inclusive paragraph-offset start cursor.")
+    end_cursor: SourceCursor = Field(description="Exclusive paragraph-offset end cursor.")
+
+
+class SourceRef(ApiModel):
+    """Inline source citation carried by reactions and memory-derived payloads."""
+
+    source_span_id: str = Field(description="Deterministic id derived from the source span coordinates.")
+    source_span: Optional[SourceSpan] = Field(default=None, description="Paragraph-offset source span when available.")
+    quote: str = Field(description="Quoted source text for this citation.")
+    role: str = Field(description="Citation role, such as primary, support, or chapter_end.")
+    resolution: Optional[dict[str, object]] = Field(default=None, description="Deterministic quote-resolution status when available.")
 
 
 class ReadingLocus(ApiModel):
     """Current reading locus projected from mechanism truth into a shared public shape."""
 
-    kind: Literal["chapter", "sentence", "span"] = Field(description="Granularity of the current reading locus.")
+    kind: Literal["chapter", "sentence", "span", "source_cursor", "source_span"] = Field(
+        description="Granularity of the current reading locus."
+    )
     chapter_id: Optional[int] = Field(
         default=None,
         description="Stable parsed-book chapter key for the current locus when known.",
@@ -157,6 +179,8 @@ class ReadingLocus(ApiModel):
     chapter_ref: Optional[str] = Field(default=None, description="Human-readable chapter reference when known.")
     sentence_start_id: Optional[str] = Field(default=None, description="Shared sentence id where the current focus begins when known.")
     sentence_end_id: Optional[str] = Field(default=None, description="Shared sentence id where the current focus ends when known.")
+    start_cursor: Optional[SourceCursor] = Field(default=None, description="Paragraph-offset cursor where the current focus begins.")
+    end_cursor: Optional[SourceCursor] = Field(default=None, description="Paragraph-offset cursor where the current focus ends.")
     locator: Optional[TextSpanLocator] = Field(default=None, description="Source-span locator for the current focus when known.")
     excerpt: Optional[str] = Field(default=None, description="Current focal excerpt when the mechanism can expose it directly.")
 
@@ -191,7 +215,7 @@ class FeaturedReactionPreview(ApiModel):
 
     reaction_id: int = Field(description="Stable public integer identifier for the reaction.")
     type: ReactionType = Field(description="Reaction type key.")
-    anchor_quote: str = Field(description="Quoted anchor text from the source book.")
+    source_quote: str = Field(description="Quoted source text from the source book.")
     content: str = Field(description="AI-authored reaction text shown to the user.")
     book_id: int = Field(description="Stable public integer identifier of the book that owns this reaction.")
     chapter_id: int = Field(description="Stable parsed-book chapter key that owns this reaction.")
@@ -205,13 +229,13 @@ class FeaturedReactionPreview(ApiModel):
         default=None,
         description="Reader locator used to jump to the source passage for this reaction.",
     )
-    primary_anchor: Optional[ReactionAnchor] = Field(
+    primary_source_ref: Optional[SourceRef] = Field(
         default=None,
-        description="Mechanism-authored primary anchor projected upward without rewriting the original thought object.",
+        description="Mechanism-authored primary source reference projected upward without rewriting the original thought object.",
     )
-    related_anchors: list[ReactionAnchor] = Field(
+    related_source_refs: list[SourceRef] = Field(
         default_factory=list,
-        description="Optional secondary anchors linked to the same reaction.",
+        description="Optional secondary source references linked to the same reaction.",
     )
     supersedes_reaction_id: Optional[int] = Field(
         default=None,
@@ -224,13 +248,13 @@ class ActivityReactionPreview(ApiModel):
 
     reaction_id: int = Field(description="Stable public integer identifier for the reaction.")
     type: ReactionType = Field(description="Reaction type key.")
-    anchor_quote: str = Field(description="Quoted anchor text from the source book.")
+    source_quote: str = Field(description="Quoted source text from the source book.")
     content: str = Field(description="AI-authored reaction text shown to the user.")
     section_ref: str = Field(description="Human-readable section reference, such as 3.2.")
     search_query: Optional[str] = Field(default=None, description="Search query attached to the reaction when applicable.")
-    primary_anchor: Optional[ReactionAnchor] = Field(
+    primary_source_ref: Optional[SourceRef] = Field(
         default=None,
-        description="Mechanism-authored primary anchor for this visible reaction when available.",
+        description="Mechanism-authored primary source reference for this visible reaction when available.",
     )
     supersedes_reaction_id: Optional[int] = Field(
         default=None,
@@ -525,8 +549,8 @@ class ActivityEvent(ApiModel):
         default=None,
         description="Public reaction id of the active durable thought referenced by the event when available.",
     )
-    anchor_quote: Optional[str] = Field(default=None, description="Sentence-level anchor quote used to group visible reactions when available.")
-    highlight_quote: Optional[str] = Field(default=None, description="High-signal anchor quote attached to the event when available.")
+    source_quote: Optional[str] = Field(default=None, description="Source quote used to group visible reactions when available.")
+    highlight_quote: Optional[str] = Field(default=None, description="High-signal source quote attached to the event when available.")
     reaction_types: list[ReactionType] = Field(description="Reaction types represented in this event.")
     search_query: Optional[str] = Field(default=None, description="Search query attached to the event when applicable.")
     visible_reactions: list[ActivityReactionPreview] = Field(description="Visible reactions grouped under the same sentence-level mindstream event.")
@@ -596,20 +620,20 @@ class ReactionCard(ApiModel):
 
     reaction_id: int = Field(description="Stable public integer reaction identifier.")
     type: ReactionType = Field(description="Reaction type key.")
-    anchor_quote: str = Field(description="Anchor quote taken from the source book.")
+    source_quote: str = Field(description="Source quote taken from the source book.")
     content: str = Field(description="Full AI reaction content.")
     search_query: Optional[str] = Field(default=None, description="Search query used to gather additional evidence when applicable.")
     search_results: list[SearchHit] = Field(description="External search results attached to the reaction.")
     target_locator: Optional[ReactionTargetLocator] = Field(default=None, description="Reader locator for jumping to the source passage.")
     section_ref: str = Field(description="Human-readable parent section reference.")
     section_summary: str = Field(description="One-line summary of the parent section.")
-    primary_anchor: Optional[ReactionAnchor] = Field(
+    primary_source_ref: Optional[SourceRef] = Field(
         default=None,
-        description="Mechanism-authored primary anchor projected into the current chapter card shape.",
+        description="Mechanism-authored primary source reference projected into the current chapter card shape.",
     )
-    related_anchors: list[ReactionAnchor] = Field(
+    related_source_refs: list[SourceRef] = Field(
         default_factory=list,
-        description="Optional secondary anchors linked to the same reaction.",
+        description="Optional secondary source references linked to the same reaction.",
     )
     supersedes_reaction_id: Optional[int] = Field(
         default=None,
@@ -715,10 +739,10 @@ class MarkRecord(ApiModel):
     reaction_type: ReactionType = Field(description="Reaction type key for the marked reaction.")
     mark_type: MarkType = Field(description="User-selected mark value.")
     reaction_excerpt: str = Field(description="Short excerpt of the reaction content used in marks views.")
-    anchor_quote: str = Field(description="Anchor quote used to recall the marked passage.")
-    primary_anchor: Optional[ReactionAnchor] = Field(
+    source_quote: str = Field(description="Source quote used to recall the marked passage.")
+    primary_source_ref: Optional[SourceRef] = Field(
         default=None,
-        description="Mechanism-authored primary anchor preserved on the mark when available.",
+        description="Mechanism-authored primary source reference preserved on the mark when available.",
     )
     supersedes_reaction_id: Optional[int] = Field(
         default=None,

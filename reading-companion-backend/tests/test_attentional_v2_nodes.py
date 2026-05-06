@@ -41,7 +41,7 @@ def _navigation_context() -> dict[str, object]:
         "active_focus_digest": {"recent_reactions": []},
         "concept_digest": [],
         "thread_digest": [],
-        "anchor_bank_digest": {"active_anchors": []},
+        "source_ref_digest": [],
         "refs": [],
     }
 
@@ -398,24 +398,24 @@ def test_read_unit_filters_unanchored_surface_and_uses_naturalized_contract(tmp_
             "reading_impression": "The line flips the frame.",
             "surfaced_reactions": [
                 {
-                    "anchor_quote": "Alpha hinge.",
+                    "source_quote": "Alpha hinge.",
                     "content": "That phrase suddenly snaps the claim into place.",
                     "prior_link": {
-                        "ref_ids": ["anchor:a-1"],
+                        "ref_ids": ["source:src:c1:p1@0-p1@12"],
                         "relation": "callback",
                         "note": "It answers the earlier thread.",
                     },
                 },
                 {
-                    "anchor_quote": "Beta consequence.",
+                        "source_quote": "Beta consequence.",
                     "content": "This pushes further than c1-s1135.",
                 },
                 {
-                    "anchor_quote": "Beta consequence.",
-                    "content": "This answers anchor:a-1 directly.",
+                        "source_quote": "Beta consequence.",
+                    "content": "This answers source:src:c1:p1@0-p1@12 directly.",
                 },
                 {
-                    "anchor_quote": "Quote outside unit",
+                        "source_quote": "Quote outside unit",
                     "content": "This one should be dropped.",
                 },
             ],
@@ -439,7 +439,7 @@ def test_read_unit_filters_unanchored_surface_and_uses_naturalized_contract(tmp_
         carry_forward_context={
             "packet_version": STATE_PACKET_VERSION,
             "refs": [
-                {"ref_id": "anchor:a-1", "kind": "anchor"},
+                {"ref_id": "source:src:c1:p1@0-p1@12", "kind": "source"},
             ],
         },
         reader_policy=build_default_reader_policy(),
@@ -452,10 +452,10 @@ def test_read_unit_filters_unanchored_surface_and_uses_naturalized_contract(tmp_
     assert result["reading_impression"] == "The line flips the frame."
     assert result["surfaced_reactions"] == [
         {
-            "anchor_quote": "Alpha hinge.",
+                "source_quote": "Alpha hinge.",
             "content": "That phrase suddenly snaps the claim into place.",
             "prior_link": {
-                "ref_ids": ["anchor:a-1"],
+                    "ref_ids": ["source:src:c1:p1@0-p1@12"],
                 "relation": "callback",
                 "note": "It answers the earlier thread.",
             },
@@ -472,7 +472,7 @@ def test_read_unit_filters_unanchored_surface_and_uses_naturalized_contract(tmp_
     assert "Explicit source structures can be worth remembering" in captured["system_prompt"]
     assert "Keep proportion around thin structural units." in captured["system_prompt"]
     assert "Do not inflate a bare heading or structural cue" in captured["system_prompt"]
-    assert "Choose each `anchor_quote` as the smallest self-sufficient span" in captured["system_prompt"]
+    assert "Choose each `source_quote` as the smallest self-sufficient span" in captured["system_prompt"]
     assert "If a sentence would lose its meaning when isolated" in captured["system_prompt"]
     assert "Do not let one sharper later sentence erase an earlier framing line" in captured["system_prompt"]
     assert "If the unit contains multiple independently valuable local triggers" in captured["system_prompt"]
@@ -487,14 +487,14 @@ def test_read_unit_filters_unanchored_surface_and_uses_naturalized_contract(tmp_
     assert "Quoting only the later sharper line" in captured["system_prompt"]
     assert "premise-plus-sharpening pair" in captured["system_prompt"]
     assert "`prior_link.ref_ids` are internal system handles" in captured["system_prompt"]
-    assert "Never copy any `ref_id`, sentence id, anchor id" in captured["system_prompt"]
+    assert "Never copy any `ref_id`, sentence id, source span id" in captured["system_prompt"]
     assert "This pushes beyond the earlier 'irrecoverable' framing." in captured["system_prompt"]
-    assert "This answers anchor:a-1 directly." in captured["system_prompt"]
+    assert "This answers source:src:c1:p1@0-p1@12 directly." in captured["system_prompt"]
     assert "`unit_delta`" not in captured["system_prompt"]
     assert "`implicit_uptake_ops`" not in captured["system_prompt"]
     assert "Do not decide or name the next route." in captured["system_prompt"]
     assert "`pressure_signals`" not in captured["system_prompt"]
-    assert manifest["prompt_version"] == "attentional_v2.read.v14"
+    assert manifest["prompt_version"] == "attentional_v2.read.v15"
 
 
 def test_read_unit_contract_preserves_source_given_stage_model_as_memory_uptake(tmp_path: Path, monkeypatch):
@@ -517,7 +517,7 @@ def test_read_unit_contract_preserves_source_given_stage_model_as_memory_uptake(
                     "payload": {
                         "thread_key": "camp_reaction_stages",
                         "statement": "囚徒对集中营生活的精神反应被作者划分为收容、适应、释放与解放三个阶段。",
-                        "support_anchor_ids": [],
+                        "source_quote": "三个阶段：收容阶段、适应阶段、释放与解放阶段",
                     },
                 }
             ],

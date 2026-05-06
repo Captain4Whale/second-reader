@@ -7,14 +7,12 @@ import re
 from src.reading_core import BookDocument
 from src.reading_core.runtime_contracts import SharedRunCursor
 
-from ..schemas import AnchorBankState
 from .schemas import SkillRequest, SkillResult
 from .source_skills import (
     build_source_map_overview,
     drilldown_source_scope,
     fetch_source_window,
     range_from_skill_arguments,
-    resolve_anchor,
     resolve_visible_sentence_range,
 )
 
@@ -23,7 +21,6 @@ _KNOWN_SKILLS = {
     "source_map_overview",
     "source_scope_drilldown",
     "source_window_fetch",
-    "anchor_resolve",
 }
 
 
@@ -79,7 +76,6 @@ def execute_skill_request(
     sentence_lookup: dict[str, dict[str, object]],
     chapter_lookup: dict[int, dict[str, object]],
     mainline_cursor: SharedRunCursor,
-    anchor_bank: AnchorBankState,
     current_scope: dict[str, object] | None = None,
 ) -> SkillResult:
     """Execute one bounded Navigate-requested source skill."""
@@ -136,20 +132,6 @@ def execute_skill_request(
             end_sentence_id=end_sentence_id,
             context_before=_safe_int(arguments.get("context_before")),
             context_after=_safe_int(arguments.get("context_after")),
-        )
-        if error:
-            return _error_result(skill_name, error)
-        return _ok_result(skill_name, result)
-
-    if skill_name == "anchor_resolve":
-        result, error = resolve_anchor(
-            anchor_bank=anchor_bank,
-            sentence_lookup=sentence_lookup,
-            chapter_lookup=chapter_lookup,
-            mainline_cursor=mainline_cursor,
-            anchor_id=_clean_text(arguments.get("anchor_id")),
-            sentence_id=_clean_text(arguments.get("sentence_id")),
-            ref_id=_clean_text(arguments.get("ref_id")),
         )
         if error:
             return _error_result(skill_name, error)

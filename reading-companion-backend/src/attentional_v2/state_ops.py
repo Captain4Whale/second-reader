@@ -24,12 +24,14 @@ from .schemas import (
     ReflectiveItem,
     ReflectiveFramesState,
     ReflectiveSummariesState,
+    SourceRef,
     ThreadTraceEntry,
     ThreadTraceState,
     ActiveAttentionItem,
     ActiveAttention,
     StateOperation,
 )
+from .source_spans import dedupe_source_refs
 
 
 ReflectiveBucket = Literal[
@@ -121,6 +123,16 @@ def _merge_unique_ids(*values: object) -> list[str]:
     return ordered
 
 
+def _merge_source_refs(*values: object) -> list[SourceRef]:
+    """Merge inline source refs while preserving stable order."""
+
+    merged: list[dict[str, object]] = []
+    for raw in values:
+        if isinstance(raw, list):
+            merged.extend(dict(item) for item in raw if isinstance(item, dict))
+    return dedupe_source_refs(merged)
+
+
 def _merge_active_item(
     existing: dict[str, object],
     payload: dict[str, object],
@@ -133,12 +145,9 @@ def _merge_active_item(
         "item_id": item_id,
         "attention_tags": _merge_unique_ids(existing.get("attention_tags"), payload.get("attention_tags")),
         "statement": str(payload.get("statement", "") or existing.get("statement", "") or "").strip(),
-        "support_anchor_ids": _merge_unique_ids(existing.get("support_anchor_ids"), payload.get("support_anchor_ids")),
+        "source_refs": _merge_source_refs(existing.get("source_refs"), payload.get("source_refs")),
         "linked_concept_keys": _merge_unique_ids(existing.get("linked_concept_keys"), payload.get("linked_concept_keys")),
         "linked_thread_keys": _merge_unique_ids(existing.get("linked_thread_keys"), payload.get("linked_thread_keys")),
-        "last_touched_sentence_id": str(
-            payload.get("last_touched_sentence_id", "") or existing.get("last_touched_sentence_id", "") or ""
-        ).strip(),
         "status": str(payload.get("status", "") or existing.get("status", "") or "").strip(),
     }
     return merged
@@ -451,11 +460,8 @@ def _upsert_concept_entry(
             payload.get("status", "") or existing.get("status", "") or ("resolved" if normalized_operation == "resolve" else "active")
         ),
         "summary": str(payload.get("summary", "") or existing.get("summary", "")),
-        "support_anchor_ids": _merge_linked_ids(existing, payload, "support_anchor_ids"),
+        "source_refs": _merge_source_refs(existing.get("source_refs"), payload.get("source_refs")),
         "linked_thread_ids": _merge_linked_ids(existing, payload, "linked_thread_ids"),
-        "last_touched_sentence_id": str(
-            payload.get("last_touched_sentence_id", "") or existing.get("last_touched_sentence_id", "")
-        ),
     }
     if normalized_operation == "reactivate" and not payload.get("status"):
         merged["status"] = "active"
@@ -520,13 +526,8 @@ def _upsert_thread_entry(
             payload.get("status", "") or existing.get("status", "") or ("resolved" if normalized_operation == "resolve" else "active")
         ),
         "summary": str(payload.get("summary", "") or existing.get("summary", "")),
-        "support_anchor_ids": _merge_linked_ids(existing, payload, "support_anchor_ids"),
+        "source_refs": _merge_source_refs(existing.get("source_refs"), payload.get("source_refs")),
         "linked_concept_keys": _merge_linked_ids(existing, payload, "linked_concept_keys"),
-        "last_touched_sentence_id": str(
-            payload.get("last_touched_sentence_id", "") or existing.get("last_touched_sentence_id", "")
-        ),
-        "source_anchor_id": str(payload.get("source_anchor_id", "") or existing.get("source_anchor_id", "")),
-        "target_anchor_ids": _merge_linked_ids(existing, payload, "target_anchor_ids"),
     }
     if normalized_operation == "reactivate" and not payload.get("status"):
         merged["status"] = "active"

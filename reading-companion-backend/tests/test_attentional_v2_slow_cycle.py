@@ -7,7 +7,6 @@ import json
 from src.attentional_v2 import slow_cycle as slow_cycle_module
 from src.attentional_v2.schemas import (
     build_default_reader_policy,
-    build_empty_anchor_bank,
     build_empty_concept_registry,
     build_empty_knowledge_activations,
     build_empty_reaction_records,
@@ -60,22 +59,25 @@ def _chapter() -> dict[str, object]:
     }
 
 
-def _anchor(anchor_id: str, sentence_id: str, quote: str, paragraph_index: int) -> dict[str, object]:
+def _source_ref(quote: str, paragraph_index: int, *, role: str = "primary") -> dict[str, object]:
     return {
-        "anchor_id": anchor_id,
-        "sentence_start_id": sentence_id,
-        "sentence_end_id": sentence_id,
-        "quote": quote,
-        "locator": {
-            "href": "chapter-1.xhtml",
-            "start_cfi": f"/6/2[chapter1]!/4/{paragraph_index * 2}/2",
-            "end_cfi": f"/6/2[chapter1]!/4/{paragraph_index * 2}/12",
-            "paragraph_index": paragraph_index,
-            "paragraph_start": paragraph_index,
-            "paragraph_end": paragraph_index,
-            "char_start": 0,
-            "char_end": len(quote),
+        "source_span_id": f"src:c1:p{paragraph_index}@0-p{paragraph_index}@{len(quote)}",
+        "source_span": {
+            "start_cursor": {
+                "chapter_id": 1,
+                "chapter_ref": "Chapter 1",
+                "paragraph_index": paragraph_index,
+                "char_offset": 0,
+            },
+            "end_cursor": {
+                "chapter_id": 1,
+                "chapter_ref": "Chapter 1",
+                "paragraph_index": paragraph_index,
+                "char_offset": len(quote),
+            },
         },
+        "quote": quote,
+        "role": role,
     }
 
 
@@ -90,30 +92,30 @@ def test_project_chapter_result_compatibility_groups_reactions_by_paragraph(tmp_
         build_reaction_record(
             reaction={
                 "type": "highlight",
-                "anchor_quote": "Markets begin as relations among people.",
+                "source_quote": "Markets begin as relations among people.",
                 "content": "The opening sentence grounds value in social relation.",
-                "related_anchor_quotes": [],
+                "related_source_quotes": [],
                 "search_query": "",
                 "search_results": [],
             },
-            primary_anchor=_anchor("a-1", "c1-s1", "Markets begin as relations among people.", 1),
+            primary_source_ref=_source_ref("Markets begin as relations among people.", 1),
             chapter_id=1,
             chapter_ref="Chapter 1",
-            emitted_at_sentence_id="c1-s1",
+            emitted_at_source_span_id="src:c1:p1@0-p1@40",
         ),
         build_reaction_record(
             reaction={
                 "type": "discern",
-                "anchor_quote": "Later the author narrows what counts as value.",
+                "source_quote": "Later the author narrows what counts as value.",
                 "content": "The later sentence tightens the frame instead of merely extending it.",
-                "related_anchor_quotes": [],
+                "related_source_quotes": [],
                 "search_query": "",
                 "search_results": [],
             },
-            primary_anchor=_anchor("a-2", "c1-s2", "Later the author narrows what counts as value.", 2),
+            primary_source_ref=_source_ref("Later the author narrows what counts as value.", 2),
             chapter_id=1,
             chapter_ref="Chapter 1",
-            emitted_at_sentence_id="c1-s2",
+            emitted_at_source_span_id="src:c1:p2@0-p2@46",
         ),
     ]
 
@@ -139,10 +141,9 @@ def test_project_chapter_result_compatibility_groups_reactions_by_paragraph(tmp_
     assert payload["reaction_type_diversity"] == 2
     assert payload["sections"][0]["segment_ref"] == "1.1"
     assert payload["sections"][1]["segment_ref"] == "1.2"
-    assert payload["sections"][0]["reactions"][0]["target_locator"]["match_mode"] == "exact"
-    assert payload["sections"][0]["reactions"][0]["primary_anchor"]["quote"] == "Markets begin as relations among people."
+    assert payload["sections"][0]["reactions"][0]["primary_source_ref"]["quote"] == "Markets begin as relations among people."
     assert payload["featured_reactions"][0]["reaction_id"]
-    assert payload["featured_reactions"][0]["primary_anchor"]["sentence_start_id"] == "c1-s1"
+    assert payload["featured_reactions"][0]["primary_source_ref"]["source_span_id"] == "src:c1:p1@0-p1@40"
     assert compatibility_path.exists()
 
 
@@ -151,10 +152,10 @@ def test_build_reaction_record_from_surfaced_reaction_persists_native_surface_fi
 
     record = build_reaction_record_from_surfaced_reaction(
         reaction={
-            "anchor_quote": "Markets begin as relations among people.",
+            "source_quote": "Markets begin as relations among people.",
             "content": "The social framing matters because it sets the book's scale.",
             "prior_link": {
-                "ref_ids": ["anchor:a-0"],
+                "ref_ids": ["src:c1:p0@0-p0@12"],
                 "relation": "callback",
                 "note": "This turns back toward the earlier social claim.",
             },
@@ -164,16 +165,16 @@ def test_build_reaction_record_from_surfaced_reaction_persists_native_surface_fi
                 "rationale": "Useful follow-up for later comparison.",
             },
         },
-        primary_anchor=_anchor("a-1", "c1-s1", "Markets begin as relations among people.", 1),
+        primary_source_ref=_source_ref("Markets begin as relations among people.", 1),
         chapter_id=1,
         chapter_ref="Chapter 1",
-        emitted_at_sentence_id="c1-s1",
+        emitted_at_source_span_id="src:c1:p1@0-p1@40",
     )
 
     assert record is not None
     assert record["record_source"] == "read_surface"
     assert record["thought"] == "The social framing matters because it sets the book's scale."
-    assert record["prior_link"]["ref_ids"] == ["anchor:a-0"]
+    assert record["prior_link"]["ref_ids"] == ["src:c1:p0@0-p0@12"]
     assert record["search_intent"]["query"] == "social marketplace framing"
     assert record["compat_family"] == "curious"
     assert compat_reaction_family(record) == "curious"
@@ -199,16 +200,16 @@ def test_project_chapter_result_compatibility_prefers_native_surface_fields_over
     legacy_shaped = build_reaction_record(
         reaction={
             "type": "highlight",
-            "anchor_quote": "Markets begin as relations among people.",
+            "source_quote": "Markets begin as relations among people.",
             "content": "The social framing matters because it sets the book's scale.",
-            "related_anchor_quotes": [],
+            "related_source_quotes": [],
             "search_query": "",
             "search_results": [],
         },
-        primary_anchor=_anchor("a-1", "c1-s1", "Markets begin as relations among people.", 1),
+        primary_source_ref=_source_ref("Markets begin as relations among people.", 1),
         chapter_id=1,
         chapter_ref="Chapter 1",
-        emitted_at_sentence_id="c1-s1",
+        emitted_at_source_span_id="src:c1:p1@0-p1@40",
     )
     legacy_shaped["search_intent"] = {
         "query": "social marketplace framing",
@@ -235,16 +236,16 @@ def test_reconsolidation_appends_later_reaction_without_mutating_earlier_one(mon
     earlier_reaction = build_reaction_record(
         reaction={
             "type": "highlight",
-            "anchor_quote": "Markets begin as relations among people.",
+            "source_quote": "Markets begin as relations among people.",
             "content": "The opening sentence grounds value in social relation.",
-            "related_anchor_quotes": [],
+            "related_source_quotes": [],
             "search_query": "",
             "search_results": [],
         },
-        primary_anchor=_anchor("a-1", "c1-s1", "Markets begin as relations among people.", 1),
+        primary_source_ref=_source_ref("Markets begin as relations among people.", 1),
         chapter_id=1,
         chapter_ref="Chapter 1",
-        emitted_at_sentence_id="c1-s1",
+        emitted_at_source_span_id="src:c1:p1@0-p1@40",
     )
 
     monkeypatch.setattr(
@@ -260,9 +261,9 @@ def test_reconsolidation_appends_later_reaction_without_mutating_earlier_one(mon
             },
             "later_reaction": {
                 "type": "discern",
-                "anchor_quote": "Later the author narrows what counts as value.",
+                "source_quote": "Later the author narrows what counts as value.",
                 "content": "The later sentence makes the earlier claim narrower than it first appeared.",
-                "related_anchor_quotes": ["Markets begin as relations among people."],
+                "related_source_quotes": ["Markets begin as relations among people."],
                 "search_query": "",
                 "search_results": [],
             },
@@ -272,8 +273,8 @@ def test_reconsolidation_appends_later_reaction_without_mutating_earlier_one(mon
 
     result = reconsolidation(
         earlier_reaction=earlier_reaction,
-        earlier_anchor_context=[earlier_reaction["primary_anchor"]],
-        later_anchor=_anchor("a-2", "c1-s2", "Later the author narrows what counts as value.", 2),
+        earlier_anchor_context=[earlier_reaction["primary_source_ref"]],
+        later_source_ref=_source_ref("Later the author narrows what counts as value.", 2),
         current_understanding_snapshot={"chapter_frame": "value is being narrowed"},
         policy_snapshot=build_default_reader_policy(),
         output_language="en",
@@ -305,7 +306,12 @@ def test_run_phase6_chapter_cycle_applies_cooling_promotion_and_optional_reactio
         if "chapter-consolidation node" in system_prompt:
             return {
                 "chapter_ref": "Chapter 1",
-                "backward_sweep": [{"anchor_id": "a-1", "why": "the opening line became the chapter spine"}],
+                "backward_sweep": [
+                    {
+                        "source_ref_id": "src:c1:p1@0-p1@40",
+                        "why": "the opening line became the chapter spine",
+                    }
+                ],
                 "cooling_operations": [
                     {
                         "operation_type": "drop",
@@ -319,14 +325,14 @@ def test_run_phase6_chapter_cycle_applies_cooling_promotion_and_optional_reactio
                     {
                         "candidate_id": "pc-1",
                         "statement": "The chapter frames value as social before narrowing it.",
-                        "support_anchor_ids": ["a-1", "a-2"],
+                        "source_refs": [
+                            _source_ref("Markets begin as relations among people.", 1, role="support"),
+                            _source_ref("Later the author narrows what counts as value.", 2, role="support"),
+                        ],
                         "promoted_from": "chapter_sweep",
                         "target_bucket": "chapter_understandings",
                         "rationale": "It survived the backward sweep and chapter-end check.",
                     }
-                ],
-                "anchor_status_updates": [
-                    {"anchor_id": "a-1", "status": "retained", "why_it_mattered": "became the chapter spine"}
                 ],
                 "knowledge_activation_updates": [],
                 "cross_chapter_carry_forward": [
@@ -334,16 +340,16 @@ def test_run_phase6_chapter_cycle_applies_cooling_promotion_and_optional_reactio
                         "item_id": "q-1",
                         "attention_tags": ["question"],
                         "statement": "How narrow will the later book make value?",
-                        "support_anchor_ids": ["a-2"],
+                        "source_refs": [_source_ref("Later the author narrows what counts as value.", 2, role="support")],
                         "status": "open",
                     }
                 ],
                 "chapter_summary_note": "The chapter narrows its own opening frame.",
                 "optional_chapter_reaction": {
                     "type": "retrospect",
-                    "anchor_quote": "Later the author narrows what counts as value.",
+                    "source_quote": "Later the author narrows what counts as value.",
                     "content": "By chapter end, the opening social frame has been deliberately narrowed.",
-                    "related_anchor_quotes": ["Markets begin as relations among people."],
+                    "related_source_quotes": ["Markets begin as relations among people."],
                     "search_query": "",
                     "search_results": [],
                 },
@@ -356,7 +362,10 @@ def test_run_phase6_chapter_cycle_applies_cooling_promotion_and_optional_reactio
                 "reflective_item": {
                     "item_id": "ru-1",
                     "statement": "The chapter frames value as social before narrowing it.",
-                    "support_anchor_ids": ["a-1", "a-2"],
+                    "source_refs": [
+                        _source_ref("Markets begin as relations among people.", 1, role="support"),
+                        _source_ref("Later the author narrows what counts as value.", 2, role="support"),
+                    ],
                     "confidence_band": "stable",
                     "promoted_from": "chapter_sweep",
                     "status": "active",
@@ -374,10 +383,10 @@ def test_run_phase6_chapter_cycle_applies_cooling_promotion_and_optional_reactio
         book_id="demo-book",
         chapter=_chapter(),
         meaning_units_in_chapter=[
-            {"sentence_ids": ["c1-s1"], "summary": "social opening"},
-            {"sentence_ids": ["c1-s2"], "summary": "narrowing turn"},
+            {"unit_id": "u-1", "source_span_id": "src:c1:p1@0-p1@40", "summary": "social opening"},
+            {"unit_id": "u-2", "source_span_id": "src:c1:p2@0-p2@46", "summary": "narrowing turn"},
         ],
-        chapter_end_anchor=_anchor("a-2", "c1-s2", "Later the author narrows what counts as value.", 2),
+        chapter_end_source_ref=_source_ref("Later the author narrows what counts as value.", 2),
         active_attention={
             **build_empty_active_attention(),
             "active_items": [
@@ -385,24 +394,13 @@ def test_run_phase6_chapter_cycle_applies_cooling_promotion_and_optional_reactio
                     "item_id": "h-1",
                     "attention_tags": ["interpretation"],
                     "statement": "Value is purely social.",
-                    "support_anchor_ids": ["a-1"],
+                    "source_refs": [_source_ref("Markets begin as relations among people.", 1, role="support")],
                     "status": "active",
                 }
             ],
         },
         concept_registry=build_empty_concept_registry(),
         thread_trace=build_empty_thread_trace(),
-        anchor_bank={
-            **build_empty_anchor_bank(),
-            "anchor_records": [
-                {
-                    **_anchor("a-1", "c1-s1", "Markets begin as relations among people.", 1),
-                    "anchor_kind": "claim",
-                    "why_it_mattered": "opening frame",
-                    "status": "active",
-                }
-            ],
-        },
         reflective_frames=build_empty_reflective_frames(),
         knowledge_activations=build_empty_knowledge_activations(),
         reaction_records=build_empty_reaction_records(),

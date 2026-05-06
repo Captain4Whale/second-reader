@@ -29,7 +29,9 @@ The public UI and API expose exactly five reaction types:
 These are public/API-facing compatibility labels.
 
 For `attentional_v2`, the internal native visible-reaction truth is surfaced semantics such as:
-- `anchor_quote`
+- `source_quote`
+- optional `primary_source_ref`
+- optional `related_source_refs`
 - `content`
 - optional `prior_link`
 - optional `outside_link`
@@ -109,11 +111,13 @@ This applies to:
 
 Internal runtime storage may still use string artifact identifiers. That is an implementation detail. Public handlers must translate internal identifiers into stable public integer IDs before returning them.
 
-Additive substrate and locator fields are allowed to carry shared sentence ids as strings when needed, for example:
+Additive substrate and locator fields are allowed to carry source-substrate references when needed, for example:
 - `reading_locus.sentence_start_id`
 - `reading_locus.sentence_end_id`
-- `primary_anchor.sentence_start_id`
-- `primary_anchor.sentence_end_id`
+- `reading_locus.start_cursor`
+- `reading_locus.end_cursor`
+- `primary_source_ref.source_span`
+- `related_source_refs[].source_span`
 
 These are not public entity ids in the book/chapter/reaction/mark namespace. They are shared parsed-book substrate references.
 
@@ -201,7 +205,8 @@ Every returned mark must include at least:
 - optional additive `chapter_number`
 - `mark_type`
 - `reaction_type`
-- `anchor_quote`
+- `source_quote`
+- optional `primary_source_ref`
 - `created_at`
 
 ### Mark Value Rules
@@ -310,8 +315,8 @@ These fields are additive and compatibility-preserving. Current routed frontend 
 ### Additive Reaction And Mark Fields
 Reaction previews, reaction cards, and mark payloads may now additively expose richer mechanism-authored fields:
 
-- `primary_anchor`
-- `related_anchors`
+- `primary_source_ref`
+- `related_source_refs`
 - `supersedes_reaction_id`
 
 Current section-era fields such as `section_ref` remain valid compatibility fields for now. They are not the long-term primary model for newer non-section mechanisms.
@@ -321,7 +326,7 @@ Current section-era fields such as `section_ref` remain valid compatibility fiel
 - Backend internal artifacts may still store `connect_back`; public API payloads must normalize that to `retrospect`, and new runtime outputs should emit `retrospect`.
 - Old mock data is not authoritative. If a mock file disagrees with this document, update or remove the mock rather than preserving conflicting terminology.
 - Legacy redirect routes are allowed, but new UI code, docs, and backend-returned frontend URLs should use canonical routes only.
-- Current chapter/detail and marks surfaces still expose `section_ref` because the routed frontend still uses the section-era model. A later intentional migration may retire that requirement once the frontend switches to locus/anchor-native rendering.
+- Current chapter/detail and marks surfaces still expose `section_ref` because the routed frontend still uses the section-era model. A later intentional migration may retire that requirement once the frontend switches to locus/source-ref-native rendering.
 
 ## How To Update This Contract
 When changing this contract:

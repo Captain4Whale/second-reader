@@ -58,7 +58,7 @@ class NormalizedReaction(TypedDict, total=False):
     compat_family: str
     chapter_ref: str
     section_ref: str
-    anchor_quote: str
+    source_quote: str
     content: str
     prior_link: dict[str, object] | None
     outside_link: dict[str, object] | None
@@ -66,8 +66,8 @@ class NormalizedReaction(TypedDict, total=False):
     search_query: str
     search_results: list[SearchHit]
     target_locator: dict[str, object] | None
-    primary_anchor: dict[str, object] | None
-    related_anchors: list[dict[str, object]]
+    primary_source_ref: dict[str, object] | None
+    related_source_refs: list[dict[str, object]]
     supersedes_reaction_id: str
 
 

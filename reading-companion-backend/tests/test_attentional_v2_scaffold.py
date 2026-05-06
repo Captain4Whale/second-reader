@@ -14,7 +14,6 @@ from src.attentional_v2.schemas import (
     ATTENTIONAL_V2_POLICY_VERSION,
     ATTENTIONAL_V2_SCHEMA_VERSION,
     build_empty_active_attention,
-    build_empty_anchor_bank,
     build_empty_concept_registry,
     build_empty_local_buffer,
     build_empty_local_continuity,
@@ -24,7 +23,6 @@ from src.attentional_v2.schemas import (
 )
 from src.attentional_v2.storage import (
     ATTENTIONAL_V2_MECHANISM_KEY,
-    anchor_bank_file,
     chapter_result_compatibility_file,
     concept_registry_file,
     event_stream_file,
@@ -483,8 +481,7 @@ def test_attentional_v2_initialization_writes_mechanism_artifacts(tmp_path):
     thread_trace = json.loads(thread_trace_file(output_dir).read_text(encoding="utf-8"))
     assert thread_trace["entries"] == []
 
-    anchor_bank = json.loads(anchor_bank_file(output_dir).read_text(encoding="utf-8"))
-    assert anchor_bank["anchor_records"] == []
+    assert not (active_attention_file(output_dir).parent / "anchor_bank.json").exists()
 
     reflective = json.loads(reflective_frames_file(output_dir).read_text(encoding="utf-8"))
     assert reflective["chapter_understandings"] == []
@@ -502,7 +499,8 @@ def test_attentional_v2_initialization_writes_mechanism_artifacts(tmp_path):
     policy = json.loads(reader_policy_file(output_dir).read_text(encoding="utf-8"))
     assert policy["policy_version"] == ATTENTIONAL_V2_POLICY_VERSION
     assert policy["unitize"]["max_coverage_unit_sentences"] == 12
-    assert policy["bridge"]["source_anchor_required"] is True
+    assert policy["bridge"]["enabled"] is False
+    assert policy["bridge"]["source_ref_required"] is True
     assert policy["search"]["default_mode"] == "no_search"
     assert policy["resume"]["cold_resume_target_sentences"] == 8
     assert policy["resume"]["reconstitution_resume_max_sentences"] == 30
@@ -587,7 +585,6 @@ def test_attentional_v2_runner_prefers_main_body_before_supporting_chapters(tmp_
             "active_attention": kwargs["active_attention"],
             "concept_registry": kwargs["concept_registry"],
             "thread_trace": kwargs["thread_trace"],
-            "anchor_bank": kwargs["anchor_bank"],
             "reflective_frames": kwargs["reflective_frames"],
             "knowledge_activations": kwargs["knowledge_activations"],
             "reaction_records": kwargs["reaction_records"],
@@ -664,7 +661,6 @@ def _empty_choose_next_unit_state() -> dict[str, dict[str, object]]:
         "concept_registry": build_empty_concept_registry(),
         "thread_trace": build_empty_thread_trace(),
         "reflective_frames": build_empty_reflective_frames(),
-        "anchor_bank": build_empty_anchor_bank(),
         "reaction_records": build_empty_reaction_records(),
     }
 
@@ -716,7 +712,6 @@ def test_navigate_choose_next_unit_selects_mainline_unit_without_active_detour(t
         concept_registry=state["concept_registry"],  # type: ignore[arg-type]
         thread_trace=state["thread_trace"],  # type: ignore[arg-type]
         reflective_frames=state["reflective_frames"],  # type: ignore[arg-type]
-        anchor_bank=state["anchor_bank"],  # type: ignore[arg-type]
         reaction_records=state["reaction_records"],  # type: ignore[arg-type]
         local_continuity=state["local_continuity"],  # type: ignore[arg-type]
         reader_policy=runner_module.build_default_reader_policy(),
@@ -783,7 +778,6 @@ def test_navigate_choose_next_unit_lands_detour_then_unitizes_inside_region(tmp_
         concept_registry=state["concept_registry"],  # type: ignore[arg-type]
         thread_trace=state["thread_trace"],  # type: ignore[arg-type]
         reflective_frames=state["reflective_frames"],  # type: ignore[arg-type]
-        anchor_bank=state["anchor_bank"],  # type: ignore[arg-type]
         reaction_records=state["reaction_records"],  # type: ignore[arg-type]
         local_continuity=local_continuity,
         reader_policy=runner_module.build_default_reader_policy(),
@@ -867,7 +861,6 @@ def test_navigate_choose_next_unit_uses_one_detour_skill_before_landing(tmp_path
         concept_registry=state["concept_registry"],  # type: ignore[arg-type]
         thread_trace=state["thread_trace"],  # type: ignore[arg-type]
         reflective_frames=state["reflective_frames"],  # type: ignore[arg-type]
-        anchor_bank=state["anchor_bank"],  # type: ignore[arg-type]
         reaction_records=state["reaction_records"],  # type: ignore[arg-type]
         local_continuity=local_continuity,
         reader_policy=runner_module.build_default_reader_policy(),
@@ -939,7 +932,6 @@ def test_navigate_choose_next_unit_defers_repeated_detour_skill_request(tmp_path
         concept_registry=state["concept_registry"],  # type: ignore[arg-type]
         thread_trace=state["thread_trace"],  # type: ignore[arg-type]
         reflective_frames=state["reflective_frames"],  # type: ignore[arg-type]
-        anchor_bank=state["anchor_bank"],  # type: ignore[arg-type]
         reaction_records=state["reaction_records"],  # type: ignore[arg-type]
         local_continuity=local_continuity,
         reader_policy=runner_module.build_default_reader_policy(),
@@ -1003,7 +995,6 @@ def test_navigate_choose_next_unit_defers_unlanded_detour(tmp_path, monkeypatch)
         concept_registry=state["concept_registry"],  # type: ignore[arg-type]
         thread_trace=state["thread_trace"],  # type: ignore[arg-type]
         reflective_frames=state["reflective_frames"],  # type: ignore[arg-type]
-        anchor_bank=state["anchor_bank"],  # type: ignore[arg-type]
         reaction_records=state["reaction_records"],  # type: ignore[arg-type]
         local_continuity=local_continuity,
         reader_policy=runner_module.build_default_reader_policy(),
@@ -1036,10 +1027,10 @@ def test_attentional_v2_read_book_runs_live_loop_and_persists_compatibility_resu
             "reading_impression": f"Meaning unit around {anchor_quote[:24]}",
             "surfaced_reactions": [
                 {
-                    "anchor_quote": anchor_quote,
+                    "source_quote": anchor_quote,
                     "content": f"Read noticed: {anchor_quote[:40]}",
                     "prior_link": {
-                        "ref_ids": ["anchor:a-0"],
+                        "ref_ids": ["source:src:c1:p1@0-p1@10"],
                         "relation": "callback",
                         "note": "The earlier thread quietly set this up.",
                     },
@@ -1075,7 +1066,6 @@ def test_attentional_v2_read_book_runs_live_loop_and_persists_compatibility_resu
             "active_attention": kwargs["active_attention"],
             "concept_registry": kwargs["concept_registry"],
             "thread_trace": kwargs["thread_trace"],
-            "anchor_bank": kwargs["anchor_bank"],
             "reflective_frames": kwargs["reflective_frames"],
             "knowledge_activations": kwargs["knowledge_activations"],
             "reaction_records": kwargs["reaction_records"],
@@ -1142,7 +1132,7 @@ def test_attentional_v2_read_book_runs_live_loop_and_persists_compatibility_resu
     assert settlement_audits[0]["source_span_id"] == unit_spans[0]["source_span_id"]
     assert settlement_audits[0]["state_deltas"]["active_attention"]["added_ids"] == ["hot-c1-s1"]
     assert settlement_audits[0]["state_deltas"]["reaction_records"]["added_ids"]
-    assert settlement_audits[0]["state_deltas"]["anchor_bank"]["added_anchor_ids"]
+    assert "anchor_bank" not in settlement_audits[0]["state_deltas"]
     shell = load_runtime_shell(runtime_shell_file(result.output_dir))
     assert shell["mechanism_key"] == ATTENTIONAL_V2_MECHANISM_KEY
     assert shell["status"] == "completed"
@@ -1155,7 +1145,7 @@ def test_attentional_v2_read_book_runs_live_loop_and_persists_compatibility_resu
     persisted_reactions = json.loads(reaction_records_file(result.output_dir).read_text(encoding="utf-8"))["records"]
     assert persisted_reactions[0]["record_source"] == "read_surface"
     assert persisted_reactions[0]["thought"].startswith("Read noticed:")
-    assert persisted_reactions[0]["prior_link"]["ref_ids"] == ["anchor:a-0"]
+    assert persisted_reactions[0]["prior_link"]["ref_ids"] == ["source:src:c1:p1@0-p1@10"]
 
 
 def test_attentional_v2_runner_persists_multiple_read_surface_reactions(tmp_path, monkeypatch):
@@ -1171,11 +1161,11 @@ def test_attentional_v2_runner_persists_multiple_read_surface_reactions(tmp_path
             "reading_impression": f"Meaning unit around {anchor_quote[:24]}",
             "surfaced_reactions": [
                 {
-                    "anchor_quote": anchor_quote,
+                    "source_quote": anchor_quote,
                     "content": f"First surfaced: {anchor_quote[:20]}",
                 },
                 {
-                    "anchor_quote": anchor_quote,
+                    "source_quote": anchor_quote,
                     "content": f"Second surfaced: {anchor_quote[:20]}",
                     "search_intent": {
                         "query": "why this line lands so hard",
@@ -1213,7 +1203,6 @@ def test_attentional_v2_runner_persists_multiple_read_surface_reactions(tmp_path
             "active_attention": kwargs["active_attention"],
             "concept_registry": kwargs["concept_registry"],
             "thread_trace": kwargs["thread_trace"],
-            "anchor_bank": kwargs["anchor_bank"],
             "reflective_frames": kwargs["reflective_frames"],
             "knowledge_activations": kwargs["knowledge_activations"],
             "reaction_records": kwargs["reaction_records"],
@@ -1272,7 +1261,6 @@ def test_attentional_v2_read_book_tolerates_missing_reaction_payload(tmp_path, m
             "active_attention": kwargs["active_attention"],
             "concept_registry": kwargs["concept_registry"],
             "thread_trace": kwargs["thread_trace"],
-            "anchor_bank": kwargs["anchor_bank"],
             "reflective_frames": kwargs["reflective_frames"],
             "knowledge_activations": kwargs["knowledge_activations"],
             "reaction_records": kwargs["reaction_records"],
@@ -1334,7 +1322,6 @@ def test_attentional_v2_read_book_runs_source_anchor_units_without_sentence_curs
             "active_attention": kwargs["active_attention"],
             "concept_registry": kwargs["concept_registry"],
             "thread_trace": kwargs["thread_trace"],
-            "anchor_bank": kwargs["anchor_bank"],
             "reflective_frames": kwargs["reflective_frames"],
             "knowledge_activations": kwargs["knowledge_activations"],
             "reaction_records": kwargs["reaction_records"],
@@ -1420,7 +1407,7 @@ def test_attentional_v2_runner_executes_detour_search_and_returns_to_mainline(tm
                 "reading_impression": "The later question clearly points back to the setup.",
                 "surfaced_reactions": [
                     {
-                        "anchor_quote": "Later question.",
+                            "source_quote": "Later question.",
                         "content": "This question is still leaning on something earlier.",
                     }
                 ],
@@ -1434,8 +1421,8 @@ def test_attentional_v2_runner_executes_detour_search_and_returns_to_mainline(tm
         return {
             "reading_impression": f"Read {focal_sentence_id}.",
             "surfaced_reactions": [
-                {
-                    "anchor_quote": str(kwargs["current_unit_sentences"][-1].get("text")),
+                    {
+                        "source_quote": str(kwargs["current_unit_sentences"][-1].get("text")),
                     "content": f"Read noticed {focal_sentence_id}.",
                 }
             ],
@@ -1488,7 +1475,6 @@ def test_attentional_v2_runner_executes_detour_search_and_returns_to_mainline(tm
             "active_attention": kwargs["active_attention"],
             "concept_registry": kwargs["concept_registry"],
             "thread_trace": kwargs["thread_trace"],
-            "anchor_bank": kwargs["anchor_bank"],
             "reflective_frames": kwargs["reflective_frames"],
             "knowledge_activations": kwargs["knowledge_activations"],
             "reaction_records": kwargs["reaction_records"],
@@ -1541,7 +1527,7 @@ def test_attentional_v2_runner_drains_last_unit_detour_before_chapter_close(tmp_
                 "reading_impression": "The chapter ending points back to the opening setup.",
                 "surfaced_reactions": [
                     {
-                        "anchor_quote": "Later answer.",
+                            "source_quote": "Later answer.",
                         "content": "This answer still depends on the opening setup.",
                     }
                 ],
@@ -1555,8 +1541,8 @@ def test_attentional_v2_runner_drains_last_unit_detour_before_chapter_close(tmp_
         return {
             "reading_impression": f"Read {focal_sentence_id}.",
             "surfaced_reactions": [
-                {
-                    "anchor_quote": str(kwargs["current_unit_sentences"][-1].get("text")),
+                    {
+                        "source_quote": str(kwargs["current_unit_sentences"][-1].get("text")),
                     "content": f"Read noticed {focal_sentence_id}.",
                 }
             ],
@@ -1605,7 +1591,6 @@ def test_attentional_v2_runner_drains_last_unit_detour_before_chapter_close(tmp_
             "active_attention": kwargs["active_attention"],
             "concept_registry": kwargs["concept_registry"],
             "thread_trace": kwargs["thread_trace"],
-            "anchor_bank": kwargs["anchor_bank"],
             "reflective_frames": kwargs["reflective_frames"],
             "knowledge_activations": kwargs["knowledge_activations"],
             "reaction_records": kwargs["reaction_records"],
@@ -1655,7 +1640,7 @@ def test_attentional_v2_runner_stops_at_audit_window_cap_and_persists_partial_ou
             "reading_impression": f"Read {sentence_ids[-1]}.",
             "surfaced_reactions": [
                 {
-                    "anchor_quote": str(focal_sentence.get("text")),
+                    "source_quote": str(focal_sentence.get("text")),
                     "content": f"Immediate reaction to {sentence_ids[-1]}.",
                 }
             ],

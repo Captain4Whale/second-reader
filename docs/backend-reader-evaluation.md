@@ -253,10 +253,11 @@ Use `docs/backend-reading-mechanism.md` for shared mechanism-platform boundaries
     - reuse must be refused when `segment_id / start_sentence_id / end_sentence_id / source_chapter_ids / source_text_sha256` do not match the active window
   - landed runner:
     - `reading-companion-backend/eval/attentional_v2/run_long_span_vnext.py`
-  - landed benchmark-only V2 probe export:
-    - `reading-companion-backend/src/attentional_v2/benchmark_probes.py`
-    - runtime capture is invoked through the `attentional_v2` observability layer, so `benchmark_probes.py` remains the Memory Quality export implementation while Reading Runner does not own probe manifest or snapshot-persistence details
-    - `unit_span_ledger.jsonl`, `read_audit.jsonl`, and `settlement_audit.jsonl` are runtime evidence used to diagnose whether a run covered and settled source spans correctly; they are not new benchmark targets or score inputs by themselves
+    - landed benchmark-only V2 probe export:
+      - `reading-companion-backend/src/attentional_v2/benchmark_probes.py`
+      - runtime capture is invoked through the `attentional_v2` observability layer, so `benchmark_probes.py` remains the Memory Quality export implementation while Reading Runner does not own probe manifest or snapshot-persistence details
+      - `unit_span_ledger.jsonl`, `read_audit.jsonl`, and `settlement_audit.jsonl` are runtime evidence used to diagnose whether a run covered and settled source spans correctly; they are not new benchmark targets or score inputs by themselves
+      - new `attentional_v2` probe/context snapshots consume inline `source_refs[]` from memory and reaction state; `anchor_bank_digest` is historical and should not be used for new Memory Quality evidence
 - The first Phase-1 diagnostic run has been corrected in two steps:
   - corrected run:
     - `attentional_v2_long_span_vnext_phase1_memory_quality_scale_fix_rejudge_20260425`
@@ -286,10 +287,10 @@ Use `docs/backend-reading-mechanism.md` for shared mechanism-platform boundaries
     - `active_attention.active_items[]`
     - each active item uses lightweight `attention_tags[]`; old `working_state` and fixed `open_questions / live_tensions / live_hypotheses / live_motifs` views belong to historical reports only
     - `local_hypothesis` / `live_hypotheses` in older evidence is historical provenance vocabulary, not a current Memory Quality state layer
-    - concept / thread / reflective / anchor-bank digests
+    - concept / thread / reflective / source-ref digests
     - continuity and recent-orientation context
     - old `gate_state`, `pressure_snapshot`, and working-pressure artifacts are not current evidence fields
-  - New probe evidence generated after the Read naturalization cutover should use `reading_impression` for read-audit / probe-facing local interpretation, and `memory_uptake_ops` for the bounded memory-update operations that feed active attention, concept, thread, and anchor layers.
+  - New probe evidence generated after the Read naturalization and SourceRef cutovers should use `reading_impression` for read-audit / probe-facing local interpretation, and `memory_uptake_ops` for the bounded memory-update operations that feed active attention, concept, and thread layers with inline source refs.
     - Older reports that show `unit_delta` or `implicit_uptake_ops` are historical artifacts from the pre-cutover contract, not current field names.
   - Memory Quality evidence reports have a fixed writing contract:
     - `reading-companion-backend/docs/evaluation/long_span/memory_quality_report_contract.md`

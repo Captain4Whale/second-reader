@@ -23,7 +23,7 @@ from src.reading_runtime import artifacts as runtime_artifacts
 from src.reading_runtime.shell_state import load_runtime_shell
 
 from .observability import reading_locus_from_cursor
-from .schemas import ATTENTIONAL_V2_MECHANISM_VERSION, ATTENTIONAL_V2_POLICY_VERSION, ReaderPolicy
+from .schemas import ATTENTIONAL_V2_MECHANISM_VERSION, ATTENTIONAL_V2_POLICY_VERSION
 from .slow_cycle import compat_reaction_family, compat_search_query
 from .storage import (
     ATTENTIONAL_V2_MECHANISM_KEY,
@@ -109,13 +109,12 @@ def _reaction_section_ref(record: Mapping[str, object], *, chapter_id: int) -> s
     explicit = _clean_text(record.get("compatibility_section_ref"))
     if explicit:
         return explicit
-    primary_anchor = record.get("primary_anchor")
-    if isinstance(primary_anchor, Mapping):
-        locator = primary_anchor.get("locator")
-        if isinstance(locator, Mapping):
-            paragraph_index = int(locator.get("paragraph_index", 0) or locator.get("paragraph_start", 0) or 0)
-            if paragraph_index > 0:
-                return f"{int(chapter_id)}.{paragraph_index}"
+    primary_source_ref = record.get("primary_source_ref")
+    source_span = primary_source_ref.get("source_span") if isinstance(primary_source_ref, Mapping) else None
+    start_cursor = source_span.get("start_cursor") if isinstance(source_span, Mapping) else None
+    if isinstance(start_cursor, Mapping):
+        paragraph_index = int(start_cursor.get("paragraph_index", 0) or 0)
+        return f"{int(chapter_id)}.{paragraph_index + 1}"
     return f"{int(chapter_id)}.1"
 
 
@@ -202,7 +201,10 @@ def _normalized_run_snapshot(
     if current_activity:
         activity_payload = {
             "reading_locus": current_activity.get("reading_locus"),
-            "current_excerpt": current_activity.get("anchor_quote") or current_activity.get("highlight_quote") or "",
+            "current_excerpt": current_activity.get("source_quote")
+            or current_activity.get("highlight_quote")
+            or current_activity.get("anchor_quote")
+            or "",
             "reconstructed_hot_state": bool(current_activity.get("reconstructed_hot_state")),
             "last_resume_kind": current_activity.get("last_resume_kind"),
             "active_reaction_id": current_activity.get("active_reaction_id") or active_reaction_id or None,
@@ -232,7 +234,7 @@ def _normalized_attention_events(output_dir: Path) -> list[NormalizedAttentionEv
             "message": _clean_text(raw.get("message")),
             "chapter_ref": _clean_text(raw.get("chapter_ref")),
             "section_ref": _clean_text(raw.get("segment_ref") or raw.get("section_ref")),
-            "current_excerpt": _clean_text(raw.get("anchor_quote") or raw.get("highlight_quote")),
+            "current_excerpt": _clean_text(raw.get("source_quote") or raw.get("highlight_quote") or raw.get("anchor_quote")),
             "search_query": _clean_text(raw.get("search_query")),
             "thought_family": _clean_text(raw.get("thought_family")),
             "problem_code": _clean_text(raw.get("problem_code")),
@@ -256,8 +258,9 @@ def _normalized_reactions(output_dir: Path) -> list[NormalizedReaction]:
         if not isinstance(raw, dict):
             continue
         chapter_id = int(raw.get("chapter_id", 0) or 0)
-        primary_anchor = raw.get("primary_anchor")
-        target_locator = primary_anchor.get("locator") if isinstance(primary_anchor, Mapping) else None
+        primary_source_ref = raw.get("primary_source_ref") or raw.get("primary_anchor")
+        target_locator = raw.get("target_locator")
+        related_source_refs = raw.get("related_source_refs") or raw.get("related_anchors")
         prior_link = raw.get("prior_link")
         outside_link = raw.get("outside_link")
         search_intent = raw.get("search_intent")
@@ -269,7 +272,8 @@ def _normalized_reactions(output_dir: Path) -> list[NormalizedReaction]:
                 "compat_family": compat_family,
                 "chapter_ref": _clean_text(raw.get("chapter_ref")),
                 "section_ref": _reaction_section_ref(raw, chapter_id=chapter_id),
-                "anchor_quote": _clean_text(primary_anchor.get("quote")) if isinstance(primary_anchor, Mapping) else "",
+                "source_quote": _clean_text(raw.get("source_quote"))
+                or (_clean_text(primary_source_ref.get("quote")) if isinstance(primary_source_ref, Mapping) else ""),
                 "content": _clean_text(raw.get("thought")),
                 "prior_link": dict(prior_link) if isinstance(prior_link, Mapping) else None,
                 "outside_link": dict(outside_link) if isinstance(outside_link, Mapping) else None,
@@ -283,13 +287,13 @@ def _normalized_reactions(output_dir: Path) -> list[NormalizedReaction]:
                 if isinstance(raw.get("search_results"), list)
                 else [],
                 "target_locator": dict(target_locator) if isinstance(target_locator, Mapping) else None,
-                "primary_anchor": dict(primary_anchor) if isinstance(primary_anchor, Mapping) else None,
-                "related_anchors": [
-                    dict(anchor)
-                    for anchor in raw.get("related_anchors", [])
-                    if isinstance(anchor, dict)
+                "primary_source_ref": dict(primary_source_ref) if isinstance(primary_source_ref, Mapping) else None,
+                "related_source_refs": [
+                    dict(source_ref)
+                    for source_ref in related_source_refs
+                    if isinstance(source_ref, dict)
                 ]
-                if isinstance(raw.get("related_anchors"), list)
+                if isinstance(related_source_refs, list)
                 else [],
                 "supersedes_reaction_id": _clean_text(raw.get("supersedes_reaction_id")),
             }
@@ -412,6 +416,53 @@ def _book_sentence_ids(document: BookDocument) -> set[str]:
     return ids
 
 
+def _chapter_for_source_cursor(document: BookDocument, cursor: Mapping[str, object]) -> Mapping[str, object] | None:
+    """Return the chapter owning one paragraph-offset cursor."""
+
+    chapter_id = int(cursor.get("chapter_id", 0) or 0)
+    chapter_ref = _clean_text(cursor.get("chapter_ref"))
+    for chapter in document.get("chapters", []):
+        if not isinstance(chapter, Mapping):
+            continue
+        if chapter_id > 0 and int(chapter.get("id", 0) or 0) == chapter_id:
+            return chapter
+        if not chapter_id and chapter_ref and _clean_text(chapter.get("reference") or chapter.get("title")) == chapter_ref:
+            return chapter
+    return None
+
+
+def _source_cursor_valid(document: BookDocument, cursor: object) -> bool:
+    """Return whether one cursor resolves inside the paragraph substrate."""
+
+    if not isinstance(cursor, Mapping):
+        return False
+    chapter = _chapter_for_source_cursor(document, cursor)
+    if chapter is None:
+        return False
+    paragraphs = [item for item in chapter.get("paragraphs", []) if isinstance(item, Mapping)]
+    paragraph_index = int(cursor.get("paragraph_index", -1) or 0)
+    if paragraph_index < 0 or paragraph_index >= len(paragraphs):
+        return False
+    char_offset = int(cursor.get("char_offset", -1) or 0)
+    return 0 <= char_offset <= len(_clean_text(paragraphs[paragraph_index].get("text")))
+
+
+def _source_ref_valid(document: BookDocument, source_ref: object) -> bool:
+    """Return whether one source ref carries resolvable paragraph-offset coordinates."""
+
+    if not isinstance(source_ref, Mapping):
+        return False
+    if not _clean_text(source_ref.get("source_span_id")) or not _clean_text(source_ref.get("quote")):
+        return False
+    source_span = source_ref.get("source_span")
+    if not isinstance(source_span, Mapping):
+        return False
+    return _source_cursor_valid(document, source_span.get("start_cursor")) and _source_cursor_valid(
+        document,
+        source_span.get("end_cursor"),
+    )
+
+
 def _check_result(
     code: str,
     status: IntegrityCheckStatus,
@@ -433,7 +484,6 @@ def run_mechanism_integrity_checks(output_dir: Path) -> MechanismIntegrityReport
     """Run structural attentional_v2 integrity checks over the current persisted artifacts."""
 
     document = _load_book_document(output_dir)
-    sentence_ids = _book_sentence_ids(document)
     shell = load_runtime_shell(runtime_artifacts.existing_runtime_shell_file(output_dir))
     reactions_payload = _load_json_if_exists(reaction_records_file(output_dir))
     recon_payload = _load_json_if_exists(reconsolidation_records_file(output_dir))
@@ -441,20 +491,20 @@ def run_mechanism_integrity_checks(output_dir: Path) -> MechanismIntegrityReport
     checks: list[IntegrityCheckResult] = []
 
     cursor = shell.get("cursor", {})
-    referenced_sentence_ids = [
-        _clean_text(cursor.get("sentence_id")),
-        _clean_text(cursor.get("span_start_sentence_id")),
-        _clean_text(cursor.get("span_end_sentence_id")),
-    ]
-    missing_cursor_ids = [sentence_id for sentence_id in referenced_sentence_ids if sentence_id and sentence_id not in sentence_ids]
+    cursor_span_valid = True
+    if isinstance(cursor, Mapping) and _clean_text(cursor.get("position_kind")) == "span":
+        cursor_span_valid = _source_cursor_valid(document, cursor.get("span_start_cursor")) and _source_cursor_valid(
+            document,
+            cursor.get("span_end_cursor"),
+        )
     checks.append(
         _check_result(
-            "runtime_cursor_sentence_ids_resolve",
-            "fail" if missing_cursor_ids else "pass",
-            "Shared runtime cursor sentence ids resolve against the canonical parsed-book substrate."
-            if not missing_cursor_ids
-            else "Shared runtime cursor references sentence ids that are missing from public/book_document.json.",
-            details={"missing_sentence_ids": missing_cursor_ids},
+            "runtime_cursor_source_span_resolves",
+            "fail" if not cursor_span_valid else "pass",
+            "Shared runtime cursor source span resolves against the canonical paragraph substrate."
+            if cursor_span_valid
+            else "Shared runtime cursor references paragraph offsets outside public/book_document.json.",
+            details={"position_kind": _clean_text(cursor.get("position_kind")) if isinstance(cursor, Mapping) else ""},
         )
     )
 
@@ -475,52 +525,26 @@ def run_mechanism_integrity_checks(output_dir: Path) -> MechanismIntegrityReport
         )
     )
 
-    missing_anchor_sentence_ids: list[str] = []
-    bad_locator_reactions: list[str] = []
+    bad_source_ref_reactions: list[str] = []
     for record in reactions_payload.get("records", []):
         if not isinstance(record, dict):
             continue
-        anchors = []
-        primary_anchor = record.get("primary_anchor")
-        if isinstance(primary_anchor, dict):
-            anchors.append(primary_anchor)
-        if isinstance(record.get("related_anchors"), list):
-            anchors.extend(anchor for anchor in record.get("related_anchors", []) if isinstance(anchor, dict))
-        for anchor in anchors:
-            start_id = _clean_text(anchor.get("sentence_start_id"))
-            end_id = _clean_text(anchor.get("sentence_end_id")) or start_id
-            if start_id and start_id not in sentence_ids:
-                missing_anchor_sentence_ids.append(start_id)
-            if end_id and end_id not in sentence_ids:
-                missing_anchor_sentence_ids.append(end_id)
-            locator = anchor.get("locator")
-            if not isinstance(locator, Mapping):
-                bad_locator_reactions.append(_clean_text(record.get("reaction_id")))
-                continue
-            href = _clean_text(locator.get("href"))
-            paragraph_index = int(locator.get("paragraph_index", 0) or locator.get("paragraph_start", 0) or 0)
-            char_start = int(locator.get("char_start", 0) or 0)
-            char_end = int(locator.get("char_end", 0) or 0)
-            if not href or paragraph_index <= 0 or char_end < char_start:
-                bad_locator_reactions.append(_clean_text(record.get("reaction_id")))
+        source_refs = []
+        primary_source_ref = record.get("primary_source_ref")
+        if isinstance(primary_source_ref, dict):
+            source_refs.append(primary_source_ref)
+        if isinstance(record.get("related_source_refs"), list):
+            source_refs.extend(source_ref for source_ref in record.get("related_source_refs", []) if isinstance(source_ref, dict))
+        if not source_refs or any(not _source_ref_valid(document, source_ref) for source_ref in source_refs):
+            bad_source_ref_reactions.append(_clean_text(record.get("reaction_id")))
     checks.append(
         _check_result(
-            "anchors_reference_shared_sentences",
-            "fail" if missing_anchor_sentence_ids else "pass",
-            "Anchors resolve against shared sentence ids."
-            if not missing_anchor_sentence_ids
-            else "One or more anchors point at sentence ids outside the shared parsed-book substrate.",
-            details={"missing_sentence_ids": sorted(set(missing_anchor_sentence_ids))},
-        )
-    )
-    checks.append(
-        _check_result(
-            "anchors_have_usable_locators",
-            "fail" if bad_locator_reactions else "pass",
-            "Anchors carry usable locator data for recall, marks, and audits."
-            if not bad_locator_reactions
-            else "One or more reactions have anchors with missing or invalid locator data.",
-            details={"reaction_ids": sorted(set(filter(None, bad_locator_reactions)))},
+            "reactions_have_resolvable_source_refs",
+            "fail" if bad_source_ref_reactions else "pass",
+            "Reactions carry paragraph-offset source refs for recall, marks, and audits."
+            if not bad_source_ref_reactions
+            else "One or more reactions have missing or invalid paragraph-offset source refs.",
+            details={"reaction_ids": sorted(set(filter(None, bad_source_ref_reactions)))},
         )
     )
 
@@ -599,14 +623,14 @@ def run_mechanism_integrity_checks(output_dir: Path) -> MechanismIntegrityReport
                 if source_record is None:
                     compatibility_errors.append(reaction_id or "unknown")
                     continue
-                source_anchor = source_record.get("primary_anchor")
-                if isinstance(source_anchor, Mapping) and _clean_text(reaction.get("anchor_quote")) != _clean_text(source_anchor.get("quote")):
+                source_ref = source_record.get("primary_source_ref")
+                if isinstance(source_ref, Mapping) and _clean_text(reaction.get("source_quote")) != _clean_text(source_ref.get("quote")):
                     compatibility_errors.append(reaction_id or "unknown")
     checks.append(
         _check_result(
             "compatibility_projection_preserves_reaction_identity",
             "fail" if compatibility_errors else "pass",
-            "Compatibility chapter payloads preserve persisted reaction identity and anchor quote."
+            "Compatibility chapter payloads preserve persisted reaction identity and source quote."
             if not compatibility_errors
             else "Compatibility chapter payloads have drifted from persisted reaction truth.",
             details={"reaction_ids": sorted(set(filter(None, compatibility_errors)))},

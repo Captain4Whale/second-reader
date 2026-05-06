@@ -161,7 +161,7 @@ def apply_activation_operations(
     state: KnowledgeActivationsState,
     operations: list[StateOperation],
     *,
-    current_sentence_id: str,
+    current_source_id: str,
     reader_policy: ReaderPolicy | None = None,
 ) -> KnowledgeActivationsState:
     """Apply explicit knowledge-activation operations and refresh policy modes."""
@@ -185,7 +185,7 @@ def apply_activation_operations(
         activation_id = str(operation.get("item_id", "") or payload.get("activation_id", "") or "")
         if not activation_id:
             activation_counter += 1
-            activation_id = f"ka:{current_sentence_id}:{activation_counter}"
+            activation_id = f"ka:{current_source_id}:{activation_counter}"
         existing = activation_index.get(activation_id, {})
         operation_type = str(operation.get("operation_type", "") or "")
 
@@ -197,7 +197,7 @@ def apply_activation_operations(
                     for key, value in payload.items()
                     if key
                     in {
-                        "trigger_anchor_id",
+                        "trigger_source_ref",
                         "activation_type",
                         "source_candidate",
                         "recognition_confidence",
@@ -205,20 +205,13 @@ def apply_activation_operations(
                         "role_assessment",
                         "evidence_hints",
                         "evidence_rationale",
-                        "support_anchor_ids",
-                        "conflict_anchor_ids",
-                        "introduced_at_sentence_id",
-                        "last_touched_sentence_id",
+                        "source_refs",
+                        "conflict_source_refs",
                         "status",
                     }
                 },
                 "activation_id": activation_id,
             }
-            if not activation.get("introduced_at_sentence_id"):
-                activation["introduced_at_sentence_id"] = str(existing.get("introduced_at_sentence_id", "") or current_sentence_id)
-            activation["last_touched_sentence_id"] = str(
-                activation.get("last_touched_sentence_id", "") or current_sentence_id
-            )
             if operation_type == "reactivate" and str(activation.get("status", "") or "") in {"rejected", "dropped", ""}:
                 activation["status"] = "plausible"
             elif not activation.get("status"):
@@ -239,7 +232,6 @@ def apply_activation_operations(
         cooled: KnowledgeActivation = {
             **existing,
             "activation_id": activation_id,
-            "last_touched_sentence_id": current_sentence_id,
             "status": status,
         }
         next_state = upsert_knowledge_activation(next_state, cooled)

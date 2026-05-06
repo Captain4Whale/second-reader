@@ -45,8 +45,8 @@ SearchTrigger = Literal["none", "identity_critical_reference", "blocking_allusio
 ActivationStatus = Literal["weak", "plausible", "strong", "rejected", "dropped"]
 AnchorRelationType = Literal["echo", "contrast", "cause", "support", "question_opened_by", "question_resolved_by", "callback"]
 ATTENTIONAL_V2_SCHEMA_VERSION = 1
-ATTENTIONAL_V2_MECHANISM_VERSION = "attentional_v2-phase8"
-ATTENTIONAL_V2_POLICY_VERSION = "attentional_v2-policy-phase8"
+ATTENTIONAL_V2_MECHANISM_VERSION = "attentional_v2-phase9"
+ATTENTIONAL_V2_POLICY_VERSION = "attentional_v2-policy-phase9"
 
 
 def _timestamp() -> str:
@@ -55,16 +55,25 @@ def _timestamp() -> str:
     return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
 
+class SourceRef(TypedDict, total=False):
+    """Inline paragraph-offset source citation; not a registry entry."""
+
+    source_span_id: str
+    source_span: dict[str, object]
+    quote: str
+    role: str
+    resolution: dict[str, object]
+
+
 class ActiveAttentionItem(TypedDict, total=False):
     """One hot local item carried in active attention."""
 
     item_id: str
     attention_tags: list[str]
     statement: str
-    support_anchor_ids: list[str]
+    source_refs: list[SourceRef]
     linked_concept_keys: list[str]
     linked_thread_keys: list[str]
-    last_touched_sentence_id: str
     status: str
 
 
@@ -161,8 +170,8 @@ class CarryForwardRef(TypedDict, total=False):
     kind: str
     item_id: str
     summary: str
-    sentence_id: str
-    anchor_id: str
+    source_span_id: str
+    source_ref: SourceRef
     reaction_id: str
     route_id: str
 
@@ -179,9 +188,8 @@ class RehydrationEntry(TypedDict, total=False):
     """One explicit rehydration entrypoint retained for later continuity recovery."""
 
     entry_id: str
-    anchor_id: str
-    sentence_start_id: str
-    sentence_end_id: str
+    source_span_id: str
+    source_ref: SourceRef
     concept_key: str
     thread_key: str
     why_rehydrate: str
@@ -201,7 +209,6 @@ class ContinuationCapsule(TypedDict, total=False):
     active_focus_digest: "ActiveFocusDigest"
     concept_digest: list["ConceptDigestItem"]
     thread_digest: list["ThreadDigestItem"]
-    anchor_bank_digest: "AnchorBankDigest"
     refs: list["CarryForwardRef"]
     rehydration_entrypoints: list[RehydrationEntry]
 
@@ -228,19 +235,13 @@ class ActiveFocusDigest(TypedDict, total=False):
     recent_reactions: list[dict[str, object]]
 
 
-class AnchorBankDigest(TypedDict, total=False):
-    """Prompt-facing digest of currently useful source-grounded anchors."""
-
-    active_anchors: list[dict[str, object]]
-
-
 class ConceptDigestItem(TypedDict, total=False):
     """One small concept-level digest entry derived from current state indexes."""
 
     ref_id: str
     concept_key: str
     concept_type: str
-    linked_anchor_ids: list[str]
+    source_refs: list[SourceRef]
     sample_quotes: list[str]
     rationale: str
 
@@ -251,8 +252,7 @@ class ThreadDigestItem(TypedDict, total=False):
     ref_id: str
     thread_key: str
     thread_type: str
-    source_anchor_id: str
-    linked_anchor_ids: list[str]
+    source_refs: list[SourceRef]
     sample_quotes: list[str]
     rationale: str
 
@@ -268,9 +268,8 @@ class CarryForwardContext(TypedDict, total=False):
     active_focus_digest: ActiveFocusDigest
     concept_digest: list[ConceptDigestItem]
     thread_digest: list[ThreadDigestItem]
-    anchor_bank_digest: AnchorBankDigest
     reflective_digest: list[dict[str, object]]
-    anchor_digest: list[dict[str, object]]
+    source_ref_digest: list[dict[str, object]]
     continuity_digest: dict[str, object]
     refs: list[CarryForwardRef]
 
@@ -286,7 +285,7 @@ class NavigationContext(TypedDict, total=False):
     active_focus_digest: ActiveFocusDigest
     concept_digest: list[ConceptDigestItem]
     thread_digest: list[ThreadDigestItem]
-    anchor_bank_digest: AnchorBankDigest
+    source_ref_digest: list[dict[str, object]]
     refs: list[CarryForwardRef]
 
 
@@ -303,14 +302,15 @@ class ContextRequest(TypedDict, total=False):
 
     kind: ContextRequestKind
     reason: str
-    anchor_ids: list[str]
-    sentence_ids: list[str]
+    source_ref_ids: list[str]
+    source_spans: list[dict[str, object]]
 
 
 class ReadAnchorEvidence(TypedDict, total=False):
     """One exact unit-local anchor cited by the read step."""
 
-    sentence_id: str
+    source_span_id: str
+    source_ref: SourceRef
     quote: str
     why_it_matters: str
 
@@ -339,7 +339,7 @@ class StateOperation(TypedDict, total=False):
 class SurfacedReaction(TypedDict, total=False):
     """One visible in-the-moment reaction surfaced directly by the read node."""
 
-    anchor_quote: str
+    source_quote: str
     content: str
     prior_link: "PriorLink" | None
     outside_link: "OutsideLink" | None
@@ -432,9 +432,9 @@ class ReactionCandidate(TypedDict, total=False):
     """One candidate anchored reaction proposed before emission gating."""
 
     type: ReactionType
-    anchor_quote: str
+    source_quote: str
     content: str
-    related_anchor_quotes: list[str]
+    related_source_quotes: list[str]
     search_query: str
     search_results: list[SearchHit]
 
@@ -486,13 +486,14 @@ class AnchoredReactionRecord(TypedDict, total=False):
     reaction_id: str
     chapter_id: int
     chapter_ref: str
-    emitted_at_sentence_id: str
+    emitted_at_source_span_id: str
     record_source: str
     type: ReactionType
     compat_family: ReactionType
     thought: str
-    primary_anchor: ReactionAnchor
-    related_anchors: list[ReactionAnchor]
+    source_quote: str
+    primary_source_ref: SourceRef
+    related_source_refs: list[SourceRef]
     reconsolidation_record_id: str
     supersedes_reaction_id: str
     compatibility_section_ref: str
@@ -575,9 +576,8 @@ class ConceptRegistryEntry(TypedDict, total=False):
     concept_type: str
     status: str
     summary: str
-    support_anchor_ids: list[str]
+    source_refs: list[SourceRef]
     linked_thread_ids: list[str]
-    last_touched_sentence_id: str
 
 
 class ConceptRegistryState(TypedDict, total=False):
@@ -596,11 +596,8 @@ class ThreadTraceEntry(TypedDict, total=False):
     thread_type: str
     status: str
     summary: str
-    support_anchor_ids: list[str]
+    source_refs: list[SourceRef]
     linked_concept_keys: list[str]
-    last_touched_sentence_id: str
-    source_anchor_id: str
-    target_anchor_ids: list[str]
 
 
 class ThreadTraceState(TypedDict, total=False):
@@ -617,7 +614,7 @@ class ReflectiveItem(TypedDict, total=False):
 
     item_id: str
     statement: str
-    support_anchor_ids: list[str]
+    source_refs: list[SourceRef]
     confidence_band: str
     promoted_from: str
     status: str
@@ -630,7 +627,7 @@ class ReflectivePromotionCandidate(TypedDict, total=False):
 
     candidate_id: str
     statement: str
-    support_anchor_ids: list[str]
+    source_refs: list[SourceRef]
     promoted_from: str
     target_bucket: str
     rationale: str
@@ -670,7 +667,7 @@ class KnowledgeActivation(TypedDict, total=False):
     """One activated piece of prior knowledge with separate warrant tracking."""
 
     activation_id: str
-    trigger_anchor_id: str
+    trigger_source_ref: SourceRef
     activation_type: str
     source_candidate: str
     recognition_confidence: str
@@ -678,10 +675,8 @@ class KnowledgeActivation(TypedDict, total=False):
     role_assessment: str
     evidence_hints: list[str]
     evidence_rationale: str
-    support_anchor_ids: list[str]
-    conflict_anchor_ids: list[str]
-    introduced_at_sentence_id: str
-    last_touched_sentence_id: str
+    source_refs: list[SourceRef]
+    conflict_source_refs: list[SourceRef]
     status: ActivationStatus
 
 
@@ -743,7 +738,6 @@ class ChapterConsolidationResult(TypedDict, total=False):
     backward_sweep: list[dict[str, object]]
     cooling_operations: list[StateOperation]
     promotion_candidates: list[ReflectivePromotionCandidate]
-    anchor_status_updates: list[dict[str, object]]
     knowledge_activation_updates: list[StateOperation]
     cross_chapter_carry_forward: list[ActiveAttentionItem]
     chapter_summary_note: str
@@ -816,8 +810,6 @@ class FullCheckpointState(TypedDict, total=False):
     concept_registry: ConceptRegistryState
     thread_trace: ThreadTraceState
     reflective_frames: ReflectiveFramesState
-    anchor_bank: AnchorBankState
-    anchor_memory: AnchorMemoryState
     reflective_summaries: ReflectiveSummariesState
     knowledge_activations: KnowledgeActivationsState
     reaction_records: ReactionRecordsState
@@ -922,7 +914,6 @@ def build_empty_continuation_capsule(
         },
         "concept_digest": [],
         "thread_digest": [],
-        "anchor_bank_digest": {"active_anchors": []},
         "refs": [],
         "rehydration_entrypoints": [],
     }
@@ -1088,7 +1079,7 @@ def build_default_reader_policy(
             "rare_search_posture": True,
             "defer_curiosity_by_default": True,
         },
-        "bridge": {"source_anchor_required": True, "max_supporting_candidates": 2},
+        "bridge": {"enabled": False, "source_ref_required": True, "max_supporting_candidates": 2},
         "resume": {
             "default_mode": "warm_resume",
             "cold_resume_target_sentences": 8,

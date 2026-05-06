@@ -9,7 +9,6 @@ SkillName = Literal[
     "source_map_overview",
     "source_scope_drilldown",
     "source_window_fetch",
-    "anchor_resolve",
 ]
 SkillStatus = Literal["ok", "error"]
 

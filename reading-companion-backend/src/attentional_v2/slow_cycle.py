@@ -23,7 +23,6 @@ from .nodes import (
 )
 from .prompts import ATTENTIONAL_V2_PROMPTS
 from .schemas import (
-    AnchorBankState,
     AnchorRecord,
     AnchoredReactionRecord,
     ChapterConsolidationResult,
@@ -47,16 +46,17 @@ from .schemas import (
     ThreadTraceState,
     ActiveAttentionItem,
     ActiveAttention,
+    SourceRef,
 )
 from .state_ops import (
     append_reaction_record,
     append_reconsolidation_record,
     apply_active_attention_operations,
     supersede_reflective_item,
-    upsert_anchor_record,
     upsert_reflective_item,
 )
 from .storage import chapter_result_compatibility_file, save_json
+from .source_spans import source_ref_from_span
 
 
 _FEATURED_PRIORITY = {
@@ -94,6 +94,33 @@ def build_reaction_anchor(anchor: AnchorRecord | dict[str, object]) -> ReactionA
         "quote": _clean_text(anchor.get("quote")),
         "locator": dict(locator) if isinstance(locator, dict) else {},
     }
+
+
+def build_reaction_source_ref(value: SourceRef | dict[str, object]) -> SourceRef:
+    """Project a source ref into the embedded durable-reaction source-ref shape."""
+
+    if not isinstance(value, dict):
+        return source_ref_from_span({}, quote="", role="reaction_anchor")
+    source_span = value.get("source_span")
+    return source_ref_from_span(
+        source_span if isinstance(source_span, Mapping) else {},
+        quote=_clean_text(value.get("quote")),
+        role=_clean_text(value.get("role")) or "reaction_anchor",
+        resolution=value.get("resolution") if isinstance(value.get("resolution"), Mapping) else None,
+    )
+
+
+def _source_ref_from_legacy_anchor(anchor: AnchorRecord | dict[str, object]) -> SourceRef:
+    """Best-effort adapter for old tests and historical callers."""
+
+    locator = anchor.get("locator")
+    source_span = locator.get("source_span") if isinstance(locator, Mapping) else {}
+    return source_ref_from_span(
+        source_span if isinstance(source_span, Mapping) else {},
+        quote=_clean_text(anchor.get("quote")),
+        role="reaction_anchor",
+        resolution={"status": "legacy_anchor_projection"},
+    )
 
 
 def _copy_prior_link(value: object) -> PriorLink | None:
@@ -157,11 +184,11 @@ def _surfaced_reaction_from_candidate(reaction: ReactionCandidate) -> SurfacedRe
     """Project one legacy reaction candidate into the surfaced-reaction truth shape."""
 
     content = _clean_text(reaction.get("content"))
-    anchor_quote = _clean_text(reaction.get("anchor_quote"))
-    if not (content and anchor_quote):
+    source_quote = _clean_text(reaction.get("source_quote") or reaction.get("anchor_quote"))
+    if not (content and source_quote):
         return None
     return {
-        "anchor_quote": anchor_quote,
+        "source_quote": source_quote,
         "content": content,
         "prior_link": None,
         "outside_link": None,
@@ -192,8 +219,8 @@ def compat_reaction_family(payload: Mapping[str, object]) -> str:
         return explicit_type
 
     thought = _clean_text(payload.get("thought")) or _clean_text(payload.get("content"))
-    anchor_quote = _clean_text(payload.get("anchor_quote"))
-    if thought and len(thought) <= max(120, len(anchor_quote) + 60):
+    source_quote = _clean_text(payload.get("source_quote") or payload.get("anchor_quote"))
+    if thought and len(thought) <= max(120, len(source_quote) + 60):
         return "highlight"
     if thought:
         return "discern"
@@ -224,16 +251,16 @@ def _legacy_search_intent_from_candidate(reaction: ReactionCandidate) -> SearchI
 def derive_reaction_id(
     *,
     chapter_ref: str,
-    emitted_at_sentence_id: str,
+    emitted_at_source_span_id: str,
     reaction_type: str,
     ordinal: int | None = None,
 ) -> str:
-    """Build a deterministic durable-reaction id from chapter, sentence, and type."""
+    """Build a deterministic durable-reaction id from chapter, source span, and type."""
 
     parts = [
         "rx",
         _clean_text(chapter_ref).replace(" ", "_") or "chapter",
-        _clean_text(emitted_at_sentence_id) or "sentence",
+        _clean_text(emitted_at_source_span_id) or "source",
         _clean_text(reaction_type) or "reaction",
     ]
     if ordinal is not None and ordinal > 0:
@@ -254,11 +281,14 @@ def derive_reconsolidation_record_id(
 def build_reaction_record(
     *,
     reaction: ReactionCandidate,
-    primary_anchor: AnchorRecord | dict[str, object],
+    primary_source_ref: SourceRef | dict[str, object] | None = None,
+    related_source_refs: list[SourceRef | dict[str, object]] | None = None,
+    primary_anchor: AnchorRecord | dict[str, object] | None = None,
     related_anchors: list[AnchorRecord | dict[str, object]] | None = None,
     chapter_id: int,
     chapter_ref: str,
-    emitted_at_sentence_id: str,
+    emitted_at_source_span_id: str = "",
+    emitted_at_sentence_id: str = "",
     reaction_id: str | None = None,
     reconsolidation_record_id: str | None = None,
     supersedes_reaction_id: str | None = None,
@@ -274,11 +304,13 @@ def build_reaction_record(
         raise ValueError("legacy reaction candidate must contain anchor_quote and content")
     record = build_reaction_record_from_surfaced_reaction(
         reaction=surfaced_reaction,
+        primary_source_ref=primary_source_ref,
+        related_source_refs=related_source_refs,
         primary_anchor=primary_anchor,
         related_anchors=related_anchors,
         chapter_id=chapter_id,
         chapter_ref=chapter_ref,
-        emitted_at_sentence_id=emitted_at_sentence_id,
+        emitted_at_source_span_id=emitted_at_source_span_id or emitted_at_sentence_id,
         reaction_id=reaction_id,
         reconsolidation_record_id=reconsolidation_record_id,
         supersedes_reaction_id=supersedes_reaction_id,
@@ -302,11 +334,14 @@ def build_reaction_record(
 def build_reaction_record_from_surfaced_reaction(
     *,
     reaction: SurfacedReaction,
-    primary_anchor: AnchorRecord | dict[str, object],
+    primary_source_ref: SourceRef | dict[str, object] | None = None,
+    related_source_refs: list[SourceRef | dict[str, object]] | None = None,
+    primary_anchor: AnchorRecord | dict[str, object] | None = None,
     related_anchors: list[AnchorRecord | dict[str, object]] | None = None,
     chapter_id: int,
     chapter_ref: str,
-    emitted_at_sentence_id: str,
+    emitted_at_source_span_id: str = "",
+    emitted_at_sentence_id: str = "",
     reaction_id: str | None = None,
     reconsolidation_record_id: str | None = None,
     supersedes_reaction_id: str | None = None,
@@ -321,8 +356,18 @@ def build_reaction_record_from_surfaced_reaction(
     if not thought:
         return None
 
-    normalized_primary_anchor = build_reaction_anchor(primary_anchor)
-    normalized_related = [build_reaction_anchor(anchor) for anchor in related_anchors or [] if isinstance(anchor, dict)]
+    normalized_primary_source_ref = (
+        build_reaction_source_ref(primary_source_ref)
+        if isinstance(primary_source_ref, dict)
+        else _source_ref_from_legacy_anchor(primary_anchor or {})
+    )
+    normalized_related = [
+        build_reaction_source_ref(ref)
+        for ref in (related_source_refs or [])
+        if isinstance(ref, dict)
+    ]
+    if not normalized_related and related_anchors:
+        normalized_related = [_source_ref_from_legacy_anchor(anchor) for anchor in related_anchors if isinstance(anchor, dict)]
     prior_link = _copy_prior_link(reaction.get("prior_link"))
     outside_link = _copy_outside_link(reaction.get("outside_link"))
     search_intent = _copy_search_intent(reaction.get("search_intent"))
@@ -332,7 +377,8 @@ def build_reaction_record_from_surfaced_reaction(
     compat_family = override_family or compat_reaction_family(
         {
             "content": thought,
-            "anchor_quote": _clean_text(reaction.get("anchor_quote")) or _clean_text(normalized_primary_anchor.get("quote")),
+            "source_quote": _clean_text(reaction.get("source_quote") or reaction.get("anchor_quote"))
+            or _clean_text(normalized_primary_source_ref.get("quote")),
             "prior_link": prior_link,
             "outside_link": outside_link,
             "search_intent": search_intent,
@@ -343,19 +389,21 @@ def build_reaction_record_from_surfaced_reaction(
         "reaction_id": reaction_id
         or derive_reaction_id(
             chapter_ref=chapter_ref,
-            emitted_at_sentence_id=emitted_at_sentence_id,
+            emitted_at_source_span_id=emitted_at_source_span_id or emitted_at_sentence_id,
             reaction_type=compat_family,
             ordinal=ordinal,
         ),
         "chapter_id": int(chapter_id),
         "chapter_ref": _clean_text(chapter_ref),
-        "emitted_at_sentence_id": _clean_text(emitted_at_sentence_id),
+        "emitted_at_source_span_id": _clean_text(emitted_at_source_span_id or emitted_at_sentence_id),
         "record_source": "read_surface",
         "type": compat_family,  # type: ignore[typeddict-item]
         "compat_family": compat_family,  # type: ignore[typeddict-item]
         "thought": thought,
-        "primary_anchor": normalized_primary_anchor,
-        "related_anchors": normalized_related,
+        "source_quote": _clean_text(reaction.get("source_quote") or reaction.get("anchor_quote"))
+        or _clean_text(normalized_primary_source_ref.get("quote")),
+        "primary_source_ref": normalized_primary_source_ref,
+        "related_source_refs": normalized_related,
         "reconsolidation_record_id": _clean_text(reconsolidation_record_id),
         "supersedes_reaction_id": _clean_text(supersedes_reaction_id),
         "compatibility_section_ref": _clean_text(compatibility_section_ref),
@@ -382,14 +430,14 @@ def reaction_records_for_chapter(
     ]
 
 
-def _target_locator_from_anchor(anchor: ReactionAnchor | dict[str, object]) -> dict[str, object] | None:
-    """Project one reaction anchor into the current target-locator shape."""
+def _target_locator_from_source_ref(source_ref: SourceRef | dict[str, object]) -> dict[str, object] | None:
+    """Project one source ref into the current target-locator shape when EPUB CFI is available."""
 
-    locator = anchor.get("locator")
+    locator = source_ref.get("locator")
     if not isinstance(locator, dict):
         return None
     href = _clean_text(locator.get("href"))
-    match_text = _clean_text(anchor.get("quote"))
+    match_text = _clean_text(source_ref.get("quote"))
     if not href or not match_text:
         return None
     return {
@@ -411,13 +459,15 @@ def _compatibility_section_ref(
     explicit = _clean_text(record.get("compatibility_section_ref"))
     if explicit:
         return explicit
-    primary_anchor = record.get("primary_anchor")
-    if isinstance(primary_anchor, dict):
-        locator = primary_anchor.get("locator")
-        if isinstance(locator, dict):
-            paragraph_index = int(locator.get("paragraph_index", 0) or locator.get("paragraph_start", 0) or 0)
-            if paragraph_index > 0:
-                return f"{int(chapter_id)}.{paragraph_index}"
+    primary_source_ref = record.get("primary_source_ref")
+    if isinstance(primary_source_ref, dict):
+        source_span = primary_source_ref.get("source_span")
+        if isinstance(source_span, dict):
+            start = source_span.get("start_cursor")
+            if isinstance(start, dict):
+                paragraph_index = int(start.get("paragraph_index", 0) or 0)
+                if paragraph_index > 0:
+                    return f"{int(chapter_id)}.{paragraph_index}"
     return f"{int(chapter_id)}.1"
 
 
@@ -490,14 +540,14 @@ def project_chapter_result_compatibility(
     featured_candidates: list[dict[str, object]] = []
 
     for record in records:
-        primary_anchor = record.get("primary_anchor")
-        if not isinstance(primary_anchor, dict):
+        primary_source_ref = record.get("primary_source_ref")
+        if not isinstance(primary_source_ref, dict):
             continue
         section_ref = _compatibility_section_ref(record, chapter_id=chapter_id)
         paragraph_index = 0
-        locator = primary_anchor.get("locator")
-        if isinstance(locator, dict):
-            paragraph_index = int(locator.get("paragraph_index", 0) or locator.get("paragraph_start", 0) or 0)
+        source_span = primary_source_ref.get("source_span")
+        if isinstance(source_span, dict) and isinstance(source_span.get("start_cursor"), dict):
+            paragraph_index = int(source_span["start_cursor"].get("paragraph_index", 0) or 0)
         paragraph = paragraphs_by_index.get(paragraph_index, {})
         section = section_groups.get(section_ref)
         if section is None:
@@ -517,12 +567,12 @@ def project_chapter_result_compatibility(
                 section["locator"] = paragraph_locator
             section_groups[section_ref] = section
 
-        target_locator = _target_locator_from_anchor(primary_anchor)
+        target_locator = _target_locator_from_source_ref(primary_source_ref)
         reaction_type = compat_reaction_family(record)
         reaction_card = {
             "reaction_id": _clean_text(record.get("reaction_id")),
             "type": reaction_type,
-            "anchor_quote": _clean_text(primary_anchor.get("quote")),
+            "source_quote": _clean_text(record.get("source_quote") or primary_source_ref.get("quote")),
             "content": _clean_text(record.get("thought")),
             "search_query": compat_search_query(record),
             "search_results": [
@@ -532,13 +582,13 @@ def project_chapter_result_compatibility(
             ]
             if isinstance(record.get("search_results"), list)
             else [],
-            "primary_anchor": build_reaction_anchor(primary_anchor),
-            "related_anchors": [
-                build_reaction_anchor(anchor)
-                for anchor in record.get("related_anchors", [])
-                if isinstance(anchor, dict)
+            "primary_source_ref": build_reaction_source_ref(primary_source_ref),
+            "related_source_refs": [
+                build_reaction_source_ref(source_ref)
+                for source_ref in record.get("related_source_refs", [])
+                if isinstance(source_ref, dict)
             ]
-            if isinstance(record.get("related_anchors"), list)
+            if isinstance(record.get("related_source_refs"), list)
             else [],
             "supersedes_reaction_id": _clean_text(record.get("supersedes_reaction_id")) or None,
         }
@@ -551,16 +601,16 @@ def project_chapter_result_compatibility(
                 "reaction_id": _clean_text(record.get("reaction_id")),
                 "type": reaction_type,
                 "segment_ref": section_ref,
-                "anchor_quote": _clean_text(primary_anchor.get("quote")),
+                "source_quote": _clean_text(record.get("source_quote") or primary_source_ref.get("quote")),
                 "content": _clean_text(record.get("thought")),
                 "target_locator": target_locator or {},
-                "primary_anchor": build_reaction_anchor(primary_anchor),
-                "related_anchors": [
-                    build_reaction_anchor(anchor)
-                    for anchor in record.get("related_anchors", [])
-                    if isinstance(anchor, dict)
+                "primary_source_ref": build_reaction_source_ref(primary_source_ref),
+                "related_source_refs": [
+                    build_reaction_source_ref(source_ref)
+                    for source_ref in record.get("related_source_refs", [])
+                    if isinstance(source_ref, dict)
                 ]
-                if isinstance(record.get("related_anchors"), list)
+                if isinstance(record.get("related_source_refs"), list)
                 else [],
                 "supersedes_reaction_id": _clean_text(record.get("supersedes_reaction_id")) or None,
             }
@@ -613,12 +663,12 @@ def _normalize_reflective_item(value: object, *, chapter_ref: str) -> Reflective
     return {
         "item_id": _clean_text(value.get("item_id")),
         "statement": statement,
-        "support_anchor_ids": [
-            _clean_text(item)
-            for item in value.get("support_anchor_ids", [])
-            if _clean_text(item)
+        "source_refs": [
+            build_reaction_source_ref(item)
+            for item in value.get("source_refs", [])
+            if isinstance(item, dict)
         ]
-        if isinstance(value.get("support_anchor_ids"), list)
+        if isinstance(value.get("source_refs"), list)
         else [],
         "confidence_band": _clean_text(value.get("confidence_band")) or "working",
         "promoted_from": _clean_text(value.get("promoted_from")) or "active_attention_item",
@@ -641,12 +691,12 @@ def _normalize_reflective_promotion_candidate(value: object) -> ReflectivePromot
     return {
         "candidate_id": _clean_text(value.get("candidate_id")),
         "statement": statement,
-        "support_anchor_ids": [
-            _clean_text(item)
-            for item in value.get("support_anchor_ids", [])
-            if _clean_text(item)
+        "source_refs": [
+            build_reaction_source_ref(item)
+            for item in value.get("source_refs", [])
+            if isinstance(item, dict)
         ]
-        if isinstance(value.get("support_anchor_ids"), list)
+        if isinstance(value.get("source_refs"), list)
         else [],
         "promoted_from": _clean_text(value.get("promoted_from")) or "chapter_sweep",
         "target_bucket": target_bucket,
@@ -802,7 +852,7 @@ def reconsolidation(
     *,
     earlier_reaction: AnchoredReactionRecord,
     earlier_anchor_context: list[dict[str, object]],
-    later_anchor: AnchorRecord | dict[str, object],
+    later_source_ref: SourceRef | dict[str, object],
     current_understanding_snapshot: dict[str, object],
     policy_snapshot: ReaderPolicy,
     output_language: str,
@@ -822,13 +872,13 @@ def reconsolidation(
         chapter_title=chapter_title,
         output_language=output_language,
     )
-    later_anchor_payload = build_reaction_anchor(later_anchor)
+    later_source_ref_payload = build_reaction_source_ref(later_source_ref)
     user_prompt = _render_prompt(
         prompts.reconsolidation_prompt,
         structural_frame=_json_block(structural_frame),
         earlier_reaction=_json_block(earlier_reaction),
         earlier_anchor_context=_json_block(earlier_anchor_context),
-        later_anchor=_json_block(later_anchor_payload),
+        later_anchor=_json_block(later_source_ref_payload),
         current_understanding_snapshot=_json_block(current_understanding_snapshot),
         policy_snapshot=_json_block(policy_snapshot),
         output_language_name=language_name(output_language),
@@ -859,14 +909,14 @@ def reconsolidation(
         decision = "keep_prior"
 
     later_candidate = _normalize_reaction_candidate(payload.get("later_reaction"))
-    emitted_at_sentence_id = _clean_text(later_anchor_payload.get("sentence_end_id") or later_anchor_payload.get("sentence_start_id"))
+    emitted_at_source_span_id = _clean_text(later_source_ref_payload.get("source_span_id"))
     later_reaction: AnchoredReactionRecord | None = None
     reconsolidation_record: ReconsolidationRecord | None = None
-    if decision == "reconsolidate" and later_candidate is not None and emitted_at_sentence_id:
+    if decision == "reconsolidate" and later_candidate is not None and emitted_at_source_span_id:
         later_reaction_family = compat_reaction_family(later_candidate)
         new_reaction_id = derive_reaction_id(
             chapter_ref=chapter_ref,
-            emitted_at_sentence_id=emitted_at_sentence_id,
+            emitted_at_source_span_id=emitted_at_source_span_id,
             reaction_type=later_reaction_family,
         )
         raw_record = _normalize_reconsolidation_record(
@@ -878,19 +928,19 @@ def reconsolidation(
             _clean_text((raw_record or {}).get("record_id"))
             or derive_reconsolidation_record_id(
                 prior_reaction_id=_clean_text(earlier_reaction.get("reaction_id")),
-                later_sentence_id=emitted_at_sentence_id,
+                later_sentence_id=emitted_at_source_span_id,
             )
         )
         later_reaction = build_reaction_record(
             reaction=later_candidate,
-            primary_anchor=later_anchor,
+            primary_source_ref=later_source_ref_payload,
             chapter_id=chapter_id,
             chapter_ref=chapter_ref,
-            emitted_at_sentence_id=emitted_at_sentence_id,
+            emitted_at_source_span_id=emitted_at_source_span_id,
             reconsolidation_record_id=record_id,
             supersedes_reaction_id=_clean_text(earlier_reaction.get("reaction_id")),
             compatibility_section_ref=_compatibility_section_ref(
-                {"primary_anchor": later_anchor_payload},
+                {"primary_source_ref": later_source_ref_payload},
                 chapter_id=chapter_id,
             ),
         )
@@ -954,37 +1004,15 @@ def _normalize_carry_forward_item(value: object) -> ActiveAttentionItem | None:
         "item_id": _clean_text(value.get("item_id")),
         "attention_tags": attention_tags,
         "statement": statement,
-        "support_anchor_ids": [
-            _clean_text(item)
-            for item in value.get("support_anchor_ids", [])
-            if _clean_text(item)
+        "source_refs": [
+            build_reaction_source_ref(item)
+            for item in value.get("source_refs", [])
+            if isinstance(item, dict)
         ]
-        if isinstance(value.get("support_anchor_ids"), list)
+        if isinstance(value.get("source_refs"), list)
         else [],
         "status": _clean_text(value.get("status")) or "open",
     }
-
-
-def _normalize_anchor_status_updates(value: object) -> list[dict[str, object]]:
-    """Normalize chapter-end anchor status updates."""
-
-    updates: list[dict[str, object]] = []
-    if not isinstance(value, list):
-        return updates
-    for item in value:
-        if not isinstance(item, dict):
-            continue
-        anchor_id = _clean_text(item.get("anchor_id"))
-        if not anchor_id:
-            continue
-        updates.append(
-            {
-                "anchor_id": anchor_id,
-                "status": _clean_text(item.get("status")) or "retained",
-                "why_it_mattered": _clean_text(item.get("why_it_mattered")),
-            }
-        )
-    return updates
 
 
 def _normalize_chapter_consolidation_result(payload: object) -> ChapterConsolidationResult:
@@ -996,7 +1024,6 @@ def _normalize_chapter_consolidation_result(payload: object) -> ChapterConsolida
             "backward_sweep": [],
             "cooling_operations": [],
             "promotion_candidates": [],
-            "anchor_status_updates": [],
             "knowledge_activation_updates": [],
             "cross_chapter_carry_forward": [],
             "chapter_summary_note": "",
@@ -1018,7 +1045,6 @@ def _normalize_chapter_consolidation_result(payload: object) -> ChapterConsolida
         "backward_sweep": list(payload.get("backward_sweep", [])) if isinstance(payload.get("backward_sweep"), list) else [],
         "cooling_operations": _normalize_state_operations(payload.get("cooling_operations")),
         "promotion_candidates": promotion_candidates,
-        "anchor_status_updates": _normalize_anchor_status_updates(payload.get("anchor_status_updates")),
         "knowledge_activation_updates": _normalize_state_operations(payload.get("knowledge_activation_updates")),
         "cross_chapter_carry_forward": carry_forward,
         "chapter_summary_note": _clean_text(payload.get("chapter_summary_note")),
@@ -1031,7 +1057,7 @@ def chapter_consolidation(
     chapter_ref: str,
     meaning_units_in_chapter: list[dict[str, object]],
     active_attention_snapshot: ActiveAttention,
-    anchor_bank_chapter_slice: list[dict[str, object]],
+    source_refs_in_chapter: list[dict[str, object]],
     reflective_frames_snapshot: ReflectiveFramesState,
     knowledge_activations_snapshot: KnowledgeActivationsState,
     persisted_reactions_in_chapter: list[AnchoredReactionRecord],
@@ -1057,7 +1083,7 @@ def chapter_consolidation(
         chapter_ref=chapter_ref,
         meaning_units_in_chapter=_json_block(meaning_units_in_chapter),
         active_attention_snapshot=_json_block(active_attention_snapshot),
-        anchor_bank_chapter_slice=_json_block(anchor_bank_chapter_slice),
+        source_refs_in_chapter=_json_block(source_refs_in_chapter),
         reflective_frames_snapshot=_json_block(reflective_frames_snapshot),
         knowledge_activations_snapshot=_json_block(knowledge_activations_snapshot),
         persisted_reactions_in_chapter=_json_block(persisted_reactions_in_chapter),
@@ -1082,33 +1108,6 @@ def chapter_consolidation(
     return normalized
 
 
-def apply_anchor_status_updates(
-    anchor_bank: AnchorBankState,
-    updates: list[dict[str, object]],
-) -> AnchorBankState:
-    """Apply chapter-end status updates to retained anchors."""
-
-    next_state = anchor_bank
-    anchors_by_id = {
-        _clean_text(anchor.get("anchor_id")): dict(anchor)
-        for anchor in anchor_bank.get("anchor_records", [])
-        if isinstance(anchor, dict) and _clean_text(anchor.get("anchor_id"))
-    }
-    for update in updates:
-        anchor_id = _clean_text(update.get("anchor_id"))
-        if not anchor_id or anchor_id not in anchors_by_id:
-            continue
-        anchor = anchors_by_id[anchor_id]
-        updated_anchor = {
-            **anchor,
-            "status": _clean_text(update.get("status")) or str(anchor.get("status", "") or "retained"),
-            "why_it_mattered": _clean_text(update.get("why_it_mattered")) or str(anchor.get("why_it_mattered", "") or ""),
-        }
-        next_state = upsert_anchor_record(next_state, updated_anchor)
-        anchors_by_id[anchor_id] = updated_anchor
-    return next_state
-
-
 def apply_cross_chapter_carry_forward(
     active_attention: ActiveAttention,
     carry_forward: list[ActiveAttentionItem],
@@ -1127,12 +1126,11 @@ def run_phase6_chapter_cycle(
     book_id: str,
     chapter: BookChapter | dict[str, object],
     meaning_units_in_chapter: list[dict[str, object]],
-    chapter_end_anchor: AnchorRecord | dict[str, object],
+    chapter_end_source_ref: SourceRef | dict[str, object],
     active_attention: ActiveAttention,
     concept_registry: ConceptRegistryState,
     thread_trace: ThreadTraceState,
     reflective_frames: ReflectiveFramesState,
-    anchor_bank: AnchorBankState,
     knowledge_activations: KnowledgeActivationsState,
     reaction_records: ReactionRecordsState,
     reader_policy: ReaderPolicy,
@@ -1147,21 +1145,16 @@ def run_phase6_chapter_cycle(
     chapter_ref = _clean_text(chapter.get("reference") or chapter.get("chapter_ref") or f"Chapter {int(chapter.get('id', 0) or 0)}")
     chapter_title = _clean_text(chapter.get("title"))
     persisted_reactions = reaction_records_for_chapter(reaction_records, chapter_ref=chapter_ref)
-    chapter_anchor_ids = {
-        _clean_text(record.get("primary_anchor", {}).get("anchor_id"))
+    source_refs_in_chapter = [
+        build_reaction_source_ref(record.get("primary_source_ref"))
         for record in persisted_reactions
-        if isinstance(record.get("primary_anchor"), dict)
-    }
-    anchor_bank_chapter_slice = [
-        dict(anchor)
-        for anchor in anchor_bank.get("anchor_records", [])
-        if isinstance(anchor, dict) and _clean_text(anchor.get("anchor_id")) in chapter_anchor_ids
+        if isinstance(record.get("primary_source_ref"), dict)
     ]
     consolidation = chapter_consolidation(
         chapter_ref=chapter_ref,
         meaning_units_in_chapter=meaning_units_in_chapter,
         active_attention_snapshot=active_attention,
-        anchor_bank_chapter_slice=anchor_bank_chapter_slice,
+        source_refs_in_chapter=source_refs_in_chapter,
         reflective_frames_snapshot=reflective_frames,
         knowledge_activations_snapshot=knowledge_activations,
         persisted_reactions_in_chapter=persisted_reactions,
@@ -1178,17 +1171,12 @@ def run_phase6_chapter_cycle(
         next_active_attention,
         consolidation.get("cross_chapter_carry_forward", []),
     )
-    next_anchor_bank = apply_anchor_status_updates(
-        anchor_bank,
-        consolidation.get("anchor_status_updates", []),
-    )
-    end_sentence_id = _clean_text(
-        chapter_end_anchor.get("sentence_end_id") or chapter_end_anchor.get("sentence_start_id")
-    )
+    chapter_end_ref = build_reaction_source_ref(chapter_end_source_ref)
+    end_source_id = _clean_text(chapter_end_ref.get("source_span_id")) or "chapter-end"
     next_knowledge_activations = apply_activation_operations(
         knowledge_activations,
         consolidation.get("knowledge_activation_updates", []),
-        current_sentence_id=end_sentence_id or _clean_text(chapter_end_anchor.get("sentence_start_id")) or "chapter-end",
+        current_source_id=end_source_id,
         reader_policy=reader_policy,
     )
 
@@ -1216,12 +1204,12 @@ def run_phase6_chapter_cycle(
             next_reaction_records,
             build_reaction_record(
                 reaction=optional_reaction,
-                primary_anchor=chapter_end_anchor,
+                primary_source_ref=chapter_end_ref,
                 chapter_id=int(chapter.get("id", 0) or 0),
                 chapter_ref=chapter_ref,
-                emitted_at_sentence_id=end_sentence_id or "chapter-end",
+                emitted_at_source_span_id=end_source_id,
                 compatibility_section_ref=_compatibility_section_ref(
-                    {"primary_anchor": build_reaction_anchor(chapter_end_anchor)},
+                    {"primary_source_ref": chapter_end_ref},
                     chapter_id=int(chapter.get("id", 0) or 0),
                 ),
                 ordinal=len(persisted_reactions) + 1,
@@ -1243,7 +1231,6 @@ def run_phase6_chapter_cycle(
         "active_attention": next_active_attention,
         "concept_registry": concept_registry,
         "thread_trace": thread_trace,
-        "anchor_bank": next_anchor_bank,
         "reflective_frames": next_reflective_frames,
         "knowledge_activations": next_knowledge_activations,
         "reaction_records": next_reaction_records,

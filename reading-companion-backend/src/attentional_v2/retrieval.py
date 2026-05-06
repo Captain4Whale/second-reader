@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import re
 
-from src.reading_core import BookDocument, SentenceRecord
+from src.reading_core import BookDocument
 
 from .schemas import AnchorBankState, ConceptRegistryState, ThreadTraceState
 

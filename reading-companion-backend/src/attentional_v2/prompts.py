@@ -10,7 +10,7 @@ from src.prompts.shared import LANGUAGE_OUTPUT_CONTRACT
 ATTENTIONAL_V2_PROMPTSET_VERSION = "attentional_v2-phase6-v25"
 SURVEY_CHAPTER_ZONE_PROMPT_VERSION = "attentional_v2.survey_chapter_zone.v1"
 NAVIGATE_CHOOSE_NEXT_UNIT_PROMPT_VERSION = "attentional_v2.navigate_choose_next_unit.v1"
-READ_UNIT_PROMPT_VERSION = "attentional_v2.read.v14"
+READ_UNIT_PROMPT_VERSION = "attentional_v2.read.v15"
 BRIDGE_RESOLUTION_PROMPT_VERSION = "attentional_v2.bridge_resolution.v5"
 REFLECTIVE_PROMOTION_PROMPT_VERSION = "attentional_v2.reflective_promotion.v1"
 RECONSOLIDATION_PROMPT_VERSION = "attentional_v2.reconsolidation.v1"
@@ -118,7 +118,6 @@ Rules:
   - `source_map_overview`: inspect the already-read book structure within allowed bounds.
   - `source_scope_drilldown`: expand one current scope card or range into smaller source cards.
   - `source_window_fetch`: fetch source text for a bounded sentence range.
-  - `anchor_resolve`: resolve a known anchor/sentence handle into short source-grounded context.
 - Skill results are evidence, not answers. After receiving a skill result, decide whether to choose a unit, request another needed skill within budget, or defer.
 - Do not request external web search. Do not request a skill just to be safer.
 - In detour mode, cite exact sentence ids as evidence because detour source skills still expose already-read evidence through legacy sentence handles.
@@ -206,9 +205,9 @@ Rules:
 - After forming the impression, surface only what naturally feels worth marking, underlining, or writing a margin note about.
 - Do not create a reaction just to fill the field.
 - A surfaced reaction may be a line that lands with force, a margin-note thought or question, a natural connection, or a distinction/turn that suddenly clarifies something.
-- Surfaced reactions must stay anchored to the current unit. Each reaction's `anchor_quote` must be an exact quote from this unit.
+- Surfaced reactions must stay anchored to the current unit. Each reaction's `source_quote` must be an exact quote from this unit.
 - It is acceptable to emit zero surfaced reactions. It is also acceptable to emit more than one when there are multiple distinct local moments worth marking, but stay bounded. Default to 0-2.
-- Choose each `anchor_quote` as the smallest self-sufficient span that can honestly stand as this reaction's footing.
+- Choose each `source_quote` as the smallest self-sufficient span that can honestly stand as this reaction's footing.
 - If one sentence can stand on its own and is worth remembering on its own, it may anchor a surfaced reaction by itself.
 - If a sentence would lose its meaning when isolated, do not force it smaller just to sound precise; use the smallest multi-sentence span that keeps the meaning intact.
 - If the unit contains multiple independently valuable local triggers, you may surface them separately. Do not let one sharper later sentence erase an earlier framing line, premise line, or hinge line that also stands on its own.
@@ -219,11 +218,11 @@ Rules:
 - Use V1's wide-entry, narrow-expression stance: be willing to notice and surface a real local trigger, but do not manufacture commentary just to fill space.
 - Common local triggers include but are not limited to: a phrase whose wording suddenly sharpens the stakes, a turn that changes the direction of understanding, a definition or distinction that finally clicks, a question that exposes the hidden hinge, or a line that explicitly calls back to something already alive in memory.
 - These are open examples, not a checklist. Do not require a fixed trigger family before expressing.
-- `prior_link.ref_ids` are internal system handles for structured linkage only. Never copy any `ref_id`, sentence id, anchor id, thread id, concept id, reaction id, or coordinate-like token into visible `content`.
+- `prior_link.ref_ids` are internal system handles for structured linkage only. Never copy any `ref_id`, sentence id, source span id, thread id, concept id, reaction id, or coordinate-like token into visible `content`.
 - If you callback to earlier material in visible `content`, speak to the reader in natural language: for example, "前面那个……", "前文把它说成……时", or "This pushes beyond the earlier 'irrecoverable' framing."
 - You do not need to quote earlier text. If a short quoted fragment genuinely helps the reader orient, keep it brief and selective.
 - Do not paste a whole earlier sentence or a long earlier excerpt into visible `content`.
-- Bad visible forms include raw handles like `c1-s1135`, `anchor:a-1`, `thread:t-2`, `concept:loss`, or `reaction:r-4`.
+- Bad visible forms include raw handles like `c1-s1135`, `source:src:c1:p1@0-p1@12`, `thread:t-2`, `concept:loss`, or `reaction:r-4`.
 - Positive examples:
   - English same-unit plurality:
     - `People want things from other people.` may stand alone when that premise is itself the memorable move.
@@ -242,23 +241,22 @@ Rules:
   - Quoting only the later sharper line while the earlier premise line survives only as background summary inside `reading_impression`.
   - Treating a premise-plus-sharpening pair as if only the sharper later line were surface-worthy by default.
   - `这与 c1-s1135 的边界压缩形成层级跃迁。`
-  - `This answers anchor:a-1 directly.`
+  - `This answers source:src:c1:p1@0-p1@12 directly.`
   - `Earlier the text said "..."` followed by a long pasted sentence from earlier material.
 - After the impression and any surfaced reactions, let memory settle naturally.
 - `memory_uptake_ops` records only what should remain available after this unit. Do not maintain state for its own sake.
 - A surfaced reaction is already persisted as a reaction record. Do not copy it into `concept_registry` or `thread_trace` just because it was strong.
-- Create a memory operation only when the reading experience yields something that should continue shaping later reading: a live focus, a reusable concept/model/definition, an unfolding thread, or a source-grounded anchor.
+- Create a memory operation only when the reading experience yields something that should continue shaping later reading: a live focus, a reusable concept/model/definition, or an unfolding thread.
 - Explicit source structures can be worth remembering even when they do not call for a visible reaction: stage models, classifications, core definitions, named distinctions, chapter roadmaps, and other author-given frameworks may belong in durable memory.
 - Do not disguise plainly stated source material as your own interpretation. Preserve source-given structure as source-given structure.
 - `memory_uptake_ops` must stay explicit and bounded. Only target:
   - `active_attention`
   - `concept_registry`
   - `thread_trace`
-  - `anchor_bank`
 - Write to `active_attention` only when an item will keep pulling on the next reads.
 - Use `concept_registry` for reusable concepts, models, definitions, or distinctions.
 - Use `thread_trace` for cross-passage or cross-chapter lines of development.
-- Use `anchor_bank` for source-grounded anchors worth keeping as evidence.
+- When an operation needs source evidence, add `source_quote` and optionally `source_role` inside the payload. The runner will resolve it to paragraph + char-offset `source_refs`.
 - Ordinary passing understanding belongs in `reading_impression`, not in persistent memory.
 - Active-attention item payloads use `attention_tags` as lightweight labels. Suggested tags include `question`, `tension`, `interpretation`, `motif`, and `focus`, but these are examples, not fixed buckets.
 - Do not use legacy active-attention bucket/list fields in new state operations.
@@ -296,7 +294,7 @@ Return JSON:
   "reading_impression": "<brief natural impression after reading this unit>",
   "surfaced_reactions": [
     {
-      "anchor_quote": "<exact quote from current unit>",
+      "source_quote": "<exact quote from current unit>",
       "content": "<visible in-the-moment reaction>",
       "prior_link": null,
       "outside_link": null,
@@ -311,7 +309,9 @@ Return JSON:
       "reason": "<brief reason>",
       "payload": {
         "statement": "<only if this naturally needs to remain available after the unit>",
-        "attention_tags": ["focus"]
+        "attention_tags": ["focus"],
+        "source_quote": "<optional exact quote from current unit>",
+        "source_role": "support"
       }
     }
   ],
@@ -420,7 +420,7 @@ Return JSON:
   "reflective_item": {
     "item_id": "<optional stable id>",
     "statement": "<durable reflective statement>",
-    "support_anchor_ids": [],
+    "source_refs": [],
     "confidence_band": "working",
     "promoted_from": "chapter_sweep",
     "status": "active"
@@ -475,9 +475,9 @@ Return JSON:
   },
   "later_reaction": {
     "type": "discern",
-    "anchor_quote": "<later anchor quote>",
+    "source_quote": "<later source quote>",
     "content": "<later anchored thought>",
-    "related_anchor_quotes": [],
+    "related_source_quotes": [],
     "search_query": "",
     "search_results": []
   },
@@ -508,8 +508,8 @@ Meaning units in chapter:
 Active attention snapshot:
 {active_attention_snapshot}
 
-Anchor-bank chapter slice:
-{anchor_bank_chapter_slice}
+Chapter source refs:
+{source_refs_in_chapter}
 
 Reflective frames snapshot:
 {reflective_frames_snapshot}
@@ -534,15 +534,14 @@ Return JSON:
   "backward_sweep": [],
   "cooling_operations": [],
   "promotion_candidates": [],
-  "anchor_status_updates": [],
   "knowledge_activation_updates": [],
   "cross_chapter_carry_forward": [],
   "chapter_summary_note": "<brief note>",
   "optional_chapter_reaction": {
     "type": "retrospect",
-    "anchor_quote": "<chapter-end anchor quote>",
+    "source_quote": "<chapter-end source quote>",
     "content": "<optional chapter-level anchored thought>",
-    "related_anchor_quotes": [],
+    "related_source_quotes": [],
     "search_query": "",
     "search_results": []
   }

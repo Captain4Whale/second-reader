@@ -6,6 +6,7 @@ from src.attentional_v2.source_spans import (
     build_paragraph_offset_preview,
     first_cursor_for_chapter,
     resolve_end_anchor_text,
+    source_ref_from_unit,
     source_unit_from_span,
 )
 from src.attentional_v2.storage import initialize_artifact_tree, unit_span_ledger_file
@@ -118,3 +119,57 @@ def test_unit_span_ledger_records_core_runtime_fact(tmp_path) -> None:
     assert record["start_cursor"] == span["start_cursor"]
     assert record["end_cursor"] == span["end_cursor"]
     assert record["source_span_id"].startswith("src:c1:p2@0-p2@")
+
+
+def test_source_ref_from_unit_resolves_single_paragraph_quote() -> None:
+    chapter = _chapter()
+    span = {
+        "start_cursor": {"chapter_id": 1, "chapter_ref": "Chapter 1", "paragraph_index": 2, "char_offset": 0},
+        "end_cursor": {"chapter_id": 1, "chapter_ref": "Chapter 1", "paragraph_index": 3, "char_offset": len("Gamma closing.")},
+    }
+    source_unit = source_unit_from_span(chapter=chapter, source_span=span)
+
+    source_ref = source_ref_from_unit(source_unit, quote="bridge.", role="reaction_anchor")
+
+    assert source_ref["source_span_id"] == "src:c1:p2@5-p2@12"
+    assert source_ref["quote"] == "bridge."
+    assert source_ref["role"] == "reaction_anchor"
+    assert source_ref["resolution"]["status"] == "matched"
+
+
+def test_source_ref_from_unit_resolves_cross_paragraph_quote() -> None:
+    chapter = _chapter()
+    span = {
+        "start_cursor": {"chapter_id": 1, "chapter_ref": "Chapter 1", "paragraph_index": 2, "char_offset": 0},
+        "end_cursor": {"chapter_id": 1, "chapter_ref": "Chapter 1", "paragraph_index": 3, "char_offset": len("Gamma closing.")},
+    }
+    source_unit = source_unit_from_span(chapter=chapter, source_span=span)
+
+    source_ref = source_ref_from_unit(source_unit, quote="bridge.\n\nGamma", role="support")
+
+    assert source_ref["source_span_id"] == "src:c1:p2@5-p3@5"
+    assert source_ref["resolution"]["status"] == "matched"
+
+
+def test_source_ref_from_unit_marks_repeated_quote_and_missing_quote_fallback() -> None:
+    chapter = {
+        "id": 1,
+        "title": "Chapter 1",
+        "paragraphs": [{"paragraph_index": 1, "text": "echo echo", "text_role": "body"}],
+    }
+    span = {
+        "start_cursor": {"chapter_id": 1, "chapter_ref": "Chapter 1", "paragraph_index": 1, "char_offset": 0},
+        "end_cursor": {"chapter_id": 1, "chapter_ref": "Chapter 1", "paragraph_index": 1, "char_offset": len("echo echo")},
+    }
+    source_unit = source_unit_from_span(chapter=chapter, source_span=span)
+
+    repeated = source_ref_from_unit(source_unit, quote="echo", role="support")
+    missing = source_ref_from_unit(source_unit, quote="absent", role="support")
+    empty = source_ref_from_unit(source_unit, quote="", role="support")
+
+    assert repeated["source_span_id"] == "src:c1:p1@0-p1@4"
+    assert repeated["resolution"]["status"] == "ambiguous_first_match"
+    assert missing["source_span_id"] == "src:c1:p1@0-p1@9"
+    assert missing["resolution"]["method"] == "quote_not_found"
+    assert empty["quote"] == "echo echo"
+    assert empty["resolution"]["method"] == "missing_quote"

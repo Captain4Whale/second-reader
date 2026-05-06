@@ -4,10 +4,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
-
 from .schemas import (
-    AnchorBankState,
     ConceptRegistryState,
     LocalBufferState,
     LocalContinuityState,
@@ -183,7 +180,6 @@ def _build_probe_snapshot(
     concept_registry: ConceptRegistryState,
     thread_trace: ThreadTraceState,
     reflective_frames: ReflectiveFramesState,
-    anchor_bank: AnchorBankState,
     reaction_records: ReactionRecordsState,
 ) -> dict[str, object]:
     """Build one normalized probe snapshot from the current persisted mechanism state."""
@@ -196,7 +192,6 @@ def _build_probe_snapshot(
         concept_registry=concept_registry,
         thread_trace=thread_trace,
         reflective_frames=reflective_frames,
-        anchor_bank=anchor_bank,
         reaction_records=reaction_records,
     )
     return {
@@ -244,9 +239,11 @@ def _build_probe_snapshot(
         "active_focus_digest": dict(carry_forward_context.get("active_focus_digest", {}))
         if isinstance(carry_forward_context.get("active_focus_digest"), dict)
         else {},
-        "anchor_bank_digest": dict(carry_forward_context.get("anchor_bank_digest", {}))
-        if isinstance(carry_forward_context.get("anchor_bank_digest"), dict)
-        else {},
+        "source_ref_digest": [
+            dict(item)
+            for item in carry_forward_context.get("source_ref_digest", [])
+            if isinstance(item, dict)
+        ],
         "recent_reading_orientation": _recent_reading_orientation(
             local_buffer=local_buffer,
             local_continuity=local_continuity,
@@ -267,7 +264,6 @@ def persist_due_memory_quality_probe_snapshots(
     concept_registry: ConceptRegistryState,
     thread_trace: ThreadTraceState,
     reflective_frames: ReflectiveFramesState,
-    anchor_bank: AnchorBankState,
     reaction_records: ReactionRecordsState,
 ) -> list[dict[str, object]]:
     """Persist any probe snapshots whose threshold is crossed by this completed read step."""
@@ -332,7 +328,6 @@ def persist_due_memory_quality_probe_snapshots(
             concept_registry=concept_registry,
             thread_trace=thread_trace,
             reflective_frames=reflective_frames,
-            anchor_bank=anchor_bank,
             reaction_records=reaction_records,
         )
         payload.setdefault("snapshots", []).append(snapshot)

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Mapping, TypedDict
 
-from .schemas import ReaderPolicy
+from .schemas import ReaderPolicy, SourceRef
 
 
 class SourceCursor(TypedDict, total=False):
@@ -135,6 +135,156 @@ def source_span_id(span: Mapping[str, object] | None) -> str:
         f"p{_int(start.get('paragraph_index'))}@{_int(start.get('char_offset'))}-"
         f"p{_int(end.get('paragraph_index'))}@{_int(end.get('char_offset'))}"
     )
+
+
+def source_ref_from_span(
+    source_span: Mapping[str, object] | None,
+    *,
+    quote: str = "",
+    role: str = "support",
+    resolution: Mapping[str, object] | None = None,
+) -> SourceRef:
+    """Build one inline source ref from an already known paragraph-offset span."""
+
+    span = dict(source_span) if isinstance(source_span, Mapping) else {}
+    source_ref: SourceRef = {
+        "source_span_id": source_span_id(span),
+        "source_span": span,
+        "quote": str(quote or ""),
+        "role": _clean_text(role) or "support",
+    }
+    if isinstance(resolution, Mapping):
+        source_ref["resolution"] = dict(resolution)
+    return source_ref
+
+
+def _source_unit_flat_slices(source_unit: Mapping[str, object]) -> list[dict[str, object]]:
+    """Return unit paragraph slices with flat offsets matching source_text."""
+
+    flat_slices: list[dict[str, object]] = []
+    flat_cursor = 0
+    for item in source_unit.get("paragraph_slices", []):
+        if not isinstance(item, Mapping):
+            continue
+        text = str(item.get("text", "") or "")
+        if flat_slices:
+            flat_cursor += 2
+        flat_start = flat_cursor
+        flat_cursor += len(text)
+        flat_slices.append(
+            {
+                **dict(item),
+                "flat_start": flat_start,
+                "flat_end": flat_cursor,
+            }
+        )
+    return flat_slices
+
+
+def _cursor_from_source_unit_flat_offset(
+    source_unit: Mapping[str, object],
+    flat_offset: int,
+) -> SourceCursor:
+    source_span = source_unit.get("source_span")
+    span = source_span if isinstance(source_span, Mapping) else {}
+    start = span.get("start_cursor")
+    end = span.get("end_cursor")
+    if not isinstance(start, Mapping):
+        return {}
+    chapter_id = _int(start.get("chapter_id") or (end.get("chapter_id") if isinstance(end, Mapping) else 0))
+    chapter_ref = _clean_text(start.get("chapter_ref") or (end.get("chapter_ref") if isinstance(end, Mapping) else ""))
+    for item in _source_unit_flat_slices(source_unit):
+        flat_start = _int(item.get("flat_start"))
+        flat_end = _int(item.get("flat_end"))
+        if flat_offset <= flat_end:
+            in_slice = max(0, min(flat_offset - flat_start, flat_end - flat_start))
+            return source_cursor(
+                chapter_id=chapter_id,
+                chapter_ref=chapter_ref,
+                paragraph_index=_int(item.get("paragraph_index")),
+                char_offset=_int(item.get("start_char")) + in_slice,
+            )
+    if isinstance(end, Mapping):
+        return dict(end)  # type: ignore[return-value]
+    return dict(start)  # type: ignore[return-value]
+
+
+def source_ref_from_unit(
+    source_unit: Mapping[str, object] | None,
+    *,
+    quote: str = "",
+    role: str = "support",
+) -> SourceRef:
+    """Resolve one unit-local quote into an inline paragraph-offset source ref."""
+
+    if not isinstance(source_unit, Mapping):
+        return source_ref_from_span({}, quote=quote, role=role, resolution={"status": "missing_source_unit"})
+    source_span = source_unit.get("source_span")
+    unit_span = dict(source_span) if isinstance(source_span, Mapping) else {}
+    unit_text = str(source_unit.get("source_text", "") or "")
+    clean_quote = str(quote or "").strip()
+    if not clean_quote:
+        return source_ref_from_span(
+            unit_span,
+            quote=unit_text,
+            role=role,
+            resolution={"status": "fallback_unit_span", "method": "missing_quote"},
+        )
+
+    matches: list[int] = []
+    start = 0
+    while True:
+        index = unit_text.find(clean_quote, start)
+        if index < 0:
+            break
+        matches.append(index)
+        start = index + max(1, len(clean_quote))
+    if not matches:
+        return source_ref_from_span(
+            unit_span,
+            quote=clean_quote,
+            role=role,
+            resolution={"status": "fallback_unit_span", "method": "quote_not_found", "match_count": 0},
+        )
+
+    match_start = matches[0]
+    start_cursor = _cursor_from_source_unit_flat_offset(source_unit, match_start)
+    end_cursor = _cursor_from_source_unit_flat_offset(source_unit, match_start + len(clean_quote))
+    quote_span = {
+        "start_cursor": start_cursor,
+        "end_cursor": end_cursor,
+    }
+    status = "matched" if len(matches) == 1 else "ambiguous_first_match"
+    return source_ref_from_span(
+        quote_span,
+        quote=clean_quote,
+        role=role,
+        resolution={"status": status, "method": "exact_text", "match_count": len(matches)},
+    )
+
+
+def dedupe_source_refs(source_refs: object) -> list[SourceRef]:
+    """Return order-preserving de-duplicated inline source refs."""
+
+    if not isinstance(source_refs, list):
+        return []
+    deduped: list[SourceRef] = []
+    seen: set[tuple[str, str, str]] = set()
+    for item in source_refs:
+        if not isinstance(item, Mapping):
+            continue
+        ref = source_ref_from_span(
+            item.get("source_span") if isinstance(item.get("source_span"), Mapping) else {},
+            quote=str(item.get("quote", "") or ""),
+            role=str(item.get("role", "") or "support"),
+            resolution=item.get("resolution") if isinstance(item.get("resolution"), Mapping) else None,
+        )
+        key = (_clean_text(ref.get("source_span_id")), _clean_text(ref.get("role")), _clean_text(ref.get("quote")))
+        if not key[0] or key in seen:
+            continue
+        seen.add(key)
+        deduped.append(ref)
+    return deduped
 
 
 def first_cursor_for_chapter(chapter: Mapping[str, object]) -> SourceCursor:
@@ -538,4 +688,3 @@ def source_locus_from_unit(source_unit: Mapping[str, object]) -> dict[str, objec
         "source_span": dict(source_span) if isinstance(source_span, Mapping) else {},
         "excerpt": str(source_unit.get("source_text", "") or "")[:220],
     }
-

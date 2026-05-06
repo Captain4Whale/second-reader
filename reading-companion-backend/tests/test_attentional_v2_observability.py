@@ -36,14 +36,6 @@ def test_record_settlement_writes_compact_state_deltas(tmp_path: Path) -> None:
         after_concept_registry={"entries": [{"concept_key": "concept-1", "summary": "new"}]},
         before_thread_trace={"entries": [{"thread_key": "thread-1", "summary": "old"}]},
         after_thread_trace={"entries": [{"thread_key": "thread-1", "summary": "updated"}]},
-        before_anchor_bank={"anchor_records": [{"anchor_id": "anchor-1", "quote": "old"}], "anchor_relations": []},
-        after_anchor_bank={
-            "anchor_records": [
-                {"anchor_id": "anchor-1", "quote": "updated"},
-                {"anchor_id": "anchor-2", "quote": "new"},
-            ],
-            "anchor_relations": [{"relation_id": "rel-1"}],
-        },
         before_reaction_records={"records": [{"reaction_id": "reaction-1", "thought": "old"}]},
         after_reaction_records={
             "records": [
@@ -67,8 +59,6 @@ def test_record_settlement_writes_compact_state_deltas(tmp_path: Path) -> None:
     }
     assert audit_line["state_deltas"]["concept_registry"]["added_ids"] == ["concept-1"]
     assert audit_line["state_deltas"]["thread_trace"]["updated_ids"] == ["thread-1"]
-    assert audit_line["state_deltas"]["anchor_bank"]["added_anchor_ids"] == ["anchor-2"]
-    assert audit_line["state_deltas"]["anchor_bank"]["updated_anchor_ids"] == ["anchor-1"]
-    assert audit_line["state_deltas"]["anchor_bank"]["added_relation_ids"] == ["rel-1"]
+    assert "anchor_bank" not in audit_line["state_deltas"]
     assert audit_line["state_deltas"]["reaction_records"]["added_ids"] == ["reaction-2"]
     assert audit_line["state_deltas"]["reaction_records"]["emitted_reaction_ids"] == ["reaction-2"]

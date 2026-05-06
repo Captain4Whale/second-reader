@@ -7,8 +7,6 @@ import re
 from src.reading_core import BookDocument
 from src.reading_core.runtime_contracts import SharedRunCursor
 
-from ..schemas import AnchorBankState
-
 
 def _clean_text(value: object) -> str:
     """Normalize one free-text value."""
@@ -361,58 +359,3 @@ def range_from_skill_arguments(
         if card:
             return _clean_text(card.get("start_sentence_id")), _clean_text(card.get("end_sentence_id"))
     return _clean_text(arguments.get("start_sentence_id")), _clean_text(arguments.get("end_sentence_id"))
-
-
-def resolve_anchor(
-    *,
-    anchor_bank: AnchorBankState,
-    sentence_lookup: dict[str, dict[str, object]],
-    chapter_lookup: dict[int, dict[str, object]],
-    mainline_cursor: SharedRunCursor,
-    anchor_id: str = "",
-    sentence_id: str = "",
-    ref_id: str = "",
-) -> tuple[dict[str, object], str | None]:
-    """Resolve an anchor or sentence handle into source-grounded context."""
-
-    handle = _clean_text(anchor_id or ref_id)
-    if handle:
-        for anchor in anchor_bank.get("anchor_records", []):
-            if not isinstance(anchor, dict):
-                continue
-            if _clean_text(anchor.get("anchor_id")) != handle:
-                continue
-            start_sentence_id = _clean_text(anchor.get("sentence_start_id"))
-            end_sentence_id = _clean_text(anchor.get("sentence_end_id")) or start_sentence_id
-            source_window, error = fetch_source_window(
-                sentence_lookup=sentence_lookup,
-                chapter_lookup=chapter_lookup,
-                mainline_cursor=mainline_cursor,
-                start_sentence_id=start_sentence_id,
-                end_sentence_id=end_sentence_id,
-                context_before=1,
-                context_after=1,
-            )
-            if error:
-                return {}, error
-            return {
-                "anchor_id": handle,
-                "quote": _clean_text(anchor.get("quote")),
-                "why_it_mattered": _clean_text(anchor.get("why_it_mattered")),
-                "source_window": source_window,
-            }, None
-    sentence_handle = _clean_text(sentence_id or ref_id)
-    if sentence_handle:
-        source_window, error = fetch_source_window(
-            sentence_lookup=sentence_lookup,
-            chapter_lookup=chapter_lookup,
-            mainline_cursor=mainline_cursor,
-            start_sentence_id=sentence_handle,
-            end_sentence_id=sentence_handle,
-            context_before=1,
-            context_after=1,
-        )
-        if error:
-            return {}, error
-        return {"sentence_id": sentence_handle, "source_window": source_window}, None
-    return {}, "anchor_or_sentence_handle_required"

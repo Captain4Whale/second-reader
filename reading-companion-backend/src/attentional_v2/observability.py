@@ -17,7 +17,6 @@ from .benchmark_probes import (
 )
 from .schemas import (
     ActiveAttention,
-    AnchorBankState,
     CarryForwardContext,
     ConceptRegistryState,
     ContextRequest,
@@ -168,25 +167,6 @@ def _id_delta(before_items: object, after_items: object, *, id_key: str) -> dict
     }
 
 
-def _anchor_bank_delta(before: AnchorBankState, after: AnchorBankState) -> dict[str, object]:
-    """Return compact anchor-bank deltas across anchors and relations."""
-
-    anchor_delta = _id_delta(before.get("anchor_records", []), after.get("anchor_records", []), id_key="anchor_id")
-    relation_delta = _id_delta(before.get("anchor_relations", []), after.get("anchor_relations", []), id_key="relation_id")
-    return {
-        "before_anchor_count": anchor_delta["before_count"],
-        "after_anchor_count": anchor_delta["after_count"],
-        "added_anchor_ids": anchor_delta["added_ids"],
-        "updated_anchor_ids": anchor_delta["updated_ids"],
-        "removed_anchor_ids": anchor_delta["removed_ids"],
-        "before_relation_count": relation_delta["before_count"],
-        "after_relation_count": relation_delta["after_count"],
-        "added_relation_ids": relation_delta["added_ids"],
-        "updated_relation_ids": relation_delta["updated_ids"],
-        "removed_relation_ids": relation_delta["removed_ids"],
-    }
-
-
 def record_read(
     output_dir: Path | None,
     *,
@@ -267,8 +247,6 @@ def record_settlement(
     after_concept_registry: ConceptRegistryState,
     before_thread_trace: ThreadTraceState,
     after_thread_trace: ThreadTraceState,
-    before_anchor_bank: AnchorBankState,
-    after_anchor_bank: AnchorBankState,
     before_reaction_records: ReactionRecordsState,
     after_reaction_records: ReactionRecordsState,
     emitted_reaction_ids: list[str] | None = None,
@@ -308,7 +286,6 @@ def record_settlement(
                     after_thread_trace.get("entries", []),
                     id_key="thread_key",
                 ),
-                "anchor_bank": _anchor_bank_delta(before_anchor_bank, after_anchor_bank),
                 "reaction_records": {
                     **_id_delta(
                         before_reaction_records.get("records", []),
@@ -344,7 +321,6 @@ def maybe_capture_memory_quality_probe(
     concept_registry: ConceptRegistryState,
     thread_trace: ThreadTraceState,
     reflective_frames: ReflectiveFramesState,
-    anchor_bank: AnchorBankState,
     reaction_records: ReactionRecordsState,
 ) -> list[dict[str, object]]:
     """Capture benchmark probe snapshots through the runtime observability boundary."""
@@ -363,7 +339,6 @@ def maybe_capture_memory_quality_probe(
         concept_registry=concept_registry,
         thread_trace=thread_trace,
         reflective_frames=reflective_frames,
-        anchor_bank=anchor_bank,
         reaction_records=reaction_records,
     )
 
@@ -417,7 +392,6 @@ def _checkpoint_state_counts(checkpoint: FullCheckpointState) -> dict[str, int]:
     """Return compact checkpoint counts that are useful for debug forensics."""
 
     local_buffer = checkpoint.get("local_buffer", {})
-    anchor_bank = checkpoint.get("anchor_bank", {}) or checkpoint.get("anchor_memory", {})
     concept_registry = checkpoint.get("concept_registry", {})
     thread_trace = checkpoint.get("thread_trace", {})
     reflective_frames = checkpoint.get("reflective_frames", {}) or checkpoint.get("reflective_summaries", {})
@@ -427,7 +401,6 @@ def _checkpoint_state_counts(checkpoint: FullCheckpointState) -> dict[str, int]:
     return {
         "recent_sentence_count": len(local_buffer.get("recent_sentences", [])),
         "open_meaning_unit_sentence_count": len(local_buffer.get("open_meaning_unit_sentence_ids", [])),
-        "anchor_count": len(anchor_bank.get("anchor_records", [])),
         "concept_count": len(concept_registry.get("entries", [])),
         "thread_count": len(thread_trace.get("entries", [])),
         "reflective_item_count": len(reflective_frames.get("chapter_understandings", [])),

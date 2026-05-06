@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from src.attentional_v2.schemas import (
     build_default_reader_policy,
-    build_empty_anchor_memory,
     build_empty_knowledge_activations,
     build_empty_local_buffer,
     build_empty_reaction_records,
@@ -13,7 +12,6 @@ from src.attentional_v2.schemas import (
     build_empty_active_attention,
 )
 from src.attentional_v2.state_ops import (
-    append_anchor_relation,
     append_reaction_record,
     append_reconsolidation_record,
     apply_active_attention_operations,
@@ -21,10 +19,23 @@ from src.attentional_v2.state_ops import (
     push_local_buffer_sentence,
     replace_policy_section,
     supersede_reflective_item,
-    upsert_anchor_record,
     upsert_knowledge_activation,
     upsert_reflective_item,
 )
+
+
+def _source_ref(quote: str = "People want things from other people.") -> dict[str, object]:
+    """Return one paragraph-offset source ref fixture."""
+
+    return {
+        "source_span_id": "src:c1:p1@0-p1@36",
+        "source_span": {
+            "start_cursor": {"chapter_id": 1, "chapter_ref": "Chapter 1", "paragraph_index": 1, "char_offset": 0},
+            "end_cursor": {"chapter_id": 1, "chapter_ref": "Chapter 1", "paragraph_index": 1, "char_offset": 36},
+        },
+        "quote": quote,
+        "role": "support",
+    }
 
 
 def test_apply_active_attention_operations_handles_append_update_close_link_and_drop():
@@ -42,7 +53,7 @@ def test_apply_active_attention_operations_handles_append_update_close_link_and_
                 "payload": {
                     "attention_tags": ["motif"],
                     "statement": "value returns as a live motif",
-                    "support_anchor_ids": ["a-1"],
+                    "source_refs": [_source_ref()],
                     "status": "active",
                 },
             }
@@ -88,58 +99,21 @@ def test_apply_active_attention_operations_handles_append_update_close_link_and_
     assert state["active_items"][0]["status"] == "closed"
     assert state["active_items"][0]["linked_concept_keys"] == ["concept:value"]
     assert state["active_items"][0]["linked_thread_keys"] == ["thread:value"]
+    assert state["active_items"][0]["source_refs"][0]["source_span_id"] == "src:c1:p1@0-p1@36"
     assert "bucket" not in state["active_items"][0]
     assert "kind" not in state["active_items"][0]
     assert dropped["active_items"] == []
 
 
-def test_anchor_and_activation_helpers_upsert_by_id():
-    """Anchor and activation helpers should replace existing items when ids match."""
-
-    anchor_state = build_empty_anchor_memory()
-    anchor_state = upsert_anchor_record(
-        anchor_state,
-        {
-            "anchor_id": "a-1",
-            "sentence_start_id": "c1-s2",
-            "sentence_end_id": "c1-s2",
-            "quote": "People want things from other people.",
-            "locator": {"paragraph_index": 2, "paragraph_start": 2, "paragraph_end": 2, "char_start": 0, "char_end": 36},
-            "anchor_kind": "claim",
-            "why_it_mattered": "sets the social frame",
-            "status": "active",
-        },
-    )
-    anchor_state = upsert_anchor_record(
-        anchor_state,
-        {
-            "anchor_id": "a-1",
-            "sentence_start_id": "c1-s2",
-            "sentence_end_id": "c1-s2",
-            "quote": "People want things from other people.",
-            "locator": {"paragraph_index": 2, "paragraph_start": 2, "paragraph_end": 2, "char_start": 0, "char_end": 36},
-            "anchor_kind": "claim",
-            "why_it_mattered": "reframed as exchange pressure",
-            "status": "active",
-        },
-    )
-    anchor_state = append_anchor_relation(
-        anchor_state,
-        {
-            "relation_id": "rel-1",
-            "relation_type": "support",
-            "source_anchor_id": "a-1",
-            "target_anchor_id": "a-2",
-            "rationale": "sets up the later claim",
-        },
-    )
+def test_activation_helpers_upsert_source_refs_by_id():
+    """Activation helpers should replace existing items while carrying inline source refs."""
 
     activation_state = build_empty_knowledge_activations()
     activation_state = upsert_knowledge_activation(
         activation_state,
         {
             "activation_id": "k-1",
-            "trigger_anchor_id": "a-1",
+            "trigger_source_ref": _source_ref(),
             "activation_type": "prior_frame",
             "source_candidate": "exchange theory",
             "recognition_confidence": "plausible",
@@ -147,10 +121,8 @@ def test_anchor_and_activation_helpers_upsert_by_id():
             "role_assessment": "background lens",
             "evidence_hints": ["market", "value"],
             "evidence_rationale": "direct lexical overlap",
-            "support_anchor_ids": ["a-1"],
-            "conflict_anchor_ids": [],
-            "introduced_at_sentence_id": "c1-s2",
-            "last_touched_sentence_id": "c1-s2",
+            "source_refs": [_source_ref()],
+            "conflict_source_refs": [],
             "status": "plausible",
         },
     )
@@ -158,7 +130,7 @@ def test_anchor_and_activation_helpers_upsert_by_id():
         activation_state,
         {
             "activation_id": "k-1",
-            "trigger_anchor_id": "a-1",
+            "trigger_source_ref": _source_ref(),
             "activation_type": "prior_frame",
             "source_candidate": "exchange theory",
             "recognition_confidence": "strong",
@@ -166,19 +138,15 @@ def test_anchor_and_activation_helpers_upsert_by_id():
             "role_assessment": "active lens",
             "evidence_hints": ["market", "value"],
             "evidence_rationale": "stronger later confirmation",
-            "support_anchor_ids": ["a-1"],
-            "conflict_anchor_ids": [],
-            "introduced_at_sentence_id": "c1-s2",
-            "last_touched_sentence_id": "c1-s3",
+            "source_refs": [_source_ref()],
+            "conflict_source_refs": [],
             "status": "strong",
         },
     )
 
-    assert len(anchor_state["anchor_records"]) == 1
-    assert anchor_state["anchor_records"][0]["why_it_mattered"] == "reframed as exchange pressure"
-    assert anchor_state["anchor_relations"][0]["relation_id"] == "rel-1"
     assert len(activation_state["activations"]) == 1
     assert activation_state["activations"][0]["status"] == "strong"
+    assert activation_state["activations"][0]["source_refs"][0]["source_span_id"] == "src:c1:p1@0-p1@36"
 
 
 def test_close_local_meaning_unit_tracks_recent_units():
@@ -222,7 +190,7 @@ def test_reflective_reaction_reconsolidation_and_policy_helpers_append_cleanly()
         item={
             "item_id": "r-1",
             "statement": "Value is mediated by other people.",
-            "support_anchor_ids": ["a-1"],
+            "source_refs": [_source_ref()],
             "confidence_band": "working",
             "promoted_from": "active_attention_item",
             "status": "active",
@@ -234,17 +202,12 @@ def test_reflective_reaction_reconsolidation_and_policy_helpers_append_cleanly()
             "reaction_id": "rx-1",
             "chapter_id": 1,
             "chapter_ref": "Chapter 1",
-            "emitted_at_sentence_id": "c1-s4",
+            "emitted_at_source_span_id": "src:c1:p1@0-p1@36",
             "type": "discern",
             "thought": "The later sentence changes the frame.",
-            "primary_anchor": {
-                "anchor_id": "a-1",
-                "sentence_start_id": "c1-s4",
-                "sentence_end_id": "c1-s4",
-                "quote": "The frame changes here.",
-                "locator": {"href": "chapter-1.xhtml", "paragraph_index": 4, "paragraph_start": 4, "paragraph_end": 4},
-            },
-            "related_anchors": [],
+            "source_quote": "The frame changes here.",
+            "primary_source_ref": _source_ref("The frame changes here."),
+            "related_source_refs": [],
             "created_at": "2026-03-23T00:00:30Z",
         },
     )

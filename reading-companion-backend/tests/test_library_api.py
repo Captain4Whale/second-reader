@@ -7,7 +7,6 @@ import json
 from pathlib import Path
 
 from fastapi.testclient import TestClient
-import pytest
 from src.api.contract import to_api_book_id, to_api_reaction_id
 from src.attentional_v2.storage import chapter_result_compatibility_file
 from src.config import get_reader_resume_compat_version
@@ -425,7 +424,7 @@ def test_bookshelf_omits_stale_opaque_stub_uploads(tmp_path):
 
     api_module.app.state.root = tmp_path
     client = TestClient(api_module.app)
-    real_book_id = _bootstrap_book(tmp_path)
+    _bootstrap_book(tmp_path)
 
     stub_output_dir = tmp_path / "output" / "0cfbde9bedca"
     stub_output_dir.mkdir(parents=True, exist_ok=True)
@@ -781,11 +780,13 @@ def test_orphan_stale_runtime_projects_to_paused_truth_and_last_known_snapshot(t
         "chapter_id": 1,
         "chapter_number": 1,
         "chapter_ref": "Chapter 1",
-        "excerpt": "1.1",
-        "locator": None,
-        "sentence_start_id": "c1-s1",
-        "sentence_end_id": "c1-s2",
-    }
+            "excerpt": "1.1",
+            "locator": None,
+            "start_cursor": None,
+            "end_cursor": None,
+            "sentence_start_id": "c1-s1",
+            "sentence_end_id": "c1-s2",
+        }
 
 
 def test_recover_unfinished_jobs_reconciles_orphan_active_runs_without_duplicate_events(tmp_path):
@@ -1237,8 +1238,8 @@ def test_api_reads_books_chapters_marks_and_docs(tmp_path):
     assert chapter_response.json()["book_id"] == public_book_id
     assert chapter_response.json()["featured_reactions"][0]["reaction_id"] == public_reaction_id
     assert chapter_response.json()["chapter_heading"]["title"] == "Opening frame"
-    assert chapter_response.json()["featured_reactions"][0]["primary_anchor"]["quote"] == "Alpha beta"
-    assert chapter_response.json()["sections"][0]["reactions"][0]["primary_anchor"]["quote"] == "Alpha beta"
+    assert chapter_response.json()["featured_reactions"][0]["source_quote"] == "Alpha beta"
+    assert chapter_response.json()["sections"][0]["reactions"][0]["source_quote"] == "Alpha beta"
 
     reactions_response = client.get(f"/api/books/{public_book_id}/chapters/1/reactions")
     assert reactions_response.status_code == 200
@@ -1261,13 +1262,13 @@ def test_api_reads_books_chapters_marks_and_docs(tmp_path):
     assert marks_response.json()["book_id"] == public_book_id
     assert marks_response.json()["groups"][0]["items"][0]["reaction_id"] == public_reaction_id
     assert isinstance(marks_response.json()["groups"][0]["items"][0]["mark_id"], int)
-    assert marks_response.json()["groups"][0]["items"][0]["primary_anchor"]["quote"] == "Alpha beta"
+    assert marks_response.json()["groups"][0]["items"][0]["source_quote"] == "Alpha beta"
 
     global_marks_response = client.get("/api/marks")
     assert global_marks_response.status_code == 200
     assert global_marks_response.json()["items"][0]["reaction_id"] == public_reaction_id
     assert isinstance(global_marks_response.json()["items"][0]["mark_id"], int)
-    assert global_marks_response.json()["items"][0]["primary_anchor"]["quote"] == "Alpha beta"
+    assert global_marks_response.json()["items"][0]["source_quote"] == "Alpha beta"
 
     delete_response = client.delete(f"/api/marks/{public_reaction_id}")
     assert delete_response.status_code == 200
@@ -1461,11 +1462,13 @@ def test_analysis_state_exposes_current_reading_activity_snapshot(tmp_path):
         "chapter_id": 1,
         "chapter_number": 1,
         "chapter_ref": "Chapter 1",
-        "excerpt": "Hormesis lost some scientific respect.",
-        "locator": None,
-        "sentence_start_id": None,
-        "sentence_end_id": None,
-    }
+            "excerpt": "Hormesis lost some scientific respect.",
+            "locator": None,
+            "start_cursor": None,
+            "end_cursor": None,
+            "sentence_start_id": None,
+            "sentence_end_id": None,
+        }
 
 
 def test_analysis_state_uses_runtime_shell_cursor_for_additive_locus_fields(tmp_path):
@@ -1519,10 +1522,12 @@ def test_analysis_state_uses_runtime_shell_cursor_for_additive_locus_fields(tmp_
         "chapter_number": 1,
         "chapter_ref": "Chapter 1",
         "sentence_start_id": "c1-s8",
-        "sentence_end_id": "c1-s9",
-        "excerpt": "Alpha beta",
-        "locator": None,
-    }
+            "sentence_end_id": "c1-s9",
+            "excerpt": "Alpha beta",
+            "locator": None,
+            "start_cursor": None,
+            "end_cursor": None,
+        }
     assert payload["active_reaction_id"] == to_api_reaction_id(book_id=book_id, reaction_id="r1")
 
 

@@ -6,10 +6,11 @@ from src.attentional_v2 import nodes as nodes_module
 from src.attentional_v2.nodes import navigate_choose_next_unit_act
 from src.attentional_v2.schemas import (
     build_default_reader_policy,
-    build_empty_anchor_memory,
+    build_empty_concept_registry,
     build_empty_local_buffer,
     build_empty_reaction_records,
-    build_empty_reflective_summaries,
+    build_empty_reflective_frames,
+    build_empty_thread_trace,
     build_empty_active_attention,
 )
 from src.attentional_v2.state_projection import (
@@ -30,6 +31,18 @@ def _sentence(sentence_id: str, text: str, *, sentence_index: int = 1) -> dict[s
     }
 
 
+def _source_ref(quote: str = "Alpha sentence.") -> dict[str, object]:
+    return {
+        "source_span_id": "src:c1:p1@0-p1@15",
+        "source_span": {
+            "start_cursor": {"chapter_id": 1, "chapter_ref": "Chapter 1", "paragraph_index": 1, "char_offset": 0},
+            "end_cursor": {"chapter_id": 1, "chapter_ref": "Chapter 1", "paragraph_index": 1, "char_offset": 15},
+        },
+        "quote": quote,
+        "role": "support",
+    }
+
+
 def test_build_carry_forward_context_exposes_phase_c1_packet_shape():
     """Carry-forward packetization should expose bounded current state layers."""
 
@@ -43,51 +56,40 @@ def test_build_carry_forward_context_exposes_phase_c1_packet_shape():
             "item_id": "question-1",
             "attention_tags": ["question"],
             "statement": "Why does the chapter turn here?",
-            "support_anchor_ids": [],
+            "source_refs": [_source_ref()],
             "status": "open",
         }
     ]
 
-    anchor_memory = build_empty_anchor_memory()
-    anchor_memory["anchor_records"] = [
+    concept_registry = build_empty_concept_registry()
+    concept_registry["entries"] = [
         {
-            "anchor_id": "a-1",
-            "sentence_start_id": "c1-s1",
-            "sentence_end_id": "c1-s1",
-            "quote": "Alpha sentence.",
-            "anchor_kind": "unit_evidence",
-            "why_it_mattered": "It established the initial line.",
+            "concept_key": "promise",
+            "concept_type": "motif",
+            "summary": "A promise is still hanging open.",
+            "source_refs": [_source_ref()],
             "status": "active",
-            "locator": {},
-            "created_at": "2026-04-12T00:00:00Z",
-            "updated_at": "2026-04-12T00:00:00Z",
-            "times_referenced": 0,
-            "source_passage_id": "",
-            "tags": [],
-        },
-        {
-            "anchor_id": "a-2",
-            "sentence_start_id": "c1-s2",
-            "sentence_end_id": "c1-s2",
-            "quote": "The earlier promise is still hanging open.",
-            "anchor_kind": "callback_target",
-            "why_it_mattered": "It keeps the earlier promise unresolved.",
-            "status": "active",
-            "locator": {},
         }
     ]
-    anchor_memory["motif_index"] = {"promise": ["a-1", "a-2"]}
-    anchor_memory["unresolved_reference_index"] = {"promise": ["a-2"], "missing name": ["a-2"]}
-    anchor_memory["trace_links"] = {"a-1": ["a-2"]}
+    thread_trace = build_empty_thread_trace()
+    thread_trace["entries"] = [
+        {
+            "thread_key": "thread:promise",
+            "thread_type": "open_reference",
+            "summary": "The later promise turns back toward the opener.",
+            "source_refs": [_source_ref()],
+            "status": "active",
+        }
+    ]
 
-    reflective_summaries = build_empty_reflective_summaries()
-    reflective_summaries["chapter_understandings"] = [
+    reflective_frames = build_empty_reflective_frames()
+    reflective_frames["chapter_understandings"] = [
         {
             "item_id": "frame-1",
             "statement": "The chapter is opening a practical dilemma.",
             "chapter_ref": "Chapter 1",
             "confidence_band": "working",
-            "support_anchor_ids": ["a-1"],
+            "source_refs": [_source_ref()],
         }
     ]
 
@@ -97,8 +99,9 @@ def test_build_carry_forward_context_exposes_phase_c1_packet_shape():
             "reaction_id": "reaction-1",
             "type": "highlight",
             "thought": "The first line already carries pressure.",
-            "emitted_at_sentence_id": "c1-s1",
-            "primary_anchor": {"anchor_id": "a-1", "quote": "Alpha sentence."},
+            "emitted_at_source_span_id": "src:c1:p1@0-p1@15",
+            "source_quote": "Alpha sentence.",
+            "primary_source_ref": _source_ref(),
         }
     ]
 
@@ -107,8 +110,9 @@ def test_build_carry_forward_context_exposes_phase_c1_packet_shape():
         current_unit_sentence_ids=["c1-s2"],
         local_buffer=local_buffer,
         active_attention=active_attention,
-        anchor_memory=anchor_memory,
-        reflective_summaries=reflective_summaries,
+        concept_registry=concept_registry,
+        thread_trace=thread_trace,
+        reflective_frames=reflective_frames,
         reaction_records=reaction_records,
     )
 
@@ -116,17 +120,16 @@ def test_build_carry_forward_context_exposes_phase_c1_packet_shape():
     assert packet["active_attention_digest"]["active_items"][0]["item_id"] == "question-1"
     assert packet["active_attention_digest"]["active_items"][0]["attention_tags"] == ["question"]
     assert packet["chapter_reflective_frame"]["chapter_frames"][0]["item_id"] == "frame-1"
-    assert packet["anchor_bank_digest"]["active_anchors"][0]["anchor_id"] == "a-1"
     assert packet["session_continuity_capsule"]["recent_sentence_ids"] == ["c1-s1"]
     assert "recent_routes" not in packet["active_focus_digest"]
     assert packet["concept_digest"][0]["concept_key"] == "promise"
-    assert packet["concept_digest"][0]["concept_type"] == "motif_and_unresolved_reference"
+    assert packet["concept_digest"][0]["concept_type"] == "motif"
     assert packet["thread_digest"][0]["thread_type"] in {"trace_link", "open_reference"}
     assert any(ref["kind"] == "concept" for ref in packet["refs"])
     assert any(ref["kind"] == "thread" for ref in packet["refs"])
 
     assert packet["reflective_digest"][0]["item_id"] == "frame-1"
-    assert packet["anchor_digest"][0]["anchor_id"] == "a-1"
+    assert packet["source_ref_digest"][0]["source_span_id"] == "src:c1:p1@0-p1@15"
     assert packet["continuity_digest"]["recent_reactions"][0]["reaction_id"] == "reaction-1"
     assert packet["refs"]
 
@@ -139,8 +142,9 @@ def test_build_navigation_context_exposes_state_packet_without_watch_metadata():
         current_sentence_id="c1-s2",
         local_buffer=build_empty_local_buffer(),
         active_attention=build_empty_active_attention(),
-        anchor_memory=build_empty_anchor_memory(),
-        reflective_summaries=build_empty_reflective_summaries(),
+        concept_registry=build_empty_concept_registry(),
+        thread_trace=build_empty_thread_trace(),
+        reflective_frames=build_empty_reflective_frames(),
         reaction_records=build_empty_reaction_records(),
     )
 
@@ -148,7 +152,8 @@ def test_build_navigation_context_exposes_state_packet_without_watch_metadata():
     assert "active_attention_digest" in packet
     assert "concept_digest" in packet
     assert "thread_digest" in packet
-    assert "anchor_bank_digest" in packet
+    assert "source_ref_digest" in packet
+    assert "anchor_bank_digest" not in packet
     assert "watch_state" not in packet
 
 
@@ -165,35 +170,40 @@ def test_build_read_prompt_packet_projects_compact_always_carry_and_selective_ca
             "item_id": "question-1",
             "attention_tags": ["question"],
             "statement": "Why does the chapter turn here?",
-            "support_anchor_ids": [],
+            "source_refs": [_source_ref()],
             "status": "open",
         }
     ]
 
-    anchor_memory = build_empty_anchor_memory()
-    anchor_memory["anchor_records"] = [
+    concept_registry = build_empty_concept_registry()
+    concept_registry["entries"] = [
         {
-            "anchor_id": "a-1",
-            "sentence_start_id": "c1-s1",
-            "sentence_end_id": "c1-s1",
-            "quote": "Alpha sentence.",
-            "anchor_kind": "unit_evidence",
-            "why_it_mattered": "It established the initial line.",
+            "concept_key": "promise",
+            "concept_type": "motif",
+            "summary": "A promise remains active.",
+            "source_refs": [_source_ref()],
             "status": "active",
-            "locator": {},
         }
     ]
-    anchor_memory["motif_index"] = {"promise": ["a-1"]}
-    anchor_memory["trace_links"] = {"a-1": ["a-1"]}
+    thread_trace = build_empty_thread_trace()
+    thread_trace["entries"] = [
+        {
+            "thread_key": "thread:promise",
+            "thread_type": "trace_link",
+            "summary": "The opener keeps returning.",
+            "source_refs": [_source_ref()],
+            "status": "active",
+        }
+    ]
 
-    reflective_summaries = build_empty_reflective_summaries()
-    reflective_summaries["chapter_understandings"] = [
+    reflective_frames = build_empty_reflective_frames()
+    reflective_frames["chapter_understandings"] = [
         {
             "item_id": "frame-1",
             "statement": "The chapter is opening a practical dilemma.",
             "chapter_ref": "Chapter 1",
             "confidence_band": "working",
-            "support_anchor_ids": ["a-1"],
+            "source_refs": [_source_ref()],
         }
     ]
 
@@ -203,8 +213,9 @@ def test_build_read_prompt_packet_projects_compact_always_carry_and_selective_ca
             "reaction_id": "reaction-1",
             "type": "highlight",
             "thought": "The first line already carries pressure.",
-            "emitted_at_sentence_id": "c1-s1",
-            "primary_anchor": {"anchor_id": "a-1", "quote": "Alpha sentence."},
+            "emitted_at_source_span_id": "src:c1:p1@0-p1@15",
+            "source_quote": "Alpha sentence.",
+            "primary_source_ref": _source_ref(),
         }
     ]
 
@@ -213,8 +224,9 @@ def test_build_read_prompt_packet_projects_compact_always_carry_and_selective_ca
         current_unit_sentence_ids=["c1-s2"],
         local_buffer=local_buffer,
         active_attention=active_attention,
-        anchor_memory=anchor_memory,
-        reflective_summaries=reflective_summaries,
+        concept_registry=concept_registry,
+        thread_trace=thread_trace,
+        reflective_frames=reflective_frames,
         reaction_records=reaction_records,
     )
 
@@ -283,7 +295,7 @@ def test_navigate_choose_next_unit_prompt_receives_navigation_context(monkeypatc
             "active_focus_digest": {"recent_reactions": []},
             "concept_digest": [{"concept_key": "promise"}],
             "thread_digest": [{"thread_key": "trace:a-1"}],
-            "anchor_bank_digest": {"active_anchors": []},
+            "source_ref_digest": [],
             "refs": [],
         },
         source_evidence={},

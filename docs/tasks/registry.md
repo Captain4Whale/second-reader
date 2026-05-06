@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-05-05T22:11:51+08:00`
+Last updated: `2026-05-06T00:00:00+08:00`
 
 ## Status Values
 - `active`
@@ -40,19 +40,19 @@ Last updated: `2026-05-05T22:11:51+08:00`
   - `Phase C.1` is now landed:
     - live prompt inputs now flow through a bounded internal `state_packet.v1` layer
     - `Navigate.unitize` now receives a small `navigation_context`
-    - `read` now receives a packetized read context that explicitly separates continuity capsule, active-attention digest, reflective frame, active focus, and anchor-bank digest
+    - `read` now receives a packetized read context that explicitly separates continuity capsule, active-attention digest, reflective frame, active focus, and source-ref digest
     - persisted runtime files and public/frontend compatibility surfaces remain unchanged
   - `Phase C.2` is now landed as the first state-territory slice:
     - live state packets now derive a bounded `concept_digest` from the current `motif_index + unresolved_reference_index`
     - live state packets now derive a bounded `thread_digest` from the current `trace_links + unresolved_reference_index`
     - `Navigate.unitize` and `read` now both receive those small concept/thread digests without changing persisted runtime files or public surfaces
   - `Phase C.3` is now landed:
-    - new runs now treat `active_attention / concept_registry / thread_trace / reflective_frames / anchor_bank` as the primary runtime and checkpoint truth
+    - new runs now treat `active_attention / concept_registry / thread_trace / reflective_frames` plus inline `source_refs[]` as the primary runtime and checkpoint truth
     - old V2 state stores were demoted to cutover-only legacy territory during the cutover
     - `active_recall` now exposes first-class `concepts` and `threads` from the new state layers
     - checkpoint/resume temporarily accepted both old and new state territory during the cutover, while newly written checkpoints already used only the new primary keys
   - `Phase C.4` is now landed:
-    - sentence-intake / bridge / slow-cycle now consume and write the new primary state layers directly
+    - sentence-intake / slow-cycle now consume and write the new primary state layers directly; the old Anchor Bank relation-writing Bridge path is paused
     - the live runner no longer projects new state back into old V2 helper stores to execute helpers
     - live runtime loading and resume now reject pre-`Phase C.3` runtime directories and checkpoints
     - public/frontend compatibility surfaces remain unchanged
@@ -88,12 +88,13 @@ Last updated: `2026-05-05T22:11:51+08:00`
     - active-detour Navigate acts can choose a source-grounded unit, request bounded source-evidence skills, or defer the detour
     - detour regions are now read through the same normal `Navigate.choose_next_unit -> read -> Reading Runner post-read settlement` loop
     - chapter-tail detours are now drained before slow-cycle close
-  - Paragraph-offset mainline cursor cutover is now landed:
+  - Paragraph-offset mainline cursor and SourceRef cutover are now landed:
     - `SourceCursor` uses `chapter_id`, `chapter_ref`, `paragraph_index`, and `char_offset`
     - `Navigate.choose_next_unit` receives an adaptive paragraph-offset preview and returns exact `end_anchor_text`
     - `Reading Runner` resolves that source anchor into an end-exclusive `SourceSpan`, advances to `end_cursor`, and records accepted units in `_mechanisms/attentional_v2/runtime/unit_span_ledger.jsonl`
     - sentence ids remain available for legacy/eval/detour compatibility, but no longer define the `attentional_v2` mainline cursor
-    - next migration target: align memory/reaction/source-anchor/probe locator payloads to source-span coordinates after the mainline cursor path settles
+    - memory/reaction/probe-facing source evidence now uses inline `SourceRef` values (`source_span_id`, `source_span`, `quote`, `role`)
+    - `anchor_bank.json` is no longer a canonical runtime artifact or checkpoint key for new runs; old anchor-bank runtimes must be rerun
   - `Phase F3` is now landed:
     - persisted visible reactions now enter the system only through `Read.surfaced_reactions[]`
     - mainline and detour reading now share one surfaced-native reaction-record builder
@@ -206,7 +207,7 @@ Last updated: `2026-05-05T22:11:51+08:00`
   - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_post_phase_d_longspan_smoke_20260412/diagnostics/value_of_others_progress_and_latency_check_20260413.md`
   - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_value_of_others_ch8_debug_legacykey_20260413/analysis/registry_snapshot.json`
 
-### `TASK-V2-NATIVE-READING-PRESENTATION` — Redesign the routed reading surfaces around chapter text and anchored reactions
+### `TASK-V2-NATIVE-READING-PRESENTATION` — Redesign the routed reading surfaces around chapter text and source-referenced reactions
 - Status: `active`
 - Lane: `migration`
 - Priority: `high`
@@ -323,8 +324,8 @@ Last updated: `2026-05-05T22:11:51+08:00`
     - standard runtime audit now includes `settlement_audit.jsonl`, a compact deterministic before/after transaction summary for `Read -> Reading Runner settlement`
     - current probe placement is semantic-manifest-driven, not hard-ratio-driven
     - settlement-audit diagnostic run `attentional_v2_settlement_audit_nawaer_diagnostic_20260505` completed for `nawaer_baodian_private_zh__segment_1` with `judge-mode none`
-    - diagnostic finding: fresh `Read` output does emit memory ops and Runner settlement materializes them, but `concept_registry` / `thread_trace` durable content is weak because Read payload fields (`statement`, `source_sentence_id`, `linked_anchor_ids`) do not align with the fields persisted by `state_ops` (`summary`, `support_anchor_ids`, `last_touched_sentence_id`)
-    - next implementation target: repair durable-store memory-op schema guidance and/or normalization before running `huochu` or all five windows again
+    - diagnostic finding: fresh `Read` output does emit memory ops and Runner settlement materializes them, but durable-store field-shape alignment needed repair; the active path now normalizes unit-local source quotes into inline `source_refs[]` before settlement
+    - next implementation target: rerun the cheap `nawaer` and focused `huochu` diagnostics before running all five windows again
   - current probe plan:
     - `reading-companion-backend/eval/manifests/probes/memory_quality_semantic_probe_plan_20260504.json`
     - selection method: `semantic_boundary_with_distance_reference`
@@ -355,7 +356,7 @@ Last updated: `2026-05-05T22:11:51+08:00`
       - current Navigator source-skill posture:
         - `Navigate.choose_next_unit` is now one unified Navigator act loop, not a Python-level dispatch between separate mainline unitize and detour-search prompt families
         - first-phase Skill Runtime is mechanism-private and currently serves active-detour Navigate acts only
-        - supported book-local skills are `source_map_overview`, `source_scope_drilldown`, `source_window_fetch`, and `anchor_resolve`
+        - supported book-local skills are `source_map_overview`, `source_scope_drilldown`, and `source_window_fetch`
         - `Reading Runner` dispatches skill requests and returns `skill_result` evidence to Navigate; skills do not choose the detour target and do not read future text past `mainline_cursor`
       - result:
         - `Memory Quality` average overall score: `3.48`
