@@ -72,6 +72,13 @@ def test_build_carry_forward_context_exposes_phase_c1_packet_shape():
             "statement": "This earlier question is resolved but still useful as lineage.",
             "source_refs": [_source_ref("Resolved sentence.")],
             "status": "resolved",
+        },
+        {
+            "item_id": "question-cooling",
+            "attention_tags": ["question"],
+            "statement": "This question is cooling but remains current support.",
+            "source_refs": [_source_ref("Cooling sentence.")],
+            "status": "cooling",
         }
     ]
 
@@ -134,6 +141,16 @@ def test_build_carry_forward_context_exposes_phase_c1_packet_shape():
             "source_refs": [],
         }
     ]
+    reflective_frames["book_level_frames"] = [
+        {
+            "item_id": "frame-superseded",
+            "statement": "This older frame is lineage, not current support.",
+            "chapter_ref": "Chapter 1",
+            "confidence_band": "working",
+            "source_refs": [_source_ref("Superseded frame.")],
+            "status": "superseded",
+        }
+    ]
 
     reaction_records = build_empty_reaction_records()
     reaction_records["records"] = [
@@ -171,12 +188,23 @@ def test_build_carry_forward_context_exposes_phase_c1_packet_shape():
     assert closed_attention["current_support"] is False
     assert closed_attention["lineage_only"] is True
     assert closed_attention["projection_warning"] == "lineage_only_not_current_support"
+    cooling_attention = _find(packet["active_attention_digest"]["active_items"], "item_id", "question-cooling")
+    assert cooling_attention["projection_role"] == "current_support"
+    assert cooling_attention["current_support"] is True
+    assert cooling_attention["lineage_only"] is False
+    assert cooling_attention["projection_warning"] == ""
     assert packet["active_attention_digest"]["hot_items"][0]["projection_role"] == "current_support"
     assert packet["chapter_reflective_frame"]["chapter_frames"][0]["item_id"] == "frame-1"
     assert packet["chapter_reflective_frame"]["chapter_frames"][0]["projection_role"] == "current_support"
     missing_frame = _find(packet["chapter_reflective_frame"]["chapter_frames"], "item_id", "frame-missing-source")
     assert missing_frame["support_status"] == "source_ref_missing"
     assert missing_frame["projection_warning"] == "source_ref_missing"
+    superseded_frame = packet["chapter_reflective_frame"]["book_frames"][0]
+    assert superseded_frame["item_id"] == "frame-superseded"
+    assert superseded_frame["projection_role"] == "lineage_only"
+    assert superseded_frame["current_support"] is False
+    assert superseded_frame["lineage_only"] is True
+    assert superseded_frame["projection_warning"] == "lineage_only_not_current_support"
     assert packet["session_continuity_capsule"]["recent_sentence_ids"] == ["c1-s1"]
     assert "recent_routes" not in packet["active_focus_digest"]
     assert packet["concept_digest"][0]["concept_key"] == "promise"

@@ -464,12 +464,12 @@ Last updated: `2026-05-16T17:34:35+08:00`
 
 ## Waiting
 
-### `TASK-SECOND-READER-MEMORY-PLANNING-SLICE3B-BRIEF-ACCEPTANCE` — Review Slice 3B Pre-implementation Brief for Lifecycle Semantics and State-op Boundary Hardening
+### `TASK-SECOND-READER-MEMORY-PLANNING-SLICE3B-REPORT-REVIEW` — Review Slice 3B Post-implementation Report for Lifecycle Semantics and State-op Boundary Hardening
 - Status: `waiting`
 - Lane: `mechanism_runtime`
 - Priority: `high`
-- Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice3B-Lifecycle-Semantics-and-State-op-Boundary-Hardening-Pre-implementation-Brief v0.md`
-- Next: human reviewer should accept the Slice 3B Pre-implementation Brief or request a patch before any Slice 3B implementation PR. Slice 3B is scoped to lifecycle semantics and state-op boundary hardening, should prefer tests and narrow helper-level clarification, and must not start code implementation before brief acceptance. No full AI Evaluation has run.
+- Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice3B-Lifecycle-Semantics-and-State-op-Boundary-Hardening-Post-implementation-Report v0.md`
+- Next: human reviewer should accept the Slice 3B Post-implementation Report or request a patch before any next-slice brief or implementation PR. Slice 3B added targeted lifecycle-boundary tests and did not change `state_ops.py` runtime behavior, prompts, schema version, public API, frontend, eval runners, retrieval utilization, planning trace, or slow-cycle work; no full AI Evaluation has run.
 - Evidence:
   - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
   - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/E实施0-Implementation Roadmap & Handoff v0.md`
@@ -483,6 +483,7 @@ Last updated: `2026-05-16T17:34:35+08:00`
   - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice3A-Status-aware-Projection-and-Boundary-Marker-Hardening-Pre-implementation-Brief v0.md`
   - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice3A-Status-aware-Projection-and-Boundary-Marker-Hardening-Post-implementation-Report v0.md`
   - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice3B-Lifecycle-Semantics-and-State-op-Boundary-Hardening-Pre-implementation-Brief v0.md`
+  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice3B-Lifecycle-Semantics-and-State-op-Boundary-Hardening-Post-implementation-Report v0.md`
   - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md`
 
 ### `TASK-DATASET-QUESTION-ALIGNED-CASE-CONSTRUCTION` — Build question-aligned case construction for evaluation datasets
@@ -558,12 +559,34 @@ Last updated: `2026-05-16T17:34:35+08:00`
 
 ## Done
 
+### `TASK-SECOND-READER-MEMORY-PLANNING-SLICE3B-BRIEF-ACCEPTANCE` — Review Slice 3B Pre-implementation Brief for Lifecycle Semantics and State-op Boundary Hardening
+- Status: `done`
+- Lane: `mechanism_runtime`
+- Priority: `high`
+- Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice3B-Lifecycle-Semantics-and-State-op-Boundary-Hardening-Pre-implementation-Brief v0.md`
+- Next: Slice 3B Pre-implementation Brief is accepted and implemented. Continue with `TASK-SECOND-READER-MEMORY-PLANNING-SLICE3B-REPORT-REVIEW`; do not start the next implementation slice before the Slice 3B Post-implementation Report is accepted.
+- Evidence:
+  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
+  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/E实施0-Implementation Roadmap & Handoff v0.md`
+  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施1-Implementation Feasibility & Delta Audit v0.md`
+  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice1-Contract-Audit-Foundations-Pre-implementation-Brief v0.md`
+  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice1-Contract-Audit-Foundations-Post-implementation-Report v0.md`
+  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice2A-Operation-Vocabulary-and-Admission-Visibility-Hardening-Pre-implementation-Brief v0.md`
+  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice2A-Operation-Vocabulary-and-Admission-Visibility-Hardening-Post-implementation-Report v0.md`
+  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice2B-Store-specific-Admission-and-Target-store-Policy-Hardening-Pre-implementation-Brief v0.md`
+  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice2B-Store-specific-Admission-and-Target-store-Policy-Hardening-Post-implementation-Report v0.md`
+  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice3A-Status-aware-Projection-and-Boundary-Marker-Hardening-Pre-implementation-Brief v0.md`
+  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice3A-Status-aware-Projection-and-Boundary-Marker-Hardening-Post-implementation-Report v0.md`
+  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice3B-Lifecycle-Semantics-and-State-op-Boundary-Hardening-Pre-implementation-Brief v0.md`
+  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice3B-Lifecycle-Semantics-and-State-op-Boundary-Hardening-Post-implementation-Report v0.md`
+  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md`
+
 ### `TASK-SECOND-READER-MEMORY-PLANNING-SLICE3A-REPORT-REVIEW` — Review Slice 3A Post-implementation Report for Status-aware Projection and Boundary Marker Hardening
 - Status: `done`
 - Lane: `mechanism_runtime`
 - Priority: `high`
 - Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice3A-Status-aware-Projection-and-Boundary-Marker-Hardening-Post-implementation-Report v0.md`
-- Next: Slice 3A Post-implementation Report is accepted, and the Slice 3B Pre-implementation Brief is created and pending review. Continue with `TASK-SECOND-READER-MEMORY-PLANNING-SLICE3B-BRIEF-ACCEPTANCE`; do not start Slice 3B implementation before the Slice 3B brief is accepted.
+- Next: Slice 3B Pre-implementation Brief is accepted and implemented, and the Slice 3B Post-implementation Report is pending review. Continue with `TASK-SECOND-READER-MEMORY-PLANNING-SLICE3B-REPORT-REVIEW`; do not start the next implementation slice before the Slice 3B Post-implementation Report is accepted.
 - Evidence:
   - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
   - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/E实施0-Implementation Roadmap & Handoff v0.md`
@@ -584,7 +607,7 @@ Last updated: `2026-05-16T17:34:35+08:00`
 - Lane: `mechanism_runtime`
 - Priority: `high`
 - Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice3A-Status-aware-Projection-and-Boundary-Marker-Hardening-Pre-implementation-Brief v0.md`
-- Next: Slice 3A Post-implementation Report is accepted, and the Slice 3B Pre-implementation Brief is created and pending review. Continue with `TASK-SECOND-READER-MEMORY-PLANNING-SLICE3B-BRIEF-ACCEPTANCE`; do not start Slice 3B implementation before the Slice 3B brief is accepted.
+- Next: Slice 3B Pre-implementation Brief is accepted and implemented, and the Slice 3B Post-implementation Report is pending review. Continue with `TASK-SECOND-READER-MEMORY-PLANNING-SLICE3B-REPORT-REVIEW`; do not start the next implementation slice before the Slice 3B Post-implementation Report is accepted.
 - Evidence:
   - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
   - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/E实施0-Implementation Roadmap & Handoff v0.md`
@@ -604,7 +627,7 @@ Last updated: `2026-05-16T17:34:35+08:00`
 - Lane: `mechanism_runtime`
 - Priority: `high`
 - Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice2B-Store-specific-Admission-and-Target-store-Policy-Hardening-Post-implementation-Report v0.md`
-- Next: Slice 3A Post-implementation Report is accepted, and the Slice 3B Pre-implementation Brief is created and pending review. Continue with `TASK-SECOND-READER-MEMORY-PLANNING-SLICE3B-BRIEF-ACCEPTANCE`; do not start Slice 3B implementation before the Slice 3B brief is accepted.
+- Next: Slice 3B Pre-implementation Brief is accepted and implemented, and the Slice 3B Post-implementation Report is pending review. Continue with `TASK-SECOND-READER-MEMORY-PLANNING-SLICE3B-REPORT-REVIEW`; do not start the next implementation slice before the Slice 3B Post-implementation Report is accepted.
 - Evidence:
   - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
   - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/E实施0-Implementation Roadmap & Handoff v0.md`
@@ -623,7 +646,7 @@ Last updated: `2026-05-16T17:34:35+08:00`
 - Lane: `mechanism_runtime`
 - Priority: `high`
 - Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice2B-Store-specific-Admission-and-Target-store-Policy-Hardening-Pre-implementation-Brief v0.md`
-- Next: Slice 3A Post-implementation Report is accepted, and the Slice 3B Pre-implementation Brief is created and pending review. Continue with `TASK-SECOND-READER-MEMORY-PLANNING-SLICE3B-BRIEF-ACCEPTANCE`; do not start Slice 3B implementation before the Slice 3B brief is accepted.
+- Next: Slice 3B Pre-implementation Brief is accepted and implemented, and the Slice 3B Post-implementation Report is pending review. Continue with `TASK-SECOND-READER-MEMORY-PLANNING-SLICE3B-REPORT-REVIEW`; do not start the next implementation slice before the Slice 3B Post-implementation Report is accepted.
 - Evidence:
   - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
   - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/E实施0-Implementation Roadmap & Handoff v0.md`
@@ -641,7 +664,7 @@ Last updated: `2026-05-16T17:34:35+08:00`
 - Lane: `mechanism_runtime`
 - Priority: `high`
 - Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice2A-Operation-Vocabulary-and-Admission-Visibility-Hardening-Post-implementation-Report v0.md`
-- Next: Slice 3A Post-implementation Report is accepted, and the Slice 3B Pre-implementation Brief is created and pending review. Continue with `TASK-SECOND-READER-MEMORY-PLANNING-SLICE3B-BRIEF-ACCEPTANCE`; do not start Slice 3B implementation before the Slice 3B brief is accepted.
+- Next: Slice 3B Pre-implementation Brief is accepted and implemented, and the Slice 3B Post-implementation Report is pending review. Continue with `TASK-SECOND-READER-MEMORY-PLANNING-SLICE3B-REPORT-REVIEW`; do not start the next implementation slice before the Slice 3B Post-implementation Report is accepted.
 - Evidence:
   - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
   - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/E实施0-Implementation Roadmap & Handoff v0.md`
@@ -658,7 +681,7 @@ Last updated: `2026-05-16T17:34:35+08:00`
 - Lane: `mechanism_runtime`
 - Priority: `high`
 - Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice2A-Operation-Vocabulary-and-Admission-Visibility-Hardening-Pre-implementation-Brief v0.md`
-- Next: Slice 3A Post-implementation Report is accepted, and the Slice 3B Pre-implementation Brief is created and pending review. Continue with `TASK-SECOND-READER-MEMORY-PLANNING-SLICE3B-BRIEF-ACCEPTANCE`; do not start Slice 3B implementation before the Slice 3B brief is accepted.
+- Next: Slice 3B Pre-implementation Brief is accepted and implemented, and the Slice 3B Post-implementation Report is pending review. Continue with `TASK-SECOND-READER-MEMORY-PLANNING-SLICE3B-REPORT-REVIEW`; do not start the next implementation slice before the Slice 3B Post-implementation Report is accepted.
 - Evidence:
   - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
   - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/E实施0-Implementation Roadmap & Handoff v0.md`
@@ -672,7 +695,7 @@ Last updated: `2026-05-16T17:34:35+08:00`
 - Lane: `mechanism_runtime`
 - Priority: `high`
 - Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice1-Contract-Audit-Foundations-Post-implementation-Report v0.md`
-- Next: Slice 3A Post-implementation Report is accepted, and the Slice 3B Pre-implementation Brief is created and pending review. Continue with `TASK-SECOND-READER-MEMORY-PLANNING-SLICE3B-BRIEF-ACCEPTANCE`; do not start Slice 3B implementation before the Slice 3B brief is accepted.
+- Next: Slice 3B Pre-implementation Brief is accepted and implemented, and the Slice 3B Post-implementation Report is pending review. Continue with `TASK-SECOND-READER-MEMORY-PLANNING-SLICE3B-REPORT-REVIEW`; do not start the next implementation slice before the Slice 3B Post-implementation Report is accepted.
 - Evidence:
   - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
   - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/E实施0-Implementation Roadmap & Handoff v0.md`
@@ -687,7 +710,7 @@ Last updated: `2026-05-16T17:34:35+08:00`
 - Lane: `mechanism_runtime`
 - Priority: `high`
 - Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice1-Contract-Audit-Foundations-Pre-implementation-Brief v0.md`
-- Next: Slice 3A Post-implementation Report is accepted, and the Slice 3B Pre-implementation Brief is created and pending review. Continue with `TASK-SECOND-READER-MEMORY-PLANNING-SLICE3B-BRIEF-ACCEPTANCE`; do not start Slice 3B implementation before the Slice 3B brief is accepted.
+- Next: Slice 3B Pre-implementation Brief is accepted and implemented, and the Slice 3B Post-implementation Report is pending review. Continue with `TASK-SECOND-READER-MEMORY-PLANNING-SLICE3B-REPORT-REVIEW`; do not start the next implementation slice before the Slice 3B Post-implementation Report is accepted.
 - Evidence:
   - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
   - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice1-Contract-Audit-Foundations-Pre-implementation-Brief v0.md`
@@ -699,7 +722,7 @@ Last updated: `2026-05-16T17:34:35+08:00`
 - Lane: `mechanism_runtime`
 - Priority: `high`
 - Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施1-Implementation Feasibility & Delta Audit v0.md`
-- Next: Slice 3A Post-implementation Report is accepted, and the Slice 3B Pre-implementation Brief is created and pending review. Continue with `TASK-SECOND-READER-MEMORY-PLANNING-SLICE3B-BRIEF-ACCEPTANCE`; do not start Slice 3B implementation before the Slice 3B brief is accepted.
+- Next: Slice 3B Pre-implementation Brief is accepted and implemented, and the Slice 3B Post-implementation Report is pending review. Continue with `TASK-SECOND-READER-MEMORY-PLANNING-SLICE3B-REPORT-REVIEW`; do not start the next implementation slice before the Slice 3B Post-implementation Report is accepted.
 - Evidence:
   - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
   - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/E实施0-Implementation Roadmap & Handoff v0.md`

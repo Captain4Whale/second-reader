@@ -40,6 +40,15 @@ def _source_ref(quote: str = "People want things from other people.") -> dict[st
     }
 
 
+def _find(items: list[dict[str, object]], key: str, value: str) -> dict[str, object]:
+    """Return one item by stable key for lifecycle-boundary assertions."""
+
+    for item in items:
+        if item.get(key) == value:
+            return item
+    raise AssertionError(f"missing {key}={value}")
+
+
 def test_apply_active_attention_operations_handles_append_update_close_link_and_drop():
     """Active-attention helpers should update tagged active_items without legacy bucket side effects."""
 
@@ -107,6 +116,87 @@ def test_apply_active_attention_operations_handles_append_update_close_link_and_
     assert dropped["active_items"] == []
 
 
+def test_active_attention_lifecycle_states_preserve_items_until_explicit_drop():
+    """Cooling, closing, and resolving are lifecycle states; only drop removes active items."""
+
+    state = {
+        "active_items": [
+            {
+                "item_id": "cooling-question",
+                "attention_tags": ["question"],
+                "statement": "This question is cooling but still part of lineage.",
+                "source_refs": [_source_ref("Cooling question.")],
+                "linked_concept_keys": ["concept:question"],
+                "status": "active",
+            },
+            {
+                "item_id": "closing-thread",
+                "attention_tags": ["thread"],
+                "statement": "This thread can close without disappearing.",
+                "source_refs": [_source_ref("Closing thread.")],
+                "linked_thread_keys": ["thread:closing"],
+                "status": "active",
+            },
+        ]
+    }
+
+    cooled = apply_active_attention_operations(
+        state,
+        [
+            {
+                "operation_type": "cool",
+                "target_store": "active_attention",
+                "item_id": "cooling-question",
+                "payload": {},
+            }
+        ],
+    )
+    cooled_item = _find(cooled["active_items"], "item_id", "cooling-question")
+    assert cooled_item["status"] == "cooling"
+    assert cooled_item["statement"] == "This question is cooling but still part of lineage."
+    assert cooled_item["source_refs"][0]["source_span_id"] == "src:c1:p1@0-p1@36"
+    assert cooled_item["linked_concept_keys"] == ["concept:question"]
+
+    resolved = apply_active_attention_operations(
+        cooled,
+        [
+            {
+                "operation_type": "resolve",
+                "target_store": "active_attention",
+                "item_id": "cooling-question",
+                "payload": {},
+            },
+            {
+                "operation_type": "close",
+                "target_store": "active_attention",
+                "item_id": "closing-thread",
+                "payload": {},
+            },
+        ],
+    )
+    resolved_item = _find(resolved["active_items"], "item_id", "cooling-question")
+    closed_item = _find(resolved["active_items"], "item_id", "closing-thread")
+    assert resolved_item["status"] == "resolved"
+    assert resolved_item["source_refs"][0]["quote"] == "Cooling question."
+    assert closed_item["status"] == "closed"
+    assert closed_item["linked_thread_keys"] == ["thread:closing"]
+
+    dropped = apply_active_attention_operations(
+        resolved,
+        [
+            {
+                "operation_type": "drop",
+                "target_store": "active_attention",
+                "item_id": "cooling-question",
+                "payload": {},
+            }
+        ],
+    )
+
+    assert [item["item_id"] for item in dropped["active_items"]] == ["closing-thread"]
+    assert _find(dropped["active_items"], "item_id", "closing-thread")["status"] == "closed"
+
+
 def test_state_ops_already_apply_resolve_operations():
     """Resolve behavior is already supported by state_ops without changing it in Slice 2A."""
 
@@ -157,6 +247,180 @@ def test_state_ops_already_apply_resolve_operations():
     assert active_state["active_items"][0]["status"] == "resolved"
     assert concept_state["entries"][0]["status"] == "resolved"
     assert thread_state["entries"][0]["status"] == "resolved"
+
+
+def test_concept_registry_lifecycle_is_store_specific_and_non_destructive():
+    """Concept lifecycle operations should remain deterministic without mimicking active attention."""
+
+    state = {
+        "entries": [
+            {
+                "concept_key": "concept-preserve",
+                "concept_type": "motif",
+                "status": "active",
+                "summary": "A concept with an existing active status.",
+                "source_refs": [_source_ref("Concept preserve.")],
+            },
+            {
+                "concept_key": "concept-close",
+                "concept_type": "motif",
+                "status": "active",
+                "summary": "A concept ready to resolve.",
+                "source_refs": [_source_ref("Concept close.")],
+                "linked_thread_ids": ["thread:shared"],
+            },
+            {
+                "concept_key": "concept-other",
+                "concept_type": "motif",
+                "status": "active",
+                "summary": "Another concept should remain.",
+                "source_refs": [_source_ref("Concept other.")],
+            },
+        ]
+    }
+
+    wrong_store = apply_concept_registry_operations(
+        state,
+        [
+            {
+                "operation_type": "resolve",
+                "target_store": "thread_trace",
+                "item_id": "concept-close",
+                "payload": {"status": "resolved"},
+            }
+        ],
+    )
+    assert _find(wrong_store["entries"], "concept_key", "concept-close")["status"] == "active"
+
+    preserved = apply_concept_registry_operations(
+        wrong_store,
+        [
+            {
+                "operation_type": "close",
+                "target_store": "concept_registry",
+                "item_id": "concept-preserve",
+                "payload": {},
+            }
+        ],
+    )
+    assert _find(preserved["entries"], "concept_key", "concept-preserve")["status"] == "active"
+
+    resolved = apply_concept_registry_operations(
+        preserved,
+        [
+            {
+                "operation_type": "close",
+                "target_store": "concept_registry",
+                "item_id": "concept-close",
+                "payload": {"status": "resolved", "summary": "Resolved concept."},
+            }
+        ],
+    )
+    resolved_concept = _find(resolved["entries"], "concept_key", "concept-close")
+    assert resolved_concept["status"] == "resolved"
+    assert resolved_concept["summary"] == "Resolved concept."
+    assert resolved_concept["source_refs"][0]["quote"] == "Concept close."
+    assert resolved_concept["linked_thread_ids"] == ["thread:shared"]
+
+    dropped = apply_concept_registry_operations(
+        resolved,
+        [
+            {
+                "operation_type": "drop",
+                "target_store": "concept_registry",
+                "item_id": "concept-close",
+                "payload": {},
+            }
+        ],
+    )
+    assert [entry["concept_key"] for entry in dropped["entries"]] == ["concept-preserve", "concept-other"]
+
+
+def test_thread_trace_lifecycle_is_store_specific_and_non_destructive():
+    """Thread lifecycle operations should remain deterministic within the thread store."""
+
+    state = {
+        "entries": [
+            {
+                "thread_key": "thread-preserve",
+                "thread_type": "trace_link",
+                "status": "active",
+                "summary": "A trace with an existing active status.",
+                "source_refs": [_source_ref("Thread preserve.")],
+            },
+            {
+                "thread_key": "thread-close",
+                "thread_type": "open_reference",
+                "status": "active",
+                "summary": "A thread ready to resolve.",
+                "source_refs": [_source_ref("Thread close.")],
+                "linked_concept_keys": ["concept:shared"],
+            },
+            {
+                "thread_key": "thread-other",
+                "thread_type": "trace_link",
+                "status": "active",
+                "summary": "Another thread should remain.",
+                "source_refs": [_source_ref("Thread other.")],
+            },
+        ]
+    }
+
+    wrong_store = apply_thread_trace_operations(
+        state,
+        [
+            {
+                "operation_type": "resolve",
+                "target_store": "concept_registry",
+                "item_id": "thread-close",
+                "payload": {"status": "resolved"},
+            }
+        ],
+    )
+    assert _find(wrong_store["entries"], "thread_key", "thread-close")["status"] == "active"
+
+    preserved = apply_thread_trace_operations(
+        wrong_store,
+        [
+            {
+                "operation_type": "close",
+                "target_store": "thread_trace",
+                "item_id": "thread-preserve",
+                "payload": {},
+            }
+        ],
+    )
+    assert _find(preserved["entries"], "thread_key", "thread-preserve")["status"] == "active"
+
+    resolved = apply_thread_trace_operations(
+        preserved,
+        [
+            {
+                "operation_type": "close",
+                "target_store": "thread_trace",
+                "item_id": "thread-close",
+                "payload": {"status": "resolved", "summary": "Resolved thread."},
+            }
+        ],
+    )
+    resolved_thread = _find(resolved["entries"], "thread_key", "thread-close")
+    assert resolved_thread["status"] == "resolved"
+    assert resolved_thread["summary"] == "Resolved thread."
+    assert resolved_thread["source_refs"][0]["quote"] == "Thread close."
+    assert resolved_thread["linked_concept_keys"] == ["concept:shared"]
+
+    dropped = apply_thread_trace_operations(
+        resolved,
+        [
+            {
+                "operation_type": "drop",
+                "target_store": "thread_trace",
+                "item_id": "thread-close",
+                "payload": {},
+            }
+        ],
+    )
+    assert [entry["thread_key"] for entry in dropped["entries"]] == ["thread-preserve", "thread-other"]
 
 
 def test_activation_helpers_upsert_source_refs_by_id():
@@ -291,5 +555,24 @@ def test_reflective_reaction_reconsolidation_and_policy_helpers_append_cleanly()
 
     assert reflective_state["chapter_understandings"][0]["status"] == "superseded"
     assert reaction_state["records"][0]["reaction_id"] == "rx-1"
+    reaction_state = append_reaction_record(
+        reaction_state,
+        {
+            "reaction_id": "rx-2",
+            "chapter_id": 1,
+            "chapter_ref": "Chapter 1",
+            "emitted_at_source_span_id": "src:c1:p1@0-p1@36",
+            "type": "question",
+            "thought": "The second reaction is appended without rewriting the first.",
+            "source_quote": "A second frame appears.",
+            "primary_source_ref": _source_ref("A second frame appears."),
+            "related_source_refs": [],
+            "created_at": "2026-03-23T00:00:45Z",
+        },
+    )
     assert reconsolidation_state["records"][0]["record_id"] == "rc-1"
     assert policy["resume"]["cold_resume_target_sentences"] == 3
+    assert [record["reaction_id"] for record in reaction_state["records"]] == ["rx-1", "rx-2"]
+    assert reaction_state["records"][0]["thought"] == "The later sentence changes the frame."
+    assert reflective_state["chapter_understandings"][0]["statement"] == "Value is mediated by other people."
+    assert reflective_state["chapter_understandings"][0]["superseded_by_item_id"] == "r-2"

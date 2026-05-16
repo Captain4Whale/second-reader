@@ -13,9 +13,9 @@ Stable mechanism behavior changes still need to be promoted to the relevant stab
 ## Current Status
 
 ```text
-Current phase: Slice 3B Pre-implementation Brief waiting for human review
-Implementation status: Slice 1 accepted; Slice 2A accepted; Slice 2B accepted; Slice 3A accepted; no Slice 3B implementation started
-Next action: human reviewer accepts the Slice 3B Pre-implementation Brief or requests a patch
+Current phase: Slice 3B implementation complete; Post-implementation Report waiting for human review
+Implementation status: Slice 1 accepted; Slice 2A accepted; Slice 2B accepted; Slice 3A accepted; Slice 3B lifecycle semantics and state-op boundary hardening implemented as test / contract hardening
+Next action: human reviewer accepts the Slice 3B Post-implementation Report or requests a patch before any next-slice brief / implementation PR
 Full AI Evaluation: not yet; deferred until core instrumentation is ready
 ```
 
@@ -748,9 +748,9 @@ Branch / PR:
 
 Pre-implementation Brief:
 - Link: `briefs/Slice3B-Lifecycle-Semantics-and-State-op-Boundary-Hardening-Pre-implementation-Brief v0.md`
-- Accepted by:
-- Acceptance date:
-- Scope changes approved:
+- Accepted by: human reviewer / user
+- Acceptance date: 2026-05-16
+- Scope changes approved: additional reviewer constraints from the Slice 3B implementation instruction
 
 Files changed:
 - docs only for Slice 3B brief landing
@@ -791,13 +791,97 @@ Post-implementation Report:
 - Known gaps:
 
 Reviewer decision:
+- accepted
+- Reviewer: human reviewer / user
+- Decision date: 2026-05-16
+- Required follow-up: implement Slice 3B exactly within the accepted brief and produce a Post-implementation Report
+
+Next recommended step:
+- Human reviewer reviews `reports/Slice3B-Lifecycle-Semantics-and-State-op-Boundary-Hardening-Post-implementation-Report v0.md`. Do not start the next implementation slice yet.
+
+## Entry 2026-05-16 — Slice 3B lifecycle semantics and state-op boundaries implemented
+
+Type:
+- implementation PR
+- post-implementation report
+
+Slice:
+- Slice 3
+
+Related docs:
+- E实施0: `../E实施0-Implementation Roadmap & Handoff v0.md`
+- C设计 source: `../C设计0-Second Reader Shared Memory–Planning Mechanism Charter v0.md`, `../C设计1-Memory Ontology Design v0.md`, `../C设计3-Memory Formation & Settlement Design v0.md`, `../C设计5-Memory Management & Evolution Design v0(patched).md`, `../C设计7-Memory Retrieval & Utilization Design v0.md`, `../C设计9-Evaluation Calibration & Minimal Eval Suite v0.md`
+- E实施1 / PR / report: `reports/Slice3B-Lifecycle-Semantics-and-State-op-Boundary-Hardening-Post-implementation-Report v0.md`
+- Brief: `briefs/Slice3B-Lifecycle-Semantics-and-State-op-Boundary-Hardening-Pre-implementation-Brief v0.md`
+
+Branch / PR:
+- Branch: `main`
+- PR:
+- Commit:
+
+Pre-implementation Brief:
+- Link: `briefs/Slice3B-Lifecycle-Semantics-and-State-op-Boundary-Hardening-Pre-implementation-Brief v0.md`
+- Accepted by: human reviewer / user
+- Acceptance date: 2026-05-16
+- Scope changes approved: additional reviewer constraints from the Slice 3B implementation instruction
+
+Files changed:
+- `reading-companion-backend/tests/test_attentional_v2_state_ops.py`
+- `reading-companion-backend/tests/test_attentional_v2_state_projection.py`
+- `docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
+- `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md`
+- `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice3B-Lifecycle-Semantics-and-State-op-Boundary-Hardening-Post-implementation-Report v0.md`
+- `docs/current-state.md`
+- `docs/tasks/registry.md`
+- `docs/tasks/registry.json`
+
+Design contracts addressed:
+- cooling is not invalidation or deletion
+- resolve / close preserve active-attention items and source refs
+- active-attention `drop` remains the explicit deletion path
+- concept and thread lifecycle behavior remains deterministic and store-specific
+- reaction records remain append-only visible trace
+- reflective supersession does not destructively overwrite the superseded statement
+- Slice 3A projection markers remain stable for cooling and superseded entries
+- `knowledge_activations` are not projected in Slice 3B
+
+Engineering tests:
+- Commands run:
+  - `cd reading-companion-backend && .venv/bin/python -m pytest tests/test_attentional_v2_state_ops.py tests/test_attentional_v2_state_projection.py -q`
+- Result:
+  - `12 passed, 6 warnings`
+- Not run / reason:
+  - full AI Evaluation not run by constraint
+
+Contract / audit checks:
+- SourceRef preserved: yes; tests assert lifecycle operations preserve source refs where applicable
+- per-op outcome: unchanged and out of Slice 3B
+- candidate vs settled separated: unchanged and deferred to Slice 6
+- audit not routed into prompt: unchanged
+- reaction_records not semantic memory: yes; reaction helper remains append-only visible trace
+- knowledge_activations not source truth: yes; `knowledge_activations` are not projected
+- other: no `state_ops.py` runtime behavior changed
+
+AI Evaluation:
+- Full eval run? no
+- Smoke only? no
+- Eval lane affected: none
+- Notes: full AI Evaluation remains deferred until core instrumentation is ready
+
+Post-implementation Report:
+- Link: `reports/Slice3B-Lifecycle-Semantics-and-State-op-Boundary-Hardening-Post-implementation-Report v0.md`
+- Summary: Slice 3B lifecycle semantics and state-op boundary hardening implemented as targeted tests and implementation-track documentation.
+- Deviations from accepted brief: none
+- Known gaps: no behavior-level lifecycle hardening beyond tests; retrieval utilization, planning trace, and slow-cycle candidate / settlement envelopes remain deferred
+
+Reviewer decision:
 - waiting for human review
 - Reviewer:
 - Decision date:
-- Required follow-up: accept or patch the Slice 3B Pre-implementation Brief before any Slice 3B implementation PR
+- Required follow-up: accept or patch the Slice 3B Post-implementation Report before any next-slice brief or implementation PR
 
 Next recommended step:
-- Human reviewer reviews `briefs/Slice3B-Lifecycle-Semantics-and-State-op-Boundary-Hardening-Pre-implementation-Brief v0.md`. Do not start Slice 3B implementation yet.
+- Human reviewer accepts `reports/Slice3B-Lifecycle-Semantics-and-State-op-Boundary-Hardening-Post-implementation-Report v0.md` or requests a patch. Do not start the next implementation slice yet.
 
 ## Entry Template
 
