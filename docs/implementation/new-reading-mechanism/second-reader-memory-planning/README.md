@@ -33,6 +33,7 @@ Evidence packs are external evidence indexes, not implementation sources. Review
 | --- | --- | --- | --- |
 | `C设计-设计路线.md` | roadmap | design route and sequence overview | orientation |
 | `E实施0-Implementation Roadmap & Handoff v0.md` | implementation handoff | implementation roadmap and handoff for the next audit | roadmap, not PR plan |
+| `E实施0-Roadmap Review & Readiness Check v0.md` | review | roadmap readiness check | review, not accepted design authority |
 | `C设计0-Second Reader Shared Memory–Planning Mechanism Charter v0.md` | design | accepted mechanism boundary and charter | accepted design |
 | `C设计1-Memory Ontology Design v0.md` | design | accepted memory ontology | accepted design |
 | `C设计2-Planning Ontology Design v0.md` | design | accepted planning ontology | accepted design |
