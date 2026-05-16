@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-05-16T20:11:32+08:00`
+Last updated: `2026-05-16T20:34:21+08:00`
 
 ## Status Values
 - `active`
@@ -464,12 +464,12 @@ Last updated: `2026-05-16T20:11:32+08:00`
 
 ## Waiting
 
-### `TASK-SECOND-READER-MEMORY-PLANNING-SLICE4A-REPORT-REVIEW` — Review Slice 4A Post-implementation Report for Supplemental Retrieval Intent and Context Assembly Contract
+### `TASK-SECOND-READER-MEMORY-PLANNING-SLICE4A-PATCH-REPORT-REVIEW` — Review Slice 4A precision patch report for result groups and forwarding metadata
 - Status: `waiting`
 - Lane: `mechanism_runtime`
 - Priority: `high`
-- Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice4A-Supplemental-Retrieval-Intent-and-Context-Assembly-Contract-Post-implementation-Report v0.md`
-- Next: human reviewer should accept the Slice 4A Post-implementation Report or request a patch before any next-slice brief or implementation PR. Slice 4A added compact supplemental retrieval intent and prompt-facing context assembly metadata; it did not change prompt text/version, runner behavior, `state_ops.py`, durable memory state, public API, frontend, eval runners, `observability.py`, or run full AI Evaluation.
+- Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice4A-Patch-Precise-Result-Groups-and-Forwarding-Metadata-Report v0.md`
+- Next: human reviewer should accept the Slice 4A precision patch report or request another patch before any Slice 4B brief or implementation PR. The patch tightens `result_groups` and `not_forwarded_result_groups` to actual non-empty retrieval groups; it did not change prompt text/version, runner behavior, `state_ops.py`, durable memory state, public API, frontend, eval runners, `observability.py`, or run full AI Evaluation.
 - Evidence:
   - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
   - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/E实施0-Implementation Roadmap & Handoff v0.md`
@@ -486,6 +486,7 @@ Last updated: `2026-05-16T20:11:32+08:00`
   - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice3B-Lifecycle-Semantics-and-State-op-Boundary-Hardening-Post-implementation-Report v0.md`
   - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice4A-Supplemental-Retrieval-Intent-and-Context-Assembly-Contract-Pre-implementation-Brief v0.md`
   - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice4A-Supplemental-Retrieval-Intent-and-Context-Assembly-Contract-Post-implementation-Report v0.md`
+  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice4A-Patch-Precise-Result-Groups-and-Forwarding-Metadata-Report v0.md`
   - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md`
 
 ### `TASK-DATASET-QUESTION-ALIGNED-CASE-CONSTRUCTION` — Build question-aligned case construction for evaluation datasets
@@ -560,6 +561,17 @@ Last updated: `2026-05-16T20:11:32+08:00`
 - Next: keep section-first compatibility fields and containers only as migration sidecars; start removal only after the V2-native overview, chapter, and marks surfaces are stable enough that the older presentation model is no longer needed for normal product use
 
 ## Done
+
+### `TASK-SECOND-READER-MEMORY-PLANNING-SLICE4A-REPORT-REVIEW` — Review Slice 4A Post-implementation Report for Supplemental Retrieval Intent and Context Assembly Contract
+- Status: `done`
+- Lane: `mechanism_runtime`
+- Priority: `high`
+- Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice4A-Supplemental-Retrieval-Intent-and-Context-Assembly-Contract-Post-implementation-Report v0.md`
+- Next: Slice 4A implementation direction is accepted with a required precision patch. Continue with `TASK-SECOND-READER-MEMORY-PLANNING-SLICE4A-PATCH-REPORT-REVIEW`; do not start Slice 4B before the Slice 4A patch report is accepted.
+- Evidence:
+  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice4A-Supplemental-Retrieval-Intent-and-Context-Assembly-Contract-Post-implementation-Report v0.md`
+  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice4A-Patch-Precise-Result-Groups-and-Forwarding-Metadata-Report v0.md`
+  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md`
 
 ### `TASK-SECOND-READER-MEMORY-PLANNING-SLICE4A-BRIEF-ACCEPTANCE` — Review Slice 4A Pre-implementation Brief for Supplemental Retrieval Intent and Context Assembly Contract
 - Status: `done`

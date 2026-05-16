@@ -460,6 +460,58 @@ def test_build_read_prompt_packet_exposes_retrieval_contract_without_full_active
     assert "knowledge_activations" not in prompt_packet
 
 
+def test_build_read_prompt_packet_uses_precise_sparse_retrieval_groups():
+    """Forwarding metadata should not list absent active-recall groups as not forwarded."""
+
+    carry_forward = build_carry_forward_context(
+        chapter_ref="Chapter 1",
+        current_unit_sentence_ids=["c1-s2"],
+        local_buffer=build_empty_local_buffer(),
+        active_attention=build_empty_active_attention(),
+        concept_registry=build_empty_concept_registry(),
+        thread_trace=build_empty_thread_trace(),
+        reflective_frames=build_empty_reflective_frames(),
+        reaction_records=build_empty_reaction_records(),
+    )
+
+    prompt_packet = build_read_prompt_packet(
+        carry_forward_context=carry_forward,
+        supplemental_context={
+            "kind": "active_recall",
+            "reason": "Need prior memory.",
+            "retrieval_intent": "memory_recovery",
+            "result_boundary": "settled_memory_refs_and_visible_trace_refs",
+            "result_groups": ["concepts", "refs"],
+            "retrieval_events": [
+                {
+                    "kind": "active_recall",
+                    "retrieval_intent": "memory_recovery",
+                    "result_boundary": "settled_memory_refs_and_visible_trace_refs",
+                    "result_groups": ["concepts", "refs"],
+                }
+            ],
+            "concepts": [{"concept_key": "promise", "summary": "A promise remains active."}],
+            "refs": [
+                {"ref_id": "concept:promise", "kind": "concept", "summary": "A promise remains active."},
+            ],
+            "knowledge_activations": [{"activation_id": "knowledge-1"}],
+        },
+    )
+
+    selective_carry = prompt_packet["selective_carry"]
+    retrieval_context = selective_carry["retrieval_context"]
+    assert retrieval_context["result_groups"] == ["concepts", "refs"]
+    assert retrieval_context["forwarded_result_groups"] == ["refs"]
+    assert retrieval_context["not_forwarded_result_groups"] == ["concepts"]
+    assert "threads" not in retrieval_context["not_forwarded_result_groups"]
+    assert "reactions" not in retrieval_context["not_forwarded_result_groups"]
+    assert retrieval_context["active_recall_full_objects_forwarded"] is False
+    assert "concepts" not in selective_carry
+    assert "threads" not in selective_carry
+    assert "reactions" not in selective_carry
+    assert "knowledge_activations" not in prompt_packet
+
+
 def test_navigate_choose_next_unit_prompt_receives_navigation_context(monkeypatch):
     """Navigate.choose_next_unit should render the navigation packet into its prompt."""
 

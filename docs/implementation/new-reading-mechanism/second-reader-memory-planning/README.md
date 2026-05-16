@@ -49,7 +49,8 @@ Evidence packs are external evidence indexes, not implementation sources. Review
 | `codex/reports/Slice2B-Store-specific-Admission-and-Target-store-Policy-Hardening-Post-implementation-Report v0.md` | post-implementation report | Slice 2B implementation evidence and review gate | accepted post-implementation report; not stable behavior authority |
 | `codex/reports/Slice3A-Status-aware-Projection-and-Boundary-Marker-Hardening-Post-implementation-Report v0.md` | post-implementation report | Slice 3A implementation evidence and review gate | accepted post-implementation report; not stable behavior authority |
 | `codex/reports/Slice3B-Lifecycle-Semantics-and-State-op-Boundary-Hardening-Post-implementation-Report v0.md` | post-implementation report | Slice 3B implementation evidence and review gate | accepted post-implementation report; not stable behavior authority |
-| `codex/reports/Slice4A-Supplemental-Retrieval-Intent-and-Context-Assembly-Contract-Post-implementation-Report v0.md` | post-implementation report | Slice 4A implementation evidence and review gate | pending human review; not stable behavior authority |
+| `codex/reports/Slice4A-Supplemental-Retrieval-Intent-and-Context-Assembly-Contract-Post-implementation-Report v0.md` | post-implementation report | Slice 4A implementation evidence and review gate | reviewed; implementation direction accepted with patch request; not stable behavior authority |
+| `codex/reports/Slice4A-Patch-Precise-Result-Groups-and-Forwarding-Metadata-Report v0.md` | patch report | Slice 4A result-group precision patch evidence and review gate | pending human review; not stable behavior authority |
 | `C设计0-Second Reader Shared Memory–Planning Mechanism Charter v0.md` | design | accepted mechanism boundary and charter | accepted design |
 | `C设计1-Memory Ontology Design v0.md` | design | accepted memory ontology | accepted design |
 | `C设计2-Planning Ontology Design v0.md` | design | accepted planning ontology | accepted design |
@@ -73,11 +74,11 @@ Evidence packs are external evidence indexes, not implementation sources. Review
 ## Current Next Step
 
 Current next step:
-Human review of `codex/reports/Slice4A-Supplemental-Retrieval-Intent-and-Context-Assembly-Contract-Post-implementation-Report v0.md`.
+Human review of `codex/reports/Slice4A-Patch-Precise-Result-Groups-and-Forwarding-Metadata-Report v0.md`.
 
-Slice 4A implementation is complete and remains pending human review through the Post-implementation Report.
+Slice 4A implementation direction is accepted, and the requested precision patch for `result_groups` / forwarding metadata is complete and pending human review through the patch report.
 
-Codex must not start the next implementation slice until the Slice 4A Post-implementation Report is accepted and the next Pre-implementation Brief is created and accepted.
+Codex must not start Slice 4B or any next implementation slice until the Slice 4A patch report is accepted and the next Pre-implementation Brief is created and accepted.
 
 ## Non-goals
 
@@ -113,7 +114,7 @@ Each implementation PR in this track requires an accepted Pre-implementation Bri
 
 The progress ledger and templates are process records. They do not replace stable product docs, stable mechanism docs, or `E实施1-Implementation Feasibility & Delta Audit`.
 
-The current E实施1 audit is recorded at `codex/E实施1-Implementation Feasibility & Delta Audit v0.md` and has been accepted with reviewer constraints. Slice 1 implementation is recorded at `codex/reports/Slice1-Contract-Audit-Foundations-Post-implementation-Report v0.md` and is accepted. Slice 2A implementation is recorded at `codex/reports/Slice2A-Operation-Vocabulary-and-Admission-Visibility-Hardening-Post-implementation-Report v0.md` and is accepted. Slice 2B implementation is recorded at `codex/reports/Slice2B-Store-specific-Admission-and-Target-store-Policy-Hardening-Post-implementation-Report v0.md` and is accepted. Slice 3A implementation is recorded at `codex/reports/Slice3A-Status-aware-Projection-and-Boundary-Marker-Hardening-Post-implementation-Report v0.md` and is accepted. Slice 3B implementation is recorded at `codex/reports/Slice3B-Lifecycle-Semantics-and-State-op-Boundary-Hardening-Post-implementation-Report v0.md` and is accepted. Slice 4A implementation is recorded at `codex/reports/Slice4A-Supplemental-Retrieval-Intent-and-Context-Assembly-Contract-Post-implementation-Report v0.md` and is pending human review.
+The current E实施1 audit is recorded at `codex/E实施1-Implementation Feasibility & Delta Audit v0.md` and has been accepted with reviewer constraints. Slice 1 implementation is recorded at `codex/reports/Slice1-Contract-Audit-Foundations-Post-implementation-Report v0.md` and is accepted. Slice 2A implementation is recorded at `codex/reports/Slice2A-Operation-Vocabulary-and-Admission-Visibility-Hardening-Post-implementation-Report v0.md` and is accepted. Slice 2B implementation is recorded at `codex/reports/Slice2B-Store-specific-Admission-and-Target-store-Policy-Hardening-Post-implementation-Report v0.md` and is accepted. Slice 3A implementation is recorded at `codex/reports/Slice3A-Status-aware-Projection-and-Boundary-Marker-Hardening-Post-implementation-Report v0.md` and is accepted. Slice 3B implementation is recorded at `codex/reports/Slice3B-Lifecycle-Semantics-and-State-op-Boundary-Hardening-Post-implementation-Report v0.md` and is accepted. Slice 4A implementation is recorded at `codex/reports/Slice4A-Supplemental-Retrieval-Intent-and-Context-Assembly-Contract-Post-implementation-Report v0.md`; its direction is accepted with a requested precision patch. The patch is recorded at `codex/reports/Slice4A-Patch-Precise-Result-Groups-and-Forwarding-Metadata-Report v0.md` and is pending human review.
 
 ## How To Use This Directory
 

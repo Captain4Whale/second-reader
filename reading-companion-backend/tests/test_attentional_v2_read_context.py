@@ -159,6 +159,49 @@ def test_active_recall_emits_memory_recovery_contract_and_visible_trace_reaction
     assert reaction_ref["semantic_memory"] is False
 
 
+def test_active_recall_result_groups_only_include_non_empty_groups():
+    """Sparse active_recall results should not advertise absent groups."""
+
+    concept_registry = build_empty_concept_registry()
+    concept_registry["entries"] = [
+        {
+            "concept_key": "promise",
+            "concept_type": "motif",
+            "summary": "A promise remains active.",
+            "source_refs": [_source_ref()],
+            "status": "active",
+        }
+    ]
+
+    resolved = resolve_context_request(
+        context_request={"kind": "active_recall", "reason": "Need prior memory."},
+        carry_forward_context=_empty_carry_forward(),  # type: ignore[arg-type]
+        book_document=_book_document(),  # type: ignore[arg-type]
+        chapter_ref="Chapter 1",
+        concept_registry=concept_registry,
+        thread_trace=build_empty_thread_trace(),
+        reflective_frames=build_empty_reflective_frames(),
+        reaction_records=build_empty_reaction_records(),
+    )
+
+    assert resolved is not None
+    assert resolved["retrieval_intent"] == "memory_recovery"
+    assert resolved["result_boundary"] == "settled_memory_refs_and_visible_trace_refs"
+    assert resolved["result_groups"] == ["concepts", "refs"]
+    assert resolved["retrieval_events"] == [
+        {
+            "kind": "active_recall",
+            "retrieval_intent": "memory_recovery",
+            "result_boundary": "settled_memory_refs_and_visible_trace_refs",
+            "result_groups": ["concepts", "refs"],
+        }
+    ]
+    assert resolved["concepts"]
+    assert resolved["refs"]
+    assert resolved["threads"] == []
+    assert resolved["reactions"] == []
+
+
 def test_merge_supplemental_contexts_preserves_retrieval_events_and_result_groups():
     """Merged supplemental bundles should preserve per-request retrieval boundaries."""
 
@@ -184,13 +227,13 @@ def test_merge_supplemental_contexts_preserves_retrieval_events_and_result_group
         "reason": "Need prior memory.",
         "retrieval_intent": "memory_recovery",
         "result_boundary": "settled_memory_refs_and_visible_trace_refs",
-        "result_groups": ["concepts", "threads", "reactions", "refs"],
+        "result_groups": ["concepts", "refs"],
         "retrieval_events": [
             {
                 "kind": "active_recall",
                 "retrieval_intent": "memory_recovery",
                 "result_boundary": "settled_memory_refs_and_visible_trace_refs",
-                "result_groups": ["concepts", "threads", "reactions", "refs"],
+                "result_groups": ["concepts", "refs"],
             }
         ],
         "refs": [{"ref_id": "concept:promise", "kind": "concept"}],
@@ -203,6 +246,6 @@ def test_merge_supplemental_contexts_preserves_retrieval_events_and_result_group
     assert merged["kind"] == "supplemental_bundle"
     assert merged["retrieval_intent"] == "mixed"
     assert merged["result_boundary"] == "supplemental_bundle"
-    assert merged["result_groups"] == ["source_refs", "excerpts", "refs", "concepts", "threads", "reactions"]
+    assert merged["result_groups"] == ["source_refs", "excerpts", "refs", "concepts"]
     assert [event["kind"] for event in merged["retrieval_events"]] == ["look_back", "active_recall"]
     assert [ref["ref_id"] for ref in merged["refs"]] == ["source:alpha", "concept:promise"]

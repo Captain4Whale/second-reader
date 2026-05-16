@@ -60,6 +60,16 @@ def _retrieval_event(
     }
 
 
+def _actual_result_groups(*items_by_group: tuple[str, object]) -> list[str]:
+    """Return result groups that are actually present in this retrieval result."""
+
+    groups: list[str] = []
+    for group, items in items_by_group:
+        if isinstance(items, list) and items:
+            groups.append(group)
+    return groups
+
+
 def _retrieval_events_from_context(context: dict[str, object]) -> list[dict[str, object]]:
     """Extract compact retrieval events from one supplemental context."""
 
@@ -276,7 +286,21 @@ def resolve_context_request(
         ]
         if not excerpts:
             return None
-        result_groups = ["source_refs", "excerpts", "refs"]
+        source_refs_payload = [dict(ref) for ref in source_refs]
+        refs = [
+            {
+                "ref_id": excerpt["ref_id"],
+                "kind": "source",
+                "source_span_id": excerpt["source_span_id"],
+                "summary": clean_text(excerpt.get("quote")),
+            }
+            for excerpt in excerpts
+        ]
+        result_groups = _actual_result_groups(
+            ("source_refs", source_refs_payload),
+            ("excerpts", excerpts),
+            ("refs", refs),
+        )
         retrieval_event = _retrieval_event(
             kind="look_back",
             retrieval_intent=_LOOK_BACK_RETRIEVAL_INTENT,
@@ -290,17 +314,9 @@ def resolve_context_request(
             "result_boundary": _LOOK_BACK_RESULT_BOUNDARY,
             "result_groups": result_groups,
             "retrieval_events": [retrieval_event],
-            "source_refs": [dict(ref) for ref in source_refs],
+            "source_refs": source_refs_payload,
             "excerpts": excerpts,
-            "refs": [
-                {
-                    "ref_id": excerpt["ref_id"],
-                    "kind": "source",
-                    "source_span_id": excerpt["source_span_id"],
-                    "summary": clean_text(excerpt.get("quote")),
-                }
-                for excerpt in excerpts
-            ],
+            "refs": refs,
         }
 
     if kind != "active_recall":
@@ -402,7 +418,13 @@ def resolve_context_request(
         }
         for item in reactions
     )
-    result_groups = ["concepts", "threads", "reactions", "refs"]
+    refs_payload = [dict(ref) for ref in refs if isinstance(ref, dict)]
+    result_groups = _actual_result_groups(
+        ("concepts", concepts),
+        ("threads", threads),
+        ("reactions", reactions),
+        ("refs", refs_payload),
+    )
     retrieval_event = _retrieval_event(
         kind="active_recall",
         retrieval_intent=_ACTIVE_RECALL_RETRIEVAL_INTENT,
@@ -419,5 +441,5 @@ def resolve_context_request(
         "concepts": concepts,
         "threads": threads,
         "reactions": reactions,
-        "refs": [dict(ref) for ref in refs if isinstance(ref, dict)],
+        "refs": refs_payload,
     }
