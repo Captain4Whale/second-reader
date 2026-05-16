@@ -860,6 +860,41 @@ def _build_retrieval_context_contract(
     }
 
 
+def build_supplemental_selective_carry(
+    supplemental_context: dict[str, object] | None,
+) -> dict[str, object]:
+    """Project supplemental context into the prompt-facing selective-carry shape."""
+
+    selective_carry: dict[str, object] = {}
+    if not isinstance(supplemental_context, dict):
+        return selective_carry
+    if isinstance(supplemental_context.get("excerpts"), list):
+        selective_carry["earlier_excerpts"] = [
+            dict(item)
+            for item in supplemental_context.get("excerpts", [])
+            if isinstance(item, dict)
+        ][:4]
+    if isinstance(supplemental_context.get("source_refs"), list):
+        selective_carry["source_ref_details"] = [
+            dict(item)
+            for item in supplemental_context.get("source_refs", [])
+            if isinstance(item, dict)
+        ][:4]
+    if isinstance(supplemental_context.get("refs"), list):
+        selective_carry["supporting_refs"] = [
+            dict(item)
+            for item in supplemental_context.get("refs", [])
+            if isinstance(item, dict)
+        ][:6]
+    retrieval_context = _build_retrieval_context_contract(
+        supplemental_context=supplemental_context,
+        selective_carry=selective_carry,
+    )
+    if retrieval_context:
+        selective_carry["retrieval_context"] = retrieval_context
+    return selective_carry
+
+
 def build_read_prompt_packet(
     *,
     carry_forward_context: CarryForwardContext,
@@ -897,32 +932,7 @@ def build_read_prompt_packet(
         else {},
     }
 
-    selective_carry: dict[str, object] = {}
-    if isinstance(supplemental_context, dict):
-        if isinstance(supplemental_context.get("excerpts"), list):
-            selective_carry["earlier_excerpts"] = [
-                dict(item)
-                for item in supplemental_context.get("excerpts", [])
-                if isinstance(item, dict)
-            ][:4]
-        if isinstance(supplemental_context.get("source_refs"), list):
-            selective_carry["source_ref_details"] = [
-                dict(item)
-                for item in supplemental_context.get("source_refs", [])
-                if isinstance(item, dict)
-            ][:4]
-        if isinstance(supplemental_context.get("refs"), list):
-            selective_carry["supporting_refs"] = [
-                dict(item)
-                for item in supplemental_context.get("refs", [])
-                if isinstance(item, dict)
-            ][:6]
-        retrieval_context = _build_retrieval_context_contract(
-            supplemental_context=supplemental_context,
-            selective_carry=selective_carry,
-        )
-        if retrieval_context:
-            selective_carry["retrieval_context"] = retrieval_context
+    selective_carry = build_supplemental_selective_carry(supplemental_context)
     if isinstance(detour_context, dict):
         active_detour_need = detour_context.get("active_detour_need")
         if isinstance(active_detour_need, dict):

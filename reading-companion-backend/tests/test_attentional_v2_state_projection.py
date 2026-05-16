@@ -18,6 +18,7 @@ from src.attentional_v2.state_projection import (
     build_carry_forward_context,
     build_navigation_context,
     build_read_prompt_packet,
+    build_supplemental_selective_carry,
 )
 
 
@@ -402,47 +403,49 @@ def test_build_read_prompt_packet_exposes_retrieval_contract_without_full_active
         reaction_records=build_empty_reaction_records(),
     )
 
+    supplemental_context = {
+        "kind": "active_recall",
+        "reason": "Need prior memory.",
+        "retrieval_intent": "memory_recovery",
+        "result_boundary": "settled_memory_refs_and_visible_trace_refs",
+        "result_groups": ["concepts", "threads", "reactions", "refs"],
+        "retrieval_events": [
+            {
+                "kind": "active_recall",
+                "retrieval_intent": "memory_recovery",
+                "result_boundary": "settled_memory_refs_and_visible_trace_refs",
+                "result_groups": ["concepts", "threads", "reactions", "refs"],
+            }
+        ],
+        "concepts": [{"concept_key": "promise", "summary": "A promise remains active."}],
+        "threads": [{"thread_key": "thread:promise", "summary": "The opener keeps returning."}],
+        "reactions": [
+            {
+                "reaction_id": "reaction-1",
+                "thought": "The first line already carries pressure.",
+                "result_role": "visible_trace",
+                "semantic_memory": False,
+            }
+        ],
+        "refs": [
+            {"ref_id": "concept:promise", "kind": "concept", "summary": "A promise remains active."},
+            {
+                "ref_id": "reaction:reaction-1",
+                "kind": "reaction",
+                "summary": "The first line already carries pressure.",
+                "result_role": "visible_trace",
+                "semantic_memory": False,
+            },
+        ],
+        "knowledge_activations": [{"activation_id": "knowledge-1"}],
+    }
     prompt_packet = build_read_prompt_packet(
         carry_forward_context=carry_forward,
-        supplemental_context={
-            "kind": "active_recall",
-            "reason": "Need prior memory.",
-            "retrieval_intent": "memory_recovery",
-            "result_boundary": "settled_memory_refs_and_visible_trace_refs",
-            "result_groups": ["concepts", "threads", "reactions", "refs"],
-            "retrieval_events": [
-                {
-                    "kind": "active_recall",
-                    "retrieval_intent": "memory_recovery",
-                    "result_boundary": "settled_memory_refs_and_visible_trace_refs",
-                    "result_groups": ["concepts", "threads", "reactions", "refs"],
-                }
-            ],
-            "concepts": [{"concept_key": "promise", "summary": "A promise remains active."}],
-            "threads": [{"thread_key": "thread:promise", "summary": "The opener keeps returning."}],
-            "reactions": [
-                {
-                    "reaction_id": "reaction-1",
-                    "thought": "The first line already carries pressure.",
-                    "result_role": "visible_trace",
-                    "semantic_memory": False,
-                }
-            ],
-            "refs": [
-                {"ref_id": "concept:promise", "kind": "concept", "summary": "A promise remains active."},
-                {
-                    "ref_id": "reaction:reaction-1",
-                    "kind": "reaction",
-                    "summary": "The first line already carries pressure.",
-                    "result_role": "visible_trace",
-                    "semantic_memory": False,
-                },
-            ],
-            "knowledge_activations": [{"activation_id": "knowledge-1"}],
-        },
+        supplemental_context=supplemental_context,
     )
 
     selective_carry = prompt_packet["selective_carry"]
+    assert selective_carry == build_supplemental_selective_carry(supplemental_context)
     assert selective_carry["supporting_refs"][0]["ref_id"] == "concept:promise"
     retrieval_context = selective_carry["retrieval_context"]
     assert retrieval_context["retrieval_intent"] == "memory_recovery"
@@ -474,31 +477,33 @@ def test_build_read_prompt_packet_uses_precise_sparse_retrieval_groups():
         reaction_records=build_empty_reaction_records(),
     )
 
+    supplemental_context = {
+        "kind": "active_recall",
+        "reason": "Need prior memory.",
+        "retrieval_intent": "memory_recovery",
+        "result_boundary": "settled_memory_refs_and_visible_trace_refs",
+        "result_groups": ["concepts", "refs"],
+        "retrieval_events": [
+            {
+                "kind": "active_recall",
+                "retrieval_intent": "memory_recovery",
+                "result_boundary": "settled_memory_refs_and_visible_trace_refs",
+                "result_groups": ["concepts", "refs"],
+            }
+        ],
+        "concepts": [{"concept_key": "promise", "summary": "A promise remains active."}],
+        "refs": [
+            {"ref_id": "concept:promise", "kind": "concept", "summary": "A promise remains active."},
+        ],
+        "knowledge_activations": [{"activation_id": "knowledge-1"}],
+    }
     prompt_packet = build_read_prompt_packet(
         carry_forward_context=carry_forward,
-        supplemental_context={
-            "kind": "active_recall",
-            "reason": "Need prior memory.",
-            "retrieval_intent": "memory_recovery",
-            "result_boundary": "settled_memory_refs_and_visible_trace_refs",
-            "result_groups": ["concepts", "refs"],
-            "retrieval_events": [
-                {
-                    "kind": "active_recall",
-                    "retrieval_intent": "memory_recovery",
-                    "result_boundary": "settled_memory_refs_and_visible_trace_refs",
-                    "result_groups": ["concepts", "refs"],
-                }
-            ],
-            "concepts": [{"concept_key": "promise", "summary": "A promise remains active."}],
-            "refs": [
-                {"ref_id": "concept:promise", "kind": "concept", "summary": "A promise remains active."},
-            ],
-            "knowledge_activations": [{"activation_id": "knowledge-1"}],
-        },
+        supplemental_context=supplemental_context,
     )
 
     selective_carry = prompt_packet["selective_carry"]
+    assert selective_carry == build_supplemental_selective_carry(supplemental_context)
     retrieval_context = selective_carry["retrieval_context"]
     assert retrieval_context["result_groups"] == ["concepts", "refs"]
     assert retrieval_context["forwarded_result_groups"] == ["refs"]

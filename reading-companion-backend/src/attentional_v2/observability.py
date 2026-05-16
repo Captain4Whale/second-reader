@@ -29,7 +29,7 @@ from .schemas import (
     ThreadTraceState,
     UnitizeDecision,
 )
-from .state_projection import context_ref_ids
+from .state_projection import build_supplemental_selective_carry, context_ref_ids
 from .storage import append_jsonl, event_stream_file, read_audit_file, settlement_audit_file, unitization_audit_file
 
 _MISSING_TARGET_STORE_WARNING = "missing_target_store_defaulted"
@@ -336,6 +336,180 @@ def _id_delta(before_items: object, after_items: object, *, id_key: str) -> dict
     }
 
 
+def _dedupe_sorted_ids(values: list[str]) -> list[str]:
+    """Return sorted unique ids while dropping empty values."""
+
+    return sorted({_clean_text(value) for value in values if _clean_text(value)})
+
+
+def _ref_identifier(item: Mapping[str, object]) -> str:
+    """Return the compact id for one supplemental ref-like item."""
+
+    return _clean_text(item.get("ref_id")) or _clean_text(item.get("source_span_id"))
+
+
+def _ref_ids_from_items(items: object) -> list[str]:
+    """Collect compact ids from one list of ref-like dictionaries."""
+
+    if not isinstance(items, list):
+        return []
+    return [
+        item_id
+        for item in items
+        if isinstance(item, Mapping)
+        for item_id in [_ref_identifier(item)]
+        if item_id
+    ]
+
+
+def _id_summary(ref_ids: list[str]) -> dict[str, object]:
+    """Return compact count-plus-id audit metadata."""
+
+    deduped = _dedupe_sorted_ids(ref_ids)
+    return {"count": len(deduped), "ref_ids": deduped}
+
+
+def _supplemental_refs_returned(supplemental_context: Mapping[str, object]) -> dict[str, object]:
+    """Return compact ids for refs available from supplemental context."""
+
+    return _id_summary(
+        [
+            *_ref_ids_from_items(supplemental_context.get("source_refs")),
+            *_ref_ids_from_items(supplemental_context.get("excerpts")),
+            *_ref_ids_from_items(supplemental_context.get("refs")),
+        ]
+    )
+
+
+def _supplemental_refs_forwarded(selective_carry: Mapping[str, object]) -> dict[str, object]:
+    """Return compact ids for refs forwarded into the prompt-facing selective carry."""
+
+    return _id_summary(
+        [
+            *_ref_ids_from_items(selective_carry.get("source_ref_details")),
+            *_ref_ids_from_items(selective_carry.get("earlier_excerpts")),
+            *_ref_ids_from_items(selective_carry.get("supporting_refs")),
+        ]
+    )
+
+
+def _source_refs_available(supplemental_context: Mapping[str, object]) -> dict[str, object]:
+    """Return compact source-calibration refs available in supplemental context."""
+
+    source_ref_ids = [
+        *_ref_ids_from_items(supplemental_context.get("source_refs")),
+        *_ref_ids_from_items(supplemental_context.get("excerpts")),
+    ]
+    refs = supplemental_context.get("refs")
+    if isinstance(refs, list):
+        source_ref_ids.extend(
+            _ref_identifier(ref)
+            for ref in refs
+            if isinstance(ref, Mapping) and _clean_text(ref.get("kind")) == "source" and _ref_identifier(ref)
+        )
+    return _id_summary(source_ref_ids)
+
+
+def _is_visible_trace_ref(ref: Mapping[str, object]) -> bool:
+    """Whether one supplemental ref is visible trace rather than semantic memory."""
+
+    return (
+        _clean_text(ref.get("kind")) == "reaction"
+        or _clean_text(ref.get("result_role")) == "visible_trace"
+        or ref.get("semantic_memory") is False
+    )
+
+
+def _visible_trace_refs_available(supplemental_context: Mapping[str, object]) -> dict[str, object]:
+    """Return compact visible-trace refs available in supplemental context."""
+
+    ref_ids: list[str] = []
+    refs = supplemental_context.get("refs")
+    if isinstance(refs, list):
+        ref_ids.extend(
+            _ref_identifier(ref)
+            for ref in refs
+            if isinstance(ref, Mapping) and _is_visible_trace_ref(ref) and _ref_identifier(ref)
+        )
+    reactions = supplemental_context.get("reactions")
+    if isinstance(reactions, list):
+        ref_ids.extend(
+            _ref_identifier(reaction)
+            for reaction in reactions
+            if isinstance(reaction, Mapping) and _ref_identifier(reaction)
+        )
+    return _id_summary(ref_ids)
+
+
+def _memory_refs_available(supplemental_context: Mapping[str, object]) -> dict[str, object]:
+    """Return compact memory refs, excluding source-calibration and visible-trace refs."""
+
+    ref_ids: list[str] = []
+    refs = supplemental_context.get("refs")
+    if isinstance(refs, list):
+        ref_ids.extend(
+            _ref_identifier(ref)
+            for ref in refs
+            if isinstance(ref, Mapping)
+            and _clean_text(ref.get("kind")) != "source"
+            and not _is_visible_trace_ref(ref)
+            and _ref_identifier(ref)
+        )
+    for key in ("concepts", "threads", "reflective_items"):
+        ref_ids.extend(_ref_ids_from_items(supplemental_context.get(key)))
+    return _id_summary(ref_ids)
+
+
+def _supplemental_retrieval_audit(supplemental_context: dict[str, object] | None) -> dict[str, object]:
+    """Return compact supplemental retrieval audit metadata when available."""
+
+    if not isinstance(supplemental_context, dict):
+        return {}
+    selective_carry = build_supplemental_selective_carry(supplemental_context)
+    retrieval_context = selective_carry.get("retrieval_context")
+    if not isinstance(retrieval_context, Mapping):
+        return {}
+    return {
+        "retrieval_intent": _clean_text(retrieval_context.get("retrieval_intent")),
+        "result_boundary": _clean_text(retrieval_context.get("result_boundary")),
+        "result_groups": [
+            _clean_text(item)
+            for item in retrieval_context.get("result_groups", [])
+            if _clean_text(item)
+        ]
+        if isinstance(retrieval_context.get("result_groups"), list)
+        else [],
+        "retrieval_events": [
+            dict(item)
+            for item in retrieval_context.get("retrieval_events", [])
+            if isinstance(item, Mapping)
+        ]
+        if isinstance(retrieval_context.get("retrieval_events"), list)
+        else [],
+        "forwarded_result_groups": [
+            _clean_text(item)
+            for item in retrieval_context.get("forwarded_result_groups", [])
+            if _clean_text(item)
+        ]
+        if isinstance(retrieval_context.get("forwarded_result_groups"), list)
+        else [],
+        "not_forwarded_result_groups": [
+            _clean_text(item)
+            for item in retrieval_context.get("not_forwarded_result_groups", [])
+            if _clean_text(item)
+        ]
+        if isinstance(retrieval_context.get("not_forwarded_result_groups"), list)
+        else [],
+        "supplemental_refs_returned": _supplemental_refs_returned(supplemental_context),
+        "supplemental_refs_forwarded_to_prompt": _supplemental_refs_forwarded(selective_carry),
+        "source_refs_available": _source_refs_available(supplemental_context),
+        "memory_refs_available": _memory_refs_available(supplemental_context),
+        "visible_trace_refs_available": _visible_trace_refs_available(supplemental_context),
+        "utilization_observed": False,
+        "utilization_basis": "not_claimed_by_read_output",
+    }
+
+
 def record_read(
     output_dir: Path | None,
     *,
@@ -364,45 +538,46 @@ def record_read(
     )
     memory_uptake_ops = _memory_uptake_ops(read_result)
     memory_uptake_admission_events = _memory_uptake_admission_events(read_result)
-    append_jsonl(
-        read_audit_file(output_dir),
-        {
-            "chapter_id": chapter_id,
-            "chapter_ref": chapter_ref,
-            "unitize_decision": dict(unitize_decision),
-            "source_span": dict(source_unit.get("source_span", {}))
-            if isinstance(source_unit, Mapping) and isinstance(source_unit.get("source_span"), Mapping)
-            else {},
-            "source_span_id": _clean_text(source_unit.get("source_span_id"))
-            if isinstance(source_unit, Mapping)
-            else "",
-            "unit_char_count": int(source_unit.get("char_count", 0) or 0)
-            if isinstance(source_unit, Mapping)
-            else 0,
-            "unit_paragraph_count": int(source_unit.get("paragraph_count", 0) or 0)
-            if isinstance(source_unit, Mapping)
-            else 0,
-            "carry_forward_ref_ids": sorted(context_ref_ids(carry_forward_context)),
-            "context_request": dict(context_request or {}),
-            "supplemental_ref_ids": sorted(context_ref_ids(supplemental_context)),
-            "supplemental_satisfied": supplemental_satisfied,
-            "supplemental_steps": [dict(step) for step in (supplemental_steps or []) if isinstance(step, Mapping)],
-            "stop_reason": _clean_text(stop_reason),
-            "budget_exhausted": bool(budget_exhausted),
-            "reading_impression": _clean_text(read_result.get("reading_impression")),
-            "surfaced_reaction_count": len(surfaced_reactions),
-            "surfaced_reactions": surfaced_reactions,
-            "memory_uptake_ops": memory_uptake_ops,
-            "memory_uptake_op_count": len(memory_uptake_ops),
-            "memory_uptake_ops_by_target_store": _memory_uptake_ops_by_target_store(memory_uptake_ops),
-            "memory_uptake_op_contracts": _memory_uptake_op_contracts(memory_uptake_ops),
-            "memory_uptake_admission_events": memory_uptake_admission_events,
-            "detour_need": dict(read_result.get("detour_need") or {})
-            if isinstance(read_result.get("detour_need"), Mapping)
-            else {},
-            "llm_fallbacks": [dict(item) for item in (llm_fallbacks or []) if isinstance(item, Mapping)],
-        },
-    )
+    row = {
+        "chapter_id": chapter_id,
+        "chapter_ref": chapter_ref,
+        "unitize_decision": dict(unitize_decision),
+        "source_span": dict(source_unit.get("source_span", {}))
+        if isinstance(source_unit, Mapping) and isinstance(source_unit.get("source_span"), Mapping)
+        else {},
+        "source_span_id": _clean_text(source_unit.get("source_span_id"))
+        if isinstance(source_unit, Mapping)
+        else "",
+        "unit_char_count": int(source_unit.get("char_count", 0) or 0)
+        if isinstance(source_unit, Mapping)
+        else 0,
+        "unit_paragraph_count": int(source_unit.get("paragraph_count", 0) or 0)
+        if isinstance(source_unit, Mapping)
+        else 0,
+        "carry_forward_ref_ids": sorted(context_ref_ids(carry_forward_context)),
+        "context_request": dict(context_request or {}),
+        "supplemental_ref_ids": sorted(context_ref_ids(supplemental_context)),
+        "supplemental_satisfied": supplemental_satisfied,
+        "supplemental_steps": [dict(step) for step in (supplemental_steps or []) if isinstance(step, Mapping)],
+        "stop_reason": _clean_text(stop_reason),
+        "budget_exhausted": bool(budget_exhausted),
+        "reading_impression": _clean_text(read_result.get("reading_impression")),
+        "surfaced_reaction_count": len(surfaced_reactions),
+        "surfaced_reactions": surfaced_reactions,
+        "memory_uptake_ops": memory_uptake_ops,
+        "memory_uptake_op_count": len(memory_uptake_ops),
+        "memory_uptake_ops_by_target_store": _memory_uptake_ops_by_target_store(memory_uptake_ops),
+        "memory_uptake_op_contracts": _memory_uptake_op_contracts(memory_uptake_ops),
+        "memory_uptake_admission_events": memory_uptake_admission_events,
+        "detour_need": dict(read_result.get("detour_need") or {})
+        if isinstance(read_result.get("detour_need"), Mapping)
+        else {},
+        "llm_fallbacks": [dict(item) for item in (llm_fallbacks or []) if isinstance(item, Mapping)],
+    }
+    supplemental_retrieval = _supplemental_retrieval_audit(supplemental_context)
+    if supplemental_retrieval:
+        row["supplemental_retrieval"] = supplemental_retrieval
+    append_jsonl(read_audit_file(output_dir), row)
 
 
 def record_settlement(
