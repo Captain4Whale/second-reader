@@ -526,6 +526,8 @@ def record_read(
     budget_exhausted: bool = False,
     read_result: Mapping[str, object],
     llm_fallbacks: list[dict[str, str]] | None = None,
+    navigation_trace: list[dict[str, object]] | None = None,
+    detour_trace_evidence: dict[str, object] | None = None,
 ) -> None:
     """Append one mechanism-private read audit record."""
 
@@ -577,6 +579,11 @@ def record_read(
     supplemental_retrieval = _supplemental_retrieval_audit(supplemental_context)
     if supplemental_retrieval:
         row["supplemental_retrieval"] = supplemental_retrieval
+    compact_navigation_trace = [dict(item) for item in (navigation_trace or []) if isinstance(item, Mapping)]
+    if compact_navigation_trace:
+        row["navigation_trace"] = compact_navigation_trace
+    if isinstance(detour_trace_evidence, Mapping) and detour_trace_evidence:
+        row["detour_trace_evidence"] = dict(detour_trace_evidence)
     append_jsonl(read_audit_file(output_dir), row)
 
 

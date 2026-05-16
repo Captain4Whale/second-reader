@@ -207,6 +207,69 @@ def test_record_read_writes_memory_uptake_op_contracts(tmp_path: Path) -> None:
         },
     ]
     assert "supplemental_retrieval" not in audit_line
+    assert "navigation_trace" not in audit_line
+    assert "detour_trace_evidence" not in audit_line
+
+
+def test_record_read_writes_compact_navigation_and_detour_evidence(tmp_path: Path) -> None:
+    output_dir = tmp_path / "output"
+
+    record_read(
+        output_dir,
+        chapter_id=1,
+        chapter_ref="Chapter 1",
+        unitize_decision={"boundary_type": "paragraph_end"},
+        carry_forward_context={},
+        read_result={
+            "reading_impression": "A detour lands.",
+            "surfaced_reactions": [],
+            "memory_uptake_ops": [],
+            "memory_uptake_admission_events": [],
+        },
+        navigation_trace=[
+            {
+                "decision": "request_skill",
+                "selection_mode": "detour",
+                "reason": "Need source evidence.",
+                "skill_result": {
+                    "status": "ok",
+                    "result_summary": {"card_count": 1},
+                },
+                "budget_state": {"mode": "detour", "act_index": 1},
+            },
+            {
+                "decision": "choose_unit",
+                "selection_mode": "detour",
+                "reason": "Source evidence is sufficient.",
+                "start_sentence_id": "c1-s1",
+                "end_sentence_id": "c1-s2",
+                "budget_state": {"mode": "detour", "act_index": 2},
+            },
+        ],
+        detour_trace_evidence={
+            "selection_mode": "detour",
+            "active_detour_id": "detour:2:c2-s1:1",
+            "detour_trace_summary": [
+                {
+                    "detour_id": "detour:2:c2-s1:1",
+                    "origin_target_hint": "opening setup",
+                    "status": "open",
+                    "open_reason": "Need the opening setup.",
+                }
+            ],
+        },
+    )
+
+    audit_line = json.loads(read_audit_file(output_dir).read_text(encoding="utf-8").strip())
+
+    assert audit_line["memory_uptake_ops"] == []
+    assert audit_line["memory_uptake_op_count"] == 0
+    assert audit_line["memory_uptake_ops_by_target_store"] == {}
+    assert audit_line["navigation_trace"][0]["decision"] == "request_skill"
+    assert audit_line["navigation_trace"][0]["skill_result"]["result_summary"] == {"card_count": 1}
+    assert audit_line["navigation_trace"][1]["decision"] == "choose_unit"
+    assert audit_line["detour_trace_evidence"]["active_detour_id"] == "detour:2:c2-s1:1"
+    assert audit_line["detour_trace_evidence"]["detour_trace_summary"][0]["open_reason"] == "Need the opening setup."
 
 
 def test_record_read_writes_look_back_supplemental_retrieval_audit(tmp_path: Path) -> None:

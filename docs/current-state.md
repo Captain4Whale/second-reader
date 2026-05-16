@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-05-16T22:06:08+08:00`
+Last verified: `2026-05-16T22:39:29+08:00`
 
 ## Current Objective
 - Land the repo-local Memory / Planning / Evaluation design chain and implementation handoff for optimizing the existing `attentional_v2` mechanism.
@@ -34,19 +34,21 @@ Last verified: `2026-05-16T22:06:08+08:00`
     - Slice 4B adds compact mechanism-private `read_audit` retrieval evidence only when supplemental retrieval metadata exists; it does not create a supplemental retrieval loop
     - current runner main read path still passes `supplemental_context=None`
     - Slice 4B does not claim actual model utilization from retrieval availability; `utilization_observed=false` and `utilization_basis=not_claimed_by_read_output` remain explicit
-    - `Slice5A-Detour-Lifecycle-and-Navigation-Trace-Audit-Hardening-Pre-implementation-Brief v0.md` is created and pending human review
-    - Slice 5A implementation has not started
+    - `Slice5A-Detour-Lifecycle-and-Navigation-Trace-Audit-Hardening-Pre-implementation-Brief v0.md` is accepted
+    - Slice 5A detour lifecycle and navigation trace audit hardening is implemented, and `Slice5A-Detour-Lifecycle-and-Navigation-Trace-Audit-Hardening-Post-implementation-Report v0.md` is pending human review
+    - Slice 5A adds compact optional detour lifecycle metadata and compact `read_audit` navigation/detour evidence only when available
+    - Slice 5A does not introduce new planner behavior, new Navigate decisions, durable `deferred` status, retrieval loop, prompt text/version change, public API/frontend/eval runner change, or full AI Evaluation
     - Slice 4A changed prompt-facing packet metadata additively, but did not change prompt text/version, runner behavior, `state_ops.py`, durable memory state, public API, frontend, eval runners, or `observability.py`
     - Slice 4A patch tightens `result_groups` and `not_forwarded_result_groups` so they reflect actual non-empty result groups rather than all possible groups
     - full retrieval utilization trace remains deferred
     - this effort optimizes existing `attentional_v2`; it does not replace the mechanism or introduce a greenfield redesign
     - this design chain was triggered by a real implementation mismatch between `memory_uptake_ops` and downstream memory/state persistence and projection structures, then converged through external evidence review, project assessment, accepted design, and implementation handoff
   - next step:
-    - human reviewer should review and accept `Slice5A-Detour-Lifecycle-and-Navigation-Trace-Audit-Hardening-Pre-implementation-Brief v0.md` or request a patch
-    - do not start Slice 5A implementation before the Slice 5A Pre-implementation Brief is accepted
+    - human reviewer should review and accept `Slice5A-Detour-Lifecycle-and-Navigation-Trace-Audit-Hardening-Post-implementation-Report v0.md` or request a patch
+    - do not start the next implementation slice before the Slice 5A Post-implementation Report is accepted
   - current non-goals:
-    - no Slice 5A implementation yet
-    - no accepted Slice 5A Pre-implementation Brief yet
+    - no next-slice implementation yet
+    - no accepted Slice 5A Post-implementation Report yet
     - no full evaluation run for this new handoff line yet
 - Shift Long Span from the discontinued `target-centered accumulation v2` method to the new active design direction:
   - `Memory Quality`

@@ -277,6 +277,39 @@ def _local_continuity_detour_trace(local_continuity: LocalContinuityState) -> li
     ]
 
 
+def _compact_detour_trace_entry(entry: dict[str, object]) -> dict[str, object]:
+    """Return a compact audit-safe detour lifecycle trace entry."""
+
+    compact: dict[str, object] = {
+        "detour_id": _clean_text(entry.get("detour_id")),
+        "origin_cursor": dict(entry.get("origin_cursor", {})) if isinstance(entry.get("origin_cursor"), dict) else {},
+        "origin_target_hint": _clean_text(entry.get("origin_target_hint")),
+        "status": _clean_text(entry.get("status")),
+    }
+    for key in (
+        "open_reason",
+        "defer_reason",
+        "resolve_reason",
+        "abandon_reason",
+        "restore_mainline_reason",
+        "last_navigation_decision",
+        "last_navigation_reason",
+    ):
+        value = _clean_text(entry.get(key))
+        if value:
+            compact[key] = value
+    return compact
+
+
+def _compact_detour_trace(local_continuity: LocalContinuityState, *, limit: int = 4) -> list[dict[str, object]]:
+    """Return the recent compact detour lifecycle trace."""
+
+    return [
+        _compact_detour_trace_entry(entry)
+        for entry in _local_continuity_detour_trace(local_continuity)
+    ][-limit:]
+
+
 def _active_detour_need(local_continuity: LocalContinuityState) -> DetourNeed | None:
     """Return the currently active detour need if one is open."""
 
@@ -297,7 +330,7 @@ def _sync_active_detour_from_trace(local_continuity: LocalContinuityState) -> Lo
             continue
         local_continuity["active_detour_id"] = _clean_text(entry.get("detour_id"))
         local_continuity["active_detour_need"] = {
-            "reason": "",
+            "reason": _clean_text(entry.get("open_reason")),
             "target_hint": _clean_text(entry.get("origin_target_hint")),
             "status": "open",
         }
@@ -336,6 +369,7 @@ def _apply_detour_need(
                 "origin_cursor": origin_cursor,
                 "origin_target_hint": _clean_text(detour_need.get("target_hint")),
                 "status": "open",
+                "open_reason": _clean_text(detour_need.get("reason")),
             }
         )
         local_continuity["detour_trace"] = trace
@@ -352,6 +386,24 @@ def _apply_detour_need(
         if _clean_text(entry.get("detour_id")) != active_detour_id:
             continue
         entry["status"] = status
+        reason = _clean_text(detour_need.get("reason"))
+        defer_reason = _clean_text(detour_need.get("defer_reason"))
+        if status == "resolved":
+            entry["resolve_reason"] = reason
+            entry["restore_mainline_reason"] = (
+                _clean_text(detour_need.get("restore_mainline_reason"))
+                or reason
+                or "detour_resolved"
+            )
+        if status == "abandoned":
+            entry["abandon_reason"] = reason
+            entry["defer_reason"] = defer_reason or reason
+        last_navigation_decision = _clean_text(detour_need.get("last_navigation_decision"))
+        if last_navigation_decision:
+            entry["last_navigation_decision"] = last_navigation_decision
+        last_navigation_reason = _clean_text(detour_need.get("last_navigation_reason"))
+        if last_navigation_reason:
+            entry["last_navigation_reason"] = last_navigation_reason
         break
     local_continuity["detour_trace"] = trace
     return _sync_active_detour_from_trace(local_continuity)
@@ -1097,15 +1149,7 @@ def _build_detour_navigation_packet(
         for ref in carry_forward_context.get("refs", [])
         if isinstance(ref, dict) and _clean_text(ref.get("kind")) in {"source", "concept", "thread", "reaction"}
     ][:8]
-    detour_trace_summary = [
-        {
-            "detour_id": _clean_text(entry.get("detour_id")),
-            "origin_target_hint": _clean_text(entry.get("origin_target_hint")),
-            "status": _clean_text(entry.get("status")),
-        }
-        for entry in local_continuity.get("detour_trace", [])
-        if isinstance(entry, dict)
-    ][-4:]
+    detour_trace_summary = _compact_detour_trace(local_continuity)
     return {
         "packet_version": _clean_text(carry_forward_context.get("packet_version")),
         "mainline_cursor": dict(local_continuity.get("mainline_cursor", {}))
@@ -1154,15 +1198,7 @@ def _build_detour_read_context(local_continuity: LocalContinuityState) -> dict[s
             if isinstance(local_continuity.get("mainline_cursor"), dict)
             else {},
         },
-        "detour_trace_summary": [
-            {
-                "detour_id": _clean_text(entry.get("detour_id")),
-                "origin_target_hint": _clean_text(entry.get("origin_target_hint")),
-                "status": _clean_text(entry.get("status")),
-            }
-            for entry in local_continuity.get("detour_trace", [])
-            if isinstance(entry, dict)
-        ][-4:],
+        "detour_trace_summary": _compact_detour_trace(local_continuity),
     }
 
 
@@ -1429,6 +1465,67 @@ def _navigate_trace_entry(
     if error:
         entry["error"] = error
     return entry
+
+
+def _compact_navigation_trace(navigate_trace: object) -> list[dict[str, object]]:
+    """Return compact navigation trace entries safe for read-audit persistence."""
+
+    if not isinstance(navigate_trace, list):
+        return []
+    compact_entries: list[dict[str, object]] = []
+    for item in navigate_trace:
+        if not isinstance(item, dict):
+            continue
+        entry: dict[str, object] = {}
+        for key in (
+            "decision",
+            "selection_mode",
+            "reason",
+            "end_anchor_text",
+            "start_sentence_id",
+            "end_sentence_id",
+            "source_span_id",
+            "resolution",
+            "skill_request",
+            "skill_result",
+            "error",
+            "budget_state",
+        ):
+            value = item.get(key)
+            if isinstance(value, dict):
+                entry[key] = dict(value)
+            elif isinstance(value, str):
+                cleaned = _clean_text(value)
+                if cleaned:
+                    entry[key] = cleaned
+            elif value not in (None, "", [], {}):
+                entry[key] = value
+        if entry:
+            compact_entries.append(entry)
+    return compact_entries
+
+
+def _detour_trace_evidence(
+    *,
+    selection_result: NavigateNextUnitResult,
+    local_continuity: LocalContinuityState,
+) -> dict[str, object]:
+    """Return compact mechanism-private detour trace evidence for a selected unit."""
+
+    selection_mode = _clean_text(selection_result.get("selection_mode"))
+    if selection_mode not in {"detour", "deferred"}:
+        return {}
+    evidence: dict[str, object] = {
+        "selection_mode": selection_mode,
+        "active_detour_id": _clean_text(local_continuity.get("active_detour_id")),
+        "detour_trace_summary": _compact_detour_trace(local_continuity),
+    }
+    if isinstance(local_continuity.get("active_detour_need"), dict):
+        evidence["active_detour_need"] = dict(local_continuity["active_detour_need"])
+    defer_reason = _clean_text(selection_result.get("defer_reason"))
+    if defer_reason:
+        evidence["defer_reason"] = defer_reason
+    return evidence
 
 
 def _resolve_detour_act_region(
@@ -2041,6 +2138,8 @@ def _run_read_with_context_loop(
     author: str,
     chapter_id: int,
     chapter_ref: str,
+    navigation_trace: list[dict[str, object]] | None = None,
+    detour_trace_evidence: dict[str, object] | None = None,
 ) -> tuple[ReadUnitResult, list[dict[str, str]]]:
     """Run one authoritative read for the chosen unit and persist its private audit."""
 
@@ -2099,6 +2198,8 @@ def _run_read_with_context_loop(
         read_result=read_result,
         stop_reason="read_complete",
         llm_fallbacks=llm_fallbacks,
+        navigation_trace=navigation_trace,
+        detour_trace_evidence=detour_trace_evidence,
     )
     return read_result, llm_fallbacks
 
@@ -2281,6 +2382,11 @@ def _settle_next_unit(
         author=provisioned.author,
         chapter_id=chapter_id,
         chapter_ref=chapter_ref,
+        navigation_trace=_compact_navigation_trace(selection_result.get("navigate_trace")),
+        detour_trace_evidence=_detour_trace_evidence(
+            selection_result=selection_result,
+            local_continuity=local_continuity,
+        ),
     )
     for fallback in read_fallbacks:
         if not isinstance(fallback, dict):
@@ -2395,9 +2501,12 @@ def _settle_next_unit(
         local_continuity = _apply_detour_need(
             local_continuity,
             {
-                "reason": "",
+                "reason": "detour_unit_read_without_new_detour_need",
+                "restore_mainline_reason": "detour_unit_read_without_new_detour_need",
                 "target_hint": _clean_text(active_detour_need.get("target_hint")),
                 "status": "resolved",
+                "last_navigation_decision": "choose_unit",
+                "last_navigation_reason": _clean_text(unitize_decision.get("reason")),
             },
         )
 
@@ -2737,12 +2846,18 @@ def run_reading_runner(request: ReadRequest, mechanism: MechanismInfo) -> ReadRe
                     if _clean_text(selection_result.get("selection_mode")) != "deferred":
                         break
                     active_detour_need = _active_detour_need(local_continuity) or {}
+                    defer_reason = _clean_text(selection_result.get("defer_reason")) or _clean_text(active_detour_need.get("reason"))
+                    navigation_trace = _compact_navigation_trace(selection_result.get("navigate_trace"))
+                    last_navigation = navigation_trace[-1] if navigation_trace else {}
                     local_continuity = _apply_detour_need(
                         local_continuity,
                         {
-                            "reason": _clean_text(selection_result.get("defer_reason")) or _clean_text(active_detour_need.get("reason")),
+                            "reason": defer_reason,
+                            "defer_reason": defer_reason,
                             "target_hint": _clean_text(active_detour_need.get("target_hint")),
                             "status": "abandoned",
+                            "last_navigation_decision": _clean_text(last_navigation.get("decision")),
+                            "last_navigation_reason": _clean_text(last_navigation.get("reason")),
                         },
                     )
                     bundle["local_continuity"] = local_continuity
@@ -2828,12 +2943,18 @@ def run_reading_runner(request: ReadRequest, mechanism: MechanismInfo) -> ReadRe
                 )
                 if _clean_text(selection_result.get("selection_mode")) == "deferred":
                     active_detour_need = _active_detour_need(local_continuity) or {}
+                    defer_reason = _clean_text(selection_result.get("defer_reason")) or _clean_text(active_detour_need.get("reason"))
+                    navigation_trace = _compact_navigation_trace(selection_result.get("navigate_trace"))
+                    last_navigation = navigation_trace[-1] if navigation_trace else {}
                     local_continuity = _apply_detour_need(
                         local_continuity,
                         {
-                            "reason": _clean_text(selection_result.get("defer_reason")) or _clean_text(active_detour_need.get("reason")),
+                            "reason": defer_reason,
+                            "defer_reason": defer_reason,
                             "target_hint": _clean_text(active_detour_need.get("target_hint")),
                             "status": "abandoned",
+                            "last_navigation_decision": _clean_text(last_navigation.get("decision")),
+                            "last_navigation_reason": _clean_text(last_navigation.get("reason")),
                         },
                     )
                     bundle["local_continuity"] = local_continuity

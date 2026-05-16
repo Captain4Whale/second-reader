@@ -464,12 +464,12 @@ Last updated: `2026-05-16T20:53:12+08:00`
 
 ## Waiting
 
-### `TASK-SECOND-READER-MEMORY-PLANNING-SLICE5A-BRIEF-ACCEPTANCE` — Review Slice 5A Pre-implementation Brief for Detour Lifecycle and Navigation Trace Audit Hardening
+### `TASK-SECOND-READER-MEMORY-PLANNING-SLICE5A-REPORT-REVIEW` — Review Slice 5A Post-implementation Report for Detour Lifecycle and Navigation Trace Audit Hardening
 - Status: `waiting`
 - Lane: `mechanism_runtime`
 - Priority: `high`
-- Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice5A-Detour-Lifecycle-and-Navigation-Trace-Audit-Hardening-Pre-implementation-Brief v0.md`
-- Next: human reviewer should accept or patch the Slice 5A Pre-implementation Brief before any Slice 5A implementation PR. The brief scopes audit/trace hardening only; it excludes new planner behavior, route steering/user route choice/visible route UX, retrieval behavior changes, prompt text changes, public API/frontend/eval runner changes, and full AI Evaluation.
+- Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice5A-Detour-Lifecycle-and-Navigation-Trace-Audit-Hardening-Post-implementation-Report v0.md`
+- Next: human reviewer should accept or patch the Slice 5A Post-implementation Report before any next implementation slice. Slice 5A implemented compact detour lifecycle metadata and compact `read_audit` navigation/detour evidence only when available; it did not introduce new planner behavior, new Navigate decisions, durable `deferred` status, retrieval loop, prompt text/version change, public API/frontend/eval runner change, or full AI Evaluation.
 - Evidence:
   - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
   - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/E实施0-Implementation Roadmap & Handoff v0.md`
@@ -478,6 +478,7 @@ Last updated: `2026-05-16T20:53:12+08:00`
   - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice4B-Retrieval-Utilization-Trace-and-Read-audit-Evidence-Pre-implementation-Brief v0.md`
   - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice4B-Retrieval-Utilization-Trace-and-Read-audit-Evidence-Post-implementation-Report v0.md`
   - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice5A-Detour-Lifecycle-and-Navigation-Trace-Audit-Hardening-Pre-implementation-Brief v0.md`
+  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice5A-Detour-Lifecycle-and-Navigation-Trace-Audit-Hardening-Post-implementation-Report v0.md`
   - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md`
 
 ### `TASK-DATASET-QUESTION-ALIGNED-CASE-CONSTRUCTION` — Build question-aligned case construction for evaluation datasets
@@ -552,6 +553,20 @@ Last updated: `2026-05-16T20:53:12+08:00`
 - Next: keep section-first compatibility fields and containers only as migration sidecars; start removal only after the V2-native overview, chapter, and marks surfaces are stable enough that the older presentation model is no longer needed for normal product use
 
 ## Done
+
+### `TASK-SECOND-READER-MEMORY-PLANNING-SLICE5A-BRIEF-ACCEPTANCE` — Review Slice 5A Pre-implementation Brief for Detour Lifecycle and Navigation Trace Audit Hardening
+- Status: `done`
+- Lane: `mechanism_runtime`
+- Priority: `high`
+- Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice5A-Detour-Lifecycle-and-Navigation-Trace-Audit-Hardening-Pre-implementation-Brief v0.md`
+- Next: Slice 5A Pre-implementation Brief is accepted and implemented. Continue with `TASK-SECOND-READER-MEMORY-PLANNING-SLICE5A-REPORT-REVIEW`; do not start the next implementation slice before the Slice 5A Post-implementation Report is accepted.
+- Evidence:
+  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
+  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/E实施0-Implementation Roadmap & Handoff v0.md`
+  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施1-Implementation Feasibility & Delta Audit v0.md`
+  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice5A-Detour-Lifecycle-and-Navigation-Trace-Audit-Hardening-Pre-implementation-Brief v0.md`
+  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice5A-Detour-Lifecycle-and-Navigation-Trace-Audit-Hardening-Post-implementation-Report v0.md`
+  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md`
 
 ### `TASK-SECOND-READER-MEMORY-PLANNING-SLICE4B-REPORT-REVIEW` — Review Slice 4B Post-implementation Report for Retrieval Utilization Trace and Read-audit Evidence
 - Status: `done`

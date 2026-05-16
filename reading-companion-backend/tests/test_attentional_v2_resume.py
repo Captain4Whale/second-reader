@@ -232,6 +232,9 @@ def test_persist_reading_position_preserves_detour_state(tmp_path: Path):
                     },
                     "origin_target_hint": "the opening setup",
                     "status": "open",
+                    "open_reason": "Need to revisit the earlier setup.",
+                    "last_navigation_decision": "request_skill",
+                    "last_navigation_reason": "Fetch opening context.",
                 }
             ],
         },
@@ -243,6 +246,9 @@ def test_persist_reading_position_preserves_detour_state(tmp_path: Path):
     assert continuity["active_detour_id"] == "detour:1:c1-s6:1"
     assert continuity["active_detour_need"]["target_hint"] == "the opening setup"
     assert continuity["detour_trace"][0]["status"] == "open"
+    assert continuity["detour_trace"][0]["open_reason"] == "Need to revisit the earlier setup."
+    assert continuity["detour_trace"][0]["last_navigation_decision"] == "request_skill"
+    assert continuity["detour_trace"][0]["last_navigation_reason"] == "Fetch opening context."
     assert shell["reading_queue_stage"] == "deferred_support"
 
 

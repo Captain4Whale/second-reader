@@ -1007,6 +1007,30 @@ def test_navigate_choose_next_unit_defers_unlanded_detour(tmp_path, monkeypatch)
     assert result["selection_mode"] == "deferred"
     assert result["defer_reason"] == "not enough grounded evidence"
     assert result["selected_unit_sentences"] == []
+    assert result["navigate_trace"][0]["decision"] == "defer_detour"
+    assert local_continuity["detour_trace"][0]["open_reason"] == "Need the opening setup."
+
+    navigation_trace = runner_module._compact_navigation_trace(result["navigate_trace"])  # noqa: SLF001
+    last_navigation = navigation_trace[-1]
+    abandoned_continuity = runner_module._apply_detour_need(  # noqa: SLF001
+        local_continuity,
+        {
+            "reason": result["defer_reason"],
+            "defer_reason": result["defer_reason"],
+            "target_hint": "opening setup",
+            "status": "abandoned",
+            "last_navigation_decision": last_navigation["decision"],
+            "last_navigation_reason": last_navigation["reason"],
+        },
+    )
+
+    abandoned_trace = abandoned_continuity["detour_trace"][0]
+    assert abandoned_trace["status"] == "abandoned"
+    assert abandoned_trace["defer_reason"] == "not enough grounded evidence"
+    assert abandoned_trace["abandon_reason"] == "not enough grounded evidence"
+    assert abandoned_trace["last_navigation_decision"] == "defer_detour"
+    assert abandoned_trace["last_navigation_reason"] == "not enough grounded evidence"
+    assert abandoned_continuity["active_detour_id"] == ""
 
 
 def test_attentional_v2_read_book_runs_live_loop_and_persists_compatibility_results(tmp_path, monkeypatch):
@@ -1507,6 +1531,11 @@ def test_attentional_v2_runner_executes_detour_search_and_returns_to_mainline(tm
     continuity = json.loads(local_continuity_file(result.output_dir).read_text(encoding="utf-8"))
     assert continuity["active_detour_id"] == ""
     assert continuity["detour_trace"][-1]["status"] == "resolved"
+    assert continuity["detour_trace"][-1]["open_reason"] == "The later question depends on the opening setup."
+    assert continuity["detour_trace"][-1]["resolve_reason"] == "detour_unit_read_without_new_detour_need"
+    assert continuity["detour_trace"][-1]["restore_mainline_reason"] == "detour_unit_read_without_new_detour_need"
+    assert continuity["detour_trace"][-1]["last_navigation_decision"] == "choose_unit"
+    assert continuity["detour_trace"][-1]["last_navigation_reason"] == "The opening setup is the right earlier region."
 
 
 def test_attentional_v2_runner_drains_last_unit_detour_before_chapter_close(tmp_path, monkeypatch):
@@ -1623,6 +1652,9 @@ def test_attentional_v2_runner_drains_last_unit_detour_before_chapter_close(tmp_
     continuity = json.loads(local_continuity_file(result.output_dir).read_text(encoding="utf-8"))
     assert continuity["active_detour_id"] == ""
     assert continuity["detour_trace"][-1]["status"] == "resolved"
+    assert continuity["detour_trace"][-1]["open_reason"] == "The chapter ending still depends on the opening setup."
+    assert continuity["detour_trace"][-1]["resolve_reason"] == "detour_unit_read_without_new_detour_need"
+    assert continuity["detour_trace"][-1]["restore_mainline_reason"] == "detour_unit_read_without_new_detour_need"
 
 
 def test_attentional_v2_runner_stops_at_audit_window_cap_and_persists_partial_outputs(tmp_path, monkeypatch):

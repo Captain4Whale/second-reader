@@ -46,6 +46,12 @@ def _navigation_context() -> dict[str, object]:
     }
 
 
+def test_navigate_act_space_remains_bounded() -> None:
+    """Navigate should keep the accepted bounded act space."""
+
+    assert nodes_module._NAVIGATE_ACT_DECISIONS == {"choose_unit", "request_skill", "defer_detour"}  # noqa: SLF001
+
+
 def _navigate_act(
     *,
     tmp_path: Path,

@@ -387,6 +387,13 @@ class DetourTraceEntry(TypedDict, total=False):
     origin_cursor: SharedRunCursor
     origin_target_hint: str
     status: DetourStatus
+    open_reason: str
+    defer_reason: str
+    resolve_reason: str
+    abandon_reason: str
+    restore_mainline_reason: str
+    last_navigation_decision: str
+    last_navigation_reason: str
 
 
 class NavigateActResult(TypedDict, total=False):
