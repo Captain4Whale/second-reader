@@ -13,9 +13,9 @@ Stable mechanism behavior changes still need to be promoted to the relevant stab
 ## Current Status
 
 ```text
-Current phase: Slice 4B Post-implementation Report waiting for human review
-Implementation status: Slice 1 accepted; Slice 2A accepted; Slice 2B accepted; Slice 3A accepted; Slice 3B accepted; Slice 4A accepted including precision patch; Slice 4B implemented and pending report review
-Next action: human reviewer accepts or patches the Slice 4B Post-implementation Report before any next implementation slice
+Current phase: Slice 5A Pre-implementation Brief waiting for human review
+Implementation status: Slice 1 accepted; Slice 2A accepted; Slice 2B accepted; Slice 3A accepted; Slice 3B accepted; Slice 4A accepted including precision patch; Slice 4B accepted; Slice 5A implementation not started
+Next action: human reviewer accepts or patches the Slice 5A Pre-implementation Brief before any Slice 5A implementation PR
 Full AI Evaluation: not yet; deferred until core instrumentation is ready
 ```
 
@@ -1291,6 +1291,78 @@ Reviewer decision:
 
 Next recommended step:
 - Human reviewer reviews `reports/Slice4B-Retrieval-Utilization-Trace-and-Read-audit-Evidence-Post-implementation-Report v0.md`. Do not start the next implementation slice yet.
+
+## Entry 2026-05-16 — Slice 4B report accepted and Slice 5A brief created
+
+Type:
+- review decision
+- pre-implementation brief
+
+Slice:
+- Slice 5
+
+Related docs:
+- E实施0: `../E实施0-Implementation Roadmap & Handoff v0.md`
+- C设计 source: `../C设计2-Planning Ontology Design v0.md`, `../C设计4-Navigation Policy Design v0.md`, `../C设计6-Detour : Look-back : Active Recall Policy Design v0.md`, `../C设计7-Memory Retrieval & Utilization Design v0.md`, `../C设计9-Evaluation Calibration & Minimal Eval Suite v0.md`
+- E实施1 / PR / report: `E实施1-Implementation Feasibility & Delta Audit v0.md`
+- Accepted report: `reports/Slice4B-Retrieval-Utilization-Trace-and-Read-audit-Evidence-Post-implementation-Report v0.md`
+- Brief: `briefs/Slice5A-Detour-Lifecycle-and-Navigation-Trace-Audit-Hardening-Pre-implementation-Brief v0.md`
+
+Branch / PR:
+- Branch: `main`
+- PR:
+- Commit:
+
+Pre-implementation Brief:
+- Link: `briefs/Slice5A-Detour-Lifecycle-and-Navigation-Trace-Audit-Hardening-Pre-implementation-Brief v0.md`
+- Accepted by:
+- Acceptance date:
+- Scope changes approved:
+
+Files changed:
+- docs only for Slice 5A brief landing
+
+Design contracts addressed:
+- Slice 4B Post-implementation Report accepted by human reviewer / user
+- Slice 5A brief created for detour lifecycle and navigation trace audit hardening
+- future Slice 5A must preserve the current Navigate act space: `choose_unit`, `request_skill`, `defer_detour`
+- future Slice 5A must keep `deferred` as a navigation outcome or audit reason, not a new durable detour status
+- future Slice 5A must not introduce new planner behavior, route steering, user route choice, visible route UX, retrieval behavior changes, prompt text changes, public API/frontend/eval runner changes, or full AI Evaluation
+
+Engineering tests:
+- Commands run: none
+- Result: not run; doc-only brief landing
+- Not run / reason: backend tests not run by scope; full AI Evaluation not run by constraint
+
+Contract / audit checks:
+- SourceRef preserved: unchanged; future Slice 5A must preserve source-grounded mainline continuity
+- per-op outcome: unchanged and out of Slice 5A
+- candidate vs settled separated: unchanged and deferred to Slice 6
+- audit not routed into prompt: unchanged; Slice 5A brief excludes audit dumps routed into prompts
+- reaction_records not semantic memory: unchanged and out of Slice 5A
+- knowledge_activations not source truth: unchanged and out of Slice 5A
+- other: detour must remain planning path deviation; `active_recall` remains memory recovery; `look_back` remains source calibration
+
+AI Evaluation:
+- Full eval run? no
+- Smoke only? no
+- Eval lane affected: none
+- Notes: full AI Evaluation remains deferred until core instrumentation is ready
+
+Post-implementation Report:
+- Link:
+- Summary:
+- Deviations from accepted brief:
+- Known gaps:
+
+Reviewer decision:
+- waiting for human review
+- Reviewer:
+- Decision date:
+- Required follow-up: accept or patch the Slice 5A Pre-implementation Brief before any Slice 5A implementation PR
+
+Next recommended step:
+- Human reviewer reviews `briefs/Slice5A-Detour-Lifecycle-and-Navigation-Trace-Audit-Hardening-Pre-implementation-Brief v0.md`. Do not start Slice 5A implementation yet.
 
 ## Entry Template
 
