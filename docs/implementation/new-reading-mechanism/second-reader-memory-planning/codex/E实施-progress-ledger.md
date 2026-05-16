@@ -13,9 +13,9 @@ Stable mechanism behavior changes still need to be promoted to the relevant stab
 ## Current Status
 
 ```text
-Current phase: Slice 3B implementation complete; Post-implementation Report waiting for human review
-Implementation status: Slice 1 accepted; Slice 2A accepted; Slice 2B accepted; Slice 3A accepted; Slice 3B lifecycle semantics and state-op boundary hardening implemented as test / contract hardening
-Next action: human reviewer accepts the Slice 3B Post-implementation Report or requests a patch before any next-slice brief / implementation PR
+Current phase: Slice 4A Pre-implementation Brief waiting for human review
+Implementation status: Slice 1 accepted; Slice 2A accepted; Slice 2B accepted; Slice 3A accepted; Slice 3B accepted; Slice 4A supplemental retrieval intent and context assembly brief created but not accepted
+Next action: human reviewer accepts the Slice 4A Pre-implementation Brief or requests a patch before any Slice 4A implementation PR
 Full AI Evaluation: not yet; deferred until core instrumentation is ready
 ```
 
@@ -882,6 +882,81 @@ Reviewer decision:
 
 Next recommended step:
 - Human reviewer accepts `reports/Slice3B-Lifecycle-Semantics-and-State-op-Boundary-Hardening-Post-implementation-Report v0.md` or requests a patch. Do not start the next implementation slice yet.
+
+## Entry 2026-05-16 — Slice 3B report accepted and Slice 4A brief created
+
+Type:
+- review decision
+- pre-implementation brief
+
+Slice:
+- Slice 4
+
+Related docs:
+- E实施0: `../E实施0-Implementation Roadmap & Handoff v0.md`
+- C设计 source: `../C设计0-Second Reader Shared Memory–Planning Mechanism Charter v0.md`, `../C设计6-Detour : Look-back : Active Recall Policy Design v0.md`, `../C设计7-Memory Retrieval & Utilization Design v0.md`, `../C设计9-Evaluation Calibration & Minimal Eval Suite v0.md`
+- E实施1 / PR / report: `reports/Slice3B-Lifecycle-Semantics-and-State-op-Boundary-Hardening-Post-implementation-Report v0.md`
+- Brief: `briefs/Slice4A-Supplemental-Retrieval-Intent-and-Context-Assembly-Contract-Pre-implementation-Brief v0.md`
+
+Branch / PR:
+- Branch: `main`
+- PR:
+- Commit:
+
+Pre-implementation Brief:
+- Link: `briefs/Slice4A-Supplemental-Retrieval-Intent-and-Context-Assembly-Contract-Pre-implementation-Brief v0.md`
+- Accepted by:
+- Acceptance date:
+- Scope changes approved:
+
+Files changed:
+- docs only for Slice 4A brief landing
+
+Design contracts addressed:
+- Slice 3B Post-implementation Report accepted by human reviewer / user
+- Slice 4A brief created for supplemental retrieval intent and context assembly contract visibility
+- future Slice 4A implementation must clarify `look_back` as source calibration and `active_recall` as memory recovery
+- future Slice 4A implementation must preserve the distinction between source excerpts / source refs and settled memory / visible trace refs
+- future Slice 4A implementation must not build a new retriever, broad RAG pipeline, full utilization trace, or full active-recall object projection into the Read prompt packet
+- future Slice 4A implementation explicitly excludes prompt text changes, runner changes, `state_ops.py`, durable memory state, navigation / detour policy, slow-cycle, public API, frontend, eval runners, and full AI Evaluation
+
+Engineering tests:
+- Commands run:
+  - not run for this doc-only brief landing
+- Result:
+  - not run
+- Not run / reason:
+  - this task only creates the Slice 4A Pre-implementation Brief and status updates
+
+Contract / audit checks:
+- SourceRef preserved: unchanged and planned for future Slice 4A retrieval-boundary tests
+- per-op outcome: unchanged and out of Slice 4A
+- candidate vs settled separated: unchanged and deferred to Slice 6
+- audit not routed into prompt: unchanged; Slice 4A brief excludes audit dumps and prompt text changes
+- reaction_records not semantic memory: preserved as an explicit Slice 4A boundary
+- knowledge_activations not source truth: preserved; Slice 4A does not project `knowledge_activations`
+- other: Slice 4A implementation remains blocked until this brief is accepted
+
+AI Evaluation:
+- Full eval run? no
+- Smoke only? no
+- Eval lane affected: none
+- Notes: full AI Evaluation remains deferred until core instrumentation is ready
+
+Post-implementation Report:
+- Link:
+- Summary:
+- Deviations from accepted brief:
+- Known gaps:
+
+Reviewer decision:
+- Slice 3B report accepted; Slice 4A brief waiting for human acceptance
+- Reviewer: human reviewer / user
+- Decision date: 2026-05-16
+- Required follow-up: accept or patch the Slice 4A Pre-implementation Brief before any Slice 4A implementation PR
+
+Next recommended step:
+- Human reviewer reviews `briefs/Slice4A-Supplemental-Retrieval-Intent-and-Context-Assembly-Contract-Pre-implementation-Brief v0.md`. Do not start Slice 4A implementation yet.
 
 ## Entry Template
 

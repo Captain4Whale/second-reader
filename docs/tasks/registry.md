@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-05-16T17:34:35+08:00`
+Last updated: `2026-05-16T19:50:41+08:00`
 
 ## Status Values
 - `active`
@@ -464,12 +464,12 @@ Last updated: `2026-05-16T17:34:35+08:00`
 
 ## Waiting
 
-### `TASK-SECOND-READER-MEMORY-PLANNING-SLICE3B-REPORT-REVIEW` — Review Slice 3B Post-implementation Report for Lifecycle Semantics and State-op Boundary Hardening
+### `TASK-SECOND-READER-MEMORY-PLANNING-SLICE4A-BRIEF-ACCEPTANCE` — Review Slice 4A Pre-implementation Brief for Supplemental Retrieval Intent and Context Assembly Contract
 - Status: `waiting`
 - Lane: `mechanism_runtime`
 - Priority: `high`
-- Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice3B-Lifecycle-Semantics-and-State-op-Boundary-Hardening-Post-implementation-Report v0.md`
-- Next: human reviewer should accept the Slice 3B Post-implementation Report or request a patch before any next-slice brief or implementation PR. Slice 3B added targeted lifecycle-boundary tests and did not change `state_ops.py` runtime behavior, prompts, schema version, public API, frontend, eval runners, retrieval utilization, planning trace, or slow-cycle work; no full AI Evaluation has run.
+- Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice4A-Supplemental-Retrieval-Intent-and-Context-Assembly-Contract-Pre-implementation-Brief v0.md`
+- Next: human reviewer should accept the Slice 4A Pre-implementation Brief or request a patch before any Slice 4A implementation PR. Slice 4A is scoped to supplemental retrieval intent and prompt-facing context assembly contract visibility; do not start implementation, change prompts / runner / `state_ops.py`, touch durable memory state, navigation / detour policy, slow-cycle, public API, frontend, eval runners, or run full AI Evaluation until the brief is accepted.
 - Evidence:
   - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
   - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/E实施0-Implementation Roadmap & Handoff v0.md`
@@ -484,6 +484,7 @@ Last updated: `2026-05-16T17:34:35+08:00`
   - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice3A-Status-aware-Projection-and-Boundary-Marker-Hardening-Post-implementation-Report v0.md`
   - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice3B-Lifecycle-Semantics-and-State-op-Boundary-Hardening-Pre-implementation-Brief v0.md`
   - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice3B-Lifecycle-Semantics-and-State-op-Boundary-Hardening-Post-implementation-Report v0.md`
+  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice4A-Supplemental-Retrieval-Intent-and-Context-Assembly-Contract-Pre-implementation-Brief v0.md`
   - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md`
 
 ### `TASK-DATASET-QUESTION-ALIGNED-CASE-CONSTRUCTION` — Build question-aligned case construction for evaluation datasets
@@ -558,6 +559,21 @@ Last updated: `2026-05-16T17:34:35+08:00`
 - Next: keep section-first compatibility fields and containers only as migration sidecars; start removal only after the V2-native overview, chapter, and marks surfaces are stable enough that the older presentation model is no longer needed for normal product use
 
 ## Done
+
+### `TASK-SECOND-READER-MEMORY-PLANNING-SLICE3B-REPORT-REVIEW` — Review Slice 3B Post-implementation Report for Lifecycle Semantics and State-op Boundary Hardening
+- Status: `done`
+- Lane: `mechanism_runtime`
+- Priority: `high`
+- Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice3B-Lifecycle-Semantics-and-State-op-Boundary-Hardening-Post-implementation-Report v0.md`
+- Next: Slice 3B Post-implementation Report is accepted. Continue with `TASK-SECOND-READER-MEMORY-PLANNING-SLICE4A-BRIEF-ACCEPTANCE`; do not start Slice 4A implementation before the Slice 4A Pre-implementation Brief is accepted.
+- Evidence:
+  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
+  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/E实施0-Implementation Roadmap & Handoff v0.md`
+  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施1-Implementation Feasibility & Delta Audit v0.md`
+  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice3B-Lifecycle-Semantics-and-State-op-Boundary-Hardening-Pre-implementation-Brief v0.md`
+  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice3B-Lifecycle-Semantics-and-State-op-Boundary-Hardening-Post-implementation-Report v0.md`
+  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice4A-Supplemental-Retrieval-Intent-and-Context-Assembly-Contract-Pre-implementation-Brief v0.md`
+  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md`
 
 ### `TASK-SECOND-READER-MEMORY-PLANNING-SLICE3B-BRIEF-ACCEPTANCE` — Review Slice 3B Pre-implementation Brief for Lifecycle Semantics and State-op Boundary Hardening
 - Status: `done`
