@@ -494,14 +494,22 @@ def _normalize_state_operations(value: object) -> list[StateOperation]:
             continue
         payload = item.get("payload")
         target_key = _clean_text(item.get("target_key") or item.get("item_id"))
+        target_store_emitted = _clean_text(item.get("target_store"))
+        effective_target_store = target_store_emitted or "active_attention"
+        compatibility_warnings: list[str] = []
+        if not target_store_emitted:
+            compatibility_warnings.append("missing_target_store_defaulted")
         operations.append(
             {
                 "op": operation_type,  # type: ignore[typeddict-item]
                 "operation_type": operation_type,  # type: ignore[typeddict-item]
-                "target_store": _clean_text(item.get("target_store")) or "active_attention",
+                "target_store": effective_target_store,
+                "target_store_emitted": target_store_emitted,
+                "effective_target_store": effective_target_store,
                 "target_key": target_key,
                 "item_id": target_key,
                 "reason": _clean_text(item.get("reason")),
+                "compatibility_warnings": compatibility_warnings,
                 "payload": dict(payload) if isinstance(payload, dict) else {},
             }
         )

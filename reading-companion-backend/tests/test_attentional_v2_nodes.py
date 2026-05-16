@@ -552,3 +552,38 @@ def test_read_unit_contract_preserves_source_given_stage_model_as_memory_uptake(
     assert result["surfaced_reactions"] == []
     assert result["memory_uptake_ops"][0]["target_store"] == "thread_trace"
     assert "三个阶段" in result["memory_uptake_ops"][0]["payload"]["statement"]
+
+
+def test_read_unit_marks_missing_target_store_as_compatibility_default(tmp_path: Path, monkeypatch):
+    """Missing target_store remains tolerated while becoming visible in audit metadata."""
+
+    def fake_invoke_json(system_prompt: str, prompt: str, default: object) -> object:
+        return {
+            "reading_impression": "The line opens a live question.",
+            "surfaced_reactions": [],
+            "memory_uptake_ops": [
+                {
+                    "op": "append",
+                    "target_key": "hot-missing-store",
+                    "payload": {"statement": "A live question should remain in attention."},
+                }
+            ],
+        }
+
+    monkeypatch.setattr(nodes_module, "invoke_json", fake_invoke_json)
+
+    result = read_unit(
+        current_unit_sentences=[
+            _sentence("c1-s1", "A live question appears.", sentence_index=1, paragraph_index=1),
+        ],
+        carry_forward_context={"packet_version": STATE_PACKET_VERSION, "refs": []},
+        reader_policy=build_default_reader_policy(),
+        output_language="en",
+        output_dir=tmp_path,
+    )
+
+    op = result["memory_uptake_ops"][0]
+    assert op["target_store"] == "active_attention"
+    assert op["target_store_emitted"] == ""
+    assert op["effective_target_store"] == "active_attention"
+    assert op["compatibility_warnings"] == ["missing_target_store_defaulted"]

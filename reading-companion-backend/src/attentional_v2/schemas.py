@@ -330,9 +330,12 @@ class StateOperation(TypedDict, total=False):
     op: StateOperationType
     operation_type: StateOperationType
     target_store: str
+    target_store_emitted: str
+    effective_target_store: str
     target_key: str
     item_id: str
     reason: str
+    compatibility_warnings: list[str]
     payload: dict[str, object]
 
 

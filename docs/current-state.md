@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-05-16T15:33:12+08:00`
+Last verified: `2026-05-16T15:59:44+08:00`
 
 ## Current Objective
 - Land the repo-local Memory / Planning / Evaluation design chain and implementation handoff for optimizing the existing `attentional_v2` mechanism.
@@ -15,15 +15,16 @@ Last verified: `2026-05-16T15:33:12+08:00`
     - Memory / Planning / Evaluation design phase is effectively complete
     - `C设计0` through `C设计9` and `E实施0` are now repo-local under `docs/implementation/new-reading-mechanism/second-reader-memory-planning/`
     - `E实施1-Implementation Feasibility & Delta Audit v0.md` is accepted with reviewer constraints
-    - `Slice1-Contract-Audit-Foundations-Pre-implementation-Brief v0.md` is now created under `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/` and is pending human acceptance
+    - `Slice1-Contract-Audit-Foundations-Pre-implementation-Brief v0.md` is accepted
+    - Slice 1 additive contract / audit scaffolding is implemented, and `Slice1-Contract-Audit-Foundations-Post-implementation-Report v0.md` is now created under `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/` and is pending human review
     - this effort optimizes existing `attentional_v2`; it does not replace the mechanism or introduce a greenfield redesign
     - this design chain was triggered by a real implementation mismatch between `memory_uptake_ops` and downstream memory/state persistence and projection structures, then converged through external evidence review, project assessment, accepted design, and implementation handoff
   - next step:
-    - human reviewer should review and accept `Slice1-Contract-Audit-Foundations-Pre-implementation-Brief v0.md` or request a patch
-    - no implementation PR should start before the Slice 1 brief is accepted
+    - human reviewer should review and accept `Slice1-Contract-Audit-Foundations-Post-implementation-Report v0.md` or request a patch
+    - do not start Slice 2 or any new implementation PR before the Slice 1 report is accepted and the next Pre-implementation Brief is created and accepted
   - current non-goals:
-    - no code implementation yet
-    - no accepted Pre-implementation Brief yet
+    - no Slice 2 implementation yet
+    - no accepted Slice 1 Post-implementation Report yet
     - no full evaluation run for this new handoff line yet
 - Shift Long Span from the discontinued `target-centered accumulation v2` method to the new active design direction:
   - `Memory Quality`

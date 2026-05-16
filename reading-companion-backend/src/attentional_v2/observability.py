@@ -32,6 +32,14 @@ from .schemas import (
 from .state_projection import context_ref_ids
 from .storage import append_jsonl, event_stream_file, read_audit_file, settlement_audit_file, unitization_audit_file
 
+_MISSING_TARGET_STORE_WARNING = "missing_target_store_defaulted"
+_SETTLED_STORE_ID_KEYS = {
+    "active_attention": "item_id",
+    "concept_registry": "concept_key",
+    "thread_trace": "thread_key",
+}
+_OUTCOME_BASIS = "audit_observed_inferred_from_compact_state_delta"
+
 
 def _timestamp() -> str:
     """Return a stable UTC timestamp."""
@@ -136,6 +144,161 @@ def _memory_uptake_ops_by_target_store(memory_uptake_ops: list[dict[str, object]
     return dict(sorted(counts.items()))
 
 
+def _operation_payload(operation: Mapping[str, object]) -> Mapping[str, object]:
+    """Return one operation payload as a mapping."""
+
+    payload = operation.get("payload")
+    return payload if isinstance(payload, Mapping) else {}
+
+
+def _operation_type(operation: Mapping[str, object]) -> str:
+    """Return the normalized operation type used for audit only."""
+
+    return _clean_text(operation.get("op") or operation.get("operation_type")).lower().replace("-", "_")
+
+
+def _target_store_emitted(operation: Mapping[str, object]) -> str:
+    """Return the target store emitted by the source op before compatibility defaults."""
+
+    if "target_store_emitted" in operation:
+        return _clean_text(operation.get("target_store_emitted"))
+    return _clean_text(operation.get("target_store"))
+
+
+def _effective_target_store(operation: Mapping[str, object]) -> str:
+    """Return the target store used by the current runtime after compatibility defaults."""
+
+    return _clean_text(operation.get("effective_target_store")) or _clean_text(operation.get("target_store")) or "active_attention"
+
+
+def _compatibility_warnings(operation: Mapping[str, object]) -> list[str]:
+    """Return additive compatibility warnings for one memory op."""
+
+    warnings: list[str] = []
+    raw_warnings = operation.get("compatibility_warnings")
+    if isinstance(raw_warnings, list):
+        warnings.extend(_clean_text(item) for item in raw_warnings if _clean_text(item))
+    if (
+        not _target_store_emitted(operation)
+        and _effective_target_store(operation) == "active_attention"
+        and _MISSING_TARGET_STORE_WARNING not in warnings
+    ):
+        warnings.append(_MISSING_TARGET_STORE_WARNING)
+    return warnings
+
+
+def _source_ref_summary(operation: Mapping[str, object]) -> tuple[int, list[str]]:
+    """Return source-ref count and resolution statuses for audit rows."""
+
+    source_refs = _operation_payload(operation).get("source_refs")
+    if not isinstance(source_refs, list):
+        return 0, []
+    count = 0
+    statuses: list[str] = []
+    for source_ref in source_refs:
+        if not isinstance(source_ref, Mapping):
+            continue
+        count += 1
+        resolution = source_ref.get("resolution")
+        status = _clean_text(resolution.get("status")) if isinstance(resolution, Mapping) else ""
+        if status and status not in statuses:
+            statuses.append(status)
+    return count, statuses
+
+
+def _operation_target_identifier(operation: Mapping[str, object], effective_target_store: str) -> str:
+    """Return the id that compact state deltas can observe for one operation."""
+
+    payload = _operation_payload(operation)
+    explicit_id = _clean_text(operation.get("target_key") or operation.get("item_id"))
+    if explicit_id:
+        return explicit_id
+    if effective_target_store == "concept_registry":
+        return _clean_text(payload.get("concept_key"))
+    if effective_target_store == "thread_trace":
+        return _clean_text(payload.get("thread_key"))
+    return _clean_text(payload.get("item_id"))
+
+
+def _memory_uptake_op_contract(operation: Mapping[str, object], operation_index: int) -> dict[str, object]:
+    """Build additive audit-contract metadata for one memory uptake operation."""
+
+    source_ref_count, source_ref_resolution_statuses = _source_ref_summary(operation)
+    target_key = _clean_text(operation.get("target_key") or operation.get("item_id"))
+    item_id = _clean_text(operation.get("item_id") or operation.get("target_key"))
+    return {
+        "operation_index": operation_index,
+        "operation_type": _operation_type(operation),
+        "target_store_emitted": _target_store_emitted(operation),
+        "effective_target_store": _effective_target_store(operation),
+        "target_key": target_key,
+        "item_id": item_id,
+        "source_ref_count": source_ref_count,
+        "source_ref_resolution_statuses": source_ref_resolution_statuses,
+        "compatibility_warnings": _compatibility_warnings(operation),
+    }
+
+
+def _memory_uptake_op_contracts(memory_uptake_ops: list[dict[str, object]]) -> list[dict[str, object]]:
+    """Return additive contract metadata for read audit rows."""
+
+    return [_memory_uptake_op_contract(operation, index) for index, operation in enumerate(memory_uptake_ops)]
+
+
+def _id_delta_contains(delta: Mapping[str, object], target_id: str) -> bool:
+    """Whether one compact id delta observed the target id."""
+
+    for key in ("added_ids", "updated_ids", "removed_ids"):
+        values = delta.get(key)
+        if isinstance(values, list) and target_id in {_clean_text(item) for item in values}:
+            return True
+    return False
+
+
+def _memory_uptake_op_outcomes(
+    memory_uptake_ops: list[dict[str, object]],
+    state_deltas: Mapping[str, object],
+) -> list[dict[str, object]]:
+    """Return audit-observed, non-authoritative per-op settlement outcomes."""
+
+    target_counts: dict[tuple[str, str], int] = {}
+    for operation in memory_uptake_ops:
+        effective_target_store = _effective_target_store(operation)
+        target_id = _operation_target_identifier(operation, effective_target_store)
+        if target_id:
+            key = (effective_target_store, target_id)
+            target_counts[key] = target_counts.get(key, 0) + 1
+
+    outcomes: list[dict[str, object]] = []
+    for index, operation in enumerate(memory_uptake_ops):
+        contract = _memory_uptake_op_contract(operation, index)
+        effective_target_store = _clean_text(contract.get("effective_target_store"))
+        target_id = _operation_target_identifier(operation, effective_target_store)
+        if effective_target_store not in _SETTLED_STORE_ID_KEYS:
+            outcome = "skipped_out_of_scope"
+        elif not target_id:
+            outcome = "unclassified"
+        elif target_counts.get((effective_target_store, target_id), 0) > 1:
+            outcome = "unclassified"
+        else:
+            delta = state_deltas.get(effective_target_store)
+            if isinstance(delta, Mapping) and _id_delta_contains(delta, target_id):
+                outcome = "accepted_observed"
+            elif isinstance(delta, Mapping):
+                outcome = "accepted_no_visible_delta"
+            else:
+                outcome = "unclassified"
+        outcomes.append(
+            {
+                **contract,
+                "target_id": target_id,
+                "outcome": outcome,
+                "outcome_basis": _OUTCOME_BASIS,
+            }
+        )
+    return outcomes
+
+
 def _items_by_id(items: object, id_key: str) -> dict[str, dict[str, object]]:
     """Return mapping-friendly items keyed by a stable id field."""
 
@@ -225,6 +388,7 @@ def record_read(
             "memory_uptake_ops": memory_uptake_ops,
             "memory_uptake_op_count": len(memory_uptake_ops),
             "memory_uptake_ops_by_target_store": _memory_uptake_ops_by_target_store(memory_uptake_ops),
+            "memory_uptake_op_contracts": _memory_uptake_op_contracts(memory_uptake_ops),
             "detour_need": dict(read_result.get("detour_need") or {})
             if isinstance(read_result.get("detour_need"), Mapping)
             else {},
@@ -258,6 +422,31 @@ def record_settlement(
     if output_dir is None:
         return
     normalized_ops = _normalized_operations(memory_uptake_ops)
+    state_deltas = {
+        "active_attention": _id_delta(
+            before_active_attention.get("active_items", []),
+            after_active_attention.get("active_items", []),
+            id_key="item_id",
+        ),
+        "concept_registry": _id_delta(
+            before_concept_registry.get("entries", []),
+            after_concept_registry.get("entries", []),
+            id_key="concept_key",
+        ),
+        "thread_trace": _id_delta(
+            before_thread_trace.get("entries", []),
+            after_thread_trace.get("entries", []),
+            id_key="thread_key",
+        ),
+        "reaction_records": {
+            **_id_delta(
+                before_reaction_records.get("records", []),
+                after_reaction_records.get("records", []),
+                id_key="reaction_id",
+            ),
+            "emitted_reaction_ids": [_clean_text(item) for item in (emitted_reaction_ids or []) if _clean_text(item)],
+        },
+    }
     append_jsonl(
         settlement_audit_file(output_dir),
         {
@@ -270,31 +459,8 @@ def record_settlement(
             "source_span_id": _clean_text(source_span_id),
             "memory_uptake_op_count": len(normalized_ops),
             "memory_uptake_ops_by_target_store": _memory_uptake_ops_by_target_store(normalized_ops),
-            "state_deltas": {
-                "active_attention": _id_delta(
-                    before_active_attention.get("active_items", []),
-                    after_active_attention.get("active_items", []),
-                    id_key="item_id",
-                ),
-                "concept_registry": _id_delta(
-                    before_concept_registry.get("entries", []),
-                    after_concept_registry.get("entries", []),
-                    id_key="concept_key",
-                ),
-                "thread_trace": _id_delta(
-                    before_thread_trace.get("entries", []),
-                    after_thread_trace.get("entries", []),
-                    id_key="thread_key",
-                ),
-                "reaction_records": {
-                    **_id_delta(
-                        before_reaction_records.get("records", []),
-                        after_reaction_records.get("records", []),
-                        id_key="reaction_id",
-                    ),
-                    "emitted_reaction_ids": [_clean_text(item) for item in (emitted_reaction_ids or []) if _clean_text(item)],
-                },
-            },
+            "memory_uptake_op_outcomes": _memory_uptake_op_outcomes(normalized_ops, state_deltas),
+            "state_deltas": state_deltas,
         },
     )
 

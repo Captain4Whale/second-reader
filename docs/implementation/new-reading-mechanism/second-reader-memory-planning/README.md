@@ -37,8 +37,9 @@ Evidence packs are external evidence indexes, not implementation sources. Review
 | `codex/E实施-progress-ledger.md` | implementation ledger | implementation-stage progress, gates, reports, and reviewer decisions | progress record, not stable behavior authority |
 | `codex/E实施1-Implementation Feasibility & Delta Audit v0.md` | implementation audit | code-grounded feasibility and delta audit for the accepted design chain | accepted code-grounded audit with reviewer constraints |
 | `codex/briefs/README.md` | template | Pre-implementation Brief template | process template |
-| `codex/briefs/Slice1-Contract-Audit-Foundations-Pre-implementation-Brief v0.md` | pre-implementation brief | Slice 1 contract and audit foundations brief | pending human acceptance; not implementation approval |
+| `codex/briefs/Slice1-Contract-Audit-Foundations-Pre-implementation-Brief v0.md` | pre-implementation brief | Slice 1 contract and audit foundations brief | accepted pre-implementation brief |
 | `codex/reports/README.md` | template | Post-implementation Report template | process template |
+| `codex/reports/Slice1-Contract-Audit-Foundations-Post-implementation-Report v0.md` | post-implementation report | Slice 1 implementation evidence and review gate | pending human review; not stable behavior authority |
 | `C设计0-Second Reader Shared Memory–Planning Mechanism Charter v0.md` | design | accepted mechanism boundary and charter | accepted design |
 | `C设计1-Memory Ontology Design v0.md` | design | accepted memory ontology | accepted design |
 | `C设计2-Planning Ontology Design v0.md` | design | accepted planning ontology | accepted design |
@@ -62,11 +63,11 @@ Evidence packs are external evidence indexes, not implementation sources. Review
 ## Current Next Step
 
 Current next step:
-Human review of `codex/briefs/Slice1-Contract-Audit-Foundations-Pre-implementation-Brief v0.md`.
+Human review of `codex/reports/Slice1-Contract-Audit-Foundations-Post-implementation-Report v0.md`.
 
-Codex must not implement code yet. `E实施1-Implementation Feasibility & Delta Audit v0.md` has been accepted with reviewer constraints, and the Slice 1 Pre-implementation Brief has been created for human acceptance.
+Slice 1 implementation is complete and remains pending human review through the Post-implementation Report.
 
-Slice 1 implementation must not start until the Pre-implementation Brief is accepted. The first PR should remain small, reversible, and focused on additive contract / audit scaffolding.
+Codex must not start Slice 2 or any new implementation PR until the Slice 1 Post-implementation Report is accepted and the next Pre-implementation Brief is created and accepted.
 
 ## Non-goals
 
@@ -102,7 +103,7 @@ Each implementation PR in this track requires an accepted Pre-implementation Bri
 
 The progress ledger and templates are process records. They do not replace stable product docs, stable mechanism docs, or `E实施1-Implementation Feasibility & Delta Audit`.
 
-The current E实施1 audit is recorded at `codex/E实施1-Implementation Feasibility & Delta Audit v0.md` and has been accepted with reviewer constraints. The current brief awaiting human acceptance is `codex/briefs/Slice1-Contract-Audit-Foundations-Pre-implementation-Brief v0.md`.
+The current E实施1 audit is recorded at `codex/E实施1-Implementation Feasibility & Delta Audit v0.md` and has been accepted with reviewer constraints. Slice 1 implementation is recorded at `codex/reports/Slice1-Contract-Audit-Foundations-Post-implementation-Report v0.md` and is pending human review.
 
 ## How To Use This Directory
 
@@ -116,4 +117,5 @@ The current E实施1 audit is recorded at `codex/E实施1-Implementation Feasibi
 8. Do not treat `D审核` reviews as authority.
 9. Read `codex/E实施1-Implementation Feasibility & Delta Audit v0.md`.
 10. Read the current Pre-implementation Brief for the target slice.
-11. Do not implement before the relevant Pre-implementation Brief is accepted.
+11. Read the current Post-implementation Report if the target slice has already landed.
+12. Do not advance to the next slice before the current Post-implementation Report is accepted.

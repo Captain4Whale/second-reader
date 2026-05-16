@@ -13,9 +13,9 @@ Stable mechanism behavior changes still need to be promoted to the relevant stab
 ## Current Status
 
 ```text
-Current phase: E实施1 accepted with reviewer constraints; Slice 1 Pre-implementation Brief created and waiting for human acceptance
-Implementation status: no code implementation started
-Next action: human reviewer accepts the Slice 1 Pre-implementation Brief or requests a patch before any implementation PR
+Current phase: Slice 1 implementation complete; Post-implementation Report waiting for human review
+Implementation status: Slice 1 additive contract / audit scaffolding implemented
+Next action: human reviewer accepts the Slice 1 Post-implementation Report or requests a patch before any Slice 2 brief / implementation PR
 Full AI Evaluation: not yet; deferred until core instrumentation is ready
 ```
 
@@ -161,6 +161,92 @@ Reviewer decision:
 
 Next recommended step:
 - Human reviewer accepts `briefs/Slice1-Contract-Audit-Foundations-Pre-implementation-Brief v0.md` or requests a patch. Do not implement code yet.
+
+## Entry 2026-05-16 — Slice 1 contract and audit foundations implemented
+
+Type:
+- implementation PR
+- post-implementation report
+
+Slice:
+- Slice 1
+
+Related docs:
+- E实施0: `../E实施0-Implementation Roadmap & Handoff v0.md`
+- C设计 source: `../C设计0-Second Reader Shared Memory–Planning Mechanism Charter v0.md`, `../C设计3-Memory Formation & Settlement Design v0.md`, `../C设计9-Evaluation Calibration & Minimal Eval Suite v0.md`
+- E实施1 / PR / report: `reports/Slice1-Contract-Audit-Foundations-Post-implementation-Report v0.md`
+- Brief: `briefs/Slice1-Contract-Audit-Foundations-Pre-implementation-Brief v0.md`
+
+Branch / PR:
+- Branch: `main`
+- PR:
+- Commit:
+
+Pre-implementation Brief:
+- Link: `briefs/Slice1-Contract-Audit-Foundations-Pre-implementation-Brief v0.md`
+- Accepted by: human reviewer / user
+- Acceptance date: 2026-05-16
+- Scope changes approved: none; implementation stayed within accepted brief and additional reviewer constraints
+
+Files changed:
+- `reading-companion-backend/src/attentional_v2/schemas.py`
+- `reading-companion-backend/src/attentional_v2/nodes.py`
+- `reading-companion-backend/src/attentional_v2/observability.py`
+- `reading-companion-backend/tests/test_attentional_v2_nodes.py`
+- `reading-companion-backend/tests/test_attentional_v2_observability.py`
+- `docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
+- `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md`
+- `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice1-Contract-Audit-Foundations-Post-implementation-Report v0.md`
+- `docs/current-state.md`
+- `docs/tasks/registry.md`
+- `docs/tasks/registry.json`
+
+Design contracts addressed:
+- additive audit-only scaffolding for normalized `memory_uptake_ops`
+- missing `target_store` preserved as tolerated behavior with `missing_target_store_defaulted`
+- `read_audit.jsonl` now has `memory_uptake_op_contracts`
+- `settlement_audit.jsonl` now has `memory_uptake_op_outcomes`
+- per-op outcomes are audit-observed / inferred, not authoritative settlement truth
+
+Engineering tests:
+- Commands run:
+  - `cd reading-companion-backend && pytest tests/test_attentional_v2_observability.py tests/test_attentional_v2_nodes.py -q`
+  - `cd reading-companion-backend && .venv/bin/python -m pytest tests/test_attentional_v2_observability.py tests/test_attentional_v2_nodes.py -q`
+- Result:
+  - direct `pytest` command unavailable on PATH
+  - `.venv/bin/python -m pytest ...` passed: `15 passed, 6 warnings`
+- Not run / reason:
+  - full AI Evaluation not run by constraint
+
+Contract / audit checks:
+- SourceRef preserved: yes; source refs stay inline and resolution statuses are summarized in audit rows
+- per-op outcome: yes; added as audit-observed inference from compact state deltas
+- candidate vs settled separated: not part of Slice 1; deferred to Slice 6
+- audit not routed into prompt: yes; no prompt files changed
+- reaction_records not semantic memory: yes; no reaction memory behavior changed
+- knowledge_activations not source truth: yes; no knowledge activation behavior changed
+- other: `resolve` allowlist alignment deferred to Slice 2 or separate brief
+
+AI Evaluation:
+- Full eval run? no
+- Smoke only? no
+- Eval lane affected: none
+- Notes: full AI Evaluation remains deferred until core instrumentation is ready
+
+Post-implementation Report:
+- Link: `reports/Slice1-Contract-Audit-Foundations-Post-implementation-Report v0.md`
+- Summary: Slice 1 additive audit scaffolding implemented and targeted tests passed through backend venv.
+- Deviations from accepted brief: none
+- Known gaps: `resolve` allowlist alignment, projection markers, retrieval utilization, planning traces, and slow-cycle envelopes remain deferred
+
+Reviewer decision:
+- waiting for human review
+- Reviewer:
+- Decision date:
+- Required follow-up: accept or patch the Slice 1 Post-implementation Report before any Slice 2 brief or implementation PR
+
+Next recommended step:
+- Human reviewer accepts `reports/Slice1-Contract-Audit-Foundations-Post-implementation-Report v0.md` or requests a patch. Do not start Slice 2 yet.
 
 ## Entry Template
 
