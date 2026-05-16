@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-05-16T18:30:10+08:00`
+Last verified: `2026-05-16T19:02:23+08:00`
 
 ## Current Objective
 - Land the repo-local Memory / Planning / Evaluation design chain and implementation handoff for optimizing the existing `attentional_v2` mechanism.
@@ -22,15 +22,17 @@ Last verified: `2026-05-16T18:30:10+08:00`
     - `Slice2B-Store-specific-Admission-and-Target-store-Policy-Hardening-Pre-implementation-Brief v0.md` is accepted
     - Slice 2B store-specific admission and target-store policy hardening is implemented, and `Slice2B-Store-specific-Admission-and-Target-store-Policy-Hardening-Post-implementation-Report v0.md` is accepted
     - `Slice3A-Status-aware-Projection-and-Boundary-Marker-Hardening-Pre-implementation-Brief v0.md` is accepted
-    - Slice 3A status-aware projection and boundary marker hardening is implemented, and `Slice3A-Status-aware-Projection-and-Boundary-Marker-Hardening-Post-implementation-Report v0.md` is created under `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/` and is pending human review
+    - Slice 3A status-aware projection and boundary marker hardening is implemented, and `Slice3A-Status-aware-Projection-and-Boundary-Marker-Hardening-Post-implementation-Report v0.md` is accepted
+    - `Slice3B-Lifecycle-Semantics-and-State-op-Boundary-Hardening-Pre-implementation-Brief v0.md` is created under `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/` and is pending human review
+    - no Slice 3B implementation has started
     - this effort optimizes existing `attentional_v2`; it does not replace the mechanism or introduce a greenfield redesign
     - this design chain was triggered by a real implementation mismatch between `memory_uptake_ops` and downstream memory/state persistence and projection structures, then converged through external evidence review, project assessment, accepted design, and implementation handoff
   - next step:
-    - human reviewer should review and accept `Slice3A-Status-aware-Projection-and-Boundary-Marker-Hardening-Post-implementation-Report v0.md` or request a patch
-    - do not start the next implementation slice before the Slice 3A report is accepted and the next Pre-implementation Brief is created and accepted
+    - human reviewer should review and accept `Slice3B-Lifecycle-Semantics-and-State-op-Boundary-Hardening-Pre-implementation-Brief v0.md` or request a patch
+    - do not start Slice 3B implementation before the Slice 3B brief is accepted
   - current non-goals:
-    - no next-slice implementation yet
-    - no accepted Slice 3A Post-implementation Report yet
+    - no Slice 3B implementation yet
+    - no accepted Slice 3B Pre-implementation Brief yet
     - no full evaluation run for this new handoff line yet
 - Shift Long Span from the discontinued `target-centered accumulation v2` method to the new active design direction:
   - `Memory Quality`
