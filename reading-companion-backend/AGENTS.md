@@ -85,6 +85,24 @@ Update when: backend-local constraints, recurring pitfalls, or stable implementa
 - `docs/backend-reading-mechanisms/attentional_v2.md` is authoritative for current default-mechanism internals.
 - `docs/backend-reading-mechanisms/iterator_v1.md` is authoritative for fallback `iterator_reader` internals.
 
+## Memory / Planning Implementation Discipline
+- Start from `../docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md` for Memory / Planning optimization work.
+- Treat `C设计0` through `C设计9` as accepted design guidance, `E实施0-Implementation Roadmap & Handoff v0.md` as the implementation roadmap, and `E实施0-Roadmap Review & Readiness Check v0.md` as readiness confirmation.
+- Use `B分析` docs as assessment background, `A调研` docs as background evidence only, and `D审核` docs as historical review only.
+- Do not implement directly from design docs. First complete and accept `E实施1-Implementation Feasibility & Delta Audit`.
+- Before each implementation PR, produce a Pre-implementation Brief and wait for acceptance.
+- After each implementation PR, produce a Post-implementation Report and update `../docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md`.
+- Keep PRs small and slice-scoped. PR slices remain provisional until confirmed by E实施1 and human review.
+- Separate Engineering Tests, Contract / Audit Checks, and AI Evaluation. Do not run full AI Evaluation unless explicitly requested.
+- Do not introduce vector DB, graph DB, Memory OS, planner agent, memory manager agent, retriever agent, broad RAG pipeline, route steering UI, or user route choice for this track.
+- Preserve SourceRef-first behavior.
+- Do not treat `reaction_records` as semantic memory.
+- Do not treat `knowledge_activations` as source truth.
+- Do not route audit dumps back into runtime prompts.
+- Do not let slow-cycle become per-unit reflection, a general planner, a memory manager agent, a prompt self-refiner, or a full book route optimizer.
+- If a proposed implementation change conflicts with current repo code reality, stop and report the current code fact, design intent, risk, options, recommended default, and whether human confirmation is needed.
+- If a PR changes prompt behavior, schema, runtime artifacts, audit format, or evaluation outputs, document the change in the Post-implementation Report and update relevant docs if the change becomes stable.
+
 ## Current Default Mechanism Path
 - `main.py`
 - `src/reading_core/`
