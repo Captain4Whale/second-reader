@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-05-16T17:13:37+08:00`
+Last verified: `2026-05-16T17:34:35+08:00`
 
 ## Current Objective
 - Land the repo-local Memory / Planning / Evaluation design chain and implementation handoff for optimizing the existing `attentional_v2` mechanism.
@@ -19,15 +19,16 @@ Last verified: `2026-05-16T17:13:37+08:00`
     - Slice 1 additive contract / audit scaffolding is implemented, and `Slice1-Contract-Audit-Foundations-Post-implementation-Report v0.md` is accepted
     - `Slice2A-Operation-Vocabulary-and-Admission-Visibility-Hardening-Pre-implementation-Brief v0.md` is accepted
     - Slice 2A operation vocabulary and admission visibility hardening is implemented, and `Slice2A-Operation-Vocabulary-and-Admission-Visibility-Hardening-Post-implementation-Report v0.md` is accepted
-    - `Slice2B-Store-specific-Admission-and-Target-store-Policy-Hardening-Pre-implementation-Brief v0.md` is created under `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/` and is pending human review
+    - `Slice2B-Store-specific-Admission-and-Target-store-Policy-Hardening-Pre-implementation-Brief v0.md` is accepted
+    - Slice 2B store-specific admission and target-store policy hardening is implemented, and `Slice2B-Store-specific-Admission-and-Target-store-Policy-Hardening-Post-implementation-Report v0.md` is created under `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/` and is pending human review
     - this effort optimizes existing `attentional_v2`; it does not replace the mechanism or introduce a greenfield redesign
     - this design chain was triggered by a real implementation mismatch between `memory_uptake_ops` and downstream memory/state persistence and projection structures, then converged through external evidence review, project assessment, accepted design, and implementation handoff
   - next step:
-    - human reviewer should review and accept `Slice2B-Store-specific-Admission-and-Target-store-Policy-Hardening-Pre-implementation-Brief v0.md` or request a patch
-    - do not start Slice 2B implementation before the Slice 2B Pre-implementation Brief is accepted
+    - human reviewer should review and accept `Slice2B-Store-specific-Admission-and-Target-store-Policy-Hardening-Post-implementation-Report v0.md` or request a patch
+    - do not start the next implementation slice before the Slice 2B report is accepted and the next Pre-implementation Brief is created and accepted
   - current non-goals:
-    - no Slice 2B implementation yet
-    - no accepted Slice 2B Pre-implementation Brief yet
+    - no next-slice implementation yet
+    - no accepted Slice 2B Post-implementation Report yet
     - no full evaluation run for this new handoff line yet
 - Shift Long Span from the discontinued `target-centered accumulation v2` method to the new active design direction:
   - `Memory Quality`

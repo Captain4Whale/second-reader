@@ -39,10 +39,11 @@ Evidence packs are external evidence indexes, not implementation sources. Review
 | `codex/briefs/README.md` | template | Pre-implementation Brief template | process template |
 | `codex/briefs/Slice1-Contract-Audit-Foundations-Pre-implementation-Brief v0.md` | pre-implementation brief | Slice 1 contract and audit foundations brief | accepted pre-implementation brief |
 | `codex/briefs/Slice2A-Operation-Vocabulary-and-Admission-Visibility-Hardening-Pre-implementation-Brief v0.md` | pre-implementation brief | Slice 2A operation vocabulary and admission visibility hardening brief | accepted pre-implementation brief |
-| `codex/briefs/Slice2B-Store-specific-Admission-and-Target-store-Policy-Hardening-Pre-implementation-Brief v0.md` | pre-implementation brief | Slice 2B store-specific admission and target-store policy hardening brief | pending human review; not implementation authority until accepted |
+| `codex/briefs/Slice2B-Store-specific-Admission-and-Target-store-Policy-Hardening-Pre-implementation-Brief v0.md` | pre-implementation brief | Slice 2B store-specific admission and target-store policy hardening brief | accepted pre-implementation brief |
 | `codex/reports/README.md` | template | Post-implementation Report template | process template |
 | `codex/reports/Slice1-Contract-Audit-Foundations-Post-implementation-Report v0.md` | post-implementation report | Slice 1 implementation evidence and review gate | accepted post-implementation report; not stable behavior authority |
 | `codex/reports/Slice2A-Operation-Vocabulary-and-Admission-Visibility-Hardening-Post-implementation-Report v0.md` | post-implementation report | Slice 2A implementation evidence and review gate | accepted post-implementation report; not stable behavior authority |
+| `codex/reports/Slice2B-Store-specific-Admission-and-Target-store-Policy-Hardening-Post-implementation-Report v0.md` | post-implementation report | Slice 2B implementation evidence and review gate | pending human review; not stable behavior authority |
 | `C设计0-Second Reader Shared Memory–Planning Mechanism Charter v0.md` | design | accepted mechanism boundary and charter | accepted design |
 | `C设计1-Memory Ontology Design v0.md` | design | accepted memory ontology | accepted design |
 | `C设计2-Planning Ontology Design v0.md` | design | accepted planning ontology | accepted design |
@@ -66,11 +67,11 @@ Evidence packs are external evidence indexes, not implementation sources. Review
 ## Current Next Step
 
 Current next step:
-Human review of `codex/briefs/Slice2B-Store-specific-Admission-and-Target-store-Policy-Hardening-Pre-implementation-Brief v0.md`.
+Human review of `codex/reports/Slice2B-Store-specific-Admission-and-Target-store-Policy-Hardening-Post-implementation-Report v0.md`.
 
-Slice 2A implementation is complete and its Post-implementation Report is accepted.
+Slice 2B implementation is complete and remains pending human review through the Post-implementation Report.
 
-Codex must not start Slice 2B implementation until the Slice 2B Pre-implementation Brief is accepted.
+Codex must not start the next implementation slice until the Slice 2B Post-implementation Report is accepted and the next Pre-implementation Brief is created and accepted.
 
 ## Non-goals
 
@@ -106,7 +107,7 @@ Each implementation PR in this track requires an accepted Pre-implementation Bri
 
 The progress ledger and templates are process records. They do not replace stable product docs, stable mechanism docs, or `E实施1-Implementation Feasibility & Delta Audit`.
 
-The current E实施1 audit is recorded at `codex/E实施1-Implementation Feasibility & Delta Audit v0.md` and has been accepted with reviewer constraints. Slice 1 implementation is recorded at `codex/reports/Slice1-Contract-Audit-Foundations-Post-implementation-Report v0.md` and is accepted. Slice 2A implementation is recorded at `codex/reports/Slice2A-Operation-Vocabulary-and-Admission-Visibility-Hardening-Post-implementation-Report v0.md` and is accepted. Slice 2B is currently documented in `codex/briefs/Slice2B-Store-specific-Admission-and-Target-store-Policy-Hardening-Pre-implementation-Brief v0.md` and is pending human review before implementation.
+The current E实施1 audit is recorded at `codex/E实施1-Implementation Feasibility & Delta Audit v0.md` and has been accepted with reviewer constraints. Slice 1 implementation is recorded at `codex/reports/Slice1-Contract-Audit-Foundations-Post-implementation-Report v0.md` and is accepted. Slice 2A implementation is recorded at `codex/reports/Slice2A-Operation-Vocabulary-and-Admission-Visibility-Hardening-Post-implementation-Report v0.md` and is accepted. Slice 2B implementation is recorded at `codex/reports/Slice2B-Store-specific-Admission-and-Target-store-Policy-Hardening-Post-implementation-Report v0.md` and is pending human review.
 
 ## How To Use This Directory
 

@@ -326,6 +326,7 @@ class ReadUnitResult(TypedDict, total=False):
 
 
 MemoryUptakeAdmissionStatus = Literal["accepted", "dropped_unknown_operation", "dropped_malformed_operation"]
+MemoryUptakeOperationStorePolicy = Literal["supported", "unsupported_target_store", "unsupported_operation_for_target_store"]
 
 
 class MemoryUptakeAdmissionEvent(TypedDict, total=False):
@@ -341,6 +342,9 @@ class MemoryUptakeAdmissionEvent(TypedDict, total=False):
     item_id: str
     compatibility_warnings: list[str]
     drop_reason: str
+    target_store_supported: bool
+    operation_store_policy: MemoryUptakeOperationStorePolicy
+    policy_warnings: list[str]
 
 
 class StateOperation(TypedDict, total=False):

@@ -593,6 +593,9 @@ def test_read_unit_marks_missing_target_store_as_compatibility_default(tmp_path:
     assert admission_event["target_store_emitted"] == ""
     assert admission_event["effective_target_store"] == "active_attention"
     assert admission_event["compatibility_warnings"] == ["missing_target_store_defaulted"]
+    assert admission_event["target_store_supported"] is True
+    assert admission_event["operation_store_policy"] == "supported"
+    assert admission_event["policy_warnings"] == []
 
 
 def test_read_unit_admits_resolve_memory_operation(tmp_path: Path, monkeypatch):
@@ -642,6 +645,9 @@ def test_read_unit_admits_resolve_memory_operation(tmp_path: Path, monkeypatch):
             "item_id": "hot-question",
             "compatibility_warnings": [],
             "drop_reason": "",
+            "target_store_supported": True,
+            "operation_store_policy": "supported",
+            "policy_warnings": [],
         }
     ]
 
@@ -702,4 +708,128 @@ def test_read_unit_records_dropped_memory_uptake_admission_events(tmp_path: Path
     assert admission_events[2]["drop_reason"] == "missing_operation_type"
     assert admission_events[3]["effective_target_store"] == "active_attention"
     assert admission_events[3]["compatibility_warnings"] == ["missing_target_store_defaulted"]
+    assert admission_events[3]["target_store_supported"] is True
+    assert admission_events[3]["operation_store_policy"] == "supported"
+    assert admission_events[3]["policy_warnings"] == []
     assert all("payload" not in event for event in admission_events)
+
+
+def test_read_unit_records_unsupported_target_store_policy_warning(tmp_path: Path, monkeypatch):
+    """Unsupported stores remain normalized while admission audit shows policy risk."""
+
+    def fake_invoke_json(system_prompt: str, prompt: str, default: object) -> object:
+        return {
+            "reading_impression": "A reflective frame is mentioned but not a read-path target.",
+            "surfaced_reactions": [],
+            "memory_uptake_ops": [
+                {
+                    "op": "append",
+                    "target_store": "reflective_frames",
+                    "target_key": "frame-1",
+                    "payload": {"summary": "This should not become a raw audit dump."},
+                }
+            ],
+        }
+
+    monkeypatch.setattr(nodes_module, "invoke_json", fake_invoke_json)
+
+    result = read_unit(
+        current_unit_sentences=[
+            _sentence("c1-s1", "The passage tempts a reflective frame.", sentence_index=1, paragraph_index=1),
+        ],
+        carry_forward_context={"packet_version": STATE_PACKET_VERSION, "refs": []},
+        reader_policy=build_default_reader_policy(),
+        output_language="en",
+        output_dir=tmp_path,
+    )
+
+    op = result["memory_uptake_ops"][0]
+    assert op["target_store"] == "reflective_frames"
+    assert op["compatibility_warnings"] == ["unsupported_target_store"]
+
+    admission_event = result["memory_uptake_admission_events"][0]
+    assert admission_event["admission_status"] == "accepted"
+    assert admission_event["target_store_supported"] is False
+    assert admission_event["operation_store_policy"] == "unsupported_target_store"
+    assert admission_event["policy_warnings"] == ["unsupported_target_store"]
+    assert admission_event["compatibility_warnings"] == ["unsupported_target_store"]
+    assert "payload" not in admission_event
+
+
+def test_read_unit_records_unsupported_operation_store_policy_warning(tmp_path: Path, monkeypatch):
+    """Unsupported operation-store pairings remain normalized but visible."""
+
+    def fake_invoke_json(system_prompt: str, prompt: str, default: object) -> object:
+        return {
+            "reading_impression": "A concept is cooling, but that pairing is only audit-visible here.",
+            "surfaced_reactions": [],
+            "memory_uptake_ops": [
+                {
+                    "op": "cool",
+                    "target_store": "concept_registry",
+                    "target_key": "concept-1",
+                    "payload": {"summary": "Cooling is not a concept-store admission policy op."},
+                }
+            ],
+        }
+
+    monkeypatch.setattr(nodes_module, "invoke_json", fake_invoke_json)
+
+    result = read_unit(
+        current_unit_sentences=[
+            _sentence("c1-s1", "The concept cools in importance.", sentence_index=1, paragraph_index=1),
+        ],
+        carry_forward_context={"packet_version": STATE_PACKET_VERSION, "refs": []},
+        reader_policy=build_default_reader_policy(),
+        output_language="en",
+        output_dir=tmp_path,
+    )
+
+    op = result["memory_uptake_ops"][0]
+    assert op["target_store"] == "concept_registry"
+    assert op["compatibility_warnings"] == ["unsupported_operation_for_target_store"]
+
+    admission_event = result["memory_uptake_admission_events"][0]
+    assert admission_event["admission_status"] == "accepted"
+    assert admission_event["target_store_supported"] is True
+    assert admission_event["operation_store_policy"] == "unsupported_operation_for_target_store"
+    assert admission_event["policy_warnings"] == ["unsupported_operation_for_target_store"]
+    assert admission_event["compatibility_warnings"] == ["unsupported_operation_for_target_store"]
+
+
+def test_read_unit_records_supported_store_policy_without_warning(tmp_path: Path, monkeypatch):
+    """Supported operation-store pairings include policy metadata without warnings."""
+
+    def fake_invoke_json(system_prompt: str, prompt: str, default: object) -> object:
+        return {
+            "reading_impression": "A concept is updated with stable admission policy.",
+            "surfaced_reactions": [],
+            "memory_uptake_ops": [
+                {
+                    "op": "update",
+                    "target_store": "concept_registry",
+                    "target_key": "concept-1",
+                    "payload": {"summary": "The concept stays aligned."},
+                }
+            ],
+        }
+
+    monkeypatch.setattr(nodes_module, "invoke_json", fake_invoke_json)
+
+    result = read_unit(
+        current_unit_sentences=[
+            _sentence("c1-s1", "The concept becomes clearer.", sentence_index=1, paragraph_index=1),
+        ],
+        carry_forward_context={"packet_version": STATE_PACKET_VERSION, "refs": []},
+        reader_policy=build_default_reader_policy(),
+        output_language="en",
+        output_dir=tmp_path,
+    )
+
+    op = result["memory_uptake_ops"][0]
+    assert op["compatibility_warnings"] == []
+
+    admission_event = result["memory_uptake_admission_events"][0]
+    assert admission_event["target_store_supported"] is True
+    assert admission_event["operation_store_policy"] == "supported"
+    assert admission_event["policy_warnings"] == []

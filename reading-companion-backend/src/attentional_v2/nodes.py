@@ -483,6 +483,38 @@ def _fallback_unitize_decision(preview_sentences: list[dict[str, object]]) -> Un
 
 
 _MISSING_TARGET_STORE_WARNING = "missing_target_store_defaulted"
+_UNSUPPORTED_TARGET_STORE_WARNING = "unsupported_target_store"
+_UNSUPPORTED_OPERATION_STORE_WARNING = "unsupported_operation_for_target_store"
+_MEMORY_UPTAKE_TARGET_STORES = {"active_attention", "concept_registry", "thread_trace"}
+_MEMORY_UPTAKE_OPERATION_STORE_POLICY = {
+    "active_attention": {
+        "append",
+        "create",
+        "update",
+        "reactivate",
+        "cool",
+        "close",
+        "resolve",
+        "link",
+        "link_anchors",
+        "drop",
+    },
+    "concept_registry": {"append", "create", "update", "link", "close", "resolve", "drop", "reactivate"},
+    "thread_trace": {"append", "create", "update", "link", "close", "resolve", "drop", "reactivate"},
+}
+
+
+def _memory_uptake_store_policy(
+    operation_type: str,
+    effective_target_store: str,
+) -> tuple[bool, str, list[str]]:
+    """Return conservative read-path admission policy metadata."""
+
+    if effective_target_store not in _MEMORY_UPTAKE_TARGET_STORES:
+        return False, _UNSUPPORTED_TARGET_STORE_WARNING, [_UNSUPPORTED_TARGET_STORE_WARNING]
+    if operation_type not in _MEMORY_UPTAKE_OPERATION_STORE_POLICY.get(effective_target_store, set()):
+        return True, _UNSUPPORTED_OPERATION_STORE_WARNING, [_UNSUPPORTED_OPERATION_STORE_WARNING]
+    return True, "supported", []
 
 
 def _memory_uptake_admission_event(
@@ -497,10 +529,13 @@ def _memory_uptake_admission_event(
     item_id: str = "",
     compatibility_warnings: list[str] | None = None,
     drop_reason: str = "",
+    target_store_supported: bool | None = None,
+    operation_store_policy: str = "",
+    policy_warnings: list[str] | None = None,
 ) -> MemoryUptakeAdmissionEvent:
     """Build compact audit metadata for read-output operation admission."""
 
-    return {
+    event: MemoryUptakeAdmissionEvent = {
         "operation_index": operation_index,
         "admission_status": admission_status,  # type: ignore[typeddict-item]
         "operation_type_emitted": operation_type_emitted,
@@ -512,6 +547,12 @@ def _memory_uptake_admission_event(
         "compatibility_warnings": list(compatibility_warnings or []),
         "drop_reason": drop_reason,
     }
+    if target_store_supported is not None:
+        event["target_store_supported"] = target_store_supported
+    if operation_store_policy:
+        event["operation_store_policy"] = operation_store_policy  # type: ignore[typeddict-item]
+        event["policy_warnings"] = list(policy_warnings or [])
+    return event
 
 
 def _normalize_state_operations_with_admission(
@@ -574,6 +615,11 @@ def _normalize_state_operations_with_admission(
                 )
             )
             continue
+        target_store_supported, operation_store_policy, policy_warnings = _memory_uptake_store_policy(
+            operation_type,
+            effective_target_store,
+        )
+        compatibility_warnings.extend(policy_warnings)
         operations.append(
             {
                 "op": operation_type,  # type: ignore[typeddict-item]
@@ -599,6 +645,9 @@ def _normalize_state_operations_with_admission(
                 target_key=target_key,
                 item_id=target_key,
                 compatibility_warnings=compatibility_warnings,
+                target_store_supported=target_store_supported,
+                operation_store_policy=operation_store_policy,
+                policy_warnings=policy_warnings,
             )
         )
     return operations, admission_events

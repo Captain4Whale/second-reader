@@ -139,6 +139,9 @@ def test_record_read_writes_memory_uptake_op_contracts(tmp_path: Path) -> None:
                     "item_id": "hot-1",
                     "compatibility_warnings": ["missing_target_store_defaulted"],
                     "drop_reason": "",
+                    "target_store_supported": True,
+                    "operation_store_policy": "supported",
+                    "policy_warnings": [],
                 },
                 {
                     "operation_index": 1,
@@ -186,6 +189,9 @@ def test_record_read_writes_memory_uptake_op_contracts(tmp_path: Path) -> None:
             "item_id": "hot-1",
             "compatibility_warnings": ["missing_target_store_defaulted"],
             "drop_reason": "",
+            "target_store_supported": True,
+            "operation_store_policy": "supported",
+            "policy_warnings": [],
         },
         {
             "operation_index": 1,

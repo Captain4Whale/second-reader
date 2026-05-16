@@ -13,9 +13,9 @@ Stable mechanism behavior changes still need to be promoted to the relevant stab
 ## Current Status
 
 ```text
-Current phase: Slice 2B Pre-implementation Brief waiting for human review
-Implementation status: Slice 1 accepted; Slice 2A accepted; Slice 2B not implemented
-Next action: human reviewer accepts the Slice 2B Pre-implementation Brief or requests a patch before any Slice 2B implementation PR
+Current phase: Slice 2B implementation complete; Post-implementation Report waiting for human review
+Implementation status: Slice 1 accepted; Slice 2A accepted; Slice 2B store-specific admission and target-store policy hardening implemented
+Next action: human reviewer accepts the Slice 2B Post-implementation Report or requests a patch before any next-slice brief / implementation PR
 Full AI Evaluation: not yet; deferred until core instrumentation is ready
 ```
 
@@ -430,9 +430,9 @@ Branch / PR:
 
 Pre-implementation Brief:
 - Link: `briefs/Slice2B-Store-specific-Admission-and-Target-store-Policy-Hardening-Pre-implementation-Brief v0.md`
-- Accepted by:
-- Acceptance date:
-- Scope changes approved:
+- Accepted by: human reviewer / user
+- Acceptance date: 2026-05-16
+- Scope changes approved: additional reviewer constraints from the Slice 2B implementation instruction
 
 Files changed:
 - docs only for Slice 2B brief landing
@@ -476,10 +476,97 @@ Reviewer decision:
 - Slice 2A Post-implementation Report accepted
 - Reviewer: human reviewer / user
 - Decision date: 2026-05-16
-- Required follow-up: accept or patch the Slice 2B Pre-implementation Brief before any Slice 2B implementation PR
+- Required follow-up: implement Slice 2B exactly within the accepted brief and produce a Post-implementation Report
 
 Next recommended step:
-- Human reviewer reviews `briefs/Slice2B-Store-specific-Admission-and-Target-store-Policy-Hardening-Pre-implementation-Brief v0.md`. Do not start Slice 2B implementation yet.
+- Human reviewer reviews `reports/Slice2B-Store-specific-Admission-and-Target-store-Policy-Hardening-Post-implementation-Report v0.md`. Do not start the next implementation slice yet.
+
+## Entry 2026-05-16 — Slice 2B store-specific admission and target-store policy hardening implemented
+
+Type:
+- implementation PR
+- post-implementation report
+
+Slice:
+- Slice 2
+
+Related docs:
+- E实施0: `../E实施0-Implementation Roadmap & Handoff v0.md`
+- C设计 source: `../C设计0-Second Reader Shared Memory–Planning Mechanism Charter v0.md`, `../C设计3-Memory Formation & Settlement Design v0.md`, `../C设计9-Evaluation Calibration & Minimal Eval Suite v0.md`
+- E实施1 / PR / report: `reports/Slice2B-Store-specific-Admission-and-Target-store-Policy-Hardening-Post-implementation-Report v0.md`
+- Brief: `briefs/Slice2B-Store-specific-Admission-and-Target-store-Policy-Hardening-Pre-implementation-Brief v0.md`
+
+Branch / PR:
+- Branch: `main`
+- PR:
+- Commit:
+
+Pre-implementation Brief:
+- Link: `briefs/Slice2B-Store-specific-Admission-and-Target-store-Policy-Hardening-Pre-implementation-Brief v0.md`
+- Accepted by: human reviewer / user
+- Acceptance date: 2026-05-16
+- Scope changes approved: additional reviewer constraints from the Slice 2B implementation instruction
+
+Files changed:
+- `reading-companion-backend/src/attentional_v2/schemas.py`
+- `reading-companion-backend/src/attentional_v2/nodes.py`
+- `reading-companion-backend/tests/test_attentional_v2_nodes.py`
+- `reading-companion-backend/tests/test_attentional_v2_observability.py`
+- `docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
+- `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md`
+- `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice2B-Store-specific-Admission-and-Target-store-Policy-Hardening-Post-implementation-Report v0.md`
+- `docs/current-state.md`
+- `docs/tasks/registry.md`
+- `docs/tasks/registry.json`
+
+Design contracts addressed:
+- target-store support metadata added to read-output admission events
+- operation-store admission policy metadata added to read-output admission events
+- unsupported target stores remain normalized and non-rejected
+- unsupported operation-store pairings remain normalized and non-rejected
+- missing `target_store` still defaults to `active_attention` and records `missing_target_store_defaulted`
+- policy warnings are compact and audit-only
+- normalized op `compatibility_warnings` surface the same policy risks for existing contract rows
+- existing Slice 1 and Slice 2A fields remain present
+
+Engineering tests:
+- Commands run:
+  - `cd reading-companion-backend && .venv/bin/python -m pytest tests/test_attentional_v2_observability.py tests/test_attentional_v2_nodes.py -q`
+- Result:
+  - `20 passed, 6 warnings`
+- Not run / reason:
+  - full AI Evaluation not run by constraint
+
+Contract / audit checks:
+- SourceRef preserved: yes; source-ref resolution and inline SourceRef semantics unchanged
+- per-op outcome: preserved from Slice 1; no new authoritative settlement truth introduced
+- admission vs settlement separated: yes; `admission_status="accepted"` remains normalization admission only
+- candidate vs settled separated: unchanged and deferred to Slice 6
+- audit not routed into prompt: yes; no prompt files changed
+- reaction_records not semantic memory: unchanged
+- knowledge_activations not source truth: unchanged
+- other: `operation_store_policy` is conservative read-path admission-policy visibility, not exact `state_ops.py` behavior
+
+AI Evaluation:
+- Full eval run? no
+- Smoke only? no
+- Eval lane affected: none
+- Notes: full AI Evaluation remains deferred until core instrumentation is ready
+
+Post-implementation Report:
+- Link: `reports/Slice2B-Store-specific-Admission-and-Target-store-Policy-Hardening-Post-implementation-Report v0.md`
+- Summary: Slice 2B store-specific admission and target-store policy audit metadata implemented; targeted tests passed through backend venv.
+- Deviations from accepted brief: none
+- Known gaps: strict target-store validation, strict operation-store pairing validation, projection markers, retrieval utilization, planning trace, and slow-cycle envelopes remain deferred
+
+Reviewer decision:
+- waiting for human review
+- Reviewer:
+- Decision date:
+- Required follow-up: accept or patch the Slice 2B Post-implementation Report before any next-slice brief or implementation PR
+
+Next recommended step:
+- Human reviewer accepts `reports/Slice2B-Store-specific-Admission-and-Target-store-Policy-Hardening-Post-implementation-Report v0.md` or requests a patch. Do not start the next implementation slice yet.
 
 ## Entry Template
 
