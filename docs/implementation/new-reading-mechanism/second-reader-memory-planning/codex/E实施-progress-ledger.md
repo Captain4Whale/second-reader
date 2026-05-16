@@ -13,9 +13,9 @@ Stable mechanism behavior changes still need to be promoted to the relevant stab
 ## Current Status
 
 ```text
-Current phase: Slice 2B implementation complete; Post-implementation Report waiting for human review
-Implementation status: Slice 1 accepted; Slice 2A accepted; Slice 2B store-specific admission and target-store policy hardening implemented
-Next action: human reviewer accepts the Slice 2B Post-implementation Report or requests a patch before any next-slice brief / implementation PR
+Current phase: Slice 3A Pre-implementation Brief waiting for human review
+Implementation status: Slice 1 accepted; Slice 2A accepted; Slice 2B accepted; Slice 3A not implemented
+Next action: human reviewer accepts the Slice 3A Pre-implementation Brief or requests a patch before any Slice 3A implementation PR
 Full AI Evaluation: not yet; deferred until core instrumentation is ready
 ```
 
@@ -560,13 +560,88 @@ Post-implementation Report:
 - Known gaps: strict target-store validation, strict operation-store pairing validation, projection markers, retrieval utilization, planning trace, and slow-cycle envelopes remain deferred
 
 Reviewer decision:
-- waiting for human review
-- Reviewer:
-- Decision date:
-- Required follow-up: accept or patch the Slice 2B Post-implementation Report before any next-slice brief or implementation PR
+- accepted
+- Reviewer: human reviewer / user
+- Decision date: 2026-05-16
+- Required follow-up: create and accept the Slice 3A Pre-implementation Brief before any Slice 3A implementation PR
 
 Next recommended step:
-- Human reviewer accepts `reports/Slice2B-Store-specific-Admission-and-Target-store-Policy-Hardening-Post-implementation-Report v0.md` or requests a patch. Do not start the next implementation slice yet.
+- Human reviewer reviews `briefs/Slice3A-Status-aware-Projection-and-Boundary-Marker-Hardening-Pre-implementation-Brief v0.md`. Do not start Slice 3A implementation yet.
+
+## Entry 2026-05-16 — Slice 2B report accepted and Slice 3A brief created
+
+Type:
+- review decision
+- pre-implementation brief
+
+Slice:
+- Slice 3
+
+Related docs:
+- E实施0: `../E实施0-Implementation Roadmap & Handoff v0.md`
+- C设计 source: `../C设计0-Second Reader Shared Memory–Planning Mechanism Charter v0.md`, `../C设计1-Memory Ontology Design v0.md`, `../C设计5-Memory Management & Evolution Design v0(patched).md`, `../C设计6-Detour : Look-back : Active Recall Policy Design v0.md`, `../C设计7-Memory Retrieval & Utilization Design v0.md`, `../C设计9-Evaluation Calibration & Minimal Eval Suite v0.md`
+- E实施1 / PR / report: `reports/Slice2B-Store-specific-Admission-and-Target-store-Policy-Hardening-Post-implementation-Report v0.md`
+- Brief: `briefs/Slice3A-Status-aware-Projection-and-Boundary-Marker-Hardening-Pre-implementation-Brief v0.md`
+
+Branch / PR:
+- Branch: `main`
+- PR:
+- Commit:
+
+Pre-implementation Brief:
+- Link: `briefs/Slice3A-Status-aware-Projection-and-Boundary-Marker-Hardening-Pre-implementation-Brief v0.md`
+- Accepted by:
+- Acceptance date:
+- Scope changes approved:
+
+Files changed:
+- docs only for Slice 3A brief landing
+
+Design contracts addressed:
+- Slice 2B Post-implementation Report accepted by human reviewer / user
+- Slice 3A brief created for status-aware projection and boundary marker hardening
+- future Slice 3A implementation scoped to prompt-facing projection markers in `state_projection.py`
+- future Slice 3A implementation explicitly excludes durable lifecycle mutation, `state_ops.py`, prompt changes, `read_context.py`, retrieval utilization, planning trace, slow-cycle, public API, frontend, and eval runners
+- reaction records remain visible trace, not semantic memory
+- future knowledge projection remains deferred and must be warrant / context only, not source truth
+
+Engineering tests:
+- Commands run:
+  - none
+- Result:
+  - not run; this is a doc-only brief landing task
+- Not run / reason:
+  - backend tests not run by doc-only task constraint
+
+Contract / audit checks:
+- SourceRef preserved: unchanged and planned for future Slice 3A projection markers
+- per-op outcome: unchanged and out of Slice 3A
+- candidate vs settled separated: unchanged and deferred to Slice 6
+- audit not routed into prompt: no audit dumps are routed into prompts
+- reaction_records not semantic memory: preserved as an explicit Slice 3A boundary
+- knowledge_activations not source truth: preserved as an explicit Slice 3A boundary
+- other: Slice 3A implementation remains blocked until this brief is accepted
+
+AI Evaluation:
+- Full eval run? no
+- Smoke only? no
+- Eval lane affected: none
+- Notes: full AI Evaluation remains deferred until core instrumentation is ready
+
+Post-implementation Report:
+- Link:
+- Summary:
+- Deviations from accepted brief:
+- Known gaps:
+
+Reviewer decision:
+- Slice 2B Post-implementation Report accepted; Slice 3A brief waiting for human acceptance
+- Reviewer: human reviewer / user
+- Decision date: 2026-05-16
+- Required follow-up: accept or patch the Slice 3A Pre-implementation Brief before any implementation PR
+
+Next recommended step:
+- Human reviewer accepts `briefs/Slice3A-Status-aware-Projection-and-Boundary-Marker-Hardening-Pre-implementation-Brief v0.md` or requests a patch. Do not start Slice 3A implementation yet.
 
 ## Entry Template
 
