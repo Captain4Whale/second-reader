@@ -321,7 +321,26 @@ class ReadUnitResult(TypedDict, total=False):
     reading_impression: str
     surfaced_reactions: list["SurfacedReaction"]
     memory_uptake_ops: list["StateOperation"]
+    memory_uptake_admission_events: list["MemoryUptakeAdmissionEvent"]
     detour_need: "DetourNeed" | None
+
+
+MemoryUptakeAdmissionStatus = Literal["accepted", "dropped_unknown_operation", "dropped_malformed_operation"]
+
+
+class MemoryUptakeAdmissionEvent(TypedDict, total=False):
+    """Audit-only admission metadata captured before memory operations are normalized."""
+
+    operation_index: int
+    admission_status: MemoryUptakeAdmissionStatus
+    operation_type_emitted: str
+    operation_type_normalized: str
+    target_store_emitted: str
+    effective_target_store: str
+    target_key: str
+    item_id: str
+    compatibility_warnings: list[str]
+    drop_reason: str
 
 
 class StateOperation(TypedDict, total=False):

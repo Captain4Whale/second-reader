@@ -127,6 +127,32 @@ def test_record_read_writes_memory_uptake_op_contracts(tmp_path: Path) -> None:
                     },
                 }
             ],
+            "memory_uptake_admission_events": [
+                {
+                    "operation_index": 0,
+                    "admission_status": "accepted",
+                    "operation_type_emitted": "append",
+                    "operation_type_normalized": "append",
+                    "target_store_emitted": "",
+                    "effective_target_store": "active_attention",
+                    "target_key": "hot-1",
+                    "item_id": "hot-1",
+                    "compatibility_warnings": ["missing_target_store_defaulted"],
+                    "drop_reason": "",
+                },
+                {
+                    "operation_index": 1,
+                    "admission_status": "dropped_unknown_operation",
+                    "operation_type_emitted": "invent",
+                    "operation_type_normalized": "invent",
+                    "target_store_emitted": "concept_registry",
+                    "effective_target_store": "concept_registry",
+                    "target_key": "concept-1",
+                    "item_id": "concept-1",
+                    "compatibility_warnings": [],
+                    "drop_reason": "unknown_operation_type",
+                },
+            ],
         },
     )
 
@@ -147,6 +173,32 @@ def test_record_read_writes_memory_uptake_op_contracts(tmp_path: Path) -> None:
             "source_ref_resolution_statuses": ["matched", "ambiguous_first_match"],
             "compatibility_warnings": ["missing_target_store_defaulted"],
         }
+    ]
+    assert audit_line["memory_uptake_admission_events"] == [
+        {
+            "operation_index": 0,
+            "admission_status": "accepted",
+            "operation_type_emitted": "append",
+            "operation_type_normalized": "append",
+            "target_store_emitted": "",
+            "effective_target_store": "active_attention",
+            "target_key": "hot-1",
+            "item_id": "hot-1",
+            "compatibility_warnings": ["missing_target_store_defaulted"],
+            "drop_reason": "",
+        },
+        {
+            "operation_index": 1,
+            "admission_status": "dropped_unknown_operation",
+            "operation_type_emitted": "invent",
+            "operation_type_normalized": "invent",
+            "target_store_emitted": "concept_registry",
+            "effective_target_store": "concept_registry",
+            "target_key": "concept-1",
+            "item_id": "concept-1",
+            "compatibility_warnings": [],
+            "drop_reason": "unknown_operation_type",
+        },
     ]
 
 

@@ -19,6 +19,7 @@ from .schemas import (
     CarryForwardContext,
     DetourNeed,
     KnowledgeActivationsState,
+    MemoryUptakeAdmissionEvent,
     NavigationContext,
     NavigateActResult,
     OutsideLink,
@@ -66,6 +67,7 @@ _STATE_OPERATION_TYPES = {
     "promote",
     "supersede",
     "reactivate",
+    "resolve",
 }
 _DETOUR_STATUSES = {"open", "resolved", "abandoned"}
 _NAVIGATE_ACT_DECISIONS = {"choose_unit", "request_skill", "defer_detour"}
@@ -480,17 +482,56 @@ def _fallback_unitize_decision(preview_sentences: list[dict[str, object]]) -> Un
     }
 
 
-def _normalize_state_operations(value: object) -> list[StateOperation]:
-    """Normalize a list of explicit state operations."""
+_MISSING_TARGET_STORE_WARNING = "missing_target_store_defaulted"
+
+
+def _memory_uptake_admission_event(
+    *,
+    operation_index: int,
+    admission_status: str,
+    operation_type_emitted: str = "",
+    operation_type_normalized: str = "",
+    target_store_emitted: str = "",
+    effective_target_store: str = "",
+    target_key: str = "",
+    item_id: str = "",
+    compatibility_warnings: list[str] | None = None,
+    drop_reason: str = "",
+) -> MemoryUptakeAdmissionEvent:
+    """Build compact audit metadata for read-output operation admission."""
+
+    return {
+        "operation_index": operation_index,
+        "admission_status": admission_status,  # type: ignore[typeddict-item]
+        "operation_type_emitted": operation_type_emitted,
+        "operation_type_normalized": operation_type_normalized,
+        "target_store_emitted": target_store_emitted,
+        "effective_target_store": effective_target_store,
+        "target_key": target_key,
+        "item_id": item_id,
+        "compatibility_warnings": list(compatibility_warnings or []),
+        "drop_reason": drop_reason,
+    }
+
+
+def _normalize_state_operations_with_admission(
+    value: object,
+) -> tuple[list[StateOperation], list[MemoryUptakeAdmissionEvent]]:
+    """Normalize explicit state operations and capture audit-only admission events."""
 
     operations: list[StateOperation] = []
+    admission_events: list[MemoryUptakeAdmissionEvent] = []
     if not isinstance(value, list):
-        return operations
-    for item in value:
+        return operations, admission_events
+    for operation_index, item in enumerate(value):
         if not isinstance(item, dict):
-            continue
-        operation_type = _clean_text(item.get("op") or item.get("operation_type")).lower().replace("-", "_")
-        if operation_type not in _STATE_OPERATION_TYPES:
+            admission_events.append(
+                _memory_uptake_admission_event(
+                    operation_index=operation_index,
+                    admission_status="dropped_malformed_operation",
+                    drop_reason="operation_not_object",
+                )
+            )
             continue
         payload = item.get("payload")
         target_key = _clean_text(item.get("target_key") or item.get("item_id"))
@@ -498,7 +539,41 @@ def _normalize_state_operations(value: object) -> list[StateOperation]:
         effective_target_store = target_store_emitted or "active_attention"
         compatibility_warnings: list[str] = []
         if not target_store_emitted:
-            compatibility_warnings.append("missing_target_store_defaulted")
+            compatibility_warnings.append(_MISSING_TARGET_STORE_WARNING)
+        operation_type_emitted = _clean_text(item.get("op") or item.get("operation_type"))
+        operation_type = operation_type_emitted.lower().replace("-", "_")
+        if not operation_type:
+            admission_events.append(
+                _memory_uptake_admission_event(
+                    operation_index=operation_index,
+                    admission_status="dropped_malformed_operation",
+                    operation_type_emitted=operation_type_emitted,
+                    operation_type_normalized=operation_type,
+                    target_store_emitted=target_store_emitted,
+                    effective_target_store=effective_target_store,
+                    target_key=target_key,
+                    item_id=target_key,
+                    compatibility_warnings=compatibility_warnings,
+                    drop_reason="missing_operation_type",
+                )
+            )
+            continue
+        if operation_type not in _STATE_OPERATION_TYPES:
+            admission_events.append(
+                _memory_uptake_admission_event(
+                    operation_index=operation_index,
+                    admission_status="dropped_unknown_operation",
+                    operation_type_emitted=operation_type_emitted,
+                    operation_type_normalized=operation_type,
+                    target_store_emitted=target_store_emitted,
+                    effective_target_store=effective_target_store,
+                    target_key=target_key,
+                    item_id=target_key,
+                    compatibility_warnings=compatibility_warnings,
+                    drop_reason="unknown_operation_type",
+                )
+            )
+            continue
         operations.append(
             {
                 "op": operation_type,  # type: ignore[typeddict-item]
@@ -513,6 +588,26 @@ def _normalize_state_operations(value: object) -> list[StateOperation]:
                 "payload": dict(payload) if isinstance(payload, dict) else {},
             }
         )
+        admission_events.append(
+            _memory_uptake_admission_event(
+                operation_index=operation_index,
+                admission_status="accepted",
+                operation_type_emitted=operation_type_emitted,
+                operation_type_normalized=operation_type,
+                target_store_emitted=target_store_emitted,
+                effective_target_store=effective_target_store,
+                target_key=target_key,
+                item_id=target_key,
+                compatibility_warnings=compatibility_warnings,
+            )
+        )
+    return operations, admission_events
+
+
+def _normalize_state_operations(value: object) -> list[StateOperation]:
+    """Normalize a list of explicit state operations."""
+
+    operations, _admission_events = _normalize_state_operations_with_admission(value)
     return operations
 
 
@@ -1158,12 +1253,14 @@ def read_unit(
         allowed_ref_ids=allowed_ref_ids,
     )
     reading_impression = _clean_text(payload.get("reading_impression")) if isinstance(payload, dict) else ""
+    memory_uptake_ops, memory_uptake_admission_events = _normalize_state_operations_with_admission(
+        payload.get("memory_uptake_ops") if isinstance(payload, dict) else None
+    )
     result: ReadUnitResult = {
         "reading_impression": reading_impression,
         "surfaced_reactions": surfaced_reactions,
-        "memory_uptake_ops": _normalize_state_operations(
-            payload.get("memory_uptake_ops") if isinstance(payload, dict) else None
-        ),
+        "memory_uptake_ops": memory_uptake_ops,
+        "memory_uptake_admission_events": memory_uptake_admission_events,
         "detour_need": _normalize_detour_need(payload.get("detour_need")) if isinstance(payload, dict) else None,
     }
     return result

@@ -134,6 +134,12 @@ def _memory_uptake_ops(read_result: Mapping[str, object]) -> list[dict[str, obje
     return _normalized_operations(read_result.get("memory_uptake_ops"))
 
 
+def _memory_uptake_admission_events(read_result: Mapping[str, object]) -> list[dict[str, object]]:
+    """Return audit-only admission metadata for read memory operations."""
+
+    return _normalized_operations(read_result.get("memory_uptake_admission_events"))
+
+
 def _memory_uptake_ops_by_target_store(memory_uptake_ops: list[dict[str, object]]) -> dict[str, int]:
     """Count read memory operations by their declared target store."""
 
@@ -357,6 +363,7 @@ def record_read(
         else []
     )
     memory_uptake_ops = _memory_uptake_ops(read_result)
+    memory_uptake_admission_events = _memory_uptake_admission_events(read_result)
     append_jsonl(
         read_audit_file(output_dir),
         {
@@ -389,6 +396,7 @@ def record_read(
             "memory_uptake_op_count": len(memory_uptake_ops),
             "memory_uptake_ops_by_target_store": _memory_uptake_ops_by_target_store(memory_uptake_ops),
             "memory_uptake_op_contracts": _memory_uptake_op_contracts(memory_uptake_ops),
+            "memory_uptake_admission_events": memory_uptake_admission_events,
             "detour_need": dict(read_result.get("detour_need") or {})
             if isinstance(read_result.get("detour_need"), Mapping)
             else {},

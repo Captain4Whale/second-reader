@@ -15,6 +15,8 @@ from src.attentional_v2.state_ops import (
     append_reaction_record,
     append_reconsolidation_record,
     apply_active_attention_operations,
+    apply_concept_registry_operations,
+    apply_thread_trace_operations,
     close_local_meaning_unit,
     push_local_buffer_sentence,
     replace_policy_section,
@@ -103,6 +105,58 @@ def test_apply_active_attention_operations_handles_append_update_close_link_and_
     assert "bucket" not in state["active_items"][0]
     assert "kind" not in state["active_items"][0]
     assert dropped["active_items"] == []
+
+
+def test_state_ops_already_apply_resolve_operations():
+    """Resolve behavior is already supported by state_ops without changing it in Slice 2A."""
+
+    active_state = {
+        "active_items": [
+            {
+                "item_id": "hot-question",
+                "statement": "A live question.",
+                "status": "active",
+            }
+        ]
+    }
+    active_state = apply_active_attention_operations(
+        active_state,
+        [
+            {
+                "operation_type": "resolve",
+                "target_store": "active_attention",
+                "item_id": "hot-question",
+                "payload": {},
+            }
+        ],
+    )
+
+    concept_state = apply_concept_registry_operations(
+        {"entries": [{"concept_key": "concept-question", "status": "active", "summary": "old"}]},
+        [
+            {
+                "operation_type": "resolve",
+                "target_store": "concept_registry",
+                "item_id": "concept-question",
+                "payload": {"status": "resolved"},
+            }
+        ],
+    )
+    thread_state = apply_thread_trace_operations(
+        {"entries": [{"thread_key": "thread-question", "status": "active", "summary": "old"}]},
+        [
+            {
+                "operation_type": "resolve",
+                "target_store": "thread_trace",
+                "item_id": "thread-question",
+                "payload": {"status": "resolved"},
+            }
+        ],
+    )
+
+    assert active_state["active_items"][0]["status"] == "resolved"
+    assert concept_state["entries"][0]["status"] == "resolved"
+    assert thread_state["entries"][0]["status"] == "resolved"
 
 
 def test_activation_helpers_upsert_source_refs_by_id():

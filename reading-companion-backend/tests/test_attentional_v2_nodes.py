@@ -587,3 +587,119 @@ def test_read_unit_marks_missing_target_store_as_compatibility_default(tmp_path:
     assert op["target_store_emitted"] == ""
     assert op["effective_target_store"] == "active_attention"
     assert op["compatibility_warnings"] == ["missing_target_store_defaulted"]
+
+    admission_event = result["memory_uptake_admission_events"][0]
+    assert admission_event["admission_status"] == "accepted"
+    assert admission_event["target_store_emitted"] == ""
+    assert admission_event["effective_target_store"] == "active_attention"
+    assert admission_event["compatibility_warnings"] == ["missing_target_store_defaulted"]
+
+
+def test_read_unit_admits_resolve_memory_operation(tmp_path: Path, monkeypatch):
+    """Schema-valid resolve ops should not disappear at node normalization."""
+
+    def fake_invoke_json(system_prompt: str, prompt: str, default: object) -> object:
+        return {
+            "reading_impression": "The earlier question has been answered.",
+            "surfaced_reactions": [],
+            "memory_uptake_ops": [
+                {
+                    "op": "resolve",
+                    "target_store": "active_attention",
+                    "target_key": "hot-question",
+                    "payload": {"status": "resolved"},
+                }
+            ],
+        }
+
+    monkeypatch.setattr(nodes_module, "invoke_json", fake_invoke_json)
+
+    result = read_unit(
+        current_unit_sentences=[
+            _sentence("c1-s1", "The answer closes the earlier question.", sentence_index=1, paragraph_index=1),
+        ],
+        carry_forward_context={"packet_version": STATE_PACKET_VERSION, "refs": []},
+        reader_policy=build_default_reader_policy(),
+        output_language="en",
+        output_dir=tmp_path,
+    )
+
+    assert len(result["memory_uptake_ops"]) == 1
+    op = result["memory_uptake_ops"][0]
+    assert op["op"] == "resolve"
+    assert op["operation_type"] == "resolve"
+    assert op["target_store"] == "active_attention"
+
+    assert result["memory_uptake_admission_events"] == [
+        {
+            "operation_index": 0,
+            "admission_status": "accepted",
+            "operation_type_emitted": "resolve",
+            "operation_type_normalized": "resolve",
+            "target_store_emitted": "active_attention",
+            "effective_target_store": "active_attention",
+            "target_key": "hot-question",
+            "item_id": "hot-question",
+            "compatibility_warnings": [],
+            "drop_reason": "",
+        }
+    ]
+
+
+def test_read_unit_records_dropped_memory_uptake_admission_events(tmp_path: Path, monkeypatch):
+    """Unknown and malformed raw ops stay dropped but become visible in audit metadata."""
+
+    def fake_invoke_json(system_prompt: str, prompt: str, default: object) -> object:
+        return {
+            "reading_impression": "Only one operation is admissible.",
+            "surfaced_reactions": [],
+            "memory_uptake_ops": [
+                "not an operation",
+                {
+                    "op": "invent",
+                    "target_store": "concept_registry",
+                    "target_key": "concept-unknown",
+                    "payload": {"summary": "This raw payload should not be copied into admission metadata."},
+                },
+                {
+                    "target_store": "thread_trace",
+                    "target_key": "thread-missing-op",
+                    "payload": {"summary": "Missing operation type."},
+                },
+                {
+                    "op": "append",
+                    "target_key": "hot-accepted",
+                    "payload": {"statement": "This remains admissible."},
+                },
+            ],
+        }
+
+    monkeypatch.setattr(nodes_module, "invoke_json", fake_invoke_json)
+
+    result = read_unit(
+        current_unit_sentences=[
+            _sentence("c1-s1", "A mixed set of memory ops appears.", sentence_index=1, paragraph_index=1),
+        ],
+        carry_forward_context={"packet_version": STATE_PACKET_VERSION, "refs": []},
+        reader_policy=build_default_reader_policy(),
+        output_language="en",
+        output_dir=tmp_path,
+    )
+
+    assert [op["target_key"] for op in result["memory_uptake_ops"]] == ["hot-accepted"]
+
+    admission_events = result["memory_uptake_admission_events"]
+    assert [event["admission_status"] for event in admission_events] == [
+        "dropped_malformed_operation",
+        "dropped_unknown_operation",
+        "dropped_malformed_operation",
+        "accepted",
+    ]
+    assert admission_events[0]["drop_reason"] == "operation_not_object"
+    assert admission_events[1]["operation_type_emitted"] == "invent"
+    assert admission_events[1]["operation_type_normalized"] == "invent"
+    assert admission_events[1]["drop_reason"] == "unknown_operation_type"
+    assert admission_events[2]["drop_reason"] == "missing_operation_type"
+    assert admission_events[3]["effective_target_store"] == "active_attention"
+    assert admission_events[3]["compatibility_warnings"] == ["missing_target_store_defaulted"]
+    assert all("payload" not in event for event in admission_events)
