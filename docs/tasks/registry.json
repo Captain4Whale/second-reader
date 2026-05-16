@@ -1,11 +1,11 @@
 {
   "version": 1,
-  "updated_at": "2026-05-16T13:46:01+08:00",
+  "updated_at": "2026-05-16T15:06:02+08:00",
   "tasks": [
     {
       "id": "TASK-SECOND-READER-MEMORY-PLANNING-FEASIBILITY-AUDIT",
       "title": "Run Implementation Feasibility & Delta Audit for Second Reader Memory-Planning optimization",
-      "status": "queued",
+      "status": "waiting",
       "lane": "mechanism_runtime",
       "priority": "high",
       "detail_ref": "docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md",
@@ -14,6 +14,8 @@
         "docs/current-state.md",
         "docs/tasks/registry.md",
         "docs/history/decision-log.md",
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施1-Implementation Feasibility & Delta Audit v0.md",
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md",
         "docs/backend-reading-mechanisms/attentional_v2.md",
         "docs/backend-reader-evaluation.md"
       ],
@@ -21,14 +23,16 @@
         "DEC-089"
       ],
       "job_refs": [],
-      "acceptance_ref": "docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md",
-      "next_action": "Run E实施1-Implementation Feasibility & Delta Audit v0 before implementation. Codex should compare accepted Memory / Planning / Evaluation design contracts from C设计0 through C设计9 plus E实施0 against current repo code, produce a design-to-file delta matrix, identify missing fields/tests/risks, and propose small PR slices. The first audit question is to confirm the real delta around memory uptake, settlement, projection, retrieval, and planning trace. Do not implement code, run full evaluation, or treat the design workspace as a replacement for stable attentional_v2 docs.",
+      "acceptance_ref": "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施1-Implementation Feasibility & Delta Audit v0.md",
+      "next_action": "E实施1-Implementation Feasibility & Delta Audit v0 is created and pending human review. Human reviewer should accept it or request a patch before any Pre-implementation Brief or implementation PR. No code implementation or full AI Evaluation has started.",
       "blocked_by": [],
       "evidence_refs": [
         "docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md",
-        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/E实施0-Implementation Roadmap & Handoff v0.md"
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/E实施0-Implementation Roadmap & Handoff v0.md",
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施1-Implementation Feasibility & Delta Audit v0.md",
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md"
       ],
-      "last_updated": "2026-05-16T05:46:01Z",
+      "last_updated": "2026-05-16T07:06:02Z",
       "last_updated_by": "codex"
     },
     {

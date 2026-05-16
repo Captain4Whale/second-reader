@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-05-16T13:46:01+08:00`
+Last updated: `2026-05-16T15:06:02+08:00`
 
 ## Status Values
 - `active`
@@ -464,6 +464,18 @@ Last updated: `2026-05-16T13:46:01+08:00`
 
 ## Waiting
 
+### `TASK-SECOND-READER-MEMORY-PLANNING-FEASIBILITY-AUDIT` — Run Implementation Feasibility & Delta Audit for Second Reader Memory-Planning optimization
+- Status: `waiting`
+- Lane: `mechanism_runtime`
+- Priority: `high`
+- Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
+- Next: `E实施1-Implementation Feasibility & Delta Audit v0.md` is created at `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施1-Implementation Feasibility & Delta Audit v0.md` and is pending human review. Human reviewer should accept it or request a patch before any Pre-implementation Brief or implementation PR. No code implementation or full AI Evaluation has started.
+- Evidence:
+  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
+  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/E实施0-Implementation Roadmap & Handoff v0.md`
+  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施1-Implementation Feasibility & Delta Audit v0.md`
+  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md`
+
 ### `TASK-DATASET-QUESTION-ALIGNED-CASE-CONSTRUCTION` — Build question-aligned case construction for evaluation datasets
 - Status: `waiting`
 - Lane: `dataset_platform`
@@ -526,16 +538,6 @@ Last updated: `2026-05-16T13:46:01+08:00`
   - `bgjob_closed_loop_bilingual_broader_auditcoherencefix_20260330` (`completed`)
 
 ## Queued
-
-### `TASK-SECOND-READER-MEMORY-PLANNING-FEASIBILITY-AUDIT` — Run Implementation Feasibility & Delta Audit for Second Reader Memory-Planning optimization
-- Status: `queued`
-- Lane: `mechanism_runtime`
-- Priority: `high`
-- Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
-- Next: run `E实施1-Implementation Feasibility & Delta Audit v0` before implementation. Codex should compare accepted Memory / Planning / Evaluation design contracts from `C设计0` through `C设计9` plus `E实施0` against current repo code, produce a design-to-file delta matrix, identify missing fields/tests/risks, and propose small PR slices. The first audit question is to confirm the real delta around memory uptake, settlement, projection, retrieval, and planning trace. Do not implement code, run full evaluation, or treat the design workspace as a replacement for stable `attentional_v2` docs.
-- Evidence:
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/E实施0-Implementation Roadmap & Handoff v0.md`
 
 ### `TASK-FE-SECTION-RETIREMENT` — Retire section-first chapter/detail and marks surfaces
 - Status: `queued`
