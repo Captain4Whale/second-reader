@@ -13,9 +13,9 @@ Stable mechanism behavior changes still need to be promoted to the relevant stab
 ## Current Status
 
 ```text
-Current phase: Slice 4A Pre-implementation Brief waiting for human review
-Implementation status: Slice 1 accepted; Slice 2A accepted; Slice 2B accepted; Slice 3A accepted; Slice 3B accepted; Slice 4A supplemental retrieval intent and context assembly brief created but not accepted
-Next action: human reviewer accepts the Slice 4A Pre-implementation Brief or requests a patch before any Slice 4A implementation PR
+Current phase: Slice 4A implementation complete; Post-implementation Report waiting for human review
+Implementation status: Slice 1 accepted; Slice 2A accepted; Slice 2B accepted; Slice 3A accepted; Slice 3B accepted; Slice 4A supplemental retrieval intent and context assembly contract implemented
+Next action: human reviewer accepts the Slice 4A Post-implementation Report or requests a patch before any next-slice brief / implementation PR
 Full AI Evaluation: not yet; deferred until core instrumentation is ready
 ```
 
@@ -957,6 +957,93 @@ Reviewer decision:
 
 Next recommended step:
 - Human reviewer reviews `briefs/Slice4A-Supplemental-Retrieval-Intent-and-Context-Assembly-Contract-Pre-implementation-Brief v0.md`. Do not start Slice 4A implementation yet.
+
+## Entry 2026-05-16 — Slice 4A supplemental retrieval intent and context assembly contract implemented
+
+Type:
+- implementation PR
+- post-implementation report
+
+Slice:
+- Slice 4
+
+Related docs:
+- E实施0: `../E实施0-Implementation Roadmap & Handoff v0.md`
+- C设计 source: `../C设计0-Second Reader Shared Memory–Planning Mechanism Charter v0.md`, `../C设计6-Detour : Look-back : Active Recall Policy Design v0.md`, `../C设计7-Memory Retrieval & Utilization Design v0.md`, `../C设计9-Evaluation Calibration & Minimal Eval Suite v0.md`
+- E实施1 / PR / report: `reports/Slice4A-Supplemental-Retrieval-Intent-and-Context-Assembly-Contract-Post-implementation-Report v0.md`
+- Brief: `briefs/Slice4A-Supplemental-Retrieval-Intent-and-Context-Assembly-Contract-Pre-implementation-Brief v0.md`
+
+Branch / PR:
+- Branch: `main`
+- PR:
+- Commit:
+
+Pre-implementation Brief:
+- Link: `briefs/Slice4A-Supplemental-Retrieval-Intent-and-Context-Assembly-Contract-Pre-implementation-Brief v0.md`
+- Accepted by: human reviewer / user
+- Acceptance date: 2026-05-16
+- Scope changes approved: additional reviewer constraints from the Slice 4A implementation instruction
+
+Files changed:
+- `reading-companion-backend/src/attentional_v2/read_context.py`
+- `reading-companion-backend/src/attentional_v2/state_projection.py`
+- `reading-companion-backend/tests/test_attentional_v2_read_context.py`
+- `reading-companion-backend/tests/test_attentional_v2_state_projection.py`
+- `docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
+- `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md`
+- `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice4A-Supplemental-Retrieval-Intent-and-Context-Assembly-Contract-Post-implementation-Report v0.md`
+- `docs/current-state.md`
+- `docs/tasks/registry.md`
+- `docs/tasks/registry.json`
+
+Design contracts addressed:
+- `look_back` is explicitly marked as source calibration
+- `active_recall` is explicitly marked as memory recovery
+- supplemental retrieval result boundaries are visible through compact metadata
+- merged supplemental bundles preserve compact `retrieval_events`
+- prompt-facing `selective_carry.retrieval_context` exposes result groups and full-object forwarding policy
+- active-recall concepts, threads, and reactions are not forwarded as full objects into the Read prompt packet in Slice 4A
+- reaction records remain visible trace, not semantic memory
+- `knowledge_activations` are not projected or treated as source truth
+- full retrieval utilization trace remains deferred
+
+Engineering tests:
+- Commands run:
+  - `cd reading-companion-backend && .venv/bin/python -m pytest tests/test_attentional_v2_read_context.py tests/test_attentional_v2_state_projection.py -q`
+- Result:
+  - `8 passed, 6 warnings`
+- Not run / reason:
+  - full AI Evaluation not run by constraint
+
+Contract / audit checks:
+- SourceRef preserved: yes; look_back remains source-ref / excerpt oriented and active_recall refs remain source-ref-backed where available
+- per-op outcome: unchanged and out of Slice 4A
+- candidate vs settled separated: unchanged and deferred to Slice 6
+- audit not routed into prompt: yes; no audit dumps are routed into prompts
+- reaction_records not semantic memory: yes; reaction refs are marked visible trace with `semantic_memory=false`
+- knowledge_activations not source truth: yes; `knowledge_activations` are not projected
+- other: `observability.py` was not changed; `read_audit` retrieval utilization trace remains deferred
+
+AI Evaluation:
+- Full eval run? no
+- Smoke only? no
+- Eval lane affected: none
+- Notes: full AI Evaluation remains deferred until core instrumentation is ready
+
+Post-implementation Report:
+- Link: `reports/Slice4A-Supplemental-Retrieval-Intent-and-Context-Assembly-Contract-Post-implementation-Report v0.md`
+- Summary: Slice 4A supplemental retrieval intent and prompt-facing context assembly contract metadata implemented with focused tests.
+- Deviations from accepted brief: none
+- Known gaps: full retrieval utilization trace, read-audit retrieval-intent evidence, and full active-recall object projection remain deferred
+
+Reviewer decision:
+- waiting for human review
+- Reviewer:
+- Decision date:
+- Required follow-up: accept or patch the Slice 4A Post-implementation Report before any next-slice brief or implementation PR
+
+Next recommended step:
+- Human reviewer accepts `reports/Slice4A-Supplemental-Retrieval-Intent-and-Context-Assembly-Contract-Post-implementation-Report v0.md` or requests a patch. Do not start the next implementation slice yet.
 
 ## Entry Template
 

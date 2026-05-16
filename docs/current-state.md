@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-05-16T19:50:41+08:00`
+Last verified: `2026-05-16T20:11:32+08:00`
 
 ## Current Objective
 - Land the repo-local Memory / Planning / Evaluation design chain and implementation handoff for optimizing the existing `attentional_v2` mechanism.
@@ -26,16 +26,18 @@ Last verified: `2026-05-16T19:50:41+08:00`
     - `Slice3B-Lifecycle-Semantics-and-State-op-Boundary-Hardening-Pre-implementation-Brief v0.md` is accepted
     - Slice 3B lifecycle semantics and state-op boundary hardening is implemented as test / contract hardening, and `Slice3B-Lifecycle-Semantics-and-State-op-Boundary-Hardening-Post-implementation-Report v0.md` is accepted
     - Slice 3B did not change runtime `state_ops.py` behavior
-    - `Slice4A-Supplemental-Retrieval-Intent-and-Context-Assembly-Contract-Pre-implementation-Brief v0.md` is created under `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/` and is pending human review
-    - no Slice 4A implementation has started
+    - `Slice4A-Supplemental-Retrieval-Intent-and-Context-Assembly-Contract-Pre-implementation-Brief v0.md` is accepted
+    - Slice 4A supplemental retrieval intent and context assembly contract is implemented, and `Slice4A-Supplemental-Retrieval-Intent-and-Context-Assembly-Contract-Post-implementation-Report v0.md` is created under `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/` and is pending human review
+    - Slice 4A changed prompt-facing packet metadata additively, but did not change prompt text/version, runner behavior, `state_ops.py`, durable memory state, public API, frontend, eval runners, or `observability.py`
+    - `read_audit` retrieval utilization trace remains deferred
     - this effort optimizes existing `attentional_v2`; it does not replace the mechanism or introduce a greenfield redesign
     - this design chain was triggered by a real implementation mismatch between `memory_uptake_ops` and downstream memory/state persistence and projection structures, then converged through external evidence review, project assessment, accepted design, and implementation handoff
   - next step:
-    - human reviewer should review and accept `Slice4A-Supplemental-Retrieval-Intent-and-Context-Assembly-Contract-Pre-implementation-Brief v0.md` or request a patch
-    - do not start Slice 4A implementation before the Slice 4A brief is accepted
+    - human reviewer should review and accept `Slice4A-Supplemental-Retrieval-Intent-and-Context-Assembly-Contract-Post-implementation-Report v0.md` or request a patch
+    - do not start the next implementation slice before the Slice 4A report is accepted and the next Pre-implementation Brief is created and accepted
   - current non-goals:
-    - no Slice 4A implementation yet
-    - no accepted Slice 4A Pre-implementation Brief yet
+    - no next-slice implementation yet
+    - no accepted Slice 4A Post-implementation Report yet
     - no full evaluation run for this new handoff line yet
 - Shift Long Span from the discontinued `target-centered accumulation v2` method to the new active design direction:
   - `Memory Quality`

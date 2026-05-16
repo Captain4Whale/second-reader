@@ -20,6 +20,12 @@ from .schemas import (
 from .source_spans import dedupe_source_refs, source_unit_from_span
 from .state_projection import build_carry_forward_context, clean_text, matching_chapter_items  # noqa: F401
 
+_LOOK_BACK_RETRIEVAL_INTENT = "source_calibration"
+_ACTIVE_RECALL_RETRIEVAL_INTENT = "memory_recovery"
+_LOOK_BACK_RESULT_BOUNDARY = "source_refs_and_excerpts"
+_ACTIVE_RECALL_RESULT_BOUNDARY = "settled_memory_refs_and_visible_trace_refs"
+_VISIBLE_TRACE_RESULT_ROLE = "visible_trace"
+
 
 def _dedupe_ref_items(items: list[dict[str, object]], *, id_key: str) -> list[dict[str, object]]:
     """Return one order-preserving deduplicated list of dict items."""
@@ -37,6 +43,77 @@ def _dedupe_ref_items(items: list[dict[str, object]], *, id_key: str) -> list[di
     return deduped
 
 
+def _retrieval_event(
+    *,
+    kind: str,
+    retrieval_intent: str,
+    result_boundary: str,
+    result_groups: list[str],
+) -> dict[str, object]:
+    """Return one compact supplemental-retrieval contract event."""
+
+    return {
+        "kind": kind,
+        "retrieval_intent": retrieval_intent,
+        "result_boundary": result_boundary,
+        "result_groups": list(result_groups),
+    }
+
+
+def _retrieval_events_from_context(context: dict[str, object]) -> list[dict[str, object]]:
+    """Extract compact retrieval events from one supplemental context."""
+
+    raw_events = context.get("retrieval_events")
+    events: list[dict[str, object]] = []
+    if isinstance(raw_events, list):
+        events = [
+            dict(item)
+            for item in raw_events
+            if isinstance(item, dict)
+        ]
+    if events:
+        return events
+    retrieval_intent = clean_text(context.get("retrieval_intent"))
+    result_boundary = clean_text(context.get("result_boundary"))
+    kind = clean_text(context.get("kind"))
+    raw_result_groups = context.get("result_groups")
+    result_groups: list[str] = []
+    if isinstance(raw_result_groups, list):
+        result_groups = [
+            clean_text(item)
+            for item in raw_result_groups
+            if clean_text(item)
+        ]
+    if not retrieval_intent and not result_boundary and not result_groups:
+        return []
+    return [
+        _retrieval_event(
+            kind=kind,
+            retrieval_intent=retrieval_intent,
+            result_boundary=result_boundary,
+            result_groups=result_groups,
+        )
+    ]
+
+
+def _union_result_groups(events: list[dict[str, object]]) -> list[str]:
+    """Return an order-preserving union of result groups from retrieval events."""
+
+    groups: list[str] = []
+    seen: set[str] = set()
+    for event in events:
+        raw_groups = event.get("result_groups")
+        if not isinstance(raw_groups, list):
+            continue
+        for raw_group in raw_groups:
+            group = clean_text(raw_group)
+            if not group or group in seen:
+                continue
+            seen.add(group)
+            groups.append(group)
+    return groups
+
+
 def merge_supplemental_contexts(
     existing: dict[str, object] | None,
     addition: dict[str, object] | None,
@@ -48,6 +125,12 @@ def merge_supplemental_contexts(
     if not isinstance(addition, dict) or not addition:
         return dict(existing)
 
+    retrieval_events = _retrieval_events_from_context(existing) + _retrieval_events_from_context(addition)
+    retrieval_kinds = {
+        clean_text(event.get("kind"))
+        for event in retrieval_events
+        if clean_text(event.get("kind"))
+    }
     merged: dict[str, object] = {
         "kind": "supplemental_bundle",
         "reason": " | ".join(
@@ -61,6 +144,16 @@ def merge_supplemental_contexts(
             id_key="ref_id",
         ),
     }
+    if retrieval_events:
+        merged["retrieval_events"] = retrieval_events
+        merged["result_groups"] = _union_result_groups(retrieval_events)
+        if len(retrieval_kinds) > 1:
+            merged["retrieval_intent"] = "mixed"
+            merged["result_boundary"] = "supplemental_bundle"
+        else:
+            first_event = retrieval_events[0]
+            merged["retrieval_intent"] = clean_text(first_event.get("retrieval_intent"))
+            merged["result_boundary"] = clean_text(first_event.get("result_boundary"))
     for key, id_key in (
         ("source_refs", "source_span_id"),
         ("concepts", "concept_key"),
@@ -183,9 +276,20 @@ def resolve_context_request(
         ]
         if not excerpts:
             return None
+        result_groups = ["source_refs", "excerpts", "refs"]
+        retrieval_event = _retrieval_event(
+            kind="look_back",
+            retrieval_intent=_LOOK_BACK_RETRIEVAL_INTENT,
+            result_boundary=_LOOK_BACK_RESULT_BOUNDARY,
+            result_groups=result_groups,
+        )
         return {
             "kind": "look_back",
             "reason": reason,
+            "retrieval_intent": _LOOK_BACK_RETRIEVAL_INTENT,
+            "result_boundary": _LOOK_BACK_RESULT_BOUNDARY,
+            "result_groups": result_groups,
+            "retrieval_events": [retrieval_event],
             "source_refs": [dict(ref) for ref in source_refs],
             "excerpts": excerpts,
             "refs": [
@@ -252,6 +356,8 @@ def resolve_context_request(
             if isinstance(record.get("primary_source_ref"), dict)
             else {},
             "source_quote": clean_text(record.get("source_quote")),
+            "result_role": _VISIBLE_TRACE_RESULT_ROLE,
+            "semantic_memory": False,
         }
         for record in reaction_records.get("records", [])[-4:]
         if isinstance(record, dict) and clean_text(record.get("reaction_id"))
@@ -291,12 +397,25 @@ def resolve_context_request(
             "source_span_id": clean_text((item.get("primary_source_ref") or {}).get("source_span_id"))
             if isinstance(item.get("primary_source_ref"), dict)
             else "",
+            "result_role": _VISIBLE_TRACE_RESULT_ROLE,
+            "semantic_memory": False,
         }
         for item in reactions
+    )
+    result_groups = ["concepts", "threads", "reactions", "refs"]
+    retrieval_event = _retrieval_event(
+        kind="active_recall",
+        retrieval_intent=_ACTIVE_RECALL_RETRIEVAL_INTENT,
+        result_boundary=_ACTIVE_RECALL_RESULT_BOUNDARY,
+        result_groups=result_groups,
     )
     return {
         "kind": "active_recall",
         "reason": reason,
+        "retrieval_intent": _ACTIVE_RECALL_RETRIEVAL_INTENT,
+        "result_boundary": _ACTIVE_RECALL_RESULT_BOUNDARY,
+        "result_groups": result_groups,
+        "retrieval_events": [retrieval_event],
         "concepts": concepts,
         "threads": threads,
         "reactions": reactions,

@@ -763,6 +763,103 @@ def build_carry_forward_context(
     }
 
 
+def _clean_string_list(value: object) -> list[str]:
+    """Return compact string items while preserving input order."""
+
+    if not isinstance(value, list):
+        return []
+    cleaned: list[str] = []
+    seen: set[str] = set()
+    for item in value:
+        text = clean_text(item)
+        if not text or text in seen:
+            continue
+        seen.add(text)
+        cleaned.append(text)
+    return cleaned
+
+
+def _retrieval_events_from_supplemental_context(
+    supplemental_context: dict[str, object],
+) -> list[dict[str, object]]:
+    """Return compact supplemental retrieval events, if available."""
+
+    events = [
+        dict(item)
+        for item in supplemental_context.get("retrieval_events", [])
+        if isinstance(item, dict)
+    ]
+    if events:
+        return events
+    retrieval_intent = clean_text(supplemental_context.get("retrieval_intent"))
+    result_boundary = clean_text(supplemental_context.get("result_boundary"))
+    result_groups = _clean_string_list(supplemental_context.get("result_groups"))
+    kind = clean_text(supplemental_context.get("kind"))
+    if not any((retrieval_intent, result_boundary, result_groups)):
+        return []
+    return [
+        {
+            "kind": kind,
+            "retrieval_intent": retrieval_intent,
+            "result_boundary": result_boundary,
+            "result_groups": result_groups,
+        }
+    ]
+
+
+def _result_groups_from_events(events: list[dict[str, object]]) -> list[str]:
+    """Return an order-preserving union of retrieval result groups."""
+
+    groups: list[str] = []
+    seen: set[str] = set()
+    for event in events:
+        for group in _clean_string_list(event.get("result_groups")):
+            if group in seen:
+                continue
+            seen.add(group)
+            groups.append(group)
+    return groups
+
+
+def _build_retrieval_context_contract(
+    *,
+    supplemental_context: dict[str, object],
+    selective_carry: dict[str, object],
+) -> dict[str, object]:
+    """Expose compact prompt-facing retrieval contract metadata."""
+
+    events = _retrieval_events_from_supplemental_context(supplemental_context)
+    result_groups = _clean_string_list(supplemental_context.get("result_groups")) or _result_groups_from_events(events)
+    retrieval_intent = clean_text(supplemental_context.get("retrieval_intent"))
+    result_boundary = clean_text(supplemental_context.get("result_boundary"))
+    if not any((events, result_groups, retrieval_intent, result_boundary)):
+        return {}
+
+    forwarded_groups: list[str] = []
+    if selective_carry.get("source_ref_details"):
+        forwarded_groups.append("source_refs")
+    if selective_carry.get("earlier_excerpts"):
+        forwarded_groups.append("excerpts")
+    if selective_carry.get("supporting_refs"):
+        forwarded_groups.append("refs")
+    forwarded_set = set(forwarded_groups)
+    not_forwarded_groups = [
+        group
+        for group in result_groups
+        if group not in forwarded_set
+    ]
+
+    return {
+        "retrieval_intent": retrieval_intent,
+        "result_boundary": result_boundary,
+        "result_groups": result_groups,
+        "retrieval_events": events,
+        "forwarded_result_groups": forwarded_groups,
+        "not_forwarded_result_groups": not_forwarded_groups,
+        "active_recall_full_objects_forwarded": False,
+    }
+
+
 def build_read_prompt_packet(
     *,
     carry_forward_context: CarryForwardContext,
@@ -820,6 +917,12 @@ def build_read_prompt_packet(
                 for item in supplemental_context.get("refs", [])
                 if isinstance(item, dict)
             ][:6]
+        retrieval_context = _build_retrieval_context_contract(
+            supplemental_context=supplemental_context,
+            selective_carry=selective_carry,
+        )
+        if retrieval_context:
+            selective_carry["retrieval_context"] = retrieval_context
     if isinstance(detour_context, dict):
         active_detour_need = detour_context.get("active_detour_need")
         if isinstance(active_detour_need, dict):
