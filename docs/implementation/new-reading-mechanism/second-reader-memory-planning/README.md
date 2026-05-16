@@ -25,7 +25,7 @@ The documents in this directory are the result of a follow-up loop: external evi
 7. `A调研` evidence packs, background only.
 8. `D审核` review docs, historical only.
 
-Evidence packs are external evidence indexes, not implementation sources. Review docs are historical review records and do not override the accepted design chain. `E实施0` is an implementation roadmap and handoff, not a final PR plan. `codex/E实施1-Implementation Feasibility & Delta Audit v0.md` is the code-grounded feasibility and delta audit that must be accepted before implementation starts.
+Evidence packs are external evidence indexes, not implementation sources. Review docs are historical review records and do not override the accepted design chain. `E实施0` is an implementation roadmap and handoff, not a final PR plan. `codex/E实施1-Implementation Feasibility & Delta Audit v0.md` is the accepted code-grounded feasibility and delta audit for the first implementation stage.
 
 ## Document Map
 
@@ -35,8 +35,9 @@ Evidence packs are external evidence indexes, not implementation sources. Review
 | `E实施0-Implementation Roadmap & Handoff v0.md` | implementation handoff | implementation roadmap and handoff for the next audit | roadmap, not PR plan |
 | `E实施0-Roadmap Review & Readiness Check v0.md` | review | roadmap readiness check | review, not accepted design authority |
 | `codex/E实施-progress-ledger.md` | implementation ledger | implementation-stage progress, gates, reports, and reviewer decisions | progress record, not stable behavior authority |
-| `codex/E实施1-Implementation Feasibility & Delta Audit v0.md` | implementation audit | code-grounded feasibility and delta audit for the accepted design chain | code-grounded audit, pending human acceptance |
+| `codex/E实施1-Implementation Feasibility & Delta Audit v0.md` | implementation audit | code-grounded feasibility and delta audit for the accepted design chain | accepted code-grounded audit with reviewer constraints |
 | `codex/briefs/README.md` | template | Pre-implementation Brief template | process template |
+| `codex/briefs/Slice1-Contract-Audit-Foundations-Pre-implementation-Brief v0.md` | pre-implementation brief | Slice 1 contract and audit foundations brief | pending human acceptance; not implementation approval |
 | `codex/reports/README.md` | template | Post-implementation Report template | process template |
 | `C设计0-Second Reader Shared Memory–Planning Mechanism Charter v0.md` | design | accepted mechanism boundary and charter | accepted design |
 | `C设计1-Memory Ontology Design v0.md` | design | accepted memory ontology | accepted design |
@@ -61,11 +62,11 @@ Evidence packs are external evidence indexes, not implementation sources. Review
 ## Current Next Step
 
 Current next step:
-Human review of `codex/E实施1-Implementation Feasibility & Delta Audit v0.md`.
+Human review of `codex/briefs/Slice1-Contract-Audit-Foundations-Pre-implementation-Brief v0.md`.
 
-Codex must not implement code yet. The E实施1 audit has compared `E实施0` and `C设计0` through `C设计9` against the current repo code, produced a design-to-file delta matrix, identified missing fields, tests, and risks, and proposed a provisional PR order.
+Codex must not implement code yet. `E实施1-Implementation Feasibility & Delta Audit v0.md` has been accepted with reviewer constraints, and the Slice 1 Pre-implementation Brief has been created for human acceptance.
 
-The provisional PR order is not accepted until a human reviewer accepts E实施1. If accepted, the next step is a Pre-implementation Brief for Slice 1 / Contract and Audit Foundations.
+Slice 1 implementation must not start until the Pre-implementation Brief is accepted. The first PR should remain small, reversible, and focused on additive contract / audit scaffolding.
 
 ## Non-goals
 
@@ -101,7 +102,7 @@ Each implementation PR in this track requires an accepted Pre-implementation Bri
 
 The progress ledger and templates are process records. They do not replace stable product docs, stable mechanism docs, or `E实施1-Implementation Feasibility & Delta Audit`.
 
-The current E实施1 audit is recorded at `codex/E实施1-Implementation Feasibility & Delta Audit v0.md` and is pending human acceptance.
+The current E实施1 audit is recorded at `codex/E实施1-Implementation Feasibility & Delta Audit v0.md` and has been accepted with reviewer constraints. The current brief awaiting human acceptance is `codex/briefs/Slice1-Contract-Audit-Foundations-Pre-implementation-Brief v0.md`.
 
 ## How To Use This Directory
 
@@ -114,4 +115,5 @@ The current E实施1 audit is recorded at `codex/E实施1-Implementation Feasibi
 7. Use `A调研` evidence only when design rationale needs source context, not as implementation instructions.
 8. Do not treat `D审核` reviews as authority.
 9. Read `codex/E实施1-Implementation Feasibility & Delta Audit v0.md`.
-10. Do not implement before `E实施1` is accepted.
+10. Read the current Pre-implementation Brief for the target slice.
+11. Do not implement before the relevant Pre-implementation Brief is accepted.

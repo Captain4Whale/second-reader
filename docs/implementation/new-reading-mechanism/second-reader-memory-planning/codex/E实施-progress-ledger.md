@@ -13,9 +13,9 @@ Stable mechanism behavior changes still need to be promoted to the relevant stab
 ## Current Status
 
 ```text
-Current phase: E实施1-Implementation Feasibility & Delta Audit created; waiting for human review
+Current phase: E实施1 accepted with reviewer constraints; Slice 1 Pre-implementation Brief created and waiting for human acceptance
 Implementation status: no code implementation started
-Next action: human reviewer accepts E实施1 or requests a patch before any Pre-implementation Brief / implementation PR
+Next action: human reviewer accepts the Slice 1 Pre-implementation Brief or requests a patch before any implementation PR
 Full AI Evaluation: not yet; deferred until core instrumentation is ready
 ```
 
@@ -87,6 +87,80 @@ Reviewer decision:
 
 Next recommended step:
 - Human reviewer accepts E实施1 or requests a patch. If accepted, create a Pre-implementation Brief for Slice 1 / Contract and Audit Foundations.
+
+## Entry 2026-05-16 — E实施1 accepted and Slice 1 brief created
+
+Type:
+- review decision
+- pre-implementation brief
+
+Slice:
+- Slice 1
+
+Related docs:
+- E实施0: `../E实施0-Implementation Roadmap & Handoff v0.md`
+- C设计 source: `../C设计0-Second Reader Shared Memory–Planning Mechanism Charter v0.md`, `../C设计3-Memory Formation & Settlement Design v0.md`, `../C设计9-Evaluation Calibration & Minimal Eval Suite v0.md`
+- E实施1 / PR / report: `E实施1-Implementation Feasibility & Delta Audit v0.md`
+- Brief: `briefs/Slice1-Contract-Audit-Foundations-Pre-implementation-Brief v0.md`
+
+Branch / PR:
+- Branch: `main`
+- PR:
+- Commit:
+
+Pre-implementation Brief:
+- Link: `briefs/Slice1-Contract-Audit-Foundations-Pre-implementation-Brief v0.md`
+- Accepted by:
+- Acceptance date:
+- Scope changes approved:
+
+Files changed:
+- none for implementation code; docs only for Slice 1 brief landing
+
+Design contracts addressed:
+- E实施1 accepted with reviewer constraints
+- Slice 1 limited to additive contract / audit scaffolding
+- missing `target_store` tolerated with explicit audit / compatibility warning in the first pass
+- `resolve` allowlist alignment deferred to Slice 2 or a separate brief after audit visibility exists
+- projection markers deferred to Slice 3
+- slow-cycle candidate / settlement envelopes deferred to Slice 6
+- no full AI Evaluation
+- first PR must stay small and reversible
+
+Engineering tests:
+- Commands run: none
+- Result: not run
+- Not run / reason: this entry records a doc-only pre-implementation brief landing; no implementation code changed
+
+Contract / audit checks:
+- SourceRef preserved: planned for additive audit visibility only
+- per-op outcome: planned for Slice 1 implementation after brief acceptance
+- candidate vs settled separated: deferred to Slice 6
+- audit not routed into prompt: no prompt changes in the brief
+- reaction_records not semantic memory: unchanged and out of Slice 1
+- knowledge_activations not source truth: unchanged and out of Slice 1
+- other: missing `target_store` remains tolerated in Slice 1 with compatibility warning
+
+AI Evaluation:
+- Full eval run? no
+- Smoke only? no
+- Eval lane affected: none
+- Notes: full AI Evaluation remains deferred until core instrumentation is ready
+
+Post-implementation Report:
+- Link:
+- Summary:
+- Deviations from accepted brief:
+- Known gaps:
+
+Reviewer decision:
+- E实施1 accepted with reviewer constraints; Slice 1 brief waiting for human acceptance
+- Reviewer: human reviewer / user
+- Decision date: 2026-05-16
+- Required follow-up: accept or patch the Slice 1 Pre-implementation Brief before any implementation PR
+
+Next recommended step:
+- Human reviewer accepts `briefs/Slice1-Contract-Audit-Foundations-Pre-implementation-Brief v0.md` or requests a patch. Do not implement code yet.
 
 ## Entry Template
 

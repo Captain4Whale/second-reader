@@ -1,11 +1,11 @@
 {
   "version": 1,
-  "updated_at": "2026-05-16T15:06:02+08:00",
+  "updated_at": "2026-05-16T15:33:12+08:00",
   "tasks": [
     {
       "id": "TASK-SECOND-READER-MEMORY-PLANNING-FEASIBILITY-AUDIT",
       "title": "Run Implementation Feasibility & Delta Audit for Second Reader Memory-Planning optimization",
-      "status": "waiting",
+      "status": "done",
       "lane": "mechanism_runtime",
       "priority": "high",
       "detail_ref": "docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md",
@@ -15,6 +15,7 @@
         "docs/tasks/registry.md",
         "docs/history/decision-log.md",
         "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施1-Implementation Feasibility & Delta Audit v0.md",
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice1-Contract-Audit-Foundations-Pre-implementation-Brief v0.md",
         "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md",
         "docs/backend-reading-mechanisms/attentional_v2.md",
         "docs/backend-reader-evaluation.md"
@@ -24,15 +25,48 @@
       ],
       "job_refs": [],
       "acceptance_ref": "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施1-Implementation Feasibility & Delta Audit v0.md",
-      "next_action": "E实施1-Implementation Feasibility & Delta Audit v0 is created and pending human review. Human reviewer should accept it or request a patch before any Pre-implementation Brief or implementation PR. No code implementation or full AI Evaluation has started.",
+      "next_action": "E实施1-Implementation Feasibility & Delta Audit v0 is accepted with reviewer constraints. Continue with TASK-SECOND-READER-MEMORY-PLANNING-SLICE1-BRIEF-ACCEPTANCE; do not implement code before the Slice 1 Pre-implementation Brief is accepted.",
       "blocked_by": [],
       "evidence_refs": [
         "docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md",
         "docs/implementation/new-reading-mechanism/second-reader-memory-planning/E实施0-Implementation Roadmap & Handoff v0.md",
         "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施1-Implementation Feasibility & Delta Audit v0.md",
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice1-Contract-Audit-Foundations-Pre-implementation-Brief v0.md",
         "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md"
       ],
-      "last_updated": "2026-05-16T07:06:02Z",
+      "last_updated": "2026-05-16T07:33:12Z",
+      "last_updated_by": "codex"
+    },
+    {
+      "id": "TASK-SECOND-READER-MEMORY-PLANNING-SLICE1-BRIEF-ACCEPTANCE",
+      "title": "Review Slice 1 Pre-implementation Brief for Contract and Audit Foundations",
+      "status": "waiting",
+      "lane": "mechanism_runtime",
+      "priority": "high",
+      "detail_ref": "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice1-Contract-Audit-Foundations-Pre-implementation-Brief v0.md",
+      "truth_refs": [
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md",
+        "docs/current-state.md",
+        "docs/tasks/registry.md",
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施1-Implementation Feasibility & Delta Audit v0.md",
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice1-Contract-Audit-Foundations-Pre-implementation-Brief v0.md",
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md"
+      ],
+      "decision_refs": [
+        "DEC-089"
+      ],
+      "job_refs": [],
+      "acceptance_ref": "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice1-Contract-Audit-Foundations-Pre-implementation-Brief v0.md",
+      "next_action": "Human reviewer should accept the Slice 1 Pre-implementation Brief or request a patch before any implementation PR. Slice 1 is limited to additive contract / audit scaffolding; missing target_store is tolerated with an audit / compatibility warning; resolve allowlist alignment is deferred to Slice 2 or a separate brief; no full AI Evaluation or code implementation has started.",
+      "blocked_by": [],
+      "evidence_refs": [
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md",
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/E实施0-Implementation Roadmap & Handoff v0.md",
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施1-Implementation Feasibility & Delta Audit v0.md",
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice1-Contract-Audit-Foundations-Pre-implementation-Brief v0.md",
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md"
+      ],
+      "last_updated": "2026-05-16T07:33:12Z",
       "last_updated_by": "codex"
     },
     {

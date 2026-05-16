@@ -7,19 +7,20 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-05-16T15:06:02+08:00`
+Last verified: `2026-05-16T15:33:12+08:00`
 
 ## Current Objective
 - Land the repo-local Memory / Planning / Evaluation design chain and implementation handoff for optimizing the existing `attentional_v2` mechanism.
   - status:
     - Memory / Planning / Evaluation design phase is effectively complete
     - `C设计0` through `C设计9` and `E实施0` are now repo-local under `docs/implementation/new-reading-mechanism/second-reader-memory-planning/`
-    - `E实施1-Implementation Feasibility & Delta Audit v0.md` is now created under `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/` and is pending human review
+    - `E实施1-Implementation Feasibility & Delta Audit v0.md` is accepted with reviewer constraints
+    - `Slice1-Contract-Audit-Foundations-Pre-implementation-Brief v0.md` is now created under `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/` and is pending human acceptance
     - this effort optimizes existing `attentional_v2`; it does not replace the mechanism or introduce a greenfield redesign
     - this design chain was triggered by a real implementation mismatch between `memory_uptake_ops` and downstream memory/state persistence and projection structures, then converged through external evidence review, project assessment, accepted design, and implementation handoff
   - next step:
-    - human reviewer should review and accept `E实施1-Implementation Feasibility & Delta Audit v0.md` or request a patch
-    - no Pre-implementation Brief or implementation PR should start before E实施1 is accepted
+    - human reviewer should review and accept `Slice1-Contract-Audit-Foundations-Pre-implementation-Brief v0.md` or request a patch
+    - no implementation PR should start before the Slice 1 brief is accepted
   - current non-goals:
     - no code implementation yet
     - no accepted Pre-implementation Brief yet
