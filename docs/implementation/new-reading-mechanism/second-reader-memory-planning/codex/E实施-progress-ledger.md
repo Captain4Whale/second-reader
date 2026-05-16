@@ -13,9 +13,9 @@ Stable mechanism behavior changes still need to be promoted to the relevant stab
 ## Current Status
 
 ```text
-Current phase: Slice 4A precision patch complete; patch report waiting for human review
-Implementation status: Slice 1 accepted; Slice 2A accepted; Slice 2B accepted; Slice 3A accepted; Slice 3B accepted; Slice 4A supplemental retrieval intent and context assembly contract implemented; Slice 4A precision patch implemented
-Next action: human reviewer accepts the Slice 4A patch report or requests another patch before any Slice 4B brief / implementation PR
+Current phase: Slice 4B Pre-implementation Brief waiting for human review
+Implementation status: Slice 1 accepted; Slice 2A accepted; Slice 2B accepted; Slice 3A accepted; Slice 3B accepted; Slice 4A accepted including precision patch; Slice 4B implementation not started
+Next action: human reviewer accepts or patches the Slice 4B Pre-implementation Brief before any Slice 4B implementation PR
 Full AI Evaluation: not yet; deferred until core instrumentation is ready
 ```
 
@@ -1121,13 +1121,88 @@ Post-implementation Report:
 - Known gaps: full retrieval utilization trace, read-audit retrieval-intent evidence, and full active-recall object projection remain deferred
 
 Reviewer decision:
+- accepted
+- Reviewer: human reviewer / user
+- Decision date: 2026-05-16
+- Required follow-up: create Slice 4B Pre-implementation Brief before any Slice 4B implementation PR
+
+Next recommended step:
+- Human reviewer reviews `briefs/Slice4B-Retrieval-Utilization-Trace-and-Read-audit-Evidence-Pre-implementation-Brief v0.md`. Do not start Slice 4B implementation yet.
+
+## Entry 2026-05-16 — Slice 4A patch accepted and Slice 4B brief created
+
+Type:
+- review decision
+- pre-implementation brief
+
+Slice:
+- Slice 4
+
+Related docs:
+- E实施0: `../E实施0-Implementation Roadmap & Handoff v0.md`
+- C设计 source: `../C设计6-Detour : Look-back : Active Recall Policy Design v0.md`, `../C设计7-Memory Retrieval & Utilization Design v0.md`, `../C设计9-Evaluation Calibration & Minimal Eval Suite v0.md`
+- E实施1 / PR / report: `reports/Slice4A-Patch-Precise-Result-Groups-and-Forwarding-Metadata-Report v0.md`
+- Brief: `briefs/Slice4B-Retrieval-Utilization-Trace-and-Read-audit-Evidence-Pre-implementation-Brief v0.md`
+
+Branch / PR:
+- Branch: `main`
+- PR:
+- Commit:
+
+Pre-implementation Brief:
+- Link: `briefs/Slice4B-Retrieval-Utilization-Trace-and-Read-audit-Evidence-Pre-implementation-Brief v0.md`
+- Accepted by:
+- Acceptance date:
+- Scope changes approved:
+
+Files changed:
+- docs only for Slice 4B brief landing
+
+Design contracts addressed:
+- Slice 4A precision patch accepted
+- Slice 4B brief created for compact `read_audit.jsonl` retrieval evidence
+- future Slice 4B implementation must not change retrieval behavior
+- future Slice 4B implementation must not claim actual model utilization unless Read output explicitly supports it
+- future Slice 4B implementation keeps full utilization trace deferred
+- future Slice 4B implementation excludes prompt text changes, `runner.py` changes, `state_ops.py`, slow-cycle, durable memory state, public API, frontend, eval runners, and full AI Evaluation
+
+Engineering tests:
+- Commands run:
+  - none
+- Result:
+  - not run; doc-only brief landing
+- Not run / reason:
+  - backend tests not run by scope; full AI Evaluation not run by constraint
+
+Contract / audit checks:
+- SourceRef preserved: unchanged; future Slice 4B tests should cover compact supplemental retrieval audit evidence
+- per-op outcome: unchanged and out of Slice 4B
+- candidate vs settled separated: unchanged and deferred to Slice 6
+- audit not routed into prompt: unchanged; Slice 4B brief excludes audit dumps routed into prompts
+- reaction_records not semantic memory: preserved as an explicit Slice 4B boundary
+- knowledge_activations not source truth: preserved; Slice 4B does not project `knowledge_activations`
+- other: Slice 4B implementation remains blocked until this brief is accepted
+
+AI Evaluation:
+- Full eval run? no
+- Smoke only? no
+- Eval lane affected: none
+- Notes: full AI Evaluation remains deferred until core instrumentation is ready
+
+Post-implementation Report:
+- Link:
+- Summary:
+- Deviations from accepted brief:
+- Known gaps:
+
+Reviewer decision:
 - waiting for human review
 - Reviewer:
 - Decision date:
-- Required follow-up: accept or patch the Slice 4A precision patch report before any Slice 4B brief or implementation PR
+- Required follow-up: accept or patch the Slice 4B Pre-implementation Brief before any Slice 4B implementation PR
 
 Next recommended step:
-- Human reviewer accepts `reports/Slice4A-Patch-Precise-Result-Groups-and-Forwarding-Metadata-Report v0.md` or requests another patch. Do not start Slice 4B yet.
+- Human reviewer reviews `briefs/Slice4B-Retrieval-Utilization-Trace-and-Read-audit-Evidence-Pre-implementation-Brief v0.md`. Do not start Slice 4B implementation yet.
 
 ## Entry Template
 
