@@ -13,9 +13,9 @@ Stable mechanism behavior changes still need to be promoted to the relevant stab
 ## Current Status
 
 ```text
-Current phase: Slice 2A implementation complete; Post-implementation Report waiting for human review
-Implementation status: Slice 1 accepted; Slice 2A operation vocabulary and admission visibility hardening implemented
-Next action: human reviewer accepts the Slice 2A Post-implementation Report or requests a patch before any next-slice brief / implementation PR
+Current phase: Slice 2B Pre-implementation Brief waiting for human review
+Implementation status: Slice 1 accepted; Slice 2A accepted; Slice 2B not implemented
+Next action: human reviewer accepts the Slice 2B Pre-implementation Brief or requests a patch before any Slice 2B implementation PR
 Full AI Evaluation: not yet; deferred until core instrumentation is ready
 ```
 
@@ -400,13 +400,86 @@ Post-implementation Report:
 - Known gaps: strict missing-target-store validation, broader store-specific admission hardening, projection markers, retrieval utilization, planning trace, and slow-cycle envelopes remain deferred
 
 Reviewer decision:
-- waiting for human review
-- Reviewer:
-- Decision date:
-- Required follow-up: accept or patch the Slice 2A Post-implementation Report before any next-slice brief or implementation PR
+- accepted
+- Reviewer: human reviewer / user
+- Decision date: 2026-05-16
+- Required follow-up: create and accept the Slice 2B Pre-implementation Brief before any Slice 2B implementation PR
 
 Next recommended step:
-- Human reviewer accepts `reports/Slice2A-Operation-Vocabulary-and-Admission-Visibility-Hardening-Post-implementation-Report v0.md` or requests a patch. Do not start the next implementation slice yet.
+- Human reviewer reviews `briefs/Slice2B-Store-specific-Admission-and-Target-store-Policy-Hardening-Pre-implementation-Brief v0.md`. Do not start Slice 2B implementation yet.
+
+## Entry 2026-05-16 — Slice 2A report accepted and Slice 2B brief created
+
+Type:
+- review decision
+- pre-implementation brief
+
+Slice:
+- Slice 2
+
+Related docs:
+- E实施0: `../E实施0-Implementation Roadmap & Handoff v0.md`
+- C设计 source: `../C设计0-Second Reader Shared Memory–Planning Mechanism Charter v0.md`, `../C设计3-Memory Formation & Settlement Design v0.md`, `../C设计9-Evaluation Calibration & Minimal Eval Suite v0.md`
+- E实施1 / PR / report: `reports/Slice2A-Operation-Vocabulary-and-Admission-Visibility-Hardening-Post-implementation-Report v0.md`
+- Brief: `briefs/Slice2B-Store-specific-Admission-and-Target-store-Policy-Hardening-Pre-implementation-Brief v0.md`
+
+Branch / PR:
+- Branch: `main`
+- PR:
+- Commit:
+
+Pre-implementation Brief:
+- Link: `briefs/Slice2B-Store-specific-Admission-and-Target-store-Policy-Hardening-Pre-implementation-Brief v0.md`
+- Accepted by:
+- Acceptance date:
+- Scope changes approved:
+
+Files changed:
+- docs only for Slice 2B brief landing
+
+Design contracts addressed:
+- Slice 2A Post-implementation Report accepted by human reviewer / user
+- Slice 2B brief created for store-specific admission and target-store policy hardening
+- future Slice 2B implementation scoped to audit-only visibility for unsupported `target_store` and operation-store pairing issues
+- future Slice 2B implementation remains blocked until this brief is accepted
+
+Engineering tests:
+- Commands run:
+  - none
+- Result:
+  - not run; this is a doc-only brief landing task
+- Not run / reason:
+  - backend tests not run by doc-only task constraint
+
+Contract / audit checks:
+- SourceRef preserved: unchanged and out of this doc-only task
+- per-op outcome: unchanged and out of this doc-only task
+- candidate vs settled separated: unchanged and deferred to Slice 6
+- audit not routed into prompt: unchanged; no prompt files changed
+- reaction_records not semantic memory: unchanged and out of Slice 2B
+- knowledge_activations not source truth: unchanged and out of Slice 2B
+- other: Slice 2B implementation remains blocked until this brief is accepted
+
+AI Evaluation:
+- Full eval run? no
+- Smoke only? no
+- Eval lane affected: none
+- Notes: full AI Evaluation remains deferred until core instrumentation is ready
+
+Post-implementation Report:
+- Link:
+- Summary:
+- Deviations from accepted brief:
+- Known gaps:
+
+Reviewer decision:
+- Slice 2A Post-implementation Report accepted
+- Reviewer: human reviewer / user
+- Decision date: 2026-05-16
+- Required follow-up: accept or patch the Slice 2B Pre-implementation Brief before any Slice 2B implementation PR
+
+Next recommended step:
+- Human reviewer reviews `briefs/Slice2B-Store-specific-Admission-and-Target-store-Policy-Hardening-Pre-implementation-Brief v0.md`. Do not start Slice 2B implementation yet.
 
 ## Entry Template
 
