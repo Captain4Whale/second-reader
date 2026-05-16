@@ -13,9 +13,9 @@ Stable mechanism behavior changes still need to be promoted to the relevant stab
 ## Current Status
 
 ```text
-Current phase: Slice 1 implementation complete; Post-implementation Report waiting for human review
-Implementation status: Slice 1 additive contract / audit scaffolding implemented
-Next action: human reviewer accepts the Slice 1 Post-implementation Report or requests a patch before any Slice 2 brief / implementation PR
+Current phase: Slice 2A Pre-implementation Brief waiting for human review
+Implementation status: Slice 1 additive contract / audit scaffolding implemented and accepted; Slice 2A not implemented
+Next action: human reviewer accepts the Slice 2A Pre-implementation Brief or requests a patch before any Slice 2A implementation PR
 Full AI Evaluation: not yet; deferred until core instrumentation is ready
 ```
 
@@ -240,13 +240,85 @@ Post-implementation Report:
 - Known gaps: `resolve` allowlist alignment, projection markers, retrieval utilization, planning traces, and slow-cycle envelopes remain deferred
 
 Reviewer decision:
-- waiting for human review
-- Reviewer:
-- Decision date:
-- Required follow-up: accept or patch the Slice 1 Post-implementation Report before any Slice 2 brief or implementation PR
+- accepted
+- Reviewer: human reviewer / user
+- Decision date: 2026-05-16
+- Required follow-up: create and accept the Slice 2A Pre-implementation Brief before any Slice 2A implementation PR
 
 Next recommended step:
-- Human reviewer accepts `reports/Slice1-Contract-Audit-Foundations-Post-implementation-Report v0.md` or requests a patch. Do not start Slice 2 yet.
+- Human reviewer reviews `briefs/Slice2A-Operation-Vocabulary-and-Admission-Visibility-Hardening-Pre-implementation-Brief v0.md`. Do not start Slice 2A implementation yet.
+
+## Entry 2026-05-16 — Slice 1 report accepted and Slice 2A brief created
+
+Type:
+- review decision
+- pre-implementation brief
+
+Slice:
+- Slice 2
+
+Related docs:
+- E实施0: `../E实施0-Implementation Roadmap & Handoff v0.md`
+- C设计 source: `../C设计0-Second Reader Shared Memory–Planning Mechanism Charter v0.md`, `../C设计3-Memory Formation & Settlement Design v0.md`, `../C设计9-Evaluation Calibration & Minimal Eval Suite v0.md`
+- E实施1 / PR / report: `reports/Slice1-Contract-Audit-Foundations-Post-implementation-Report v0.md`
+- Brief: `briefs/Slice2A-Operation-Vocabulary-and-Admission-Visibility-Hardening-Pre-implementation-Brief v0.md`
+
+Branch / PR:
+- Branch: `main`
+- PR:
+- Commit:
+
+Pre-implementation Brief:
+- Link: `briefs/Slice2A-Operation-Vocabulary-and-Admission-Visibility-Hardening-Pre-implementation-Brief v0.md`
+- Accepted by:
+- Acceptance date:
+- Scope changes approved:
+
+Files changed:
+- none for implementation code; docs only for Slice 2A brief landing
+
+Design contracts addressed:
+- Slice 1 Post-implementation Report accepted by human reviewer / user
+- Slice 2A brief created for operation vocabulary and admission visibility hardening
+- `resolve` allowlist alignment scoped for future Slice 2A implementation
+- raw unknown / malformed `memory_uptake_ops` admission visibility scoped as audit-only evidence
+- missing `target_store` remains tolerated with `missing_target_store_defaulted`
+- prompt changes and `state_ops.py` behavior changes explicitly excluded from Slice 2A
+
+Engineering tests:
+- Commands run: none
+- Result: not run
+- Not run / reason: this entry records a doc-only pre-implementation brief landing; no implementation code changed
+
+Contract / audit checks:
+- SourceRef preserved: planned; no implementation code changed in this brief landing
+- per-op outcome: preserved from Slice 1; no implementation code changed
+- candidate vs settled separated: unchanged and deferred to Slice 6
+- audit not routed into prompt: no prompt changes in the brief
+- reaction_records not semantic memory: unchanged and out of Slice 2A
+- knowledge_activations not source truth: unchanged and out of Slice 2A
+- other: Slice 2A implementation remains blocked until this brief is accepted
+
+AI Evaluation:
+- Full eval run? no
+- Smoke only? no
+- Eval lane affected: none
+- Notes: full AI Evaluation remains deferred until core instrumentation is ready
+
+Post-implementation Report:
+- Link:
+- Summary:
+- Deviations from accepted brief:
+- Known gaps:
+
+Reviewer decision:
+- Slice 1 Post-implementation Report accepted; Slice 2A brief waiting for human acceptance
+- Reviewer: human reviewer / user
+- Decision date: 2026-05-16
+- Required follow-up: accept or patch the Slice 2A Pre-implementation Brief before any implementation PR
+
+Next recommended step:
+- Human reviewer accepts `briefs/Slice2A-Operation-Vocabulary-and-Admission-Visibility-Hardening-Pre-implementation-Brief v0.md` or requests a patch. Do not implement code yet.
 
 ## Entry Template
 

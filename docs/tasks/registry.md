@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-05-16T15:59:44+08:00`
+Last updated: `2026-05-16T16:30:28+08:00`
 
 ## Status Values
 - `active`
@@ -464,18 +464,19 @@ Last updated: `2026-05-16T15:59:44+08:00`
 
 ## Waiting
 
-### `TASK-SECOND-READER-MEMORY-PLANNING-SLICE1-REPORT-REVIEW` — Review Slice 1 Post-implementation Report for Contract and Audit Foundations
+### `TASK-SECOND-READER-MEMORY-PLANNING-SLICE2A-BRIEF-ACCEPTANCE` — Review Slice 2A Pre-implementation Brief for Operation Vocabulary and Admission Visibility Hardening
 - Status: `waiting`
 - Lane: `mechanism_runtime`
 - Priority: `high`
-- Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice1-Contract-Audit-Foundations-Post-implementation-Report v0.md`
-- Next: human reviewer should accept the Slice 1 Post-implementation Report or request a patch before any Slice 2 brief or implementation PR. Slice 1 implemented additive audit-only scaffolding for `memory_uptake_ops`; missing `target_store` remains tolerated with compatibility warning; per-op outcomes are audit-observed / inferred from compact deltas, not authoritative settlement truth. No full AI Evaluation has run.
+- Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice2A-Operation-Vocabulary-and-Admission-Visibility-Hardening-Pre-implementation-Brief v0.md`
+- Next: human reviewer should accept the Slice 2A Pre-implementation Brief or request a patch before any Slice 2A implementation PR. Slice 2A is scoped to operation vocabulary alignment and audit-only admission visibility; it must not reject missing `target_store`, change prompts, change `state_ops.py` behavior, touch projection/retrieval/planning/slow-cycle/public API/frontend/eval runners, or run full AI Evaluation.
 - Evidence:
   - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
   - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/E实施0-Implementation Roadmap & Handoff v0.md`
   - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施1-Implementation Feasibility & Delta Audit v0.md`
   - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice1-Contract-Audit-Foundations-Pre-implementation-Brief v0.md`
   - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice1-Contract-Audit-Foundations-Post-implementation-Report v0.md`
+  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice2A-Operation-Vocabulary-and-Admission-Visibility-Hardening-Pre-implementation-Brief v0.md`
   - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md`
 
 ### `TASK-DATASET-QUESTION-ALIGNED-CASE-CONSTRUCTION` — Build question-aligned case construction for evaluation datasets
@@ -551,12 +552,27 @@ Last updated: `2026-05-16T15:59:44+08:00`
 
 ## Done
 
+### `TASK-SECOND-READER-MEMORY-PLANNING-SLICE1-REPORT-REVIEW` — Review Slice 1 Post-implementation Report for Contract and Audit Foundations
+- Status: `done`
+- Lane: `mechanism_runtime`
+- Priority: `high`
+- Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice1-Contract-Audit-Foundations-Post-implementation-Report v0.md`
+- Next: Slice 1 Post-implementation Report is accepted. Continue with `TASK-SECOND-READER-MEMORY-PLANNING-SLICE2A-BRIEF-ACCEPTANCE`; do not start Slice 2A implementation before the Slice 2A Pre-implementation Brief is accepted.
+- Evidence:
+  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
+  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/E实施0-Implementation Roadmap & Handoff v0.md`
+  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施1-Implementation Feasibility & Delta Audit v0.md`
+  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice1-Contract-Audit-Foundations-Pre-implementation-Brief v0.md`
+  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice1-Contract-Audit-Foundations-Post-implementation-Report v0.md`
+  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice2A-Operation-Vocabulary-and-Admission-Visibility-Hardening-Pre-implementation-Brief v0.md`
+  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md`
+
 ### `TASK-SECOND-READER-MEMORY-PLANNING-SLICE1-BRIEF-ACCEPTANCE` — Review Slice 1 Pre-implementation Brief for Contract and Audit Foundations
 - Status: `done`
 - Lane: `mechanism_runtime`
 - Priority: `high`
 - Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice1-Contract-Audit-Foundations-Pre-implementation-Brief v0.md`
-- Next: Slice 1 Pre-implementation Brief is accepted and implemented. Continue with `TASK-SECOND-READER-MEMORY-PLANNING-SLICE1-REPORT-REVIEW`; do not start Slice 2 before the Slice 1 Post-implementation Report is accepted.
+- Next: Slice 1 Pre-implementation Brief and Post-implementation Report are accepted. Continue with `TASK-SECOND-READER-MEMORY-PLANNING-SLICE2A-BRIEF-ACCEPTANCE`; do not start Slice 2A implementation before the Slice 2A Pre-implementation Brief is accepted.
 - Evidence:
   - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
   - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice1-Contract-Audit-Foundations-Pre-implementation-Brief v0.md`
@@ -568,7 +584,7 @@ Last updated: `2026-05-16T15:59:44+08:00`
 - Lane: `mechanism_runtime`
 - Priority: `high`
 - Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施1-Implementation Feasibility & Delta Audit v0.md`
-- Next: E实施1 is accepted with reviewer constraints. Continue with `TASK-SECOND-READER-MEMORY-PLANNING-SLICE1-BRIEF-ACCEPTANCE`; do not implement code before the Slice 1 Pre-implementation Brief is accepted.
+- Next: E实施1 is accepted with reviewer constraints, and Slice 1 is accepted. Continue with `TASK-SECOND-READER-MEMORY-PLANNING-SLICE2A-BRIEF-ACCEPTANCE`; do not implement Slice 2A before the Slice 2A Pre-implementation Brief is accepted.
 - Evidence:
   - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
   - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/E实施0-Implementation Roadmap & Handoff v0.md`
