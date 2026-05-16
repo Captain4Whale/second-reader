@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-05-16T17:57:51+08:00",
+  "updated_at": "2026-05-16T18:30:10+08:00",
   "tasks": [
     {
       "id": "TASK-SECOND-READER-MEMORY-PLANNING-FEASIBILITY-AUDIT",
@@ -25,7 +25,7 @@
       ],
       "job_refs": [],
       "acceptance_ref": "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施1-Implementation Feasibility & Delta Audit v0.md",
-      "next_action": "E实施1-Implementation Feasibility & Delta Audit v0 is accepted with reviewer constraints, and Slice 1 / Slice 2A / Slice 2B are implemented and accepted. Slice 3A Pre-implementation Brief is pending human review. Continue with TASK-SECOND-READER-MEMORY-PLANNING-SLICE3A-BRIEF-ACCEPTANCE; do not start Slice 3A implementation before the Slice 3A brief is accepted.",
+      "next_action": "E实施1-Implementation Feasibility & Delta Audit v0 is accepted with reviewer constraints, and Slice 1 / Slice 2A / Slice 2B are implemented and accepted. Slice 3A is implemented and pending report review. Continue with TASK-SECOND-READER-MEMORY-PLANNING-SLICE3A-REPORT-REVIEW; do not start the next implementation slice before the Slice 3A Post-implementation Report is accepted.",
       "blocked_by": [],
       "evidence_refs": [
         "docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md",
@@ -58,7 +58,7 @@
       ],
       "job_refs": [],
       "acceptance_ref": "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice1-Contract-Audit-Foundations-Pre-implementation-Brief v0.md",
-      "next_action": "Slice 1 / Slice 2A / Slice 2B are accepted, and Slice 3A Pre-implementation Brief is pending human review. Continue with TASK-SECOND-READER-MEMORY-PLANNING-SLICE3A-BRIEF-ACCEPTANCE; do not start Slice 3A implementation before the Slice 3A brief is accepted.",
+      "next_action": "Slice 1 / Slice 2A / Slice 2B are accepted, and Slice 3A is implemented and pending report review. Continue with TASK-SECOND-READER-MEMORY-PLANNING-SLICE3A-REPORT-REVIEW; do not start the next implementation slice before the Slice 3A Post-implementation Report is accepted.",
       "blocked_by": [],
       "evidence_refs": [
         "docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md",
@@ -93,7 +93,7 @@
       ],
       "job_refs": [],
       "acceptance_ref": "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice1-Contract-Audit-Foundations-Post-implementation-Report v0.md",
-      "next_action": "Slice 1 / Slice 2A / Slice 2B are accepted, and Slice 3A Pre-implementation Brief is pending human review. Continue with TASK-SECOND-READER-MEMORY-PLANNING-SLICE3A-BRIEF-ACCEPTANCE; do not start Slice 3A implementation before the Slice 3A brief is accepted.",
+      "next_action": "Slice 1 / Slice 2A / Slice 2B are accepted, and Slice 3A is implemented and pending report review. Continue with TASK-SECOND-READER-MEMORY-PLANNING-SLICE3A-REPORT-REVIEW; do not start the next implementation slice before the Slice 3A Post-implementation Report is accepted.",
       "blocked_by": [],
       "evidence_refs": [
         "docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md",
@@ -130,7 +130,7 @@
       ],
       "job_refs": [],
       "acceptance_ref": "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice2A-Operation-Vocabulary-and-Admission-Visibility-Hardening-Pre-implementation-Brief v0.md",
-      "next_action": "Slice 2A and Slice 2B are accepted, and Slice 3A Pre-implementation Brief is pending human review. Continue with TASK-SECOND-READER-MEMORY-PLANNING-SLICE3A-BRIEF-ACCEPTANCE; do not start Slice 3A implementation before the Slice 3A brief is accepted.",
+      "next_action": "Slice 2A and Slice 2B are accepted, and Slice 3A is implemented and pending report review. Continue with TASK-SECOND-READER-MEMORY-PLANNING-SLICE3A-REPORT-REVIEW; do not start the next implementation slice before the Slice 3A Post-implementation Report is accepted.",
       "blocked_by": [],
       "evidence_refs": [
         "docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md",
@@ -168,7 +168,7 @@
       ],
       "job_refs": [],
       "acceptance_ref": "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice2A-Operation-Vocabulary-and-Admission-Visibility-Hardening-Post-implementation-Report v0.md",
-      "next_action": "Slice 2A Post-implementation Report is accepted, Slice 2B is implemented and accepted, and Slice 3A Pre-implementation Brief is pending human review. Continue with TASK-SECOND-READER-MEMORY-PLANNING-SLICE3A-BRIEF-ACCEPTANCE; do not start Slice 3A implementation before the Slice 3A brief is accepted.",
+      "next_action": "Slice 2A Post-implementation Report is accepted, Slice 2B is implemented and accepted, and Slice 3A is implemented and pending report review. Continue with TASK-SECOND-READER-MEMORY-PLANNING-SLICE3A-REPORT-REVIEW; do not start the next implementation slice before the Slice 3A Post-implementation Report is accepted.",
       "blocked_by": [],
       "evidence_refs": [
         "docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md",
@@ -209,7 +209,7 @@
       ],
       "job_refs": [],
       "acceptance_ref": "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice2B-Store-specific-Admission-and-Target-store-Policy-Hardening-Pre-implementation-Brief v0.md",
-      "next_action": "Slice 2B Pre-implementation Brief is accepted and implemented, and the Slice 2B Post-implementation Report is accepted. Continue with TASK-SECOND-READER-MEMORY-PLANNING-SLICE3A-BRIEF-ACCEPTANCE; do not start Slice 3A implementation before the Slice 3A brief is accepted.",
+      "next_action": "Slice 2B Pre-implementation Brief is accepted and implemented, the Slice 2B Post-implementation Report is accepted, and Slice 3A is implemented and pending report review. Continue with TASK-SECOND-READER-MEMORY-PLANNING-SLICE3A-REPORT-REVIEW; do not start the next implementation slice before the Slice 3A Post-implementation Report is accepted.",
       "blocked_by": [],
       "evidence_refs": [
         "docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md",
@@ -252,7 +252,7 @@
       ],
       "job_refs": [],
       "acceptance_ref": "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice2B-Store-specific-Admission-and-Target-store-Policy-Hardening-Post-implementation-Report v0.md",
-      "next_action": "Slice 2B Post-implementation Report is accepted, and Slice 3A Pre-implementation Brief is pending human review. Continue with TASK-SECOND-READER-MEMORY-PLANNING-SLICE3A-BRIEF-ACCEPTANCE; do not start Slice 3A implementation before the Slice 3A brief is accepted.",
+      "next_action": "Slice 2B Post-implementation Report is accepted, and Slice 3A is implemented and pending report review. Continue with TASK-SECOND-READER-MEMORY-PLANNING-SLICE3A-REPORT-REVIEW; do not start the next implementation slice before the Slice 3A Post-implementation Report is accepted.",
       "blocked_by": [],
       "evidence_refs": [
         "docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md",
@@ -273,7 +273,7 @@
     {
       "id": "TASK-SECOND-READER-MEMORY-PLANNING-SLICE3A-BRIEF-ACCEPTANCE",
       "title": "Review Slice 3A Pre-implementation Brief for Status-aware Projection and Boundary Marker Hardening",
-      "status": "waiting",
+      "status": "done",
       "lane": "mechanism_runtime",
       "priority": "high",
       "detail_ref": "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice3A-Status-aware-Projection-and-Boundary-Marker-Hardening-Pre-implementation-Brief v0.md",
@@ -289,6 +289,7 @@
         "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice2B-Store-specific-Admission-and-Target-store-Policy-Hardening-Pre-implementation-Brief v0.md",
         "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice2B-Store-specific-Admission-and-Target-store-Policy-Hardening-Post-implementation-Report v0.md",
         "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice3A-Status-aware-Projection-and-Boundary-Marker-Hardening-Pre-implementation-Brief v0.md",
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice3A-Status-aware-Projection-and-Boundary-Marker-Hardening-Post-implementation-Report v0.md",
         "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md"
       ],
       "decision_refs": [
@@ -296,7 +297,7 @@
       ],
       "job_refs": [],
       "acceptance_ref": "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice3A-Status-aware-Projection-and-Boundary-Marker-Hardening-Pre-implementation-Brief v0.md",
-      "next_action": "Human reviewer should accept the Slice 3A Pre-implementation Brief or request a patch before any Slice 3A implementation PR. Slice 3A is scoped to prompt-facing projection markers in state_projection.py; it must not change durable lifecycle mutation, state_ops.py, prompts, read_context.py, retrieval utilization, planning trace, slow-cycle, public API, frontend, or eval runners; no full AI Evaluation should run.",
+      "next_action": "Slice 3A Pre-implementation Brief is accepted and implemented. Continue with TASK-SECOND-READER-MEMORY-PLANNING-SLICE3A-REPORT-REVIEW; do not start the next implementation slice before the Slice 3A Post-implementation Report is accepted.",
       "blocked_by": [],
       "evidence_refs": [
         "docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md",
@@ -309,9 +310,56 @@
         "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice2B-Store-specific-Admission-and-Target-store-Policy-Hardening-Pre-implementation-Brief v0.md",
         "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice2B-Store-specific-Admission-and-Target-store-Policy-Hardening-Post-implementation-Report v0.md",
         "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice3A-Status-aware-Projection-and-Boundary-Marker-Hardening-Pre-implementation-Brief v0.md",
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice3A-Status-aware-Projection-and-Boundary-Marker-Hardening-Post-implementation-Report v0.md",
         "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md"
       ],
-      "last_updated": "2026-05-16T09:57:51Z",
+      "last_updated": "2026-05-16T10:30:10Z",
+      "last_updated_by": "codex"
+    },
+    {
+      "id": "TASK-SECOND-READER-MEMORY-PLANNING-SLICE3A-REPORT-REVIEW",
+      "title": "Review Slice 3A Post-implementation Report for Status-aware Projection and Boundary Marker Hardening",
+      "status": "waiting",
+      "lane": "mechanism_runtime",
+      "priority": "high",
+      "detail_ref": "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice3A-Status-aware-Projection-and-Boundary-Marker-Hardening-Post-implementation-Report v0.md",
+      "truth_refs": [
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md",
+        "docs/current-state.md",
+        "docs/tasks/registry.md",
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施1-Implementation Feasibility & Delta Audit v0.md",
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice1-Contract-Audit-Foundations-Pre-implementation-Brief v0.md",
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice1-Contract-Audit-Foundations-Post-implementation-Report v0.md",
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice2A-Operation-Vocabulary-and-Admission-Visibility-Hardening-Pre-implementation-Brief v0.md",
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice2A-Operation-Vocabulary-and-Admission-Visibility-Hardening-Post-implementation-Report v0.md",
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice2B-Store-specific-Admission-and-Target-store-Policy-Hardening-Pre-implementation-Brief v0.md",
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice2B-Store-specific-Admission-and-Target-store-Policy-Hardening-Post-implementation-Report v0.md",
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice3A-Status-aware-Projection-and-Boundary-Marker-Hardening-Pre-implementation-Brief v0.md",
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice3A-Status-aware-Projection-and-Boundary-Marker-Hardening-Post-implementation-Report v0.md",
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md"
+      ],
+      "decision_refs": [
+        "DEC-089"
+      ],
+      "job_refs": [],
+      "acceptance_ref": "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice3A-Status-aware-Projection-and-Boundary-Marker-Hardening-Post-implementation-Report v0.md",
+      "next_action": "Human reviewer should accept the Slice 3A Post-implementation Report or request a patch before any next-slice brief or implementation PR. Slice 3A added additive prompt-facing projection markers in state_projection.py; prompt text, prompt version, schema version, durable lifecycle mutation, state_ops.py, read_context.py, retrieval utilization, planning trace, slow-cycle, public API, frontend, and eval runners were not changed; no full AI Evaluation has run.",
+      "blocked_by": [],
+      "evidence_refs": [
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md",
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/E实施0-Implementation Roadmap & Handoff v0.md",
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施1-Implementation Feasibility & Delta Audit v0.md",
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice1-Contract-Audit-Foundations-Pre-implementation-Brief v0.md",
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice1-Contract-Audit-Foundations-Post-implementation-Report v0.md",
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice2A-Operation-Vocabulary-and-Admission-Visibility-Hardening-Pre-implementation-Brief v0.md",
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice2A-Operation-Vocabulary-and-Admission-Visibility-Hardening-Post-implementation-Report v0.md",
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice2B-Store-specific-Admission-and-Target-store-Policy-Hardening-Pre-implementation-Brief v0.md",
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice2B-Store-specific-Admission-and-Target-store-Policy-Hardening-Post-implementation-Report v0.md",
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice3A-Status-aware-Projection-and-Boundary-Marker-Hardening-Pre-implementation-Brief v0.md",
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice3A-Status-aware-Projection-and-Boundary-Marker-Hardening-Post-implementation-Report v0.md",
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md"
+      ],
+      "last_updated": "2026-05-16T10:30:10Z",
       "last_updated_by": "codex"
     },
     {

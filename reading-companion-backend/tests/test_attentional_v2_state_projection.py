@@ -43,6 +43,13 @@ def _source_ref(quote: str = "Alpha sentence.") -> dict[str, object]:
     }
 
 
+def _find(items: list[dict[str, object]], key: str, value: str) -> dict[str, object]:
+    for item in items:
+        if item.get(key) == value:
+            return item
+    raise AssertionError(f"missing {key}={value}")
+
+
 def test_build_carry_forward_context_exposes_phase_c1_packet_shape():
     """Carry-forward packetization should expose bounded current state layers."""
 
@@ -58,6 +65,13 @@ def test_build_carry_forward_context_exposes_phase_c1_packet_shape():
             "statement": "Why does the chapter turn here?",
             "source_refs": [_source_ref()],
             "status": "open",
+        },
+        {
+            "item_id": "question-closed",
+            "attention_tags": ["question"],
+            "statement": "This earlier question is resolved but still useful as lineage.",
+            "source_refs": [_source_ref("Resolved sentence.")],
+            "status": "resolved",
         }
     ]
 
@@ -69,6 +83,20 @@ def test_build_carry_forward_context_exposes_phase_c1_packet_shape():
             "summary": "A promise is still hanging open.",
             "source_refs": [_source_ref()],
             "status": "active",
+        },
+        {
+            "concept_key": "z-resolved-promise",
+            "concept_type": "motif",
+            "summary": "An older promise reading has been resolved.",
+            "source_refs": [_source_ref("Resolved promise.")],
+            "status": "resolved",
+        },
+        {
+            "concept_key": "unanchored",
+            "concept_type": "motif",
+            "summary": "This projected concept lacks source refs.",
+            "source_refs": [],
+            "status": "active",
         }
     ]
     thread_trace = build_empty_thread_trace()
@@ -78,6 +106,13 @@ def test_build_carry_forward_context_exposes_phase_c1_packet_shape():
             "thread_type": "open_reference",
             "summary": "The later promise turns back toward the opener.",
             "source_refs": [_source_ref()],
+            "status": "active",
+        },
+        {
+            "thread_key": "thread:no-source",
+            "thread_type": "trace_link",
+            "summary": "This thread still lacks source refs and should stay filtered out.",
+            "source_refs": [],
             "status": "active",
         }
     ]
@@ -90,6 +125,13 @@ def test_build_carry_forward_context_exposes_phase_c1_packet_shape():
             "chapter_ref": "Chapter 1",
             "confidence_band": "working",
             "source_refs": [_source_ref()],
+        },
+        {
+            "item_id": "frame-missing-source",
+            "statement": "This frame is projected but needs source-ref warning.",
+            "chapter_ref": "Chapter 1",
+            "confidence_band": "working",
+            "source_refs": [],
         }
     ]
 
@@ -119,19 +161,63 @@ def test_build_carry_forward_context_exposes_phase_c1_packet_shape():
     assert packet["packet_version"] == STATE_PACKET_VERSION
     assert packet["active_attention_digest"]["active_items"][0]["item_id"] == "question-1"
     assert packet["active_attention_digest"]["active_items"][0]["attention_tags"] == ["question"]
+    assert packet["active_attention_digest"]["active_items"][0]["projection_role"] == "current_support"
+    assert packet["active_attention_digest"]["active_items"][0]["support_status"] == "source_backed"
+    assert packet["active_attention_digest"]["active_items"][0]["current_support"] is True
+    assert packet["active_attention_digest"]["active_items"][0]["lineage_only"] is False
+    assert packet["active_attention_digest"]["active_items"][0]["projection_warning"] == ""
+    closed_attention = _find(packet["active_attention_digest"]["active_items"], "item_id", "question-closed")
+    assert closed_attention["projection_role"] == "lineage_only"
+    assert closed_attention["current_support"] is False
+    assert closed_attention["lineage_only"] is True
+    assert closed_attention["projection_warning"] == "lineage_only_not_current_support"
+    assert packet["active_attention_digest"]["hot_items"][0]["projection_role"] == "current_support"
     assert packet["chapter_reflective_frame"]["chapter_frames"][0]["item_id"] == "frame-1"
+    assert packet["chapter_reflective_frame"]["chapter_frames"][0]["projection_role"] == "current_support"
+    missing_frame = _find(packet["chapter_reflective_frame"]["chapter_frames"], "item_id", "frame-missing-source")
+    assert missing_frame["support_status"] == "source_ref_missing"
+    assert missing_frame["projection_warning"] == "source_ref_missing"
     assert packet["session_continuity_capsule"]["recent_sentence_ids"] == ["c1-s1"]
     assert "recent_routes" not in packet["active_focus_digest"]
     assert packet["concept_digest"][0]["concept_key"] == "promise"
     assert packet["concept_digest"][0]["concept_type"] == "motif"
+    assert packet["concept_digest"][0]["projection_role"] == "current_support"
+    assert packet["concept_digest"][0]["support_status"] == "source_backed"
+    resolved_concept = _find(packet["concept_digest"], "concept_key", "z-resolved-promise")
+    assert resolved_concept["projection_role"] == "lineage_only"
+    assert resolved_concept["current_support"] is False
+    missing_concept = _find(packet["concept_digest"], "concept_key", "unanchored")
+    assert missing_concept["support_status"] == "source_ref_missing"
+    assert missing_concept["projection_warning"] == "source_ref_missing"
     assert packet["thread_digest"][0]["thread_type"] in {"trace_link", "open_reference"}
+    thread = _find(packet["thread_digest"], "thread_key", "thread:promise")
+    assert thread["projection_role"] == "current_support"
+    assert thread["support_status"] == "source_backed"
+    assert all(item["thread_key"] != "thread:no-source" for item in packet["thread_digest"])
     assert any(ref["kind"] == "concept" for ref in packet["refs"])
     assert any(ref["kind"] == "thread" for ref in packet["refs"])
 
     assert packet["reflective_digest"][0]["item_id"] == "frame-1"
+    assert packet["reflective_digest"][0]["projection_role"] == "current_support"
     assert packet["source_ref_digest"][0]["source_span_id"] == "src:c1:p1@0-p1@15"
     assert packet["continuity_digest"]["recent_reactions"][0]["reaction_id"] == "reaction-1"
+    assert packet["continuity_digest"]["recent_reactions"][0]["projection_role"] == "visible_trace"
+    assert packet["continuity_digest"]["recent_reactions"][0]["visible_trace_support"] is True
+    assert packet["continuity_digest"]["recent_reactions"][0]["current_support"] is False
+    assert (
+        packet["continuity_digest"]["recent_reactions"][0]["projection_warning"]
+        == "visible_trace_not_semantic_memory"
+    )
+    assert packet["active_focus_digest"]["recent_reactions"][0]["projection_role"] == "visible_trace"
     assert packet["refs"]
+    assert "knowledge_activations" not in packet
+
+    persisted_active = packet["continuation_capsule"]["active_attention_digest"]["active_items"][0]
+    persisted_concept = packet["continuation_capsule"]["concept_digest"][0]
+    persisted_reaction = packet["continuation_capsule"]["session_continuity_capsule"]["recent_reactions"][0]
+    assert "projection_role" not in persisted_active
+    assert "projection_role" not in persisted_concept
+    assert "projection_role" not in persisted_reaction
 
 
 def test_build_navigation_context_exposes_state_packet_without_watch_metadata():
@@ -256,14 +342,22 @@ def test_build_read_prompt_packet_projects_compact_always_carry_and_selective_ca
 
     assert prompt_packet["packet_version"] == STATE_PACKET_VERSION
     assert prompt_packet["active_attention"]["active_items"][0]["item_id"] == "question-1"
+    assert prompt_packet["active_attention"]["active_items"][0]["projection_role"] == "current_support"
     assert prompt_packet["concept_digest"][0]["concept_key"] == "promise"
+    assert prompt_packet["concept_digest"][0]["support_status"] == "source_backed"
     assert prompt_packet["thread_digest"][0]["thread_key"]
+    assert prompt_packet["thread_digest"][0]["projection_role"] == "current_support"
     assert prompt_packet["reflective_digest"]["chapter_frames"][0]["item_id"] == "frame-1"
+    assert prompt_packet["reflective_digest"]["chapter_frames"][0]["projection_role"] == "current_support"
     assert prompt_packet["selective_carry"]["earlier_excerpts"][0]["ref_id"] == "lookback:sentence:c1-s1"
     assert prompt_packet["selective_carry"]["supporting_refs"][0]["ref_id"] == "lookback:sentence:c1-s1"
     assert "refs" not in prompt_packet
     assert "anchor_bank_digest" not in prompt_packet
     assert prompt_packet["local_continuity"]["recent_reactions"][0]["reaction_id"] == "reaction-1"
+    assert prompt_packet["local_continuity"]["recent_reactions"][0]["projection_role"] == "visible_trace"
+    assert prompt_packet["local_continuity"]["recent_reactions"][0]["visible_trace_support"] is True
+    assert prompt_packet["local_continuity"]["recent_reactions"][0]["current_support"] is False
+    assert "knowledge_activations" not in prompt_packet
 
 
 def test_navigate_choose_next_unit_prompt_receives_navigation_context(monkeypatch):

@@ -34,6 +34,15 @@ STATE_PACKET_VERSION = "attentional_v2.state_packet.v1"
 _CONCEPT_DIGEST_LIMIT = 3
 _THREAD_DIGEST_LIMIT = 3
 _DIGEST_QUOTE_LIMIT = 2
+_LINEAGE_ONLY_STATUSES = {
+    "closed",
+    "resolved",
+    "superseded",
+    "invalidated",
+    "rejected",
+    "dropped",
+    "retired",
+}
 
 
 def clean_text(value: object) -> str:
@@ -121,6 +130,87 @@ def _item_tags(item: dict[str, object]) -> list[str]:
     return tags
 
 
+def _projection_markers(*, status: object = "", source_refs: list[SourceRef]) -> dict[str, object]:
+    """Return prompt-facing support markers without changing durable state."""
+
+    status_text = clean_text(status).lower()
+    support_status = "source_backed" if source_refs else "source_ref_missing"
+    if status_text in _LINEAGE_ONLY_STATUSES:
+        return {
+            "projection_role": "lineage_only",
+            "support_status": support_status,
+            "current_support": False,
+            "lineage_only": True,
+            "projection_warning": "lineage_only_not_current_support",
+        }
+    return {
+        "projection_role": "current_support",
+        "support_status": support_status,
+        "current_support": True,
+        "lineage_only": False,
+        "projection_warning": "" if source_refs else "source_ref_missing",
+    }
+
+
+def _with_projection_markers(record: dict[str, object], *, status: object = "") -> dict[str, object]:
+    """Copy one memory projection record and add compact support markers."""
+
+    source_refs = _source_refs(record.get("source_refs"))
+    marked = dict(record)
+    marked.update(_projection_markers(status=status, source_refs=source_refs))
+    return marked
+
+
+def _with_visible_trace_markers(record: dict[str, object]) -> dict[str, object]:
+    """Copy one visible reaction projection with non-semantic-memory markers."""
+
+    marked = dict(record)
+    marked.update(
+        {
+            "projection_role": "visible_trace",
+            "support_status": "visible_trace",
+            "visible_trace_support": True,
+            "current_support": False,
+            "projection_warning": "visible_trace_not_semantic_memory",
+        }
+    )
+    return marked
+
+
+def _status_by_key(entries: list[object], key_name: str) -> dict[str, str]:
+    """Return source-state status by entry key for prompt-facing marker calculation."""
+
+    statuses: dict[str, str] = {}
+    for entry in entries:
+        if not isinstance(entry, dict):
+            continue
+        key = clean_text(entry.get(key_name))
+        if key:
+            statuses[key] = clean_text(entry.get("status"))
+    return statuses
+
+
+def _reflective_status_by_item_id(reflective_frames: ReflectiveFramesState) -> dict[str, str]:
+    """Return reflective item status by item id across all frame buckets."""
+
+    statuses: dict[str, str] = {}
+    for bucket in (
+        "chapter_understandings",
+        "book_level_frames",
+        "durable_definitions",
+        "stabilized_motifs",
+        "resolved_questions_of_record",
+        "chapter_end_notes",
+    ):
+        for item in reflective_frames.get(bucket, []):
+            if not isinstance(item, dict):
+                continue
+            item_id = clean_text(item.get("item_id"))
+            if item_id:
+                statuses[item_id] = clean_text(item.get("status"))
+    return statuses
+
+
 def _build_active_attention_digest(
     active_attention: ActiveAttention,
     *,
@@ -166,6 +256,33 @@ def _build_active_attention_digest(
         )
     return {
         "active_items": digest_active_items[:6],
+        "hot_items": hot_items,
+    }
+
+
+def _mark_active_attention_digest(active_attention_digest: ActiveAttentionDigest) -> ActiveAttentionDigest:
+    """Add prompt-facing support markers to active-attention digest copies."""
+
+    active_items = [
+        _with_projection_markers(item, status=item.get("status"))
+        for item in active_attention_digest.get("active_items", [])
+        if isinstance(item, dict)
+    ]
+    active_by_ref_id = {
+        clean_text(item.get("ref_id")): item
+        for item in active_items
+        if clean_text(item.get("ref_id"))
+    }
+    hot_items: list[dict[str, object]] = []
+    for item in active_attention_digest.get("hot_items", []):
+        if not isinstance(item, dict):
+            continue
+        ref_id = clean_text(item.get("ref_id"))
+        hot_items.append(
+            dict(active_by_ref_id.get(ref_id, _with_projection_markers(item, status=item.get("status"))))
+        )
+    return {
+        "active_items": active_items,
         "hot_items": hot_items,
     }
 
@@ -222,6 +339,23 @@ def _build_reflective_frame_digest(
     }
 
 
+def _mark_reflective_frame_digest(
+    reflective_frame: ReflectiveFrameDigest,
+    *,
+    status_by_item_id: dict[str, str],
+) -> ReflectiveFrameDigest:
+    """Add prompt-facing support markers to reflective-frame digest copies."""
+
+    marked: ReflectiveFrameDigest = {}
+    for bucket in ("chapter_frames", "book_frames", "durable_definitions"):
+        marked[bucket] = [
+            _with_projection_markers(item, status=status_by_item_id.get(clean_text(item.get("item_id")), ""))
+            for item in reflective_frame.get(bucket, [])
+            if isinstance(item, dict)
+        ]
+    return marked
+
+
 def _build_concept_digest(
     concept_registry: ConceptRegistryState,
     *,
@@ -267,6 +401,20 @@ def _build_concept_digest(
             },
         )
     return digest
+
+
+def _mark_concept_digest(
+    concept_digest: list[ConceptDigestItem],
+    *,
+    status_by_concept_key: dict[str, str],
+) -> list[dict[str, object]]:
+    """Add prompt-facing support markers to concept digest copies."""
+
+    return [
+        _with_projection_markers(item, status=status_by_concept_key.get(clean_text(item.get("concept_key")), ""))
+        for item in concept_digest
+        if isinstance(item, dict)
+    ]
 
 
 def _build_thread_digest(
@@ -321,6 +469,20 @@ def _build_thread_digest(
         if len(digest) >= _THREAD_DIGEST_LIMIT:
             break
     return digest
+
+
+def _mark_thread_digest(
+    thread_digest: list[ThreadDigestItem],
+    *,
+    status_by_thread_key: dict[str, str],
+) -> list[dict[str, object]]:
+    """Add prompt-facing support markers to thread digest copies."""
+
+    return [
+        _with_projection_markers(item, status=status_by_thread_key.get(clean_text(item.get("thread_key")), ""))
+        for item in thread_digest
+        if isinstance(item, dict)
+    ]
 
 
 def _build_recent_reactions(
@@ -548,10 +710,37 @@ def build_carry_forward_context(
             mechanism_version=clean_text(primary_active_attention.get("mechanism_version")),
         )
     )
+    marked_active_attention_digest = _mark_active_attention_digest(active_attention_digest)
+    marked_chapter_reflective_frame = _mark_reflective_frame_digest(
+        chapter_reflective_frame,
+        status_by_item_id=_reflective_status_by_item_id(primary_reflective_frames),
+    )
+    marked_concept_digest = _mark_concept_digest(
+        concept_digest,
+        status_by_concept_key=_status_by_key(primary_concept_registry.get("entries", []), "concept_key"),
+    )
+    marked_thread_digest = _mark_thread_digest(
+        thread_digest,
+        status_by_thread_key=_status_by_key(primary_thread_trace.get("entries", []), "thread_key"),
+    )
+    marked_recent_reactions = [
+        _with_visible_trace_markers(item)
+        for item in recent_reactions
+        if isinstance(item, dict)
+    ]
+    marked_session_continuity_capsule = _build_session_continuity_capsule(
+        local_buffer,
+        excluded_sentence_ids=excluded_sentence_ids,
+        recent_reactions=marked_recent_reactions,
+    )
+    marked_active_focus_digest = _build_active_focus_digest(
+        marked_active_attention_digest,
+        recent_reactions=marked_recent_reactions,
+    )
     reflective_digest = [
-        *chapter_reflective_frame.get("chapter_frames", []),
-        *chapter_reflective_frame.get("book_frames", []),
-        *chapter_reflective_frame.get("durable_definitions", []),
+        *marked_chapter_reflective_frame.get("chapter_frames", []),
+        *marked_chapter_reflective_frame.get("book_frames", []),
+        *marked_chapter_reflective_frame.get("durable_definitions", []),
     ]
     source_ref_digest = [
         dict(ref.get("source_ref", {}))
@@ -561,15 +750,15 @@ def build_carry_forward_context(
     return {
         "packet_version": STATE_PACKET_VERSION,
         "continuation_capsule": primary_continuation_capsule,
-        "session_continuity_capsule": session_continuity_capsule,
-        "active_attention_digest": active_attention_digest,
-        "chapter_reflective_frame": chapter_reflective_frame,
-        "active_focus_digest": active_focus_digest,
-        "concept_digest": concept_digest,
-        "thread_digest": thread_digest,
+        "session_continuity_capsule": marked_session_continuity_capsule,
+        "active_attention_digest": marked_active_attention_digest,
+        "chapter_reflective_frame": marked_chapter_reflective_frame,
+        "active_focus_digest": marked_active_focus_digest,
+        "concept_digest": marked_concept_digest,
+        "thread_digest": marked_thread_digest,
         "reflective_digest": reflective_digest,
         "source_ref_digest": source_ref_digest,
-        "continuity_digest": session_continuity_capsule,
+        "continuity_digest": marked_session_continuity_capsule,
         "refs": refs,
     }
 
