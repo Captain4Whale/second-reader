@@ -13,9 +13,9 @@ Stable mechanism behavior changes still need to be promoted to the relevant stab
 ## Current Status
 
 ```text
-Current phase: Slice 5A Post-implementation Report waiting for human review
-Implementation status: Slice 1 accepted; Slice 2A accepted; Slice 2B accepted; Slice 3A accepted; Slice 3B accepted; Slice 4A accepted including precision patch; Slice 4B accepted; Slice 5A implemented and pending report review
-Next action: human reviewer accepts or patches the Slice 5A Post-implementation Report before any next implementation slice
+Current phase: Slice 5B Pre-implementation Brief waiting for human review
+Implementation status: Slice 1 accepted; Slice 2A accepted; Slice 2B accepted; Slice 3A accepted; Slice 3B accepted; Slice 4A accepted including precision patch; Slice 4B accepted; Slice 5A accepted; Slice 5B brief created and pending review
+Next action: human reviewer accepts or patches the Slice 5B Pre-implementation Brief before any Slice 5B implementation
 Full AI Evaluation: not yet; deferred until core instrumentation is ready
 ```
 
@@ -1444,13 +1444,91 @@ Post-implementation Report:
 - Known gaps: no retrieval loop, full utilization trace, or full AI Evaluation; detour trace evidence is compact audit metadata and does not claim planning quality
 
 Reviewer decision:
+- accepted
+- Reviewer: human reviewer / user
+- Decision date: 2026-05-16
+- Required follow-up: prepare and review Slice 5B Pre-implementation Brief before any Slice 5B implementation
+
+Next recommended step:
+- Human reviewer reviews `briefs/Slice5B-Planning-Support-Signals-and-Detour-Value-Cost-Audit-Markers-Pre-implementation-Brief v0.md`. Do not start Slice 5B implementation yet.
+
+## Entry 2026-05-16 — Slice 5A report accepted and Slice 5B brief created
+
+Type:
+- review decision
+- pre-implementation brief
+
+Slice:
+- Slice 5
+
+Related docs:
+- E实施0: `../E实施0-Implementation Roadmap & Handoff v0.md`
+- C设计 source: `../C设计2-Planning Ontology Design v0.md`, `../C设计4-Navigation Policy Design v0.md`, `../C设计6-Detour : Look-back : Active Recall Policy Design v0.md`, `../C设计7-Memory Retrieval & Utilization Design v0.md`, `../C设计9-Evaluation Calibration & Minimal Eval Suite v0.md`
+- E实施1 / PR / report: `E实施1-Implementation Feasibility & Delta Audit v0.md`
+- Prior report: `reports/Slice5A-Detour-Lifecycle-and-Navigation-Trace-Audit-Hardening-Post-implementation-Report v0.md`
+- Brief: `briefs/Slice5B-Planning-Support-Signals-and-Detour-Value-Cost-Audit-Markers-Pre-implementation-Brief v0.md`
+
+Branch / PR:
+- Branch: `main`
+- PR:
+- Commit:
+
+Pre-implementation Brief:
+- Link: `briefs/Slice5B-Planning-Support-Signals-and-Detour-Value-Cost-Audit-Markers-Pre-implementation-Brief v0.md`
+- Accepted by:
+- Acceptance date:
+- Scope changes approved:
+
+Files changed:
+- docs only for Slice 5B brief landing
+
+Design contracts addressed:
+- Slice 5A Post-implementation Report accepted by human reviewer / user
+- Slice 5B brief created for compact planning support-signal and detour value-cost audit markers
+- future Slice 5B must keep markers as mechanism-private audit / explanation metadata only
+- future Slice 5B must not treat `source_scent`, `detour_value`, or `continuity_cost` as product scores, planning-quality proof, route recommendations, or state-machine authority
+- future Slice 5B must preserve Navigate act space: `choose_unit`, `request_skill`, `defer_detour`
+- future Slice 5B must preserve durable detour statuses: `open`, `resolved`, `abandoned`
+- future Slice 5B must not introduce durable `deferred`, retrieval loops, new planner behavior, prompt text/version changes, route steering, user route choice, visible route UX, public API/frontend/eval runner changes, or full AI Evaluation
+
+Engineering tests:
+- Commands run:
+  - not run for this doc-only brief landing
+- Result:
+  - not applicable
+- Not run / reason:
+  - backend tests not run because no implementation code changed
+  - full AI Evaluation not run by constraint
+
+Contract / audit checks:
+- SourceRef preserved: unchanged
+- per-op outcome: unchanged and out of Slice 5B brief landing
+- candidate vs settled separated: unchanged and deferred to Slice 6
+- audit not routed into prompt: unchanged; Slice 5B brief excludes audit dumps routed into prompts
+- reaction_records not semantic memory: unchanged and out of Slice 5B
+- knowledge_activations not source truth: unchanged and out of Slice 5B
+- other: future Slice 5B must use `not_assessed`, `false`, or omission when support/value/cost evidence is ambiguous
+
+AI Evaluation:
+- Full eval run? no
+- Smoke only? no
+- Eval lane affected: none
+- Notes: full AI Evaluation remains deferred until core instrumentation is ready
+
+Post-implementation Report:
+- Link:
+- Summary:
+- Deviations from accepted brief:
+- Known gaps:
+
+Reviewer decision:
 - waiting for human review
 - Reviewer:
 - Decision date:
-- Required follow-up: accept or patch the Slice 5A Post-implementation Report before any next implementation slice
+- Required follow-up: accept or patch the Slice 5B Pre-implementation Brief before any Slice 5B implementation PR
 
 Next recommended step:
-- Human reviewer reviews `reports/Slice5A-Detour-Lifecycle-and-Navigation-Trace-Audit-Hardening-Post-implementation-Report v0.md`. Do not start the next implementation slice yet.
+- Human reviewer reviews `briefs/Slice5B-Planning-Support-Signals-and-Detour-Value-Cost-Audit-Markers-Pre-implementation-Brief v0.md`. Do not start Slice 5B implementation yet.
 
 ## Entry Template
 

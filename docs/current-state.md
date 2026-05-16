@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-05-16T22:39:29+08:00`
+Last verified: `2026-05-16T23:04:54+08:00`
 
 ## Current Objective
 - Land the repo-local Memory / Planning / Evaluation design chain and implementation handoff for optimizing the existing `attentional_v2` mechanism.
@@ -35,20 +35,22 @@ Last verified: `2026-05-16T22:39:29+08:00`
     - current runner main read path still passes `supplemental_context=None`
     - Slice 4B does not claim actual model utilization from retrieval availability; `utilization_observed=false` and `utilization_basis=not_claimed_by_read_output` remain explicit
     - `Slice5A-Detour-Lifecycle-and-Navigation-Trace-Audit-Hardening-Pre-implementation-Brief v0.md` is accepted
-    - Slice 5A detour lifecycle and navigation trace audit hardening is implemented, and `Slice5A-Detour-Lifecycle-and-Navigation-Trace-Audit-Hardening-Post-implementation-Report v0.md` is pending human review
+    - Slice 5A detour lifecycle and navigation trace audit hardening is implemented, and `Slice5A-Detour-Lifecycle-and-Navigation-Trace-Audit-Hardening-Post-implementation-Report v0.md` is accepted
     - Slice 5A adds compact optional detour lifecycle metadata and compact `read_audit` navigation/detour evidence only when available
     - Slice 5A does not introduce new planner behavior, new Navigate decisions, durable `deferred` status, retrieval loop, prompt text/version change, public API/frontend/eval runner change, or full AI Evaluation
+    - `Slice5B-Planning-Support-Signals-and-Detour-Value-Cost-Audit-Markers-Pre-implementation-Brief v0.md` is created and pending human review
+    - Slice 5B implementation has not started
+    - Slice 5B must keep planning support-signal / value-cost markers as compact mechanism-private audit metadata only, not product scores, planning-quality proof, route recommendations, state-machine authority, or user-facing route UX
     - Slice 4A changed prompt-facing packet metadata additively, but did not change prompt text/version, runner behavior, `state_ops.py`, durable memory state, public API, frontend, eval runners, or `observability.py`
     - Slice 4A patch tightens `result_groups` and `not_forwarded_result_groups` so they reflect actual non-empty result groups rather than all possible groups
     - full retrieval utilization trace remains deferred
     - this effort optimizes existing `attentional_v2`; it does not replace the mechanism or introduce a greenfield redesign
     - this design chain was triggered by a real implementation mismatch between `memory_uptake_ops` and downstream memory/state persistence and projection structures, then converged through external evidence review, project assessment, accepted design, and implementation handoff
   - next step:
-    - human reviewer should review and accept `Slice5A-Detour-Lifecycle-and-Navigation-Trace-Audit-Hardening-Post-implementation-Report v0.md` or request a patch
-    - do not start the next implementation slice before the Slice 5A Post-implementation Report is accepted
+    - human reviewer should review and accept `Slice5B-Planning-Support-Signals-and-Detour-Value-Cost-Audit-Markers-Pre-implementation-Brief v0.md` or request a patch
+    - do not start Slice 5B implementation before the Slice 5B Pre-implementation Brief is accepted
   - current non-goals:
-    - no next-slice implementation yet
-    - no accepted Slice 5A Post-implementation Report yet
+    - no Slice 5B implementation yet
     - no full evaluation run for this new handoff line yet
 - Shift Long Span from the discontinued `target-centered accumulation v2` method to the new active design direction:
   - `Memory Quality`
