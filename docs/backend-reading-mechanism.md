@@ -149,3 +149,6 @@ Use `docs/backend-sequential-lifecycle.md` for the job-level workflow over time.
   - owns mechanism catalog details and authoring rules
 - `docs/backend-reading-mechanisms/<mechanism_key>.md`
   - owns one mechanism's internal reading design
+- `docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
+  - owns the initiative-local Memory / Planning / Evaluation design chain and implementation handoff for optimizing current `attentional_v2`
+  - does not redefine shared mechanism boundaries or replace stable mechanism docs

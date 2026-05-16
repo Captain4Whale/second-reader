@@ -81,6 +81,10 @@ Update when: the design capture, plan, tracker, or open-question set changes dur
 - `runtime-artifact-map.md`
   - concrete Phase 1 ownership split between shared `_runtime/` and `_mechanisms/attentional_v2/`
   - use this when adding new state files or checking whether one artifact belongs to the shell or the mechanism
+- `second-reader-memory-planning/`
+  - repo-local Memory / Planning / Evaluation design chain and implementation handoff for optimizing current `attentional_v2`
+  - use when preparing the feasibility audit or implementation slices for memory/planning contract hardening
+  - not a replacement for stable docs and not a full mechanism redesign
 
 ## Working Rules
 - Do not treat this folder as a replacement for the stable docs.
@@ -116,4 +120,5 @@ Update when: the design capture, plan, tracker, or open-question set changes dur
 15. `post-recovery-gate-review-checklist.md`
 16. `mechanism-pattern-ledger.md`
 17. `runtime-artifact-map.md`
-18. Stable docs listed above, as required by the task at hand
+18. `second-reader-memory-planning/README.md`
+19. Stable docs listed above, as required by the task at hand

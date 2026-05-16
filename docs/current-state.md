@@ -7,9 +7,22 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-05-06T20:22:35+08:00`
+Last verified: `2026-05-16T13:46:01+08:00`
 
 ## Current Objective
+- Land the repo-local Memory / Planning / Evaluation design chain and implementation handoff for optimizing the existing `attentional_v2` mechanism.
+  - status:
+    - Memory / Planning / Evaluation design phase is effectively complete
+    - `C设计0` through `C设计9` and `E实施0` are now repo-local under `docs/implementation/new-reading-mechanism/second-reader-memory-planning/`
+    - this effort optimizes existing `attentional_v2`; it does not replace the mechanism or introduce a greenfield redesign
+    - this design chain was triggered by a real implementation mismatch between `memory_uptake_ops` and downstream memory/state persistence and projection structures, then converged through external evidence review, project assessment, accepted design, and implementation handoff
+  - next step:
+    - run `E实施1-Implementation Feasibility & Delta Audit v0`
+    - Codex should first compare the accepted design chain and `E实施0` against current repo code, produce a design-to-file delta matrix, identify missing fields/tests/risks, and propose PR order
+  - current non-goals:
+    - no code implementation yet
+    - no `E实施1` document created yet
+    - no full evaluation run for this new handoff line yet
 - Shift Long Span from the discontinued `target-centered accumulation v2` method to the new active design direction:
   - `Memory Quality`
   - `Spontaneous Callback`

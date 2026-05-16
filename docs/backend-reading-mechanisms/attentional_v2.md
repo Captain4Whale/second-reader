@@ -13,6 +13,10 @@ Update when: the live ontology, progression logic, LLM schedule, memory model, u
 
 Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `docs/backend-state-aggregation.md` for shared public-state surfaces.
 
+## Implementation Guidance Note
+- For the current Memory / Planning contract hardening design chain and implementation handoff, see `docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`.
+- That directory is implementation guidance for optimizing existing `attentional_v2`; stable mechanism behavior remains defined here and should be updated only when implementation lands.
+
 ## Mechanism-Internal Reading Runner Boundary
 - `Reading Runner` is the name for this mechanism's internal read-progress executor.
   - It owns the live loop around `Navigate.choose_next_unit`, `Read`, post-read settlement, cursor advancement, detour state handoff, and mechanism-private runtime persistence.

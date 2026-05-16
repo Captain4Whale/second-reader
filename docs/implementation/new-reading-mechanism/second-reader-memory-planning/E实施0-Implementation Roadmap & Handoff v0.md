@@ -68,7 +68,7 @@
 | C设计5 Memory Management & Evolution      | lifecycle 语义                 | visibility lifecycle ≠ semantic validity；cooling ≠ invalidation；supersede ≠ overwrite；reaction / knowledge 不得 semanticize | Slice 3 的 lifecycle / projection hardening                 |
 | C设计6 Detour / Look-back / Active Recall | 三机制分工                     | active_recall = memory recovery；look_back = source calibration；detour = path deviation；failed look-back 不得由 memory confidence 静默替代 | Slice 4–5 的 retrieval/use trace 与 detour restore gate     |
 | C设计7 Memory Retrieval & Utilization     | retrieval/utilization contract | retrieval intent-aware；retrieval hit ≠ utilization success；current support vs lineage；items_returned / items_used / no_use_reason | Slice 4 的最小 instrumentation                              |
-| C设计8 Slow-cycle / Macro-planning        | slow-cycle safety 来源         | **未找到 standalone C设计8 文件**；本 handoff 只使用 C设计路线、C设计9 和用户给定 slice 范围中的 C8 intent：candidate vs settled、promotion evidence、carry-forward safety | Slice 6；Codex audit 必须继续查 repo / docs 目录是否存在 C8 |
+| C设计8 Slow-cycle / Macro-planning        | slow-cycle safety 来源         | `C设计8-Slow-cycle : Macro-planning Design v0.md` 已在 repo-local design chain 中；candidate vs settled、promotion evidence、carry-forward safety 是 Slice 6 的核心输入 | Slice 6；Codex audit 必须纳入 C设计8，但仍需 code-grounded verification |
 | C设计9 Evaluation Calibration             | eval strategy                  | 保留 user-level selective 与 Long Span MQ / Callback / FVI 两条 lane；Planning / Slow-cycle 只轻量补 trace-quality / safety；engineering tests 与 AI Eval 分离 | Slice 7–8；决定何时跑 smoke / full eval                     |
 
 ------
@@ -118,7 +118,7 @@ survey / reading_plan orientation
 
 ### 3.4 缺失 / 不清楚
 
-- **C设计8 standalone 文件未找到**：GitHub search 没找到 `C设计8 Slow-cycle / Macro-planning Design v0` 或 `Slow-cycle Macro-planning`，当前上传文件中也没有 standalone C8。本文对 C8 的实现角色只基于 C设计路线、C设计9 与用户给定 implementation slice，不假设 C8 正文细节。
+- **C设计8 已存在**：当前 repo-local design chain 已包含 `C设计8-Slow-cycle : Macro-planning Design v0.md`。`E实施1` 必须将其纳入 feasibility audit，但仍不得跳过 code-grounded verification，也不得直接把设计术语当作已实现事实。
 - **runtime artifact audit 未做**：本文没有逐行读取真实运行目录中的 `read_audit.jsonl / settlement_audit.jsonl / unit_span_ledger.jsonl / active_attention.json / concept_registry.json / thread_trace.json / reaction_records.json`。因此本文只做 architecture / contract / repo-file-level snapshot，不声称 runtime-quality 已经验证。
 - **`run_excerpt_comparison.py` 仍存在**：但 repo evaluation docs 已把 excerpt surface 标为 historical / superseded；它不应重新成为 active lane。
 - **task registry 当前已有结构性 rework 线**：repo 任务登记显示 `TASK-ATTENTIONAL-V2-STRUCTURAL-REWORK` 仍是 active，并记录了 paragraph-offset SourceRef cutover、F4A audit、F4B scheduling、detour 未充分验证等事实。
@@ -154,7 +154,7 @@ survey / reading_plan orientation
 12. **Small PRs over big bang rewrite.**
 13. **Audit rows do not enter runtime prompt.**
 14. **Visible route disclosure remains explicitly out of scope.**
-15. **Do not let C8 absence become design invention.** Codex must verify C8 file existence before implementing C8-specific names.
+15. **Do not let C8 design become unaudited implementation.** `C设计8-Slow-cycle : Macro-planning Design v0.md` exists and must be included in `E实施1`, but Codex must verify current code deltas before implementing C8-specific names or behavior.
 
 ------
 
@@ -187,7 +187,7 @@ Codex 应验证：
 - 哪些改动风险最大；
 - 哪些测试可复用；
 - 哪些设计假设不符合代码现实；
-- C设计8 standalone 是否存在；
+- C设计8 slow-cycle / macro-planning contracts 与当前代码的 delta；
 - 推荐 PR 顺序。
 
 Codex 输出：
@@ -475,7 +475,7 @@ Rollback / compatibility：
 
 目标：落实 C设计8-style 的 candidate vs settled、promotion safety、carry-forward safety。
 
-注意：standalone C设计8 未找到。此 slice 只实现 C设计路线 / C设计9 / 用户 handoff 中明确要求的 minimal slow-cycle safety，不引入 C8 未确认术语。
+注意：C设计8 已存在并应纳入 `E实施1` audit。此 slice 仍只实现 code-grounded audit 确认后的 minimal slow-cycle safety，不直接把 C设计8 术语扩写成未验证的 runtime behavior。
 
 范围：
 
@@ -744,7 +744,7 @@ Codex 应输出：
 7. **proposed PR order**
    保持小 PR，不一次性实现所有 slice。
 8. **assumptions needing human confirmation**
-   尤其 C设计8 是否存在、field naming 是否可定、legacy artifact compatibility 是否保留。
+   尤其 C设计8 contracts 如何映射到当前代码、field naming 是否可定、legacy artifact compatibility 是否保留。
 
 Feasibility audit 被 human reviewer 接受后，再进入第一轮实现 PR。
 
@@ -789,7 +789,7 @@ Feasibility audit 被 human reviewer 接受后，再进入第一轮实现 PR。
 | reaction misuse                                | visible_trace marker；projection warning；no automatic semantic promotion |
 | knowledge misuse                               | warrant marker；not source truth；requires source evidence for concept writes |
 | Codex implementing too much at once            | enforce slice PR order；reviewer rejects big-bang PR         |
-| C8 absence causing invention                   | Codex must locate C8 or mark absent; implement only confirmed minimal slow-cycle safety |
+| C8 design causing unaudited invention          | include C设计8 in audit; implement only code-grounded, confirmed minimal slow-cycle safety |
 | engineering tests confused with AI Eval        | separate test gate vs behavior smoke vs eval suite           |
 | current eval runners broken by instrumentation | eval runner smoke before full eval; keep artifacts backward compatible |
 
@@ -832,7 +832,7 @@ evaluation docs/runners/tests
 
 并明确报告：
 
-- C设计8 是否存在；
+- C设计8 slow-cycle / macro-planning contracts 与当前代码的 delta；
 - `source_skills.py` 路径差异；
 - `resolve` schema / nodes allowlist delta；
 - missing `target_store` default behavior；
@@ -858,7 +858,7 @@ Reviewer 应重点看：
 - 是否保持 `LLM proposes; deterministic runner settles`；
 - 是否避免新增 planner / retriever / memory manager；
 - 是否把 engineering tests 与 AI Eval 分开；
-- 是否把 C8 absence 标清楚；
+- 是否把 C设计8 contracts 与 current implementation delta 标清楚；
 - 是否每个 slice 都可小 PR、可回滚；
 - 是否先 contract / audit，后 behavior。
 

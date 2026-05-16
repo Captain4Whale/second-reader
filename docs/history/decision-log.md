@@ -2640,3 +2640,29 @@ This new direction is design frozen but not yet implemented as a formal benchmar
 - `reading-companion-backend/tests/test_attentional_v2_state_projection.py`
 - `reading-companion-backend/tests/test_public_contract.py`
 - `reading-companion-backend/tests/test_library_api.py`
+
+## Entry 86
+**ID**: DEC-089
+**Status**: active
+
+**Decision / Inflection**: Adopt repo-local Memory-Planning design chain and implementation handoff for `attentional_v2` optimization.
+
+**Period**: May 16, 2026, after the Memory / Planning / Evaluation design chain converged and was added to the repo under `docs/implementation/new-reading-mechanism/second-reader-memory-planning/`.
+
+**Decision**: The Memory / Planning / Evaluation design chain is accepted as implementation-facing guidance for optimizing the existing `attentional_v2` mechanism. The project will proceed through `E实施1-Implementation Feasibility & Delta Audit v0` before code implementation.
+
+**Rationale**: The design phase has converged; continuing to write design pages would create diminishing returns. Implementation should start with a code-grounded delta audit and then proceed through phased small PRs.
+
+**Non-goals**: No greenfield redesign, no replacement mechanism, no route steering UI, no user route choice, no direct PR plan, and no full eval before core instrumentation.
+
+**What changed in the project record**: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md` now defines the directory purpose, authority order, document map, non-goals, implementation posture, and current next step. `docs/source-of-truth-map.md`, `docs/current-state.md`, and `docs/tasks/registry.*` now route future agents to the directory and to the queued feasibility-audit task.
+
+**Why it matters later**: Future agents should treat the new directory as an initiative-local implementation workspace for optimizing current `attentional_v2`, not as stable mechanism authority. Stable behavior changes still need to land in code and be promoted to the relevant stable docs.
+
+**Primary evidence**:
+- `docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
+- `docs/implementation/new-reading-mechanism/second-reader-memory-planning/E实施0-Implementation Roadmap & Handoff v0.md`
+- `docs/source-of-truth-map.md`
+- `docs/current-state.md`
+- `docs/tasks/registry.md`
+- `docs/tasks/registry.json`
