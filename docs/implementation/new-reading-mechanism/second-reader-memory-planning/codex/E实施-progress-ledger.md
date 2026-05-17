@@ -13,9 +13,9 @@ Stable mechanism behavior changes still need to be promoted to the relevant stab
 ## Current Status
 
 ```text
-Current phase: Slice 5B Post-implementation Report waiting for human review
-Implementation status: Slice 1 accepted; Slice 2A accepted; Slice 2B accepted; Slice 3A accepted; Slice 3B accepted; Slice 4A accepted including precision patch; Slice 4B accepted; Slice 5A accepted; Slice 5B implemented and pending report review
-Next action: human reviewer accepts or patches the Slice 5B Post-implementation Report before any next implementation slice
+Current phase: Slice 6A Pre-implementation Brief waiting for human review
+Implementation status: Slice 1 accepted; Slice 2A accepted; Slice 2B accepted; Slice 3A accepted; Slice 3B accepted; Slice 4A accepted including precision patch; Slice 4B accepted; Slice 5A accepted; Slice 5B accepted; Slice 6A brief created and pending review
+Next action: human reviewer accepts or patches the Slice 6A Pre-implementation Brief before any Slice 6A implementation
 Full AI Evaluation: not yet; deferred until core instrumentation is ready
 ```
 
@@ -1616,6 +1616,88 @@ Reviewer decision:
 
 Next recommended step:
 - Human reviewer reviews `reports/Slice5B-Planning-Support-Signals-and-Detour-Value-Cost-Audit-Markers-Post-implementation-Report v0.md`. Do not start the next implementation slice yet.
+
+## Entry 2026-05-17 — Slice 5B report accepted and Slice 6A brief created
+
+Type:
+- review decision
+- pre-implementation brief
+
+Slice:
+- Slice 6
+
+Related docs:
+- E实施0: `../E实施0-Implementation Roadmap & Handoff v0.md`
+- C设计 source: `../C设计0-Second Reader Shared Memory–Planning Mechanism Charter v0.md`, `../C设计1-Memory Ontology Design v0.md`, `../C设计3-Memory Formation & Settlement Design v0.md`, `../C设计5-Memory Management & Evolution Design v0(patched).md`, `../C设计8-Slow-cycle : Macro-planning Design v0.md`, `../C设计9-Evaluation Calibration & Minimal Eval Suite v0.md`
+- E实施1 / PR / report: `E实施1-Implementation Feasibility & Delta Audit v0.md`
+- Prior report: `reports/Slice5B-Planning-Support-Signals-and-Detour-Value-Cost-Audit-Markers-Post-implementation-Report v0.md`
+- Brief: `briefs/Slice6A-Slow-cycle-Candidate-and-Settlement-Audit-Envelope-Foundations-Pre-implementation-Brief v0.md`
+
+Branch / PR:
+- Branch: `main`
+- PR:
+- Commit:
+
+Pre-implementation Brief:
+- Link: `briefs/Slice6A-Slow-cycle-Candidate-and-Settlement-Audit-Envelope-Foundations-Pre-implementation-Brief v0.md`
+- Accepted by:
+- Acceptance date:
+- Scope changes approved:
+
+Files changed:
+- `docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
+- `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md`
+- `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice6A-Slow-cycle-Candidate-and-Settlement-Audit-Envelope-Foundations-Pre-implementation-Brief v0.md`
+- `docs/current-state.md`
+- `docs/tasks/registry.md`
+- `docs/tasks/registry.json`
+
+Design contracts addressed:
+- docs only for Slice 6A brief landing
+- Slice 5B Post-implementation Report accepted by human reviewer / user
+- future Slice 6A focuses on slow-cycle candidate-vs-settled audit envelope foundations
+- future Slice 6A must keep candidates separate from durable truth
+- future Slice 6A must treat `withhold` and `not_carried` as valid auditable outcomes, not failures
+- future Slice 6A must preserve `reaction_records` as visible trace and `knowledge_activations` as warrant/context, not source truth
+- future Slice 6A must not add per-unit reflection, broad slow-cycle behavior expansion, prompt changes by default, public API/frontend/eval runner changes, or full AI Evaluation
+
+Engineering tests:
+- Commands run:
+  - not run; doc-only brief landing
+- Result:
+  - not applicable
+- Not run / reason:
+  - backend tests, benchmark jobs, implementation code, and full AI Evaluation intentionally not run by scope
+
+Contract / audit checks:
+- SourceRef preserved: unchanged; future Slice 6A must preserve SourceRef-first behavior and promotion evidence boundaries
+- per-op outcome: unchanged and out of Slice 6A brief landing
+- candidate vs settled separated: brief created to scope this future audit boundary
+- audit not routed into prompt: unchanged; Slice 6A brief excludes audit dumps routed into prompts
+- reaction_records not semantic memory: unchanged and explicitly preserved
+- knowledge_activations not source truth: unchanged and explicitly preserved
+- other: future Slice 6A should use `not_assessed`, omission, or count-only metadata when evidence cannot be derived safely
+
+AI Evaluation:
+- Full eval run? no
+- Smoke only? no
+- Eval lane affected: none
+- Notes: full AI Evaluation remains deferred until core instrumentation is ready
+
+Post-implementation Report:
+- Link:
+- Summary:
+- Deviations from accepted brief:
+- Known gaps:
+
+Reviewer decision:
+- Slice 5B Post-implementation Report accepted
+- Reviewer: human reviewer / user
+- Decision date: 2026-05-17
+- Required follow-up: accept or patch the Slice 6A Pre-implementation Brief before any Slice 6A implementation
+
+Next recommended step:
+- Human reviewer reviews `briefs/Slice6A-Slow-cycle-Candidate-and-Settlement-Audit-Envelope-Foundations-Pre-implementation-Brief v0.md`. Do not start Slice 6A implementation yet.
 
 ## Entry Template
 
