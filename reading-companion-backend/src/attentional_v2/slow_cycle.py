@@ -42,6 +42,7 @@ from .schemas import (
     ReflectivePromotionResult,
     ReflectiveFramesState,
     SearchIntent,
+    SlowCycleAuditEnvelope,
     SurfacedReaction,
     ThreadTraceState,
     ActiveAttentionItem,
@@ -55,7 +56,7 @@ from .state_ops import (
     supersede_reflective_item,
     upsert_reflective_item,
 )
-from .storage import chapter_result_compatibility_file, save_json
+from .storage import append_jsonl, chapter_result_compatibility_file, save_json, slow_cycle_audit_file
 from .source_spans import dedupe_source_refs, source_ref_from_span
 
 
@@ -75,12 +76,201 @@ _REFLECTIVE_BUCKETS = {
     "chapter_end_notes",
 }
 _COMPAT_FAMILIES = {"highlight", "discern", "association", "retrospect", "curious", "silent"}
+_SLOW_CYCLE_AUDIT_SCHEMA = "attentional_v2.slow_cycle_audit.v1"
 
 
 def _timestamp() -> str:
     """Return a stable UTC timestamp."""
 
     return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+
+
+def _source_ref_evidence(source_refs: object) -> tuple[int, list[str], str]:
+    """Return compact SourceRef evidence metadata without copying refs."""
+
+    if not isinstance(source_refs, list):
+        return 0, [], "missing_source_refs"
+    statuses: list[str] = []
+    for source_ref in source_refs:
+        if not isinstance(source_ref, Mapping):
+            continue
+        resolution = source_ref.get("resolution")
+        status = _clean_text(resolution.get("status")) if isinstance(resolution, Mapping) else ""
+        statuses.append(status or "not_assessed")
+    if not statuses:
+        return 0, [], "missing_source_refs"
+    compact_statuses = list(dict.fromkeys(statuses))
+    if any(status != "not_assessed" for status in compact_statuses):
+        return len(statuses), compact_statuses, "source_refs_present"
+    return len(statuses), compact_statuses, "not_assessed"
+
+
+def _with_source_ref_evidence(
+    envelope: SlowCycleAuditEnvelope,
+    source_refs: object,
+) -> SlowCycleAuditEnvelope:
+    """Attach compact SourceRef evidence metadata to one audit envelope."""
+
+    source_ref_count, statuses, evidence_status = _source_ref_evidence(source_refs)
+    envelope["source_ref_count"] = source_ref_count
+    envelope["source_ref_resolution_statuses"] = statuses
+    envelope["promotion_evidence_status"] = evidence_status
+    return envelope
+
+
+def _promotion_audit_envelope(
+    *,
+    chapter_ref: str,
+    candidate: ReflectivePromotionCandidate,
+    result: ReflectivePromotionResult,
+) -> SlowCycleAuditEnvelope:
+    """Build audit-only candidate/settlement evidence for one promotion decision."""
+
+    reflective_item = result.get("reflective_item") if isinstance(result.get("reflective_item"), Mapping) else None
+    promoted = str(result.get("decision", "") or "") == "promote" and reflective_item is not None
+    evidence_source_refs = reflective_item.get("source_refs") if promoted and reflective_item is not None else candidate.get("source_refs")
+    envelope: SlowCycleAuditEnvelope = {
+        "trigger_type": "chapter_end",
+        "chapter_ref": chapter_ref,
+        "candidate_type": "reflective_promotion",
+        "candidate_id": _clean_text(candidate.get("candidate_id")),
+        "target_bucket": _clean_text(result.get("target_bucket") or candidate.get("target_bucket")),
+        "settlement_decision": "promoted" if promoted else "withheld",
+        "settlement_reason": _clean_text(result.get("reason")),
+        "supersede_bucket": _clean_text(result.get("supersede_bucket")),
+        "supersede_item_id": _clean_text(result.get("supersede_item_id")),
+    }
+    if promoted and reflective_item is not None:
+        envelope["settled_item_id"] = _clean_text(reflective_item.get("item_id"))
+    else:
+        envelope["withhold_promotion_reason"] = _clean_text(result.get("reason")) or "not_assessed"
+    return _with_source_ref_evidence(envelope, evidence_source_refs)
+
+
+def _carry_forward_audit_envelopes(
+    *,
+    chapter_ref: str,
+    post_cooling_active_attention: ActiveAttention,
+    carry_forward: list[ActiveAttentionItem],
+) -> list[SlowCycleAuditEnvelope]:
+    """Build audit-only carried/not-carried evidence without changing carry behavior."""
+
+    envelopes: list[SlowCycleAuditEnvelope] = []
+    active_items_by_id = {
+        _clean_text(item.get("item_id")): item
+        for item in post_cooling_active_attention.get("active_items", [])
+        if isinstance(item, Mapping) and _clean_text(item.get("item_id"))
+    }
+    carried_ids: set[str] = set()
+    for item in carry_forward:
+        item_id = _clean_text(item.get("item_id"))
+        if item_id:
+            carried_ids.add(item_id)
+        envelope: SlowCycleAuditEnvelope = {
+            "trigger_type": "chapter_end",
+            "chapter_ref": chapter_ref,
+            "candidate_type": "cross_chapter_carry_forward",
+            "candidate_id": item_id,
+            "settlement_decision": "carried",
+            "carry_forward_reason": "selected_by_chapter_consolidation",
+            "settlement_reason": _clean_text(item.get("status")) or "selected_by_chapter_consolidation",
+        }
+        envelopes.append(_with_source_ref_evidence(envelope, item.get("source_refs")))
+
+    for item_id, item in active_items_by_id.items():
+        if item_id in carried_ids:
+            continue
+        envelope = {
+            "trigger_type": "chapter_end",
+            "chapter_ref": chapter_ref,
+            "candidate_type": "cross_chapter_carry_forward",
+            "candidate_id": item_id,
+            "settlement_decision": "not_carried",
+            "not_carried_reason": "not_selected_by_chapter_consolidation",
+            "settlement_reason": "not_selected_by_chapter_consolidation",
+        }
+        envelopes.append(_with_source_ref_evidence(envelope, item.get("source_refs")))
+    return envelopes
+
+
+def _knowledge_update_audit_envelopes(
+    *,
+    chapter_ref: str,
+    operations: list[dict[str, object]],
+) -> list[SlowCycleAuditEnvelope]:
+    """Build compact warrant/context envelopes for knowledge activation operations."""
+
+    envelopes: list[SlowCycleAuditEnvelope] = []
+    for index, operation in enumerate(operations):
+        if not isinstance(operation, Mapping):
+            continue
+        payload = operation.get("payload")
+        payload = payload if isinstance(payload, Mapping) else {}
+        source_refs = []
+        trigger_source_ref = payload.get("trigger_source_ref")
+        if isinstance(trigger_source_ref, Mapping):
+            source_refs.append(trigger_source_ref)
+        if isinstance(payload.get("source_refs"), list):
+            source_refs.extend(item for item in payload.get("source_refs", []) if isinstance(item, Mapping))
+        envelope: SlowCycleAuditEnvelope = {
+            "trigger_type": "chapter_end",
+            "chapter_ref": chapter_ref,
+            "candidate_type": "knowledge_activation_update",
+            "candidate_id": _clean_text(operation.get("item_id") or payload.get("activation_id")) or f"knowledge_activation_update:{index}",
+            "target_bucket": "knowledge_activations",
+            "settlement_decision": "warrant_context_update_observed",
+            "settlement_reason": _clean_text(operation.get("reason")) or "not_assessed",
+            "promotion_evidence_status": "warrant_context_not_source_truth",
+        }
+        evidence = _with_source_ref_evidence(envelope, source_refs)
+        evidence["promotion_evidence_status"] = "warrant_context_not_source_truth"
+        envelopes.append(evidence)
+    return envelopes
+
+
+def _optional_reaction_audit_envelope(
+    *,
+    chapter_ref: str,
+    reaction_record: AnchoredReactionRecord,
+) -> SlowCycleAuditEnvelope:
+    """Build compact visible-trace evidence for a chapter-end reaction."""
+
+    envelope: SlowCycleAuditEnvelope = {
+        "trigger_type": "chapter_end",
+        "chapter_ref": chapter_ref,
+        "candidate_type": "optional_chapter_reaction",
+        "candidate_id": _clean_text(reaction_record.get("reaction_id")),
+        "settled_item_id": _clean_text(reaction_record.get("reaction_id")),
+        "settlement_decision": "visible_trace_appended",
+        "settlement_reason": "visible_trace_not_semantic_memory",
+        "promotion_evidence_status": "visible_trace_not_semantic_memory",
+    }
+    evidence = _with_source_ref_evidence(envelope, [reaction_record.get("primary_source_ref")])
+    evidence["promotion_evidence_status"] = "visible_trace_not_semantic_memory"
+    return evidence
+
+
+def _record_slow_cycle_audit(
+    output_dir: Path | None,
+    *,
+    chapter_ref: str,
+    envelopes: list[SlowCycleAuditEnvelope],
+) -> None:
+    """Persist one compact slow-cycle audit row when evidence exists."""
+
+    if output_dir is None or not envelopes:
+        return
+    append_jsonl(
+        slow_cycle_audit_file(output_dir),
+        {
+            "recorded_at": _timestamp(),
+            "audit_schema": _SLOW_CYCLE_AUDIT_SCHEMA,
+            "trigger_type": "chapter_end",
+            "chapter_ref": chapter_ref,
+            "candidate_count": len(envelopes),
+            "envelopes": envelopes,
+        },
+    )
 
 
 def build_reaction_anchor(anchor: AnchorRecord | dict[str, object]) -> ReactionAnchor:
@@ -1192,7 +1382,17 @@ def run_phase6_chapter_cycle(
         chapter_title=chapter_title,
     )
 
-    next_active_attention = apply_active_attention_operations(active_attention, consolidation.get("cooling_operations", []))
+    audit_envelopes: list[SlowCycleAuditEnvelope] = []
+
+    post_cooling_active_attention = apply_active_attention_operations(active_attention, consolidation.get("cooling_operations", []))
+    audit_envelopes.extend(
+        _carry_forward_audit_envelopes(
+            chapter_ref=chapter_ref,
+            post_cooling_active_attention=post_cooling_active_attention,
+            carry_forward=consolidation.get("cross_chapter_carry_forward", []),
+        )
+    )
+    next_active_attention = post_cooling_active_attention
     next_active_attention = apply_cross_chapter_carry_forward(
         next_active_attention,
         consolidation.get("cross_chapter_carry_forward", []),
@@ -1204,6 +1404,12 @@ def run_phase6_chapter_cycle(
         consolidation.get("knowledge_activation_updates", []),
         current_source_id=end_source_id,
         reader_policy=reader_policy,
+    )
+    audit_envelopes.extend(
+        _knowledge_update_audit_envelopes(
+            chapter_ref=chapter_ref,
+            operations=consolidation.get("knowledge_activation_updates", []),
+        )
     )
 
     next_reflective_frames = reflective_frames
@@ -1222,24 +1428,38 @@ def run_phase6_chapter_cycle(
         )
         promotion_results.append(promotion_result)
         next_reflective_frames = apply_reflective_promotion(next_reflective_frames, promotion_result)
+        audit_envelopes.append(
+            _promotion_audit_envelope(
+                chapter_ref=chapter_ref,
+                candidate=candidate,
+                result=promotion_result,
+            )
+        )
 
     next_reaction_records = reaction_records
     optional_reaction = consolidation.get("optional_chapter_reaction")
     if isinstance(optional_reaction, dict):
+        optional_reaction_record = build_reaction_record(
+            reaction=optional_reaction,
+            primary_source_ref=chapter_end_ref,
+            chapter_id=int(chapter.get("id", 0) or 0),
+            chapter_ref=chapter_ref,
+            emitted_at_source_span_id=end_source_id,
+            compatibility_section_ref=_compatibility_section_ref(
+                {"primary_source_ref": chapter_end_ref},
+                chapter_id=int(chapter.get("id", 0) or 0),
+            ),
+            ordinal=len(persisted_reactions) + 1,
+        )
         next_reaction_records = append_reaction_record(
             next_reaction_records,
-            build_reaction_record(
-                reaction=optional_reaction,
-                primary_source_ref=chapter_end_ref,
-                chapter_id=int(chapter.get("id", 0) or 0),
+            optional_reaction_record,
+        )
+        audit_envelopes.append(
+            _optional_reaction_audit_envelope(
                 chapter_ref=chapter_ref,
-                emitted_at_source_span_id=end_source_id,
-                compatibility_section_ref=_compatibility_section_ref(
-                    {"primary_source_ref": chapter_end_ref},
-                    chapter_id=int(chapter.get("id", 0) or 0),
-                ),
-                ordinal=len(persisted_reactions) + 1,
-            ),
+                reaction_record=optional_reaction_record,
+            )
         )
 
     compatibility_payload = project_chapter_result_compatibility(
@@ -1250,6 +1470,7 @@ def run_phase6_chapter_cycle(
         output_dir=output_dir,
         persist=persist_compatibility_projection,
     )
+    _record_slow_cycle_audit(output_dir, chapter_ref=chapter_ref, envelopes=audit_envelopes)
 
     return {
         "chapter_consolidation": consolidation,

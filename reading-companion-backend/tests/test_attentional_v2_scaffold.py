@@ -37,6 +37,7 @@ from src.attentional_v2.storage import (
     revisit_index_file,
     resume_metadata_file,
     settlement_audit_file,
+    slow_cycle_audit_file,
     survey_map_file,
     thread_trace_file,
     unit_span_ledger_file,
@@ -524,7 +525,9 @@ def test_attentional_v2_initialization_writes_mechanism_artifacts(tmp_path):
     assert event_stream_file(output_dir).read_text(encoding="utf-8") == ""
     assert result["artifact_map"]["active_attention"].endswith("active_attention.json")
     assert result["artifact_map"]["settlement_audit"].endswith("settlement_audit.jsonl")
+    assert result["artifact_map"]["slow_cycle_audit"].endswith("slow_cycle_audit.jsonl")
     assert result["artifact_map"]["unit_span_ledger"].endswith("unit_span_ledger.jsonl")
+    assert not slow_cycle_audit_file(output_dir).exists()
     assert unit_span_ledger_file(output_dir).read_text(encoding="utf-8") == ""
 
 

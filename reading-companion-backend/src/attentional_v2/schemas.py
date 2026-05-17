@@ -784,6 +784,27 @@ class ChapterConsolidationResult(TypedDict, total=False):
     optional_chapter_reaction: ReactionCandidate | None
 
 
+class SlowCycleAuditEnvelope(TypedDict, total=False):
+    """Compact audit-only envelope for slow-cycle candidate and settlement evidence."""
+
+    trigger_type: str
+    chapter_ref: str
+    candidate_type: str
+    candidate_id: str
+    source_ref_count: int
+    source_ref_resolution_statuses: list[str]
+    promotion_evidence_status: str
+    settlement_decision: str
+    settlement_reason: str
+    withhold_promotion_reason: str
+    not_carried_reason: str
+    carry_forward_reason: str
+    target_bucket: str
+    settled_item_id: str
+    supersede_bucket: str
+    supersede_item_id: str
+
+
 class LoggingPolicy(TypedDict, total=False):
     """Versioned observability policy for standard vs debug persistence."""
 

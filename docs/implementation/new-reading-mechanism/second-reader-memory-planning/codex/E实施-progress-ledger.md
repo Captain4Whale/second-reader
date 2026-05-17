@@ -13,9 +13,9 @@ Stable mechanism behavior changes still need to be promoted to the relevant stab
 ## Current Status
 
 ```text
-Current phase: Slice 6A Pre-implementation Brief waiting for human review
-Implementation status: Slice 1 accepted; Slice 2A accepted; Slice 2B accepted; Slice 3A accepted; Slice 3B accepted; Slice 4A accepted including precision patch; Slice 4B accepted; Slice 5A accepted; Slice 5B accepted; Slice 6A brief created and pending review
-Next action: human reviewer accepts or patches the Slice 6A Pre-implementation Brief before any Slice 6A implementation
+Current phase: Slice 6A Post-implementation Report waiting for human review
+Implementation status: Slice 1 accepted; Slice 2A accepted; Slice 2B accepted; Slice 3A accepted; Slice 3B accepted; Slice 4A accepted including precision patch; Slice 4B accepted; Slice 5A accepted; Slice 5B accepted; Slice 6A implemented and pending report review
+Next action: human reviewer accepts or patches the Slice 6A Post-implementation Report before any next implementation slice
 Full AI Evaluation: not yet; deferred until core instrumentation is ready
 ```
 
@@ -1698,6 +1698,94 @@ Reviewer decision:
 
 Next recommended step:
 - Human reviewer reviews `briefs/Slice6A-Slow-cycle-Candidate-and-Settlement-Audit-Envelope-Foundations-Pre-implementation-Brief v0.md`. Do not start Slice 6A implementation yet.
+
+## Entry 2026-05-17 — Slice 6A implemented and post-report created
+
+Type:
+- implementation PR
+- post-implementation report
+
+Slice:
+- Slice 6
+
+Related docs:
+- E实施0: `../E实施0-Implementation Roadmap & Handoff v0.md`
+- C设计 source: `../C设计0-Second Reader Shared Memory–Planning Mechanism Charter v0.md`, `../C设计1-Memory Ontology Design v0.md`, `../C设计3-Memory Formation & Settlement Design v0.md`, `../C设计5-Memory Management & Evolution Design v0(patched).md`, `../C设计8-Slow-cycle : Macro-planning Design v0.md`, `../C设计9-Evaluation Calibration & Minimal Eval Suite v0.md`
+- E实施1 / PR / report: `E实施1-Implementation Feasibility & Delta Audit v0.md`
+- Brief: `briefs/Slice6A-Slow-cycle-Candidate-and-Settlement-Audit-Envelope-Foundations-Pre-implementation-Brief v0.md`
+- Report: `reports/Slice6A-Slow-cycle-Candidate-and-Settlement-Audit-Envelope-Foundations-Post-implementation-Report v0.md`
+
+Branch / PR:
+- Branch: `main`
+- PR:
+- Commit:
+
+Pre-implementation Brief:
+- Link: `briefs/Slice6A-Slow-cycle-Candidate-and-Settlement-Audit-Envelope-Foundations-Pre-implementation-Brief v0.md`
+- Accepted by: human reviewer / user
+- Acceptance date: 2026-05-17
+- Scope changes approved: compact mechanism-private slow-cycle candidate-vs-settled audit envelope foundations only; no slow-cycle behavior change, prompt text/version change, `runner.py` change, public API/frontend/eval runner change, or full AI Evaluation
+
+Files changed:
+- `reading-companion-backend/src/attentional_v2/schemas.py`
+- `reading-companion-backend/src/attentional_v2/slow_cycle.py`
+- `reading-companion-backend/src/attentional_v2/storage.py`
+- `reading-companion-backend/tests/test_attentional_v2_slow_cycle.py`
+- `reading-companion-backend/tests/test_attentional_v2_scaffold.py`
+- `docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
+- `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md`
+- `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice6A-Slow-cycle-Candidate-and-Settlement-Audit-Envelope-Foundations-Post-implementation-Report v0.md`
+- `docs/current-state.md`
+- `docs/tasks/registry.md`
+- `docs/tasks/registry.json`
+
+Design contracts addressed:
+- compact `slow_cycle_audit.jsonl` mechanism-private audit stream added
+- slow-cycle candidates and outcomes are visible without treating candidate existence as durable truth
+- promotion candidate existence is separated from promotion success
+- `withheld` and `not_carried` are valid auditable outcomes, not failures
+- optional chapter reactions are marked visible trace, not semantic memory
+- knowledge activation operations are marked warrant/context, not source truth
+- no full prompt packets, chapter-consolidation payloads, durable stores, source windows, or audit dumps copied into audit rows
+- no slow-cycle behavior change, prompt text/version change, `runner.py` change, public API/frontend/eval runner change, or full AI Evaluation
+
+Engineering tests:
+- Commands run:
+  - `cd reading-companion-backend && .venv/bin/python -m pytest tests/test_attentional_v2_slow_cycle.py tests/test_attentional_v2_scaffold.py -q`
+- Result:
+  - `26 passed, 6 warnings`
+- Not run / reason:
+  - full AI Evaluation not run by constraint
+
+Contract / audit checks:
+- SourceRef preserved: yes; carry-forward SourceRef merge/dedupe behavior preserved
+- per-op outcome: unchanged and out of Slice 6A
+- candidate vs settled separated: yes; slow-cycle audit envelopes distinguish candidate evidence from settled outcome labels
+- audit not routed into prompt: yes
+- reaction_records not semantic memory: yes; optional chapter reaction audit uses visible-trace boundary
+- knowledge_activations not source truth: yes; knowledge operation audit uses warrant/context boundary
+- other: `continuation_capsule_delta` omitted to avoid touching `state_projection.py` or copying larger payloads
+
+AI Evaluation:
+- Full eval run? no
+- Smoke only? no
+- Eval lane affected: none
+- Notes: full AI Evaluation remains deferred until core instrumentation is ready
+
+Post-implementation Report:
+- Link: `reports/Slice6A-Slow-cycle-Candidate-and-Settlement-Audit-Envelope-Foundations-Post-implementation-Report v0.md`
+- Summary: Slice 6A adds compact mechanism-private `slow_cycle_audit.jsonl` evidence for existing slow-cycle candidate-vs-settled boundaries while preserving slow-cycle behavior and prompt/runtime/public/eval boundaries.
+- Deviations from accepted brief: none
+- Known gaps: no full continuation-capsule delta; no full AI Evaluation
+
+Reviewer decision:
+- waiting for human review
+- Reviewer:
+- Decision date:
+- Required follow-up: accept or patch the Slice 6A Post-implementation Report before any next implementation slice
+
+Next recommended step:
+- Human reviewer reviews `reports/Slice6A-Slow-cycle-Candidate-and-Settlement-Audit-Envelope-Foundations-Post-implementation-Report v0.md`. Do not start the next implementation slice yet.
 
 ## Entry Template
 

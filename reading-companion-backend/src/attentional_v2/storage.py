@@ -199,6 +199,12 @@ def settlement_audit_file(output_dir: Path) -> Path:
     return runtime_dir(output_dir) / "settlement_audit.jsonl"
 
 
+def slow_cycle_audit_file(output_dir: Path) -> Path:
+    """Return the mechanism-private slow-cycle audit stream path."""
+
+    return runtime_dir(output_dir) / "slow_cycle_audit.jsonl"
+
+
 def prompt_manifest_file(output_dir: Path, node_name: str) -> Path:
     """Return one node-level prompt-manifest path."""
 
@@ -257,6 +263,7 @@ def artifact_map(output_dir: Path) -> dict[str, str]:
         "debug_event_stream": str(event_stream_file(output_dir).relative_to(output_dir)),
         "read_audit": str(read_audit_file(output_dir).relative_to(output_dir)),
         "settlement_audit": str(settlement_audit_file(output_dir).relative_to(output_dir)),
+        "slow_cycle_audit": str(slow_cycle_audit_file(output_dir).relative_to(output_dir)),
         "prompt_manifests": str(prompt_manifests_dir(output_dir).relative_to(output_dir)),
     }
 

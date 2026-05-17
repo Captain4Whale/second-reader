@@ -25,6 +25,7 @@ from src.attentional_v2.slow_cycle import (
     reconsolidation,
     run_phase6_chapter_cycle,
 )
+from src.attentional_v2.storage import slow_cycle_audit_file
 from src.reading_mechanisms.attentional_v2 import AttentionalV2Mechanism
 
 
@@ -405,7 +406,7 @@ def test_run_phase6_chapter_cycle_applies_cooling_promotion_and_optional_reactio
     output_dir = tmp_path / "output" / "demo-book"
     AttentionalV2Mechanism().initialize_artifacts(output_dir)
 
-    def fake_invoke_json(system_prompt: str, _prompt: str, default: object) -> object:
+    def fake_invoke_json(system_prompt: str, prompt: str, default: object) -> object:
         if "chapter-consolidation node" in system_prompt:
             return {
                 "chapter_ref": "Chapter 1",
@@ -417,7 +418,7 @@ def test_run_phase6_chapter_cycle_applies_cooling_promotion_and_optional_reactio
                 ],
                 "cooling_operations": [
                     {
-                        "operation_type": "drop",
+                        "operation_type": "cool",
                         "target_store": "active_attention",
                         "item_id": "h-1",
                         "reason": "local heat ends with the chapter",
@@ -435,9 +436,38 @@ def test_run_phase6_chapter_cycle_applies_cooling_promotion_and_optional_reactio
                         "promoted_from": "chapter_sweep",
                         "target_bucket": "chapter_understandings",
                         "rationale": "It survived the backward sweep and chapter-end check.",
+                    },
+                    {
+                        "candidate_id": "pc-missing",
+                        "statement": "A tempting but unsupported chapter claim.",
+                        "source_refs": [],
+                        "promoted_from": "chapter_sweep",
+                        "target_bucket": "chapter_understandings",
+                        "rationale": "The sweep surfaced it, but evidence is ambiguous.",
                     }
                 ],
-                "knowledge_activation_updates": [],
+                "knowledge_activation_updates": [
+                    {
+                        "operation_type": "create",
+                        "target_store": "knowledge_activations",
+                        "item_id": "ka-1",
+                        "reason": "chapter-end allusion remains warrant/context only",
+                        "payload": {
+                            "activation_id": "ka-1",
+                            "trigger_source_ref": _source_ref("Later the author narrows what counts as value.", 2, role="support"),
+                            "activation_type": "allusion",
+                            "source_candidate": "market anthropology",
+                            "recognition_confidence": "weak",
+                            "reading_warrant": "Only useful as context for the chapter-end turn.",
+                            "role_assessment": "context",
+                            "evidence_hints": ["chapter-end narrowing"],
+                            "evidence_rationale": "The book text only warrants contextual use.",
+                            "source_refs": [_source_ref("Later the author narrows what counts as value.", 2, role="support")],
+                            "conflict_source_refs": [],
+                            "status": "weak",
+                        },
+                    }
+                ],
                 "cross_chapter_carry_forward": [
                     {
                         "item_id": "q-1",
@@ -458,6 +488,17 @@ def test_run_phase6_chapter_cycle_applies_cooling_promotion_and_optional_reactio
                 },
             }
         if "reflective-promotion node" in system_prompt:
+            if "pc-missing" in prompt:
+                return {
+                    "decision": "withhold",
+                    "reason": "Missing supporting SourceRefs.",
+                    "target_bucket": "chapter_understandings",
+                    "reflective_item": None,
+                    "supersede_bucket": "",
+                    "supersede_item_id": "",
+                    "state_operations": [],
+                    "chapter_ref": "Chapter 1",
+                }
             return {
                 "decision": "promote",
                 "reason": "The statement is chapter-durable and well supported.",
@@ -530,7 +571,52 @@ def test_run_phase6_chapter_cycle_applies_cooling_promotion_and_optional_reactio
     assert [item["item_id"] for item in result["active_attention"]["active_items"]] == ["q-1"]
     assert result["active_attention"]["active_items"][0]["attention_tags"] == ["question"]
     assert result["reflective_frames"]["chapter_understandings"][0]["item_id"] == "ru-1"
+    assert result["knowledge_activations"]["activations"][0]["activation_id"] == "ka-1"
     assert result["reaction_records"]["records"][0]["type"] == "retrospect"
     assert result["compatibility_payload"]["visible_reaction_count"] == 1
     assert chapter_manifest["prompt_version"] == "attentional_v2.chapter_consolidation.v4"
     assert promotion_manifest["prompt_version"] == "attentional_v2.reflective_promotion.v1"
+
+    audit_rows = [
+        json.loads(line)
+        for line in slow_cycle_audit_file(output_dir).read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    ]
+    assert len(audit_rows) == 1
+    audit_row = audit_rows[0]
+    assert audit_row["audit_schema"] == "attentional_v2.slow_cycle_audit.v1"
+    assert audit_row["trigger_type"] == "chapter_end"
+    assert audit_row["chapter_ref"] == "Chapter 1"
+
+    envelopes = audit_row["envelopes"]
+    assert audit_row["candidate_count"] == len(envelopes)
+
+    promoted = next(item for item in envelopes if item.get("candidate_id") == "pc-1")
+    assert promoted["candidate_type"] == "reflective_promotion"
+    assert promoted["settlement_decision"] == "promoted"
+    assert promoted["settled_item_id"] == "ru-1"
+    assert promoted["source_ref_count"] == 2
+
+    withheld = next(item for item in envelopes if item.get("candidate_id") == "pc-missing")
+    assert withheld["settlement_decision"] == "withheld"
+    assert withheld["withhold_promotion_reason"] == "Missing supporting SourceRefs."
+    assert withheld["source_ref_count"] == 0
+    assert withheld["promotion_evidence_status"] == "missing_source_refs"
+
+    carried = next(item for item in envelopes if item.get("candidate_id") == "q-1")
+    assert carried["candidate_type"] == "cross_chapter_carry_forward"
+    assert carried["settlement_decision"] == "carried"
+    assert carried["carry_forward_reason"] == "selected_by_chapter_consolidation"
+
+    not_carried = next(item for item in envelopes if item.get("candidate_id") == "h-1")
+    assert not_carried["settlement_decision"] == "not_carried"
+    assert not_carried["not_carried_reason"] == "not_selected_by_chapter_consolidation"
+
+    knowledge = next(item for item in envelopes if item.get("candidate_type") == "knowledge_activation_update")
+    assert knowledge["candidate_id"] == "ka-1"
+    assert knowledge["settlement_decision"] == "warrant_context_update_observed"
+    assert knowledge["promotion_evidence_status"] == "warrant_context_not_source_truth"
+
+    reaction = next(item for item in envelopes if item.get("candidate_type") == "optional_chapter_reaction")
+    assert reaction["settlement_decision"] == "visible_trace_appended"
+    assert reaction["promotion_evidence_status"] == "visible_trace_not_semantic_memory"
