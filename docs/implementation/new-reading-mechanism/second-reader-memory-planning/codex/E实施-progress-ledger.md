@@ -13,9 +13,9 @@ Stable mechanism behavior changes still need to be promoted to the relevant stab
 ## Current Status
 
 ```text
-Current phase: Slice 8B Pre-implementation Brief waiting for human review
-Implementation status: Slice 1 accepted; Slice 2A accepted; Slice 2B accepted; Slice 3A accepted; Slice 3B accepted; Slice 4A accepted including precision patch; Slice 4B accepted; Slice 5A accepted; Slice 5B accepted; Slice 6A accepted including carried SourceRef audit precision patch; Slice 6B no-code closure brief accepted; Slice 6 closed; Slice 7A accepted; Slice 7B accepted; Slice 8A accepted; Slice 8B run brief created
-Next action: human reviewer accepts or revises the Slice 8B Pre-implementation Brief before any Minimal Eval Suite execution slice or eval execution
+Current phase: Slice 8C Pre-implementation Brief waiting for human review
+Implementation status: Slice 1 accepted; Slice 2A accepted; Slice 2B accepted; Slice 3A accepted; Slice 3B accepted; Slice 4A accepted including precision patch; Slice 4B accepted; Slice 5A accepted; Slice 5B accepted; Slice 6A accepted including carried SourceRef audit precision patch; Slice 6B no-code closure brief accepted; Slice 6 closed; Slice 7A accepted; Slice 7B accepted; Slice 8A accepted; Slice 8B accepted; Slice 8C execution brief created
+Next action: human reviewer accepts or revises the Slice 8C Pre-implementation Brief before any Minimal Eval Suite execution, judge call, reading job, benchmark job, or eval run directory creation
 Full AI Evaluation: not yet; deferred until a later accepted eval slice explicitly requests it
 ```
 
@@ -2415,6 +2415,52 @@ Validation for brief landing:
 Next recommended step:
 - Human reviewer reviews `briefs/Slice8B-Minimal-Eval-Suite-Run-Brief-and-Execution-Guardrails-Pre-implementation-Brief v0.md`.
 - Do not start the Minimal Eval Suite, create eval run directories, run benchmark jobs, call judges, launch reading jobs, or start a later execution slice until this brief is accepted and that later execution slice is explicitly requested and accepted.
+
+## Entry 2026-05-17 — Slice 8B brief accepted and Slice 8C execution brief created
+
+Type:
+- review decision / pre-implementation brief
+
+Slice:
+- Slice 8C
+
+Related docs:
+- E实施0: `../E实施0-Implementation Roadmap & Handoff v0.md`
+- C设计 source: `../C设计9-Evaluation Calibration & Minimal Eval Suite v0.md`
+- E实施1: `E实施1-Implementation Feasibility & Delta Audit v0.md`
+- Slice 8A report: `reports/Slice8A-Post-implementation-Review-and-Minimal-Eval-Readiness-Gate-Post-implementation-Report v0.md`
+- Slice 8B brief: `briefs/Slice8B-Minimal-Eval-Suite-Run-Brief-and-Execution-Guardrails-Pre-implementation-Brief v0.md`
+- Slice 8C brief: `briefs/Slice8C-Minimal-Eval-Suite-Execution-Preflight-and-Bounded-Run-Pre-implementation-Brief v0.md`
+
+Branch / PR:
+- Branch: `main`
+- PR:
+- Commit:
+
+Decision:
+- Slice 8B Pre-implementation Brief accepted by human reviewer / user.
+- Slice 8C Pre-implementation Brief created as a doc-only execution-slice brief.
+
+Scope:
+- Defines exact future preflight checks, run ids, commands, background-job policy, expected outputs, cost posture, evidence-catalog policy, acceptance checks, and rollback rules.
+- Future bounded execution includes both lanes:
+  - Lane A: fresh `attentional_v2`-only Local / User-level Selective Legibility smoke on one segment and three note cases.
+  - Lane B: `attentional_v2`-only Long Span MQ / Callback / FVI smoke using existing semantic-probe source outputs, fresh Memory Quality rejudge, copied reaction audit, and no reading jobs.
+- Keeps actual eval execution blocked until Slice 8C is accepted and execution is explicitly requested.
+- Does not change runtime mechanism code, prompts, eval runners, judge prompts, public API, frontend, durable mechanism state, schemas, evidence catalog, or metric taxonomy.
+- Does not run full AI Evaluation, benchmark jobs, judge calls, reading jobs, or create eval run directories.
+
+Validation for brief landing:
+- planned:
+  - `cd reading-companion-backend && .venv/bin/python scripts/validate_minimal_eval_inventory_smoke.py --manifest eval/manifests/attentional_v2_minimal_eval_inventory_v1.json`
+  - `cd reading-companion-backend && .venv/bin/python -m pytest tests/test_attentional_v2_minimal_eval_inventory.py -q`
+  - parse `docs/tasks/registry.json`
+  - `git diff --check`
+  - confirm forbidden runtime/frontend/eval-runner diff is empty
+
+Next recommended step:
+- Human reviewer reviews `briefs/Slice8C-Minimal-Eval-Suite-Execution-Preflight-and-Bounded-Run-Pre-implementation-Brief v0.md`.
+- Do not start the Minimal Eval Suite, create eval run directories, run benchmark jobs, call judges, launch reading jobs, modify eval runners, or update the evidence catalog until this brief is accepted and execution is explicitly requested.
 
 ## Entry Template
 
