@@ -1541,7 +1541,7 @@
     {
       "id": "TASK-SECOND-READER-MEMORY-PLANNING-SLICE8G-REPORT-REVIEW",
       "title": "Review Slice 8G Minimal Eval Suite Smoke Closure Report",
-      "status": "waiting",
+      "status": "done",
       "lane": "mechanism_runtime",
       "priority": "high",
       "detail_ref": "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8G-Minimal-Eval-Suite-Smoke-Closure-and-Evidence-Interpretation-Report v0.md",
@@ -1565,8 +1565,8 @@
         "bgjob_minimal_eval_suite_lane_a_smoke_20260517_retry1",
         "bgjob_minimal_eval_suite_lane_b_smoke_20260517"
       ],
-      "acceptance_ref": "",
-      "next_action": "Human reviewer should review the Slice 8G Minimal Eval Suite smoke closure and evidence interpretation report. The bounded smoke sequence completed after Lane A retry, but remains diagnostic evidence only; do not start another eval slice, update the evidence catalog, promote Long Span vNext, create eval run directories, or claim product quality until this report is accepted and the next action is explicitly approved.",
+      "acceptance_ref": "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8G-Minimal-Eval-Suite-Smoke-Closure-and-Evidence-Interpretation-Report v0.md",
+      "next_action": "Slice 8G Minimal Eval Suite smoke closure report is accepted. Slice 8H diagnostic evidence catalog entry brief is pending review; do not update the evidence catalog, promote Long Span vNext, run broader eval, create eval run directories, or start another eval slice until the Slice 8H brief is reviewed.",
       "blocked_by": [],
       "evidence_refs": [
         "docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md",
@@ -1586,7 +1586,59 @@
         "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_minimal_eval_suite_lane_b_smoke_20260517/meta/output_sourcing.json",
         "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md"
       ],
-      "last_updated": "2026-05-17T12:02:10Z",
+      "last_updated": "2026-05-17T12:51:46Z",
+      "last_updated_by": "codex"
+    },
+    {
+      "id": "TASK-SECOND-READER-MEMORY-PLANNING-SLICE8H-BRIEF-ACCEPTANCE",
+      "title": "Review Slice 8H Diagnostic Evidence Catalog Entry Brief",
+      "status": "waiting",
+      "lane": "mechanism_runtime",
+      "priority": "high",
+      "detail_ref": "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice8H-Diagnostic-Evidence-Catalog-Entry-for-Minimal-Eval-Suite-Smoke-Pre-implementation-Brief v0.md",
+      "truth_refs": [
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md",
+        "docs/current-state.md",
+        "docs/tasks/registry.md",
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施1-Implementation Feasibility & Delta Audit v0.md",
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8C-Minimal-Eval-Suite-Execution-Preflight-and-Bounded-Run-Post-implementation-Report v0.md",
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8D-Lane-A-Source-locator-Compatibility-Triage-and-Minimal-Patch-Post-implementation-Report v0.md",
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8E-Lane-A-Retry1-Bounded-Execution-Post-run-Report v0.md",
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8F-Lane-B-Bounded-Diagnostic-Smoke-Post-run-Report v0.md",
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8G-Minimal-Eval-Suite-Smoke-Closure-and-Evidence-Interpretation-Report v0.md",
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice8H-Diagnostic-Evidence-Catalog-Entry-for-Minimal-Eval-Suite-Smoke-Pre-implementation-Brief v0.md",
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md"
+      ],
+      "decision_refs": [
+        "DEC-089"
+      ],
+      "job_refs": [
+        "bgjob_minimal_eval_suite_lane_a_smoke_20260517",
+        "bgjob_minimal_eval_suite_lane_a_smoke_20260517_retry1",
+        "bgjob_minimal_eval_suite_lane_b_smoke_20260517"
+      ],
+      "acceptance_ref": "",
+      "next_action": "Human reviewer should review the Slice 8H diagnostic evidence catalog entry brief. The brief recommends a future diagnostic_smoke catalog entry for the completed Slice 8C through Slice 8G Minimal Eval Suite smoke sequence, but the evidence catalog remains unchanged until this brief is accepted. Do not run eval, create eval run directories, modify eval runners/runtime code, update the evidence catalog, promote Long Span vNext, or claim product quality.",
+      "blocked_by": [],
+      "evidence_refs": [
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md",
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/E实施0-Implementation Roadmap & Handoff v0.md",
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施1-Implementation Feasibility & Delta Audit v0.md",
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8C-Minimal-Eval-Suite-Execution-Preflight-and-Bounded-Run-Post-implementation-Report v0.md",
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8D-Lane-A-Source-locator-Compatibility-Triage-and-Minimal-Patch-Post-implementation-Report v0.md",
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8E-Lane-A-Retry1-Bounded-Execution-Post-run-Report v0.md",
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8F-Lane-B-Bounded-Diagnostic-Smoke-Post-run-Report v0.md",
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8G-Minimal-Eval-Suite-Smoke-Closure-and-Evidence-Interpretation-Report v0.md",
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice8H-Diagnostic-Evidence-Catalog-Entry-for-Minimal-Eval-Suite-Smoke-Pre-implementation-Brief v0.md",
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_minimal_eval_suite_lane_a_smoke_20260517_retry1/summary/aggregate.json",
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_minimal_eval_suite_lane_a_smoke_20260517_retry1/summary/report.md",
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_minimal_eval_suite_lane_b_smoke_20260517/summary/aggregate.json",
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_minimal_eval_suite_lane_b_smoke_20260517/summary/report.md",
+        "reading-companion-backend/docs/evaluation/evidence_catalog.md",
+        "reading-companion-backend/docs/evaluation/evidence_catalog.json",
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md"
+      ],
+      "last_updated": "2026-05-17T12:51:46Z",
       "last_updated_by": "codex"
     },
     {
