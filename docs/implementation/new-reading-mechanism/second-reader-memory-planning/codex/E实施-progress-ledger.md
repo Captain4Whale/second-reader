@@ -13,9 +13,9 @@ Stable mechanism behavior changes still need to be promoted to the relevant stab
 ## Current Status
 
 ```text
-Current phase: Slice 8A Pre-implementation Brief waiting for human review
-Implementation status: Slice 1 accepted; Slice 2A accepted; Slice 2B accepted; Slice 3A accepted; Slice 3B accepted; Slice 4A accepted including precision patch; Slice 4B accepted; Slice 5A accepted; Slice 5B accepted; Slice 6A accepted including carried SourceRef audit precision patch; Slice 6B no-code closure brief accepted; Slice 6 closed; Slice 7A accepted; Slice 7B accepted; Slice 8A brief created
-Next action: human reviewer accepts or revises the Slice 8A Pre-implementation Brief before any Minimal Eval Suite run brief or eval execution
+Current phase: Slice 8A Post-implementation Report waiting for human review
+Implementation status: Slice 1 accepted; Slice 2A accepted; Slice 2B accepted; Slice 3A accepted; Slice 3B accepted; Slice 4A accepted including precision patch; Slice 4B accepted; Slice 5A accepted; Slice 5B accepted; Slice 6A accepted including carried SourceRef audit precision patch; Slice 6B no-code closure brief accepted; Slice 6 closed; Slice 7A accepted; Slice 7B accepted; Slice 8A doc-only readiness gate landed
+Next action: human reviewer accepts or revises the Slice 8A Post-implementation Report before any Minimal Eval Suite run brief or eval execution
 Full AI Evaluation: not yet; deferred until a later accepted eval slice explicitly requests it
 ```
 
@@ -2282,6 +2282,95 @@ Validation for brief landing:
 Next recommended step:
 - Human reviewer reviews `briefs/Slice8A-Post-implementation-Review-and-Minimal-Eval-Readiness-Gate-Pre-implementation-Brief v0.md`.
 - Do not run eval or create a Minimal Eval Suite run until the Slice 8A brief is accepted and a later eval-run brief is created and accepted.
+
+## Entry 2026-05-17 — Slice 8A doc-only readiness gate landed
+
+Type:
+- doc-only readiness gate / post-implementation report
+
+Slice:
+- Slice 8A
+
+Related docs:
+- E实施0: `../E实施0-Implementation Roadmap & Handoff v0.md`
+- C设计 source: `../C设计9-Evaluation Calibration & Minimal Eval Suite v0.md`
+- E实施1: `E实施1-Implementation Feasibility & Delta Audit v0.md`
+- Brief: `briefs/Slice8A-Post-implementation-Review-and-Minimal-Eval-Readiness-Gate-Pre-implementation-Brief v0.md`
+- Report: `reports/Slice8A-Post-implementation-Review-and-Minimal-Eval-Readiness-Gate-Post-implementation-Report v0.md`
+
+Branch / PR:
+- Branch: `main`
+- PR:
+- Commit:
+
+Pre-implementation Brief:
+- Link: `briefs/Slice8A-Post-implementation-Review-and-Minimal-Eval-Readiness-Gate-Pre-implementation-Brief v0.md`
+- Accepted by: human reviewer / user
+- Acceptance date: 2026-05-17
+- Scope changes approved: none
+
+Files changed:
+- `docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
+- `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md`
+- `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8A-Post-implementation-Review-and-Minimal-Eval-Readiness-Gate-Post-implementation-Report v0.md`
+- `docs/current-state.md`
+- `docs/tasks/registry.md`
+- `docs/tasks/registry.json`
+
+Design contracts addressed:
+- Slice 1 through Slice 7B accepted evidence inventoried for readiness
+- evidence-surface readiness matrix recorded
+- Lane A / Local User-level Selective Legibility preserved as active benchmark lane
+- Lane B / Long Span MQ Callback FVI preserved as diagnostic phase 1, not formal authority
+- no prerequisite runtime patch or eval-runner patch currently indicated
+- actual Minimal Eval Suite execution remains blocked until a later eval-run brief is created and accepted
+
+Engineering tests:
+- Commands run:
+  - `cd reading-companion-backend && .venv/bin/python scripts/validate_minimal_eval_inventory_smoke.py --manifest eval/manifests/attentional_v2_minimal_eval_inventory_v1.json`
+  - `cd reading-companion-backend && .venv/bin/python -m pytest tests/test_attentional_v2_minimal_eval_inventory.py -q`
+  - `node -e "JSON.parse(require('fs').readFileSync('docs/tasks/registry.json','utf8'))"`
+  - `git diff --check`
+  - `git diff --name-only -- reading-companion-backend/src/attentional_v2 reading-companion-frontend reading-companion-backend/eval/attentional_v2/run_user_level_selective_comparison.py reading-companion-backend/eval/attentional_v2/run_long_span_vnext.py`
+- Result:
+  - smoke summary returned `status=ok`, `tracked_path_count=13`, `local_only_present_count=6`, `local_only_missing_count=0`
+  - `8 passed in 0.07s`
+  - `docs/tasks/registry.json` parsed successfully
+  - `git diff --check` returned no whitespace errors
+  - forbidden runtime/frontend/eval-runner diff check returned empty output
+- Not run / reason:
+  - full AI Evaluation, benchmark jobs, judge calls, reading jobs, eval run directories, broad suites, and eval runners not run by constraint
+
+Contract / audit checks:
+- SourceRef preserved: no runtime changes
+- per-op outcome: no runtime changes
+- candidate vs settled separated: no runtime changes
+- audit not routed into prompt: no prompt changes
+- reaction_records not semantic memory: no runtime changes
+- knowledge_activations not source truth: no runtime changes
+- other: instrumentation availability is not product quality; retrieval availability is not utilization success; visible reaction presence is not callback correctness; SourceRef count is not fidelity score; trace existence is not planning quality; `slow_cycle_audit` existence is not slow-cycle quality
+
+AI Evaluation:
+- Full eval run? no
+- Smoke only? static manifest smoke only; no eval execution
+- Eval lane affected: Lane A and Lane B readiness documentation only
+- Notes: no benchmark jobs, judge calls, reading jobs, eval run directories, scoring, or formal-authority promotion
+
+Post-implementation Report:
+- Link: `reports/Slice8A-Post-implementation-Review-and-Minimal-Eval-Readiness-Gate-Post-implementation-Report v0.md`
+- Summary: Slice 8A readiness gate landed as doc-only status/report update.
+- Deviations from accepted brief: none
+- Known gaps: no actual Minimal Eval Suite run; later eval-run brief still required before execution
+
+Reviewer decision:
+- waiting for human review
+- Reviewer:
+- Decision date:
+- Required follow-up: accept or revise the Slice 8A Post-implementation Report before any Minimal Eval Suite run brief or eval execution
+
+Next recommended step:
+- Human reviewer reviews `reports/Slice8A-Post-implementation-Review-and-Minimal-Eval-Readiness-Gate-Post-implementation-Report v0.md`.
+- Do not start the Minimal Eval Suite, create eval run directories, run benchmark jobs, call judges, launch reading jobs, or create the next eval-run brief until this report is accepted and the user explicitly requests the later run brief.
 
 ## Entry Template
 
