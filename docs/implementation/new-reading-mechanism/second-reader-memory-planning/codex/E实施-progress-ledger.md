@@ -13,9 +13,9 @@ Stable mechanism behavior changes still need to be promoted to the relevant stab
 ## Current Status
 
 ```text
-Current phase: Slice 8E Lane A `_retry1` bounded execution report waiting for human review
-Implementation status: Slice 1 accepted; Slice 2A accepted; Slice 2B accepted; Slice 3A accepted; Slice 3B accepted; Slice 4A accepted including precision patch; Slice 4B accepted; Slice 5A accepted; Slice 5B accepted; Slice 6A accepted including carried SourceRef audit precision patch; Slice 6B no-code closure brief accepted; Slice 6 closed; Slice 7A accepted; Slice 7B accepted; Slice 8A accepted; Slice 8B accepted; Slice 8C execution brief accepted; Slice 8C bounded Lane A execution attempted and failed before summary generation; Slice 8C report accepted as failed execution evidence; Slice 8D Lane A source-locator compatibility patch accepted; Slice 8E Lane A `_retry1` completed successfully; Lane B not launched
-Next action: human reviewer reviews the Slice 8E Post-run Report before any Lane B launch, evidence-catalog update, or next eval slice
+Current phase: Slice 8F Lane B bounded diagnostic smoke report waiting for human review
+Implementation status: Slice 1 accepted; Slice 2A accepted; Slice 2B accepted; Slice 3A accepted; Slice 3B accepted; Slice 4A accepted including precision patch; Slice 4B accepted; Slice 5A accepted; Slice 5B accepted; Slice 6A accepted including carried SourceRef audit precision patch; Slice 6B no-code closure brief accepted; Slice 6 closed; Slice 7A accepted; Slice 7B accepted; Slice 8A accepted; Slice 8B accepted; Slice 8C execution brief accepted; Slice 8C bounded Lane A execution attempted and failed before summary generation; Slice 8C report accepted as failed execution evidence; Slice 8D Lane A source-locator compatibility patch accepted; Slice 8E Lane A `_retry1` accepted; Slice 8F Lane B bounded diagnostic smoke completed successfully
+Next action: human reviewer reviews the Slice 8F Post-run Report before any evidence-catalog update, formal-authority promotion, or next eval slice
 Full AI Evaluation: not yet; deferred until a later accepted eval slice explicitly requests it
 ```
 
@@ -2651,11 +2651,11 @@ Reviewer decision:
 - accepted
 - Reviewer: user
 - Decision date: 2026-05-17
-- Required follow-up: Lane A `_retry1` bounded execution authorized and completed as Slice 8E; review the Slice 8E report before any Lane B launch, evidence-catalog update, or next eval slice
+- Required follow-up: Lane A `_retry1` bounded execution was authorized and accepted as Slice 8E; Lane B bounded diagnostic smoke is recorded as Slice 8F and pending report review
 
 Next recommended step:
-- Continue with `reports/Slice8E-Lane-A-Retry1-Bounded-Execution-Post-run-Report v0.md` review.
-- Do not launch Lane B, update the evidence catalog, or start another eval slice until the Slice 8E report is accepted and a next action is explicitly approved.
+- Continue with `reports/Slice8F-Lane-B-Bounded-Diagnostic-Smoke-Post-run-Report v0.md` review.
+- Do not update the evidence catalog, promote Long Span vNext to formal benchmark authority, or start another eval slice until the Slice 8F report is accepted and a next action is explicitly approved.
 
 ## Entry 2026-05-17 — Slice 8E Lane A `_retry1` bounded execution
 
@@ -2758,14 +2758,128 @@ Post-implementation Report:
   - no evidence catalog entry
 
 Reviewer decision:
+- accepted
+- Reviewer: user
+- Decision date: 2026-05-17
+- Required follow-up: Lane B bounded diagnostic smoke authorized and completed as Slice 8F; review the Slice 8F report before any evidence-catalog update, formal-authority promotion, or next eval slice
+
+Next recommended step:
+- Continue with `reports/Slice8F-Lane-B-Bounded-Diagnostic-Smoke-Post-run-Report v0.md` review.
+- Do not update the evidence catalog, promote Long Span vNext to formal benchmark authority, or start another eval slice until the Slice 8F report is accepted and a next action is explicitly approved.
+
+## Entry 2026-05-17 — Slice 8F Lane B bounded diagnostic smoke
+
+Type:
+- eval smoke / post-run report
+
+Slice:
+- Slice 8
+
+Related docs:
+- E实施0: `../E实施0-Implementation Roadmap & Handoff v0.md`
+- C设计 source: `../C设计9-Evaluation Calibration & Minimal Eval Suite v0.md`
+- E实施1 / PR / report:
+  - `E实施1-Implementation Feasibility & Delta Audit v0.md`
+  - `briefs/Slice8C-Minimal-Eval-Suite-Execution-Preflight-and-Bounded-Run-Pre-implementation-Brief v0.md`
+  - `reports/Slice8C-Minimal-Eval-Suite-Execution-Preflight-and-Bounded-Run-Post-implementation-Report v0.md`
+  - `reports/Slice8E-Lane-A-Retry1-Bounded-Execution-Post-run-Report v0.md`
+  - `reports/Slice8F-Lane-B-Bounded-Diagnostic-Smoke-Post-run-Report v0.md`
+
+Branch / PR:
+- Branch: `main`
+- PR:
+- Commit:
+
+Pre-implementation Brief:
+- Link: `briefs/Slice8C-Minimal-Eval-Suite-Execution-Preflight-and-Bounded-Run-Pre-implementation-Brief v0.md`
+- Accepted by: user
+- Acceptance date: 2026-05-17
+- Scope changes approved:
+  - Slice 8E report accepted
+  - run Lane B only as a bounded diagnostic smoke
+  - do not launch another Lane A run
+  - do not update evidence catalog
+  - do not modify runtime code, eval runners, judge prompts, frontend, public API, or durable state
+  - do not promote Long Span vNext to formal benchmark authority
+
+Files changed:
+- `reports/Slice8F-Lane-B-Bounded-Diagnostic-Smoke-Post-run-Report v0.md`
+- `../README.md`
+- `E实施-progress-ledger.md`
+- `../../../../current-state.md`
+- `../../../../tasks/registry.md`
+- `../../../../tasks/registry.json`
+
+Execution:
+- Job id: `bgjob_minimal_eval_suite_lane_b_smoke_20260517`
+- Run id: `attentional_v2_minimal_eval_suite_lane_b_smoke_20260517`
+- Run directory: `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_minimal_eval_suite_lane_b_smoke_20260517`
+- Job status: `completed`
+- Exit code: `0`
+- Started: `2026-05-17T11:39:24.773270Z`
+- Ended: `2026-05-17T11:40:54.920938Z`
+
+Engineering tests:
+- Commands run:
+  - `cd reading-companion-backend && .venv/bin/python scripts/validate_minimal_eval_inventory_smoke.py --manifest eval/manifests/attentional_v2_minimal_eval_inventory_v1.json`
+  - `cd reading-companion-backend && .venv/bin/python -m pytest tests/test_attentional_v2_minimal_eval_inventory.py tests/test_run_user_level_selective_comparison.py -q`
+  - `cd reading-companion-backend && .venv/bin/python scripts/check_background_jobs.py`
+  - `node -e "JSON.parse(require('fs').readFileSync('docs/tasks/registry.json','utf8'))"`
+  - `git diff --check`
+  - `git diff --name-only -- reading-companion-backend/src/attentional_v2 reading-companion-frontend reading-companion-backend/eval/attentional_v2/run_user_level_selective_comparison.py reading-companion-backend/eval/attentional_v2/run_long_span_vnext.py reading-companion-backend/docs/evaluation/evidence_catalog.md reading-companion-backend/docs/evaluation/evidence_catalog.json`
+- Result:
+  - manifest smoke passed
+  - focused tests passed: `22 passed, 6 warnings in 0.31s`
+  - pre-launch background-job registry showed no active jobs
+  - registry JSON parse passed
+  - diff check passed
+  - forbidden diff check was empty
+
+Contract / audit checks:
+- SourceRef preserved: no runtime SourceRef behavior changed
+- per-op outcome: no runtime op behavior changed
+- candidate vs settled separated: no runtime behavior changed
+- audit not routed into prompt: no prompt changes
+- reaction_records not semantic memory: no runtime memory behavior changed
+- knowledge_activations not source truth: no slow-cycle behavior changed
+- other:
+  - Lane B used only `attentional_v2`, one selected Memory Quality window, reused source outputs, and `--judge-mode llm`
+  - aggregate checks passed: `mechanism_keys=["attentional_v2"]`, `probe_plan_id=memory_quality_semantic_probe_plan_20260504`, `probe_selection_method=semantic_boundary_with_distance_reference`, `memory_quality.window_count=1`, `memory_quality.probe_count=5`, `memory_quality_source=fresh_judge`, `reaction_audit_source=copied_from_memory_quality_source_run`
+  - `meta/output_sourcing.json.fresh_task_count=0`, so no reading jobs were launched
+  - copied reaction audit contains the full source run's five reaction windows, while fresh Memory Quality rejudge covers one selected window; this is recorded as a diagnostic observation, not a product-quality claim
+
+AI Evaluation:
+- Full eval run? no
+- Smoke only? yes, Lane B bounded diagnostic smoke only
+- Eval lane affected: Lane B / Long Span MQ / Callback / FVI diagnostic phase 1
+- Notes:
+  - no Lane A launch
+  - no cross-mechanism comparison
+  - no evidence catalog update
+  - no reading jobs
+  - `5` fresh Memory Quality judge calls
+  - no fresh reaction-audit judge calls
+  - LLM usage: `5` requests, `5` successes, `0` errors, `0` retries
+
+Post-implementation Report:
+- Link: `reports/Slice8F-Lane-B-Bounded-Diagnostic-Smoke-Post-run-Report v0.md`
+- Summary: Lane B bounded diagnostic smoke completed successfully; outputs and aggregate checks are present.
+- Deviations from accepted brief:
+  - `reaction_window_summaries.jsonl` contains `5` copied source-run rows rather than only one target-window row because reaction audit was copied unchanged from the source run.
+- Known gaps:
+  - no product-quality claim
+  - no evidence catalog entry
+  - Long Span vNext remains diagnostic phase 1, not formal authority
+
+Reviewer decision:
 - waiting for human review
 - Reviewer:
 - Decision date:
-- Required follow-up: review Slice 8E report before launching Lane B or starting another eval slice
+- Required follow-up: review Slice 8F report before any evidence-catalog update, formal-authority promotion, or next eval slice
 
 Next recommended step:
-- Human reviewer reviews `reports/Slice8E-Lane-A-Retry1-Bounded-Execution-Post-run-Report v0.md`.
-- If accepted, a separately authorized Lane B bounded diagnostic launch is reasonable; do not launch Lane B automatically.
+- Human reviewer reviews `reports/Slice8F-Lane-B-Bounded-Diagnostic-Smoke-Post-run-Report v0.md`.
+- If accepted, the Minimal Eval Suite smoke can be closed or a separate small follow-up can clarify copied reaction-audit filtering/reporting semantics before any catalog entry.
 
 ## Entry Template
 

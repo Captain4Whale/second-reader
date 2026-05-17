@@ -1417,7 +1417,7 @@
         "bgjob_minimal_eval_suite_lane_a_smoke_20260517"
       ],
       "acceptance_ref": "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8D-Lane-A-Source-locator-Compatibility-Triage-and-Minimal-Patch-Post-implementation-Report v0.md",
-      "next_action": "Slice 8D Post-implementation Report is accepted. Lane A _retry1 bounded execution has completed and is recorded in TASK-SECOND-READER-MEMORY-PLANNING-SLICE8E-REPORT-REVIEW; do not launch Lane B, update the evidence catalog, or start another eval slice until the Slice 8E report is reviewed.",
+      "next_action": "Slice 8D Post-implementation Report is accepted. Lane A _retry1 is accepted, and Lane B bounded diagnostic smoke has completed and is recorded in TASK-SECOND-READER-MEMORY-PLANNING-SLICE8F-REPORT-REVIEW; do not update the evidence catalog or start another eval slice until the Slice 8F report is reviewed.",
       "blocked_by": [],
       "evidence_refs": [
         "docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md",
@@ -1438,13 +1438,13 @@
         "reading-companion-backend/eval/attentional_v2/run_user_level_selective_comparison.py",
         "reading-companion-backend/tests/test_run_user_level_selective_comparison.py"
       ],
-      "last_updated": "2026-05-17T11:11:05Z",
+      "last_updated": "2026-05-17T11:44:07Z",
       "last_updated_by": "codex"
     },
     {
       "id": "TASK-SECOND-READER-MEMORY-PLANNING-SLICE8E-REPORT-REVIEW",
       "title": "Review Slice 8E Post-run Report for Lane A Retry1 Bounded Execution",
-      "status": "waiting",
+      "status": "done",
       "lane": "mechanism_runtime",
       "priority": "high",
       "detail_ref": "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8E-Lane-A-Retry1-Bounded-Execution-Post-run-Report v0.md",
@@ -1468,8 +1468,8 @@
       "job_refs": [
         "bgjob_minimal_eval_suite_lane_a_smoke_20260517_retry1"
       ],
-      "acceptance_ref": "",
-      "next_action": "Human reviewer should review the Slice 8E Lane A _retry1 bounded execution report. Lane A retry1 completed successfully; do not launch Lane B, update the evidence catalog, create new eval run directories, run cross-mechanism comparison, or start another eval slice until this report is accepted and the next action is explicitly approved.",
+      "acceptance_ref": "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8E-Lane-A-Retry1-Bounded-Execution-Post-run-Report v0.md",
+      "next_action": "Slice 8E Post-run Report is accepted. Lane B bounded diagnostic smoke has completed and is recorded in TASK-SECOND-READER-MEMORY-PLANNING-SLICE8F-REPORT-REVIEW; do not update the evidence catalog, promote Long Span vNext, or start another eval slice until the Slice 8F report is reviewed.",
       "blocked_by": [],
       "evidence_refs": [
         "docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md",
@@ -1485,7 +1485,57 @@
         "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_minimal_eval_suite_lane_a_smoke_20260517_retry1/summary/llm_usage.json",
         "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md"
       ],
-      "last_updated": "2026-05-17T11:11:05Z",
+      "last_updated": "2026-05-17T11:44:07Z",
+      "last_updated_by": "codex"
+    },
+    {
+      "id": "TASK-SECOND-READER-MEMORY-PLANNING-SLICE8F-REPORT-REVIEW",
+      "title": "Review Slice 8F Post-run Report for Lane B Bounded Diagnostic Smoke",
+      "status": "waiting",
+      "lane": "mechanism_runtime",
+      "priority": "high",
+      "detail_ref": "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8F-Lane-B-Bounded-Diagnostic-Smoke-Post-run-Report v0.md",
+      "truth_refs": [
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md",
+        "docs/current-state.md",
+        "docs/tasks/registry.md",
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施1-Implementation Feasibility & Delta Audit v0.md",
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice8A-Post-implementation-Review-and-Minimal-Eval-Readiness-Gate-Pre-implementation-Brief v0.md",
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8A-Post-implementation-Review-and-Minimal-Eval-Readiness-Gate-Post-implementation-Report v0.md",
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice8B-Minimal-Eval-Suite-Run-Brief-and-Execution-Guardrails-Pre-implementation-Brief v0.md",
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice8C-Minimal-Eval-Suite-Execution-Preflight-and-Bounded-Run-Pre-implementation-Brief v0.md",
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8C-Minimal-Eval-Suite-Execution-Preflight-and-Bounded-Run-Post-implementation-Report v0.md",
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8D-Lane-A-Source-locator-Compatibility-Triage-and-Minimal-Patch-Post-implementation-Report v0.md",
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8E-Lane-A-Retry1-Bounded-Execution-Post-run-Report v0.md",
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8F-Lane-B-Bounded-Diagnostic-Smoke-Post-run-Report v0.md",
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md"
+      ],
+      "decision_refs": [
+        "DEC-089"
+      ],
+      "job_refs": [
+        "bgjob_minimal_eval_suite_lane_b_smoke_20260517"
+      ],
+      "acceptance_ref": "",
+      "next_action": "Human reviewer should review the Slice 8F Lane B bounded diagnostic smoke report. Lane B completed successfully with one selected Memory Quality window, fresh Memory Quality rejudge, copied reaction audit, no reading jobs, and no evidence-catalog update; do not start another eval slice, update the evidence catalog, promote Long Span vNext, or create new eval run directories until this report is accepted and the next action is explicitly approved.",
+      "blocked_by": [],
+      "evidence_refs": [
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md",
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/E实施0-Implementation Roadmap & Handoff v0.md",
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施1-Implementation Feasibility & Delta Audit v0.md",
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice8B-Minimal-Eval-Suite-Run-Brief-and-Execution-Guardrails-Pre-implementation-Brief v0.md",
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice8C-Minimal-Eval-Suite-Execution-Preflight-and-Bounded-Run-Pre-implementation-Brief v0.md",
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8C-Minimal-Eval-Suite-Execution-Preflight-and-Bounded-Run-Post-implementation-Report v0.md",
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8D-Lane-A-Source-locator-Compatibility-Triage-and-Minimal-Patch-Post-implementation-Report v0.md",
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8E-Lane-A-Retry1-Bounded-Execution-Post-run-Report v0.md",
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8F-Lane-B-Bounded-Diagnostic-Smoke-Post-run-Report v0.md",
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_minimal_eval_suite_lane_b_smoke_20260517/summary/aggregate.json",
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_minimal_eval_suite_lane_b_smoke_20260517/summary/report.md",
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_minimal_eval_suite_lane_b_smoke_20260517/summary/llm_usage.json",
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_minimal_eval_suite_lane_b_smoke_20260517/meta/output_sourcing.json",
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md"
+      ],
+      "last_updated": "2026-05-17T11:44:07Z",
       "last_updated_by": "codex"
     },
     {

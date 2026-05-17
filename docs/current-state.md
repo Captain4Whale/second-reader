@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-05-17T19:11:05+08:00`
+Last verified: `2026-05-17T19:44:07+08:00`
 
 ## Current Objective
 - Land the repo-local Memory / Planning / Evaluation design chain and implementation handoff for optimizing the existing `attentional_v2` mechanism.
@@ -71,7 +71,13 @@ Last verified: `2026-05-17T19:11:05+08:00`
     - Slice 8E used run id `attentional_v2_minimal_eval_suite_lane_a_smoke_20260517_retry1`, `attentional_v2` only, one `huochu` segment, and three note cases
     - Slice 8E aggregate checks passed: `segment_count=1`, `note_case_count=3`, mechanisms `["attentional_v2"]`, `exact_match_count=2`, `miss_count=1`, and `note_recall=0.6667`
     - Slice 8E recorded `1` unlocatable retrospect diagnostic, and that unlocatable id was not counted as a best reaction or candidate match
-    - `Slice8E-Lane-A-Retry1-Bounded-Execution-Post-run-Report v0.md` is pending human review
+    - `Slice8E-Lane-A-Retry1-Bounded-Execution-Post-run-Report v0.md` is accepted
+    - Slice 8F Lane B bounded diagnostic smoke completed successfully as `bgjob_minimal_eval_suite_lane_b_smoke_20260517`
+    - Slice 8F used run id `attentional_v2_minimal_eval_suite_lane_b_smoke_20260517`, `attentional_v2` only, one selected `huochu` Memory Quality window, reused semantic-probe source outputs, fresh Memory Quality rejudge, and copied reaction audit
+    - Slice 8F aggregate checks passed: `mechanism_keys=["attentional_v2"]`, `memory_quality.window_count=1`, `memory_quality.probe_count=5`, `memory_quality_source=fresh_judge`, `reaction_audit_source=copied_from_memory_quality_source_run`, and `fresh_task_count=0`
+    - Slice 8F recorded `5` Memory Quality judge calls, zero reading jobs, and zero fresh reaction-audit judge calls
+    - Slice 8F validation observed that copied reaction audit artifacts contain all `5` source-run reaction windows, while the fresh Memory Quality rejudge covers the single selected window; this is diagnostic evidence only and not a product-quality claim
+    - `Slice8F-Lane-B-Bounded-Diagnostic-Smoke-Post-run-Report v0.md` is pending human review
     - Slice 6A adds compact mechanism-private `slow_cycle_audit.jsonl` evidence for slow-cycle candidate-vs-settled boundaries; it does not change slow-cycle behavior, prompt text/version, `runner.py`, public API/frontend/eval runner behavior, or full AI Evaluation posture
     - Slice 4A changed prompt-facing packet metadata additively, but did not change prompt text/version, runner behavior, `state_ops.py`, durable memory state, public API, frontend, eval runners, or `observability.py`
     - Slice 4A patch tightens `result_groups` and `not_forwarded_result_groups` so they reflect actual non-empty result groups rather than all possible groups
@@ -79,8 +85,8 @@ Last verified: `2026-05-17T19:11:05+08:00`
     - this effort optimizes existing `attentional_v2`; it does not replace the mechanism or introduce a greenfield redesign
     - this design chain was triggered by a real implementation mismatch between `memory_uptake_ops` and downstream memory/state persistence and projection structures, then converged through external evidence review, project assessment, accepted design, and implementation handoff
   - next step:
-    - human reviewer should review `Slice8E-Lane-A-Retry1-Bounded-Execution-Post-run-Report v0.md`
-    - do not launch Lane B, start another eval slice, create new eval run directories, modify eval runners, or update the evidence catalog until the Slice 8E report is reviewed and a next action is explicitly accepted
+    - human reviewer should review `Slice8F-Lane-B-Bounded-Diagnostic-Smoke-Post-run-Report v0.md`
+    - do not start another eval slice, create new eval run directories, modify eval runners, update the evidence catalog, or promote Long Span vNext to formal benchmark authority until the Slice 8F report is reviewed and a next action is explicitly accepted
   - current non-goals:
     - no next-slice implementation yet
     - no full evaluation run for this new handoff line yet
