@@ -13,9 +13,9 @@ Stable mechanism behavior changes still need to be promoted to the relevant stab
 ## Current Status
 
 ```text
-Current phase: Slice 6A patch report waiting for human review
-Implementation status: Slice 1 accepted; Slice 2A accepted; Slice 2B accepted; Slice 3A accepted; Slice 3B accepted; Slice 4A accepted including precision patch; Slice 4B accepted; Slice 5A accepted; Slice 5B accepted; Slice 6A implemented, reviewed, and patched for carried SourceRef audit evidence precision
-Next action: human reviewer accepts or patches the Slice 6A patch report before any next implementation slice
+Current phase: Slice 6B no-code closure brief waiting for human review
+Implementation status: Slice 1 accepted; Slice 2A accepted; Slice 2B accepted; Slice 3A accepted; Slice 3B accepted; Slice 4A accepted including precision patch; Slice 4B accepted; Slice 5A accepted; Slice 5B accepted; Slice 6A accepted including carried SourceRef audit precision patch; Slice 6B no-code closure brief created
+Next action: human reviewer accepts or revises the Slice 6B closure brief before Slice 7 / Minimal Eval Implementation
 Full AI Evaluation: not yet; deferred until core instrumentation is ready
 ```
 
@@ -1851,13 +1851,90 @@ Post-patch Report:
 - Deviations from accepted patch scope: none
 
 Reviewer decision:
+- accepted
+- Reviewer: human reviewer / user
+- Decision date: 2026-05-17
+- Required follow-up: prepare Slice 6B closure brief before Slice 7 / Minimal Eval Implementation
+
+Next recommended step:
+- Human reviewer reviews `briefs/Slice6B-Slow-cycle-Re-entry-Reconsolidation-and-Eval-readiness-Smoke-Pre-implementation-Brief v0.md`. Do not start Slice 7 yet.
+
+## Entry 2026-05-17 — Slice 6A patch accepted and Slice 6B no-code closure brief created
+
+Type:
+- review decision
+- pre-implementation brief
+- no-code closure recommendation
+
+Slice:
+- Slice 6B
+
+Related docs:
+- E实施0: `../E实施0-Implementation Roadmap & Handoff v0.md`
+- C设计 source: `../C设计0-Second Reader Shared Memory–Planning Mechanism Charter v0.md`, `../C设计1-Memory Ontology Design v0.md`, `../C设计3-Memory Formation & Settlement Design v0.md`, `../C设计5-Memory Management & Evolution Design v0(patched).md`, `../C设计8-Slow-cycle : Macro-planning Design v0.md`, `../C设计9-Evaluation Calibration & Minimal Eval Suite v0.md`
+- E实施1 / PR / report: `E实施1-Implementation Feasibility & Delta Audit v0.md`
+- Slice 6A report: `reports/Slice6A-Slow-cycle-Candidate-and-Settlement-Audit-Envelope-Foundations-Post-implementation-Report v0.md`
+- Slice 6A patch report: `reports/Slice6A-Patch-Carry-forward-Settled-SourceRef-Evidence-Precision-Report v0.md`
+- Brief: `briefs/Slice6B-Slow-cycle-Re-entry-Reconsolidation-and-Eval-readiness-Smoke-Pre-implementation-Brief v0.md`
+
+Branch / PR:
+- Branch: `main`
+- PR:
+- Commit:
+
+Reviewer decision:
+- Slice 6A patch report accepted
+- Reviewer: human reviewer / user
+- Decision date: 2026-05-17
+
+Pre-implementation Brief:
+- Link: `briefs/Slice6B-Slow-cycle-Re-entry-Reconsolidation-and-Eval-readiness-Smoke-Pre-implementation-Brief v0.md`
+- Status: waiting for human review
+- Recommendation: no additional Slice 6 runtime implementation; close Slice 6 if accepted and proceed to Slice 7 / Minimal Eval Implementation
+
+Files changed:
+- `docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
+- `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md`
+- `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice6B-Slow-cycle-Re-entry-Reconsolidation-and-Eval-readiness-Smoke-Pre-implementation-Brief v0.md`
+- `docs/current-state.md`
+- `docs/tasks/registry.md`
+- `docs/tasks/registry.json`
+
+Design contracts addressed:
+- Slice 6A plus patch provides enough slow-cycle candidate-vs-settled evidence for minimal eval-readiness
+- reconsolidation append-only records and tests are sufficient for now
+- continuation / re-entry evidence should be evaluated in Slice 7 from existing artifacts rather than pre-emptively instrumented in Slice 6
+- detour continuity remains owned by Slice 5 navigation/detour trace
+- no slow-cycle behavior change, prompt text/version change, `runner.py` change, public API/frontend/eval runner change, or full AI Evaluation
+
+Engineering tests:
+- Commands run:
+  - none; doc-only brief landing
+- Not run / reason:
+  - backend tests not run because no runtime implementation changed
+  - full AI Evaluation not run by constraint
+
+Contract / audit checks:
+- SourceRef preserved: unchanged; Slice 6A patch accepted
+- candidate vs settled separated: unchanged and sufficient for minimal eval smoke
+- reconsolidation append-only boundary: unchanged and covered by existing tests
+- audit not routed into prompt: unchanged
+- next slice: not started
+
+AI Evaluation:
+- Full eval run? no
+- Smoke only? no
+- Eval lane affected: none
+- Notes: Slice 7 / Minimal Eval Implementation remains the next planned eval step if this closure brief is accepted
+
+Reviewer decision:
 - waiting for human review
 - Reviewer:
 - Decision date:
-- Required follow-up: accept or patch the Slice 6A patch report before any next implementation slice
+- Required follow-up: accept or revise the Slice 6B no-code closure brief before Slice 7 / Minimal Eval Implementation
 
 Next recommended step:
-- Human reviewer reviews `reports/Slice6A-Patch-Carry-forward-Settled-SourceRef-Evidence-Precision-Report v0.md`. Do not start the next implementation slice yet.
+- Human reviewer reviews `briefs/Slice6B-Slow-cycle-Re-entry-Reconsolidation-and-Eval-readiness-Smoke-Pre-implementation-Brief v0.md`. Do not start Slice 7 yet.
 
 ## Entry Template
 
