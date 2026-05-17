@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-05-17T14:38:25+08:00`
+Last verified: `2026-05-17T16:24:36+08:00`
 
 ## Current Objective
 - Land the repo-local Memory / Planning / Evaluation design chain and implementation handoff for optimizing the existing `attentional_v2` mechanism.
@@ -62,7 +62,11 @@ Last verified: `2026-05-17T14:38:25+08:00`
     - Slice 8C bounded execution was attempted exactly within the accepted brief
     - Lane A launched as `bgjob_minimal_eval_suite_lane_a_smoke_20260517`, completed the fresh `attentional_v2` read for `huochu_shengming_de_yiyi_private_zh__segment_1`, then failed before summary generation because visible reaction `rx:Full_Content:src:c1:p1@0-p3@146:highlight:1` had no usable source-span locator for user-level selective matching
     - Lane B was not launched, `attentional_v2_minimal_eval_suite_lane_b_smoke_20260517` was not created, and no retry was attempted
-    - `Slice8C-Minimal-Eval-Suite-Execution-Preflight-and-Bounded-Run-Post-implementation-Report v0.md` is pending human review
+    - `Slice8C-Minimal-Eval-Suite-Execution-Preflight-and-Bounded-Run-Post-implementation-Report v0.md` is accepted as failed execution evidence
+    - Slice 8D Lane A source-locator compatibility patch is implemented
+    - Slice 8D patches the Lane A user-level selective runner to derive `segment_source_v1` slices from structured same-paragraph `primary_source_ref.source_span` when `target_locator` is absent
+    - Slice 8D records truly unlocatable reactions as compact diagnostics and skips them from matching; it does not turn unlocatable reactions into matches
+    - `Slice8D-Lane-A-Source-locator-Compatibility-Triage-and-Minimal-Patch-Post-implementation-Report v0.md` is pending human review
     - Slice 6A adds compact mechanism-private `slow_cycle_audit.jsonl` evidence for slow-cycle candidate-vs-settled boundaries; it does not change slow-cycle behavior, prompt text/version, `runner.py`, public API/frontend/eval runner behavior, or full AI Evaluation posture
     - Slice 4A changed prompt-facing packet metadata additively, but did not change prompt text/version, runner behavior, `state_ops.py`, durable memory state, public API, frontend, eval runners, or `observability.py`
     - Slice 4A patch tightens `result_groups` and `not_forwarded_result_groups` so they reflect actual non-empty result groups rather than all possible groups
@@ -70,8 +74,8 @@ Last verified: `2026-05-17T14:38:25+08:00`
     - this effort optimizes existing `attentional_v2`; it does not replace the mechanism or introduce a greenfield redesign
     - this design chain was triggered by a real implementation mismatch between `memory_uptake_ops` and downstream memory/state persistence and projection structures, then converged through external evidence review, project assessment, accepted design, and implementation handoff
   - next step:
-    - human reviewer should review `Slice8C-Minimal-Eval-Suite-Execution-Preflight-and-Bounded-Run-Post-implementation-Report v0.md`
-    - do not retry Lane A, launch Lane B, start another eval slice, create new eval run directories, modify eval runners, or update the evidence catalog until the Slice 8C report is reviewed and a next action is explicitly accepted
+    - human reviewer should review `Slice8D-Lane-A-Source-locator-Compatibility-Triage-and-Minimal-Patch-Post-implementation-Report v0.md`
+    - do not retry Lane A, launch Lane B, start another eval slice, create new eval run directories, modify eval runners beyond this accepted Lane A compatibility patch, or update the evidence catalog until the Slice 8D report is reviewed and a next action is explicitly accepted
   - current non-goals:
     - no next-slice implementation yet
     - no full evaluation run for this new handoff line yet

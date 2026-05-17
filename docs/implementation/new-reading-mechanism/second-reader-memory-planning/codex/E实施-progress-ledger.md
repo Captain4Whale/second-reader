@@ -13,9 +13,9 @@ Stable mechanism behavior changes still need to be promoted to the relevant stab
 ## Current Status
 
 ```text
-Current phase: Slice 8C Post-implementation Report waiting for human review
-Implementation status: Slice 1 accepted; Slice 2A accepted; Slice 2B accepted; Slice 3A accepted; Slice 3B accepted; Slice 4A accepted including precision patch; Slice 4B accepted; Slice 5A accepted; Slice 5B accepted; Slice 6A accepted including carried SourceRef audit precision patch; Slice 6B no-code closure brief accepted; Slice 6 closed; Slice 7A accepted; Slice 7B accepted; Slice 8A accepted; Slice 8B accepted; Slice 8C execution brief accepted; Slice 8C bounded Lane A execution attempted and failed before summary generation; Lane B not launched
-Next action: human reviewer reviews the Slice 8C Post-implementation Report before any retry, Lane B launch, evidence-catalog update, or next eval slice
+Current phase: Slice 8D Post-implementation Report waiting for human review
+Implementation status: Slice 1 accepted; Slice 2A accepted; Slice 2B accepted; Slice 3A accepted; Slice 3B accepted; Slice 4A accepted including precision patch; Slice 4B accepted; Slice 5A accepted; Slice 5B accepted; Slice 6A accepted including carried SourceRef audit precision patch; Slice 6B no-code closure brief accepted; Slice 6 closed; Slice 7A accepted; Slice 7B accepted; Slice 8A accepted; Slice 8B accepted; Slice 8C execution brief accepted; Slice 8C bounded Lane A execution attempted and failed before summary generation; Slice 8C report accepted as failed execution evidence; Slice 8D Lane A source-locator compatibility patch implemented; Lane B not launched
+Next action: human reviewer reviews the Slice 8D Post-implementation Report before any Lane A retry, Lane B launch, evidence-catalog update, or next eval slice
 Full AI Evaluation: not yet; deferred until a later accepted eval slice explicitly requests it
 ```
 
@@ -2567,6 +2567,95 @@ Reviewer decision:
 Next recommended step:
 - Human reviewer reviews `reports/Slice8C-Minimal-Eval-Suite-Execution-Preflight-and-Bounded-Run-Post-implementation-Report v0.md`.
 - Do not retry Lane A, launch Lane B, start another eval slice, modify eval runners, or update the evidence catalog until the report is reviewed and a next action is explicitly accepted.
+
+## Entry 2026-05-17 — Slice 8D Lane A source-locator compatibility patch implemented
+
+Type:
+- implementation PR
+- post-implementation report
+
+Slice:
+- Slice 8D
+
+Related docs:
+- E实施0: `../E实施0-Implementation Roadmap & Handoff v0.md`
+- C设计 source: `../C设计9-Evaluation Calibration & Minimal Eval Suite v0.md`
+- E实施1: `E实施1-Implementation Feasibility & Delta Audit v0.md`
+- Slice 8C report: `reports/Slice8C-Minimal-Eval-Suite-Execution-Preflight-and-Bounded-Run-Post-implementation-Report v0.md`
+- Slice 8D report: `reports/Slice8D-Lane-A-Source-locator-Compatibility-Triage-and-Minimal-Patch-Post-implementation-Report v0.md`
+
+Branch / PR:
+- Branch: `main`
+- PR:
+- Commit:
+
+Pre-implementation Brief:
+- Link: user-accepted Slice 8D triage / patch plan in chat
+- Accepted by: human reviewer / user
+- Acceptance date: 2026-05-17
+- Scope changes approved: patch Lane A source-locator compatibility only; no eval retry, no Lane B launch, no evidence-catalog update, no runtime mechanism change
+
+Files changed:
+- `reading-companion-backend/eval/attentional_v2/run_user_level_selective_comparison.py`
+- `reading-companion-backend/tests/test_run_user_level_selective_comparison.py`
+- `docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
+- `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md`
+- `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8D-Lane-A-Source-locator-Compatibility-Triage-and-Minimal-Patch-Post-implementation-Report v0.md`
+- `docs/current-state.md`
+- `docs/tasks/registry.md`
+- `docs/tasks/registry.json`
+
+Design contracts addressed:
+- uses structured `primary_source_ref.source_span` as Lane A source-locator compatibility fallback when `target_locator` is absent
+- preserves locator precedence and strict source-span overlap matching
+- skips truly unlocatable reactions as compact diagnostics rather than converting them into matches
+- does not parse `reaction_id` as the primary locator solution
+- does not change normalized export, runtime mechanism code, prompts, judge prompts, evidence catalog, Long Span runner, frontend, public API, or durable mechanism state
+
+Engineering tests:
+- Commands run:
+  - `cd reading-companion-backend && .venv/bin/python -m pytest tests/test_run_user_level_selective_comparison.py -q`
+  - `node -e "JSON.parse(require('fs').readFileSync('docs/tasks/registry.json','utf8'))"`
+  - `git diff --check`
+  - forbidden runtime/frontend/Long Span/evidence-catalog diff check
+- Result:
+  - targeted pytest passed: `14 passed, 6 warnings`
+  - `docs/tasks/registry.json` parsed successfully
+  - `git diff --check` passed
+  - forbidden runtime/frontend/Long Span/evidence-catalog diff check returned empty output
+- Not run / reason:
+  - no Lane A retry, no Lane B launch, no judges, no reading jobs, no full AI Evaluation, no benchmark jobs, and no new eval run directories by constraint
+
+Contract / audit checks:
+- SourceRef preserved: yes; patch uses existing structured SourceRef evidence
+- per-op outcome: no runtime changes
+- candidate vs settled separated: no runtime changes
+- audit not routed into prompt: no prompt changes
+- reaction_records not semantic memory: no runtime memory behavior changed
+- knowledge_activations not source truth: no knowledge activation behavior changed
+- other: unlocatable locator diagnostics are not product scores or matches
+
+AI Evaluation:
+- Full eval run? no
+- Smoke only? no new smoke run; this patch only repairs the Lane A source-locator compatibility seam exposed by Slice 8C
+- Eval lane affected: Lane A runner compatibility only
+- Notes: Slice 8C remains failed execution evidence; any retry requires a later accepted execution slice with a new `_retry1` run id
+
+Post-implementation Report:
+- Link: `reports/Slice8D-Lane-A-Source-locator-Compatibility-Triage-and-Minimal-Patch-Post-implementation-Report v0.md`
+- Summary: Lane A user-level selective runner now falls back to `primary_source_ref.source_span` when `target_locator` is absent and reports truly unlocatable reactions as diagnostics.
+- Deviations from accepted brief: none
+- Known gaps: no Lane A retry, no Lane B smoke evidence, no product-quality claim
+
+Reviewer decision:
+- waiting for human review
+- Reviewer:
+- Decision date:
+- Required follow-up: review Slice 8D report before authorizing any retry, Lane B launch, evidence-catalog update, or next eval slice
+
+Next recommended step:
+- Human reviewer reviews `reports/Slice8D-Lane-A-Source-locator-Compatibility-Triage-and-Minimal-Patch-Post-implementation-Report v0.md`.
+- Do not retry Lane A, launch Lane B, update the evidence catalog, or start another eval slice until the Slice 8D report is accepted and a next action is explicitly approved.
 
 ## Entry Template
 

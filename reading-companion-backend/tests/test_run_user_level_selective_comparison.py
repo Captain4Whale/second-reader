@@ -20,6 +20,35 @@ def _slice(*, start: int = 0, end: int = 17, paragraph_index: int = 1, text: str
     }
 
 
+def _source_ref(
+    *,
+    start: int = 0,
+    end: int = 17,
+    paragraph_index: int = 1,
+    quote: str = "Alpha hinge line.",
+) -> dict[str, object]:
+    return {
+        "source_span_id": f"src:c1:p{paragraph_index}@{start}-p{paragraph_index}@{end}",
+        "source_span": {
+            "start_cursor": {
+                "chapter_id": 1,
+                "chapter_ref": "Full Content",
+                "paragraph_index": paragraph_index,
+                "char_offset": start,
+            },
+            "end_cursor": {
+                "chapter_id": 1,
+                "chapter_ref": "Full Content",
+                "paragraph_index": paragraph_index,
+                "char_offset": end,
+            },
+        },
+        "quote": quote,
+        "role": "reaction_anchor",
+        "resolution": {"status": "matched", "method": "exact_text", "match_count": 1},
+    }
+
+
 def _note_case(*, source_span_text: str, note_text: str = "note", span: dict[str, object] | None = None) -> module.NoteCase:
     return module.NoteCase(
         note_case_id="source_a__note_1",
@@ -132,21 +161,70 @@ def test_target_locator_source_span_slices_take_priority(tmp_path: Path) -> None
     note_case = _note_case(source_span_text="Alpha hinge line.")
     result = module.evaluate_note_case_for_mechanism(
         note_case=note_case,
-        mechanism_payload=_mechanism_payload(
-            "different visible quote",
-            locator={
-                "match_text": "different visible quote",
-                "match_mode": "exact",
-                "source_span_resolution": "exact",
-                "source_span_slices": [_slice(text="Alpha hinge line.", end=len("Alpha hinge line."))],
+        mechanism_payload={
+            "status": "completed",
+            "normalized_eval_bundle": {
+                "reactions": [
+                    {
+                        "reaction_id": "r1",
+                        "type": "discern",
+                        "section_ref": "1.1",
+                        "anchor_quote": "different visible quote",
+                        "content": "reaction",
+                        "target_locator": {
+                            "match_text": "different visible quote",
+                            "match_mode": "exact",
+                            "source_span_resolution": "exact",
+                            "source_span_slices": [_slice(text="Alpha hinge line.", end=len("Alpha hinge line."))],
+                        },
+                        "primary_source_ref": _source_ref(
+                            start=0,
+                            end=len("Wrong paragraph text."),
+                            paragraph_index=9,
+                            quote="Wrong paragraph text.",
+                        ),
+                    }
+                ]
             },
-        ),
+        },
         mechanism_key="iterator_v1",
         run_root=tmp_path,
         judge_mode="none",
     )
 
     assert result["label"] == "exact_match"
+    assert result["best_reaction"]["source_span_resolution"] == "exact"
+
+
+def test_primary_source_ref_source_span_used_when_target_locator_missing(tmp_path: Path) -> None:
+    note_case = _note_case(source_span_text="Alpha hinge line.")
+    result = module.evaluate_note_case_for_mechanism(
+        note_case=note_case,
+        mechanism_payload={
+            "status": "completed",
+            "normalized_eval_bundle": {
+                "reactions": [
+                    {
+                        "reaction_id": "r1",
+                        "type": "discern",
+                        "section_ref": "1.1",
+                        "source_quote": "Alpha hinge line.",
+                        "content": "reaction",
+                        "target_locator": None,
+                        "primary_source_ref": _source_ref(end=len("Alpha hinge line."), quote="Alpha hinge line."),
+                    }
+                ]
+            },
+        },
+        mechanism_key="attentional_v2",
+        run_root=tmp_path,
+        judge_mode="none",
+    )
+
+    assert result["label"] == "exact_match"
+    assert result["best_reaction"]["source_span_resolution"] == "matched"
+    assert result["best_reaction"]["source_span_slices"] == [_slice(text="Alpha hinge line.", end=len("Alpha hinge line."))]
+    assert result["locator_diagnostics"]["unlocatable_reaction_count"] == 0
 
 
 def test_segment_fallback_span_never_auto_counts_as_exact(tmp_path: Path) -> None:
@@ -190,20 +268,54 @@ def test_textually_similar_reaction_without_source_overlap_is_not_a_candidate(tm
     assert result["candidate_reactions"] == []
 
 
-def test_visible_reaction_without_locator_fails_contract(tmp_path: Path) -> None:
+def test_visible_reaction_without_locator_is_skipped_as_diagnostic(tmp_path: Path) -> None:
     note_case = _note_case(source_span_text="Alpha hinge line.")
-    try:
-        module.evaluate_note_case_for_mechanism(
-            note_case=note_case,
-            mechanism_payload=_mechanism_payload("Alpha hinge line.", locator={}),
-            mechanism_key="attentional_v2",
-            run_root=tmp_path,
-            judge_mode="none",
-        )
-    except ValueError as exc:
-        assert "has no usable source locator" in str(exc)
-    else:
-        raise AssertionError("missing locator should fail user-level selective matching")
+    result = module.evaluate_note_case_for_mechanism(
+        note_case=note_case,
+        mechanism_payload=_mechanism_payload("Alpha hinge line.", locator={}),
+        mechanism_key="attentional_v2",
+        run_root=tmp_path,
+        judge_mode="none",
+    )
+
+    assert result["label"] == "miss"
+    assert result["candidate_reactions"] == []
+    assert result["judgment"]["reason"] == "no_candidate_source_span_overlap"
+    assert result["locator_diagnostics"] == {
+        "unlocatable_reaction_count": 1,
+        "unlocatable_reaction_ids": ["r1"],
+    }
+
+
+def test_zero_length_primary_source_ref_is_skipped_as_unlocatable(tmp_path: Path) -> None:
+    note_case = _note_case(source_span_text="Alpha hinge line.")
+    result = module.evaluate_note_case_for_mechanism(
+        note_case=note_case,
+        mechanism_payload={
+            "status": "completed",
+            "normalized_eval_bundle": {
+                "reactions": [
+                    {
+                        "reaction_id": "r1",
+                        "type": "retrospect",
+                        "section_ref": "1.1",
+                        "source_quote": "Alpha hinge line.",
+                        "content": "reaction",
+                        "target_locator": None,
+                        "primary_source_ref": _source_ref(start=17, end=17, quote="Alpha hinge line."),
+                    }
+                ]
+            },
+        },
+        mechanism_key="attentional_v2",
+        run_root=tmp_path,
+        judge_mode="none",
+    )
+
+    assert result["label"] == "miss"
+    assert result["candidate_reactions"] == []
+    assert result["locator_diagnostics"]["unlocatable_reaction_count"] == 1
+    assert result["locator_diagnostics"]["unlocatable_reaction_ids"] == ["r1"]
 
 
 def test_duplicate_reactions_on_same_span_are_deduped_before_judge(tmp_path: Path, monkeypatch) -> None:
@@ -303,7 +415,13 @@ def test_aggregate_results_counts_exact_and_focused_hits() -> None:
                 "source_id": "source_a",
                 "language_track": "en",
                 "mechanism_results": {
-                    "attentional_v2": {"label": "exact_match"},
+                    "attentional_v2": {
+                        "label": "exact_match",
+                        "locator_diagnostics": {
+                            "unlocatable_reaction_count": 1,
+                            "unlocatable_reaction_ids": ["rx:unlocatable"],
+                        },
+                    },
                     "iterator_v1": {"label": "miss"},
                 },
             },
@@ -322,6 +440,8 @@ def test_aggregate_results_counts_exact_and_focused_hits() -> None:
     assert aggregate["mechanisms"]["attentional_v2"]["note_recall"] == 1.0
     assert aggregate["mechanisms"]["attentional_v2"]["exact_match_count"] == 1
     assert aggregate["mechanisms"]["attentional_v2"]["focused_hit_count"] == 1
+    assert aggregate["mechanisms"]["attentional_v2"]["unlocatable_reaction_count"] == 1
+    assert aggregate["mechanisms"]["attentional_v2"]["unlocatable_reaction_ids"] == ["rx:unlocatable"]
     assert aggregate["mechanisms"]["iterator_v1"]["note_recall"] == 0.0
     assert aggregate["mechanisms"]["iterator_v1"]["incidental_cover_count"] == 1
     assert aggregate["pairwise_delta"]["note_recall_delta"] == 1.0

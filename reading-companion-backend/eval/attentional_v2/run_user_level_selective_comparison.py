@@ -326,6 +326,41 @@ def _locator_to_slice(
     }
 
 
+def _source_ref_to_slice(
+    source_ref: dict[str, Any],
+    *,
+    segment_id: str,
+    source_id: str,
+    text: str = "",
+) -> dict[str, Any] | None:
+    source_span = source_ref.get("source_span")
+    if not isinstance(source_span, dict):
+        return None
+    start_cursor = source_span.get("start_cursor")
+    end_cursor = source_span.get("end_cursor")
+    if not isinstance(start_cursor, dict) or not isinstance(end_cursor, dict):
+        return None
+    start_paragraph = _int_or_none(start_cursor.get("paragraph_index"))
+    end_paragraph = _int_or_none(end_cursor.get("paragraph_index"))
+    char_start = _int_or_none(start_cursor.get("char_offset"))
+    char_end = _int_or_none(end_cursor.get("char_offset"))
+    if start_paragraph is None or end_paragraph is None or char_start is None or char_end is None:
+        return None
+    if start_paragraph != end_paragraph:
+        return None
+    if start_paragraph <= 0 or char_start < 0 or char_end <= char_start:
+        return None
+    return {
+        "coordinate_system": "segment_source_v1",
+        "segment_id": segment_id,
+        "source_id": source_id,
+        "paragraph_index": start_paragraph,
+        "char_start": char_start,
+        "char_end": char_end,
+        "text": text,
+    }
+
+
 def _locator_source_span_slices(
     locator: dict[str, Any],
     *,
@@ -386,6 +421,19 @@ def _reaction_source_span(
         )
         if direct_slice is not None:
             return [direct_slice], _clean_text(direct_locator.get("match_mode")) or "char_locator"
+    primary_source_ref = reaction.get("primary_source_ref")
+    if isinstance(primary_source_ref, dict):
+        source_ref_slice = _source_ref_to_slice(
+            primary_source_ref,
+            segment_id=segment_id,
+            source_id=source_id,
+            text=_clean_text(primary_source_ref.get("quote")) or _clean_text(reaction.get("source_quote")) or visible_text,
+        )
+        if source_ref_slice is not None:
+            resolution = primary_source_ref.get("resolution")
+            return [source_ref_slice], (
+                _clean_text(resolution.get("status")) if isinstance(resolution, dict) else ""
+            ) or "primary_source_ref"
     primary_anchor = reaction.get("primary_anchor")
     if isinstance(primary_anchor, dict):
         anchor_locator = primary_anchor.get("locator")
@@ -410,8 +458,16 @@ def _slice_key(slice_payload: dict[str, Any]) -> tuple[str, int, int, int]:
     )
 
 
-def _reaction_candidates(bundle: dict[str, Any], *, note_case: NoteCase) -> list[dict[str, Any]]:
+def _empty_locator_diagnostics() -> dict[str, Any]:
+    return {
+        "unlocatable_reaction_count": 0,
+        "unlocatable_reaction_ids": [],
+    }
+
+
+def _reaction_candidates(bundle: dict[str, Any], *, note_case: NoteCase) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     reactions_by_span: dict[tuple[tuple[str, int, int, int], ...], dict[str, Any]] = {}
+    locator_diagnostics = _empty_locator_diagnostics()
     for index, item in enumerate(bundle.get("reactions") or []):
         if not isinstance(item, dict):
             continue
@@ -425,10 +481,10 @@ def _reaction_candidates(bundle: dict[str, Any], *, note_case: NoteCase) -> list
         )
         reaction_id = _clean_text(item.get("reaction_id")) or f"reaction_{index + 1}"
         if not source_slices:
-            raise ValueError(
-                f"Visible reaction {reaction_id} in segment {note_case.segment_id} has no usable source locator; "
-                "user-level selective matching requires source-span locators."
-            )
+            locator_diagnostics["unlocatable_reaction_count"] += 1
+            if len(locator_diagnostics["unlocatable_reaction_ids"]) < 12:
+                locator_diagnostics["unlocatable_reaction_ids"].append(reaction_id)
+            continue
         span_key = tuple(sorted(_slice_key(source_slice) for source_slice in source_slices))
         candidate = reactions_by_span.get(span_key)
         if candidate is None:
@@ -447,7 +503,7 @@ def _reaction_candidates(bundle: dict[str, Any], *, note_case: NoteCase) -> list
             continue
         candidate["duplicate_reaction_ids"].append(reaction_id)
         candidate["duplicate_reaction_count"] = int(candidate.get("duplicate_reaction_count", 1) or 1) + 1
-    return sorted(reactions_by_span.values(), key=lambda item: item["reaction_id"])
+    return sorted(reactions_by_span.values(), key=lambda item: item["reaction_id"]), locator_diagnostics
 
 
 def _slices_equal(left: list[dict[str, Any]], right: list[dict[str, Any]]) -> bool:
@@ -626,12 +682,13 @@ def evaluate_note_case_for_mechanism(
             "candidate_reactions": [],
             "span_candidate_count": 0,
             "duplicate_reaction_count": 0,
+            "locator_diagnostics": _empty_locator_diagnostics(),
         }
 
     bundle = dict(mechanism_payload.get("normalized_eval_bundle") or {})
     if note_case.source_span_coordinate_system != "segment_source_v1" or not note_case.source_span_slices:
         raise ValueError(f"Note case {note_case.note_case_id} is missing segment-source span slices")
-    reactions = _reaction_candidates(bundle, note_case=note_case)
+    reactions, locator_diagnostics = _reaction_candidates(bundle, note_case=note_case)
 
     exact_hits = [
         reaction
@@ -657,6 +714,7 @@ def evaluate_note_case_for_mechanism(
             "candidate_reactions": [exact_reaction],
             "span_candidate_count": len(exact_hits),
             "duplicate_reaction_count": sum(int(item.get("duplicate_reaction_count", 1) or 1) for item in exact_hits),
+            "locator_diagnostics": locator_diagnostics,
         }
 
     shortlisted: list[dict[str, Any]] = []
@@ -684,6 +742,7 @@ def evaluate_note_case_for_mechanism(
             "candidate_reactions": [],
             "span_candidate_count": 0,
             "duplicate_reaction_count": 0,
+            "locator_diagnostics": locator_diagnostics,
         }
 
     evaluated_candidates: list[dict[str, Any]] = []
@@ -724,6 +783,7 @@ def evaluate_note_case_for_mechanism(
         "candidate_reactions": evaluated_candidates[:6],
         "span_candidate_count": len(shortlisted),
         "duplicate_reaction_count": sum(int(item.get("duplicate_reaction_count", 1) or 1) for item in shortlisted),
+        "locator_diagnostics": locator_diagnostics,
     }
 
 
@@ -744,6 +804,28 @@ def _aggregate_results(
     for mechanism_key in mechanism_keys:
         scoped = [payload for payload in note_case_payloads if mechanism_key in payload["mechanism_results"]]
         label_counts = Counter(str(payload["mechanism_results"][mechanism_key]["label"]) for payload in scoped)
+        unlocatable_observation_count = sum(
+            int(
+                payload["mechanism_results"][mechanism_key]
+                .get("locator_diagnostics", {})
+                .get("unlocatable_reaction_count", 0)
+                or 0
+            )
+            for payload in scoped
+        )
+        unlocatable_reaction_ids = sorted(
+            {
+                str(reaction_id)
+                for payload in scoped
+                for reaction_id in (
+                    payload["mechanism_results"][mechanism_key]
+                    .get("locator_diagnostics", {})
+                    .get("unlocatable_reaction_ids", [])
+                    or []
+                )
+                if str(reaction_id)
+            }
+        )
         by_source: dict[str, list[dict[str, Any]]] = defaultdict(list)
         by_language: dict[str, list[dict[str, Any]]] = defaultdict(list)
         for payload in scoped:
@@ -763,6 +845,9 @@ def _aggregate_results(
                 int(payload["mechanism_results"][mechanism_key].get("duplicate_reaction_count", 0) or 0)
                 for payload in scoped
             ),
+            "unlocatable_reaction_count": len(unlocatable_reaction_ids),
+            "unlocatable_reaction_observation_count": unlocatable_observation_count,
+            "unlocatable_reaction_ids": unlocatable_reaction_ids[:12],
             "note_recall": round(
                 (
                     label_counts.get("exact_match", 0) + label_counts.get("focused_hit", 0)
