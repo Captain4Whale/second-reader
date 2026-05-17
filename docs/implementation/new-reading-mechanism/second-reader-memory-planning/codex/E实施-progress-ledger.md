@@ -13,9 +13,9 @@ Stable mechanism behavior changes still need to be promoted to the relevant stab
 ## Current Status
 
 ```text
-Current phase: Slice 8F Lane B bounded diagnostic smoke report waiting for human review
-Implementation status: Slice 1 accepted; Slice 2A accepted; Slice 2B accepted; Slice 3A accepted; Slice 3B accepted; Slice 4A accepted including precision patch; Slice 4B accepted; Slice 5A accepted; Slice 5B accepted; Slice 6A accepted including carried SourceRef audit precision patch; Slice 6B no-code closure brief accepted; Slice 6 closed; Slice 7A accepted; Slice 7B accepted; Slice 8A accepted; Slice 8B accepted; Slice 8C execution brief accepted; Slice 8C bounded Lane A execution attempted and failed before summary generation; Slice 8C report accepted as failed execution evidence; Slice 8D Lane A source-locator compatibility patch accepted; Slice 8E Lane A `_retry1` accepted; Slice 8F Lane B bounded diagnostic smoke completed successfully
-Next action: human reviewer reviews the Slice 8F Post-run Report before any evidence-catalog update, formal-authority promotion, or next eval slice
+Current phase: Slice 8G Minimal Eval Suite smoke closure and evidence interpretation report waiting for human review
+Implementation status: Slice 1 accepted; Slice 2A accepted; Slice 2B accepted; Slice 3A accepted; Slice 3B accepted; Slice 4A accepted including precision patch; Slice 4B accepted; Slice 5A accepted; Slice 5B accepted; Slice 6A accepted including carried SourceRef audit precision patch; Slice 6B no-code closure brief accepted; Slice 6 closed; Slice 7A accepted; Slice 7B accepted; Slice 8A accepted; Slice 8B accepted; Slice 8C execution brief accepted; Slice 8C bounded Lane A execution attempted and failed before summary generation; Slice 8C report accepted as failed execution evidence; Slice 8D Lane A source-locator compatibility patch accepted; Slice 8E Lane A `_retry1` accepted; Slice 8F Lane B bounded diagnostic smoke accepted; Slice 8G closure report landed
+Next action: human reviewer reviews the Slice 8G closure report before any evidence-catalog update, formal-authority promotion, broader eval, or next eval slice
 Full AI Evaluation: not yet; deferred until a later accepted eval slice explicitly requests it
 ```
 
@@ -2651,11 +2651,11 @@ Reviewer decision:
 - accepted
 - Reviewer: user
 - Decision date: 2026-05-17
-- Required follow-up: Lane A `_retry1` bounded execution was authorized and accepted as Slice 8E; Lane B bounded diagnostic smoke is recorded as Slice 8F and pending report review
+- Required follow-up: Lane A `_retry1` and Lane B bounded diagnostic smoke are accepted; Slice 8G closure report is pending review
 
 Next recommended step:
-- Continue with `reports/Slice8F-Lane-B-Bounded-Diagnostic-Smoke-Post-run-Report v0.md` review.
-- Do not update the evidence catalog, promote Long Span vNext to formal benchmark authority, or start another eval slice until the Slice 8F report is accepted and a next action is explicitly approved.
+- Continue with `reports/Slice8G-Minimal-Eval-Suite-Smoke-Closure-and-Evidence-Interpretation-Report v0.md` review.
+- Do not update the evidence catalog, promote Long Span vNext to formal benchmark authority, run broader eval, or start another eval slice until the Slice 8G report is accepted and a next action is explicitly approved.
 
 ## Entry 2026-05-17 — Slice 8E Lane A `_retry1` bounded execution
 
@@ -2761,11 +2761,11 @@ Reviewer decision:
 - accepted
 - Reviewer: user
 - Decision date: 2026-05-17
-- Required follow-up: Lane B bounded diagnostic smoke authorized and completed as Slice 8F; review the Slice 8F report before any evidence-catalog update, formal-authority promotion, or next eval slice
+- Required follow-up: Lane B bounded diagnostic smoke is accepted; Slice 8G closure report is pending review before any evidence-catalog update, formal-authority promotion, broader eval, or next eval slice
 
 Next recommended step:
-- Continue with `reports/Slice8F-Lane-B-Bounded-Diagnostic-Smoke-Post-run-Report v0.md` review.
-- Do not update the evidence catalog, promote Long Span vNext to formal benchmark authority, or start another eval slice until the Slice 8F report is accepted and a next action is explicitly approved.
+- Continue with `reports/Slice8G-Minimal-Eval-Suite-Smoke-Closure-and-Evidence-Interpretation-Report v0.md` review.
+- Do not update the evidence catalog, promote Long Span vNext to formal benchmark authority, run broader eval, or start another eval slice until the Slice 8G report is accepted and a next action is explicitly approved.
 
 ## Entry 2026-05-17 — Slice 8F Lane B bounded diagnostic smoke
 
@@ -2872,14 +2872,117 @@ Post-implementation Report:
   - Long Span vNext remains diagnostic phase 1, not formal authority
 
 Reviewer decision:
+- accepted
+- Reviewer: user
+- Decision date: 2026-05-17
+- Required follow-up: Slice 8G closure and evidence interpretation report landed; review the Slice 8G report before any evidence-catalog update, formal-authority promotion, broader eval, or next eval slice
+
+Next recommended step:
+- Continue with `reports/Slice8G-Minimal-Eval-Suite-Smoke-Closure-and-Evidence-Interpretation-Report v0.md` review.
+- Do not update the evidence catalog, promote Long Span vNext to formal benchmark authority, run broader eval, or start another eval slice until the Slice 8G report is accepted and a next action is explicitly approved.
+
+## Entry 2026-05-17 — Slice 8G Minimal Eval Suite smoke closure and evidence interpretation
+
+Type:
+- doc-only closure report
+- evidence interpretation report
+
+Slice:
+- Slice 8
+
+Related docs:
+- E实施0: `../E实施0-Implementation Roadmap & Handoff v0.md`
+- C设计 source: `../C设计9-Evaluation Calibration & Minimal Eval Suite v0.md`
+- E实施1 / PR / report:
+  - `E实施1-Implementation Feasibility & Delta Audit v0.md`
+  - `reports/Slice8C-Minimal-Eval-Suite-Execution-Preflight-and-Bounded-Run-Post-implementation-Report v0.md`
+  - `reports/Slice8D-Lane-A-Source-locator-Compatibility-Triage-and-Minimal-Patch-Post-implementation-Report v0.md`
+  - `reports/Slice8E-Lane-A-Retry1-Bounded-Execution-Post-run-Report v0.md`
+  - `reports/Slice8F-Lane-B-Bounded-Diagnostic-Smoke-Post-run-Report v0.md`
+  - `reports/Slice8G-Minimal-Eval-Suite-Smoke-Closure-and-Evidence-Interpretation-Report v0.md`
+
+Branch / PR:
+- Branch: `main`
+- PR:
+- Commit:
+
+Pre-implementation Brief:
+- Link: `briefs/Slice8C-Minimal-Eval-Suite-Execution-Preflight-and-Bounded-Run-Pre-implementation-Brief v0.md`
+- Accepted by: user
+- Acceptance date: 2026-05-17
+- Scope changes approved:
+  - Slice 8F report accepted
+  - land doc-only closure and evidence interpretation
+  - do not run more eval
+  - do not update evidence catalog
+  - do not modify runtime code, eval runners, judge prompts, frontend, public API, or durable state
+  - do not promote Long Span vNext to formal benchmark authority
+  - do not claim product-quality proof
+
+Files changed:
+- `reports/Slice8G-Minimal-Eval-Suite-Smoke-Closure-and-Evidence-Interpretation-Report v0.md`
+- `../README.md`
+- `E实施-progress-ledger.md`
+- `../../../../current-state.md`
+- `../../../../tasks/registry.md`
+- `../../../../tasks/registry.json`
+
+Design contracts addressed:
+- closes Slice 8C through Slice 8F as bounded diagnostic smoke evidence
+- preserves Lane A / Lane B interpretation boundaries
+- keeps Long Span vNext diagnostic-only
+- records that Lane B copied reaction audit is broader than the selected Memory Quality window
+- does not claim product-quality proof from smoke outputs
+
+Engineering tests:
+- Commands run:
+  - `node -e "JSON.parse(require('fs').readFileSync('docs/tasks/registry.json','utf8'))"`
+  - `git diff --check`
+  - `git diff --name-only -- reading-companion-backend/src/attentional_v2 reading-companion-frontend reading-companion-backend/eval/attentional_v2/run_user_level_selective_comparison.py reading-companion-backend/eval/attentional_v2/run_long_span_vnext.py reading-companion-backend/docs/evaluation/evidence_catalog.md reading-companion-backend/docs/evaluation/evidence_catalog.json`
+- Result:
+  - pending validation after docs are staged
+- Not run / reason:
+  - no eval, no benchmark jobs, no judge calls, no reading jobs, and no eval run directories by constraint
+
+Contract / audit checks:
+- SourceRef preserved: no runtime SourceRef behavior changed
+- per-op outcome: no runtime op behavior changed
+- candidate vs settled separated: no runtime behavior changed
+- audit not routed into prompt: no prompt changes
+- reaction_records not semantic memory: no runtime memory behavior changed
+- knowledge_activations not source truth: no slow-cycle behavior changed
+- other:
+  - no evidence catalog update
+  - no formal benchmark authority promotion
+  - no new metric taxonomy
+
+AI Evaluation:
+- Full eval run? no
+- Smoke only? no new smoke run in Slice 8G; this is interpretation of already completed Slice 8C through Slice 8F evidence
+- Eval lane affected: Lane A and Lane B interpretation only
+- Notes:
+  - Minimal Eval Suite smoke is recorded as completed after Lane A retry
+  - evidence remains diagnostic and not product-quality proof
+
+Post-implementation Report:
+- Link: `reports/Slice8G-Minimal-Eval-Suite-Smoke-Closure-and-Evidence-Interpretation-Report v0.md`
+- Summary: Closure report interprets Slice 8C failed Lane A attempt, Slice 8D source-locator patch, Slice 8E Lane A retry success, and Slice 8F Lane B diagnostic smoke success.
+- Deviations from accepted brief: none
+- Known gaps:
+  - no evidence catalog entry
+  - no formal benchmark promotion
+  - no broader eval
+  - optional future brief may clarify Lane B copied reaction-audit filtering/reporting semantics
+
+Reviewer decision:
 - waiting for human review
 - Reviewer:
 - Decision date:
-- Required follow-up: review Slice 8F report before any evidence-catalog update, formal-authority promotion, or next eval slice
+- Required follow-up: review Slice 8G report before any evidence-catalog update, formal-authority promotion, broader eval, or next eval slice
 
 Next recommended step:
-- Human reviewer reviews `reports/Slice8F-Lane-B-Bounded-Diagnostic-Smoke-Post-run-Report v0.md`.
-- If accepted, the Minimal Eval Suite smoke can be closed or a separate small follow-up can clarify copied reaction-audit filtering/reporting semantics before any catalog entry.
+- Human reviewer reviews `reports/Slice8G-Minimal-Eval-Suite-Smoke-Closure-and-Evidence-Interpretation-Report v0.md`.
+- If accepted, decide separately whether to create a diagnostic evidence-catalog entry brief, a Lane B reaction-audit semantics brief, or a broader eval brief.
 
 ## Entry Template
 
