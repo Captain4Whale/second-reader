@@ -1592,7 +1592,7 @@
     {
       "id": "TASK-SECOND-READER-MEMORY-PLANNING-SLICE8H-BRIEF-ACCEPTANCE",
       "title": "Review Slice 8H Diagnostic Evidence Catalog Entry Brief",
-      "status": "waiting",
+      "status": "done",
       "lane": "mechanism_runtime",
       "priority": "high",
       "detail_ref": "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice8H-Diagnostic-Evidence-Catalog-Entry-for-Minimal-Eval-Suite-Smoke-Pre-implementation-Brief v0.md",
@@ -1617,8 +1617,8 @@
         "bgjob_minimal_eval_suite_lane_a_smoke_20260517_retry1",
         "bgjob_minimal_eval_suite_lane_b_smoke_20260517"
       ],
-      "acceptance_ref": "",
-      "next_action": "Human reviewer should review the Slice 8H diagnostic evidence catalog entry brief. The brief recommends a future diagnostic_smoke catalog entry for the completed Slice 8C through Slice 8G Minimal Eval Suite smoke sequence, but the evidence catalog remains unchanged until this brief is accepted. Do not run eval, create eval run directories, modify eval runners/runtime code, update the evidence catalog, promote Long Span vNext, or claim product quality.",
+      "acceptance_ref": "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice8H-Diagnostic-Evidence-Catalog-Entry-for-Minimal-Eval-Suite-Smoke-Pre-implementation-Brief v0.md",
+      "next_action": "Slice 8H Pre-implementation Brief is accepted. Slice 8H catalog entry implementation has landed and is recorded in TASK-SECOND-READER-MEMORY-PLANNING-SLICE8H-REPORT-REVIEW; do not run eval, promote Long Span vNext, add further catalog entries, or claim product quality until the Slice 8H report is reviewed.",
       "blocked_by": [],
       "evidence_refs": [
         "docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md",
@@ -1636,9 +1636,54 @@
         "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_minimal_eval_suite_lane_b_smoke_20260517/summary/report.md",
         "reading-companion-backend/docs/evaluation/evidence_catalog.md",
         "reading-companion-backend/docs/evaluation/evidence_catalog.json",
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8H-Diagnostic-Evidence-Catalog-Entry-for-Minimal-Eval-Suite-Smoke-Post-implementation-Report v0.md",
         "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md"
       ],
-      "last_updated": "2026-05-17T12:51:46Z",
+      "last_updated": "2026-05-17T14:14:36Z",
+      "last_updated_by": "codex"
+    },
+    {
+      "id": "TASK-SECOND-READER-MEMORY-PLANNING-SLICE8H-REPORT-REVIEW",
+      "title": "Review Slice 8H Diagnostic Evidence Catalog Entry Report",
+      "status": "waiting",
+      "lane": "mechanism_runtime",
+      "priority": "high",
+      "detail_ref": "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8H-Diagnostic-Evidence-Catalog-Entry-for-Minimal-Eval-Suite-Smoke-Post-implementation-Report v0.md",
+      "truth_refs": [
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md",
+        "docs/current-state.md",
+        "docs/tasks/registry.md",
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施1-Implementation Feasibility & Delta Audit v0.md",
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice8H-Diagnostic-Evidence-Catalog-Entry-for-Minimal-Eval-Suite-Smoke-Pre-implementation-Brief v0.md",
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8H-Diagnostic-Evidence-Catalog-Entry-for-Minimal-Eval-Suite-Smoke-Post-implementation-Report v0.md",
+        "reading-companion-backend/docs/evaluation/evidence_catalog.md",
+        "reading-companion-backend/docs/evaluation/evidence_catalog.json",
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md"
+      ],
+      "decision_refs": [
+        "DEC-089"
+      ],
+      "job_refs": [
+        "bgjob_minimal_eval_suite_lane_a_smoke_20260517",
+        "bgjob_minimal_eval_suite_lane_a_smoke_20260517_retry1",
+        "bgjob_minimal_eval_suite_lane_b_smoke_20260517"
+      ],
+      "acceptance_ref": "",
+      "next_action": "Human reviewer should review the Slice 8H diagnostic evidence catalog entry report. The catalog now contains one diagnostic_smoke entry for the completed Slice 8C through Slice 8G Minimal Eval Suite smoke sequence; this is diagnostic only, not formal benchmark authority or product-quality proof. Do not run eval, create eval run directories, modify eval runners/runtime code, add further catalog entries, promote Long Span vNext, or claim product quality.",
+      "blocked_by": [],
+      "evidence_refs": [
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md",
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/E实施0-Implementation Roadmap & Handoff v0.md",
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施1-Implementation Feasibility & Delta Audit v0.md",
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice8H-Diagnostic-Evidence-Catalog-Entry-for-Minimal-Eval-Suite-Smoke-Pre-implementation-Brief v0.md",
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8H-Diagnostic-Evidence-Catalog-Entry-for-Minimal-Eval-Suite-Smoke-Post-implementation-Report v0.md",
+        "reading-companion-backend/docs/evaluation/evidence_catalog.md",
+        "reading-companion-backend/docs/evaluation/evidence_catalog.json",
+        "reading-companion-backend/scripts/update_evaluation_catalog.py",
+        "reading-companion-backend/docs/evaluation/README.md",
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md"
+      ],
+      "last_updated": "2026-05-17T14:14:36Z",
       "last_updated_by": "codex"
     },
     {

@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-05-17T20:51:46+08:00`
+Last updated: `2026-05-17T22:14:36+08:00`
 
 ## Status Values
 - `active`
@@ -464,12 +464,12 @@ Last updated: `2026-05-17T20:51:46+08:00`
 
 ## Waiting
 
-### `TASK-SECOND-READER-MEMORY-PLANNING-SLICE8H-BRIEF-ACCEPTANCE` — Review Slice 8H Diagnostic Evidence Catalog Entry Brief
+### `TASK-SECOND-READER-MEMORY-PLANNING-SLICE8H-REPORT-REVIEW` — Review Slice 8H Diagnostic Evidence Catalog Entry Report
 - Status: `waiting`
 - Lane: `mechanism_runtime`
 - Priority: `high`
-- Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice8H-Diagnostic-Evidence-Catalog-Entry-for-Minimal-Eval-Suite-Smoke-Pre-implementation-Brief v0.md`
-- Next: human reviewer should review the Slice 8H diagnostic evidence catalog entry brief. The brief recommends a future `diagnostic_smoke` catalog entry for the completed Slice 8C through Slice 8G Minimal Eval Suite smoke sequence, but the evidence catalog remains unchanged until this brief is accepted. Do not run eval, create eval run directories, modify eval runners/runtime code, update the evidence catalog, promote Long Span vNext, or claim product quality.
+- Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8H-Diagnostic-Evidence-Catalog-Entry-for-Minimal-Eval-Suite-Smoke-Post-implementation-Report v0.md`
+- Next: human reviewer should review the Slice 8H diagnostic evidence catalog entry report. The catalog now contains one `diagnostic_smoke` entry for the completed Slice 8C through Slice 8G Minimal Eval Suite smoke sequence; this is diagnostic only, not formal benchmark authority or product-quality proof. Do not run eval, create eval run directories, modify eval runners/runtime code, add further catalog entries, promote Long Span vNext, or claim product quality.
 - Jobs:
   - `bgjob_minimal_eval_suite_lane_a_smoke_20260517` (`failed`)
   - `bgjob_minimal_eval_suite_lane_a_smoke_20260517_retry1` (`completed`)
@@ -493,6 +493,9 @@ Last updated: `2026-05-17T20:51:46+08:00`
   - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8F-Lane-B-Bounded-Diagnostic-Smoke-Post-run-Report v0.md`
   - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8G-Minimal-Eval-Suite-Smoke-Closure-and-Evidence-Interpretation-Report v0.md`
   - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice8H-Diagnostic-Evidence-Catalog-Entry-for-Minimal-Eval-Suite-Smoke-Pre-implementation-Brief v0.md`
+  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8H-Diagnostic-Evidence-Catalog-Entry-for-Minimal-Eval-Suite-Smoke-Post-implementation-Report v0.md`
+  - `reading-companion-backend/docs/evaluation/evidence_catalog.md`
+  - `reading-companion-backend/docs/evaluation/evidence_catalog.json`
   - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_minimal_eval_suite_lane_a_smoke_20260517_retry1/summary/aggregate.json`
   - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_minimal_eval_suite_lane_a_smoke_20260517_retry1/summary/report.md`
   - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_minimal_eval_suite_lane_a_smoke_20260517_retry1/summary/llm_usage.json`
@@ -574,6 +577,23 @@ Last updated: `2026-05-17T20:51:46+08:00`
 - Next: keep section-first compatibility fields and containers only as migration sidecars; start removal only after the V2-native overview, chapter, and marks surfaces are stable enough that the older presentation model is no longer needed for normal product use
 
 ## Done
+
+### `TASK-SECOND-READER-MEMORY-PLANNING-SLICE8H-BRIEF-ACCEPTANCE` — Review Slice 8H Diagnostic Evidence Catalog Entry Brief
+- Status: `done`
+- Lane: `mechanism_runtime`
+- Priority: `high`
+- Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice8H-Diagnostic-Evidence-Catalog-Entry-for-Minimal-Eval-Suite-Smoke-Pre-implementation-Brief v0.md`
+- Next: Slice 8H Pre-implementation Brief is accepted. Slice 8H catalog entry implementation has landed and is recorded in `TASK-SECOND-READER-MEMORY-PLANNING-SLICE8H-REPORT-REVIEW`; do not run eval, promote Long Span vNext, add further catalog entries, or claim product quality until the Slice 8H report is reviewed.
+- Jobs:
+  - `bgjob_minimal_eval_suite_lane_a_smoke_20260517` (`failed`)
+  - `bgjob_minimal_eval_suite_lane_a_smoke_20260517_retry1` (`completed`)
+  - `bgjob_minimal_eval_suite_lane_b_smoke_20260517` (`completed`)
+- Evidence:
+  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice8H-Diagnostic-Evidence-Catalog-Entry-for-Minimal-Eval-Suite-Smoke-Pre-implementation-Brief v0.md`
+  - `reading-companion-backend/docs/evaluation/evidence_catalog.md`
+  - `reading-companion-backend/docs/evaluation/evidence_catalog.json`
+  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8H-Diagnostic-Evidence-Catalog-Entry-for-Minimal-Eval-Suite-Smoke-Post-implementation-Report v0.md`
+  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md`
 
 ### `TASK-SECOND-READER-MEMORY-PLANNING-SLICE8G-REPORT-REVIEW` — Review Slice 8G Minimal Eval Suite Smoke Closure Report
 - Status: `done`

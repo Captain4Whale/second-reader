@@ -13,9 +13,9 @@ Stable mechanism behavior changes still need to be promoted to the relevant stab
 ## Current Status
 
 ```text
-Current phase: Slice 8H diagnostic evidence catalog entry brief waiting for human review
-Implementation status: Slice 1 accepted; Slice 2A accepted; Slice 2B accepted; Slice 3A accepted; Slice 3B accepted; Slice 4A accepted including precision patch; Slice 4B accepted; Slice 5A accepted; Slice 5B accepted; Slice 6A accepted including carried SourceRef audit precision patch; Slice 6B no-code closure brief accepted; Slice 6 closed; Slice 7A accepted; Slice 7B accepted; Slice 8A accepted; Slice 8B accepted; Slice 8C execution brief accepted; Slice 8C bounded Lane A execution attempted and failed before summary generation; Slice 8C report accepted as failed execution evidence; Slice 8D Lane A source-locator compatibility patch accepted; Slice 8E Lane A `_retry1` accepted; Slice 8F Lane B bounded diagnostic smoke accepted; Slice 8G closure report accepted; Slice 8H diagnostic evidence catalog entry brief landed
-Next action: human reviewer reviews the Slice 8H brief before any evidence-catalog update, formal-authority promotion, broader eval, or next eval slice
+Current phase: Slice 8H diagnostic evidence catalog entry report waiting for human review
+Implementation status: Slice 1 accepted; Slice 2A accepted; Slice 2B accepted; Slice 3A accepted; Slice 3B accepted; Slice 4A accepted including precision patch; Slice 4B accepted; Slice 5A accepted; Slice 5B accepted; Slice 6A accepted including carried SourceRef audit precision patch; Slice 6B no-code closure brief accepted; Slice 6 closed; Slice 7A accepted; Slice 7B accepted; Slice 8A accepted; Slice 8B accepted; Slice 8C execution brief accepted; Slice 8C bounded Lane A execution attempted and failed before summary generation; Slice 8C report accepted as failed execution evidence; Slice 8D Lane A source-locator compatibility patch accepted; Slice 8E Lane A `_retry1` accepted; Slice 8F Lane B bounded diagnostic smoke accepted; Slice 8G closure report accepted; Slice 8H diagnostic evidence catalog entry brief accepted; Slice 8H diagnostic catalog entry landed
+Next action: human reviewer reviews the Slice 8H report before any further catalog entry, formal-authority promotion, broader eval, or next eval slice
 Full AI Evaluation: not yet; deferred until a later accepted eval slice explicitly requests it
 ```
 
@@ -2989,6 +2989,8 @@ Next recommended step:
 Type:
 - pre-implementation brief
 - cataloging brief
+- catalog-only implementation
+- post-implementation report
 
 Slice:
 - Slice 8
@@ -3012,8 +3014,8 @@ Branch / PR:
 
 Pre-implementation Brief:
 - Link: `briefs/Slice8H-Diagnostic-Evidence-Catalog-Entry-for-Minimal-Eval-Suite-Smoke-Pre-implementation-Brief v0.md`
-- Accepted by: pending human review
-- Acceptance date:
+- Accepted by: user
+- Acceptance date: 2026-05-17
 - Scope changes approved:
   - Slice 8G closure report accepted
   - prepare a doc-only cataloging brief
@@ -3022,6 +3024,11 @@ Pre-implementation Brief:
 
 Files changed:
 - `briefs/Slice8H-Diagnostic-Evidence-Catalog-Entry-for-Minimal-Eval-Suite-Smoke-Pre-implementation-Brief v0.md`
+- `reports/Slice8H-Diagnostic-Evidence-Catalog-Entry-for-Minimal-Eval-Suite-Smoke-Post-implementation-Report v0.md`
+- `reading-companion-backend/docs/evaluation/evidence_catalog.md`
+- `reading-companion-backend/docs/evaluation/evidence_catalog.json`
+- `reading-companion-backend/docs/evaluation/README.md`
+- `reading-companion-backend/scripts/update_evaluation_catalog.py`
 - `../README.md`
 - `E实施-progress-ledger.md`
 - `../../../../current-state.md`
@@ -3029,20 +3036,21 @@ Files changed:
 - `../../../../tasks/registry.json`
 
 Design contracts addressed:
-- recommends one future diagnostic smoke evidence catalog entry for the Slice 8C through Slice 8G sequence
-- proposes `diagnostic_smoke` as a status label, with `not_formal_authority` and `not_product_quality_proof` preserved as caveats
-- keeps `evidence_catalog.md` and `evidence_catalog.json` unchanged during brief landing
+- adds one diagnostic smoke evidence catalog entry for the Slice 8C through Slice 8G sequence
+- adds `diagnostic_smoke` as a catalog status label, with `not_formal_authority` and `not_product_quality_proof` preserved as caveats
+- keeps `FORMAL_STATUSES` unchanged, so `diagnostic_smoke` is not formal authority
 - keeps Long Span vNext diagnostic-only, not formal benchmark authority
 
 Engineering tests:
 - Commands run:
+  - `cd reading-companion-backend && .venv/bin/python scripts/update_evaluation_catalog.py --check`
   - `node -e "JSON.parse(require('fs').readFileSync('docs/tasks/registry.json','utf8'))"`
   - `git diff --check`
-  - `git diff --name-only -- reading-companion-backend/src/attentional_v2 reading-companion-frontend reading-companion-backend/eval/attentional_v2/run_user_level_selective_comparison.py reading-companion-backend/eval/attentional_v2/run_long_span_vnext.py reading-companion-backend/docs/evaluation/evidence_catalog.md reading-companion-backend/docs/evaluation/evidence_catalog.json`
+  - `git diff --name-only -- reading-companion-backend/src/attentional_v2 reading-companion-frontend reading-companion-backend/eval/attentional_v2/run_user_level_selective_comparison.py reading-companion-backend/eval/attentional_v2/run_long_span_vnext.py`
 - Result:
-  - pending validation after docs are staged
+  - passed; forbidden runtime/frontend/eval-runner diff check returned empty output
 - Not run / reason:
-  - no eval, benchmark jobs, judge calls, reading jobs, eval run directories, or catalog update by constraint
+  - no eval, benchmark jobs, judge calls, reading jobs, or eval run directories by constraint
 
 Contract / audit checks:
 - SourceRef preserved: no runtime SourceRef behavior changed
@@ -3052,35 +3060,35 @@ Contract / audit checks:
 - reaction_records not semantic memory: no runtime memory behavior changed
 - knowledge_activations not source truth: no slow-cycle behavior changed
 - other:
-  - no evidence catalog update during brief landing
+  - evidence catalog updated with one diagnostic smoke entry only
   - no formal benchmark authority promotion
   - no new metric taxonomy
 
 AI Evaluation:
 - Full eval run? no
-- Smoke only? no new smoke run in Slice 8H
+- Smoke only? no new smoke run in Slice 8H; existing Slice 8C through Slice 8G smoke sequence was cataloged
 - Eval lane affected: Lane A and Lane B cataloging recommendation only
 - Notes:
-  - Slice 8H recommends cataloging completed smoke evidence as diagnostic only
-  - the proposed future catalog entry must not be read as product-quality proof
+  - Slice 8H catalogs completed smoke evidence as diagnostic only
+  - the catalog entry must not be read as product-quality proof
 
 Post-implementation Report:
-- Link:
-- Summary:
-- Deviations from accepted brief:
+- Link: `reports/Slice8H-Diagnostic-Evidence-Catalog-Entry-for-Minimal-Eval-Suite-Smoke-Post-implementation-Report v0.md`
+- Summary: Adds one `diagnostic_smoke` evidence catalog entry for the completed Slice 8C through Slice 8G Minimal Eval Suite smoke sequence and updates catalog tooling so validation accepts the non-formal status.
+- Deviations from accepted brief: none
 - Known gaps:
-  - evidence catalog not yet updated
-  - future catalog implementation remains blocked pending Slice 8H acceptance
+  - diagnostic catalog entry does not prove product quality
+  - broader eval and Long Span formal-authority promotion remain blocked pending later human approval
 
 Reviewer decision:
 - waiting for human review
 - Reviewer:
 - Decision date:
-- Required follow-up: review Slice 8H brief before editing `evidence_catalog.md` or `evidence_catalog.json`
+- Required follow-up: review Slice 8H report before any further catalog entry, broader eval, or formal-authority promotion
 
 Next recommended step:
-- Human reviewer reviews `briefs/Slice8H-Diagnostic-Evidence-Catalog-Entry-for-Minimal-Eval-Suite-Smoke-Pre-implementation-Brief v0.md`.
-- If accepted, implement the catalog entry only; do not run eval or broaden benchmark authority.
+- Human reviewer reviews `reports/Slice8H-Diagnostic-Evidence-Catalog-Entry-for-Minimal-Eval-Suite-Smoke-Post-implementation-Report v0.md`.
+- Do not run eval, broaden benchmark authority, or add more catalog entries without a later accepted slice.
 
 ## Entry Template
 

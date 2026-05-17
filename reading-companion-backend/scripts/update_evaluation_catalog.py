@@ -27,6 +27,7 @@ ALLOWED_STATUSES = {
     "historical_evidence",
     "superseded",
     "quality_audit",
+    "diagnostic_smoke",
     "failed_diagnostic",
     "invalidated_diagnostic",
 }
@@ -51,6 +52,9 @@ SURFACE_DEFAULTS: dict[str, dict[str, str]] = {
     },
     "attentional_v2_quality_audit": {
         "evaluation_goal": "Focused mechanism quality audit",
+    },
+    "minimal_eval_suite_smoke": {
+        "evaluation_goal": "Minimal Eval Suite bounded diagnostic smoke",
     },
 }
 
@@ -379,6 +383,22 @@ def _display_metric_summary(metric_summary: dict[str, Any]) -> str:
                 )
             if target_bits:
                 pieces.append(f"{target_name}: " + "; ".join(target_bits))
+    lane_a = metric_summary.get("lane_a")
+    if isinstance(lane_a, dict):
+        lane_a_bits = []
+        for key in ("note_recall", "exact_match_count", "miss_count", "note_case_count"):
+            if key in lane_a:
+                lane_a_bits.append(f"{key}={lane_a[key]}")
+        if lane_a_bits:
+            pieces.append("lane_a: " + ", ".join(lane_a_bits))
+    lane_b = metric_summary.get("lane_b")
+    if isinstance(lane_b, dict):
+        lane_b_bits = []
+        for key in ("average_memory_quality_score", "probe_count", "window_count"):
+            if key in lane_b:
+                lane_b_bits.append(f"{key}={lane_b[key]}")
+        if lane_b_bits:
+            pieces.append("lane_b: " + ", ".join(lane_b_bits))
     for key in ("note_case_count", "case_count", "completed_case_count", "failed_case_count"):
         if key in metric_summary:
             pieces.append(f"{key}={metric_summary[key]}")
@@ -417,6 +437,7 @@ def write_markdown_catalog(catalog: dict[str, Any], *, catalog_md_path: Path = D
     status_order = [
         ("current_formal_evidence", "Current Formal Evidence"),
         ("quality_audit", "Quality Audits"),
+        ("diagnostic_smoke", "Diagnostic Smoke Evidence"),
         ("historical_evidence", "Historical Evidence"),
         ("superseded", "Superseded Evidence"),
         ("failed_diagnostic", "Failed Diagnostics"),
@@ -435,6 +456,7 @@ def write_markdown_catalog(catalog: dict[str, Any], *, catalog_md_path: Path = D
         "",
         "- `current_formal_evidence`: current evidence for an active benchmark surface.",
         "- `quality_audit`: focused quality audit that informs mechanism work but is not a formal benchmark score.",
+        "- `diagnostic_smoke`: reviewed bounded smoke evidence; diagnostic only, not formal benchmark authority or product-quality proof.",
         "- `historical_evidence`: preserved evidence from an older but still valid methodology.",
         "- `superseded`: preserved evidence replaced by a newer active run or benchmark contract.",
         "- `failed_diagnostic` / `invalidated_diagnostic`: failure evidence useful for debugging, not mechanism-quality evidence.",
@@ -450,11 +472,17 @@ def write_markdown_catalog(catalog: dict[str, Any], *, catalog_md_path: Path = D
                 _md_link(catalog_md_path, run_paths.get("aggregate", ""), "aggregate"),
                 _md_link(catalog_md_path, run_paths.get("report", ""), "report"),
             ]
-            analysis_docs = run_paths.get("analysis_docs") if isinstance(run_paths.get("analysis_docs"), list) else []
-            links.extend(
-                _md_link(catalog_md_path, str(path), f"analysis {idx}")
-                for idx, path in enumerate(analysis_docs, 1)
-            )
+            analysis_docs = run_paths.get("analysis_docs")
+            if isinstance(analysis_docs, list):
+                links.extend(
+                    _md_link(catalog_md_path, str(path), f"analysis {idx}")
+                    for idx, path in enumerate(analysis_docs, 1)
+                )
+            elif isinstance(analysis_docs, dict):
+                links.extend(
+                    _md_link(catalog_md_path, str(path), str(label).replace("_", " "))
+                    for label, path in analysis_docs.items()
+                )
             links = [link for link in links if link]
             rows.append(
                 [
@@ -520,6 +548,10 @@ def validate_catalog(*, catalog_json_path: Path = DEFAULT_CATALOG_JSON) -> list[
                 for item in path_value:
                     if item and not _path_exists(str(item)):
                         errors.append(f"entry {idx}: missing {path_key} path {item}")
+            elif isinstance(path_value, dict):
+                for item_key, item_value in path_value.items():
+                    if item_value and not _path_exists(str(item_value)):
+                        errors.append(f"entry {idx}: missing {path_key}.{item_key} path {item_value}")
         for path_key in ("dataset_path", "manifest_path"):
             path_value = entry.get(path_key)
             if path_value and not _path_exists(str(path_value)):

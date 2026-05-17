@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-05-17T20:51:46+08:00`
+Last verified: `2026-05-17T22:14:36+08:00`
 
 ## Current Objective
 - Land the repo-local Memory / Planning / Evaluation design chain and implementation handoff for optimizing the existing `attentional_v2` mechanism.
@@ -82,9 +82,10 @@ Last verified: `2026-05-17T20:51:46+08:00`
     - Slice 8G records that Minimal Eval Suite smoke completed successfully after Lane A retry, but evidence remains diagnostic only, not formal benchmark authority or product-quality proof
     - Slice 8G recommends no immediate runtime patch and no immediate eval-runner patch; optional future follow-ups require separate human approval
     - `Slice8G-Minimal-Eval-Suite-Smoke-Closure-and-Evidence-Interpretation-Report v0.md` is accepted
-    - Slice 8H diagnostic evidence catalog entry brief is landed as a doc-only cataloging brief
-    - Slice 8H recommends adding one future `diagnostic_smoke` evidence catalog entry for the completed Slice 8C through Slice 8G Minimal Eval Suite smoke sequence, but does not update `evidence_catalog.md` or `evidence_catalog.json`
-    - `Slice8H-Diagnostic-Evidence-Catalog-Entry-for-Minimal-Eval-Suite-Smoke-Pre-implementation-Brief v0.md` is pending human review
+    - Slice 8H diagnostic evidence catalog entry brief is accepted
+    - Slice 8H added one `diagnostic_smoke` evidence catalog entry for the completed Slice 8C through Slice 8G Minimal Eval Suite smoke sequence
+    - `diagnostic_smoke` is diagnostic only, not formal benchmark authority, not product-quality proof, and not Long Span vNext promotion
+    - `Slice8H-Diagnostic-Evidence-Catalog-Entry-for-Minimal-Eval-Suite-Smoke-Post-implementation-Report v0.md` is pending human review
     - Slice 6A adds compact mechanism-private `slow_cycle_audit.jsonl` evidence for slow-cycle candidate-vs-settled boundaries; it does not change slow-cycle behavior, prompt text/version, `runner.py`, public API/frontend/eval runner behavior, or full AI Evaluation posture
     - Slice 4A changed prompt-facing packet metadata additively, but did not change prompt text/version, runner behavior, `state_ops.py`, durable memory state, public API, frontend, eval runners, or `observability.py`
     - Slice 4A patch tightens `result_groups` and `not_forwarded_result_groups` so they reflect actual non-empty result groups rather than all possible groups
@@ -92,8 +93,8 @@ Last verified: `2026-05-17T20:51:46+08:00`
     - this effort optimizes existing `attentional_v2`; it does not replace the mechanism or introduce a greenfield redesign
     - this design chain was triggered by a real implementation mismatch between `memory_uptake_ops` and downstream memory/state persistence and projection structures, then converged through external evidence review, project assessment, accepted design, and implementation handoff
   - next step:
-    - human reviewer should review `Slice8H-Diagnostic-Evidence-Catalog-Entry-for-Minimal-Eval-Suite-Smoke-Pre-implementation-Brief v0.md`
-    - do not update the evidence catalog, start another eval slice, create new eval run directories, modify eval runners, promote Long Span vNext to formal benchmark authority, or run broader eval until the Slice 8H brief is reviewed and a next action is explicitly accepted
+    - human reviewer should review `Slice8H-Diagnostic-Evidence-Catalog-Entry-for-Minimal-Eval-Suite-Smoke-Post-implementation-Report v0.md`
+    - do not run eval, start another eval slice, create new eval run directories, modify eval runners, add further catalog entries, promote Long Span vNext to formal benchmark authority, or run broader eval until the Slice 8H report is reviewed and a next action is explicitly accepted
   - current non-goals:
     - no next-slice implementation yet
     - no full evaluation run for this new handoff line yet

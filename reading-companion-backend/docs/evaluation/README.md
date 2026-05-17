@@ -21,6 +21,7 @@ Use [evidence_catalog.md](./evidence_catalog.md) as the first stop when asking â
 
 - The catalog intentionally records selected evidence, not every smoke/debug/scratch run.
 - Formal runs, focused quality audits, superseded historical evidence, and important diagnostics can be cataloged.
+- `diagnostic_smoke` entries are reviewed bounded smoke evidence only; they are not formal benchmark authority or product-quality proof.
 - The catalog does not move raw artifacts and does not replace the background-job registry.
 - Update it with:
   - `cd reading-companion-backend && .venv/bin/python scripts/update_evaluation_catalog.py upsert ...`

@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-05-03T00:00:00Z",
+  "updated_at": "2026-05-17T14:14:36Z",
   "entries": [
     {
       "run_id": "attentional_v2_active_benchmark_rerun_20260419",
@@ -273,6 +273,82 @@
       "job_ids": [],
       "one_line_conclusion": "Phase-1 Long Span vNext diagnostic evidence with corrected Memory Quality scale and freshly rejudged reaction-audit evidence surface; V2 shows 152 grounded spontaneous callbacks, 84 weak callbacks, and 2 false visible integrations across 1282 visible reactions, while V1 shows 51 grounded callbacks and 13 weak callbacks across 375 visible reactions. No books were reread. The Memory Quality score belongs to the historical hard-ratio probe era; future Memory Quality runs use the semantic probe manifest.",
       "updated_at": "2026-05-04T19:13:31Z"
+    },
+    {
+      "run_id": "attentional_v2_minimal_eval_suite_smoke_20260517",
+      "surface": "minimal_eval_suite_smoke",
+      "evaluation_goal": "Minimal Eval Suite bounded diagnostic smoke",
+      "status": "diagnostic_smoke",
+      "dataset_id": "",
+      "dataset_path": "state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260422",
+      "manifest_path": "eval/manifests/splits/attentional_v2_user_level_selective_v1_draft.json",
+      "mechanisms": [
+        "attentional_v2"
+      ],
+      "metric_summary": {
+        "lane_a": {
+          "failed_run_id": "attentional_v2_minimal_eval_suite_lane_a_smoke_20260517",
+          "retry_run_id": "attentional_v2_minimal_eval_suite_lane_a_smoke_20260517_retry1",
+          "segment_count": 1,
+          "note_case_count": 3,
+          "exact_match_count": 2,
+          "miss_count": 1,
+          "note_recall": 0.6667,
+          "source_locator_compatibility_patch_required": true,
+          "unlocatable_reactions_not_counted_as_matches": true
+        },
+        "lane_b": {
+          "run_id": "attentional_v2_minimal_eval_suite_lane_b_smoke_20260517",
+          "window_count": 1,
+          "probe_count": 5,
+          "average_memory_quality_score": 3.7,
+          "memory_quality_source": "fresh_judge",
+          "reaction_audit_source": "copied_from_memory_quality_source_run",
+          "selected_window_grounded_callbacks": 29,
+          "selected_window_weak_callbacks": 9,
+          "selected_window_false_visible_integrations": 0,
+          "copied_reaction_audit_scope": "broader_than_selected_mq_window",
+          "fresh_callback_fvi_judging": false
+        },
+        "caveats": {
+          "not_product_quality_proof": true,
+          "not_formal_benchmark_authority": true,
+          "not_long_span_vnext_promotion": true,
+          "no_cross_mechanism_comparison": true,
+          "no_full_ai_evaluation": true,
+          "callback_fvi_not_fresh_judged_in_slice8f": true
+        }
+      },
+      "run_paths": {
+        "lane_a_retry_aggregate": "eval/runs/attentional_v2/attentional_v2_minimal_eval_suite_lane_a_smoke_20260517_retry1/summary/aggregate.json",
+        "lane_a_retry_report": "eval/runs/attentional_v2/attentional_v2_minimal_eval_suite_lane_a_smoke_20260517_retry1/summary/report.md",
+        "lane_a_retry_llm_usage": "eval/runs/attentional_v2/attentional_v2_minimal_eval_suite_lane_a_smoke_20260517_retry1/summary/llm_usage.json",
+        "lane_b_aggregate": "eval/runs/attentional_v2/attentional_v2_minimal_eval_suite_lane_b_smoke_20260517/summary/aggregate.json",
+        "lane_b_report": "eval/runs/attentional_v2/attentional_v2_minimal_eval_suite_lane_b_smoke_20260517/summary/report.md",
+        "lane_b_llm_usage": "eval/runs/attentional_v2/attentional_v2_minimal_eval_suite_lane_b_smoke_20260517/summary/llm_usage.json",
+        "lane_b_output_sourcing": "eval/runs/attentional_v2/attentional_v2_minimal_eval_suite_lane_b_smoke_20260517/meta/output_sourcing.json",
+        "analysis_docs": [
+          "eval/runs/attentional_v2/attentional_v2_minimal_eval_suite_lane_a_smoke_20260517_retry1/summary/aggregate.json",
+          "eval/runs/attentional_v2/attentional_v2_minimal_eval_suite_lane_a_smoke_20260517_retry1/summary/report.md",
+          "eval/runs/attentional_v2/attentional_v2_minimal_eval_suite_lane_a_smoke_20260517_retry1/summary/llm_usage.json",
+          "eval/runs/attentional_v2/attentional_v2_minimal_eval_suite_lane_b_smoke_20260517/summary/aggregate.json",
+          "eval/runs/attentional_v2/attentional_v2_minimal_eval_suite_lane_b_smoke_20260517/summary/report.md",
+          "eval/runs/attentional_v2/attentional_v2_minimal_eval_suite_lane_b_smoke_20260517/summary/llm_usage.json",
+          "eval/runs/attentional_v2/attentional_v2_minimal_eval_suite_lane_b_smoke_20260517/meta/output_sourcing.json",
+          "../docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8C-Minimal-Eval-Suite-Execution-Preflight-and-Bounded-Run-Post-implementation-Report v0.md",
+          "../docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8D-Lane-A-Source-locator-Compatibility-Triage-and-Minimal-Patch-Post-implementation-Report v0.md",
+          "../docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8E-Lane-A-Retry1-Bounded-Execution-Post-run-Report v0.md",
+          "../docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8F-Lane-B-Bounded-Diagnostic-Smoke-Post-run-Report v0.md",
+          "../docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8G-Minimal-Eval-Suite-Smoke-Closure-and-Evidence-Interpretation-Report v0.md"
+        ]
+      },
+      "job_ids": [
+        "bgjob_minimal_eval_suite_lane_a_smoke_20260517",
+        "bgjob_minimal_eval_suite_lane_a_smoke_20260517_retry1",
+        "bgjob_minimal_eval_suite_lane_b_smoke_20260517"
+      ],
+      "one_line_conclusion": "Reviewed Minimal Eval Suite smoke completed after Lane A retry and Lane B diagnostic smoke; cataloged as diagnostic smoke only, not product-quality proof, not formal benchmark authority, and not Long Span vNext promotion.",
+      "updated_at": "2026-05-17T14:14:36Z"
     },
     {
       "run_id": "attentional_v2_accumulation_benchmark_v2_frozen_active_rerun_20260419",
