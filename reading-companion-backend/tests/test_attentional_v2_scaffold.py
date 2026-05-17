@@ -791,6 +791,11 @@ def test_navigate_choose_next_unit_lands_detour_then_unitizes_inside_region(tmp_
     assert result["chapter_id"] == 1
     assert [sentence["sentence_id"] for sentence in result["selected_unit_sentences"]] == ["c1-s1", "c1-s2"]
     assert result["navigate_trace"][0]["decision"] == "choose_unit"
+    navigation_trace = runner_module._compact_navigation_trace(result["navigate_trace"])  # noqa: SLF001
+    assert navigation_trace[0]["source_scent"] == "present"
+    assert navigation_trace[0]["detour_value"] == "source_support_available"
+    assert navigation_trace[0]["active_recall_needed"] is False
+    assert navigation_trace[0]["look_back_needed"] is False
 
 
 def test_navigate_choose_next_unit_uses_one_detour_skill_before_landing(tmp_path, monkeypatch):
@@ -875,6 +880,20 @@ def test_navigate_choose_next_unit_uses_one_detour_skill_before_landing(tmp_path
     assert result["navigate_trace"][0]["decision"] == "request_skill"
     assert result["navigate_trace"][0]["skill_result"]["status"] == "ok"
     assert result["navigate_trace"][1]["decision"] == "choose_unit"
+    navigation_trace = runner_module._compact_navigation_trace(result["navigate_trace"])  # noqa: SLF001
+    assert navigation_trace[0]["source_scent"] == "present"
+    assert navigation_trace[0]["detour_value"] == "source_support_requested"
+    assert navigation_trace[0]["look_back_needed"] is True
+    assert navigation_trace[0]["active_recall_needed"] is False
+    assert navigation_trace[1]["source_scent"] == "present"
+    assert navigation_trace[1]["continuity_cost"] == "budget_used"
+    detour_evidence = runner_module._detour_trace_evidence(  # noqa: SLF001
+        selection_result=result,
+        local_continuity=local_continuity,
+    )
+    assert detour_evidence["detour_value"] == "source_support_available"
+    assert detour_evidence["support_signal_reason"] == "source_evidence_available"
+    assert "detour_value" not in local_continuity["detour_trace"][0]
 
 
 def test_navigate_choose_next_unit_defers_repeated_detour_skill_request(tmp_path, monkeypatch):
@@ -946,6 +965,12 @@ def test_navigate_choose_next_unit_defers_repeated_detour_skill_request(tmp_path
     assert result["navigate_trace"][0]["decision"] == "request_skill"
     assert result["navigate_trace"][0]["skill_result"]["status"] == "ok"
     assert result["navigate_trace"][-1]["decision"] == "request_skill"
+    navigation_trace = runner_module._compact_navigation_trace(result["navigate_trace"])  # noqa: SLF001
+    assert navigation_trace[0]["look_back_needed"] is True
+    assert navigation_trace[0]["active_recall_needed"] is False
+    assert navigation_trace[-1]["budget_stop_reason"] == "navigate_skill_budget_exhausted"
+    assert navigation_trace[-1]["continuity_cost"] == "budget_stop"
+    assert not any(isinstance(entry.get("continuity_cost"), (int, float)) for entry in navigation_trace)
 
 
 def test_navigate_choose_next_unit_defers_unlanded_detour(tmp_path, monkeypatch):
@@ -1012,6 +1037,17 @@ def test_navigate_choose_next_unit_defers_unlanded_detour(tmp_path, monkeypatch)
 
     navigation_trace = runner_module._compact_navigation_trace(result["navigate_trace"])  # noqa: SLF001
     last_navigation = navigation_trace[-1]
+    assert last_navigation["source_scent"] == "not_assessed"
+    assert last_navigation["detour_value"] == "not_assessed"
+    assert last_navigation["active_recall_needed"] is False
+    assert last_navigation["look_back_needed"] is False
+    detour_evidence = runner_module._detour_trace_evidence(  # noqa: SLF001
+        selection_result=result,
+        local_continuity=local_continuity,
+    )
+    assert detour_evidence["source_scent"] == "not_assessed"
+    assert detour_evidence["detour_value"] == "not_assessed"
+    assert detour_evidence["active_recall_needed"] is False
     abandoned_continuity = runner_module._apply_detour_need(  # noqa: SLF001
         local_continuity,
         {
@@ -1030,6 +1066,8 @@ def test_navigate_choose_next_unit_defers_unlanded_detour(tmp_path, monkeypatch)
     assert abandoned_trace["abandon_reason"] == "not enough grounded evidence"
     assert abandoned_trace["last_navigation_decision"] == "defer_detour"
     assert abandoned_trace["last_navigation_reason"] == "not enough grounded evidence"
+    assert "detour_value" not in abandoned_trace
+    assert "continuity_cost" not in abandoned_trace
     assert abandoned_continuity["active_detour_id"] == ""
 
 

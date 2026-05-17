@@ -13,9 +13,9 @@ Stable mechanism behavior changes still need to be promoted to the relevant stab
 ## Current Status
 
 ```text
-Current phase: Slice 5B Pre-implementation Brief waiting for human review
-Implementation status: Slice 1 accepted; Slice 2A accepted; Slice 2B accepted; Slice 3A accepted; Slice 3B accepted; Slice 4A accepted including precision patch; Slice 4B accepted; Slice 5A accepted; Slice 5B brief created and pending review
-Next action: human reviewer accepts or patches the Slice 5B Pre-implementation Brief before any Slice 5B implementation
+Current phase: Slice 5B Post-implementation Report waiting for human review
+Implementation status: Slice 1 accepted; Slice 2A accepted; Slice 2B accepted; Slice 3A accepted; Slice 3B accepted; Slice 4A accepted including precision patch; Slice 4B accepted; Slice 5A accepted; Slice 5B implemented and pending report review
+Next action: human reviewer accepts or patches the Slice 5B Post-implementation Report before any next implementation slice
 Full AI Evaluation: not yet; deferred until core instrumentation is ready
 ```
 
@@ -1475,9 +1475,9 @@ Branch / PR:
 
 Pre-implementation Brief:
 - Link: `briefs/Slice5B-Planning-Support-Signals-and-Detour-Value-Cost-Audit-Markers-Pre-implementation-Brief v0.md`
-- Accepted by:
-- Acceptance date:
-- Scope changes approved:
+- Accepted by: human reviewer / user
+- Acceptance date: 2026-05-17
+- Scope changes approved: compact planning support-signal / value-cost markers only; markers are mechanism-private audit / explanation metadata only; no numeric scoring, new planner behavior, new Navigate decisions, durable `deferred`, retrieval loops, prompt text/version changes, route steering, user route choice, visible route UX, public API/frontend/eval runner changes, or full AI Evaluation
 
 Files changed:
 - docs only for Slice 5B brief landing
@@ -1522,13 +1522,100 @@ Post-implementation Report:
 - Known gaps:
 
 Reviewer decision:
+- accepted
+- Reviewer: human reviewer / user
+- Decision date: 2026-05-17
+- Required follow-up: implement Slice 5B exactly within the accepted brief, then produce a Post-implementation Report
+
+Next recommended step:
+- Human reviewer reviews `reports/Slice5B-Planning-Support-Signals-and-Detour-Value-Cost-Audit-Markers-Post-implementation-Report v0.md`. Do not start the next implementation slice yet.
+
+## Entry 2026-05-17 — Slice 5B implemented and post-report created
+
+Type:
+- implementation PR
+- post-implementation report
+
+Slice:
+- Slice 5
+
+Related docs:
+- E实施0: `../E实施0-Implementation Roadmap & Handoff v0.md`
+- C设计 source: `../C设计2-Planning Ontology Design v0.md`, `../C设计4-Navigation Policy Design v0.md`, `../C设计6-Detour : Look-back : Active Recall Policy Design v0.md`, `../C设计7-Memory Retrieval & Utilization Design v0.md`, `../C设计9-Evaluation Calibration & Minimal Eval Suite v0.md`
+- E实施1 / PR / report: `E实施1-Implementation Feasibility & Delta Audit v0.md`
+- Brief: `briefs/Slice5B-Planning-Support-Signals-and-Detour-Value-Cost-Audit-Markers-Pre-implementation-Brief v0.md`
+- Report: `reports/Slice5B-Planning-Support-Signals-and-Detour-Value-Cost-Audit-Markers-Post-implementation-Report v0.md`
+
+Branch / PR:
+- Branch: `main`
+- PR:
+- Commit:
+
+Pre-implementation Brief:
+- Link: `briefs/Slice5B-Planning-Support-Signals-and-Detour-Value-Cost-Audit-Markers-Pre-implementation-Brief v0.md`
+- Accepted by: human reviewer / user
+- Acceptance date: 2026-05-17
+- Scope changes approved: compact planning support-signal / value-cost markers only; markers are mechanism-private audit / explanation metadata only; no numeric scoring, new planner behavior, new Navigate decisions, durable `deferred`, retrieval loops, prompt text/version changes, route steering, user route choice, visible route UX, public API/frontend/eval runner changes, or full AI Evaluation
+
+Files changed:
+- `reading-companion-backend/src/attentional_v2/schemas.py`
+- `reading-companion-backend/src/attentional_v2/runner.py`
+- `reading-companion-backend/tests/test_attentional_v2_observability.py`
+- `reading-companion-backend/tests/test_attentional_v2_scaffold.py`
+- `docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
+- `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md`
+- `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice5B-Planning-Support-Signals-and-Detour-Value-Cost-Audit-Markers-Post-implementation-Report v0.md`
+- `docs/current-state.md`
+- `docs/tasks/registry.md`
+- `docs/tasks/registry.json`
+
+Design contracts addressed:
+- compact planning support-signal / value-cost markers added to existing navigation/detour audit evidence only
+- markers are symbolic / boolean mechanism-private audit metadata, not product scores or planning-quality proof
+- no numeric scoring introduced
+- `active_recall_needed` and `look_back_needed` remain audit markers only and do not trigger retrieval
+- `budget_stop_reason` is derived only from explicit deterministic budget / defer evidence
+- durable detour statuses remain `open`, `resolved`, and `abandoned`
+- Navigate act space remains `choose_unit`, `request_skill`, and `defer_detour`
+- no new planner behavior, route steering, user route choice, visible route UX, retrieval loop, prompt text/version change, public API/frontend/eval runner change, or full AI Evaluation
+
+Engineering tests:
+- Commands run:
+  - `cd reading-companion-backend && .venv/bin/python -m pytest tests/test_attentional_v2_observability.py tests/test_attentional_v2_scaffold.py tests/test_attentional_v2_nodes.py -q`
+- Result:
+  - `42 passed, 6 warnings`
+- Not run / reason:
+  - full AI Evaluation not run by constraint
+
+Contract / audit checks:
+- SourceRef preserved: yes; unchanged
+- per-op outcome: unchanged and out of Slice 5B
+- candidate vs settled separated: unchanged and deferred to Slice 6
+- audit not routed into prompt: yes
+- reaction_records not semantic memory: unchanged and preserved
+- knowledge_activations not source truth: unchanged and preserved
+- other: `local_continuity.detour_trace` remains lifecycle trace state, not a planning score store
+
+AI Evaluation:
+- Full eval run? no
+- Smoke only? no
+- Eval lane affected: none
+- Notes: full AI Evaluation remains deferred until core instrumentation is ready
+
+Post-implementation Report:
+- Link: `reports/Slice5B-Planning-Support-Signals-and-Detour-Value-Cost-Audit-Markers-Post-implementation-Report v0.md`
+- Summary: Slice 5B adds compact mechanism-private planning support markers to existing navigation/detour audit evidence while preserving planner behavior, Navigate act space, durable statuses, prompt text/version, retrieval behavior, source skills, public API/frontend/eval runners, and full AI Evaluation boundaries.
+- Deviations from accepted brief: none
+- Known gaps: no full retrieval utilization trace, active-recall/look-back loop, planner behavior, or full AI Evaluation
+
+Reviewer decision:
 - waiting for human review
 - Reviewer:
 - Decision date:
-- Required follow-up: accept or patch the Slice 5B Pre-implementation Brief before any Slice 5B implementation PR
+- Required follow-up: accept or patch the Slice 5B Post-implementation Report before any next implementation slice
 
 Next recommended step:
-- Human reviewer reviews `briefs/Slice5B-Planning-Support-Signals-and-Detour-Value-Cost-Audit-Markers-Pre-implementation-Brief v0.md`. Do not start Slice 5B implementation yet.
+- Human reviewer reviews `reports/Slice5B-Planning-Support-Signals-and-Detour-Value-Cost-Audit-Markers-Post-implementation-Report v0.md`. Do not start the next implementation slice yet.
 
 ## Entry Template
 

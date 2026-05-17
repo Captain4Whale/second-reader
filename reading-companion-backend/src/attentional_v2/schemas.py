@@ -430,6 +430,13 @@ class NavigateActTraceEntry(TypedDict, total=False):
     skill_result: dict[str, object]
     error: str
     budget_state: dict[str, object]
+    source_scent: str
+    detour_value: str
+    continuity_cost: str
+    active_recall_needed: bool
+    look_back_needed: bool
+    support_signal_reason: str
+    budget_stop_reason: str
 
 
 class NavigateNextUnitResult(TypedDict, total=False):

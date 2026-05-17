@@ -1467,6 +1467,101 @@ def _navigate_trace_entry(
     return entry
 
 
+_PLANNING_SUPPORT_MARKER_KEYS = (
+    "source_scent",
+    "detour_value",
+    "continuity_cost",
+    "active_recall_needed",
+    "look_back_needed",
+    "support_signal_reason",
+    "budget_stop_reason",
+)
+
+
+def _navigation_budget_stop_reason(entry: dict[str, object]) -> str:
+    """Return deterministic budget stop evidence, if the trace entry has it."""
+
+    error = _clean_text(entry.get("error"))
+    if error == "navigate_skill_budget_exhausted":
+        return error
+    reason = _clean_text(entry.get("reason"))
+    if reason == "navigate_choose_next_unit_budget_exhausted":
+        return reason
+    return ""
+
+
+def _safe_int(value: object) -> int:
+    """Return an int for compact audit math, or zero when the value is not numeric."""
+
+    if isinstance(value, bool):
+        return int(value)
+    if isinstance(value, int):
+        return value
+    if isinstance(value, str) and value.isdigit():
+        return int(value)
+    return 0
+
+
+def _navigation_planning_support_markers(entry: dict[str, object]) -> dict[str, object]:
+    """Return compact audit-only planning markers for one navigation trace entry."""
+
+    decision = _clean_text(entry.get("decision"))
+    selection_mode = _clean_text(entry.get("selection_mode"))
+    if selection_mode != "detour" and decision not in {"request_skill", "defer_detour"} and not entry.get("error"):
+        return {}
+
+    skill_request = entry.get("skill_request") if isinstance(entry.get("skill_request"), dict) else {}
+    skill_result = entry.get("skill_result") if isinstance(entry.get("skill_result"), dict) else {}
+    budget_state = entry.get("budget_state") if isinstance(entry.get("budget_state"), dict) else {}
+    has_source_reference = bool(
+        _clean_text(entry.get("source_span_id"))
+        or _clean_text(entry.get("start_sentence_id"))
+        or _clean_text(entry.get("end_sentence_id"))
+    )
+    has_skill_evidence = bool(skill_result)
+    budget_stop_reason = _navigation_budget_stop_reason(entry)
+
+    source_scent = "not_assessed"
+    if has_source_reference or has_skill_evidence:
+        source_scent = "present"
+    elif skill_request:
+        source_scent = "requested"
+
+    detour_value = "not_assessed"
+    if decision == "request_skill":
+        detour_value = "source_support_requested"
+    elif decision == "choose_unit" and has_source_reference:
+        detour_value = "source_support_available"
+
+    continuity_cost = "not_assessed"
+    if budget_stop_reason:
+        continuity_cost = "budget_stop"
+    elif _safe_int(budget_state.get("act_index")) > 1 or _safe_int(budget_state.get("skill_requests_used")) > 0:
+        continuity_cost = "budget_used"
+
+    support_signal_reason = "not_assessed"
+    if budget_stop_reason:
+        support_signal_reason = "budget_stop"
+    elif skill_request:
+        support_signal_reason = "source_skill_requested"
+    elif decision == "choose_unit" and has_source_reference:
+        support_signal_reason = "source_evidence_available"
+    elif decision == "defer_detour":
+        support_signal_reason = _clean_text(entry.get("reason")) or "detour_deferred"
+
+    markers: dict[str, object] = {
+        "source_scent": source_scent,
+        "detour_value": detour_value,
+        "continuity_cost": continuity_cost,
+        "active_recall_needed": False,
+        "look_back_needed": bool(skill_request or has_skill_evidence),
+        "support_signal_reason": support_signal_reason,
+    }
+    if budget_stop_reason:
+        markers["budget_stop_reason"] = budget_stop_reason
+    return markers
+
+
 def _compact_navigation_trace(navigate_trace: object) -> list[dict[str, object]]:
     """Return compact navigation trace entries safe for read-audit persistence."""
 
@@ -1501,8 +1596,40 @@ def _compact_navigation_trace(navigate_trace: object) -> list[dict[str, object]]
             elif value not in (None, "", [], {}):
                 entry[key] = value
         if entry:
+            entry.update(_navigation_planning_support_markers(entry))
             compact_entries.append(entry)
     return compact_entries
+
+
+def _detour_planning_support_markers(
+    *,
+    selection_result: NavigateNextUnitResult,
+    navigation_trace: list[dict[str, object]],
+) -> dict[str, object]:
+    """Return top-level audit-only planning markers for detour evidence."""
+
+    selection_mode = _clean_text(selection_result.get("selection_mode"))
+    if selection_mode not in {"detour", "deferred"}:
+        return {}
+    markers = {
+        key: value
+        for key, value in (navigation_trace[-1] if navigation_trace else {}).items()
+        if key in _PLANNING_SUPPORT_MARKER_KEYS
+    }
+    defer_reason = _clean_text(selection_result.get("defer_reason"))
+    if defer_reason == "navigate_choose_next_unit_budget_exhausted":
+        markers["budget_stop_reason"] = defer_reason
+        markers["continuity_cost"] = "budget_stop"
+        markers["support_signal_reason"] = "budget_stop"
+    return {
+        "source_scent": markers.get("source_scent", "not_assessed"),
+        "detour_value": markers.get("detour_value", "not_assessed"),
+        "continuity_cost": markers.get("continuity_cost", "not_assessed"),
+        "active_recall_needed": bool(markers.get("active_recall_needed", False)),
+        "look_back_needed": bool(markers.get("look_back_needed", False)),
+        "support_signal_reason": markers.get("support_signal_reason", "not_assessed"),
+        **({"budget_stop_reason": markers["budget_stop_reason"]} if _clean_text(markers.get("budget_stop_reason")) else {}),
+    }
 
 
 def _detour_trace_evidence(
@@ -1525,6 +1652,12 @@ def _detour_trace_evidence(
     defer_reason = _clean_text(selection_result.get("defer_reason"))
     if defer_reason:
         evidence["defer_reason"] = defer_reason
+    evidence.update(
+        _detour_planning_support_markers(
+            selection_result=selection_result,
+            navigation_trace=_compact_navigation_trace(selection_result.get("navigate_trace")),
+        )
+    )
     return evidence
 
 
