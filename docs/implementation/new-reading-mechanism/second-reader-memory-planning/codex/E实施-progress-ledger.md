@@ -13,9 +13,9 @@ Stable mechanism behavior changes still need to be promoted to the relevant stab
 ## Current Status
 
 ```text
-Current phase: Slice 7B Pre-implementation Brief waiting for human review
-Implementation status: Slice 1 accepted; Slice 2A accepted; Slice 2B accepted; Slice 3A accepted; Slice 3B accepted; Slice 4A accepted including precision patch; Slice 4B accepted; Slice 5A accepted; Slice 5B accepted; Slice 6A accepted including carried SourceRef audit precision patch; Slice 6B no-code closure brief accepted; Slice 6 closed; Slice 7A accepted; Slice 7B brief created
-Next action: human reviewer accepts or revises the Slice 7B Pre-implementation Brief before Slice 7B implementation or any eval run
+Current phase: Slice 7B Post-implementation Report waiting for human review
+Implementation status: Slice 1 accepted; Slice 2A accepted; Slice 2B accepted; Slice 3A accepted; Slice 3B accepted; Slice 4A accepted including precision patch; Slice 4B accepted; Slice 5A accepted; Slice 5B accepted; Slice 6A accepted including carried SourceRef audit precision patch; Slice 6B no-code closure brief accepted; Slice 6 closed; Slice 7A accepted; Slice 7B implemented
+Next action: human reviewer accepts or revises the Slice 7B Post-implementation Report before the next eval slice or any eval run
 Full AI Evaluation: not yet; deferred until a later accepted eval slice explicitly requests it
 ```
 
@@ -2135,8 +2135,8 @@ Branch / PR:
 
 Decision:
 - Slice 7A Post-implementation Report accepted by human reviewer / user.
-- Slice 7B Pre-implementation Brief created and pending human review.
-- Slice 7B implementation remains blocked until the Slice 7B brief is accepted.
+- Slice 7B Pre-implementation Brief created and accepted by human reviewer / user.
+- Slice 7B implementation landed as a tiny static smoke harness.
 
 Scope:
 - Defines a tiny non-LLM minimal eval smoke harness / validator for the Slice 7A inventory manifest.
@@ -2151,8 +2151,93 @@ Validation for brief landing:
   - confirm diff is docs-only
 
 Next recommended step:
-- Human reviewer reviews `briefs/Slice7B-Minimal-Eval-Smoke-Harness-and-Evidence-Availability-Validation-Pre-implementation-Brief v0.md`.
-- Do not start Slice 7B implementation or run eval until the brief is accepted.
+- Human reviewer reviews `reports/Slice7B-Minimal-Eval-Smoke-Harness-and-Evidence-Availability-Validation-Post-implementation-Report v0.md`.
+- Do not start the next eval slice or run eval until the report is accepted.
+
+## Entry 2026-05-17 — Slice 7B implementation and post-report
+
+Type:
+- implementation PR / post-implementation report
+
+Slice:
+- Slice 7B
+
+Related docs:
+- E实施0: `../E实施0-Implementation Roadmap & Handoff v0.md`
+- C设计 source: `../C设计9-Evaluation Calibration & Minimal Eval Suite v0.md`
+- E实施1: `E实施1-Implementation Feasibility & Delta Audit v0.md`
+- Brief: `briefs/Slice7B-Minimal-Eval-Smoke-Harness-and-Evidence-Availability-Validation-Pre-implementation-Brief v0.md`
+- Report: `reports/Slice7B-Minimal-Eval-Smoke-Harness-and-Evidence-Availability-Validation-Post-implementation-Report v0.md`
+
+Branch / PR:
+- Branch: `main`
+- PR:
+- Commit:
+
+Pre-implementation Brief:
+- Link: `briefs/Slice7B-Minimal-Eval-Smoke-Harness-and-Evidence-Availability-Validation-Pre-implementation-Brief v0.md`
+- Accepted by: human reviewer / user
+- Acceptance date: 2026-05-17
+- Scope changes approved: none
+
+Files changed:
+- `reading-companion-backend/scripts/validate_minimal_eval_inventory_smoke.py`
+- `reading-companion-backend/tests/test_attentional_v2_minimal_eval_inventory.py`
+- `reading-companion-backend/docs/evaluation/README.md`
+- `docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
+- `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md`
+- `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice7B-Minimal-Eval-Smoke-Harness-and-Evidence-Availability-Validation-Post-implementation-Report v0.md`
+- `docs/current-state.md`
+- `docs/tasks/registry.md`
+- `docs/tasks/registry.json`
+
+Design contracts addressed:
+- added stdlib-only smoke validator for the Slice 7A manifest
+- validator emits compact JSON summary with lane IDs, evidence surface IDs, tracked path count, local-only counts, and diagnostics
+- missing local-only paths are reported, not failed
+- required evidence surfaces, interpretation guards, and non-scoring diagnostics are validated
+- no eval runner is imported, invoked, or modified
+- smoke summary is evidence-availability validation only, not eval result evidence or product-quality score
+
+Engineering tests:
+- Commands run:
+  - `cd reading-companion-backend && .venv/bin/python -m pytest tests/test_attentional_v2_minimal_eval_inventory.py -q`
+  - `cd reading-companion-backend && .venv/bin/python scripts/validate_minimal_eval_inventory_smoke.py --manifest eval/manifests/attentional_v2_minimal_eval_inventory_v1.json`
+  - `node -e "JSON.parse(require('fs').readFileSync('docs/tasks/registry.json','utf8'))"`
+  - `git diff --check`
+  - `git diff --name-only -- reading-companion-backend/src/attentional_v2 reading-companion-frontend reading-companion-backend/eval/attentional_v2/run_user_level_selective_comparison.py reading-companion-backend/eval/attentional_v2/run_long_span_vnext.py`
+- Result:
+  - `8 passed in 0.07s`
+  - smoke summary returned `status=ok`, `tracked_path_count=13`, `local_only_present_count=6`, `local_only_missing_count=0`
+  - `docs/tasks/registry.json` parsed successfully
+  - `git diff --check` returned no whitespace errors
+  - forbidden runtime/frontend/eval-runner diff check returned empty output
+- Not run / reason:
+  - full AI Evaluation not run by constraint
+  - benchmark jobs, judge calls, reading jobs, long-running eval jobs, broad stale suites, and eval runners not run by constraint
+
+Contract / audit checks:
+- runtime mechanism code unchanged
+- eval runners and judge prompts unchanged
+- public API/frontend/durable mechanism state unchanged
+- no scoring introduced
+- Long Span vNext remains diagnostic Phase-1, not formal benchmark authority
+
+Post-implementation Report:
+- Link: `reports/Slice7B-Minimal-Eval-Smoke-Harness-and-Evidence-Availability-Validation-Post-implementation-Report v0.md`
+- Summary: Slice 7B landed a tiny non-LLM smoke validator plus subprocess tests and status docs.
+- Deviations from accepted brief: none
+- Known gaps: no actual eval execution; no eval runner consumption of the manifest
+
+Reviewer decision:
+- waiting for human review
+- Reviewer:
+- Decision date:
+- Required follow-up: accept or revise the Slice 7B Post-implementation Report before the next eval slice or any eval run
+
+Next recommended step:
+- Human reviewer reviews `reports/Slice7B-Minimal-Eval-Smoke-Harness-and-Evidence-Availability-Validation-Post-implementation-Report v0.md`.
+- Do not start the next eval slice or run eval until this report is accepted.
 
 ## Entry Template
 

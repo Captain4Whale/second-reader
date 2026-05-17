@@ -1,12 +1,15 @@
 from __future__ import annotations
 
 import json
+import subprocess
+import sys
 from collections.abc import Iterator, Mapping
 from pathlib import Path
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 MANIFEST_PATH = REPO_ROOT / "reading-companion-backend/eval/manifests/attentional_v2_minimal_eval_inventory_v1.json"
+SMOKE_SCRIPT_PATH = REPO_ROOT / "reading-companion-backend/scripts/validate_minimal_eval_inventory_smoke.py"
 
 REQUIRED_LANES = {
     "lane_a_local_user_level_selective_legibility",
@@ -50,6 +53,21 @@ def _path_refs(manifest: Mapping[str, object]) -> Iterator[Mapping[str, object]]
     for mapping in _walk_mappings(manifest):
         if "workspace_path" in mapping:
             yield mapping
+
+
+def _run_smoke(manifest_path: Path) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        [
+            sys.executable,
+            str(SMOKE_SCRIPT_PATH),
+            "--manifest",
+            str(manifest_path),
+        ],
+        cwd=REPO_ROOT / "reading-companion-backend",
+        check=False,
+        text=True,
+        capture_output=True,
+    )
 
 
 def test_minimal_eval_inventory_preserves_two_active_lanes() -> None:
@@ -153,3 +171,35 @@ def test_interpretation_guards_and_diagnostics_are_non_scoring() -> None:
         assert diagnostic["evidence_availability_only"] is True
 
     assert manifest["future_smoke_proposal"]["execute_in_slice_7a"] is False
+
+
+def test_minimal_eval_inventory_smoke_validator_accepts_committed_manifest() -> None:
+    result = _run_smoke(MANIFEST_PATH)
+
+    assert result.returncode == 0, result.stderr
+    assert result.stderr == ""
+
+    summary = json.loads(result.stdout)
+    assert summary["status"] == "ok"
+    assert set(summary["lane_ids"]) == REQUIRED_LANES
+    assert set(summary["evidence_surface_ids"]) == REQUIRED_EVIDENCE_SURFACES
+    assert set(summary["diagnostic_ids"]) == {"planning_trace_quality", "slow_cycle_safety"}
+    assert summary["tracked_path_count"] > 0
+    assert summary["local_only_missing_count"] >= 0
+    assert summary["local_only_present_count"] >= 0
+
+
+def test_minimal_eval_inventory_smoke_validator_rejects_false_guard(tmp_path: Path) -> None:
+    manifest = _load_manifest()
+    manifest["interpretation_guards"]["source_ref_count_is_not_fidelity_score"] = False
+    manifest_path = tmp_path / "manifest_with_false_guard.json"
+    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+
+    result = _run_smoke(manifest_path)
+
+    assert result.returncode != 0
+    assert result.stdout == ""
+
+    failure = json.loads(result.stderr)
+    assert failure["status"] == "failed"
+    assert any("source_ref_count_is_not_fidelity_score" in error for error in failure["errors"])

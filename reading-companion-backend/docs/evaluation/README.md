@@ -32,6 +32,8 @@ Use [attentional_v2_minimal_eval_inventory_v1.json](../../eval/manifests/attenti
 
 This manifest is wiring readiness only. It is not eval result evidence, does not run judges, and does not promote diagnostic trace availability into product-quality scores.
 
+Run `cd reading-companion-backend && .venv/bin/python scripts/validate_minimal_eval_inventory_smoke.py --manifest eval/manifests/attentional_v2_minimal_eval_inventory_v1.json` for a non-LLM smoke check of manifest parseability, tracked asset availability, and evidence-surface wiring.
+
 ## Active Benchmark Pointers And Evaluation Authority
 
 | Surface | Run ID | Compared mechanisms | Status | One-line conclusion | Evidence |
