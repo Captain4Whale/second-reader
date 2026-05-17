@@ -464,12 +464,12 @@ Last updated: `2026-05-17T10:53:49+08:00`
 
 ## Waiting
 
-### `TASK-SECOND-READER-MEMORY-PLANNING-SLICE7B-REPORT-REVIEW` — Review Slice 7B Post-implementation Report for Minimal Eval Smoke Harness and Evidence Availability Validation
+### `TASK-SECOND-READER-MEMORY-PLANNING-SLICE8A-BRIEF-ACCEPTANCE` — Review Slice 8A Pre-implementation Brief for Post-implementation Review and Minimal Eval Readiness Gate
 - Status: `waiting`
 - Lane: `mechanism_runtime`
 - Priority: `high`
-- Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice7B-Minimal-Eval-Smoke-Harness-and-Evidence-Availability-Validation-Post-implementation-Report v0.md`
-- Next: human reviewer should accept or revise the Slice 7B Post-implementation Report before the next eval slice or any eval run. Slice 7B landed a static non-LLM smoke harness only.
+- Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice8A-Post-implementation-Review-and-Minimal-Eval-Readiness-Gate-Pre-implementation-Brief v0.md`
+- Next: human reviewer should accept or revise the Slice 8A readiness-gate brief before any Minimal Eval Suite run brief or eval execution.
 - Evidence:
   - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
   - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/E实施0-Implementation Roadmap & Handoff v0.md`
@@ -479,6 +479,7 @@ Last updated: `2026-05-17T10:53:49+08:00`
   - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice7A-Minimal-Eval-Asset-Inventory-and-Evidence-Wiring-Post-implementation-Report v0.md`
   - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice7B-Minimal-Eval-Smoke-Harness-and-Evidence-Availability-Validation-Pre-implementation-Brief v0.md`
   - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice7B-Minimal-Eval-Smoke-Harness-and-Evidence-Availability-Validation-Post-implementation-Report v0.md`
+  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice8A-Post-implementation-Review-and-Minimal-Eval-Readiness-Gate-Pre-implementation-Brief v0.md`
   - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md`
 
 ### `TASK-DATASET-QUESTION-ALIGNED-CASE-CONSTRUCTION` — Build question-aligned case construction for evaluation datasets
@@ -553,6 +554,24 @@ Last updated: `2026-05-17T10:53:49+08:00`
 - Next: keep section-first compatibility fields and containers only as migration sidecars; start removal only after the V2-native overview, chapter, and marks surfaces are stable enough that the older presentation model is no longer needed for normal product use
 
 ## Done
+
+### `TASK-SECOND-READER-MEMORY-PLANNING-SLICE7B-REPORT-REVIEW` — Review Slice 7B Post-implementation Report for Minimal Eval Smoke Harness and Evidence Availability Validation
+- Status: `done`
+- Lane: `mechanism_runtime`
+- Priority: `high`
+- Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice7B-Minimal-Eval-Smoke-Harness-and-Evidence-Availability-Validation-Post-implementation-Report v0.md`
+- Next: Slice 7B Post-implementation Report is accepted. Continue with `TASK-SECOND-READER-MEMORY-PLANNING-SLICE8A-BRIEF-ACCEPTANCE`; do not run eval before the Slice 8A readiness gate and later eval-run brief are accepted.
+- Evidence:
+  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
+  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/E实施0-Implementation Roadmap & Handoff v0.md`
+  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施1-Implementation Feasibility & Delta Audit v0.md`
+  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice6B-Slow-cycle-Re-entry-Reconsolidation-and-Eval-readiness-Smoke-Pre-implementation-Brief v0.md`
+  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice7A-Minimal-Eval-Asset-Inventory-and-Evidence-Wiring-Pre-implementation-Brief v0.md`
+  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice7A-Minimal-Eval-Asset-Inventory-and-Evidence-Wiring-Post-implementation-Report v0.md`
+  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice7B-Minimal-Eval-Smoke-Harness-and-Evidence-Availability-Validation-Pre-implementation-Brief v0.md`
+  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice7B-Minimal-Eval-Smoke-Harness-and-Evidence-Availability-Validation-Post-implementation-Report v0.md`
+  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice8A-Post-implementation-Review-and-Minimal-Eval-Readiness-Gate-Pre-implementation-Brief v0.md`
+  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md`
 
 ### `TASK-SECOND-READER-MEMORY-PLANNING-SLICE7B-BRIEF-ACCEPTANCE` — Review Slice 7B Pre-implementation Brief for Minimal Eval Smoke Harness and Evidence Availability Validation
 - Status: `done`
