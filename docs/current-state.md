@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-05-17T09:24:32+08:00`
+Last verified: `2026-05-17T09:41:09+08:00`
 
 ## Current Objective
 - Land the repo-local Memory / Planning / Evaluation design chain and implementation handoff for optimizing the existing `attentional_v2` mechanism.
@@ -44,8 +44,10 @@ Last verified: `2026-05-17T09:24:32+08:00`
     - `Slice6A-Slow-cycle-Candidate-and-Settlement-Audit-Envelope-Foundations-Pre-implementation-Brief v0.md` is accepted
     - Slice 6A slow-cycle candidate and settlement audit envelope foundations are implemented, and `Slice6A-Slow-cycle-Candidate-and-Settlement-Audit-Envelope-Foundations-Post-implementation-Report v0.md` has been reviewed; the implementation direction is accepted with a requested carried SourceRef audit precision patch before the next slice
     - Slice 6A carried SourceRef audit precision patch is implemented, and `Slice6A-Patch-Carry-forward-Settled-SourceRef-Evidence-Precision-Report v0.md` is accepted
-    - `Slice6B-Slow-cycle-Re-entry-Reconsolidation-and-Eval-readiness-Smoke-Pre-implementation-Brief v0.md` is pending human review
-    - Slice 6B recommends no additional Slice 6 runtime implementation; if accepted, Slice 6 should close and the next gate should be Slice 7 / Minimal Eval Implementation
+    - `Slice6B-Slow-cycle-Re-entry-Reconsolidation-and-Eval-readiness-Smoke-Pre-implementation-Brief v0.md` is accepted
+    - Slice 6 is closed with no additional Slice 6 runtime implementation
+    - `Slice7A-Minimal-Eval-Asset-Inventory-and-Evidence-Wiring-Pre-implementation-Brief v0.md` is pending human review
+    - Slice 7A is a doc-only pre-implementation brief for minimal eval asset inventory and evidence wiring; no eval implementation has started
     - Slice 6A adds compact mechanism-private `slow_cycle_audit.jsonl` evidence for slow-cycle candidate-vs-settled boundaries; it does not change slow-cycle behavior, prompt text/version, `runner.py`, public API/frontend/eval runner behavior, or full AI Evaluation posture
     - Slice 4A changed prompt-facing packet metadata additively, but did not change prompt text/version, runner behavior, `state_ops.py`, durable memory state, public API, frontend, eval runners, or `observability.py`
     - Slice 4A patch tightens `result_groups` and `not_forwarded_result_groups` so they reflect actual non-empty result groups rather than all possible groups
@@ -53,8 +55,8 @@ Last verified: `2026-05-17T09:24:32+08:00`
     - this effort optimizes existing `attentional_v2`; it does not replace the mechanism or introduce a greenfield redesign
     - this design chain was triggered by a real implementation mismatch between `memory_uptake_ops` and downstream memory/state persistence and projection structures, then converged through external evidence review, project assessment, accepted design, and implementation handoff
   - next step:
-    - human reviewer should review and accept `Slice6B-Slow-cycle-Re-entry-Reconsolidation-and-Eval-readiness-Smoke-Pre-implementation-Brief v0.md` or request revision
-    - do not start Slice 7 / Minimal Eval Implementation before the Slice 6B closure brief is accepted
+    - human reviewer should review and accept `Slice7A-Minimal-Eval-Asset-Inventory-and-Evidence-Wiring-Pre-implementation-Brief v0.md` or request revision
+    - do not start Slice 7A implementation or any eval run before the Slice 7A brief is accepted
   - current non-goals:
     - no next-slice implementation yet
     - no full evaluation run for this new handoff line yet

@@ -13,10 +13,10 @@ Stable mechanism behavior changes still need to be promoted to the relevant stab
 ## Current Status
 
 ```text
-Current phase: Slice 6B no-code closure brief waiting for human review
-Implementation status: Slice 1 accepted; Slice 2A accepted; Slice 2B accepted; Slice 3A accepted; Slice 3B accepted; Slice 4A accepted including precision patch; Slice 4B accepted; Slice 5A accepted; Slice 5B accepted; Slice 6A accepted including carried SourceRef audit precision patch; Slice 6B no-code closure brief created
-Next action: human reviewer accepts or revises the Slice 6B closure brief before Slice 7 / Minimal Eval Implementation
-Full AI Evaluation: not yet; deferred until core instrumentation is ready
+Current phase: Slice 7A Pre-implementation Brief waiting for human review
+Implementation status: Slice 1 accepted; Slice 2A accepted; Slice 2B accepted; Slice 3A accepted; Slice 3B accepted; Slice 4A accepted including precision patch; Slice 4B accepted; Slice 5A accepted; Slice 5B accepted; Slice 6A accepted including carried SourceRef audit precision patch; Slice 6B no-code closure brief accepted; Slice 6 closed; Slice 7A Pre-implementation Brief created
+Next action: human reviewer accepts or revises the Slice 7A brief before minimal eval inventory / evidence wiring implementation
+Full AI Evaluation: not yet; deferred until a later accepted eval slice explicitly requests it
 ```
 
 ## Entry 2026-05-16 — E实施1 feasibility audit created
@@ -1935,6 +1935,90 @@ Reviewer decision:
 
 Next recommended step:
 - Human reviewer reviews `briefs/Slice6B-Slow-cycle-Re-entry-Reconsolidation-and-Eval-readiness-Smoke-Pre-implementation-Brief v0.md`. Do not start Slice 7 yet.
+
+## Entry 2026-05-17 — Slice 6B accepted, Slice 6 closed, and Slice 7A brief created
+
+Type:
+- review decision
+- pre-implementation brief
+- slice closure
+
+Slice:
+- Slice 7A
+
+Related docs:
+- E实施0: `../E实施0-Implementation Roadmap & Handoff v0.md`
+- C设计 source: `../C设计9-Evaluation Calibration & Minimal Eval Suite v0.md`
+- Stable eval docs: `docs/backend-reader-evaluation.md`, `reading-companion-backend/docs/evaluation/README.md`, `reading-companion-backend/docs/evaluation/user_level/README.md`, `reading-companion-backend/docs/evaluation/long_span/README.md`
+- Slice 6B brief: `briefs/Slice6B-Slow-cycle-Re-entry-Reconsolidation-and-Eval-readiness-Smoke-Pre-implementation-Brief v0.md`
+- Brief: `briefs/Slice7A-Minimal-Eval-Asset-Inventory-and-Evidence-Wiring-Pre-implementation-Brief v0.md`
+
+Branch / PR:
+- Branch: `main`
+- PR:
+- Commit:
+
+Reviewer decision:
+- Slice 6B no-code closure brief accepted
+- Slice 6 closed with no additional runtime implementation
+- Reviewer: human reviewer / user
+- Decision date: 2026-05-17
+
+Pre-implementation Brief:
+- Link: `briefs/Slice7A-Minimal-Eval-Asset-Inventory-and-Evidence-Wiring-Pre-implementation-Brief v0.md`
+- Status: waiting for human review
+- Recommendation: proceed only after human acceptance with static eval asset inventory and evidence wiring; do not run eval in Slice 7A
+
+Files changed:
+- `docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
+- `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md`
+- `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice7A-Minimal-Eval-Asset-Inventory-and-Evidence-Wiring-Pre-implementation-Brief v0.md`
+- `docs/current-state.md`
+- `docs/tasks/registry.md`
+- `docs/tasks/registry.json`
+
+Design contracts addressed:
+- Slice 6 is closed after accepted Slice 6B no-code closure brief
+- Slice 7 starts with minimal eval asset inventory and evidence wiring, not evaluation redesign
+- existing eval lanes are preserved:
+  - Lane A: Local / User-level Selective Legibility
+  - Lane B: Long Span MQ / Callback / FVI
+- planning trace and slow-cycle safety remain lightweight diagnostics only
+- contract / audit checks are not product quality scores
+- no runtime mechanism behavior, prompt text/version, public API, frontend, eval runner, or mechanism state change
+- no full AI Evaluation
+
+Engineering tests:
+- Commands run:
+  - none; doc-only brief landing
+- Not run / reason:
+  - backend tests not run because no runtime implementation changed
+  - eval runners not run by constraint
+  - full AI Evaluation not run by constraint
+
+Contract / audit checks:
+- SourceRef preserved: unchanged
+- per-op outcome: unchanged; available as Slice 1 / Slice 2 evidence substrate
+- candidate vs settled separated: unchanged; Slice 6 closed with existing slow-cycle audit substrate
+- audit not routed into prompt: unchanged
+- reaction_records not semantic memory: unchanged
+- knowledge_activations not source truth: unchanged
+- other: retrieval availability, trace existence, audit existence, visible reaction presence, and SourceRef counts are not treated as quality scores
+
+AI Evaluation:
+- Full eval run? no
+- Smoke only? no
+- Eval lane affected: none
+- Notes: Slice 7A brief defines future static inventory / evidence-wiring implementation only; actual eval smoke remains deferred until a later accepted slice
+
+Reviewer decision:
+- waiting for human review
+- Reviewer:
+- Decision date:
+- Required follow-up: accept or revise the Slice 7A Pre-implementation Brief before any Slice 7A implementation or eval run
+
+Next recommended step:
+- Human reviewer reviews `briefs/Slice7A-Minimal-Eval-Asset-Inventory-and-Evidence-Wiring-Pre-implementation-Brief v0.md`. Do not start eval implementation or run evaluation yet.
 
 ## Entry Template
 
