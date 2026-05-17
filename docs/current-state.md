@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-05-17T11:42:58+08:00`
+Last verified: `2026-05-17T12:15:12+08:00`
 
 ## Current Objective
 - Land the repo-local Memory / Planning / Evaluation design chain and implementation handoff for optimizing the existing `attentional_v2` mechanism.
@@ -53,9 +53,11 @@ Last verified: `2026-05-17T11:42:58+08:00`
     - Slice 7B minimal eval smoke harness and evidence availability validation is implemented, and `Slice7B-Minimal-Eval-Smoke-Harness-and-Evidence-Availability-Validation-Post-implementation-Report v0.md` is accepted
     - Slice 7B added a stdlib-only smoke validator for the Slice 7A manifest and subprocess tests; no eval, judge calls, benchmark jobs, reading jobs, eval runner changes, or runtime mechanism changes were introduced
     - `Slice8A-Post-implementation-Review-and-Minimal-Eval-Readiness-Gate-Pre-implementation-Brief v0.md` is accepted
-    - Slice 8A doc-only readiness gate is landed, and `Slice8A-Post-implementation-Review-and-Minimal-Eval-Readiness-Gate-Post-implementation-Report v0.md` is pending human review
+    - Slice 8A doc-only readiness gate is landed, and `Slice8A-Post-implementation-Review-and-Minimal-Eval-Readiness-Gate-Post-implementation-Report v0.md` is accepted
     - Slice 8A records that no prerequisite runtime patch or eval-runner patch is currently indicated before a later Minimal Eval Suite run brief
     - Slice 8A does not run eval, launch benchmark jobs, call judges, start reading jobs, create eval run directories, change runtime mechanism behavior, modify eval runners, add scoring, or promote Long Span vNext to formal benchmark authority
+    - `Slice8B-Minimal-Eval-Suite-Run-Brief-and-Execution-Guardrails-Pre-implementation-Brief v0.md` is created and pending human review
+    - Slice 8B is a doc-only run brief defining future Minimal Eval Suite run profile and execution guardrails; it does not execute eval, call judges, launch reading jobs, create eval run directories, or modify eval runners/runtime behavior
     - Slice 6A adds compact mechanism-private `slow_cycle_audit.jsonl` evidence for slow-cycle candidate-vs-settled boundaries; it does not change slow-cycle behavior, prompt text/version, `runner.py`, public API/frontend/eval runner behavior, or full AI Evaluation posture
     - Slice 4A changed prompt-facing packet metadata additively, but did not change prompt text/version, runner behavior, `state_ops.py`, durable memory state, public API, frontend, eval runners, or `observability.py`
     - Slice 4A patch tightens `result_groups` and `not_forwarded_result_groups` so they reflect actual non-empty result groups rather than all possible groups
@@ -63,8 +65,8 @@ Last verified: `2026-05-17T11:42:58+08:00`
     - this effort optimizes existing `attentional_v2`; it does not replace the mechanism or introduce a greenfield redesign
     - this design chain was triggered by a real implementation mismatch between `memory_uptake_ops` and downstream memory/state persistence and projection structures, then converged through external evidence review, project assessment, accepted design, and implementation handoff
   - next step:
-    - human reviewer should review and accept `Slice8A-Post-implementation-Review-and-Minimal-Eval-Readiness-Gate-Post-implementation-Report v0.md` or request revision
-    - do not start an actual Minimal Eval Suite run or create the next eval-run brief until the Slice 8A Post-implementation Report is accepted and the user explicitly requests the later run brief
+    - human reviewer should review and accept `Slice8B-Minimal-Eval-Suite-Run-Brief-and-Execution-Guardrails-Pre-implementation-Brief v0.md` or request revision
+    - do not start an actual Minimal Eval Suite run, call judges, launch reading jobs, create eval run directories, or start a later execution slice until the Slice 8B run brief is accepted and that later execution slice is explicitly requested and accepted
   - current non-goals:
     - no next-slice implementation yet
     - no full evaluation run for this new handoff line yet
