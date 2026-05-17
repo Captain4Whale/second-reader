@@ -26,6 +26,12 @@ Use [evidence_catalog.md](./evidence_catalog.md) as the first stop when asking â
   - `cd reading-companion-backend && .venv/bin/python scripts/update_evaluation_catalog.py upsert ...`
   - `cd reading-companion-backend && .venv/bin/python scripts/update_evaluation_catalog.py --check`
 
+## Minimal Eval Inventory
+
+Use [attentional_v2_minimal_eval_inventory_v1.json](../../eval/manifests/attentional_v2_minimal_eval_inventory_v1.json) when checking which existing assets and mechanism-private audit surfaces are wired into the minimal eval implementation track.
+
+This manifest is wiring readiness only. It is not eval result evidence, does not run judges, and does not promote diagnostic trace availability into product-quality scores.
+
 ## Active Benchmark Pointers And Evaluation Authority
 
 | Surface | Run ID | Compared mechanisms | Status | One-line conclusion | Evidence |

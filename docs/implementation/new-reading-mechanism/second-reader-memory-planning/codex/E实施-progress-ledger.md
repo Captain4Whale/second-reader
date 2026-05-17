@@ -13,9 +13,9 @@ Stable mechanism behavior changes still need to be promoted to the relevant stab
 ## Current Status
 
 ```text
-Current phase: Slice 7A Pre-implementation Brief waiting for human review
-Implementation status: Slice 1 accepted; Slice 2A accepted; Slice 2B accepted; Slice 3A accepted; Slice 3B accepted; Slice 4A accepted including precision patch; Slice 4B accepted; Slice 5A accepted; Slice 5B accepted; Slice 6A accepted including carried SourceRef audit precision patch; Slice 6B no-code closure brief accepted; Slice 6 closed; Slice 7A Pre-implementation Brief created
-Next action: human reviewer accepts or revises the Slice 7A brief before minimal eval inventory / evidence wiring implementation
+Current phase: Slice 7A Post-implementation Report waiting for human review
+Implementation status: Slice 1 accepted; Slice 2A accepted; Slice 2B accepted; Slice 3A accepted; Slice 3B accepted; Slice 4A accepted including precision patch; Slice 4B accepted; Slice 5A accepted; Slice 5B accepted; Slice 6A accepted including carried SourceRef audit precision patch; Slice 6B no-code closure brief accepted; Slice 6 closed; Slice 7A implemented
+Next action: human reviewer accepts or revises the Slice 7A Post-implementation Report before Slice 7B or any eval run
 Full AI Evaluation: not yet; deferred until a later accepted eval slice explicitly requests it
 ```
 
@@ -2019,6 +2019,99 @@ Reviewer decision:
 
 Next recommended step:
 - Human reviewer reviews `briefs/Slice7A-Minimal-Eval-Asset-Inventory-and-Evidence-Wiring-Pre-implementation-Brief v0.md`. Do not start eval implementation or run evaluation yet.
+
+## Entry 2026-05-17 — Slice 7A minimal eval asset inventory implemented
+
+Type:
+- implementation PR
+- post-implementation report
+
+Slice:
+- Slice 7A
+
+Related docs:
+- E实施0: `../E实施0-Implementation Roadmap & Handoff v0.md`
+- C设计 source: `../C设计9-Evaluation Calibration & Minimal Eval Suite v0.md`
+- Stable eval docs: `docs/backend-reader-evaluation.md`, `reading-companion-backend/docs/evaluation/README.md`, `reading-companion-backend/docs/evaluation/user_level/README.md`, `reading-companion-backend/docs/evaluation/long_span/README.md`
+- Brief: `briefs/Slice7A-Minimal-Eval-Asset-Inventory-and-Evidence-Wiring-Pre-implementation-Brief v0.md`
+- Report: `reports/Slice7A-Minimal-Eval-Asset-Inventory-and-Evidence-Wiring-Post-implementation-Report v0.md`
+
+Branch / PR:
+- Branch: `main`
+- PR:
+- Commit:
+
+Pre-implementation Brief:
+- Link: `briefs/Slice7A-Minimal-Eval-Asset-Inventory-and-Evidence-Wiring-Pre-implementation-Brief v0.md`
+- Accepted by: human reviewer / user
+- Acceptance date: 2026-05-17
+- Scope changes approved: none; implementation stayed static inventory / evidence wiring only
+
+Files changed:
+- `reading-companion-backend/eval/manifests/attentional_v2_minimal_eval_inventory_v1.json`
+- `reading-companion-backend/tests/test_attentional_v2_minimal_eval_inventory.py`
+- `reading-companion-backend/docs/evaluation/README.md`
+- `docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
+- `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md`
+- `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice7A-Minimal-Eval-Asset-Inventory-and-Evidence-Wiring-Post-implementation-Report v0.md`
+- `docs/current-state.md`
+- `docs/tasks/registry.md`
+- `docs/tasks/registry.json`
+
+Design contracts addressed:
+- Lane A / Local User-level Selective Legibility preserved as active benchmark lane
+- Lane B / Long Span MQ / Callback / FVI preserved as diagnostic Phase-1 lane
+- Lane A active dataset pointer distinguished from the current formal evidence bundle dataset
+- Long Span vNext diagnostic evidence distinguished from formal benchmark authority
+- historical / superseded / discontinued assets marked without reactivation
+- Slice 1-6 evidence surfaces mapped to eval lanes and diagnostic additions
+- Planning Trace Quality and Slow-cycle Safety kept as evidence-availability diagnostics only
+- retrieval availability, visible reaction presence, SourceRef counts, trace existence, and `slow_cycle_audit` existence explicitly guarded from quality-score interpretation
+
+Engineering tests:
+- Commands run:
+  - `cd reading-companion-backend && .venv/bin/python -m pytest tests/test_attentional_v2_minimal_eval_inventory.py -q`
+  - `node -e "JSON.parse(require('fs').readFileSync('docs/tasks/registry.json','utf8'))"`
+  - `git diff --check`
+  - `git diff --name-only -- reading-companion-backend/src/attentional_v2 reading-companion-frontend reading-companion-backend/eval/attentional_v2/run_user_level_selective_comparison.py reading-companion-backend/eval/attentional_v2/run_long_span_vnext.py`
+- Result:
+  - `6 passed in 0.01s`
+  - `docs/tasks/registry.json` parsed successfully
+  - `git diff --check` returned no whitespace errors
+  - forbidden runtime/frontend/eval-runner diff check returned empty output
+- Not run / reason:
+  - full AI Evaluation not run by constraint
+  - benchmark jobs, judge calls, reading jobs, long-running eval jobs, and broad stale suites not run by constraint
+
+Contract / audit checks:
+- SourceRef preserved: unchanged; manifest states SourceRef count is not fidelity score
+- per-op outcome: unchanged; manifest maps memory uptake admission / outcome fields as evidence substrate only
+- candidate vs settled separated: unchanged; manifest maps `slow_cycle_audit` without treating existence as quality
+- audit not routed into prompt: unchanged; no runtime prompt code changed
+- reaction_records not semantic memory: unchanged; visible reaction presence is not callback correctness
+- knowledge_activations not source truth: unchanged
+- other: no runtime mechanism code, eval runner, judge prompt, public API, frontend, durable state, prompt text, or prompt version changed
+
+AI Evaluation:
+- Full eval run? no
+- Smoke only? no
+- Eval lane affected: Lane A and Lane B are inventoried only
+- Notes: actual eval smoke remains deferred to a later accepted slice
+
+Post-implementation Report:
+- Link: `reports/Slice7A-Minimal-Eval-Asset-Inventory-and-Evidence-Wiring-Post-implementation-Report v0.md`
+- Summary: Slice 7A landed a static minimal eval inventory and evidence-wiring manifest plus pure static validation tests.
+- Deviations from accepted brief: none
+- Known gaps: no eval execution; no eval runner consumption; no Long Span formal-authority promotion
+
+Reviewer decision:
+- waiting for human review
+- Reviewer:
+- Decision date:
+- Required follow-up: accept or revise the Slice 7A Post-implementation Report before Slice 7B or any eval run
+
+Next recommended step:
+- Human reviewer reviews `reports/Slice7A-Minimal-Eval-Asset-Inventory-and-Evidence-Wiring-Post-implementation-Report v0.md`. Do not start Slice 7B or run eval yet.
 
 ## Entry Template
 

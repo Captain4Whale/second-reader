@@ -1,0 +1,317 @@
+{
+  "manifest_id": "attentional_v2_minimal_eval_inventory_v1",
+  "schema_version": 1,
+  "status": "active_inventory",
+  "purpose": "minimal_eval_asset_inventory_and_evidence_wiring",
+  "created_at": "2026-05-17",
+  "scope": {
+    "slice": "Slice 7A",
+    "summary": "Static inventory of existing minimal eval assets and Slice 1-6 evidence wiring for attentional_v2.",
+    "runtime_behavior_change": false,
+    "eval_execution": false,
+    "public_api_change": false
+  },
+  "active_lanes": [
+    {
+      "id": "lane_a_local_user_level_selective_legibility",
+      "label": "Lane A: Local / User-level Selective Legibility",
+      "status": "active_benchmark_lane",
+      "formal_authority": true,
+      "metric_family": "user_level_selective_legibility",
+      "metric_summary": "Note recall over aligned human notes with strict source-span overlap.",
+      "active_dataset_pointer": {
+        "dataset_id": "attentional_v2_user_level_selective_v1_repaired_20260422",
+        "workspace_path": "reading-companion-backend/state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260422/manifest.json",
+        "path_status": "local_only",
+        "role": "current_active_dataset_pointer",
+        "note": "This is the current active dataset pointer with 202 note cases."
+      },
+      "current_formal_evidence": {
+        "run_id": "attentional_v2_user_level_selective_v1_active_rerun_20260419",
+        "status": "current_formal_evidence_on_prior_repaired_package",
+        "formal_evidence_dataset_id": "attentional_v2_user_level_selective_v1_repaired_20260416",
+        "formal_evidence_dataset_boundary": {
+          "workspace_path": "reading-companion-backend/state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260416/manifest.json",
+          "path_status": "local_only",
+          "note": "The current formal evidence bundle used the then-active 20260416 repaired package."
+        },
+        "aggregate": {
+          "workspace_path": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_user_level_selective_v1_active_rerun_20260419/summary/aggregate.json",
+          "path_status": "local_only"
+        },
+        "report": {
+          "workspace_path": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_user_level_selective_v1_active_rerun_20260419/summary/report.md",
+          "path_status": "local_only"
+        }
+      },
+      "assets": [
+        {
+          "id": "lane_a_docs",
+          "workspace_path": "reading-companion-backend/docs/evaluation/user_level/README.md",
+          "path_status": "tracked",
+          "role": "surface_index"
+        },
+        {
+          "id": "lane_a_split_manifest",
+          "workspace_path": "reading-companion-backend/eval/manifests/splits/attentional_v2_user_level_selective_v1_draft.json",
+          "path_status": "tracked",
+          "role": "active_split_manifest"
+        },
+        {
+          "id": "lane_a_runner",
+          "workspace_path": "reading-companion-backend/eval/attentional_v2/run_user_level_selective_comparison.py",
+          "path_status": "tracked",
+          "role": "existing_runner_not_modified_by_slice_7a"
+        },
+        {
+          "id": "lane_a_renderer",
+          "workspace_path": "reading-companion-backend/eval/attentional_v2/render_user_level_selective_audit.py",
+          "path_status": "tracked",
+          "role": "existing_human_audit_renderer_not_modified_by_slice_7a"
+        },
+        {
+          "id": "lane_a_helper_module",
+          "workspace_path": "reading-companion-backend/eval/attentional_v2/user_level_selective_v1.py",
+          "path_status": "tracked",
+          "role": "existing_helper_module_not_modified_by_slice_7a"
+        }
+      ],
+      "evidence_surface_ids": [
+        "read_audit",
+        "settlement_audit",
+        "source_ref_binding_resolution_markers",
+        "projection_markers",
+        "memory_uptake_admission_outcome_fields"
+      ]
+    },
+    {
+      "id": "lane_b_long_span_mq_callback_fvi",
+      "label": "Lane B: Long Span MQ / Callback / FVI",
+      "status": "diagnostic_phase_1",
+      "formal_authority": false,
+      "dimensions": [
+        "memory_quality",
+        "spontaneous_callback",
+        "false_visible_integration"
+      ],
+      "metric_summary": "Diagnostic long-span direction covering Memory Quality, Spontaneous Callback, and False Visible Integration.",
+      "current_diagnostic_evidence": {
+        "run_id": "attentional_v2_long_span_vnext_phase1_reaction_evidence_fix_rejudge_20260425",
+        "status": "phase_1_diagnostic_evidence_not_formal_authority",
+        "aggregate": {
+          "workspace_path": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_long_span_vnext_phase1_reaction_evidence_fix_rejudge_20260425/summary/aggregate.json",
+          "path_status": "local_only"
+        },
+        "report": {
+          "workspace_path": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_long_span_vnext_phase1_reaction_evidence_fix_rejudge_20260425/summary/report.md",
+          "path_status": "local_only"
+        }
+      },
+      "assets": [
+        {
+          "id": "lane_b_docs",
+          "workspace_path": "reading-companion-backend/docs/evaluation/long_span/README.md",
+          "path_status": "tracked",
+          "role": "surface_index"
+        },
+        {
+          "id": "lane_b_runner",
+          "workspace_path": "reading-companion-backend/eval/attentional_v2/run_long_span_vnext.py",
+          "path_status": "tracked",
+          "role": "existing_runner_not_modified_by_slice_7a"
+        },
+        {
+          "id": "lane_b_probe_exporter",
+          "workspace_path": "reading-companion-backend/src/attentional_v2/benchmark_probes.py",
+          "path_status": "tracked",
+          "role": "existing_probe_exporter_not_modified_by_slice_7a"
+        },
+        {
+          "id": "lane_b_semantic_probe_manifest",
+          "workspace_path": "reading-companion-backend/eval/manifests/probes/memory_quality_semantic_probe_plan_20260504.json",
+          "path_status": "tracked",
+          "role": "active_memory_quality_probe_manifest"
+        }
+      ],
+      "evidence_surface_ids": [
+        "read_audit",
+        "settlement_audit",
+        "supplemental_retrieval",
+        "navigation_trace",
+        "detour_trace_evidence",
+        "slow_cycle_audit",
+        "source_ref_binding_resolution_markers",
+        "projection_markers",
+        "memory_uptake_admission_outcome_fields"
+      ]
+    }
+  ],
+  "historical_assets": [
+    {
+      "id": "excerpt_surface_v1_1",
+      "status": "historical_superseded",
+      "not_active_lane": true,
+      "workspace_path": "reading-companion-backend/eval/manifests/splits/attentional_v2_excerpt_surface_v1_1_draft.json",
+      "path_status": "tracked",
+      "note": "Preserved as historical / superseded evidence, not the active local-user benchmark pointer."
+    },
+    {
+      "id": "accumulation_benchmark_v1",
+      "status": "historical_durable_evidence",
+      "not_active_lane": true,
+      "workspace_path": "reading-companion-backend/eval/manifests/splits/attentional_v2_accumulation_benchmark_v1_draft.json",
+      "path_status": "tracked",
+      "note": "Older bounded long-span evidence retained for history."
+    },
+    {
+      "id": "accumulation_benchmark_v2",
+      "status": "discontinued_invalidated_diagnostic",
+      "not_active_lane": true,
+      "workspace_path": "reading-companion-backend/eval/manifests/splits/attentional_v2_accumulation_benchmark_v2_frozen.json",
+      "path_status": "tracked",
+      "note": "Discontinued target-centered route; retained as diagnostic evidence only."
+    },
+    {
+      "id": "older_subsegment_excerpt_chapter_assets",
+      "status": "reference_only",
+      "not_active_lane": true,
+      "workspace_path": "reading-companion-backend/docs/evaluation/README.md",
+      "path_status": "tracked",
+      "note": "Older subsegment, excerpt, and chapter comparison reports remain reference-only unless a later accepted eval slice reactivates them."
+    }
+  ],
+  "evidence_surfaces": [
+    {
+      "id": "read_audit",
+      "artifact_or_field": "_mechanisms/attentional_v2/runtime/read_audit.jsonl",
+      "available_after_slice": "Slice 1 through Slice 5",
+      "maps_to": [
+        "lane_a_local_user_level_selective_legibility",
+        "lane_b_long_span_mq_callback_fvi"
+      ],
+      "evidence_role": "per-read mechanism-private audit substrate"
+    },
+    {
+      "id": "settlement_audit",
+      "artifact_or_field": "_mechanisms/attentional_v2/runtime/settlement_audit.jsonl",
+      "available_after_slice": "Slice 1",
+      "maps_to": [
+        "lane_a_local_user_level_selective_legibility",
+        "lane_b_long_span_mq_callback_fvi"
+      ],
+      "evidence_role": "read-to-state settlement deltas and memory uptake operation outcomes"
+    },
+    {
+      "id": "supplemental_retrieval",
+      "artifact_or_field": "read_audit.supplemental_retrieval",
+      "available_after_slice": "Slice 4B",
+      "maps_to": [
+        "lane_b_long_span_mq_callback_fvi"
+      ],
+      "evidence_role": "retrieval intent/result-boundary availability, not utilization success"
+    },
+    {
+      "id": "navigation_trace",
+      "artifact_or_field": "read_audit.navigation_trace",
+      "available_after_slice": "Slice 5A and Slice 5B",
+      "maps_to": [
+        "lane_b_long_span_mq_callback_fvi",
+        "planning_trace_quality"
+      ],
+      "evidence_role": "navigation trace availability for diagnostic review, not planning quality score"
+    },
+    {
+      "id": "detour_trace_evidence",
+      "artifact_or_field": "read_audit.detour_trace_evidence",
+      "available_after_slice": "Slice 5A and Slice 5B",
+      "maps_to": [
+        "lane_b_long_span_mq_callback_fvi",
+        "planning_trace_quality"
+      ],
+      "evidence_role": "detour lifecycle evidence for diagnostic review, not route recommendation or route quality score"
+    },
+    {
+      "id": "slow_cycle_audit",
+      "artifact_or_field": "_mechanisms/attentional_v2/runtime/slow_cycle_audit.jsonl",
+      "available_after_slice": "Slice 6A plus carried SourceRef evidence precision patch",
+      "maps_to": [
+        "lane_b_long_span_mq_callback_fvi",
+        "slow_cycle_safety"
+      ],
+      "evidence_role": "candidate-vs-settled slow-cycle boundary substrate, not slow-cycle quality score"
+    },
+    {
+      "id": "source_ref_binding_resolution_markers",
+      "artifact_or_field": "inline source_refs and SourceRef resolution/status markers in runtime and audit surfaces",
+      "available_after_slice": "Slice 1 through Slice 6",
+      "maps_to": [
+        "lane_a_local_user_level_selective_legibility",
+        "lane_b_long_span_mq_callback_fvi"
+      ],
+      "evidence_role": "source evidence availability and binding diagnostics, not fidelity score by count"
+    },
+    {
+      "id": "projection_markers",
+      "artifact_or_field": "projection_role, support_status, lineage_only, current_support, visible_trace_support",
+      "available_after_slice": "Slice 3A",
+      "maps_to": [
+        "lane_b_long_span_mq_callback_fvi"
+      ],
+      "evidence_role": "prompt-facing support/boundary metadata for diagnostic review"
+    },
+    {
+      "id": "memory_uptake_admission_outcome_fields",
+      "artifact_or_field": "read_audit memory_uptake_admission_events and settlement_audit memory_uptake_op_outcomes",
+      "available_after_slice": "Slice 1, Slice 2A, and Slice 2B",
+      "maps_to": [
+        "lane_a_local_user_level_selective_legibility",
+        "lane_b_long_span_mq_callback_fvi"
+      ],
+      "evidence_role": "normalization admission and observed outcome metadata, not product quality proof"
+    }
+  ],
+  "diagnostic_additions": [
+    {
+      "id": "planning_trace_quality",
+      "label": "Planning Trace Quality",
+      "diagnostic_only": true,
+      "quality_score": false,
+      "evidence_availability_only": true,
+      "evidence_surface_ids": [
+        "navigation_trace",
+        "detour_trace_evidence"
+      ],
+      "interpretation": "Trace presence can support later review, but trace existence is not planning quality."
+    },
+    {
+      "id": "slow_cycle_safety",
+      "label": "Slow-cycle Safety",
+      "diagnostic_only": true,
+      "quality_score": false,
+      "evidence_availability_only": true,
+      "evidence_surface_ids": [
+        "slow_cycle_audit"
+      ],
+      "interpretation": "slow_cycle_audit can support later candidate-vs-settled review, but audit existence is not slow-cycle quality."
+    }
+  ],
+  "interpretation_guards": {
+    "retrieval_availability_is_not_utilization_success": true,
+    "visible_reaction_presence_is_not_callback_correctness": true,
+    "source_ref_count_is_not_fidelity_score": true,
+    "trace_existence_is_not_planning_quality": true,
+    "slow_cycle_audit_existence_is_not_slow_cycle_quality": true,
+    "contract_audit_checks_are_not_product_quality_scores": true
+  },
+  "future_smoke_proposal": {
+    "execute_in_slice_7a": false,
+    "description": "A later accepted eval slice may run a minimal smoke that checks asset existence, manifest parseability, lane separation, and evidence-surface availability without judge calls or reading jobs.",
+    "must_not_run_in_slice_7a": [
+      "full_ai_evaluation",
+      "benchmark_jobs",
+      "judge_calls",
+      "reading_jobs",
+      "long_running_eval_jobs"
+    ]
+  }
+}
