@@ -13,9 +13,9 @@ Stable mechanism behavior changes still need to be promoted to the relevant stab
 ## Current Status
 
 ```text
-Current phase: Slice 8C Pre-implementation Brief waiting for human review
-Implementation status: Slice 1 accepted; Slice 2A accepted; Slice 2B accepted; Slice 3A accepted; Slice 3B accepted; Slice 4A accepted including precision patch; Slice 4B accepted; Slice 5A accepted; Slice 5B accepted; Slice 6A accepted including carried SourceRef audit precision patch; Slice 6B no-code closure brief accepted; Slice 6 closed; Slice 7A accepted; Slice 7B accepted; Slice 8A accepted; Slice 8B accepted; Slice 8C execution brief created
-Next action: human reviewer accepts or revises the Slice 8C Pre-implementation Brief before any Minimal Eval Suite execution, judge call, reading job, benchmark job, or eval run directory creation
+Current phase: Slice 8C Post-implementation Report waiting for human review
+Implementation status: Slice 1 accepted; Slice 2A accepted; Slice 2B accepted; Slice 3A accepted; Slice 3B accepted; Slice 4A accepted including precision patch; Slice 4B accepted; Slice 5A accepted; Slice 5B accepted; Slice 6A accepted including carried SourceRef audit precision patch; Slice 6B no-code closure brief accepted; Slice 6 closed; Slice 7A accepted; Slice 7B accepted; Slice 8A accepted; Slice 8B accepted; Slice 8C execution brief accepted; Slice 8C bounded Lane A execution attempted and failed before summary generation; Lane B not launched
+Next action: human reviewer reviews the Slice 8C Post-implementation Report before any retry, Lane B launch, evidence-catalog update, or next eval slice
 Full AI Evaluation: not yet; deferred until a later accepted eval slice explicitly requests it
 ```
 
@@ -2461,6 +2461,112 @@ Validation for brief landing:
 Next recommended step:
 - Human reviewer reviews `briefs/Slice8C-Minimal-Eval-Suite-Execution-Preflight-and-Bounded-Run-Pre-implementation-Brief v0.md`.
 - Do not start the Minimal Eval Suite, create eval run directories, run benchmark jobs, call judges, launch reading jobs, modify eval runners, or update the evidence catalog until this brief is accepted and execution is explicitly requested.
+
+## Entry 2026-05-17 — Slice 8C bounded eval execution attempted and report created
+
+Type:
+- eval smoke / post-implementation report
+
+Slice:
+- Slice 8C
+
+Related docs:
+- E实施0: `../E实施0-Implementation Roadmap & Handoff v0.md`
+- C设计 source: `../C设计9-Evaluation Calibration & Minimal Eval Suite v0.md`
+- E实施1: `E实施1-Implementation Feasibility & Delta Audit v0.md`
+- Slice 8B brief: `briefs/Slice8B-Minimal-Eval-Suite-Run-Brief-and-Execution-Guardrails-Pre-implementation-Brief v0.md`
+- Slice 8C brief: `briefs/Slice8C-Minimal-Eval-Suite-Execution-Preflight-and-Bounded-Run-Pre-implementation-Brief v0.md`
+- Slice 8C report: `reports/Slice8C-Minimal-Eval-Suite-Execution-Preflight-and-Bounded-Run-Post-implementation-Report v0.md`
+
+Branch / PR:
+- Branch: `main`
+- PR:
+- Commit:
+
+Pre-implementation Brief:
+- Link: `briefs/Slice8C-Minimal-Eval-Suite-Execution-Preflight-and-Bounded-Run-Pre-implementation-Brief v0.md`
+- Accepted by: human reviewer / user
+- Acceptance date: 2026-05-17
+- Scope changes approved: execute bounded two-lane plan sequentially, with Lane B blocked unless Lane A reaches terminal success
+
+Files changed:
+- `docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
+- `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md`
+- `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8C-Minimal-Eval-Suite-Execution-Preflight-and-Bounded-Run-Post-implementation-Report v0.md`
+- `docs/current-state.md`
+- `docs/tasks/registry.md`
+- `docs/tasks/registry.json`
+
+Design contracts addressed:
+- Static preflight checks ran before execution.
+- Lane A used `attentional_v2` only, one `huochu` segment, and three note cases.
+- Lane B was not launched because Lane A failed.
+- Evidence catalog was not updated.
+- Runtime mechanism code, eval runners, judge prompts, frontend, public API, and durable mechanism state were not modified.
+
+Engineering tests / checks:
+- Commands run:
+  - `cd reading-companion-backend && .venv/bin/python scripts/validate_minimal_eval_inventory_smoke.py --manifest eval/manifests/attentional_v2_minimal_eval_inventory_v1.json`
+  - `cd reading-companion-backend && .venv/bin/python -m pytest tests/test_attentional_v2_minimal_eval_inventory.py -q`
+  - `cd reading-companion-backend && .venv/bin/python scripts/check_background_jobs.py`
+  - `node -e "JSON.parse(require('fs').readFileSync('docs/tasks/registry.json','utf8'))"`
+  - `git diff --check`
+  - forbidden runtime/frontend/eval-runner diff check
+  - target run-directory absence checks
+  - Lane B source-run metadata check
+- Result:
+  - manifest smoke returned `status=ok`
+  - static inventory pytest returned `8 passed in 0.07s`
+  - registry had no active jobs before launch
+  - `docs/tasks/registry.json` parsed successfully
+  - `git diff --check` passed before execution
+  - forbidden runtime/frontend/eval-runner diff check returned empty output
+  - Lane B source metadata matched `probe_plan_id=memory_quality_semantic_probe_plan_20260504` and `probe_selection_method=semantic_boundary_with_distance_reference`
+- Not run / reason:
+  - Lane B not run because Lane A failed
+  - full AI Evaluation, broad benchmark jobs, cross-mechanism comparison, evidence-catalog updates, eval-runner changes, and retries not run by constraint
+
+Execution result:
+- Lane A job id: `bgjob_minimal_eval_suite_lane_a_smoke_20260517`
+- Lane A run id: `attentional_v2_minimal_eval_suite_lane_a_smoke_20260517`
+- Lane A registry status: `failed`
+- Lane A exit code: `1`
+- Lane A failure: user-level selective matching raised `ValueError` because visible reaction `rx:Full_Content:src:c1:p1@0-p3@146:highlight:1` had no usable source locator.
+- Lane A partial evidence: fresh V2 read completed one chapter, emitted `152` visible reactions, and wrote runtime `activity.jsonl` plus `llm_standard.jsonl`.
+- Lane A missing expected outputs: `summary/aggregate.json`, `summary/report.md`, and `summary/llm_usage.json`.
+- Lane B job id: `bgjob_minimal_eval_suite_lane_b_smoke_20260517`
+- Lane B status: not launched; run directory not created.
+
+Contract / audit checks:
+- SourceRef preserved: no runtime changes
+- per-op outcome: no runtime changes
+- candidate vs settled separated: no runtime changes
+- audit not routed into prompt: no prompt changes
+- reaction_records not semantic memory: no runtime changes
+- knowledge_activations not source truth: no runtime changes
+- other: audit existence is not product quality; retrieval availability is not utilization success; visible reaction presence is not callback correctness; SourceRef count is not fidelity score; trace existence is not planning quality; `slow_cycle_audit` existence is not slow-cycle quality
+
+AI Evaluation:
+- Full eval run? no
+- Smoke only? attempted bounded Lane A smoke; failed before eval summary generation
+- Eval lane affected: Lane A attempted; Lane B not launched
+- Notes: this is diagnostic execution evidence only, not product-quality proof
+
+Post-implementation Report:
+- Link: `reports/Slice8C-Minimal-Eval-Suite-Execution-Preflight-and-Bounded-Run-Post-implementation-Report v0.md`
+- Summary: Slice 8C preflight passed, Lane A launched and failed after fresh V2 read completion due source-locator compatibility in user-level selective matching, Lane B was not launched, and partial outputs/logs were preserved.
+- Deviations from accepted brief: none; failure policy followed
+- Known gaps: no Lane A aggregate summary, no Lane B smoke evidence, no product-quality claim
+
+Reviewer decision:
+- waiting for human review
+- Reviewer:
+- Decision date:
+- Required follow-up: decide whether to patch the source-locator compatibility seam, adjust the run profile, or authorize a `_retry1` run
+
+Next recommended step:
+- Human reviewer reviews `reports/Slice8C-Minimal-Eval-Suite-Execution-Preflight-and-Bounded-Run-Post-implementation-Report v0.md`.
+- Do not retry Lane A, launch Lane B, start another eval slice, modify eval runners, or update the evidence catalog until the report is reviewed and a next action is explicitly accepted.
 
 ## Entry Template
 

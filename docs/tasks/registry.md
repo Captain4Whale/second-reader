@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-05-17T12:42:09+08:00`
+Last updated: `2026-05-17T14:38:25+08:00`
 
 ## Status Values
 - `active`
@@ -464,12 +464,14 @@ Last updated: `2026-05-17T12:42:09+08:00`
 
 ## Waiting
 
-### `TASK-SECOND-READER-MEMORY-PLANNING-SLICE8C-BRIEF-ACCEPTANCE` — Review Slice 8C Pre-implementation Brief for Minimal Eval Suite Execution Preflight and Bounded Run
+### `TASK-SECOND-READER-MEMORY-PLANNING-SLICE8C-REPORT-REVIEW` — Review Slice 8C Post-implementation Report for Minimal Eval Suite Execution Preflight and Bounded Run
 - Status: `waiting`
 - Lane: `mechanism_runtime`
 - Priority: `high`
-- Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice8C-Minimal-Eval-Suite-Execution-Preflight-and-Bounded-Run-Pre-implementation-Brief v0.md`
-- Next: human reviewer should accept or revise the Slice 8C execution brief before any Minimal Eval Suite execution, eval run, benchmark job, judge call, reading job, eval run directory creation, evidence-catalog update, or eval-runner change.
+- Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8C-Minimal-Eval-Suite-Execution-Preflight-and-Bounded-Run-Post-implementation-Report v0.md`
+- Next: human reviewer should review the failed Slice 8C bounded execution attempt and decide whether to patch the Lane A source-locator compatibility seam, adjust the run profile, or authorize a `_retry1` run. Do not retry Lane A, launch Lane B, start another eval slice, update the evidence catalog, or modify eval runners until this report is reviewed and a next action is explicitly accepted.
+- Jobs:
+  - `bgjob_minimal_eval_suite_lane_a_smoke_20260517` (`failed`)
 - Evidence:
   - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
   - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/E实施0-Implementation Roadmap & Handoff v0.md`
@@ -483,6 +485,7 @@ Last updated: `2026-05-17T12:42:09+08:00`
   - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8A-Post-implementation-Review-and-Minimal-Eval-Readiness-Gate-Post-implementation-Report v0.md`
   - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice8B-Minimal-Eval-Suite-Run-Brief-and-Execution-Guardrails-Pre-implementation-Brief v0.md`
   - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice8C-Minimal-Eval-Suite-Execution-Preflight-and-Bounded-Run-Pre-implementation-Brief v0.md`
+  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8C-Minimal-Eval-Suite-Execution-Preflight-and-Bounded-Run-Post-implementation-Report v0.md`
   - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md`
 
 ### `TASK-DATASET-QUESTION-ALIGNED-CASE-CONSTRUCTION` — Build question-aligned case construction for evaluation datasets
@@ -557,6 +560,30 @@ Last updated: `2026-05-17T12:42:09+08:00`
 - Next: keep section-first compatibility fields and containers only as migration sidecars; start removal only after the V2-native overview, chapter, and marks surfaces are stable enough that the older presentation model is no longer needed for normal product use
 
 ## Done
+
+### `TASK-SECOND-READER-MEMORY-PLANNING-SLICE8C-BRIEF-ACCEPTANCE` — Review Slice 8C Pre-implementation Brief for Minimal Eval Suite Execution Preflight and Bounded Run
+- Status: `done`
+- Lane: `mechanism_runtime`
+- Priority: `high`
+- Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice8C-Minimal-Eval-Suite-Execution-Preflight-and-Bounded-Run-Pre-implementation-Brief v0.md`
+- Next: Slice 8C Pre-implementation Brief is accepted, bounded execution was attempted, Lane A failed before summary generation after the fresh V2 read completed, and Lane B was not launched. Continue with `TASK-SECOND-READER-MEMORY-PLANNING-SLICE8C-REPORT-REVIEW`; do not retry Lane A, launch Lane B, update the evidence catalog, modify eval runners, or start another eval slice until the report is reviewed.
+- Jobs:
+  - `bgjob_minimal_eval_suite_lane_a_smoke_20260517` (`failed`)
+- Evidence:
+  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
+  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/E实施0-Implementation Roadmap & Handoff v0.md`
+  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施1-Implementation Feasibility & Delta Audit v0.md`
+  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice6B-Slow-cycle-Re-entry-Reconsolidation-and-Eval-readiness-Smoke-Pre-implementation-Brief v0.md`
+  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice7A-Minimal-Eval-Asset-Inventory-and-Evidence-Wiring-Pre-implementation-Brief v0.md`
+  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice7A-Minimal-Eval-Asset-Inventory-and-Evidence-Wiring-Post-implementation-Report v0.md`
+  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice7B-Minimal-Eval-Smoke-Harness-and-Evidence-Availability-Validation-Pre-implementation-Brief v0.md`
+  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice7B-Minimal-Eval-Smoke-Harness-and-Evidence-Availability-Validation-Post-implementation-Report v0.md`
+  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice8A-Post-implementation-Review-and-Minimal-Eval-Readiness-Gate-Pre-implementation-Brief v0.md`
+  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8A-Post-implementation-Review-and-Minimal-Eval-Readiness-Gate-Post-implementation-Report v0.md`
+  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice8B-Minimal-Eval-Suite-Run-Brief-and-Execution-Guardrails-Pre-implementation-Brief v0.md`
+  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice8C-Minimal-Eval-Suite-Execution-Preflight-and-Bounded-Run-Pre-implementation-Brief v0.md`
+  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8C-Minimal-Eval-Suite-Execution-Preflight-and-Bounded-Run-Post-implementation-Report v0.md`
+  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md`
 
 ### `TASK-SECOND-READER-MEMORY-PLANNING-SLICE8B-BRIEF-ACCEPTANCE` — Review Slice 8B Pre-implementation Brief for Minimal Eval Suite Run Brief and Execution Guardrails
 - Status: `done`
