@@ -13,9 +13,9 @@ Stable mechanism behavior changes still need to be promoted to the relevant stab
 ## Current Status
 
 ```text
-Current phase: Slice 7A Post-implementation Report waiting for human review
-Implementation status: Slice 1 accepted; Slice 2A accepted; Slice 2B accepted; Slice 3A accepted; Slice 3B accepted; Slice 4A accepted including precision patch; Slice 4B accepted; Slice 5A accepted; Slice 5B accepted; Slice 6A accepted including carried SourceRef audit precision patch; Slice 6B no-code closure brief accepted; Slice 6 closed; Slice 7A implemented
-Next action: human reviewer accepts or revises the Slice 7A Post-implementation Report before Slice 7B or any eval run
+Current phase: Slice 7B Pre-implementation Brief waiting for human review
+Implementation status: Slice 1 accepted; Slice 2A accepted; Slice 2B accepted; Slice 3A accepted; Slice 3B accepted; Slice 4A accepted including precision patch; Slice 4B accepted; Slice 5A accepted; Slice 5B accepted; Slice 6A accepted including carried SourceRef audit precision patch; Slice 6B no-code closure brief accepted; Slice 6 closed; Slice 7A accepted; Slice 7B brief created
+Next action: human reviewer accepts or revises the Slice 7B Pre-implementation Brief before Slice 7B implementation or any eval run
 Full AI Evaluation: not yet; deferred until a later accepted eval slice explicitly requests it
 ```
 
@@ -2105,13 +2105,54 @@ Post-implementation Report:
 - Known gaps: no eval execution; no eval runner consumption; no Long Span formal-authority promotion
 
 Reviewer decision:
-- waiting for human review
-- Reviewer:
-- Decision date:
-- Required follow-up: accept or revise the Slice 7A Post-implementation Report before Slice 7B or any eval run
+- accepted
+- Reviewer: human reviewer / user
+- Decision date: 2026-05-17
+- Required follow-up: create and review the Slice 7B Pre-implementation Brief before Slice 7B implementation or any eval run
 
 Next recommended step:
-- Human reviewer reviews `reports/Slice7A-Minimal-Eval-Asset-Inventory-and-Evidence-Wiring-Post-implementation-Report v0.md`. Do not start Slice 7B or run eval yet.
+- Human reviewer reviews `briefs/Slice7B-Minimal-Eval-Smoke-Harness-and-Evidence-Availability-Validation-Pre-implementation-Brief v0.md`. Do not start Slice 7B implementation or run eval yet.
+
+## Entry 2026-05-17 — Slice 7B Pre-implementation Brief created
+
+Type:
+- review decision / pre-implementation brief
+
+Slice:
+- Slice 7B
+
+Related docs:
+- E实施0: `../E实施0-Implementation Roadmap & Handoff v0.md`
+- C设计 source: `../C设计9-Evaluation Calibration & Minimal Eval Suite v0.md`
+- E实施1: `E实施1-Implementation Feasibility & Delta Audit v0.md`
+- Slice 7A report: `reports/Slice7A-Minimal-Eval-Asset-Inventory-and-Evidence-Wiring-Post-implementation-Report v0.md`
+- Slice 7B brief: `briefs/Slice7B-Minimal-Eval-Smoke-Harness-and-Evidence-Availability-Validation-Pre-implementation-Brief v0.md`
+
+Branch / PR:
+- Branch: `main`
+- PR:
+- Commit:
+
+Decision:
+- Slice 7A Post-implementation Report accepted by human reviewer / user.
+- Slice 7B Pre-implementation Brief created and pending human review.
+- Slice 7B implementation remains blocked until the Slice 7B brief is accepted.
+
+Scope:
+- Defines a tiny non-LLM minimal eval smoke harness / validator for the Slice 7A inventory manifest.
+- Keeps Slice 7B implementation limited to a read-only smoke script, tests, and optional eval README pointer.
+- Does not run full AI Evaluation, benchmark jobs, judge calls, reading jobs, or long-running eval jobs.
+- Does not modify runtime mechanism code, eval runners, judge prompts, public API, frontend, or durable mechanism state.
+
+Validation for brief landing:
+- planned:
+  - parse `docs/tasks/registry.json`
+  - `git diff --check`
+  - confirm diff is docs-only
+
+Next recommended step:
+- Human reviewer reviews `briefs/Slice7B-Minimal-Eval-Smoke-Harness-and-Evidence-Availability-Validation-Pre-implementation-Brief v0.md`.
+- Do not start Slice 7B implementation or run eval until the brief is accepted.
 
 ## Entry Template
 
