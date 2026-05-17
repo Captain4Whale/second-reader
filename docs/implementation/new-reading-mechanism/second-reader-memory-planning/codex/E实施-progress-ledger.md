@@ -13,9 +13,9 @@ Stable mechanism behavior changes still need to be promoted to the relevant stab
 ## Current Status
 
 ```text
-Current phase: Slice 8D Post-implementation Report waiting for human review
-Implementation status: Slice 1 accepted; Slice 2A accepted; Slice 2B accepted; Slice 3A accepted; Slice 3B accepted; Slice 4A accepted including precision patch; Slice 4B accepted; Slice 5A accepted; Slice 5B accepted; Slice 6A accepted including carried SourceRef audit precision patch; Slice 6B no-code closure brief accepted; Slice 6 closed; Slice 7A accepted; Slice 7B accepted; Slice 8A accepted; Slice 8B accepted; Slice 8C execution brief accepted; Slice 8C bounded Lane A execution attempted and failed before summary generation; Slice 8C report accepted as failed execution evidence; Slice 8D Lane A source-locator compatibility patch implemented; Lane B not launched
-Next action: human reviewer reviews the Slice 8D Post-implementation Report before any Lane A retry, Lane B launch, evidence-catalog update, or next eval slice
+Current phase: Slice 8E Lane A `_retry1` bounded execution report waiting for human review
+Implementation status: Slice 1 accepted; Slice 2A accepted; Slice 2B accepted; Slice 3A accepted; Slice 3B accepted; Slice 4A accepted including precision patch; Slice 4B accepted; Slice 5A accepted; Slice 5B accepted; Slice 6A accepted including carried SourceRef audit precision patch; Slice 6B no-code closure brief accepted; Slice 6 closed; Slice 7A accepted; Slice 7B accepted; Slice 8A accepted; Slice 8B accepted; Slice 8C execution brief accepted; Slice 8C bounded Lane A execution attempted and failed before summary generation; Slice 8C report accepted as failed execution evidence; Slice 8D Lane A source-locator compatibility patch accepted; Slice 8E Lane A `_retry1` completed successfully; Lane B not launched
+Next action: human reviewer reviews the Slice 8E Post-run Report before any Lane B launch, evidence-catalog update, or next eval slice
 Full AI Evaluation: not yet; deferred until a later accepted eval slice explicitly requests it
 ```
 
@@ -2648,14 +2648,124 @@ Post-implementation Report:
 - Known gaps: no Lane A retry, no Lane B smoke evidence, no product-quality claim
 
 Reviewer decision:
+- accepted
+- Reviewer: user
+- Decision date: 2026-05-17
+- Required follow-up: Lane A `_retry1` bounded execution authorized and completed as Slice 8E; review the Slice 8E report before any Lane B launch, evidence-catalog update, or next eval slice
+
+Next recommended step:
+- Continue with `reports/Slice8E-Lane-A-Retry1-Bounded-Execution-Post-run-Report v0.md` review.
+- Do not launch Lane B, update the evidence catalog, or start another eval slice until the Slice 8E report is accepted and a next action is explicitly approved.
+
+## Entry 2026-05-17 — Slice 8E Lane A `_retry1` bounded execution
+
+Type:
+- eval smoke / post-run report
+
+Slice:
+- Slice 8
+
+Related docs:
+- E实施0: `../E实施0-Implementation Roadmap & Handoff v0.md`
+- C设计 source: `../C设计9-Evaluation Calibration & Minimal Eval Suite v0.md`
+- E实施1 / PR / report:
+  - `E实施1-Implementation Feasibility & Delta Audit v0.md`
+  - `briefs/Slice8C-Minimal-Eval-Suite-Execution-Preflight-and-Bounded-Run-Pre-implementation-Brief v0.md`
+  - `reports/Slice8C-Minimal-Eval-Suite-Execution-Preflight-and-Bounded-Run-Post-implementation-Report v0.md`
+  - `reports/Slice8D-Lane-A-Source-locator-Compatibility-Triage-and-Minimal-Patch-Post-implementation-Report v0.md`
+  - `reports/Slice8E-Lane-A-Retry1-Bounded-Execution-Post-run-Report v0.md`
+
+Branch / PR:
+- Branch: `main`
+- PR:
+- Commit:
+
+Pre-implementation Brief:
+- Link: `briefs/Slice8C-Minimal-Eval-Suite-Execution-Preflight-and-Bounded-Run-Pre-implementation-Brief v0.md`
+- Accepted by: user
+- Acceptance date: 2026-05-17
+- Scope changes approved:
+  - Slice 8D report accepted
+  - run Lane A only as `_retry1`
+  - do not launch Lane B
+  - do not update evidence catalog
+  - do not modify runtime code, eval runners, judge prompts, frontend, public API, or durable state
+
+Files changed:
+- `reports/Slice8E-Lane-A-Retry1-Bounded-Execution-Post-run-Report v0.md`
+- `../README.md`
+- `E实施-progress-ledger.md`
+- `../../../../current-state.md`
+- `../../../../tasks/registry.md`
+- `../../../../tasks/registry.json`
+
+Execution:
+- Job id: `bgjob_minimal_eval_suite_lane_a_smoke_20260517_retry1`
+- Run id: `attentional_v2_minimal_eval_suite_lane_a_smoke_20260517_retry1`
+- Run directory: `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_minimal_eval_suite_lane_a_smoke_20260517_retry1`
+- Job status: `completed`
+- Exit code: `0`
+- Started: `2026-05-17T09:22:31.719758Z`
+- Ended: `2026-05-17T11:07:31.654879Z`
+
+Engineering tests:
+- Commands run:
+  - `cd reading-companion-backend && .venv/bin/python scripts/validate_minimal_eval_inventory_smoke.py --manifest eval/manifests/attentional_v2_minimal_eval_inventory_v1.json`
+  - `cd reading-companion-backend && .venv/bin/python -m pytest tests/test_attentional_v2_minimal_eval_inventory.py tests/test_run_user_level_selective_comparison.py -q`
+  - `cd reading-companion-backend && .venv/bin/python scripts/check_background_jobs.py`
+  - `node -e "JSON.parse(require('fs').readFileSync('docs/tasks/registry.json','utf8'))"`
+  - `git diff --check`
+  - `git diff --name-only -- reading-companion-backend/src/attentional_v2 reading-companion-frontend reading-companion-backend/eval/attentional_v2/run_long_span_vnext.py reading-companion-backend/docs/evaluation/evidence_catalog.md reading-companion-backend/docs/evaluation/evidence_catalog.json`
+- Result:
+  - manifest smoke passed
+  - focused tests passed: `22 passed, 6 warnings in 0.38s`
+  - pre-launch background-job registry showed no active jobs
+  - registry JSON parse passed
+  - diff check passed
+  - forbidden diff check was empty
+
+Contract / audit checks:
+- SourceRef preserved: no runtime SourceRef behavior changed
+- per-op outcome: no runtime op behavior changed
+- candidate vs settled separated: no runtime behavior changed
+- audit not routed into prompt: no prompt changes
+- reaction_records not semantic memory: no runtime memory behavior changed
+- knowledge_activations not source truth: no slow-cycle behavior changed
+- other:
+  - Lane A `_retry1` used only `attentional_v2`, one segment, and three note cases
+  - aggregate checks passed: `segment_count=1`, `note_case_count=3`, mechanisms `["attentional_v2"]`
+  - unlocatable diagnostic remained diagnostic-only and was not counted as a match
+
+AI Evaluation:
+- Full eval run? no
+- Smoke only? yes, Lane A bounded `_retry1` only
+- Eval lane affected: Lane A / Local User-level Selective Legibility
+- Notes:
+  - no Lane B launch
+  - no cross-mechanism comparison
+  - no evidence catalog update
+  - fresh reading job occurred
+  - runner launched with `--judge-mode llm`, but the three produced note-case results resolved through deterministic exact-span or no-overlap paths; no shortlisted non-exact candidate required the LLM judge path
+  - runtime LLM usage: `213` requests, `213` successes, `0` errors, `12` retries
+
+Post-implementation Report:
+- Link: `reports/Slice8E-Lane-A-Retry1-Bounded-Execution-Post-run-Report v0.md`
+- Summary: Lane A `_retry1` completed successfully after Slice 8D source-locator compatibility patch; outputs and aggregate checks are present.
+- Deviations from accepted brief: none
+- Known gaps:
+  - no Lane B smoke run yet
+  - no product-quality claim
+  - no evidence catalog entry
+
+Reviewer decision:
 - waiting for human review
 - Reviewer:
 - Decision date:
-- Required follow-up: review Slice 8D report before authorizing any retry, Lane B launch, evidence-catalog update, or next eval slice
+- Required follow-up: review Slice 8E report before launching Lane B or starting another eval slice
 
 Next recommended step:
-- Human reviewer reviews `reports/Slice8D-Lane-A-Source-locator-Compatibility-Triage-and-Minimal-Patch-Post-implementation-Report v0.md`.
-- Do not retry Lane A, launch Lane B, update the evidence catalog, or start another eval slice until the Slice 8D report is accepted and a next action is explicitly approved.
+- Human reviewer reviews `reports/Slice8E-Lane-A-Retry1-Bounded-Execution-Post-run-Report v0.md`.
+- If accepted, a separately authorized Lane B bounded diagnostic launch is reasonable; do not launch Lane B automatically.
 
 ## Entry Template
 

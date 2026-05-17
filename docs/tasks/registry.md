@@ -464,14 +464,14 @@ Last updated: `2026-05-17T16:24:36+08:00`
 
 ## Waiting
 
-### `TASK-SECOND-READER-MEMORY-PLANNING-SLICE8D-REPORT-REVIEW` — Review Slice 8D Post-implementation Report for Lane A Source-locator Compatibility Triage and Minimal Patch
+### `TASK-SECOND-READER-MEMORY-PLANNING-SLICE8E-REPORT-REVIEW` — Review Slice 8E Post-run Report for Lane A `_retry1` Bounded Execution
 - Status: `waiting`
 - Lane: `mechanism_runtime`
 - Priority: `high`
-- Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8D-Lane-A-Source-locator-Compatibility-Triage-and-Minimal-Patch-Post-implementation-Report v0.md`
-- Next: human reviewer should review the Slice 8D source-locator compatibility patch before any Lane A `_retry1`, Lane B launch, evidence-catalog update, or next eval slice. Do not retry Lane A, launch Lane B, create new eval run directories, call judges, launch reading jobs, or update the evidence catalog until this report is accepted and the next execution action is explicitly approved.
+- Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8E-Lane-A-Retry1-Bounded-Execution-Post-run-Report v0.md`
+- Next: human reviewer should review the Slice 8E Lane A `_retry1` bounded execution report. Lane A retry1 completed successfully; do not launch Lane B, update the evidence catalog, create new eval run directories, run cross-mechanism comparison, or start another eval slice until this report is accepted and the next action is explicitly approved.
 - Jobs:
-  - `bgjob_minimal_eval_suite_lane_a_smoke_20260517` (`failed`)
+  - `bgjob_minimal_eval_suite_lane_a_smoke_20260517_retry1` (`completed`)
 - Evidence:
   - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
   - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/E实施0-Implementation Roadmap & Handoff v0.md`
@@ -487,8 +487,10 @@ Last updated: `2026-05-17T16:24:36+08:00`
   - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice8C-Minimal-Eval-Suite-Execution-Preflight-and-Bounded-Run-Pre-implementation-Brief v0.md`
   - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8C-Minimal-Eval-Suite-Execution-Preflight-and-Bounded-Run-Post-implementation-Report v0.md`
   - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8D-Lane-A-Source-locator-Compatibility-Triage-and-Minimal-Patch-Post-implementation-Report v0.md`
-  - `reading-companion-backend/eval/attentional_v2/run_user_level_selective_comparison.py`
-  - `reading-companion-backend/tests/test_run_user_level_selective_comparison.py`
+  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8E-Lane-A-Retry1-Bounded-Execution-Post-run-Report v0.md`
+  - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_minimal_eval_suite_lane_a_smoke_20260517_retry1/summary/aggregate.json`
+  - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_minimal_eval_suite_lane_a_smoke_20260517_retry1/summary/report.md`
+  - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_minimal_eval_suite_lane_a_smoke_20260517_retry1/summary/llm_usage.json`
   - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md`
 
 ### `TASK-DATASET-QUESTION-ALIGNED-CASE-CONSTRUCTION` — Build question-aligned case construction for evaluation datasets
@@ -563,6 +565,20 @@ Last updated: `2026-05-17T16:24:36+08:00`
 - Next: keep section-first compatibility fields and containers only as migration sidecars; start removal only after the V2-native overview, chapter, and marks surfaces are stable enough that the older presentation model is no longer needed for normal product use
 
 ## Done
+
+### `TASK-SECOND-READER-MEMORY-PLANNING-SLICE8D-REPORT-REVIEW` — Review Slice 8D Post-implementation Report for Lane A Source-locator Compatibility Triage and Minimal Patch
+- Status: `done`
+- Lane: `mechanism_runtime`
+- Priority: `high`
+- Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8D-Lane-A-Source-locator-Compatibility-Triage-and-Minimal-Patch-Post-implementation-Report v0.md`
+- Next: Slice 8D Post-implementation Report is accepted. Lane A `_retry1` bounded execution has completed and is recorded in `TASK-SECOND-READER-MEMORY-PLANNING-SLICE8E-REPORT-REVIEW`; do not launch Lane B, update the evidence catalog, or start another eval slice until the Slice 8E report is reviewed.
+- Jobs:
+  - `bgjob_minimal_eval_suite_lane_a_smoke_20260517` (`failed`)
+- Evidence:
+  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8D-Lane-A-Source-locator-Compatibility-Triage-and-Minimal-Patch-Post-implementation-Report v0.md`
+  - `reading-companion-backend/eval/attentional_v2/run_user_level_selective_comparison.py`
+  - `reading-companion-backend/tests/test_run_user_level_selective_comparison.py`
+  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md`
 
 ### `TASK-SECOND-READER-MEMORY-PLANNING-SLICE8C-REPORT-REVIEW` — Review Slice 8C Post-implementation Report for Minimal Eval Suite Execution Preflight and Bounded Run
 - Status: `done`
