@@ -13,9 +13,9 @@ Stable mechanism behavior changes still need to be promoted to the relevant stab
 ## Current Status
 
 ```text
-Current phase: Slice 6A Post-implementation Report waiting for human review
-Implementation status: Slice 1 accepted; Slice 2A accepted; Slice 2B accepted; Slice 3A accepted; Slice 3B accepted; Slice 4A accepted including precision patch; Slice 4B accepted; Slice 5A accepted; Slice 5B accepted; Slice 6A implemented and pending report review
-Next action: human reviewer accepts or patches the Slice 6A Post-implementation Report before any next implementation slice
+Current phase: Slice 6A patch report waiting for human review
+Implementation status: Slice 1 accepted; Slice 2A accepted; Slice 2B accepted; Slice 3A accepted; Slice 3B accepted; Slice 4A accepted including precision patch; Slice 4B accepted; Slice 5A accepted; Slice 5B accepted; Slice 6A implemented, reviewed, and patched for carried SourceRef audit evidence precision
+Next action: human reviewer accepts or patches the Slice 6A patch report before any next implementation slice
 Full AI Evaluation: not yet; deferred until core instrumentation is ready
 ```
 
@@ -1779,13 +1779,85 @@ Post-implementation Report:
 - Known gaps: no full continuation-capsule delta; no full AI Evaluation
 
 Reviewer decision:
+- reviewed; implementation direction accepted with required carried SourceRef audit precision patch
+- Reviewer: human reviewer / user
+- Decision date: 2026-05-17
+- Required follow-up: produce and review the Slice 6A carried SourceRef audit precision patch report before any next implementation slice
+
+Next recommended step:
+- Human reviewer reviews `reports/Slice6A-Patch-Carry-forward-Settled-SourceRef-Evidence-Precision-Report v0.md`. Do not start the next implementation slice yet.
+
+## Entry 2026-05-17 — Slice 6A carried SourceRef audit precision patch
+
+Type:
+- implementation patch
+- patch report
+
+Slice:
+- Slice 6A patch
+
+Related docs:
+- E实施0: `../E实施0-Implementation Roadmap & Handoff v0.md`
+- C设计 source: `../C设计0-Second Reader Shared Memory–Planning Mechanism Charter v0.md`, `../C设计1-Memory Ontology Design v0.md`, `../C设计3-Memory Formation & Settlement Design v0.md`, `../C设计5-Memory Management & Evolution Design v0(patched).md`, `../C设计8-Slow-cycle : Macro-planning Design v0.md`, `../C设计9-Evaluation Calibration & Minimal Eval Suite v0.md`
+- E实施1 / PR / report: `E实施1-Implementation Feasibility & Delta Audit v0.md`
+- Slice 6A report: `reports/Slice6A-Slow-cycle-Candidate-and-Settlement-Audit-Envelope-Foundations-Post-implementation-Report v0.md`
+- Patch report: `reports/Slice6A-Patch-Carry-forward-Settled-SourceRef-Evidence-Precision-Report v0.md`
+
+Branch / PR:
+- Branch: `main`
+- PR:
+- Commit:
+
+Reviewer decision:
+- Slice 6A Post-implementation Report reviewed; implementation direction accepted with a requested carried SourceRef audit precision patch
+- Reviewer: human reviewer / user
+- Decision date: 2026-05-17
+
+Files changed:
+- `reading-companion-backend/src/attentional_v2/slow_cycle.py`
+- `reading-companion-backend/tests/test_attentional_v2_slow_cycle.py`
+- `docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
+- `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md`
+- `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice6A-Patch-Carry-forward-Settled-SourceRef-Evidence-Precision-Report v0.md`
+- `docs/current-state.md`
+- `docs/tasks/registry.md`
+- `docs/tasks/registry.json`
+
+Design contracts addressed:
+- carried `cross_chapter_carry_forward` audit envelopes now derive SourceRef evidence from the settled carried item evidence shape
+- existing post-cooling active item SourceRefs and carry-forward candidate SourceRefs are combined using `dedupe_source_refs(...)`
+- durable carry-forward behavior is unchanged
+- audit rows remain compact and do not copy merged refs, full durable stores, source windows, prompt packets, or audit dumps
+- ambiguous SourceRef resolution remains `not_assessed`
+
+Engineering tests:
+- Commands run:
+  - `cd reading-companion-backend && .venv/bin/python -m pytest tests/test_attentional_v2_slow_cycle.py tests/test_attentional_v2_scaffold.py -q`
+- Result:
+  - `26 passed, 6 warnings`
+- Not run / reason:
+  - full AI Evaluation not run by constraint
+
+Contract / audit checks:
+- SourceRef preserved: yes; `apply_cross_chapter_carry_forward(...)` still preserves existing refs for reused `item_id`
+- audit evidence precision: yes; carried audit envelope reports nonzero SourceRef evidence when refs are supplied by the existing settled item shape
+- behavior change: none; slow-cycle behavior, prompt text/version, `runner.py`, public API/frontend/eval runner behavior unchanged
+- audit not routed into prompt: yes
+- next slice: not started
+
+Post-patch Report:
+- Link: `reports/Slice6A-Patch-Carry-forward-Settled-SourceRef-Evidence-Precision-Report v0.md`
+- Summary: Slice 6A patch tightens carried SourceRef audit evidence precision for reused active-attention items without changing durable carry-forward behavior.
+- Deviations from accepted patch scope: none
+
+Reviewer decision:
 - waiting for human review
 - Reviewer:
 - Decision date:
-- Required follow-up: accept or patch the Slice 6A Post-implementation Report before any next implementation slice
+- Required follow-up: accept or patch the Slice 6A patch report before any next implementation slice
 
 Next recommended step:
-- Human reviewer reviews `reports/Slice6A-Slow-cycle-Candidate-and-Settlement-Audit-Envelope-Foundations-Post-implementation-Report v0.md`. Do not start the next implementation slice yet.
+- Human reviewer reviews `reports/Slice6A-Patch-Carry-forward-Settled-SourceRef-Evidence-Precision-Report v0.md`. Do not start the next implementation slice yet.
 
 ## Entry Template
 

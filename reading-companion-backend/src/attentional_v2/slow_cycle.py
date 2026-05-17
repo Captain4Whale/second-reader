@@ -175,7 +175,14 @@ def _carry_forward_audit_envelopes(
             "carry_forward_reason": "selected_by_chapter_consolidation",
             "settlement_reason": _clean_text(item.get("status")) or "selected_by_chapter_consolidation",
         }
-        envelopes.append(_with_source_ref_evidence(envelope, item.get("source_refs")))
+        existing_item = active_items_by_id.get(item_id, {})
+        audit_source_refs = dedupe_source_refs(
+            [
+                *(existing_item.get("source_refs", []) if isinstance(existing_item.get("source_refs"), list) else []),
+                *(item.get("source_refs", []) if isinstance(item.get("source_refs"), list) else []),
+            ]
+        )
+        envelopes.append(_with_source_ref_evidence(envelope, audit_source_refs))
 
     for item_id, item in active_items_by_id.items():
         if item_id in carried_ids:

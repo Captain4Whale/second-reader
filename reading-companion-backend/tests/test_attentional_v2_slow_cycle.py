@@ -473,7 +473,7 @@ def test_run_phase6_chapter_cycle_applies_cooling_promotion_and_optional_reactio
                         "item_id": "q-1",
                         "attention_tags": ["question"],
                         "statement": "How narrow will the later book make value?",
-                        "source_refs": [_source_ref("Later the author narrows what counts as value.", 2, role="support")],
+                        "source_refs": [],
                         "status": "open",
                     }
                 ],
@@ -540,6 +540,13 @@ def test_run_phase6_chapter_cycle_applies_cooling_promotion_and_optional_reactio
                     "statement": "Value is purely social.",
                     "source_refs": [_source_ref("Markets begin as relations among people.", 1, role="support")],
                     "status": "active",
+                },
+                {
+                    "item_id": "q-1",
+                    "attention_tags": ["question"],
+                    "statement": "How narrow will the later book make value?",
+                    "source_refs": [_source_ref("Later the author narrows what counts as value.", 2, role="support")],
+                    "status": "active",
                 }
             ],
         },
@@ -570,6 +577,9 @@ def test_run_phase6_chapter_cycle_applies_cooling_promotion_and_optional_reactio
     assert result["chapter_consolidation"]["chapter_summary_note"] == "The chapter narrows its own opening frame."
     assert [item["item_id"] for item in result["active_attention"]["active_items"]] == ["q-1"]
     assert result["active_attention"]["active_items"][0]["attention_tags"] == ["question"]
+    assert result["active_attention"]["active_items"][0]["source_refs"] == [
+        _source_ref("Later the author narrows what counts as value.", 2, role="support")
+    ]
     assert result["reflective_frames"]["chapter_understandings"][0]["item_id"] == "ru-1"
     assert result["knowledge_activations"]["activations"][0]["activation_id"] == "ka-1"
     assert result["reaction_records"]["records"][0]["type"] == "retrospect"
@@ -607,6 +617,8 @@ def test_run_phase6_chapter_cycle_applies_cooling_promotion_and_optional_reactio
     assert carried["candidate_type"] == "cross_chapter_carry_forward"
     assert carried["settlement_decision"] == "carried"
     assert carried["carry_forward_reason"] == "selected_by_chapter_consolidation"
+    assert carried["source_ref_count"] == 1
+    assert carried["source_ref_resolution_statuses"] == ["not_assessed"]
 
     not_carried = next(item for item in envelopes if item.get("candidate_id") == "h-1")
     assert not_carried["settlement_decision"] == "not_carried"
