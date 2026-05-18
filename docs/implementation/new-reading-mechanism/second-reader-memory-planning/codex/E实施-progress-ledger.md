@@ -13,9 +13,9 @@ Stable mechanism behavior changes still need to be promoted to the relevant stab
 ## Current Status
 
 ```text
-Current phase: Slice 8H diagnostic evidence catalog entry report waiting for human review
-Implementation status: Slice 1 accepted; Slice 2A accepted; Slice 2B accepted; Slice 3A accepted; Slice 3B accepted; Slice 4A accepted including precision patch; Slice 4B accepted; Slice 5A accepted; Slice 5B accepted; Slice 6A accepted including carried SourceRef audit precision patch; Slice 6B no-code closure brief accepted; Slice 6 closed; Slice 7A accepted; Slice 7B accepted; Slice 8A accepted; Slice 8B accepted; Slice 8C execution brief accepted; Slice 8C bounded Lane A execution attempted and failed before summary generation; Slice 8C report accepted as failed execution evidence; Slice 8D Lane A source-locator compatibility patch accepted; Slice 8E Lane A `_retry1` accepted; Slice 8F Lane B bounded diagnostic smoke accepted; Slice 8G closure report accepted; Slice 8H diagnostic evidence catalog entry brief accepted; Slice 8H diagnostic catalog entry landed
-Next action: human reviewer reviews the Slice 8H report before any further catalog entry, formal-authority promotion, broader eval, or next eval slice
+Current phase: Memory / Planning / Minimal Eval implementation track closed after Slice 8H
+Implementation status: Slice 1 accepted; Slice 2A accepted; Slice 2B accepted; Slice 3A accepted; Slice 3B accepted; Slice 4A accepted including precision patch; Slice 4B accepted; Slice 5A accepted; Slice 5B accepted; Slice 6A accepted including carried SourceRef audit precision patch; Slice 6B no-code closure brief accepted; Slice 6 closed; Slice 7A accepted; Slice 7B accepted; Slice 8A accepted; Slice 8B accepted; Slice 8C execution brief accepted; Slice 8C bounded Lane A execution attempted and failed before summary generation; Slice 8C report accepted as failed execution evidence; Slice 8D Lane A source-locator compatibility patch accepted; Slice 8E Lane A `_retry1` accepted; Slice 8F Lane B bounded diagnostic smoke accepted; Slice 8G closure report accepted; Slice 8H diagnostic evidence catalog entry brief accepted; Slice 8H diagnostic catalog entry report accepted; implementation track closed
+Next action: no active implementation or eval task remains in this track; broader eval, formal-authority promotion, runtime patches, further catalog entries, or product-quality claims require a separate future brief
 Full AI Evaluation: not yet; deferred until a later accepted eval slice explicitly requests it
 ```
 
@@ -3081,14 +3081,60 @@ Post-implementation Report:
   - broader eval and Long Span formal-authority promotion remain blocked pending later human approval
 
 Reviewer decision:
-- waiting for human review
-- Reviewer:
-- Decision date:
-- Required follow-up: review Slice 8H report before any further catalog entry, broader eval, or formal-authority promotion
+- accepted
+- Reviewer: user
+- Decision date: 2026-05-18
+- Required follow-up: none for this implementation track; future broader eval, formal-authority promotion, runtime patches, further catalog entries, or product-quality claims require a separate future brief
 
 Next recommended step:
-- Human reviewer reviews `reports/Slice8H-Diagnostic-Evidence-Catalog-Entry-for-Minimal-Eval-Suite-Smoke-Post-implementation-Report v0.md`.
-- Do not run eval, broaden benchmark authority, or add more catalog entries without a later accepted slice.
+- Memory / Planning / Minimal Eval implementation track is closed after Slice 8H.
+- Do not run eval, broaden benchmark authority, add more catalog entries, patch runtime, or claim product quality without a later accepted brief.
+
+## Entry 2026-05-18 — Final status-only closure after Slice 8H
+
+Type:
+- status-only closure update
+
+Slice:
+- Slice 8H final closure
+
+Related docs:
+- E实施0: `../E实施0-Implementation Roadmap & Handoff v0.md`
+- E实施1 / reports:
+  - `E实施1-Implementation Feasibility & Delta Audit v0.md`
+  - `reports/Slice8H-Diagnostic-Evidence-Catalog-Entry-for-Minimal-Eval-Suite-Smoke-Post-implementation-Report v0.md`
+
+Decision:
+- Slice 8H diagnostic catalog entry is accepted.
+- `attentional_v2_minimal_eval_suite_smoke_20260517` remains cataloged as `diagnostic_smoke` only.
+- The completed Slice 8C through Slice 8G Minimal Eval Suite smoke is diagnostic evidence only, not formal benchmark authority, not Long Span vNext promotion, and not product-quality proof.
+- The Memory / Planning / Minimal Eval implementation track is closed after Slice 8H.
+
+Files changed:
+- `../README.md`
+- `E实施-progress-ledger.md`
+- `../../../../current-state.md`
+- `../../../../tasks/registry.md`
+- `../../../../tasks/registry.json`
+
+Validation:
+- Commands to run:
+  - `node -e "JSON.parse(require('fs').readFileSync('docs/tasks/registry.json','utf8'))"`
+  - `git diff --check`
+  - `git diff --name-only -- reading-companion-backend/src/attentional_v2 reading-companion-frontend reading-companion-backend/eval/attentional_v2/run_user_level_selective_comparison.py reading-companion-backend/eval/attentional_v2/run_long_span_vnext.py reading-companion-backend/docs/evaluation/evidence_catalog.md reading-companion-backend/docs/evaluation/evidence_catalog.json`
+
+Explicit non-actions:
+- no eval run
+- no eval run directories created
+- no evidence catalog files changed
+- no runtime mechanism code changed
+- no eval runners, judge prompts, frontend, public API, or durable mechanism state changed
+- no Long Span vNext formal-authority promotion
+- no product-quality claim
+
+Required follow-up:
+- none for this implementation track
+- any broader eval, formal-authority promotion, runtime patch, further catalog entry, or product-quality claim requires a separate future brief
 
 ## Entry Template
 

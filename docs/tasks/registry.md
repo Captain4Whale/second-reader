@@ -464,12 +464,16 @@ Last updated: `2026-05-17T22:14:36+08:00`
 
 ## Waiting
 
+_No active waiting tasks for the Memory / Planning / Minimal Eval implementation track._
+
+## Done
+
 ### `TASK-SECOND-READER-MEMORY-PLANNING-SLICE8H-REPORT-REVIEW` — Review Slice 8H Diagnostic Evidence Catalog Entry Report
-- Status: `waiting`
+- Status: `done`
 - Lane: `mechanism_runtime`
 - Priority: `high`
 - Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8H-Diagnostic-Evidence-Catalog-Entry-for-Minimal-Eval-Suite-Smoke-Post-implementation-Report v0.md`
-- Next: human reviewer should review the Slice 8H diagnostic evidence catalog entry report. The catalog now contains one `diagnostic_smoke` entry for the completed Slice 8C through Slice 8G Minimal Eval Suite smoke sequence; this is diagnostic only, not formal benchmark authority or product-quality proof. Do not run eval, create eval run directories, modify eval runners/runtime code, add further catalog entries, promote Long Span vNext, or claim product quality.
+- Next: Slice 8H Post-implementation Report is accepted. The Memory / Planning / Minimal Eval implementation track is closed after Slice 8H. The completed Slice 8C through Slice 8G Minimal Eval Suite smoke is cataloged as `diagnostic_smoke` only; any broader eval, formal-authority promotion, runtime patch, further catalog entry, or product-quality claim requires a separate future brief.
 - Jobs:
   - `bgjob_minimal_eval_suite_lane_a_smoke_20260517` (`failed`)
   - `bgjob_minimal_eval_suite_lane_a_smoke_20260517_retry1` (`completed`)
@@ -575,9 +579,6 @@ Last updated: `2026-05-17T22:14:36+08:00`
 - Detail: `docs/implementation/new-reading-mechanism/new-reading-mechanism-execution-tracker.md`
 - Blocked by: `TASK-V2-NATIVE-READING-PRESENTATION`
 - Next: keep section-first compatibility fields and containers only as migration sidecars; start removal only after the V2-native overview, chapter, and marks surfaces are stable enough that the older presentation model is no longer needed for normal product use
-
-## Done
-
 ### `TASK-SECOND-READER-MEMORY-PLANNING-SLICE8H-BRIEF-ACCEPTANCE` — Review Slice 8H Diagnostic Evidence Catalog Entry Brief
 - Status: `done`
 - Lane: `mechanism_runtime`
