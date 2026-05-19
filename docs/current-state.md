@@ -7,13 +7,29 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-05-19T08:20:40+08:00`
+Last verified: `2026-05-19T12:30:20+08:00`
 
 ## Current Objective
-- Post-Slice8H Eval-1 LLM-health / eval-strictness repair is landed and pending human review.
+- Post-Slice8H Eval-1 Retry1 high-parallel full active evaluation completed and is pending human review.
   - status:
     - no active Eval-1 background jobs remain in the registry
-    - no Eval-1 retry has been launched after the repair
+    - all 5 Long Span producer jobs completed successfully
+    - all 5 Lane A user-level reuse shards completed successfully
+    - all 5 producer outputs passed strict LLM health checks with `fallback_count=0`
+    - post-run report:
+      - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Eval1-Full-Active-Evaluation-Post-Slice8H-Retry1-High-Parallel-Post-run-Report v0.md`
+  - evaluation facts:
+    - Lane A covered the active `20260422` user-level selective package: `5` segments, `202` note cases, `attentional_v2` only
+    - Lane A report-level totals: `exact_match_count=28`, `focused_hit_count=42`, `incidental_cover_count=8`, `miss_count=124`, `note_recall=0.3465`, `unlocatable_reaction_count=3`
+    - Lane B covered the active semantic-probe manifest: `5` windows, `25` Memory Quality probes, `attentional_v2` only
+    - Lane B report-level totals: average Memory Quality score `3.42`, grounded callbacks `126`, weak callbacks `60`, false visible integrations `2`
+    - Lane B sources: `memory_quality_source=fresh_judge`, `reaction_audit_source=fresh_judge`
+    - total LLM usage: `1332` requests, `1332` successes, `0` errors, `47` retries
+  - next step:
+    - human review of the Eval-1 Retry1 post-run report
+    - do not update the evidence catalog, promote Long Span vNext, launch broader eval, or claim product quality without explicit human approval
+- Post-Slice8H Eval-1 LLM-health / eval-strictness repair is accepted and was used by Retry1.
+  - status:
     - the aborted optimized producer remains invalid operational failure evidence only
     - repair report:
       - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Eval1-LLM-Health-and-Eval-Strictness-Repair-Post-implementation-Report v0.md`
@@ -24,8 +40,8 @@ Last verified: `2026-05-19T08:20:40+08:00`
     - output/run health checker is available at `reading-companion-backend/scripts/check_eval_llm_health.py`
     - product runtime fallback remains allowed, but fallback-backed outputs are diagnostics and not valid eval evidence
   - next step:
-    - human review of the repair report
-    - do not retry Eval-1, update the evidence catalog, promote Long Span vNext, or claim product quality without explicit future approval and fresh run ids
+    - keep strict health gates in force for future eval runs
+    - do not reuse aborted `20260518` partial outputs
 - Post-Slice8H Eval-1 broader active evaluation attempt is stopped.
   - status:
     - no active Eval-1 background jobs remain in the registry after stopping `bgjob_full_long_span_vnext_post_slice8h_20260518_parallel5`
@@ -43,7 +59,7 @@ Last verified: `2026-05-19T08:20:40+08:00`
     - partial outputs from `attentional_v2_full_long_span_vnext_post_slice8h_20260518_parallel5` must not be used as valid Long Span evidence or as Lane A reuse-source output
     - no product-quality claim, formal benchmark authority, Long Span vNext promotion, or evidence-catalog update is authorized from this attempt
   - next step:
-    - do not retry Eval-1, launch Lane A shards, or start another eval run until a separate accepted brief or patch plan addresses LLM-health / fallback guardrails and assigns fresh run ids
+    - keep this attempt as operational failure evidence only; use the completed `20260519` Retry1 report for the current post-run review
 - Memory / Planning / Minimal Eval implementation track for optimizing the existing `attentional_v2` mechanism is closed after Slice 8H.
   - status:
     - Memory / Planning / Evaluation design phase is effectively complete
@@ -133,7 +149,7 @@ Last verified: `2026-05-19T08:20:40+08:00`
     - do not run eval, start another eval slice, create new eval run directories, modify eval runners, add further catalog entries, promote Long Span vNext to formal benchmark authority, run broader eval, or claim product quality without a separate future brief
   - current non-goals:
     - no next-slice implementation yet
-    - no accepted full-evaluation result for this new handoff line yet; the post-Slice8H Eval-1 attempt was stopped before valid summaries and is operational failure evidence only
+    - Eval-1 Retry1 full active evaluation results are pending human review; they are not yet cataloged evidence, formal benchmark authority, or product-quality proof
 - Shift Long Span from the discontinued `target-centered accumulation v2` method to the new active design direction:
   - `Memory Quality`
   - `Spontaneous Callback`

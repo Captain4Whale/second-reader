@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-05-19T08:20:40+08:00`
+Last updated: `2026-05-19T12:30:20+08:00`
 
 ## Status Values
 - `active`
@@ -484,20 +484,55 @@ Last updated: `2026-05-19T08:20:40+08:00`
 
 ## Waiting
 
-### `TASK-SECOND-READER-MEMORY-PLANNING-EVAL1-LLM-HEALTH-REPAIR-REPORT-REVIEW` — Review Eval-1 LLM health and eval strictness repair report
+### `TASK-SECOND-READER-MEMORY-PLANNING-EVAL1-RETRY1-HIGH-PARALLEL-REPORT-REVIEW` — Review Eval-1 Retry1 high-parallel full active evaluation report
 - Status: `waiting`
 - Lane: `mechanism_eval`
 - Priority: `high`
+- Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Eval1-Full-Active-Evaluation-Post-Slice8H-Retry1-High-Parallel-Post-run-Report v0.md`
+- Next: review the completed Eval-1 Retry1 high-parallel full active evaluation. Do not update the evidence catalog, promote Long Span vNext, launch broader eval, or claim product quality before human review.
+- Jobs: none
+- Evidence:
+  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Eval1-Full-Active-Evaluation-Post-Slice8H-Retry1-High-Parallel-Post-run-Report v0.md`
+  - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_long_span_post_slice8h_20260519_huochu/summary/aggregate.json`
+  - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_long_span_post_slice8h_20260519_mangge/summary/aggregate.json`
+  - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_long_span_post_slice8h_20260519_nawaer/summary/aggregate.json`
+  - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_long_span_post_slice8h_20260519_value_of_others/summary/aggregate.json`
+  - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_long_span_post_slice8h_20260519_xidaduo/summary/aggregate.json`
+
+## Done
+
+### `TASK-SECOND-READER-MEMORY-PLANNING-EVAL1-RETRY1-HIGH-PARALLEL` — Run Eval-1 Retry1 high-parallel full active evaluation for `attentional_v2`
+- Status: `done`
+- Lane: `mechanism_eval`
+- Priority: `high`
+- Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Eval1-Full-Active-Evaluation-Post-Slice8H-Retry1-High-Parallel-Post-run-Report v0.md`
+- Next: Eval-1 Retry1 completed all 5 active Long Span semantic-probe windows and all 5 Lane A user-level reuse shards for `attentional_v2`. Results are pending human review; no evidence catalog update, Long Span formal-authority promotion, broader eval, or product-quality claim is authorized.
+- Jobs:
+  - `bgjob_eval1_long_span_post_slice8h_20260519_huochu` (`completed`)
+  - `bgjob_eval1_long_span_post_slice8h_20260519_mangge` (`completed`)
+  - `bgjob_eval1_long_span_post_slice8h_20260519_nawaer` (`completed`)
+  - `bgjob_eval1_long_span_post_slice8h_20260519_value_of_others` (`completed`)
+  - `bgjob_eval1_long_span_post_slice8h_20260519_xidaduo` (`completed`)
+  - `bgjob_eval1_user_level_post_slice8h_20260519_reuse_huochu` (`completed`)
+  - `bgjob_eval1_user_level_post_slice8h_20260519_reuse_mangge` (`completed`)
+  - `bgjob_eval1_user_level_post_slice8h_20260519_reuse_nawaer` (`completed`)
+  - `bgjob_eval1_user_level_post_slice8h_20260519_reuse_value_of_others` (`completed`)
+  - `bgjob_eval1_user_level_post_slice8h_20260519_reuse_xidaduo` (`completed`)
+- Evidence:
+  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Eval1-Full-Active-Evaluation-Post-Slice8H-Retry1-High-Parallel-Post-run-Report v0.md`
+
+### `TASK-SECOND-READER-MEMORY-PLANNING-EVAL1-LLM-HEALTH-REPAIR-REPORT-REVIEW` — Review Eval-1 LLM health and eval strictness repair report
+- Status: `done`
+- Lane: `mechanism_eval`
+- Priority: `high`
 - Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Eval1-LLM-Health-and-Eval-Strictness-Repair-Post-implementation-Report v0.md`
-- Next: review the repair before any Eval-1 retry. The aborted producer remains invalid and must not be reused. Future retry requires fresh run ids, live target preflight, strict eval health gates, and explicit human approval.
+- Next: repair accepted and used by Eval-1 Retry1. Keep strict eval health gates, live target preflight, and same-tier failover in force for future eval runs.
 - Jobs: none
 - Evidence:
   - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Eval1-LLM-Health-and-Eval-Strictness-Repair-Post-implementation-Report v0.md`
   - `reading-companion-backend/eval/attentional_v2/llm_health.py`
   - `reading-companion-backend/scripts/check_llm_targets_live.py`
   - `reading-companion-backend/scripts/check_eval_llm_health.py`
-
-## Done
 
 ### `TASK-SECOND-READER-MEMORY-PLANNING-SLICE8H-REPORT-REVIEW` — Review Slice 8H Diagnostic Evidence Catalog Entry Report
 - Status: `done`

@@ -14,9 +14,9 @@ Stable mechanism behavior changes still need to be promoted to the relevant stab
 
 ```text
 Current phase: Memory / Planning / Minimal Eval implementation track closed after Slice 8H
-Implementation status: Slice 1 accepted; Slice 2A accepted; Slice 2B accepted; Slice 3A accepted; Slice 3B accepted; Slice 4A accepted including precision patch; Slice 4B accepted; Slice 5A accepted; Slice 5B accepted; Slice 6A accepted including carried SourceRef audit precision patch; Slice 6B no-code closure brief accepted; Slice 6 closed; Slice 7A accepted; Slice 7B accepted; Slice 8A accepted; Slice 8B accepted; Slice 8C execution brief accepted; Slice 8C bounded Lane A execution attempted and failed before summary generation; Slice 8C report accepted as failed execution evidence; Slice 8D Lane A source-locator compatibility patch accepted; Slice 8E Lane A `_retry1` accepted; Slice 8F Lane B bounded diagnostic smoke accepted; Slice 8G closure report accepted; Slice 8H diagnostic evidence catalog entry brief accepted; Slice 8H diagnostic catalog entry report accepted; implementation track closed; post-Slice8H Eval-1 broader active evaluation attempt stopped and recorded as aborted operational evidence
-Next action: no active implementation or eval job remains in this track; do not retry Eval-1 or reuse partial producer outputs until a separate accepted brief or patch plan addresses LLM-health / fallback guardrails and assigns fresh run ids
-Full AI Evaluation: post-Slice8H broader active evaluation was attempted but stopped before valid summaries; no valid full-evaluation evidence is accepted from that attempt
+Implementation status: Slice 1 accepted; Slice 2A accepted; Slice 2B accepted; Slice 3A accepted; Slice 3B accepted; Slice 4A accepted including precision patch; Slice 4B accepted; Slice 5A accepted; Slice 5B accepted; Slice 6A accepted including carried SourceRef audit precision patch; Slice 6B no-code closure brief accepted; Slice 6 closed; Slice 7A accepted; Slice 7B accepted; Slice 8A accepted; Slice 8B accepted; Slice 8C execution brief accepted; Slice 8C bounded Lane A execution attempted and failed before summary generation; Slice 8C report accepted as failed execution evidence; Slice 8D Lane A source-locator compatibility patch accepted; Slice 8E Lane A `_retry1` accepted; Slice 8F Lane B bounded diagnostic smoke accepted; Slice 8G closure report accepted; Slice 8H diagnostic evidence catalog entry brief accepted; Slice 8H diagnostic catalog entry report accepted; implementation track closed; post-Slice8H Eval-1 broader active evaluation attempt stopped and recorded as aborted operational evidence; Eval-1 LLM-health / eval-strictness repair accepted; Eval-1 Retry1 high-parallel full active evaluation completed and is pending human review
+Next action: human review of `Eval1-Full-Active-Evaluation-Post-Slice8H-Retry1-High-Parallel-Post-run-Report v0.md`; do not update the evidence catalog, promote Long Span vNext, launch broader eval, or claim product quality before that review
+Full AI Evaluation: post-Slice8H Eval-1 Retry1 completed the current active Lane A / Lane B scope for `attentional_v2`; results are pending human review and are not automatic product-quality proof or formal benchmark authority
 ```
 
 ## Entry 2026-05-16 — E实施1 feasibility audit created
@@ -3248,10 +3248,95 @@ Post-implementation Report:
   - future retry must use fresh run ids and explicit human approval
 
 Reviewer decision:
+- accepted by user instruction to restart Eval-1 with the repair in force
+
+Next recommended step:
+- Eval-1 Retry1 high-parallel run with fresh `20260519` run ids
+
+## Entry 2026-05-19 — Eval-1 Retry1 high-parallel full active evaluation completed
+
+Type:
+- full active evaluation run / post-run report
+
+Slice:
+- Post-Slice8H Eval-1 Retry1
+
+Related docs:
+- accepted repair:
+  - `reports/Eval1-LLM-Health-and-Eval-Strictness-Repair-Post-implementation-Report v0.md`
+- post-run report:
+  - `reports/Eval1-Full-Active-Evaluation-Post-Slice8H-Retry1-High-Parallel-Post-run-Report v0.md`
+
+Files changed:
+- `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Eval1-Full-Active-Evaluation-Post-Slice8H-Retry1-High-Parallel-Post-run-Report v0.md`
+- `docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
+- `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md`
+- `docs/current-state.md`
+- `docs/tasks/registry.md`
+- `docs/tasks/registry.json`
+
+Execution summary:
+- Launched 5 independent Long Span producer jobs in parallel, one per current semantic-probe window.
+- Launched 5 Lane A user-level reuse shards after each matching producer completed and passed strict LLM health validation.
+- Reused only fresh `20260519` producer outputs; the aborted `20260518` producer outputs were preserved and not reused.
+- No `iterator_v1`, cross-mechanism comparison, historical benchmark surfaces, Reader Reaction Value, evidence catalog update, runtime change, eval-runner change, or judge-prompt change was introduced.
+
+Lane A:
+- Scope: active user-level selective package `20260422`, `attentional_v2` only.
+- Report-level total:
+  - `segment_count=5`
+  - `note_case_count=202`
+  - `exact_match_count=28`
+  - `focused_hit_count=42`
+  - `incidental_cover_count=8`
+  - `miss_count=124`
+  - `note_recall=0.3465`
+  - `unlocatable_reaction_count=3`
+- Lane A reading jobs:
+  - none; each shard reused its matching Long Span producer output directory.
+
+Lane B:
+- Scope: current semantic probe manifest `memory_quality_semantic_probe_plan_20260504`, `attentional_v2` only.
+- Report-level total:
+  - `window_count=5`
+  - `probe_count=25`
+  - `average_overall_memory_quality_score=3.42`
+  - `total_visible_reactions=729`
+  - `grounded_callback_count=126`
+  - `weak_callback_count=60`
+  - `false_visible_integration_count=2`
+  - `memory_quality_source=fresh_judge`
+  - `reaction_audit_source=fresh_judge`
+- Strict health:
+  - all 5 producer outputs passed `check_eval_llm_health.py`
+  - `fallback_count=0`
+
+LLM usage:
+- Total requests: `1332`
+- Successes: `1332`
+- Errors: `0`
+- Retries: `47`
+- Targets:
+  - `MiniMax-M2.7-personal`: `1066` requests, `1066` successes
+  - `MiniMax-M2.7-personal-2`: `266` requests, `266` successes
+
+AI Evaluation:
+- Full active Eval-1 retry? yes, within the explicitly approved active Lane A / Lane B scope.
+- Product-quality proof? no.
+- Evidence catalog update? no.
+- Long Span formal-authority promotion? no.
+
+Post-run Report:
+- Link:
+  - `codex/reports/Eval1-Full-Active-Evaluation-Post-Slice8H-Retry1-High-Parallel-Post-run-Report v0.md`
+- Summary:
+  - Eval-1 Retry1 completed successfully and is ready for human review.
+
+Reviewer decision:
 - pending human review
 
 Next recommended step:
-- human review of the repair report before any broader Eval-1 retry
+- human review of the Eval-1 Retry1 post-run report before catalog update, formal-authority promotion, broader eval, or product-quality claim
 
 ## Entry Template
 

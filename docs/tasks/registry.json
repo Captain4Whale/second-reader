@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-05-19T08:20:40+08:00",
+  "updated_at": "2026-05-19T04:30:20Z",
   "tasks": [
     {
       "id": "TASK-SECOND-READER-MEMORY-PLANNING-FEASIBILITY-AUDIT",
@@ -3210,7 +3210,7 @@
     {
       "id": "TASK-SECOND-READER-MEMORY-PLANNING-EVAL1-LLM-HEALTH-REPAIR-REPORT-REVIEW",
       "title": "Review Eval-1 LLM health and eval strictness repair report",
-      "status": "waiting",
+      "status": "done",
       "lane": "mechanism_eval",
       "priority": "high",
       "detail_ref": "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Eval1-LLM-Health-and-Eval-Strictness-Repair-Post-implementation-Report v0.md",
@@ -3223,8 +3223,8 @@
       ],
       "decision_refs": [],
       "job_refs": [],
-      "acceptance_ref": "",
-      "next_action": "Review the Eval-1 LLM health / eval strictness repair before any Eval-1 retry. Future retry requires fresh run ids, live target preflight, strict eval health gates, no evidence catalog update before review, and explicit human approval.",
+      "acceptance_ref": "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Eval1-LLM-Health-and-Eval-Strictness-Repair-Post-implementation-Report v0.md",
+      "next_action": "Repair accepted and used by Eval-1 Retry1. Keep strict eval health gates, live target preflight, and same-tier failover in force for future eval runs.",
       "blocked_by": [],
       "evidence_refs": [
         "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Eval1-LLM-Health-and-Eval-Strictness-Repair-Post-implementation-Report v0.md",
@@ -3235,7 +3235,93 @@
         "reading-companion-backend/eval/attentional_v2/run_user_level_selective_comparison.py",
         "reading-companion-backend/eval/attentional_v2/run_long_span_vnext.py"
       ],
-      "last_updated": "2026-05-19T00:20:40Z",
+      "last_updated": "2026-05-19T04:30:20Z",
+      "last_updated_by": "codex"
+    },
+    {
+      "id": "TASK-SECOND-READER-MEMORY-PLANNING-EVAL1-RETRY1-HIGH-PARALLEL",
+      "title": "Run Eval-1 Retry1 high-parallel full active evaluation for attentional_v2",
+      "status": "done",
+      "lane": "mechanism_eval",
+      "priority": "high",
+      "detail_ref": "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Eval1-Full-Active-Evaluation-Post-Slice8H-Retry1-High-Parallel-Post-run-Report v0.md",
+      "truth_refs": [
+        "docs/current-state.md",
+        "docs/tasks/registry.md",
+        "docs/backend-reader-evaluation.md",
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md",
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md"
+      ],
+      "decision_refs": [],
+      "job_refs": [
+        "bgjob_eval1_long_span_post_slice8h_20260519_huochu",
+        "bgjob_eval1_long_span_post_slice8h_20260519_mangge",
+        "bgjob_eval1_long_span_post_slice8h_20260519_nawaer",
+        "bgjob_eval1_long_span_post_slice8h_20260519_value_of_others",
+        "bgjob_eval1_long_span_post_slice8h_20260519_xidaduo",
+        "bgjob_eval1_user_level_post_slice8h_20260519_reuse_huochu",
+        "bgjob_eval1_user_level_post_slice8h_20260519_reuse_mangge",
+        "bgjob_eval1_user_level_post_slice8h_20260519_reuse_nawaer",
+        "bgjob_eval1_user_level_post_slice8h_20260519_reuse_value_of_others",
+        "bgjob_eval1_user_level_post_slice8h_20260519_reuse_xidaduo"
+      ],
+      "acceptance_ref": "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Eval1-Full-Active-Evaluation-Post-Slice8H-Retry1-High-Parallel-Post-run-Report v0.md",
+      "next_action": "Eval-1 Retry1 completed all 5 active Long Span semantic-probe windows and all 5 Lane A user-level reuse shards for attentional_v2. Results are pending human review; no evidence catalog update, Long Span formal-authority promotion, broader eval, or product-quality claim is authorized.",
+      "blocked_by": [],
+      "evidence_refs": [
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Eval1-Full-Active-Evaluation-Post-Slice8H-Retry1-High-Parallel-Post-run-Report v0.md",
+        "reading-companion-backend/state/job_registry/jobs/bgjob_eval1_long_span_post_slice8h_20260519_huochu.json",
+        "reading-companion-backend/state/job_registry/jobs/bgjob_eval1_long_span_post_slice8h_20260519_mangge.json",
+        "reading-companion-backend/state/job_registry/jobs/bgjob_eval1_long_span_post_slice8h_20260519_nawaer.json",
+        "reading-companion-backend/state/job_registry/jobs/bgjob_eval1_long_span_post_slice8h_20260519_value_of_others.json",
+        "reading-companion-backend/state/job_registry/jobs/bgjob_eval1_long_span_post_slice8h_20260519_xidaduo.json",
+        "reading-companion-backend/state/job_registry/jobs/bgjob_eval1_user_level_post_slice8h_20260519_reuse_huochu.json",
+        "reading-companion-backend/state/job_registry/jobs/bgjob_eval1_user_level_post_slice8h_20260519_reuse_mangge.json",
+        "reading-companion-backend/state/job_registry/jobs/bgjob_eval1_user_level_post_slice8h_20260519_reuse_nawaer.json",
+        "reading-companion-backend/state/job_registry/jobs/bgjob_eval1_user_level_post_slice8h_20260519_reuse_value_of_others.json",
+        "reading-companion-backend/state/job_registry/jobs/bgjob_eval1_user_level_post_slice8h_20260519_reuse_xidaduo.json",
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_long_span_post_slice8h_20260519_huochu/summary/aggregate.json",
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_long_span_post_slice8h_20260519_mangge/summary/aggregate.json",
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_long_span_post_slice8h_20260519_nawaer/summary/aggregate.json",
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_long_span_post_slice8h_20260519_value_of_others/summary/aggregate.json",
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_long_span_post_slice8h_20260519_xidaduo/summary/aggregate.json",
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_user_level_post_slice8h_20260519_reuse_huochu/summary/aggregate.json",
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_user_level_post_slice8h_20260519_reuse_mangge/summary/aggregate.json",
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_user_level_post_slice8h_20260519_reuse_nawaer/summary/aggregate.json",
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_user_level_post_slice8h_20260519_reuse_value_of_others/summary/aggregate.json",
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_user_level_post_slice8h_20260519_reuse_xidaduo/summary/aggregate.json"
+      ],
+      "last_updated": "2026-05-19T04:30:20Z",
+      "last_updated_by": "codex"
+    },
+    {
+      "id": "TASK-SECOND-READER-MEMORY-PLANNING-EVAL1-RETRY1-HIGH-PARALLEL-REPORT-REVIEW",
+      "title": "Review Eval-1 Retry1 high-parallel full active evaluation report",
+      "status": "waiting",
+      "lane": "mechanism_eval",
+      "priority": "high",
+      "detail_ref": "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Eval1-Full-Active-Evaluation-Post-Slice8H-Retry1-High-Parallel-Post-run-Report v0.md",
+      "truth_refs": [
+        "docs/current-state.md",
+        "docs/tasks/registry.md",
+        "docs/backend-reader-evaluation.md",
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md",
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md"
+      ],
+      "decision_refs": [],
+      "job_refs": [],
+      "acceptance_ref": "",
+      "next_action": "Review the completed Eval-1 Retry1 high-parallel full active evaluation. Do not update the evidence catalog, promote Long Span vNext, launch broader eval, or claim product quality before human review.",
+      "blocked_by": [],
+      "evidence_refs": [
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Eval1-Full-Active-Evaluation-Post-Slice8H-Retry1-High-Parallel-Post-run-Report v0.md",
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_long_span_post_slice8h_20260519_huochu/summary/aggregate.json",
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_long_span_post_slice8h_20260519_mangge/summary/aggregate.json",
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_long_span_post_slice8h_20260519_nawaer/summary/aggregate.json",
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_long_span_post_slice8h_20260519_value_of_others/summary/aggregate.json",
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_long_span_post_slice8h_20260519_xidaduo/summary/aggregate.json"
+      ],
+      "last_updated": "2026-05-19T04:30:20Z",
       "last_updated_by": "codex"
     }
   ]
