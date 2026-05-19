@@ -14,9 +14,9 @@ Stable mechanism behavior changes still need to be promoted to the relevant stab
 
 ```text
 Current phase: Memory / Planning / Minimal Eval implementation track closed after Slice 8H
-Implementation status: Slice 1 accepted; Slice 2A accepted; Slice 2B accepted; Slice 3A accepted; Slice 3B accepted; Slice 4A accepted including precision patch; Slice 4B accepted; Slice 5A accepted; Slice 5B accepted; Slice 6A accepted including carried SourceRef audit precision patch; Slice 6B no-code closure brief accepted; Slice 6 closed; Slice 7A accepted; Slice 7B accepted; Slice 8A accepted; Slice 8B accepted; Slice 8C execution brief accepted; Slice 8C bounded Lane A execution attempted and failed before summary generation; Slice 8C report accepted as failed execution evidence; Slice 8D Lane A source-locator compatibility patch accepted; Slice 8E Lane A `_retry1` accepted; Slice 8F Lane B bounded diagnostic smoke accepted; Slice 8G closure report accepted; Slice 8H diagnostic evidence catalog entry brief accepted; Slice 8H diagnostic catalog entry report accepted; implementation track closed
-Next action: no active implementation or eval task remains in this track; broader eval, formal-authority promotion, runtime patches, further catalog entries, or product-quality claims require a separate future brief
-Full AI Evaluation: not yet; deferred until a later accepted eval slice explicitly requests it
+Implementation status: Slice 1 accepted; Slice 2A accepted; Slice 2B accepted; Slice 3A accepted; Slice 3B accepted; Slice 4A accepted including precision patch; Slice 4B accepted; Slice 5A accepted; Slice 5B accepted; Slice 6A accepted including carried SourceRef audit precision patch; Slice 6B no-code closure brief accepted; Slice 6 closed; Slice 7A accepted; Slice 7B accepted; Slice 8A accepted; Slice 8B accepted; Slice 8C execution brief accepted; Slice 8C bounded Lane A execution attempted and failed before summary generation; Slice 8C report accepted as failed execution evidence; Slice 8D Lane A source-locator compatibility patch accepted; Slice 8E Lane A `_retry1` accepted; Slice 8F Lane B bounded diagnostic smoke accepted; Slice 8G closure report accepted; Slice 8H diagnostic evidence catalog entry brief accepted; Slice 8H diagnostic catalog entry report accepted; implementation track closed; post-Slice8H Eval-1 broader active evaluation attempt stopped and recorded as aborted operational evidence
+Next action: no active implementation or eval job remains in this track; do not retry Eval-1 or reuse partial producer outputs until a separate accepted brief or patch plan addresses LLM-health / fallback guardrails and assigns fresh run ids
+Full AI Evaluation: post-Slice8H broader active evaluation was attempted but stopped before valid summaries; no valid full-evaluation evidence is accepted from that attempt
 ```
 
 ## Entry 2026-05-16 — E实施1 feasibility audit created
@@ -3135,6 +3135,59 @@ Explicit non-actions:
 Required follow-up:
 - none for this implementation track
 - any broader eval, formal-authority promotion, runtime patch, further catalog entry, or product-quality claim requires a separate future brief
+
+## Entry 2026-05-19 — Post-Slice8H Eval-1 broader evaluation attempt stopped
+
+Type:
+- aborted broader-eval operation record
+
+Slice:
+- post-Slice8H Eval-1
+
+Related docs:
+- Report: `reports/Eval1-Full-Active-Evaluation-Post-Slice8H-Aborted-Run-Report v0.md`
+- Current state: `../../../../current-state.md`
+- Task registry: `../../../../tasks/registry.md`, `../../../../tasks/registry.json`
+
+Decision:
+- Stop the current Eval-1 background work before launching any additional shards.
+- Preserve existing logs and partial run directories.
+- Treat all partial Eval-1 outputs from this attempt as invalid for evaluation interpretation and invalid as Lane A reuse sources.
+
+Jobs:
+- `bgjob_full_user_level_selective_post_slice8h_20260518`: `abandoned`, exit `-15`.
+- `bgjob_full_long_span_vnext_post_slice8h_20260518`: `abandoned`, exit `-15`.
+- `bgjob_full_long_span_vnext_post_slice8h_20260518_parallel5`: `abandoned`, exit `-15`.
+- latest registry refresh after stop: no active jobs.
+
+Key evidence:
+- Optimized Long Span producer run dir:
+  - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_full_long_span_vnext_post_slice8h_20260518_parallel5`
+- The optimized producer created `meta/selected_windows.json` but did not create:
+  - `summary/aggregate.json`
+  - `summary/report.md`
+  - `summary/llm_usage.json`
+- Local LLM trace inspection for the optimized producer found `919` rows: `465` successful and `454` error rows.
+- Error breakdown: `network_blocked=334`, `llm_timeout=120`.
+- In the recent five-hour window from the final completed trace, `90 / 90` rows were `llm_timeout`.
+- Runtime activity contained LLM fallback events, so paragraph-position progress was not reliable model-backed evaluation progress.
+
+Explicit non-actions:
+- no new eval run launched after stop
+- no Lane A reuse shard launched
+- no evidence catalog update
+- no runtime mechanism code change
+- no eval runner change
+- no judge-prompt change
+- no frontend, public API, or durable mechanism state change
+- no new metrics or scoring
+- no Long Span vNext formal-authority promotion
+- no product-quality claim
+
+Required follow-up:
+- before retrying Eval-1, prepare a separate accepted brief or patch plan for LLM-health / fallback guardrails and fresh run ids
+- do not reuse `attentional_v2_full_long_span_vnext_post_slice8h_20260518_parallel5` as the Lane A source-output producer
+- do not treat any partial output from the stopped jobs as product-quality proof or formal benchmark authority
 
 ## Entry Template
 

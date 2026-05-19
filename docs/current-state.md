@@ -7,9 +7,27 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-05-18T12:33:50+08:00`
+Last verified: `2026-05-19T08:01:35+08:00`
 
 ## Current Objective
+- Post-Slice8H Eval-1 broader active evaluation attempt is stopped.
+  - status:
+    - no active Eval-1 background jobs remain in the registry after stopping `bgjob_full_long_span_vnext_post_slice8h_20260518_parallel5`
+    - stopped / preserved jobs:
+      - `bgjob_full_user_level_selective_post_slice8h_20260518` (`abandoned`, exit `-15`)
+      - `bgjob_full_long_span_vnext_post_slice8h_20260518` (`abandoned`, exit `-15`)
+      - `bgjob_full_long_span_vnext_post_slice8h_20260518_parallel5` (`abandoned`, exit `-15`)
+    - the optimized producer run directory is preserved at `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_full_long_span_vnext_post_slice8h_20260518_parallel5`
+    - the optimized producer created `meta/selected_windows.json` but did not create `summary/aggregate.json`, `summary/report.md`, or `summary/llm_usage.json`
+    - local LLM traces for the optimized producer show `919` rows: `465` successful rows and `454` error rows, with `network_blocked=334` and `llm_timeout=120`
+    - the recent five-hour window from the final completed trace contained `90 / 90` `llm_timeout` rows
+    - runtime activity includes LLM fallback events, so paragraph-position progress from this attempt is not reliable model-backed evaluation progress
+  - interpretation:
+    - the stopped Eval-1 attempt is operational failure evidence only
+    - partial outputs from `attentional_v2_full_long_span_vnext_post_slice8h_20260518_parallel5` must not be used as valid Long Span evidence or as Lane A reuse-source output
+    - no product-quality claim, formal benchmark authority, Long Span vNext promotion, or evidence-catalog update is authorized from this attempt
+  - next step:
+    - do not retry Eval-1, launch Lane A shards, or start another eval run until a separate accepted brief or patch plan addresses LLM-health / fallback guardrails and assigns fresh run ids
 - Memory / Planning / Minimal Eval implementation track for optimizing the existing `attentional_v2` mechanism is closed after Slice 8H.
   - status:
     - Memory / Planning / Evaluation design phase is effectively complete
@@ -99,7 +117,7 @@ Last verified: `2026-05-18T12:33:50+08:00`
     - do not run eval, start another eval slice, create new eval run directories, modify eval runners, add further catalog entries, promote Long Span vNext to formal benchmark authority, run broader eval, or claim product quality without a separate future brief
   - current non-goals:
     - no next-slice implementation yet
-    - no full evaluation run for this new handoff line yet
+    - no accepted full-evaluation result for this new handoff line yet; the post-Slice8H Eval-1 attempt was stopped before valid summaries and is operational failure evidence only
 - Shift Long Span from the discontinued `target-centered accumulation v2` method to the new active design direction:
   - `Memory Quality`
   - `Spontaneous Callback`

@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-05-17T22:14:36+08:00`
+Last updated: `2026-05-19T08:01:35+08:00`
 
 ## Status Values
 - `active`
@@ -461,6 +461,26 @@ Last updated: `2026-05-17T22:14:36+08:00`
   - `bgjob_durable_trace_reentry_gate_personal_serial_20260401` (`abandoned`)
   - `bgjob_runtime_viability_gate_20260401` (`completed`)
   - `bgjob_runtime_viability_gate_serialfix_20260401` (`completed`)
+
+## Cancelled
+
+### `TASK-SECOND-READER-MEMORY-PLANNING-EVAL1-FULL-ACTIVE-EVALUATION` — Run post-Slice8H full active evaluation for `attentional_v2`
+- Status: `cancelled`
+- Lane: `mechanism_eval`
+- Priority: `high`
+- Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Eval1-Full-Active-Evaluation-Post-Slice8H-Aborted-Run-Report v0.md`
+- Next: Eval-1 was stopped before completion after LLM-health investigation showed that partial Long Span producer progress included runtime fallback during `network_blocked` / `llm_timeout` failures and no summary outputs were produced. Do not reuse partial outputs, launch Lane A reuse shards, update the evidence catalog, promote Long Span vNext, or claim product quality. Any retry requires a separate accepted brief or patch plan for LLM-health / fallback guardrails plus fresh run ids.
+- Jobs:
+  - `bgjob_full_user_level_selective_post_slice8h_20260518` (`abandoned`)
+  - `bgjob_full_long_span_vnext_post_slice8h_20260518` (`abandoned`)
+  - `bgjob_full_long_span_vnext_post_slice8h_20260518_parallel5` (`abandoned`)
+- Evidence:
+  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Eval1-Full-Active-Evaluation-Post-Slice8H-Aborted-Run-Report v0.md`
+  - `reading-companion-backend/state/job_registry/jobs/bgjob_full_user_level_selective_post_slice8h_20260518.json`
+  - `reading-companion-backend/state/job_registry/jobs/bgjob_full_long_span_vnext_post_slice8h_20260518.json`
+  - `reading-companion-backend/state/job_registry/jobs/bgjob_full_long_span_vnext_post_slice8h_20260518_parallel5.json`
+  - `reading-companion-backend/state/job_registry/logs/bgjob_full_long_span_vnext_post_slice8h_20260518_parallel5.log`
+  - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_full_long_span_vnext_post_slice8h_20260518_parallel5/meta/selected_windows.json`
 
 ## Waiting
 
