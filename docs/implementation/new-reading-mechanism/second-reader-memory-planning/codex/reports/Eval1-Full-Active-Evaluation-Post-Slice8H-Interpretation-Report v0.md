@@ -20,6 +20,7 @@ Detailed reviewer dossier:
 
 - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/eval1-full-active-evaluation-post-slice8h-dossier/README.md`
 - Window pages: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/eval1-full-active-evaluation-post-slice8h-dossier/windows/*.md`
+- The dossier is the probe/case-level audit layer for human review; this main report intentionally stays at aggregate interpretation and navigation level.
 
 Operational index:
 
