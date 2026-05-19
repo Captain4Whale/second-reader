@@ -41,6 +41,11 @@ Update when: backend-local constraints, recurring pitfalls, or stable implementa
   - Independent offline jobs may be launched concurrently when they use isolated packets, datasets, run dirs, and job records.
   - The registry refresh is for overlap awareness and coordination, not a default instruction to serialize unrelated work.
   - If concurrent jobs converge on one shared global summary, schedule one follow-up refresh step after the concurrent jobs finish instead of treating that shared summary as the ownership of multiple parallel jobs.
+  - For important eval runs, create or update `docs/evaluation/run_ledger.*` in the same workflow so run ids, job ids, terminal status, artifact paths, and report paths remain discoverable after chat context is gone.
+  - Before launching a significant eval, prefer reserving a `planned` or `running` ledger entry once the run id and job id are known.
+  - After completion, failure, abandonment, review-pending transition, or catalog reclassification, update the ledger to the appropriate terminal or review status and run `cd reading-companion-backend && .venv/bin/python scripts/update_evaluation_run_ledger.py --check`.
+  - Sharded evals should use one parent ledger entry plus child shard entries; the ledger is operational history, not evidence approval.
+  - Do not treat run-ledger updates as evidence-catalog updates. Catalog promotion still requires human review or explicit approval.
 - Do not stop at storing findings in docs.
   - After each meaningful evaluation round, investigate what specifically contributed to the result and turn the highest-value findings into a selective implementation plan.
   - Either implement a small number of fitting improvements in the current approved mechanism, or record an explicit defer reason.

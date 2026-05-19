@@ -28,6 +28,8 @@ Update when: document layering, reading order, task routing, or cross-project co
 - Long-running eval or dataset jobs should not live only in chat memory.
   - If a task is expected to run longer than roughly `10-15` minutes, register it in the backend background-job registry before or immediately after launch.
   - Before starting overlapping long-running work, check the active registry first so a new agent does not duplicate or lose an in-flight run.
+  - Important eval runs must also be recorded in `reading-companion-backend/docs/evaluation/run_ledger.*` with run ids, job ids, status, artifact paths, and report paths.
+  - When an eval starts, finishes, fails, is abandoned, reaches review-pending, or is cataloged / invalidated / superseded, update the run ledger and run `cd reading-companion-backend && .venv/bin/python scripts/update_evaluation_run_ledger.py --check`.
 - When a task introduces or expands a generated intermediate-artifact directory under tracked repo territory, update `.gitignore` in the same task.
   - Do not leave new runtime, eval, packet, or scratch output directories tracked by accident and plan to clean them up later.
   - If one generated artifact really must be committed as durable evidence, force-add it intentionally and explain why.
