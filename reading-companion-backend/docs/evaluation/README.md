@@ -8,6 +8,7 @@ This directory is the checked-in home for reviewed, human-readable evaluation re
 - Machine-generated run artifacts live in `reading-companion-backend/eval/runs/`.
 - The operational run ledger lives at [run_ledger.md](./run_ledger.md) with a machine-readable companion [run_ledger.json](./run_ledger.json).
 - Reviewed human interpretation reports live here under surface-specific subdirectories.
+- Reviewer-facing report-writing expectations live in [reporting_standard.md](./reporting_standard.md).
 - The lightweight evidence catalog lives at [evidence_catalog.md](./evidence_catalog.md) with a machine-readable companion [evidence_catalog.json](./evidence_catalog.json).
 
 This split is intentional:
@@ -15,6 +16,7 @@ This split is intentional:
 - `eval/runs/...` is the canonical raw run output.
 - `run_ledger.*` is the operational "what ran when, with which artifacts" index.
 - `docs/evaluation/...` is the human-facing interpretation/archive layer.
+- `reporting_standard.md` defines the minimum evidence chain for important human-readable reports.
 - `evidence_catalog.*` is the cross-surface evidence index; it records which runs are current, historical, superseded, quality audits, or diagnostics.
 
 ## Evaluation Run Ledger
@@ -40,6 +42,15 @@ Use [evidence_catalog.md](./evidence_catalog.md) as the first stop when asking â
 - Update it with:
   - `cd reading-companion-backend && .venv/bin/python scripts/update_evaluation_catalog.py upsert ...`
   - `cd reading-companion-backend && .venv/bin/python scripts/update_evaluation_catalog.py --check`
+
+## Report Writing Standard
+
+Use [reporting_standard.md](./reporting_standard.md) when writing or reviewing important human-readable eval reports.
+
+- Important reports should follow the reviewer path: `answer -> metrics -> window/case evidence -> raw artifacts`.
+- Representative examples should identify the case/probe/reaction id, source or note evidence, model output or memory-state evidence, judge label/reason, and reviewer interpretation.
+- Long Span / Memory Quality reports should keep the source-map pattern: one full source document per window, probe markers, short orientation excerpts, raw snapshot links, and clear separation between probe-time evidence and final runtime dumps.
+- Local/User-level reports should provide the same depth through per-window note-case summaries, exact/focused/incidental/miss examples, unlocatable diagnostics, and miss-mode analysis.
 
 ## Minimal Eval Inventory
 
