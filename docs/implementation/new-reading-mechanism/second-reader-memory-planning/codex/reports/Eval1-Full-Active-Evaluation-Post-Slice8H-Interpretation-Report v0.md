@@ -16,6 +16,11 @@ Primary post-run report:
 
 - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Eval1-Full-Active-Evaluation-Post-Slice8H-Retry1-High-Parallel-Post-run-Report v0.md`
 
+Detailed reviewer dossier:
+
+- `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/eval1-full-active-evaluation-post-slice8h-dossier/README.md`
+- Window pages: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/eval1-full-active-evaluation-post-slice8h-dossier/windows/*.md`
+
 Operational index:
 
 - Parent ledger entry: `eval1_full_active_post_slice8h_retry1_20260519`
