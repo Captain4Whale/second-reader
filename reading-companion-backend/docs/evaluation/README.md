@@ -6,14 +6,28 @@ This directory is the checked-in home for reviewed, human-readable evaluation re
 
 - Stable evaluation methodology lives in [docs/backend-reader-evaluation.md](../../../docs/backend-reader-evaluation.md).
 - Machine-generated run artifacts live in `reading-companion-backend/eval/runs/`.
+- The operational run ledger lives at [run_ledger.md](./run_ledger.md) with a machine-readable companion [run_ledger.json](./run_ledger.json).
 - Reviewed human interpretation reports live here under surface-specific subdirectories.
 - The lightweight evidence catalog lives at [evidence_catalog.md](./evidence_catalog.md) with a machine-readable companion [evidence_catalog.json](./evidence_catalog.json).
 
 This split is intentional:
 
 - `eval/runs/...` is the canonical raw run output.
+- `run_ledger.*` is the operational "what ran when, with which artifacts" index.
 - `docs/evaluation/...` is the human-facing interpretation/archive layer.
 - `evidence_catalog.*` is the cross-surface evidence index; it records which runs are current, historical, superseded, quality audits, or diagnostics.
+
+## Evaluation Run Ledger
+
+Use [run_ledger.md](./run_ledger.md) when asking "what evals have we run, when did they run, what status did they reach, and where are the artifacts/reports?"
+
+- The ledger can include completed, failed, abandoned, invalidated, synthetic parent, and review-pending runs.
+- It does not make a run trusted evidence and does not promote Long Span vNext to formal authority.
+- It intentionally sits between raw artifacts and the evidence catalog: broader than `evidence_catalog.*`, narrower and more curated than listing every debug/dryrun directory under `eval/runs/`.
+- Update it with:
+  - `cd reading-companion-backend && .venv/bin/python scripts/update_evaluation_run_ledger.py upsert ...`
+  - `cd reading-companion-backend && .venv/bin/python scripts/update_evaluation_run_ledger.py render`
+  - `cd reading-companion-backend && .venv/bin/python scripts/update_evaluation_run_ledger.py --check`
 
 ## Evidence Catalog
 

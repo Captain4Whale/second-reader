@@ -1,0 +1,1058 @@
+{
+  "schema_version": 1,
+  "updated_at": "2026-05-19T12:24:02.441787Z",
+  "entries": [
+    {
+      "run_id": "attentional_v2_excerpt_surface_v1_1_judged_20260406",
+      "date": "2026-04-06",
+      "surface": "excerpt_surface_v1_1",
+      "lane": "excerpt_historical",
+      "status": "superseded",
+      "mechanisms": [
+        "attentional_v2",
+        "iterator_v1"
+      ],
+      "dataset_or_manifest": [],
+      "run_dir": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_excerpt_surface_v1_1_judged_20260406",
+      "summary_paths": {
+        "aggregate": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_excerpt_surface_v1_1_judged_20260406/summary/aggregate.json",
+        "case_results": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_excerpt_surface_v1_1_judged_20260406/summary/case_results.jsonl",
+        "llm_usage": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_excerpt_surface_v1_1_judged_20260406/summary/llm_usage.json",
+        "report": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_excerpt_surface_v1_1_judged_20260406/summary/report.md"
+      },
+      "job_ids": [],
+      "report_paths": [
+        "reading-companion-backend/docs/evaluation/excerpt/attentional_v2_excerpt_surface_v1_1_judged_20260406_interpretation.md"
+      ],
+      "catalog_status": "superseded",
+      "notes": "Superseded excerpt surface v1.1 formal evidence retained for historical comparison, no longer active benchmark authority.",
+      "parent_run_id": "",
+      "child_run_ids": [],
+      "synthetic": false,
+      "local_missing_allowed": [],
+      "metadata": {
+        "source": "evidence_catalog"
+      },
+      "updated_at": "2026-05-19T12:24:02.416949Z"
+    },
+    {
+      "run_id": "attentional_v2_accumulation_benchmark_v1_judged_rerun_20260407",
+      "date": "2026-04-07",
+      "surface": "bounded_longspan_accumulation_v1",
+      "lane": "long_span_historical_accumulation",
+      "status": "historical",
+      "mechanisms": [
+        "attentional_v2",
+        "iterator_v1"
+      ],
+      "dataset_or_manifest": [],
+      "run_dir": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_accumulation_benchmark_v1_judged_rerun_20260407",
+      "summary_paths": {
+        "aggregate": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_accumulation_benchmark_v1_judged_rerun_20260407/summary/aggregate.json",
+        "case_results": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_accumulation_benchmark_v1_judged_rerun_20260407/summary/case_results.jsonl",
+        "llm_usage": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_accumulation_benchmark_v1_judged_rerun_20260407/summary/llm_usage.json",
+        "report": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_accumulation_benchmark_v1_judged_rerun_20260407/summary/report.md"
+      },
+      "job_ids": [],
+      "report_paths": [
+        "reading-companion-backend/docs/evaluation/long_span/attentional_v2_accumulation_benchmark_v1_judged_rerun_20260407_interpretation.md",
+        "reading-companion-backend/docs/evaluation/long_span/attentional_v2_accumulation_benchmark_v1_judged_rerun_20260407_score_impact_reaction_appendix.md"
+      ],
+      "catalog_status": "historical_evidence",
+      "notes": "Historical bounded long-span v1 evidence: iterator_v1 won overall on retrospective bridging and window-end closure.",
+      "parent_run_id": "",
+      "child_run_ids": [],
+      "synthetic": false,
+      "local_missing_allowed": [],
+      "metadata": {
+        "source": "evidence_catalog"
+      },
+      "updated_at": "2026-05-19T12:24:02.415969Z"
+    },
+    {
+      "run_id": "attentional_v2_user_level_selective_v1_failed_shards_retry2_20260415",
+      "date": "2026-04-15",
+      "surface": "user_level_selective_v1",
+      "lane": "local_user_level_selective",
+      "status": "invalidated",
+      "mechanisms": [],
+      "dataset_or_manifest": [],
+      "run_dir": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_user_level_selective_v1_failed_shards_retry2_20260415",
+      "summary_paths": {},
+      "job_ids": [
+        "bgjob_user_level_selective_v1_failed_shards_retry2_20260415"
+      ],
+      "report_paths": [],
+      "catalog_status": "invalidated_diagnostic",
+      "notes": "Invalidated diagnostic run stopped after discovering string-similarity candidate retrieval instead of strict source-span overlap.",
+      "parent_run_id": "",
+      "child_run_ids": [],
+      "synthetic": false,
+      "local_missing_allowed": [],
+      "metadata": {
+        "source": "evidence_catalog"
+      },
+      "updated_at": "2026-05-19T12:24:02.423468Z"
+    },
+    {
+      "run_id": "attentional_v2_user_level_selective_v1_rejudge_reuse_20260416",
+      "date": "2026-04-16",
+      "surface": "user_level_selective_v1",
+      "lane": "local_user_level_selective",
+      "status": "failed",
+      "mechanisms": [],
+      "dataset_or_manifest": [],
+      "run_dir": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_user_level_selective_v1_rejudge_reuse_20260416",
+      "summary_paths": {
+        "llm_usage": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_user_level_selective_v1_rejudge_reuse_20260416/summary/llm_usage.json"
+      },
+      "job_ids": [
+        "bgjob_user_level_selective_v1_rejudge_reuse_20260416"
+      ],
+      "report_paths": [],
+      "catalog_status": "failed_diagnostic",
+      "notes": "Failed diagnostic run retained for the split-manifest contamination and watchdog relaunch failure chain.",
+      "parent_run_id": "",
+      "child_run_ids": [],
+      "synthetic": false,
+      "local_missing_allowed": [],
+      "metadata": {
+        "source": "evidence_catalog"
+      },
+      "updated_at": "2026-05-19T12:24:02.423942Z"
+    },
+    {
+      "run_id": "attentional_v2_user_level_selective_v1_repaired_rejudge_20260416",
+      "date": "2026-04-16",
+      "surface": "user_level_selective_v1",
+      "lane": "local_user_level_selective",
+      "status": "superseded",
+      "mechanisms": [
+        "attentional_v2",
+        "iterator_v1"
+      ],
+      "dataset_or_manifest": [
+        "state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260416",
+        "state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260416/attentional_v2_user_level_selective_v1_repaired_20260416_draft.json"
+      ],
+      "run_dir": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_user_level_selective_v1_repaired_rejudge_20260416",
+      "summary_paths": {
+        "aggregate": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_user_level_selective_v1_repaired_rejudge_20260416/summary/aggregate.json",
+        "llm_usage": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_user_level_selective_v1_repaired_rejudge_20260416/summary/llm_usage.json",
+        "report": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_user_level_selective_v1_repaired_rejudge_20260416/summary/report.md"
+      },
+      "job_ids": [
+        "bgjob_user_level_selective_v1_repaired_rejudge_20260416"
+      ],
+      "report_paths": [
+        "reading-companion-backend/docs/evaluation/user_level/attentional_v2_user_level_selective_v1_repaired_rejudge_20260416_interpretation.md"
+      ],
+      "catalog_status": "superseded",
+      "notes": "Superseded repaired strict source-span rejudge; replaced by the April 19 active rerun on the repaired 203-case package.",
+      "parent_run_id": "",
+      "child_run_ids": [],
+      "synthetic": false,
+      "local_missing_allowed": [],
+      "metadata": {
+        "source": "evidence_catalog"
+      },
+      "updated_at": "2026-05-19T12:24:02.424748Z"
+    },
+    {
+      "run_id": "attentional_v2_accumulation_benchmark_v2_frozen_active_rerun_20260419",
+      "date": "2026-04-19",
+      "surface": "target_centered_accumulation_v2",
+      "lane": "long_span_discontinued_target_centered",
+      "status": "invalidated",
+      "mechanisms": [
+        "attentional_v2",
+        "iterator_v1"
+      ],
+      "dataset_or_manifest": [
+        "eval/manifests/splits/attentional_v2_accumulation_benchmark_v2_frozen.json",
+        "state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260416"
+      ],
+      "run_dir": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_accumulation_benchmark_v2_frozen_active_rerun_20260419",
+      "summary_paths": {
+        "aggregate": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_accumulation_benchmark_v2_frozen_active_rerun_20260419/summary/aggregate.json",
+        "case_results": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_accumulation_benchmark_v2_frozen_active_rerun_20260419/summary/case_results.jsonl",
+        "llm_usage": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_accumulation_benchmark_v2_frozen_active_rerun_20260419/summary/llm_usage.json",
+        "report": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_accumulation_benchmark_v2_frozen_active_rerun_20260419/summary/report.md",
+        "selection": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_accumulation_benchmark_v2_frozen_active_rerun_20260419/summary/selection.json"
+      },
+      "job_ids": [
+        "bgjob_accumulation_benchmark_v2_active_formal_20260419"
+      ],
+      "report_paths": [],
+      "catalog_status": "invalidated_diagnostic",
+      "notes": "Invalidated diagnostic evidence: the April 19 Long Span judge contract could credit target text itself or pre-target callbacks, so this run is replaced by the April 22 contract-fix rejudge.",
+      "parent_run_id": "",
+      "child_run_ids": [],
+      "synthetic": false,
+      "local_missing_allowed": [],
+      "metadata": {
+        "source": "evidence_catalog"
+      },
+      "updated_at": "2026-05-19T12:24:02.421444Z"
+    },
+    {
+      "run_id": "attentional_v2_active_benchmark_rerun_20260419",
+      "date": "2026-04-19",
+      "surface": "active_benchmark_bundle",
+      "lane": "active_benchmark_bundle",
+      "status": "cataloged",
+      "mechanisms": [
+        "attentional_v2",
+        "iterator_v1"
+      ],
+      "dataset_or_manifest": [],
+      "run_dir": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_benchmark_rerun_20260419",
+      "summary_paths": {
+        "aggregate": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_benchmark_rerun_20260419/summary/aggregate.json",
+        "report": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_benchmark_rerun_20260419/summary/report.md"
+      },
+      "job_ids": [
+        "bgjob_accumulation_benchmark_v2_active_formal_20260419",
+        "bgjob_accumulation_v2_rejudge_contract_fix_20260422",
+        "bgjob_user_level_selective_v1_active_formal_20260419"
+      ],
+      "report_paths": [],
+      "catalog_status": "current_formal_evidence",
+      "notes": "Active benchmark bundle remains the current formal excerpt evidence bundle. Its Long Span child and the later April 22 target-centered rejudge are both preserved only as discontinued diagnostic evidence after the Long Span route change.",
+      "parent_run_id": "",
+      "child_run_ids": [],
+      "synthetic": false,
+      "local_missing_allowed": [],
+      "metadata": {
+        "source": "evidence_catalog"
+      },
+      "updated_at": "2026-05-19T12:24:02.414095Z"
+    },
+    {
+      "run_id": "attentional_v2_f4a_quality_audit_20260419",
+      "date": "2026-04-19",
+      "surface": "attentional_v2_quality_audit",
+      "lane": "quality_audit",
+      "status": "cataloged",
+      "mechanisms": [
+        "attentional_v2"
+      ],
+      "dataset_or_manifest": [],
+      "run_dir": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_f4a_quality_audit_20260419",
+      "summary_paths": {
+        "aggregate": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_f4a_quality_audit_20260419/summary/aggregate.json",
+        "report": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_f4a_quality_audit_20260419/summary/report.md"
+      },
+      "job_ids": [
+        "bgjob_attentional_v2_f4a_quality_audit_20260419"
+      ],
+      "report_paths": [],
+      "catalog_status": "quality_audit",
+      "notes": "Focused quality audit found V2 reaction density and reading-time wording recovered, while detour behavior was not exercised.",
+      "parent_run_id": "",
+      "child_run_ids": [],
+      "synthetic": false,
+      "local_missing_allowed": [],
+      "metadata": {
+        "source": "evidence_catalog"
+      },
+      "updated_at": "2026-05-19T12:24:02.415158Z"
+    },
+    {
+      "run_id": "attentional_v2_user_level_selective_v1_active_rerun_20260419",
+      "date": "2026-04-19",
+      "surface": "user_level_selective_v1",
+      "lane": "local_user_level_selective",
+      "status": "cataloged",
+      "mechanisms": [
+        "attentional_v2",
+        "iterator_v1"
+      ],
+      "dataset_or_manifest": [
+        "eval/manifests/splits/attentional_v2_user_level_selective_v1_draft.json",
+        "state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260416"
+      ],
+      "run_dir": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_user_level_selective_v1_active_rerun_20260419",
+      "summary_paths": {
+        "aggregate": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_user_level_selective_v1_active_rerun_20260419/summary/aggregate.json",
+        "llm_usage": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_user_level_selective_v1_active_rerun_20260419/summary/llm_usage.json",
+        "report": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_user_level_selective_v1_active_rerun_20260419/summary/report.md"
+      },
+      "job_ids": [
+        "bgjob_user_level_selective_v1_active_formal_20260419"
+      ],
+      "report_paths": [],
+      "catalog_status": "current_formal_evidence",
+      "notes": "Current active user-level selective rerun: attentional_v2 leads note recall 0.3498 vs iterator_v1 0.1232.",
+      "parent_run_id": "",
+      "child_run_ids": [],
+      "synthetic": false,
+      "local_missing_allowed": [],
+      "metadata": {
+        "source": "evidence_catalog"
+      },
+      "updated_at": "2026-05-19T12:24:02.423048Z"
+    },
+    {
+      "run_id": "attentional_v2_accumulation_benchmark_v2_frozen_rejudge_contract_fix_20260422",
+      "date": "2026-04-22",
+      "surface": "target_centered_accumulation_v2",
+      "lane": "long_span_discontinued_target_centered",
+      "status": "invalidated",
+      "mechanisms": [
+        "attentional_v2",
+        "iterator_v1"
+      ],
+      "dataset_or_manifest": [
+        "eval/manifests/splits/attentional_v2_accumulation_benchmark_v2_frozen.json",
+        "state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260416"
+      ],
+      "run_dir": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_accumulation_benchmark_v2_frozen_rejudge_contract_fix_20260422",
+      "summary_paths": {
+        "aggregate": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_accumulation_benchmark_v2_frozen_rejudge_contract_fix_20260422/summary/aggregate.json",
+        "case_results": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_accumulation_benchmark_v2_frozen_rejudge_contract_fix_20260422/summary/case_results.jsonl",
+        "llm_usage": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_accumulation_benchmark_v2_frozen_rejudge_contract_fix_20260422/summary/llm_usage.json",
+        "report": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_accumulation_benchmark_v2_frozen_rejudge_contract_fix_20260422/summary/report.md",
+        "selection": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_accumulation_benchmark_v2_frozen_rejudge_contract_fix_20260422/summary/selection.json"
+      },
+      "job_ids": [],
+      "report_paths": [],
+      "catalog_status": "invalidated_diagnostic",
+      "notes": "This April 22 rejudge repaired the old target-visible evidence contract, but the underlying target-centered question is no longer the current Long Span direction; preserve it as the last corrected diagnostic for the discontinued route.",
+      "parent_run_id": "",
+      "child_run_ids": [],
+      "synthetic": false,
+      "local_missing_allowed": [],
+      "metadata": {
+        "source": "evidence_catalog"
+      },
+      "updated_at": "2026-05-19T12:24:02.422253Z"
+    },
+    {
+      "run_id": "attentional_v2_long_span_vnext_phase1_memory_quality_scale_fix_rejudge_20260425",
+      "date": "2026-04-25",
+      "surface": "long_span_vnext_phase1",
+      "lane": "long_span_vnext_phase1",
+      "status": "cataloged",
+      "mechanisms": [
+        "attentional_v2",
+        "iterator_v1"
+      ],
+      "dataset_or_manifest": [
+        "state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260422"
+      ],
+      "run_dir": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_long_span_vnext_phase1_memory_quality_scale_fix_rejudge_20260425",
+      "summary_paths": {
+        "aggregate": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_long_span_vnext_phase1_memory_quality_scale_fix_rejudge_20260425/summary/aggregate.json",
+        "llm_usage": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_long_span_vnext_phase1_memory_quality_scale_fix_rejudge_20260425/summary/llm_usage.json",
+        "memory_quality_results": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_long_span_vnext_phase1_memory_quality_scale_fix_rejudge_20260425/summary/memory_quality_results.jsonl",
+        "reaction_audit_results": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_long_span_vnext_phase1_memory_quality_scale_fix_rejudge_20260425/summary/reaction_audit_results.jsonl",
+        "reaction_window_summaries": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_long_span_vnext_phase1_memory_quality_scale_fix_rejudge_20260425/summary/reaction_window_summaries.jsonl",
+        "report": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_long_span_vnext_phase1_memory_quality_scale_fix_rejudge_20260425/summary/report.md"
+      },
+      "job_ids": [],
+      "report_paths": [],
+      "catalog_status": "quality_audit",
+      "notes": "Phase-1 Long Span vNext diagnostic evidence with corrected Memory Quality scale; books were not reread, but reaction-audit results were copied unchanged from the April 23 source run and are superseded for reaction-evidence interpretation by the later April 25 reaction-evidence rejudge.",
+      "parent_run_id": "",
+      "child_run_ids": [],
+      "synthetic": false,
+      "local_missing_allowed": [],
+      "metadata": {
+        "source": "evidence_catalog"
+      },
+      "updated_at": "2026-05-19T12:24:02.417940Z"
+    },
+    {
+      "run_id": "attentional_v2_long_span_vnext_phase1_reaction_evidence_fix_rejudge_20260425",
+      "date": "2026-04-25",
+      "surface": "long_span_vnext_phase1",
+      "lane": "long_span_vnext_phase1",
+      "status": "cataloged",
+      "mechanisms": [
+        "attentional_v2",
+        "iterator_v1"
+      ],
+      "dataset_or_manifest": [
+        "state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260422"
+      ],
+      "run_dir": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_long_span_vnext_phase1_reaction_evidence_fix_rejudge_20260425",
+      "summary_paths": {
+        "aggregate": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_long_span_vnext_phase1_reaction_evidence_fix_rejudge_20260425/summary/aggregate.json",
+        "llm_usage": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_long_span_vnext_phase1_reaction_evidence_fix_rejudge_20260425/summary/llm_usage.json",
+        "memory_quality_results": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_long_span_vnext_phase1_reaction_evidence_fix_rejudge_20260425/summary/memory_quality_results.jsonl",
+        "reaction_audit_results": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_long_span_vnext_phase1_reaction_evidence_fix_rejudge_20260425/summary/reaction_audit_results.jsonl",
+        "reaction_window_summaries": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_long_span_vnext_phase1_reaction_evidence_fix_rejudge_20260425/summary/reaction_window_summaries.jsonl",
+        "report": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_long_span_vnext_phase1_reaction_evidence_fix_rejudge_20260425/summary/report.md"
+      },
+      "job_ids": [],
+      "report_paths": [],
+      "catalog_status": "quality_audit",
+      "notes": "Phase-1 Long Span vNext diagnostic evidence with corrected Memory Quality scale and freshly rejudged reaction-audit evidence surface; V2 shows 152 grounded spontaneous callbacks, 84 weak callbacks, and 2 false visible integrations across 1282 visible reactions, while V1 shows 51 grounded callbacks and 13 weak callbacks across 375 visible reactions. No books were reread. The Memory Quality score belongs to the historical hard-ratio probe era; future Memory Quality runs use the semantic probe manifest.",
+      "parent_run_id": "",
+      "child_run_ids": [],
+      "synthetic": false,
+      "local_missing_allowed": [],
+      "metadata": {
+        "source": "evidence_catalog"
+      },
+      "updated_at": "2026-05-19T12:24:02.419088Z"
+    },
+    {
+      "run_id": "attentional_v2_minimal_eval_suite_lane_a_smoke_20260517",
+      "date": "2026-05-17",
+      "surface": "minimal_eval_suite_smoke",
+      "lane": "lane_a_local_user_level_selective",
+      "status": "failed",
+      "mechanisms": [
+        "attentional_v2"
+      ],
+      "dataset_or_manifest": [
+        "eval/manifests/splits/attentional_v2_user_level_selective_v1_draft.json"
+      ],
+      "run_dir": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_minimal_eval_suite_lane_a_smoke_20260517",
+      "summary_paths": {},
+      "job_ids": [
+        "bgjob_minimal_eval_suite_lane_a_smoke_20260517"
+      ],
+      "report_paths": [
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8C-Minimal-Eval-Suite-Execution-Preflight-and-Bounded-Run-Post-implementation-Report v0.md"
+      ],
+      "catalog_status": "not_cataloged",
+      "notes": "Failed Lane A smoke attempt preserved as execution evidence; missing source-span locator blocked summary generation.",
+      "parent_run_id": "",
+      "child_run_ids": [],
+      "synthetic": false,
+      "local_missing_allowed": [],
+      "metadata": {},
+      "updated_at": "2026-05-19T12:24:02.425222Z"
+    },
+    {
+      "run_id": "attentional_v2_minimal_eval_suite_lane_a_smoke_20260517_retry1",
+      "date": "2026-05-17",
+      "surface": "minimal_eval_suite_smoke",
+      "lane": "lane_a_local_user_level_selective",
+      "status": "completed",
+      "mechanisms": [
+        "attentional_v2"
+      ],
+      "dataset_or_manifest": [
+        "eval/manifests/splits/attentional_v2_user_level_selective_v1_draft.json"
+      ],
+      "run_dir": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_minimal_eval_suite_lane_a_smoke_20260517_retry1",
+      "summary_paths": {
+        "aggregate": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_minimal_eval_suite_lane_a_smoke_20260517_retry1/summary/aggregate.json",
+        "llm_usage": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_minimal_eval_suite_lane_a_smoke_20260517_retry1/summary/llm_usage.json",
+        "report": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_minimal_eval_suite_lane_a_smoke_20260517_retry1/summary/report.md"
+      },
+      "job_ids": [
+        "bgjob_minimal_eval_suite_lane_a_smoke_20260517_retry1"
+      ],
+      "report_paths": [
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8E-Lane-A-Retry1-Bounded-Execution-Post-run-Report v0.md"
+      ],
+      "catalog_status": "not_cataloged",
+      "notes": "Lane A retry1 bounded smoke completed; represented in the synthetic diagnostic smoke catalog entry.",
+      "parent_run_id": "",
+      "child_run_ids": [],
+      "synthetic": false,
+      "local_missing_allowed": [],
+      "metadata": {},
+      "updated_at": "2026-05-19T12:24:02.425944Z"
+    },
+    {
+      "run_id": "attentional_v2_minimal_eval_suite_lane_b_smoke_20260517",
+      "date": "2026-05-17",
+      "surface": "minimal_eval_suite_smoke",
+      "lane": "lane_b_long_span_diagnostic",
+      "status": "completed",
+      "mechanisms": [
+        "attentional_v2"
+      ],
+      "dataset_or_manifest": [
+        "eval/manifests/probes/memory_quality_semantic_probe_plan_20260504.json"
+      ],
+      "run_dir": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_minimal_eval_suite_lane_b_smoke_20260517",
+      "summary_paths": {
+        "aggregate": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_minimal_eval_suite_lane_b_smoke_20260517/summary/aggregate.json",
+        "llm_usage": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_minimal_eval_suite_lane_b_smoke_20260517/summary/llm_usage.json",
+        "memory_quality_results": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_minimal_eval_suite_lane_b_smoke_20260517/summary/memory_quality_results.jsonl",
+        "reaction_audit_results": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_minimal_eval_suite_lane_b_smoke_20260517/summary/reaction_audit_results.jsonl",
+        "reaction_window_summaries": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_minimal_eval_suite_lane_b_smoke_20260517/summary/reaction_window_summaries.jsonl",
+        "report": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_minimal_eval_suite_lane_b_smoke_20260517/summary/report.md"
+      },
+      "job_ids": [
+        "bgjob_minimal_eval_suite_lane_b_smoke_20260517"
+      ],
+      "report_paths": [
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8F-Lane-B-Bounded-Diagnostic-Smoke-Post-run-Report v0.md"
+      ],
+      "catalog_status": "not_cataloged",
+      "notes": "Lane B bounded diagnostic smoke completed; represented in the synthetic diagnostic smoke catalog entry.",
+      "parent_run_id": "",
+      "child_run_ids": [],
+      "synthetic": false,
+      "local_missing_allowed": [],
+      "metadata": {},
+      "updated_at": "2026-05-19T12:24:02.426748Z"
+    },
+    {
+      "run_id": "attentional_v2_minimal_eval_suite_smoke_20260517",
+      "date": "2026-05-17",
+      "surface": "minimal_eval_suite_smoke",
+      "lane": "minimal_eval_suite_smoke",
+      "status": "cataloged",
+      "mechanisms": [
+        "attentional_v2"
+      ],
+      "dataset_or_manifest": [
+        "eval/manifests/splits/attentional_v2_user_level_selective_v1_draft.json",
+        "state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260422"
+      ],
+      "run_dir": "",
+      "summary_paths": {
+        "analysis_10": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_minimal_eval_suite_lane_a_smoke_20260517_retry1/summary/llm_usage.json",
+        "analysis_11": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_minimal_eval_suite_lane_b_smoke_20260517/summary/aggregate.json",
+        "analysis_12": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_minimal_eval_suite_lane_b_smoke_20260517/summary/report.md",
+        "analysis_13": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_minimal_eval_suite_lane_b_smoke_20260517/summary/llm_usage.json",
+        "analysis_14": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_minimal_eval_suite_lane_b_smoke_20260517/meta/output_sourcing.json",
+        "analysis_8": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_minimal_eval_suite_lane_a_smoke_20260517_retry1/summary/aggregate.json",
+        "analysis_9": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_minimal_eval_suite_lane_a_smoke_20260517_retry1/summary/report.md",
+        "lane_a_retry_aggregate": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_minimal_eval_suite_lane_a_smoke_20260517_retry1/summary/aggregate.json",
+        "lane_a_retry_llm_usage": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_minimal_eval_suite_lane_a_smoke_20260517_retry1/summary/llm_usage.json",
+        "lane_a_retry_report": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_minimal_eval_suite_lane_a_smoke_20260517_retry1/summary/report.md",
+        "lane_b_aggregate": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_minimal_eval_suite_lane_b_smoke_20260517/summary/aggregate.json",
+        "lane_b_llm_usage": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_minimal_eval_suite_lane_b_smoke_20260517/summary/llm_usage.json",
+        "lane_b_output_sourcing": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_minimal_eval_suite_lane_b_smoke_20260517/meta/output_sourcing.json",
+        "lane_b_report": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_minimal_eval_suite_lane_b_smoke_20260517/summary/report.md"
+      },
+      "job_ids": [
+        "bgjob_minimal_eval_suite_lane_a_smoke_20260517",
+        "bgjob_minimal_eval_suite_lane_a_smoke_20260517_retry1",
+        "bgjob_minimal_eval_suite_lane_b_smoke_20260517"
+      ],
+      "report_paths": [
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8C-Minimal-Eval-Suite-Execution-Preflight-and-Bounded-Run-Post-implementation-Report v0.md",
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8D-Lane-A-Source-locator-Compatibility-Triage-and-Minimal-Patch-Post-implementation-Report v0.md",
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8E-Lane-A-Retry1-Bounded-Execution-Post-run-Report v0.md",
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8F-Lane-B-Bounded-Diagnostic-Smoke-Post-run-Report v0.md",
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8G-Minimal-Eval-Suite-Smoke-Closure-and-Evidence-Interpretation-Report v0.md"
+      ],
+      "catalog_status": "diagnostic_smoke",
+      "notes": "Reviewed Minimal Eval Suite smoke completed after Lane A retry and Lane B diagnostic smoke; cataloged as diagnostic smoke only, not product-quality proof, not formal benchmark authority, and not Long Span vNext promotion.",
+      "parent_run_id": "",
+      "child_run_ids": [],
+      "synthetic": true,
+      "local_missing_allowed": [],
+      "metadata": {
+        "source": "evidence_catalog"
+      },
+      "updated_at": "2026-05-19T12:24:02.420171Z"
+    },
+    {
+      "run_id": "attentional_v2_full_long_span_vnext_post_slice8h_20260518",
+      "date": "2026-05-18",
+      "surface": "eval1_full_active_post_slice8h",
+      "lane": "lane_b_long_span_vnext",
+      "status": "abandoned",
+      "mechanisms": [
+        "attentional_v2"
+      ],
+      "dataset_or_manifest": [
+        "eval/manifests/probes/memory_quality_semantic_probe_plan_20260504.json"
+      ],
+      "run_dir": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_full_long_span_vnext_post_slice8h_20260518",
+      "summary_paths": {},
+      "job_ids": [
+        "bgjob_full_long_span_vnext_post_slice8h_20260518"
+      ],
+      "report_paths": [
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Eval1-Full-Active-Evaluation-Post-Slice8H-Aborted-Run-Report v0.md"
+      ],
+      "catalog_status": "not_cataloged",
+      "notes": "Conservative Eval-1 Lane B job abandoned and preserved; not reused.",
+      "parent_run_id": "",
+      "child_run_ids": [],
+      "synthetic": false,
+      "local_missing_allowed": [],
+      "metadata": {},
+      "updated_at": "2026-05-19T12:24:02.427032Z"
+    },
+    {
+      "run_id": "attentional_v2_full_long_span_vnext_post_slice8h_20260518_parallel5",
+      "date": "2026-05-18",
+      "surface": "eval1_full_active_post_slice8h",
+      "lane": "lane_b_long_span_vnext_parallel_producer",
+      "status": "abandoned",
+      "mechanisms": [
+        "attentional_v2"
+      ],
+      "dataset_or_manifest": [
+        "eval/manifests/probes/memory_quality_semantic_probe_plan_20260504.json"
+      ],
+      "run_dir": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_full_long_span_vnext_post_slice8h_20260518_parallel5",
+      "summary_paths": {},
+      "job_ids": [
+        "bgjob_full_long_span_vnext_post_slice8h_20260518_parallel5"
+      ],
+      "report_paths": [
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Eval1-Full-Active-Evaluation-Post-Slice8H-Aborted-Run-Report v0.md",
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Eval1-LLM-Health-and-Eval-Strictness-Repair-Post-implementation-Report v0.md"
+      ],
+      "catalog_status": "not_cataloged",
+      "notes": "Optimized but unhealthy producer stopped after LLM fallback/timeouts; partial outputs invalid and not reused.",
+      "parent_run_id": "",
+      "child_run_ids": [],
+      "synthetic": false,
+      "local_missing_allowed": [],
+      "metadata": {},
+      "updated_at": "2026-05-19T12:24:02.427205Z"
+    },
+    {
+      "run_id": "attentional_v2_full_user_level_selective_post_slice8h_20260518",
+      "date": "2026-05-18",
+      "surface": "eval1_full_active_post_slice8h",
+      "lane": "lane_a_local_user_level_selective",
+      "status": "abandoned",
+      "mechanisms": [
+        "attentional_v2"
+      ],
+      "dataset_or_manifest": [
+        "eval/manifests/splits/attentional_v2_user_level_selective_v1_draft.json"
+      ],
+      "run_dir": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_full_user_level_selective_post_slice8h_20260518",
+      "summary_paths": {},
+      "job_ids": [
+        "bgjob_full_user_level_selective_post_slice8h_20260518"
+      ],
+      "report_paths": [
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Eval1-Full-Active-Evaluation-Post-Slice8H-Aborted-Run-Report v0.md"
+      ],
+      "catalog_status": "not_cataloged",
+      "notes": "Conservative Eval-1 Lane A job abandoned and preserved; not reused.",
+      "parent_run_id": "",
+      "child_run_ids": [],
+      "synthetic": false,
+      "local_missing_allowed": [],
+      "metadata": {},
+      "updated_at": "2026-05-19T12:24:02.426922Z"
+    },
+    {
+      "run_id": "eval1_llm_health_eval_strictness_repair_20260518",
+      "date": "2026-05-18",
+      "surface": "eval_infrastructure_repair",
+      "lane": "llm_health_and_eval_strictness",
+      "status": "completed",
+      "mechanisms": [
+        "attentional_v2"
+      ],
+      "dataset_or_manifest": [],
+      "run_dir": "",
+      "summary_paths": {},
+      "job_ids": [],
+      "report_paths": [
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Eval1-LLM-Health-and-Eval-Strictness-Repair-Post-implementation-Report v0.md"
+      ],
+      "catalog_status": "not_cataloged",
+      "notes": "Repair report for LLM health gates and failover; not an eval result run.",
+      "parent_run_id": "",
+      "child_run_ids": [],
+      "synthetic": true,
+      "local_missing_allowed": [],
+      "metadata": {},
+      "updated_at": "2026-05-19T12:24:02.426791Z"
+    },
+    {
+      "run_id": "attentional_v2_eval1_long_span_post_slice8h_20260519_huochu",
+      "date": "2026-05-19",
+      "surface": "eval1_full_active_post_slice8h",
+      "lane": "lane_b_long_span_vnext_producer",
+      "status": "completed",
+      "mechanisms": [
+        "attentional_v2"
+      ],
+      "dataset_or_manifest": [
+        "eval/manifests/probes/memory_quality_semantic_probe_plan_20260504.json",
+        "eval/manifests/splits/attentional_v2_user_level_selective_v1_draft.json"
+      ],
+      "run_dir": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_long_span_post_slice8h_20260519_huochu",
+      "summary_paths": {
+        "aggregate": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_long_span_post_slice8h_20260519_huochu/summary/aggregate.json",
+        "llm_usage": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_long_span_post_slice8h_20260519_huochu/summary/llm_usage.json",
+        "memory_quality_results": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_long_span_post_slice8h_20260519_huochu/summary/memory_quality_results.jsonl",
+        "reaction_audit_results": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_long_span_post_slice8h_20260519_huochu/summary/reaction_audit_results.jsonl",
+        "reaction_window_summaries": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_long_span_post_slice8h_20260519_huochu/summary/reaction_window_summaries.jsonl",
+        "report": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_long_span_post_slice8h_20260519_huochu/summary/report.md"
+      },
+      "job_ids": [
+        "bgjob_eval1_long_span_post_slice8h_20260519_huochu"
+      ],
+      "report_paths": [
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Eval1-Full-Active-Evaluation-Post-Slice8H-Retry1-High-Parallel-Post-run-Report v0.md"
+      ],
+      "catalog_status": "not_cataloged",
+      "notes": "Eval-1 Retry1 Lane B producer for huochu_shengming_de_yiyi_private_zh__segment_1; completed with fresh reading, MQ judge, and reaction audit.",
+      "parent_run_id": "eval1_full_active_post_slice8h_retry1_20260519",
+      "child_run_ids": [],
+      "synthetic": false,
+      "local_missing_allowed": [],
+      "metadata": {},
+      "updated_at": "2026-05-19T12:24:02.427836Z"
+    },
+    {
+      "run_id": "attentional_v2_eval1_long_span_post_slice8h_20260519_mangge",
+      "date": "2026-05-19",
+      "surface": "eval1_full_active_post_slice8h",
+      "lane": "lane_b_long_span_vnext_producer",
+      "status": "completed",
+      "mechanisms": [
+        "attentional_v2"
+      ],
+      "dataset_or_manifest": [
+        "eval/manifests/probes/memory_quality_semantic_probe_plan_20260504.json",
+        "eval/manifests/splits/attentional_v2_user_level_selective_v1_draft.json"
+      ],
+      "run_dir": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_long_span_post_slice8h_20260519_mangge",
+      "summary_paths": {
+        "aggregate": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_long_span_post_slice8h_20260519_mangge/summary/aggregate.json",
+        "llm_usage": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_long_span_post_slice8h_20260519_mangge/summary/llm_usage.json",
+        "memory_quality_results": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_long_span_post_slice8h_20260519_mangge/summary/memory_quality_results.jsonl",
+        "reaction_audit_results": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_long_span_post_slice8h_20260519_mangge/summary/reaction_audit_results.jsonl",
+        "reaction_window_summaries": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_long_span_post_slice8h_20260519_mangge/summary/reaction_window_summaries.jsonl",
+        "report": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_long_span_post_slice8h_20260519_mangge/summary/report.md"
+      },
+      "job_ids": [
+        "bgjob_eval1_long_span_post_slice8h_20260519_mangge"
+      ],
+      "report_paths": [
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Eval1-Full-Active-Evaluation-Post-Slice8H-Retry1-High-Parallel-Post-run-Report v0.md"
+      ],
+      "catalog_status": "not_cataloged",
+      "notes": "Eval-1 Retry1 Lane B producer for mangge_zhi_dao_private_zh__segment_1; completed with fresh reading, MQ judge, and reaction audit.",
+      "parent_run_id": "eval1_full_active_post_slice8h_retry1_20260519",
+      "child_run_ids": [],
+      "synthetic": false,
+      "local_missing_allowed": [],
+      "metadata": {},
+      "updated_at": "2026-05-19T12:24:02.429010Z"
+    },
+    {
+      "run_id": "attentional_v2_eval1_long_span_post_slice8h_20260519_nawaer",
+      "date": "2026-05-19",
+      "surface": "eval1_full_active_post_slice8h",
+      "lane": "lane_b_long_span_vnext_producer",
+      "status": "completed",
+      "mechanisms": [
+        "attentional_v2"
+      ],
+      "dataset_or_manifest": [
+        "eval/manifests/probes/memory_quality_semantic_probe_plan_20260504.json",
+        "eval/manifests/splits/attentional_v2_user_level_selective_v1_draft.json"
+      ],
+      "run_dir": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_long_span_post_slice8h_20260519_nawaer",
+      "summary_paths": {
+        "aggregate": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_long_span_post_slice8h_20260519_nawaer/summary/aggregate.json",
+        "llm_usage": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_long_span_post_slice8h_20260519_nawaer/summary/llm_usage.json",
+        "memory_quality_results": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_long_span_post_slice8h_20260519_nawaer/summary/memory_quality_results.jsonl",
+        "reaction_audit_results": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_long_span_post_slice8h_20260519_nawaer/summary/reaction_audit_results.jsonl",
+        "reaction_window_summaries": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_long_span_post_slice8h_20260519_nawaer/summary/reaction_window_summaries.jsonl",
+        "report": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_long_span_post_slice8h_20260519_nawaer/summary/report.md"
+      },
+      "job_ids": [
+        "bgjob_eval1_long_span_post_slice8h_20260519_nawaer"
+      ],
+      "report_paths": [
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Eval1-Full-Active-Evaluation-Post-Slice8H-Retry1-High-Parallel-Post-run-Report v0.md"
+      ],
+      "catalog_status": "not_cataloged",
+      "notes": "Eval-1 Retry1 Lane B producer for nawaer_baodian_private_zh__segment_1; completed with fresh reading, MQ judge, and reaction audit.",
+      "parent_run_id": "eval1_full_active_post_slice8h_retry1_20260519",
+      "child_run_ids": [],
+      "synthetic": false,
+      "local_missing_allowed": [],
+      "metadata": {},
+      "updated_at": "2026-05-19T12:24:02.430283Z"
+    },
+    {
+      "run_id": "attentional_v2_eval1_long_span_post_slice8h_20260519_value_of_others",
+      "date": "2026-05-19",
+      "surface": "eval1_full_active_post_slice8h",
+      "lane": "lane_b_long_span_vnext_producer",
+      "status": "completed",
+      "mechanisms": [
+        "attentional_v2"
+      ],
+      "dataset_or_manifest": [
+        "eval/manifests/probes/memory_quality_semantic_probe_plan_20260504.json",
+        "eval/manifests/splits/attentional_v2_user_level_selective_v1_draft.json"
+      ],
+      "run_dir": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_long_span_post_slice8h_20260519_value_of_others",
+      "summary_paths": {
+        "aggregate": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_long_span_post_slice8h_20260519_value_of_others/summary/aggregate.json",
+        "llm_usage": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_long_span_post_slice8h_20260519_value_of_others/summary/llm_usage.json",
+        "memory_quality_results": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_long_span_post_slice8h_20260519_value_of_others/summary/memory_quality_results.jsonl",
+        "reaction_audit_results": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_long_span_post_slice8h_20260519_value_of_others/summary/reaction_audit_results.jsonl",
+        "reaction_window_summaries": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_long_span_post_slice8h_20260519_value_of_others/summary/reaction_window_summaries.jsonl",
+        "report": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_long_span_post_slice8h_20260519_value_of_others/summary/report.md"
+      },
+      "job_ids": [
+        "bgjob_eval1_long_span_post_slice8h_20260519_value_of_others"
+      ],
+      "report_paths": [
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Eval1-Full-Active-Evaluation-Post-Slice8H-Retry1-High-Parallel-Post-run-Report v0.md"
+      ],
+      "catalog_status": "not_cataloged",
+      "notes": "Eval-1 Retry1 Lane B producer for value_of_others_private_en__segment_1; completed with fresh reading, MQ judge, and reaction audit.",
+      "parent_run_id": "eval1_full_active_post_slice8h_retry1_20260519",
+      "child_run_ids": [],
+      "synthetic": false,
+      "local_missing_allowed": [],
+      "metadata": {},
+      "updated_at": "2026-05-19T12:24:02.431445Z"
+    },
+    {
+      "run_id": "attentional_v2_eval1_long_span_post_slice8h_20260519_xidaduo",
+      "date": "2026-05-19",
+      "surface": "eval1_full_active_post_slice8h",
+      "lane": "lane_b_long_span_vnext_producer",
+      "status": "completed",
+      "mechanisms": [
+        "attentional_v2"
+      ],
+      "dataset_or_manifest": [
+        "eval/manifests/probes/memory_quality_semantic_probe_plan_20260504.json",
+        "eval/manifests/splits/attentional_v2_user_level_selective_v1_draft.json"
+      ],
+      "run_dir": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_long_span_post_slice8h_20260519_xidaduo",
+      "summary_paths": {
+        "aggregate": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_long_span_post_slice8h_20260519_xidaduo/summary/aggregate.json",
+        "llm_usage": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_long_span_post_slice8h_20260519_xidaduo/summary/llm_usage.json",
+        "memory_quality_results": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_long_span_post_slice8h_20260519_xidaduo/summary/memory_quality_results.jsonl",
+        "reaction_audit_results": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_long_span_post_slice8h_20260519_xidaduo/summary/reaction_audit_results.jsonl",
+        "reaction_window_summaries": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_long_span_post_slice8h_20260519_xidaduo/summary/reaction_window_summaries.jsonl",
+        "report": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_long_span_post_slice8h_20260519_xidaduo/summary/report.md"
+      },
+      "job_ids": [
+        "bgjob_eval1_long_span_post_slice8h_20260519_xidaduo"
+      ],
+      "report_paths": [
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Eval1-Full-Active-Evaluation-Post-Slice8H-Retry1-High-Parallel-Post-run-Report v0.md"
+      ],
+      "catalog_status": "not_cataloged",
+      "notes": "Eval-1 Retry1 Lane B producer for xidaduo_private_zh__segment_1; completed with fresh reading, MQ judge, and reaction audit.",
+      "parent_run_id": "eval1_full_active_post_slice8h_retry1_20260519",
+      "child_run_ids": [],
+      "synthetic": false,
+      "local_missing_allowed": [],
+      "metadata": {},
+      "updated_at": "2026-05-19T12:24:02.432563Z"
+    },
+    {
+      "run_id": "attentional_v2_eval1_user_level_post_slice8h_20260519_reuse_huochu",
+      "date": "2026-05-19",
+      "surface": "eval1_full_active_post_slice8h",
+      "lane": "lane_a_user_level_reuse_shard",
+      "status": "completed",
+      "mechanisms": [
+        "attentional_v2"
+      ],
+      "dataset_or_manifest": [
+        "eval/manifests/splits/attentional_v2_user_level_selective_v1_draft.json"
+      ],
+      "run_dir": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_user_level_post_slice8h_20260519_reuse_huochu",
+      "summary_paths": {
+        "aggregate": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_user_level_post_slice8h_20260519_reuse_huochu/summary/aggregate.json",
+        "llm_usage": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_user_level_post_slice8h_20260519_reuse_huochu/summary/llm_usage.json",
+        "report": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_user_level_post_slice8h_20260519_reuse_huochu/summary/report.md"
+      },
+      "job_ids": [
+        "bgjob_eval1_user_level_post_slice8h_20260519_reuse_huochu"
+      ],
+      "report_paths": [
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Eval1-Full-Active-Evaluation-Post-Slice8H-Retry1-High-Parallel-Post-run-Report v0.md"
+      ],
+      "catalog_status": "not_cataloged",
+      "notes": "Eval-1 Retry1 Lane A reuse shard for huochu_shengming_de_yiyi_private_zh__segment_1; reused matching Lane B output directory.",
+      "parent_run_id": "eval1_full_active_post_slice8h_retry1_20260519",
+      "child_run_ids": [],
+      "synthetic": false,
+      "local_missing_allowed": [],
+      "metadata": {},
+      "updated_at": "2026-05-19T12:24:02.428390Z"
+    },
+    {
+      "run_id": "attentional_v2_eval1_user_level_post_slice8h_20260519_reuse_mangge",
+      "date": "2026-05-19",
+      "surface": "eval1_full_active_post_slice8h",
+      "lane": "lane_a_user_level_reuse_shard",
+      "status": "completed",
+      "mechanisms": [
+        "attentional_v2"
+      ],
+      "dataset_or_manifest": [
+        "eval/manifests/splits/attentional_v2_user_level_selective_v1_draft.json"
+      ],
+      "run_dir": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_user_level_post_slice8h_20260519_reuse_mangge",
+      "summary_paths": {
+        "aggregate": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_user_level_post_slice8h_20260519_reuse_mangge/summary/aggregate.json",
+        "llm_usage": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_user_level_post_slice8h_20260519_reuse_mangge/summary/llm_usage.json",
+        "report": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_user_level_post_slice8h_20260519_reuse_mangge/summary/report.md"
+      },
+      "job_ids": [
+        "bgjob_eval1_user_level_post_slice8h_20260519_reuse_mangge"
+      ],
+      "report_paths": [
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Eval1-Full-Active-Evaluation-Post-Slice8H-Retry1-High-Parallel-Post-run-Report v0.md"
+      ],
+      "catalog_status": "not_cataloged",
+      "notes": "Eval-1 Retry1 Lane A reuse shard for mangge_zhi_dao_private_zh__segment_1; reused matching Lane B output directory.",
+      "parent_run_id": "eval1_full_active_post_slice8h_retry1_20260519",
+      "child_run_ids": [],
+      "synthetic": false,
+      "local_missing_allowed": [],
+      "metadata": {},
+      "updated_at": "2026-05-19T12:24:02.429595Z"
+    },
+    {
+      "run_id": "attentional_v2_eval1_user_level_post_slice8h_20260519_reuse_nawaer",
+      "date": "2026-05-19",
+      "surface": "eval1_full_active_post_slice8h",
+      "lane": "lane_a_user_level_reuse_shard",
+      "status": "completed",
+      "mechanisms": [
+        "attentional_v2"
+      ],
+      "dataset_or_manifest": [
+        "eval/manifests/splits/attentional_v2_user_level_selective_v1_draft.json"
+      ],
+      "run_dir": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_user_level_post_slice8h_20260519_reuse_nawaer",
+      "summary_paths": {
+        "aggregate": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_user_level_post_slice8h_20260519_reuse_nawaer/summary/aggregate.json",
+        "llm_usage": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_user_level_post_slice8h_20260519_reuse_nawaer/summary/llm_usage.json",
+        "report": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_user_level_post_slice8h_20260519_reuse_nawaer/summary/report.md"
+      },
+      "job_ids": [
+        "bgjob_eval1_user_level_post_slice8h_20260519_reuse_nawaer"
+      ],
+      "report_paths": [
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Eval1-Full-Active-Evaluation-Post-Slice8H-Retry1-High-Parallel-Post-run-Report v0.md"
+      ],
+      "catalog_status": "not_cataloged",
+      "notes": "Eval-1 Retry1 Lane A reuse shard for nawaer_baodian_private_zh__segment_1; reused matching Lane B output directory.",
+      "parent_run_id": "eval1_full_active_post_slice8h_retry1_20260519",
+      "child_run_ids": [],
+      "synthetic": false,
+      "local_missing_allowed": [],
+      "metadata": {},
+      "updated_at": "2026-05-19T12:24:02.430847Z"
+    },
+    {
+      "run_id": "attentional_v2_eval1_user_level_post_slice8h_20260519_reuse_value_of_others",
+      "date": "2026-05-19",
+      "surface": "eval1_full_active_post_slice8h",
+      "lane": "lane_a_user_level_reuse_shard",
+      "status": "completed",
+      "mechanisms": [
+        "attentional_v2"
+      ],
+      "dataset_or_manifest": [
+        "eval/manifests/splits/attentional_v2_user_level_selective_v1_draft.json"
+      ],
+      "run_dir": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_user_level_post_slice8h_20260519_reuse_value_of_others",
+      "summary_paths": {
+        "aggregate": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_user_level_post_slice8h_20260519_reuse_value_of_others/summary/aggregate.json",
+        "llm_usage": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_user_level_post_slice8h_20260519_reuse_value_of_others/summary/llm_usage.json",
+        "report": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_user_level_post_slice8h_20260519_reuse_value_of_others/summary/report.md"
+      },
+      "job_ids": [
+        "bgjob_eval1_user_level_post_slice8h_20260519_reuse_value_of_others"
+      ],
+      "report_paths": [
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Eval1-Full-Active-Evaluation-Post-Slice8H-Retry1-High-Parallel-Post-run-Report v0.md"
+      ],
+      "catalog_status": "not_cataloged",
+      "notes": "Eval-1 Retry1 Lane A reuse shard for value_of_others_private_en__segment_1; reused matching Lane B output directory.",
+      "parent_run_id": "eval1_full_active_post_slice8h_retry1_20260519",
+      "child_run_ids": [],
+      "synthetic": false,
+      "local_missing_allowed": [],
+      "metadata": {},
+      "updated_at": "2026-05-19T12:24:02.432008Z"
+    },
+    {
+      "run_id": "attentional_v2_eval1_user_level_post_slice8h_20260519_reuse_xidaduo",
+      "date": "2026-05-19",
+      "surface": "eval1_full_active_post_slice8h",
+      "lane": "lane_a_user_level_reuse_shard",
+      "status": "completed",
+      "mechanisms": [
+        "attentional_v2"
+      ],
+      "dataset_or_manifest": [
+        "eval/manifests/splits/attentional_v2_user_level_selective_v1_draft.json"
+      ],
+      "run_dir": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_user_level_post_slice8h_20260519_reuse_xidaduo",
+      "summary_paths": {
+        "aggregate": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_user_level_post_slice8h_20260519_reuse_xidaduo/summary/aggregate.json",
+        "llm_usage": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_user_level_post_slice8h_20260519_reuse_xidaduo/summary/llm_usage.json",
+        "report": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_user_level_post_slice8h_20260519_reuse_xidaduo/summary/report.md"
+      },
+      "job_ids": [
+        "bgjob_eval1_user_level_post_slice8h_20260519_reuse_xidaduo"
+      ],
+      "report_paths": [
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Eval1-Full-Active-Evaluation-Post-Slice8H-Retry1-High-Parallel-Post-run-Report v0.md"
+      ],
+      "catalog_status": "not_cataloged",
+      "notes": "Eval-1 Retry1 Lane A reuse shard for xidaduo_private_zh__segment_1; reused matching Lane B output directory.",
+      "parent_run_id": "eval1_full_active_post_slice8h_retry1_20260519",
+      "child_run_ids": [],
+      "synthetic": false,
+      "local_missing_allowed": [],
+      "metadata": {},
+      "updated_at": "2026-05-19T12:24:02.433216Z"
+    },
+    {
+      "run_id": "eval1_full_active_post_slice8h_retry1_20260519",
+      "date": "2026-05-19",
+      "surface": "eval1_full_active_post_slice8h",
+      "lane": "full_active_eval_parent",
+      "status": "review_pending",
+      "mechanisms": [
+        "attentional_v2"
+      ],
+      "dataset_or_manifest": [
+        "eval/manifests/probes/memory_quality_semantic_probe_plan_20260504.json",
+        "eval/manifests/splits/attentional_v2_user_level_selective_v1_draft.json"
+      ],
+      "run_dir": "",
+      "summary_paths": {},
+      "job_ids": [],
+      "report_paths": [
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Eval1-Full-Active-Evaluation-Post-Slice8H-Retry1-High-Parallel-Post-run-Report v0.md"
+      ],
+      "catalog_status": "review_pending",
+      "notes": "Eval-1 Retry1 high-parallel full active evaluation completed; pending human review and not yet cataloged.",
+      "parent_run_id": "",
+      "child_run_ids": [
+        "attentional_v2_eval1_long_span_post_slice8h_20260519_huochu",
+        "attentional_v2_eval1_long_span_post_slice8h_20260519_mangge",
+        "attentional_v2_eval1_long_span_post_slice8h_20260519_nawaer",
+        "attentional_v2_eval1_long_span_post_slice8h_20260519_value_of_others",
+        "attentional_v2_eval1_long_span_post_slice8h_20260519_xidaduo",
+        "attentional_v2_eval1_user_level_post_slice8h_20260519_reuse_huochu",
+        "attentional_v2_eval1_user_level_post_slice8h_20260519_reuse_mangge",
+        "attentional_v2_eval1_user_level_post_slice8h_20260519_reuse_nawaer",
+        "attentional_v2_eval1_user_level_post_slice8h_20260519_reuse_value_of_others",
+        "attentional_v2_eval1_user_level_post_slice8h_20260519_reuse_xidaduo"
+      ],
+      "synthetic": true,
+      "local_missing_allowed": [],
+      "metadata": {
+        "lane_a_note_case_count": 202,
+        "lane_b_probe_count": 25
+      },
+      "updated_at": "2026-05-19T12:24:02.433255Z"
+    }
+  ]
+}
