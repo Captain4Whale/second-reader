@@ -16,6 +16,7 @@ from eval.attentional_v2.completed_output_reuse import (
     rebuild_normalized_bundle_from_completed_output,
     run_state_status,
 )
+from eval.attentional_v2.llm_health import assert_eval_output_llm_health
 from eval.attentional_v2.llm_usage_summary import write_llm_usage_summary
 from eval.attentional_v2.user_level_selective_v1 import DATASET_DIR, MANIFEST_PATH
 from src.iterator_reader.llm_utils import ReaderLLMError, invoke_json, llm_invocation_scope
@@ -249,6 +250,14 @@ def _run_mechanism_for_segment(
             )
         )
     bundle = dict(result.normalized_eval_bundle or {})
+    llm_health = (
+        assert_eval_output_llm_health(
+            Path(result.output_dir),
+            label=f"{segment.segment_id}:{mechanism_key}",
+        )
+        if mechanism_key == "attentional_v2"
+        else None
+    )
     return {
         "status": "completed",
         "mechanism_key": mechanism_key,
@@ -256,6 +265,7 @@ def _run_mechanism_for_segment(
         "output_dir": str(result.output_dir),
         "normalized_eval_bundle": bundle,
         "bundle_summary": _bundle_summary(bundle),
+        "llm_health": llm_health,
         "error": "",
     }
 
@@ -274,6 +284,14 @@ def _rebuild_mechanism_payload_from_output(
     )
     bundle = dict(rebuilt["normalized_eval_bundle"])
     mechanism_label = str(rebuilt["mechanism_label"])
+    llm_health = (
+        assert_eval_output_llm_health(
+            source_output_dir,
+            label=f"{segment.segment_id}:{mechanism_key}:reuse",
+        )
+        if mechanism_key == "attentional_v2"
+        else None
+    )
 
     rebuilt_path = run_root / "rebuilt_bundles" / segment.segment_id / mechanism_key / "normalized_eval_bundle.json"
     _json_dump(rebuilt_path, bundle)
@@ -286,6 +304,7 @@ def _rebuild_mechanism_payload_from_output(
         "rebuilt_bundle_path": str(rebuilt_path),
         "normalized_eval_bundle": bundle,
         "bundle_summary": _bundle_summary(bundle),
+        "llm_health": llm_health,
         "error": "",
     }
 

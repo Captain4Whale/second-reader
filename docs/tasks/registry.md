@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-05-19T08:01:35+08:00`
+Last updated: `2026-05-19T08:20:40+08:00`
 
 ## Status Values
 - `active`
@@ -484,7 +484,18 @@ Last updated: `2026-05-19T08:01:35+08:00`
 
 ## Waiting
 
-_No active waiting tasks for the Memory / Planning / Minimal Eval implementation track._
+### `TASK-SECOND-READER-MEMORY-PLANNING-EVAL1-LLM-HEALTH-REPAIR-REPORT-REVIEW` — Review Eval-1 LLM health and eval strictness repair report
+- Status: `waiting`
+- Lane: `mechanism_eval`
+- Priority: `high`
+- Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Eval1-LLM-Health-and-Eval-Strictness-Repair-Post-implementation-Report v0.md`
+- Next: review the repair before any Eval-1 retry. The aborted producer remains invalid and must not be reused. Future retry requires fresh run ids, live target preflight, strict eval health gates, and explicit human approval.
+- Jobs: none
+- Evidence:
+  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Eval1-LLM-Health-and-Eval-Strictness-Repair-Post-implementation-Report v0.md`
+  - `reading-companion-backend/eval/attentional_v2/llm_health.py`
+  - `reading-companion-backend/scripts/check_llm_targets_live.py`
+  - `reading-companion-backend/scripts/check_eval_llm_health.py`
 
 ## Done
 

@@ -7,9 +7,25 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-05-19T08:01:35+08:00`
+Last verified: `2026-05-19T08:20:40+08:00`
 
 ## Current Objective
+- Post-Slice8H Eval-1 LLM-health / eval-strictness repair is landed and pending human review.
+  - status:
+    - no active Eval-1 background jobs remain in the registry
+    - no Eval-1 retry has been launched after the repair
+    - the aborted optimized producer remains invalid operational failure evidence only
+    - repair report:
+      - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Eval1-LLM-Health-and-Eval-Strictness-Repair-Post-implementation-Report v0.md`
+  - implementation facts:
+    - active eval runners now reject unhealthy `attentional_v2` reading outputs before judge/reuse when traces show `llm_fallback`, all-failed LLM traces, or recent retryable `network_blocked` / `llm_timeout` streaks
+    - shared LLM gateway now supports same-tier failover for non-manual `network_blocked` / `llm_timeout` provider failures
+    - live preflight script is available at `reading-companion-backend/scripts/check_llm_targets_live.py`
+    - output/run health checker is available at `reading-companion-backend/scripts/check_eval_llm_health.py`
+    - product runtime fallback remains allowed, but fallback-backed outputs are diagnostics and not valid eval evidence
+  - next step:
+    - human review of the repair report
+    - do not retry Eval-1, update the evidence catalog, promote Long Span vNext, or claim product quality without explicit future approval and fresh run ids
 - Post-Slice8H Eval-1 broader active evaluation attempt is stopped.
   - status:
     - no active Eval-1 background jobs remain in the registry after stopping `bgjob_full_long_span_vnext_post_slice8h_20260518_parallel5`

@@ -1565,18 +1565,68 @@ def _effective_profile(scope: LLMInvocationScopeState | None, explicit_profile_i
 def _resolve_provider_sequence(profile: LLMProfileConfig) -> list[LLMProviderConfig]:
     registry = get_llm_registry()
     if profile.selected_target_id:
-        provider = registry.get_provider(profile.selected_target_id)
-        if provider.provider_id != profile.provider_id:
+        selected_provider = registry.get_provider(profile.selected_target_id)
+        if selected_provider.provider_id != profile.provider_id:
             raise LLMRegistryError(
                 f"Profile {profile.profile_id} pinned target {profile.selected_target_id} does not match provider_id {profile.provider_id}."
             )
-        return [provider]
+        providers = [selected_provider]
+        if _selected_profile_allows_same_tier_failover(profile):
+            tier, selected_index = _resolve_target_membership(profile, profile.selected_target_id)
+            ordered_target_ids = (
+                list(tier.target_ids[selected_index + 1 :])
+                + list(tier.target_ids[:selected_index])
+            )
+            for target_id in ordered_target_ids:
+                provider = registry.get_provider(target_id)
+                if not _target_is_reachable(provider) or _quota_wait_seconds(provider) > 0:
+                    continue
+                if not _provider_supports_profile_model(profile, provider):
+                    continue
+                providers.append(provider)
+        return providers
     provider = registry.get_provider(profile.provider_id)
-    if "*" not in provider.supported_models and profile.model not in provider.supported_models:
+    if not _provider_supports_profile_model(profile, provider):
         raise LLMRegistryError(
             f"Profile {profile.profile_id} cannot use provider {profile.provider_id} with model {profile.model}."
         )
     return [provider]
+
+
+def _provider_supports_profile_model(profile: LLMProfileConfig, provider: LLMProviderConfig) -> bool:
+    if profile.model_source == "selected_target" and len(provider.supported_models) == 1:
+        return True
+    return "*" in provider.supported_models or profile.model in provider.supported_models
+
+
+def _selected_profile_allows_same_tier_failover(profile: LLMProfileConfig) -> bool:
+    if not profile.selected_target_id:
+        return False
+    if profile.selection_reason == "manual_override":
+        return False
+    if _clean_text(profile.selection_override_source):
+        return False
+    try:
+        tier, _ = _resolve_target_membership(profile, profile.selected_target_id)
+    except LLMRegistryError:
+        return False
+    return len(tier.target_ids) > 1
+
+
+def _profile_for_provider_attempt(
+    profile: LLMProfileConfig,
+    provider: LLMProviderConfig,
+) -> LLMProfileConfig:
+    if provider.provider_id == profile.provider_id and (
+        "*" in provider.supported_models or profile.model in provider.supported_models
+    ):
+        return profile
+    return replace(
+        profile,
+        provider_id=provider.provider_id,
+        model=_selected_model_for_provider(profile, provider),
+        selected_target_id=provider.provider_id,
+    )
 
 
 def _selected_provider_for_profile(
@@ -1706,6 +1756,7 @@ def _invoke_response(
     final_contract = ""
     final_slot_id = ""
     final_problem_code = ""
+    final_model = profile.model
     last_error: Exception | None = None
     response: Any | None = None
     quota_retry_attempt_count = 0
@@ -1753,6 +1804,7 @@ def _invoke_response(
             break
         round_attempted_provider_call = False
         for provider in providers:
+            attempt_profile = _profile_for_provider_attempt(profile, provider)
             key_slots = provider.resolved_key_pool()
             if not key_slots:
                 raise ReaderLLMError(
@@ -1769,6 +1821,7 @@ def _invoke_response(
                 final_provider_id = provider.provider_id
                 final_contract = provider.contract
                 final_slot_id = key_slot["slot_id"]
+                final_model = attempt_profile.model
                 quota_wait_ms_before_attempt = 0
                 shared_quota_cooldown_honored = False
                 provider_gate_wait_ms = 0
@@ -1841,7 +1894,7 @@ def _invoke_response(
                         response = adapter.invoke(
                             messages,
                             provider=provider,
-                            profile=profile,
+                            profile=attempt_profile,
                             api_key=key_slot["api_key"],
                             timeout_seconds=profile.timeout_seconds,
                         )
@@ -1872,12 +1925,12 @@ def _invoke_response(
                         "call_id": call_id,
                         "profile_id": profile.profile_id,
                         "provider_id": provider.provider_id,
-                        "selected_target_id": profile.selected_target_id or provider.provider_id,
+                        "selected_target_id": provider.provider_id,
                         "selected_tier_id": profile.selected_tier_id or "",
                         "selection_reason": profile.selection_reason or "",
                         "selection_override_source": profile.selection_override_source or "",
                         "contract": provider.contract,
-                        "model": profile.model,
+                        "model": attempt_profile.model,
                         "mechanism_key": trace_context.mechanism_key if trace_context else "",
                         "eval_target": trace_context.eval_target if trace_context else "",
                         "stage": trace_context.stage if trace_context else "",
@@ -1919,7 +1972,7 @@ def _invoke_response(
                     final_problem_code = classified
                     last_error = exc
                     message = str(exc).lower()
-                    if classified in {"llm_timeout", "llm_quota"} or "malformed json payload" in message:
+                    if classified in {"network_blocked", "llm_timeout", "llm_quota"} or "malformed json payload" in message:
                         provider_controller.report_pressure()
                     if classified == "llm_quota":
                         quota_retry_attempt_count += 1
@@ -1959,12 +2012,12 @@ def _invoke_response(
         "call_id": call_id,
         "profile_id": profile.profile_id,
         "provider_id": final_provider_id,
-        "selected_target_id": profile.selected_target_id or final_provider_id,
+        "selected_target_id": final_provider_id or profile.selected_target_id or "",
         "selected_tier_id": profile.selected_tier_id or "",
         "selection_reason": profile.selection_reason or "",
         "selection_override_source": profile.selection_override_source or "",
         "contract": final_contract,
-        "model": profile.model,
+        "model": final_model,
         "mechanism_key": trace_context.mechanism_key if trace_context else "",
         "eval_target": trace_context.eval_target if trace_context else "",
         "stage": trace_context.stage if trace_context else "",

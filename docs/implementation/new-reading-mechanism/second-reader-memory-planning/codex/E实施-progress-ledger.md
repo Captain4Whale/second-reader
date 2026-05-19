@@ -3189,6 +3189,70 @@ Required follow-up:
 - do not reuse `attentional_v2_full_long_span_vnext_post_slice8h_20260518_parallel5` as the Lane A source-output producer
 - do not treat any partial output from the stopped jobs as product-quality proof or formal benchmark authority
 
+## Entry 2026-05-19 — Eval-1 LLM health / eval strictness repair landed
+
+Type:
+- implementation PR / post-implementation report
+
+Slice:
+- Post-Slice8H Eval-1 repair
+
+Related docs:
+- abort evidence:
+  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Eval1-Full-Active-Evaluation-Post-Slice8H-Aborted-Run-Report v0.md`
+- repair report:
+  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Eval1-LLM-Health-and-Eval-Strictness-Repair-Post-implementation-Report v0.md`
+
+Files changed:
+- `reading-companion-backend/src/reading_runtime/llm_gateway.py`
+- `reading-companion-backend/eval/attentional_v2/llm_health.py`
+- `reading-companion-backend/eval/attentional_v2/run_user_level_selective_comparison.py`
+- `reading-companion-backend/eval/attentional_v2/run_long_span_vnext.py`
+- `reading-companion-backend/scripts/check_llm_targets_live.py`
+- `reading-companion-backend/scripts/check_eval_llm_health.py`
+- `reading-companion-backend/tests/test_llm_health.py`
+- `reading-companion-backend/tests/test_llm_gateway.py`
+- status / evaluation docs
+
+Implementation summary:
+- Added strict eval LLM-health validation for active `attentional_v2` eval reading outputs.
+- Active user-level and Long Span eval runners now reject fallback-backed or all-failed LLM output before judge/reuse.
+- Shared gateway now supports same-tier failover for non-manual `network_blocked` / `llm_timeout` provider failures.
+- Added a live target preflight script and an output/run health checker.
+- Product runtime fallback remains allowed, but fallback-backed outputs are explicit diagnostics and not eval evidence.
+
+Engineering tests:
+- Commands run:
+  - `cd reading-companion-backend && .venv/bin/python -m pytest tests/test_llm_health.py tests/test_llm_gateway.py::test_same_tier_failover_tries_second_target_after_timeout tests/test_run_user_level_selective_comparison.py tests/test_long_span_vnext.py -q`
+- Result:
+  - `39 passed`
+
+AI Evaluation:
+- Full eval run? no
+- Eval retry launched? no
+- Eval lane affected:
+  - Lane A / active user-level selective runner health gate
+  - Lane B / active Long Span vNext runner health gate
+- Notes:
+  - no evidence catalog update
+  - no product-quality claim
+  - no Long Span formal-authority promotion
+
+Post-implementation Report:
+- Link:
+  - `codex/reports/Eval1-LLM-Health-and-Eval-Strictness-Repair-Post-implementation-Report v0.md`
+- Summary:
+  - repaired the Eval-1 LLM health guardrail gap and shared target-failover weakness exposed by the aborted optimized producer
+- Known gaps:
+  - no Eval-1 retry has been launched
+  - future retry must use fresh run ids and explicit human approval
+
+Reviewer decision:
+- pending human review
+
+Next recommended step:
+- human review of the repair report before any broader Eval-1 retry
+
 ## Entry Template
 
 ```text

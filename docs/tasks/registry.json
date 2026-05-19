@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-05-19T08:01:35+08:00",
+  "updated_at": "2026-05-19T08:20:40+08:00",
   "tasks": [
     {
       "id": "TASK-SECOND-READER-MEMORY-PLANNING-FEASIBILITY-AUDIT",
@@ -3205,6 +3205,37 @@
         "reading-companion-backend/state/eval_local_datasets/excerpt_cases/attentional_v2_human_notes_guided_dataset_v1_excerpt_zh_reviewed_cluster_freeze_complete_20260404/manifest.json"
       ],
       "last_updated": "2026-04-14T12:40:00Z",
+      "last_updated_by": "codex"
+    },
+    {
+      "id": "TASK-SECOND-READER-MEMORY-PLANNING-EVAL1-LLM-HEALTH-REPAIR-REPORT-REVIEW",
+      "title": "Review Eval-1 LLM health and eval strictness repair report",
+      "status": "waiting",
+      "lane": "mechanism_eval",
+      "priority": "high",
+      "detail_ref": "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Eval1-LLM-Health-and-Eval-Strictness-Repair-Post-implementation-Report v0.md",
+      "truth_refs": [
+        "docs/current-state.md",
+        "docs/tasks/registry.md",
+        "docs/backend-reader-evaluation.md",
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md",
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md"
+      ],
+      "decision_refs": [],
+      "job_refs": [],
+      "acceptance_ref": "",
+      "next_action": "Review the Eval-1 LLM health / eval strictness repair before any Eval-1 retry. Future retry requires fresh run ids, live target preflight, strict eval health gates, no evidence catalog update before review, and explicit human approval.",
+      "blocked_by": [],
+      "evidence_refs": [
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Eval1-LLM-Health-and-Eval-Strictness-Repair-Post-implementation-Report v0.md",
+        "reading-companion-backend/eval/attentional_v2/llm_health.py",
+        "reading-companion-backend/scripts/check_llm_targets_live.py",
+        "reading-companion-backend/scripts/check_eval_llm_health.py",
+        "reading-companion-backend/src/reading_runtime/llm_gateway.py",
+        "reading-companion-backend/eval/attentional_v2/run_user_level_selective_comparison.py",
+        "reading-companion-backend/eval/attentional_v2/run_long_span_vnext.py"
+      ],
+      "last_updated": "2026-05-19T00:20:40Z",
       "last_updated_by": "codex"
     }
   ]

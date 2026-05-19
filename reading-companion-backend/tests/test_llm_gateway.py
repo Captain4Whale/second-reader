@@ -1610,7 +1610,7 @@ def test_attentional_node_uses_shared_runtime_trace(tmp_path: Path, monkeypatch:
     output_dir = tmp_path / "output" / "attn-demo"
     with llm_invocation_scope(
         profile_id=DEFAULT_RUNTIME_PROFILE_ID,
-        trace_context=runtime_trace_context(output_dir, mechanism_key="attentional_v2"),
+        trace_context=runtime_trace_context(output_dir, mechanism_key="attentional_v2", debug_enabled=True),
     ):
         result = read_unit(
             current_unit_sentences=[{"sentence_id": "s1", "text": "Alpha hinge line.", "text_role": "body"}],
@@ -2091,6 +2091,52 @@ def test_pooled_primary_target_rotation_persists_across_runtime_restarts(
         "MiniMax-M2.7-highspeed",
     ]
     assert [call["provider_id"] for call in adapter.calls] == selected_targets
+
+
+def test_same_tier_failover_tries_second_target_after_timeout(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    _set_targets_and_bindings(
+        monkeypatch,
+        targets=_two_minimax_targets(),
+        bindings=_pooled_primary_bindings(
+            ["MiniMax-M2.7-highspeed", "MiniMax-M2.7"],
+            max_concurrency=2,
+            default_burst_concurrency=2,
+        ),
+    )
+    adapter = _SequencedRecordingAdapter(
+        ["timeout", "ok"],
+        response_content='{"ok": true, "provider": "__API_KEY__"}',
+    )
+    monkeypatch.setitem(CONTRACT_ADAPTERS, "anthropic", adapter)
+
+    output_dir = tmp_path / "output" / "same-tier-failover"
+    with llm_invocation_scope(
+        profile_id=DEFAULT_RUNTIME_PROFILE_ID,
+        trace_context=runtime_trace_context(output_dir, mechanism_key="attentional_v2", debug_enabled=True),
+    ):
+        assert current_llm_scope() is not None
+        assert current_llm_scope().pinned_target_id == "MiniMax-M2.7-highspeed"
+        payload = invoke_json("system", "user", {})
+
+    standard_rows = _read_jsonl(runtime_artifacts.llm_standard_trace_file(output_dir))
+    debug_rows = _read_jsonl(runtime_artifacts.llm_debug_trace_file(output_dir, "attentional_v2"))
+
+    assert payload["ok"] is True
+    assert [call["provider_id"] for call in adapter.calls] == [
+        "MiniMax-M2.7-highspeed",
+        "MiniMax-M2.7",
+    ]
+    assert [call["model"] for call in adapter.calls] == ["MiniMax-M2.7-highspeed", "MiniMax-M2.7"]
+    assert standard_rows[-1]["selected_target_id"] == "MiniMax-M2.7"
+    assert standard_rows[-1]["model"] == "MiniMax-M2.7"
+    assert standard_rows[-1]["fallback"]["providers_tried"] == [
+        "MiniMax-M2.7-highspeed",
+        "MiniMax-M2.7",
+    ]
+    assert debug_rows[-1]["attempts"][0]["problem_code"] == "llm_timeout"
 
 
 def test_scope_pins_one_target_and_nested_scopes_inherit_it(monkeypatch: pytest.MonkeyPatch):

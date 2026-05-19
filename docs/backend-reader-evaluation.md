@@ -463,8 +463,9 @@ For the current Memory / Planning / Evaluation implementation guidance chain, se
   - the recommended local operator surface is now the split target catalog plus profile-binding pair under `reading-companion-backend/config/llm_targets.local.json` and `reading-companion-backend/config/llm_profile_bindings.local.json`
   - the profile-binding file should prefer ordered `target_tiers` over one hardcoded target plus ad hoc fallback fields
   - those two local files still compile into one shared backend registry and one shared gateway policy surface
-  - the shared gateway now chooses one concrete target when a runtime, dataset-review, or evaluation scope starts and keeps that target pinned for the whole scope
-  - cross-target or cross-model fallback is allowed only when a new scope starts; the gateway should not mix models/providers mid-run
+  - the shared gateway chooses one concrete target when a runtime, dataset-review, or evaluation scope starts and keeps that target as the primary target for the scope
+  - if that selected target hits `network_blocked` / `llm_timeout` style provider failure and the selection was not a manual override, the gateway may try another reachable target in the same tier and should trace the actual target/model used
+  - manual/env overrides remain pinned; cross-tier promotion and formal evidence interpretation still require explicit evaluation review
 - New eval/review runners should default to shared-policy worker counts instead of hardcoded local worker limits.
   - case-level fanout is preferred when cases are independent
   - deterministic artifact ordering must still be preserved in final summaries and reports
@@ -488,6 +489,10 @@ For the current Memory / Planning / Evaluation implementation guidance chain, se
 - If a judged lane completes with aggregate/report files but every case is `mechanism_unavailable` because provider cooldown or quota wait-budget exhaustion, treat the run as harness failure rather than mechanism evidence.
   - zero-score ties from `mechanism_unavailable` fallback payloads are not valid comparison results
   - the correct next move is a quota-safe rerun, not product interpretation
+- Active eval runners should treat LLM fallback-backed reading outputs as invalid evidence.
+  - product/runtime runs may still record `llm_fallback` and degrade visibly instead of hard-failing immediately
+  - evaluation runs should fail fast before judging or reuse when reading-output traces show `llm_fallback`, all-failed LLM traces, or a recent retryable `network_blocked` / `llm_timeout` streak
+  - PID liveness or paragraph-position progress is not enough to prove eval health; operators should inspect LLM health traces and expected outputs before interpreting progress
 
 ## Throughput Diagnosis Rule
 - Cross-mechanism evaluation should treat runtime throughput as first-class evidence, not only as operator inconvenience.

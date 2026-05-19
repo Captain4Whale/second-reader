@@ -17,6 +17,7 @@ import time
 from typing import Any
 
 from eval.attentional_v2.completed_output_reuse import rebuild_normalized_bundle_from_completed_output, run_state_status
+from eval.attentional_v2.llm_health import assert_eval_output_llm_health
 from eval.attentional_v2.llm_usage_summary import write_llm_usage_summary
 from eval.attentional_v2.user_level_selective_v1 import DATASET_DIR, MANIFEST_PATH
 from src.attentional_v2.benchmark_probes import is_memory_quality_probe_export_complete, load_memory_quality_probe_export
@@ -553,6 +554,11 @@ def _completed_output_payload(
         "output_dir": str(output_dir),
         "normalized_eval_bundle": bundle,
         "bundle_summary": _bundle_summary(bundle),
+        "llm_health": (
+            assert_eval_output_llm_health(output_dir, label=f"{segment_id}:{mechanism_key}")
+            if mechanism_key == "attentional_v2"
+            else None
+        ),
     }
 
 
@@ -1768,6 +1774,11 @@ def run_long_span_vnext(
             "output_modes": {
                 f"{segment_id}:{mechanism_key}": payload.get("run_mode")
                 for (segment_id, mechanism_key), payload in sorted(output_payloads.items())
+            },
+            "llm_health": {
+                f"{segment_id}:{mechanism_key}": payload.get("llm_health")
+                for (segment_id, mechanism_key), payload in sorted(output_payloads.items())
+                if payload.get("llm_health")
             },
         },
     )
