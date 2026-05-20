@@ -2590,96 +2590,970 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
 ```
 
 #### Active Attention
-- `transactional-relationships-framing`
-  - tags: `focus, framework`
-  - status: `active`
-  - projection_role: `current_support`
-  - support_status: `source_backed`
-  - statement: Relationships as value-transaction media: this is the governing frame introduced at the outset.
-  - source refs:
-    - `src:c1:p3@0-p3@56`; role `thesis_statement`; resolution `matched`
-      - quote: RELATIONSHIPS ARE THE MEDIA IN WHICH VALUE IS TRANSACTED
-- `default-skepticism-default`
-  - tags: `tension, interpretation`
-  - status: `active`
-  - projection_role: `current_support`
-  - support_status: `source_backed`
-  - statement: Default skepticism toward others: 'problem until they prove otherwise' — inverts normal social assumptions.
-  - source refs:
-    - `src:c1:p4@452-p4@516`; role `key_claim`; resolution `matched`
-      - quote: other people are typically a problem until they prove otherwise.
-- `covert-transaction-norm`
-  - tags: `focus, framework`
-  - status: `active`
-  - projection_role: `current_support`
-  - support_status: `source_backed`
-  - statement: Value transactions in relationships are covert by necessity — negotiated with subtlety, tact, and indirectness. The exchange is structurally hidden, not just unconsciously operated.
-  - source refs:
-    - `src:c1:p14@475-p14@616`; role `key_claim`; resolution `matched`
-      - quote: the transaction of value in such relationships is typically negotiated covertly: it must be approached with subtlety, tact, and indirectness.
-- `value-mismatch-pain-awareness-conditional`
-  - tags: `focus, interpretation`
-  - status: `active`
-  - projection_role: `current_support`
-  - support_status: `source_backed`
-  - statement: Relationship pain from value mismatch is awareness-conditional: distress emerges when the under-compensated party recognizes that the other party's perception has shifted since the point of transaction.
-  - source refs:
-    - `src:c1:p16@791-p16@896`; role `key_claim`; resolution `matched`
-      - quote: awareness of this violation can lead to a great deal of pain and distress for the under-compensated party
+
+`active_attention_digest`:
+
+```json
+{
+  "active_items": [
+    {
+      "ref_id": "active_attention:transactional-relationships-framing",
+      "item_id": "transactional-relationships-framing",
+      "attention_tags": [
+        "focus",
+        "framework"
+      ],
+      "statement": "Relationships as value-transaction media: this is the governing frame introduced at the outset.",
+      "status": "active",
+      "source_refs": [
+        {
+          "source_span_id": "src:c1:p3@0-p3@56",
+          "source_span": {
+            "start_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 3,
+              "char_offset": 0
+            },
+            "end_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 3,
+              "char_offset": 56
+            }
+          },
+          "quote": "RELATIONSHIPS ARE THE MEDIA IN WHICH VALUE IS TRANSACTED",
+          "role": "thesis_statement",
+          "resolution": {
+            "status": "matched",
+            "method": "exact_text",
+            "match_count": 1
+          }
+        }
+      ],
+      "linked_concept_keys": [],
+      "linked_thread_keys": [],
+      "projection_role": "current_support",
+      "support_status": "source_backed",
+      "current_support": true,
+      "lineage_only": false,
+      "projection_warning": ""
+    },
+    {
+      "ref_id": "active_attention:default-skepticism-default",
+      "item_id": "default-skepticism-default",
+      "attention_tags": [
+        "tension",
+        "interpretation"
+      ],
+      "statement": "Default skepticism toward others: 'problem until they prove otherwise' — inverts normal social assumptions.",
+      "status": "active",
+      "source_refs": [
+        {
+          "source_span_id": "src:c1:p4@452-p4@516",
+          "source_span": {
+            "start_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 4,
+              "char_offset": 452
+            },
+            "end_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 4,
+              "char_offset": 516
+            }
+          },
+          "quote": "other people are typically a problem until they prove otherwise.",
+          "role": "key_claim",
+          "resolution": {
+            "status": "matched",
+            "method": "exact_text",
+            "match_count": 1
+          }
+        }
+      ],
+      "linked_concept_keys": [],
+      "linked_thread_keys": [],
+      "projection_role": "current_support",
+      "support_status": "source_backed",
+      "current_support": true,
+      "lineage_only": false,
+      "projection_warning": ""
+    },
+    {
+      "ref_id": "active_attention:covert-transaction-norm",
+      "item_id": "covert-transaction-norm",
+      "attention_tags": [
+        "focus",
+        "framework"
+      ],
+      "statement": "Value transactions in relationships are covert by necessity — negotiated with subtlety, tact, and indirectness. The exchange is structurally hidden, not just unconsciously operated.",
+      "status": "active",
+      "source_refs": [
+        {
+          "source_span_id": "src:c1:p14@475-p14@616",
+          "source_span": {
+            "start_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 14,
+              "char_offset": 475
+            },
+            "end_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 14,
+              "char_offset": 616
+            }
+          },
+          "quote": "the transaction of value in such relationships is typically negotiated covertly: it must be approached with subtlety, tact, and indirectness.",
+          "role": "key_claim",
+          "resolution": {
+            "status": "matched",
+            "method": "exact_text",
+            "match_count": 1
+          }
+        }
+      ],
+      "linked_concept_keys": [],
+      "linked_thread_keys": [],
+      "projection_role": "current_support",
+      "support_status": "source_backed",
+      "current_support": true,
+      "lineage_only": false,
+      "projection_warning": ""
+    },
+    {
+      "ref_id": "active_attention:value-mismatch-pain-awareness-conditional",
+      "item_id": "value-mismatch-pain-awareness-conditional",
+      "attention_tags": [
+        "focus",
+        "interpretation"
+      ],
+      "statement": "Relationship pain from value mismatch is awareness-conditional: distress emerges when the under-compensated party recognizes that the other party's perception has shifted since the point of transaction.",
+      "status": "active",
+      "source_refs": [
+        {
+          "source_span_id": "src:c1:p16@791-p16@896",
+          "source_span": {
+            "start_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 16,
+              "char_offset": 791
+            },
+            "end_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 16,
+              "char_offset": 896
+            }
+          },
+          "quote": "awareness of this violation can lead to a great deal of pain and distress for the under-compensated party",
+          "role": "key_claim",
+          "resolution": {
+            "status": "matched",
+            "method": "exact_text",
+            "match_count": 1
+          }
+        }
+      ],
+      "linked_concept_keys": [],
+      "linked_thread_keys": [],
+      "projection_role": "current_support",
+      "support_status": "source_backed",
+      "current_support": true,
+      "lineage_only": false,
+      "projection_warning": ""
+    }
+  ],
+  "hot_items": [
+    {
+      "ref_id": "active_attention:transactional-relationships-framing",
+      "item_id": "transactional-relationships-framing",
+      "attention_tags": [
+        "focus",
+        "framework"
+      ],
+      "statement": "Relationships as value-transaction media: this is the governing frame introduced at the outset.",
+      "status": "active",
+      "source_refs": [
+        {
+          "source_span_id": "src:c1:p3@0-p3@56",
+          "source_span": {
+            "start_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 3,
+              "char_offset": 0
+            },
+            "end_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 3,
+              "char_offset": 56
+            }
+          },
+          "quote": "RELATIONSHIPS ARE THE MEDIA IN WHICH VALUE IS TRANSACTED",
+          "role": "thesis_statement",
+          "resolution": {
+            "status": "matched",
+            "method": "exact_text",
+            "match_count": 1
+          }
+        }
+      ],
+      "linked_concept_keys": [],
+      "linked_thread_keys": [],
+      "projection_role": "current_support",
+      "support_status": "source_backed",
+      "current_support": true,
+      "lineage_only": false,
+      "projection_warning": ""
+    },
+    {
+      "ref_id": "active_attention:default-skepticism-default",
+      "item_id": "default-skepticism-default",
+      "attention_tags": [
+        "tension",
+        "interpretation"
+      ],
+      "statement": "Default skepticism toward others: 'problem until they prove otherwise' — inverts normal social assumptions.",
+      "status": "active",
+      "source_refs": [
+        {
+          "source_span_id": "src:c1:p4@452-p4@516",
+          "source_span": {
+            "start_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 4,
+              "char_offset": 452
+            },
+            "end_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 4,
+              "char_offset": 516
+            }
+          },
+          "quote": "other people are typically a problem until they prove otherwise.",
+          "role": "key_claim",
+          "resolution": {
+            "status": "matched",
+            "method": "exact_text",
+            "match_count": 1
+          }
+        }
+      ],
+      "linked_concept_keys": [],
+      "linked_thread_keys": [],
+      "projection_role": "current_support",
+      "support_status": "source_backed",
+      "current_support": true,
+      "lineage_only": false,
+      "projection_warning": ""
+    },
+    {
+      "ref_id": "active_attention:covert-transaction-norm",
+      "item_id": "covert-transaction-norm",
+      "attention_tags": [
+        "focus",
+        "framework"
+      ],
+      "statement": "Value transactions in relationships are covert by necessity — negotiated with subtlety, tact, and indirectness. The exchange is structurally hidden, not just unconsciously operated.",
+      "status": "active",
+      "source_refs": [
+        {
+          "source_span_id": "src:c1:p14@475-p14@616",
+          "source_span": {
+            "start_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 14,
+              "char_offset": 475
+            },
+            "end_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 14,
+              "char_offset": 616
+            }
+          },
+          "quote": "the transaction of value in such relationships is typically negotiated covertly: it must be approached with subtlety, tact, and indirectness.",
+          "role": "key_claim",
+          "resolution": {
+            "status": "matched",
+            "method": "exact_text",
+            "match_count": 1
+          }
+        }
+      ],
+      "linked_concept_keys": [],
+      "linked_thread_keys": [],
+      "projection_role": "current_support",
+      "support_status": "source_backed",
+      "current_support": true,
+      "lineage_only": false,
+      "projection_warning": ""
+    },
+    {
+      "ref_id": "active_attention:value-mismatch-pain-awareness-conditional",
+      "item_id": "value-mismatch-pain-awareness-conditional",
+      "attention_tags": [
+        "focus",
+        "interpretation"
+      ],
+      "statement": "Relationship pain from value mismatch is awareness-conditional: distress emerges when the under-compensated party recognizes that the other party's perception has shifted since the point of transaction.",
+      "status": "active",
+      "source_refs": [
+        {
+          "source_span_id": "src:c1:p16@791-p16@896",
+          "source_span": {
+            "start_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 16,
+              "char_offset": 791
+            },
+            "end_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 16,
+              "char_offset": 896
+            }
+          },
+          "quote": "awareness of this violation can lead to a great deal of pain and distress for the under-compensated party",
+          "role": "key_claim",
+          "resolution": {
+            "status": "matched",
+            "method": "exact_text",
+            "match_count": 1
+          }
+        }
+      ],
+      "linked_concept_keys": [],
+      "linked_thread_keys": [],
+      "projection_role": "current_support",
+      "support_status": "source_backed",
+      "current_support": true,
+      "lineage_only": false,
+      "projection_warning": ""
+    }
+  ]
+}
+```
+
+#### Active Focus
+
+`active_focus_digest`:
+
+```json
+{
+  "active_items": [
+    {
+      "ref_id": "active_attention:transactional-relationships-framing",
+      "item_id": "transactional-relationships-framing",
+      "attention_tags": [
+        "focus",
+        "framework"
+      ],
+      "statement": "Relationships as value-transaction media: this is the governing frame introduced at the outset.",
+      "status": "active",
+      "source_refs": [
+        {
+          "source_span_id": "src:c1:p3@0-p3@56",
+          "source_span": {
+            "start_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 3,
+              "char_offset": 0
+            },
+            "end_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 3,
+              "char_offset": 56
+            }
+          },
+          "quote": "RELATIONSHIPS ARE THE MEDIA IN WHICH VALUE IS TRANSACTED",
+          "role": "thesis_statement",
+          "resolution": {
+            "status": "matched",
+            "method": "exact_text",
+            "match_count": 1
+          }
+        }
+      ],
+      "linked_concept_keys": [],
+      "linked_thread_keys": [],
+      "projection_role": "current_support",
+      "support_status": "source_backed",
+      "current_support": true,
+      "lineage_only": false,
+      "projection_warning": ""
+    },
+    {
+      "ref_id": "active_attention:default-skepticism-default",
+      "item_id": "default-skepticism-default",
+      "attention_tags": [
+        "tension",
+        "interpretation"
+      ],
+      "statement": "Default skepticism toward others: 'problem until they prove otherwise' — inverts normal social assumptions.",
+      "status": "active",
+      "source_refs": [
+        {
+          "source_span_id": "src:c1:p4@452-p4@516",
+          "source_span": {
+            "start_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 4,
+              "char_offset": 452
+            },
+            "end_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 4,
+              "char_offset": 516
+            }
+          },
+          "quote": "other people are typically a problem until they prove otherwise.",
+          "role": "key_claim",
+          "resolution": {
+            "status": "matched",
+            "method": "exact_text",
+            "match_count": 1
+          }
+        }
+      ],
+      "linked_concept_keys": [],
+      "linked_thread_keys": [],
+      "projection_role": "current_support",
+      "support_status": "source_backed",
+      "current_support": true,
+      "lineage_only": false,
+      "projection_warning": ""
+    },
+    {
+      "ref_id": "active_attention:covert-transaction-norm",
+      "item_id": "covert-transaction-norm",
+      "attention_tags": [
+        "focus",
+        "framework"
+      ],
+      "statement": "Value transactions in relationships are covert by necessity — negotiated with subtlety, tact, and indirectness. The exchange is structurally hidden, not just unconsciously operated.",
+      "status": "active",
+      "source_refs": [
+        {
+          "source_span_id": "src:c1:p14@475-p14@616",
+          "source_span": {
+            "start_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 14,
+              "char_offset": 475
+            },
+            "end_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 14,
+              "char_offset": 616
+            }
+          },
+          "quote": "the transaction of value in such relationships is typically negotiated covertly: it must be approached with subtlety, tact, and indirectness.",
+          "role": "key_claim",
+          "resolution": {
+            "status": "matched",
+            "method": "exact_text",
+            "match_count": 1
+          }
+        }
+      ],
+      "linked_concept_keys": [],
+      "linked_thread_keys": [],
+      "projection_role": "current_support",
+      "support_status": "source_backed",
+      "current_support": true,
+      "lineage_only": false,
+      "projection_warning": ""
+    },
+    {
+      "ref_id": "active_attention:value-mismatch-pain-awareness-conditional",
+      "item_id": "value-mismatch-pain-awareness-conditional",
+      "attention_tags": [
+        "focus",
+        "interpretation"
+      ],
+      "statement": "Relationship pain from value mismatch is awareness-conditional: distress emerges when the under-compensated party recognizes that the other party's perception has shifted since the point of transaction.",
+      "status": "active",
+      "source_refs": [
+        {
+          "source_span_id": "src:c1:p16@791-p16@896",
+          "source_span": {
+            "start_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 16,
+              "char_offset": 791
+            },
+            "end_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 16,
+              "char_offset": 896
+            }
+          },
+          "quote": "awareness of this violation can lead to a great deal of pain and distress for the under-compensated party",
+          "role": "key_claim",
+          "resolution": {
+            "status": "matched",
+            "method": "exact_text",
+            "match_count": 1
+          }
+        }
+      ],
+      "linked_concept_keys": [],
+      "linked_thread_keys": [],
+      "projection_role": "current_support",
+      "support_status": "source_backed",
+      "current_support": true,
+      "lineage_only": false,
+      "projection_warning": ""
+    }
+  ],
+  "recent_reactions": [
+    {
+      "ref_id": "reaction:rx:Full_Content:src:c1:p16@0-p16@1015:discern:13",
+      "reaction_id": "rx:Full_Content:src:c1:p16@0-p16@1015:discern:13",
+      "type": "discern",
+      "thought": "This is a clean two-boundary theorem for relationship formation. Too symmetric (identical goods) → no transaction. Too asymmetric (disparate values) → relationship probability decreases. Only the narrow middle band — unequal goods, comparable value — sustains the exchange. This extends the earlier 'unequal goods of comparable value' definition into a generative condition with failure modes.",
+      "emitted_at_source_span_id": "src:c1:p16@0-p16@1015",
+      "primary_source_ref": {
+        "source_span_id": "src:c1:p16@260-p16@574",
+        "source_span": {
+          "start_cursor": {
+            "chapter_id": 1,
+            "chapter_ref": "Full Content",
+            "paragraph_index": 16,
+            "char_offset": 260
+          },
+          "end_cursor": {
+            "chapter_id": 1,
+            "chapter_ref": "Full Content",
+            "paragraph_index": 16,
+            "char_offset": 574
+          }
+        },
+        "quote": "If the goods are the same, then exchange is either unnecessary or impossible (so no relationship is formed). And if their values are too disparate, then the relationship becomes likely in inverse proportion to the size of the perceived mismatch in value: the greater the mismatch, the less likely the relationship.",
+        "role": "reaction_anchor",
+        "resolution": {
+          "status": "matched",
+          "method": "exact_text",
+          "match_count": 1
+        }
+      },
+      "source_quote": "If the goods are the same, then exchange is either unnecessary or impossible (so no relationship is formed). And if their values are too disparate, then the relationship becomes likely in inverse proportion to the size of the perceived mismatch in value: the greater the mismatch, the less likely the relationship.",
+      "projection_role": "visible_trace",
+      "support_status": "visible_trace",
+      "visible_trace_support": true,
+      "current_support": false,
+      "projection_warning": "visible_trace_not_semantic_memory"
+    },
+    {
+      "ref_id": "reaction:rx:Full_Content:src:c1:p16@0-p16@1015:discern:14",
+      "reaction_id": "rx:Full_Content:src:c1:p16@0-p16@1015:discern:14",
+      "type": "discern",
+      "thought": "This is the key consequence clause. The pain isn't automatic — it requires awareness. Someone operating with a stale mismatch perception feels fine until the other party's shifted valuation becomes visible. The distress is a function of the recognition, not the mismatch itself.",
+      "emitted_at_source_span_id": "src:c1:p16@0-p16@1015",
+      "primary_source_ref": {
+        "source_span_id": "src:c1:p16@791-p16@896",
+        "source_span": {
+          "start_cursor": {
+            "chapter_id": 1,
+            "chapter_ref": "Full Content",
+            "paragraph_index": 16,
+            "char_offset": 791
+          },
+          "end_cursor": {
+            "chapter_id": 1,
+            "chapter_ref": "Full Content",
+            "paragraph_index": 16,
+            "char_offset": 896
+          }
+        },
+        "quote": "awareness of this violation can lead to a great deal of pain and distress for the under-compensated party",
+        "role": "reaction_anchor",
+        "resolution": {
+          "status": "matched",
+          "method": "exact_text",
+          "match_count": 1
+        }
+      },
+      "source_quote": "awareness of this violation can lead to a great deal of pain and distress for the under-compensated party",
+      "projection_role": "visible_trace",
+      "support_status": "visible_trace",
+      "visible_trace_support": true,
+      "current_support": false,
+      "projection_warning": "visible_trace_not_semantic_memory"
+    }
+  ]
+}
+```
 
 #### Concept Digest
-- `comparable-value-exchange`
-  - concept_type: `concept`
-  - projection_role: `current_support`
-  - support_status: `source_backed`
-  - sample quotes:
-    - the media in which unequal goods of comparable value are exchanged
-  - source refs:
-    - `src:c1:p12@464-p12@530`; role `refined_definition`; resolution `matched`
-      - quote: the media in which unequal goods of comparable value are exchanged
-- `epistemic-opacity-of-valuation`
-  - concept_type: `concept`
-  - projection_role: `current_support`
-  - support_status: `source_backed`
-  - sample quotes:
-    - this valuation typically occurs beneath the threshold of awareness. This means that neither party can ever know the other's true valuation of a specific good (which exists in the inaccessible privacy of the other's mind), and also that each party typically doesn't entirely know his or her own valuation of the good in question.
-  - source refs:
-    - `src:c1:p11@0-p11@916`; role `support`; resolution `fallback_unit_span`
-      - quote: this valuation typically occurs beneath the threshold of awareness. This means that neither party can ever know the other's true valuation of a specific good (which exists in the inaccessible privacy of the other's mind), and also that each party typically doesn't entirely know his or her own valuation of the good in question.
-- `prosocial-neutral-instrumental`
-  - concept_type: `concept`
-  - projection_role: `current_support`
-  - support_status: `source_backed`
-  - sample quotes:
-    - This is, by definition, a prosocial solution, as it creates the basis of society.
-  - source refs:
-    - `src:c1:p6@472-p6@553`; role `key_definition`; resolution `matched`
-      - quote: This is, by definition, a prosocial solution, as it creates the basis of society.
+
+`concept_digest`:
+
+```json
+[
+  {
+    "ref_id": "concept:comparable-value-exchange",
+    "concept_key": "comparable-value-exchange",
+    "concept_type": "concept",
+    "source_refs": [
+      {
+        "source_span_id": "src:c1:p12@464-p12@530",
+        "source_span": {
+          "start_cursor": {
+            "chapter_id": 1,
+            "chapter_ref": "Full Content",
+            "paragraph_index": 12,
+            "char_offset": 464
+          },
+          "end_cursor": {
+            "chapter_id": 1,
+            "chapter_ref": "Full Content",
+            "paragraph_index": 12,
+            "char_offset": 530
+          }
+        },
+        "quote": "the media in which unequal goods of comparable value are exchanged",
+        "role": "refined_definition",
+        "resolution": {
+          "status": "matched",
+          "method": "exact_text",
+          "match_count": 1
+        }
+      }
+    ],
+    "sample_quotes": [
+      "the media in which unequal goods of comparable value are exchanged"
+    ],
+    "rationale": "",
+    "projection_role": "current_support",
+    "support_status": "source_backed",
+    "current_support": true,
+    "lineage_only": false,
+    "projection_warning": ""
+  },
+  {
+    "ref_id": "concept:epistemic-opacity-of-valuation",
+    "concept_key": "epistemic-opacity-of-valuation",
+    "concept_type": "concept",
+    "source_refs": [
+      {
+        "source_span_id": "src:c1:p11@0-p11@916",
+        "source_span": {
+          "start_cursor": {
+            "chapter_id": 1,
+            "chapter_ref": "Full Content",
+            "paragraph_index": 11,
+            "char_offset": 0
+          },
+          "end_cursor": {
+            "chapter_id": 1,
+            "chapter_ref": "Full Content",
+            "paragraph_index": 11,
+            "char_offset": 916
+          }
+        },
+        "quote": "this valuation typically occurs beneath the threshold of awareness. This means that neither party can ever know the other's true valuation of a specific good (which exists in the inaccessible privacy of the other's mind), and also that each party typically doesn't entirely know his or her own valuation of the good in question.",
+        "role": "support",
+        "resolution": {
+          "status": "fallback_unit_span",
+          "method": "quote_not_found",
+          "match_count": 0
+        }
+      }
+    ],
+    "sample_quotes": [
+      "this valuation typically occurs beneath the threshold of awareness. This means that neither party can ever know the other's true valuation of a specific good (which exists in the inaccessible privacy of the other's mind), and also that each party typically doesn't entirely know his or her own valuation of the good in question."
+    ],
+    "rationale": "",
+    "projection_role": "current_support",
+    "support_status": "source_backed",
+    "current_support": true,
+    "lineage_only": false,
+    "projection_warning": ""
+  },
+  {
+    "ref_id": "concept:prosocial-neutral-instrumental",
+    "concept_key": "prosocial-neutral-instrumental",
+    "concept_type": "concept",
+    "source_refs": [
+      {
+        "source_span_id": "src:c1:p6@472-p6@553",
+        "source_span": {
+          "start_cursor": {
+            "chapter_id": 1,
+            "chapter_ref": "Full Content",
+            "paragraph_index": 6,
+            "char_offset": 472
+          },
+          "end_cursor": {
+            "chapter_id": 1,
+            "chapter_ref": "Full Content",
+            "paragraph_index": 6,
+            "char_offset": 553
+          }
+        },
+        "quote": "This is, by definition, a prosocial solution, as it creates the basis of society.",
+        "role": "key_definition",
+        "resolution": {
+          "status": "matched",
+          "method": "exact_text",
+          "match_count": 1
+        }
+      }
+    ],
+    "sample_quotes": [
+      "This is, by definition, a prosocial solution, as it creates the basis of society."
+    ],
+    "rationale": "",
+    "projection_role": "current_support",
+    "support_status": "source_backed",
+    "current_support": true,
+    "lineage_only": false,
+    "projection_warning": ""
+  }
+]
+```
 
 #### Thread Digest
-- `(none recorded in snapshot)`
+
+`thread_digest`:
+
+```json
+[]
+```
 
 #### Reflective Digest
-- `(none recorded in snapshot)`
+
+`reflective_digest`:
+
+```json
+{
+  "chapter_frames": [],
+  "book_frames": [],
+  "durable_definitions": []
+}
+```
 
 #### SourceRef Digest
-- `src:c1:p3@0-p3@56`; role `thesis_statement`; resolution `matched`
-  - quote: RELATIONSHIPS ARE THE MEDIA IN WHICH VALUE IS TRANSACTED
-- `src:c1:p4@452-p4@516`; role `key_claim`; resolution `matched`
-  - quote: other people are typically a problem until they prove otherwise.
-- `src:c1:p14@475-p14@616`; role `key_claim`; resolution `matched`
-  - quote: the transaction of value in such relationships is typically negotiated covertly: it must be approached with subtlety, tact, and indirectness.
-- `src:c1:p16@791-p16@896`; role `key_claim`; resolution `matched`
-  - quote: awareness of this violation can lead to a great deal of pain and distress for the under-compensated party
-- `src:c1:p12@464-p12@530`; role `refined_definition`; resolution `matched`
-  - quote: the media in which unequal goods of comparable value are exchanged
-- `src:c1:p11@0-p11@916`; role `support`; resolution `fallback_unit_span`
-  - quote: this valuation typically occurs beneath the threshold of awareness. This means that neither party can ever know the other's true valuation of a specific good (which exists in the inaccessible privacy of the other's mind), and also that each party typically doesn't entirely know his or her own valuation of the good in question.
-- `src:c1:p6@472-p6@553`; role `key_definition`; resolution `matched`
-  - quote: This is, by definition, a prosocial solution, as it creates the basis of society.
-- `src:c1:p16@260-p16@574`; role `reaction_anchor`; resolution `matched`
-  - quote: If the goods are the same, then exchange is either unnecessary or impossible (so no relationship is formed). And if their values are too disparate, then the relationship becomes likely in inverse proportion to the size of the perceived mismatch in value: the greater the mismatch, the less likely the relationship.
 
+`source_ref_digest`:
+
+```json
+[
+  {
+    "source_span_id": "src:c1:p3@0-p3@56",
+    "source_span": {
+      "start_cursor": {
+        "chapter_id": 1,
+        "chapter_ref": "Full Content",
+        "paragraph_index": 3,
+        "char_offset": 0
+      },
+      "end_cursor": {
+        "chapter_id": 1,
+        "chapter_ref": "Full Content",
+        "paragraph_index": 3,
+        "char_offset": 56
+      }
+    },
+    "quote": "RELATIONSHIPS ARE THE MEDIA IN WHICH VALUE IS TRANSACTED",
+    "role": "thesis_statement",
+    "resolution": {
+      "status": "matched",
+      "method": "exact_text",
+      "match_count": 1
+    }
+  },
+  {
+    "source_span_id": "src:c1:p4@452-p4@516",
+    "source_span": {
+      "start_cursor": {
+        "chapter_id": 1,
+        "chapter_ref": "Full Content",
+        "paragraph_index": 4,
+        "char_offset": 452
+      },
+      "end_cursor": {
+        "chapter_id": 1,
+        "chapter_ref": "Full Content",
+        "paragraph_index": 4,
+        "char_offset": 516
+      }
+    },
+    "quote": "other people are typically a problem until they prove otherwise.",
+    "role": "key_claim",
+    "resolution": {
+      "status": "matched",
+      "method": "exact_text",
+      "match_count": 1
+    }
+  },
+  {
+    "source_span_id": "src:c1:p14@475-p14@616",
+    "source_span": {
+      "start_cursor": {
+        "chapter_id": 1,
+        "chapter_ref": "Full Content",
+        "paragraph_index": 14,
+        "char_offset": 475
+      },
+      "end_cursor": {
+        "chapter_id": 1,
+        "chapter_ref": "Full Content",
+        "paragraph_index": 14,
+        "char_offset": 616
+      }
+    },
+    "quote": "the transaction of value in such relationships is typically negotiated covertly: it must be approached with subtlety, tact, and indirectness.",
+    "role": "key_claim",
+    "resolution": {
+      "status": "matched",
+      "method": "exact_text",
+      "match_count": 1
+    }
+  },
+  {
+    "source_span_id": "src:c1:p16@791-p16@896",
+    "source_span": {
+      "start_cursor": {
+        "chapter_id": 1,
+        "chapter_ref": "Full Content",
+        "paragraph_index": 16,
+        "char_offset": 791
+      },
+      "end_cursor": {
+        "chapter_id": 1,
+        "chapter_ref": "Full Content",
+        "paragraph_index": 16,
+        "char_offset": 896
+      }
+    },
+    "quote": "awareness of this violation can lead to a great deal of pain and distress for the under-compensated party",
+    "role": "key_claim",
+    "resolution": {
+      "status": "matched",
+      "method": "exact_text",
+      "match_count": 1
+    }
+  },
+  {
+    "source_span_id": "src:c1:p12@464-p12@530",
+    "source_span": {
+      "start_cursor": {
+        "chapter_id": 1,
+        "chapter_ref": "Full Content",
+        "paragraph_index": 12,
+        "char_offset": 464
+      },
+      "end_cursor": {
+        "chapter_id": 1,
+        "chapter_ref": "Full Content",
+        "paragraph_index": 12,
+        "char_offset": 530
+      }
+    },
+    "quote": "the media in which unequal goods of comparable value are exchanged",
+    "role": "refined_definition",
+    "resolution": {
+      "status": "matched",
+      "method": "exact_text",
+      "match_count": 1
+    }
+  },
+  {
+    "source_span_id": "src:c1:p11@0-p11@916",
+    "source_span": {
+      "start_cursor": {
+        "chapter_id": 1,
+        "chapter_ref": "Full Content",
+        "paragraph_index": 11,
+        "char_offset": 0
+      },
+      "end_cursor": {
+        "chapter_id": 1,
+        "chapter_ref": "Full Content",
+        "paragraph_index": 11,
+        "char_offset": 916
+      }
+    },
+    "quote": "this valuation typically occurs beneath the threshold of awareness. This means that neither party can ever know the other's true valuation of a specific good (which exists in the inaccessible privacy of the other's mind), and also that each party typically doesn't entirely know his or her own valuation of the good in question.",
+    "role": "support",
+    "resolution": {
+      "status": "fallback_unit_span",
+      "method": "quote_not_found",
+      "match_count": 0
+    }
+  },
+  {
+    "source_span_id": "src:c1:p6@472-p6@553",
+    "source_span": {
+      "start_cursor": {
+        "chapter_id": 1,
+        "chapter_ref": "Full Content",
+        "paragraph_index": 6,
+        "char_offset": 472
+      },
+      "end_cursor": {
+        "chapter_id": 1,
+        "chapter_ref": "Full Content",
+        "paragraph_index": 6,
+        "char_offset": 553
+      }
+    },
+    "quote": "This is, by definition, a prosocial solution, as it creates the basis of society.",
+    "role": "key_definition",
+    "resolution": {
+      "status": "matched",
+      "method": "exact_text",
+      "match_count": 1
+    }
+  },
+  {
+    "source_span_id": "src:c1:p16@260-p16@574",
+    "source_span": {
+      "start_cursor": {
+        "chapter_id": 1,
+        "chapter_ref": "Full Content",
+        "paragraph_index": 16,
+        "char_offset": 260
+      },
+      "end_cursor": {
+        "chapter_id": 1,
+        "chapter_ref": "Full Content",
+        "paragraph_index": 16,
+        "char_offset": 574
+      }
+    },
+    "quote": "If the goods are the same, then exchange is either unnecessary or impossible (so no relationship is formed). And if their values are too disparate, then the relationship becomes likely in inverse proportion to the size of the perceived mismatch in value: the greater the mismatch, the less likely the relationship.",
+    "role": "reaction_anchor",
+    "resolution": {
+      "status": "matched",
+      "method": "exact_text",
+      "match_count": 1
+    }
+  }
+]
+```
 #### Score Rationale
 - salience: `4`
 - mainline_fidelity: `4`
@@ -2714,122 +3588,1097 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
 ```
 
 #### Active Attention
-- `transactional-relationships-framing`
-  - tags: `focus, framework`
-  - status: `active`
-  - projection_role: `current_support`
-  - support_status: `source_backed`
-  - statement: Relationships as value-transaction media: this is the governing frame introduced at the outset.
-  - source refs:
-    - `src:c1:p3@0-p3@56`; role `thesis_statement`; resolution `matched`
-      - quote: RELATIONSHIPS ARE THE MEDIA IN WHICH VALUE IS TRANSACTED
-- `default-skepticism-default`
-  - tags: `tension, interpretation`
-  - status: `active`
-  - projection_role: `current_support`
-  - support_status: `source_backed`
-  - statement: Default skepticism toward others: 'problem until they prove otherwise' — inverts normal social assumptions.
-  - source refs:
-    - `src:c1:p4@452-p4@516`; role `key_claim`; resolution `matched`
-      - quote: other people are typically a problem until they prove otherwise.
-- `covert-transaction-norm`
-  - tags: `focus, framework`
-  - status: `active`
-  - projection_role: `current_support`
-  - support_status: `source_backed`
-  - statement: Value transactions in relationships are covert by necessity — negotiated with subtlety, tact, and indirectness. The exchange is structurally hidden, not just unconsciously operated.
-  - source refs:
-    - `src:c1:p14@475-p14@616`; role `key_claim`; resolution `matched`
-      - quote: the transaction of value in such relationships is typically negotiated covertly: it must be approached with subtlety, tact, and indirectness.
-- `value-mismatch-pain-awareness-conditional`
-  - tags: `focus, interpretation`
-  - status: `active`
-  - projection_role: `current_support`
-  - support_status: `source_backed`
-  - statement: Relationship pain from value mismatch is awareness-conditional: distress emerges when the under-compensated party recognizes that the other party's perception has shifted since the point of transaction.
-  - source refs:
-    - `src:c1:p16@791-p16@896`; role `key_claim`; resolution `matched`
-      - quote: awareness of this violation can lead to a great deal of pain and distress for the under-compensated party
-- `nested-game-structure`
-  - tags: `focus, framework`
-  - status: `active`
-  - projection_role: `current_support`
-  - support_status: `source_backed`
-  - statement: Nested game structure: each specific relationship is its own sub-game within a meta-game category. Rules and goals vary not only by relationship type but by individual instance.
-  - source refs:
-    - `src:c1:p18@0-p18@875`; role `support`; resolution `fallback_unit_span`
-      - quote: Every type of relationship constitutes a different game – as does every specific relationship of the same type. And since each specific friendship is nested in the larger game of general friendship, we find that the overarching category contains enormous variation at the individual level.
-- `abstraction-utility-inverse`
-  - tags: `focus, tension`
-  - status: `active`
-  - projection_role: `current_support`
-  - support_status: `source_backed`
-  - statement: Truth and utility are inversely related in relationship principles: the more accurate a category-level principle is, the more abstract and unsatisfying it becomes.
-  - source refs:
-    - `src:c1:p19@502-p19@591`; role `key_claim`; resolution `matched`
-      - quote: the truer these principles are, the more abstract and unsatisfying they are likely to be.
+
+`active_attention_digest`:
+
+```json
+{
+  "active_items": [
+    {
+      "ref_id": "active_attention:transactional-relationships-framing",
+      "item_id": "transactional-relationships-framing",
+      "attention_tags": [
+        "focus",
+        "framework"
+      ],
+      "statement": "Relationships as value-transaction media: this is the governing frame introduced at the outset.",
+      "status": "active",
+      "source_refs": [
+        {
+          "source_span_id": "src:c1:p3@0-p3@56",
+          "source_span": {
+            "start_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 3,
+              "char_offset": 0
+            },
+            "end_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 3,
+              "char_offset": 56
+            }
+          },
+          "quote": "RELATIONSHIPS ARE THE MEDIA IN WHICH VALUE IS TRANSACTED",
+          "role": "thesis_statement",
+          "resolution": {
+            "status": "matched",
+            "method": "exact_text",
+            "match_count": 1
+          }
+        }
+      ],
+      "linked_concept_keys": [],
+      "linked_thread_keys": [],
+      "projection_role": "current_support",
+      "support_status": "source_backed",
+      "current_support": true,
+      "lineage_only": false,
+      "projection_warning": ""
+    },
+    {
+      "ref_id": "active_attention:default-skepticism-default",
+      "item_id": "default-skepticism-default",
+      "attention_tags": [
+        "tension",
+        "interpretation"
+      ],
+      "statement": "Default skepticism toward others: 'problem until they prove otherwise' — inverts normal social assumptions.",
+      "status": "active",
+      "source_refs": [
+        {
+          "source_span_id": "src:c1:p4@452-p4@516",
+          "source_span": {
+            "start_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 4,
+              "char_offset": 452
+            },
+            "end_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 4,
+              "char_offset": 516
+            }
+          },
+          "quote": "other people are typically a problem until they prove otherwise.",
+          "role": "key_claim",
+          "resolution": {
+            "status": "matched",
+            "method": "exact_text",
+            "match_count": 1
+          }
+        }
+      ],
+      "linked_concept_keys": [],
+      "linked_thread_keys": [],
+      "projection_role": "current_support",
+      "support_status": "source_backed",
+      "current_support": true,
+      "lineage_only": false,
+      "projection_warning": ""
+    },
+    {
+      "ref_id": "active_attention:covert-transaction-norm",
+      "item_id": "covert-transaction-norm",
+      "attention_tags": [
+        "focus",
+        "framework"
+      ],
+      "statement": "Value transactions in relationships are covert by necessity — negotiated with subtlety, tact, and indirectness. The exchange is structurally hidden, not just unconsciously operated.",
+      "status": "active",
+      "source_refs": [
+        {
+          "source_span_id": "src:c1:p14@475-p14@616",
+          "source_span": {
+            "start_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 14,
+              "char_offset": 475
+            },
+            "end_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 14,
+              "char_offset": 616
+            }
+          },
+          "quote": "the transaction of value in such relationships is typically negotiated covertly: it must be approached with subtlety, tact, and indirectness.",
+          "role": "key_claim",
+          "resolution": {
+            "status": "matched",
+            "method": "exact_text",
+            "match_count": 1
+          }
+        }
+      ],
+      "linked_concept_keys": [],
+      "linked_thread_keys": [],
+      "projection_role": "current_support",
+      "support_status": "source_backed",
+      "current_support": true,
+      "lineage_only": false,
+      "projection_warning": ""
+    },
+    {
+      "ref_id": "active_attention:value-mismatch-pain-awareness-conditional",
+      "item_id": "value-mismatch-pain-awareness-conditional",
+      "attention_tags": [
+        "focus",
+        "interpretation"
+      ],
+      "statement": "Relationship pain from value mismatch is awareness-conditional: distress emerges when the under-compensated party recognizes that the other party's perception has shifted since the point of transaction.",
+      "status": "active",
+      "source_refs": [
+        {
+          "source_span_id": "src:c1:p16@791-p16@896",
+          "source_span": {
+            "start_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 16,
+              "char_offset": 791
+            },
+            "end_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 16,
+              "char_offset": 896
+            }
+          },
+          "quote": "awareness of this violation can lead to a great deal of pain and distress for the under-compensated party",
+          "role": "key_claim",
+          "resolution": {
+            "status": "matched",
+            "method": "exact_text",
+            "match_count": 1
+          }
+        }
+      ],
+      "linked_concept_keys": [],
+      "linked_thread_keys": [],
+      "projection_role": "current_support",
+      "support_status": "source_backed",
+      "current_support": true,
+      "lineage_only": false,
+      "projection_warning": ""
+    },
+    {
+      "ref_id": "active_attention:nested-game-structure",
+      "item_id": "nested-game-structure",
+      "attention_tags": [
+        "focus",
+        "framework"
+      ],
+      "statement": "Nested game structure: each specific relationship is its own sub-game within a meta-game category. Rules and goals vary not only by relationship type but by individual instance.",
+      "status": "active",
+      "source_refs": [
+        {
+          "source_span_id": "src:c1:p18@0-p18@875",
+          "source_span": {
+            "start_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 18,
+              "char_offset": 0
+            },
+            "end_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 18,
+              "char_offset": 875
+            }
+          },
+          "quote": "Every type of relationship constitutes a different game – as does every specific relationship of the same type. And since each specific friendship is nested in the larger game of general friendship, we find that the overarching category contains enormous variation at the individual level.",
+          "role": "support",
+          "resolution": {
+            "status": "fallback_unit_span",
+            "method": "quote_not_found",
+            "match_count": 0
+          }
+        }
+      ],
+      "linked_concept_keys": [],
+      "linked_thread_keys": [],
+      "projection_role": "current_support",
+      "support_status": "source_backed",
+      "current_support": true,
+      "lineage_only": false,
+      "projection_warning": ""
+    },
+    {
+      "ref_id": "active_attention:abstraction-utility-inverse",
+      "item_id": "abstraction-utility-inverse",
+      "attention_tags": [
+        "focus",
+        "tension"
+      ],
+      "statement": "Truth and utility are inversely related in relationship principles: the more accurate a category-level principle is, the more abstract and unsatisfying it becomes.",
+      "status": "active",
+      "source_refs": [
+        {
+          "source_span_id": "src:c1:p19@502-p19@591",
+          "source_span": {
+            "start_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 19,
+              "char_offset": 502
+            },
+            "end_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 19,
+              "char_offset": 591
+            }
+          },
+          "quote": "the truer these principles are, the more abstract and unsatisfying they are likely to be.",
+          "role": "key_claim",
+          "resolution": {
+            "status": "matched",
+            "method": "exact_text",
+            "match_count": 1
+          }
+        }
+      ],
+      "linked_concept_keys": [],
+      "linked_thread_keys": [],
+      "projection_role": "current_support",
+      "support_status": "source_backed",
+      "current_support": true,
+      "lineage_only": false,
+      "projection_warning": ""
+    }
+  ],
+  "hot_items": [
+    {
+      "ref_id": "active_attention:transactional-relationships-framing",
+      "item_id": "transactional-relationships-framing",
+      "attention_tags": [
+        "focus",
+        "framework"
+      ],
+      "statement": "Relationships as value-transaction media: this is the governing frame introduced at the outset.",
+      "status": "active",
+      "source_refs": [
+        {
+          "source_span_id": "src:c1:p3@0-p3@56",
+          "source_span": {
+            "start_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 3,
+              "char_offset": 0
+            },
+            "end_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 3,
+              "char_offset": 56
+            }
+          },
+          "quote": "RELATIONSHIPS ARE THE MEDIA IN WHICH VALUE IS TRANSACTED",
+          "role": "thesis_statement",
+          "resolution": {
+            "status": "matched",
+            "method": "exact_text",
+            "match_count": 1
+          }
+        }
+      ],
+      "linked_concept_keys": [],
+      "linked_thread_keys": [],
+      "projection_role": "current_support",
+      "support_status": "source_backed",
+      "current_support": true,
+      "lineage_only": false,
+      "projection_warning": ""
+    },
+    {
+      "ref_id": "active_attention:default-skepticism-default",
+      "item_id": "default-skepticism-default",
+      "attention_tags": [
+        "tension",
+        "interpretation"
+      ],
+      "statement": "Default skepticism toward others: 'problem until they prove otherwise' — inverts normal social assumptions.",
+      "status": "active",
+      "source_refs": [
+        {
+          "source_span_id": "src:c1:p4@452-p4@516",
+          "source_span": {
+            "start_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 4,
+              "char_offset": 452
+            },
+            "end_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 4,
+              "char_offset": 516
+            }
+          },
+          "quote": "other people are typically a problem until they prove otherwise.",
+          "role": "key_claim",
+          "resolution": {
+            "status": "matched",
+            "method": "exact_text",
+            "match_count": 1
+          }
+        }
+      ],
+      "linked_concept_keys": [],
+      "linked_thread_keys": [],
+      "projection_role": "current_support",
+      "support_status": "source_backed",
+      "current_support": true,
+      "lineage_only": false,
+      "projection_warning": ""
+    },
+    {
+      "ref_id": "active_attention:covert-transaction-norm",
+      "item_id": "covert-transaction-norm",
+      "attention_tags": [
+        "focus",
+        "framework"
+      ],
+      "statement": "Value transactions in relationships are covert by necessity — negotiated with subtlety, tact, and indirectness. The exchange is structurally hidden, not just unconsciously operated.",
+      "status": "active",
+      "source_refs": [
+        {
+          "source_span_id": "src:c1:p14@475-p14@616",
+          "source_span": {
+            "start_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 14,
+              "char_offset": 475
+            },
+            "end_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 14,
+              "char_offset": 616
+            }
+          },
+          "quote": "the transaction of value in such relationships is typically negotiated covertly: it must be approached with subtlety, tact, and indirectness.",
+          "role": "key_claim",
+          "resolution": {
+            "status": "matched",
+            "method": "exact_text",
+            "match_count": 1
+          }
+        }
+      ],
+      "linked_concept_keys": [],
+      "linked_thread_keys": [],
+      "projection_role": "current_support",
+      "support_status": "source_backed",
+      "current_support": true,
+      "lineage_only": false,
+      "projection_warning": ""
+    },
+    {
+      "ref_id": "active_attention:value-mismatch-pain-awareness-conditional",
+      "item_id": "value-mismatch-pain-awareness-conditional",
+      "attention_tags": [
+        "focus",
+        "interpretation"
+      ],
+      "statement": "Relationship pain from value mismatch is awareness-conditional: distress emerges when the under-compensated party recognizes that the other party's perception has shifted since the point of transaction.",
+      "status": "active",
+      "source_refs": [
+        {
+          "source_span_id": "src:c1:p16@791-p16@896",
+          "source_span": {
+            "start_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 16,
+              "char_offset": 791
+            },
+            "end_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 16,
+              "char_offset": 896
+            }
+          },
+          "quote": "awareness of this violation can lead to a great deal of pain and distress for the under-compensated party",
+          "role": "key_claim",
+          "resolution": {
+            "status": "matched",
+            "method": "exact_text",
+            "match_count": 1
+          }
+        }
+      ],
+      "linked_concept_keys": [],
+      "linked_thread_keys": [],
+      "projection_role": "current_support",
+      "support_status": "source_backed",
+      "current_support": true,
+      "lineage_only": false,
+      "projection_warning": ""
+    }
+  ]
+}
+```
+
+#### Active Focus
+
+`active_focus_digest`:
+
+```json
+{
+  "active_items": [
+    {
+      "ref_id": "active_attention:transactional-relationships-framing",
+      "item_id": "transactional-relationships-framing",
+      "attention_tags": [
+        "focus",
+        "framework"
+      ],
+      "statement": "Relationships as value-transaction media: this is the governing frame introduced at the outset.",
+      "status": "active",
+      "source_refs": [
+        {
+          "source_span_id": "src:c1:p3@0-p3@56",
+          "source_span": {
+            "start_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 3,
+              "char_offset": 0
+            },
+            "end_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 3,
+              "char_offset": 56
+            }
+          },
+          "quote": "RELATIONSHIPS ARE THE MEDIA IN WHICH VALUE IS TRANSACTED",
+          "role": "thesis_statement",
+          "resolution": {
+            "status": "matched",
+            "method": "exact_text",
+            "match_count": 1
+          }
+        }
+      ],
+      "linked_concept_keys": [],
+      "linked_thread_keys": [],
+      "projection_role": "current_support",
+      "support_status": "source_backed",
+      "current_support": true,
+      "lineage_only": false,
+      "projection_warning": ""
+    },
+    {
+      "ref_id": "active_attention:default-skepticism-default",
+      "item_id": "default-skepticism-default",
+      "attention_tags": [
+        "tension",
+        "interpretation"
+      ],
+      "statement": "Default skepticism toward others: 'problem until they prove otherwise' — inverts normal social assumptions.",
+      "status": "active",
+      "source_refs": [
+        {
+          "source_span_id": "src:c1:p4@452-p4@516",
+          "source_span": {
+            "start_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 4,
+              "char_offset": 452
+            },
+            "end_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 4,
+              "char_offset": 516
+            }
+          },
+          "quote": "other people are typically a problem until they prove otherwise.",
+          "role": "key_claim",
+          "resolution": {
+            "status": "matched",
+            "method": "exact_text",
+            "match_count": 1
+          }
+        }
+      ],
+      "linked_concept_keys": [],
+      "linked_thread_keys": [],
+      "projection_role": "current_support",
+      "support_status": "source_backed",
+      "current_support": true,
+      "lineage_only": false,
+      "projection_warning": ""
+    },
+    {
+      "ref_id": "active_attention:covert-transaction-norm",
+      "item_id": "covert-transaction-norm",
+      "attention_tags": [
+        "focus",
+        "framework"
+      ],
+      "statement": "Value transactions in relationships are covert by necessity — negotiated with subtlety, tact, and indirectness. The exchange is structurally hidden, not just unconsciously operated.",
+      "status": "active",
+      "source_refs": [
+        {
+          "source_span_id": "src:c1:p14@475-p14@616",
+          "source_span": {
+            "start_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 14,
+              "char_offset": 475
+            },
+            "end_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 14,
+              "char_offset": 616
+            }
+          },
+          "quote": "the transaction of value in such relationships is typically negotiated covertly: it must be approached with subtlety, tact, and indirectness.",
+          "role": "key_claim",
+          "resolution": {
+            "status": "matched",
+            "method": "exact_text",
+            "match_count": 1
+          }
+        }
+      ],
+      "linked_concept_keys": [],
+      "linked_thread_keys": [],
+      "projection_role": "current_support",
+      "support_status": "source_backed",
+      "current_support": true,
+      "lineage_only": false,
+      "projection_warning": ""
+    },
+    {
+      "ref_id": "active_attention:value-mismatch-pain-awareness-conditional",
+      "item_id": "value-mismatch-pain-awareness-conditional",
+      "attention_tags": [
+        "focus",
+        "interpretation"
+      ],
+      "statement": "Relationship pain from value mismatch is awareness-conditional: distress emerges when the under-compensated party recognizes that the other party's perception has shifted since the point of transaction.",
+      "status": "active",
+      "source_refs": [
+        {
+          "source_span_id": "src:c1:p16@791-p16@896",
+          "source_span": {
+            "start_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 16,
+              "char_offset": 791
+            },
+            "end_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 16,
+              "char_offset": 896
+            }
+          },
+          "quote": "awareness of this violation can lead to a great deal of pain and distress for the under-compensated party",
+          "role": "key_claim",
+          "resolution": {
+            "status": "matched",
+            "method": "exact_text",
+            "match_count": 1
+          }
+        }
+      ],
+      "linked_concept_keys": [],
+      "linked_thread_keys": [],
+      "projection_role": "current_support",
+      "support_status": "source_backed",
+      "current_support": true,
+      "lineage_only": false,
+      "projection_warning": ""
+    }
+  ],
+  "recent_reactions": [
+    {
+      "ref_id": "reaction:rx:Full_Content:src:c1:p22@0-p23@663:discern:21",
+      "reaction_id": "rx:Full_Content:src:c1:p22@0-p23@663:discern:21",
+      "type": "discern",
+      "thought": "The pivot from \"perceived\" to \"perception of value\" is the book's key move in this unit — not what is actually valuable, but what is perceived as valuable. This is where the framework becomes distinctively about subjective evaluation rather than objective exchange.",
+      "emitted_at_source_span_id": "src:c1:p22@0-p23@663",
+      "primary_source_ref": {
+        "source_span_id": "src:c1:p23@468-p23@663",
+        "source_span": {
+          "start_cursor": {
+            "chapter_id": 1,
+            "chapter_ref": "Full Content",
+            "paragraph_index": 23,
+            "char_offset": 468
+          },
+          "end_cursor": {
+            "chapter_id": 1,
+            "chapter_ref": "Full Content",
+            "paragraph_index": 23,
+            "char_offset": 663
+          }
+        },
+        "quote": "And if people enter into (and remain in) sexual relationships with their perceived best options, then the perception of value must be the mechanism that lies at the heart of sexual relationships.",
+        "role": "reaction_anchor",
+        "resolution": {
+          "status": "matched",
+          "method": "exact_text",
+          "match_count": 1
+        }
+      },
+      "source_quote": "And if people enter into (and remain in) sexual relationships with their perceived best options, then the perception of value must be the mechanism that lies at the heart of sexual relationships.",
+      "projection_role": "visible_trace",
+      "support_status": "visible_trace",
+      "visible_trace_support": true,
+      "current_support": false,
+      "projection_warning": "visible_trace_not_semantic_memory"
+    },
+    {
+      "ref_id": "reaction:rx:Full_Content:src:c1:p24@0-p26@122:discern:22",
+      "reaction_id": "rx:Full_Content:src:c1:p24@0-p26@122:discern:22",
+      "type": "discern",
+      "thought": "The reversibility test as epistemic arbiter: the model's ability to explain its own inputs makes it more fundamental than those inputs. This subordinates emotion to the economic framework rather than placing them in parallel — a strong asymmetric move that runs counter to most popular relationship writing.",
+      "emitted_at_source_span_id": "src:c1:p24@0-p26@122",
+      "primary_source_ref": {
+        "source_span_id": "src:c1:p25@500-p25@662",
+        "source_span": {
+          "start_cursor": {
+            "chapter_id": 1,
+            "chapter_ref": "Full Content",
+            "paragraph_index": 25,
+            "char_offset": 500
+          },
+          "end_cursor": {
+            "chapter_id": 1,
+            "chapter_ref": "Full Content",
+            "paragraph_index": 25,
+            "char_offset": 662
+          }
+        },
+        "quote": "And since the model can explain emotions (but emotions cannot explain the model), this means that the model is more fundamentally true and should take precedence.",
+        "role": "reaction_anchor",
+        "resolution": {
+          "status": "matched",
+          "method": "exact_text",
+          "match_count": 1
+        }
+      },
+      "source_quote": "And since the model can explain emotions (but emotions cannot explain the model), this means that the model is more fundamentally true and should take precedence.",
+      "projection_role": "visible_trace",
+      "support_status": "visible_trace",
+      "visible_trace_support": true,
+      "current_support": false,
+      "projection_warning": "visible_trace_not_semantic_memory"
+    }
+  ]
+}
+```
 
 #### Concept Digest
-- `comparable-value-exchange`
-  - concept_type: `concept`
-  - projection_role: `current_support`
-  - support_status: `source_backed`
-  - sample quotes:
-    - the media in which unequal goods of comparable value are exchanged
-  - source refs:
-    - `src:c1:p12@464-p12@530`; role `refined_definition`; resolution `matched`
-      - quote: the media in which unequal goods of comparable value are exchanged
-- `epistemic-opacity-of-valuation`
-  - concept_type: `concept`
-  - projection_role: `current_support`
-  - support_status: `source_backed`
-  - sample quotes:
-    - this valuation typically occurs beneath the threshold of awareness. This means that neither party can ever know the other's true valuation of a specific good (which exists in the inaccessible privacy of the other's mind), and also that each party typically doesn't entirely know his or her own valuation of the good in question.
-  - source refs:
-    - `src:c1:p11@0-p11@916`; role `support`; resolution `fallback_unit_span`
-      - quote: this valuation typically occurs beneath the threshold of awareness. This means that neither party can ever know the other's true valuation of a specific good (which exists in the inaccessible privacy of the other's mind), and also that each party typically doesn't entirely know his or her own valuation of the good in question.
-- `prosocial-neutral-instrumental`
-  - concept_type: `concept`
-  - projection_role: `current_support`
-  - support_status: `source_backed`
-  - sample quotes:
-    - This is, by definition, a prosocial solution, as it creates the basis of society.
-  - source refs:
-    - `src:c1:p6@472-p6@553`; role `key_definition`; resolution `matched`
-      - quote: This is, by definition, a prosocial solution, as it creates the basis of society.
+
+`concept_digest`:
+
+```json
+[
+  {
+    "ref_id": "concept:comparable-value-exchange",
+    "concept_key": "comparable-value-exchange",
+    "concept_type": "concept",
+    "source_refs": [
+      {
+        "source_span_id": "src:c1:p12@464-p12@530",
+        "source_span": {
+          "start_cursor": {
+            "chapter_id": 1,
+            "chapter_ref": "Full Content",
+            "paragraph_index": 12,
+            "char_offset": 464
+          },
+          "end_cursor": {
+            "chapter_id": 1,
+            "chapter_ref": "Full Content",
+            "paragraph_index": 12,
+            "char_offset": 530
+          }
+        },
+        "quote": "the media in which unequal goods of comparable value are exchanged",
+        "role": "refined_definition",
+        "resolution": {
+          "status": "matched",
+          "method": "exact_text",
+          "match_count": 1
+        }
+      }
+    ],
+    "sample_quotes": [
+      "the media in which unequal goods of comparable value are exchanged"
+    ],
+    "rationale": "",
+    "projection_role": "current_support",
+    "support_status": "source_backed",
+    "current_support": true,
+    "lineage_only": false,
+    "projection_warning": ""
+  },
+  {
+    "ref_id": "concept:epistemic-opacity-of-valuation",
+    "concept_key": "epistemic-opacity-of-valuation",
+    "concept_type": "concept",
+    "source_refs": [
+      {
+        "source_span_id": "src:c1:p11@0-p11@916",
+        "source_span": {
+          "start_cursor": {
+            "chapter_id": 1,
+            "chapter_ref": "Full Content",
+            "paragraph_index": 11,
+            "char_offset": 0
+          },
+          "end_cursor": {
+            "chapter_id": 1,
+            "chapter_ref": "Full Content",
+            "paragraph_index": 11,
+            "char_offset": 916
+          }
+        },
+        "quote": "this valuation typically occurs beneath the threshold of awareness. This means that neither party can ever know the other's true valuation of a specific good (which exists in the inaccessible privacy of the other's mind), and also that each party typically doesn't entirely know his or her own valuation of the good in question.",
+        "role": "support",
+        "resolution": {
+          "status": "fallback_unit_span",
+          "method": "quote_not_found",
+          "match_count": 0
+        }
+      }
+    ],
+    "sample_quotes": [
+      "this valuation typically occurs beneath the threshold of awareness. This means that neither party can ever know the other's true valuation of a specific good (which exists in the inaccessible privacy of the other's mind), and also that each party typically doesn't entirely know his or her own valuation of the good in question."
+    ],
+    "rationale": "",
+    "projection_role": "current_support",
+    "support_status": "source_backed",
+    "current_support": true,
+    "lineage_only": false,
+    "projection_warning": ""
+  },
+  {
+    "ref_id": "concept:prosocial-neutral-instrumental",
+    "concept_key": "prosocial-neutral-instrumental",
+    "concept_type": "concept",
+    "source_refs": [
+      {
+        "source_span_id": "src:c1:p6@472-p6@553",
+        "source_span": {
+          "start_cursor": {
+            "chapter_id": 1,
+            "chapter_ref": "Full Content",
+            "paragraph_index": 6,
+            "char_offset": 472
+          },
+          "end_cursor": {
+            "chapter_id": 1,
+            "chapter_ref": "Full Content",
+            "paragraph_index": 6,
+            "char_offset": 553
+          }
+        },
+        "quote": "This is, by definition, a prosocial solution, as it creates the basis of society.",
+        "role": "key_definition",
+        "resolution": {
+          "status": "matched",
+          "method": "exact_text",
+          "match_count": 1
+        }
+      }
+    ],
+    "sample_quotes": [
+      "This is, by definition, a prosocial solution, as it creates the basis of society."
+    ],
+    "rationale": "",
+    "projection_role": "current_support",
+    "support_status": "source_backed",
+    "current_support": true,
+    "lineage_only": false,
+    "projection_warning": ""
+  }
+]
+```
 
 #### Thread Digest
-- `perception-vs-actuality-mechanism`
-  - thread_type: `thread`
-  - projection_role: `current_support`
-  - support_status: `source_backed`
-  - sample quotes:
-    - then the perception of value must be the mechanism that lies at the heart of sexual relationships.
-  - source refs:
-    - `src:c1:p23@565-p23@663`; role `key_claim`; resolution `matched`
-      - quote: then the perception of value must be the mechanism that lies at the heart of sexual relationships.
+
+`thread_digest`:
+
+```json
+[
+  {
+    "ref_id": "thread:perception-vs-actuality-mechanism",
+    "thread_key": "perception-vs-actuality-mechanism",
+    "thread_type": "thread",
+    "source_refs": [
+      {
+        "source_span_id": "src:c1:p23@565-p23@663",
+        "source_span": {
+          "start_cursor": {
+            "chapter_id": 1,
+            "chapter_ref": "Full Content",
+            "paragraph_index": 23,
+            "char_offset": 565
+          },
+          "end_cursor": {
+            "chapter_id": 1,
+            "chapter_ref": "Full Content",
+            "paragraph_index": 23,
+            "char_offset": 663
+          }
+        },
+        "quote": "then the perception of value must be the mechanism that lies at the heart of sexual relationships.",
+        "role": "key_claim",
+        "resolution": {
+          "status": "matched",
+          "method": "exact_text",
+          "match_count": 1
+        }
+      }
+    ],
+    "sample_quotes": [
+      "then the perception of value must be the mechanism that lies at the heart of sexual relationships."
+    ],
+    "rationale": "",
+    "projection_role": "current_support",
+    "support_status": "source_backed",
+    "current_support": true,
+    "lineage_only": false,
+    "projection_warning": ""
+  }
+]
+```
 
 #### Reflective Digest
-- `(none recorded in snapshot)`
+
+`reflective_digest`:
+
+```json
+{
+  "chapter_frames": [],
+  "book_frames": [],
+  "durable_definitions": []
+}
+```
 
 #### SourceRef Digest
-- `src:c1:p3@0-p3@56`; role `thesis_statement`; resolution `matched`
-  - quote: RELATIONSHIPS ARE THE MEDIA IN WHICH VALUE IS TRANSACTED
-- `src:c1:p4@452-p4@516`; role `key_claim`; resolution `matched`
-  - quote: other people are typically a problem until they prove otherwise.
-- `src:c1:p14@475-p14@616`; role `key_claim`; resolution `matched`
-  - quote: the transaction of value in such relationships is typically negotiated covertly: it must be approached with subtlety, tact, and indirectness.
-- `src:c1:p16@791-p16@896`; role `key_claim`; resolution `matched`
-  - quote: awareness of this violation can lead to a great deal of pain and distress for the under-compensated party
-- `src:c1:p18@0-p18@875`; role `support`; resolution `fallback_unit_span`
-  - quote: Every type of relationship constitutes a different game – as does every specific relationship of the same type. And since each specific friendship is nested in the larger game of general friendship, we find that the overarching category contains enormous variation at the individual level.
-- `src:c1:p19@502-p19@591`; role `key_claim`; resolution `matched`
-  - quote: the truer these principles are, the more abstract and unsatisfying they are likely to be.
-- `src:c1:p20@31-p20@430`; role `support`; resolution `matched`
-  - quote: On the one hand, greater specificity at the category level will make any claim less valid and reliable because it will increase the likelihood that it is contradicted at the individual level. On the other hand, less specificity at the category level will make any claim less practical and actionable because it will decrease the likelihood that it can be effectively applied at the individual level.
-- `src:c1:p12@464-p12@530`; role `refined_definition`; resolution `matched`
-  - quote: the media in which unequal goods of comparable value are exchanged
 
+`source_ref_digest`:
+
+```json
+[
+  {
+    "source_span_id": "src:c1:p3@0-p3@56",
+    "source_span": {
+      "start_cursor": {
+        "chapter_id": 1,
+        "chapter_ref": "Full Content",
+        "paragraph_index": 3,
+        "char_offset": 0
+      },
+      "end_cursor": {
+        "chapter_id": 1,
+        "chapter_ref": "Full Content",
+        "paragraph_index": 3,
+        "char_offset": 56
+      }
+    },
+    "quote": "RELATIONSHIPS ARE THE MEDIA IN WHICH VALUE IS TRANSACTED",
+    "role": "thesis_statement",
+    "resolution": {
+      "status": "matched",
+      "method": "exact_text",
+      "match_count": 1
+    }
+  },
+  {
+    "source_span_id": "src:c1:p4@452-p4@516",
+    "source_span": {
+      "start_cursor": {
+        "chapter_id": 1,
+        "chapter_ref": "Full Content",
+        "paragraph_index": 4,
+        "char_offset": 452
+      },
+      "end_cursor": {
+        "chapter_id": 1,
+        "chapter_ref": "Full Content",
+        "paragraph_index": 4,
+        "char_offset": 516
+      }
+    },
+    "quote": "other people are typically a problem until they prove otherwise.",
+    "role": "key_claim",
+    "resolution": {
+      "status": "matched",
+      "method": "exact_text",
+      "match_count": 1
+    }
+  },
+  {
+    "source_span_id": "src:c1:p14@475-p14@616",
+    "source_span": {
+      "start_cursor": {
+        "chapter_id": 1,
+        "chapter_ref": "Full Content",
+        "paragraph_index": 14,
+        "char_offset": 475
+      },
+      "end_cursor": {
+        "chapter_id": 1,
+        "chapter_ref": "Full Content",
+        "paragraph_index": 14,
+        "char_offset": 616
+      }
+    },
+    "quote": "the transaction of value in such relationships is typically negotiated covertly: it must be approached with subtlety, tact, and indirectness.",
+    "role": "key_claim",
+    "resolution": {
+      "status": "matched",
+      "method": "exact_text",
+      "match_count": 1
+    }
+  },
+  {
+    "source_span_id": "src:c1:p16@791-p16@896",
+    "source_span": {
+      "start_cursor": {
+        "chapter_id": 1,
+        "chapter_ref": "Full Content",
+        "paragraph_index": 16,
+        "char_offset": 791
+      },
+      "end_cursor": {
+        "chapter_id": 1,
+        "chapter_ref": "Full Content",
+        "paragraph_index": 16,
+        "char_offset": 896
+      }
+    },
+    "quote": "awareness of this violation can lead to a great deal of pain and distress for the under-compensated party",
+    "role": "key_claim",
+    "resolution": {
+      "status": "matched",
+      "method": "exact_text",
+      "match_count": 1
+    }
+  },
+  {
+    "source_span_id": "src:c1:p18@0-p18@875",
+    "source_span": {
+      "start_cursor": {
+        "chapter_id": 1,
+        "chapter_ref": "Full Content",
+        "paragraph_index": 18,
+        "char_offset": 0
+      },
+      "end_cursor": {
+        "chapter_id": 1,
+        "chapter_ref": "Full Content",
+        "paragraph_index": 18,
+        "char_offset": 875
+      }
+    },
+    "quote": "Every type of relationship constitutes a different game – as does every specific relationship of the same type. And since each specific friendship is nested in the larger game of general friendship, we find that the overarching category contains enormous variation at the individual level.",
+    "role": "support",
+    "resolution": {
+      "status": "fallback_unit_span",
+      "method": "quote_not_found",
+      "match_count": 0
+    }
+  },
+  {
+    "source_span_id": "src:c1:p19@502-p19@591",
+    "source_span": {
+      "start_cursor": {
+        "chapter_id": 1,
+        "chapter_ref": "Full Content",
+        "paragraph_index": 19,
+        "char_offset": 502
+      },
+      "end_cursor": {
+        "chapter_id": 1,
+        "chapter_ref": "Full Content",
+        "paragraph_index": 19,
+        "char_offset": 591
+      }
+    },
+    "quote": "the truer these principles are, the more abstract and unsatisfying they are likely to be.",
+    "role": "key_claim",
+    "resolution": {
+      "status": "matched",
+      "method": "exact_text",
+      "match_count": 1
+    }
+  },
+  {
+    "source_span_id": "src:c1:p20@31-p20@430",
+    "source_span": {
+      "start_cursor": {
+        "chapter_id": 1,
+        "chapter_ref": "Full Content",
+        "paragraph_index": 20,
+        "char_offset": 31
+      },
+      "end_cursor": {
+        "chapter_id": 1,
+        "chapter_ref": "Full Content",
+        "paragraph_index": 20,
+        "char_offset": 430
+      }
+    },
+    "quote": "On the one hand, greater specificity at the category level will make any claim less valid and reliable because it will increase the likelihood that it is contradicted at the individual level. On the other hand, less specificity at the category level will make any claim less practical and actionable because it will decrease the likelihood that it can be effectively applied at the individual level.",
+    "role": "support",
+    "resolution": {
+      "status": "matched",
+      "method": "exact_text",
+      "match_count": 1
+    }
+  },
+  {
+    "source_span_id": "src:c1:p12@464-p12@530",
+    "source_span": {
+      "start_cursor": {
+        "chapter_id": 1,
+        "chapter_ref": "Full Content",
+        "paragraph_index": 12,
+        "char_offset": 464
+      },
+      "end_cursor": {
+        "chapter_id": 1,
+        "chapter_ref": "Full Content",
+        "paragraph_index": 12,
+        "char_offset": 530
+      }
+    },
+    "quote": "the media in which unequal goods of comparable value are exchanged",
+    "role": "refined_definition",
+    "resolution": {
+      "status": "matched",
+      "method": "exact_text",
+      "match_count": 1
+    }
+  }
+]
+```
 #### Score Rationale
 - salience: `4`
 - mainline_fidelity: `4`
@@ -2864,122 +4713,1097 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
 ```
 
 #### Active Attention
-- `transactional-relationships-framing`
-  - tags: `focus, framework`
-  - status: `active`
-  - projection_role: `current_support`
-  - support_status: `source_backed`
-  - statement: Relationships as value-transaction media: this is the governing frame introduced at the outset.
-  - source refs:
-    - `src:c1:p3@0-p3@56`; role `thesis_statement`; resolution `matched`
-      - quote: RELATIONSHIPS ARE THE MEDIA IN WHICH VALUE IS TRANSACTED
-- `default-skepticism-default`
-  - tags: `tension, interpretation`
-  - status: `active`
-  - projection_role: `current_support`
-  - support_status: `source_backed`
-  - statement: Default skepticism toward others: 'problem until they prove otherwise' — inverts normal social assumptions.
-  - source refs:
-    - `src:c1:p4@452-p4@516`; role `key_claim`; resolution `matched`
-      - quote: other people are typically a problem until they prove otherwise.
-- `covert-transaction-norm`
-  - tags: `focus, framework`
-  - status: `active`
-  - projection_role: `current_support`
-  - support_status: `source_backed`
-  - statement: Value transactions in relationships are covert by necessity — negotiated with subtlety, tact, and indirectness. The exchange is structurally hidden, not just unconsciously operated.
-  - source refs:
-    - `src:c1:p14@475-p14@616`; role `key_claim`; resolution `matched`
-      - quote: the transaction of value in such relationships is typically negotiated covertly: it must be approached with subtlety, tact, and indirectness.
-- `value-mismatch-pain-awareness-conditional`
-  - tags: `focus, interpretation`
-  - status: `active`
-  - projection_role: `current_support`
-  - support_status: `source_backed`
-  - statement: Relationship pain from value mismatch is awareness-conditional: distress emerges when the under-compensated party recognizes that the other party's perception has shifted since the point of transaction.
-  - source refs:
-    - `src:c1:p16@791-p16@896`; role `key_claim`; resolution `matched`
-      - quote: awareness of this violation can lead to a great deal of pain and distress for the under-compensated party
-- `nested-game-structure`
-  - tags: `focus, framework`
-  - status: `active`
-  - projection_role: `current_support`
-  - support_status: `source_backed`
-  - statement: Nested game structure: each specific relationship is its own sub-game within a meta-game category. Rules and goals vary not only by relationship type but by individual instance.
-  - source refs:
-    - `src:c1:p18@0-p18@875`; role `support`; resolution `fallback_unit_span`
-      - quote: Every type of relationship constitutes a different game – as does every specific relationship of the same type. And since each specific friendship is nested in the larger game of general friendship, we find that the overarching category contains enormous variation at the individual level.
-- `abstraction-utility-inverse`
-  - tags: `focus, tension`
-  - status: `active`
-  - projection_role: `current_support`
-  - support_status: `source_backed`
-  - statement: Truth and utility are inversely related in relationship principles: the more accurate a category-level principle is, the more abstract and unsatisfying it becomes.
-  - source refs:
-    - `src:c1:p19@502-p19@591`; role `key_claim`; resolution `matched`
-      - quote: the truer these principles are, the more abstract and unsatisfying they are likely to be.
+
+`active_attention_digest`:
+
+```json
+{
+  "active_items": [
+    {
+      "ref_id": "active_attention:transactional-relationships-framing",
+      "item_id": "transactional-relationships-framing",
+      "attention_tags": [
+        "focus",
+        "framework"
+      ],
+      "statement": "Relationships as value-transaction media: this is the governing frame introduced at the outset.",
+      "status": "active",
+      "source_refs": [
+        {
+          "source_span_id": "src:c1:p3@0-p3@56",
+          "source_span": {
+            "start_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 3,
+              "char_offset": 0
+            },
+            "end_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 3,
+              "char_offset": 56
+            }
+          },
+          "quote": "RELATIONSHIPS ARE THE MEDIA IN WHICH VALUE IS TRANSACTED",
+          "role": "thesis_statement",
+          "resolution": {
+            "status": "matched",
+            "method": "exact_text",
+            "match_count": 1
+          }
+        }
+      ],
+      "linked_concept_keys": [],
+      "linked_thread_keys": [],
+      "projection_role": "current_support",
+      "support_status": "source_backed",
+      "current_support": true,
+      "lineage_only": false,
+      "projection_warning": ""
+    },
+    {
+      "ref_id": "active_attention:default-skepticism-default",
+      "item_id": "default-skepticism-default",
+      "attention_tags": [
+        "tension",
+        "interpretation"
+      ],
+      "statement": "Default skepticism toward others: 'problem until they prove otherwise' — inverts normal social assumptions.",
+      "status": "active",
+      "source_refs": [
+        {
+          "source_span_id": "src:c1:p4@452-p4@516",
+          "source_span": {
+            "start_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 4,
+              "char_offset": 452
+            },
+            "end_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 4,
+              "char_offset": 516
+            }
+          },
+          "quote": "other people are typically a problem until they prove otherwise.",
+          "role": "key_claim",
+          "resolution": {
+            "status": "matched",
+            "method": "exact_text",
+            "match_count": 1
+          }
+        }
+      ],
+      "linked_concept_keys": [],
+      "linked_thread_keys": [],
+      "projection_role": "current_support",
+      "support_status": "source_backed",
+      "current_support": true,
+      "lineage_only": false,
+      "projection_warning": ""
+    },
+    {
+      "ref_id": "active_attention:covert-transaction-norm",
+      "item_id": "covert-transaction-norm",
+      "attention_tags": [
+        "focus",
+        "framework"
+      ],
+      "statement": "Value transactions in relationships are covert by necessity — negotiated with subtlety, tact, and indirectness. The exchange is structurally hidden, not just unconsciously operated.",
+      "status": "active",
+      "source_refs": [
+        {
+          "source_span_id": "src:c1:p14@475-p14@616",
+          "source_span": {
+            "start_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 14,
+              "char_offset": 475
+            },
+            "end_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 14,
+              "char_offset": 616
+            }
+          },
+          "quote": "the transaction of value in such relationships is typically negotiated covertly: it must be approached with subtlety, tact, and indirectness.",
+          "role": "key_claim",
+          "resolution": {
+            "status": "matched",
+            "method": "exact_text",
+            "match_count": 1
+          }
+        }
+      ],
+      "linked_concept_keys": [],
+      "linked_thread_keys": [],
+      "projection_role": "current_support",
+      "support_status": "source_backed",
+      "current_support": true,
+      "lineage_only": false,
+      "projection_warning": ""
+    },
+    {
+      "ref_id": "active_attention:value-mismatch-pain-awareness-conditional",
+      "item_id": "value-mismatch-pain-awareness-conditional",
+      "attention_tags": [
+        "focus",
+        "interpretation"
+      ],
+      "statement": "Relationship pain from value mismatch is awareness-conditional: distress emerges when the under-compensated party recognizes that the other party's perception has shifted since the point of transaction.",
+      "status": "active",
+      "source_refs": [
+        {
+          "source_span_id": "src:c1:p16@791-p16@896",
+          "source_span": {
+            "start_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 16,
+              "char_offset": 791
+            },
+            "end_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 16,
+              "char_offset": 896
+            }
+          },
+          "quote": "awareness of this violation can lead to a great deal of pain and distress for the under-compensated party",
+          "role": "key_claim",
+          "resolution": {
+            "status": "matched",
+            "method": "exact_text",
+            "match_count": 1
+          }
+        }
+      ],
+      "linked_concept_keys": [],
+      "linked_thread_keys": [],
+      "projection_role": "current_support",
+      "support_status": "source_backed",
+      "current_support": true,
+      "lineage_only": false,
+      "projection_warning": ""
+    },
+    {
+      "ref_id": "active_attention:nested-game-structure",
+      "item_id": "nested-game-structure",
+      "attention_tags": [
+        "focus",
+        "framework"
+      ],
+      "statement": "Nested game structure: each specific relationship is its own sub-game within a meta-game category. Rules and goals vary not only by relationship type but by individual instance.",
+      "status": "active",
+      "source_refs": [
+        {
+          "source_span_id": "src:c1:p18@0-p18@875",
+          "source_span": {
+            "start_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 18,
+              "char_offset": 0
+            },
+            "end_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 18,
+              "char_offset": 875
+            }
+          },
+          "quote": "Every type of relationship constitutes a different game – as does every specific relationship of the same type. And since each specific friendship is nested in the larger game of general friendship, we find that the overarching category contains enormous variation at the individual level.",
+          "role": "support",
+          "resolution": {
+            "status": "fallback_unit_span",
+            "method": "quote_not_found",
+            "match_count": 0
+          }
+        }
+      ],
+      "linked_concept_keys": [],
+      "linked_thread_keys": [],
+      "projection_role": "current_support",
+      "support_status": "source_backed",
+      "current_support": true,
+      "lineage_only": false,
+      "projection_warning": ""
+    },
+    {
+      "ref_id": "active_attention:abstraction-utility-inverse",
+      "item_id": "abstraction-utility-inverse",
+      "attention_tags": [
+        "focus",
+        "tension"
+      ],
+      "statement": "Truth and utility are inversely related in relationship principles: the more accurate a category-level principle is, the more abstract and unsatisfying it becomes.",
+      "status": "active",
+      "source_refs": [
+        {
+          "source_span_id": "src:c1:p19@502-p19@591",
+          "source_span": {
+            "start_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 19,
+              "char_offset": 502
+            },
+            "end_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 19,
+              "char_offset": 591
+            }
+          },
+          "quote": "the truer these principles are, the more abstract and unsatisfying they are likely to be.",
+          "role": "key_claim",
+          "resolution": {
+            "status": "matched",
+            "method": "exact_text",
+            "match_count": 1
+          }
+        }
+      ],
+      "linked_concept_keys": [],
+      "linked_thread_keys": [],
+      "projection_role": "current_support",
+      "support_status": "source_backed",
+      "current_support": true,
+      "lineage_only": false,
+      "projection_warning": ""
+    }
+  ],
+  "hot_items": [
+    {
+      "ref_id": "active_attention:transactional-relationships-framing",
+      "item_id": "transactional-relationships-framing",
+      "attention_tags": [
+        "focus",
+        "framework"
+      ],
+      "statement": "Relationships as value-transaction media: this is the governing frame introduced at the outset.",
+      "status": "active",
+      "source_refs": [
+        {
+          "source_span_id": "src:c1:p3@0-p3@56",
+          "source_span": {
+            "start_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 3,
+              "char_offset": 0
+            },
+            "end_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 3,
+              "char_offset": 56
+            }
+          },
+          "quote": "RELATIONSHIPS ARE THE MEDIA IN WHICH VALUE IS TRANSACTED",
+          "role": "thesis_statement",
+          "resolution": {
+            "status": "matched",
+            "method": "exact_text",
+            "match_count": 1
+          }
+        }
+      ],
+      "linked_concept_keys": [],
+      "linked_thread_keys": [],
+      "projection_role": "current_support",
+      "support_status": "source_backed",
+      "current_support": true,
+      "lineage_only": false,
+      "projection_warning": ""
+    },
+    {
+      "ref_id": "active_attention:default-skepticism-default",
+      "item_id": "default-skepticism-default",
+      "attention_tags": [
+        "tension",
+        "interpretation"
+      ],
+      "statement": "Default skepticism toward others: 'problem until they prove otherwise' — inverts normal social assumptions.",
+      "status": "active",
+      "source_refs": [
+        {
+          "source_span_id": "src:c1:p4@452-p4@516",
+          "source_span": {
+            "start_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 4,
+              "char_offset": 452
+            },
+            "end_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 4,
+              "char_offset": 516
+            }
+          },
+          "quote": "other people are typically a problem until they prove otherwise.",
+          "role": "key_claim",
+          "resolution": {
+            "status": "matched",
+            "method": "exact_text",
+            "match_count": 1
+          }
+        }
+      ],
+      "linked_concept_keys": [],
+      "linked_thread_keys": [],
+      "projection_role": "current_support",
+      "support_status": "source_backed",
+      "current_support": true,
+      "lineage_only": false,
+      "projection_warning": ""
+    },
+    {
+      "ref_id": "active_attention:covert-transaction-norm",
+      "item_id": "covert-transaction-norm",
+      "attention_tags": [
+        "focus",
+        "framework"
+      ],
+      "statement": "Value transactions in relationships are covert by necessity — negotiated with subtlety, tact, and indirectness. The exchange is structurally hidden, not just unconsciously operated.",
+      "status": "active",
+      "source_refs": [
+        {
+          "source_span_id": "src:c1:p14@475-p14@616",
+          "source_span": {
+            "start_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 14,
+              "char_offset": 475
+            },
+            "end_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 14,
+              "char_offset": 616
+            }
+          },
+          "quote": "the transaction of value in such relationships is typically negotiated covertly: it must be approached with subtlety, tact, and indirectness.",
+          "role": "key_claim",
+          "resolution": {
+            "status": "matched",
+            "method": "exact_text",
+            "match_count": 1
+          }
+        }
+      ],
+      "linked_concept_keys": [],
+      "linked_thread_keys": [],
+      "projection_role": "current_support",
+      "support_status": "source_backed",
+      "current_support": true,
+      "lineage_only": false,
+      "projection_warning": ""
+    },
+    {
+      "ref_id": "active_attention:value-mismatch-pain-awareness-conditional",
+      "item_id": "value-mismatch-pain-awareness-conditional",
+      "attention_tags": [
+        "focus",
+        "interpretation"
+      ],
+      "statement": "Relationship pain from value mismatch is awareness-conditional: distress emerges when the under-compensated party recognizes that the other party's perception has shifted since the point of transaction.",
+      "status": "active",
+      "source_refs": [
+        {
+          "source_span_id": "src:c1:p16@791-p16@896",
+          "source_span": {
+            "start_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 16,
+              "char_offset": 791
+            },
+            "end_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 16,
+              "char_offset": 896
+            }
+          },
+          "quote": "awareness of this violation can lead to a great deal of pain and distress for the under-compensated party",
+          "role": "key_claim",
+          "resolution": {
+            "status": "matched",
+            "method": "exact_text",
+            "match_count": 1
+          }
+        }
+      ],
+      "linked_concept_keys": [],
+      "linked_thread_keys": [],
+      "projection_role": "current_support",
+      "support_status": "source_backed",
+      "current_support": true,
+      "lineage_only": false,
+      "projection_warning": ""
+    }
+  ]
+}
+```
+
+#### Active Focus
+
+`active_focus_digest`:
+
+```json
+{
+  "active_items": [
+    {
+      "ref_id": "active_attention:transactional-relationships-framing",
+      "item_id": "transactional-relationships-framing",
+      "attention_tags": [
+        "focus",
+        "framework"
+      ],
+      "statement": "Relationships as value-transaction media: this is the governing frame introduced at the outset.",
+      "status": "active",
+      "source_refs": [
+        {
+          "source_span_id": "src:c1:p3@0-p3@56",
+          "source_span": {
+            "start_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 3,
+              "char_offset": 0
+            },
+            "end_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 3,
+              "char_offset": 56
+            }
+          },
+          "quote": "RELATIONSHIPS ARE THE MEDIA IN WHICH VALUE IS TRANSACTED",
+          "role": "thesis_statement",
+          "resolution": {
+            "status": "matched",
+            "method": "exact_text",
+            "match_count": 1
+          }
+        }
+      ],
+      "linked_concept_keys": [],
+      "linked_thread_keys": [],
+      "projection_role": "current_support",
+      "support_status": "source_backed",
+      "current_support": true,
+      "lineage_only": false,
+      "projection_warning": ""
+    },
+    {
+      "ref_id": "active_attention:default-skepticism-default",
+      "item_id": "default-skepticism-default",
+      "attention_tags": [
+        "tension",
+        "interpretation"
+      ],
+      "statement": "Default skepticism toward others: 'problem until they prove otherwise' — inverts normal social assumptions.",
+      "status": "active",
+      "source_refs": [
+        {
+          "source_span_id": "src:c1:p4@452-p4@516",
+          "source_span": {
+            "start_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 4,
+              "char_offset": 452
+            },
+            "end_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 4,
+              "char_offset": 516
+            }
+          },
+          "quote": "other people are typically a problem until they prove otherwise.",
+          "role": "key_claim",
+          "resolution": {
+            "status": "matched",
+            "method": "exact_text",
+            "match_count": 1
+          }
+        }
+      ],
+      "linked_concept_keys": [],
+      "linked_thread_keys": [],
+      "projection_role": "current_support",
+      "support_status": "source_backed",
+      "current_support": true,
+      "lineage_only": false,
+      "projection_warning": ""
+    },
+    {
+      "ref_id": "active_attention:covert-transaction-norm",
+      "item_id": "covert-transaction-norm",
+      "attention_tags": [
+        "focus",
+        "framework"
+      ],
+      "statement": "Value transactions in relationships are covert by necessity — negotiated with subtlety, tact, and indirectness. The exchange is structurally hidden, not just unconsciously operated.",
+      "status": "active",
+      "source_refs": [
+        {
+          "source_span_id": "src:c1:p14@475-p14@616",
+          "source_span": {
+            "start_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 14,
+              "char_offset": 475
+            },
+            "end_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 14,
+              "char_offset": 616
+            }
+          },
+          "quote": "the transaction of value in such relationships is typically negotiated covertly: it must be approached with subtlety, tact, and indirectness.",
+          "role": "key_claim",
+          "resolution": {
+            "status": "matched",
+            "method": "exact_text",
+            "match_count": 1
+          }
+        }
+      ],
+      "linked_concept_keys": [],
+      "linked_thread_keys": [],
+      "projection_role": "current_support",
+      "support_status": "source_backed",
+      "current_support": true,
+      "lineage_only": false,
+      "projection_warning": ""
+    },
+    {
+      "ref_id": "active_attention:value-mismatch-pain-awareness-conditional",
+      "item_id": "value-mismatch-pain-awareness-conditional",
+      "attention_tags": [
+        "focus",
+        "interpretation"
+      ],
+      "statement": "Relationship pain from value mismatch is awareness-conditional: distress emerges when the under-compensated party recognizes that the other party's perception has shifted since the point of transaction.",
+      "status": "active",
+      "source_refs": [
+        {
+          "source_span_id": "src:c1:p16@791-p16@896",
+          "source_span": {
+            "start_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 16,
+              "char_offset": 791
+            },
+            "end_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 16,
+              "char_offset": 896
+            }
+          },
+          "quote": "awareness of this violation can lead to a great deal of pain and distress for the under-compensated party",
+          "role": "key_claim",
+          "resolution": {
+            "status": "matched",
+            "method": "exact_text",
+            "match_count": 1
+          }
+        }
+      ],
+      "linked_concept_keys": [],
+      "linked_thread_keys": [],
+      "projection_role": "current_support",
+      "support_status": "source_backed",
+      "current_support": true,
+      "lineage_only": false,
+      "projection_warning": ""
+    }
+  ],
+  "recent_reactions": [
+    {
+      "ref_id": "reaction:rx:Full_Content:src:c1:p42@0-p42@987:discern:36",
+      "reaction_id": "rx:Full_Content:src:c1:p42@0-p42@987:discern:36",
+      "type": "discern",
+      "thought": "The 'more elegantly' qualifier does real work here. Earlier material established that emotion transforms the value coefficient as a functional necessity. This unit goes further—it claims the emotional channel is not just a workaround for unconscious opacity but a superior method. Conscious awareness of the full valuation calculus would be epistemically accurate but behaviorally clumsy; emotion is elegant precisely because it condenses the signal down to what drives action. This upgrades the emotion-as-translator concept from necessity to optimization.",
+      "emitted_at_source_span_id": "src:c1:p42@0-p42@987",
+      "primary_source_ref": {
+        "source_span_id": "src:c1:p42@550-p42@677",
+        "source_span": {
+          "start_cursor": {
+            "chapter_id": 1,
+            "chapter_ref": "Full Content",
+            "paragraph_index": 42,
+            "char_offset": 550
+          },
+          "end_cursor": {
+            "chapter_id": 1,
+            "chapter_ref": "Full Content",
+            "paragraph_index": 42,
+            "char_offset": 677
+          }
+        },
+        "quote": "The feelings behind these statements accomplish the same goal more elegantly than awareness of the valuation process ever could",
+        "role": "reaction_anchor",
+        "resolution": {
+          "status": "matched",
+          "method": "exact_text",
+          "match_count": 1
+        }
+      },
+      "source_quote": "The feelings behind these statements accomplish the same goal more elegantly than awareness of the valuation process ever could",
+      "projection_role": "visible_trace",
+      "support_status": "visible_trace",
+      "visible_trace_support": true,
+      "current_support": false,
+      "projection_warning": "visible_trace_not_semantic_memory"
+    },
+    {
+      "ref_id": "reaction:rx:Full_Content:src:c1:p42@0-p42@987:discern:37",
+      "reaction_id": "rx:Full_Content:src:c1:p42@0-p42@987:discern:37",
+      "type": "discern",
+      "thought": "The word 'constituted' is precise: feelings are not merely accompanied by impulses but made of them. This tightens the mechanism—valuation flows into emotion, and emotion is already structured as action-readiness. The four verbs (approach, acquire, protect, maintain) map onto the behavioral register the value coefficient needs to express.",
+      "emitted_at_source_span_id": "src:c1:p42@0-p42@987",
+      "primary_source_ref": {
+        "source_span_id": "src:c1:p42@795-p42@987",
+        "source_span": {
+          "start_cursor": {
+            "chapter_id": 1,
+            "chapter_ref": "Full Content",
+            "paragraph_index": 42,
+            "char_offset": 795
+          },
+          "end_cursor": {
+            "chapter_id": 1,
+            "chapter_ref": "Full Content",
+            "paragraph_index": 42,
+            "char_offset": 987
+          }
+        },
+        "quote": "this communication is extremely useful because it is constituted by behavioral impulses that motivate action in alignment with this valuation: to approach, to acquire, to protect, to maintain.",
+        "role": "reaction_anchor",
+        "resolution": {
+          "status": "matched",
+          "method": "exact_text",
+          "match_count": 1
+        }
+      },
+      "source_quote": "this communication is extremely useful because it is constituted by behavioral impulses that motivate action in alignment with this valuation: to approach, to acquire, to protect, to maintain.",
+      "projection_role": "visible_trace",
+      "support_status": "visible_trace",
+      "visible_trace_support": true,
+      "current_support": false,
+      "projection_warning": "visible_trace_not_semantic_memory"
+    }
+  ]
+}
+```
 
 #### Concept Digest
-- `comparable-value-exchange`
-  - concept_type: `concept`
-  - projection_role: `current_support`
-  - support_status: `source_backed`
-  - sample quotes:
-    - the media in which unequal goods of comparable value are exchanged
-  - source refs:
-    - `src:c1:p12@464-p12@530`; role `refined_definition`; resolution `matched`
-      - quote: the media in which unequal goods of comparable value are exchanged
-- `emotion-as-translator`
-  - concept_type: `concept`
-  - projection_role: `current_support`
-  - support_status: `source_backed`
-  - sample quotes:
-    - the calculated value coefficient is transformed into an emotion
-  - source refs:
-    - `src:c1:p41@379-p41@442`; role `key_definition`; resolution `matched`
-      - quote: the calculated value coefficient is transformed into an emotion
-- `epistemic-opacity-of-valuation`
-  - concept_type: `concept`
-  - projection_role: `current_support`
-  - support_status: `source_backed`
-  - sample quotes:
-    - this valuation typically occurs beneath the threshold of awareness. This means that neither party can ever know the other's true valuation of a specific good (which exists in the inaccessible privacy of the other's mind), and also that each party typically doesn't entirely know his or her own valuation of the good in question.
-  - source refs:
-    - `src:c1:p11@0-p11@916`; role `support`; resolution `fallback_unit_span`
-      - quote: this valuation typically occurs beneath the threshold of awareness. This means that neither party can ever know the other's true valuation of a specific good (which exists in the inaccessible privacy of the other's mind), and also that each party typically doesn't entirely know his or her own valuation of the good in question.
+
+`concept_digest`:
+
+```json
+[
+  {
+    "ref_id": "concept:comparable-value-exchange",
+    "concept_key": "comparable-value-exchange",
+    "concept_type": "concept",
+    "source_refs": [
+      {
+        "source_span_id": "src:c1:p12@464-p12@530",
+        "source_span": {
+          "start_cursor": {
+            "chapter_id": 1,
+            "chapter_ref": "Full Content",
+            "paragraph_index": 12,
+            "char_offset": 464
+          },
+          "end_cursor": {
+            "chapter_id": 1,
+            "chapter_ref": "Full Content",
+            "paragraph_index": 12,
+            "char_offset": 530
+          }
+        },
+        "quote": "the media in which unequal goods of comparable value are exchanged",
+        "role": "refined_definition",
+        "resolution": {
+          "status": "matched",
+          "method": "exact_text",
+          "match_count": 1
+        }
+      }
+    ],
+    "sample_quotes": [
+      "the media in which unequal goods of comparable value are exchanged"
+    ],
+    "rationale": "",
+    "projection_role": "current_support",
+    "support_status": "source_backed",
+    "current_support": true,
+    "lineage_only": false,
+    "projection_warning": ""
+  },
+  {
+    "ref_id": "concept:emotion-as-translator",
+    "concept_key": "emotion-as-translator",
+    "concept_type": "concept",
+    "source_refs": [
+      {
+        "source_span_id": "src:c1:p41@379-p41@442",
+        "source_span": {
+          "start_cursor": {
+            "chapter_id": 1,
+            "chapter_ref": "Full Content",
+            "paragraph_index": 41,
+            "char_offset": 379
+          },
+          "end_cursor": {
+            "chapter_id": 1,
+            "chapter_ref": "Full Content",
+            "paragraph_index": 41,
+            "char_offset": 442
+          }
+        },
+        "quote": "the calculated value coefficient is transformed into an emotion",
+        "role": "key_definition",
+        "resolution": {
+          "status": "matched",
+          "method": "exact_text",
+          "match_count": 1
+        }
+      }
+    ],
+    "sample_quotes": [
+      "the calculated value coefficient is transformed into an emotion"
+    ],
+    "rationale": "",
+    "projection_role": "current_support",
+    "support_status": "source_backed",
+    "current_support": true,
+    "lineage_only": false,
+    "projection_warning": ""
+  },
+  {
+    "ref_id": "concept:epistemic-opacity-of-valuation",
+    "concept_key": "epistemic-opacity-of-valuation",
+    "concept_type": "concept",
+    "source_refs": [
+      {
+        "source_span_id": "src:c1:p11@0-p11@916",
+        "source_span": {
+          "start_cursor": {
+            "chapter_id": 1,
+            "chapter_ref": "Full Content",
+            "paragraph_index": 11,
+            "char_offset": 0
+          },
+          "end_cursor": {
+            "chapter_id": 1,
+            "chapter_ref": "Full Content",
+            "paragraph_index": 11,
+            "char_offset": 916
+          }
+        },
+        "quote": "this valuation typically occurs beneath the threshold of awareness. This means that neither party can ever know the other's true valuation of a specific good (which exists in the inaccessible privacy of the other's mind), and also that each party typically doesn't entirely know his or her own valuation of the good in question.",
+        "role": "support",
+        "resolution": {
+          "status": "fallback_unit_span",
+          "method": "quote_not_found",
+          "match_count": 0
+        }
+      }
+    ],
+    "sample_quotes": [
+      "this valuation typically occurs beneath the threshold of awareness. This means that neither party can ever know the other's true valuation of a specific good (which exists in the inaccessible privacy of the other's mind), and also that each party typically doesn't entirely know his or her own valuation of the good in question."
+    ],
+    "rationale": "",
+    "projection_role": "current_support",
+    "support_status": "source_backed",
+    "current_support": true,
+    "lineage_only": false,
+    "projection_warning": ""
+  }
+]
+```
 
 #### Thread Digest
-- `perception-vs-actuality-mechanism`
-  - thread_type: `thread`
-  - projection_role: `current_support`
-  - support_status: `source_backed`
-  - sample quotes:
-    - then the perception of value must be the mechanism that lies at the heart of sexual relationships.
-  - source refs:
-    - `src:c1:p23@565-p23@663`; role `key_claim`; resolution `matched`
-      - quote: then the perception of value must be the mechanism that lies at the heart of sexual relationships.
+
+`thread_digest`:
+
+```json
+[
+  {
+    "ref_id": "thread:perception-vs-actuality-mechanism",
+    "thread_key": "perception-vs-actuality-mechanism",
+    "thread_type": "thread",
+    "source_refs": [
+      {
+        "source_span_id": "src:c1:p23@565-p23@663",
+        "source_span": {
+          "start_cursor": {
+            "chapter_id": 1,
+            "chapter_ref": "Full Content",
+            "paragraph_index": 23,
+            "char_offset": 565
+          },
+          "end_cursor": {
+            "chapter_id": 1,
+            "chapter_ref": "Full Content",
+            "paragraph_index": 23,
+            "char_offset": 663
+          }
+        },
+        "quote": "then the perception of value must be the mechanism that lies at the heart of sexual relationships.",
+        "role": "key_claim",
+        "resolution": {
+          "status": "matched",
+          "method": "exact_text",
+          "match_count": 1
+        }
+      }
+    ],
+    "sample_quotes": [
+      "then the perception of value must be the mechanism that lies at the heart of sexual relationships."
+    ],
+    "rationale": "",
+    "projection_role": "current_support",
+    "support_status": "source_backed",
+    "current_support": true,
+    "lineage_only": false,
+    "projection_warning": ""
+  }
+]
+```
 
 #### Reflective Digest
-- `(none recorded in snapshot)`
+
+`reflective_digest`:
+
+```json
+{
+  "chapter_frames": [],
+  "book_frames": [],
+  "durable_definitions": []
+}
+```
 
 #### SourceRef Digest
-- `src:c1:p3@0-p3@56`; role `thesis_statement`; resolution `matched`
-  - quote: RELATIONSHIPS ARE THE MEDIA IN WHICH VALUE IS TRANSACTED
-- `src:c1:p4@452-p4@516`; role `key_claim`; resolution `matched`
-  - quote: other people are typically a problem until they prove otherwise.
-- `src:c1:p14@475-p14@616`; role `key_claim`; resolution `matched`
-  - quote: the transaction of value in such relationships is typically negotiated covertly: it must be approached with subtlety, tact, and indirectness.
-- `src:c1:p16@791-p16@896`; role `key_claim`; resolution `matched`
-  - quote: awareness of this violation can lead to a great deal of pain and distress for the under-compensated party
-- `src:c1:p18@0-p18@875`; role `support`; resolution `fallback_unit_span`
-  - quote: Every type of relationship constitutes a different game – as does every specific relationship of the same type. And since each specific friendship is nested in the larger game of general friendship, we find that the overarching category contains enormous variation at the individual level.
-- `src:c1:p19@502-p19@591`; role `key_claim`; resolution `matched`
-  - quote: the truer these principles are, the more abstract and unsatisfying they are likely to be.
-- `src:c1:p20@31-p20@430`; role `support`; resolution `matched`
-  - quote: On the one hand, greater specificity at the category level will make any claim less valid and reliable because it will increase the likelihood that it is contradicted at the individual level. On the other hand, less specificity at the category level will make any claim less practical and actionable because it will decrease the likelihood that it can be effectively applied at the individual level.
-- `src:c1:p33@19-p33@195`; role `key_claim`; resolution `matched`
-  - quote: nesting games will always take precedence over nested games whenever we become aware of new information that affects the acquisition (or maintenance) of the superordinate game.
 
+`source_ref_digest`:
+
+```json
+[
+  {
+    "source_span_id": "src:c1:p3@0-p3@56",
+    "source_span": {
+      "start_cursor": {
+        "chapter_id": 1,
+        "chapter_ref": "Full Content",
+        "paragraph_index": 3,
+        "char_offset": 0
+      },
+      "end_cursor": {
+        "chapter_id": 1,
+        "chapter_ref": "Full Content",
+        "paragraph_index": 3,
+        "char_offset": 56
+      }
+    },
+    "quote": "RELATIONSHIPS ARE THE MEDIA IN WHICH VALUE IS TRANSACTED",
+    "role": "thesis_statement",
+    "resolution": {
+      "status": "matched",
+      "method": "exact_text",
+      "match_count": 1
+    }
+  },
+  {
+    "source_span_id": "src:c1:p4@452-p4@516",
+    "source_span": {
+      "start_cursor": {
+        "chapter_id": 1,
+        "chapter_ref": "Full Content",
+        "paragraph_index": 4,
+        "char_offset": 452
+      },
+      "end_cursor": {
+        "chapter_id": 1,
+        "chapter_ref": "Full Content",
+        "paragraph_index": 4,
+        "char_offset": 516
+      }
+    },
+    "quote": "other people are typically a problem until they prove otherwise.",
+    "role": "key_claim",
+    "resolution": {
+      "status": "matched",
+      "method": "exact_text",
+      "match_count": 1
+    }
+  },
+  {
+    "source_span_id": "src:c1:p14@475-p14@616",
+    "source_span": {
+      "start_cursor": {
+        "chapter_id": 1,
+        "chapter_ref": "Full Content",
+        "paragraph_index": 14,
+        "char_offset": 475
+      },
+      "end_cursor": {
+        "chapter_id": 1,
+        "chapter_ref": "Full Content",
+        "paragraph_index": 14,
+        "char_offset": 616
+      }
+    },
+    "quote": "the transaction of value in such relationships is typically negotiated covertly: it must be approached with subtlety, tact, and indirectness.",
+    "role": "key_claim",
+    "resolution": {
+      "status": "matched",
+      "method": "exact_text",
+      "match_count": 1
+    }
+  },
+  {
+    "source_span_id": "src:c1:p16@791-p16@896",
+    "source_span": {
+      "start_cursor": {
+        "chapter_id": 1,
+        "chapter_ref": "Full Content",
+        "paragraph_index": 16,
+        "char_offset": 791
+      },
+      "end_cursor": {
+        "chapter_id": 1,
+        "chapter_ref": "Full Content",
+        "paragraph_index": 16,
+        "char_offset": 896
+      }
+    },
+    "quote": "awareness of this violation can lead to a great deal of pain and distress for the under-compensated party",
+    "role": "key_claim",
+    "resolution": {
+      "status": "matched",
+      "method": "exact_text",
+      "match_count": 1
+    }
+  },
+  {
+    "source_span_id": "src:c1:p18@0-p18@875",
+    "source_span": {
+      "start_cursor": {
+        "chapter_id": 1,
+        "chapter_ref": "Full Content",
+        "paragraph_index": 18,
+        "char_offset": 0
+      },
+      "end_cursor": {
+        "chapter_id": 1,
+        "chapter_ref": "Full Content",
+        "paragraph_index": 18,
+        "char_offset": 875
+      }
+    },
+    "quote": "Every type of relationship constitutes a different game – as does every specific relationship of the same type. And since each specific friendship is nested in the larger game of general friendship, we find that the overarching category contains enormous variation at the individual level.",
+    "role": "support",
+    "resolution": {
+      "status": "fallback_unit_span",
+      "method": "quote_not_found",
+      "match_count": 0
+    }
+  },
+  {
+    "source_span_id": "src:c1:p19@502-p19@591",
+    "source_span": {
+      "start_cursor": {
+        "chapter_id": 1,
+        "chapter_ref": "Full Content",
+        "paragraph_index": 19,
+        "char_offset": 502
+      },
+      "end_cursor": {
+        "chapter_id": 1,
+        "chapter_ref": "Full Content",
+        "paragraph_index": 19,
+        "char_offset": 591
+      }
+    },
+    "quote": "the truer these principles are, the more abstract and unsatisfying they are likely to be.",
+    "role": "key_claim",
+    "resolution": {
+      "status": "matched",
+      "method": "exact_text",
+      "match_count": 1
+    }
+  },
+  {
+    "source_span_id": "src:c1:p20@31-p20@430",
+    "source_span": {
+      "start_cursor": {
+        "chapter_id": 1,
+        "chapter_ref": "Full Content",
+        "paragraph_index": 20,
+        "char_offset": 31
+      },
+      "end_cursor": {
+        "chapter_id": 1,
+        "chapter_ref": "Full Content",
+        "paragraph_index": 20,
+        "char_offset": 430
+      }
+    },
+    "quote": "On the one hand, greater specificity at the category level will make any claim less valid and reliable because it will increase the likelihood that it is contradicted at the individual level. On the other hand, less specificity at the category level will make any claim less practical and actionable because it will decrease the likelihood that it can be effectively applied at the individual level.",
+    "role": "support",
+    "resolution": {
+      "status": "matched",
+      "method": "exact_text",
+      "match_count": 1
+    }
+  },
+  {
+    "source_span_id": "src:c1:p33@19-p33@195",
+    "source_span": {
+      "start_cursor": {
+        "chapter_id": 1,
+        "chapter_ref": "Full Content",
+        "paragraph_index": 33,
+        "char_offset": 19
+      },
+      "end_cursor": {
+        "chapter_id": 1,
+        "chapter_ref": "Full Content",
+        "paragraph_index": 33,
+        "char_offset": 195
+      }
+    },
+    "quote": "nesting games will always take precedence over nested games whenever we become aware of new information that affects the acquisition (or maintenance) of the superordinate game.",
+    "role": "key_claim",
+    "resolution": {
+      "status": "matched",
+      "method": "exact_text",
+      "match_count": 1
+    }
+  }
+]
+```
 #### Score Rationale
 - salience: `4`
 - mainline_fidelity: `4`
@@ -3014,122 +5838,1097 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
 ```
 
 #### Active Attention
-- `transactional-relationships-framing`
-  - tags: `focus, framework`
-  - status: `active`
-  - projection_role: `current_support`
-  - support_status: `source_backed`
-  - statement: Relationships as value-transaction media: this is the governing frame introduced at the outset.
-  - source refs:
-    - `src:c1:p3@0-p3@56`; role `thesis_statement`; resolution `matched`
-      - quote: RELATIONSHIPS ARE THE MEDIA IN WHICH VALUE IS TRANSACTED
-- `default-skepticism-default`
-  - tags: `tension, interpretation`
-  - status: `active`
-  - projection_role: `current_support`
-  - support_status: `source_backed`
-  - statement: Default skepticism toward others: 'problem until they prove otherwise' — inverts normal social assumptions.
-  - source refs:
-    - `src:c1:p4@452-p4@516`; role `key_claim`; resolution `matched`
-      - quote: other people are typically a problem until they prove otherwise.
-- `covert-transaction-norm`
-  - tags: `focus, framework`
-  - status: `active`
-  - projection_role: `current_support`
-  - support_status: `source_backed`
-  - statement: Value transactions in relationships are covert by necessity — negotiated with subtlety, tact, and indirectness. The exchange is structurally hidden, not just unconsciously operated.
-  - source refs:
-    - `src:c1:p14@475-p14@616`; role `key_claim`; resolution `matched`
-      - quote: the transaction of value in such relationships is typically negotiated covertly: it must be approached with subtlety, tact, and indirectness.
-- `value-mismatch-pain-awareness-conditional`
-  - tags: `focus, interpretation`
-  - status: `active`
-  - projection_role: `current_support`
-  - support_status: `source_backed`
-  - statement: Relationship pain from value mismatch is awareness-conditional: distress emerges when the under-compensated party recognizes that the other party's perception has shifted since the point of transaction.
-  - source refs:
-    - `src:c1:p16@791-p16@896`; role `key_claim`; resolution `matched`
-      - quote: awareness of this violation can lead to a great deal of pain and distress for the under-compensated party
-- `nested-game-structure`
-  - tags: `focus, framework`
-  - status: `active`
-  - projection_role: `current_support`
-  - support_status: `source_backed`
-  - statement: Nested game structure: each specific relationship is its own sub-game within a meta-game category. Rules and goals vary not only by relationship type but by individual instance.
-  - source refs:
-    - `src:c1:p18@0-p18@875`; role `support`; resolution `fallback_unit_span`
-      - quote: Every type of relationship constitutes a different game – as does every specific relationship of the same type. And since each specific friendship is nested in the larger game of general friendship, we find that the overarching category contains enormous variation at the individual level.
-- `abstraction-utility-inverse`
-  - tags: `focus, tension`
-  - status: `active`
-  - projection_role: `current_support`
-  - support_status: `source_backed`
-  - statement: Truth and utility are inversely related in relationship principles: the more accurate a category-level principle is, the more abstract and unsatisfying it becomes.
-  - source refs:
-    - `src:c1:p19@502-p19@591`; role `key_claim`; resolution `matched`
-      - quote: the truer these principles are, the more abstract and unsatisfying they are likely to be.
+
+`active_attention_digest`:
+
+```json
+{
+  "active_items": [
+    {
+      "ref_id": "active_attention:transactional-relationships-framing",
+      "item_id": "transactional-relationships-framing",
+      "attention_tags": [
+        "focus",
+        "framework"
+      ],
+      "statement": "Relationships as value-transaction media: this is the governing frame introduced at the outset.",
+      "status": "active",
+      "source_refs": [
+        {
+          "source_span_id": "src:c1:p3@0-p3@56",
+          "source_span": {
+            "start_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 3,
+              "char_offset": 0
+            },
+            "end_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 3,
+              "char_offset": 56
+            }
+          },
+          "quote": "RELATIONSHIPS ARE THE MEDIA IN WHICH VALUE IS TRANSACTED",
+          "role": "thesis_statement",
+          "resolution": {
+            "status": "matched",
+            "method": "exact_text",
+            "match_count": 1
+          }
+        }
+      ],
+      "linked_concept_keys": [],
+      "linked_thread_keys": [],
+      "projection_role": "current_support",
+      "support_status": "source_backed",
+      "current_support": true,
+      "lineage_only": false,
+      "projection_warning": ""
+    },
+    {
+      "ref_id": "active_attention:default-skepticism-default",
+      "item_id": "default-skepticism-default",
+      "attention_tags": [
+        "tension",
+        "interpretation"
+      ],
+      "statement": "Default skepticism toward others: 'problem until they prove otherwise' — inverts normal social assumptions.",
+      "status": "active",
+      "source_refs": [
+        {
+          "source_span_id": "src:c1:p4@452-p4@516",
+          "source_span": {
+            "start_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 4,
+              "char_offset": 452
+            },
+            "end_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 4,
+              "char_offset": 516
+            }
+          },
+          "quote": "other people are typically a problem until they prove otherwise.",
+          "role": "key_claim",
+          "resolution": {
+            "status": "matched",
+            "method": "exact_text",
+            "match_count": 1
+          }
+        }
+      ],
+      "linked_concept_keys": [],
+      "linked_thread_keys": [],
+      "projection_role": "current_support",
+      "support_status": "source_backed",
+      "current_support": true,
+      "lineage_only": false,
+      "projection_warning": ""
+    },
+    {
+      "ref_id": "active_attention:covert-transaction-norm",
+      "item_id": "covert-transaction-norm",
+      "attention_tags": [
+        "focus",
+        "framework"
+      ],
+      "statement": "Value transactions in relationships are covert by necessity — negotiated with subtlety, tact, and indirectness. The exchange is structurally hidden, not just unconsciously operated.",
+      "status": "active",
+      "source_refs": [
+        {
+          "source_span_id": "src:c1:p14@475-p14@616",
+          "source_span": {
+            "start_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 14,
+              "char_offset": 475
+            },
+            "end_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 14,
+              "char_offset": 616
+            }
+          },
+          "quote": "the transaction of value in such relationships is typically negotiated covertly: it must be approached with subtlety, tact, and indirectness.",
+          "role": "key_claim",
+          "resolution": {
+            "status": "matched",
+            "method": "exact_text",
+            "match_count": 1
+          }
+        }
+      ],
+      "linked_concept_keys": [],
+      "linked_thread_keys": [],
+      "projection_role": "current_support",
+      "support_status": "source_backed",
+      "current_support": true,
+      "lineage_only": false,
+      "projection_warning": ""
+    },
+    {
+      "ref_id": "active_attention:value-mismatch-pain-awareness-conditional",
+      "item_id": "value-mismatch-pain-awareness-conditional",
+      "attention_tags": [
+        "focus",
+        "interpretation"
+      ],
+      "statement": "Relationship pain from value mismatch is awareness-conditional: distress emerges when the under-compensated party recognizes that the other party's perception has shifted since the point of transaction.",
+      "status": "active",
+      "source_refs": [
+        {
+          "source_span_id": "src:c1:p16@791-p16@896",
+          "source_span": {
+            "start_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 16,
+              "char_offset": 791
+            },
+            "end_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 16,
+              "char_offset": 896
+            }
+          },
+          "quote": "awareness of this violation can lead to a great deal of pain and distress for the under-compensated party",
+          "role": "key_claim",
+          "resolution": {
+            "status": "matched",
+            "method": "exact_text",
+            "match_count": 1
+          }
+        }
+      ],
+      "linked_concept_keys": [],
+      "linked_thread_keys": [],
+      "projection_role": "current_support",
+      "support_status": "source_backed",
+      "current_support": true,
+      "lineage_only": false,
+      "projection_warning": ""
+    },
+    {
+      "ref_id": "active_attention:nested-game-structure",
+      "item_id": "nested-game-structure",
+      "attention_tags": [
+        "focus",
+        "framework"
+      ],
+      "statement": "Nested game structure: each specific relationship is its own sub-game within a meta-game category. Rules and goals vary not only by relationship type but by individual instance.",
+      "status": "active",
+      "source_refs": [
+        {
+          "source_span_id": "src:c1:p18@0-p18@875",
+          "source_span": {
+            "start_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 18,
+              "char_offset": 0
+            },
+            "end_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 18,
+              "char_offset": 875
+            }
+          },
+          "quote": "Every type of relationship constitutes a different game – as does every specific relationship of the same type. And since each specific friendship is nested in the larger game of general friendship, we find that the overarching category contains enormous variation at the individual level.",
+          "role": "support",
+          "resolution": {
+            "status": "fallback_unit_span",
+            "method": "quote_not_found",
+            "match_count": 0
+          }
+        }
+      ],
+      "linked_concept_keys": [],
+      "linked_thread_keys": [],
+      "projection_role": "current_support",
+      "support_status": "source_backed",
+      "current_support": true,
+      "lineage_only": false,
+      "projection_warning": ""
+    },
+    {
+      "ref_id": "active_attention:abstraction-utility-inverse",
+      "item_id": "abstraction-utility-inverse",
+      "attention_tags": [
+        "focus",
+        "tension"
+      ],
+      "statement": "Truth and utility are inversely related in relationship principles: the more accurate a category-level principle is, the more abstract and unsatisfying it becomes.",
+      "status": "active",
+      "source_refs": [
+        {
+          "source_span_id": "src:c1:p19@502-p19@591",
+          "source_span": {
+            "start_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 19,
+              "char_offset": 502
+            },
+            "end_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 19,
+              "char_offset": 591
+            }
+          },
+          "quote": "the truer these principles are, the more abstract and unsatisfying they are likely to be.",
+          "role": "key_claim",
+          "resolution": {
+            "status": "matched",
+            "method": "exact_text",
+            "match_count": 1
+          }
+        }
+      ],
+      "linked_concept_keys": [],
+      "linked_thread_keys": [],
+      "projection_role": "current_support",
+      "support_status": "source_backed",
+      "current_support": true,
+      "lineage_only": false,
+      "projection_warning": ""
+    }
+  ],
+  "hot_items": [
+    {
+      "ref_id": "active_attention:transactional-relationships-framing",
+      "item_id": "transactional-relationships-framing",
+      "attention_tags": [
+        "focus",
+        "framework"
+      ],
+      "statement": "Relationships as value-transaction media: this is the governing frame introduced at the outset.",
+      "status": "active",
+      "source_refs": [
+        {
+          "source_span_id": "src:c1:p3@0-p3@56",
+          "source_span": {
+            "start_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 3,
+              "char_offset": 0
+            },
+            "end_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 3,
+              "char_offset": 56
+            }
+          },
+          "quote": "RELATIONSHIPS ARE THE MEDIA IN WHICH VALUE IS TRANSACTED",
+          "role": "thesis_statement",
+          "resolution": {
+            "status": "matched",
+            "method": "exact_text",
+            "match_count": 1
+          }
+        }
+      ],
+      "linked_concept_keys": [],
+      "linked_thread_keys": [],
+      "projection_role": "current_support",
+      "support_status": "source_backed",
+      "current_support": true,
+      "lineage_only": false,
+      "projection_warning": ""
+    },
+    {
+      "ref_id": "active_attention:default-skepticism-default",
+      "item_id": "default-skepticism-default",
+      "attention_tags": [
+        "tension",
+        "interpretation"
+      ],
+      "statement": "Default skepticism toward others: 'problem until they prove otherwise' — inverts normal social assumptions.",
+      "status": "active",
+      "source_refs": [
+        {
+          "source_span_id": "src:c1:p4@452-p4@516",
+          "source_span": {
+            "start_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 4,
+              "char_offset": 452
+            },
+            "end_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 4,
+              "char_offset": 516
+            }
+          },
+          "quote": "other people are typically a problem until they prove otherwise.",
+          "role": "key_claim",
+          "resolution": {
+            "status": "matched",
+            "method": "exact_text",
+            "match_count": 1
+          }
+        }
+      ],
+      "linked_concept_keys": [],
+      "linked_thread_keys": [],
+      "projection_role": "current_support",
+      "support_status": "source_backed",
+      "current_support": true,
+      "lineage_only": false,
+      "projection_warning": ""
+    },
+    {
+      "ref_id": "active_attention:covert-transaction-norm",
+      "item_id": "covert-transaction-norm",
+      "attention_tags": [
+        "focus",
+        "framework"
+      ],
+      "statement": "Value transactions in relationships are covert by necessity — negotiated with subtlety, tact, and indirectness. The exchange is structurally hidden, not just unconsciously operated.",
+      "status": "active",
+      "source_refs": [
+        {
+          "source_span_id": "src:c1:p14@475-p14@616",
+          "source_span": {
+            "start_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 14,
+              "char_offset": 475
+            },
+            "end_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 14,
+              "char_offset": 616
+            }
+          },
+          "quote": "the transaction of value in such relationships is typically negotiated covertly: it must be approached with subtlety, tact, and indirectness.",
+          "role": "key_claim",
+          "resolution": {
+            "status": "matched",
+            "method": "exact_text",
+            "match_count": 1
+          }
+        }
+      ],
+      "linked_concept_keys": [],
+      "linked_thread_keys": [],
+      "projection_role": "current_support",
+      "support_status": "source_backed",
+      "current_support": true,
+      "lineage_only": false,
+      "projection_warning": ""
+    },
+    {
+      "ref_id": "active_attention:value-mismatch-pain-awareness-conditional",
+      "item_id": "value-mismatch-pain-awareness-conditional",
+      "attention_tags": [
+        "focus",
+        "interpretation"
+      ],
+      "statement": "Relationship pain from value mismatch is awareness-conditional: distress emerges when the under-compensated party recognizes that the other party's perception has shifted since the point of transaction.",
+      "status": "active",
+      "source_refs": [
+        {
+          "source_span_id": "src:c1:p16@791-p16@896",
+          "source_span": {
+            "start_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 16,
+              "char_offset": 791
+            },
+            "end_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 16,
+              "char_offset": 896
+            }
+          },
+          "quote": "awareness of this violation can lead to a great deal of pain and distress for the under-compensated party",
+          "role": "key_claim",
+          "resolution": {
+            "status": "matched",
+            "method": "exact_text",
+            "match_count": 1
+          }
+        }
+      ],
+      "linked_concept_keys": [],
+      "linked_thread_keys": [],
+      "projection_role": "current_support",
+      "support_status": "source_backed",
+      "current_support": true,
+      "lineage_only": false,
+      "projection_warning": ""
+    }
+  ]
+}
+```
+
+#### Active Focus
+
+`active_focus_digest`:
+
+```json
+{
+  "active_items": [
+    {
+      "ref_id": "active_attention:transactional-relationships-framing",
+      "item_id": "transactional-relationships-framing",
+      "attention_tags": [
+        "focus",
+        "framework"
+      ],
+      "statement": "Relationships as value-transaction media: this is the governing frame introduced at the outset.",
+      "status": "active",
+      "source_refs": [
+        {
+          "source_span_id": "src:c1:p3@0-p3@56",
+          "source_span": {
+            "start_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 3,
+              "char_offset": 0
+            },
+            "end_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 3,
+              "char_offset": 56
+            }
+          },
+          "quote": "RELATIONSHIPS ARE THE MEDIA IN WHICH VALUE IS TRANSACTED",
+          "role": "thesis_statement",
+          "resolution": {
+            "status": "matched",
+            "method": "exact_text",
+            "match_count": 1
+          }
+        }
+      ],
+      "linked_concept_keys": [],
+      "linked_thread_keys": [],
+      "projection_role": "current_support",
+      "support_status": "source_backed",
+      "current_support": true,
+      "lineage_only": false,
+      "projection_warning": ""
+    },
+    {
+      "ref_id": "active_attention:default-skepticism-default",
+      "item_id": "default-skepticism-default",
+      "attention_tags": [
+        "tension",
+        "interpretation"
+      ],
+      "statement": "Default skepticism toward others: 'problem until they prove otherwise' — inverts normal social assumptions.",
+      "status": "active",
+      "source_refs": [
+        {
+          "source_span_id": "src:c1:p4@452-p4@516",
+          "source_span": {
+            "start_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 4,
+              "char_offset": 452
+            },
+            "end_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 4,
+              "char_offset": 516
+            }
+          },
+          "quote": "other people are typically a problem until they prove otherwise.",
+          "role": "key_claim",
+          "resolution": {
+            "status": "matched",
+            "method": "exact_text",
+            "match_count": 1
+          }
+        }
+      ],
+      "linked_concept_keys": [],
+      "linked_thread_keys": [],
+      "projection_role": "current_support",
+      "support_status": "source_backed",
+      "current_support": true,
+      "lineage_only": false,
+      "projection_warning": ""
+    },
+    {
+      "ref_id": "active_attention:covert-transaction-norm",
+      "item_id": "covert-transaction-norm",
+      "attention_tags": [
+        "focus",
+        "framework"
+      ],
+      "statement": "Value transactions in relationships are covert by necessity — negotiated with subtlety, tact, and indirectness. The exchange is structurally hidden, not just unconsciously operated.",
+      "status": "active",
+      "source_refs": [
+        {
+          "source_span_id": "src:c1:p14@475-p14@616",
+          "source_span": {
+            "start_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 14,
+              "char_offset": 475
+            },
+            "end_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 14,
+              "char_offset": 616
+            }
+          },
+          "quote": "the transaction of value in such relationships is typically negotiated covertly: it must be approached with subtlety, tact, and indirectness.",
+          "role": "key_claim",
+          "resolution": {
+            "status": "matched",
+            "method": "exact_text",
+            "match_count": 1
+          }
+        }
+      ],
+      "linked_concept_keys": [],
+      "linked_thread_keys": [],
+      "projection_role": "current_support",
+      "support_status": "source_backed",
+      "current_support": true,
+      "lineage_only": false,
+      "projection_warning": ""
+    },
+    {
+      "ref_id": "active_attention:value-mismatch-pain-awareness-conditional",
+      "item_id": "value-mismatch-pain-awareness-conditional",
+      "attention_tags": [
+        "focus",
+        "interpretation"
+      ],
+      "statement": "Relationship pain from value mismatch is awareness-conditional: distress emerges when the under-compensated party recognizes that the other party's perception has shifted since the point of transaction.",
+      "status": "active",
+      "source_refs": [
+        {
+          "source_span_id": "src:c1:p16@791-p16@896",
+          "source_span": {
+            "start_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 16,
+              "char_offset": 791
+            },
+            "end_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 16,
+              "char_offset": 896
+            }
+          },
+          "quote": "awareness of this violation can lead to a great deal of pain and distress for the under-compensated party",
+          "role": "key_claim",
+          "resolution": {
+            "status": "matched",
+            "method": "exact_text",
+            "match_count": 1
+          }
+        }
+      ],
+      "linked_concept_keys": [],
+      "linked_thread_keys": [],
+      "projection_role": "current_support",
+      "support_status": "source_backed",
+      "current_support": true,
+      "lineage_only": false,
+      "projection_warning": ""
+    }
+  ],
+  "recent_reactions": [
+    {
+      "ref_id": "reaction:rx:Full_Content:src:c1:p53@0-p53@803:discern:43",
+      "reaction_id": "rx:Full_Content:src:c1:p53@0-p53@803:discern:43",
+      "type": "discern",
+      "thought": "The example performs quiet work: it shows that the genetic-survival priority isn't just about unconscious biological imperative but can manifest as conscious sacrifice. This sets up potential tension with the earlier framing of relationship dynamics as transaction-based.",
+      "emitted_at_source_span_id": "src:c1:p53@0-p53@803",
+      "primary_source_ref": {
+        "source_span_id": "src:c1:p53@538-p53@611",
+        "source_span": {
+          "start_cursor": {
+            "chapter_id": 1,
+            "chapter_ref": "Full Content",
+            "paragraph_index": 53,
+            "char_offset": 538
+          },
+          "end_cursor": {
+            "chapter_id": 1,
+            "chapter_ref": "Full Content",
+            "paragraph_index": 53,
+            "char_offset": 611
+          }
+        },
+        "quote": "A mother who dies so her children might live exemplifies this phenomenon.",
+        "role": "reaction_anchor",
+        "resolution": {
+          "status": "matched",
+          "method": "exact_text",
+          "match_count": 1
+        }
+      },
+      "source_quote": "A mother who dies so her children might live exemplifies this phenomenon.",
+      "projection_role": "visible_trace",
+      "support_status": "visible_trace",
+      "visible_trace_support": true,
+      "current_support": false,
+      "projection_warning": "visible_trace_not_semantic_memory"
+    },
+    {
+      "ref_id": "reaction:rx:Full_Content:src:c1:p54@0-p55@595:discern:44",
+      "reaction_id": "rx:Full_Content:src:c1:p54@0-p55@595:discern:44",
+      "type": "discern",
+      "thought": "The double framing here does quiet work. 'Game of games' elevates the category, then 'the game that makes all other games possible' makes it constitutive rather than merely dominant. This is what allows the text to derive behavioral consequences as logical deductions rather than empirical claims.",
+      "emitted_at_source_span_id": "src:c1:p54@0-p55@595",
+      "primary_source_ref": {
+        "source_span_id": "src:c1:p54@187-p54@251",
+        "source_span": {
+          "start_cursor": {
+            "chapter_id": 1,
+            "chapter_ref": "Full Content",
+            "paragraph_index": 54,
+            "char_offset": 187
+          },
+          "end_cursor": {
+            "chapter_id": 1,
+            "chapter_ref": "Full Content",
+            "paragraph_index": 54,
+            "char_offset": 251
+          }
+        },
+        "quote": "the game of games: the game that makes all other games possible.",
+        "role": "reaction_anchor",
+        "resolution": {
+          "status": "matched",
+          "method": "exact_text",
+          "match_count": 1
+        }
+      },
+      "source_quote": "the game of games: the game that makes all other games possible.",
+      "projection_role": "visible_trace",
+      "support_status": "visible_trace",
+      "visible_trace_support": true,
+      "current_support": false,
+      "projection_warning": "visible_trace_not_semantic_memory"
+    }
+  ]
+}
+```
 
 #### Concept Digest
-- `comparable-value-exchange`
-  - concept_type: `concept`
-  - projection_role: `current_support`
-  - support_status: `source_backed`
-  - sample quotes:
-    - the media in which unequal goods of comparable value are exchanged
-  - source refs:
-    - `src:c1:p12@464-p12@530`; role `refined_definition`; resolution `matched`
-      - quote: the media in which unequal goods of comparable value are exchanged
-- `emotion-as-translator`
-  - concept_type: `concept`
-  - projection_role: `current_support`
-  - support_status: `source_backed`
-  - sample quotes:
-    - the calculated value coefficient is transformed into an emotion
-  - source refs:
-    - `src:c1:p41@379-p41@442`; role `key_definition`; resolution `matched`
-      - quote: the calculated value coefficient is transformed into an emotion
-- `epistemic-opacity-of-valuation`
-  - concept_type: `concept`
-  - projection_role: `current_support`
-  - support_status: `source_backed`
-  - sample quotes:
-    - this valuation typically occurs beneath the threshold of awareness. This means that neither party can ever know the other's true valuation of a specific good (which exists in the inaccessible privacy of the other's mind), and also that each party typically doesn't entirely know his or her own valuation of the good in question.
-  - source refs:
-    - `src:c1:p11@0-p11@916`; role `support`; resolution `fallback_unit_span`
-      - quote: this valuation typically occurs beneath the threshold of awareness. This means that neither party can ever know the other's true valuation of a specific good (which exists in the inaccessible privacy of the other's mind), and also that each party typically doesn't entirely know his or her own valuation of the good in question.
+
+`concept_digest`:
+
+```json
+[
+  {
+    "ref_id": "concept:comparable-value-exchange",
+    "concept_key": "comparable-value-exchange",
+    "concept_type": "concept",
+    "source_refs": [
+      {
+        "source_span_id": "src:c1:p12@464-p12@530",
+        "source_span": {
+          "start_cursor": {
+            "chapter_id": 1,
+            "chapter_ref": "Full Content",
+            "paragraph_index": 12,
+            "char_offset": 464
+          },
+          "end_cursor": {
+            "chapter_id": 1,
+            "chapter_ref": "Full Content",
+            "paragraph_index": 12,
+            "char_offset": 530
+          }
+        },
+        "quote": "the media in which unequal goods of comparable value are exchanged",
+        "role": "refined_definition",
+        "resolution": {
+          "status": "matched",
+          "method": "exact_text",
+          "match_count": 1
+        }
+      }
+    ],
+    "sample_quotes": [
+      "the media in which unequal goods of comparable value are exchanged"
+    ],
+    "rationale": "",
+    "projection_role": "current_support",
+    "support_status": "source_backed",
+    "current_support": true,
+    "lineage_only": false,
+    "projection_warning": ""
+  },
+  {
+    "ref_id": "concept:emotion-as-translator",
+    "concept_key": "emotion-as-translator",
+    "concept_type": "concept",
+    "source_refs": [
+      {
+        "source_span_id": "src:c1:p41@379-p41@442",
+        "source_span": {
+          "start_cursor": {
+            "chapter_id": 1,
+            "chapter_ref": "Full Content",
+            "paragraph_index": 41,
+            "char_offset": 379
+          },
+          "end_cursor": {
+            "chapter_id": 1,
+            "chapter_ref": "Full Content",
+            "paragraph_index": 41,
+            "char_offset": 442
+          }
+        },
+        "quote": "the calculated value coefficient is transformed into an emotion",
+        "role": "key_definition",
+        "resolution": {
+          "status": "matched",
+          "method": "exact_text",
+          "match_count": 1
+        }
+      }
+    ],
+    "sample_quotes": [
+      "the calculated value coefficient is transformed into an emotion"
+    ],
+    "rationale": "",
+    "projection_role": "current_support",
+    "support_status": "source_backed",
+    "current_support": true,
+    "lineage_only": false,
+    "projection_warning": ""
+  },
+  {
+    "ref_id": "concept:epistemic-opacity-of-valuation",
+    "concept_key": "epistemic-opacity-of-valuation",
+    "concept_type": "concept",
+    "source_refs": [
+      {
+        "source_span_id": "src:c1:p11@0-p11@916",
+        "source_span": {
+          "start_cursor": {
+            "chapter_id": 1,
+            "chapter_ref": "Full Content",
+            "paragraph_index": 11,
+            "char_offset": 0
+          },
+          "end_cursor": {
+            "chapter_id": 1,
+            "chapter_ref": "Full Content",
+            "paragraph_index": 11,
+            "char_offset": 916
+          }
+        },
+        "quote": "this valuation typically occurs beneath the threshold of awareness. This means that neither party can ever know the other's true valuation of a specific good (which exists in the inaccessible privacy of the other's mind), and also that each party typically doesn't entirely know his or her own valuation of the good in question.",
+        "role": "support",
+        "resolution": {
+          "status": "fallback_unit_span",
+          "method": "quote_not_found",
+          "match_count": 0
+        }
+      }
+    ],
+    "sample_quotes": [
+      "this valuation typically occurs beneath the threshold of awareness. This means that neither party can ever know the other's true valuation of a specific good (which exists in the inaccessible privacy of the other's mind), and also that each party typically doesn't entirely know his or her own valuation of the good in question."
+    ],
+    "rationale": "",
+    "projection_role": "current_support",
+    "support_status": "source_backed",
+    "current_support": true,
+    "lineage_only": false,
+    "projection_warning": ""
+  }
+]
+```
 
 #### Thread Digest
-- `perception-vs-actuality-mechanism`
-  - thread_type: `thread`
-  - projection_role: `current_support`
-  - support_status: `source_backed`
-  - sample quotes:
-    - then the perception of value must be the mechanism that lies at the heart of sexual relationships.
-  - source refs:
-    - `src:c1:p23@565-p23@663`; role `key_claim`; resolution `matched`
-      - quote: then the perception of value must be the mechanism that lies at the heart of sexual relationships.
+
+`thread_digest`:
+
+```json
+[
+  {
+    "ref_id": "thread:perception-vs-actuality-mechanism",
+    "thread_key": "perception-vs-actuality-mechanism",
+    "thread_type": "thread",
+    "source_refs": [
+      {
+        "source_span_id": "src:c1:p23@565-p23@663",
+        "source_span": {
+          "start_cursor": {
+            "chapter_id": 1,
+            "chapter_ref": "Full Content",
+            "paragraph_index": 23,
+            "char_offset": 565
+          },
+          "end_cursor": {
+            "chapter_id": 1,
+            "chapter_ref": "Full Content",
+            "paragraph_index": 23,
+            "char_offset": 663
+          }
+        },
+        "quote": "then the perception of value must be the mechanism that lies at the heart of sexual relationships.",
+        "role": "key_claim",
+        "resolution": {
+          "status": "matched",
+          "method": "exact_text",
+          "match_count": 1
+        }
+      }
+    ],
+    "sample_quotes": [
+      "then the perception of value must be the mechanism that lies at the heart of sexual relationships."
+    ],
+    "rationale": "",
+    "projection_role": "current_support",
+    "support_status": "source_backed",
+    "current_support": true,
+    "lineage_only": false,
+    "projection_warning": ""
+  }
+]
+```
 
 #### Reflective Digest
-- `(none recorded in snapshot)`
+
+`reflective_digest`:
+
+```json
+{
+  "chapter_frames": [],
+  "book_frames": [],
+  "durable_definitions": []
+}
+```
 
 #### SourceRef Digest
-- `src:c1:p3@0-p3@56`; role `thesis_statement`; resolution `matched`
-  - quote: RELATIONSHIPS ARE THE MEDIA IN WHICH VALUE IS TRANSACTED
-- `src:c1:p4@452-p4@516`; role `key_claim`; resolution `matched`
-  - quote: other people are typically a problem until they prove otherwise.
-- `src:c1:p14@475-p14@616`; role `key_claim`; resolution `matched`
-  - quote: the transaction of value in such relationships is typically negotiated covertly: it must be approached with subtlety, tact, and indirectness.
-- `src:c1:p16@791-p16@896`; role `key_claim`; resolution `matched`
-  - quote: awareness of this violation can lead to a great deal of pain and distress for the under-compensated party
-- `src:c1:p18@0-p18@875`; role `support`; resolution `fallback_unit_span`
-  - quote: Every type of relationship constitutes a different game – as does every specific relationship of the same type. And since each specific friendship is nested in the larger game of general friendship, we find that the overarching category contains enormous variation at the individual level.
-- `src:c1:p19@502-p19@591`; role `key_claim`; resolution `matched`
-  - quote: the truer these principles are, the more abstract and unsatisfying they are likely to be.
-- `src:c1:p20@31-p20@430`; role `support`; resolution `matched`
-  - quote: On the one hand, greater specificity at the category level will make any claim less valid and reliable because it will increase the likelihood that it is contradicted at the individual level. On the other hand, less specificity at the category level will make any claim less practical and actionable because it will decrease the likelihood that it can be effectively applied at the individual level.
-- `src:c1:p33@19-p33@195`; role `key_claim`; resolution `matched`
-  - quote: nesting games will always take precedence over nested games whenever we become aware of new information that affects the acquisition (or maintenance) of the superordinate game.
 
+`source_ref_digest`:
+
+```json
+[
+  {
+    "source_span_id": "src:c1:p3@0-p3@56",
+    "source_span": {
+      "start_cursor": {
+        "chapter_id": 1,
+        "chapter_ref": "Full Content",
+        "paragraph_index": 3,
+        "char_offset": 0
+      },
+      "end_cursor": {
+        "chapter_id": 1,
+        "chapter_ref": "Full Content",
+        "paragraph_index": 3,
+        "char_offset": 56
+      }
+    },
+    "quote": "RELATIONSHIPS ARE THE MEDIA IN WHICH VALUE IS TRANSACTED",
+    "role": "thesis_statement",
+    "resolution": {
+      "status": "matched",
+      "method": "exact_text",
+      "match_count": 1
+    }
+  },
+  {
+    "source_span_id": "src:c1:p4@452-p4@516",
+    "source_span": {
+      "start_cursor": {
+        "chapter_id": 1,
+        "chapter_ref": "Full Content",
+        "paragraph_index": 4,
+        "char_offset": 452
+      },
+      "end_cursor": {
+        "chapter_id": 1,
+        "chapter_ref": "Full Content",
+        "paragraph_index": 4,
+        "char_offset": 516
+      }
+    },
+    "quote": "other people are typically a problem until they prove otherwise.",
+    "role": "key_claim",
+    "resolution": {
+      "status": "matched",
+      "method": "exact_text",
+      "match_count": 1
+    }
+  },
+  {
+    "source_span_id": "src:c1:p14@475-p14@616",
+    "source_span": {
+      "start_cursor": {
+        "chapter_id": 1,
+        "chapter_ref": "Full Content",
+        "paragraph_index": 14,
+        "char_offset": 475
+      },
+      "end_cursor": {
+        "chapter_id": 1,
+        "chapter_ref": "Full Content",
+        "paragraph_index": 14,
+        "char_offset": 616
+      }
+    },
+    "quote": "the transaction of value in such relationships is typically negotiated covertly: it must be approached with subtlety, tact, and indirectness.",
+    "role": "key_claim",
+    "resolution": {
+      "status": "matched",
+      "method": "exact_text",
+      "match_count": 1
+    }
+  },
+  {
+    "source_span_id": "src:c1:p16@791-p16@896",
+    "source_span": {
+      "start_cursor": {
+        "chapter_id": 1,
+        "chapter_ref": "Full Content",
+        "paragraph_index": 16,
+        "char_offset": 791
+      },
+      "end_cursor": {
+        "chapter_id": 1,
+        "chapter_ref": "Full Content",
+        "paragraph_index": 16,
+        "char_offset": 896
+      }
+    },
+    "quote": "awareness of this violation can lead to a great deal of pain and distress for the under-compensated party",
+    "role": "key_claim",
+    "resolution": {
+      "status": "matched",
+      "method": "exact_text",
+      "match_count": 1
+    }
+  },
+  {
+    "source_span_id": "src:c1:p18@0-p18@875",
+    "source_span": {
+      "start_cursor": {
+        "chapter_id": 1,
+        "chapter_ref": "Full Content",
+        "paragraph_index": 18,
+        "char_offset": 0
+      },
+      "end_cursor": {
+        "chapter_id": 1,
+        "chapter_ref": "Full Content",
+        "paragraph_index": 18,
+        "char_offset": 875
+      }
+    },
+    "quote": "Every type of relationship constitutes a different game – as does every specific relationship of the same type. And since each specific friendship is nested in the larger game of general friendship, we find that the overarching category contains enormous variation at the individual level.",
+    "role": "support",
+    "resolution": {
+      "status": "fallback_unit_span",
+      "method": "quote_not_found",
+      "match_count": 0
+    }
+  },
+  {
+    "source_span_id": "src:c1:p19@502-p19@591",
+    "source_span": {
+      "start_cursor": {
+        "chapter_id": 1,
+        "chapter_ref": "Full Content",
+        "paragraph_index": 19,
+        "char_offset": 502
+      },
+      "end_cursor": {
+        "chapter_id": 1,
+        "chapter_ref": "Full Content",
+        "paragraph_index": 19,
+        "char_offset": 591
+      }
+    },
+    "quote": "the truer these principles are, the more abstract and unsatisfying they are likely to be.",
+    "role": "key_claim",
+    "resolution": {
+      "status": "matched",
+      "method": "exact_text",
+      "match_count": 1
+    }
+  },
+  {
+    "source_span_id": "src:c1:p20@31-p20@430",
+    "source_span": {
+      "start_cursor": {
+        "chapter_id": 1,
+        "chapter_ref": "Full Content",
+        "paragraph_index": 20,
+        "char_offset": 31
+      },
+      "end_cursor": {
+        "chapter_id": 1,
+        "chapter_ref": "Full Content",
+        "paragraph_index": 20,
+        "char_offset": 430
+      }
+    },
+    "quote": "On the one hand, greater specificity at the category level will make any claim less valid and reliable because it will increase the likelihood that it is contradicted at the individual level. On the other hand, less specificity at the category level will make any claim less practical and actionable because it will decrease the likelihood that it can be effectively applied at the individual level.",
+    "role": "support",
+    "resolution": {
+      "status": "matched",
+      "method": "exact_text",
+      "match_count": 1
+    }
+  },
+  {
+    "source_span_id": "src:c1:p33@19-p33@195",
+    "source_span": {
+      "start_cursor": {
+        "chapter_id": 1,
+        "chapter_ref": "Full Content",
+        "paragraph_index": 33,
+        "char_offset": 19
+      },
+      "end_cursor": {
+        "chapter_id": 1,
+        "chapter_ref": "Full Content",
+        "paragraph_index": 33,
+        "char_offset": 195
+      }
+    },
+    "quote": "nesting games will always take precedence over nested games whenever we become aware of new information that affects the acquisition (or maintenance) of the superordinate game.",
+    "role": "key_claim",
+    "resolution": {
+      "status": "matched",
+      "method": "exact_text",
+      "match_count": 1
+    }
+  }
+]
+```
 #### Score Rationale
 - salience: `3`
 - mainline_fidelity: `4`
@@ -3162,122 +6961,1097 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
 ```
 
 #### Active Attention
-- `transactional-relationships-framing`
-  - tags: `focus, framework`
-  - status: `active`
-  - projection_role: `current_support`
-  - support_status: `source_backed`
-  - statement: Relationships as value-transaction media: this is the governing frame introduced at the outset.
-  - source refs:
-    - `src:c1:p3@0-p3@56`; role `thesis_statement`; resolution `matched`
-      - quote: RELATIONSHIPS ARE THE MEDIA IN WHICH VALUE IS TRANSACTED
-- `default-skepticism-default`
-  - tags: `tension, interpretation`
-  - status: `active`
-  - projection_role: `current_support`
-  - support_status: `source_backed`
-  - statement: Default skepticism toward others: 'problem until they prove otherwise' — inverts normal social assumptions.
-  - source refs:
-    - `src:c1:p4@452-p4@516`; role `key_claim`; resolution `matched`
-      - quote: other people are typically a problem until they prove otherwise.
-- `covert-transaction-norm`
-  - tags: `focus, framework`
-  - status: `active`
-  - projection_role: `current_support`
-  - support_status: `source_backed`
-  - statement: Value transactions in relationships are covert by necessity — negotiated with subtlety, tact, and indirectness. The exchange is structurally hidden, not just unconsciously operated.
-  - source refs:
-    - `src:c1:p14@475-p14@616`; role `key_claim`; resolution `matched`
-      - quote: the transaction of value in such relationships is typically negotiated covertly: it must be approached with subtlety, tact, and indirectness.
-- `value-mismatch-pain-awareness-conditional`
-  - tags: `focus, interpretation`
-  - status: `active`
-  - projection_role: `current_support`
-  - support_status: `source_backed`
-  - statement: Relationship pain from value mismatch is awareness-conditional: distress emerges when the under-compensated party recognizes that the other party's perception has shifted since the point of transaction.
-  - source refs:
-    - `src:c1:p16@791-p16@896`; role `key_claim`; resolution `matched`
-      - quote: awareness of this violation can lead to a great deal of pain and distress for the under-compensated party
-- `nested-game-structure`
-  - tags: `focus, framework`
-  - status: `active`
-  - projection_role: `current_support`
-  - support_status: `source_backed`
-  - statement: Nested game structure: each specific relationship is its own sub-game within a meta-game category. Rules and goals vary not only by relationship type but by individual instance.
-  - source refs:
-    - `src:c1:p18@0-p18@875`; role `support`; resolution `fallback_unit_span`
-      - quote: Every type of relationship constitutes a different game – as does every specific relationship of the same type. And since each specific friendship is nested in the larger game of general friendship, we find that the overarching category contains enormous variation at the individual level.
-- `abstraction-utility-inverse`
-  - tags: `focus, tension`
-  - status: `active`
-  - projection_role: `current_support`
-  - support_status: `source_backed`
-  - statement: Truth and utility are inversely related in relationship principles: the more accurate a category-level principle is, the more abstract and unsatisfying it becomes.
-  - source refs:
-    - `src:c1:p19@502-p19@591`; role `key_claim`; resolution `matched`
-      - quote: the truer these principles are, the more abstract and unsatisfying they are likely to be.
+
+`active_attention_digest`:
+
+```json
+{
+  "active_items": [
+    {
+      "ref_id": "active_attention:transactional-relationships-framing",
+      "item_id": "transactional-relationships-framing",
+      "attention_tags": [
+        "focus",
+        "framework"
+      ],
+      "statement": "Relationships as value-transaction media: this is the governing frame introduced at the outset.",
+      "status": "active",
+      "source_refs": [
+        {
+          "source_span_id": "src:c1:p3@0-p3@56",
+          "source_span": {
+            "start_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 3,
+              "char_offset": 0
+            },
+            "end_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 3,
+              "char_offset": 56
+            }
+          },
+          "quote": "RELATIONSHIPS ARE THE MEDIA IN WHICH VALUE IS TRANSACTED",
+          "role": "thesis_statement",
+          "resolution": {
+            "status": "matched",
+            "method": "exact_text",
+            "match_count": 1
+          }
+        }
+      ],
+      "linked_concept_keys": [],
+      "linked_thread_keys": [],
+      "projection_role": "current_support",
+      "support_status": "source_backed",
+      "current_support": true,
+      "lineage_only": false,
+      "projection_warning": ""
+    },
+    {
+      "ref_id": "active_attention:default-skepticism-default",
+      "item_id": "default-skepticism-default",
+      "attention_tags": [
+        "tension",
+        "interpretation"
+      ],
+      "statement": "Default skepticism toward others: 'problem until they prove otherwise' — inverts normal social assumptions.",
+      "status": "active",
+      "source_refs": [
+        {
+          "source_span_id": "src:c1:p4@452-p4@516",
+          "source_span": {
+            "start_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 4,
+              "char_offset": 452
+            },
+            "end_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 4,
+              "char_offset": 516
+            }
+          },
+          "quote": "other people are typically a problem until they prove otherwise.",
+          "role": "key_claim",
+          "resolution": {
+            "status": "matched",
+            "method": "exact_text",
+            "match_count": 1
+          }
+        }
+      ],
+      "linked_concept_keys": [],
+      "linked_thread_keys": [],
+      "projection_role": "current_support",
+      "support_status": "source_backed",
+      "current_support": true,
+      "lineage_only": false,
+      "projection_warning": ""
+    },
+    {
+      "ref_id": "active_attention:covert-transaction-norm",
+      "item_id": "covert-transaction-norm",
+      "attention_tags": [
+        "focus",
+        "framework"
+      ],
+      "statement": "Value transactions in relationships are covert by necessity — negotiated with subtlety, tact, and indirectness. The exchange is structurally hidden, not just unconsciously operated.",
+      "status": "active",
+      "source_refs": [
+        {
+          "source_span_id": "src:c1:p14@475-p14@616",
+          "source_span": {
+            "start_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 14,
+              "char_offset": 475
+            },
+            "end_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 14,
+              "char_offset": 616
+            }
+          },
+          "quote": "the transaction of value in such relationships is typically negotiated covertly: it must be approached with subtlety, tact, and indirectness.",
+          "role": "key_claim",
+          "resolution": {
+            "status": "matched",
+            "method": "exact_text",
+            "match_count": 1
+          }
+        }
+      ],
+      "linked_concept_keys": [],
+      "linked_thread_keys": [],
+      "projection_role": "current_support",
+      "support_status": "source_backed",
+      "current_support": true,
+      "lineage_only": false,
+      "projection_warning": ""
+    },
+    {
+      "ref_id": "active_attention:value-mismatch-pain-awareness-conditional",
+      "item_id": "value-mismatch-pain-awareness-conditional",
+      "attention_tags": [
+        "focus",
+        "interpretation"
+      ],
+      "statement": "Relationship pain from value mismatch is awareness-conditional: distress emerges when the under-compensated party recognizes that the other party's perception has shifted since the point of transaction.",
+      "status": "active",
+      "source_refs": [
+        {
+          "source_span_id": "src:c1:p16@791-p16@896",
+          "source_span": {
+            "start_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 16,
+              "char_offset": 791
+            },
+            "end_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 16,
+              "char_offset": 896
+            }
+          },
+          "quote": "awareness of this violation can lead to a great deal of pain and distress for the under-compensated party",
+          "role": "key_claim",
+          "resolution": {
+            "status": "matched",
+            "method": "exact_text",
+            "match_count": 1
+          }
+        }
+      ],
+      "linked_concept_keys": [],
+      "linked_thread_keys": [],
+      "projection_role": "current_support",
+      "support_status": "source_backed",
+      "current_support": true,
+      "lineage_only": false,
+      "projection_warning": ""
+    },
+    {
+      "ref_id": "active_attention:nested-game-structure",
+      "item_id": "nested-game-structure",
+      "attention_tags": [
+        "focus",
+        "framework"
+      ],
+      "statement": "Nested game structure: each specific relationship is its own sub-game within a meta-game category. Rules and goals vary not only by relationship type but by individual instance.",
+      "status": "active",
+      "source_refs": [
+        {
+          "source_span_id": "src:c1:p18@0-p18@875",
+          "source_span": {
+            "start_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 18,
+              "char_offset": 0
+            },
+            "end_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 18,
+              "char_offset": 875
+            }
+          },
+          "quote": "Every type of relationship constitutes a different game – as does every specific relationship of the same type. And since each specific friendship is nested in the larger game of general friendship, we find that the overarching category contains enormous variation at the individual level.",
+          "role": "support",
+          "resolution": {
+            "status": "fallback_unit_span",
+            "method": "quote_not_found",
+            "match_count": 0
+          }
+        }
+      ],
+      "linked_concept_keys": [],
+      "linked_thread_keys": [],
+      "projection_role": "current_support",
+      "support_status": "source_backed",
+      "current_support": true,
+      "lineage_only": false,
+      "projection_warning": ""
+    },
+    {
+      "ref_id": "active_attention:abstraction-utility-inverse",
+      "item_id": "abstraction-utility-inverse",
+      "attention_tags": [
+        "focus",
+        "tension"
+      ],
+      "statement": "Truth and utility are inversely related in relationship principles: the more accurate a category-level principle is, the more abstract and unsatisfying it becomes.",
+      "status": "active",
+      "source_refs": [
+        {
+          "source_span_id": "src:c1:p19@502-p19@591",
+          "source_span": {
+            "start_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 19,
+              "char_offset": 502
+            },
+            "end_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 19,
+              "char_offset": 591
+            }
+          },
+          "quote": "the truer these principles are, the more abstract and unsatisfying they are likely to be.",
+          "role": "key_claim",
+          "resolution": {
+            "status": "matched",
+            "method": "exact_text",
+            "match_count": 1
+          }
+        }
+      ],
+      "linked_concept_keys": [],
+      "linked_thread_keys": [],
+      "projection_role": "current_support",
+      "support_status": "source_backed",
+      "current_support": true,
+      "lineage_only": false,
+      "projection_warning": ""
+    }
+  ],
+  "hot_items": [
+    {
+      "ref_id": "active_attention:transactional-relationships-framing",
+      "item_id": "transactional-relationships-framing",
+      "attention_tags": [
+        "focus",
+        "framework"
+      ],
+      "statement": "Relationships as value-transaction media: this is the governing frame introduced at the outset.",
+      "status": "active",
+      "source_refs": [
+        {
+          "source_span_id": "src:c1:p3@0-p3@56",
+          "source_span": {
+            "start_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 3,
+              "char_offset": 0
+            },
+            "end_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 3,
+              "char_offset": 56
+            }
+          },
+          "quote": "RELATIONSHIPS ARE THE MEDIA IN WHICH VALUE IS TRANSACTED",
+          "role": "thesis_statement",
+          "resolution": {
+            "status": "matched",
+            "method": "exact_text",
+            "match_count": 1
+          }
+        }
+      ],
+      "linked_concept_keys": [],
+      "linked_thread_keys": [],
+      "projection_role": "current_support",
+      "support_status": "source_backed",
+      "current_support": true,
+      "lineage_only": false,
+      "projection_warning": ""
+    },
+    {
+      "ref_id": "active_attention:default-skepticism-default",
+      "item_id": "default-skepticism-default",
+      "attention_tags": [
+        "tension",
+        "interpretation"
+      ],
+      "statement": "Default skepticism toward others: 'problem until they prove otherwise' — inverts normal social assumptions.",
+      "status": "active",
+      "source_refs": [
+        {
+          "source_span_id": "src:c1:p4@452-p4@516",
+          "source_span": {
+            "start_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 4,
+              "char_offset": 452
+            },
+            "end_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 4,
+              "char_offset": 516
+            }
+          },
+          "quote": "other people are typically a problem until they prove otherwise.",
+          "role": "key_claim",
+          "resolution": {
+            "status": "matched",
+            "method": "exact_text",
+            "match_count": 1
+          }
+        }
+      ],
+      "linked_concept_keys": [],
+      "linked_thread_keys": [],
+      "projection_role": "current_support",
+      "support_status": "source_backed",
+      "current_support": true,
+      "lineage_only": false,
+      "projection_warning": ""
+    },
+    {
+      "ref_id": "active_attention:covert-transaction-norm",
+      "item_id": "covert-transaction-norm",
+      "attention_tags": [
+        "focus",
+        "framework"
+      ],
+      "statement": "Value transactions in relationships are covert by necessity — negotiated with subtlety, tact, and indirectness. The exchange is structurally hidden, not just unconsciously operated.",
+      "status": "active",
+      "source_refs": [
+        {
+          "source_span_id": "src:c1:p14@475-p14@616",
+          "source_span": {
+            "start_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 14,
+              "char_offset": 475
+            },
+            "end_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 14,
+              "char_offset": 616
+            }
+          },
+          "quote": "the transaction of value in such relationships is typically negotiated covertly: it must be approached with subtlety, tact, and indirectness.",
+          "role": "key_claim",
+          "resolution": {
+            "status": "matched",
+            "method": "exact_text",
+            "match_count": 1
+          }
+        }
+      ],
+      "linked_concept_keys": [],
+      "linked_thread_keys": [],
+      "projection_role": "current_support",
+      "support_status": "source_backed",
+      "current_support": true,
+      "lineage_only": false,
+      "projection_warning": ""
+    },
+    {
+      "ref_id": "active_attention:value-mismatch-pain-awareness-conditional",
+      "item_id": "value-mismatch-pain-awareness-conditional",
+      "attention_tags": [
+        "focus",
+        "interpretation"
+      ],
+      "statement": "Relationship pain from value mismatch is awareness-conditional: distress emerges when the under-compensated party recognizes that the other party's perception has shifted since the point of transaction.",
+      "status": "active",
+      "source_refs": [
+        {
+          "source_span_id": "src:c1:p16@791-p16@896",
+          "source_span": {
+            "start_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 16,
+              "char_offset": 791
+            },
+            "end_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 16,
+              "char_offset": 896
+            }
+          },
+          "quote": "awareness of this violation can lead to a great deal of pain and distress for the under-compensated party",
+          "role": "key_claim",
+          "resolution": {
+            "status": "matched",
+            "method": "exact_text",
+            "match_count": 1
+          }
+        }
+      ],
+      "linked_concept_keys": [],
+      "linked_thread_keys": [],
+      "projection_role": "current_support",
+      "support_status": "source_backed",
+      "current_support": true,
+      "lineage_only": false,
+      "projection_warning": ""
+    }
+  ]
+}
+```
+
+#### Active Focus
+
+`active_focus_digest`:
+
+```json
+{
+  "active_items": [
+    {
+      "ref_id": "active_attention:transactional-relationships-framing",
+      "item_id": "transactional-relationships-framing",
+      "attention_tags": [
+        "focus",
+        "framework"
+      ],
+      "statement": "Relationships as value-transaction media: this is the governing frame introduced at the outset.",
+      "status": "active",
+      "source_refs": [
+        {
+          "source_span_id": "src:c1:p3@0-p3@56",
+          "source_span": {
+            "start_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 3,
+              "char_offset": 0
+            },
+            "end_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 3,
+              "char_offset": 56
+            }
+          },
+          "quote": "RELATIONSHIPS ARE THE MEDIA IN WHICH VALUE IS TRANSACTED",
+          "role": "thesis_statement",
+          "resolution": {
+            "status": "matched",
+            "method": "exact_text",
+            "match_count": 1
+          }
+        }
+      ],
+      "linked_concept_keys": [],
+      "linked_thread_keys": [],
+      "projection_role": "current_support",
+      "support_status": "source_backed",
+      "current_support": true,
+      "lineage_only": false,
+      "projection_warning": ""
+    },
+    {
+      "ref_id": "active_attention:default-skepticism-default",
+      "item_id": "default-skepticism-default",
+      "attention_tags": [
+        "tension",
+        "interpretation"
+      ],
+      "statement": "Default skepticism toward others: 'problem until they prove otherwise' — inverts normal social assumptions.",
+      "status": "active",
+      "source_refs": [
+        {
+          "source_span_id": "src:c1:p4@452-p4@516",
+          "source_span": {
+            "start_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 4,
+              "char_offset": 452
+            },
+            "end_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 4,
+              "char_offset": 516
+            }
+          },
+          "quote": "other people are typically a problem until they prove otherwise.",
+          "role": "key_claim",
+          "resolution": {
+            "status": "matched",
+            "method": "exact_text",
+            "match_count": 1
+          }
+        }
+      ],
+      "linked_concept_keys": [],
+      "linked_thread_keys": [],
+      "projection_role": "current_support",
+      "support_status": "source_backed",
+      "current_support": true,
+      "lineage_only": false,
+      "projection_warning": ""
+    },
+    {
+      "ref_id": "active_attention:covert-transaction-norm",
+      "item_id": "covert-transaction-norm",
+      "attention_tags": [
+        "focus",
+        "framework"
+      ],
+      "statement": "Value transactions in relationships are covert by necessity — negotiated with subtlety, tact, and indirectness. The exchange is structurally hidden, not just unconsciously operated.",
+      "status": "active",
+      "source_refs": [
+        {
+          "source_span_id": "src:c1:p14@475-p14@616",
+          "source_span": {
+            "start_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 14,
+              "char_offset": 475
+            },
+            "end_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 14,
+              "char_offset": 616
+            }
+          },
+          "quote": "the transaction of value in such relationships is typically negotiated covertly: it must be approached with subtlety, tact, and indirectness.",
+          "role": "key_claim",
+          "resolution": {
+            "status": "matched",
+            "method": "exact_text",
+            "match_count": 1
+          }
+        }
+      ],
+      "linked_concept_keys": [],
+      "linked_thread_keys": [],
+      "projection_role": "current_support",
+      "support_status": "source_backed",
+      "current_support": true,
+      "lineage_only": false,
+      "projection_warning": ""
+    },
+    {
+      "ref_id": "active_attention:value-mismatch-pain-awareness-conditional",
+      "item_id": "value-mismatch-pain-awareness-conditional",
+      "attention_tags": [
+        "focus",
+        "interpretation"
+      ],
+      "statement": "Relationship pain from value mismatch is awareness-conditional: distress emerges when the under-compensated party recognizes that the other party's perception has shifted since the point of transaction.",
+      "status": "active",
+      "source_refs": [
+        {
+          "source_span_id": "src:c1:p16@791-p16@896",
+          "source_span": {
+            "start_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 16,
+              "char_offset": 791
+            },
+            "end_cursor": {
+              "chapter_id": 1,
+              "chapter_ref": "Full Content",
+              "paragraph_index": 16,
+              "char_offset": 896
+            }
+          },
+          "quote": "awareness of this violation can lead to a great deal of pain and distress for the under-compensated party",
+          "role": "key_claim",
+          "resolution": {
+            "status": "matched",
+            "method": "exact_text",
+            "match_count": 1
+          }
+        }
+      ],
+      "linked_concept_keys": [],
+      "linked_thread_keys": [],
+      "projection_role": "current_support",
+      "support_status": "source_backed",
+      "current_support": true,
+      "lineage_only": false,
+      "projection_warning": ""
+    }
+  ],
+  "recent_reactions": [
+    {
+      "ref_id": "reaction:rx:Full_Content:src:c1:p74@0-p74@544:discern:55",
+      "reaction_id": "rx:Full_Content:src:c1:p74@0-p74@544:discern:55",
+      "type": "discern",
+      "thought": "The 'enlightenment-level' qualifier lands as a deliberate deflation. Rather than offering a practical path, it sets the bar so high that for normal purposes the unconscious process might as well be treated as fixed.",
+      "emitted_at_source_span_id": "src:c1:p74@0-p74@544",
+      "primary_source_ref": {
+        "source_span_id": "src:c1:p74@137-p74@273",
+        "source_span": {
+          "start_cursor": {
+            "chapter_id": 1,
+            "chapter_ref": "Full Content",
+            "paragraph_index": 74,
+            "char_offset": 137
+          },
+          "end_cursor": {
+            "chapter_id": 1,
+            "chapter_ref": "Full Content",
+            "paragraph_index": 74,
+            "char_offset": 273
+          }
+        },
+        "quote": "This tendency is baked into our neurobiology and might only be surmountable through enlightenment-level self-awareness and self-control.",
+        "role": "reaction_anchor",
+        "resolution": {
+          "status": "matched",
+          "method": "exact_text",
+          "match_count": 1
+        }
+      },
+      "source_quote": "This tendency is baked into our neurobiology and might only be surmountable through enlightenment-level self-awareness and self-control.",
+      "projection_role": "visible_trace",
+      "support_status": "visible_trace",
+      "visible_trace_support": true,
+      "current_support": false,
+      "projection_warning": "visible_trace_not_semantic_memory"
+    },
+    {
+      "ref_id": "reaction:rx:Full_Content:src:c1:p74@0-p74@544:discern:56",
+      "reaction_id": "rx:Full_Content:src:c1:p74@0-p74@544:discern:56",
+      "type": "discern",
+      "thought": "This second half runs against the deterministic tenor of the first. The 'not entirely' is doing real work — it preserves the biological substrate while asserting that cultural and perceptual inputs reshape the weighting. Together with the earlier 'weights and evaluations used in that process are not' (p73), this frames culture and perception as the levers worth examining, even if direct self-override isn't on the table.",
+      "emitted_at_source_span_id": "src:c1:p74@0-p74@544",
+      "primary_source_ref": {
+        "source_span_id": "src:c1:p74@293-p74@544",
+        "source_span": {
+          "start_cursor": {
+            "chapter_id": 1,
+            "chapter_ref": "Full Content",
+            "paragraph_index": 74,
+            "char_offset": 293
+          },
+          "end_cursor": {
+            "chapter_id": 1,
+            "chapter_ref": "Full Content",
+            "paragraph_index": 74,
+            "char_offset": 544
+          }
+        },
+        "quote": "what people value – and how much they value those things – is not entirely biologically determined. It is both mediated by perception (which is not always reliable) and informed by culture (which creates significant variability across time and place).",
+        "role": "reaction_anchor",
+        "resolution": {
+          "status": "matched",
+          "method": "exact_text",
+          "match_count": 1
+        }
+      },
+      "source_quote": "what people value – and how much they value those things – is not entirely biologically determined. It is both mediated by perception (which is not always reliable) and informed by culture (which creates significant variability across time and place).",
+      "projection_role": "visible_trace",
+      "support_status": "visible_trace",
+      "visible_trace_support": true,
+      "current_support": false,
+      "projection_warning": "visible_trace_not_semantic_memory"
+    }
+  ]
+}
+```
 
 #### Concept Digest
-- `approach-avoidance-conflict-taxonomy`
-  - concept_type: `concept`
-  - projection_role: `current_support`
-  - support_status: `source_backed`
-  - sample quotes:
-    - high-value individual is desire. low-value individual is disgust. mid-value individual — if a lot of what we really want AND a lot of what we really don't — we feel conflicted. this is called an approach-avoidance conflict, and it can trap people in agonizing indecision for years.
-  - source refs:
-    - `src:c1:p63@0-p65@1416`; role `key_claim`; resolution `fallback_unit_span`
-      - quote: high-value individual is desire. low-value individual is disgust. mid-value individual — if a lot of what we really want AND a lot of what we really don't — we feel conflicted. this is called an approach-avoidance conflict, and it can trap people in agonizing indecision for years.
-- `comparable-value-exchange`
-  - concept_type: `concept`
-  - projection_role: `current_support`
-  - support_status: `source_backed`
-  - sample quotes:
-    - the media in which unequal goods of comparable value are exchanged
-  - source refs:
-    - `src:c1:p12@464-p12@530`; role `refined_definition`; resolution `matched`
-      - quote: the media in which unequal goods of comparable value are exchanged
-- `emotion-as-translator`
-  - concept_type: `concept`
-  - projection_role: `current_support`
-  - support_status: `source_backed`
-  - sample quotes:
-    - the calculated value coefficient is transformed into an emotion
-  - source refs:
-    - `src:c1:p41@379-p41@442`; role `key_definition`; resolution `matched`
-      - quote: the calculated value coefficient is transformed into an emotion
+
+`concept_digest`:
+
+```json
+[
+  {
+    "ref_id": "concept:approach-avoidance-conflict-taxonomy",
+    "concept_key": "approach-avoidance-conflict-taxonomy",
+    "concept_type": "concept",
+    "source_refs": [
+      {
+        "source_span_id": "src:c1:p63@0-p65@1416",
+        "source_span": {
+          "start_cursor": {
+            "chapter_id": 1,
+            "chapter_ref": "Full Content",
+            "paragraph_index": 63,
+            "char_offset": 0
+          },
+          "end_cursor": {
+            "chapter_id": 1,
+            "chapter_ref": "Full Content",
+            "paragraph_index": 65,
+            "char_offset": 1416
+          }
+        },
+        "quote": "high-value individual is desire. low-value individual is disgust. mid-value individual — if a lot of what we really want AND a lot of what we really don't — we feel conflicted. this is called an approach-avoidance conflict, and it can trap people in agonizing indecision for years.",
+        "role": "key_claim",
+        "resolution": {
+          "status": "fallback_unit_span",
+          "method": "quote_not_found",
+          "match_count": 0
+        }
+      }
+    ],
+    "sample_quotes": [
+      "high-value individual is desire. low-value individual is disgust. mid-value individual — if a lot of what we really want AND a lot of what we really don't — we feel conflicted. this is called an approach-avoidance conflict, and it can trap people in agonizing indecision for years."
+    ],
+    "rationale": "",
+    "projection_role": "current_support",
+    "support_status": "source_backed",
+    "current_support": true,
+    "lineage_only": false,
+    "projection_warning": ""
+  },
+  {
+    "ref_id": "concept:comparable-value-exchange",
+    "concept_key": "comparable-value-exchange",
+    "concept_type": "concept",
+    "source_refs": [
+      {
+        "source_span_id": "src:c1:p12@464-p12@530",
+        "source_span": {
+          "start_cursor": {
+            "chapter_id": 1,
+            "chapter_ref": "Full Content",
+            "paragraph_index": 12,
+            "char_offset": 464
+          },
+          "end_cursor": {
+            "chapter_id": 1,
+            "chapter_ref": "Full Content",
+            "paragraph_index": 12,
+            "char_offset": 530
+          }
+        },
+        "quote": "the media in which unequal goods of comparable value are exchanged",
+        "role": "refined_definition",
+        "resolution": {
+          "status": "matched",
+          "method": "exact_text",
+          "match_count": 1
+        }
+      }
+    ],
+    "sample_quotes": [
+      "the media in which unequal goods of comparable value are exchanged"
+    ],
+    "rationale": "",
+    "projection_role": "current_support",
+    "support_status": "source_backed",
+    "current_support": true,
+    "lineage_only": false,
+    "projection_warning": ""
+  },
+  {
+    "ref_id": "concept:emotion-as-translator",
+    "concept_key": "emotion-as-translator",
+    "concept_type": "concept",
+    "source_refs": [
+      {
+        "source_span_id": "src:c1:p41@379-p41@442",
+        "source_span": {
+          "start_cursor": {
+            "chapter_id": 1,
+            "chapter_ref": "Full Content",
+            "paragraph_index": 41,
+            "char_offset": 379
+          },
+          "end_cursor": {
+            "chapter_id": 1,
+            "chapter_ref": "Full Content",
+            "paragraph_index": 41,
+            "char_offset": 442
+          }
+        },
+        "quote": "the calculated value coefficient is transformed into an emotion",
+        "role": "key_definition",
+        "resolution": {
+          "status": "matched",
+          "method": "exact_text",
+          "match_count": 1
+        }
+      }
+    ],
+    "sample_quotes": [
+      "the calculated value coefficient is transformed into an emotion"
+    ],
+    "rationale": "",
+    "projection_role": "current_support",
+    "support_status": "source_backed",
+    "current_support": true,
+    "lineage_only": false,
+    "projection_warning": ""
+  }
+]
+```
 
 #### Thread Digest
-- `perception-vs-actuality-mechanism`
-  - thread_type: `thread`
-  - projection_role: `current_support`
-  - support_status: `source_backed`
-  - sample quotes:
-    - then the perception of value must be the mechanism that lies at the heart of sexual relationships.
-  - source refs:
-    - `src:c1:p23@565-p23@663`; role `key_claim`; resolution `matched`
-      - quote: then the perception of value must be the mechanism that lies at the heart of sexual relationships.
+
+`thread_digest`:
+
+```json
+[
+  {
+    "ref_id": "thread:perception-vs-actuality-mechanism",
+    "thread_key": "perception-vs-actuality-mechanism",
+    "thread_type": "thread",
+    "source_refs": [
+      {
+        "source_span_id": "src:c1:p23@565-p23@663",
+        "source_span": {
+          "start_cursor": {
+            "chapter_id": 1,
+            "chapter_ref": "Full Content",
+            "paragraph_index": 23,
+            "char_offset": 565
+          },
+          "end_cursor": {
+            "chapter_id": 1,
+            "chapter_ref": "Full Content",
+            "paragraph_index": 23,
+            "char_offset": 663
+          }
+        },
+        "quote": "then the perception of value must be the mechanism that lies at the heart of sexual relationships.",
+        "role": "key_claim",
+        "resolution": {
+          "status": "matched",
+          "method": "exact_text",
+          "match_count": 1
+        }
+      }
+    ],
+    "sample_quotes": [
+      "then the perception of value must be the mechanism that lies at the heart of sexual relationships."
+    ],
+    "rationale": "",
+    "projection_role": "current_support",
+    "support_status": "source_backed",
+    "current_support": true,
+    "lineage_only": false,
+    "projection_warning": ""
+  }
+]
+```
 
 #### Reflective Digest
-- `(none recorded in snapshot)`
+
+`reflective_digest`:
+
+```json
+{
+  "chapter_frames": [],
+  "book_frames": [],
+  "durable_definitions": []
+}
+```
 
 #### SourceRef Digest
-- `src:c1:p3@0-p3@56`; role `thesis_statement`; resolution `matched`
-  - quote: RELATIONSHIPS ARE THE MEDIA IN WHICH VALUE IS TRANSACTED
-- `src:c1:p4@452-p4@516`; role `key_claim`; resolution `matched`
-  - quote: other people are typically a problem until they prove otherwise.
-- `src:c1:p14@475-p14@616`; role `key_claim`; resolution `matched`
-  - quote: the transaction of value in such relationships is typically negotiated covertly: it must be approached with subtlety, tact, and indirectness.
-- `src:c1:p16@791-p16@896`; role `key_claim`; resolution `matched`
-  - quote: awareness of this violation can lead to a great deal of pain and distress for the under-compensated party
-- `src:c1:p18@0-p18@875`; role `support`; resolution `fallback_unit_span`
-  - quote: Every type of relationship constitutes a different game – as does every specific relationship of the same type. And since each specific friendship is nested in the larger game of general friendship, we find that the overarching category contains enormous variation at the individual level.
-- `src:c1:p19@502-p19@591`; role `key_claim`; resolution `matched`
-  - quote: the truer these principles are, the more abstract and unsatisfying they are likely to be.
-- `src:c1:p20@31-p20@430`; role `support`; resolution `matched`
-  - quote: On the one hand, greater specificity at the category level will make any claim less valid and reliable because it will increase the likelihood that it is contradicted at the individual level. On the other hand, less specificity at the category level will make any claim less practical and actionable because it will decrease the likelihood that it can be effectively applied at the individual level.
-- `src:c1:p33@19-p33@195`; role `key_claim`; resolution `matched`
-  - quote: nesting games will always take precedence over nested games whenever we become aware of new information that affects the acquisition (or maintenance) of the superordinate game.
 
+`source_ref_digest`:
+
+```json
+[
+  {
+    "source_span_id": "src:c1:p3@0-p3@56",
+    "source_span": {
+      "start_cursor": {
+        "chapter_id": 1,
+        "chapter_ref": "Full Content",
+        "paragraph_index": 3,
+        "char_offset": 0
+      },
+      "end_cursor": {
+        "chapter_id": 1,
+        "chapter_ref": "Full Content",
+        "paragraph_index": 3,
+        "char_offset": 56
+      }
+    },
+    "quote": "RELATIONSHIPS ARE THE MEDIA IN WHICH VALUE IS TRANSACTED",
+    "role": "thesis_statement",
+    "resolution": {
+      "status": "matched",
+      "method": "exact_text",
+      "match_count": 1
+    }
+  },
+  {
+    "source_span_id": "src:c1:p4@452-p4@516",
+    "source_span": {
+      "start_cursor": {
+        "chapter_id": 1,
+        "chapter_ref": "Full Content",
+        "paragraph_index": 4,
+        "char_offset": 452
+      },
+      "end_cursor": {
+        "chapter_id": 1,
+        "chapter_ref": "Full Content",
+        "paragraph_index": 4,
+        "char_offset": 516
+      }
+    },
+    "quote": "other people are typically a problem until they prove otherwise.",
+    "role": "key_claim",
+    "resolution": {
+      "status": "matched",
+      "method": "exact_text",
+      "match_count": 1
+    }
+  },
+  {
+    "source_span_id": "src:c1:p14@475-p14@616",
+    "source_span": {
+      "start_cursor": {
+        "chapter_id": 1,
+        "chapter_ref": "Full Content",
+        "paragraph_index": 14,
+        "char_offset": 475
+      },
+      "end_cursor": {
+        "chapter_id": 1,
+        "chapter_ref": "Full Content",
+        "paragraph_index": 14,
+        "char_offset": 616
+      }
+    },
+    "quote": "the transaction of value in such relationships is typically negotiated covertly: it must be approached with subtlety, tact, and indirectness.",
+    "role": "key_claim",
+    "resolution": {
+      "status": "matched",
+      "method": "exact_text",
+      "match_count": 1
+    }
+  },
+  {
+    "source_span_id": "src:c1:p16@791-p16@896",
+    "source_span": {
+      "start_cursor": {
+        "chapter_id": 1,
+        "chapter_ref": "Full Content",
+        "paragraph_index": 16,
+        "char_offset": 791
+      },
+      "end_cursor": {
+        "chapter_id": 1,
+        "chapter_ref": "Full Content",
+        "paragraph_index": 16,
+        "char_offset": 896
+      }
+    },
+    "quote": "awareness of this violation can lead to a great deal of pain and distress for the under-compensated party",
+    "role": "key_claim",
+    "resolution": {
+      "status": "matched",
+      "method": "exact_text",
+      "match_count": 1
+    }
+  },
+  {
+    "source_span_id": "src:c1:p18@0-p18@875",
+    "source_span": {
+      "start_cursor": {
+        "chapter_id": 1,
+        "chapter_ref": "Full Content",
+        "paragraph_index": 18,
+        "char_offset": 0
+      },
+      "end_cursor": {
+        "chapter_id": 1,
+        "chapter_ref": "Full Content",
+        "paragraph_index": 18,
+        "char_offset": 875
+      }
+    },
+    "quote": "Every type of relationship constitutes a different game – as does every specific relationship of the same type. And since each specific friendship is nested in the larger game of general friendship, we find that the overarching category contains enormous variation at the individual level.",
+    "role": "support",
+    "resolution": {
+      "status": "fallback_unit_span",
+      "method": "quote_not_found",
+      "match_count": 0
+    }
+  },
+  {
+    "source_span_id": "src:c1:p19@502-p19@591",
+    "source_span": {
+      "start_cursor": {
+        "chapter_id": 1,
+        "chapter_ref": "Full Content",
+        "paragraph_index": 19,
+        "char_offset": 502
+      },
+      "end_cursor": {
+        "chapter_id": 1,
+        "chapter_ref": "Full Content",
+        "paragraph_index": 19,
+        "char_offset": 591
+      }
+    },
+    "quote": "the truer these principles are, the more abstract and unsatisfying they are likely to be.",
+    "role": "key_claim",
+    "resolution": {
+      "status": "matched",
+      "method": "exact_text",
+      "match_count": 1
+    }
+  },
+  {
+    "source_span_id": "src:c1:p20@31-p20@430",
+    "source_span": {
+      "start_cursor": {
+        "chapter_id": 1,
+        "chapter_ref": "Full Content",
+        "paragraph_index": 20,
+        "char_offset": 31
+      },
+      "end_cursor": {
+        "chapter_id": 1,
+        "chapter_ref": "Full Content",
+        "paragraph_index": 20,
+        "char_offset": 430
+      }
+    },
+    "quote": "On the one hand, greater specificity at the category level will make any claim less valid and reliable because it will increase the likelihood that it is contradicted at the individual level. On the other hand, less specificity at the category level will make any claim less practical and actionable because it will decrease the likelihood that it can be effectively applied at the individual level.",
+    "role": "support",
+    "resolution": {
+      "status": "matched",
+      "method": "exact_text",
+      "match_count": 1
+    }
+  },
+  {
+    "source_span_id": "src:c1:p33@19-p33@195",
+    "source_span": {
+      "start_cursor": {
+        "chapter_id": 1,
+        "chapter_ref": "Full Content",
+        "paragraph_index": 33,
+        "char_offset": 19
+      },
+      "end_cursor": {
+        "chapter_id": 1,
+        "chapter_ref": "Full Content",
+        "paragraph_index": 33,
+        "char_offset": 195
+      }
+    },
+    "quote": "nesting games will always take precedence over nested games whenever we become aware of new information that affects the acquisition (or maintenance) of the superordinate game.",
+    "role": "key_claim",
+    "resolution": {
+      "status": "matched",
+      "method": "exact_text",
+      "match_count": 1
+    }
+  }
+]
+```
 #### Score Rationale
 - salience: `3`
 - mainline_fidelity: `3`

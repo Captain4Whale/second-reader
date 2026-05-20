@@ -1,6 +1,6 @@
 # Eval-1 Full Active Evaluation Post-Slice8H: Playback Dossier
 
-This dossier replays Eval-1 as a reading trace rather than as a score table. It is designed for human review of the product-facing reading experience: source window -> visible reactions -> note coverage -> callback/FVI audit -> recorded state evidence -> scoring interpretation.
+This dossier replays Eval-1 as a reading trace rather than as a score table. It is designed for human review of the product-facing reading experience: source window -> visible reactions -> note coverage -> callback/FVI audit -> exact recorded state fields -> scoring interpretation.
 
 It is not a new eval run, not an evidence-catalog update, not product-quality proof, and not Long Span formal benchmark authority.
 
@@ -9,7 +9,7 @@ It is not a new eval run, not an evidence-catalog update, not product-quality pr
 1. Open the dataset source window first for the book/window context.
 2. Read the matching playback window page in order; every visible reaction from the Eval-1 run is listed.
 3. Use the conditional Selective Legibility and Callback/FVI blocks only where they appear; local-only / non-target reactions stay compact.
-4. At each Memory Quality probe, inspect the concrete recorded state digests before reading the score rationale; synthetic wrappers and recent-continuity capsules are intentionally not shown as memory stores.
+4. At each Memory Quality probe, inspect the exact recorded snapshot fields before reading the score rationale; empty arrays, empty objects, and `null` values are shown as recorded rather than hidden behind a synthetic wrapper.
 5. Use the final scoring interpretation to connect the trace back to the four metrics.
 
 ## Window Index
