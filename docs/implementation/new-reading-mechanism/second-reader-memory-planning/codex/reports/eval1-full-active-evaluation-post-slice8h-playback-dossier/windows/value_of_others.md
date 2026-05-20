@@ -2567,7 +2567,27 @@ The chapter closes on a structural promissory note: two universal difficulties n
 
 ## Probe Memory Checkpoints
 
-Memory Quality is scored at probe time. The state below is a structured re-layout of the recorded probe snapshot, not a fresh summary and not the final runtime dump.
+Memory Quality is scored at probe time. The state blocks below are exact Markdown re-layouts of recorded probe snapshot digest fields, not fresh summaries and not final runtime dumps.
+
+### Memory State Evidence Boundary
+
+- Probe-time scoring evidence: `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_long_span_post_slice8h_20260519_value_of_others/outputs/value_of_others_private_en__segment_1/attentional_v2/_mechanisms/attentional_v2/exports/memory_quality_probe_snapshots.json`. The per-probe blocks below come from snapshot fields such as `active_attention_digest`, `concept_digest`, `thread_digest`, `reflective_digest`, and `source_ref_digest`.
+- Final full runtime state references: files under `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_long_span_post_slice8h_20260519_value_of_others/outputs/value_of_others_private_en__segment_1/attentional_v2/_mechanisms/attentional_v2/runtime`. These are useful for diagnosis, but they are window-end state references rather than the exact state used at each Memory Quality probe.
+- Window boundary checkpoint: `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_long_span_post_slice8h_20260519_value_of_others/outputs/value_of_others_private_en__segment_1/attentional_v2/_mechanisms/attentional_v2/runtime/checkpoints/chapter-001.json`. This is the chapter/window boundary checkpoint, not five independent probe-time checkpoints.
+- Missing artifact boundary: current Eval-1 artifacts do not contain per-probe full-store dumps. A future exporter needs explicit `exports/probe_state_snapshots/probe_###/...` captures before a report can link to complete memory stores at each probe.
+
+### Full Runtime State Links
+
+| State artifact | Path | Boundary note |
+| --- | --- | --- |
+| Active Attention | `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_long_span_post_slice8h_20260519_value_of_others/outputs/value_of_others_private_en__segment_1/attentional_v2/_mechanisms/attentional_v2/runtime/active_attention.json` | Final window-end active attention store; not the probe-time full store. |
+| Concept Registry | `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_long_span_post_slice8h_20260519_value_of_others/outputs/value_of_others_private_en__segment_1/attentional_v2/_mechanisms/attentional_v2/runtime/concept_registry.json` | Final window-end concept store; use for diagnosis only. |
+| Thread Trace | `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_long_span_post_slice8h_20260519_value_of_others/outputs/value_of_others_private_en__segment_1/attentional_v2/_mechanisms/attentional_v2/runtime/thread_trace.json` | Final window-end thread store; use for diagnosis only. |
+| Reflective Frames | `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_long_span_post_slice8h_20260519_value_of_others/outputs/value_of_others_private_en__segment_1/attentional_v2/_mechanisms/attentional_v2/runtime/reflective_frames.json` | Final window-end reflective store; use for diagnosis only. |
+| Reaction Records | `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_long_span_post_slice8h_20260519_value_of_others/outputs/value_of_others_private_en__segment_1/attentional_v2/_mechanisms/attentional_v2/runtime/reaction_records.json` | Final window reaction record store; timeline above is the reviewer-readable projection. |
+| Read Audit | `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_long_span_post_slice8h_20260519_value_of_others/outputs/value_of_others_private_en__segment_1/attentional_v2/_mechanisms/attentional_v2/runtime/read_audit.jsonl` | Runtime operation/audit stream for diagnosis. |
+| Settlement Audit | `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_long_span_post_slice8h_20260519_value_of_others/outputs/value_of_others_private_en__segment_1/attentional_v2/_mechanisms/attentional_v2/runtime/settlement_audit.jsonl` | Runtime settlement/audit stream for diagnosis. |
+| Chapter checkpoint | `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_long_span_post_slice8h_20260519_value_of_others/outputs/value_of_others_private_en__segment_1/attentional_v2/_mechanisms/attentional_v2/runtime/checkpoints/chapter-001.json` | Full window boundary checkpoint, not a per-probe checkpoint. |
 
 ### Probe 1 — MQ `4.00` — near 20%
 
@@ -2589,7 +2609,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
    s92 / p18: For instance, the game of friendship is different from the game of business, both in their rules and goals.
 ```
 
-#### Active Attention
+#### Probe-time snapshot field: active_attention_digest
 
 `active_attention_digest`:
 
@@ -2946,266 +2966,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
 }
 ```
 
-#### Active Focus
-
-`active_focus_digest`:
-
-```json
-{
-  "active_items": [
-    {
-      "ref_id": "active_attention:transactional-relationships-framing",
-      "item_id": "transactional-relationships-framing",
-      "attention_tags": [
-        "focus",
-        "framework"
-      ],
-      "statement": "Relationships as value-transaction media: this is the governing frame introduced at the outset.",
-      "status": "active",
-      "source_refs": [
-        {
-          "source_span_id": "src:c1:p3@0-p3@56",
-          "source_span": {
-            "start_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 3,
-              "char_offset": 0
-            },
-            "end_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 3,
-              "char_offset": 56
-            }
-          },
-          "quote": "RELATIONSHIPS ARE THE MEDIA IN WHICH VALUE IS TRANSACTED",
-          "role": "thesis_statement",
-          "resolution": {
-            "status": "matched",
-            "method": "exact_text",
-            "match_count": 1
-          }
-        }
-      ],
-      "linked_concept_keys": [],
-      "linked_thread_keys": [],
-      "projection_role": "current_support",
-      "support_status": "source_backed",
-      "current_support": true,
-      "lineage_only": false,
-      "projection_warning": ""
-    },
-    {
-      "ref_id": "active_attention:default-skepticism-default",
-      "item_id": "default-skepticism-default",
-      "attention_tags": [
-        "tension",
-        "interpretation"
-      ],
-      "statement": "Default skepticism toward others: 'problem until they prove otherwise' — inverts normal social assumptions.",
-      "status": "active",
-      "source_refs": [
-        {
-          "source_span_id": "src:c1:p4@452-p4@516",
-          "source_span": {
-            "start_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 4,
-              "char_offset": 452
-            },
-            "end_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 4,
-              "char_offset": 516
-            }
-          },
-          "quote": "other people are typically a problem until they prove otherwise.",
-          "role": "key_claim",
-          "resolution": {
-            "status": "matched",
-            "method": "exact_text",
-            "match_count": 1
-          }
-        }
-      ],
-      "linked_concept_keys": [],
-      "linked_thread_keys": [],
-      "projection_role": "current_support",
-      "support_status": "source_backed",
-      "current_support": true,
-      "lineage_only": false,
-      "projection_warning": ""
-    },
-    {
-      "ref_id": "active_attention:covert-transaction-norm",
-      "item_id": "covert-transaction-norm",
-      "attention_tags": [
-        "focus",
-        "framework"
-      ],
-      "statement": "Value transactions in relationships are covert by necessity — negotiated with subtlety, tact, and indirectness. The exchange is structurally hidden, not just unconsciously operated.",
-      "status": "active",
-      "source_refs": [
-        {
-          "source_span_id": "src:c1:p14@475-p14@616",
-          "source_span": {
-            "start_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 14,
-              "char_offset": 475
-            },
-            "end_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 14,
-              "char_offset": 616
-            }
-          },
-          "quote": "the transaction of value in such relationships is typically negotiated covertly: it must be approached with subtlety, tact, and indirectness.",
-          "role": "key_claim",
-          "resolution": {
-            "status": "matched",
-            "method": "exact_text",
-            "match_count": 1
-          }
-        }
-      ],
-      "linked_concept_keys": [],
-      "linked_thread_keys": [],
-      "projection_role": "current_support",
-      "support_status": "source_backed",
-      "current_support": true,
-      "lineage_only": false,
-      "projection_warning": ""
-    },
-    {
-      "ref_id": "active_attention:value-mismatch-pain-awareness-conditional",
-      "item_id": "value-mismatch-pain-awareness-conditional",
-      "attention_tags": [
-        "focus",
-        "interpretation"
-      ],
-      "statement": "Relationship pain from value mismatch is awareness-conditional: distress emerges when the under-compensated party recognizes that the other party's perception has shifted since the point of transaction.",
-      "status": "active",
-      "source_refs": [
-        {
-          "source_span_id": "src:c1:p16@791-p16@896",
-          "source_span": {
-            "start_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 16,
-              "char_offset": 791
-            },
-            "end_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 16,
-              "char_offset": 896
-            }
-          },
-          "quote": "awareness of this violation can lead to a great deal of pain and distress for the under-compensated party",
-          "role": "key_claim",
-          "resolution": {
-            "status": "matched",
-            "method": "exact_text",
-            "match_count": 1
-          }
-        }
-      ],
-      "linked_concept_keys": [],
-      "linked_thread_keys": [],
-      "projection_role": "current_support",
-      "support_status": "source_backed",
-      "current_support": true,
-      "lineage_only": false,
-      "projection_warning": ""
-    }
-  ],
-  "recent_reactions": [
-    {
-      "ref_id": "reaction:rx:Full_Content:src:c1:p16@0-p16@1015:discern:13",
-      "reaction_id": "rx:Full_Content:src:c1:p16@0-p16@1015:discern:13",
-      "type": "discern",
-      "thought": "This is a clean two-boundary theorem for relationship formation. Too symmetric (identical goods) → no transaction. Too asymmetric (disparate values) → relationship probability decreases. Only the narrow middle band — unequal goods, comparable value — sustains the exchange. This extends the earlier 'unequal goods of comparable value' definition into a generative condition with failure modes.",
-      "emitted_at_source_span_id": "src:c1:p16@0-p16@1015",
-      "primary_source_ref": {
-        "source_span_id": "src:c1:p16@260-p16@574",
-        "source_span": {
-          "start_cursor": {
-            "chapter_id": 1,
-            "chapter_ref": "Full Content",
-            "paragraph_index": 16,
-            "char_offset": 260
-          },
-          "end_cursor": {
-            "chapter_id": 1,
-            "chapter_ref": "Full Content",
-            "paragraph_index": 16,
-            "char_offset": 574
-          }
-        },
-        "quote": "If the goods are the same, then exchange is either unnecessary or impossible (so no relationship is formed). And if their values are too disparate, then the relationship becomes likely in inverse proportion to the size of the perceived mismatch in value: the greater the mismatch, the less likely the relationship.",
-        "role": "reaction_anchor",
-        "resolution": {
-          "status": "matched",
-          "method": "exact_text",
-          "match_count": 1
-        }
-      },
-      "source_quote": "If the goods are the same, then exchange is either unnecessary or impossible (so no relationship is formed). And if their values are too disparate, then the relationship becomes likely in inverse proportion to the size of the perceived mismatch in value: the greater the mismatch, the less likely the relationship.",
-      "projection_role": "visible_trace",
-      "support_status": "visible_trace",
-      "visible_trace_support": true,
-      "current_support": false,
-      "projection_warning": "visible_trace_not_semantic_memory"
-    },
-    {
-      "ref_id": "reaction:rx:Full_Content:src:c1:p16@0-p16@1015:discern:14",
-      "reaction_id": "rx:Full_Content:src:c1:p16@0-p16@1015:discern:14",
-      "type": "discern",
-      "thought": "This is the key consequence clause. The pain isn't automatic — it requires awareness. Someone operating with a stale mismatch perception feels fine until the other party's shifted valuation becomes visible. The distress is a function of the recognition, not the mismatch itself.",
-      "emitted_at_source_span_id": "src:c1:p16@0-p16@1015",
-      "primary_source_ref": {
-        "source_span_id": "src:c1:p16@791-p16@896",
-        "source_span": {
-          "start_cursor": {
-            "chapter_id": 1,
-            "chapter_ref": "Full Content",
-            "paragraph_index": 16,
-            "char_offset": 791
-          },
-          "end_cursor": {
-            "chapter_id": 1,
-            "chapter_ref": "Full Content",
-            "paragraph_index": 16,
-            "char_offset": 896
-          }
-        },
-        "quote": "awareness of this violation can lead to a great deal of pain and distress for the under-compensated party",
-        "role": "reaction_anchor",
-        "resolution": {
-          "status": "matched",
-          "method": "exact_text",
-          "match_count": 1
-        }
-      },
-      "source_quote": "awareness of this violation can lead to a great deal of pain and distress for the under-compensated party",
-      "projection_role": "visible_trace",
-      "support_status": "visible_trace",
-      "visible_trace_support": true,
-      "current_support": false,
-      "projection_warning": "visible_trace_not_semantic_memory"
-    }
-  ]
-}
-```
-
-#### Concept Digest
+#### Probe-time snapshot field: concept_digest
 
 `concept_digest`:
 
@@ -3334,7 +3095,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
 ]
 ```
 
-#### Thread Digest
+#### Probe-time snapshot field: thread_digest
 
 `thread_digest`:
 
@@ -3342,7 +3103,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
 []
 ```
 
-#### Reflective Digest
+#### Probe-time snapshot field: reflective_digest
 
 `reflective_digest`:
 
@@ -3354,7 +3115,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
 }
 ```
 
-#### SourceRef Digest
+#### Probe-time snapshot field: source_ref_digest
 
 `source_ref_digest`:
 
@@ -3587,7 +3348,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
    s138 / p28: Value is easy to define but difficult to pin down.
 ```
 
-#### Active Attention
+#### Probe-time snapshot field: active_attention_digest
 
 `active_attention_digest`:
 
@@ -4030,266 +3791,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
 }
 ```
 
-#### Active Focus
-
-`active_focus_digest`:
-
-```json
-{
-  "active_items": [
-    {
-      "ref_id": "active_attention:transactional-relationships-framing",
-      "item_id": "transactional-relationships-framing",
-      "attention_tags": [
-        "focus",
-        "framework"
-      ],
-      "statement": "Relationships as value-transaction media: this is the governing frame introduced at the outset.",
-      "status": "active",
-      "source_refs": [
-        {
-          "source_span_id": "src:c1:p3@0-p3@56",
-          "source_span": {
-            "start_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 3,
-              "char_offset": 0
-            },
-            "end_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 3,
-              "char_offset": 56
-            }
-          },
-          "quote": "RELATIONSHIPS ARE THE MEDIA IN WHICH VALUE IS TRANSACTED",
-          "role": "thesis_statement",
-          "resolution": {
-            "status": "matched",
-            "method": "exact_text",
-            "match_count": 1
-          }
-        }
-      ],
-      "linked_concept_keys": [],
-      "linked_thread_keys": [],
-      "projection_role": "current_support",
-      "support_status": "source_backed",
-      "current_support": true,
-      "lineage_only": false,
-      "projection_warning": ""
-    },
-    {
-      "ref_id": "active_attention:default-skepticism-default",
-      "item_id": "default-skepticism-default",
-      "attention_tags": [
-        "tension",
-        "interpretation"
-      ],
-      "statement": "Default skepticism toward others: 'problem until they prove otherwise' — inverts normal social assumptions.",
-      "status": "active",
-      "source_refs": [
-        {
-          "source_span_id": "src:c1:p4@452-p4@516",
-          "source_span": {
-            "start_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 4,
-              "char_offset": 452
-            },
-            "end_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 4,
-              "char_offset": 516
-            }
-          },
-          "quote": "other people are typically a problem until they prove otherwise.",
-          "role": "key_claim",
-          "resolution": {
-            "status": "matched",
-            "method": "exact_text",
-            "match_count": 1
-          }
-        }
-      ],
-      "linked_concept_keys": [],
-      "linked_thread_keys": [],
-      "projection_role": "current_support",
-      "support_status": "source_backed",
-      "current_support": true,
-      "lineage_only": false,
-      "projection_warning": ""
-    },
-    {
-      "ref_id": "active_attention:covert-transaction-norm",
-      "item_id": "covert-transaction-norm",
-      "attention_tags": [
-        "focus",
-        "framework"
-      ],
-      "statement": "Value transactions in relationships are covert by necessity — negotiated with subtlety, tact, and indirectness. The exchange is structurally hidden, not just unconsciously operated.",
-      "status": "active",
-      "source_refs": [
-        {
-          "source_span_id": "src:c1:p14@475-p14@616",
-          "source_span": {
-            "start_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 14,
-              "char_offset": 475
-            },
-            "end_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 14,
-              "char_offset": 616
-            }
-          },
-          "quote": "the transaction of value in such relationships is typically negotiated covertly: it must be approached with subtlety, tact, and indirectness.",
-          "role": "key_claim",
-          "resolution": {
-            "status": "matched",
-            "method": "exact_text",
-            "match_count": 1
-          }
-        }
-      ],
-      "linked_concept_keys": [],
-      "linked_thread_keys": [],
-      "projection_role": "current_support",
-      "support_status": "source_backed",
-      "current_support": true,
-      "lineage_only": false,
-      "projection_warning": ""
-    },
-    {
-      "ref_id": "active_attention:value-mismatch-pain-awareness-conditional",
-      "item_id": "value-mismatch-pain-awareness-conditional",
-      "attention_tags": [
-        "focus",
-        "interpretation"
-      ],
-      "statement": "Relationship pain from value mismatch is awareness-conditional: distress emerges when the under-compensated party recognizes that the other party's perception has shifted since the point of transaction.",
-      "status": "active",
-      "source_refs": [
-        {
-          "source_span_id": "src:c1:p16@791-p16@896",
-          "source_span": {
-            "start_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 16,
-              "char_offset": 791
-            },
-            "end_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 16,
-              "char_offset": 896
-            }
-          },
-          "quote": "awareness of this violation can lead to a great deal of pain and distress for the under-compensated party",
-          "role": "key_claim",
-          "resolution": {
-            "status": "matched",
-            "method": "exact_text",
-            "match_count": 1
-          }
-        }
-      ],
-      "linked_concept_keys": [],
-      "linked_thread_keys": [],
-      "projection_role": "current_support",
-      "support_status": "source_backed",
-      "current_support": true,
-      "lineage_only": false,
-      "projection_warning": ""
-    }
-  ],
-  "recent_reactions": [
-    {
-      "ref_id": "reaction:rx:Full_Content:src:c1:p22@0-p23@663:discern:21",
-      "reaction_id": "rx:Full_Content:src:c1:p22@0-p23@663:discern:21",
-      "type": "discern",
-      "thought": "The pivot from \"perceived\" to \"perception of value\" is the book's key move in this unit — not what is actually valuable, but what is perceived as valuable. This is where the framework becomes distinctively about subjective evaluation rather than objective exchange.",
-      "emitted_at_source_span_id": "src:c1:p22@0-p23@663",
-      "primary_source_ref": {
-        "source_span_id": "src:c1:p23@468-p23@663",
-        "source_span": {
-          "start_cursor": {
-            "chapter_id": 1,
-            "chapter_ref": "Full Content",
-            "paragraph_index": 23,
-            "char_offset": 468
-          },
-          "end_cursor": {
-            "chapter_id": 1,
-            "chapter_ref": "Full Content",
-            "paragraph_index": 23,
-            "char_offset": 663
-          }
-        },
-        "quote": "And if people enter into (and remain in) sexual relationships with their perceived best options, then the perception of value must be the mechanism that lies at the heart of sexual relationships.",
-        "role": "reaction_anchor",
-        "resolution": {
-          "status": "matched",
-          "method": "exact_text",
-          "match_count": 1
-        }
-      },
-      "source_quote": "And if people enter into (and remain in) sexual relationships with their perceived best options, then the perception of value must be the mechanism that lies at the heart of sexual relationships.",
-      "projection_role": "visible_trace",
-      "support_status": "visible_trace",
-      "visible_trace_support": true,
-      "current_support": false,
-      "projection_warning": "visible_trace_not_semantic_memory"
-    },
-    {
-      "ref_id": "reaction:rx:Full_Content:src:c1:p24@0-p26@122:discern:22",
-      "reaction_id": "rx:Full_Content:src:c1:p24@0-p26@122:discern:22",
-      "type": "discern",
-      "thought": "The reversibility test as epistemic arbiter: the model's ability to explain its own inputs makes it more fundamental than those inputs. This subordinates emotion to the economic framework rather than placing them in parallel — a strong asymmetric move that runs counter to most popular relationship writing.",
-      "emitted_at_source_span_id": "src:c1:p24@0-p26@122",
-      "primary_source_ref": {
-        "source_span_id": "src:c1:p25@500-p25@662",
-        "source_span": {
-          "start_cursor": {
-            "chapter_id": 1,
-            "chapter_ref": "Full Content",
-            "paragraph_index": 25,
-            "char_offset": 500
-          },
-          "end_cursor": {
-            "chapter_id": 1,
-            "chapter_ref": "Full Content",
-            "paragraph_index": 25,
-            "char_offset": 662
-          }
-        },
-        "quote": "And since the model can explain emotions (but emotions cannot explain the model), this means that the model is more fundamentally true and should take precedence.",
-        "role": "reaction_anchor",
-        "resolution": {
-          "status": "matched",
-          "method": "exact_text",
-          "match_count": 1
-        }
-      },
-      "source_quote": "And since the model can explain emotions (but emotions cannot explain the model), this means that the model is more fundamentally true and should take precedence.",
-      "projection_role": "visible_trace",
-      "support_status": "visible_trace",
-      "visible_trace_support": true,
-      "current_support": false,
-      "projection_warning": "visible_trace_not_semantic_memory"
-    }
-  ]
-}
-```
-
-#### Concept Digest
+#### Probe-time snapshot field: concept_digest
 
 `concept_digest`:
 
@@ -4418,7 +3920,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
 ]
 ```
 
-#### Thread Digest
+#### Probe-time snapshot field: thread_digest
 
 `thread_digest`:
 
@@ -4467,7 +3969,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
 ]
 ```
 
-#### Reflective Digest
+#### Probe-time snapshot field: reflective_digest
 
 `reflective_digest`:
 
@@ -4479,7 +3981,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
 }
 ```
 
-#### SourceRef Digest
+#### Probe-time snapshot field: source_ref_digest
 
 `source_ref_digest`:
 
@@ -4712,7 +4214,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
    s249 / p47: This decision is not unsettling – it’s common sense.
 ```
 
-#### Active Attention
+#### Probe-time snapshot field: active_attention_digest
 
 `active_attention_digest`:
 
@@ -5155,266 +4657,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
 }
 ```
 
-#### Active Focus
-
-`active_focus_digest`:
-
-```json
-{
-  "active_items": [
-    {
-      "ref_id": "active_attention:transactional-relationships-framing",
-      "item_id": "transactional-relationships-framing",
-      "attention_tags": [
-        "focus",
-        "framework"
-      ],
-      "statement": "Relationships as value-transaction media: this is the governing frame introduced at the outset.",
-      "status": "active",
-      "source_refs": [
-        {
-          "source_span_id": "src:c1:p3@0-p3@56",
-          "source_span": {
-            "start_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 3,
-              "char_offset": 0
-            },
-            "end_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 3,
-              "char_offset": 56
-            }
-          },
-          "quote": "RELATIONSHIPS ARE THE MEDIA IN WHICH VALUE IS TRANSACTED",
-          "role": "thesis_statement",
-          "resolution": {
-            "status": "matched",
-            "method": "exact_text",
-            "match_count": 1
-          }
-        }
-      ],
-      "linked_concept_keys": [],
-      "linked_thread_keys": [],
-      "projection_role": "current_support",
-      "support_status": "source_backed",
-      "current_support": true,
-      "lineage_only": false,
-      "projection_warning": ""
-    },
-    {
-      "ref_id": "active_attention:default-skepticism-default",
-      "item_id": "default-skepticism-default",
-      "attention_tags": [
-        "tension",
-        "interpretation"
-      ],
-      "statement": "Default skepticism toward others: 'problem until they prove otherwise' — inverts normal social assumptions.",
-      "status": "active",
-      "source_refs": [
-        {
-          "source_span_id": "src:c1:p4@452-p4@516",
-          "source_span": {
-            "start_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 4,
-              "char_offset": 452
-            },
-            "end_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 4,
-              "char_offset": 516
-            }
-          },
-          "quote": "other people are typically a problem until they prove otherwise.",
-          "role": "key_claim",
-          "resolution": {
-            "status": "matched",
-            "method": "exact_text",
-            "match_count": 1
-          }
-        }
-      ],
-      "linked_concept_keys": [],
-      "linked_thread_keys": [],
-      "projection_role": "current_support",
-      "support_status": "source_backed",
-      "current_support": true,
-      "lineage_only": false,
-      "projection_warning": ""
-    },
-    {
-      "ref_id": "active_attention:covert-transaction-norm",
-      "item_id": "covert-transaction-norm",
-      "attention_tags": [
-        "focus",
-        "framework"
-      ],
-      "statement": "Value transactions in relationships are covert by necessity — negotiated with subtlety, tact, and indirectness. The exchange is structurally hidden, not just unconsciously operated.",
-      "status": "active",
-      "source_refs": [
-        {
-          "source_span_id": "src:c1:p14@475-p14@616",
-          "source_span": {
-            "start_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 14,
-              "char_offset": 475
-            },
-            "end_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 14,
-              "char_offset": 616
-            }
-          },
-          "quote": "the transaction of value in such relationships is typically negotiated covertly: it must be approached with subtlety, tact, and indirectness.",
-          "role": "key_claim",
-          "resolution": {
-            "status": "matched",
-            "method": "exact_text",
-            "match_count": 1
-          }
-        }
-      ],
-      "linked_concept_keys": [],
-      "linked_thread_keys": [],
-      "projection_role": "current_support",
-      "support_status": "source_backed",
-      "current_support": true,
-      "lineage_only": false,
-      "projection_warning": ""
-    },
-    {
-      "ref_id": "active_attention:value-mismatch-pain-awareness-conditional",
-      "item_id": "value-mismatch-pain-awareness-conditional",
-      "attention_tags": [
-        "focus",
-        "interpretation"
-      ],
-      "statement": "Relationship pain from value mismatch is awareness-conditional: distress emerges when the under-compensated party recognizes that the other party's perception has shifted since the point of transaction.",
-      "status": "active",
-      "source_refs": [
-        {
-          "source_span_id": "src:c1:p16@791-p16@896",
-          "source_span": {
-            "start_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 16,
-              "char_offset": 791
-            },
-            "end_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 16,
-              "char_offset": 896
-            }
-          },
-          "quote": "awareness of this violation can lead to a great deal of pain and distress for the under-compensated party",
-          "role": "key_claim",
-          "resolution": {
-            "status": "matched",
-            "method": "exact_text",
-            "match_count": 1
-          }
-        }
-      ],
-      "linked_concept_keys": [],
-      "linked_thread_keys": [],
-      "projection_role": "current_support",
-      "support_status": "source_backed",
-      "current_support": true,
-      "lineage_only": false,
-      "projection_warning": ""
-    }
-  ],
-  "recent_reactions": [
-    {
-      "ref_id": "reaction:rx:Full_Content:src:c1:p42@0-p42@987:discern:36",
-      "reaction_id": "rx:Full_Content:src:c1:p42@0-p42@987:discern:36",
-      "type": "discern",
-      "thought": "The 'more elegantly' qualifier does real work here. Earlier material established that emotion transforms the value coefficient as a functional necessity. This unit goes further—it claims the emotional channel is not just a workaround for unconscious opacity but a superior method. Conscious awareness of the full valuation calculus would be epistemically accurate but behaviorally clumsy; emotion is elegant precisely because it condenses the signal down to what drives action. This upgrades the emotion-as-translator concept from necessity to optimization.",
-      "emitted_at_source_span_id": "src:c1:p42@0-p42@987",
-      "primary_source_ref": {
-        "source_span_id": "src:c1:p42@550-p42@677",
-        "source_span": {
-          "start_cursor": {
-            "chapter_id": 1,
-            "chapter_ref": "Full Content",
-            "paragraph_index": 42,
-            "char_offset": 550
-          },
-          "end_cursor": {
-            "chapter_id": 1,
-            "chapter_ref": "Full Content",
-            "paragraph_index": 42,
-            "char_offset": 677
-          }
-        },
-        "quote": "The feelings behind these statements accomplish the same goal more elegantly than awareness of the valuation process ever could",
-        "role": "reaction_anchor",
-        "resolution": {
-          "status": "matched",
-          "method": "exact_text",
-          "match_count": 1
-        }
-      },
-      "source_quote": "The feelings behind these statements accomplish the same goal more elegantly than awareness of the valuation process ever could",
-      "projection_role": "visible_trace",
-      "support_status": "visible_trace",
-      "visible_trace_support": true,
-      "current_support": false,
-      "projection_warning": "visible_trace_not_semantic_memory"
-    },
-    {
-      "ref_id": "reaction:rx:Full_Content:src:c1:p42@0-p42@987:discern:37",
-      "reaction_id": "rx:Full_Content:src:c1:p42@0-p42@987:discern:37",
-      "type": "discern",
-      "thought": "The word 'constituted' is precise: feelings are not merely accompanied by impulses but made of them. This tightens the mechanism—valuation flows into emotion, and emotion is already structured as action-readiness. The four verbs (approach, acquire, protect, maintain) map onto the behavioral register the value coefficient needs to express.",
-      "emitted_at_source_span_id": "src:c1:p42@0-p42@987",
-      "primary_source_ref": {
-        "source_span_id": "src:c1:p42@795-p42@987",
-        "source_span": {
-          "start_cursor": {
-            "chapter_id": 1,
-            "chapter_ref": "Full Content",
-            "paragraph_index": 42,
-            "char_offset": 795
-          },
-          "end_cursor": {
-            "chapter_id": 1,
-            "chapter_ref": "Full Content",
-            "paragraph_index": 42,
-            "char_offset": 987
-          }
-        },
-        "quote": "this communication is extremely useful because it is constituted by behavioral impulses that motivate action in alignment with this valuation: to approach, to acquire, to protect, to maintain.",
-        "role": "reaction_anchor",
-        "resolution": {
-          "status": "matched",
-          "method": "exact_text",
-          "match_count": 1
-        }
-      },
-      "source_quote": "this communication is extremely useful because it is constituted by behavioral impulses that motivate action in alignment with this valuation: to approach, to acquire, to protect, to maintain.",
-      "projection_role": "visible_trace",
-      "support_status": "visible_trace",
-      "visible_trace_support": true,
-      "current_support": false,
-      "projection_warning": "visible_trace_not_semantic_memory"
-    }
-  ]
-}
-```
-
-#### Concept Digest
+#### Probe-time snapshot field: concept_digest
 
 `concept_digest`:
 
@@ -5543,7 +4786,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
 ]
 ```
 
-#### Thread Digest
+#### Probe-time snapshot field: thread_digest
 
 `thread_digest`:
 
@@ -5592,7 +4835,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
 ]
 ```
 
-#### Reflective Digest
+#### Probe-time snapshot field: reflective_digest
 
 `reflective_digest`:
 
@@ -5604,7 +4847,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
 }
 ```
 
-#### SourceRef Digest
+#### Probe-time snapshot field: source_ref_digest
 
 `source_ref_digest`:
 
@@ -5837,7 +5080,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
    s299 / p58: This will alter the relative priority of what we want from any particular person, and this, in turn, will affect how much we value that person by influencing our perception of the trade-offs involved.
 ```
 
-#### Active Attention
+#### Probe-time snapshot field: active_attention_digest
 
 `active_attention_digest`:
 
@@ -6280,266 +5523,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
 }
 ```
 
-#### Active Focus
-
-`active_focus_digest`:
-
-```json
-{
-  "active_items": [
-    {
-      "ref_id": "active_attention:transactional-relationships-framing",
-      "item_id": "transactional-relationships-framing",
-      "attention_tags": [
-        "focus",
-        "framework"
-      ],
-      "statement": "Relationships as value-transaction media: this is the governing frame introduced at the outset.",
-      "status": "active",
-      "source_refs": [
-        {
-          "source_span_id": "src:c1:p3@0-p3@56",
-          "source_span": {
-            "start_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 3,
-              "char_offset": 0
-            },
-            "end_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 3,
-              "char_offset": 56
-            }
-          },
-          "quote": "RELATIONSHIPS ARE THE MEDIA IN WHICH VALUE IS TRANSACTED",
-          "role": "thesis_statement",
-          "resolution": {
-            "status": "matched",
-            "method": "exact_text",
-            "match_count": 1
-          }
-        }
-      ],
-      "linked_concept_keys": [],
-      "linked_thread_keys": [],
-      "projection_role": "current_support",
-      "support_status": "source_backed",
-      "current_support": true,
-      "lineage_only": false,
-      "projection_warning": ""
-    },
-    {
-      "ref_id": "active_attention:default-skepticism-default",
-      "item_id": "default-skepticism-default",
-      "attention_tags": [
-        "tension",
-        "interpretation"
-      ],
-      "statement": "Default skepticism toward others: 'problem until they prove otherwise' — inverts normal social assumptions.",
-      "status": "active",
-      "source_refs": [
-        {
-          "source_span_id": "src:c1:p4@452-p4@516",
-          "source_span": {
-            "start_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 4,
-              "char_offset": 452
-            },
-            "end_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 4,
-              "char_offset": 516
-            }
-          },
-          "quote": "other people are typically a problem until they prove otherwise.",
-          "role": "key_claim",
-          "resolution": {
-            "status": "matched",
-            "method": "exact_text",
-            "match_count": 1
-          }
-        }
-      ],
-      "linked_concept_keys": [],
-      "linked_thread_keys": [],
-      "projection_role": "current_support",
-      "support_status": "source_backed",
-      "current_support": true,
-      "lineage_only": false,
-      "projection_warning": ""
-    },
-    {
-      "ref_id": "active_attention:covert-transaction-norm",
-      "item_id": "covert-transaction-norm",
-      "attention_tags": [
-        "focus",
-        "framework"
-      ],
-      "statement": "Value transactions in relationships are covert by necessity — negotiated with subtlety, tact, and indirectness. The exchange is structurally hidden, not just unconsciously operated.",
-      "status": "active",
-      "source_refs": [
-        {
-          "source_span_id": "src:c1:p14@475-p14@616",
-          "source_span": {
-            "start_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 14,
-              "char_offset": 475
-            },
-            "end_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 14,
-              "char_offset": 616
-            }
-          },
-          "quote": "the transaction of value in such relationships is typically negotiated covertly: it must be approached with subtlety, tact, and indirectness.",
-          "role": "key_claim",
-          "resolution": {
-            "status": "matched",
-            "method": "exact_text",
-            "match_count": 1
-          }
-        }
-      ],
-      "linked_concept_keys": [],
-      "linked_thread_keys": [],
-      "projection_role": "current_support",
-      "support_status": "source_backed",
-      "current_support": true,
-      "lineage_only": false,
-      "projection_warning": ""
-    },
-    {
-      "ref_id": "active_attention:value-mismatch-pain-awareness-conditional",
-      "item_id": "value-mismatch-pain-awareness-conditional",
-      "attention_tags": [
-        "focus",
-        "interpretation"
-      ],
-      "statement": "Relationship pain from value mismatch is awareness-conditional: distress emerges when the under-compensated party recognizes that the other party's perception has shifted since the point of transaction.",
-      "status": "active",
-      "source_refs": [
-        {
-          "source_span_id": "src:c1:p16@791-p16@896",
-          "source_span": {
-            "start_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 16,
-              "char_offset": 791
-            },
-            "end_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 16,
-              "char_offset": 896
-            }
-          },
-          "quote": "awareness of this violation can lead to a great deal of pain and distress for the under-compensated party",
-          "role": "key_claim",
-          "resolution": {
-            "status": "matched",
-            "method": "exact_text",
-            "match_count": 1
-          }
-        }
-      ],
-      "linked_concept_keys": [],
-      "linked_thread_keys": [],
-      "projection_role": "current_support",
-      "support_status": "source_backed",
-      "current_support": true,
-      "lineage_only": false,
-      "projection_warning": ""
-    }
-  ],
-  "recent_reactions": [
-    {
-      "ref_id": "reaction:rx:Full_Content:src:c1:p53@0-p53@803:discern:43",
-      "reaction_id": "rx:Full_Content:src:c1:p53@0-p53@803:discern:43",
-      "type": "discern",
-      "thought": "The example performs quiet work: it shows that the genetic-survival priority isn't just about unconscious biological imperative but can manifest as conscious sacrifice. This sets up potential tension with the earlier framing of relationship dynamics as transaction-based.",
-      "emitted_at_source_span_id": "src:c1:p53@0-p53@803",
-      "primary_source_ref": {
-        "source_span_id": "src:c1:p53@538-p53@611",
-        "source_span": {
-          "start_cursor": {
-            "chapter_id": 1,
-            "chapter_ref": "Full Content",
-            "paragraph_index": 53,
-            "char_offset": 538
-          },
-          "end_cursor": {
-            "chapter_id": 1,
-            "chapter_ref": "Full Content",
-            "paragraph_index": 53,
-            "char_offset": 611
-          }
-        },
-        "quote": "A mother who dies so her children might live exemplifies this phenomenon.",
-        "role": "reaction_anchor",
-        "resolution": {
-          "status": "matched",
-          "method": "exact_text",
-          "match_count": 1
-        }
-      },
-      "source_quote": "A mother who dies so her children might live exemplifies this phenomenon.",
-      "projection_role": "visible_trace",
-      "support_status": "visible_trace",
-      "visible_trace_support": true,
-      "current_support": false,
-      "projection_warning": "visible_trace_not_semantic_memory"
-    },
-    {
-      "ref_id": "reaction:rx:Full_Content:src:c1:p54@0-p55@595:discern:44",
-      "reaction_id": "rx:Full_Content:src:c1:p54@0-p55@595:discern:44",
-      "type": "discern",
-      "thought": "The double framing here does quiet work. 'Game of games' elevates the category, then 'the game that makes all other games possible' makes it constitutive rather than merely dominant. This is what allows the text to derive behavioral consequences as logical deductions rather than empirical claims.",
-      "emitted_at_source_span_id": "src:c1:p54@0-p55@595",
-      "primary_source_ref": {
-        "source_span_id": "src:c1:p54@187-p54@251",
-        "source_span": {
-          "start_cursor": {
-            "chapter_id": 1,
-            "chapter_ref": "Full Content",
-            "paragraph_index": 54,
-            "char_offset": 187
-          },
-          "end_cursor": {
-            "chapter_id": 1,
-            "chapter_ref": "Full Content",
-            "paragraph_index": 54,
-            "char_offset": 251
-          }
-        },
-        "quote": "the game of games: the game that makes all other games possible.",
-        "role": "reaction_anchor",
-        "resolution": {
-          "status": "matched",
-          "method": "exact_text",
-          "match_count": 1
-        }
-      },
-      "source_quote": "the game of games: the game that makes all other games possible.",
-      "projection_role": "visible_trace",
-      "support_status": "visible_trace",
-      "visible_trace_support": true,
-      "current_support": false,
-      "projection_warning": "visible_trace_not_semantic_memory"
-    }
-  ]
-}
-```
-
-#### Concept Digest
+#### Probe-time snapshot field: concept_digest
 
 `concept_digest`:
 
@@ -6668,7 +5652,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
 ]
 ```
 
-#### Thread Digest
+#### Probe-time snapshot field: thread_digest
 
 `thread_digest`:
 
@@ -6717,7 +5701,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
 ]
 ```
 
-#### Reflective Digest
+#### Probe-time snapshot field: reflective_digest
 
 `reflective_digest`:
 
@@ -6729,7 +5713,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
 }
 ```
 
-#### SourceRef Digest
+#### Probe-time snapshot field: source_ref_digest
 
 `source_ref_digest`:
 
@@ -6960,7 +5944,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
    s388 / p78: We could call this the law of small numbers as applied to relationships, and it skews our valuations irrespective of the nature of the relationships on which they were trained.
 ```
 
-#### Active Attention
+#### Probe-time snapshot field: active_attention_digest
 
 `active_attention_digest`:
 
@@ -7403,266 +6387,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
 }
 ```
 
-#### Active Focus
-
-`active_focus_digest`:
-
-```json
-{
-  "active_items": [
-    {
-      "ref_id": "active_attention:transactional-relationships-framing",
-      "item_id": "transactional-relationships-framing",
-      "attention_tags": [
-        "focus",
-        "framework"
-      ],
-      "statement": "Relationships as value-transaction media: this is the governing frame introduced at the outset.",
-      "status": "active",
-      "source_refs": [
-        {
-          "source_span_id": "src:c1:p3@0-p3@56",
-          "source_span": {
-            "start_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 3,
-              "char_offset": 0
-            },
-            "end_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 3,
-              "char_offset": 56
-            }
-          },
-          "quote": "RELATIONSHIPS ARE THE MEDIA IN WHICH VALUE IS TRANSACTED",
-          "role": "thesis_statement",
-          "resolution": {
-            "status": "matched",
-            "method": "exact_text",
-            "match_count": 1
-          }
-        }
-      ],
-      "linked_concept_keys": [],
-      "linked_thread_keys": [],
-      "projection_role": "current_support",
-      "support_status": "source_backed",
-      "current_support": true,
-      "lineage_only": false,
-      "projection_warning": ""
-    },
-    {
-      "ref_id": "active_attention:default-skepticism-default",
-      "item_id": "default-skepticism-default",
-      "attention_tags": [
-        "tension",
-        "interpretation"
-      ],
-      "statement": "Default skepticism toward others: 'problem until they prove otherwise' — inverts normal social assumptions.",
-      "status": "active",
-      "source_refs": [
-        {
-          "source_span_id": "src:c1:p4@452-p4@516",
-          "source_span": {
-            "start_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 4,
-              "char_offset": 452
-            },
-            "end_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 4,
-              "char_offset": 516
-            }
-          },
-          "quote": "other people are typically a problem until they prove otherwise.",
-          "role": "key_claim",
-          "resolution": {
-            "status": "matched",
-            "method": "exact_text",
-            "match_count": 1
-          }
-        }
-      ],
-      "linked_concept_keys": [],
-      "linked_thread_keys": [],
-      "projection_role": "current_support",
-      "support_status": "source_backed",
-      "current_support": true,
-      "lineage_only": false,
-      "projection_warning": ""
-    },
-    {
-      "ref_id": "active_attention:covert-transaction-norm",
-      "item_id": "covert-transaction-norm",
-      "attention_tags": [
-        "focus",
-        "framework"
-      ],
-      "statement": "Value transactions in relationships are covert by necessity — negotiated with subtlety, tact, and indirectness. The exchange is structurally hidden, not just unconsciously operated.",
-      "status": "active",
-      "source_refs": [
-        {
-          "source_span_id": "src:c1:p14@475-p14@616",
-          "source_span": {
-            "start_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 14,
-              "char_offset": 475
-            },
-            "end_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 14,
-              "char_offset": 616
-            }
-          },
-          "quote": "the transaction of value in such relationships is typically negotiated covertly: it must be approached with subtlety, tact, and indirectness.",
-          "role": "key_claim",
-          "resolution": {
-            "status": "matched",
-            "method": "exact_text",
-            "match_count": 1
-          }
-        }
-      ],
-      "linked_concept_keys": [],
-      "linked_thread_keys": [],
-      "projection_role": "current_support",
-      "support_status": "source_backed",
-      "current_support": true,
-      "lineage_only": false,
-      "projection_warning": ""
-    },
-    {
-      "ref_id": "active_attention:value-mismatch-pain-awareness-conditional",
-      "item_id": "value-mismatch-pain-awareness-conditional",
-      "attention_tags": [
-        "focus",
-        "interpretation"
-      ],
-      "statement": "Relationship pain from value mismatch is awareness-conditional: distress emerges when the under-compensated party recognizes that the other party's perception has shifted since the point of transaction.",
-      "status": "active",
-      "source_refs": [
-        {
-          "source_span_id": "src:c1:p16@791-p16@896",
-          "source_span": {
-            "start_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 16,
-              "char_offset": 791
-            },
-            "end_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 16,
-              "char_offset": 896
-            }
-          },
-          "quote": "awareness of this violation can lead to a great deal of pain and distress for the under-compensated party",
-          "role": "key_claim",
-          "resolution": {
-            "status": "matched",
-            "method": "exact_text",
-            "match_count": 1
-          }
-        }
-      ],
-      "linked_concept_keys": [],
-      "linked_thread_keys": [],
-      "projection_role": "current_support",
-      "support_status": "source_backed",
-      "current_support": true,
-      "lineage_only": false,
-      "projection_warning": ""
-    }
-  ],
-  "recent_reactions": [
-    {
-      "ref_id": "reaction:rx:Full_Content:src:c1:p74@0-p74@544:discern:55",
-      "reaction_id": "rx:Full_Content:src:c1:p74@0-p74@544:discern:55",
-      "type": "discern",
-      "thought": "The 'enlightenment-level' qualifier lands as a deliberate deflation. Rather than offering a practical path, it sets the bar so high that for normal purposes the unconscious process might as well be treated as fixed.",
-      "emitted_at_source_span_id": "src:c1:p74@0-p74@544",
-      "primary_source_ref": {
-        "source_span_id": "src:c1:p74@137-p74@273",
-        "source_span": {
-          "start_cursor": {
-            "chapter_id": 1,
-            "chapter_ref": "Full Content",
-            "paragraph_index": 74,
-            "char_offset": 137
-          },
-          "end_cursor": {
-            "chapter_id": 1,
-            "chapter_ref": "Full Content",
-            "paragraph_index": 74,
-            "char_offset": 273
-          }
-        },
-        "quote": "This tendency is baked into our neurobiology and might only be surmountable through enlightenment-level self-awareness and self-control.",
-        "role": "reaction_anchor",
-        "resolution": {
-          "status": "matched",
-          "method": "exact_text",
-          "match_count": 1
-        }
-      },
-      "source_quote": "This tendency is baked into our neurobiology and might only be surmountable through enlightenment-level self-awareness and self-control.",
-      "projection_role": "visible_trace",
-      "support_status": "visible_trace",
-      "visible_trace_support": true,
-      "current_support": false,
-      "projection_warning": "visible_trace_not_semantic_memory"
-    },
-    {
-      "ref_id": "reaction:rx:Full_Content:src:c1:p74@0-p74@544:discern:56",
-      "reaction_id": "rx:Full_Content:src:c1:p74@0-p74@544:discern:56",
-      "type": "discern",
-      "thought": "This second half runs against the deterministic tenor of the first. The 'not entirely' is doing real work — it preserves the biological substrate while asserting that cultural and perceptual inputs reshape the weighting. Together with the earlier 'weights and evaluations used in that process are not' (p73), this frames culture and perception as the levers worth examining, even if direct self-override isn't on the table.",
-      "emitted_at_source_span_id": "src:c1:p74@0-p74@544",
-      "primary_source_ref": {
-        "source_span_id": "src:c1:p74@293-p74@544",
-        "source_span": {
-          "start_cursor": {
-            "chapter_id": 1,
-            "chapter_ref": "Full Content",
-            "paragraph_index": 74,
-            "char_offset": 293
-          },
-          "end_cursor": {
-            "chapter_id": 1,
-            "chapter_ref": "Full Content",
-            "paragraph_index": 74,
-            "char_offset": 544
-          }
-        },
-        "quote": "what people value – and how much they value those things – is not entirely biologically determined. It is both mediated by perception (which is not always reliable) and informed by culture (which creates significant variability across time and place).",
-        "role": "reaction_anchor",
-        "resolution": {
-          "status": "matched",
-          "method": "exact_text",
-          "match_count": 1
-        }
-      },
-      "source_quote": "what people value – and how much they value those things – is not entirely biologically determined. It is both mediated by perception (which is not always reliable) and informed by culture (which creates significant variability across time and place).",
-      "projection_role": "visible_trace",
-      "support_status": "visible_trace",
-      "visible_trace_support": true,
-      "current_support": false,
-      "projection_warning": "visible_trace_not_semantic_memory"
-    }
-  ]
-}
-```
-
-#### Concept Digest
+#### Probe-time snapshot field: concept_digest
 
 `concept_digest`:
 
@@ -7791,7 +6516,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
 ]
 ```
 
-#### Thread Digest
+#### Probe-time snapshot field: thread_digest
 
 `thread_digest`:
 
@@ -7840,7 +6565,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
 ]
 ```
 
-#### Reflective Digest
+#### Probe-time snapshot field: reflective_digest
 
 `reflective_digest`:
 
@@ -7852,7 +6577,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
 }
 ```
 
-#### SourceRef Digest
+#### Probe-time snapshot field: source_ref_digest
 
 `source_ref_digest`:
 

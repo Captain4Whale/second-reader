@@ -1087,7 +1087,27 @@ Every visible reaction in this Eval-1 window is listed in reading order. Fields 
 
 ## Probe Memory Checkpoints
 
-Memory Quality is scored at probe time. The state below is a structured re-layout of the recorded probe snapshot, not a fresh summary and not the final runtime dump.
+Memory Quality is scored at probe time. The state blocks below are exact Markdown re-layouts of recorded probe snapshot digest fields, not fresh summaries and not final runtime dumps.
+
+### Memory State Evidence Boundary
+
+- Probe-time scoring evidence: `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_long_span_post_slice8h_20260519_nawaer/outputs/nawaer_baodian_private_zh__segment_1/attentional_v2/_mechanisms/attentional_v2/exports/memory_quality_probe_snapshots.json`. The per-probe blocks below come from snapshot fields such as `active_attention_digest`, `concept_digest`, `thread_digest`, `reflective_digest`, and `source_ref_digest`.
+- Final full runtime state references: files under `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_long_span_post_slice8h_20260519_nawaer/outputs/nawaer_baodian_private_zh__segment_1/attentional_v2/_mechanisms/attentional_v2/runtime`. These are useful for diagnosis, but they are window-end state references rather than the exact state used at each Memory Quality probe.
+- Window boundary checkpoint: `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_long_span_post_slice8h_20260519_nawaer/outputs/nawaer_baodian_private_zh__segment_1/attentional_v2/_mechanisms/attentional_v2/runtime/checkpoints/chapter-001.json`. This is the chapter/window boundary checkpoint, not five independent probe-time checkpoints.
+- Missing artifact boundary: current Eval-1 artifacts do not contain per-probe full-store dumps. A future exporter needs explicit `exports/probe_state_snapshots/probe_###/...` captures before a report can link to complete memory stores at each probe.
+
+### Full Runtime State Links
+
+| State artifact | Path | Boundary note |
+| --- | --- | --- |
+| Active Attention | `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_long_span_post_slice8h_20260519_nawaer/outputs/nawaer_baodian_private_zh__segment_1/attentional_v2/_mechanisms/attentional_v2/runtime/active_attention.json` | Final window-end active attention store; not the probe-time full store. |
+| Concept Registry | `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_long_span_post_slice8h_20260519_nawaer/outputs/nawaer_baodian_private_zh__segment_1/attentional_v2/_mechanisms/attentional_v2/runtime/concept_registry.json` | Final window-end concept store; use for diagnosis only. |
+| Thread Trace | `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_long_span_post_slice8h_20260519_nawaer/outputs/nawaer_baodian_private_zh__segment_1/attentional_v2/_mechanisms/attentional_v2/runtime/thread_trace.json` | Final window-end thread store; use for diagnosis only. |
+| Reflective Frames | `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_long_span_post_slice8h_20260519_nawaer/outputs/nawaer_baodian_private_zh__segment_1/attentional_v2/_mechanisms/attentional_v2/runtime/reflective_frames.json` | Final window-end reflective store; use for diagnosis only. |
+| Reaction Records | `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_long_span_post_slice8h_20260519_nawaer/outputs/nawaer_baodian_private_zh__segment_1/attentional_v2/_mechanisms/attentional_v2/runtime/reaction_records.json` | Final window reaction record store; timeline above is the reviewer-readable projection. |
+| Read Audit | `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_long_span_post_slice8h_20260519_nawaer/outputs/nawaer_baodian_private_zh__segment_1/attentional_v2/_mechanisms/attentional_v2/runtime/read_audit.jsonl` | Runtime operation/audit stream for diagnosis. |
+| Settlement Audit | `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_long_span_post_slice8h_20260519_nawaer/outputs/nawaer_baodian_private_zh__segment_1/attentional_v2/_mechanisms/attentional_v2/runtime/settlement_audit.jsonl` | Runtime settlement/audit stream for diagnosis. |
+| Chapter checkpoint | `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_long_span_post_slice8h_20260519_nawaer/outputs/nawaer_baodian_private_zh__segment_1/attentional_v2/_mechanisms/attentional_v2/runtime/checkpoints/chapter-001.json` | Full window boundary checkpoint, not a per-probe checkpoint. |
 
 ### Probe 1 — MQ `3.25` — near 20%
 
@@ -1109,7 +1129,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
    s37 / p19: 选择一个有长期发展前景的行业，找到可以长期合作的人。
 ```
 
-#### Active Attention
+#### Probe-time snapshot field: active_attention_digest
 
 `active_attention_digest`:
 
@@ -1294,180 +1314,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
 }
 ```
 
-#### Active Focus
-
-`active_focus_digest`:
-
-```json
-{
-  "active_items": [
-    {
-      "ref_id": "active_attention:find_leverage_points",
-      "item_id": "find_leverage_points",
-      "attention_tags": [
-        "focus",
-        "model"
-      ],
-      "statement": "观察企业，找到最能创造财富的杠杆支点，然后抓住这部分财富",
-      "status": "active",
-      "source_refs": [
-        {
-          "source_span_id": "src:c1:p5@67-p5@124",
-          "source_span": {
-            "start_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 5,
-              "char_offset": 67
-            },
-            "end_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 5,
-              "char_offset": 124
-            }
-          },
-          "quote": "我发现自己愈加擅长观察企业，并从中找到最能创造财富的杠杆支点，然后抓住这部分财富（这种特长说不上是可悲还是幸运）。",
-          "role": "support",
-          "resolution": {
-            "status": "matched",
-            "method": "exact_text",
-            "match_count": 1
-          }
-        }
-      ],
-      "linked_concept_keys": [],
-      "linked_thread_keys": [],
-      "projection_role": "current_support",
-      "support_status": "source_backed",
-      "current_support": true,
-      "lineage_only": false,
-      "projection_warning": ""
-    },
-    {
-      "ref_id": "active_attention:ignore_status_seekers",
-      "item_id": "ignore_status_seekers",
-      "attention_tags": [
-        "focus",
-        "model"
-      ],
-      "statement": "追求地位者：以攻击创造者而非创造价值为手段获取地位。对这种人应主动无视，不将其作为竞争或说服的对象。",
-      "status": "active",
-      "source_refs": [
-        {
-          "source_span_id": "src:c1:p13@0-p13@33",
-          "source_span": {
-            "start_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 13,
-              "char_offset": 0
-            },
-            "end_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 13,
-              "char_offset": 33
-            }
-          },
-          "quote": "无视一味追求社会地位的人。他们获得地位的手段就是攻击创造财富的人。",
-          "role": "core_definition",
-          "resolution": {
-            "status": "matched",
-            "method": "exact_text",
-            "match_count": 1
-          }
-        }
-      ],
-      "linked_concept_keys": [],
-      "linked_thread_keys": [],
-      "projection_role": "current_support",
-      "support_status": "source_backed",
-      "current_support": true,
-      "lineage_only": false,
-      "projection_warning": ""
-    }
-  ],
-  "recent_reactions": [
-    {
-      "ref_id": "reaction:rx:Full_Content:src:c1:p10@0-p11@39:highlight:5",
-      "reaction_id": "rx:Full_Content:src:c1:p10@0-p11@39:highlight:5",
-      "type": "highlight",
-      "thought": "这句话把道德兼容性的反面说透了：不是\"不能\"拥有财富，而是内心对财富的排斥会直接导致财富的疏离。是一种自我应验的预言。",
-      "emitted_at_source_span_id": "src:c1:p10@0-p11@39",
-      "primary_source_ref": {
-        "source_span_id": "src:c1:p11@18-p11@39",
-        "source_span": {
-          "start_cursor": {
-            "chapter_id": 1,
-            "chapter_ref": "Full Content",
-            "paragraph_index": 11,
-            "char_offset": 18
-          },
-          "end_cursor": {
-            "chapter_id": 1,
-            "chapter_ref": "Full Content",
-            "paragraph_index": 11,
-            "char_offset": 39
-          }
-        },
-        "quote": "如果你内心鄙视财富，财富就会对你避而远之。",
-        "role": "reaction_anchor",
-        "resolution": {
-          "status": "matched",
-          "method": "exact_text",
-          "match_count": 1
-        }
-      },
-      "source_quote": "如果你内心鄙视财富，财富就会对你避而远之。",
-      "projection_role": "visible_trace",
-      "support_status": "visible_trace",
-      "visible_trace_support": true,
-      "current_support": false,
-      "projection_warning": "visible_trace_not_semantic_memory"
-    },
-    {
-      "ref_id": "reaction:rx:Full_Content:src:c1:p12@0-p13@33:highlight:6",
-      "reaction_id": "rx:Full_Content:src:c1:p12@0-p13@33:highlight:6",
-      "type": "highlight",
-      "thought": "这句话揭示了一种经典的权力逻辑：地位是一个零和博弈的坐标，它的增长只能通过贬低他人来实现。而攻击的靶点往往选得精准——恰好是那些真正在做有价值之事的人。这种「攻击创造者」的行为模式，本质上是一种嫉妒的投射，比单纯的贪婪更难对付。",
-      "emitted_at_source_span_id": "src:c1:p12@0-p13@33",
-      "primary_source_ref": {
-        "source_span_id": "src:c1:p13@0-p13@33",
-        "source_span": {
-          "start_cursor": {
-            "chapter_id": 1,
-            "chapter_ref": "Full Content",
-            "paragraph_index": 13,
-            "char_offset": 0
-          },
-          "end_cursor": {
-            "chapter_id": 1,
-            "chapter_ref": "Full Content",
-            "paragraph_index": 13,
-            "char_offset": 33
-          }
-        },
-        "quote": "无视一味追求社会地位的人。他们获得地位的手段就是攻击创造财富的人。",
-        "role": "reaction_anchor",
-        "resolution": {
-          "status": "matched",
-          "method": "exact_text",
-          "match_count": 1
-        }
-      },
-      "source_quote": "无视一味追求社会地位的人。他们获得地位的手段就是攻击创造财富的人。",
-      "projection_role": "visible_trace",
-      "support_status": "visible_trace",
-      "visible_trace_support": true,
-      "current_support": false,
-      "projection_warning": "visible_trace_not_semantic_memory"
-    }
-  ]
-}
-```
-
-#### Concept Digest
+#### Probe-time snapshot field: concept_digest
 
 `concept_digest`:
 
@@ -1556,7 +1403,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
 ]
 ```
 
-#### Thread Digest
+#### Probe-time snapshot field: thread_digest
 
 `thread_digest`:
 
@@ -1564,7 +1411,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
 []
 ```
 
-#### Reflective Digest
+#### Probe-time snapshot field: reflective_digest
 
 `reflective_digest`:
 
@@ -1576,7 +1423,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
 }
 ```
 
-#### SourceRef Digest
+#### Probe-time snapshot field: source_ref_digest
 
 `source_ref_digest`:
 
@@ -1785,7 +1632,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
    s67 / p45: “给我一根足够长的杠杆和一个支点，我就能撬动地球。
 ```
 
-#### Active Attention
+#### Probe-time snapshot field: active_attention_digest
 
 `active_attention_digest`:
 
@@ -2142,266 +1989,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
 }
 ```
 
-#### Active Focus
-
-`active_focus_digest`:
-
-```json
-{
-  "active_items": [
-    {
-      "ref_id": "active_attention:find_leverage_points",
-      "item_id": "find_leverage_points",
-      "attention_tags": [
-        "focus",
-        "model"
-      ],
-      "statement": "观察企业，找到最能创造财富的杠杆支点，然后抓住这部分财富",
-      "status": "active",
-      "source_refs": [
-        {
-          "source_span_id": "src:c1:p5@67-p5@124",
-          "source_span": {
-            "start_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 5,
-              "char_offset": 67
-            },
-            "end_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 5,
-              "char_offset": 124
-            }
-          },
-          "quote": "我发现自己愈加擅长观察企业，并从中找到最能创造财富的杠杆支点，然后抓住这部分财富（这种特长说不上是可悲还是幸运）。",
-          "role": "support",
-          "resolution": {
-            "status": "matched",
-            "method": "exact_text",
-            "match_count": 1
-          }
-        }
-      ],
-      "linked_concept_keys": [],
-      "linked_thread_keys": [],
-      "projection_role": "current_support",
-      "support_status": "source_backed",
-      "current_support": true,
-      "lineage_only": false,
-      "projection_warning": ""
-    },
-    {
-      "ref_id": "active_attention:ignore_status_seekers",
-      "item_id": "ignore_status_seekers",
-      "attention_tags": [
-        "focus",
-        "model"
-      ],
-      "statement": "追求地位者：以攻击创造者而非创造价值为手段获取地位。对这种人应主动无视，不将其作为竞争或说服的对象。",
-      "status": "active",
-      "source_refs": [
-        {
-          "source_span_id": "src:c1:p13@0-p13@33",
-          "source_span": {
-            "start_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 13,
-              "char_offset": 0
-            },
-            "end_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 13,
-              "char_offset": 33
-            }
-          },
-          "quote": "无视一味追求社会地位的人。他们获得地位的手段就是攻击创造财富的人。",
-          "role": "core_definition",
-          "resolution": {
-            "status": "matched",
-            "method": "exact_text",
-            "match_count": 1
-          }
-        }
-      ],
-      "linked_concept_keys": [],
-      "linked_thread_keys": [],
-      "projection_role": "current_support",
-      "support_status": "source_backed",
-      "current_support": true,
-      "lineage_only": false,
-      "projection_warning": ""
-    },
-    {
-      "ref_id": "active_attention:partner_selection_integrity_first",
-      "item_id": "partner_selection_integrity_first",
-      "attention_tags": [
-        "focus",
-        "model"
-      ],
-      "statement": "商业伙伴选择的价值排序：聪明+精力充沛是基本门槛，正直诚信才是决定性要素",
-      "status": "active",
-      "source_refs": [
-        {
-          "source_span_id": "src:c1:p25@0-p25@32",
-          "source_span": {
-            "start_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 25,
-              "char_offset": 0
-            },
-            "end_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 25,
-              "char_offset": 32
-            }
-          },
-          "quote": "选择聪明过人、精力充沛的商业伙伴，但更重要的是，他们要正直诚信。",
-          "role": "core_definition",
-          "resolution": {
-            "status": "matched",
-            "method": "exact_text",
-            "match_count": 1
-          }
-        }
-      ],
-      "linked_concept_keys": [],
-      "linked_thread_keys": [],
-      "projection_role": "current_support",
-      "support_status": "source_backed",
-      "current_support": true,
-      "lineage_only": false,
-      "projection_warning": ""
-    },
-    {
-      "ref_id": "active_attention:expertise_play_vs_effort",
-      "item_id": "expertise_play_vs_effort",
-      "attention_tags": [
-        "focus",
-        "model"
-      ],
-      "statement": "专长累积的检验标准：过程对你像玩耍，对他人吃力——这个主观感受可以作为判断是否在追求真正兴趣的信号。",
-      "status": "active",
-      "source_refs": [
-        {
-          "source_span_id": "src:c1:p37@0-p37@27",
-          "source_span": {
-            "start_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 37,
-              "char_offset": 0
-            },
-            "end_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 37,
-              "char_offset": 27
-            }
-          },
-          "quote": "累积专长的过程，对你而言就像玩耍，对他人来说则很吃力。",
-          "role": "support",
-          "resolution": {
-            "status": "matched",
-            "method": "exact_text",
-            "match_count": 1
-          }
-        }
-      ],
-      "linked_concept_keys": [],
-      "linked_thread_keys": [],
-      "projection_role": "current_support",
-      "support_status": "source_backed",
-      "current_support": true,
-      "lineage_only": false,
-      "projection_warning": ""
-    }
-  ],
-  "recent_reactions": [
-    {
-      "ref_id": "reaction:rx:Full_Content:src:c1:p38@0-p39@32:retrospect:13",
-      "reaction_id": "rx:Full_Content:src:c1:p38@0-p39@32:retrospect:13",
-      "type": "retrospect",
-      "thought": "这句话和前面那句「专长指的是无法通过培训获得的知识」形成了完整的逻辑闭环：前一句给出了定义层面的约束（不可培训性），这一句给出了实践层面的约束（不可学校化）。两个「无法」指向同一个方向——专长的获得和传授都绕不开个人化的、近身的接触。",
-      "emitted_at_source_span_id": "src:c1:p38@0-p39@32",
-      "primary_source_ref": {
-        "source_span_id": "src:c1:p39@0-p39@32",
-        "source_span": {
-          "start_cursor": {
-            "chapter_id": 1,
-            "chapter_ref": "Full Content",
-            "paragraph_index": 39,
-            "char_offset": 0
-          },
-          "end_cursor": {
-            "chapter_id": 1,
-            "chapter_ref": "Full Content",
-            "paragraph_index": 39,
-            "char_offset": 32
-          }
-        },
-        "quote": "专长的传授需要通过师傅带徒弟的方式完成，而无法通过学校教育完成。",
-        "role": "reaction_anchor",
-        "resolution": {
-          "status": "matched",
-          "method": "exact_text",
-          "match_count": 1
-        }
-      },
-      "source_quote": "专长的传授需要通过师傅带徒弟的方式完成，而无法通过学校教育完成。",
-      "projection_role": "visible_trace",
-      "support_status": "visible_trace",
-      "visible_trace_support": true,
-      "current_support": false,
-      "projection_warning": "visible_trace_not_semantic_memory"
-    },
-    {
-      "ref_id": "reaction:rx:Full_Content:src:c1:p40@0-p43@43:highlight:14",
-      "reaction_id": "rx:Full_Content:src:c1:p40@0-p43@43:highlight:14",
-      "type": "highlight",
-      "thought": "这句话和前文建立的专长概念形成同方向延伸：不可培训、不可学校化、不可外包自动化——三个\"不能\"从不同维度指向同一个结论：专长是个人化的、不可标准化的。",
-      "emitted_at_source_span_id": "src:c1:p40@0-p43@43",
-      "primary_source_ref": {
-        "source_span_id": "src:c1:p41@0-p41@27",
-        "source_span": {
-          "start_cursor": {
-            "chapter_id": 1,
-            "chapter_ref": "Full Content",
-            "paragraph_index": 41,
-            "char_offset": 0
-          },
-          "end_cursor": {
-            "chapter_id": 1,
-            "chapter_ref": "Full Content",
-            "paragraph_index": 41,
-            "char_offset": 27
-          }
-        },
-        "quote": "专长往往具有高度的技术性或创造性，不能被外包或自动化。",
-        "role": "reaction_anchor",
-        "resolution": {
-          "status": "matched",
-          "method": "exact_text",
-          "match_count": 1
-        }
-      },
-      "source_quote": "专长往往具有高度的技术性或创造性，不能被外包或自动化。",
-      "projection_role": "visible_trace",
-      "support_status": "visible_trace",
-      "visible_trace_support": true,
-      "current_support": false,
-      "projection_warning": "visible_trace_not_semantic_memory"
-    }
-  ]
-}
-```
-
-#### Concept Digest
+#### Probe-time snapshot field: concept_digest
 
 `concept_digest`:
 
@@ -2530,7 +2118,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
 ]
 ```
 
-#### Thread Digest
+#### Probe-time snapshot field: thread_digest
 
 `thread_digest`:
 
@@ -2538,7 +2126,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
 []
 ```
 
-#### Reflective Digest
+#### Probe-time snapshot field: reflective_digest
 
 `reflective_digest`:
 
@@ -2550,7 +2138,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
 }
 ```
 
-#### SourceRef Digest
+#### Probe-time snapshot field: source_ref_digest
 
 `source_ref_digest`:
 
@@ -2783,7 +2371,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
    s94 / p61: 杠杆是判断力的倍增器。
 ```
 
-#### Active Attention
+#### Probe-time snapshot field: active_attention_digest
 
 `active_attention_digest`:
 
@@ -3140,266 +2728,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
 }
 ```
 
-#### Active Focus
-
-`active_focus_digest`:
-
-```json
-{
-  "active_items": [
-    {
-      "ref_id": "active_attention:find_leverage_points",
-      "item_id": "find_leverage_points",
-      "attention_tags": [
-        "focus",
-        "model"
-      ],
-      "statement": "观察企业，找到最能创造财富的杠杆支点，然后抓住这部分财富",
-      "status": "active",
-      "source_refs": [
-        {
-          "source_span_id": "src:c1:p5@67-p5@124",
-          "source_span": {
-            "start_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 5,
-              "char_offset": 67
-            },
-            "end_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 5,
-              "char_offset": 124
-            }
-          },
-          "quote": "我发现自己愈加擅长观察企业，并从中找到最能创造财富的杠杆支点，然后抓住这部分财富（这种特长说不上是可悲还是幸运）。",
-          "role": "support",
-          "resolution": {
-            "status": "matched",
-            "method": "exact_text",
-            "match_count": 1
-          }
-        }
-      ],
-      "linked_concept_keys": [],
-      "linked_thread_keys": [],
-      "projection_role": "current_support",
-      "support_status": "source_backed",
-      "current_support": true,
-      "lineage_only": false,
-      "projection_warning": ""
-    },
-    {
-      "ref_id": "active_attention:ignore_status_seekers",
-      "item_id": "ignore_status_seekers",
-      "attention_tags": [
-        "focus",
-        "model"
-      ],
-      "statement": "追求地位者：以攻击创造者而非创造价值为手段获取地位。对这种人应主动无视，不将其作为竞争或说服的对象。",
-      "status": "active",
-      "source_refs": [
-        {
-          "source_span_id": "src:c1:p13@0-p13@33",
-          "source_span": {
-            "start_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 13,
-              "char_offset": 0
-            },
-            "end_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 13,
-              "char_offset": 33
-            }
-          },
-          "quote": "无视一味追求社会地位的人。他们获得地位的手段就是攻击创造财富的人。",
-          "role": "core_definition",
-          "resolution": {
-            "status": "matched",
-            "method": "exact_text",
-            "match_count": 1
-          }
-        }
-      ],
-      "linked_concept_keys": [],
-      "linked_thread_keys": [],
-      "projection_role": "current_support",
-      "support_status": "source_backed",
-      "current_support": true,
-      "lineage_only": false,
-      "projection_warning": ""
-    },
-    {
-      "ref_id": "active_attention:partner_selection_integrity_first",
-      "item_id": "partner_selection_integrity_first",
-      "attention_tags": [
-        "focus",
-        "model"
-      ],
-      "statement": "商业伙伴选择的价值排序：聪明+精力充沛是基本门槛，正直诚信才是决定性要素",
-      "status": "active",
-      "source_refs": [
-        {
-          "source_span_id": "src:c1:p25@0-p25@32",
-          "source_span": {
-            "start_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 25,
-              "char_offset": 0
-            },
-            "end_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 25,
-              "char_offset": 32
-            }
-          },
-          "quote": "选择聪明过人、精力充沛的商业伙伴，但更重要的是，他们要正直诚信。",
-          "role": "core_definition",
-          "resolution": {
-            "status": "matched",
-            "method": "exact_text",
-            "match_count": 1
-          }
-        }
-      ],
-      "linked_concept_keys": [],
-      "linked_thread_keys": [],
-      "projection_role": "current_support",
-      "support_status": "source_backed",
-      "current_support": true,
-      "lineage_only": false,
-      "projection_warning": ""
-    },
-    {
-      "ref_id": "active_attention:expertise_play_vs_effort",
-      "item_id": "expertise_play_vs_effort",
-      "attention_tags": [
-        "focus",
-        "model"
-      ],
-      "statement": "专长累积的检验标准：过程对你像玩耍，对他人吃力——这个主观感受可以作为判断是否在追求真正兴趣的信号。",
-      "status": "active",
-      "source_refs": [
-        {
-          "source_span_id": "src:c1:p37@0-p37@27",
-          "source_span": {
-            "start_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 37,
-              "char_offset": 0
-            },
-            "end_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 37,
-              "char_offset": 27
-            }
-          },
-          "quote": "累积专长的过程，对你而言就像玩耍，对他人来说则很吃力。",
-          "role": "support",
-          "resolution": {
-            "status": "matched",
-            "method": "exact_text",
-            "match_count": 1
-          }
-        }
-      ],
-      "linked_concept_keys": [],
-      "linked_thread_keys": [],
-      "projection_role": "current_support",
-      "support_status": "source_backed",
-      "current_support": true,
-      "lineage_only": false,
-      "projection_warning": ""
-    }
-  ],
-  "recent_reactions": [
-    {
-      "ref_id": "reaction:rx:Full_Content:src:c1:p54@0-p55@59:highlight:21",
-      "reaction_id": "rx:Full_Content:src:c1:p54@0-p55@59:highlight:21",
-      "type": "highlight",
-      "thought": "这与前文\"资本和劳动力是需要获得许可才能使用的杠杆\"形成直接对照。三种杠杆由此完成了许可依赖性的光谱排列：劳动力需要雇佣协议，资本需要融资同意，而代码/媒体只依赖个人技能积累，无需第三方授权。",
-      "emitted_at_source_span_id": "src:c1:p54@0-p55@59",
-      "primary_source_ref": {
-        "source_span_id": "src:c1:p55@0-p55@19",
-        "source_span": {
-          "start_cursor": {
-            "chapter_id": 1,
-            "chapter_ref": "Full Content",
-            "paragraph_index": 55,
-            "char_offset": 0
-          },
-          "end_cursor": {
-            "chapter_id": 1,
-            "chapter_ref": "Full Content",
-            "paragraph_index": 55,
-            "char_offset": 19
-          }
-        },
-        "quote": "代码和媒体是不需要许可就能使用的杠杆。",
-        "role": "reaction_anchor",
-        "resolution": {
-          "status": "matched",
-          "method": "exact_text",
-          "match_count": 1
-        }
-      },
-      "source_quote": "代码和媒体是不需要许可就能使用的杠杆。",
-      "projection_role": "visible_trace",
-      "support_status": "visible_trace",
-      "visible_trace_support": true,
-      "current_support": false,
-      "projection_warning": "visible_trace_not_semantic_memory"
-    },
-    {
-      "ref_id": "reaction:rx:Full_Content:src:c1:p54@0-p55@59:highlight:22",
-      "reaction_id": "rx:Full_Content:src:c1:p54@0-p55@59:highlight:22",
-      "type": "highlight",
-      "thought": "\"新富阶层\"这个定性在价值排序上有分量——它暗示代码/媒体杠杆不只是\"更好的选择\"，而是当代财富迁移的结构性标志。结合前文劳动力杠杆的\"争夺最激烈\"，三种杠杆的价值梯度已完整呈现。",
-      "emitted_at_source_span_id": "src:c1:p54@0-p55@59",
-      "primary_source_ref": {
-        "source_span_id": "src:c1:p55@19-p55@35",
-        "source_span": {
-          "start_cursor": {
-            "chapter_id": 1,
-            "chapter_ref": "Full Content",
-            "paragraph_index": 55,
-            "char_offset": 19
-          },
-          "end_cursor": {
-            "chapter_id": 1,
-            "chapter_ref": "Full Content",
-            "paragraph_index": 55,
-            "char_offset": 35
-          }
-        },
-        "quote": "这两个杠杆是新富阶层背后的杠杆。",
-        "role": "reaction_anchor",
-        "resolution": {
-          "status": "matched",
-          "method": "exact_text",
-          "match_count": 1
-        }
-      },
-      "source_quote": "这两个杠杆是新富阶层背后的杠杆。",
-      "projection_role": "visible_trace",
-      "support_status": "visible_trace",
-      "visible_trace_support": true,
-      "current_support": false,
-      "projection_warning": "visible_trace_not_semantic_memory"
-    }
-  ]
-}
-```
-
-#### Concept Digest
+#### Probe-time snapshot field: concept_digest
 
 `concept_digest`:
 
@@ -3528,7 +2857,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
 ]
 ```
 
-#### Thread Digest
+#### Probe-time snapshot field: thread_digest
 
 `thread_digest`:
 
@@ -3536,7 +2865,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
 []
 ```
 
-#### Reflective Digest
+#### Probe-time snapshot field: reflective_digest
 
 `reflective_digest`:
 
@@ -3548,7 +2877,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
 }
 ```
 
-#### SourceRef Digest
+#### Probe-time snapshot field: source_ref_digest
 
 `source_ref_digest`:
 
@@ -3781,7 +3110,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
    s141 / p90: 金钱是我们转移财富的方式。
 ```
 
-#### Active Attention
+#### Probe-time snapshot field: active_attention_digest
 
 `active_attention_digest`:
 
@@ -4224,266 +3553,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
 }
 ```
 
-#### Active Focus
-
-`active_focus_digest`:
-
-```json
-{
-  "active_items": [
-    {
-      "ref_id": "active_attention:find_leverage_points",
-      "item_id": "find_leverage_points",
-      "attention_tags": [
-        "focus",
-        "model"
-      ],
-      "statement": "观察企业，找到最能创造财富的杠杆支点，然后抓住这部分财富",
-      "status": "active",
-      "source_refs": [
-        {
-          "source_span_id": "src:c1:p5@67-p5@124",
-          "source_span": {
-            "start_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 5,
-              "char_offset": 67
-            },
-            "end_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 5,
-              "char_offset": 124
-            }
-          },
-          "quote": "我发现自己愈加擅长观察企业，并从中找到最能创造财富的杠杆支点，然后抓住这部分财富（这种特长说不上是可悲还是幸运）。",
-          "role": "support",
-          "resolution": {
-            "status": "matched",
-            "method": "exact_text",
-            "match_count": 1
-          }
-        }
-      ],
-      "linked_concept_keys": [],
-      "linked_thread_keys": [],
-      "projection_role": "current_support",
-      "support_status": "source_backed",
-      "current_support": true,
-      "lineage_only": false,
-      "projection_warning": ""
-    },
-    {
-      "ref_id": "active_attention:ignore_status_seekers",
-      "item_id": "ignore_status_seekers",
-      "attention_tags": [
-        "focus",
-        "model"
-      ],
-      "statement": "追求地位者：以攻击创造者而非创造价值为手段获取地位。对这种人应主动无视，不将其作为竞争或说服的对象。",
-      "status": "active",
-      "source_refs": [
-        {
-          "source_span_id": "src:c1:p13@0-p13@33",
-          "source_span": {
-            "start_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 13,
-              "char_offset": 0
-            },
-            "end_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 13,
-              "char_offset": 33
-            }
-          },
-          "quote": "无视一味追求社会地位的人。他们获得地位的手段就是攻击创造财富的人。",
-          "role": "core_definition",
-          "resolution": {
-            "status": "matched",
-            "method": "exact_text",
-            "match_count": 1
-          }
-        }
-      ],
-      "linked_concept_keys": [],
-      "linked_thread_keys": [],
-      "projection_role": "current_support",
-      "support_status": "source_backed",
-      "current_support": true,
-      "lineage_only": false,
-      "projection_warning": ""
-    },
-    {
-      "ref_id": "active_attention:partner_selection_integrity_first",
-      "item_id": "partner_selection_integrity_first",
-      "attention_tags": [
-        "focus",
-        "model"
-      ],
-      "statement": "商业伙伴选择的价值排序：聪明+精力充沛是基本门槛，正直诚信才是决定性要素",
-      "status": "active",
-      "source_refs": [
-        {
-          "source_span_id": "src:c1:p25@0-p25@32",
-          "source_span": {
-            "start_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 25,
-              "char_offset": 0
-            },
-            "end_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 25,
-              "char_offset": 32
-            }
-          },
-          "quote": "选择聪明过人、精力充沛的商业伙伴，但更重要的是，他们要正直诚信。",
-          "role": "core_definition",
-          "resolution": {
-            "status": "matched",
-            "method": "exact_text",
-            "match_count": 1
-          }
-        }
-      ],
-      "linked_concept_keys": [],
-      "linked_thread_keys": [],
-      "projection_role": "current_support",
-      "support_status": "source_backed",
-      "current_support": true,
-      "lineage_only": false,
-      "projection_warning": ""
-    },
-    {
-      "ref_id": "active_attention:expertise_play_vs_effort",
-      "item_id": "expertise_play_vs_effort",
-      "attention_tags": [
-        "focus",
-        "model"
-      ],
-      "statement": "专长累积的检验标准：过程对你像玩耍，对他人吃力——这个主观感受可以作为判断是否在追求真正兴趣的信号。",
-      "status": "active",
-      "source_refs": [
-        {
-          "source_span_id": "src:c1:p37@0-p37@27",
-          "source_span": {
-            "start_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 37,
-              "char_offset": 0
-            },
-            "end_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 37,
-              "char_offset": 27
-            }
-          },
-          "quote": "累积专长的过程，对你而言就像玩耍，对他人来说则很吃力。",
-          "role": "support",
-          "resolution": {
-            "status": "matched",
-            "method": "exact_text",
-            "match_count": 1
-          }
-        }
-      ],
-      "linked_concept_keys": [],
-      "linked_thread_keys": [],
-      "projection_role": "current_support",
-      "support_status": "source_backed",
-      "current_support": true,
-      "lineage_only": false,
-      "projection_warning": ""
-    }
-  ],
-  "recent_reactions": [
-    {
-      "ref_id": "reaction:rx:Full_Content:src:c1:p80@0-p84@10:highlight:31",
-      "reaction_id": "rx:Full_Content:src:c1:p80@0-p84@10:highlight:31",
-      "type": "highlight",
-      "thought": "五个字完成了整个章节的压缩。所有分散的原则——专长、杠杆、判断力、责任、时薪框架——都在这个公式里找到了聚合点。它既是命令句，也是诊断工具：你现在做的，是不是在\"产品化自己\"？",
-      "emitted_at_source_span_id": "src:c1:p80@0-p84@10",
-      "primary_source_ref": {
-        "source_span_id": "src:c1:p84@0-p84@10",
-        "source_span": {
-          "start_cursor": {
-            "chapter_id": 1,
-            "chapter_ref": "Full Content",
-            "paragraph_index": 84,
-            "char_offset": 0
-          },
-          "end_cursor": {
-            "chapter_id": 1,
-            "chapter_ref": "Full Content",
-            "paragraph_index": 84,
-            "char_offset": 10
-          }
-        },
-        "quote": "总结：把自己产品化。",
-        "role": "reaction_anchor",
-        "resolution": {
-          "status": "matched",
-          "method": "exact_text",
-          "match_count": 1
-        }
-      },
-      "source_quote": "总结：把自己产品化。",
-      "projection_role": "visible_trace",
-      "support_status": "visible_trace",
-      "visible_trace_support": true,
-      "current_support": false,
-      "projection_warning": "visible_trace_not_semantic_memory"
-    },
-    {
-      "ref_id": "reaction:rx:Full_Content:src:c1:p85@0-p88@72:highlight:32",
-      "reaction_id": "rx:Full_Content:src:c1:p85@0-p88@72:highlight:32",
-      "type": "highlight",
-      "thought": "这个\"交叉重叠\"的结构很有意思：\"专长\"既是\"产品化\"的门槛，也是\"自己\"本来就有的东西。作者用这个词的双重归属，把整个分散的理念体系——责任感、判断力、独特性、杠杆——全部锚定在这两个词的交叉点上。",
-      "emitted_at_source_span_id": "src:c1:p85@0-p88@72",
-      "primary_source_ref": {
-        "source_span_id": "src:c1:p86@26-p86@102",
-        "source_span": {
-          "start_cursor": {
-            "chapter_id": 1,
-            "chapter_ref": "Full Content",
-            "paragraph_index": 86,
-            "char_offset": 26
-          },
-          "end_cursor": {
-            "chapter_id": 1,
-            "chapter_ref": "Full Content",
-            "paragraph_index": 86,
-            "char_offset": 102
-          }
-        },
-        "quote": "“自己”具有独特性，“产品化”是发挥杠杆效应；“自己”具有责任感，“产品化”需要专长。“自己”其实也具有专长。因此，这两个重点就可以概括上述所有的理念。",
-        "role": "reaction_anchor",
-        "resolution": {
-          "status": "matched",
-          "method": "exact_text",
-          "match_count": 1
-        }
-      },
-      "source_quote": "“自己”具有独特性，“产品化”是发挥杠杆效应；“自己”具有责任感，“产品化”需要专长。“自己”其实也具有专长。因此，这两个重点就可以概括上述所有的理念。",
-      "projection_role": "visible_trace",
-      "support_status": "visible_trace",
-      "visible_trace_support": true,
-      "current_support": false,
-      "projection_warning": "visible_trace_not_semantic_memory"
-    }
-  ]
-}
-```
-
-#### Concept Digest
+#### Probe-time snapshot field: concept_digest
 
 `concept_digest`:
 
@@ -4612,7 +3682,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
 ]
 ```
 
-#### Thread Digest
+#### Probe-time snapshot field: thread_digest
 
 `thread_digest`:
 
@@ -4701,7 +3771,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
 ]
 ```
 
-#### Reflective Digest
+#### Probe-time snapshot field: reflective_digest
 
 `reflective_digest`:
 
@@ -4713,7 +3783,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
 }
 ```
 
-#### SourceRef Digest
+#### Probe-time snapshot field: source_ref_digest
 
 `source_ref_digest`:
 
@@ -4944,7 +4014,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
 >> s169 / p99: [78]
 ```
 
-#### Active Attention
+#### Probe-time snapshot field: active_attention_digest
 
 `active_attention_digest`:
 
@@ -5387,266 +4457,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
 }
 ```
 
-#### Active Focus
-
-`active_focus_digest`:
-
-```json
-{
-  "active_items": [
-    {
-      "ref_id": "active_attention:find_leverage_points",
-      "item_id": "find_leverage_points",
-      "attention_tags": [
-        "focus",
-        "model"
-      ],
-      "statement": "观察企业，找到最能创造财富的杠杆支点，然后抓住这部分财富",
-      "status": "active",
-      "source_refs": [
-        {
-          "source_span_id": "src:c1:p5@67-p5@124",
-          "source_span": {
-            "start_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 5,
-              "char_offset": 67
-            },
-            "end_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 5,
-              "char_offset": 124
-            }
-          },
-          "quote": "我发现自己愈加擅长观察企业，并从中找到最能创造财富的杠杆支点，然后抓住这部分财富（这种特长说不上是可悲还是幸运）。",
-          "role": "support",
-          "resolution": {
-            "status": "matched",
-            "method": "exact_text",
-            "match_count": 1
-          }
-        }
-      ],
-      "linked_concept_keys": [],
-      "linked_thread_keys": [],
-      "projection_role": "current_support",
-      "support_status": "source_backed",
-      "current_support": true,
-      "lineage_only": false,
-      "projection_warning": ""
-    },
-    {
-      "ref_id": "active_attention:ignore_status_seekers",
-      "item_id": "ignore_status_seekers",
-      "attention_tags": [
-        "focus",
-        "model"
-      ],
-      "statement": "追求地位者：以攻击创造者而非创造价值为手段获取地位。对这种人应主动无视，不将其作为竞争或说服的对象。",
-      "status": "active",
-      "source_refs": [
-        {
-          "source_span_id": "src:c1:p13@0-p13@33",
-          "source_span": {
-            "start_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 13,
-              "char_offset": 0
-            },
-            "end_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 13,
-              "char_offset": 33
-            }
-          },
-          "quote": "无视一味追求社会地位的人。他们获得地位的手段就是攻击创造财富的人。",
-          "role": "core_definition",
-          "resolution": {
-            "status": "matched",
-            "method": "exact_text",
-            "match_count": 1
-          }
-        }
-      ],
-      "linked_concept_keys": [],
-      "linked_thread_keys": [],
-      "projection_role": "current_support",
-      "support_status": "source_backed",
-      "current_support": true,
-      "lineage_only": false,
-      "projection_warning": ""
-    },
-    {
-      "ref_id": "active_attention:partner_selection_integrity_first",
-      "item_id": "partner_selection_integrity_first",
-      "attention_tags": [
-        "focus",
-        "model"
-      ],
-      "statement": "商业伙伴选择的价值排序：聪明+精力充沛是基本门槛，正直诚信才是决定性要素",
-      "status": "active",
-      "source_refs": [
-        {
-          "source_span_id": "src:c1:p25@0-p25@32",
-          "source_span": {
-            "start_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 25,
-              "char_offset": 0
-            },
-            "end_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 25,
-              "char_offset": 32
-            }
-          },
-          "quote": "选择聪明过人、精力充沛的商业伙伴，但更重要的是，他们要正直诚信。",
-          "role": "core_definition",
-          "resolution": {
-            "status": "matched",
-            "method": "exact_text",
-            "match_count": 1
-          }
-        }
-      ],
-      "linked_concept_keys": [],
-      "linked_thread_keys": [],
-      "projection_role": "current_support",
-      "support_status": "source_backed",
-      "current_support": true,
-      "lineage_only": false,
-      "projection_warning": ""
-    },
-    {
-      "ref_id": "active_attention:expertise_play_vs_effort",
-      "item_id": "expertise_play_vs_effort",
-      "attention_tags": [
-        "focus",
-        "model"
-      ],
-      "statement": "专长累积的检验标准：过程对你像玩耍，对他人吃力——这个主观感受可以作为判断是否在追求真正兴趣的信号。",
-      "status": "active",
-      "source_refs": [
-        {
-          "source_span_id": "src:c1:p37@0-p37@27",
-          "source_span": {
-            "start_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 37,
-              "char_offset": 0
-            },
-            "end_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 37,
-              "char_offset": 27
-            }
-          },
-          "quote": "累积专长的过程，对你而言就像玩耍，对他人来说则很吃力。",
-          "role": "support",
-          "resolution": {
-            "status": "matched",
-            "method": "exact_text",
-            "match_count": 1
-          }
-        }
-      ],
-      "linked_concept_keys": [],
-      "linked_thread_keys": [],
-      "projection_role": "current_support",
-      "support_status": "source_backed",
-      "current_support": true,
-      "lineage_only": false,
-      "projection_warning": ""
-    }
-  ],
-  "recent_reactions": [
-    {
-      "ref_id": "reaction:rx:Full_Content:src:c1:p94@0-p98@146:highlight:37",
-      "reaction_id": "rx:Full_Content:src:c1:p94@0-p98@146:highlight:37",
-      "type": "highlight",
-      "thought": "这提供了一个关于技术价值的锐利时间窗口视角：科技在被广泛采用前才有超额回报，之后就变成基础设施。这个定义把\"科技投资\"从玄学变成一个可辨识的生命周期问题。",
-      "emitted_at_source_span_id": "src:c1:p94@0-p98@146",
-      "primary_source_ref": {
-        "source_span_id": "src:c1:p98@45-p98@67",
-        "source_span": {
-          "start_cursor": {
-            "chapter_id": 1,
-            "chapter_ref": "Full Content",
-            "paragraph_index": 98,
-            "char_offset": 45
-          },
-          "end_cursor": {
-            "chapter_id": 1,
-            "chapter_ref": "Full Content",
-            "paragraph_index": 98,
-            "char_offset": 67
-          }
-        },
-        "quote": "某种东西一旦得到广泛应用，它就不再是科技了。",
-        "role": "reaction_anchor",
-        "resolution": {
-          "status": "matched",
-          "method": "exact_text",
-          "match_count": 1
-        }
-      },
-      "source_quote": "某种东西一旦得到广泛应用，它就不再是科技了。",
-      "projection_role": "visible_trace",
-      "support_status": "visible_trace",
-      "visible_trace_support": true,
-      "current_support": false,
-      "projection_warning": "visible_trace_not_semantic_memory"
-    },
-    {
-      "ref_id": "reaction:rx:Full_Content:src:c1:p99@0-p99@193:highlight:38",
-      "reaction_id": "rx:Full_Content:src:c1:p99@0-p99@193:highlight:38",
-      "type": "highlight",
-      "thought": "这个表述把「规模化」从商业术语变成了一种思维姿态——不是「如果成功了再考虑规模」，而是把规模本身作为设计目标。",
-      "emitted_at_source_span_id": "src:c1:p99@0-p99@193",
-      "primary_source_ref": {
-        "source_span_id": "src:c1:p99@0-p99@65",
-        "source_span": {
-          "start_cursor": {
-            "chapter_id": 1,
-            "chapter_ref": "Full Content",
-            "paragraph_index": 99,
-            "char_offset": 0
-          },
-          "end_cursor": {
-            "chapter_id": 1,
-            "chapter_ref": "Full Content",
-            "paragraph_index": 99,
-            "char_offset": 65
-          }
-        },
-        "quote": "下一步是思考如何规模化，因为只提供一个产品或一项服务是远远不够的，必须提供成千上万个，甚至几十万、几百万、几十亿个，最好人手一个。",
-        "role": "reaction_anchor",
-        "resolution": {
-          "status": "matched",
-          "method": "exact_text",
-          "match_count": 1
-        }
-      },
-      "source_quote": "下一步是思考如何规模化，因为只提供一个产品或一项服务是远远不够的，必须提供成千上万个，甚至几十万、几百万、几十亿个，最好人手一个。",
-      "projection_role": "visible_trace",
-      "support_status": "visible_trace",
-      "visible_trace_support": true,
-      "current_support": false,
-      "projection_warning": "visible_trace_not_semantic_memory"
-    }
-  ]
-}
-```
-
-#### Concept Digest
+#### Probe-time snapshot field: concept_digest
 
 `concept_digest`:
 
@@ -5775,7 +4586,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
 ]
 ```
 
-#### Thread Digest
+#### Probe-time snapshot field: thread_digest
 
 `thread_digest`:
 
@@ -5864,7 +4675,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
 ]
 ```
 
-#### Reflective Digest
+#### Probe-time snapshot field: reflective_digest
 
 `reflective_digest`:
 
@@ -5876,7 +4687,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
 }
 ```
 
-#### SourceRef Digest
+#### Probe-time snapshot field: source_ref_digest
 
 `source_ref_digest`:
 

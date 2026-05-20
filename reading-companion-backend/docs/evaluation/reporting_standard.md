@@ -79,7 +79,7 @@ Required shape:
 
 - `Source Window`: link to the dataset-stable source window, including covered chapters, paragraph ids, note-target markers, and probe markers.
 - `Reading Timeline`: list every visible reaction in reading order, with source-span excerpt, reaction text, SourceRef / paragraph-char coordinate, and only the relevant eval annotations.
-- `Probe Memory Checkpoints`: for each Memory Quality probe, show source orientation, capture point, exact recorded state fields, judge scores, and judge reason.
+- `Probe Memory Checkpoints`: for each Memory Quality probe, show source orientation, capture point, probe-time scoring evidence fields, judge scores, and judge reason.
 - `Scoring Interpretation`: explain how the reaction timeline and probe checkpoints produce the lane scores.
 - `Manual Review Guide`: tell reviewers which raw artifacts to open and which fields to inspect when they disagree with a label or score.
 
@@ -95,7 +95,10 @@ Field display rules:
 - If a reaction is local-only, say it is local-only; do not emit empty callback/FVI fields.
 - If a reaction overlaps a Selective Legibility note target, include the note-case id, target note text, target source span, label, source-span relation, judge reason, and whether it counted toward recall.
 - If a reaction is a grounded callback, weak callback, or FVI, include prior-link evidence when present, judge reason, and a short reviewer interpretation.
-- Memory state should use the artifact's real field names and values. Preserve the recorded active attention, active focus, concept digest, thread digest, reflective digest, and SourceRef evidence; show empty arrays, empty objects, and `null` values explicitly rather than silently omitting them.
+- Memory state should use the artifact's real field names and values. Preserve the recorded probe-time fields such as `active_attention_digest`, `concept_digest`, `thread_digest`, `reflective_digest`, and `source_ref_digest`; show empty arrays, empty objects, and `null` values explicitly rather than silently omitting them.
+- Do not present derived projection fields such as `active_focus_digest` as peer memory stores. If a report needs them for prompt/context-packaging diagnosis, put them in a clearly labeled projection appendix rather than the main Memory Quality state evidence.
+- Distinguish probe-time scoring evidence from final runtime state references. A probe snapshot digest is the evidence the judge saw; final `runtime/*.json` files are useful diagnostic references, but they cannot be used as substitutes for complete probe-time stores.
+- If the run does not contain per-probe full-store snapshots, state that boundary explicitly. Future reports that need complete probe-time stores should require exporter artifacts such as `exports/probe_state_snapshots/probe_###/active_attention.json` rather than inferring backward from final runtime state.
 - Do not default-display `continuity_context`, `recent_reading_orientation`, `recent_sentence_ids`, `recent_meaning_units`, or `recent_reactions` as Memory Quality state. These are continuity/projection artifacts, not durable memory stores; include them only in a clearly labeled continuity-diagnostics section when that is the review target.
 - Recent visible reactions should appear in the reading timeline or callback/FVI evidence when relevant, not inside a synthetic memory-state wrapper.
 - Do not present `target_sentence_id`, `target sentence`, or `cN-sM` handles by themselves as canonical source coordinates. Label them as orientation-only or legacy/eval locator metadata, and pair them with paragraph-char `SourceRef` / source-span coordinates whenever those are available.
@@ -122,9 +125,11 @@ Required:
 - inline probe markers in that source document
 - probe sections with short deterministic orientation excerpts, not repeated full source-so-far dumps
 - raw probe snapshot links
+- final runtime state links, clearly labeled as final references rather than probe-time scoring evidence
 - judge score dimensions and judge reason
 - a clear statement that probe-time snapshot is scoring evidence
 - a clear statement that final runtime dump is for learning/debugging and cannot replace probe-time evidence
+- a clear statement when complete per-probe memory-store dumps are unavailable
 
 The narrower Long Span Memory Quality contract lives in [long_span/memory_quality_report_contract.md](./long_span/memory_quality_report_contract.md).
 

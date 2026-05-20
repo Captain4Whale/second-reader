@@ -1,6 +1,6 @@
 # Eval-1 Full Active Evaluation Post-Slice8H: Playback Dossier
 
-This dossier replays Eval-1 as a reading trace rather than as a score table. It is designed for human review of the product-facing reading experience: source window -> visible reactions -> note coverage -> callback/FVI audit -> exact recorded state fields -> scoring interpretation.
+This dossier replays Eval-1 as a reading trace rather than as a score table. It is designed for human review of the product-facing reading experience: source window -> visible reactions -> note coverage -> callback/FVI audit -> probe-time scoring evidence -> scoring interpretation.
 
 It is not a new eval run, not an evidence-catalog update, not product-quality proof, and not Long Span formal benchmark authority.
 
@@ -9,8 +9,15 @@ It is not a new eval run, not an evidence-catalog update, not product-quality pr
 1. Open the dataset source window first for the book/window context.
 2. Read the matching playback window page in order; every visible reaction from the Eval-1 run is listed.
 3. Use the conditional Selective Legibility and Callback/FVI blocks only where they appear; local-only / non-target reactions stay compact.
-4. At each Memory Quality probe, inspect the exact recorded snapshot fields before reading the score rationale; empty arrays, empty objects, and `null` values are shown as recorded rather than hidden behind a synthetic wrapper.
+4. At each Memory Quality probe, inspect the recorded probe-time digest fields before reading the score rationale; empty arrays, empty objects, and `null` values are shown as recorded rather than hidden behind a synthetic wrapper.
 5. Use the final scoring interpretation to connect the trace back to the four metrics.
+
+## Memory State Evidence Boundary
+
+- `memory_quality_probe_snapshots.json` is the probe-time scoring evidence used by Memory Quality judging in this Eval-1 run. It contains digest fields such as `active_attention_digest`, `concept_digest`, `thread_digest`, `reflective_digest`, and `source_ref_digest`.
+- The `runtime/*.json` links in each window page are final full runtime state references. They are useful for diagnosis, but they are not the exact complete state at each probe point.
+- `runtime/checkpoints/chapter-001.json` is the window boundary checkpoint. It should not be read as five separate probe-time full-store checkpoints.
+- Current Eval-1 artifacts do not include per-probe full memory-store dumps. If future reviews need complete probe-time stores, the eval exporter should add explicit `exports/probe_state_snapshots/probe_###/...` artifacts rather than inferring from final runtime state.
 
 ## Window Index
 

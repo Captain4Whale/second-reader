@@ -3061,7 +3061,27 @@ Every visible reaction in this Eval-1 window is listed in reading order. Fields 
 
 ## Probe Memory Checkpoints
 
-Memory Quality is scored at probe time. The state below is a structured re-layout of the recorded probe snapshot, not a fresh summary and not the final runtime dump.
+Memory Quality is scored at probe time. The state blocks below are exact Markdown re-layouts of recorded probe snapshot digest fields, not fresh summaries and not final runtime dumps.
+
+### Memory State Evidence Boundary
+
+- Probe-time scoring evidence: `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_long_span_post_slice8h_20260519_huochu/outputs/huochu_shengming_de_yiyi_private_zh__segment_1/attentional_v2/_mechanisms/attentional_v2/exports/memory_quality_probe_snapshots.json`. The per-probe blocks below come from snapshot fields such as `active_attention_digest`, `concept_digest`, `thread_digest`, `reflective_digest`, and `source_ref_digest`.
+- Final full runtime state references: files under `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_long_span_post_slice8h_20260519_huochu/outputs/huochu_shengming_de_yiyi_private_zh__segment_1/attentional_v2/_mechanisms/attentional_v2/runtime`. These are useful for diagnosis, but they are window-end state references rather than the exact state used at each Memory Quality probe.
+- Window boundary checkpoint: `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_long_span_post_slice8h_20260519_huochu/outputs/huochu_shengming_de_yiyi_private_zh__segment_1/attentional_v2/_mechanisms/attentional_v2/runtime/checkpoints/chapter-001.json`. This is the chapter/window boundary checkpoint, not five independent probe-time checkpoints.
+- Missing artifact boundary: current Eval-1 artifacts do not contain per-probe full-store dumps. A future exporter needs explicit `exports/probe_state_snapshots/probe_###/...` captures before a report can link to complete memory stores at each probe.
+
+### Full Runtime State Links
+
+| State artifact | Path | Boundary note |
+| --- | --- | --- |
+| Active Attention | `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_long_span_post_slice8h_20260519_huochu/outputs/huochu_shengming_de_yiyi_private_zh__segment_1/attentional_v2/_mechanisms/attentional_v2/runtime/active_attention.json` | Final window-end active attention store; not the probe-time full store. |
+| Concept Registry | `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_long_span_post_slice8h_20260519_huochu/outputs/huochu_shengming_de_yiyi_private_zh__segment_1/attentional_v2/_mechanisms/attentional_v2/runtime/concept_registry.json` | Final window-end concept store; use for diagnosis only. |
+| Thread Trace | `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_long_span_post_slice8h_20260519_huochu/outputs/huochu_shengming_de_yiyi_private_zh__segment_1/attentional_v2/_mechanisms/attentional_v2/runtime/thread_trace.json` | Final window-end thread store; use for diagnosis only. |
+| Reflective Frames | `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_long_span_post_slice8h_20260519_huochu/outputs/huochu_shengming_de_yiyi_private_zh__segment_1/attentional_v2/_mechanisms/attentional_v2/runtime/reflective_frames.json` | Final window-end reflective store; use for diagnosis only. |
+| Reaction Records | `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_long_span_post_slice8h_20260519_huochu/outputs/huochu_shengming_de_yiyi_private_zh__segment_1/attentional_v2/_mechanisms/attentional_v2/runtime/reaction_records.json` | Final window reaction record store; timeline above is the reviewer-readable projection. |
+| Read Audit | `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_long_span_post_slice8h_20260519_huochu/outputs/huochu_shengming_de_yiyi_private_zh__segment_1/attentional_v2/_mechanisms/attentional_v2/runtime/read_audit.jsonl` | Runtime operation/audit stream for diagnosis. |
+| Settlement Audit | `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_long_span_post_slice8h_20260519_huochu/outputs/huochu_shengming_de_yiyi_private_zh__segment_1/attentional_v2/_mechanisms/attentional_v2/runtime/settlement_audit.jsonl` | Runtime settlement/audit stream for diagnosis. |
+| Chapter checkpoint | `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_long_span_post_slice8h_20260519_huochu/outputs/huochu_shengming_de_yiyi_private_zh__segment_1/attentional_v2/_mechanisms/attentional_v2/runtime/checkpoints/chapter-001.json` | Full window boundary checkpoint, not a per-probe checkpoint. |
 
 ### Probe 1 — MQ `3.50` — near 20%
 
@@ -3085,7 +3105,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
    s271 / p52: 其次指对周围一切丑恶行为的厌恶，甚至仅仅是丑陋的外貌都让他感觉厌恶。
 ```
 
-#### Active Attention
+#### Probe-time snapshot field: active_attention_digest
 
 `active_attention_digest`:
 
@@ -3526,265 +3546,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
 }
 ```
 
-#### Active Focus
-
-`active_focus_digest`:
-
-```json
-{
-  "active_items": [
-    {
-      "ref_id": "active_attention:focus-ordinary-prisoners",
-      "item_id": "focus-ordinary-prisoners",
-      "attention_tags": [
-        "focus"
-      ],
-      "statement": "书中关注的是普通囚徒——没有袖箍、没有特权、姓名不为人知——而非英雄或囚头。死亡多发生在小集中营而非奥斯维辛式的大集中营。",
-      "status": "active",
-      "source_refs": [
-        {
-          "source_span_id": "src:c1:p4@126-p4@174",
-          "source_span": {
-            "start_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 4,
-              "char_offset": 126
-            },
-            "end_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 4,
-              "char_offset": 174
-            }
-          },
-          "quote": "本书不是名人的受难记，而是将注意力集中在那些不为人所知、没有记录在案的遇难者所遭受的磨难和死亡。",
-          "role": "core thesis",
-          "resolution": {
-            "status": "matched",
-            "method": "exact_text",
-            "match_count": 1
-          }
-        }
-      ],
-      "linked_concept_keys": [],
-      "linked_thread_keys": [],
-      "projection_role": "current_support",
-      "support_status": "source_backed",
-      "current_support": true,
-      "lineage_only": false,
-      "projection_warning": ""
-    },
-    {
-      "ref_id": "active_attention:adaptation-to-terror",
-      "item_id": "adaptation-to-terror",
-      "attention_tags": [
-        "focus",
-        "psychological-mechanism"
-      ],
-      "statement": "\"适应\"与\"习以为常\"不是麻木，而是心理防线的战略性重塑——为了在极端环境中存活，大脑必须将极度恐慌改写为可接受的日常状态。",
-      "status": "active",
-      "source_refs": [
-        {
-          "source_span_id": "src:c1:p18@146-p18@178",
-          "source_span": {
-            "start_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 18,
-              "char_offset": 146
-            },
-            "end_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 18,
-              "char_offset": 178
-            }
-          },
-          "quote": "从那一刻起，我们不得不逐渐适应这种极度恐慌的状态，直至习以为常。",
-          "role": "core mechanism",
-          "resolution": {
-            "status": "matched",
-            "method": "exact_text",
-            "match_count": 1
-          }
-        }
-      ],
-      "linked_concept_keys": [],
-      "linked_thread_keys": [],
-      "projection_role": "current_support",
-      "support_status": "source_backed",
-      "current_support": true,
-      "lineage_only": false,
-      "projection_warning": ""
-    },
-    {
-      "ref_id": "active_attention:selection-mechanism",
-      "item_id": "selection-mechanism",
-      "attention_tags": [
-        "focus",
-        "mechanism"
-      ],
-      "statement": "「筛选」机制：党卫军军官通过一个简单的手势（左=老弱病残→毒气室，右=劳动力→劳役）在一分钟内做出生死判决。叙述者因背包略微左倾、用力挺直身体、军官犹豫后转向其双肩而幸存在右侧。这一过程后来「反复出现」。",
-      "status": "active",
-      "source_refs": [
-        {
-          "source_span_id": "src:c1:p23@18-p23@59",
-          "source_span": {
-            "start_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 23,
-              "char_offset": 18
-            },
-            "end_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 23,
-              "char_offset": 59
-            }
-          },
-          "quote": "分到右边的是干活的人，分到左边的是老弱病残、不能干活的人，这些人要被送到特殊营地。",
-          "role": "core definition",
-          "resolution": {
-            "status": "matched",
-            "method": "exact_text",
-            "match_count": 1
-          }
-        }
-      ],
-      "linked_concept_keys": [],
-      "linked_thread_keys": [],
-      "projection_role": "current_support",
-      "support_status": "source_backed",
-      "current_support": true,
-      "lineage_only": false,
-      "projection_warning": ""
-    },
-    {
-      "ref_id": "active_attention:psychological-adaptations-under-extremity",
-      "item_id": "psychological-adaptations-under-extremity",
-      "attention_tags": [
-        "focus",
-        "psychological-mechanism"
-      ],
-      "statement": "极端剥夺后的两种心理适应态：①冷酷的幽默感（反身性自嘲，最低限度的庆幸）——「幽默」是被接管而非主动选择；②悬置式好奇（把自己当作陌生事件打量，不问「我害怕」而问「我会怎样」）。两者都是将极度恐惧改写为可承受状态的心理策略的具体显现。",
-      "status": "active",
-      "source_refs": [
-        {
-          "source_span_id": "src:c1:p42@43-p42@68",
-          "source_span": {
-            "start_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 42,
-              "char_offset": 43
-            },
-            "end_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 42,
-              "char_offset": 68
-            }
-          },
-          "quote": "在登山遇险的关键时刻，人们只会有一种感觉，即好奇。",
-          "role": "support",
-          "resolution": {
-            "status": "matched",
-            "method": "exact_text",
-            "match_count": 1
-          }
-        }
-      ],
-      "linked_concept_keys": [],
-      "linked_thread_keys": [],
-      "projection_role": "current_support",
-      "support_status": "source_backed",
-      "current_support": true,
-      "lineage_only": false,
-      "projection_warning": ""
-    }
-  ],
-  "recent_reactions": [
-    {
-      "ref_id": "reaction:rx:Full_Content:src:c1:p47@0-p47@276:discern:28",
-      "reaction_id": "rx:Full_Content:src:c1:p47@0-p47@276:discern:28",
-      "type": "discern",
-      "thought": "「免除麻烦」这个说法冷酷到了极点，却因此具有一种奇怪的诚实。它不是在美化毒气室，而是揭示了一种极端处境下的功利逻辑：死亡已经被安排好了，你不需要亲自动手。这个逻辑隐含的前提是——自杀念头确实存在，而且确实需要某种出口，只是这个出口已经被外部力量接管了。它同时暗示：真正让人恐惧的不是死亡本身，而是死亡之前的那个等待——毒气室至少结束这个等待。",
-      "emitted_at_source_span_id": "src:c1:p47@0-p47@276",
-      "primary_source_ref": {
-        "source_span_id": "src:c1:p47@253-p47@276",
-        "source_span": {
-          "start_cursor": {
-            "chapter_id": 1,
-            "chapter_ref": "Full Content",
-            "paragraph_index": 47,
-            "char_offset": 253
-          },
-          "end_cursor": {
-            "chapter_id": 1,
-            "chapter_ref": "Full Content",
-            "paragraph_index": 47,
-            "char_offset": 276
-          }
-        },
-        "quote": "不要忘了，毒气室至少可以使他们免除自杀的麻烦。",
-        "role": "reaction_anchor",
-        "resolution": {
-          "status": "matched",
-          "method": "exact_text",
-          "match_count": 1
-        }
-      },
-      "source_quote": "不要忘了，毒气室至少可以使他们免除自杀的麻烦。",
-      "projection_role": "visible_trace",
-      "support_status": "visible_trace",
-      "visible_trace_support": true,
-      "current_support": false,
-      "projection_warning": "visible_trace_not_semantic_memory"
-    },
-    {
-      "ref_id": "reaction:rx:Full_Content:src:c1:p48@0-p48@323:highlight:29",
-      "reaction_id": "rx:Full_Content:src:c1:p48@0-p48@323:highlight:29",
-      "type": "highlight",
-      "thought": "\"善言具有误导性\"——这个判断本身值得注意。在集中营中，善意与误导并不矛盾。传递安慰的人自己没有可靠的判断依据，他的信息来自已被现实否定的预期。这和前文那些\"我一直确信\"的信念崩解是同一种结构：人在极端环境中失去了辨别真假的能力，连安慰都可能是建立在错误之上的。",
-      "emitted_at_source_span_id": "src:c1:p48@0-p48@323",
-      "primary_source_ref": {
-        "source_span_id": "src:c1:p48@241-p48@322",
-        "source_span": {
-          "start_cursor": {
-            "chapter_id": 1,
-            "chapter_ref": "Full Content",
-            "paragraph_index": 48,
-            "char_offset": 241
-          },
-          "end_cursor": {
-            "chapter_id": 1,
-            "chapter_ref": "Full Content",
-            "paragraph_index": 48,
-            "char_offset": 322
-          }
-        },
-        "quote": "他关于这个M的判断是错误的，他的善言具有误导性。因为一位约60岁的棚屋街区医生犯人曾告诉过我他是如何祈求M博士放过他将被送进毒气室的儿子，可M博士却冷冷地拒绝了。",
-        "role": "reaction_anchor",
-        "resolution": {
-          "status": "matched",
-          "method": "exact_text",
-          "match_count": 1
-        }
-      },
-      "source_quote": "他关于这个M的判断是错误的，他的善言具有误导性。因为一位约60岁的棚屋街区医生犯人曾告诉过我他是如何祈求M博士放过他将被送进毒气室的儿子，可M博士却冷冷地拒绝了。",
-      "projection_role": "visible_trace",
-      "support_status": "visible_trace",
-      "visible_trace_support": true,
-      "current_support": false,
-      "projection_warning": "visible_trace_not_semantic_memory"
-    }
-  ]
-}
-```
-
-#### Concept Digest
+#### Probe-time snapshot field: concept_digest
 
 `concept_digest`:
 
@@ -3913,7 +3675,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
 ]
 ```
 
-#### Thread Digest
+#### Probe-time snapshot field: thread_digest
 
 `thread_digest`:
 
@@ -4066,7 +3828,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
 ]
 ```
 
-#### Reflective Digest
+#### Probe-time snapshot field: reflective_digest
 
 `reflective_digest`:
 
@@ -4078,7 +3840,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
 }
 ```
 
-#### SourceRef Digest
+#### Probe-time snapshot field: source_ref_digest
 
 `source_ref_digest`:
 
@@ -4311,7 +4073,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
    s530 / p108: 站在外面，我们欣赏着晚霞，看着不断变换形状和色彩的云朵笼罩着整个天空，云彩一会儿铁红色，一会儿艳红色，与我们荒凉的棚屋形成鲜明对比，泥潭也映照出灿烂的天空。
 ```
 
-#### Active Attention
+#### Probe-time snapshot field: active_attention_digest
 
 `active_attention_digest`:
 
@@ -4752,265 +4514,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
 }
 ```
 
-#### Active Focus
-
-`active_focus_digest`:
-
-```json
-{
-  "active_items": [
-    {
-      "ref_id": "active_attention:focus-ordinary-prisoners",
-      "item_id": "focus-ordinary-prisoners",
-      "attention_tags": [
-        "focus"
-      ],
-      "statement": "书中关注的是普通囚徒——没有袖箍、没有特权、姓名不为人知——而非英雄或囚头。死亡多发生在小集中营而非奥斯维辛式的大集中营。",
-      "status": "active",
-      "source_refs": [
-        {
-          "source_span_id": "src:c1:p4@126-p4@174",
-          "source_span": {
-            "start_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 4,
-              "char_offset": 126
-            },
-            "end_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 4,
-              "char_offset": 174
-            }
-          },
-          "quote": "本书不是名人的受难记，而是将注意力集中在那些不为人所知、没有记录在案的遇难者所遭受的磨难和死亡。",
-          "role": "core thesis",
-          "resolution": {
-            "status": "matched",
-            "method": "exact_text",
-            "match_count": 1
-          }
-        }
-      ],
-      "linked_concept_keys": [],
-      "linked_thread_keys": [],
-      "projection_role": "current_support",
-      "support_status": "source_backed",
-      "current_support": true,
-      "lineage_only": false,
-      "projection_warning": ""
-    },
-    {
-      "ref_id": "active_attention:adaptation-to-terror",
-      "item_id": "adaptation-to-terror",
-      "attention_tags": [
-        "focus",
-        "psychological-mechanism"
-      ],
-      "statement": "\"适应\"与\"习以为常\"不是麻木，而是心理防线的战略性重塑——为了在极端环境中存活，大脑必须将极度恐慌改写为可接受的日常状态。",
-      "status": "active",
-      "source_refs": [
-        {
-          "source_span_id": "src:c1:p18@146-p18@178",
-          "source_span": {
-            "start_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 18,
-              "char_offset": 146
-            },
-            "end_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 18,
-              "char_offset": 178
-            }
-          },
-          "quote": "从那一刻起，我们不得不逐渐适应这种极度恐慌的状态，直至习以为常。",
-          "role": "core mechanism",
-          "resolution": {
-            "status": "matched",
-            "method": "exact_text",
-            "match_count": 1
-          }
-        }
-      ],
-      "linked_concept_keys": [],
-      "linked_thread_keys": [],
-      "projection_role": "current_support",
-      "support_status": "source_backed",
-      "current_support": true,
-      "lineage_only": false,
-      "projection_warning": ""
-    },
-    {
-      "ref_id": "active_attention:selection-mechanism",
-      "item_id": "selection-mechanism",
-      "attention_tags": [
-        "focus",
-        "mechanism"
-      ],
-      "statement": "「筛选」机制：党卫军军官通过一个简单的手势（左=老弱病残→毒气室，右=劳动力→劳役）在一分钟内做出生死判决。叙述者因背包略微左倾、用力挺直身体、军官犹豫后转向其双肩而幸存在右侧。这一过程后来「反复出现」。",
-      "status": "active",
-      "source_refs": [
-        {
-          "source_span_id": "src:c1:p23@18-p23@59",
-          "source_span": {
-            "start_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 23,
-              "char_offset": 18
-            },
-            "end_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 23,
-              "char_offset": 59
-            }
-          },
-          "quote": "分到右边的是干活的人，分到左边的是老弱病残、不能干活的人，这些人要被送到特殊营地。",
-          "role": "core definition",
-          "resolution": {
-            "status": "matched",
-            "method": "exact_text",
-            "match_count": 1
-          }
-        }
-      ],
-      "linked_concept_keys": [],
-      "linked_thread_keys": [],
-      "projection_role": "current_support",
-      "support_status": "source_backed",
-      "current_support": true,
-      "lineage_only": false,
-      "projection_warning": ""
-    },
-    {
-      "ref_id": "active_attention:psychological-adaptations-under-extremity",
-      "item_id": "psychological-adaptations-under-extremity",
-      "attention_tags": [
-        "focus",
-        "psychological-mechanism"
-      ],
-      "statement": "极端剥夺后的两种心理适应态：①冷酷的幽默感（反身性自嘲，最低限度的庆幸）——「幽默」是被接管而非主动选择；②悬置式好奇（把自己当作陌生事件打量，不问「我害怕」而问「我会怎样」）。两者都是将极度恐惧改写为可承受状态的心理策略的具体显现。",
-      "status": "active",
-      "source_refs": [
-        {
-          "source_span_id": "src:c1:p42@43-p42@68",
-          "source_span": {
-            "start_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 42,
-              "char_offset": 43
-            },
-            "end_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 42,
-              "char_offset": 68
-            }
-          },
-          "quote": "在登山遇险的关键时刻，人们只会有一种感觉，即好奇。",
-          "role": "support",
-          "resolution": {
-            "status": "matched",
-            "method": "exact_text",
-            "match_count": 1
-          }
-        }
-      ],
-      "linked_concept_keys": [],
-      "linked_thread_keys": [],
-      "projection_role": "current_support",
-      "support_status": "source_backed",
-      "current_support": true,
-      "lineage_only": false,
-      "projection_warning": ""
-    }
-  ],
-  "recent_reactions": [
-    {
-      "ref_id": "reaction:rx:Full_Content:src:c1:p95@0-p99@176:highlight:61",
-      "reaction_id": "rx:Full_Content:src:c1:p95@0-p99@176:highlight:61",
-      "type": "highlight",
-      "thought": "\"不论真实与否\"这几个字至关重要——它坦承了这种明亮的理想化性质，却也正因为坦承而更具力量。不是因为她真的比太阳亮，所以值得坚守；而是无论真假，这种确信本身就是集中营中最后的自由领地。",
-      "emitted_at_source_span_id": "src:c1:p95@0-p99@176",
-      "primary_source_ref": {
-        "source_span_id": "src:c1:p99@148-p99@176",
-        "source_span": {
-          "start_cursor": {
-            "chapter_id": 1,
-            "chapter_ref": "Full Content",
-            "paragraph_index": 99,
-            "char_offset": 148
-          },
-          "end_cursor": {
-            "chapter_id": 1,
-            "chapter_ref": "Full Content",
-            "paragraph_index": 99,
-            "char_offset": 176
-          }
-        },
-        "quote": "不论真实与否，我都坚信她的外貌比冉冉升起的太阳还要明亮。",
-        "role": "reaction_anchor",
-        "resolution": {
-          "status": "matched",
-          "method": "exact_text",
-          "match_count": 1
-        }
-      },
-      "source_quote": "不论真实与否，我都坚信她的外貌比冉冉升起的太阳还要明亮。",
-      "projection_role": "visible_trace",
-      "support_status": "visible_trace",
-      "visible_trace_support": true,
-      "current_support": false,
-      "projection_warning": "visible_trace_not_semantic_memory"
-    },
-    {
-      "ref_id": "reaction:rx:Full_Content:src:c1:p100@0-p104@134:discern:62",
-      "reaction_id": "rx:Full_Content:src:c1:p100@0-p104@134:discern:62",
-      "type": "discern",
-      "thought": "这里有一个隐含的深刻区分：爱一个人≠爱她的肉体。在极端环境中，「不知妻子是否还活着」这个念头非但没有摧毁他的爱，反而促成了对爱的更本质理解——所爱之人的在场与否、存亡与否，都不是爱的边界；真正重要的是爱以何种方式终止。这意味着爱是一种独立于被爱对象的价值。",
-      "emitted_at_source_span_id": "src:c1:p100@0-p104@134",
-      "primary_source_ref": {
-        "source_span_id": "src:c1:p104@71-p104@134",
-        "source_span": {
-          "start_cursor": {
-            "chapter_id": 1,
-            "chapter_ref": "Full Content",
-            "paragraph_index": 104,
-            "char_offset": 71
-          },
-          "end_cursor": {
-            "chapter_id": 1,
-            "chapter_ref": "Full Content",
-            "paragraph_index": 104,
-            "char_offset": 134
-          }
-        },
-        "quote": "爱一个人可以远远超过爱她的肉体本身。爱在精神和内心方面具有深刻的含义，无论伴侣是否在场，是否健在，爱以什么方式终止是很重要的。",
-        "role": "reaction_anchor",
-        "resolution": {
-          "status": "matched",
-          "method": "exact_text",
-          "match_count": 1
-        }
-      },
-      "source_quote": "爱一个人可以远远超过爱她的肉体本身。爱在精神和内心方面具有深刻的含义，无论伴侣是否在场，是否健在，爱以什么方式终止是很重要的。",
-      "projection_role": "visible_trace",
-      "support_status": "visible_trace",
-      "visible_trace_support": true,
-      "current_support": false,
-      "projection_warning": "visible_trace_not_semantic_memory"
-    }
-  ]
-}
-```
-
-#### Concept Digest
+#### Probe-time snapshot field: concept_digest
 
 `concept_digest`:
 
@@ -5139,7 +4643,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
 ]
 ```
 
-#### Thread Digest
+#### Probe-time snapshot field: thread_digest
 
 `thread_digest`:
 
@@ -5292,7 +4796,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
 ]
 ```
 
-#### Reflective Digest
+#### Probe-time snapshot field: reflective_digest
 
 `reflective_digest`:
 
@@ -5304,7 +4808,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
 }
 ```
 
-#### SourceRef Digest
+#### Probe-time snapshot field: source_ref_digest
 
 `source_ref_digest`:
 
@@ -5537,7 +5041,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
    s796 / p149: 在最后关头，出了点技术上的问题，我们不得不再回到集中营。
 ```
 
-#### Active Attention
+#### Probe-time snapshot field: active_attention_digest
 
 `active_attention_digest`:
 
@@ -5978,265 +5482,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
 }
 ```
 
-#### Active Focus
-
-`active_focus_digest`:
-
-```json
-{
-  "active_items": [
-    {
-      "ref_id": "active_attention:focus-ordinary-prisoners",
-      "item_id": "focus-ordinary-prisoners",
-      "attention_tags": [
-        "focus"
-      ],
-      "statement": "书中关注的是普通囚徒——没有袖箍、没有特权、姓名不为人知——而非英雄或囚头。死亡多发生在小集中营而非奥斯维辛式的大集中营。",
-      "status": "active",
-      "source_refs": [
-        {
-          "source_span_id": "src:c1:p4@126-p4@174",
-          "source_span": {
-            "start_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 4,
-              "char_offset": 126
-            },
-            "end_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 4,
-              "char_offset": 174
-            }
-          },
-          "quote": "本书不是名人的受难记，而是将注意力集中在那些不为人所知、没有记录在案的遇难者所遭受的磨难和死亡。",
-          "role": "core thesis",
-          "resolution": {
-            "status": "matched",
-            "method": "exact_text",
-            "match_count": 1
-          }
-        }
-      ],
-      "linked_concept_keys": [],
-      "linked_thread_keys": [],
-      "projection_role": "current_support",
-      "support_status": "source_backed",
-      "current_support": true,
-      "lineage_only": false,
-      "projection_warning": ""
-    },
-    {
-      "ref_id": "active_attention:adaptation-to-terror",
-      "item_id": "adaptation-to-terror",
-      "attention_tags": [
-        "focus",
-        "psychological-mechanism"
-      ],
-      "statement": "\"适应\"与\"习以为常\"不是麻木，而是心理防线的战略性重塑——为了在极端环境中存活，大脑必须将极度恐慌改写为可接受的日常状态。",
-      "status": "active",
-      "source_refs": [
-        {
-          "source_span_id": "src:c1:p18@146-p18@178",
-          "source_span": {
-            "start_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 18,
-              "char_offset": 146
-            },
-            "end_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 18,
-              "char_offset": 178
-            }
-          },
-          "quote": "从那一刻起，我们不得不逐渐适应这种极度恐慌的状态，直至习以为常。",
-          "role": "core mechanism",
-          "resolution": {
-            "status": "matched",
-            "method": "exact_text",
-            "match_count": 1
-          }
-        }
-      ],
-      "linked_concept_keys": [],
-      "linked_thread_keys": [],
-      "projection_role": "current_support",
-      "support_status": "source_backed",
-      "current_support": true,
-      "lineage_only": false,
-      "projection_warning": ""
-    },
-    {
-      "ref_id": "active_attention:selection-mechanism",
-      "item_id": "selection-mechanism",
-      "attention_tags": [
-        "focus",
-        "mechanism"
-      ],
-      "statement": "「筛选」机制：党卫军军官通过一个简单的手势（左=老弱病残→毒气室，右=劳动力→劳役）在一分钟内做出生死判决。叙述者因背包略微左倾、用力挺直身体、军官犹豫后转向其双肩而幸存在右侧。这一过程后来「反复出现」。",
-      "status": "active",
-      "source_refs": [
-        {
-          "source_span_id": "src:c1:p23@18-p23@59",
-          "source_span": {
-            "start_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 23,
-              "char_offset": 18
-            },
-            "end_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 23,
-              "char_offset": 59
-            }
-          },
-          "quote": "分到右边的是干活的人，分到左边的是老弱病残、不能干活的人，这些人要被送到特殊营地。",
-          "role": "core definition",
-          "resolution": {
-            "status": "matched",
-            "method": "exact_text",
-            "match_count": 1
-          }
-        }
-      ],
-      "linked_concept_keys": [],
-      "linked_thread_keys": [],
-      "projection_role": "current_support",
-      "support_status": "source_backed",
-      "current_support": true,
-      "lineage_only": false,
-      "projection_warning": ""
-    },
-    {
-      "ref_id": "active_attention:psychological-adaptations-under-extremity",
-      "item_id": "psychological-adaptations-under-extremity",
-      "attention_tags": [
-        "focus",
-        "psychological-mechanism"
-      ],
-      "statement": "极端剥夺后的两种心理适应态：①冷酷的幽默感（反身性自嘲，最低限度的庆幸）——「幽默」是被接管而非主动选择；②悬置式好奇（把自己当作陌生事件打量，不问「我害怕」而问「我会怎样」）。两者都是将极度恐惧改写为可承受状态的心理策略的具体显现。",
-      "status": "active",
-      "source_refs": [
-        {
-          "source_span_id": "src:c1:p42@43-p42@68",
-          "source_span": {
-            "start_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 42,
-              "char_offset": 43
-            },
-            "end_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 42,
-              "char_offset": 68
-            }
-          },
-          "quote": "在登山遇险的关键时刻，人们只会有一种感觉，即好奇。",
-          "role": "support",
-          "resolution": {
-            "status": "matched",
-            "method": "exact_text",
-            "match_count": 1
-          }
-        }
-      ],
-      "linked_concept_keys": [],
-      "linked_thread_keys": [],
-      "projection_role": "current_support",
-      "support_status": "source_backed",
-      "current_support": true,
-      "lineage_only": false,
-      "projection_warning": ""
-    }
-  ],
-  "recent_reactions": [
-    {
-      "ref_id": "reaction:rx:Full_Content:src:c1:p150@0-p150@280:discern:93",
-      "reaction_id": "rx:Full_Content:src:c1:p150@0-p150@280:discern:93",
-      "type": "discern",
-      "thought": "三个宾语并列：「背包」「牙刷」「女尸」。没有过渡、没有停顿、没有情绪词。搜刮生存物资与发现死亡并列，这意味着在集中营里，发现尸体已经内化为日常搜索行为的一部分，而非需要单独标记的事件。这种平静本身就是一种精神状态的体现——不是麻木，而是已经将「身边有尸体」整合进了正常活动的框架。",
-      "emitted_at_source_span_id": "src:c1:p150@0-p150@280",
-      "primary_source_ref": {
-        "source_span_id": "src:c1:p150@255-p150@280",
-        "source_span": {
-          "start_cursor": {
-            "chapter_id": 1,
-            "chapter_ref": "Full Content",
-            "paragraph_index": 150,
-            "char_offset": 255
-          },
-          "end_cursor": {
-            "chapter_id": 1,
-            "chapter_ref": "Full Content",
-            "paragraph_index": 150,
-            "char_offset": 280
-          }
-        },
-        "quote": "我进去找到了一个背包和一把牙刷，还发现了一具女尸。",
-        "role": "reaction_anchor",
-        "resolution": {
-          "status": "matched",
-          "method": "exact_text",
-          "match_count": 1
-        }
-      },
-      "source_quote": "我进去找到了一个背包和一把牙刷，还发现了一具女尸。",
-      "projection_role": "visible_trace",
-      "support_status": "visible_trace",
-      "visible_trace_support": true,
-      "current_support": false,
-      "projection_warning": "visible_trace_not_semantic_memory"
-    },
-    {
-      "ref_id": "reaction:rx:Full_Content:src:c1:p151@0-p151@366:highlight:94",
-      "reaction_id": "rx:Full_Content:src:c1:p151@0-p151@366:highlight:94",
-      "type": "highlight",
-      "thought": "「自己拿一次主意」——这个表述直接呼应了前文关于犯人「逃避责任」「不敢采取主动行为」的描述。叙说者打破了这个模式，而他打破它的方式是：拒绝行动。这里存在一个悖论结构——在集中营语境下，最大胆的决定往往恰恰是「不做某事」，而非「做某事」。",
-      "emitted_at_source_span_id": "src:c1:p151@0-p151@366",
-      "primary_source_ref": {
-        "source_span_id": "src:c1:p151@242-p151@294",
-        "source_span": {
-          "start_cursor": {
-            "chapter_id": 1,
-            "chapter_ref": "Full Content",
-            "paragraph_index": 151,
-            "char_offset": 242
-          },
-          "end_cursor": {
-            "chapter_id": 1,
-            "chapter_ref": "Full Content",
-            "paragraph_index": 151,
-            "char_offset": 294
-          }
-        },
-        "quote": "突然，我决定自己拿一次主意。我跑出去告诉那个朋友我不跟他跑了。一说出这句话，那种不安的感觉就顿时消失了。",
-        "role": "reaction_anchor",
-        "resolution": {
-          "status": "matched",
-          "method": "exact_text",
-          "match_count": 1
-        }
-      },
-      "source_quote": "突然，我决定自己拿一次主意。我跑出去告诉那个朋友我不跟他跑了。一说出这句话，那种不安的感觉就顿时消失了。",
-      "projection_role": "visible_trace",
-      "support_status": "visible_trace",
-      "visible_trace_support": true,
-      "current_support": false,
-      "projection_warning": "visible_trace_not_semantic_memory"
-    }
-  ]
-}
-```
-
-#### Concept Digest
+#### Probe-time snapshot field: concept_digest
 
 `concept_digest`:
 
@@ -6365,7 +5611,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
 ]
 ```
 
-#### Thread Digest
+#### Probe-time snapshot field: thread_digest
 
 `thread_digest`:
 
@@ -6518,7 +5764,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
 ]
 ```
 
-#### Reflective Digest
+#### Probe-time snapshot field: reflective_digest
 
 `reflective_digest`:
 
@@ -6530,7 +5776,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
 }
 ```
 
-#### SourceRef Digest
+#### Probe-time snapshot field: source_ref_digest
 
 `source_ref_digest`:
 
@@ -6763,7 +6009,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
    s1085 / p193: 这严重减弱了他们身体的抵抗力，导致许多人死亡。
 ```
 
-#### Active Attention
+#### Probe-time snapshot field: active_attention_digest
 
 `active_attention_digest`:
 
@@ -7204,265 +6450,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
 }
 ```
 
-#### Active Focus
-
-`active_focus_digest`:
-
-```json
-{
-  "active_items": [
-    {
-      "ref_id": "active_attention:focus-ordinary-prisoners",
-      "item_id": "focus-ordinary-prisoners",
-      "attention_tags": [
-        "focus"
-      ],
-      "statement": "书中关注的是普通囚徒——没有袖箍、没有特权、姓名不为人知——而非英雄或囚头。死亡多发生在小集中营而非奥斯维辛式的大集中营。",
-      "status": "active",
-      "source_refs": [
-        {
-          "source_span_id": "src:c1:p4@126-p4@174",
-          "source_span": {
-            "start_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 4,
-              "char_offset": 126
-            },
-            "end_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 4,
-              "char_offset": 174
-            }
-          },
-          "quote": "本书不是名人的受难记，而是将注意力集中在那些不为人所知、没有记录在案的遇难者所遭受的磨难和死亡。",
-          "role": "core thesis",
-          "resolution": {
-            "status": "matched",
-            "method": "exact_text",
-            "match_count": 1
-          }
-        }
-      ],
-      "linked_concept_keys": [],
-      "linked_thread_keys": [],
-      "projection_role": "current_support",
-      "support_status": "source_backed",
-      "current_support": true,
-      "lineage_only": false,
-      "projection_warning": ""
-    },
-    {
-      "ref_id": "active_attention:adaptation-to-terror",
-      "item_id": "adaptation-to-terror",
-      "attention_tags": [
-        "focus",
-        "psychological-mechanism"
-      ],
-      "statement": "\"适应\"与\"习以为常\"不是麻木，而是心理防线的战略性重塑——为了在极端环境中存活，大脑必须将极度恐慌改写为可接受的日常状态。",
-      "status": "active",
-      "source_refs": [
-        {
-          "source_span_id": "src:c1:p18@146-p18@178",
-          "source_span": {
-            "start_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 18,
-              "char_offset": 146
-            },
-            "end_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 18,
-              "char_offset": 178
-            }
-          },
-          "quote": "从那一刻起，我们不得不逐渐适应这种极度恐慌的状态，直至习以为常。",
-          "role": "core mechanism",
-          "resolution": {
-            "status": "matched",
-            "method": "exact_text",
-            "match_count": 1
-          }
-        }
-      ],
-      "linked_concept_keys": [],
-      "linked_thread_keys": [],
-      "projection_role": "current_support",
-      "support_status": "source_backed",
-      "current_support": true,
-      "lineage_only": false,
-      "projection_warning": ""
-    },
-    {
-      "ref_id": "active_attention:selection-mechanism",
-      "item_id": "selection-mechanism",
-      "attention_tags": [
-        "focus",
-        "mechanism"
-      ],
-      "statement": "「筛选」机制：党卫军军官通过一个简单的手势（左=老弱病残→毒气室，右=劳动力→劳役）在一分钟内做出生死判决。叙述者因背包略微左倾、用力挺直身体、军官犹豫后转向其双肩而幸存在右侧。这一过程后来「反复出现」。",
-      "status": "active",
-      "source_refs": [
-        {
-          "source_span_id": "src:c1:p23@18-p23@59",
-          "source_span": {
-            "start_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 23,
-              "char_offset": 18
-            },
-            "end_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 23,
-              "char_offset": 59
-            }
-          },
-          "quote": "分到右边的是干活的人，分到左边的是老弱病残、不能干活的人，这些人要被送到特殊营地。",
-          "role": "core definition",
-          "resolution": {
-            "status": "matched",
-            "method": "exact_text",
-            "match_count": 1
-          }
-        }
-      ],
-      "linked_concept_keys": [],
-      "linked_thread_keys": [],
-      "projection_role": "current_support",
-      "support_status": "source_backed",
-      "current_support": true,
-      "lineage_only": false,
-      "projection_warning": ""
-    },
-    {
-      "ref_id": "active_attention:psychological-adaptations-under-extremity",
-      "item_id": "psychological-adaptations-under-extremity",
-      "attention_tags": [
-        "focus",
-        "psychological-mechanism"
-      ],
-      "statement": "极端剥夺后的两种心理适应态：①冷酷的幽默感（反身性自嘲，最低限度的庆幸）——「幽默」是被接管而非主动选择；②悬置式好奇（把自己当作陌生事件打量，不问「我害怕」而问「我会怎样」）。两者都是将极度恐惧改写为可承受状态的心理策略的具体显现。",
-      "status": "active",
-      "source_refs": [
-        {
-          "source_span_id": "src:c1:p42@43-p42@68",
-          "source_span": {
-            "start_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 42,
-              "char_offset": 43
-            },
-            "end_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 42,
-              "char_offset": 68
-            }
-          },
-          "quote": "在登山遇险的关键时刻，人们只会有一种感觉，即好奇。",
-          "role": "support",
-          "resolution": {
-            "status": "matched",
-            "method": "exact_text",
-            "match_count": 1
-          }
-        }
-      ],
-      "linked_concept_keys": [],
-      "linked_thread_keys": [],
-      "projection_role": "current_support",
-      "support_status": "source_backed",
-      "current_support": true,
-      "lineage_only": false,
-      "projection_warning": ""
-    }
-  ],
-  "recent_reactions": [
-    {
-      "ref_id": "reaction:rx:Full_Content:src:c1:p192@0-p192@160:retrospect:120",
-      "reaction_id": "rx:Full_Content:src:c1:p192@0-p192@160:retrospect:120",
-      "type": "retrospect",
-      "thought": "这句话是全段最锋利的反讽。声音是对的——战争在某一天结束了；但F没能活到那一天。预言在事实层面成立，在F的生命时间线上彻底失效。这比「预言错了」更残忍，因为它证明F的死亡不是来自预言的欺骗，而是来自时间的不等人。",
-      "emitted_at_source_span_id": "src:c1:p192@0-p192@160",
-      "primary_source_ref": {
-        "source_span_id": "src:c1:p192@143-p192@160",
-        "source_span": {
-          "start_cursor": {
-            "chapter_id": 1,
-            "chapter_ref": "Full Content",
-            "paragraph_index": 192,
-            "char_offset": 143
-          },
-          "end_cursor": {
-            "chapter_id": 1,
-            "chapter_ref": "Full Content",
-            "paragraph_index": 192,
-            "char_offset": 160
-          }
-        },
-        "quote": "虽然他梦里声音所说的最终都应验了。",
-        "role": "reaction_anchor",
-        "resolution": {
-          "status": "matched",
-          "method": "exact_text",
-          "match_count": 1
-        }
-      },
-      "source_quote": "虽然他梦里声音所说的最终都应验了。",
-      "projection_role": "visible_trace",
-      "support_status": "visible_trace",
-      "visible_trace_support": true,
-      "current_support": false,
-      "projection_warning": "visible_trace_not_semantic_memory"
-    },
-    {
-      "ref_id": "reaction:rx:Full_Content:src:c1:p193@0-p197@106:discern:121",
-      "reaction_id": "rx:Full_Content:src:c1:p193@0-p197@106:discern:121",
-      "type": "discern",
-      "thought": "这句话翻转了主客体关系。通常人问「我活着有什么意义」时，是把生活当作一个有待回应自己的客体。但这里的逻辑是反过来的：生活是主体，它在向你提问，你要回答的不是「我想从生活得到什么」，而是「生活要我做什么」。这个翻转意味着意义的发现不是内省的，而是行动性的。",
-      "emitted_at_source_span_id": "src:c1:p193@0-p197@106",
-      "primary_source_ref": {
-        "source_span_id": "src:c1:p195@45-p195@75",
-        "source_span": {
-          "start_cursor": {
-            "chapter_id": 1,
-            "chapter_ref": "Full Content",
-            "paragraph_index": 195,
-            "char_offset": 45
-          },
-          "end_cursor": {
-            "chapter_id": 1,
-            "chapter_ref": "Full Content",
-            "paragraph_index": 195,
-            "char_offset": 75
-          }
-        },
-        "quote": "我们期望生活给予什么并不重要，重要的是生活对我们有什么期望。",
-        "role": "reaction_anchor",
-        "resolution": {
-          "status": "matched",
-          "method": "exact_text",
-          "match_count": 1
-        }
-      },
-      "source_quote": "我们期望生活给予什么并不重要，重要的是生活对我们有什么期望。",
-      "projection_role": "visible_trace",
-      "support_status": "visible_trace",
-      "visible_trace_support": true,
-      "current_support": false,
-      "projection_warning": "visible_trace_not_semantic_memory"
-    }
-  ]
-}
-```
-
-#### Concept Digest
+#### Probe-time snapshot field: concept_digest
 
 `concept_digest`:
 
@@ -7591,7 +6579,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
 ]
 ```
 
-#### Thread Digest
+#### Probe-time snapshot field: thread_digest
 
 `thread_digest`:
 
@@ -7744,7 +6732,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
 ]
 ```
 
-#### Reflective Digest
+#### Probe-time snapshot field: reflective_digest
 
 `reflective_digest`:
 
@@ -7756,7 +6744,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
 }
 ```
 
-#### SourceRef Digest
+#### Probe-time snapshot field: source_ref_digest
 
 `source_ref_digest`:
 
@@ -7989,7 +6977,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
    s1294 / p230: 他生气了，恼怒地瞪了我一眼，吼道：“你甭说啦！
 ```
 
-#### Active Attention
+#### Probe-time snapshot field: active_attention_digest
 
 `active_attention_digest`:
 
@@ -8430,265 +7418,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
 }
 ```
 
-#### Active Focus
-
-`active_focus_digest`:
-
-```json
-{
-  "active_items": [
-    {
-      "ref_id": "active_attention:focus-ordinary-prisoners",
-      "item_id": "focus-ordinary-prisoners",
-      "attention_tags": [
-        "focus"
-      ],
-      "statement": "书中关注的是普通囚徒——没有袖箍、没有特权、姓名不为人知——而非英雄或囚头。死亡多发生在小集中营而非奥斯维辛式的大集中营。",
-      "status": "active",
-      "source_refs": [
-        {
-          "source_span_id": "src:c1:p4@126-p4@174",
-          "source_span": {
-            "start_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 4,
-              "char_offset": 126
-            },
-            "end_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 4,
-              "char_offset": 174
-            }
-          },
-          "quote": "本书不是名人的受难记，而是将注意力集中在那些不为人所知、没有记录在案的遇难者所遭受的磨难和死亡。",
-          "role": "core thesis",
-          "resolution": {
-            "status": "matched",
-            "method": "exact_text",
-            "match_count": 1
-          }
-        }
-      ],
-      "linked_concept_keys": [],
-      "linked_thread_keys": [],
-      "projection_role": "current_support",
-      "support_status": "source_backed",
-      "current_support": true,
-      "lineage_only": false,
-      "projection_warning": ""
-    },
-    {
-      "ref_id": "active_attention:adaptation-to-terror",
-      "item_id": "adaptation-to-terror",
-      "attention_tags": [
-        "focus",
-        "psychological-mechanism"
-      ],
-      "statement": "\"适应\"与\"习以为常\"不是麻木，而是心理防线的战略性重塑——为了在极端环境中存活，大脑必须将极度恐慌改写为可接受的日常状态。",
-      "status": "active",
-      "source_refs": [
-        {
-          "source_span_id": "src:c1:p18@146-p18@178",
-          "source_span": {
-            "start_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 18,
-              "char_offset": 146
-            },
-            "end_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 18,
-              "char_offset": 178
-            }
-          },
-          "quote": "从那一刻起，我们不得不逐渐适应这种极度恐慌的状态，直至习以为常。",
-          "role": "core mechanism",
-          "resolution": {
-            "status": "matched",
-            "method": "exact_text",
-            "match_count": 1
-          }
-        }
-      ],
-      "linked_concept_keys": [],
-      "linked_thread_keys": [],
-      "projection_role": "current_support",
-      "support_status": "source_backed",
-      "current_support": true,
-      "lineage_only": false,
-      "projection_warning": ""
-    },
-    {
-      "ref_id": "active_attention:selection-mechanism",
-      "item_id": "selection-mechanism",
-      "attention_tags": [
-        "focus",
-        "mechanism"
-      ],
-      "statement": "「筛选」机制：党卫军军官通过一个简单的手势（左=老弱病残→毒气室，右=劳动力→劳役）在一分钟内做出生死判决。叙述者因背包略微左倾、用力挺直身体、军官犹豫后转向其双肩而幸存在右侧。这一过程后来「反复出现」。",
-      "status": "active",
-      "source_refs": [
-        {
-          "source_span_id": "src:c1:p23@18-p23@59",
-          "source_span": {
-            "start_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 23,
-              "char_offset": 18
-            },
-            "end_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 23,
-              "char_offset": 59
-            }
-          },
-          "quote": "分到右边的是干活的人，分到左边的是老弱病残、不能干活的人，这些人要被送到特殊营地。",
-          "role": "core definition",
-          "resolution": {
-            "status": "matched",
-            "method": "exact_text",
-            "match_count": 1
-          }
-        }
-      ],
-      "linked_concept_keys": [],
-      "linked_thread_keys": [],
-      "projection_role": "current_support",
-      "support_status": "source_backed",
-      "current_support": true,
-      "lineage_only": false,
-      "projection_warning": ""
-    },
-    {
-      "ref_id": "active_attention:psychological-adaptations-under-extremity",
-      "item_id": "psychological-adaptations-under-extremity",
-      "attention_tags": [
-        "focus",
-        "psychological-mechanism"
-      ],
-      "statement": "极端剥夺后的两种心理适应态：①冷酷的幽默感（反身性自嘲，最低限度的庆幸）——「幽默」是被接管而非主动选择；②悬置式好奇（把自己当作陌生事件打量，不问「我害怕」而问「我会怎样」）。两者都是将极度恐惧改写为可承受状态的心理策略的具体显现。",
-      "status": "active",
-      "source_refs": [
-        {
-          "source_span_id": "src:c1:p42@43-p42@68",
-          "source_span": {
-            "start_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 42,
-              "char_offset": 43
-            },
-            "end_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 42,
-              "char_offset": 68
-            }
-          },
-          "quote": "在登山遇险的关键时刻，人们只会有一种感觉，即好奇。",
-          "role": "support",
-          "resolution": {
-            "status": "matched",
-            "method": "exact_text",
-            "match_count": 1
-          }
-        }
-      ],
-      "linked_concept_keys": [],
-      "linked_thread_keys": [],
-      "projection_role": "current_support",
-      "support_status": "source_backed",
-      "current_support": true,
-      "lineage_only": false,
-      "projection_warning": ""
-    }
-  ],
-  "recent_reactions": [
-    {
-      "ref_id": "reaction:rx:Full_Content:src:c1:p232@0-p236@159:highlight:146",
-      "reaction_id": "rx:Full_Content:src:c1:p232@0-p236@159:highlight:146",
-      "type": "highlight",
-      "thought": "这里构成了一个尖锐的翻转：拯救手段在解放后成为伤害来源——因为那个被植入的期待（有人在等你回家）可能从一开始就是假的。心理支持系统的失效不是技术问题，而是它的前提在归来时塌陷了。",
-      "emitted_at_source_span_id": "src:c1:p232@0-p236@159",
-      "primary_source_ref": {
-        "source_span_id": "src:c1:p235@0-p235@85",
-        "source_span": {
-          "start_cursor": {
-            "chapter_id": 1,
-            "chapter_ref": "Full Content",
-            "paragraph_index": 235,
-            "char_offset": 0
-          },
-          "end_cursor": {
-            "chapter_id": 1,
-            "chapter_ref": "Full Content",
-            "paragraph_index": 235,
-            "char_offset": 85
-          }
-        },
-        "quote": "我们在说到给予集中营犯人精神力量的时候，曾经讲过应该给他一个未来生活中值得期待的目标。要提醒他，生活在等着他，亲人在等着他回家。但被解放以后呢？一些犯人发现没有人在等他。",
-        "role": "reaction_anchor",
-        "resolution": {
-          "status": "matched",
-          "method": "exact_text",
-          "match_count": 1
-        }
-      },
-      "source_quote": "我们在说到给予集中营犯人精神力量的时候，曾经讲过应该给他一个未来生活中值得期待的目标。要提醒他，生活在等着他，亲人在等着他回家。但被解放以后呢？一些犯人发现没有人在等他。",
-      "projection_role": "visible_trace",
-      "support_status": "visible_trace",
-      "visible_trace_support": true,
-      "current_support": false,
-      "projection_warning": "visible_trace_not_semantic_memory"
-    },
-    {
-      "ref_id": "reaction:rx:Full_Content:src:c1:p237@0-p238@61:highlight:147",
-      "reaction_id": "rx:Full_Content:src:c1:p237@0-p238@61:highlight:147",
-      "type": "highlight",
-      "thought": "「最后的解放」被定义为能够把经历当作噩梦来观看的那一刻——即与那段经验拉开心理距离。这与前面讨论的「适应」和「悬置式好奇」构成呼应：生存需要将现实改写为可承受状态，而解放需要将那段改写本身再拉开一层距离，变成可回顾的对象。",
-      "emitted_at_source_span_id": "src:c1:p237@0-p238@61",
-      "primary_source_ref": {
-        "source_span_id": "src:c1:p237@72-p237@109",
-        "source_span": {
-          "start_cursor": {
-            "chapter_id": 1,
-            "chapter_ref": "Full Content",
-            "paragraph_index": 237,
-            "char_offset": 72
-          },
-          "end_cursor": {
-            "chapter_id": 1,
-            "chapter_ref": "Full Content",
-            "paragraph_index": 237,
-            "char_offset": 109
-          }
-        },
-        "quote": "当他们觉得集中营的全部经历仅仅是一场噩梦而已时，他们最后的解放也就到来了。",
-        "role": "reaction_anchor",
-        "resolution": {
-          "status": "matched",
-          "method": "exact_text",
-          "match_count": 1
-        }
-      },
-      "source_quote": "当他们觉得集中营的全部经历仅仅是一场噩梦而已时，他们最后的解放也就到来了。",
-      "projection_role": "visible_trace",
-      "support_status": "visible_trace",
-      "visible_trace_support": true,
-      "current_support": false,
-      "projection_warning": "visible_trace_not_semantic_memory"
-    }
-  ]
-}
-```
-
-#### Concept Digest
+#### Probe-time snapshot field: concept_digest
 
 `concept_digest`:
 
@@ -8817,7 +7547,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
 ]
 ```
 
-#### Thread Digest
+#### Probe-time snapshot field: thread_digest
 
 `thread_digest`:
 
@@ -8970,7 +7700,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
 ]
 ```
 
-#### Reflective Digest
+#### Probe-time snapshot field: reflective_digest
 
 `reflective_digest`:
 
@@ -8982,7 +7712,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
 }
 ```
 
-#### SourceRef Digest
+#### Probe-time snapshot field: source_ref_digest
 
 `source_ref_digest`:
 

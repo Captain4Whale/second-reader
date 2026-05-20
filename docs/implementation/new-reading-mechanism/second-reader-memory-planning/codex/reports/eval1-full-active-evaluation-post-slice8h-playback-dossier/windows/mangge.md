@@ -4660,7 +4660,27 @@ escalation（升级）机制在这里变得清晰：第二年要超越第一年�
 
 ## Probe Memory Checkpoints
 
-Memory Quality is scored at probe time. The state below is a structured re-layout of the recorded probe snapshot, not a fresh summary and not the final runtime dump.
+Memory Quality is scored at probe time. The state blocks below are exact Markdown re-layouts of recorded probe snapshot digest fields, not fresh summaries and not final runtime dumps.
+
+### Memory State Evidence Boundary
+
+- Probe-time scoring evidence: `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_long_span_post_slice8h_20260519_mangge/outputs/mangge_zhi_dao_private_zh__segment_1/attentional_v2/_mechanisms/attentional_v2/exports/memory_quality_probe_snapshots.json`. The per-probe blocks below come from snapshot fields such as `active_attention_digest`, `concept_digest`, `thread_digest`, `reflective_digest`, and `source_ref_digest`.
+- Final full runtime state references: files under `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_long_span_post_slice8h_20260519_mangge/outputs/mangge_zhi_dao_private_zh__segment_1/attentional_v2/_mechanisms/attentional_v2/runtime`. These are useful for diagnosis, but they are window-end state references rather than the exact state used at each Memory Quality probe.
+- Window boundary checkpoint: `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_long_span_post_slice8h_20260519_mangge/outputs/mangge_zhi_dao_private_zh__segment_1/attentional_v2/_mechanisms/attentional_v2/runtime/checkpoints/chapter-001.json`. This is the chapter/window boundary checkpoint, not five independent probe-time checkpoints.
+- Missing artifact boundary: current Eval-1 artifacts do not contain per-probe full-store dumps. A future exporter needs explicit `exports/probe_state_snapshots/probe_###/...` captures before a report can link to complete memory stores at each probe.
+
+### Full Runtime State Links
+
+| State artifact | Path | Boundary note |
+| --- | --- | --- |
+| Active Attention | `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_long_span_post_slice8h_20260519_mangge/outputs/mangge_zhi_dao_private_zh__segment_1/attentional_v2/_mechanisms/attentional_v2/runtime/active_attention.json` | Final window-end active attention store; not the probe-time full store. |
+| Concept Registry | `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_long_span_post_slice8h_20260519_mangge/outputs/mangge_zhi_dao_private_zh__segment_1/attentional_v2/_mechanisms/attentional_v2/runtime/concept_registry.json` | Final window-end concept store; use for diagnosis only. |
+| Thread Trace | `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_long_span_post_slice8h_20260519_mangge/outputs/mangge_zhi_dao_private_zh__segment_1/attentional_v2/_mechanisms/attentional_v2/runtime/thread_trace.json` | Final window-end thread store; use for diagnosis only. |
+| Reflective Frames | `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_long_span_post_slice8h_20260519_mangge/outputs/mangge_zhi_dao_private_zh__segment_1/attentional_v2/_mechanisms/attentional_v2/runtime/reflective_frames.json` | Final window-end reflective store; use for diagnosis only. |
+| Reaction Records | `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_long_span_post_slice8h_20260519_mangge/outputs/mangge_zhi_dao_private_zh__segment_1/attentional_v2/_mechanisms/attentional_v2/runtime/reaction_records.json` | Final window reaction record store; timeline above is the reviewer-readable projection. |
+| Read Audit | `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_long_span_post_slice8h_20260519_mangge/outputs/mangge_zhi_dao_private_zh__segment_1/attentional_v2/_mechanisms/attentional_v2/runtime/read_audit.jsonl` | Runtime operation/audit stream for diagnosis. |
+| Settlement Audit | `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_long_span_post_slice8h_20260519_mangge/outputs/mangge_zhi_dao_private_zh__segment_1/attentional_v2/_mechanisms/attentional_v2/runtime/settlement_audit.jsonl` | Runtime settlement/audit stream for diagnosis. |
+| Chapter checkpoint | `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_long_span_post_slice8h_20260519_mangge/outputs/mangge_zhi_dao_private_zh__segment_1/attentional_v2/_mechanisms/attentional_v2/runtime/checkpoints/chapter-001.json` | Full window boundary checkpoint, not a per-probe checkpoint. |
 
 ### Probe 1 — MQ `4.00` — near 20%
 
@@ -4682,7 +4702,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
    s413 / p180: 现在，西科已经没那么有价值了，他们还是愿意买。
 ```
 
-#### Active Attention
+#### Probe-time snapshot field: active_attention_digest
 
 `active_attention_digest`:
 
@@ -5115,262 +5135,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
 }
 ```
 
-#### Active Focus
-
-`active_focus_digest`:
-
-```json
-{
-  "active_items": [
-    {
-      "ref_id": "active_attention:wesco_1987_structure",
-      "item_id": "wesco_1987_structure",
-      "attention_tags": [
-        "focus"
-      ],
-      "statement": "1987年西科金融三个主要分支机构：互助储蓄（加州帕萨迪纳）、精密钢材Precision Steel（芝加哥，1979年收购）、西科—金融保险公司（奥马哈，再保险）",
-      "status": "active",
-      "source_refs": [
-        {
-          "source_span_id": "src:c1:p4@0-p4@172",
-          "source_span": {
-            "start_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 4,
-              "char_offset": 0
-            },
-            "end_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 4,
-              "char_offset": 172
-            }
-          },
-          "quote": "1987年时，西科金融有三个主要的分支机构：（1）位于加州帕萨迪纳的互助储蓄；（2）精密钢材（Precision Steel），由西科金融于1979年收购，总部位于芝加哥，从事钢铁制品批发和贴牌金属专用产品生产；（3）西科—金融保险公司（Wesco-Financial Insurance Company），总部位于奥马哈，主要从事再保险业务。",
-          "role": "support",
-          "resolution": {
-            "status": "matched",
-            "method": "exact_text",
-            "match_count": 1
-          }
-        }
-      ],
-      "linked_concept_keys": [],
-      "linked_thread_keys": [],
-      "projection_role": "current_support",
-      "support_status": "source_backed",
-      "current_support": true,
-      "lineage_only": false,
-      "projection_warning": ""
-    },
-    {
-      "ref_id": "active_attention:wesco_board_composition",
-      "item_id": "wesco_board_composition",
-      "attention_tags": [
-        "focus"
-      ],
-      "statement": "西科董事会成员：迪克·罗森塔尔（已故，飞机事故）之后，蒂施家族成员（Tisch family）接续作为董事会保障力量",
-      "status": "active",
-      "source_refs": [
-        {
-          "source_span_id": "src:c1:p23@0-p23@57",
-          "source_span": {
-            "start_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 23,
-              "char_offset": 0
-            },
-            "end_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 23,
-              "char_offset": 57
-            }
-          },
-          "quote": "好在我们还有和迪克·罗森塔尔一样的人才，我们的董事会中还有蒂施家族的成员。蒂施家族人才济济，都是脚踏实地的投资者。",
-          "role": "support",
-          "resolution": {
-            "status": "matched",
-            "method": "exact_text",
-            "match_count": 1
-          }
-        }
-      ],
-      "linked_concept_keys": [],
-      "linked_thread_keys": [],
-      "projection_role": "current_support",
-      "support_status": "source_backed",
-      "current_support": true,
-      "lineage_only": false,
-      "projection_warning": ""
-    },
-    {
-      "ref_id": "active_attention:wesco_asset_solidity",
-      "item_id": "wesco_asset_solidity",
-      "attention_tags": [
-        "focus"
-      ],
-      "statement": "西科金融资产状况：质量可靠，手握大量富余资产，目前缺乏好机会配置。保险业务可能因周期不利而收缩，但资产和盈利能力不受业务中断影响。",
-      "status": "active",
-      "source_refs": [
-        {
-          "source_span_id": "src:c1:p32@0-p32@53",
-          "source_span": {
-            "start_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 32,
-              "char_offset": 0
-            },
-            "end_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 32,
-              "char_offset": 53
-            }
-          },
-          "quote": "西科金融的资产质量非常让人放心。目前，我们手中掌握着大量富余的资产，只是找不到好机会，没地方配置这些资产。",
-          "role": "support",
-          "resolution": {
-            "status": "matched",
-            "method": "exact_text",
-            "match_count": 1
-          }
-        }
-      ],
-      "linked_concept_keys": [],
-      "linked_thread_keys": [],
-      "projection_role": "current_support",
-      "support_status": "source_backed",
-      "current_support": true,
-      "lineage_only": false,
-      "projection_warning": ""
-    },
-    {
-      "ref_id": "active_attention:wesco_asset_deployability",
-      "item_id": "wesco_asset_deployability",
-      "attention_tags": [
-        "focus"
-      ],
-      "statement": "西科金融的资产立场：手握大量资产是主动选择，持有状态有弹性，即使极端情况下也能部署。\"这是现在，不意味着永远\"——不动是因为没好机会，不是因为动不了。",
-      "status": "active",
-      "source_refs": [
-        {
-          "source_span_id": "src:c1:p33@0-p33@62",
-          "source_span": {
-            "start_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 33,
-              "char_offset": 0
-            },
-            "end_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 33,
-              "char_offset": 62
-            }
-          },
-          "quote": "我们把大量资产攥在手里，这是现在，不意味着永远。真有人拿枪顶着我的脑袋，逼我把这些钱投出去，迫不得已，我也能把这些钱投出去。",
-          "role": "support",
-          "resolution": {
-            "status": "matched",
-            "method": "exact_text",
-            "match_count": 1
-          }
-        }
-      ],
-      "linked_concept_keys": [],
-      "linked_thread_keys": [],
-      "projection_role": "current_support",
-      "support_status": "source_backed",
-      "current_support": true,
-      "lineage_only": false,
-      "projection_warning": ""
-    }
-  ],
-  "recent_reactions": [
-    {
-      "ref_id": "reaction:rx:Full_Content:src:c1:p173@0-p177@20:highlight:73",
-      "reaction_id": "rx:Full_Content:src:c1:p173@0-p177@20:highlight:73",
-      "type": "highlight",
-      "thought": "\"剧透\"这个词精确地捕捉了信息披露的本质：不是不知道，而是说出来会破坏某些东西。这个词与前面的校长笑话形成闭环，幽默中带着真实的边界感。",
-      "emitted_at_source_span_id": "src:c1:p173@0-p177@20",
-      "primary_source_ref": {
-        "source_span_id": "src:c1:p177@0-p177@20",
-        "source_span": {
-          "start_cursor": {
-            "chapter_id": 1,
-            "chapter_ref": "Full Content",
-            "paragraph_index": 177,
-            "char_offset": 0
-          },
-          "end_cursor": {
-            "chapter_id": 1,
-            "chapter_ref": "Full Content",
-            "paragraph_index": 177,
-            "char_offset": 20
-          }
-        },
-        "quote": "西科的清算价值是多少？我不能向你们剧透。",
-        "role": "reaction_anchor",
-        "resolution": {
-          "status": "matched",
-          "method": "exact_text",
-          "match_count": 1
-        }
-      },
-      "source_quote": "西科的清算价值是多少？我不能向你们剧透。",
-      "projection_role": "visible_trace",
-      "support_status": "visible_trace",
-      "visible_trace_support": true,
-      "current_support": false,
-      "projection_warning": "visible_trace_not_semantic_memory"
-    },
-    {
-      "ref_id": "reaction:rx:Full_Content:src:c1:p178@0-p182@34:highlight:74",
-      "reaction_id": "rx:Full_Content:src:c1:p178@0-p182@34:highlight:74",
-      "type": "highlight",
-      "thought": "\"已经没那么有价值了\"——这句话说得很平，却很重要。股东不是因为低估而买，而是越过价值问题去信任管理层。这让信任这件事变得非常纯粹，也非常脆弱。",
-      "emitted_at_source_span_id": "src:c1:p178@0-p182@34",
-      "primary_source_ref": {
-        "source_span_id": "src:c1:p180@0-p180@53",
-        "source_span": {
-          "start_cursor": {
-            "chapter_id": 1,
-            "chapter_ref": "Full Content",
-            "paragraph_index": 180,
-            "char_offset": 0
-          },
-          "end_cursor": {
-            "chapter_id": 1,
-            "chapter_ref": "Full Content",
-            "paragraph_index": 180,
-            "char_offset": 53
-          }
-        },
-        "quote": "他们最早买入的时候，西科很有价值。现在，西科已经没那么有价值了，他们还是愿意买。因为他们看好西科的管理者。",
-        "role": "reaction_anchor",
-        "resolution": {
-          "status": "matched",
-          "method": "exact_text",
-          "match_count": 1
-        }
-      },
-      "source_quote": "他们最早买入的时候，西科很有价值。现在，西科已经没那么有价值了，他们还是愿意买。因为他们看好西科的管理者。",
-      "projection_role": "visible_trace",
-      "support_status": "visible_trace",
-      "visible_trace_support": true,
-      "current_support": false,
-      "projection_warning": "visible_trace_not_semantic_memory"
-    }
-  ]
-}
-```
-
-#### Concept Digest
+#### Probe-time snapshot field: concept_digest
 
 `concept_digest`:
 
@@ -5499,7 +5264,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
 ]
 ```
 
-#### Thread Digest
+#### Probe-time snapshot field: thread_digest
 
 `thread_digest`:
 
@@ -5653,7 +5418,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
 ]
 ```
 
-#### Reflective Digest
+#### Probe-time snapshot field: reflective_digest
 
 `reflective_digest`:
 
@@ -5665,7 +5430,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
 }
 ```
 
-#### SourceRef Digest
+#### Probe-time snapshot field: source_ref_digest
 
 `source_ref_digest`:
 
@@ -5898,7 +5663,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
    s712 / p272: 占比如此之高的流动资产，该如何配置？
 ```
 
-#### Active Attention
+#### Probe-time snapshot field: active_attention_digest
 
 `active_attention_digest`:
 
@@ -6331,262 +6096,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
 }
 ```
 
-#### Active Focus
-
-`active_focus_digest`:
-
-```json
-{
-  "active_items": [
-    {
-      "ref_id": "active_attention:wesco_1987_structure",
-      "item_id": "wesco_1987_structure",
-      "attention_tags": [
-        "focus"
-      ],
-      "statement": "1987年西科金融三个主要分支机构：互助储蓄（加州帕萨迪纳）、精密钢材Precision Steel（芝加哥，1979年收购）、西科—金融保险公司（奥马哈，再保险）",
-      "status": "active",
-      "source_refs": [
-        {
-          "source_span_id": "src:c1:p4@0-p4@172",
-          "source_span": {
-            "start_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 4,
-              "char_offset": 0
-            },
-            "end_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 4,
-              "char_offset": 172
-            }
-          },
-          "quote": "1987年时，西科金融有三个主要的分支机构：（1）位于加州帕萨迪纳的互助储蓄；（2）精密钢材（Precision Steel），由西科金融于1979年收购，总部位于芝加哥，从事钢铁制品批发和贴牌金属专用产品生产；（3）西科—金融保险公司（Wesco-Financial Insurance Company），总部位于奥马哈，主要从事再保险业务。",
-          "role": "support",
-          "resolution": {
-            "status": "matched",
-            "method": "exact_text",
-            "match_count": 1
-          }
-        }
-      ],
-      "linked_concept_keys": [],
-      "linked_thread_keys": [],
-      "projection_role": "current_support",
-      "support_status": "source_backed",
-      "current_support": true,
-      "lineage_only": false,
-      "projection_warning": ""
-    },
-    {
-      "ref_id": "active_attention:wesco_board_composition",
-      "item_id": "wesco_board_composition",
-      "attention_tags": [
-        "focus"
-      ],
-      "statement": "西科董事会成员：迪克·罗森塔尔（已故，飞机事故）之后，蒂施家族成员（Tisch family）接续作为董事会保障力量",
-      "status": "active",
-      "source_refs": [
-        {
-          "source_span_id": "src:c1:p23@0-p23@57",
-          "source_span": {
-            "start_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 23,
-              "char_offset": 0
-            },
-            "end_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 23,
-              "char_offset": 57
-            }
-          },
-          "quote": "好在我们还有和迪克·罗森塔尔一样的人才，我们的董事会中还有蒂施家族的成员。蒂施家族人才济济，都是脚踏实地的投资者。",
-          "role": "support",
-          "resolution": {
-            "status": "matched",
-            "method": "exact_text",
-            "match_count": 1
-          }
-        }
-      ],
-      "linked_concept_keys": [],
-      "linked_thread_keys": [],
-      "projection_role": "current_support",
-      "support_status": "source_backed",
-      "current_support": true,
-      "lineage_only": false,
-      "projection_warning": ""
-    },
-    {
-      "ref_id": "active_attention:wesco_asset_solidity",
-      "item_id": "wesco_asset_solidity",
-      "attention_tags": [
-        "focus"
-      ],
-      "statement": "西科金融资产状况：质量可靠，手握大量富余资产，目前缺乏好机会配置。保险业务可能因周期不利而收缩，但资产和盈利能力不受业务中断影响。",
-      "status": "active",
-      "source_refs": [
-        {
-          "source_span_id": "src:c1:p32@0-p32@53",
-          "source_span": {
-            "start_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 32,
-              "char_offset": 0
-            },
-            "end_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 32,
-              "char_offset": 53
-            }
-          },
-          "quote": "西科金融的资产质量非常让人放心。目前，我们手中掌握着大量富余的资产，只是找不到好机会，没地方配置这些资产。",
-          "role": "support",
-          "resolution": {
-            "status": "matched",
-            "method": "exact_text",
-            "match_count": 1
-          }
-        }
-      ],
-      "linked_concept_keys": [],
-      "linked_thread_keys": [],
-      "projection_role": "current_support",
-      "support_status": "source_backed",
-      "current_support": true,
-      "lineage_only": false,
-      "projection_warning": ""
-    },
-    {
-      "ref_id": "active_attention:wesco_asset_deployability",
-      "item_id": "wesco_asset_deployability",
-      "attention_tags": [
-        "focus"
-      ],
-      "statement": "西科金融的资产立场：手握大量资产是主动选择，持有状态有弹性，即使极端情况下也能部署。\"这是现在，不意味着永远\"——不动是因为没好机会，不是因为动不了。",
-      "status": "active",
-      "source_refs": [
-        {
-          "source_span_id": "src:c1:p33@0-p33@62",
-          "source_span": {
-            "start_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 33,
-              "char_offset": 0
-            },
-            "end_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 33,
-              "char_offset": 62
-            }
-          },
-          "quote": "我们把大量资产攥在手里，这是现在，不意味着永远。真有人拿枪顶着我的脑袋，逼我把这些钱投出去，迫不得已，我也能把这些钱投出去。",
-          "role": "support",
-          "resolution": {
-            "status": "matched",
-            "method": "exact_text",
-            "match_count": 1
-          }
-        }
-      ],
-      "linked_concept_keys": [],
-      "linked_thread_keys": [],
-      "projection_role": "current_support",
-      "support_status": "source_backed",
-      "current_support": true,
-      "lineage_only": false,
-      "projection_warning": ""
-    }
-  ],
-  "recent_reactions": [
-    {
-      "ref_id": "reaction:rx:Full_Content:src:c1:p272@0-p274@84:retrospect:116",
-      "reaction_id": "rx:Full_Content:src:c1:p272@0-p274@84:retrospect:116",
-      "type": "retrospect",
-      "thought": "\"不谈论\"是一种主动的认知边界，而非信息披露义务的被动应对。这个规矩的实质是：保护决策空间，不向市场解释逻辑。只有当客观约束（买入上限）出现时，才例外开口——这和\"攥在手里，不意味着永远\"的立场一致：行动由内部判断驱动，而非外部解释需求。",
-      "emitted_at_source_span_id": "src:c1:p272@0-p274@84",
-      "primary_source_ref": {
-        "source_span_id": "src:c1:p274@0-p274@84",
-        "source_span": {
-          "start_cursor": {
-            "chapter_id": 1,
-            "chapter_ref": "Full Content",
-            "paragraph_index": 274,
-            "char_offset": 0
-          },
-          "end_cursor": {
-            "chapter_id": 1,
-            "chapter_ref": "Full Content",
-            "paragraph_index": 274,
-            "char_offset": 84
-          }
-        },
-        "quote": "我们有个规矩，除非是法律要求披露，我们不谈论我们的有价证券投资活动。我们一般也不会公开谈论我们的投资逻辑，房地美算是个特例，因为我们已经达到了买入上限，不能买入更多了。",
-        "role": "reaction_anchor",
-        "resolution": {
-          "status": "matched",
-          "method": "exact_text",
-          "match_count": 1
-        }
-      },
-      "source_quote": "我们有个规矩，除非是法律要求披露，我们不谈论我们的有价证券投资活动。我们一般也不会公开谈论我们的投资逻辑，房地美算是个特例，因为我们已经达到了买入上限，不能买入更多了。",
-      "projection_role": "visible_trace",
-      "support_status": "visible_trace",
-      "visible_trace_support": true,
-      "current_support": false,
-      "projection_warning": "visible_trace_not_semantic_memory"
-    },
-    {
-      "ref_id": "reaction:rx:Full_Content:src:c1:p272@0-p274@84:retrospect:117",
-      "reaction_id": "rx:Full_Content:src:c1:p272@0-p274@84:retrospect:117",
-      "type": "retrospect",
-      "thought": "\"一无所知\"在这里是坦诚的自我描述，不是能力失败的托辞——他们诚实面对的是\"有资产、无机会\"的结构性状态，而不是掩盖找不到好标的的事实。这个措辞和前文\"找不到好机会，没地方配置\"完全一致，但\"管理层还一无所知\"多了一层主动承认无知的味道。",
-      "emitted_at_source_span_id": "src:c1:p272@0-p274@84",
-      "primary_source_ref": {
-        "source_span_id": "src:c1:p272@29-p272@56",
-        "source_span": {
-          "start_cursor": {
-            "chapter_id": 1,
-            "chapter_ref": "Full Content",
-            "paragraph_index": 272,
-            "char_offset": 29
-          },
-          "end_cursor": {
-            "chapter_id": 1,
-            "chapter_ref": "Full Content",
-            "paragraph_index": 272,
-            "char_offset": 56
-          }
-        },
-        "quote": "占比如此之高的流动资产，该如何配置？管理层还一无所知。",
-        "role": "reaction_anchor",
-        "resolution": {
-          "status": "matched",
-          "method": "exact_text",
-          "match_count": 1
-        }
-      },
-      "source_quote": "占比如此之高的流动资产，该如何配置？管理层还一无所知。",
-      "projection_role": "visible_trace",
-      "support_status": "visible_trace",
-      "visible_trace_support": true,
-      "current_support": false,
-      "projection_warning": "visible_trace_not_semantic_memory"
-    }
-  ]
-}
-```
-
-#### Concept Digest
+#### Probe-time snapshot field: concept_digest
 
 `concept_digest`:
 
@@ -6715,7 +6225,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
 ]
 ```
 
-#### Thread Digest
+#### Probe-time snapshot field: thread_digest
 
 `thread_digest`:
 
@@ -6894,7 +6404,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
 ]
 ```
 
-#### Reflective Digest
+#### Probe-time snapshot field: reflective_digest
 
 `reflective_digest`:
 
@@ -6906,7 +6416,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
 }
 ```
 
-#### SourceRef Digest
+#### Probe-time snapshot field: source_ref_digest
 
 `source_ref_digest`:
 
@@ -7139,7 +6649,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
    s1055 / p398: 于是，因为存款有保险、利率不受限制，储贷行业上演了“劣币驱逐良币”的一幕。
 ```
 
-#### Active Attention
+#### Probe-time snapshot field: active_attention_digest
 
 `active_attention_digest`:
 
@@ -7572,262 +7082,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
 }
 ```
 
-#### Active Focus
-
-`active_focus_digest`:
-
-```json
-{
-  "active_items": [
-    {
-      "ref_id": "active_attention:wesco_1987_structure",
-      "item_id": "wesco_1987_structure",
-      "attention_tags": [
-        "focus"
-      ],
-      "statement": "1987年西科金融三个主要分支机构：互助储蓄（加州帕萨迪纳）、精密钢材Precision Steel（芝加哥，1979年收购）、西科—金融保险公司（奥马哈，再保险）",
-      "status": "active",
-      "source_refs": [
-        {
-          "source_span_id": "src:c1:p4@0-p4@172",
-          "source_span": {
-            "start_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 4,
-              "char_offset": 0
-            },
-            "end_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 4,
-              "char_offset": 172
-            }
-          },
-          "quote": "1987年时，西科金融有三个主要的分支机构：（1）位于加州帕萨迪纳的互助储蓄；（2）精密钢材（Precision Steel），由西科金融于1979年收购，总部位于芝加哥，从事钢铁制品批发和贴牌金属专用产品生产；（3）西科—金融保险公司（Wesco-Financial Insurance Company），总部位于奥马哈，主要从事再保险业务。",
-          "role": "support",
-          "resolution": {
-            "status": "matched",
-            "method": "exact_text",
-            "match_count": 1
-          }
-        }
-      ],
-      "linked_concept_keys": [],
-      "linked_thread_keys": [],
-      "projection_role": "current_support",
-      "support_status": "source_backed",
-      "current_support": true,
-      "lineage_only": false,
-      "projection_warning": ""
-    },
-    {
-      "ref_id": "active_attention:wesco_board_composition",
-      "item_id": "wesco_board_composition",
-      "attention_tags": [
-        "focus"
-      ],
-      "statement": "西科董事会成员：迪克·罗森塔尔（已故，飞机事故）之后，蒂施家族成员（Tisch family）接续作为董事会保障力量",
-      "status": "active",
-      "source_refs": [
-        {
-          "source_span_id": "src:c1:p23@0-p23@57",
-          "source_span": {
-            "start_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 23,
-              "char_offset": 0
-            },
-            "end_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 23,
-              "char_offset": 57
-            }
-          },
-          "quote": "好在我们还有和迪克·罗森塔尔一样的人才，我们的董事会中还有蒂施家族的成员。蒂施家族人才济济，都是脚踏实地的投资者。",
-          "role": "support",
-          "resolution": {
-            "status": "matched",
-            "method": "exact_text",
-            "match_count": 1
-          }
-        }
-      ],
-      "linked_concept_keys": [],
-      "linked_thread_keys": [],
-      "projection_role": "current_support",
-      "support_status": "source_backed",
-      "current_support": true,
-      "lineage_only": false,
-      "projection_warning": ""
-    },
-    {
-      "ref_id": "active_attention:wesco_asset_solidity",
-      "item_id": "wesco_asset_solidity",
-      "attention_tags": [
-        "focus"
-      ],
-      "statement": "西科金融资产状况：质量可靠，手握大量富余资产，目前缺乏好机会配置。保险业务可能因周期不利而收缩，但资产和盈利能力不受业务中断影响。",
-      "status": "active",
-      "source_refs": [
-        {
-          "source_span_id": "src:c1:p32@0-p32@53",
-          "source_span": {
-            "start_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 32,
-              "char_offset": 0
-            },
-            "end_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 32,
-              "char_offset": 53
-            }
-          },
-          "quote": "西科金融的资产质量非常让人放心。目前，我们手中掌握着大量富余的资产，只是找不到好机会，没地方配置这些资产。",
-          "role": "support",
-          "resolution": {
-            "status": "matched",
-            "method": "exact_text",
-            "match_count": 1
-          }
-        }
-      ],
-      "linked_concept_keys": [],
-      "linked_thread_keys": [],
-      "projection_role": "current_support",
-      "support_status": "source_backed",
-      "current_support": true,
-      "lineage_only": false,
-      "projection_warning": ""
-    },
-    {
-      "ref_id": "active_attention:wesco_asset_deployability",
-      "item_id": "wesco_asset_deployability",
-      "attention_tags": [
-        "focus"
-      ],
-      "statement": "西科金融的资产立场：手握大量资产是主动选择，持有状态有弹性，即使极端情况下也能部署。\"这是现在，不意味着永远\"——不动是因为没好机会，不是因为动不了。",
-      "status": "active",
-      "source_refs": [
-        {
-          "source_span_id": "src:c1:p33@0-p33@62",
-          "source_span": {
-            "start_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 33,
-              "char_offset": 0
-            },
-            "end_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 33,
-              "char_offset": 62
-            }
-          },
-          "quote": "我们把大量资产攥在手里，这是现在，不意味着永远。真有人拿枪顶着我的脑袋，逼我把这些钱投出去，迫不得已，我也能把这些钱投出去。",
-          "role": "support",
-          "resolution": {
-            "status": "matched",
-            "method": "exact_text",
-            "match_count": 1
-          }
-        }
-      ],
-      "linked_concept_keys": [],
-      "linked_thread_keys": [],
-      "projection_role": "current_support",
-      "support_status": "source_backed",
-      "current_support": true,
-      "lineage_only": false,
-      "projection_warning": ""
-    }
-  ],
-  "recent_reactions": [
-    {
-      "ref_id": "reaction:rx:Full_Content:src:c1:p398@0-p400@103:highlight:168",
-      "reaction_id": "rx:Full_Content:src:c1:p398@0-p400@103:highlight:168",
-      "type": "highlight",
-      "thought": "\"既定政策，难以改变\"——和前文\"各自为政\"的诊断形成结构层面的呼应：监管失灵是制度碎片化导致的，而行业困境是政策组合锁死的。问题不是某个人做错了什么，而是系统本身。",
-      "emitted_at_source_span_id": "src:c1:p398@0-p400@103",
-      "primary_source_ref": {
-        "source_span_id": "src:c1:p400@25-p400@103",
-        "source_span": {
-          "start_cursor": {
-            "chapter_id": 1,
-            "chapter_ref": "Full Content",
-            "paragraph_index": 400,
-            "char_offset": 25
-          },
-          "end_cursor": {
-            "chapter_id": 1,
-            "chapter_ref": "Full Content",
-            "paragraph_index": 400,
-            "char_offset": 103
-          }
-        },
-        "quote": "监管部门为储贷行业提供存款保险、为困难企业提供很长的缓冲期、储贷机构的利率不受限制、资产配置不受限制，这些是既定政策，难以改变。储贷行业的问题也许根本无解。",
-        "role": "reaction_anchor",
-        "resolution": {
-          "status": "matched",
-          "method": "exact_text",
-          "match_count": 1
-        }
-      },
-      "source_quote": "监管部门为储贷行业提供存款保险、为困难企业提供很长的缓冲期、储贷机构的利率不受限制、资产配置不受限制，这些是既定政策，难以改变。储贷行业的问题也许根本无解。",
-      "projection_role": "visible_trace",
-      "support_status": "visible_trace",
-      "visible_trace_support": true,
-      "current_support": false,
-      "projection_warning": "visible_trace_not_semantic_memory"
-    },
-    {
-      "ref_id": "reaction:rx:Full_Content:src:c1:p398@0-p400@103:highlight:169",
-      "reaction_id": "rx:Full_Content:src:c1:p398@0-p400@103:highlight:169",
-      "type": "highlight",
-      "thought": "\"也许根本无解\"——这个措辞值得注意。不是\"无法解决\"，而是\"也许\"\"根本\"——带着一种对系统复杂性的诚实承认，同时暗示这些政策本身是权衡的产物。",
-      "emitted_at_source_span_id": "src:c1:p398@0-p400@103",
-      "primary_source_ref": {
-        "source_span_id": "src:c1:p400@89-p400@103",
-        "source_span": {
-          "start_cursor": {
-            "chapter_id": 1,
-            "chapter_ref": "Full Content",
-            "paragraph_index": 400,
-            "char_offset": 89
-          },
-          "end_cursor": {
-            "chapter_id": 1,
-            "chapter_ref": "Full Content",
-            "paragraph_index": 400,
-            "char_offset": 103
-          }
-        },
-        "quote": "储贷行业的问题也许根本无解。",
-        "role": "reaction_anchor",
-        "resolution": {
-          "status": "matched",
-          "method": "exact_text",
-          "match_count": 1
-        }
-      },
-      "source_quote": "储贷行业的问题也许根本无解。",
-      "projection_role": "visible_trace",
-      "support_status": "visible_trace",
-      "visible_trace_support": true,
-      "current_support": false,
-      "projection_warning": "visible_trace_not_semantic_memory"
-    }
-  ]
-}
-```
-
-#### Concept Digest
+#### Probe-time snapshot field: concept_digest
 
 `concept_digest`:
 
@@ -7956,7 +7211,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
 ]
 ```
 
-#### Thread Digest
+#### Probe-time snapshot field: thread_digest
 
 `thread_digest`:
 
@@ -8135,7 +7390,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
 ]
 ```
 
-#### Reflective Digest
+#### Probe-time snapshot field: reflective_digest
 
 `reflective_digest`:
 
@@ -8147,7 +7402,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
 }
 ```
 
-#### SourceRef Digest
+#### Probe-time snapshot field: source_ref_digest
 
 `source_ref_digest`:
 
@@ -8380,7 +7635,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
    s1420 / p552: 我想起了很久以前遇到的一位国税局审计员。
 ```
 
-#### Active Attention
+#### Probe-time snapshot field: active_attention_digest
 
 `active_attention_digest`:
 
@@ -8813,262 +8068,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
 }
 ```
 
-#### Active Focus
-
-`active_focus_digest`:
-
-```json
-{
-  "active_items": [
-    {
-      "ref_id": "active_attention:wesco_1987_structure",
-      "item_id": "wesco_1987_structure",
-      "attention_tags": [
-        "focus"
-      ],
-      "statement": "1987年西科金融三个主要分支机构：互助储蓄（加州帕萨迪纳）、精密钢材Precision Steel（芝加哥，1979年收购）、西科—金融保险公司（奥马哈，再保险）",
-      "status": "active",
-      "source_refs": [
-        {
-          "source_span_id": "src:c1:p4@0-p4@172",
-          "source_span": {
-            "start_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 4,
-              "char_offset": 0
-            },
-            "end_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 4,
-              "char_offset": 172
-            }
-          },
-          "quote": "1987年时，西科金融有三个主要的分支机构：（1）位于加州帕萨迪纳的互助储蓄；（2）精密钢材（Precision Steel），由西科金融于1979年收购，总部位于芝加哥，从事钢铁制品批发和贴牌金属专用产品生产；（3）西科—金融保险公司（Wesco-Financial Insurance Company），总部位于奥马哈，主要从事再保险业务。",
-          "role": "support",
-          "resolution": {
-            "status": "matched",
-            "method": "exact_text",
-            "match_count": 1
-          }
-        }
-      ],
-      "linked_concept_keys": [],
-      "linked_thread_keys": [],
-      "projection_role": "current_support",
-      "support_status": "source_backed",
-      "current_support": true,
-      "lineage_only": false,
-      "projection_warning": ""
-    },
-    {
-      "ref_id": "active_attention:wesco_board_composition",
-      "item_id": "wesco_board_composition",
-      "attention_tags": [
-        "focus"
-      ],
-      "statement": "西科董事会成员：迪克·罗森塔尔（已故，飞机事故）之后，蒂施家族成员（Tisch family）接续作为董事会保障力量",
-      "status": "active",
-      "source_refs": [
-        {
-          "source_span_id": "src:c1:p23@0-p23@57",
-          "source_span": {
-            "start_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 23,
-              "char_offset": 0
-            },
-            "end_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 23,
-              "char_offset": 57
-            }
-          },
-          "quote": "好在我们还有和迪克·罗森塔尔一样的人才，我们的董事会中还有蒂施家族的成员。蒂施家族人才济济，都是脚踏实地的投资者。",
-          "role": "support",
-          "resolution": {
-            "status": "matched",
-            "method": "exact_text",
-            "match_count": 1
-          }
-        }
-      ],
-      "linked_concept_keys": [],
-      "linked_thread_keys": [],
-      "projection_role": "current_support",
-      "support_status": "source_backed",
-      "current_support": true,
-      "lineage_only": false,
-      "projection_warning": ""
-    },
-    {
-      "ref_id": "active_attention:wesco_asset_solidity",
-      "item_id": "wesco_asset_solidity",
-      "attention_tags": [
-        "focus"
-      ],
-      "statement": "西科金融资产状况：质量可靠，手握大量富余资产，目前缺乏好机会配置。保险业务可能因周期不利而收缩，但资产和盈利能力不受业务中断影响。",
-      "status": "active",
-      "source_refs": [
-        {
-          "source_span_id": "src:c1:p32@0-p32@53",
-          "source_span": {
-            "start_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 32,
-              "char_offset": 0
-            },
-            "end_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 32,
-              "char_offset": 53
-            }
-          },
-          "quote": "西科金融的资产质量非常让人放心。目前，我们手中掌握着大量富余的资产，只是找不到好机会，没地方配置这些资产。",
-          "role": "support",
-          "resolution": {
-            "status": "matched",
-            "method": "exact_text",
-            "match_count": 1
-          }
-        }
-      ],
-      "linked_concept_keys": [],
-      "linked_thread_keys": [],
-      "projection_role": "current_support",
-      "support_status": "source_backed",
-      "current_support": true,
-      "lineage_only": false,
-      "projection_warning": ""
-    },
-    {
-      "ref_id": "active_attention:wesco_asset_deployability",
-      "item_id": "wesco_asset_deployability",
-      "attention_tags": [
-        "focus"
-      ],
-      "statement": "西科金融的资产立场：手握大量资产是主动选择，持有状态有弹性，即使极端情况下也能部署。\"这是现在，不意味着永远\"——不动是因为没好机会，不是因为动不了。",
-      "status": "active",
-      "source_refs": [
-        {
-          "source_span_id": "src:c1:p33@0-p33@62",
-          "source_span": {
-            "start_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 33,
-              "char_offset": 0
-            },
-            "end_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 33,
-              "char_offset": 62
-            }
-          },
-          "quote": "我们把大量资产攥在手里，这是现在，不意味着永远。真有人拿枪顶着我的脑袋，逼我把这些钱投出去，迫不得已，我也能把这些钱投出去。",
-          "role": "support",
-          "resolution": {
-            "status": "matched",
-            "method": "exact_text",
-            "match_count": 1
-          }
-        }
-      ],
-      "linked_concept_keys": [],
-      "linked_thread_keys": [],
-      "projection_role": "current_support",
-      "support_status": "source_backed",
-      "current_support": true,
-      "lineage_only": false,
-      "projection_warning": ""
-    }
-  ],
-  "recent_reactions": [
-    {
-      "ref_id": "reaction:rx:Full_Content:src:c1:p546@0-p550@41:highlight:227",
-      "reaction_id": "rx:Full_Content:src:c1:p546@0-p550@41:highlight:227",
-      "type": "highlight",
-      "thought": "这个反问把\"六周\"这个具体数字变成了一个结构性困境的锚点。审计一家小公司尚且如此，当规模放大、问题变多时，时间和能力的缺口就成为不可弥补的结构性漏洞。六周这个数字本身不重要，重要的是它与\"大型储贷机构\"之间那道无法跨越的鸿沟。",
-      "emitted_at_source_span_id": "src:c1:p546@0-p550@41",
-      "primary_source_ref": {
-        "source_span_id": "src:c1:p550@0-p550@41",
-        "source_span": {
-          "start_cursor": {
-            "chapter_id": 1,
-            "chapter_ref": "Full Content",
-            "paragraph_index": 550,
-            "char_offset": 0
-          },
-          "end_cursor": {
-            "chapter_id": 1,
-            "chapter_ref": "Full Content",
-            "paragraph_index": 550,
-            "char_offset": 41
-          }
-        },
-        "quote": "审计我们这样一家小公司尚且需要这么长时间，如果要审计一家问题重重的大型储贷机构呢？",
-        "role": "reaction_anchor",
-        "resolution": {
-          "status": "matched",
-          "method": "exact_text",
-          "match_count": 1
-        }
-      },
-      "source_quote": "审计我们这样一家小公司尚且需要这么长时间，如果要审计一家问题重重的大型储贷机构呢？",
-      "projection_role": "visible_trace",
-      "support_status": "visible_trace",
-      "visible_trace_support": true,
-      "current_support": false,
-      "projection_warning": "visible_trace_not_semantic_memory"
-    },
-    {
-      "ref_id": "reaction:rx:Full_Content:src:c1:p551@0-p555@52:highlight:228",
-      "reaction_id": "rx:Full_Content:src:c1:p551@0-p555@52:highlight:228",
-      "type": "highlight",
-      "thought": "这段话把\"敌意\"从道德问题还原为心理机制——不是性格问题，是暴露量的函数。和\"投行是卖方\"的信息困境形成平行：认知被污染，不只是监管人员自身的原因。",
-      "emitted_at_source_span_id": "src:c1:p551@0-p555@52",
-      "primary_source_ref": {
-        "source_span_id": "src:c1:p553@51-p553@125",
-        "source_span": {
-          "start_cursor": {
-            "chapter_id": 1,
-            "chapter_ref": "Full Content",
-            "paragraph_index": 553,
-            "char_offset": 51
-          },
-          "end_cursor": {
-            "chapter_id": 1,
-            "chapter_ref": "Full Content",
-            "paragraph_index": 553,
-            "char_offset": 125
-          }
-        },
-        "quote": "看到了太多的丑恶，很容易对周围的世界充满敌意。让我去审计一家声名狼藉的储贷机构，看高管睁着眼睛说瞎话，我肯定受不了。每天都要面对人渣，怎么能不崩溃？",
-        "role": "reaction_anchor",
-        "resolution": {
-          "status": "matched",
-          "method": "exact_text",
-          "match_count": 1
-        }
-      },
-      "source_quote": "看到了太多的丑恶，很容易对周围的世界充满敌意。让我去审计一家声名狼藉的储贷机构，看高管睁着眼睛说瞎话，我肯定受不了。每天都要面对人渣，怎么能不崩溃？",
-      "projection_role": "visible_trace",
-      "support_status": "visible_trace",
-      "visible_trace_support": true,
-      "current_support": false,
-      "projection_warning": "visible_trace_not_semantic_memory"
-    }
-  ]
-}
-```
-
-#### Concept Digest
+#### Probe-time snapshot field: concept_digest
 
 `concept_digest`:
 
@@ -9197,7 +8197,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
 ]
 ```
 
-#### Thread Digest
+#### Probe-time snapshot field: thread_digest
 
 `thread_digest`:
 
@@ -9376,7 +8376,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
 ]
 ```
 
-#### Reflective Digest
+#### Probe-time snapshot field: reflective_digest
 
 `reflective_digest`:
 
@@ -9388,7 +8388,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
 }
 ```
 
-#### SourceRef Digest
+#### Probe-time snapshot field: source_ref_digest
 
 `source_ref_digest`:
 
@@ -9621,7 +8621,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
    s1757 / p653: 当年，西科的母公司收购西科时，西科就非常孱弱。
 ```
 
-#### Active Attention
+#### Probe-time snapshot field: active_attention_digest
 
 `active_attention_digest`:
 
@@ -10054,262 +9054,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
 }
 ```
 
-#### Active Focus
-
-`active_focus_digest`:
-
-```json
-{
-  "active_items": [
-    {
-      "ref_id": "active_attention:wesco_1987_structure",
-      "item_id": "wesco_1987_structure",
-      "attention_tags": [
-        "focus"
-      ],
-      "statement": "1987年西科金融三个主要分支机构：互助储蓄（加州帕萨迪纳）、精密钢材Precision Steel（芝加哥，1979年收购）、西科—金融保险公司（奥马哈，再保险）",
-      "status": "active",
-      "source_refs": [
-        {
-          "source_span_id": "src:c1:p4@0-p4@172",
-          "source_span": {
-            "start_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 4,
-              "char_offset": 0
-            },
-            "end_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 4,
-              "char_offset": 172
-            }
-          },
-          "quote": "1987年时，西科金融有三个主要的分支机构：（1）位于加州帕萨迪纳的互助储蓄；（2）精密钢材（Precision Steel），由西科金融于1979年收购，总部位于芝加哥，从事钢铁制品批发和贴牌金属专用产品生产；（3）西科—金融保险公司（Wesco-Financial Insurance Company），总部位于奥马哈，主要从事再保险业务。",
-          "role": "support",
-          "resolution": {
-            "status": "matched",
-            "method": "exact_text",
-            "match_count": 1
-          }
-        }
-      ],
-      "linked_concept_keys": [],
-      "linked_thread_keys": [],
-      "projection_role": "current_support",
-      "support_status": "source_backed",
-      "current_support": true,
-      "lineage_only": false,
-      "projection_warning": ""
-    },
-    {
-      "ref_id": "active_attention:wesco_board_composition",
-      "item_id": "wesco_board_composition",
-      "attention_tags": [
-        "focus"
-      ],
-      "statement": "西科董事会成员：迪克·罗森塔尔（已故，飞机事故）之后，蒂施家族成员（Tisch family）接续作为董事会保障力量",
-      "status": "active",
-      "source_refs": [
-        {
-          "source_span_id": "src:c1:p23@0-p23@57",
-          "source_span": {
-            "start_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 23,
-              "char_offset": 0
-            },
-            "end_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 23,
-              "char_offset": 57
-            }
-          },
-          "quote": "好在我们还有和迪克·罗森塔尔一样的人才，我们的董事会中还有蒂施家族的成员。蒂施家族人才济济，都是脚踏实地的投资者。",
-          "role": "support",
-          "resolution": {
-            "status": "matched",
-            "method": "exact_text",
-            "match_count": 1
-          }
-        }
-      ],
-      "linked_concept_keys": [],
-      "linked_thread_keys": [],
-      "projection_role": "current_support",
-      "support_status": "source_backed",
-      "current_support": true,
-      "lineage_only": false,
-      "projection_warning": ""
-    },
-    {
-      "ref_id": "active_attention:wesco_asset_solidity",
-      "item_id": "wesco_asset_solidity",
-      "attention_tags": [
-        "focus"
-      ],
-      "statement": "西科金融资产状况：质量可靠，手握大量富余资产，目前缺乏好机会配置。保险业务可能因周期不利而收缩，但资产和盈利能力不受业务中断影响。",
-      "status": "active",
-      "source_refs": [
-        {
-          "source_span_id": "src:c1:p32@0-p32@53",
-          "source_span": {
-            "start_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 32,
-              "char_offset": 0
-            },
-            "end_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 32,
-              "char_offset": 53
-            }
-          },
-          "quote": "西科金融的资产质量非常让人放心。目前，我们手中掌握着大量富余的资产，只是找不到好机会，没地方配置这些资产。",
-          "role": "support",
-          "resolution": {
-            "status": "matched",
-            "method": "exact_text",
-            "match_count": 1
-          }
-        }
-      ],
-      "linked_concept_keys": [],
-      "linked_thread_keys": [],
-      "projection_role": "current_support",
-      "support_status": "source_backed",
-      "current_support": true,
-      "lineage_only": false,
-      "projection_warning": ""
-    },
-    {
-      "ref_id": "active_attention:wesco_asset_deployability",
-      "item_id": "wesco_asset_deployability",
-      "attention_tags": [
-        "focus"
-      ],
-      "statement": "西科金融的资产立场：手握大量资产是主动选择，持有状态有弹性，即使极端情况下也能部署。\"这是现在，不意味着永远\"——不动是因为没好机会，不是因为动不了。",
-      "status": "active",
-      "source_refs": [
-        {
-          "source_span_id": "src:c1:p33@0-p33@62",
-          "source_span": {
-            "start_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 33,
-              "char_offset": 0
-            },
-            "end_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 33,
-              "char_offset": 62
-            }
-          },
-          "quote": "我们把大量资产攥在手里，这是现在，不意味着永远。真有人拿枪顶着我的脑袋，逼我把这些钱投出去，迫不得已，我也能把这些钱投出去。",
-          "role": "support",
-          "resolution": {
-            "status": "matched",
-            "method": "exact_text",
-            "match_count": 1
-          }
-        }
-      ],
-      "linked_concept_keys": [],
-      "linked_thread_keys": [],
-      "projection_role": "current_support",
-      "support_status": "source_backed",
-      "current_support": true,
-      "lineage_only": false,
-      "projection_warning": ""
-    }
-  ],
-  "recent_reactions": [
-    {
-      "ref_id": "reaction:rx:Full_Content:src:c1:p650@0-p654@79:highlight:268",
-      "reaction_id": "rx:Full_Content:src:c1:p650@0-p654@79:highlight:268",
-      "type": "highlight",
-      "thought": "\"天生的\"三个字把问题定调了：这不是管理失误或市场变化造成的，而是结构性的起点问题。这解释了为什么西科此后的多年一直在\"守势\"——底子薄决定了它的选择空间受限。",
-      "emitted_at_source_span_id": "src:c1:p650@0-p654@79",
-      "primary_source_ref": {
-        "source_span_id": "src:c1:p653@0-p653@11",
-        "source_span": {
-          "start_cursor": {
-            "chapter_id": 1,
-            "chapter_ref": "Full Content",
-            "paragraph_index": 653,
-            "char_offset": 0
-          },
-          "end_cursor": {
-            "chapter_id": 1,
-            "chapter_ref": "Full Content",
-            "paragraph_index": 653,
-            "char_offset": 11
-          }
-        },
-        "quote": "西科的底子薄是天生的。",
-        "role": "reaction_anchor",
-        "resolution": {
-          "status": "matched",
-          "method": "exact_text",
-          "match_count": 1
-        }
-      },
-      "source_quote": "西科的底子薄是天生的。",
-      "projection_role": "visible_trace",
-      "support_status": "visible_trace",
-      "visible_trace_support": true,
-      "current_support": false,
-      "projection_warning": "visible_trace_not_semantic_memory"
-    },
-    {
-      "ref_id": "reaction:rx:Full_Content:src:c1:p655@0-p657@56:highlight:269",
-      "reaction_id": "rx:Full_Content:src:c1:p655@0-p657@56:highlight:269",
-      "type": "highlight",
-      "thought": "兔子/乌龟的类比在这里不只是修辞，而是把价值投资的竞争结构说清楚了：好生意天然跑得快，普通生意天然跑得慢，这不是努力能弥补的起点差异。",
-      "emitted_at_source_span_id": "src:c1:p655@0-p657@56",
-      "primary_source_ref": {
-        "source_span_id": "src:c1:p657@0-p657@29",
-        "source_span": {
-          "start_cursor": {
-            "chapter_id": 1,
-            "chapter_ref": "Full Content",
-            "paragraph_index": 657,
-            "char_offset": 0
-          },
-          "end_cursor": {
-            "chapter_id": 1,
-            "chapter_ref": "Full Content",
-            "paragraph_index": 657,
-            "char_offset": 29
-          }
-        },
-        "quote": "好生意内在价值高，如同兔子。普通生意内在价值低，如同乌龟。",
-        "role": "reaction_anchor",
-        "resolution": {
-          "status": "matched",
-          "method": "exact_text",
-          "match_count": 1
-        }
-      },
-      "source_quote": "好生意内在价值高，如同兔子。普通生意内在价值低，如同乌龟。",
-      "projection_role": "visible_trace",
-      "support_status": "visible_trace",
-      "visible_trace_support": true,
-      "current_support": false,
-      "projection_warning": "visible_trace_not_semantic_memory"
-    }
-  ]
-}
-```
-
-#### Concept Digest
+#### Probe-time snapshot field: concept_digest
 
 `concept_digest`:
 
@@ -10438,7 +9183,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
 ]
 ```
 
-#### Thread Digest
+#### Probe-time snapshot field: thread_digest
 
 `thread_digest`:
 
@@ -10642,7 +9387,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
 ]
 ```
 
-#### Reflective Digest
+#### Probe-time snapshot field: reflective_digest
 
 `reflective_digest`:
 
@@ -10654,7 +9399,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
 }
 ```
 
-#### SourceRef Digest
+#### Probe-time snapshot field: source_ref_digest
 
 `source_ref_digest`:
 

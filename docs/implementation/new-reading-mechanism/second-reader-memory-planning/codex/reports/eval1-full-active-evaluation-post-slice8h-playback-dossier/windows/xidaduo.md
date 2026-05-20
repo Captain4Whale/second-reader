@@ -3730,7 +3730,27 @@ Brahman，在奥义书中指称至高存在或至高自我，即宇宙自我。
 
 ## Probe Memory Checkpoints
 
-Memory Quality is scored at probe time. The state below is a structured re-layout of the recorded probe snapshot, not a fresh summary and not the final runtime dump.
+Memory Quality is scored at probe time. The state blocks below are exact Markdown re-layouts of recorded probe snapshot digest fields, not fresh summaries and not final runtime dumps.
+
+### Memory State Evidence Boundary
+
+- Probe-time scoring evidence: `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_long_span_post_slice8h_20260519_xidaduo/outputs/xidaduo_private_zh__segment_1/attentional_v2/_mechanisms/attentional_v2/exports/memory_quality_probe_snapshots.json`. The per-probe blocks below come from snapshot fields such as `active_attention_digest`, `concept_digest`, `thread_digest`, `reflective_digest`, and `source_ref_digest`.
+- Final full runtime state references: files under `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_long_span_post_slice8h_20260519_xidaduo/outputs/xidaduo_private_zh__segment_1/attentional_v2/_mechanisms/attentional_v2/runtime`. These are useful for diagnosis, but they are window-end state references rather than the exact state used at each Memory Quality probe.
+- Window boundary checkpoint: `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_long_span_post_slice8h_20260519_xidaduo/outputs/xidaduo_private_zh__segment_1/attentional_v2/_mechanisms/attentional_v2/runtime/checkpoints/chapter-001.json`. This is the chapter/window boundary checkpoint, not five independent probe-time checkpoints.
+- Missing artifact boundary: current Eval-1 artifacts do not contain per-probe full-store dumps. A future exporter needs explicit `exports/probe_state_snapshots/probe_###/...` captures before a report can link to complete memory stores at each probe.
+
+### Full Runtime State Links
+
+| State artifact | Path | Boundary note |
+| --- | --- | --- |
+| Active Attention | `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_long_span_post_slice8h_20260519_xidaduo/outputs/xidaduo_private_zh__segment_1/attentional_v2/_mechanisms/attentional_v2/runtime/active_attention.json` | Final window-end active attention store; not the probe-time full store. |
+| Concept Registry | `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_long_span_post_slice8h_20260519_xidaduo/outputs/xidaduo_private_zh__segment_1/attentional_v2/_mechanisms/attentional_v2/runtime/concept_registry.json` | Final window-end concept store; use for diagnosis only. |
+| Thread Trace | `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_long_span_post_slice8h_20260519_xidaduo/outputs/xidaduo_private_zh__segment_1/attentional_v2/_mechanisms/attentional_v2/runtime/thread_trace.json` | Final window-end thread store; use for diagnosis only. |
+| Reflective Frames | `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_long_span_post_slice8h_20260519_xidaduo/outputs/xidaduo_private_zh__segment_1/attentional_v2/_mechanisms/attentional_v2/runtime/reflective_frames.json` | Final window-end reflective store; use for diagnosis only. |
+| Reaction Records | `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_long_span_post_slice8h_20260519_xidaduo/outputs/xidaduo_private_zh__segment_1/attentional_v2/_mechanisms/attentional_v2/runtime/reaction_records.json` | Final window reaction record store; timeline above is the reviewer-readable projection. |
+| Read Audit | `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_long_span_post_slice8h_20260519_xidaduo/outputs/xidaduo_private_zh__segment_1/attentional_v2/_mechanisms/attentional_v2/runtime/read_audit.jsonl` | Runtime operation/audit stream for diagnosis. |
+| Settlement Audit | `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_long_span_post_slice8h_20260519_xidaduo/outputs/xidaduo_private_zh__segment_1/attentional_v2/_mechanisms/attentional_v2/runtime/settlement_audit.jsonl` | Runtime settlement/audit stream for diagnosis. |
+| Chapter checkpoint | `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_long_span_post_slice8h_20260519_xidaduo/outputs/xidaduo_private_zh__segment_1/attentional_v2/_mechanisms/attentional_v2/runtime/checkpoints/chapter-001.json` | Full window boundary checkpoint, not a per-probe checkpoint. |
 
 ### Probe 1 — MQ `3.50` — near 20%
 
@@ -3752,7 +3772,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
    s444 / p109: 悉达多以他特有的方式笑了。
 ```
 
-#### Active Attention
+#### Probe-time snapshot field: active_attention_digest
 
 `active_attention_digest`:
 
@@ -4195,266 +4215,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
 }
 ```
 
-#### Active Focus
-
-`active_focus_digest`:
-
-```json
-{
-  "active_items": [
-    {
-      "ref_id": "active_attention:govinda_shadow_devotion",
-      "item_id": "govinda_shadow_devotion",
-      "attention_tags": [
-        "focus",
-        "motif"
-      ],
-      "statement": "乔文达的追随方式：不做朋友而做影子；追随的不是同路而是依附式的侍奉；即便在神的世界里仍是附属性存在",
-      "status": "active",
-      "source_refs": [
-        {
-          "source_span_id": "src:c1:p7@230-p7@258",
-          "source_span": {
-            "start_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 7,
-              "char_offset": 230
-            },
-            "end_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 7,
-              "char_offset": 258
-            }
-          },
-          "quote": "他仍要做他的朋友，他的随从，他的仆人，他的侍卫，他的影子",
-          "role": "support",
-          "resolution": {
-            "status": "matched",
-            "method": "exact_text",
-            "match_count": 1
-          }
-        }
-      ],
-      "linked_concept_keys": [],
-      "linked_thread_keys": [],
-      "projection_role": "current_support",
-      "support_status": "source_backed",
-      "current_support": true,
-      "lineage_only": false,
-      "projection_warning": ""
-    },
-    {
-      "ref_id": "active_attention:devotion_structure_this_unit",
-      "item_id": "devotion_structure_this_unit",
-      "attention_tags": [
-        "focus",
-        "interpretation"
-      ],
-      "statement": "崇拜结构：父亲（期待）、母亲（幸福）、女儿们（爱情涟漪）、乔文达（影子式追随）——四个方向完成对悉达多的仰望",
-      "status": "active",
-      "source_refs": [
-        {
-          "source_span_id": "src:c1:p7@0-p7@10",
-          "source_span": {
-            "start_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 7,
-              "char_offset": 0
-            },
-            "end_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 7,
-              "char_offset": 10
-            }
-          },
-          "quote": "而最爱他的人是乔文达",
-          "role": "support",
-          "resolution": {
-            "status": "matched",
-            "method": "exact_text",
-            "match_count": 1
-          }
-        }
-      ],
-      "linked_concept_keys": [],
-      "linked_thread_keys": [],
-      "projection_role": "current_support",
-      "support_status": "source_backed",
-      "current_support": true,
-      "lineage_only": false,
-      "projection_warning": ""
-    },
-    {
-      "ref_id": "active_attention:inner_void_despite_outer_perfection",
-      "item_id": "inner_void_despite_outer_perfection",
-      "attention_tags": [
-        "focus",
-        "motif"
-      ],
-      "statement": "外部圆满/内部空洞的对照：所有人都爱他、仪式完美执行，但\"无法让自己喜悦\"——这种空虚不是匮乏而是过载：婆罗门教义越多，灵魂越不安",
-      "status": "active",
-      "source_refs": [
-        {
-          "source_span_id": "src:c1:p9@0-p9@26",
-          "source_span": {
-            "start_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 9,
-              "char_offset": 0
-            },
-            "end_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 9,
-              "char_offset": 26
-            }
-          },
-          "quote": "可是他，悉达多，却无法让自己喜悦，无法让自己略有兴致",
-          "role": "support",
-          "resolution": {
-            "status": "matched",
-            "method": "exact_text",
-            "match_count": 1
-          }
-        }
-      ],
-      "linked_concept_keys": [],
-      "linked_thread_keys": [],
-      "projection_role": "current_support",
-      "support_status": "source_backed",
-      "current_support": true,
-      "lineage_only": false,
-      "projection_warning": ""
-    },
-    {
-      "ref_id": "active_attention:spiritual_container_never_full",
-      "item_id": "spiritual_container_never_full",
-      "attention_tags": [
-        "focus",
-        "interpretation"
-      ],
-      "statement": "精神容器的结构性饥饿：婆罗门教义越渊博，灵魂越不安；爱、仪式、知识全部无法盛满这个容器；这是存在性的、结构性的焦渴，而非匮乏性的",
-      "status": "active",
-      "source_refs": [
-        {
-          "source_span_id": "src:c1:p10@107-p10@121",
-          "source_span": {
-            "start_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 10,
-              "char_offset": 107
-            },
-            "end_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 10,
-              "char_offset": 121
-            }
-          },
-          "quote": "他充满渴望的精神容器仍未盛满",
-          "role": "support",
-          "resolution": {
-            "status": "matched",
-            "method": "exact_text",
-            "match_count": 1
-          }
-        }
-      ],
-      "linked_concept_keys": [],
-      "linked_thread_keys": [],
-      "projection_role": "current_support",
-      "support_status": "source_backed",
-      "current_support": true,
-      "lineage_only": false,
-      "projection_warning": ""
-    }
-  ],
-  "recent_reactions": [
-    {
-      "ref_id": "reaction:rx:Full_Content:src:c1:p107@0-p111@87:highlight:40",
-      "reaction_id": "rx:Full_Content:src:c1:p107@0-p111@87:highlight:40",
-      "type": "highlight",
-      "thought": "这个笑与前文\"所有圣贤都没有抵达天国\"形成呼应——当所有人都在寻求答案时，悉达多已经知道答案不在任何人的教导里。但这种知道不是解脱，而是带着悲伤和嘲讽的处境。他同情那些仍然相信答案存在的人，也嘲讽包括自己在内的这个追逐。",
-      "emitted_at_source_span_id": "src:c1:p107@0-p111@87",
-      "primary_source_ref": {
-        "source_span_id": "src:c1:p109@13-p109@30",
-        "source_span": {
-          "start_cursor": {
-            "chapter_id": 1,
-            "chapter_ref": "Full Content",
-            "paragraph_index": 109,
-            "char_offset": 13
-          },
-          "end_cursor": {
-            "chapter_id": 1,
-            "chapter_ref": "Full Content",
-            "paragraph_index": 109,
-            "char_offset": 30
-          }
-        },
-        "quote": "他的笑声里一半是悲痛，一半是嘲讽。",
-        "role": "reaction_anchor",
-        "resolution": {
-          "status": "matched",
-          "method": "exact_text",
-          "match_count": 1
-        }
-      },
-      "source_quote": "他的笑声里一半是悲痛，一半是嘲讽。",
-      "projection_role": "visible_trace",
-      "support_status": "visible_trace",
-      "visible_trace_support": true,
-      "current_support": false,
-      "projection_warning": "visible_trace_not_semantic_memory"
-    },
-    {
-      "ref_id": "reaction:rx:Full_Content:src:c1:p115@0-p116@41:highlight:41",
-      "reaction_id": "rx:Full_Content:src:c1:p115@0-p116@41:highlight:41",
-      "type": "highlight",
-      "thought": "这句话干脆到近乎冷酷。\"并不\"是否定，但比\"不是\"更主动——它暗示他曾被邀请，但他选择了拒绝。它将\"能力\"和\"追求\"分开：你能做到，但你不必以此为目的。这也是对乔文达那句\"很快就能学会\"的冷处理——学会又怎样？",
-      "emitted_at_source_span_id": "src:c1:p115@0-p116@41",
-      "primary_source_ref": {
-        "source_span_id": "src:c1:p116@1-p116@14",
-        "source_span": {
-          "start_cursor": {
-            "chapter_id": 1,
-            "chapter_ref": "Full Content",
-            "paragraph_index": 116,
-            "char_offset": 1
-          },
-          "end_cursor": {
-            "chapter_id": 1,
-            "chapter_ref": "Full Content",
-            "paragraph_index": 116,
-            "char_offset": 14
-          }
-        },
-        "quote": "在水面行走并不是我的追求。",
-        "role": "reaction_anchor",
-        "resolution": {
-          "status": "matched",
-          "method": "exact_text",
-          "match_count": 1
-        }
-      },
-      "source_quote": "在水面行走并不是我的追求。",
-      "projection_role": "visible_trace",
-      "support_status": "visible_trace",
-      "visible_trace_support": true,
-      "current_support": false,
-      "projection_warning": "visible_trace_not_semantic_memory"
-    }
-  ]
-}
-```
-
-#### Concept Digest
+#### Probe-time snapshot field: concept_digest
 
 `concept_digest`:
 
@@ -4583,7 +4344,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
 ]
 ```
 
-#### Thread Digest
+#### Probe-time snapshot field: thread_digest
 
 `thread_digest`:
 
@@ -4712,7 +4473,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
 ]
 ```
 
-#### Reflective Digest
+#### Probe-time snapshot field: reflective_digest
 
 `reflective_digest`:
 
@@ -4724,7 +4485,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
 }
 ```
 
-#### SourceRef Digest
+#### Probe-time snapshot field: source_ref_digest
 
 `source_ref_digest`:
 
@@ -4957,7 +4718,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
    s754 / p179: 不会再让阿特曼和尘世疾苦成为我思想和生命的中心。
 ```
 
-#### Active Attention
+#### Probe-time snapshot field: active_attention_digest
 
 `active_attention_digest`:
 
@@ -5400,266 +5161,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
 }
 ```
 
-#### Active Focus
-
-`active_focus_digest`:
-
-```json
-{
-  "active_items": [
-    {
-      "ref_id": "active_attention:govinda_shadow_devotion",
-      "item_id": "govinda_shadow_devotion",
-      "attention_tags": [
-        "focus",
-        "motif"
-      ],
-      "statement": "乔文达的追随方式：不做朋友而做影子；追随的不是同路而是依附式的侍奉；即便在神的世界里仍是附属性存在",
-      "status": "active",
-      "source_refs": [
-        {
-          "source_span_id": "src:c1:p7@230-p7@258",
-          "source_span": {
-            "start_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 7,
-              "char_offset": 230
-            },
-            "end_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 7,
-              "char_offset": 258
-            }
-          },
-          "quote": "他仍要做他的朋友，他的随从，他的仆人，他的侍卫，他的影子",
-          "role": "support",
-          "resolution": {
-            "status": "matched",
-            "method": "exact_text",
-            "match_count": 1
-          }
-        }
-      ],
-      "linked_concept_keys": [],
-      "linked_thread_keys": [],
-      "projection_role": "current_support",
-      "support_status": "source_backed",
-      "current_support": true,
-      "lineage_only": false,
-      "projection_warning": ""
-    },
-    {
-      "ref_id": "active_attention:devotion_structure_this_unit",
-      "item_id": "devotion_structure_this_unit",
-      "attention_tags": [
-        "focus",
-        "interpretation"
-      ],
-      "statement": "崇拜结构：父亲（期待）、母亲（幸福）、女儿们（爱情涟漪）、乔文达（影子式追随）——四个方向完成对悉达多的仰望",
-      "status": "active",
-      "source_refs": [
-        {
-          "source_span_id": "src:c1:p7@0-p7@10",
-          "source_span": {
-            "start_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 7,
-              "char_offset": 0
-            },
-            "end_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 7,
-              "char_offset": 10
-            }
-          },
-          "quote": "而最爱他的人是乔文达",
-          "role": "support",
-          "resolution": {
-            "status": "matched",
-            "method": "exact_text",
-            "match_count": 1
-          }
-        }
-      ],
-      "linked_concept_keys": [],
-      "linked_thread_keys": [],
-      "projection_role": "current_support",
-      "support_status": "source_backed",
-      "current_support": true,
-      "lineage_only": false,
-      "projection_warning": ""
-    },
-    {
-      "ref_id": "active_attention:inner_void_despite_outer_perfection",
-      "item_id": "inner_void_despite_outer_perfection",
-      "attention_tags": [
-        "focus",
-        "motif"
-      ],
-      "statement": "外部圆满/内部空洞的对照：所有人都爱他、仪式完美执行，但\"无法让自己喜悦\"——这种空虚不是匮乏而是过载：婆罗门教义越多，灵魂越不安",
-      "status": "active",
-      "source_refs": [
-        {
-          "source_span_id": "src:c1:p9@0-p9@26",
-          "source_span": {
-            "start_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 9,
-              "char_offset": 0
-            },
-            "end_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 9,
-              "char_offset": 26
-            }
-          },
-          "quote": "可是他，悉达多，却无法让自己喜悦，无法让自己略有兴致",
-          "role": "support",
-          "resolution": {
-            "status": "matched",
-            "method": "exact_text",
-            "match_count": 1
-          }
-        }
-      ],
-      "linked_concept_keys": [],
-      "linked_thread_keys": [],
-      "projection_role": "current_support",
-      "support_status": "source_backed",
-      "current_support": true,
-      "lineage_only": false,
-      "projection_warning": ""
-    },
-    {
-      "ref_id": "active_attention:spiritual_container_never_full",
-      "item_id": "spiritual_container_never_full",
-      "attention_tags": [
-        "focus",
-        "interpretation"
-      ],
-      "statement": "精神容器的结构性饥饿：婆罗门教义越渊博，灵魂越不安；爱、仪式、知识全部无法盛满这个容器；这是存在性的、结构性的焦渴，而非匮乏性的",
-      "status": "active",
-      "source_refs": [
-        {
-          "source_span_id": "src:c1:p10@107-p10@121",
-          "source_span": {
-            "start_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 10,
-              "char_offset": 107
-            },
-            "end_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 10,
-              "char_offset": 121
-            }
-          },
-          "quote": "他充满渴望的精神容器仍未盛满",
-          "role": "support",
-          "resolution": {
-            "status": "matched",
-            "method": "exact_text",
-            "match_count": 1
-          }
-        }
-      ],
-      "linked_concept_keys": [],
-      "linked_thread_keys": [],
-      "projection_role": "current_support",
-      "support_status": "source_backed",
-      "current_support": true,
-      "lineage_only": false,
-      "projection_warning": ""
-    }
-  ],
-  "recent_reactions": [
-    {
-      "ref_id": "reaction:rx:Full_Content:src:c1:p184@0-p184@311:highlight:66",
-      "reaction_id": "rx:Full_Content:src:c1:p184@0-p184@311:highlight:66",
-      "type": "highlight",
-      "thought": "三个问题构成孤独的精确诊断：从\"我在哪里\"到\"我与谁同在\"，最后到\"我用什么语言\"——归属感被逐层剥去，最后落到语言和存在的根底。",
-      "emitted_at_source_span_id": "src:c1:p184@0-p184@311",
-      "primary_source_ref": {
-        "source_span_id": "src:c1:p184@285-p184@311",
-        "source_span": {
-          "start_cursor": {
-            "chapter_id": 1,
-            "chapter_ref": "Full Content",
-            "paragraph_index": 184,
-            "char_offset": 285
-          },
-          "end_cursor": {
-            "chapter_id": 1,
-            "chapter_ref": "Full Content",
-            "paragraph_index": 184,
-            "char_offset": 311
-          }
-        },
-        "quote": "可是他，悉达多，他属于哪里？和谁分享生活？说谁的话？",
-        "role": "reaction_anchor",
-        "resolution": {
-          "status": "matched",
-          "method": "exact_text",
-          "match_count": 1
-        }
-      },
-      "source_quote": "可是他，悉达多，他属于哪里？和谁分享生活？说谁的话？",
-      "projection_role": "visible_trace",
-      "support_status": "visible_trace",
-      "visible_trace_support": true,
-      "current_support": false,
-      "projection_warning": "visible_trace_not_semantic_memory"
-    },
-    {
-      "ref_id": "reaction:rx:Full_Content:src:c1:p185@0-p185@111:highlight:67",
-      "reaction_id": "rx:Full_Content:src:c1:p185@0-p185@111:highlight:67",
-      "type": "highlight",
-      "thought": "三个\"再也不\"构成一种不可逆的结构——不是\"也许不\"，不是\"暂时不\"，是结构性的永不回头。与前面那个\"拜自己为师\"的宣言合在一起，才完整：向内的认知转向，必须以向外的决绝出走为行动锚点。",
-      "emitted_at_source_span_id": "src:c1:p185@0-p185@111",
-      "primary_source_ref": {
-        "source_span_id": "src:c1:p185@90-p185@111",
-        "source_span": {
-          "start_cursor": {
-            "chapter_id": 1,
-            "chapter_ref": "Full Content",
-            "paragraph_index": 185,
-            "char_offset": 90
-          },
-          "end_cursor": {
-            "chapter_id": 1,
-            "chapter_ref": "Full Content",
-            "paragraph_index": 185,
-            "char_offset": 111
-          }
-        },
-        "quote": "他再也不回家，再也不回父亲那里，再不回去。",
-        "role": "reaction_anchor",
-        "resolution": {
-          "status": "matched",
-          "method": "exact_text",
-          "match_count": 1
-        }
-      },
-      "source_quote": "他再也不回家，再也不回父亲那里，再不回去。",
-      "projection_role": "visible_trace",
-      "support_status": "visible_trace",
-      "visible_trace_support": true,
-      "current_support": false,
-      "projection_warning": "visible_trace_not_semantic_memory"
-    }
-  ]
-}
-```
-
-#### Concept Digest
+#### Probe-time snapshot field: concept_digest
 
 `concept_digest`:
 
@@ -5788,7 +5290,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
 ]
 ```
 
-#### Thread Digest
+#### Probe-time snapshot field: thread_digest
 
 `thread_digest`:
 
@@ -5991,7 +5493,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
 ]
 ```
 
-#### Reflective Digest
+#### Probe-time snapshot field: reflective_digest
 
 `reflective_digest`:
 
@@ -6003,7 +5505,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
 }
 ```
 
-#### SourceRef Digest
+#### Probe-time snapshot field: source_ref_digest
 
 `source_ref_digest`:
 
@@ -6236,7 +5738,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
    s1534 / p336: 悉达多学会做生意，发号施令，寻欢作乐。
 ```
 
-#### Active Attention
+#### Probe-time snapshot field: active_attention_digest
 
 `active_attention_digest`:
 
@@ -6727,290 +6229,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
 }
 ```
 
-#### Active Focus
-
-`active_focus_digest`:
-
-```json
-{
-  "active_items": [
-    {
-      "ref_id": "active_attention:govinda_shadow_devotion",
-      "item_id": "govinda_shadow_devotion",
-      "attention_tags": [
-        "focus",
-        "motif"
-      ],
-      "statement": "乔文达皈依佛陀、加入僧团，走的是集体依附之路；悉达多此刻用宗教故事换取理发伙计的信任、用刮胡理发敷油沐浴完成自我改造，走的是主动个体化之路。两条路的对照正在成形。",
-      "status": "active",
-      "source_refs": [
-        {
-          "source_span_id": "src:c1:p7@230-p7@258",
-          "source_span": {
-            "start_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 7,
-              "char_offset": 230
-            },
-            "end_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 7,
-              "char_offset": 258
-            }
-          },
-          "quote": "他仍要做他的朋友，他的随从，他的仆人，他的侍卫，他的影子",
-          "role": "support",
-          "resolution": {
-            "status": "matched",
-            "method": "exact_text",
-            "match_count": 1
-          }
-        },
-        {
-          "source_span_id": "src:c1:p210@0-p214@189",
-          "source_span": {
-            "start_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 210,
-              "char_offset": 0
-            },
-            "end_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 214,
-              "char_offset": 189
-            }
-          },
-          "quote": "为了这个目标，悉达多踏遍城邑，走街串巷……他让那位伙计为他刮了胡须，剪了头发并敷了上好的头油。",
-          "role": "support",
-          "resolution": {
-            "status": "fallback_unit_span",
-            "method": "quote_not_found",
-            "match_count": 0
-          }
-        }
-      ],
-      "linked_concept_keys": [],
-      "linked_thread_keys": [],
-      "projection_role": "current_support",
-      "support_status": "source_backed",
-      "current_support": true,
-      "lineage_only": false,
-      "projection_warning": ""
-    },
-    {
-      "ref_id": "active_attention:devotion_structure_this_unit",
-      "item_id": "devotion_structure_this_unit",
-      "attention_tags": [
-        "focus",
-        "interpretation"
-      ],
-      "statement": "崇拜结构：父亲（期待）、母亲（幸福）、女儿们（爱情涟漪）、乔文达（影子式追随）——四个方向完成对悉达多的仰望",
-      "status": "active",
-      "source_refs": [
-        {
-          "source_span_id": "src:c1:p7@0-p7@10",
-          "source_span": {
-            "start_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 7,
-              "char_offset": 0
-            },
-            "end_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 7,
-              "char_offset": 10
-            }
-          },
-          "quote": "而最爱他的人是乔文达",
-          "role": "support",
-          "resolution": {
-            "status": "matched",
-            "method": "exact_text",
-            "match_count": 1
-          }
-        }
-      ],
-      "linked_concept_keys": [],
-      "linked_thread_keys": [],
-      "projection_role": "current_support",
-      "support_status": "source_backed",
-      "current_support": true,
-      "lineage_only": false,
-      "projection_warning": ""
-    },
-    {
-      "ref_id": "active_attention:inner_void_despite_outer_perfection",
-      "item_id": "inner_void_despite_outer_perfection",
-      "attention_tags": [
-        "focus",
-        "motif"
-      ],
-      "statement": "外部圆满/内部空洞的对照：所有人都爱他、仪式完美执行，但\"无法让自己喜悦\"——这种空虚不是匮乏而是过载：婆罗门教义越多，灵魂越不安",
-      "status": "active",
-      "source_refs": [
-        {
-          "source_span_id": "src:c1:p9@0-p9@26",
-          "source_span": {
-            "start_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 9,
-              "char_offset": 0
-            },
-            "end_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 9,
-              "char_offset": 26
-            }
-          },
-          "quote": "可是他，悉达多，却无法让自己喜悦，无法让自己略有兴致",
-          "role": "support",
-          "resolution": {
-            "status": "matched",
-            "method": "exact_text",
-            "match_count": 1
-          }
-        }
-      ],
-      "linked_concept_keys": [],
-      "linked_thread_keys": [],
-      "projection_role": "current_support",
-      "support_status": "source_backed",
-      "current_support": true,
-      "lineage_only": false,
-      "projection_warning": ""
-    },
-    {
-      "ref_id": "active_attention:spiritual_container_never_full",
-      "item_id": "spiritual_container_never_full",
-      "attention_tags": [
-        "focus",
-        "interpretation"
-      ],
-      "statement": "精神容器的结构性饥饿：婆罗门教义越渊博，灵魂越不安；爱、仪式、知识全部无法盛满这个容器；这是存在性的、结构性的焦渴，而非匮乏性的",
-      "status": "active",
-      "source_refs": [
-        {
-          "source_span_id": "src:c1:p10@107-p10@121",
-          "source_span": {
-            "start_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 10,
-              "char_offset": 107
-            },
-            "end_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 10,
-              "char_offset": 121
-            }
-          },
-          "quote": "他充满渴望的精神容器仍未盛满",
-          "role": "support",
-          "resolution": {
-            "status": "matched",
-            "method": "exact_text",
-            "match_count": 1
-          }
-        }
-      ],
-      "linked_concept_keys": [],
-      "linked_thread_keys": [],
-      "projection_role": "current_support",
-      "support_status": "source_backed",
-      "current_support": true,
-      "lineage_only": false,
-      "projection_warning": ""
-    }
-  ],
-  "recent_reactions": [
-    {
-      "ref_id": "reaction:rx:Full_Content:src:c1:p346@0-p347@87:highlight:135",
-      "reaction_id": "rx:Full_Content:src:c1:p346@0-p347@87:highlight:135",
-      "type": "highlight",
-      "thought": "连接前文\"这游戏叫做轮回\"的\"游戏\"——这里他用来质问自己拥有芒果树和花园这件事，同样是游戏。而且是更基础的、在他走入红尘之前的那层游戏：把世界当真，把拥有当真。轮回是一个游戏，这个\"拥有\"是嵌套在轮回里的更小的游戏。",
-      "emitted_at_source_span_id": "src:c1:p346@0-p347@87",
-      "primary_source_ref": {
-        "source_span_id": "src:c1:p346@106-p346@130",
-        "source_span": {
-          "start_cursor": {
-            "chapter_id": 1,
-            "chapter_ref": "Full Content",
-            "paragraph_index": 346,
-            "char_offset": 106
-          },
-          "end_cursor": {
-            "chapter_id": 1,
-            "chapter_ref": "Full Content",
-            "paragraph_index": 346,
-            "char_offset": 130
-          }
-        },
-        "quote": "这是真实的，必要的吗？难道这不是一场愚蠢的游戏？",
-        "role": "reaction_anchor",
-        "resolution": {
-          "status": "matched",
-          "method": "exact_text",
-          "match_count": 1
-        }
-      },
-      "source_quote": "这是真实的，必要的吗？难道这不是一场愚蠢的游戏？",
-      "projection_role": "visible_trace",
-      "support_status": "visible_trace",
-      "visible_trace_support": true,
-      "current_support": false,
-      "projection_warning": "visible_trace_not_semantic_memory"
-    },
-    {
-      "ref_id": "reaction:rx:Full_Content:src:c1:p348@0-p349@93:retrospect:136",
-      "reaction_id": "rx:Full_Content:src:c1:p348@0-p349@93:retrospect:136",
-      "type": "retrospect",
-      "thought": "\"失却的痛苦中欣喜\"——这里不是矛盾，而是清醒。她知道那是最后一次，所以每一个动作同时是告别和彻底。痛苦和欣喜并行，因为两个都是真的。",
-      "emitted_at_source_span_id": "src:c1:p348@0-p349@93",
-      "primary_source_ref": {
-        "source_span_id": "src:c1:p348@112-p348@146",
-        "source_span": {
-          "start_cursor": {
-            "chapter_id": 1,
-            "chapter_ref": "Full Content",
-            "paragraph_index": 348,
-            "char_offset": 112
-          },
-          "end_cursor": {
-            "chapter_id": 1,
-            "chapter_ref": "Full Content",
-            "paragraph_index": 348,
-            "char_offset": 146
-          }
-        },
-        "quote": "她在失却的痛苦中欣喜，她能最后一次把他紧贴胸口，再一次彻底被他征服。",
-        "role": "reaction_anchor",
-        "resolution": {
-          "status": "matched",
-          "method": "exact_text",
-          "match_count": 1
-        }
-      },
-      "source_quote": "她在失却的痛苦中欣喜，她能最后一次把他紧贴胸口，再一次彻底被他征服。",
-      "projection_role": "visible_trace",
-      "support_status": "visible_trace",
-      "visible_trace_support": true,
-      "current_support": false,
-      "projection_warning": "visible_trace_not_semantic_memory"
-    }
-  ]
-}
-```
-
-#### Concept Digest
+#### Probe-time snapshot field: concept_digest
 
 `concept_digest`:
 
@@ -7139,7 +6358,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
 ]
 ```
 
-#### Thread Digest
+#### Probe-time snapshot field: thread_digest
 
 `thread_digest`:
 
@@ -7342,7 +6561,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
 ]
 ```
 
-#### Reflective Digest
+#### Probe-time snapshot field: reflective_digest
 
 `reflective_digest`:
 
@@ -7354,7 +6573,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
 }
 ```
 
-#### SourceRef Digest
+#### Probe-time snapshot field: source_ref_digest
 
 `source_ref_digest`:
 
@@ -7587,7 +6806,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
    s2069 / p428: 这也是河水所示。
 ```
 
-#### Active Attention
+#### Probe-time snapshot field: active_attention_digest
 
 `active_attention_digest`:
 
@@ -8078,290 +7297,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
 }
 ```
 
-#### Active Focus
-
-`active_focus_digest`:
-
-```json
-{
-  "active_items": [
-    {
-      "ref_id": "active_attention:govinda_shadow_devotion",
-      "item_id": "govinda_shadow_devotion",
-      "attention_tags": [
-        "focus",
-        "motif"
-      ],
-      "statement": "乔文达皈依佛陀、加入僧团，走的是集体依附之路；悉达多此刻用宗教故事换取理发伙计的信任、用刮胡理发敷油沐浴完成自我改造，走的是主动个体化之路。两条路的对照正在成形。",
-      "status": "active",
-      "source_refs": [
-        {
-          "source_span_id": "src:c1:p7@230-p7@258",
-          "source_span": {
-            "start_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 7,
-              "char_offset": 230
-            },
-            "end_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 7,
-              "char_offset": 258
-            }
-          },
-          "quote": "他仍要做他的朋友，他的随从，他的仆人，他的侍卫，他的影子",
-          "role": "support",
-          "resolution": {
-            "status": "matched",
-            "method": "exact_text",
-            "match_count": 1
-          }
-        },
-        {
-          "source_span_id": "src:c1:p210@0-p214@189",
-          "source_span": {
-            "start_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 210,
-              "char_offset": 0
-            },
-            "end_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 214,
-              "char_offset": 189
-            }
-          },
-          "quote": "为了这个目标，悉达多踏遍城邑，走街串巷……他让那位伙计为他刮了胡须，剪了头发并敷了上好的头油。",
-          "role": "support",
-          "resolution": {
-            "status": "fallback_unit_span",
-            "method": "quote_not_found",
-            "match_count": 0
-          }
-        }
-      ],
-      "linked_concept_keys": [],
-      "linked_thread_keys": [],
-      "projection_role": "current_support",
-      "support_status": "source_backed",
-      "current_support": true,
-      "lineage_only": false,
-      "projection_warning": ""
-    },
-    {
-      "ref_id": "active_attention:devotion_structure_this_unit",
-      "item_id": "devotion_structure_this_unit",
-      "attention_tags": [
-        "focus",
-        "interpretation"
-      ],
-      "statement": "崇拜结构：父亲（期待）、母亲（幸福）、女儿们（爱情涟漪）、乔文达（影子式追随）——四个方向完成对悉达多的仰望",
-      "status": "active",
-      "source_refs": [
-        {
-          "source_span_id": "src:c1:p7@0-p7@10",
-          "source_span": {
-            "start_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 7,
-              "char_offset": 0
-            },
-            "end_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 7,
-              "char_offset": 10
-            }
-          },
-          "quote": "而最爱他的人是乔文达",
-          "role": "support",
-          "resolution": {
-            "status": "matched",
-            "method": "exact_text",
-            "match_count": 1
-          }
-        }
-      ],
-      "linked_concept_keys": [],
-      "linked_thread_keys": [],
-      "projection_role": "current_support",
-      "support_status": "source_backed",
-      "current_support": true,
-      "lineage_only": false,
-      "projection_warning": ""
-    },
-    {
-      "ref_id": "active_attention:inner_void_despite_outer_perfection",
-      "item_id": "inner_void_despite_outer_perfection",
-      "attention_tags": [
-        "focus",
-        "motif"
-      ],
-      "statement": "外部圆满/内部空洞的对照：所有人都爱他、仪式完美执行，但\"无法让自己喜悦\"——这种空虚不是匮乏而是过载：婆罗门教义越多，灵魂越不安",
-      "status": "active",
-      "source_refs": [
-        {
-          "source_span_id": "src:c1:p9@0-p9@26",
-          "source_span": {
-            "start_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 9,
-              "char_offset": 0
-            },
-            "end_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 9,
-              "char_offset": 26
-            }
-          },
-          "quote": "可是他，悉达多，却无法让自己喜悦，无法让自己略有兴致",
-          "role": "support",
-          "resolution": {
-            "status": "matched",
-            "method": "exact_text",
-            "match_count": 1
-          }
-        }
-      ],
-      "linked_concept_keys": [],
-      "linked_thread_keys": [],
-      "projection_role": "current_support",
-      "support_status": "source_backed",
-      "current_support": true,
-      "lineage_only": false,
-      "projection_warning": ""
-    },
-    {
-      "ref_id": "active_attention:spiritual_container_never_full",
-      "item_id": "spiritual_container_never_full",
-      "attention_tags": [
-        "focus",
-        "interpretation"
-      ],
-      "statement": "精神容器的结构性饥饿：婆罗门教义越渊博，灵魂越不安；爱、仪式、知识全部无法盛满这个容器；这是存在性的、结构性的焦渴，而非匮乏性的",
-      "status": "active",
-      "source_refs": [
-        {
-          "source_span_id": "src:c1:p10@107-p10@121",
-          "source_span": {
-            "start_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 10,
-              "char_offset": 107
-            },
-            "end_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 10,
-              "char_offset": 121
-            }
-          },
-          "quote": "他充满渴望的精神容器仍未盛满",
-          "role": "support",
-          "resolution": {
-            "status": "matched",
-            "method": "exact_text",
-            "match_count": 1
-          }
-        }
-      ],
-      "linked_concept_keys": [],
-      "linked_thread_keys": [],
-      "projection_role": "current_support",
-      "support_status": "source_backed",
-      "current_support": true,
-      "lineage_only": false,
-      "projection_warning": ""
-    }
-  ],
-  "recent_reactions": [
-    {
-      "ref_id": "reaction:rx:Full_Content:src:c1:p461@0-p465@143:highlight:185",
-      "reaction_id": "rx:Full_Content:src:c1:p461@0-p465@143:highlight:185",
-      "type": "highlight",
-      "thought": "这里的\"不语\"与悉达多之前的\"不语\"形成完整的呼应——他在认出\"是悉达多却又不是\"时选择沉默，她也在这最想说话的时刻失去了言语。两个人用同样的方式完成了最后的交流：不说。",
-      "emitted_at_source_span_id": "src:c1:p461@0-p465@143",
-      "primary_source_ref": {
-        "source_span_id": "src:c1:p465@63-p465@87",
-        "source_span": {
-          "start_cursor": {
-            "chapter_id": 1,
-            "chapter_ref": "Full Content",
-            "paragraph_index": 465,
-            "char_offset": 63
-          },
-          "end_cursor": {
-            "chapter_id": 1,
-            "chapter_ref": "Full Content",
-            "paragraph_index": 465,
-            "char_offset": 87
-          }
-        },
-        "quote": "她想把这告诉他，可舌头却不听使唤。她默默望着他。",
-        "role": "reaction_anchor",
-        "resolution": {
-          "status": "matched",
-          "method": "exact_text",
-          "match_count": 1
-        }
-      },
-      "source_quote": "她想把这告诉他，可舌头却不听使唤。她默默望着他。",
-      "projection_role": "visible_trace",
-      "support_status": "visible_trace",
-      "visible_trace_support": true,
-      "current_support": false,
-      "projection_warning": "visible_trace_not_semantic_memory"
-    },
-    {
-      "ref_id": "reaction:rx:Full_Content:src:c1:p467@0-p467@110:highlight:186",
-      "reaction_id": "rx:Full_Content:src:c1:p467@0-p467@110:highlight:186",
-      "type": "highlight",
-      "thought": "时间拟人化：不是他在回忆时间，而是时间在触摸他、簇拥他——一种被动的、被命运浸润的感受。这与前面\"不语\"和\"同样好\"的情感重量形成反差，这里是更宽广、更沉默的承接。",
-      "emitted_at_source_span_id": "src:c1:p467@0-p467@110",
-      "primary_source_ref": {
-        "source_span_id": "src:c1:p467@60-p467@87",
-        "source_span": {
-          "start_cursor": {
-            "chapter_id": 1,
-            "chapter_ref": "Full Content",
-            "paragraph_index": 467,
-            "char_offset": 60
-          },
-          "end_cursor": {
-            "chapter_id": 1,
-            "chapter_ref": "Full Content",
-            "paragraph_index": 467,
-            "char_offset": 87
-          }
-        },
-        "quote": "他倾听河水奔涌，沉浸在往事中，被一生的时光触摸，簇拥。",
-        "role": "reaction_anchor",
-        "resolution": {
-          "status": "matched",
-          "method": "exact_text",
-          "match_count": 1
-        }
-      },
-      "source_quote": "他倾听河水奔涌，沉浸在往事中，被一生的时光触摸，簇拥。",
-      "projection_role": "visible_trace",
-      "support_status": "visible_trace",
-      "visible_trace_support": true,
-      "current_support": false,
-      "projection_warning": "visible_trace_not_semantic_memory"
-    }
-  ]
-}
-```
-
-#### Concept Digest
+#### Probe-time snapshot field: concept_digest
 
 `concept_digest`:
 
@@ -8490,7 +7426,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
 ]
 ```
 
-#### Thread Digest
+#### Probe-time snapshot field: thread_digest
 
 `thread_digest`:
 
@@ -8693,7 +7629,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
 ]
 ```
 
-#### Reflective Digest
+#### Probe-time snapshot field: reflective_digest
 
 `reflective_digest`:
 
@@ -8705,7 +7641,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
 }
 ```
 
-#### SourceRef Digest
+#### Probe-time snapshot field: source_ref_digest
 
 `source_ref_digest`:
 
@@ -8938,7 +7874,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
    s2419 / p497: 你不是我父亲，哪怕你做过我母亲十次的姘夫！
 ```
 
-#### Active Attention
+#### Probe-time snapshot field: active_attention_digest
 
 `active_attention_digest`:
 
@@ -9429,290 +8365,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
 }
 ```
 
-#### Active Focus
-
-`active_focus_digest`:
-
-```json
-{
-  "active_items": [
-    {
-      "ref_id": "active_attention:govinda_shadow_devotion",
-      "item_id": "govinda_shadow_devotion",
-      "attention_tags": [
-        "focus",
-        "motif"
-      ],
-      "statement": "乔文达皈依佛陀、加入僧团，走的是集体依附之路；悉达多此刻用宗教故事换取理发伙计的信任、用刮胡理发敷油沐浴完成自我改造，走的是主动个体化之路。两条路的对照正在成形。",
-      "status": "active",
-      "source_refs": [
-        {
-          "source_span_id": "src:c1:p7@230-p7@258",
-          "source_span": {
-            "start_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 7,
-              "char_offset": 230
-            },
-            "end_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 7,
-              "char_offset": 258
-            }
-          },
-          "quote": "他仍要做他的朋友，他的随从，他的仆人，他的侍卫，他的影子",
-          "role": "support",
-          "resolution": {
-            "status": "matched",
-            "method": "exact_text",
-            "match_count": 1
-          }
-        },
-        {
-          "source_span_id": "src:c1:p210@0-p214@189",
-          "source_span": {
-            "start_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 210,
-              "char_offset": 0
-            },
-            "end_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 214,
-              "char_offset": 189
-            }
-          },
-          "quote": "为了这个目标，悉达多踏遍城邑，走街串巷……他让那位伙计为他刮了胡须，剪了头发并敷了上好的头油。",
-          "role": "support",
-          "resolution": {
-            "status": "fallback_unit_span",
-            "method": "quote_not_found",
-            "match_count": 0
-          }
-        }
-      ],
-      "linked_concept_keys": [],
-      "linked_thread_keys": [],
-      "projection_role": "current_support",
-      "support_status": "source_backed",
-      "current_support": true,
-      "lineage_only": false,
-      "projection_warning": ""
-    },
-    {
-      "ref_id": "active_attention:devotion_structure_this_unit",
-      "item_id": "devotion_structure_this_unit",
-      "attention_tags": [
-        "focus",
-        "interpretation"
-      ],
-      "statement": "崇拜结构：父亲（期待）、母亲（幸福）、女儿们（爱情涟漪）、乔文达（影子式追随）——四个方向完成对悉达多的仰望",
-      "status": "active",
-      "source_refs": [
-        {
-          "source_span_id": "src:c1:p7@0-p7@10",
-          "source_span": {
-            "start_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 7,
-              "char_offset": 0
-            },
-            "end_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 7,
-              "char_offset": 10
-            }
-          },
-          "quote": "而最爱他的人是乔文达",
-          "role": "support",
-          "resolution": {
-            "status": "matched",
-            "method": "exact_text",
-            "match_count": 1
-          }
-        }
-      ],
-      "linked_concept_keys": [],
-      "linked_thread_keys": [],
-      "projection_role": "current_support",
-      "support_status": "source_backed",
-      "current_support": true,
-      "lineage_only": false,
-      "projection_warning": ""
-    },
-    {
-      "ref_id": "active_attention:inner_void_despite_outer_perfection",
-      "item_id": "inner_void_despite_outer_perfection",
-      "attention_tags": [
-        "focus",
-        "motif"
-      ],
-      "statement": "外部圆满/内部空洞的对照：所有人都爱他、仪式完美执行，但\"无法让自己喜悦\"——这种空虚不是匮乏而是过载：婆罗门教义越多，灵魂越不安",
-      "status": "active",
-      "source_refs": [
-        {
-          "source_span_id": "src:c1:p9@0-p9@26",
-          "source_span": {
-            "start_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 9,
-              "char_offset": 0
-            },
-            "end_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 9,
-              "char_offset": 26
-            }
-          },
-          "quote": "可是他，悉达多，却无法让自己喜悦，无法让自己略有兴致",
-          "role": "support",
-          "resolution": {
-            "status": "matched",
-            "method": "exact_text",
-            "match_count": 1
-          }
-        }
-      ],
-      "linked_concept_keys": [],
-      "linked_thread_keys": [],
-      "projection_role": "current_support",
-      "support_status": "source_backed",
-      "current_support": true,
-      "lineage_only": false,
-      "projection_warning": ""
-    },
-    {
-      "ref_id": "active_attention:spiritual_container_never_full",
-      "item_id": "spiritual_container_never_full",
-      "attention_tags": [
-        "focus",
-        "interpretation"
-      ],
-      "statement": "精神容器的结构性饥饿：婆罗门教义越渊博，灵魂越不安；爱、仪式、知识全部无法盛满这个容器；这是存在性的、结构性的焦渴，而非匮乏性的",
-      "status": "active",
-      "source_refs": [
-        {
-          "source_span_id": "src:c1:p10@107-p10@121",
-          "source_span": {
-            "start_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 10,
-              "char_offset": 107
-            },
-            "end_cursor": {
-              "chapter_id": 1,
-              "chapter_ref": "Full Content",
-              "paragraph_index": 10,
-              "char_offset": 121
-            }
-          },
-          "quote": "他充满渴望的精神容器仍未盛满",
-          "role": "support",
-          "resolution": {
-            "status": "matched",
-            "method": "exact_text",
-            "match_count": 1
-          }
-        }
-      ],
-      "linked_concept_keys": [],
-      "linked_thread_keys": [],
-      "projection_role": "current_support",
-      "support_status": "source_backed",
-      "current_support": true,
-      "lineage_only": false,
-      "projection_warning": ""
-    }
-  ],
-  "recent_reactions": [
-    {
-      "ref_id": "reaction:rx:Full_Content:src:c1:p529@0-p533@115:highlight:209",
-      "reaction_id": "rx:Full_Content:src:c1:p529@0-p533@115:highlight:209",
-      "type": "highlight",
-      "thought": "「不再听到哀，听到笑」——这个并列句揭示了修行的核心：不是学会了某种高级的听法，而是彻底停止了选择。所有的哀与笑同时涌来，而灵魂不再被任何一种占据。统一不是综合，而是不再区分。这个「唵」是取消区别的结果，不是添加进来的东西。",
-      "emitted_at_source_span_id": "src:c1:p529@0-p533@115",
-      "primary_source_ref": {
-        "source_span_id": "src:c1:p529@172-p529@263",
-        "source_span": {
-          "start_cursor": {
-            "chapter_id": 1,
-            "chapter_ref": "Full Content",
-            "paragraph_index": 529,
-            "char_offset": 172
-          },
-          "end_cursor": {
-            "chapter_id": 1,
-            "chapter_ref": "Full Content",
-            "paragraph_index": 529,
-            "char_offset": 263
-          }
-        },
-        "quote": "当他专注于河水咆哮的交响，当他不再听到哀，听到笑，当他的灵魂不再执念于一种声音，自我不再被占据，而是倾听一切，倾听整体和统一时，这伟大的交响，凝成了一个字，这个字是“唵”，意为圆满。",
-        "role": "reaction_anchor",
-        "resolution": {
-          "status": "matched",
-          "method": "exact_text",
-          "match_count": 1
-        }
-      },
-      "source_quote": "当他专注于河水咆哮的交响，当他不再听到哀，听到笑，当他的灵魂不再执念于一种声音，自我不再被占据，而是倾听一切，倾听整体和统一时，这伟大的交响，凝成了一个字，这个字是“唵”，意为圆满。",
-      "projection_role": "visible_trace",
-      "support_status": "visible_trace",
-      "visible_trace_support": true,
-      "current_support": false,
-      "projection_warning": "visible_trace_not_semantic_memory"
-    },
-    {
-      "ref_id": "reaction:rx:Full_Content:src:c1:p529@0-p533@115:highlight:210",
-      "reaction_id": "rx:Full_Content:src:c1:p529@0-p533@115:highlight:210",
-      "type": "highlight",
-      "thought": "瓦酥迪瓦的离开与悉达多的觉醒同时完成。他不是被动的旁观者，而是引导者——引导到无需再引导的那一刻。「做了太久的船夫」呼应了前文船夫作为过渡性角色的定位：河流是通道，不是居所。当悉达多已能在河中听见「唵」，船夫的历史使命便完结了。",
-      "emitted_at_source_span_id": "src:c1:p529@0-p533@115",
-      "primary_source_ref": {
-        "source_span_id": "src:c1:p533@48-p533@97",
-        "source_span": {
-          "start_cursor": {
-            "chapter_id": 1,
-            "chapter_ref": "Full Content",
-            "paragraph_index": 533,
-            "char_offset": 48
-          },
-          "end_cursor": {
-            "chapter_id": 1,
-            "chapter_ref": "Full Content",
-            "paragraph_index": 533,
-            "char_offset": 97
-          }
-        },
-        "quote": "我在等候这一时刻，亲爱的，现在它终于来临。让我走吧，我已等候良久，我已做了太久的船夫。现在已结束。",
-        "role": "reaction_anchor",
-        "resolution": {
-          "status": "matched",
-          "method": "exact_text",
-          "match_count": 1
-        }
-      },
-      "source_quote": "我在等候这一时刻，亲爱的，现在它终于来临。让我走吧，我已等候良久，我已做了太久的船夫。现在已结束。",
-      "projection_role": "visible_trace",
-      "support_status": "visible_trace",
-      "visible_trace_support": true,
-      "current_support": false,
-      "projection_warning": "visible_trace_not_semantic_memory"
-    }
-  ]
-}
-```
-
-#### Concept Digest
+#### Probe-time snapshot field: concept_digest
 
 `concept_digest`:
 
@@ -9841,7 +8494,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
 ]
 ```
 
-#### Thread Digest
+#### Probe-time snapshot field: thread_digest
 
 `thread_digest`:
 
@@ -10044,7 +8697,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
 ]
 ```
 
-#### Reflective Digest
+#### Probe-time snapshot field: reflective_digest
 
 `reflective_digest`:
 
@@ -10056,7 +8709,7 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
 }
 ```
 
-#### SourceRef Digest
+#### Probe-time snapshot field: source_ref_digest
 
 `source_ref_digest`:
 
