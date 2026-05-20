@@ -69,6 +69,34 @@ Include:
 - judge label and short reason
 - runtime context links when relevant
 
+## Book-Window Playback Dossier
+
+Important evals should also provide a reviewer-facing playback dossier when the run is meant to expose product behavior, not only metric outcomes.
+
+The playback dossier answers: what did the reader visibly do while reading this exact source window?
+
+Required shape:
+
+- `Source Window`: link to the dataset-stable source window, including covered chapters, paragraph ids, note-target markers, and probe markers.
+- `Reading Timeline`: list every visible reaction in reading order, with source-span excerpt, reaction text, SourceRef / paragraph-char coordinate, and only the relevant eval annotations.
+- `Probe Memory Checkpoints`: for each Memory Quality probe, show source orientation, capture point, structured probe-time memory state, judge scores, and judge reason.
+- `Scoring Interpretation`: explain how the reaction timeline and probe checkpoints produce the lane scores.
+- `Manual Review Guide`: tell reviewers which raw artifacts to open and which fields to inspect when they disagree with a label or score.
+
+Storage rules:
+
+- Dataset-stable source windows should live near the dataset package, not in a run-specific report directory.
+- Run-specific playback dossiers should live with the human-readable eval report for that run.
+- The playback dossier is not a new metric, not evidence-catalog promotion, and not product-quality proof.
+
+Field display rules:
+
+- Keep reaction entries conditional rather than template-heavy. If a reaction has no Selective Legibility target, say so once; do not emit an empty note block.
+- If a reaction is local-only, say it is local-only; do not emit empty callback/FVI fields.
+- If a reaction overlaps a Selective Legibility note target, include the note-case id, target note text, target source span, label, source-span relation, judge reason, and whether it counted toward recall.
+- If a reaction is a grounded callback, weak callback, or FVI, include prior-link evidence when present, judge reason, and a short reviewer interpretation.
+- Memory state should be structured for reading, not reduced to a tiny abstract summary. Preserve the recorded probe-time active attention, concept digest, thread digest, reflective digest, and SourceRef evidence as much as practical, but re-layout it as readable Markdown rather than raw JSON.
+
 ## Cross-Surface Rules
 
 - Every score or label used as evidence should have at least one explanation path back to a concrete case, probe, or reaction.

@@ -22,6 +22,18 @@ Detailed reviewer dossier:
 - Window pages: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/eval1-full-active-evaluation-post-slice8h-dossier/windows/*.md`
 - The dossier is the probe/case-level audit layer for human review; this main report intentionally stays at aggregate interpretation and navigation level.
 
+Product-facing playback dossier:
+
+- `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/eval1-full-active-evaluation-post-slice8h-playback-dossier/README.md`
+- Window pages: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/eval1-full-active-evaluation-post-slice8h-playback-dossier/windows/*.md`
+- This is the reading-site replay layer: it lists every visible reaction in reading order, attaches each reaction's source-span excerpt, adds Selective Legibility / Callback / FVI annotations only when relevant, and shows the probe-time Memory Quality state before the scoring interpretation.
+
+Dataset-stable source windows:
+
+- `reading-companion-backend/state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260422/source_windows_readable/README.md`
+- Window pages: `reading-companion-backend/state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260422/source_windows_readable/*.md`
+- These are not run outputs. They live beside the active dataset because the full source windows, covered chapters, paragraph ids, note-target markers, and probe markers are stable for this dataset boundary.
+
 Operational index:
 
 - Parent ledger entry: `eval1_full_active_post_slice8h_retry1_20260519`
