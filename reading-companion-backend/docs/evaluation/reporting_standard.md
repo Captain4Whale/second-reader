@@ -96,6 +96,7 @@ Field display rules:
 - If a reaction overlaps a Selective Legibility note target, include the note-case id, target note text, target source span, label, source-span relation, judge reason, and whether it counted toward recall.
 - If a reaction is a grounded callback, weak callback, or FVI, include prior-link evidence when present, judge reason, and a short reviewer interpretation.
 - Memory state should be structured for reading, not reduced to a tiny abstract summary. Preserve the recorded probe-time active attention, concept digest, thread digest, reflective digest, and SourceRef evidence as much as practical, but re-layout it as readable Markdown rather than raw JSON.
+- Do not present `target_sentence_id`, `target sentence`, or `cN-sM` handles by themselves as canonical source coordinates. Label them as orientation-only or legacy/eval locator metadata, and pair them with paragraph-char `SourceRef` / source-span coordinates whenever those are available.
 
 ## Cross-Surface Rules
 

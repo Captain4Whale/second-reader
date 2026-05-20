@@ -188,6 +188,12 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - the accepted unit range read by `Read`
   - shape: `start_cursor`, `end_cursor`
   - ranges are end-exclusive: `[start, end)`
+- `coordinate boundary`
+  - paragraph-offset `SourceCursor` / `SourceSpan` is the authoritative coordinate system for current mainline reading progress
+  - inline paragraph-offset `SourceRef` is the authoritative source-evidence coordinate for current memory, reaction, and probe-facing state
+  - parse-time sentence ids may still appear in compatibility projections, local-buffer sentence fields, detour evidence, semantic probe locators, and reviewer orientation text
+  - seeing `sentence_id`, `target_sentence_id`, or `cN-sM` in an artifact does not mean the current mainline reader is sentence-driven
+  - new mechanism design and reviewer-facing reports should present paragraph-char / source-span coordinates as canonical and label sentence ids as compatibility or orientation metadata
 - `Unit Span Ledger`
   - the append-only runtime fact recording accepted mainline units
   - used for reading-history continuity and resume validation, not merely for debugging

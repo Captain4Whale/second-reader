@@ -2666,3 +2666,29 @@ This new direction is design frozen but not yet implemented as a formal benchmar
 - `docs/current-state.md`
 - `docs/tasks/registry.md`
 - `docs/tasks/registry.json`
+
+## Entry 87
+**ID**: DEC-090
+**Status**: active
+
+**Decision / Clarification**: Preserve DEC-087 as the live coordinate decision, and clarify the remaining sentence-id boundary.
+
+**Period**: May 20, 2026, after the Eval-1 playback/reporting pass exposed `target_sentence_id` / `target sentence` handles prominently enough to risk confusion about whether the current reader had regressed to sentence-driven progress.
+
+**Clarification**: DEC-087 remains correct. Current `attentional_v2` mainline reading progress is source-span-native: the Reading Runner advances through paragraph-offset `SourceCursor` / `SourceSpan`, and current source evidence is expressed through inline paragraph-offset `SourceRef`. Seeing `sentence_id`, `target_sentence_id`, or `cN-sM` in artifacts does not mean the mainline reader is sentence-driven.
+
+**Boundary**: Sentence records still exist because the shared parsed book substrate produces them and several consumers still need stable orientation handles. They may appear in compatibility projections, local-buffer sentence fields, detour evidence, semantic-probe target locators, window reuse checks, and reviewer orientation text. Those sentence ids are compatibility / eval locator metadata, not the authoritative coordinate for new `attentional_v2` mainline design.
+
+**Risk**: Long Span semantic probes and reviewer-facing playback reports can still over-present sentence ids unless they are paired with paragraph-char source coordinates. If a sentence splitter produces an awkward boundary, any downstream task that treats the sentence id as primary can inherit that error. This is especially important for Memory Quality probe placement/reporting and for human review documents that show `target sentence` labels.
+
+**Rule going forward**: New mechanism work and reviewer-facing reports should treat paragraph-char / source-span coordinates as canonical. Sentence ids may remain as orientation or legacy/eval metadata, but reports should label them that way and show the available paragraph-char locator, source span, or `SourceRef` evidence beside them. A future implementation slice may migrate Long Span probe targets or local-buffer state further toward source-span-native coordinates, but that is separate from this fact-maintenance decision.
+
+**Primary evidence**:
+- `docs/history/decision-log.md` DEC-087
+- `docs/backend-reading-mechanisms/attentional_v2.md`
+- `docs/backend-reader-evaluation.md`
+- `reading-companion-backend/docs/evaluation/reporting_standard.md`
+- `reading-companion-backend/src/attentional_v2/source_spans.py`
+- `reading-companion-backend/src/attentional_v2/runner.py`
+- `reading-companion-backend/src/attentional_v2/benchmark_probes.py`
+- `reading-companion-backend/src/attentional_v2/state_ops.py`

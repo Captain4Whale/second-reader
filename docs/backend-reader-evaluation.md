@@ -178,6 +178,7 @@ For the current Memory / Planning / Evaluation implementation guidance chain, se
   - the first question is whether the visible reaction's quoted source span intersects the note case's canonical source span
   - textual similarity, shared words, nearby ideas, or semantic relatedness must not admit a candidate when the source spans do not overlap
   - the active coordinate system is the rendered reading segment substrate (`segment_source_v1`) because that is what mechanisms read during this benchmark
+  - current `attentional_v2` outputs should bridge into this substrate through paragraph-char `SourceRef.source_span` / normalized source-span slices, not through sentence-id proximity
   - original parsed-book sentence ids and note provenance remain audit metadata, not the primary matching coordinate
   - original parsed-book chapter coordinates remain audit metadata through `source_chapter_id` / `source_chapter_ids`; they are not user-visible chapter numbering
 - Exact match should be narrow and automatic:
@@ -248,7 +249,8 @@ For the current Memory / Planning / Evaluation implementation guidance chain, se
     - phase-1 scope is `attentional_v2` only
     - `attentional_v2` windows are freshly read or same-run resumed so probe snapshots exist
     - current snapshots use explicit semantic `probe_targets` from `memory_quality_semantic_probe_plan_20260504.json`; missing targets fail fast instead of falling back to ratio probes
-    - older sentence-target probe manifests and sentence ids are compatibility/eval locator metadata after the paragraph-offset cursor cutover; they are not the current `attentional_v2` mainline reading coordinate
+    - current semantic probe manifests may still name `target_sentence_id` / sentence ordinals as eval locator metadata, even after the paragraph-offset cursor cutover; they are not the current `attentional_v2` mainline reading coordinate
+    - future Long Span reports should pair any sentence id with the available paragraph-char locator, source span, or `SourceRef` evidence so reviewers do not mistake `cN-sM` orientation handles for canonical source coordinates
   - add full-window reaction audit for `Spontaneous Callback` and `False Visible Integration`
     - phase-1 comparison scope is `attentional_v2` vs `iterator_v1`
     - unchanged `iterator_v1` windows may reuse prior completed normalized reading outputs because reaction audit only consumes visible reactions
