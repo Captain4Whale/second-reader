@@ -150,6 +150,7 @@ def load_memory_quality_probe_plan(path: Path) -> dict[str, Any]:
         if not isinstance(targets, list) or len(targets) != 5:
             raise ValueError(f"probe-plan window must contain exactly 5 targets: {segment_id}")
         previous_ordinal = 0
+        previous_source_cursor: tuple[int, int, int] | None = None
         for target in targets:
             if not isinstance(target, dict):
                 raise ValueError(f"invalid probe target in window: {segment_id}")
@@ -159,6 +160,23 @@ def load_memory_quality_probe_plan(path: Path) -> dict[str, Any]:
             previous_ordinal = ordinal
             if not _clean_text(target.get("target_sentence_id")):
                 raise ValueError(f"probe target is missing target_sentence_id for {segment_id}")
+            target_source_cursor = _source_cursor(target.get("target_source_cursor"))
+            target_source_span = _source_span(target.get("target_source_span"))
+            legacy_status = _clean_text(target.get("target_locator_status")) == "legacy_sentence_only"
+            if not target_source_cursor and not target_source_span and not legacy_status:
+                raise ValueError(
+                    "probe target must include source-native coordinates or explicit "
+                    f"legacy fallback status for {segment_id}"
+                )
+            if target_source_cursor:
+                source_key = (
+                    _int(target_source_cursor.get("chapter_id")),
+                    _int(target_source_cursor.get("paragraph_index")),
+                    _int(target_source_cursor.get("char_offset")),
+                )
+                if previous_source_cursor is not None and source_key <= previous_source_cursor:
+                    raise ValueError(f"source-native probe targets must be strictly increasing for {segment_id}")
+                previous_source_cursor = source_key
             if not _clean_text(target.get("why_this_probe_point")):
                 raise ValueError(f"probe target is missing why_this_probe_point for {segment_id}")
             signals = target.get("structural_signals_to_check")
@@ -215,6 +233,62 @@ def _timestamp() -> str:
 
 def _clean_text(value: object) -> str:
     return str(value or "").strip()
+
+
+def _int(value: object, default: int = 0) -> int:
+    try:
+        return int(value if value is not None else default)
+    except (TypeError, ValueError):
+        return default
+
+
+def _source_cursor(value: object) -> dict[str, Any]:
+    if not isinstance(value, dict):
+        return {}
+    if "paragraph_index" not in value or "char_offset" not in value:
+        return {}
+    cursor: dict[str, Any] = {
+        "chapter_id": _int(value.get("chapter_id")),
+        "paragraph_index": max(0, _int(value.get("paragraph_index"))),
+        "char_offset": max(0, _int(value.get("char_offset"))),
+    }
+    chapter_ref = _clean_text(value.get("chapter_ref"))
+    if chapter_ref:
+        cursor["chapter_ref"] = chapter_ref
+    return cursor
+
+
+def _source_span(value: object) -> dict[str, Any]:
+    if not isinstance(value, dict):
+        return {}
+    start = _source_cursor(value.get("start_cursor"))
+    end = _source_cursor(value.get("end_cursor"))
+    if not start or not end:
+        return {}
+    return {"start_cursor": start, "end_cursor": end}
+
+
+def _source_cursor_label(cursor: object) -> str:
+    normalized = _source_cursor(cursor)
+    if not normalized:
+        return ""
+    return (
+        f"c{_int(normalized.get('chapter_id'))}:"
+        f"p{_int(normalized.get('paragraph_index'))}@{_int(normalized.get('char_offset'))}"
+    )
+
+
+def _source_span_label(span: object) -> str:
+    normalized = _source_span(span)
+    if not normalized:
+        return ""
+    start = normalized["start_cursor"]
+    end = normalized["end_cursor"]
+    return (
+        f"src:c{_int(start.get('chapter_id') or end.get('chapter_id'))}:"
+        f"p{_int(start.get('paragraph_index'))}@{_int(start.get('char_offset'))}-"
+        f"p{_int(end.get('paragraph_index'))}@{_int(end.get('char_offset'))}"
+    )
 
 
 def _json_dump(path: Path, payload: object) -> None:
@@ -763,6 +837,37 @@ def build_read_so_far_source_text(book_document: dict[str, Any], capture_sentenc
             paragraphs.append(paragraph_text)
         if capture_sentence:
             break
+    return "\n\n".join(part for part in paragraphs if part)
+
+
+def build_read_so_far_source_text_to_cursor(book_document: dict[str, Any], capture_source_cursor: object) -> str:
+    cursor = _source_cursor(capture_source_cursor)
+    if not cursor:
+        return ""
+    target_chapter_id = _int(cursor.get("chapter_id"))
+    target_paragraph_index = _int(cursor.get("paragraph_index"))
+    target_char_offset = _int(cursor.get("char_offset"))
+    paragraphs: list[str] = []
+    for raw_chapter in book_document.get("chapters", []):
+        if not isinstance(raw_chapter, dict):
+            continue
+        chapter_id = _int(raw_chapter.get("id"))
+        if chapter_id != target_chapter_id:
+            continue
+        for paragraph in raw_chapter.get("paragraphs", []):
+            if not isinstance(paragraph, dict):
+                continue
+            paragraph_index = _int(paragraph.get("paragraph_index"))
+            paragraph_text = str(paragraph.get("text") or "")
+            if not paragraph_text:
+                continue
+            if paragraph_index < target_paragraph_index:
+                paragraphs.append(paragraph_text)
+                continue
+            if paragraph_index == target_paragraph_index:
+                paragraphs.append(paragraph_text[:target_char_offset].rstrip() or paragraph_text)
+                return "\n\n".join(part for part in paragraphs if part)
+        break
     return "\n\n".join(part for part in paragraphs if part)
 
 
@@ -1425,6 +1530,9 @@ def _append_examples(lines: list[str], examples: list[dict[str, Any]]) -> None:
 
 
 def _probe_position_label(row: dict[str, Any]) -> str:
+    source_label = _source_cursor_label(row.get("target_source_cursor"))
+    if source_label:
+        return source_label
     rough = _clean_text(row.get("rough_position_target"))
     if rough:
         return rough
@@ -1470,9 +1578,15 @@ def _render_report(
         )
         probe_rows = [row for row in memory_quality_results if row["segment_id"] == window_summary["segment_id"]]
         for row in probe_rows:
+            source_span = _clean_text(row.get("target_source_span_id")) or _source_span_label(row.get("target_source_span"))
+            sentence_orientation = _clean_text(row.get("capture_sentence_id"))
             lines.append(
                 f"- Probe `{row['probe_index']}` (`{_probe_position_label(row)}`): overall `{float(row['overall_memory_quality_score']):.3f}`. {row['reason']}"
             )
+            if source_span:
+                lines.append(f"  - Source coordinate: `{source_span}`")
+            if sentence_orientation:
+                lines.append(f"  - Legacy sentence orientation metadata: `{sentence_orientation}`")
             if _clean_text(row.get("why_this_probe_point")):
                 lines.append(f"  - Probe placement: {_clean_text(row.get('why_this_probe_point'))}")
             review_focus = row.get("probe_review_focus")
@@ -1794,6 +1908,12 @@ def run_long_span_vnext(
                 if not isinstance(snapshot, dict):
                     continue
                 capture_sentence_id = _clean_text(snapshot.get("capture_sentence_id"))
+                capture_source_cursor = _source_cursor(snapshot.get("capture_source_cursor"))
+                read_so_far_source_text = (
+                    build_read_so_far_source_text_to_cursor(book_document, capture_source_cursor)
+                    if capture_source_cursor
+                    else build_read_so_far_source_text(book_document, capture_sentence_id)
+                )
                 probe_payload = {
                     "probe_index": int(snapshot.get("probe_index", 0) or 0),
                     "estimated_ratio": float(snapshot.get("estimated_ratio", 0.0) or 0.0),
@@ -1801,7 +1921,7 @@ def run_long_span_vnext(
                     "boundary_kind": _clean_text(snapshot.get("boundary_kind")),
                     "why_this_probe_point": _clean_text(snapshot.get("why_this_probe_point")),
                     "structural_signals_to_check": snapshot.get("structural_signals_to_check", []),
-                    "read_so_far_source_text": build_read_so_far_source_text(book_document, capture_sentence_id),
+                    "read_so_far_source_text": read_so_far_source_text,
                     "memory_snapshot": snapshot,
                 }
                 probe_review_focus = memory_quality_probe_review_focus(
@@ -1832,7 +1952,14 @@ def run_long_span_vnext(
             "boundary_kind": _clean_text(snapshot.get("boundary_kind")),
             "why_this_probe_point": _clean_text(snapshot.get("why_this_probe_point")),
             "structural_signals_to_check": snapshot.get("structural_signals_to_check", []),
+            "target_locator_status": _clean_text(snapshot.get("target_locator_status")),
+            "target_source_cursor": _source_cursor(snapshot.get("target_source_cursor")),
+            "target_source_span": _source_span(snapshot.get("target_source_span")),
+            "target_source_span_id": _clean_text(snapshot.get("target_source_span_id")),
             "capture_sentence_id": capture_sentence_id,
+            "capture_source_cursor": _source_cursor(snapshot.get("capture_source_cursor")),
+            "capture_source_span": _source_span(snapshot.get("capture_source_span")),
+            "capture_source_span_id": _clean_text(snapshot.get("capture_source_span_id")),
             "probe_review_focus": probe_payload.get("probe_review_focus"),
             **judgment,
         }

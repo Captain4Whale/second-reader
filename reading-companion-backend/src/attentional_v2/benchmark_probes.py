@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Mapping
 from .schemas import (
     ConceptRegistryState,
     LocalBufferState,
@@ -17,7 +18,7 @@ from .state_projection import build_carry_forward_context
 from .storage import load_json, memory_quality_probe_export_file, save_json
 
 
-MEMORY_QUALITY_PROBE_EXPORT_SCHEMA_VERSION = 1
+MEMORY_QUALITY_PROBE_EXPORT_SCHEMA_VERSION = 2
 
 
 def _timestamp() -> str:
@@ -30,6 +31,71 @@ def _clean_text(value: object) -> str:
     """Return one normalized string."""
 
     return str(value or "").strip()
+
+
+def _int(value: object, default: int = 0) -> int:
+    try:
+        return int(value if value is not None else default)
+    except (TypeError, ValueError):
+        return default
+
+
+def _source_cursor(value: object) -> dict[str, object]:
+    if not isinstance(value, Mapping):
+        return {}
+    if "paragraph_index" not in value or "char_offset" not in value:
+        return {}
+    cursor: dict[str, object] = {
+        "chapter_id": _int(value.get("chapter_id")),
+        "paragraph_index": max(0, _int(value.get("paragraph_index"))),
+        "char_offset": max(0, _int(value.get("char_offset"))),
+    }
+    chapter_ref = _clean_text(value.get("chapter_ref"))
+    if chapter_ref:
+        cursor["chapter_ref"] = chapter_ref
+    return cursor
+
+
+def _source_span(value: object) -> dict[str, object]:
+    if not isinstance(value, Mapping):
+        return {}
+    start = _source_cursor(value.get("start_cursor"))
+    end = _source_cursor(value.get("end_cursor"))
+    if not start or not end:
+        return {}
+    return {"start_cursor": start, "end_cursor": end}
+
+
+def _span_end_cursor(span: Mapping[str, object] | None) -> dict[str, object]:
+    if not isinstance(span, Mapping):
+        return {}
+    return _source_cursor(span.get("end_cursor"))
+
+
+def _cursor_key(cursor: Mapping[str, object]) -> tuple[int, int, int]:
+    return (
+        _int(cursor.get("chapter_id")),
+        _int(cursor.get("paragraph_index")),
+        _int(cursor.get("char_offset")),
+    )
+
+
+def _cursor_at_or_after(actual: Mapping[str, object], target: Mapping[str, object]) -> bool:
+    return _cursor_key(actual) >= _cursor_key(target)
+
+
+def _source_span_id(span: Mapping[str, object] | None) -> str:
+    if not isinstance(span, Mapping):
+        return ""
+    start = _source_cursor(span.get("start_cursor"))
+    end = _source_cursor(span.get("end_cursor"))
+    if not start or not end:
+        return ""
+    return (
+        f"src:c{_int(start.get('chapter_id') or end.get('chapter_id'))}:"
+        f"p{_int(start.get('paragraph_index'))}@{_int(start.get('char_offset'))}-"
+        f"p{_int(end.get('paragraph_index'))}@{_int(end.get('char_offset'))}"
+    )
 
 
 def memory_quality_probe_settings(mechanism_config: dict[str, object] | None) -> dict[str, object] | None:
@@ -108,29 +174,49 @@ def _normalize_probe_targets(
     sentence_ordinals = {sentence_id: index + 1 for index, sentence_id in enumerate(ordered_sentence_ids)}
     targets: list[dict[str, object]] = []
     previous_ordinal = 0
+    previous_source_key: tuple[int, int, int] | None = None
     for index, raw_target in enumerate(configured_targets, start=1):
         if not isinstance(raw_target, dict):
             raise ValueError(f"invalid memory-quality probe target at index {index}: expected object")
+        target = dict(raw_target)
+        target_source_span = _source_span(target.get("target_source_span"))
+        target_source_cursor = _source_cursor(target.get("target_source_cursor")) or _span_end_cursor(target_source_span)
+        if target_source_cursor:
+            target["target_source_cursor"] = target_source_cursor
+            if target_source_span:
+                target["target_source_span"] = target_source_span
+                target["target_source_span_id"] = _clean_text(target.get("target_source_span_id")) or _source_span_id(
+                    target_source_span
+                )
+            target["target_locator_status"] = "source_native"
+            current_source_key = _cursor_key(target_source_cursor)
+            if previous_source_key is not None and current_source_key <= previous_source_key:
+                raise ValueError("source-native memory-quality probe targets must be in strictly increasing source order")
+            previous_source_key = current_source_key
         target_sentence_id = _clean_text(raw_target.get("target_sentence_id"))
         if not target_sentence_id:
             raw_ordinal = raw_target.get("target_sentence_ordinal")
-            try:
-                target_ordinal = int(raw_ordinal)
-            except (TypeError, ValueError) as exc:
-                raise ValueError(f"probe target {index} is missing target_sentence_id") from exc
-            if target_ordinal < 1 or target_ordinal > total_sentences:
-                raise ValueError(f"probe target {index} ordinal is outside the window: {target_ordinal}")
-            target_sentence_id = ordered_sentence_ids[target_ordinal - 1]
-        if target_sentence_id not in sentence_ordinals:
-            raise ValueError(f"probe target {index} sentence is outside the window: {target_sentence_id}")
-        target_ordinal = sentence_ordinals[target_sentence_id]
-        if target_ordinal <= previous_ordinal:
-            raise ValueError("memory-quality probe targets must be in strictly increasing sentence order")
-        previous_ordinal = target_ordinal
-        target = dict(raw_target)
+            target_ordinal = _int(raw_ordinal)
+            if target_ordinal > 0:
+                if target_ordinal > total_sentences:
+                    raise ValueError(f"probe target {index} ordinal is outside the window: {target_ordinal}")
+                target_sentence_id = ordered_sentence_ids[target_ordinal - 1]
+            elif not target_source_cursor:
+                raise ValueError(f"probe target {index} is missing target_sentence_id")
+        if target_sentence_id:
+            if target_sentence_id not in sentence_ordinals:
+                raise ValueError(f"probe target {index} sentence is outside the window: {target_sentence_id}")
+            target_ordinal = sentence_ordinals[target_sentence_id]
+            if target_ordinal <= previous_ordinal:
+                raise ValueError("memory-quality probe targets must be in strictly increasing sentence order")
+            previous_ordinal = target_ordinal
+        else:
+            target_ordinal = _int(raw_target.get("target_sentence_ordinal"))
         target["probe_index"] = int(target.get("probe_index") or index)
         target["target_sentence_id"] = target_sentence_id
         target["target_sentence_ordinal"] = target_ordinal
+        if not target_source_cursor:
+            target["target_locator_status"] = _clean_text(target.get("target_locator_status")) or "legacy_sentence_only"
         targets.append(target)
     return targets
 
@@ -160,6 +246,10 @@ def _recent_reading_orientation(
     ][-2:]
     return {
         "chapter_ref": _clean_text(local_continuity.get("chapter_ref")),
+        "current_source_span_id": _clean_text(local_continuity.get("current_source_span_id")),
+        "current_source_span": dict(local_continuity.get("current_source_span", {}))
+        if isinstance(local_continuity.get("current_source_span"), Mapping)
+        else {},
         "current_sentence_id": _clean_text(local_continuity.get("current_sentence_id")),
         "recent_sentence_ids": recent_sentence_ids,
         "recent_meaning_units": recent_meaning_units,
@@ -173,6 +263,8 @@ def _build_probe_snapshot(
     window_start_sentence_id: str,
     actual_sentence_id: str,
     actual_sentence_ordinal: int,
+    actual_source_span: dict[str, object],
+    actual_source_span_id: str,
     chapter_ref: str,
     local_buffer: LocalBufferState,
     local_continuity: LocalContinuityState,
@@ -194,6 +286,10 @@ def _build_probe_snapshot(
         reflective_frames=reflective_frames,
         reaction_records=reaction_records,
     )
+    target_source_span = _source_span(probe_target.get("target_source_span"))
+    target_source_cursor = _source_cursor(probe_target.get("target_source_cursor")) or _span_end_cursor(target_source_span)
+    capture_source_span = _source_span(actual_source_span)
+    capture_source_cursor = _span_end_cursor(capture_source_span)
     return {
         "probe_index": int(probe_target.get("probe_index", 0) or 0),
         "estimated_ratio": float(probe_target.get("estimated_ratio", 0.0) or 0.0),
@@ -209,13 +305,24 @@ def _build_probe_snapshot(
         else [],
         "target_sentence_ordinal": int(probe_target.get("target_sentence_ordinal", 0) or 0),
         "target_sentence_id": _clean_text(probe_target.get("target_sentence_id")),
+        "target_locator_status": _clean_text(probe_target.get("target_locator_status")),
+        "target_source_cursor": target_source_cursor,
+        "target_source_span": target_source_span,
+        "target_source_span_id": _clean_text(probe_target.get("target_source_span_id")) or _source_span_id(
+            target_source_span
+        ),
         "captured_at": _timestamp(),
         "capture_sentence_ordinal": actual_sentence_ordinal,
         "capture_sentence_id": actual_sentence_id,
+        "capture_source_cursor": capture_source_cursor,
+        "capture_source_span": capture_source_span,
+        "capture_source_span_id": _clean_text(actual_source_span_id) or _source_span_id(capture_source_span),
         "coverage": {
             "start_sentence_id": window_start_sentence_id,
             "end_sentence_id": actual_sentence_id,
             "sentence_count": actual_sentence_ordinal,
+            "end_source_cursor": capture_source_cursor,
+            "end_source_span_id": _clean_text(actual_source_span_id) or _source_span_id(capture_source_span),
         },
         "continuity_context": dict(carry_forward_context.get("session_continuity_capsule", {}))
         if isinstance(carry_forward_context.get("session_continuity_capsule"), dict)
@@ -265,6 +372,8 @@ def persist_due_memory_quality_probe_snapshots(
     thread_trace: ThreadTraceState,
     reflective_frames: ReflectiveFramesState,
     reaction_records: ReactionRecordsState,
+    actual_source_span: dict[str, object] | None = None,
+    actual_source_span_id: str = "",
 ) -> list[dict[str, object]]:
     """Persist any probe snapshots whose threshold is crossed by this completed read step."""
 
@@ -305,6 +414,8 @@ def persist_due_memory_quality_probe_snapshots(
         if isinstance(item, dict) and int(item.get("probe_index", 0) or 0) > 0
     }
     actual_sentence_ordinal = cleaned_sentence_ids.index(cleaned_actual_sentence_id) + 1
+    cleaned_actual_source_span = _source_span(actual_source_span)
+    actual_source_cursor = _span_end_cursor(cleaned_actual_source_span)
     window_start_sentence_id = cleaned_sentence_ids[0]
     new_snapshots: list[dict[str, object]] = []
     for probe_target in payload.get("probe_targets", []):
@@ -312,15 +423,24 @@ def persist_due_memory_quality_probe_snapshots(
             continue
         probe_index = int(probe_target.get("probe_index", 0) or 0)
         target_ordinal = int(probe_target.get("target_sentence_ordinal", 0) or 0)
-        if probe_index <= 0 or target_ordinal <= 0 or probe_index in existing_indexes:
+        target_source_cursor = _source_cursor(probe_target.get("target_source_cursor"))
+        if probe_index <= 0 or probe_index in existing_indexes:
             continue
-        if actual_sentence_ordinal < target_ordinal:
+        if target_source_cursor:
+            if not actual_source_cursor or not _cursor_at_or_after(actual_source_cursor, target_source_cursor):
+                continue
+        elif target_ordinal > 0:
+            if actual_sentence_ordinal < target_ordinal:
+                continue
+        else:
             continue
         snapshot = _build_probe_snapshot(
             probe_target=probe_target,
             window_start_sentence_id=window_start_sentence_id,
             actual_sentence_id=cleaned_actual_sentence_id,
             actual_sentence_ordinal=actual_sentence_ordinal,
+            actual_source_span=cleaned_actual_source_span,
+            actual_source_span_id=_clean_text(actual_source_span_id),
             chapter_ref=chapter_ref,
             local_buffer=local_buffer,
             local_continuity=local_continuity,

@@ -2692,6 +2692,8 @@ def _settle_next_unit(
         thread_trace=thread_trace,
         reflective_frames=reflective_frames,
         reaction_records=reaction_records,
+        actual_source_span=source_span if is_source_mainline else {},
+        actual_source_span_id=source_id if is_source_mainline else "",
     )
     active_refs = {
         "reaction_id": _clean_text(emitted_reactions[-1].get("reaction_id")) if emitted_reactions else "",

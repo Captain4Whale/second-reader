@@ -260,6 +260,7 @@ For the current Memory / Planning / Evaluation implementation guidance chain, se
     - landed benchmark-only V2 probe export:
       - `reading-companion-backend/src/attentional_v2/benchmark_probes.py`
       - runtime capture is invoked through the `attentional_v2` observability layer, so `benchmark_probes.py` remains the Memory Quality export implementation while Reading Runner does not own probe manifest or snapshot-persistence details
+      - Memory Quality probe export schema v2 records source-native target/capture coordinates (`target_source_cursor`, `target_source_span`, `capture_source_cursor`, `capture_source_span`) and treats sentence ids as orientation metadata / legacy fallback
       - `unit_span_ledger.jsonl`, `read_audit.jsonl`, and `settlement_audit.jsonl` are runtime evidence used to diagnose whether a run covered and settled source spans correctly; they are not new benchmark targets or score inputs by themselves
       - new `attentional_v2` probe/context snapshots consume inline `source_refs[]` from memory and reaction state; `anchor_bank_digest` is historical and should not be used for new Memory Quality evidence
 - The first Phase-1 diagnostic run has been corrected in two steps:

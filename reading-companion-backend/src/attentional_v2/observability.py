@@ -678,6 +678,8 @@ def maybe_capture_memory_quality_probe(
     thread_trace: ThreadTraceState,
     reflective_frames: ReflectiveFramesState,
     reaction_records: ReactionRecordsState,
+    actual_source_span: dict[str, object] | None = None,
+    actual_source_span_id: str = "",
 ) -> list[dict[str, object]]:
     """Capture benchmark probe snapshots through the runtime observability boundary."""
 
@@ -696,6 +698,8 @@ def maybe_capture_memory_quality_probe(
         thread_trace=thread_trace,
         reflective_frames=reflective_frames,
         reaction_records=reaction_records,
+        actual_source_span=actual_source_span,
+        actual_source_span_id=actual_source_span_id,
     )
 
 

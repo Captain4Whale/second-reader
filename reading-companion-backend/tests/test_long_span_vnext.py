@@ -64,6 +64,45 @@ def _semantic_probe_settings() -> dict[str, object]:
     }
 
 
+def _source_native_probe_settings() -> dict[str, object]:
+    settings = _semantic_probe_settings()
+    settings["probe_targets"] = [
+        {
+            "probe_index": 1,
+            "target_sentence_id": "c1-s4",
+            "target_sentence_ordinal": 4,
+            "rough_position_target": "source-native probe",
+            "estimated_ratio": 0.8,
+            "boundary_kind": "test boundary",
+            "why_this_probe_point": "A source-native semantic boundary in the fixture.",
+            "structural_signals_to_check": ["fixture source-native structure"],
+            "target_locator_status": "source_native",
+            "target_source_cursor": {
+                "chapter_id": 1,
+                "chapter_ref": "Chapter 1",
+                "paragraph_index": 2,
+                "char_offset": 6,
+            },
+            "target_source_span": {
+                "start_cursor": {
+                    "chapter_id": 1,
+                    "chapter_ref": "Chapter 1",
+                    "paragraph_index": 2,
+                    "char_offset": 0,
+                },
+                "end_cursor": {
+                    "chapter_id": 1,
+                    "chapter_ref": "Chapter 1",
+                    "paragraph_index": 2,
+                    "char_offset": 6,
+                },
+            },
+            "target_source_span_id": "src:c1:p2@0-p2@6",
+        }
+    ]
+    return settings
+
+
 def _window_b() -> runner.ReadingWindow:
     return runner.ReadingWindow(
         segment_id="segment_b",
@@ -235,6 +274,103 @@ def test_persist_due_memory_quality_probe_snapshots_emits_once_per_semantic_targ
     )
     assert len(final) == 1
     assert is_memory_quality_probe_export_complete(output_dir)
+
+
+def test_source_native_memory_quality_probe_fires_by_source_cursor(tmp_path: Path) -> None:
+    output_dir = tmp_path / "output"
+    initialize_artifact_tree(output_dir)
+
+    local_buffer = build_empty_local_buffer()
+    local_continuity = build_empty_local_continuity()
+    local_continuity["chapter_ref"] = "Chapter 1"
+    local_continuity["current_source_span_id"] = "src:c1:p2@6-p2@13"
+    local_continuity["current_source_span"] = {
+        "start_cursor": {"chapter_id": 1, "chapter_ref": "Chapter 1", "paragraph_index": 2, "char_offset": 6},
+        "end_cursor": {"chapter_id": 1, "chapter_ref": "Chapter 1", "paragraph_index": 2, "char_offset": 13},
+    }
+
+    captured = persist_due_memory_quality_probe_snapshots(
+        output_dir=output_dir,
+        settings=_source_native_probe_settings(),
+        ordered_sentence_ids=["c1-s1", "c1-s2", "c1-s3", "c1-s4", "c1-s5"],
+        actual_sentence_id="c1-s2",
+        chapter_ref="Chapter 1",
+        local_buffer=local_buffer,
+        local_continuity=local_continuity,
+        active_attention=build_empty_active_attention(),
+        concept_registry=build_empty_concept_registry(),
+        thread_trace=build_empty_thread_trace(),
+        reflective_frames=build_empty_reflective_frames(),
+        reaction_records=build_empty_reaction_records(),
+        actual_source_span={
+            "start_cursor": {"chapter_id": 1, "chapter_ref": "Chapter 1", "paragraph_index": 2, "char_offset": 6},
+            "end_cursor": {"chapter_id": 1, "chapter_ref": "Chapter 1", "paragraph_index": 2, "char_offset": 13},
+        },
+        actual_source_span_id="src:c1:p2@6-p2@13",
+    )
+
+    assert len(captured) == 1
+    snapshot = captured[0]
+    assert snapshot["target_locator_status"] == "source_native"
+    assert snapshot["target_source_cursor"] == {
+        "chapter_id": 1,
+        "chapter_ref": "Chapter 1",
+        "paragraph_index": 2,
+        "char_offset": 6,
+    }
+    assert snapshot["capture_source_cursor"] == {
+        "chapter_id": 1,
+        "chapter_ref": "Chapter 1",
+        "paragraph_index": 2,
+        "char_offset": 13,
+    }
+    assert snapshot["target_source_span_id"] == "src:c1:p2@0-p2@6"
+    assert snapshot["capture_source_span_id"] == "src:c1:p2@6-p2@13"
+    assert snapshot["recent_reading_orientation"]["current_source_span_id"] == "src:c1:p2@6-p2@13"
+
+
+def test_source_native_memory_quality_probe_does_not_fall_back_to_sentence_threshold(tmp_path: Path) -> None:
+    output_dir = tmp_path / "output"
+    initialize_artifact_tree(output_dir)
+
+    captured = persist_due_memory_quality_probe_snapshots(
+        output_dir=output_dir,
+        settings=_source_native_probe_settings(),
+        ordered_sentence_ids=["c1-s1", "c1-s2", "c1-s3", "c1-s4", "c1-s5"],
+        actual_sentence_id="c1-s4",
+        chapter_ref="Chapter 1",
+        local_buffer=build_empty_local_buffer(),
+        local_continuity=build_empty_local_continuity(),
+        active_attention=build_empty_active_attention(),
+        concept_registry=build_empty_concept_registry(),
+        thread_trace=build_empty_thread_trace(),
+        reflective_frames=build_empty_reflective_frames(),
+        reaction_records=build_empty_reaction_records(),
+    )
+
+    assert captured == []
+    assert not is_memory_quality_probe_export_complete(output_dir)
+
+
+def test_build_read_so_far_source_text_uses_source_cursor_offsets() -> None:
+    book_document = {
+        "chapters": [
+            {
+                "id": 1,
+                "paragraphs": [
+                    {"paragraph_index": 1, "text": "Alpha."},
+                    {"paragraph_index": 2, "text": "  Beta with leading spaces."},
+                ],
+            }
+        ]
+    }
+
+    text = runner.build_read_so_far_source_text_to_cursor(
+        book_document,
+        {"chapter_id": 1, "paragraph_index": 2, "char_offset": 6},
+    )
+
+    assert text == "Alpha.\n\n  Beta"
 
 
 def test_memory_quality_probe_observability_hook_is_disabled_by_default(tmp_path: Path) -> None:
@@ -413,10 +549,23 @@ def test_default_memory_quality_probe_plan_covers_five_windows() -> None:
     assert plan["selection_method"] == runner.PROBE_SELECTION_METHOD
     assert len(plan["windows"]) == 5
     assert all(len(window["probe_targets"]) == 5 for window in plan["windows"])
+    assert all(
+        target.get("target_locator_status") == "source_native"
+        and target.get("target_source_cursor")
+        and target.get("target_source_span")
+        for window in plan["windows"]
+        for target in window["probe_targets"]
+    )
     huochu = next(
         window for window in plan["windows"] if window["segment_id"] == "huochu_shengming_de_yiyi_private_zh__segment_1"
     )
     assert huochu["probe_targets"][0]["target_sentence_id"] == "c1-s261"
+    assert huochu["probe_targets"][0]["target_source_cursor"] == {
+        "chapter_id": 1,
+        "chapter_ref": "Full Content",
+        "paragraph_index": 51,
+        "char_offset": 260,
+    }
     assert "三阶段" in " ".join(huochu["probe_targets"][0]["structural_signals_to_check"])
 
 
@@ -450,6 +599,14 @@ def test_memory_quality_report_surfaces_probe_review_focus() -> None:
                 "segment_id": "huochu_shengming_de_yiyi_private_zh__segment_1",
                 "probe_index": 1,
                 "threshold_ratio": 0.2,
+                "target_source_cursor": {
+                    "chapter_id": 1,
+                    "chapter_ref": "Full Content",
+                    "paragraph_index": 51,
+                    "char_offset": 260,
+                },
+                "target_source_span_id": "src:c1:p51@242-p51@260",
+                "capture_sentence_id": "c1-s261",
                 "overall_memory_quality_score": 4.0,
                 "reason": "The snapshot retains a structural frame.",
                 "probe_review_focus": focus,
@@ -460,6 +617,8 @@ def test_memory_quality_report_surfaces_probe_review_focus() -> None:
 
     assert "Structural-signal supplement" in report
     assert "Structural signal to check" in report
+    assert "Source coordinate: `src:c1:p51@242-p51@260`" in report
+    assert "Legacy sentence orientation metadata: `c1-s261`" in report
     assert "囚徒精神反应三阶段" in report
 
 
@@ -643,7 +802,50 @@ def test_run_long_span_vnext_writes_separated_memory_and_reaction_outputs(tmp_pa
                     {
                         "probe_index": 1,
                         "threshold_ratio": 0.2,
+                        "target_locator_status": "source_native",
+                        "target_source_cursor": {
+                            "chapter_id": 1,
+                            "chapter_ref": "Chapter 1",
+                            "paragraph_index": 1,
+                            "char_offset": 12,
+                        },
+                        "target_source_span": {
+                            "start_cursor": {
+                                "chapter_id": 1,
+                                "chapter_ref": "Chapter 1",
+                                "paragraph_index": 1,
+                                "char_offset": 7,
+                            },
+                            "end_cursor": {
+                                "chapter_id": 1,
+                                "chapter_ref": "Chapter 1",
+                                "paragraph_index": 1,
+                                "char_offset": 12,
+                            },
+                        },
+                        "target_source_span_id": "src:c1:p1@7-p1@12",
                         "capture_sentence_id": "c1-s2",
+                        "capture_source_cursor": {
+                            "chapter_id": 1,
+                            "chapter_ref": "Chapter 1",
+                            "paragraph_index": 1,
+                            "char_offset": 12,
+                        },
+                        "capture_source_span": {
+                            "start_cursor": {
+                                "chapter_id": 1,
+                                "chapter_ref": "Chapter 1",
+                                "paragraph_index": 1,
+                                "char_offset": 7,
+                            },
+                            "end_cursor": {
+                                "chapter_id": 1,
+                                "chapter_ref": "Chapter 1",
+                                "paragraph_index": 1,
+                                "char_offset": 12,
+                            },
+                        },
+                        "capture_source_span_id": "src:c1:p1@7-p1@12",
                     }
                 ]
             }
@@ -724,6 +926,18 @@ def test_run_long_span_vnext_writes_separated_memory_and_reaction_outputs(tmp_pa
     assert "## Reaction Audit Method" in report
     assert "## Spontaneous Callback" in report
     assert "## False Visible Integration" in report
+    memory_rows = [
+        json.loads(line)
+        for line in (run_root / "summary" / "memory_quality_results.jsonl").read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    ]
+    assert memory_rows[0]["target_source_span_id"] == "src:c1:p1@7-p1@12"
+    assert memory_rows[0]["capture_source_cursor"] == {
+        "chapter_id": 1,
+        "chapter_ref": "Chapter 1",
+        "paragraph_index": 1,
+        "char_offset": 12,
+    }
     rows = [
         json.loads(line)
         for line in (run_root / "summary" / "reaction_audit_results.jsonl").read_text(encoding="utf-8").splitlines()

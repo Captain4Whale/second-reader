@@ -129,6 +129,8 @@ class LocalContinuityState(TypedDict, total=False):
     recent_meaning_units: list[list[str]]
     last_meaning_unit_closed_at_sentence_id: str
     mainline_cursor: SharedRunCursor
+    current_source_span: dict[str, object]
+    current_source_span_id: str
     reading_queue_stage: str
     active_detour_id: str
     active_detour_need: "DetourNeed" | None
