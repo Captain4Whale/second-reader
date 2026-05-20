@@ -3085,18 +3085,6 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
    s271 / p52: 其次指对周围一切丑恶行为的厌恶，甚至仅仅是丑陋的外貌都让他感觉厌恶。
 ```
 
-#### Probe-Time Memory State
-#### Recent Continuity Context
-- `rx:Full_Content:src:c1:p47@0-p47@276:discern:28` / `discern` / 「免除麻烦」这个说法冷酷到了极点，却因此具有一种奇怪的诚实。它不是在美化毒气室，而是揭示了一种极端处境下的功利逻辑：死亡已经被安排好了，你不需要亲自动手。这个逻辑隐含的前提是——自杀念头确实存在，而且确实需要某种出口，只是这个出口已经被外部力量接管了。它同时暗示：真正让人恐惧的不是死亡本身，而是死亡之前的那个等待——毒气室至少结束这个等待。
-  - `src:c1:p47@253-p47@276`; role `reaction_anchor`; resolution `matched`
-    - quote: 不要忘了，毒气室至少可以使他们免除自杀的麻烦。
-- `rx:Full_Content:src:c1:p48@0-p48@323:highlight:29` / `highlight` / "善言具有误导性"——这个判断本身值得注意。在集中营中，善意与误导并不矛盾。传递安慰的人自己没有可靠的判断依据，他的信息来自已被现实否定的预期。这和前文那些"我一直确信"的信念崩解是同一种结构：人在极端环境中失去了辨别真假的能力，连安慰都可能是建立在错误之上的。
-  - `src:c1:p48@241-p48@322`; role `reaction_anchor`; resolution `matched`
-    - quote: 他关于这个M的判断是错误的，他的善言具有误导性。因为一位约60岁的棚屋街区医生犯人曾告诉过我他是如何祈求M博士放过他将被送进毒气室的儿子，可M博士却冷冷地拒绝了。
-- `rx:Full_Content:src:c1:p49@0-p53@154:retrospect:30` / `retrospect` / 这句话是整个粪便段落的重心，却轻描淡写。"强烈抑制"的不只是厌恶感，而是"正常人"这个概念本身在身体层面的被取消。这个抑制不是隐喻，而是字面意义的：你的情感反应系统必须死机才能让你活下来。这与第二阶段"情感进入一种死亡状态"构成因果链——先是被环境强制压制，随后情感自己学会了死。
-  - `src:c1:p53@140-p53@154`; role `reaction_anchor`; resolution `matched`
-    - quote: 人的正常反应受到强烈的抑制。
-
 #### Active Attention
 - `focus-ordinary-prisoners`
   - tags: `focus`
@@ -3267,18 +3255,6 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
    s529 / p108: 一天晚上，我们端着汤碗，精疲力竭地躺在棚屋的地板上休息，一名狱友冲进来让我们跑到集合地看日落。
    s530 / p108: 站在外面，我们欣赏着晚霞，看着不断变换形状和色彩的云朵笼罩着整个天空，云彩一会儿铁红色，一会儿艳红色，与我们荒凉的棚屋形成鲜明对比，泥潭也映照出灿烂的天空。
 ```
-
-#### Probe-Time Memory State
-#### Recent Continuity Context
-- `rx:Full_Content:src:c1:p95@0-p99@176:highlight:61` / `highlight` / "不论真实与否"这几个字至关重要——它坦承了这种明亮的理想化性质，却也正因为坦承而更具力量。不是因为她真的比太阳亮，所以值得坚守；而是无论真假，这种确信本身就是集中营中最后的自由领地。
-  - `src:c1:p99@148-p99@176`; role `reaction_anchor`; resolution `matched`
-    - quote: 不论真实与否，我都坚信她的外貌比冉冉升起的太阳还要明亮。
-- `rx:Full_Content:src:c1:p100@0-p104@134:discern:62` / `discern` / 这里有一个隐含的深刻区分：爱一个人≠爱她的肉体。在极端环境中，「不知妻子是否还活着」这个念头非但没有摧毁他的爱，反而促成了对爱的更本质理解——所爱之人的在场与否、存亡与否，都不是爱的边界；真正重要的是爱以何种方式终止。这意味着爱是一种独立于被爱对象的价值。
-  - `src:c1:p104@71-p104@134`; role `reaction_anchor`; resolution `matched`
-    - quote: 爱一个人可以远远超过爱她的肉体本身。爱在精神和内心方面具有深刻的含义，无论伴侣是否在场，是否健在，爱以什么方式终止是很重要的。
-- `rx:Full_Content:src:c1:p105@0-p109@374:highlight:63` / `highlight` / 鸟的降临不是偶然的文学点缀。"直直地盯着我"——这个"直直"暗示了一种有意识的、带有见证性质的注视。它同时完成了三件事：将内在的精神体验外在化，将"她在身边"这个不可见的确信可见化，并在"看守侮辱我"的同一时刻，引入了一个完全不同的观察者。
-  - `src:c1:p109@287-p109@374`; role `reaction_anchor`; resolution `matched`
-    - quote: 我强烈感觉到她的存在，她陪伴在我身旁，我甚至有伸手触摸她或抓住她的冲动，她就在身边的感觉越来越强烈。就在那一刻，一只鸟飞下来，刚好落在我面前，在我挖壕沟的土堆上直直地盯着我。
 
 #### Active Attention
 - `focus-ordinary-prisoners`
@@ -3451,18 +3427,6 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
    s796 / p149: 在最后关头，出了点技术上的问题，我们不得不再回到集中营。
 ```
 
-#### Probe-Time Memory State
-#### Recent Continuity Context
-- `rx:Full_Content:src:c1:p150@0-p150@280:discern:93` / `discern` / 三个宾语并列：「背包」「牙刷」「女尸」。没有过渡、没有停顿、没有情绪词。搜刮生存物资与发现死亡并列，这意味着在集中营里，发现尸体已经内化为日常搜索行为的一部分，而非需要单独标记的事件。这种平静本身就是一种精神状态的体现——不是麻木，而是已经将「身边有尸体」整合进了正常活动的框架。
-  - `src:c1:p150@255-p150@280`; role `reaction_anchor`; resolution `matched`
-    - quote: 我进去找到了一个背包和一把牙刷，还发现了一具女尸。
-- `rx:Full_Content:src:c1:p151@0-p151@366:highlight:94` / `highlight` / 「自己拿一次主意」——这个表述直接呼应了前文关于犯人「逃避责任」「不敢采取主动行为」的描述。叙说者打破了这个模式，而他打破它的方式是：拒绝行动。这里存在一个悖论结构——在集中营语境下，最大胆的决定往往恰恰是「不做某事」，而非「做某事」。
-  - `src:c1:p151@242-p151@294`; role `reaction_anchor`; resolution `matched`
-    - quote: 突然，我决定自己拿一次主意。我跑出去告诉那个朋友我不跟他跑了。一说出这句话，那种不安的感觉就顿时消失了。
-- `rx:Full_Content:src:c1:p151@0-p151@366:discern:95` / `discern` / 「前所未有的平静」与前文的不安形成对照——前者是拒绝逃跑后即刻获得的，而不是等到结果出现之后。这个平静不是建立在确定性之上的，它是真正的内在状态，而非外部结果的折射。这与「82名犯人」段落中那种建立在错误预期上的行动形成镜像式对比：这里是平静源于决定本身，那里是死亡源于预期落空。
-  - `src:c1:p151@294-p151@323`; role `reaction_anchor`; resolution `matched`
-    - quote: 我不知道接下来会发生什么事，但我内心得到了前所未有的平静。
-
 #### Active Attention
 - `focus-ordinary-prisoners`
   - tags: `focus`
@@ -3634,18 +3598,6 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
    s1085 / p193: 这严重减弱了他们身体的抵抗力，导致许多人死亡。
 ```
 
-#### Probe-Time Memory State
-#### Recent Continuity Context
-- `rx:Full_Content:src:c1:p192@0-p192@160:retrospect:120` / `retrospect` / 这句话是全段最锋利的反讽。声音是对的——战争在某一天结束了；但F没能活到那一天。预言在事实层面成立，在F的生命时间线上彻底失效。这比「预言错了」更残忍，因为它证明F的死亡不是来自预言的欺骗，而是来自时间的不等人。
-  - `src:c1:p192@143-p192@160`; role `reaction_anchor`; resolution `matched`
-    - quote: 虽然他梦里声音所说的最终都应验了。
-- `rx:Full_Content:src:c1:p193@0-p197@106:discern:121` / `discern` / 这句话翻转了主客体关系。通常人问「我活着有什么意义」时，是把生活当作一个有待回应自己的客体。但这里的逻辑是反过来的：生活是主体，它在向你提问，你要回答的不是「我想从生活得到什么」，而是「生活要我做什么」。这个翻转意味着意义的发现不是内省的，而是行动性的。
-  - `src:c1:p195@45-p195@75`; role `reaction_anchor`; resolution `matched`
-    - quote: 我们期望生活给予什么并不重要，重要的是生活对我们有什么期望。
-- `rx:Full_Content:src:c1:p193@0-p197@106:highlight:122` / `highlight` / 这里用「责任」来定义生命本身——不是「活着是美好的」，而是「活着是一种被赋予的任务」。这种表述和加缪的荒谬哲学有相近处，但方向不同：加缪强调荒谬与反抗的并列，这里强调的是「应该完成的任务」这一结构性词汇，意味着某种超越个人偏好的秩序感。
-  - `src:c1:p195@138-p195@174`; role `reaction_anchor`; resolution `matched`
-    - quote: 生命最终意味着承担与接受所有的挑战，完成自己应该完成的任务这一巨大责任。
-
 #### Active Attention
 - `focus-ordinary-prisoners`
   - tags: `focus`
@@ -3816,18 +3768,6 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
    s1293 / p230: 我嘀咕了几句，大概是说不该践踏青苗。
    s1294 / p230: 他生气了，恼怒地瞪了我一眼，吼道：“你甭说啦！
 ```
-
-#### Probe-Time Memory State
-#### Recent Continuity Context
-- `rx:Full_Content:src:c1:p232@0-p236@159:highlight:146` / `highlight` / 这里构成了一个尖锐的翻转：拯救手段在解放后成为伤害来源——因为那个被植入的期待（有人在等你回家）可能从一开始就是假的。心理支持系统的失效不是技术问题，而是它的前提在归来时塌陷了。
-  - `src:c1:p235@0-p235@85`; role `reaction_anchor`; resolution `matched`
-    - quote: 我们在说到给予集中营犯人精神力量的时候，曾经讲过应该给他一个未来生活中值得期待的目标。要提醒他，生活在等着他，亲人在等着他回家。但被解放以后呢？一些犯人发现没有人在等他。
-- `rx:Full_Content:src:c1:p237@0-p238@61:highlight:147` / `highlight` / 「最后的解放」被定义为能够把经历当作噩梦来观看的那一刻——即与那段经验拉开心理距离。这与前面讨论的「适应」和「悬置式好奇」构成呼应：生存需要将现实改写为可承受状态，而解放需要将那段改写本身再拉开一层距离，变成可回顾的对象。
-  - `src:c1:p237@72-p237@109`; role `reaction_anchor`; resolution `matched`
-    - quote: 当他们觉得集中营的全部经历仅仅是一场噩梦而已时，他们最后的解放也就到来了。
-- `rx:Full_Content:src:c1:p237@0-p238@61:highlight:148` / `highlight` / 「除了上帝」这个限定在这里不是普通的宗教表达——它精确地划出了无惧的边界：苦难的尽头不是虚无，而是对某种不可测之物的敬畏保留。这意味着自由的反面不是恐惧，而是冒犯神圣。
-  - `src:c1:p238@0-p238@61`; role `reaction_anchor`; resolution `matched`
-    - quote: 对于回家的犯人来说，最重要的体验是在他经受了那么多苦难之后，除了上帝，他不再畏惧任何东西，那种体验有着无与伦比的美妙感觉。
 
 #### Active Attention
 - `focus-ordinary-prisoners`

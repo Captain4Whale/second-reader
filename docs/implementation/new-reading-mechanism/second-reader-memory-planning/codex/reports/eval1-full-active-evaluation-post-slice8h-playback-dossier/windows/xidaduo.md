@@ -3752,18 +3752,6 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
    s444 / p109: 悉达多以他特有的方式笑了。
 ```
 
-#### Probe-Time Memory State
-#### Recent Continuity Context
-- `rx:Full_Content:src:c1:p107@0-p111@87:highlight:40` / `highlight` / 这个笑与前文"所有圣贤都没有抵达天国"形成呼应——当所有人都在寻求答案时，悉达多已经知道答案不在任何人的教导里。但这种知道不是解脱，而是带着悲伤和嘲讽的处境。他同情那些仍然相信答案存在的人，也嘲讽包括自己在内的这个追逐。
-  - `src:c1:p109@13-p109@30`; role `reaction_anchor`; resolution `matched`
-    - quote: 他的笑声里一半是悲痛，一半是嘲讽。
-- `rx:Full_Content:src:c1:p115@0-p116@41:highlight:41` / `highlight` / 这句话干脆到近乎冷酷。"并不"是否定，但比"不是"更主动——它暗示他曾被邀请，但他选择了拒绝。它将"能力"和"追求"分开：你能做到，但你不必以此为目的。这也是对乔文达那句"很快就能学会"的冷处理——学会又怎样？
-  - `src:c1:p116@1-p116@14`; role `reaction_anchor`; resolution `matched`
-    - quote: 在水面行走并不是我的追求。
-- `rx:Full_Content:src:c1:p115@0-p116@41:discern:42` / `discern` / "老朽"这个词暴露了悉达多的位置：他用这个词时，已经不在沙门之中了。他在外面看他们，带着一种超越之后的距离感。而"把戏"这个词又把沙门的技艺彻底贬低——不是法门，不是修炼，是把戏。这进一步推进了前面那句"并不是我的追求"：他不只是不追求，他根本就是蔑视。
-  - `src:c1:p116@21-p116@41`; role `reaction_anchor`; resolution `matched`
-    - quote: 还是让那些沙门老朽为这些把戏沾沾自喜吧！
-
 #### Active Attention
 - `govinda_shadow_devotion`
   - tags: `focus, motif`
@@ -3931,18 +3919,6 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
    s753 / p179: “哦，”他深吸了口气，释然道，“我不会再让悉达多溜走！
    s754 / p179: 不会再让阿特曼和尘世疾苦成为我思想和生命的中心。
 ```
-
-#### Probe-Time Memory State
-#### Recent Continuity Context
-- `rx:Full_Content:src:c1:p184@0-p184@311:highlight:66` / `highlight` / 三个问题构成孤独的精确诊断：从"我在哪里"到"我与谁同在"，最后到"我用什么语言"——归属感被逐层剥去，最后落到语言和存在的根底。
-  - `src:c1:p184@285-p184@311`; role `reaction_anchor`; resolution `matched`
-    - quote: 可是他，悉达多，他属于哪里？和谁分享生活？说谁的话？
-- `rx:Full_Content:src:c1:p185@0-p185@111:highlight:67` / `highlight` / 三个"再也不"构成一种不可逆的结构——不是"也许不"，不是"暂时不"，是结构性的永不回头。与前面那个"拜自己为师"的宣言合在一起，才完整：向内的认知转向，必须以向外的决绝出走为行动锚点。
-  - `src:c1:p185@90-p185@111`; role `reaction_anchor`; resolution `matched`
-    - quote: 他再也不回家，再也不回父亲那里，再不回去。
-- `rx:Full_Content:src:c1:p185@0-p185@111:highlight:68` / `highlight` / 这个"更自我"的悖论在此刻落定——不是拥有了什么而更完整，而是剥去了所有支撑才更"坚实"。这与前面"精神容器的结构性饥饿"形成一种反向呼应：当初是外在圆满而内在空洞，如今是外在丧失而内在充盈。
-  - `src:c1:p185@25-p185@42`; role `reaction_anchor`; resolution `matched`
-    - quote: 此刻，悉达多比从前更自我，更坚实。
 
 #### Active Attention
 - `govinda_shadow_devotion`
@@ -4119,18 +4095,6 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
    s1533 / p335: 同时，他的感官却活跃起来，它学到许多，体验许多。
    s1534 / p336: 悉达多学会做生意，发号施令，寻欢作乐。
 ```
-
-#### Probe-Time Memory State
-#### Recent Continuity Context
-- `rx:Full_Content:src:c1:p346@0-p347@87:highlight:135` / `highlight` / 连接前文"这游戏叫做轮回"的"游戏"——这里他用来质问自己拥有芒果树和花园这件事，同样是游戏。而且是更基础的、在他走入红尘之前的那层游戏：把世界当真，把拥有当真。轮回是一个游戏，这个"拥有"是嵌套在轮回里的更小的游戏。
-  - `src:c1:p346@106-p346@130`; role `reaction_anchor`; resolution `matched`
-    - quote: 这是真实的，必要的吗？难道这不是一场愚蠢的游戏？
-- `rx:Full_Content:src:c1:p348@0-p349@93:retrospect:136` / `retrospect` / "失却的痛苦中欣喜"——这里不是矛盾，而是清醒。她知道那是最后一次，所以每一个动作同时是告别和彻底。痛苦和欣喜并行，因为两个都是真的。
-  - `src:c1:p348@112-p348@146`; role `reaction_anchor`; resolution `matched`
-    - quote: 她在失却的痛苦中欣喜，她能最后一次把他紧贴胸口，再一次彻底被他征服。
-- `rx:Full_Content:src:c1:p348@0-p349@93:retrospect:137` / `retrospect` / 前文"这游戏叫做轮回"的"游戏"在此处发生了回响：迦摩罗继续这场游戏——她选择留下这个孩子，承担代价，而非切断联系。这与悉达多"游戏业已终结"的离去形成对照的弧线：他走了，她选择继续留在这个游戏里。
-  - `src:c1:p349@70-p349@93`; role `reaction_anchor`; resolution `matched`
-    - quote: 不久后，她发现同悉达多最后的交欢令她怀了身孕。
 
 #### Active Attention
 - `govinda_shadow_devotion`
@@ -4310,18 +4274,6 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
    s2069 / p428: 这也是河水所示。
 ```
 
-#### Probe-Time Memory State
-#### Recent Continuity Context
-- `rx:Full_Content:src:c1:p461@0-p465@143:highlight:185` / `highlight` / 这里的"不语"与悉达多之前的"不语"形成完整的呼应——他在认出"是悉达多却又不是"时选择沉默，她也在这最想说话的时刻失去了言语。两个人用同样的方式完成了最后的交流：不说。
-  - `src:c1:p465@63-p465@87`; role `reaction_anchor`; resolution `matched`
-    - quote: 她想把这告诉他，可舌头却不听使唤。她默默望着他。
-- `rx:Full_Content:src:c1:p467@0-p467@110:highlight:186` / `highlight` / 时间拟人化：不是他在回忆时间，而是时间在触摸他、簇拥他——一种被动的、被命运浸润的感受。这与前面"不语"和"同样好"的情感重量形成反差，这里是更宽广、更沉默的承接。
-  - `src:c1:p467@60-p467@87`; role `reaction_anchor`; resolution `matched`
-    - quote: 他倾听河水奔涌，沉浸在往事中，被一生的时光触摸，簇拥。
-- `rx:Full_Content:src:c1:p472@38-p474@15:highlight:187` / `highlight` / 全章最轻与最重的句子并置。熟睡——生命；柴堆——死亡。它们之间没有任何过渡词，只有句号。这不是对比，是同在。
-  - `src:c1:p474@0-p474@15`; role `reaction_anchor`; resolution `matched`
-    - quote: 孩子仍在熟睡。他们架起了柴堆。
-
 #### Active Attention
 - `govinda_shadow_devotion`
   - tags: `focus, motif`
@@ -4499,18 +4451,6 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
    s2418 / p497: 我恨你。
    s2419 / p497: 你不是我父亲，哪怕你做过我母亲十次的姘夫！
 ```
-
-#### Probe-Time Memory State
-#### Recent Continuity Context
-- `rx:Full_Content:src:c1:p529@0-p533@115:highlight:209` / `highlight` / 「不再听到哀，听到笑」——这个并列句揭示了修行的核心：不是学会了某种高级的听法，而是彻底停止了选择。所有的哀与笑同时涌来，而灵魂不再被任何一种占据。统一不是综合，而是不再区分。这个「唵」是取消区别的结果，不是添加进来的东西。
-  - `src:c1:p529@172-p529@263`; role `reaction_anchor`; resolution `matched`
-    - quote: 当他专注于河水咆哮的交响，当他不再听到哀，听到笑，当他的灵魂不再执念于一种声音，自我不再被占据，而是倾听一切，倾听整体和统一时，这伟大的交响，凝成了一个字，这个字是“唵”，意为圆满。
-- `rx:Full_Content:src:c1:p529@0-p533@115:highlight:210` / `highlight` / 瓦酥迪瓦的离开与悉达多的觉醒同时完成。他不是被动的旁观者，而是引导者——引导到无需再引导的那一刻。「做了太久的船夫」呼应了前文船夫作为过渡性角色的定位：河流是通道，不是居所。当悉达多已能在河中听见「唵」，船夫的历史使命便完结了。
-  - `src:c1:p533@48-p533@97`; role `reaction_anchor`; resolution `matched`
-    - quote: 我在等候这一时刻，亲爱的，现在它终于来临。让我走吧，我已等候良久，我已做了太久的船夫。现在已结束。
-- `rx:Full_Content:src:c1:p533@115-p536@23:highlight:211` / `highlight` / "光芒四射"这个词骤然明亮——它不仅是告别，更是一种显化。船夫在离开的瞬间成为光本身，与佛陀的圆满、与"唵"的圆满形成结构性的共鸣。融入统一不是削弱，而是显发。这与前文"统一不是综合而是不再区分"形成深层回响：区分停止之时，光芒才得以透出。
-  - `src:c1:p536@0-p536@23`; role `reaction_anchor`; resolution `matched`
-    - quote: “我要去林中，去融入统一。”瓦稣迪瓦光芒四射。
 
 #### Active Attention
 - `govinda_shadow_devotion`

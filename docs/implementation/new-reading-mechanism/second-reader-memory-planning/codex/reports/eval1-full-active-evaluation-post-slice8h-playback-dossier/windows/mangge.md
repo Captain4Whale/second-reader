@@ -4682,18 +4682,6 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
    s413 / p180: 现在，西科已经没那么有价值了，他们还是愿意买。
 ```
 
-#### Probe-Time Memory State
-#### Recent Continuity Context
-- `rx:Full_Content:src:c1:p173@0-p177@20:highlight:73` / `highlight` / "剧透"这个词精确地捕捉了信息披露的本质：不是不知道，而是说出来会破坏某些东西。这个词与前面的校长笑话形成闭环，幽默中带着真实的边界感。
-  - `src:c1:p177@0-p177@20`; role `reaction_anchor`; resolution `matched`
-    - quote: 西科的清算价值是多少？我不能向你们剧透。
-- `rx:Full_Content:src:c1:p178@0-p182@34:highlight:74` / `highlight` / "已经没那么有价值了"——这句话说得很平，却很重要。股东不是因为低估而买，而是越过价值问题去信任管理层。这让信任这件事变得非常纯粹，也非常脆弱。
-  - `src:c1:p180@0-p180@53`; role `reaction_anchor`; resolution `matched`
-    - quote: 他们最早买入的时候，西科很有价值。现在，西科已经没那么有价值了，他们还是愿意买。因为他们看好西科的管理者。
-- `rx:Full_Content:src:c1:p178@0-p182@34:discern:75` / `discern` / "不是好生意"和"信任管理层"用"但是"连接，是全文的逻辑落点。芒格不是在批评，而是在展示一种选择：有些投资决策的核心变量不是生意本身，而是管理层的可信度。这与前面"不想"而非"不能"清算的道德立场形成深层呼应——对人的信任可以独立于对生意的评估而成立。
-  - `src:c1:p182@0-p182@34`; role `reaction_anchor`; resolution `matched`
-    - quote: 与之形成对照的是，西科不是好生意，但我们的股东因为信任管理层而买入。
-
 #### Active Attention
 - `wesco_1987_structure`
   - tags: `focus`
@@ -4864,18 +4852,6 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
    s711 / p272: 在西科的资产负债表中，绝大部分资产是高流动性的类现金资产。
    s712 / p272: 占比如此之高的流动资产，该如何配置？
 ```
-
-#### Probe-Time Memory State
-#### Recent Continuity Context
-- `rx:Full_Content:src:c1:p272@0-p274@84:retrospect:116` / `retrospect` / "不谈论"是一种主动的认知边界，而非信息披露义务的被动应对。这个规矩的实质是：保护决策空间，不向市场解释逻辑。只有当客观约束（买入上限）出现时，才例外开口——这和"攥在手里，不意味着永远"的立场一致：行动由内部判断驱动，而非外部解释需求。
-  - `src:c1:p274@0-p274@84`; role `reaction_anchor`; resolution `matched`
-    - quote: 我们有个规矩，除非是法律要求披露，我们不谈论我们的有价证券投资活动。我们一般也不会公开谈论我们的投资逻辑，房地美算是个特例，因为我们已经达到了买入上限，不能买入更多了。
-- `rx:Full_Content:src:c1:p272@0-p274@84:retrospect:117` / `retrospect` / "一无所知"在这里是坦诚的自我描述，不是能力失败的托辞——他们诚实面对的是"有资产、无机会"的结构性状态，而不是掩盖找不到好标的的事实。这个措辞和前文"找不到好机会，没地方配置"完全一致，但"管理层还一无所知"多了一层主动承认无知的味道。
-  - `src:c1:p272@29-p272@56`; role `reaction_anchor`; resolution `matched`
-    - quote: 占比如此之高的流动资产，该如何配置？管理层还一无所知。
-- `rx:Full_Content:src:c1:p275@0-p275@77:retrospect:118` / `retrospect` / 这个反身句式（"不X就是不X"）干脆堵死了揣测的入口。语气近乎防御性——仿佛预见到有人会在沉默里找信号，于是提前把门焊死。这和前文"保护决策空间，不向市场解释逻辑"一脉相承：沉默是空白，不是谜面。
-  - `src:c1:p275@49-p275@77`; role `reaction_anchor`; resolution `matched`
-    - quote: 不发表评论就是不发表评论，没什么隐藏含义，不必揣摩猜测。
 
 #### Active Attention
 - `wesco_1987_structure`
@@ -5051,18 +5027,6 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
    s1055 / p398: 于是，因为存款有保险、利率不受限制，储贷行业上演了“劣币驱逐良币”的一幕。
 ```
 
-#### Probe-Time Memory State
-#### Recent Continuity Context
-- `rx:Full_Content:src:c1:p398@0-p400@103:highlight:168` / `highlight` / "既定政策，难以改变"——和前文"各自为政"的诊断形成结构层面的呼应：监管失灵是制度碎片化导致的，而行业困境是政策组合锁死的。问题不是某个人做错了什么，而是系统本身。
-  - `src:c1:p400@25-p400@103`; role `reaction_anchor`; resolution `matched`
-    - quote: 监管部门为储贷行业提供存款保险、为困难企业提供很长的缓冲期、储贷机构的利率不受限制、资产配置不受限制，这些是既定政策，难以改变。储贷行业的问题也许根本无解。
-- `rx:Full_Content:src:c1:p398@0-p400@103:highlight:169` / `highlight` / "也许根本无解"——这个措辞值得注意。不是"无法解决"，而是"也许""根本"——带着一种对系统复杂性的诚实承认，同时暗示这些政策本身是权衡的产物。
-  - `src:c1:p400@89-p400@103`; role `reaction_anchor`; resolution `matched`
-    - quote: 储贷行业的问题也许根本无解。
-- `rx:Full_Content:src:c1:p401@0-p403@23:retrospect:170` / `retrospect` / 这是本单元新增的元层面：复杂性理论本身作为诊断工具。前文说的是"既定政策难以改变"和"成本压力迫不得已"，这里转向的是政策干预行为的内在复杂性——即使政策目标单一、出发点合理，系统响应也可能反噬。这个框架比"政策错了"更深一层。
-  - `src:c1:p401@17-p401@72`; role `reaction_anchor`; resolution `matched`
-    - quote: 在复杂的体系中，牵一发而动全身，本来只想提高一个变量的作用，却往往导致其他变量的作用降低，产生意料之外的后果。
-
 #### Active Attention
 - `wesco_1987_structure`
   - tags: `focus`
@@ -5237,18 +5201,6 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
    s1420 / p552: 我想起了很久以前遇到的一位国税局审计员。
 ```
 
-#### Probe-Time Memory State
-#### Recent Continuity Context
-- `rx:Full_Content:src:c1:p546@0-p550@41:highlight:227` / `highlight` / 这个反问把"六周"这个具体数字变成了一个结构性困境的锚点。审计一家小公司尚且如此，当规模放大、问题变多时，时间和能力的缺口就成为不可弥补的结构性漏洞。六周这个数字本身不重要，重要的是它与"大型储贷机构"之间那道无法跨越的鸿沟。
-  - `src:c1:p550@0-p550@41`; role `reaction_anchor`; resolution `matched`
-    - quote: 审计我们这样一家小公司尚且需要这么长时间，如果要审计一家问题重重的大型储贷机构呢？
-- `rx:Full_Content:src:c1:p551@0-p555@52:highlight:228` / `highlight` / 这段话把"敌意"从道德问题还原为心理机制——不是性格问题，是暴露量的函数。和"投行是卖方"的信息困境形成平行：认知被污染，不只是监管人员自身的原因。
-  - `src:c1:p553@51-p553@125`; role `reaction_anchor`; resolution `matched`
-    - quote: 看到了太多的丑恶，很容易对周围的世界充满敌意。让我去审计一家声名狼藉的储贷机构，看高管睁着眼睛说瞎话，我肯定受不了。每天都要面对人渣，怎么能不崩溃？
-- `rx:Full_Content:src:c1:p551@0-p555@52:highlight:229` / `highlight` / "我不是要批评"是一个关键姿态——芒格在这里选择理解而非批判，把监管失败从个人道德问题收回了结构性描述。持久战的比喻完成了最后的升格：这不是个体撑不住，是战场设计的结构性问题。
-  - `src:c1:p555@0-p555@52`; role `reaction_anchor`; resolution `matched`
-    - quote: 我不是要批评监管人员。审计恶劣的储贷机构，如同打一场艰苦的持久战。谁都不可能在残酷的战场上坚持很长时间。
-
 #### Active Attention
 - `wesco_1987_structure`
   - tags: `focus`
@@ -5422,18 +5374,6 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
    s1756 / p653: 西科的底子薄是天生的。
    s1757 / p653: 当年，西科的母公司收购西科时，西科就非常孱弱。
 ```
-
-#### Probe-Time Memory State
-#### Recent Continuity Context
-- `rx:Full_Content:src:c1:p650@0-p654@79:highlight:268` / `highlight` / "天生的"三个字把问题定调了：这不是管理失误或市场变化造成的，而是结构性的起点问题。这解释了为什么西科此后的多年一直在"守势"——底子薄决定了它的选择空间受限。
-  - `src:c1:p653@0-p653@11`; role `reaction_anchor`; resolution `matched`
-    - quote: 西科的底子薄是天生的。
-- `rx:Full_Content:src:c1:p655@0-p657@56:highlight:269` / `highlight` / 兔子/乌龟的类比在这里不只是修辞，而是把价值投资的竞争结构说清楚了：好生意天然跑得快，普通生意天然跑得慢，这不是努力能弥补的起点差异。
-  - `src:c1:p657@0-p657@29`; role `reaction_anchor`; resolution `matched`
-    - quote: 好生意内在价值高，如同兔子。普通生意内在价值低，如同乌龟。
-- `rx:Full_Content:src:c1:p655@0-p657@56:highlight:270` / `highlight` / "不好动"三个字把芒格的自我定位说到了最诚实的地方——不是不能动，是主动选择不动。这和前面"攥在手里，不意味着永远"是同一个底色：好机会没出现之前，不作为是美德而非懒惰。
-  - `src:c1:p657@29-p657@55`; role `reaction_anchor`; resolution `matched`
-    - quote: 西科是一只与兔子赛跑的乌龟，而且是一只不好动的乌龟。
 
 #### Active Attention
 - `wesco_1987_structure`

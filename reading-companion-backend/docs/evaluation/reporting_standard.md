@@ -79,7 +79,7 @@ Required shape:
 
 - `Source Window`: link to the dataset-stable source window, including covered chapters, paragraph ids, note-target markers, and probe markers.
 - `Reading Timeline`: list every visible reaction in reading order, with source-span excerpt, reaction text, SourceRef / paragraph-char coordinate, and only the relevant eval annotations.
-- `Probe Memory Checkpoints`: for each Memory Quality probe, show source orientation, capture point, structured probe-time memory state, judge scores, and judge reason.
+- `Probe Memory Checkpoints`: for each Memory Quality probe, show source orientation, capture point, concrete recorded state digests, judge scores, and judge reason.
 - `Scoring Interpretation`: explain how the reaction timeline and probe checkpoints produce the lane scores.
 - `Manual Review Guide`: tell reviewers which raw artifacts to open and which fields to inspect when they disagree with a label or score.
 
@@ -95,7 +95,9 @@ Field display rules:
 - If a reaction is local-only, say it is local-only; do not emit empty callback/FVI fields.
 - If a reaction overlaps a Selective Legibility note target, include the note-case id, target note text, target source span, label, source-span relation, judge reason, and whether it counted toward recall.
 - If a reaction is a grounded callback, weak callback, or FVI, include prior-link evidence when present, judge reason, and a short reviewer interpretation.
-- Memory state should be structured for reading, not reduced to a tiny abstract summary. Preserve the recorded probe-time active attention, concept digest, thread digest, reflective digest, and SourceRef evidence as much as practical, but re-layout it as readable Markdown rather than raw JSON.
+- Memory state should be structured for reading, not reduced to a tiny abstract summary. Preserve the recorded active attention, concept digest, thread digest, reflective digest, and SourceRef evidence as much as practical, but re-layout it as readable Markdown rather than raw JSON.
+- Do not default-display `continuity_context`, `recent_reading_orientation`, `recent_sentence_ids`, `recent_meaning_units`, or `recent_reactions` as Memory Quality state. These are continuity/projection artifacts, not durable memory stores; include them only in a clearly labeled continuity-diagnostics section when that is the review target.
+- Recent visible reactions should appear in the reading timeline or callback/FVI evidence when relevant, not inside a synthetic memory-state wrapper.
 - Do not present `target_sentence_id`, `target sentence`, or `cN-sM` handles by themselves as canonical source coordinates. Label them as orientation-only or legacy/eval locator metadata, and pair them with paragraph-char `SourceRef` / source-span coordinates whenever those are available.
 - Do not use `rough_position_target`, `distribution_reference_label`, or labels such as `near 20%` as the primary Memory Quality probe heading. Headings should foreground the semantic boundary and source coordinate; distance labels are secondary distribution-reference metadata.
 

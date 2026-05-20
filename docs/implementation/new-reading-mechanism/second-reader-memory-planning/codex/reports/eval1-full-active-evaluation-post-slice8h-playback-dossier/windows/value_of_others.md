@@ -2589,18 +2589,6 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
    s92 / p18: For instance, the game of friendship is different from the game of business, both in their rules and goals.
 ```
 
-#### Probe-Time Memory State
-#### Recent Continuity Context
-- `rx:Full_Content:src:c1:p16@0-p16@1015:discern:13` / `discern` / This is a clean two-boundary theorem for relationship formation. Too symmetric (identical goods) → no transaction. Too asymmetric (disparate values) → relationship probability decreases. Only the narrow middle band — unequal goods, comparable value — sustains the exchange. This extends the earlier 'unequal goods of comparable value' definition into a generative condition with failure modes.
-  - `src:c1:p16@260-p16@574`; role `reaction_anchor`; resolution `matched`
-    - quote: If the goods are the same, then exchange is either unnecessary or impossible (so no relationship is formed). And if their values are too disparate, then the relationship becomes likely in inverse proportion to the size of the perceived mismatch in value: the greater the mismatch, the less likely the relationship.
-- `rx:Full_Content:src:c1:p16@0-p16@1015:discern:14` / `discern` / This is the key consequence clause. The pain isn't automatic — it requires awareness. Someone operating with a stale mismatch perception feels fine until the other party's shifted valuation becomes visible. The distress is a function of the recognition, not the mismatch itself.
-  - `src:c1:p16@791-p16@896`; role `reaction_anchor`; resolution `matched`
-    - quote: awareness of this violation can lead to a great deal of pain and distress for the under-compensated party
-- `rx:Full_Content:src:c1:p17@0-p17@961:discern:15` / `discern` / The exit condition is now formalized as a law: insufficient payoff (or reverse payoff) triggers withdrawal. This completes the game-theoretic frame — not just the structure of play, but the conditions under which play ends.
-  - `src:c1:p17@810-p17@961`; role `reaction_anchor`; resolution `matched`
-    - quote: If people get too little of what they want (or too much of what they don’t want), they stop playing – which, incidentally, is another relationship law.
-
 #### Active Attention
 - `transactional-relationships-framing`
   - tags: `focus, framework`
@@ -2724,18 +2712,6 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
    s137 / p27: The covert calculator⁠4
    s138 / p28: Value is easy to define but difficult to pin down.
 ```
-
-#### Probe-Time Memory State
-#### Recent Continuity Context
-- `rx:Full_Content:src:c1:p22@0-p23@663:discern:21` / `discern` / The pivot from "perceived" to "perception of value" is the book's key move in this unit — not what is actually valuable, but what is perceived as valuable. This is where the framework becomes distinctively about subjective evaluation rather than objective exchange.
-  - `src:c1:p23@468-p23@663`; role `reaction_anchor`; resolution `matched`
-    - quote: And if people enter into (and remain in) sexual relationships with their perceived best options, then the perception of value must be the mechanism that lies at the heart of sexual relationships.
-- `rx:Full_Content:src:c1:p24@0-p26@122:discern:22` / `discern` / The reversibility test as epistemic arbiter: the model's ability to explain its own inputs makes it more fundamental than those inputs. This subordinates emotion to the economic framework rather than placing them in parallel — a strong asymmetric move that runs counter to most popular relationship writing.
-  - `src:c1:p25@500-p25@662`; role `reaction_anchor`; resolution `matched`
-    - quote: And since the model can explain emotions (but emotions cannot explain the model), this means that the model is more fundamentally true and should take precedence.
-- `rx:Full_Content:src:c1:p24@0-p26@122:discern:23` / `discern` / The pivot is the book's own explicit roadmap for what comes next. The 'why this is the case' directly references the priority claim just made, signaling that the value-examination is not a digression but the infrastructure supporting it.
-  - `src:c1:p26@0-p26@122`; role `reaction_anchor`; resolution `matched`
-    - quote: To understand why this is the case, we need to take a closer look at the concept of value: what it is and how it operates.
 
 #### Active Attention
 - `transactional-relationships-framing`
@@ -2887,18 +2863,6 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
    s249 / p47: This decision is not unsettling – it’s common sense.
 ```
 
-#### Probe-Time Memory State
-#### Recent Continuity Context
-- `rx:Full_Content:src:c1:p42@0-p42@987:discern:36` / `discern` / The 'more elegantly' qualifier does real work here. Earlier material established that emotion transforms the value coefficient as a functional necessity. This unit goes further—it claims the emotional channel is not just a workaround for unconscious opacity but a superior method. Conscious awareness of the full valuation calculus would be epistemically accurate but behaviorally clumsy; emotion is elegant precisely because it condenses the signal down to what drives action. This upgrades the emotion-as-translator c…
-  - `src:c1:p42@550-p42@677`; role `reaction_anchor`; resolution `matched`
-    - quote: The feelings behind these statements accomplish the same goal more elegantly than awareness of the valuation process ever could
-- `rx:Full_Content:src:c1:p42@0-p42@987:discern:37` / `discern` / The word 'constituted' is precise: feelings are not merely accompanied by impulses but made of them. This tightens the mechanism—valuation flows into emotion, and emotion is already structured as action-readiness. The four verbs (approach, acquire, protect, maintain) map onto the behavioral register the value coefficient needs to express.
-  - `src:c1:p42@795-p42@987`; role `reaction_anchor`; resolution `matched`
-    - quote: this communication is extremely useful because it is constituted by behavioral impulses that motivate action in alignment with this valuation: to approach, to acquire, to protect, to maintain.
-- `rx:Full_Content:src:c1:p44@0-p46@455:discern:38` / `discern` / This is the clean resolution to the unsettled/contention tension — reframing value from an absolute property to a goal-relative one. It defuses the moral discomfort by shifting the question from 'are some people more valuable?' to 'valuable for what purpose?' Worth remembering as a key conceptual hinge the book has been building toward.
-  - `src:c1:p46@388-p46@454`; role `reaction_anchor`; resolution `matched`
-    - quote: value is always assessed in relation to a personally relevant goal
-
 #### Active Attention
 - `transactional-relationships-framing`
   - tags: `focus, framework`
@@ -3049,18 +3013,6 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
    s299 / p58: This will alter the relative priority of what we want from any particular person, and this, in turn, will affect how much we value that person by influencing our perception of the trade-offs involved.
 ```
 
-#### Probe-Time Memory State
-#### Recent Continuity Context
-- `rx:Full_Content:src:c1:p53@0-p53@803:discern:43` / `discern` / The example performs quiet work: it shows that the genetic-survival priority isn't just about unconscious biological imperative but can manifest as conscious sacrifice. This sets up potential tension with the earlier framing of relationship dynamics as transaction-based.
-  - `src:c1:p53@538-p53@611`; role `reaction_anchor`; resolution `matched`
-    - quote: A mother who dies so her children might live exemplifies this phenomenon.
-- `rx:Full_Content:src:c1:p54@0-p55@595:discern:44` / `discern` / The double framing here does quiet work. 'Game of games' elevates the category, then 'the game that makes all other games possible' makes it constitutive rather than merely dominant. This is what allows the text to derive behavioral consequences as logical deductions rather than empirical claims.
-  - `src:c1:p54@187-p54@251`; role `reaction_anchor`; resolution `matched`
-    - quote: the game of games: the game that makes all other games possible.
-- `rx:Full_Content:src:c1:p54@0-p55@595:discern:45` / `discern` / The 'balk' acknowledges reader resistance upfront, then the plumber line sidesteps the objection by reframing the logic in neutral transactional terms. The analogy applies the framework unflinchingly to sexual relationships—the discomfort is the point.
-  - `src:c1:p55@502-p55@595`; role `reaction_anchor`; resolution `matched`
-    - quote: People might balk at this, but no one continues to pay the plumber after the job is finished.
-
 #### Active Attention
 - `transactional-relationships-framing`
   - tags: `focus, framework`
@@ -3208,18 +3160,6 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
    s387 / p77: Penguins, ostriches, and condors are fully just as avian as sparrows, but an algorithm trained exclusively on sparrows (let alone one specific sparrow) probably wouldn’t even recognize them as birds.
    s388 / p78: We could call this the law of small numbers as applied to relationships, and it skews our valuations irrespective of the nature of the relationships on which they were trained.
 ```
-
-#### Probe-Time Memory State
-#### Recent Continuity Context
-- `rx:Full_Content:src:c1:p74@0-p74@544:discern:55` / `discern` / The 'enlightenment-level' qualifier lands as a deliberate deflation. Rather than offering a practical path, it sets the bar so high that for normal purposes the unconscious process might as well be treated as fixed.
-  - `src:c1:p74@137-p74@273`; role `reaction_anchor`; resolution `matched`
-    - quote: This tendency is baked into our neurobiology and might only be surmountable through enlightenment-level self-awareness and self-control.
-- `rx:Full_Content:src:c1:p74@0-p74@544:discern:56` / `discern` / This second half runs against the deterministic tenor of the first. The 'not entirely' is doing real work — it preserves the biological substrate while asserting that cultural and perceptual inputs reshape the weighting. Together with the earlier 'weights and evaluations used in that process are not' (p73), this frames culture and perception as the levers worth examining, even if direct self-override isn't on the table.
-  - `src:c1:p74@293-p74@544`; role `reaction_anchor`; resolution `matched`
-    - quote: what people value – and how much they value those things – is not entirely biologically determined. It is both mediated by perception (which is not always reliable) and informed by culture (which creates significant variability across time and place).
-- `rx:Full_Content:src:c1:p76@0-p78@176:discern:57` / `discern` / The naming here is the operative move — not just the analogy. 'Law of small numbers' borrows from statistics to describe a structural sampling problem: n=1 yields overfitted pattern recognition that fails to categorize genuinely similar cases. The phrase 'irrespective of the nature of the relationships on which they were trained' is doing real work — it means the distortion isn't determined by whether the parental relationship was good or bad, but by its singularity alone. The second reason (announced as 'both' al…
-  - `src:c1:p78@0-p78@176`; role `reaction_anchor`; resolution `matched`
-    - quote: We could call this the law of small numbers as applied to relationships, and it skews our valuations irrespective of the nature of the relationships on which they were trained.
 
 #### Active Attention
 - `transactional-relationships-framing`

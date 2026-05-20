@@ -1109,18 +1109,6 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
    s37 / p19: 选择一个有长期发展前景的行业，找到可以长期合作的人。
 ```
 
-#### Probe-Time Memory State
-#### Recent Continuity Context
-- `rx:Full_Content:src:c1:p10@0-p11@39:highlight:5` / `highlight` / 这句话把道德兼容性的反面说透了：不是"不能"拥有财富，而是内心对财富的排斥会直接导致财富的疏离。是一种自我应验的预言。
-  - `src:c1:p11@18-p11@39`; role `reaction_anchor`; resolution `matched`
-    - quote: 如果你内心鄙视财富，财富就会对你避而远之。
-- `rx:Full_Content:src:c1:p12@0-p13@33:highlight:6` / `highlight` / 这句话揭示了一种经典的权力逻辑：地位是一个零和博弈的坐标，它的增长只能通过贬低他人来实现。而攻击的靶点往往选得精准——恰好是那些真正在做有价值之事的人。这种「攻击创造者」的行为模式，本质上是一种嫉妒的投射，比单纯的贪婪更难对付。
-  - `src:c1:p13@0-p13@33`; role `reaction_anchor`; resolution `matched`
-    - quote: 无视一味追求社会地位的人。他们获得地位的手段就是攻击创造财富的人。
-- `rx:Full_Content:src:c1:p14@0-p15@41:highlight:7` / `highlight` / 把工资劳动称为"出租时间"是很犀利的表述——它把这种交易模式的本质暴露出来了：你在出卖生命时间，换来一次性报酬，但没有积累任何生产资料。这种命名方式本身就带有一股揭示感。
-  - `src:c1:p15@0-p15@41`; role `reaction_anchor`; resolution `matched`
-    - quote: 依靠出租时间是不可能致富的。你必须拥有股权（企业的部分所有权），才能实现财务自由。
-
 #### Active Attention
 - `find_leverage_points`
   - tags: `focus, model`
@@ -1215,18 +1203,6 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
    s66 / p44: ∨
    s67 / p45: “给我一根足够长的杠杆和一个支点，我就能撬动地球。
 ```
-
-#### Probe-Time Memory State
-#### Recent Continuity Context
-- `rx:Full_Content:src:c1:p38@0-p39@32:retrospect:13` / `retrospect` / 这句话和前面那句「专长指的是无法通过培训获得的知识」形成了完整的逻辑闭环：前一句给出了定义层面的约束（不可培训性），这一句给出了实践层面的约束（不可学校化）。两个「无法」指向同一个方向——专长的获得和传授都绕不开个人化的、近身的接触。
-  - `src:c1:p39@0-p39@32`; role `reaction_anchor`; resolution `matched`
-    - quote: 专长的传授需要通过师傅带徒弟的方式完成，而无法通过学校教育完成。
-- `rx:Full_Content:src:c1:p40@0-p43@43:highlight:14` / `highlight` / 这句话和前文建立的专长概念形成同方向延伸：不可培训、不可学校化、不可外包自动化——三个"不能"从不同维度指向同一个结论：专长是个人化的、不可标准化的。
-  - `src:c1:p41@0-p41@27`; role `reaction_anchor`; resolution `matched`
-    - quote: 专长往往具有高度的技术性或创造性，不能被外包或自动化。
-- `rx:Full_Content:src:c1:p40@0-p43@43:highlight:15` / `highlight` / 这里出现了一个视角切换：从"专长的内在属性"（技术性、创造性、热爱驱动）转向"获取财富所需的个人行动"（承担责任、持股、使用杠杆）。专长是入场券，愿意用个人名义承担风险才是真正的分界线。
-  - `src:c1:p43@0-p43@43`; role `reaction_anchor`; resolution `matched`
-    - quote: 培养责任感，勇于以个人名义承担商业风险。社会将根据责任大小、股权多少和杠杆效应回报你。
 
 #### Active Attention
 - `find_leverage_points`
@@ -1352,18 +1328,6 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
    s94 / p61: 杠杆是判断力的倍增器。
 ```
 
-#### Probe-Time Memory State
-#### Recent Continuity Context
-- `rx:Full_Content:src:c1:p54@0-p55@59:highlight:21` / `highlight` / 这与前文"资本和劳动力是需要获得许可才能使用的杠杆"形成直接对照。三种杠杆由此完成了许可依赖性的光谱排列：劳动力需要雇佣协议，资本需要融资同意，而代码/媒体只依赖个人技能积累，无需第三方授权。
-  - `src:c1:p55@0-p55@19`; role `reaction_anchor`; resolution `matched`
-    - quote: 代码和媒体是不需要许可就能使用的杠杆。
-- `rx:Full_Content:src:c1:p54@0-p55@59:highlight:22` / `highlight` / "新富阶层"这个定性在价值排序上有分量——它暗示代码/媒体杠杆不只是"更好的选择"，而是当代财富迁移的结构性标志。结合前文劳动力杠杆的"争夺最激烈"，三种杠杆的价值梯度已完整呈现。
-  - `src:c1:p55@19-p55@35`; role `reaction_anchor`; resolution `matched`
-    - quote: 这两个杠杆是新富阶层背后的杠杆。
-- `rx:Full_Content:src:c1:p58@0-p59@25:highlight:23` / `highlight` / 这句话把"代码和媒体是不需要许可的杠杆"落地成具体路径——四种形态，覆盖了从深度内容到即时传播的完整媒体光谱。
-  - `src:c1:p59@0-p59@25`; role `reaction_anchor`; resolution `matched`
-    - quote: 如果不会写代码，那就出书、写博客、做视频、录播客。
-
 #### Active Attention
 - `find_leverage_points`
   - tags: `focus, model`
@@ -1487,18 +1451,6 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
    s140 / p89: 财富和金钱的区别是什么？
    s141 / p90: 金钱是我们转移财富的方式。
 ```
-
-#### Probe-Time Memory State
-#### Recent Continuity Context
-- `rx:Full_Content:src:c1:p80@0-p84@10:highlight:31` / `highlight` / 五个字完成了整个章节的压缩。所有分散的原则——专长、杠杆、判断力、责任、时薪框架——都在这个公式里找到了聚合点。它既是命令句，也是诊断工具：你现在做的，是不是在"产品化自己"？
-  - `src:c1:p84@0-p84@10`; role `reaction_anchor`; resolution `matched`
-    - quote: 总结：把自己产品化。
-- `rx:Full_Content:src:c1:p85@0-p88@72:highlight:32` / `highlight` / 这个"交叉重叠"的结构很有意思："专长"既是"产品化"的门槛，也是"自己"本来就有的东西。作者用这个词的双重归属，把整个分散的理念体系——责任感、判断力、独特性、杠杆——全部锚定在这两个词的交叉点上。
-  - `src:c1:p86@26-p86@102`; role `reaction_anchor`; resolution `matched`
-    - quote: “自己”具有独特性，“产品化”是发挥杠杆效应；“自己”具有责任感，“产品化”需要专长。“自己”其实也具有专长。因此，这两个重点就可以概括上述所有的理念。
-- `rx:Full_Content:src:c1:p85@0-p88@72:retrospect:33` / `retrospect` / 这与前面"当你终于变得富有时，你会意识到，这并不是你最初的追求"形成呼应——财富不是起点，"我能提供什么独特的价值"才是真正需要花几十年去回答的问题。
-  - `src:c1:p88@31-p88@68`; role `reaction_anchor`; resolution `matched`
-    - quote: 并不是要花几十年执行，而是要把大部分时间用于思考：我能提供什么独特的价值？
 
 #### Active Attention
 - `find_leverage_points`
@@ -1656,18 +1608,6 @@ Memory Quality is scored at probe time. The state below is a structured re-layou
    s168 / p99: 然后，他们研究出了如何制造这样一部智能手机，以及如何实现规模化生产。
 >> s169 / p99: [78]
 ```
-
-#### Probe-Time Memory State
-#### Recent Continuity Context
-- `rx:Full_Content:src:c1:p94@0-p98@146:highlight:37` / `highlight` / 这提供了一个关于技术价值的锐利时间窗口视角：科技在被广泛采用前才有超额回报，之后就变成基础设施。这个定义把"科技投资"从玄学变成一个可辨识的生命周期问题。
-  - `src:c1:p98@45-p98@67`; role `reaction_anchor`; resolution `matched`
-    - quote: 某种东西一旦得到广泛应用，它就不再是科技了。
-- `rx:Full_Content:src:c1:p99@0-p99@193:highlight:38` / `highlight` / 这个表述把「规模化」从商业术语变成了一种思维姿态——不是「如果成功了再考虑规模」，而是把规模本身作为设计目标。
-  - `src:c1:p99@0-p99@65`; role `reaction_anchor`; resolution `matched`
-    - quote: 下一步是思考如何规模化，因为只提供一个产品或一项服务是远远不够的，必须提供成千上万个，甚至几十万、几百万、几十亿个，最好人手一个。
-- `rx:Full_Content:src:c1:p99@0-p99@193:highlight:39` / `highlight` / 从「设想」到「规模化生产」之间有一个隐含的关键步骤：制造工艺的突破。这暗示了一个财富创造的结构性要求——不仅要想得好，还要能让别人也能生产。
-  - `src:c1:p99@93-p99@189`; role `reaction_anchor`; resolution `matched`
-    - quote: 他们设想的是一台可以装在口袋里随身携带的小型计算机，拥有电话的所有功能，甚至比电话的功能还强大100倍，使用起来也非常简单。然后，他们研究出了如何制造这样一部智能手机，以及如何实现规模化生产。
 
 #### Active Attention
 - `find_leverage_points`
