@@ -160,6 +160,12 @@ def load_memory_quality_probe_plan(path: Path) -> dict[str, Any]:
             previous_ordinal = ordinal
             if not _clean_text(target.get("target_sentence_id")):
                 raise ValueError(f"probe target is missing target_sentence_id for {segment_id}")
+            distribution_label = _clean_text(target.get("distribution_reference_label")) or _clean_text(
+                target.get("rough_position_target")
+            )
+            if not distribution_label:
+                raise ValueError(f"probe target is missing distribution reference label for {segment_id}")
+            target["distribution_reference_label"] = distribution_label
             target_source_cursor = _source_cursor(target.get("target_source_cursor"))
             target_source_span = _source_span(target.get("target_source_span"))
             legacy_status = _clean_text(target.get("target_locator_status")) == "legacy_sentence_only"
@@ -1530,14 +1536,22 @@ def _append_examples(lines: list[str], examples: list[dict[str, Any]]) -> None:
 
 
 def _probe_position_label(row: dict[str, Any]) -> str:
+    boundary = _clean_text(row.get("boundary_kind"))
+    if boundary:
+        return boundary
     source_label = _source_cursor_label(row.get("target_source_cursor"))
     if source_label:
         return source_label
-    rough = _clean_text(row.get("rough_position_target"))
-    if rough:
-        return rough
+    return "semantic target"
+
+
+def _distribution_reference_label(row: dict[str, Any]) -> str:
+    return _clean_text(row.get("distribution_reference_label")) or _clean_text(row.get("rough_position_target"))
+
+
+def _estimated_ratio_label(row: dict[str, Any]) -> str:
     ratio = float(row.get("estimated_ratio", row.get("threshold_ratio", 0.0)) or 0.0)
-    return f"{ratio:.1%}" if ratio > 0 else "semantic target"
+    return f"{ratio:.3f}" if ratio > 0 else ""
 
 
 def _render_report(
@@ -1579,14 +1593,22 @@ def _render_report(
         probe_rows = [row for row in memory_quality_results if row["segment_id"] == window_summary["segment_id"]]
         for row in probe_rows:
             source_span = _clean_text(row.get("target_source_span_id")) or _source_span_label(row.get("target_source_span"))
+            locator_status = _clean_text(row.get("target_locator_status"))
             sentence_orientation = _clean_text(row.get("capture_sentence_id"))
             lines.append(
-                f"- Probe `{row['probe_index']}` (`{_probe_position_label(row)}`): overall `{float(row['overall_memory_quality_score']):.3f}`. {row['reason']}"
+                f"- Probe `{row['probe_index']}` - {_probe_position_label(row)}: overall `{float(row['overall_memory_quality_score']):.3f}`. {row['reason']}"
             )
             if source_span:
                 lines.append(f"  - Source coordinate: `{source_span}`")
+            if locator_status:
+                lines.append(f"  - Target locator status: `{locator_status}`")
             if sentence_orientation:
                 lines.append(f"  - Legacy sentence orientation metadata: `{sentence_orientation}`")
+            distribution_label = _distribution_reference_label(row)
+            estimated_ratio = _estimated_ratio_label(row)
+            if distribution_label or estimated_ratio:
+                suffix = f" (estimated_ratio={estimated_ratio})" if estimated_ratio else ""
+                lines.append(f"  - Distribution reference: {distribution_label or 'unspecified'}{suffix}")
             if _clean_text(row.get("why_this_probe_point")):
                 lines.append(f"  - Probe placement: {_clean_text(row.get('why_this_probe_point'))}")
             review_focus = row.get("probe_review_focus")
@@ -1917,6 +1939,8 @@ def run_long_span_vnext(
                 probe_payload = {
                     "probe_index": int(snapshot.get("probe_index", 0) or 0),
                     "estimated_ratio": float(snapshot.get("estimated_ratio", 0.0) or 0.0),
+                    "distribution_reference_label": _clean_text(snapshot.get("distribution_reference_label"))
+                    or _clean_text(snapshot.get("rough_position_target")),
                     "rough_position_target": _clean_text(snapshot.get("rough_position_target")),
                     "boundary_kind": _clean_text(snapshot.get("boundary_kind")),
                     "why_this_probe_point": _clean_text(snapshot.get("why_this_probe_point")),
@@ -1948,6 +1972,8 @@ def run_long_span_vnext(
             "mechanism_key": "attentional_v2",
             "probe_index": int(snapshot.get("probe_index", 0) or 0),
             "estimated_ratio": float(snapshot.get("estimated_ratio", 0.0) or 0.0),
+            "distribution_reference_label": _clean_text(snapshot.get("distribution_reference_label"))
+            or _clean_text(snapshot.get("rough_position_target")),
             "rough_position_target": _clean_text(snapshot.get("rough_position_target")),
             "boundary_kind": _clean_text(snapshot.get("boundary_kind")),
             "why_this_probe_point": _clean_text(snapshot.get("why_this_probe_point")),

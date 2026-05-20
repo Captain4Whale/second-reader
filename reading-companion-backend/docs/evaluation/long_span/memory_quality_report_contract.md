@@ -46,12 +46,15 @@ Each report must explain:
 
 - active probe plan id and manifest path, for example `memory_quality_semantic_probe_plan_20260504`
 - selection method: `semantic_boundary_with_distance_reference`
-- `target_sentence`: the semantic boundary sentence selected by the manifest
-- `rough ratio`: approximate progress position for distribution sanity only
-- `actual_captured_sentence`: the end of the first completed read unit that crossed the semantic target
+- semantic boundary type (`boundary_kind`) as the probe's primary identity
+- source-native target coordinate / span when present
+- legacy target sentence metadata only as orientation, not as the primary coordinate
+- distribution reference label and estimated ratio only as coverage sanity metadata
+- actual captured source coordinate / span, plus legacy captured sentence metadata when present
 - why each probe point was selected, including semantic boundary rationale and structural signals to check
 - no probe-only read step is inserted
 - the probe may be slightly later than the selected target because reading units are indivisible for capture
+- report headings must not title probes as `near 20%`, `near 40%`, or similar distance-reference labels
 
 ## Source Evidence Rules
 

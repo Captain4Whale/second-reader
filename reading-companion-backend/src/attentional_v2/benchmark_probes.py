@@ -217,6 +217,9 @@ def _normalize_probe_targets(
         target["target_sentence_ordinal"] = target_ordinal
         if not target_source_cursor:
             target["target_locator_status"] = _clean_text(target.get("target_locator_status")) or "legacy_sentence_only"
+        target["distribution_reference_label"] = _clean_text(target.get("distribution_reference_label")) or _clean_text(
+            target.get("rough_position_target")
+        )
         targets.append(target)
     return targets
 
@@ -293,6 +296,8 @@ def _build_probe_snapshot(
     return {
         "probe_index": int(probe_target.get("probe_index", 0) or 0),
         "estimated_ratio": float(probe_target.get("estimated_ratio", 0.0) or 0.0),
+        "distribution_reference_label": _clean_text(probe_target.get("distribution_reference_label"))
+        or _clean_text(probe_target.get("rough_position_target")),
         "rough_position_target": _clean_text(probe_target.get("rough_position_target")),
         "boundary_kind": _clean_text(probe_target.get("boundary_kind")),
         "why_this_probe_point": _clean_text(probe_target.get("why_this_probe_point")),

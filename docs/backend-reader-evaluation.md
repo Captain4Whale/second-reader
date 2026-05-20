@@ -116,7 +116,7 @@ For the current Memory / Planning / Evaluation implementation guidance chain, se
 - the current active long-span direction is now a design-frozen three-metric line:
   - `Memory Quality`
     - judge probe-point memory/state snapshots holistically during continuous reading
-    - current probe targets come from a versioned semantic probe manifest, not fixed ratio checkpoints
+    - current probe targets are semantic-boundary selections from a versioned manifest; distance labels are only distribution-reference metadata, not fixed ratio checkpoints
   - `Spontaneous Callback`
     - audit complete-window visible reactions for natural recalls or links to prior material
   - `False Visible Integration`
@@ -137,6 +137,7 @@ For the current Memory / Planning / Evaluation implementation guidance chain, se
     - `reading-companion-backend/eval/manifests/probes/memory_quality_semantic_probe_plan_20260504.json`
     - selection method: `semantic_boundary_with_distance_reference`
     - hard `20% / 40% / 60% / 80% / end` ratio probes are retired for new runs
+    - report headings should identify the semantic boundary and source coordinate first; `near 20%`-style labels are secondary distribution references
 - `reader_value.insight_and_clarification` remains an orthogonal output-value axis, but it is not part of the first release of the new long-span `Memory Quality / Spontaneous Callback / False Visible Integration` direction.
 - `excerpt surface` is now a historical chapter-scoped local-text surface name used by older formal runs.
 - the current active local benchmark meaning is `user-level selective`.
@@ -284,7 +285,7 @@ For the current Memory / Planning / Evaluation implementation guidance chain, se
     - if a salient source-given structure appears only in the source text and not in the snapshot, it should affect `salience_score` and `organization_score`, and sometimes `mainline_fidelity_score`
     - individual probes may carry a small `probe_review_focus` note for high-risk structural signals; the focus sharpens the audit but the judgment remains holistic
   - Memory Quality probe placement is now semantic-manifest-driven:
-    - the manifest records `target_sentence_id`, rough distance reference, semantic rationale, and structural signals to check for each probe
+    - the manifest records the semantic boundary, source-native locator, placement rationale, structural signals to check, and secondary distribution reference metadata for each probe
     - the runtime still captures a snapshot only after the first completed read step that crosses the target; it does not insert probe-only reading steps
     - capture is an opt-in observability consumer: product runs without `memory_quality_probe_export.enabled` and explicit `probe_targets` do not build probe snapshots
     - old hard-ratio probe reports remain historical evidence and are not rewritten

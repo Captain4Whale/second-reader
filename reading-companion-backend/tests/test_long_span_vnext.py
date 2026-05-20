@@ -553,6 +553,10 @@ def test_default_memory_quality_probe_plan_covers_five_windows() -> None:
         target.get("target_locator_status") == "source_native"
         and target.get("target_source_cursor")
         and target.get("target_source_span")
+        and target.get("distribution_reference_label")
+        and target.get("boundary_kind")
+        and target.get("why_this_probe_point")
+        and target.get("structural_signals_to_check")
         for window in plan["windows"]
         for target in window["probe_targets"]
     )
@@ -599,6 +603,9 @@ def test_memory_quality_report_surfaces_probe_review_focus() -> None:
                 "segment_id": "huochu_shengming_de_yiyi_private_zh__segment_1",
                 "probe_index": 1,
                 "threshold_ratio": 0.2,
+                "distribution_reference_label": "near 20%",
+                "rough_position_target": "near 20%",
+                "boundary_kind": "phase transition",
                 "target_source_cursor": {
                     "chapter_id": 1,
                     "chapter_ref": "Full Content",
@@ -617,8 +624,11 @@ def test_memory_quality_report_surfaces_probe_review_focus() -> None:
 
     assert "Structural-signal supplement" in report
     assert "Structural signal to check" in report
+    assert "Probe `1` - phase transition" in report
+    assert "Probe `1` (`near 20%`)" not in report
     assert "Source coordinate: `src:c1:p51@242-p51@260`" in report
     assert "Legacy sentence orientation metadata: `c1-s261`" in report
+    assert "Distribution reference: near 20% (estimated_ratio=0.200)" in report
     assert "囚徒精神反应三阶段" in report
 
 
@@ -802,6 +812,9 @@ def test_run_long_span_vnext_writes_separated_memory_and_reaction_outputs(tmp_pa
                     {
                         "probe_index": 1,
                         "threshold_ratio": 0.2,
+                        "distribution_reference_label": "near 20%",
+                        "rough_position_target": "near 20%",
+                        "boundary_kind": "test boundary",
                         "target_locator_status": "source_native",
                         "target_source_cursor": {
                             "chapter_id": 1,
@@ -932,6 +945,7 @@ def test_run_long_span_vnext_writes_separated_memory_and_reaction_outputs(tmp_pa
         if line.strip()
     ]
     assert memory_rows[0]["target_source_span_id"] == "src:c1:p1@7-p1@12"
+    assert memory_rows[0]["distribution_reference_label"] == "near 20%"
     assert memory_rows[0]["capture_source_cursor"] == {
         "chapter_id": 1,
         "chapter_ref": "Chapter 1",

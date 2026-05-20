@@ -97,6 +97,7 @@ Field display rules:
 - If a reaction is a grounded callback, weak callback, or FVI, include prior-link evidence when present, judge reason, and a short reviewer interpretation.
 - Memory state should be structured for reading, not reduced to a tiny abstract summary. Preserve the recorded probe-time active attention, concept digest, thread digest, reflective digest, and SourceRef evidence as much as practical, but re-layout it as readable Markdown rather than raw JSON.
 - Do not present `target_sentence_id`, `target sentence`, or `cN-sM` handles by themselves as canonical source coordinates. Label them as orientation-only or legacy/eval locator metadata, and pair them with paragraph-char `SourceRef` / source-span coordinates whenever those are available.
+- Do not use `rough_position_target`, `distribution_reference_label`, or labels such as `near 20%` as the primary Memory Quality probe heading. Headings should foreground the semantic boundary and source coordinate; distance labels are secondary distribution-reference metadata.
 
 ## Cross-Surface Rules
 
