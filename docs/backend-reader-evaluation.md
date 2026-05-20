@@ -289,12 +289,14 @@ For the current Memory / Planning / Evaluation implementation guidance chain, se
     - the runtime still captures a snapshot only after the first completed read step that crosses the target; it does not insert probe-only reading steps
     - capture is an opt-in observability consumer: product runs without `memory_quality_probe_export.enabled` and explicit `probe_targets` do not build probe snapshots
     - old hard-ratio probe reports remain historical evidence and are not rewritten
-  - Memory Quality probe snapshots should expose current prompt-facing state only:
-    - `active_attention.active_items[]`
-    - each active item uses lightweight `attention_tags[]`; old `working_state` and fixed `open_questions / live_tensions / live_hypotheses / live_motifs` views belong to historical reports only
-    - `local_hypothesis` / `live_hypotheses` in older evidence is historical provenance vocabulary, not a current Memory Quality state layer
-    - concept / thread / reflective / source-ref digests
-    - continuity and recent-orientation context
+  - Memory Quality probe snapshots should score complete probe-time memory state:
+    - `scoring_memory_state.active_attention`
+    - `scoring_memory_state.concept_registry`
+    - `scoring_memory_state.thread_trace`
+    - `scoring_memory_state.reflective_frames`
+    - digest fields remain auxiliary projection / compatibility evidence, not the primary scoring surface for new runs
+    - `reaction_records`, local buffer, continuity glue, and read-audit streams are not Memory Quality stores; reaction-level behavior remains covered by Selective Legibility, Spontaneous Callback, and False Visible Integration
+    - old digest-only Memory Quality runs should be labeled with `memory_snapshot_basis=legacy_digest_snapshot`, while new full-state runs should record `memory_snapshot_basis=full_probe_time_memory_state`
     - old `gate_state`, `pressure_snapshot`, and working-pressure artifacts are not current evidence fields
   - New probe evidence generated after the Read naturalization and SourceRef cutovers should use `reading_impression` for read-audit / probe-facing local interpretation, and `memory_uptake_ops` for the bounded memory-update operations that feed active attention, concept, and thread layers with inline source refs.
     - Older reports that show `unit_delta` or `implicit_uptake_ops` are historical artifacts from the pre-cutover contract, not current field names.

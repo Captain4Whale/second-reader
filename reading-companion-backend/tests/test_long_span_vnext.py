@@ -288,6 +288,14 @@ def test_source_native_memory_quality_probe_fires_by_source_cursor(tmp_path: Pat
         "start_cursor": {"chapter_id": 1, "chapter_ref": "Chapter 1", "paragraph_index": 2, "char_offset": 6},
         "end_cursor": {"chapter_id": 1, "chapter_ref": "Chapter 1", "paragraph_index": 2, "char_offset": 13},
     }
+    active_attention = build_empty_active_attention()
+    active_attention["active_items"] = [{"item_id": "active-a", "statement": "Alpha remains salient."}]
+    concept_registry = build_empty_concept_registry()
+    concept_registry["entries"] = [{"concept_key": "concept-a", "summary": "Alpha concept."}]
+    thread_trace = build_empty_thread_trace()
+    thread_trace["entries"] = [{"thread_key": "thread-a", "summary": "Alpha thread."}]
+    reflective_frames = build_empty_reflective_frames()
+    reflective_frames["chapter_understandings"] = [{"frame_id": "frame-a", "summary": "Alpha frame."}]
 
     captured = persist_due_memory_quality_probe_snapshots(
         output_dir=output_dir,
@@ -297,10 +305,10 @@ def test_source_native_memory_quality_probe_fires_by_source_cursor(tmp_path: Pat
         chapter_ref="Chapter 1",
         local_buffer=local_buffer,
         local_continuity=local_continuity,
-        active_attention=build_empty_active_attention(),
-        concept_registry=build_empty_concept_registry(),
-        thread_trace=build_empty_thread_trace(),
-        reflective_frames=build_empty_reflective_frames(),
+        active_attention=active_attention,
+        concept_registry=concept_registry,
+        thread_trace=thread_trace,
+        reflective_frames=reflective_frames,
         reaction_records=build_empty_reaction_records(),
         actual_source_span={
             "start_cursor": {"chapter_id": 1, "chapter_ref": "Chapter 1", "paragraph_index": 2, "char_offset": 6},
@@ -327,6 +335,11 @@ def test_source_native_memory_quality_probe_fires_by_source_cursor(tmp_path: Pat
     assert snapshot["target_source_span_id"] == "src:c1:p2@0-p2@6"
     assert snapshot["capture_source_span_id"] == "src:c1:p2@6-p2@13"
     assert snapshot["recent_reading_orientation"]["current_source_span_id"] == "src:c1:p2@6-p2@13"
+    assert snapshot["scoring_memory_state"]["active_attention"]["active_items"][0]["item_id"] == "active-a"
+    assert snapshot["scoring_memory_state"]["concept_registry"]["entries"][0]["concept_key"] == "concept-a"
+    assert snapshot["scoring_memory_state"]["thread_trace"]["entries"][0]["thread_key"] == "thread-a"
+    assert snapshot["scoring_memory_state"]["reflective_frames"]["chapter_understandings"][0]["frame_id"] == "frame-a"
+    assert snapshot["projection_digest"]["active_attention_digest"] == snapshot["active_attention_digest"]
 
 
 def test_source_native_memory_quality_probe_does_not_fall_back_to_sentence_threshold(tmp_path: Path) -> None:
@@ -502,7 +515,13 @@ def test_memory_quality_judge_prompt_defines_score_scale(tmp_path: Path, monkeyp
         probe_payload={
             "probe_index": 1,
             "read_so_far_source_text": "Alpha.",
-            "memory_snapshot": {"items": ["Alpha"]},
+            "memory_snapshot": {
+                "active_attention": {"active_items": [{"item_id": "alpha"}]},
+                "concept_registry": {"entries": []},
+                "thread_trace": {"entries": []},
+                "reflective_frames": {"chapter_understandings": []},
+            },
+            "memory_snapshot_basis": runner.MEMORY_SNAPSHOT_BASIS_FULL_STATE,
             "probe_review_focus": {
                 "focus_id": "demo_structural_signal",
                 "title": "Demo structure",
@@ -513,6 +532,9 @@ def test_memory_quality_judge_prompt_defines_score_scale(tmp_path: Path, monkeyp
     )
 
     assert "Higher is better" in captured["system_prompt"]
+    assert "complete probe-time memory state" in captured["system_prompt"]
+    assert "active_attention, concept_registry, thread_trace, and reflective_frames" in captured["system_prompt"]
+    assert "legacy_digest_snapshot" in captured["system_prompt"]
     assert "1 = poor / absent" in captured["system_prompt"]
     assert "3 = adequate / useful" in captured["system_prompt"]
     assert "5 = excellent" in captured["system_prompt"]
@@ -522,6 +544,7 @@ def test_memory_quality_judge_prompt_defines_score_scale(tmp_path: Path, monkeyp
     assert "not as an exact-match gold answer" in captured["system_prompt"]
     assert "Do not copy numbers from the output schema as defaults" in captured["system_prompt"]
     assert "probe_review_focus" in captured["user_prompt"]
+    assert runner.MEMORY_SNAPSHOT_BASIS_FULL_STATE in captured["user_prompt"]
     assert runner.MEMORY_QUALITY_JUDGE_CONTRACT in captured["user_prompt"]
     assert judgment["judge_provided_overall_memory_quality_score"] == 1
     assert judgment["overall_memory_quality_score"] == 3.5
@@ -651,6 +674,36 @@ def test_normalize_memory_quality_judgment_clamps_and_derives_overall() -> None:
     assert judgment["judge_provided_overall_memory_quality_score"] == 5
     assert judgment["overall_memory_quality_score"] == 2.75
     assert judgment["memory_quality_judge_contract"] == runner.MEMORY_QUALITY_JUDGE_CONTRACT
+
+
+def test_memory_quality_judge_prefers_full_probe_time_memory_state() -> None:
+    memory_snapshot, basis = runner._memory_snapshot_for_quality_judge(
+        {
+            "scoring_memory_state": {
+                "active_attention": {"active_items": [{"item_id": "full-active"}]},
+                "concept_registry": {"entries": [{"concept_key": "full-concept"}]},
+                "thread_trace": {"entries": [{"thread_key": "full-thread"}]},
+                "reflective_frames": {"chapter_understandings": [{"frame_id": "full-frame"}]},
+            },
+            "active_attention_digest": {"active_items": [{"item_id": "digest-only"}]},
+        }
+    )
+
+    assert basis == runner.MEMORY_SNAPSHOT_BASIS_FULL_STATE
+    assert memory_snapshot["active_attention"]["active_items"][0]["item_id"] == "full-active"
+    assert "active_attention_digest" not in memory_snapshot
+
+
+def test_memory_quality_judge_marks_digest_only_snapshot_as_legacy() -> None:
+    memory_snapshot, basis = runner._memory_snapshot_for_quality_judge(
+        {
+            "probe_index": 1,
+            "active_attention_digest": {"active_items": [{"item_id": "digest-only"}]},
+        }
+    )
+
+    assert basis == runner.MEMORY_SNAPSHOT_BASIS_LEGACY_DIGEST
+    assert memory_snapshot["active_attention_digest"]["active_items"][0]["item_id"] == "digest-only"
 
 
 def test_ensure_window_output_reuses_completed_v2_with_probe_export(tmp_path: Path, monkeypatch) -> None:
@@ -859,6 +912,12 @@ def test_run_long_span_vnext_writes_separated_memory_and_reaction_outputs(tmp_pa
                             },
                         },
                         "capture_source_span_id": "src:c1:p1@7-p1@12",
+                        "scoring_memory_state": {
+                            "active_attention": {"active_items": [{"item_id": "full-active"}]},
+                            "concept_registry": {"entries": [{"concept_key": "full-concept"}]},
+                            "thread_trace": {"entries": [{"thread_key": "full-thread"}]},
+                            "reflective_frames": {"chapter_understandings": [{"frame_id": "full-frame"}]},
+                        },
                     }
                 ]
             }
@@ -895,18 +954,20 @@ def test_run_long_span_vnext_writes_separated_memory_and_reaction_outputs(tmp_pa
             "run_mode": "reuse_completed",
         },
     )
-    monkeypatch.setattr(
-        runner,
-        "judge_memory_quality_probe",
-        lambda **kwargs: {
+    captured_probe_payloads: list[dict[str, object]] = []
+
+    def _fake_judge_memory_quality_probe(**kwargs):
+        captured_probe_payloads.append(kwargs["probe_payload"])
+        return {
             "salience_score": 4,
             "mainline_fidelity_score": 4,
             "organization_score": 3,
             "fidelity_score": 4,
             "overall_memory_quality_score": 4,
             "reason": "Retained the mainline clearly.",
-        },
-    )
+        }
+
+    monkeypatch.setattr(runner, "judge_memory_quality_probe", _fake_judge_memory_quality_probe)
     monkeypatch.setattr(
         runner,
         "audit_window_reactions",
@@ -946,12 +1007,18 @@ def test_run_long_span_vnext_writes_separated_memory_and_reaction_outputs(tmp_pa
     ]
     assert memory_rows[0]["target_source_span_id"] == "src:c1:p1@7-p1@12"
     assert memory_rows[0]["distribution_reference_label"] == "near 20%"
+    assert memory_rows[0]["memory_snapshot_basis"] == runner.MEMORY_SNAPSHOT_BASIS_FULL_STATE
     assert memory_rows[0]["capture_source_cursor"] == {
         "chapter_id": 1,
         "chapter_ref": "Chapter 1",
         "paragraph_index": 1,
         "char_offset": 12,
     }
+    assert aggregate["memory_quality"]["memory_snapshot_basis_counts"] == {runner.MEMORY_SNAPSHOT_BASIS_FULL_STATE: 1}
+    assert captured_probe_payloads[0]["memory_snapshot_basis"] == runner.MEMORY_SNAPSHOT_BASIS_FULL_STATE
+    assert captured_probe_payloads[0]["memory_snapshot"]["active_attention"]["active_items"][0]["item_id"] == "full-active"
+    assert "active_attention_digest" not in captured_probe_payloads[0]["memory_snapshot"]
+    assert "Memory snapshot basis: `full_probe_time_memory_state`" in report
     rows = [
         json.loads(line)
         for line in (run_root / "summary" / "reaction_audit_results.jsonl").read_text(encoding="utf-8").splitlines()

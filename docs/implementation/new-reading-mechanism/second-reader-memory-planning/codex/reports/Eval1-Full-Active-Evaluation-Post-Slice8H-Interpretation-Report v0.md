@@ -4,9 +4,11 @@
 
 Eval-1 Retry1 completed the full active post-Slice8H `attentional_v2` evaluation scope: Lane A ran all 5 active Local/User-level Selective Legibility windows with 202 note cases, and Lane B ran all 5 active Long Span semantic-probe windows with 25 Memory Quality probes plus fresh Callback/FVI audit.
 
-What it supports: `attentional_v2` is evaluation-operational on the current active dataset boundary. The run produced health-checked reading outputs, strict user-level source-span matching, fresh Memory Quality judging, and fresh visible-reaction audit evidence across all active windows.
+What it supports: `attentional_v2` is evaluation-operational on the current active dataset boundary. The run produced health-checked reading outputs, strict user-level source-span matching, fresh Memory Quality judging under the now-legacy `legacy_digest_snapshot` basis, and fresh visible-reaction audit evidence across all active windows.
 
 What it does not support: this is not product-quality proof, not a cross-mechanism conclusion, not an evidence-catalog update, and not a Long Span vNext formal-authority promotion. Treat it as completed evaluation evidence awaiting human review.
+
+Memory Quality basis caveat: this report predates the full-state MQ repair. Its Memory Quality scores judge probe-time digest snapshots, not complete probe-time memory stores. Future full-state MQ runs should record `memory_snapshot_basis=full_probe_time_memory_state`; these Eval-1 Retry1 MQ scores should be read as `legacy_digest_snapshot`.
 
 Recommendation: accept Eval-1 as completed evaluation evidence after review; consider a separate catalog-entry brief only after reviewers agree the interpretation and caveats are adequate. Keep Long Span vNext diagnostic unless a later formal-authority brief explicitly promotes it.
 
@@ -26,7 +28,7 @@ Product-facing playback dossier:
 
 - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/eval1-full-active-evaluation-post-slice8h-playback-dossier/README.md`
 - Window pages: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/eval1-full-active-evaluation-post-slice8h-playback-dossier/windows/*.md`
-- This is the reading-site replay layer: it lists every visible reaction in reading order, attaches each reaction's source-span excerpt, adds Selective Legibility / Callback / FVI annotations only when relevant, and shows the probe-time Memory Quality state before the scoring interpretation.
+- This is the reading-site replay layer: it lists every visible reaction in reading order, attaches each reaction's source-span excerpt, adds Selective Legibility / Callback / FVI annotations only when relevant, and shows the legacy probe-time digest evidence used by Eval-1 Memory Quality before the scoring interpretation.
 
 Dataset-stable source windows:
 
@@ -150,7 +152,7 @@ Unlocatable diagnostics, not counted as matches:
 
 ## Lane B: Long Span MQ / Callback / FVI
 
-Lane B asks two different questions. Memory Quality asks whether the probe-time memory snapshot retained important structure at semantic-probe boundaries. Callback/FVI asks whether visible reactions correctly integrate earlier visible material. These are related, but they are not interchangeable.
+Lane B asks two different questions. In this Eval-1 Retry1 report, Memory Quality asks whether the legacy probe-time digest snapshot retained important structure at semantic-probe boundaries. After the full-state MQ repair, future Memory Quality runs should instead judge complete probe-time memory stores. Callback/FVI asks whether visible reactions correctly integrate earlier visible material. These are related, but they are not interchangeable.
 
 ### Aggregate Result
 

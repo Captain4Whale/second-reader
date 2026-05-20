@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from copy import deepcopy
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Mapping
@@ -18,7 +19,7 @@ from .state_projection import build_carry_forward_context
 from .storage import load_json, memory_quality_probe_export_file, save_json
 
 
-MEMORY_QUALITY_PROBE_EXPORT_SCHEMA_VERSION = 2
+MEMORY_QUALITY_PROBE_EXPORT_SCHEMA_VERSION = 3
 
 
 def _timestamp() -> str:
@@ -260,6 +261,21 @@ def _recent_reading_orientation(
     }
 
 
+def _full_scoring_memory_state(
+    *,
+    active_attention: ActiveAttention,
+    concept_registry: ConceptRegistryState,
+    thread_trace: ThreadTraceState,
+    reflective_frames: ReflectiveFramesState,
+) -> dict[str, object]:
+    return {
+        "active_attention": deepcopy(active_attention) if isinstance(active_attention, Mapping) else {},
+        "concept_registry": deepcopy(concept_registry) if isinstance(concept_registry, Mapping) else {},
+        "thread_trace": deepcopy(thread_trace) if isinstance(thread_trace, Mapping) else {},
+        "reflective_frames": deepcopy(reflective_frames) if isinstance(reflective_frames, Mapping) else {},
+    }
+
+
 def _build_probe_snapshot(
     *,
     probe_target: dict[str, object],
@@ -293,6 +309,55 @@ def _build_probe_snapshot(
     target_source_cursor = _source_cursor(probe_target.get("target_source_cursor")) or _span_end_cursor(target_source_span)
     capture_source_span = _source_span(actual_source_span)
     capture_source_cursor = _span_end_cursor(capture_source_span)
+    continuity_context = (
+        dict(carry_forward_context.get("session_continuity_capsule", {}))
+        if isinstance(carry_forward_context.get("session_continuity_capsule"), dict)
+        else {}
+    )
+    active_attention_digest = (
+        dict(carry_forward_context.get("active_attention_digest", {}))
+        if isinstance(carry_forward_context.get("active_attention_digest"), dict)
+        else {}
+    )
+    concept_digest = [
+        dict(item)
+        for item in carry_forward_context.get("concept_digest", [])
+        if isinstance(item, dict)
+    ]
+    thread_digest = [
+        dict(item)
+        for item in carry_forward_context.get("thread_digest", [])
+        if isinstance(item, dict)
+    ]
+    reflective_digest = (
+        dict(carry_forward_context.get("chapter_reflective_frame", {}))
+        if isinstance(carry_forward_context.get("chapter_reflective_frame"), dict)
+        else {}
+    )
+    active_focus_digest = (
+        dict(carry_forward_context.get("active_focus_digest", {}))
+        if isinstance(carry_forward_context.get("active_focus_digest"), dict)
+        else {}
+    )
+    source_ref_digest = [
+        dict(item)
+        for item in carry_forward_context.get("source_ref_digest", [])
+        if isinstance(item, dict)
+    ]
+    recent_reading_orientation = _recent_reading_orientation(
+        local_buffer=local_buffer,
+        local_continuity=local_continuity,
+    )
+    projection_digest = {
+        "continuity_context": continuity_context,
+        "active_attention_digest": active_attention_digest,
+        "concept_digest": concept_digest,
+        "thread_digest": thread_digest,
+        "reflective_digest": reflective_digest,
+        "active_focus_digest": active_focus_digest,
+        "source_ref_digest": source_ref_digest,
+        "recent_reading_orientation": recent_reading_orientation,
+    }
     return {
         "probe_index": int(probe_target.get("probe_index", 0) or 0),
         "estimated_ratio": float(probe_target.get("estimated_ratio", 0.0) or 0.0),
@@ -329,37 +394,21 @@ def _build_probe_snapshot(
             "end_source_cursor": capture_source_cursor,
             "end_source_span_id": _clean_text(actual_source_span_id) or _source_span_id(capture_source_span),
         },
-        "continuity_context": dict(carry_forward_context.get("session_continuity_capsule", {}))
-        if isinstance(carry_forward_context.get("session_continuity_capsule"), dict)
-        else {},
-        "active_attention_digest": dict(carry_forward_context.get("active_attention_digest", {}))
-        if isinstance(carry_forward_context.get("active_attention_digest"), dict)
-        else {},
-        "concept_digest": [
-            dict(item)
-            for item in carry_forward_context.get("concept_digest", [])
-            if isinstance(item, dict)
-        ],
-        "thread_digest": [
-            dict(item)
-            for item in carry_forward_context.get("thread_digest", [])
-            if isinstance(item, dict)
-        ],
-        "reflective_digest": dict(carry_forward_context.get("chapter_reflective_frame", {}))
-        if isinstance(carry_forward_context.get("chapter_reflective_frame"), dict)
-        else {},
-        "active_focus_digest": dict(carry_forward_context.get("active_focus_digest", {}))
-        if isinstance(carry_forward_context.get("active_focus_digest"), dict)
-        else {},
-        "source_ref_digest": [
-            dict(item)
-            for item in carry_forward_context.get("source_ref_digest", [])
-            if isinstance(item, dict)
-        ],
-        "recent_reading_orientation": _recent_reading_orientation(
-            local_buffer=local_buffer,
-            local_continuity=local_continuity,
+        "scoring_memory_state": _full_scoring_memory_state(
+            active_attention=active_attention,
+            concept_registry=concept_registry,
+            thread_trace=thread_trace,
+            reflective_frames=reflective_frames,
         ),
+        "projection_digest": projection_digest,
+        "continuity_context": continuity_context,
+        "active_attention_digest": active_attention_digest,
+        "concept_digest": concept_digest,
+        "thread_digest": thread_digest,
+        "reflective_digest": reflective_digest,
+        "active_focus_digest": active_focus_digest,
+        "source_ref_digest": source_ref_digest,
+        "recent_reading_orientation": recent_reading_orientation,
     }
 
 

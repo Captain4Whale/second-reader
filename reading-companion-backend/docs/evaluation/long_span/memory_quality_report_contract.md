@@ -67,21 +67,23 @@ Each report must explain:
 
 ## State Evidence Rules
 
-The scoring evidence remains the probe-time snapshot, not the final runtime dump.
+The scoring evidence for new Memory Quality runs is the complete probe-time memory state, not a digest projection and not the final runtime dump.
 
 Each window report must explain the difference:
 
-- `probe snapshot`: the state evidence captured at that checkpoint and used for scoring
+- `scoring_memory_state`: the complete memory stores captured at that checkpoint and used for scoring
+- `projection_digest`: prompt/context-facing digest evidence retained for compatibility and debugging, but not the primary scoring surface
 - `full runtime dump`: the final complete runtime state for learning, debugging, and mechanism inspection
 - final runtime dump cannot replace probe-time state evidence because it is captured after later reading has changed state
+- legacy digest-only snapshots should be labeled with `memory_snapshot_basis=legacy_digest_snapshot` and not described as full-state Memory Quality
 
 Each probe should show:
 
 - score dimensions and judge reason
 - raw snapshot link
-- state layer counts
-- readable state digests
-- recent orientation context
+- memory snapshot basis
+- complete probe-time state layers: `active_attention`, `concept_registry`, `thread_trace`, `reflective_frames`
+- projection digest only as auxiliary compatibility evidence when useful
 
 ## No Current Route Evidence
 
@@ -122,4 +124,6 @@ Before closing a generated Memory Quality evidence report, check:
 - Every probe links to raw snapshot JSON, source marker, source landmark, and runtime appendix.
 - No new report contains a current `Recent Routes` / `route_action` evidence block.
 - The report states that probe placement is semantic-manifest-driven, with distance only as a reference.
+- The report states that complete probe-time memory state is the scoring evidence for new runs.
 - The report states that final runtime dump cannot replace probe-time snapshot evidence.
+- Legacy digest-only runs are labeled as `legacy_digest_snapshot`.

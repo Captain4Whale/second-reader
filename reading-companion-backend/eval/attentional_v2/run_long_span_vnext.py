@@ -55,6 +55,8 @@ JUDGE_SCHEMA_RETRY_INSTRUCTION = (
     "Do not wrap it in markdown fences or nest it under another key."
 )
 MEMORY_QUALITY_JUDGE_CONTRACT = "scale_v3_structural_signal_aware"
+MEMORY_SNAPSHOT_BASIS_FULL_STATE = "full_probe_time_memory_state"
+MEMORY_SNAPSHOT_BASIS_LEGACY_DIGEST = "legacy_digest_snapshot"
 REACTION_AUDIT_JUDGE_CONTRACT = "visible_reaction_audit_v2_native_evidence"
 MEMORY_QUALITY_DIMENSION_KEYS = (
     "salience_score",
@@ -113,6 +115,16 @@ def _run_in_parallel(items: list[Any], worker_count: int, fn) -> list[Any]:
 
 def _output_dir_for(run_root: Path, segment_id: str, mechanism_key: str) -> Path:
     return run_root / "outputs" / segment_id / mechanism_key
+
+
+def _memory_snapshot_for_quality_judge(snapshot: dict[str, Any]) -> tuple[dict[str, Any], str]:
+    scoring_memory_state = snapshot.get("scoring_memory_state")
+    if isinstance(scoring_memory_state, dict) and all(
+        isinstance(scoring_memory_state.get(key), dict)
+        for key in ("active_attention", "concept_registry", "thread_trace", "reflective_frames")
+    ):
+        return dict(scoring_memory_state), MEMORY_SNAPSHOT_BASIS_FULL_STATE
+    return dict(snapshot), MEMORY_SNAPSHOT_BASIS_LEGACY_DIGEST
 
 
 def memory_quality_probe_review_focus(*, segment_id: str, probe_index: int) -> dict[str, str] | None:
@@ -940,19 +952,23 @@ def judge_memory_quality_probe(
 
     system_prompt = f"""You are judging long-span memory quality for a continuous-reading agent.
 
-Focus on what the memory snapshot actually retains at this probe point.
+Focus on what the complete probe-time memory state actually retains at this probe point.
 The source slice shows what has already been read; it is context, not substitute memory.
-Do not reward the snapshot for information that exists only in the source slice.
+Do not reward the memory state for information that exists only in the source slice.
+For new runs, probe_payload.memory_snapshot is the complete probe-time memory state,
+including active_attention, concept_registry, thread_trace, and reflective_frames.
+If probe_payload.memory_snapshot_basis is legacy_digest_snapshot, the payload is old digest-only
+evidence; judge it as legacy evidence and do not assume it is a complete memory store.
 
 Pay special attention to source-given structural signals. If the source-so-far explicitly introduces
 an organizing structure such as a stage model, classification, core definition, roadmap, or named distinction,
-check whether the snapshot retains it in some meaningful form. Exact wording and fixed
-field placement are not required. If a salient source-given structure is missing from the snapshot,
+check whether the memory state retains it in some meaningful form. Exact wording and fixed
+field placement are not required. If a salient source-given structure is missing from the memory state,
 that should usually affect salience_score and organization_score, and sometimes mainline_fidelity_score.
 
 Some probe payloads include probe_review_focus. Treat it as a human-authored structural signal to
 inspect carefully, not as an exact-match gold answer. The focus should sharpen your audit of the
-snapshot, but the final judgment must still be holistic and based on what the snapshot actually
+memory state, but the final judgment must still be holistic and based on what the memory state actually
 retains.
 
 Use this 1-5 scale for every score. Higher is better.
@@ -979,7 +995,7 @@ Return JSON only."""
         "salience_score, mainline_fidelity_score, organization_score, fidelity_score. "
         "You may include overall_memory_quality_score, but it is audit-only and will be recomputed. "
         f'Also include "memory_quality_judge_contract":"{MEMORY_QUALITY_JUDGE_CONTRACT}" and '
-        '"reason":"2-5 sentences citing concrete retained items from the snapshot and any important omissions/drift. '
+        '"reason":"2-5 sentences citing concrete retained items from the memory state and any important omissions/drift. '
         'If probe_review_focus is present and materially retained or missing, mention it explicitly."'
     )
     payload: object = {}
@@ -1433,12 +1449,14 @@ def _aggregate_memory_quality(probe_results: list[dict[str, Any]]) -> dict[str, 
 
     window_summaries: list[dict[str, Any]] = []
     for segment_id, rows in windows.items():
+        basis_counts = Counter(_clean_text(row.get("memory_snapshot_basis")) or "unknown" for row in rows)
         window_summaries.append(
             {
                 "segment_id": segment_id,
                 "source_id": rows[0]["source_id"],
                 "book_title": rows[0]["book_title"],
                 "probe_count": len(rows),
+                "memory_snapshot_basis_counts": dict(sorted(basis_counts.items())),
                 "average_salience_score": mean(float(row["salience_score"]) for row in rows),
                 "average_mainline_fidelity_score": mean(float(row["mainline_fidelity_score"]) for row in rows),
                 "average_organization_score": mean(float(row["organization_score"]) for row in rows),
@@ -1452,6 +1470,9 @@ def _aggregate_memory_quality(probe_results: list[dict[str, Any]]) -> dict[str, 
         "memory_quality_judge_contract": MEMORY_QUALITY_JUDGE_CONTRACT,
         "probe_count": len(probe_results),
         "window_count": len(ordered_windows),
+        "memory_snapshot_basis_counts": dict(
+            sorted(Counter(_clean_text(row.get("memory_snapshot_basis")) or "unknown" for row in probe_results).items())
+        ),
         "average_overall_memory_quality_score": mean(
             float(item["average_overall_memory_quality_score"]) for item in ordered_windows
         )
@@ -1573,7 +1594,9 @@ def _render_report(
         f"- Probe selection: `{aggregate.get('probe_selection_method') or PROBE_SELECTION_METHOD}`; probe targets are semantic boundaries with distance only as a distribution reference, not hard ratio checkpoints.",
         "- Scoring scale: `1 = poor / absent`, `3 = adequate / useful`, `5 = excellent`; higher is better.",
         "- Overall memory quality is derived from salience, mainline fidelity, organization, and fidelity scores.",
-        "- Structural-signal supplement: when source-so-far explicitly introduces a stage model, classification, core definition, roadmap, or named distinction, the judge checks whether the snapshot retains it; probe-specific review focus is an audit aid, not an exact-match gold answer.",
+        "- Scoring evidence: new runs judge the complete probe-time memory stores (`active_attention`, `concept_registry`, `thread_trace`, `reflective_frames`). Legacy digest-only probe snapshots are explicitly marked when reused.",
+        f"- Memory snapshot basis counts: `{json.dumps(memory_quality.get('memory_snapshot_basis_counts', {}), ensure_ascii=False, sort_keys=True)}`",
+        "- Structural-signal supplement: when source-so-far explicitly introduces a stage model, classification, core definition, roadmap, or named distinction, the judge checks whether the memory state retains it; probe-specific review focus is an audit aid, not an exact-match gold answer.",
         f"- Overall average memory quality score: `{memory_quality.get('average_overall_memory_quality_score', 0.0):.3f}`",
         f"- Probe count: `{memory_quality.get('probe_count', 0)}`",
         f"- Window count: `{memory_quality.get('window_count', 0)}`",
@@ -1587,6 +1610,7 @@ def _render_report(
                 f"### {window_summary['book_title']} (`{window_summary['segment_id']}`)",
                 f"- Average overall memory quality: `{window_summary['average_overall_memory_quality_score']:.3f}`",
                 f"- Probe count: `{window_summary['probe_count']}`",
+                f"- Memory snapshot basis counts: `{json.dumps(window_summary.get('memory_snapshot_basis_counts', {}), ensure_ascii=False, sort_keys=True)}`",
                 "",
             ]
         )
@@ -1604,6 +1628,9 @@ def _render_report(
                 lines.append(f"  - Target locator status: `{locator_status}`")
             if sentence_orientation:
                 lines.append(f"  - Legacy sentence orientation metadata: `{sentence_orientation}`")
+            memory_snapshot_basis = _clean_text(row.get("memory_snapshot_basis"))
+            if memory_snapshot_basis:
+                lines.append(f"  - Memory snapshot basis: `{memory_snapshot_basis}`")
             distribution_label = _distribution_reference_label(row)
             estimated_ratio = _estimated_ratio_label(row)
             if distribution_label or estimated_ratio:
@@ -1931,6 +1958,7 @@ def run_long_span_vnext(
                     continue
                 capture_sentence_id = _clean_text(snapshot.get("capture_sentence_id"))
                 capture_source_cursor = _source_cursor(snapshot.get("capture_source_cursor"))
+                memory_snapshot, memory_snapshot_basis = _memory_snapshot_for_quality_judge(snapshot)
                 read_so_far_source_text = (
                     build_read_so_far_source_text_to_cursor(book_document, capture_source_cursor)
                     if capture_source_cursor
@@ -1946,7 +1974,8 @@ def run_long_span_vnext(
                     "why_this_probe_point": _clean_text(snapshot.get("why_this_probe_point")),
                     "structural_signals_to_check": snapshot.get("structural_signals_to_check", []),
                     "read_so_far_source_text": read_so_far_source_text,
-                    "memory_snapshot": snapshot,
+                    "memory_snapshot": memory_snapshot,
+                    "memory_snapshot_basis": memory_snapshot_basis,
                 }
                 probe_review_focus = memory_quality_probe_review_focus(
                     segment_id=window.segment_id,
@@ -1986,6 +2015,7 @@ def run_long_span_vnext(
             "capture_source_cursor": _source_cursor(snapshot.get("capture_source_cursor")),
             "capture_source_span": _source_span(snapshot.get("capture_source_span")),
             "capture_source_span_id": _clean_text(snapshot.get("capture_source_span_id")),
+            "memory_snapshot_basis": _clean_text(probe_payload.get("memory_snapshot_basis")),
             "probe_review_focus": probe_payload.get("probe_review_focus"),
             **judgment,
         }
