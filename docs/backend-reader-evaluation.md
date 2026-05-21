@@ -298,6 +298,7 @@ For the current Memory / Planning / Evaluation implementation guidance chain, se
     - `reaction_records`, local buffer, continuity glue, and read-audit streams are not Memory Quality stores; reaction-level behavior remains covered by Selective Legibility, Spontaneous Callback, and False Visible Integration
     - old digest-only Memory Quality runs should be labeled with `memory_snapshot_basis=legacy_digest_snapshot`, while new full-state runs should record `memory_snapshot_basis=full_probe_time_memory_state`
     - old `gate_state`, `pressure_snapshot`, and working-pressure artifacts are not current evidence fields
+    - Active Attention should be interpreted as open live questions with `question_from`, `driving_question`, `working_answer`, and source evidence; reports should not treat it as a generic recent-memory digest or summary cache
   - New probe evidence generated after the Read naturalization and SourceRef cutovers should use `reading_impression` for read-audit / probe-facing local interpretation, and `memory_uptake_ops` for the bounded memory-update operations that feed active attention, concept, and thread layers with inline source refs.
     - Older reports that show `unit_delta` or `implicit_uptake_ops` are historical artifacts from the pre-cutover contract, not current field names.
   - Memory Quality evidence reports have a fixed writing contract:

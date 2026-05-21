@@ -63,9 +63,10 @@ def test_apply_active_attention_operations_handles_append_update_close_link_and_
                 "reason": "motif became active",
                 "payload": {
                     "attention_tags": ["motif"],
-                    "statement": "value returns as a live motif",
+                    "question_from": "The chapter introduces value as a recurring problem.",
+                    "driving_question": "How will value narrow as the chapter develops?",
+                    "working_answer": "",
                     "source_refs": [_source_ref()],
-                    "status": "active",
                 },
             }
         ],
@@ -79,6 +80,8 @@ def test_apply_active_attention_operations_handles_append_update_close_link_and_
                 "target_store": "active_attention",
                 "item_id": "m-1",
                 "payload": {
+                    "working_answer": "Value is becoming a social exchange problem.",
+                    "answer_source_refs": [_source_ref("Value is mediated by other people.")],
                     "linked_concept_keys": ["concept:value"],
                     "linked_thread_keys": ["thread:value"],
                 },
@@ -107,17 +110,58 @@ def test_apply_active_attention_operations_handles_append_update_close_link_and_
 
     assert state["active_items"][0]["item_id"] == "m-1"
     assert state["active_items"][0]["attention_tags"] == ["motif"]
+    assert state["active_items"][0]["question_from"] == "The chapter introduces value as a recurring problem."
+    assert state["active_items"][0]["driving_question"] == "How will value narrow as the chapter develops?"
+    assert state["active_items"][0]["working_answer"] == "Value is becoming a social exchange problem."
     assert state["active_items"][0]["status"] == "closed"
     assert state["active_items"][0]["linked_concept_keys"] == ["concept:value"]
     assert state["active_items"][0]["linked_thread_keys"] == ["thread:value"]
     assert state["active_items"][0]["source_refs"][0]["source_span_id"] == "src:c1:p1@0-p1@36"
+    assert state["active_items"][0]["answer_source_refs"][0]["quote"] == "Value is mediated by other people."
     assert "bucket" not in state["active_items"][0]
     assert "kind" not in state["active_items"][0]
     assert dropped["active_items"] == []
 
 
+def test_active_attention_text_fields_preserve_by_default_and_allow_explicit_clear():
+    """Live-question text fields should distinguish omitted values from explicit replacement."""
+
+    state = build_empty_active_attention()
+    state = apply_active_attention_operations(
+        state,
+        [
+            {
+                "operation_type": "create",
+                "target_store": "active_attention",
+                "item_id": "q-1",
+                "payload": {
+                    "question_from": "A bomb is placed under the table.",
+                    "driving_question": "When will the bomb explode?",
+                    "working_answer": "No timing clue yet.",
+                },
+            }
+        ],
+    )
+    state = apply_active_attention_operations(
+        state,
+        [
+            {
+                "operation_type": "update",
+                "target_store": "active_attention",
+                "item_id": "q-1",
+                "payload": {"working_answer": ""},
+            }
+        ],
+    )
+
+    item = _find(state["active_items"], "item_id", "q-1")
+    assert item["question_from"] == "A bomb is placed under the table."
+    assert item["driving_question"] == "When will the bomb explode?"
+    assert item["working_answer"] == ""
+
+
 def test_active_attention_lifecycle_states_preserve_items_until_explicit_drop():
-    """Cooling, closing, and resolving are lifecycle states; only drop removes active items."""
+    """Cooling, closing, and answered states are lifecycle states; only drop removes active items."""
 
     state = {
         "active_items": [
@@ -176,7 +220,7 @@ def test_active_attention_lifecycle_states_preserve_items_until_explicit_drop():
     )
     resolved_item = _find(resolved["active_items"], "item_id", "cooling-question")
     closed_item = _find(resolved["active_items"], "item_id", "closing-thread")
-    assert resolved_item["status"] == "resolved"
+    assert resolved_item["status"] == "answered"
     assert resolved_item["source_refs"][0]["quote"] == "Cooling question."
     assert closed_item["status"] == "closed"
     assert closed_item["linked_thread_keys"] == ["thread:closing"]
@@ -198,7 +242,7 @@ def test_active_attention_lifecycle_states_preserve_items_until_explicit_drop():
 
 
 def test_state_ops_already_apply_resolve_operations():
-    """Resolve behavior is already supported by state_ops without changing it in Slice 2A."""
+    """Resolve behavior is store-specific: active questions become answered."""
 
     active_state = {
         "active_items": [
@@ -244,7 +288,7 @@ def test_state_ops_already_apply_resolve_operations():
         ],
     )
 
-    assert active_state["active_items"][0]["status"] == "resolved"
+    assert active_state["active_items"][0]["status"] == "answered"
     assert concept_state["entries"][0]["status"] == "resolved"
     assert thread_state["entries"][0]["status"] == "resolved"
 

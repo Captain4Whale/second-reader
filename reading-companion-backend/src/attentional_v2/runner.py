@@ -2137,14 +2137,22 @@ def _normalize_memory_uptake_ops_source_refs(
             continue
         operation = dict(item)
         payload = dict(operation.get("payload", {})) if isinstance(operation.get("payload"), dict) else {}
-        if isinstance(payload.get("source_refs"), list):
-            operation["payload"] = payload
-            normalized.append(operation)
-            continue
+
         source_quote = _clean_text(payload.get("source_quote") or payload.get("quote") or payload.get("evidence_quote"))
         source_role = _clean_text(payload.get("source_role")) or "support"
-        if isinstance(source_unit, dict) and source_unit:
+        if isinstance(source_unit, dict) and source_unit and not isinstance(payload.get("source_refs"), list):
             payload["source_refs"] = [source_ref_from_unit(source_unit, quote=source_quote, role=source_role)]
+        answer_source_quote = _clean_text(payload.get("answer_source_quote"))
+        answer_source_role = _clean_text(payload.get("answer_source_role")) or "answer_support"
+        if (
+            isinstance(source_unit, dict)
+            and source_unit
+            and answer_source_quote
+            and not isinstance(payload.get("answer_source_refs"), list)
+        ):
+            payload["answer_source_refs"] = [
+                source_ref_from_unit(source_unit, quote=answer_source_quote, role=answer_source_role)
+            ]
         operation["payload"] = payload
         normalized.append(operation)
     return normalized

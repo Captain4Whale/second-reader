@@ -133,6 +133,14 @@ def _merge_source_refs(*values: object) -> list[SourceRef]:
     return dedupe_source_refs(merged)
 
 
+def _merge_text_field(existing: dict[str, object], payload: dict[str, object], key: str) -> str:
+    """Return payload text when explicitly provided, otherwise preserve existing text."""
+
+    if key in payload:
+        return str(payload.get(key) or "").strip()
+    return str(existing.get(key) or "").strip()
+
+
 def _merge_active_item(
     existing: dict[str, object],
     payload: dict[str, object],
@@ -144,8 +152,15 @@ def _merge_active_item(
     merged: ActiveAttentionItem = {
         "item_id": item_id,
         "attention_tags": _merge_unique_ids(existing.get("attention_tags"), payload.get("attention_tags")),
-        "statement": str(payload.get("statement", "") or existing.get("statement", "") or "").strip(),
+        "question_from": _merge_text_field(existing, payload, "question_from"),
+        "driving_question": _merge_text_field(existing, payload, "driving_question"),
+        "working_answer": _merge_text_field(existing, payload, "working_answer"),
+        "statement": _merge_text_field(existing, payload, "statement"),
         "source_refs": _merge_source_refs(existing.get("source_refs"), payload.get("source_refs")),
+        "answer_source_refs": _merge_source_refs(
+            existing.get("answer_source_refs"),
+            payload.get("answer_source_refs"),
+        ),
         "linked_concept_keys": _merge_unique_ids(existing.get("linked_concept_keys"), payload.get("linked_concept_keys")),
         "linked_thread_keys": _merge_unique_ids(existing.get("linked_thread_keys"), payload.get("linked_thread_keys")),
         "status": str(payload.get("status", "") or existing.get("status", "") or "").strip(),
@@ -179,9 +194,11 @@ def _apply_active_attention_operations(
         if operation_type in {"append", "create", "update", "reactivate", "cool"}:
             merged_item = _merge_active_item(existing, payload, item_id=item_id)
             if operation_type in {"append", "create"} and not merged_item.get("status"):
-                merged_item["status"] = "active"
+                merged_item["status"] = "open"
+            if operation_type == "update" and not merged_item.get("status"):
+                merged_item["status"] = "open"
             if operation_type == "reactivate" and not payload.get("status"):
-                merged_item["status"] = "active"
+                merged_item["status"] = "open"
             if operation_type == "cool" and not payload.get("status"):
                 merged_item["status"] = "cooling"
             active_items = _upsert_by_id(active_items, merged_item, id_key="item_id")
@@ -193,7 +210,7 @@ def _apply_active_attention_operations(
                 continue
             merged_item = _merge_active_item(existing, payload, item_id=item_id)
             if not payload.get("status"):
-                merged_item["status"] = "resolved" if operation_type == "resolve" else "closed"
+                merged_item["status"] = "answered" if operation_type == "resolve" else "closed"
             active_items = _upsert_by_id(active_items, merged_item, id_key="item_id")
             touched = True
             continue

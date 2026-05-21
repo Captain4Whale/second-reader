@@ -63,7 +63,9 @@ def test_build_carry_forward_context_exposes_phase_c1_packet_shape():
         {
             "item_id": "question-1",
             "attention_tags": ["question"],
-            "statement": "Why does the chapter turn here?",
+            "question_from": "The opener introduces a practical dilemma.",
+            "driving_question": "Why does the chapter turn here?",
+            "working_answer": "",
             "source_refs": [_source_ref()],
             "status": "open",
         },
@@ -77,7 +79,9 @@ def test_build_carry_forward_context_exposes_phase_c1_packet_shape():
         {
             "item_id": "question-cooling",
             "attention_tags": ["question"],
-            "statement": "This question is cooling but remains current support.",
+            "question_from": "A still-open transition has not fully settled.",
+            "driving_question": "How will the transition resolve?",
+            "working_answer": "The chapter is starting to answer it.",
             "source_refs": [_source_ref("Cooling sentence.")],
             "status": "cooling",
         }
@@ -179,6 +183,10 @@ def test_build_carry_forward_context_exposes_phase_c1_packet_shape():
     assert packet["packet_version"] == STATE_PACKET_VERSION
     assert packet["active_attention_digest"]["active_items"][0]["item_id"] == "question-1"
     assert packet["active_attention_digest"]["active_items"][0]["attention_tags"] == ["question"]
+    assert packet["active_attention_digest"]["active_items"][0]["question_from"] == (
+        "The opener introduces a practical dilemma."
+    )
+    assert packet["active_attention_digest"]["active_items"][0]["driving_question"] == "Why does the chapter turn here?"
     assert packet["active_attention_digest"]["active_items"][0]["projection_role"] == "current_support"
     assert packet["active_attention_digest"]["active_items"][0]["support_status"] == "source_backed"
     assert packet["active_attention_digest"]["active_items"][0]["current_support"] is True
@@ -284,7 +292,9 @@ def test_build_read_prompt_packet_projects_compact_always_carry_and_selective_ca
         {
             "item_id": "question-1",
             "attention_tags": ["question"],
-            "statement": "Why does the chapter turn here?",
+            "question_from": "The opener introduces a practical dilemma.",
+            "driving_question": "Why does the chapter turn here?",
+            "working_answer": "",
             "source_refs": [_source_ref()],
             "status": "open",
         }
@@ -370,8 +380,16 @@ def test_build_read_prompt_packet_projects_compact_always_carry_and_selective_ca
     )
 
     assert prompt_packet["packet_version"] == STATE_PACKET_VERSION
-    assert prompt_packet["active_attention"]["active_items"][0]["item_id"] == "question-1"
-    assert prompt_packet["active_attention"]["active_items"][0]["projection_role"] == "current_support"
+    assert prompt_packet["active_attention"]["active_questions"] == [
+        {
+            "item_id": "question-1",
+            "question_from": "The opener introduces a practical dilemma.",
+            "driving_question": "Why does the chapter turn here?",
+            "working_answer": "",
+        }
+    ]
+    assert prompt_packet["active_attention"]["open_question_count"] == 1
+    assert prompt_packet["active_attention"]["projection_warning"] == ""
     assert prompt_packet["concept_digest"][0]["concept_key"] == "promise"
     assert prompt_packet["concept_digest"][0]["support_status"] == "source_backed"
     assert prompt_packet["thread_digest"][0]["thread_key"]
@@ -387,6 +405,48 @@ def test_build_read_prompt_packet_projects_compact_always_carry_and_selective_ca
     assert prompt_packet["local_continuity"]["recent_reactions"][0]["visible_trace_support"] is True
     assert prompt_packet["local_continuity"]["recent_reactions"][0]["current_support"] is False
     assert "knowledge_activations" not in prompt_packet
+
+
+def test_read_prompt_packet_includes_all_open_questions_without_runtime_fields():
+    """Read prompt context should carry all open questions, not the first six digest records."""
+
+    active_items = [
+        {
+            "item_id": f"question-{index}",
+            "question_from": f"source trigger {index}",
+            "driving_question": f"what happens with question {index}?",
+            "working_answer": "",
+            "status": "open",
+            "source_refs": [_source_ref(f"Question {index}.")],
+            "answer_source_refs": [_source_ref(f"Answer {index}.")],
+            "linked_concept_keys": [f"concept:{index}"],
+            "projection_role": "current_support",
+        }
+        for index in range(7)
+    ]
+    active_items.append(
+        {
+            "item_id": "question-answered",
+            "question_from": "answered source",
+            "driving_question": "answered question?",
+            "working_answer": "answered",
+            "status": "answered",
+        }
+    )
+
+    prompt_packet = build_read_prompt_packet(
+        carry_forward_context={
+            "packet_version": STATE_PACKET_VERSION,
+            "active_attention_digest": {"active_items": active_items},
+        }
+    )
+
+    active_questions = prompt_packet["active_attention"]["active_questions"]
+    assert len(active_questions) == 7
+    assert [item["item_id"] for item in active_questions] == [f"question-{index}" for index in range(7)]
+    assert "question-answered" not in {item["item_id"] for item in active_questions}
+    assert prompt_packet["active_attention"]["projection_warning"] == "open_active_question_count_exceeds_soft_limit"
+    assert set(active_questions[0]) == {"item_id", "question_from", "driving_question", "working_answer"}
 
 
 def test_build_read_prompt_packet_exposes_retrieval_contract_without_full_active_recall_objects():

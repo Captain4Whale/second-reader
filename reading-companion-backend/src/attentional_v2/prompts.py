@@ -10,7 +10,7 @@ from src.prompts.shared import LANGUAGE_OUTPUT_CONTRACT
 ATTENTIONAL_V2_PROMPTSET_VERSION = "attentional_v2-phase6-v25"
 SURVEY_CHAPTER_ZONE_PROMPT_VERSION = "attentional_v2.survey_chapter_zone.v1"
 NAVIGATE_CHOOSE_NEXT_UNIT_PROMPT_VERSION = "attentional_v2.navigate_choose_next_unit.v1"
-READ_UNIT_PROMPT_VERSION = "attentional_v2.read.v15"
+READ_UNIT_PROMPT_VERSION = "attentional_v2.read.v16"
 BRIDGE_RESOLUTION_PROMPT_VERSION = "attentional_v2.bridge_resolution.v5"
 REFLECTIVE_PROMOTION_PROMPT_VERSION = "attentional_v2.reflective_promotion.v1"
 RECONSOLIDATION_PROMPT_VERSION = "attentional_v2.reconsolidation.v1"
@@ -243,22 +243,32 @@ Rules:
   - `这与 c1-s1135 的边界压缩形成层级跃迁。`
   - `This answers source:src:c1:p1@0-p1@12 directly.`
   - `Earlier the text said "..."` followed by a long pasted sentence from earlier material.
-- After the impression and any surfaced reactions, let memory settle naturally.
+- After the impression and any surfaced reactions, maintain memory deliberately.
 - `memory_uptake_ops` records only what should remain available after this unit. Do not maintain state for its own sake.
 - A surfaced reaction is already persisted as a reaction record. Do not copy it into `concept_registry` or `thread_trace` just because it was strong.
-- Create a memory operation only when the reading experience yields something that should continue shaping later reading: a live focus, a reusable concept/model/definition, or an unfolding thread.
+- Create a memory operation only when the reading experience yields something that should continue shaping later reading: an open question, a reusable concept/model/definition, or an unfolding thread.
 - Explicit source structures can be worth remembering even when they do not call for a visible reaction: stage models, classifications, core definitions, named distinctions, chapter roadmaps, and other author-given frameworks may belong in durable memory.
 - Do not disguise plainly stated source material as your own interpretation. Preserve source-given structure as source-given structure.
 - `memory_uptake_ops` must stay explicit and bounded. Only target:
   - `active_attention`
   - `concept_registry`
   - `thread_trace`
-- Write to `active_attention` only when an item will keep pulling on the next reads.
+- `active_attention` is the reader's live question set, not recent memory and not a summary cache.
+- Write to `active_attention` only when already-read text raises a question that still pulls the reader forward to seek an answer, confirmation, reversal, or continuation.
+- Active-attention payloads must use `question_from`, `driving_question`, and `working_answer`; do not create new `statement`-only active-attention items.
+- `question_from` says what already-read source moment raised the question. It is normally stable.
+- `driving_question` says what the reader is now trying to find out.
+- `working_answer` says the current best partial answer. It may be empty for a newly opened question and should be updated when the text advances it.
+- Before creating new active questions, inspect existing `active_questions` in the read context packet. If the current unit answers, advances, reverses, weakens, or closes one, emit an `update`, `resolve`, `close`, or `drop` operation for that existing `item_id`.
+- If an answer becomes durable, write the durable content to `concept_registry` or `thread_trace` and close the active question. Do not use `promote` as an active-attention operation.
+- Do not create an active question when the current unit raises and answers the question locally.
+- Do not store stable concepts, definitions, chapter summaries, or surfaced reactions in `active_attention`.
 - Use `concept_registry` for reusable concepts, models, definitions, or distinctions.
 - Use `thread_trace` for cross-passage or cross-chapter lines of development.
 - When an operation needs source evidence, add `source_quote` and optionally `source_role` inside the payload. The runner will resolve it to paragraph + char-offset `source_refs`.
+- When an operation answers an active question, add `answer_source_quote` and optionally `answer_source_role`; the runner will resolve it to `answer_source_refs`.
 - Ordinary passing understanding belongs in `reading_impression`, not in persistent memory.
-- Active-attention item payloads use `attention_tags` as lightweight labels. Suggested tags include `question`, `tension`, `interpretation`, `motif`, and `focus`, but these are examples, not fixed buckets.
+- Active-attention item payloads may still use `attention_tags` as lightweight labels, but the live question fields are authoritative.
 - Do not use legacy active-attention bucket/list fields in new state operations.
 - Do not write `reflective_frames`, `reaction_records`, or history/audit layers here.
 - Propose operations, not whole-object rewrites.
@@ -303,16 +313,37 @@ Return JSON:
   ],
   "memory_uptake_ops": [
     {
-      "op": "append",
+      "op": "create",
       "target_store": "active_attention",
       "target_key": "item-key",
       "reason": "<brief reason>",
       "payload": {
-        "statement": "<only if this naturally needs to remain available after the unit>",
-        "attention_tags": ["focus"],
+        "question_from": "<what already-read source moment raised this question>",
+        "driving_question": "<what the reader is now trying to find out>",
+        "working_answer": "",
+        "status": "open",
+        "attention_tags": ["question"],
         "source_quote": "<optional exact quote from current unit>",
         "source_role": "support"
       }
+    },
+    {
+      "op": "update",
+      "target_store": "active_attention",
+      "target_key": "<existing active question item_id>",
+      "reason": "<how the current unit advances the question>",
+      "payload": {
+        "working_answer": "<current best partial answer>",
+        "answer_source_quote": "<exact quote from current unit that supports this answer>",
+        "answer_source_role": "answer_support"
+      }
+    },
+    {
+      "op": "close",
+      "target_store": "active_attention",
+      "target_key": "<existing active question item_id>",
+      "reason": "<why this question no longer drives later reading>",
+      "payload": {}
     }
   ],
   "detour_need": null

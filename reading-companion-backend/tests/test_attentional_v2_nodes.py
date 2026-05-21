@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 
 from src.attentional_v2 import nodes as nodes_module
+from src.attentional_v2 import runner as runner_module
 from src.attentional_v2.nodes import (
     build_unitize_preview,
     navigate_choose_next_unit_act,
@@ -473,7 +474,14 @@ def test_read_unit_filters_unanchored_surface_and_uses_naturalized_contract(tmp_
     assert "You are a careful reader moving through this book." in captured["system_prompt"]
     assert "not as a field-filling task" in captured["system_prompt"]
     assert "Let `reading_impression` be the brief natural impression" in captured["system_prompt"]
-    assert "After the impression and any surfaced reactions, let memory settle naturally." in captured["system_prompt"]
+    assert "After the impression and any surfaced reactions, maintain memory deliberately." in captured["system_prompt"]
+    assert "reader's live question set" in captured["system_prompt"]
+    assert "question_from" in captured["system_prompt"]
+    assert "driving_question" in captured["system_prompt"]
+    assert "working_answer" in captured["system_prompt"]
+    assert "Do not create an active question when the current unit raises and answers the question locally." in captured[
+        "system_prompt"
+    ]
     assert "A surfaced reaction is already persisted as a reaction record." in captured["system_prompt"]
     assert "Explicit source structures can be worth remembering" in captured["system_prompt"]
     assert "Keep proportion around thin structural units." in captured["system_prompt"]
@@ -500,7 +508,7 @@ def test_read_unit_filters_unanchored_surface_and_uses_naturalized_contract(tmp_
     assert "`implicit_uptake_ops`" not in captured["system_prompt"]
     assert "Do not decide or name the next route." in captured["system_prompt"]
     assert "`pressure_signals`" not in captured["system_prompt"]
-    assert manifest["prompt_version"] == "attentional_v2.read.v15"
+    assert manifest["prompt_version"] == "attentional_v2.read.v16"
 
 
 def test_read_unit_contract_preserves_source_given_stage_model_as_memory_uptake(tmp_path: Path, monkeypatch):
@@ -656,6 +664,55 @@ def test_read_unit_admits_resolve_memory_operation(tmp_path: Path, monkeypatch):
             "policy_warnings": [],
         }
     ]
+
+
+def test_read_unit_resolves_active_question_answer_source_refs(tmp_path: Path, monkeypatch):
+    """Read-output source normalization should keep question and answer evidence separate."""
+
+    def fake_invoke_json(system_prompt: str, prompt: str, default: object) -> object:
+        return {
+            "reading_impression": "The passage starts answering the open question.",
+            "surfaced_reactions": [],
+            "memory_uptake_ops": [
+                {
+                    "op": "update",
+                    "target_store": "active_attention",
+                    "target_key": "bomb-question",
+                    "payload": {
+                        "working_answer": "Someone has noticed the bomb but has not disarmed it.",
+                        "answer_source_quote": "Someone noticed the bomb.",
+                    },
+                }
+            ],
+        }
+
+    monkeypatch.setattr(nodes_module, "invoke_json", fake_invoke_json)
+
+    result = read_unit(
+        current_unit_sentences=[
+            _sentence("c1-s1", "Someone noticed the bomb.", sentence_index=1, paragraph_index=1),
+        ],
+        carry_forward_context={"packet_version": STATE_PACKET_VERSION, "refs": []},
+        reader_policy=build_default_reader_policy(),
+        output_language="en",
+        output_dir=tmp_path,
+    )
+
+    normalized_ops = runner_module._normalize_memory_uptake_ops_source_refs(
+        result["memory_uptake_ops"],
+        source_unit={
+            "source_text": "Someone noticed the bomb.",
+            "source_span": {
+                "start_cursor": {"chapter_id": 1, "chapter_ref": "Chapter 1", "paragraph_index": 1, "char_offset": 0},
+                "end_cursor": {"chapter_id": 1, "chapter_ref": "Chapter 1", "paragraph_index": 1, "char_offset": 24},
+            },
+            "paragraph_offsets": [{"paragraph_index": 1, "start": 0, "end": 24}],
+        },
+    )
+
+    payload = normalized_ops[0]["payload"]
+    assert payload["answer_source_refs"][0]["quote"] == "Someone noticed the bomb."
+    assert payload["answer_source_refs"][0]["role"] == "answer_support"
 
 
 def test_read_unit_records_dropped_memory_uptake_admission_events(tmp_path: Path, monkeypatch):

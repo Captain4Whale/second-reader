@@ -38,6 +38,13 @@ def _book_document() -> dict[str, object]:
                 "id": 1,
                 "title": "Chapter 1",
                 "reference": "Chapter 1",
+                "paragraphs": [
+                    {
+                        "paragraph_index": 1,
+                        "text": "Alpha sentence. Beta sentence.",
+                        "text_role": "body",
+                    }
+                ],
                 "sentences": [
                     {
                         "sentence_id": "c1-s1",
@@ -136,7 +143,9 @@ def test_read_unit_projects_compact_packet_and_returns_f1_surface_contract(tmp_p
         {
             "item_id": "question-1",
             "attention_tags": ["question"],
-            "statement": "Why does the chapter turn here?",
+            "question_from": "Alpha sentence creates a turn.",
+            "driving_question": "Why does the chapter turn here?",
+            "working_answer": "",
             "support_anchor_ids": [],
             "status": "open",
         }
@@ -146,6 +155,7 @@ def test_read_unit_projects_compact_packet_and_returns_f1_surface_contract(tmp_p
     anchor_memory["anchor_records"] = [_anchor_record("a-1", "c1-s1", "Alpha sentence.")]
     anchor_memory["motif_index"] = {"promise": ["a-1"]}
     anchor_memory["trace_links"] = {"a-1": ["a-1"]}
+    anchor_bank, concept_registry, thread_trace = migrate_anchor_memory_to_new_layers(anchor_memory)
 
     reflective_summaries = build_empty_reflective_summaries()
     reflective_summaries["chapter_understandings"] = [
@@ -157,6 +167,7 @@ def test_read_unit_projects_compact_packet_and_returns_f1_surface_contract(tmp_p
             "support_anchor_ids": ["a-1"],
         }
     ]
+    reflective_frames = migrate_reflective_summaries_to_frames(reflective_summaries)
 
     reaction_records = build_empty_reaction_records()
     reaction_records["records"] = [
@@ -174,6 +185,9 @@ def test_read_unit_projects_compact_packet_and_returns_f1_surface_contract(tmp_p
         current_unit_sentence_ids=["c1-s2"],
         local_buffer=local_buffer,
         active_attention=active_attention,
+        concept_registry=concept_registry,
+        thread_trace=thread_trace,
+        reflective_frames=reflective_frames,
         anchor_memory=anchor_memory,
         reflective_summaries=reflective_summaries,
         reaction_records=reaction_records,
@@ -227,15 +241,16 @@ def test_read_unit_projects_compact_packet_and_returns_f1_surface_contract(tmp_p
     )
 
     assert "\"packet_version\": \"attentional_v2.state_packet.v1\"" in captured["prompt"]
-    assert "\"active_items\"" in captured["prompt"]
+    assert "\"active_questions\"" in captured["prompt"]
+    assert "\"driving_question\": \"Why does the chapter turn here?\"" in captured["prompt"]
     assert "\"concept_key\": \"promise\"" in captured["prompt"]
     assert "\"earlier_excerpts\"" in captured["prompt"]
     assert "\"refs\": [" not in captured["prompt"]
     assert "\"anchor_bank_digest\"" not in captured["prompt"]
-    assert manifest["prompt_version"] == "attentional_v2.read.v14"
+    assert manifest["prompt_version"] == "attentional_v2.read.v16"
     assert result["reading_impression"] == "The second sentence sharpens the first one."
-    assert result["surfaced_reactions"][0]["anchor_quote"] == "Beta sentence."
-    assert result["surfaced_reactions"][0]["prior_link"]["ref_ids"] == ["anchor:a-1", "lookback:sentence:c1-s1"]
+    assert result["surfaced_reactions"][0]["source_quote"] == "Beta sentence."
+    assert result["surfaced_reactions"][0]["prior_link"]["ref_ids"] == ["lookback:sentence:c1-s1"]
     assert result["memory_uptake_ops"][0]["op"] == "update"
     assert result["memory_uptake_ops"][0]["target_store"] == "active_attention"
     assert result["detour_need"]["status"] == "open"
@@ -263,13 +278,26 @@ def test_resolve_context_request_returns_exact_look_back_excerpt_and_none_when_u
         context_request={
             "kind": "look_back",
             "reason": "Need the earlier line verbatim.",
-            "anchor_ids": ["a-1"],
-            "sentence_ids": ["c1-s1"],
+            "source_spans": [
+                {
+                    "start_cursor": {
+                        "chapter_id": 1,
+                        "chapter_ref": "Chapter 1",
+                        "paragraph_index": 1,
+                        "char_offset": 0,
+                    },
+                    "end_cursor": {
+                        "chapter_id": 1,
+                        "chapter_ref": "Chapter 1",
+                        "paragraph_index": 1,
+                        "char_offset": len("Alpha sentence."),
+                    },
+                }
+            ],
         },
         carry_forward_context=carry_forward,
         book_document=book_document,
         chapter_ref="Chapter 1",
-        anchor_bank=anchor_bank,
         concept_registry=concept_registry,
         thread_trace=thread_trace,
         reflective_frames=reflective_frames,
@@ -279,7 +307,7 @@ def test_resolve_context_request_returns_exact_look_back_excerpt_and_none_when_u
     assert resolved is not None
     assert resolved["kind"] == "look_back"
     assert len(resolved["excerpts"]) == 1
-    assert resolved["excerpts"][0]["excerpt_text"] == "Alpha sentence."
+    assert resolved["excerpts"][0]["text"] == "Alpha sentence."
 
     unresolved = resolve_context_request(
         context_request={
@@ -291,7 +319,6 @@ def test_resolve_context_request_returns_exact_look_back_excerpt_and_none_when_u
         carry_forward_context=carry_forward,
         book_document=book_document,
         chapter_ref="Chapter 1",
-        anchor_bank=anchor_bank,
         concept_registry=concept_registry,
         thread_trace=thread_trace,
         reflective_frames=reflective_frames,
@@ -335,7 +362,6 @@ def test_resolve_context_request_active_recall_surfaces_concepts_and_threads():
         carry_forward_context=carry_forward,
         book_document=_book_document(),
         chapter_ref="Chapter 1",
-        anchor_bank=anchor_bank,
         concept_registry=concept_registry,
         thread_trace=thread_trace,
         reflective_frames=reflective_frames,
@@ -414,7 +440,6 @@ def test_run_read_with_context_loop_reads_once_and_persists_f1_audit(tmp_path, m
         concept_registry=concept_registry,
         thread_trace=thread_trace,
         reflective_frames=reflective_frames,
-        anchor_bank=anchor_bank,
         knowledge_activations=build_empty_knowledge_activations(),
         reaction_records=build_empty_reaction_records(),
         reader_policy=build_default_reader_policy(),

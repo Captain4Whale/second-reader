@@ -66,19 +66,23 @@ class SourceRef(TypedDict, total=False):
 
 
 class ActiveAttentionItem(TypedDict, total=False):
-    """One hot local item carried in active attention."""
+    """One live question carried in active attention."""
 
     item_id: str
     attention_tags: list[str]
+    question_from: str
+    driving_question: str
+    working_answer: str
     statement: str
     source_refs: list[SourceRef]
+    answer_source_refs: list[SourceRef]
     linked_concept_keys: list[str]
     linked_thread_keys: list[str]
     status: str
 
 
 class ActiveAttention(TypedDict, total=False):
-    """Primary hot attention state for items still shaping near-term reading."""
+    """Primary open-question state for items still driving near-term reading."""
 
     schema_version: int
     mechanism_version: str

@@ -2692,3 +2692,31 @@ This new direction is design frozen but not yet implemented as a formal benchmar
 - `reading-companion-backend/src/attentional_v2/runner.py`
 - `reading-companion-backend/src/attentional_v2/benchmark_probes.py`
 - `reading-companion-backend/src/attentional_v2/state_ops.py`
+
+## Entry 88
+**ID**: DEC-091
+**Status**: active
+
+**Decision / Inflection**: Redefine `Active Attention` as the reader's live open-question set.
+
+**Period**: May 21, 2026, after Eval-1 playback review showed that the previous "hot state / recent important points" framing was too broad to guide creation, lifecycle maintenance, prompt use, or human review.
+
+**Decision**: Current `attentional_v2` Active Attention now means questions raised by already-read source that still drive the reader to keep looking for an answer. Current active items use `question_from`, `driving_question`, `working_answer`, `source_refs`, `answer_source_refs`, and `status`. `statement` remains a legacy compatibility field for old artifacts, but new Read outputs should not create statement-only active items.
+
+**Lifecycle rule**: `Read` owns active-question lifecycle intent. `create` / `append` creates a new `open` question, `update` / `reactivate` advances its `working_answer`, `resolve` marks it `answered`, `close` marks it `closed`, and `drop` removes a mistaken or obsolete question. Durable answers should be written into `concept_registry` or `thread_trace` and then close the active question; active-attention `promote` is not the main path.
+
+**Prompt boundary**: Read prompt projection carries all open active questions, not a top-N slice. Prompt-visible fields are only `item_id`, `question_from`, `driving_question`, and `working_answer`. Runtime fields such as source refs, linked keys, statuses, and projection markers remain in artifacts and reports rather than the Read prompt.
+
+**Why this path won**: The live-question definition gives Active Attention a sharper product role: it is the set of unresolved things that make the reader continue reading. That is easier to create, update, answer, and close than a broad "important recent memory" bucket. It also keeps stable concepts in `concept_registry`, unfolding lines in `thread_trace`, visible output in `reaction_records`, and active questions in their own hot layer.
+
+**Why it matters later**: Future prompt, report, and eval work should not describe Active Attention as a digest summary or a cache of recent reactions. If a future run shows static active questions across probes, the first diagnosis should be lifecycle/use failure, not a need for another metric. Historical reports with statement-shaped active items remain readable as legacy artifacts.
+
+**Primary evidence**:
+- `docs/backend-reading-mechanisms/attentional_v2.md`
+- `docs/backend-reader-evaluation.md`
+- `reading-companion-backend/docs/evaluation/reporting_standard.md`
+- `reading-companion-backend/src/attentional_v2/schemas.py`
+- `reading-companion-backend/src/attentional_v2/prompts.py`
+- `reading-companion-backend/src/attentional_v2/state_ops.py`
+- `reading-companion-backend/src/attentional_v2/state_projection.py`
+- `reading-companion-backend/src/attentional_v2/runner.py`

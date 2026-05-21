@@ -35,6 +35,7 @@ _CONCEPT_DIGEST_LIMIT = 3
 _THREAD_DIGEST_LIMIT = 3
 _DIGEST_QUOTE_LIMIT = 2
 _LINEAGE_ONLY_STATUSES = {
+    "answered",
     "closed",
     "resolved",
     "superseded",
@@ -43,6 +44,8 @@ _LINEAGE_ONLY_STATUSES = {
     "dropped",
     "retired",
 }
+_OPEN_ACTIVE_ATTENTION_STATUSES = {"", "active", "cooling", "open"}
+_ACTIVE_QUESTION_SOFT_LIMIT = 6
 
 
 def clean_text(value: object) -> str:
@@ -177,6 +180,46 @@ def _with_visible_trace_markers(record: dict[str, object]) -> dict[str, object]:
     return marked
 
 
+def _is_open_active_attention_item(item: dict[str, object]) -> bool:
+    """Return whether an active-attention item is still an open reading question."""
+
+    return clean_text(item.get("status")).lower() in _OPEN_ACTIVE_ATTENTION_STATUSES
+
+
+def _has_live_question_fields(item: dict[str, object]) -> bool:
+    """Return whether an item uses the live-question schema rather than legacy statement-only shape."""
+
+    return any(
+        clean_text(item.get(key))
+        for key in (
+            "question_from",
+            "driving_question",
+            "working_answer",
+        )
+    )
+
+
+def _active_question_prompt_items(active_attention_digest: ActiveAttentionDigest) -> list[dict[str, object]]:
+    """Project all open live questions into the narrow Read-node prompt shape."""
+
+    prompt_items: list[dict[str, object]] = []
+    for item in active_attention_digest.get("active_items", []):
+        if not isinstance(item, dict):
+            continue
+        item_id = clean_text(item.get("item_id"))
+        if not item_id or not _is_open_active_attention_item(item) or not _has_live_question_fields(item):
+            continue
+        prompt_items.append(
+            {
+                "item_id": item_id,
+                "question_from": clean_text(item.get("question_from")),
+                "driving_question": clean_text(item.get("driving_question")),
+                "working_answer": clean_text(item.get("working_answer")),
+            }
+        )
+    return prompt_items
+
+
 def _status_by_key(entries: list[object], key_name: str) -> dict[str, str]:
     """Return source-state status by entry key for prompt-facing marker calculation."""
 
@@ -230,9 +273,13 @@ def _build_active_attention_digest(
             "ref_id": ref_id,
             "item_id": item_id,
             "attention_tags": _item_tags(item),
+            "question_from": clean_text(item.get("question_from")),
+            "driving_question": clean_text(item.get("driving_question")),
+            "working_answer": clean_text(item.get("working_answer")),
             "statement": clean_text(item.get("statement")),
             "status": clean_text(item.get("status")),
             "source_refs": _source_refs(item.get("source_refs"))[:3],
+            "answer_source_refs": _source_refs(item.get("answer_source_refs"))[:3],
             "linked_concept_keys": list(item.get("linked_concept_keys", []))
             if isinstance(item.get("linked_concept_keys"), list)
             else [],
@@ -241,7 +288,7 @@ def _build_active_attention_digest(
             else [],
         }
         digest_active_items.append(record)
-        if len(hot_items) < 4:
+        if _is_open_active_attention_item(record) and len(hot_items) < 4:
             hot_items.append(record)
         _append_ref(
             refs,
@@ -249,13 +296,17 @@ def _build_active_attention_digest(
                 "ref_id": ref_id,
                 "kind": "active_attention",
                 "item_id": item_id,
-                "summary": clean_text(item.get("statement")) or ", ".join(_item_tags(item)),
+                "summary": clean_text(item.get("driving_question"))
+                or clean_text(item.get("working_answer"))
+                or clean_text(item.get("question_from"))
+                or clean_text(item.get("statement"))
+                or ", ".join(_item_tags(item)),
                 "source_span_id": clean_text((_source_refs(item.get("source_refs")) or [{}])[0].get("source_span_id")),
                 "source_ref": (_source_refs(item.get("source_refs")) or [{}])[0],
             },
         )
     return {
-        "active_items": digest_active_items[:6],
+        "active_items": digest_active_items,
         "hot_items": hot_items,
     }
 
@@ -903,19 +954,26 @@ def build_read_prompt_packet(
 ) -> dict[str, object]:
     """Project the persisted state packet into the narrow read-node prompt view."""
 
+    active_attention_digest = (
+        dict(carry_forward_context.get("active_attention_digest", {}))
+        if isinstance(carry_forward_context.get("active_attention_digest"), dict)
+        else {}
+    )
+    active_questions = _active_question_prompt_items(active_attention_digest)
+    active_question_warning = (
+        "open_active_question_count_exceeds_soft_limit"
+        if len(active_questions) > _ACTIVE_QUESTION_SOFT_LIMIT
+        else ""
+    )
     packet: dict[str, object] = {
         "packet_version": clean_text(carry_forward_context.get("packet_version")) or STATE_PACKET_VERSION,
         "local_continuity": dict(carry_forward_context.get("session_continuity_capsule", {}))
         if isinstance(carry_forward_context.get("session_continuity_capsule"), dict)
         else {},
         "active_attention": {
-            "active_items": [
-                dict(item)
-                for item in carry_forward_context.get("active_attention_digest", {}).get("active_items", [])
-                if isinstance(item, dict)
-            ][:6]
-            if isinstance(carry_forward_context.get("active_attention_digest"), dict)
-            else [],
+            "active_questions": active_questions,
+            "open_question_count": len(active_questions),
+            "projection_warning": active_question_warning,
         },
         "concept_digest": [
             dict(item)

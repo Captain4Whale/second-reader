@@ -131,8 +131,11 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
 - The post-F4 cleanup has also retired the old gate/pressure sidecar from current state.
   - Current hot state is `active_attention.active_items`.
   - `Working State` was the historical name for this hot layer; current code, prompts, runtime artifacts, checkpoints, and Memory Quality snapshots use `Active Attention`.
-  - Each active item now carries lightweight `attention_tags[]` rather than the old fixed question/tension/hypothesis/motif digest lists.
-  - `local_hypotheses` / `live_hypotheses` are historical names only. Hypothesis-like material is now just an `active_attention.active_items[]` entry with tags such as `interpretation`, `tension`, or another natural label; if it becomes stable and reusable, it should move into `concept_registry` or `thread_trace` instead of remaining as a separate hot-state list.
+  - Active Attention is now the reader's live question set: questions raised by already-read source that still drive the reader to keep looking for an answer.
+  - A current active item should use `question_from`, `driving_question`, `working_answer`, `source_refs`, `answer_source_refs`, and `status`.
+  - `statement` remains a legacy compatibility field for old artifacts and warm resume only; new Read outputs should not create statement-only active items.
+  - Each active item may still carry lightweight `attention_tags[]`, but tags are not the ontology. The governing shape is the open question and its current answer.
+  - `local_hypotheses` / `live_hypotheses` are historical names only. Hypothesis-like material is current only if it is framed as a live question in `active_attention.active_items[]`; if it becomes stable and reusable, it should move into `concept_registry` or `thread_trace` instead of remaining as a hot-state question.
   - `gate_state`, `pressure_snapshot`, and the old working-pressure file are historical trigger/watch/zoom design artifacts, not current runtime or prompt inputs.
   - `pressure_signals` were the intermediate one-step `Read -> Navigate.route` signals; they are now historical after the forward-settlement cutover.
 - The forward-settlement cutover is now landed.
@@ -471,7 +474,10 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - `always carry`
     - `current_unit`
     - a compact `local_continuity` summary
-    - compact `active_attention`
+    - all open active questions from `active_attention`, not a top-N truncation
+      - prompt-visible fields are only `item_id`, `question_from`, `driving_question`, and `working_answer`
+      - source refs, answer source refs, linked keys, statuses, and projection markers remain in runtime/audit/report artifacts rather than the Read prompt
+      - if the open-question set grows too large, the projection should warn rather than silently omit questions
     - compact `concept_digest`
     - compact `thread_digest`
     - compact `reflective_digest`
@@ -507,9 +513,17 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - `local_continuity`
     - reading-flow position, paragraph-offset `mainline_cursor`, recent unit boundaries, active detour trace, and return semantics
   - `active_attention`
-    - the current unresolved hot items that may still shape the next reads
+    - the current live questions that may still shape the next reads
     - native truth is `active_attention.active_items[]`
     - item labels are lightweight `attention_tags[]`, not fixed routing buckets
+    - core current fields are:
+      - `question_from`: what already-read material raised the question
+      - `driving_question`: what the reader is now trying to answer
+      - `working_answer`: the best current answer, if the reading has started to answer it
+      - `source_refs`: paragraph-offset evidence for `question_from`
+      - `answer_source_refs`: paragraph-offset evidence for `working_answer`
+      - `status`: `open`, `answered`, `closed`, or legacy equivalents
+    - empty, `active`, `cooling`, and `open` are treated as prompt-eligible open statuses; `answered`, `resolved`, and `closed` are lineage/history and are not carried into the Read prompt
   - `long-distance memory`
     - `concept_registry`
     - `thread_trace`
@@ -524,6 +538,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - New runtime truth does not write or require an `anchor_bank.json` artifact.
   - Chapter-end carry-forward preserves existing `active_attention` source refs by deterministic `item_id` merge after cooling, so a `chapter_consolidation` omission cannot erase evidence coordinates for a carried item.
   - Carry-forward does not fuzzy-match by statement and does not invent source refs for newly introduced items.
+  - Active-question merges preserve `question_from`, update `working_answer` only when the payload explicitly provides one, and dedupe both `source_refs` and `answer_source_refs`.
 - Ownership is now:
   - `Navigate`
     - owns `local_continuity`
@@ -532,6 +547,13 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
     - owns current-unit understanding
     - owns surfaced reactions
     - owns updates into `active_attention / concept_registry / thread_trace`
+    - owns active-question lifecycle intent:
+      - `create` / `append` creates a new open question when the current unit raises something that remains unanswered
+      - `update` / `reactivate` advances or rekindles the `working_answer`
+      - `resolve` marks a question answered
+      - `close` marks a question no longer driving the reading
+      - `drop` removes a mistaken or obsolete question
+      - durable answers should be written to `concept_registry` or `thread_trace` and then close the active question, not use an active-attention `promote` path
     - may request later detour by emitting `detour_need`
   - `slow cycle`
     - owns chapter-end cooling, promotion, reconsolidation, and `reflective_frames`
