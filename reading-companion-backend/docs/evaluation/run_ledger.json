@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-05-19T12:24:02.441787Z",
+  "updated_at": "2026-05-21T02:53:12.911789Z",
   "entries": [
     {
       "run_id": "attentional_v2_excerpt_surface_v1_1_judged_20260406",
@@ -1053,6 +1053,47 @@
         "lane_b_probe_count": 25
       },
       "updated_at": "2026-05-19T12:24:02.433255Z"
+    },
+    {
+      "run_id": "attentional_v2_active_attention_live_question_micro_huochu_20260521",
+      "date": "2026-05-21",
+      "surface": "active_attention_live_question_micro",
+      "lane": "mechanism_eval_diagnostic",
+      "status": "review_pending",
+      "mechanisms": [
+        "attentional_v2"
+      ],
+      "dataset_or_manifest": [
+        "state/eval_local_datasets/diagnostic_micro/active_attention_live_question_huochu_20260521",
+        "state/eval_local_datasets/diagnostic_micro/active_attention_live_question_huochu_20260521/probe_plan.json",
+        "state/eval_local_datasets/diagnostic_micro/active_attention_live_question_huochu_20260521/split_manifest.json"
+      ],
+      "run_dir": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_live_question_micro_huochu_20260521",
+      "summary_paths": {
+        "aggregate": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_live_question_micro_huochu_20260521/summary/aggregate.json",
+        "llm_usage": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_live_question_micro_huochu_20260521/summary/llm_usage.json",
+        "memory_quality_results": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_live_question_micro_huochu_20260521/summary/memory_quality_results.jsonl",
+        "reaction_audit_results": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_live_question_micro_huochu_20260521/summary/reaction_audit_results.jsonl",
+        "reaction_window_summaries": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_live_question_micro_huochu_20260521/summary/reaction_window_summaries.jsonl",
+        "report": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_live_question_micro_huochu_20260521/summary/report.md"
+      },
+      "job_ids": [
+        "bgjob_active_attention_live_question_micro_huochu_20260521"
+      ],
+      "report_paths": [
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Live-Question-Micro-Eval-Huochu-Post-run-Report v0.md"
+      ],
+      "catalog_status": "not_cataloged",
+      "notes": "Diagnostic micro eval completed with clean LLM health, but failed the Active Attention live-question lifecycle check: probe-time active_attention was empty and final active items were legacy statement-only and ungrounded.",
+      "parent_run_id": "",
+      "child_run_ids": [],
+      "synthetic": false,
+      "local_missing_allowed": [],
+      "metadata": {
+        "diagnostic_verdict": "failed_active_attention_lifecycle",
+        "original_paragraph_range": "huochu p45-p61"
+      },
+      "updated_at": "2026-05-21T02:53:12.911500Z"
     }
   ]
 }

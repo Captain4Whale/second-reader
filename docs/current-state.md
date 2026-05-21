@@ -7,9 +7,27 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-05-19T12:30:20+08:00`
+Last verified: `2026-05-21T10:53:00+08:00`
 
 ## Current Objective
+- Active Attention live-question micro eval completed and is pending human review.
+  - status:
+    - run id: `attentional_v2_active_attention_live_question_micro_huochu_20260521`
+    - job id: `bgjob_active_attention_live_question_micro_huochu_20260521`
+    - source: diagnostic micro excerpt from `huochu` original paragraphs `p45-p61`
+    - run directory: `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_live_question_micro_huochu_20260521`
+    - post-run report: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Live-Question-Micro-Eval-Huochu-Post-run-Report v0.md`
+    - run-local audit: `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_live_question_micro_huochu_20260521/analysis/active_attention_lifecycle_audit/README.md`
+  - diagnostic facts:
+    - job completed successfully with expected summary outputs
+    - strict LLM health passed: `34 / 34` successful traces, `0` errors, `0` fallback traces
+    - Memory Quality ran on `full_probe_time_memory_state`, `5` probes, average MQ `2.05`
+    - reaction audit observed `22` visible reactions, `1` grounded callback, `0` weak callbacks, and `0` false visible integrations
+    - Active Attention lifecycle check failed: all `5` probe-time active-attention snapshots were empty, all unit-level settlement deltas kept `active_attention` at `0 -> 0`, and final runtime active-attention contained `2` legacy `statement`-only ungrounded open items
+  - next step:
+    - human review of the micro eval post-run report
+    - likely next implementation brief should inspect the `read_unit` / `chapter_consolidation` prompt contract and prevent legacy ungrounded `statement`-only active items from being created as final open state
+    - do not rerun broader eval, update the evidence catalog, promote Long Span vNext, or claim product quality from this diagnostic micro eval
 - Post-Slice8H Eval-1 Retry1 high-parallel full active evaluation completed and is pending human review.
   - status:
     - no active Eval-1 background jobs remain in the registry

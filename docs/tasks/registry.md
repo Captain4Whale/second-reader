@@ -484,6 +484,19 @@ Last updated: `2026-05-19T12:30:20+08:00`
 
 ## Waiting
 
+### `TASK-SECOND-READER-ACTIVE-ATTENTION-MICRO-EVAL-REPORT-REVIEW` — Review Active Attention live-question micro eval report
+- Status: `waiting`
+- Lane: `mechanism_eval`
+- Priority: `high`
+- Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Live-Question-Micro-Eval-Huochu-Post-run-Report v0.md`
+- Next: review the completed diagnostic micro eval. The job completed with clean LLM health, but the Active Attention lifecycle check failed: probe-time active attention was empty and final active items were legacy `statement`-only and ungrounded. Do not launch broader eval, update the evidence catalog, promote Long Span vNext, or claim product quality from this diagnostic run.
+- Jobs:
+  - `bgjob_active_attention_live_question_micro_huochu_20260521` (`completed`)
+- Evidence:
+  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Live-Question-Micro-Eval-Huochu-Post-run-Report v0.md`
+  - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_live_question_micro_huochu_20260521/summary/aggregate.json`
+  - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_live_question_micro_huochu_20260521/analysis/active_attention_lifecycle_audit/README.md`
+
 ### `TASK-SECOND-READER-MEMORY-PLANNING-EVAL1-RETRY1-HIGH-PARALLEL-REPORT-REVIEW` — Review Eval-1 Retry1 high-parallel full active evaluation report
 - Status: `waiting`
 - Lane: `mechanism_eval`
@@ -500,6 +513,19 @@ Last updated: `2026-05-19T12:30:20+08:00`
   - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_long_span_post_slice8h_20260519_xidaduo/summary/aggregate.json`
 
 ## Done
+
+### `TASK-SECOND-READER-ACTIVE-ATTENTION-MICRO-EVAL-20260521` — Run Active Attention live-question diagnostic micro eval on `huochu`
+- Status: `done`
+- Lane: `mechanism_eval`
+- Priority: `high`
+- Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Live-Question-Micro-Eval-Huochu-Post-run-Report v0.md`
+- Next: diagnostic execution is complete and recorded in `TASK-SECOND-READER-ACTIVE-ATTENTION-MICRO-EVAL-REPORT-REVIEW`. The result is a useful failure case for Active Attention live-question behavior; do not treat it as cataloged evidence, product-quality proof, or authorization for broader eval.
+- Jobs:
+  - `bgjob_active_attention_live_question_micro_huochu_20260521` (`completed`)
+- Evidence:
+  - `reading-companion-backend/docs/evaluation/run_ledger.md`
+  - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_live_question_micro_huochu_20260521/summary/aggregate.json`
+  - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_live_question_micro_huochu_20260521/summary/llm_usage.json`
 
 ### `TASK-SECOND-READER-MEMORY-PLANNING-EVAL1-RETRY1-HIGH-PARALLEL` — Run Eval-1 Retry1 high-parallel full active evaluation for `attentional_v2`
 - Status: `done`

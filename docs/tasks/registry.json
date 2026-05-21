@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-05-19T04:30:20Z",
+  "updated_at": "2026-05-21T02:53:00Z",
   "tasks": [
     {
       "id": "TASK-SECOND-READER-MEMORY-PLANNING-FEASIBILITY-AUDIT",
@@ -3322,6 +3322,63 @@
         "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_long_span_post_slice8h_20260519_xidaduo/summary/aggregate.json"
       ],
       "last_updated": "2026-05-19T04:30:20Z",
+      "last_updated_by": "codex"
+    },
+    {
+      "id": "TASK-SECOND-READER-ACTIVE-ATTENTION-MICRO-EVAL-REPORT-REVIEW",
+      "title": "Review Active Attention live-question micro eval report",
+      "status": "waiting",
+      "lane": "mechanism_eval",
+      "priority": "high",
+      "detail_ref": "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Live-Question-Micro-Eval-Huochu-Post-run-Report v0.md",
+      "truth_refs": [
+        "docs/current-state.md",
+        "docs/tasks/registry.md",
+        "reading-companion-backend/docs/evaluation/run_ledger.md",
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Live-Question-Micro-Eval-Huochu-Post-run-Report v0.md"
+      ],
+      "decision_refs": [],
+      "job_refs": [
+        "bgjob_active_attention_live_question_micro_huochu_20260521"
+      ],
+      "acceptance_ref": "",
+      "next_action": "Review the completed diagnostic micro eval. The job completed with clean LLM health, but the Active Attention lifecycle check failed: probe-time active attention was empty and final active items were legacy statement-only and ungrounded. Do not launch broader eval, update the evidence catalog, promote Long Span vNext, or claim product quality from this diagnostic run.",
+      "blocked_by": [],
+      "evidence_refs": [
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Live-Question-Micro-Eval-Huochu-Post-run-Report v0.md",
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_live_question_micro_huochu_20260521/summary/aggregate.json",
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_live_question_micro_huochu_20260521/analysis/active_attention_lifecycle_audit/README.md"
+      ],
+      "last_updated": "2026-05-21T02:53:00Z",
+      "last_updated_by": "codex"
+    },
+    {
+      "id": "TASK-SECOND-READER-ACTIVE-ATTENTION-MICRO-EVAL-20260521",
+      "title": "Run Active Attention live-question diagnostic micro eval on huochu",
+      "status": "done",
+      "lane": "mechanism_eval",
+      "priority": "high",
+      "detail_ref": "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Live-Question-Micro-Eval-Huochu-Post-run-Report v0.md",
+      "truth_refs": [
+        "docs/current-state.md",
+        "docs/tasks/registry.md",
+        "reading-companion-backend/docs/evaluation/run_ledger.md",
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Live-Question-Micro-Eval-Huochu-Post-run-Report v0.md"
+      ],
+      "decision_refs": [],
+      "job_refs": [
+        "bgjob_active_attention_live_question_micro_huochu_20260521"
+      ],
+      "acceptance_ref": "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Live-Question-Micro-Eval-Huochu-Post-run-Report v0.md",
+      "next_action": "Diagnostic execution is complete and recorded in TASK-SECOND-READER-ACTIVE-ATTENTION-MICRO-EVAL-REPORT-REVIEW. The result is a useful failure case for Active Attention live-question behavior; do not treat it as cataloged evidence, product-quality proof, or authorization for broader eval.",
+      "blocked_by": [],
+      "evidence_refs": [
+        "reading-companion-backend/docs/evaluation/run_ledger.md",
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_live_question_micro_huochu_20260521/summary/aggregate.json",
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_live_question_micro_huochu_20260521/summary/llm_usage.json",
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_live_question_micro_huochu_20260521/analysis/active_attention_lifecycle_audit/README.md"
+      ],
+      "last_updated": "2026-05-21T02:53:00Z",
       "last_updated_by": "codex"
     }
   ]
