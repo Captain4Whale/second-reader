@@ -131,13 +131,14 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
 - The post-F4 cleanup has also retired the old gate/pressure sidecar from current state.
   - Current hot state is `active_attention.active_items`.
   - `Working State` was the historical name for this hot layer; current code, prompts, runtime artifacts, checkpoints, and Memory Quality snapshots use `Active Attention`.
-  - Active Attention is now the reader's carry-forward set of live questions: questions raised by already-read source that the reader would naturally keep in mind while reading forward.
+  - Active Attention is now the reader's carry-forward set of live inquiries: source-triggered tensions, questions, or watchpoints that the reader would naturally keep in mind while reading forward.
   - The creation trigger is reader-native, not a mechanical memory gate: create an active item only when the current unit leaves an unanswered question, tension, claim, or developing pattern that makes the reader want to find out what happens, why it matters, or how it resolves later.
+  - Each current active item should satisfy `one source-triggered inquiry + one answer boundary`. It does not need to end with a question mark, but it must make clear what the reader is trying to find out and what kind of later source evidence would advance or close it.
   - Importance alone is not enough. Stable concepts, frameworks, chapter summaries, and visible reactions belong in `reading_impression`, `concept_registry`, `thread_trace`, or `reaction_records`, not in `active_attention`.
-  - A current active item should use `question_from`, `driving_question`, `working_answer`, `source_refs`, `answer_source_refs`, and `status`.
+  - A current active item should use `question_from`, `driving_question`, `answer_boundary`, `working_answer`, `source_refs`, `answer_source_refs`, and `status`.
   - `statement` remains a legacy compatibility field for old artifacts and warm resume only; new Read outputs should not create statement-only active items.
   - Each active item may still carry lightweight `attention_tags[]`, but tags are not the ontology. The governing shape is the open question and its current answer.
-  - `local_hypotheses` / `live_hypotheses` are historical names only. Hypothesis-like material is current only if it is framed as a live question in `active_attention.active_items[]`; if it becomes stable and reusable, it should move into `concept_registry` or `thread_trace` instead of remaining as a hot-state question.
+  - `local_hypotheses` / `live_hypotheses` are historical names only. Hypothesis-like material is current only if it is framed as a live inquiry in `active_attention.active_items[]`; if it becomes stable and reusable, it should move into `concept_registry` or `thread_trace` instead of remaining as a hot-state inquiry.
   - `gate_state`, `pressure_snapshot`, and the old working-pressure file are historical trigger/watch/zoom design artifacts, not current runtime or prompt inputs.
   - `pressure_signals` were the intermediate one-step `Read -> Navigate.route` signals; they are now historical after the forward-settlement cutover.
 - The forward-settlement cutover is now landed.
@@ -479,10 +480,10 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - `always carry`
     - `current_unit`
     - a compact `local_continuity` summary
-    - all open active questions from `active_attention`, not a top-N truncation
-      - prompt-visible fields are only `item_id`, `question_from`, `driving_question`, and `working_answer`
+    - all open active inquiries from `active_attention`, not a top-N truncation
+      - prompt-visible fields are only `item_id`, `question_from`, `driving_question`, `answer_boundary`, and `working_answer`
       - source refs, answer source refs, linked keys, statuses, and projection markers remain in runtime/audit/report artifacts rather than the Read prompt
-      - if the open-question set grows too large, the projection should warn rather than silently omit questions
+      - if the open-inquiry set grows too large, the projection should warn rather than silently omit inquiries
     - compact `concept_digest`
     - compact `thread_digest`
     - compact `reflective_digest`
@@ -518,12 +519,13 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - `local_continuity`
     - reading-flow position, paragraph-offset `mainline_cursor`, recent unit boundaries, active detour trace, and return semantics
   - `active_attention`
-    - the current live questions that may still shape the next reads
+    - the current live inquiries that may still shape the next reads
     - native truth is `active_attention.active_items[]`
     - item labels are lightweight `attention_tags[]`, not fixed routing buckets
     - core current fields are:
-      - `question_from`: what already-read material raised the question
-      - `driving_question`: what the reader is now trying to answer
+      - `question_from`: what already-read material raised the inquiry
+      - `driving_question`: what the reader is now trying to answer or watch resolve; it may be phrased as a question, tension, or watchpoint
+      - `answer_boundary`: what kind of later source evidence would advance, answer, or close the inquiry
       - `working_answer`: the best current answer, if the reading has started to answer it
       - `source_refs`: paragraph-offset evidence for `question_from`
       - `answer_source_refs`: paragraph-offset evidence for `working_answer`
@@ -543,9 +545,9 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - Its id is deterministically derived from the paragraph-offset span, for example `src:c1:p3@12-p3@48`.
   - New runtime truth does not write or require an `anchor_bank.json` artifact.
   - Chapter-end carry-forward preserves existing `active_attention` source refs by deterministic `item_id` merge after cooling, so a `chapter_consolidation` omission cannot erase evidence coordinates for a carried item.
-  - Chapter-end carry-forward is live-question native: it preserves and merges `question_from`, `driving_question`, `working_answer`, `source_refs`, `answer_source_refs`, linked keys, and status.
+    - Chapter-end carry-forward is live-inquiry native: it preserves and merges `question_from`, `driving_question`, `answer_boundary`, `working_answer`, `source_refs`, `answer_source_refs`, linked keys, and status.
   - Carry-forward does not fuzzy-match by statement and does not invent source refs for newly introduced items; new statement-only carry-forward items are rejected instead of becoming current Active Attention.
-  - Active-question merges preserve `question_from`, update `working_answer` only when the payload explicitly provides one, and dedupe both `source_refs` and `answer_source_refs`.
+  - Active-inquiry merges preserve `question_from` and `answer_boundary`, update `working_answer` only when the payload explicitly provides one, and dedupe both `source_refs` and `answer_source_refs`.
   - Read-output `source_quote` / `answer_source_quote` are resolved into paragraph-offset `SourceRef` objects before settlement; malformed model-emitted `source_refs` lists do not block that resolution.
 - Ownership is now:
   - `Navigate`
@@ -555,13 +557,13 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
     - owns current-unit understanding
     - owns surfaced reactions
     - owns updates into `active_attention / concept_registry / thread_trace`
-    - owns active-question lifecycle intent:
-      - `create` / `append` creates a new open question when the current unit leaves an unanswered question that would shape how the reader reads forward
+    - owns active-inquiry lifecycle intent:
+      - `create` / `append` creates a new open inquiry when the current unit leaves an unanswered question, tension, claim, or watchpoint that would shape how the reader reads forward
       - `update` / `reactivate` advances, corrects, reverses, weakens, or rekindles the `working_answer`
-      - `resolve` marks a question answered enough that it no longer needs to be carried as open
-      - `close` marks a question no longer driving the reading, without implying it was fully answered
-      - `drop` removes a mistaken or obsolete question
-      - durable answers should be written to `concept_registry` or `thread_trace` and then close the active question, not use an active-attention `promote` path
+      - `resolve` marks an inquiry answered enough against its `answer_boundary` that it no longer needs to be carried as open
+      - `close` marks an inquiry no longer driving the reading, without implying it was fully answered
+      - `drop` removes a mistaken or obsolete inquiry
+      - durable answers should be written to `concept_registry` or `thread_trace`, linked back when possible, and then close the active inquiry; do not use an active-attention `promote` path
     - may request later detour by emitting `detour_need`
   - `slow cycle`
     - owns chapter-end cooling, promotion, reconsolidation, and `reflective_frames`

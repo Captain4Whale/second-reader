@@ -65,6 +65,7 @@ def test_build_carry_forward_context_exposes_phase_c1_packet_shape():
             "attention_tags": ["question"],
             "question_from": "The opener introduces a practical dilemma.",
             "driving_question": "Why does the chapter turn here?",
+            "answer_boundary": "A later unit explains the reason for the turn.",
             "working_answer": "",
             "source_refs": [_source_ref()],
             "status": "open",
@@ -81,6 +82,7 @@ def test_build_carry_forward_context_exposes_phase_c1_packet_shape():
             "attention_tags": ["question"],
             "question_from": "A still-open transition has not fully settled.",
             "driving_question": "How will the transition resolve?",
+            "answer_boundary": "A later unit resolves the transition or makes it irrelevant.",
             "working_answer": "The chapter is starting to answer it.",
             "source_refs": [_source_ref("Cooling sentence.")],
             "status": "cooling",
@@ -187,6 +189,9 @@ def test_build_carry_forward_context_exposes_phase_c1_packet_shape():
         "The opener introduces a practical dilemma."
     )
     assert packet["active_attention_digest"]["active_items"][0]["driving_question"] == "Why does the chapter turn here?"
+    assert packet["active_attention_digest"]["active_items"][0]["answer_boundary"] == (
+        "A later unit explains the reason for the turn."
+    )
     assert packet["active_attention_digest"]["active_items"][0]["projection_role"] == "current_support"
     assert packet["active_attention_digest"]["active_items"][0]["support_status"] == "source_backed"
     assert packet["active_attention_digest"]["active_items"][0]["current_support"] is True
@@ -294,6 +299,7 @@ def test_build_read_prompt_packet_projects_compact_always_carry_and_selective_ca
             "attention_tags": ["question"],
             "question_from": "The opener introduces a practical dilemma.",
             "driving_question": "Why does the chapter turn here?",
+            "answer_boundary": "A later unit explains the reason for the turn.",
             "working_answer": "",
             "source_refs": [_source_ref()],
             "status": "open",
@@ -385,6 +391,7 @@ def test_build_read_prompt_packet_projects_compact_always_carry_and_selective_ca
             "item_id": "question-1",
             "question_from": "The opener introduces a practical dilemma.",
             "driving_question": "Why does the chapter turn here?",
+            "answer_boundary": "A later unit explains the reason for the turn.",
             "working_answer": "",
         }
     ]
@@ -415,6 +422,7 @@ def test_read_prompt_packet_includes_all_open_questions_without_runtime_fields()
             "item_id": f"question-{index}",
             "question_from": f"source trigger {index}",
             "driving_question": f"what happens with question {index}?",
+            "answer_boundary": f"answer boundary {index}",
             "working_answer": "",
             "status": "open",
             "source_refs": [_source_ref(f"Question {index}.")],
@@ -429,6 +437,7 @@ def test_read_prompt_packet_includes_all_open_questions_without_runtime_fields()
             "item_id": "question-answered",
             "question_from": "answered source",
             "driving_question": "answered question?",
+            "answer_boundary": "answered boundary",
             "working_answer": "answered",
             "status": "answered",
         }
@@ -446,7 +455,13 @@ def test_read_prompt_packet_includes_all_open_questions_without_runtime_fields()
     assert [item["item_id"] for item in active_questions] == [f"question-{index}" for index in range(7)]
     assert "question-answered" not in {item["item_id"] for item in active_questions}
     assert prompt_packet["active_attention"]["projection_warning"] == "open_active_question_count_exceeds_soft_limit"
-    assert set(active_questions[0]) == {"item_id", "question_from", "driving_question", "working_answer"}
+    assert set(active_questions[0]) == {
+        "item_id",
+        "question_from",
+        "driving_question",
+        "answer_boundary",
+        "working_answer",
+    }
 
 
 def test_build_read_prompt_packet_exposes_retrieval_contract_without_full_active_recall_objects():

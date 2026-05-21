@@ -1261,6 +1261,7 @@ def _normalize_carry_forward_item(value: object) -> ActiveAttentionItem | None:
     for field in (
         "question_from",
         "driving_question",
+        "answer_boundary",
         "working_answer",
         "statement",
     ):
@@ -1403,6 +1404,7 @@ def apply_cross_chapter_carry_forward(
             "attention_tags": _merge_unique_texts(existing.get("attention_tags"), item.get("attention_tags")),
             "question_from": _clean_text(item.get("question_from")) or _clean_text(existing.get("question_from")),
             "driving_question": _clean_text(item.get("driving_question")) or _clean_text(existing.get("driving_question")),
+            "answer_boundary": _clean_text(item.get("answer_boundary")) or _clean_text(existing.get("answer_boundary")),
             "working_answer": _clean_text(item.get("working_answer")) or _clean_text(existing.get("working_answer")),
             "statement": _clean_text(item.get("statement")) or _clean_text(existing.get("statement")),
             "linked_concept_keys": _merge_unique_texts(

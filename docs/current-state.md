@@ -7,28 +7,31 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-05-21T20:35:00+08:00`
+Last verified: `2026-05-21T21:30:00+08:00`
 
 ## Current Objective
-- Active Attention reader-native prompt repair and Retry1 micro eval completed; retry1 report is pending human review.
+- Active Attention inquiry-boundary repair and Retry2 micro eval completed; retry2 report is pending human review.
   - status:
-    - prompt repair: Read prompt bumped to `attentional_v2.read.v18`
-    - run id: `attentional_v2_active_attention_live_question_micro_huochu_20260521_retry1`
-    - job id: `bgjob_active_attention_live_question_micro_huochu_20260521_retry1`
+    - prompt / contract repair: Read prompt bumped to `attentional_v2.read.v19`; `ActiveAttentionItem` now accepts optional `answer_boundary`
+    - run id: `attentional_v2_active_attention_live_question_micro_huochu_20260521_retry2`
+    - job id: `bgjob_active_attention_live_question_micro_huochu_20260521_retry2`
     - source: diagnostic micro excerpt from `huochu` original paragraphs `p45-p61`
-    - run directory: `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_live_question_micro_huochu_20260521_retry1`
-    - post-run report: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Live-Question-Micro-Eval-Huochu-Retry1-Post-run-Report v0.md`
-    - run-local audit: `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_live_question_micro_huochu_20260521_retry1/analysis/active_attention_lifecycle_audit/README.md`
+    - run directory: `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_live_question_micro_huochu_20260521_retry2`
+    - post-run report: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Inquiry-Boundary-Micro-Eval-Huochu-Retry2-Post-run-Report v0.md`
+    - run-local audit: `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_live_question_micro_huochu_20260521_retry2/analysis/active_attention_lifecycle_audit/README.md`
   - diagnostic facts:
     - job completed successfully with expected summary outputs
-    - strict LLM health passed: `26 / 26` successful traces, `0` errors, `0` fallback traces
-    - Memory Quality ran on `full_probe_time_memory_state`, `5` probes, average MQ `3.85`
-    - reaction audit observed `16` visible reactions, `0` grounded callbacks, `2` weak callbacks, and `1` false visible integration
-    - Active Attention lifecycle check improved: probe-time snapshots contained active items at all `5` probes; final runtime active attention contained `3` live-question-native items with `question_from`, `driving_question`, `working_answer`, `source_refs`, and `answer_source_refs`
-    - final active item statuses: `2` answered, `1` open for a defensible later-meaning / third-stage question
-    - prior failed run `attentional_v2_active_attention_live_question_micro_huochu_20260521` remains preserved as diagnostic failure evidence only
+    - strict LLM health passed: `20 / 20` successful traces, `0` errors, `0` fallback traces
+    - Memory Quality ran on `full_probe_time_memory_state`, `5` probes, average MQ `3.60`
+    - reaction audit observed `10` visible reactions, `2` grounded callbacks, `0` weak callbacks, and `0` false visible integrations
+    - Active Attention contract check improved: probe-time snapshots contained active items at all `5` probes; all observed active items used `question_from`, `driving_question`, `answer_boundary`, and `working_answer`, with no statement-only active item
+    - lifecycle result is partial-positive: the run resolved the older adaptation inquiry and created a follow-up `stage_two_emotional_death` inquiry, but that follow-up inquiry was still somewhat broad and was resolved before the final protective-shell paragraph fully settled the answer
+    - prior runs remain preserved:
+      - `attentional_v2_active_attention_live_question_micro_huochu_20260521`: diagnostic failure evidence
+      - `attentional_v2_active_attention_live_question_micro_huochu_20260521_retry1`: positive reader-native prompt repair evidence, superseded by retry2 for inquiry-boundary review
   - next step:
-    - human review of the Retry1 micro eval post-run report
+    - human review of the Retry2 inquiry-boundary micro eval post-run report
+    - if accepted, a narrow follow-up should address answer-boundary satisfaction semantics rather than add metrics or patch individual examples
     - no evidence catalog update, broader eval, Long Span vNext formal promotion, or product-quality claim is authorized from this diagnostic micro eval without explicit human approval
 - Post-Slice8H Eval-1 Retry1 high-parallel full active evaluation completed and is pending human review.
   - status:

@@ -2720,3 +2720,27 @@ This new direction is design frozen but not yet implemented as a formal benchmar
 - `reading-companion-backend/src/attentional_v2/state_ops.py`
 - `reading-companion-backend/src/attentional_v2/state_projection.py`
 - `reading-companion-backend/src/attentional_v2/runner.py`
+
+## Entry 89
+**ID**: DEC-092
+**Status**: active
+
+**Decision / Clarification**: Tighten Active Attention from broad live-question state to one carried inquiry with one answer boundary.
+
+**Period**: May 21, 2026, after the first successful Active Attention micro eval showed live-question creation and lifecycle behavior, but also exposed over-broad active items whose partial answers could be resolved too early.
+
+**Clarification**: Active Attention remains the reader's carry-forward question layer from DEC-091, but the unit of state is now stricter: one source-triggered inquiry plus one `answer_boundary`. The `driving_question` field remains for compatibility, but it means the reader's driving inquiry; it does not have to be a literal question-mark sentence. The required semantic contract is that the item states what the reader is trying to find out or watch resolve, and what kind of later source evidence would advance, answer, or close it.
+
+**Lifecycle rule**: `Read` should split candidate active items that contain multiple independent answer boundaries. If a passage answers only part of a broad inquiry, the reader should update the item and keep it open, or resolve the answered item and create a narrower follow-up item. `resolve` means the current unit satisfied the item's answer boundary enough that the inquiry no longer needs to be carried as open; `close` means it no longer helps reading forward without claiming a full answer.
+
+**Why this matters later**: This keeps Active Attention from drifting back into a summary bucket or an ever-growing theme container. It also makes prompt projection and reviewer reports more auditable: an active item can be inspected for its source trigger, live inquiry, answer boundary, current answer, and source evidence. Stable answers should settle into `concept_registry` or `thread_trace`, optionally linked from the active item during resolve/close.
+
+**Primary evidence**:
+- `docs/backend-reading-mechanisms/attentional_v2.md`
+- `docs/backend-reader-evaluation.md`
+- `reading-companion-backend/docs/evaluation/reporting_standard.md`
+- `reading-companion-backend/src/attentional_v2/schemas.py`
+- `reading-companion-backend/src/attentional_v2/prompts.py`
+- `reading-companion-backend/src/attentional_v2/state_ops.py`
+- `reading-companion-backend/src/attentional_v2/state_projection.py`
+- `reading-companion-backend/src/attentional_v2/slow_cycle.py`

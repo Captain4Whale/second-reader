@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-05-21T12:35:41.437165Z",
+  "updated_at": "2026-05-21T13:24:57.260516Z",
   "entries": [
     {
       "run_id": "attentional_v2_excerpt_surface_v1_1_judged_20260406",
@@ -1132,6 +1132,44 @@
       "local_missing_allowed": [],
       "metadata": {},
       "updated_at": "2026-05-21T12:35:41.436863Z"
+    },
+    {
+      "run_id": "attentional_v2_active_attention_live_question_micro_huochu_20260521_retry2",
+      "date": "2026-05-21",
+      "surface": "active_attention_live_question_micro",
+      "lane": "mechanism_eval_diagnostic",
+      "status": "review_pending",
+      "mechanisms": [
+        "attentional_v2"
+      ],
+      "dataset_or_manifest": [
+        "state/eval_local_datasets/diagnostic_micro/active_attention_live_question_huochu_20260521/probe_plan.json",
+        "state/eval_local_datasets/diagnostic_micro/active_attention_live_question_huochu_20260521/split_manifest.json"
+      ],
+      "run_dir": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_live_question_micro_huochu_20260521_retry2",
+      "summary_paths": {
+        "aggregate": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_live_question_micro_huochu_20260521_retry2/summary/aggregate.json",
+        "llm_usage": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_live_question_micro_huochu_20260521_retry2/summary/llm_usage.json",
+        "memory_quality_results": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_live_question_micro_huochu_20260521_retry2/summary/memory_quality_results.jsonl",
+        "reaction_audit_results": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_live_question_micro_huochu_20260521_retry2/summary/reaction_audit_results.jsonl",
+        "reaction_window_summaries": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_live_question_micro_huochu_20260521_retry2/summary/reaction_window_summaries.jsonl",
+        "report": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_live_question_micro_huochu_20260521_retry2/summary/report.md"
+      },
+      "job_ids": [
+        "bgjob_active_attention_live_question_micro_huochu_20260521_retry2"
+      ],
+      "report_paths": [
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Inquiry-Boundary-Micro-Eval-Huochu-Retry2-Post-run-Report v0.md",
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_live_question_micro_huochu_20260521_retry2/analysis/active_attention_lifecycle_audit/README.md"
+      ],
+      "catalog_status": "not_cataloged",
+      "notes": "Retry2 diagnostic micro eval completed after Active Attention inquiry-boundary repair. Contract is wired end-to-end and answer_boundary appears in probe-time state, but lifecycle judgment remains partial because stage_two_emotional_death resolved before the final protective-shell answer. Diagnostic only; no evidence catalog update or product-quality claim.",
+      "parent_run_id": "",
+      "child_run_ids": [],
+      "synthetic": false,
+      "local_missing_allowed": [],
+      "metadata": {},
+      "updated_at": "2026-05-21T13:24:57.260219Z"
     }
   ]
 }

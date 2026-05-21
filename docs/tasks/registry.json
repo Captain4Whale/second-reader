@@ -3325,6 +3325,36 @@
       "last_updated_by": "codex"
     },
     {
+      "id": "TASK-SECOND-READER-ACTIVE-ATTENTION-INQUIRY-BOUNDARY-REPAIR-RETRY2-REPORT-REVIEW",
+      "title": "Review Active Attention inquiry-boundary repair Retry2 report",
+      "status": "waiting",
+      "lane": "mechanism_eval",
+      "priority": "high",
+      "detail_ref": "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Inquiry-Boundary-Micro-Eval-Huochu-Retry2-Post-run-Report v0.md",
+      "truth_refs": [
+        "docs/current-state.md",
+        "docs/tasks/registry.md",
+        "reading-companion-backend/docs/evaluation/run_ledger.md",
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Inquiry-Boundary-Micro-Eval-Huochu-Retry2-Post-run-Report v0.md"
+      ],
+      "decision_refs": [
+        "DEC-092"
+      ],
+      "job_refs": [
+        "bgjob_active_attention_live_question_micro_huochu_20260521_retry2"
+      ],
+      "acceptance_ref": "",
+      "next_action": "Review the completed Retry2 diagnostic micro eval and inquiry-boundary repair. The contract is wired end to end and answer_boundary appears in probe-time state, but lifecycle judgment remains partial because stage_two_emotional_death resolved before the final protective-shell answer. Do not update the evidence catalog, promote Long Span vNext, run broader eval, or claim product quality from this diagnostic run without explicit approval.",
+      "blocked_by": [],
+      "evidence_refs": [
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Inquiry-Boundary-Micro-Eval-Huochu-Retry2-Post-run-Report v0.md",
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_live_question_micro_huochu_20260521_retry2/summary/aggregate.json",
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_live_question_micro_huochu_20260521_retry2/analysis/active_attention_lifecycle_audit/README.md"
+      ],
+      "last_updated": "2026-05-21T13:30:00Z",
+      "last_updated_by": "codex"
+    },
+    {
       "id": "TASK-SECOND-READER-ACTIVE-ATTENTION-MICRO-EVAL-RETRY1-REPORT-REVIEW",
       "title": "Review Active Attention live-question micro eval Retry1 report",
       "status": "waiting",
@@ -3350,6 +3380,40 @@
         "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_live_question_micro_huochu_20260521_retry1/analysis/active_attention_lifecycle_audit/README.md"
       ],
       "last_updated": "2026-05-21T12:35:00Z",
+      "last_updated_by": "codex"
+    },
+    {
+      "id": "TASK-SECOND-READER-ACTIVE-ATTENTION-INQUIRY-BOUNDARY-REPAIR-RETRY2-20260521",
+      "title": "Implement Active Attention inquiry-boundary repair and run Retry2 micro eval on huochu",
+      "status": "done",
+      "lane": "mechanism_eval",
+      "priority": "high",
+      "detail_ref": "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Inquiry-Boundary-Micro-Eval-Huochu-Retry2-Post-run-Report v0.md",
+      "truth_refs": [
+        "docs/current-state.md",
+        "docs/tasks/registry.md",
+        "docs/backend-reading-mechanisms/attentional_v2.md",
+        "docs/backend-reader-evaluation.md",
+        "reading-companion-backend/docs/evaluation/run_ledger.md",
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Inquiry-Boundary-Micro-Eval-Huochu-Retry2-Post-run-Report v0.md"
+      ],
+      "decision_refs": [
+        "DEC-092"
+      ],
+      "job_refs": [
+        "bgjob_active_attention_live_question_micro_huochu_20260521_retry2"
+      ],
+      "acceptance_ref": "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Inquiry-Boundary-Micro-Eval-Huochu-Retry2-Post-run-Report v0.md",
+      "next_action": "Retry2 diagnostic execution is complete and recorded in TASK-SECOND-READER-ACTIVE-ATTENTION-INQUIRY-BOUNDARY-REPAIR-RETRY2-REPORT-REVIEW. The result is partial-positive diagnostic evidence: the answer_boundary contract is wired, but answer-boundary satisfaction still needs human review before any next repair. Do not treat it as cataloged evidence, product-quality proof, or authorization for broader eval.",
+      "blocked_by": [],
+      "evidence_refs": [
+        "reading-companion-backend/docs/evaluation/run_ledger.md",
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Inquiry-Boundary-Micro-Eval-Huochu-Retry2-Post-run-Report v0.md",
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_live_question_micro_huochu_20260521_retry2/summary/aggregate.json",
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_live_question_micro_huochu_20260521_retry2/summary/llm_usage.json",
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_live_question_micro_huochu_20260521_retry2/analysis/active_attention_lifecycle_audit/README.md"
+      ],
+      "last_updated": "2026-05-21T13:30:00Z",
       "last_updated_by": "codex"
     },
     {

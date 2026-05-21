@@ -65,6 +65,7 @@ def test_apply_active_attention_operations_handles_append_update_close_link_and_
                     "attention_tags": ["motif"],
                     "question_from": "The chapter introduces value as a recurring problem.",
                     "driving_question": "How will value narrow as the chapter develops?",
+                    "answer_boundary": "Later source distinguishes value from broad social wanting.",
                     "working_answer": "",
                     "source_refs": [_source_ref()],
                 },
@@ -112,6 +113,7 @@ def test_apply_active_attention_operations_handles_append_update_close_link_and_
     assert state["active_items"][0]["attention_tags"] == ["motif"]
     assert state["active_items"][0]["question_from"] == "The chapter introduces value as a recurring problem."
     assert state["active_items"][0]["driving_question"] == "How will value narrow as the chapter develops?"
+    assert state["active_items"][0]["answer_boundary"] == "Later source distinguishes value from broad social wanting."
     assert state["active_items"][0]["working_answer"] == "Value is becoming a social exchange problem."
     assert state["active_items"][0]["status"] == "closed"
     assert state["active_items"][0]["linked_concept_keys"] == ["concept:value"]
@@ -137,6 +139,7 @@ def test_active_attention_text_fields_preserve_by_default_and_allow_explicit_cle
                 "payload": {
                     "question_from": "A bomb is placed under the table.",
                     "driving_question": "When will the bomb explode?",
+                    "answer_boundary": "A later passage reveals the timer, detonation, or disarming outcome.",
                     "working_answer": "No timing clue yet.",
                 },
             }
@@ -157,6 +160,7 @@ def test_active_attention_text_fields_preserve_by_default_and_allow_explicit_cle
     item = _find(state["active_items"], "item_id", "q-1")
     assert item["question_from"] == "A bomb is placed under the table."
     assert item["driving_question"] == "When will the bomb explode?"
+    assert item["answer_boundary"] == "A later passage reveals the timer, detonation, or disarming outcome."
     assert item["working_answer"] == ""
 
 

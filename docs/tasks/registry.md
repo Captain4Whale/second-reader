@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-05-19T12:30:20+08:00`
+Last updated: `2026-05-21T21:30:00+08:00`
 
 ## Status Values
 - `active`
@@ -484,6 +484,19 @@ Last updated: `2026-05-19T12:30:20+08:00`
 
 ## Waiting
 
+### `TASK-SECOND-READER-ACTIVE-ATTENTION-INQUIRY-BOUNDARY-REPAIR-RETRY2-REPORT-REVIEW` — Review Active Attention inquiry-boundary repair Retry2 report
+- Status: `waiting`
+- Lane: `mechanism_eval`
+- Priority: `high`
+- Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Inquiry-Boundary-Micro-Eval-Huochu-Retry2-Post-run-Report v0.md`
+- Next: review the completed Retry2 diagnostic micro eval and inquiry-boundary repair. The contract is wired end to end and `answer_boundary` appears in probe-time state, but lifecycle judgment remains partial because `stage_two_emotional_death` resolved before the final protective-shell answer. Do not update the evidence catalog, promote Long Span vNext, run broader eval, or claim product quality from this diagnostic run without explicit approval.
+- Jobs:
+  - `bgjob_active_attention_live_question_micro_huochu_20260521_retry2` (`completed`)
+- Evidence:
+  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Inquiry-Boundary-Micro-Eval-Huochu-Retry2-Post-run-Report v0.md`
+  - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_live_question_micro_huochu_20260521_retry2/summary/aggregate.json`
+  - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_live_question_micro_huochu_20260521_retry2/analysis/active_attention_lifecycle_audit/README.md`
+
 ### `TASK-SECOND-READER-ACTIVE-ATTENTION-MICRO-EVAL-RETRY1-REPORT-REVIEW` — Review Active Attention live-question micro eval Retry1 report
 - Status: `waiting`
 - Lane: `mechanism_eval`
@@ -513,6 +526,21 @@ Last updated: `2026-05-19T12:30:20+08:00`
   - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_long_span_post_slice8h_20260519_xidaduo/summary/aggregate.json`
 
 ## Done
+
+### `TASK-SECOND-READER-ACTIVE-ATTENTION-INQUIRY-BOUNDARY-REPAIR-RETRY2-20260521` — Implement Active Attention inquiry-boundary repair and run Retry2 micro eval on `huochu`
+- Status: `done`
+- Lane: `mechanism_eval`
+- Priority: `high`
+- Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Inquiry-Boundary-Micro-Eval-Huochu-Retry2-Post-run-Report v0.md`
+- Next: Retry2 diagnostic execution is complete and recorded in `TASK-SECOND-READER-ACTIVE-ATTENTION-INQUIRY-BOUNDARY-REPAIR-RETRY2-REPORT-REVIEW`. The result is partial-positive diagnostic evidence: the `answer_boundary` contract is wired, but answer-boundary satisfaction still needs human review before any next repair. Do not treat it as cataloged evidence, product-quality proof, or authorization for broader eval.
+- Jobs:
+  - `bgjob_active_attention_live_question_micro_huochu_20260521_retry2` (`completed`)
+- Evidence:
+  - `reading-companion-backend/docs/evaluation/run_ledger.md`
+  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Inquiry-Boundary-Micro-Eval-Huochu-Retry2-Post-run-Report v0.md`
+  - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_live_question_micro_huochu_20260521_retry2/summary/aggregate.json`
+  - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_live_question_micro_huochu_20260521_retry2/summary/llm_usage.json`
+  - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_live_question_micro_huochu_20260521_retry2/analysis/active_attention_lifecycle_audit/README.md`
 
 ### `TASK-SECOND-READER-ACTIVE-ATTENTION-MICRO-EVAL-20260521` — Run Active Attention live-question diagnostic micro eval on `huochu`
 - Status: `done`

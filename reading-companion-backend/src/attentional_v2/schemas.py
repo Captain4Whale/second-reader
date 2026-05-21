@@ -72,6 +72,7 @@ class ActiveAttentionItem(TypedDict, total=False):
     attention_tags: list[str]
     question_from: str
     driving_question: str
+    answer_boundary: str
     working_answer: str
     statement: str
     source_refs: list[SourceRef]

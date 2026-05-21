@@ -194,13 +194,14 @@ def _has_live_question_fields(item: dict[str, object]) -> bool:
         for key in (
             "question_from",
             "driving_question",
+            "answer_boundary",
             "working_answer",
         )
     )
 
 
 def _active_question_prompt_items(active_attention_digest: ActiveAttentionDigest) -> list[dict[str, object]]:
-    """Project all open live questions into the narrow Read-node prompt shape."""
+    """Project all open live inquiries into the narrow Read-node prompt shape."""
 
     prompt_items: list[dict[str, object]] = []
     for item in active_attention_digest.get("active_items", []):
@@ -214,6 +215,7 @@ def _active_question_prompt_items(active_attention_digest: ActiveAttentionDigest
                 "item_id": item_id,
                 "question_from": clean_text(item.get("question_from")),
                 "driving_question": clean_text(item.get("driving_question")),
+                "answer_boundary": clean_text(item.get("answer_boundary")),
                 "working_answer": clean_text(item.get("working_answer")),
             }
         )
@@ -275,6 +277,7 @@ def _build_active_attention_digest(
             "attention_tags": _item_tags(item),
             "question_from": clean_text(item.get("question_from")),
             "driving_question": clean_text(item.get("driving_question")),
+            "answer_boundary": clean_text(item.get("answer_boundary")),
             "working_answer": clean_text(item.get("working_answer")),
             "statement": clean_text(item.get("statement")),
             "status": clean_text(item.get("status")),
@@ -297,6 +300,7 @@ def _build_active_attention_digest(
                 "kind": "active_attention",
                 "item_id": item_id,
                 "summary": clean_text(item.get("driving_question"))
+                or clean_text(item.get("answer_boundary"))
                 or clean_text(item.get("working_answer"))
                 or clean_text(item.get("question_from"))
                 or clean_text(item.get("statement"))

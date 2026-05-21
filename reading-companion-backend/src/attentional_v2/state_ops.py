@@ -189,6 +189,7 @@ def _merge_active_item(
         "attention_tags": _merge_unique_ids(existing.get("attention_tags"), payload.get("attention_tags")),
         "question_from": _merge_text_field(existing, payload, "question_from"),
         "driving_question": _merge_text_field(existing, payload, "driving_question"),
+        "answer_boundary": _merge_text_field(existing, payload, "answer_boundary"),
         "working_answer": _merge_text_field(existing, payload, "working_answer"),
         "statement": _merge_text_field(existing, payload, "statement"),
         "source_refs": _merge_source_refs(existing.get("source_refs"), payload.get("source_refs")),
