@@ -7,10 +7,10 @@ from dataclasses import dataclass
 from src.prompts.shared import LANGUAGE_OUTPUT_CONTRACT
 
 
-ATTENTIONAL_V2_PROMPTSET_VERSION = "attentional_v2-phase6-v26"
+ATTENTIONAL_V2_PROMPTSET_VERSION = "attentional_v2-phase6-v27"
 SURVEY_CHAPTER_ZONE_PROMPT_VERSION = "attentional_v2.survey_chapter_zone.v1"
 NAVIGATE_CHOOSE_NEXT_UNIT_PROMPT_VERSION = "attentional_v2.navigate_choose_next_unit.v1"
-READ_UNIT_PROMPT_VERSION = "attentional_v2.read.v17"
+READ_UNIT_PROMPT_VERSION = "attentional_v2.read.v18"
 BRIDGE_RESOLUTION_PROMPT_VERSION = "attentional_v2.bridge_resolution.v5"
 REFLECTIVE_PROMOTION_PROMPT_VERSION = "attentional_v2.reflective_promotion.v1"
 RECONSOLIDATION_PROMPT_VERSION = "attentional_v2.reconsolidation.v1"
@@ -254,13 +254,23 @@ Rules:
   - `concept_registry`
   - `thread_trace`
 - Do not target `concept_digest`, `thread_digest`, `active_focus_digest`, or report/projection fields. Digests are prompt projections, not writable memory stores.
-- `active_attention` is the reader's live question set, not recent memory and not a summary cache.
-- Write to `active_attention` only when already-read text raises a question that still pulls the reader forward to seek an answer, confirmation, reversal, or continuation.
+- `active_attention` is the reader's carry-forward set of live questions, not recent memory and not a summary cache.
+- After reading this unit, pause as a curious reader. Ask whether the passage left you wanting to understand something later: what happens next, why this matters, how a tension resolves, whether a claim will be answered, or how a developing pattern will turn.
+- Write to `active_attention` only when a question is still alive after this unit and would shape how you read forward.
+- Good active questions feel like something a reader naturally carries forward:
+  - narrative tension: a bomb is placed on the table, so the reader carries "when or whether will it explode?"
+  - argument tension: the author poses a problem, so the reader carries "how will the author answer this?"
+  - `活出生命的意义`: the text begins showing prisoners under camp conditions, so the reader may carry "how do prisoners adapt psychologically, and what does that adaptation cost?"
+- Do not create an active question merely because the passage is important. Importance alone belongs in `reading_impression`, `concept_registry`, or `thread_trace`; `active_attention` requires forward pull.
 - Active-attention payloads must use `question_from`, `driving_question`, and `working_answer`; do not create new `statement`-only active-attention items.
 - `question_from` says what already-read source moment raised the question. It is normally stable.
 - `driving_question` says what the reader is now trying to find out.
 - `working_answer` says the current best partial answer. It may be empty for a newly opened question and should be updated when the text advances it.
-- Before creating new active questions, inspect existing `active_questions` in the read context packet. If the current unit answers, advances, reverses, weakens, or closes one, emit an `update`, `resolve`, `close`, or `drop` operation for that existing `item_id`.
+- Before creating new active questions, inspect existing `active_questions` in the read context packet. For each one, ask whether this unit advances, corrects, reverses, weakens, answers, or makes it irrelevant. Emit an `update`, `resolve`, `close`, or `drop` operation for that existing `item_id` when appropriate.
+- Use `create` / `append` when this unit opens a still-unanswered question that will guide later reading.
+- Use `update` / `reactivate` when this unit changes the current best answer or rekindles an older question.
+- Use `resolve` when this unit gives enough answer that the reader no longer needs to carry the question as open.
+- Use `close` when the question is no longer useful for reading forward, but not because it was fully answered.
 - If an answer becomes durable, write the durable content to `concept_registry` or `thread_trace` and close the active question. Do not use `promote` as an active-attention operation.
 - Do not create an active question when the current unit raises and answers the question locally.
 - Do not store stable concepts, definitions, chapter summaries, or surfaced reactions in `active_attention`.
@@ -336,6 +346,17 @@ Return JSON:
       "payload": {
         "working_answer": "<current best partial answer>",
         "answer_source_quote": "<exact quote from current unit that supports this answer>",
+        "answer_source_role": "answer_support"
+      }
+    },
+    {
+      "op": "resolve",
+      "target_store": "active_attention",
+      "target_key": "<existing active question item_id>",
+      "reason": "<why the current unit answers the question enough to stop carrying it as open>",
+      "payload": {
+        "working_answer": "<final current answer>",
+        "answer_source_quote": "<exact quote from current unit that answers the question>",
         "answer_source_role": "answer_support"
       }
     },

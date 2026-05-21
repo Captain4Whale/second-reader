@@ -3325,31 +3325,31 @@
       "last_updated_by": "codex"
     },
     {
-      "id": "TASK-SECOND-READER-ACTIVE-ATTENTION-MICRO-EVAL-REPORT-REVIEW",
-      "title": "Review Active Attention live-question micro eval report",
+      "id": "TASK-SECOND-READER-ACTIVE-ATTENTION-MICRO-EVAL-RETRY1-REPORT-REVIEW",
+      "title": "Review Active Attention live-question micro eval Retry1 report",
       "status": "waiting",
       "lane": "mechanism_eval",
       "priority": "high",
-      "detail_ref": "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Live-Question-Micro-Eval-Huochu-Post-run-Report v0.md",
+      "detail_ref": "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Live-Question-Micro-Eval-Huochu-Retry1-Post-run-Report v0.md",
       "truth_refs": [
         "docs/current-state.md",
         "docs/tasks/registry.md",
         "reading-companion-backend/docs/evaluation/run_ledger.md",
-        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Live-Question-Micro-Eval-Huochu-Post-run-Report v0.md"
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Live-Question-Micro-Eval-Huochu-Retry1-Post-run-Report v0.md"
       ],
       "decision_refs": [],
       "job_refs": [
-        "bgjob_active_attention_live_question_micro_huochu_20260521"
+        "bgjob_active_attention_live_question_micro_huochu_20260521_retry1"
       ],
       "acceptance_ref": "",
-      "next_action": "Review the completed diagnostic micro eval. The job completed with clean LLM health, but the Active Attention lifecycle check failed: probe-time active attention was empty and final active items were legacy statement-only and ungrounded. Do not launch broader eval, update the evidence catalog, promote Long Span vNext, or claim product quality from this diagnostic run.",
+      "next_action": "Review the completed Retry1 diagnostic micro eval. The reader-native prompt repair produced live-question-native Active Attention behavior in the targeted huochu micro window, but this remains diagnostic only. Do not launch broader eval, update the evidence catalog, promote Long Span vNext, or claim product quality from this diagnostic run without explicit approval.",
       "blocked_by": [],
       "evidence_refs": [
-        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Live-Question-Micro-Eval-Huochu-Post-run-Report v0.md",
-        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_live_question_micro_huochu_20260521/summary/aggregate.json",
-        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_live_question_micro_huochu_20260521/analysis/active_attention_lifecycle_audit/README.md"
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Live-Question-Micro-Eval-Huochu-Retry1-Post-run-Report v0.md",
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_live_question_micro_huochu_20260521_retry1/summary/aggregate.json",
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_live_question_micro_huochu_20260521_retry1/analysis/active_attention_lifecycle_audit/README.md"
       ],
-      "last_updated": "2026-05-21T02:53:00Z",
+      "last_updated": "2026-05-21T12:35:00Z",
       "last_updated_by": "codex"
     },
     {
@@ -3379,6 +3379,35 @@
         "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_live_question_micro_huochu_20260521/analysis/active_attention_lifecycle_audit/README.md"
       ],
       "last_updated": "2026-05-21T02:53:00Z",
+      "last_updated_by": "codex"
+    },
+    {
+      "id": "TASK-SECOND-READER-ACTIVE-ATTENTION-MICRO-EVAL-RETRY1-20260521",
+      "title": "Run Active Attention reader-native prompt repair Retry1 micro eval on huochu",
+      "status": "done",
+      "lane": "mechanism_eval",
+      "priority": "high",
+      "detail_ref": "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Live-Question-Micro-Eval-Huochu-Retry1-Post-run-Report v0.md",
+      "truth_refs": [
+        "docs/current-state.md",
+        "docs/tasks/registry.md",
+        "reading-companion-backend/docs/evaluation/run_ledger.md",
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Live-Question-Micro-Eval-Huochu-Retry1-Post-run-Report v0.md"
+      ],
+      "decision_refs": [],
+      "job_refs": [
+        "bgjob_active_attention_live_question_micro_huochu_20260521_retry1"
+      ],
+      "acceptance_ref": "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Live-Question-Micro-Eval-Huochu-Retry1-Post-run-Report v0.md",
+      "next_action": "Retry1 diagnostic execution is complete and recorded in TASK-SECOND-READER-ACTIVE-ATTENTION-MICRO-EVAL-RETRY1-REPORT-REVIEW. The result is positive diagnostic evidence for the targeted Active Attention live-question behavior; do not treat it as cataloged evidence, product-quality proof, or authorization for broader eval.",
+      "blocked_by": [],
+      "evidence_refs": [
+        "reading-companion-backend/docs/evaluation/run_ledger.md",
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_live_question_micro_huochu_20260521_retry1/summary/aggregate.json",
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_live_question_micro_huochu_20260521_retry1/summary/llm_usage.json",
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_live_question_micro_huochu_20260521_retry1/analysis/active_attention_lifecycle_audit/README.md"
+      ],
+      "last_updated": "2026-05-21T12:35:00Z",
       "last_updated_by": "codex"
     }
   ]

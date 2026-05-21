@@ -475,13 +475,22 @@ def test_read_unit_filters_unanchored_surface_and_uses_naturalized_contract(tmp_
     assert "not as a field-filling task" in captured["system_prompt"]
     assert "Let `reading_impression` be the brief natural impression" in captured["system_prompt"]
     assert "After the impression and any surfaced reactions, maintain memory deliberately." in captured["system_prompt"]
-    assert "reader's live question set" in captured["system_prompt"]
+    assert "reader's carry-forward set of live questions" in captured["system_prompt"]
+    assert "pause as a curious reader" in captured["system_prompt"]
+    assert "left you wanting to understand something later" in captured["system_prompt"]
+    assert "still alive after this unit" in captured["system_prompt"]
+    assert "would shape how you read forward" in captured["system_prompt"]
     assert "question_from" in captured["system_prompt"]
     assert "driving_question" in captured["system_prompt"]
     assert "working_answer" in captured["system_prompt"]
+    assert "when or whether will it explode?" in captured["system_prompt"]
+    assert "how will the author answer this?" in captured["system_prompt"]
+    assert "how do prisoners adapt psychologically" in captured["system_prompt"]
+    assert "Importance alone belongs" in captured["system_prompt"]
     assert "Do not create an active question when the current unit raises and answers the question locally." in captured[
         "system_prompt"
     ]
+    assert "\"op\": \"resolve\"" in captured["prompt"]
     assert "A surfaced reaction is already persisted as a reaction record." in captured["system_prompt"]
     assert "Explicit source structures can be worth remembering" in captured["system_prompt"]
     assert "Keep proportion around thin structural units." in captured["system_prompt"]
@@ -511,7 +520,7 @@ def test_read_unit_filters_unanchored_surface_and_uses_naturalized_contract(tmp_
     assert "\"target_store\": \"concept_registry\"" in captured["prompt"]
     assert "\"target_store\": \"thread_trace\"" in captured["prompt"]
     assert "Do not target `concept_digest`, `thread_digest`, `active_focus_digest`" in captured["system_prompt"]
-    assert manifest["prompt_version"] == "attentional_v2.read.v17"
+    assert manifest["prompt_version"] == "attentional_v2.read.v18"
 
 
 def test_read_unit_contract_preserves_source_given_stage_model_as_memory_uptake(tmp_path: Path, monkeypatch):

@@ -7,27 +7,29 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-05-21T10:53:00+08:00`
+Last verified: `2026-05-21T20:35:00+08:00`
 
 ## Current Objective
-- Active Attention live-question micro eval completed and is pending human review.
+- Active Attention reader-native prompt repair and Retry1 micro eval completed; retry1 report is pending human review.
   - status:
-    - run id: `attentional_v2_active_attention_live_question_micro_huochu_20260521`
-    - job id: `bgjob_active_attention_live_question_micro_huochu_20260521`
+    - prompt repair: Read prompt bumped to `attentional_v2.read.v18`
+    - run id: `attentional_v2_active_attention_live_question_micro_huochu_20260521_retry1`
+    - job id: `bgjob_active_attention_live_question_micro_huochu_20260521_retry1`
     - source: diagnostic micro excerpt from `huochu` original paragraphs `p45-p61`
-    - run directory: `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_live_question_micro_huochu_20260521`
-    - post-run report: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Live-Question-Micro-Eval-Huochu-Post-run-Report v0.md`
-    - run-local audit: `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_live_question_micro_huochu_20260521/analysis/active_attention_lifecycle_audit/README.md`
+    - run directory: `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_live_question_micro_huochu_20260521_retry1`
+    - post-run report: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Live-Question-Micro-Eval-Huochu-Retry1-Post-run-Report v0.md`
+    - run-local audit: `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_live_question_micro_huochu_20260521_retry1/analysis/active_attention_lifecycle_audit/README.md`
   - diagnostic facts:
     - job completed successfully with expected summary outputs
-    - strict LLM health passed: `34 / 34` successful traces, `0` errors, `0` fallback traces
-    - Memory Quality ran on `full_probe_time_memory_state`, `5` probes, average MQ `2.05`
-    - reaction audit observed `22` visible reactions, `1` grounded callback, `0` weak callbacks, and `0` false visible integrations
-    - Active Attention lifecycle check failed: all `5` probe-time active-attention snapshots were empty, all unit-level settlement deltas kept `active_attention` at `0 -> 0`, and final runtime active-attention contained `2` legacy `statement`-only ungrounded open items
+    - strict LLM health passed: `26 / 26` successful traces, `0` errors, `0` fallback traces
+    - Memory Quality ran on `full_probe_time_memory_state`, `5` probes, average MQ `3.85`
+    - reaction audit observed `16` visible reactions, `0` grounded callbacks, `2` weak callbacks, and `1` false visible integration
+    - Active Attention lifecycle check improved: probe-time snapshots contained active items at all `5` probes; final runtime active attention contained `3` live-question-native items with `question_from`, `driving_question`, `working_answer`, `source_refs`, and `answer_source_refs`
+    - final active item statuses: `2` answered, `1` open for a defensible later-meaning / third-stage question
+    - prior failed run `attentional_v2_active_attention_live_question_micro_huochu_20260521` remains preserved as diagnostic failure evidence only
   - next step:
-    - human review of the micro eval post-run report
-    - likely next implementation brief should inspect the `read_unit` / `chapter_consolidation` prompt contract and prevent legacy ungrounded `statement`-only active items from being created as final open state
-    - do not rerun broader eval, update the evidence catalog, promote Long Span vNext, or claim product quality from this diagnostic micro eval
+    - human review of the Retry1 micro eval post-run report
+    - no evidence catalog update, broader eval, Long Span vNext formal promotion, or product-quality claim is authorized from this diagnostic micro eval without explicit human approval
 - Post-Slice8H Eval-1 Retry1 high-parallel full active evaluation completed and is pending human review.
   - status:
     - no active Eval-1 background jobs remain in the registry

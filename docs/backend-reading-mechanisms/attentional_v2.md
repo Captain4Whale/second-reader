@@ -131,7 +131,9 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
 - The post-F4 cleanup has also retired the old gate/pressure sidecar from current state.
   - Current hot state is `active_attention.active_items`.
   - `Working State` was the historical name for this hot layer; current code, prompts, runtime artifacts, checkpoints, and Memory Quality snapshots use `Active Attention`.
-  - Active Attention is now the reader's live question set: questions raised by already-read source that still drive the reader to keep looking for an answer.
+  - Active Attention is now the reader's carry-forward set of live questions: questions raised by already-read source that the reader would naturally keep in mind while reading forward.
+  - The creation trigger is reader-native, not a mechanical memory gate: create an active item only when the current unit leaves an unanswered question, tension, claim, or developing pattern that makes the reader want to find out what happens, why it matters, or how it resolves later.
+  - Importance alone is not enough. Stable concepts, frameworks, chapter summaries, and visible reactions belong in `reading_impression`, `concept_registry`, `thread_trace`, or `reaction_records`, not in `active_attention`.
   - A current active item should use `question_from`, `driving_question`, `working_answer`, `source_refs`, `answer_source_refs`, and `status`.
   - `statement` remains a legacy compatibility field for old artifacts and warm resume only; new Read outputs should not create statement-only active items.
   - Each active item may still carry lightweight `attention_tags[]`, but tags are not the ontology. The governing shape is the open question and its current answer.
@@ -554,10 +556,10 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
     - owns surfaced reactions
     - owns updates into `active_attention / concept_registry / thread_trace`
     - owns active-question lifecycle intent:
-      - `create` / `append` creates a new open question when the current unit raises something that remains unanswered
-      - `update` / `reactivate` advances or rekindles the `working_answer`
-      - `resolve` marks a question answered
-      - `close` marks a question no longer driving the reading
+      - `create` / `append` creates a new open question when the current unit leaves an unanswered question that would shape how the reader reads forward
+      - `update` / `reactivate` advances, corrects, reverses, weakens, or rekindles the `working_answer`
+      - `resolve` marks a question answered enough that it no longer needs to be carried as open
+      - `close` marks a question no longer driving the reading, without implying it was fully answered
       - `drop` removes a mistaken or obsolete question
       - durable answers should be written to `concept_registry` or `thread_trace` and then close the active question, not use an active-attention `promote` path
     - may request later detour by emitting `detour_need`

@@ -14,10 +14,47 @@ Stable mechanism behavior changes still need to be promoted to the relevant stab
 
 ```text
 Current phase: Memory / Planning / Minimal Eval implementation track closed after Slice 8H
-Implementation status: Slice 1 accepted; Slice 2A accepted; Slice 2B accepted; Slice 3A accepted; Slice 3B accepted; Slice 4A accepted including precision patch; Slice 4B accepted; Slice 5A accepted; Slice 5B accepted; Slice 6A accepted including carried SourceRef audit precision patch; Slice 6B no-code closure brief accepted; Slice 6 closed; Slice 7A accepted; Slice 7B accepted; Slice 8A accepted; Slice 8B accepted; Slice 8C execution brief accepted; Slice 8C bounded Lane A execution attempted and failed before summary generation; Slice 8C report accepted as failed execution evidence; Slice 8D Lane A source-locator compatibility patch accepted; Slice 8E Lane A `_retry1` accepted; Slice 8F Lane B bounded diagnostic smoke accepted; Slice 8G closure report accepted; Slice 8H diagnostic evidence catalog entry brief accepted; Slice 8H diagnostic catalog entry report accepted; implementation track closed; post-Slice8H Eval-1 broader active evaluation attempt stopped and recorded as aborted operational evidence; Eval-1 LLM-health / eval-strictness repair accepted; Eval-1 Retry1 high-parallel full active evaluation completed and is pending human review
-Next action: human review of `Eval1-Full-Active-Evaluation-Post-Slice8H-Retry1-High-Parallel-Post-run-Report v0.md`; do not update the evidence catalog, promote Long Span vNext, launch broader eval, or claim product quality before that review
-Full AI Evaluation: post-Slice8H Eval-1 Retry1 completed the current active Lane A / Lane B scope for `attentional_v2`; results are pending human review and are not automatic product-quality proof or formal benchmark authority
+Implementation status: Slice 1 accepted; Slice 2A accepted; Slice 2B accepted; Slice 3A accepted; Slice 3B accepted; Slice 4A accepted including precision patch; Slice 4B accepted; Slice 5A accepted; Slice 5B accepted; Slice 6A accepted including carried SourceRef audit precision patch; Slice 6B no-code closure brief accepted; Slice 6 closed; Slice 7A accepted; Slice 7B accepted; Slice 8A accepted; Slice 8B accepted; Slice 8C execution brief accepted; Slice 8C bounded Lane A execution attempted and failed before summary generation; Slice 8C report accepted as failed execution evidence; Slice 8D Lane A source-locator compatibility patch accepted; Slice 8E Lane A `_retry1` accepted; Slice 8F Lane B bounded diagnostic smoke accepted; Slice 8G closure report accepted; Slice 8H diagnostic evidence catalog entry brief accepted; Slice 8H diagnostic catalog entry report accepted; implementation track closed; post-Slice8H Eval-1 broader active evaluation attempt stopped and recorded as aborted operational evidence; Eval-1 LLM-health / eval-strictness repair accepted; Eval-1 Retry1 high-parallel full active evaluation completed and is pending human review; Active Attention reader-native prompt repair landed and Retry1 micro eval completed with positive diagnostic lifecycle evidence pending human review
+Next action: human review of `ActiveAttention-Live-Question-Micro-Eval-Huochu-Retry1-Post-run-Report v0.md` and `Eval1-Full-Active-Evaluation-Post-Slice8H-Retry1-High-Parallel-Post-run-Report v0.md`; do not update the evidence catalog, promote Long Span vNext, launch broader eval, or claim product quality before explicit review
+Full AI Evaluation: post-Slice8H Eval-1 Retry1 completed the current active Lane A / Lane B scope for `attentional_v2`; the Active Attention retry1 micro eval is targeted diagnostic validation only; neither result is automatic product-quality proof or formal benchmark authority
 ```
+
+## Entry 2026-05-21 — Active Attention reader-native prompt repair and retry1 micro eval
+
+Type:
+- prompt / mechanism contract repair plus diagnostic micro eval
+
+Related docs:
+- Mechanism doc: `docs/backend-reading-mechanisms/attentional_v2.md`
+- Post-run report: `reports/ActiveAttention-Live-Question-Micro-Eval-Huochu-Retry1-Post-run-Report v0.md`
+- Run ledger: `reading-companion-backend/docs/evaluation/run_ledger.md`
+
+Files changed:
+- `reading-companion-backend/src/attentional_v2/prompts.py`
+- `reading-companion-backend/tests/test_attentional_v2_nodes.py`
+- `reading-companion-backend/tests/test_attentional_v2_phase_b.py`
+- `docs/backend-reading-mechanisms/attentional_v2.md`
+- status docs and run ledger
+
+Design contracts addressed:
+- Active Attention is reader carry-forward open questions, not summary/cache/reaction copy.
+- Read prompt now asks from the curious-reader perspective whether the unit leaves a still-alive question that shapes forward reading.
+- Existing `memory_uptake_ops` JSON contract remains the hard state-write interface.
+
+Engineering tests:
+- Commands run: `cd reading-companion-backend && .venv/bin/python -m pytest tests/test_attentional_v2_state_ops.py tests/test_attentional_v2_nodes.py tests/test_attentional_v2_state_projection.py tests/test_attentional_v2_slow_cycle.py tests/test_attentional_v2_scaffold.py tests/test_long_span_vnext.py -q`
+- Result: `90 passed`
+
+AI Evaluation:
+- Full eval run? no
+- Smoke only? targeted diagnostic micro eval
+- Eval lane affected: Long Span diagnostic micro eval for Active Attention lifecycle behavior
+- Result: retry1 completed; probe-time snapshots contained Active Attention items at all five probes; final state had three live-question-native items, two answered and one defensibly open; LLM health passed with `26 / 26` successes and `0` fallbacks
+
+Post-implementation Report:
+- Link: `reports/ActiveAttention-Live-Question-Micro-Eval-Huochu-Retry1-Post-run-Report v0.md`
+- Summary: reader-native prompt repair appears effective for the targeted `huochu` micro window.
+- Known gaps: source-quote precision still has fallback unit spans; callback/FVI reaction layer still has weak/FVI cases; no product-quality claim or evidence catalog update.
 
 ## Entry 2026-05-16 — E实施1 feasibility audit created
 
