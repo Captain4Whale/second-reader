@@ -105,6 +105,36 @@ def _source_ref_evidence(source_refs: object) -> tuple[int, list[str], str]:
     return len(statuses), compact_statuses, "not_assessed"
 
 
+def _has_live_question_fields(item: Mapping[str, object]) -> bool:
+    """Return whether a carry-forward item uses the current live-question schema."""
+
+    return any(
+        _clean_text(item.get(field))
+        for field in (
+            "question_from",
+            "driving_question",
+            "working_answer",
+        )
+    )
+
+
+def _merge_unique_texts(*values: object) -> list[str]:
+    """Merge string lists while preserving order."""
+
+    ordered: list[str] = []
+    seen: set[str] = set()
+    for raw in values:
+        if not isinstance(raw, list):
+            continue
+        for item in raw:
+            text = _clean_text(item)
+            if not text or text in seen:
+                continue
+            seen.add(text)
+            ordered.append(text)
+    return ordered
+
+
 def _with_source_ref_evidence(
     envelope: SlowCycleAuditEnvelope,
     source_refs: object,
@@ -166,6 +196,19 @@ def _carry_forward_audit_envelopes(
         item_id = _clean_text(item.get("item_id"))
         if item_id:
             carried_ids.add(item_id)
+        existing_item = active_items_by_id.get(item_id, {})
+        if not existing_item and not _has_live_question_fields(item):
+            envelope = {
+                "trigger_type": "chapter_end",
+                "chapter_ref": chapter_ref,
+                "candidate_type": "cross_chapter_carry_forward",
+                "candidate_id": item_id,
+                "settlement_decision": "rejected",
+                "settlement_reason": "missing_live_question_fields",
+                "not_carried_reason": "missing_live_question_fields",
+            }
+            envelopes.append(_with_source_ref_evidence(envelope, item.get("source_refs")))
+            continue
         envelope: SlowCycleAuditEnvelope = {
             "trigger_type": "chapter_end",
             "chapter_ref": chapter_ref,
@@ -175,7 +218,6 @@ def _carry_forward_audit_envelopes(
             "carry_forward_reason": "selected_by_chapter_consolidation",
             "settlement_reason": _clean_text(item.get("status")) or "selected_by_chapter_consolidation",
         }
-        existing_item = active_items_by_id.get(item_id, {})
         audit_source_refs = dedupe_source_refs(
             [
                 *(existing_item.get("source_refs", []) if isinstance(existing_item.get("source_refs"), list) else []),
@@ -1189,18 +1231,17 @@ def _normalize_carry_forward_item(value: object) -> ActiveAttentionItem | None:
 
     if not isinstance(value, dict):
         return None
-    statement = _clean_text(value.get("statement"))
-    if not statement:
+    item_id = _clean_text(value.get("item_id"))
+    if not item_id:
         return None
     attention_tags = [
         _clean_text(item)
         for item in value.get("attention_tags", [])
         if _clean_text(item)
     ] if isinstance(value.get("attention_tags"), list) else []
-    return {
-        "item_id": _clean_text(value.get("item_id")),
+    item: ActiveAttentionItem = {
+        "item_id": item_id,
         "attention_tags": attention_tags,
-        "statement": statement,
         "source_refs": [
             build_reaction_source_ref(item)
             for item in value.get("source_refs", [])
@@ -1208,8 +1249,41 @@ def _normalize_carry_forward_item(value: object) -> ActiveAttentionItem | None:
         ]
         if isinstance(value.get("source_refs"), list)
         else [],
+        "answer_source_refs": [
+            build_reaction_source_ref(item)
+            for item in value.get("answer_source_refs", [])
+            if isinstance(item, dict)
+        ]
+        if isinstance(value.get("answer_source_refs"), list)
+        else [],
         "status": _clean_text(value.get("status")) or "open",
     }
+    for field in (
+        "question_from",
+        "driving_question",
+        "working_answer",
+        "statement",
+    ):
+        text = _clean_text(value.get(field))
+        if text:
+            item[field] = text  # type: ignore[literal-required]
+    linked_concept_keys = [
+        _clean_text(item)
+        for item in value.get("linked_concept_keys", [])
+        if _clean_text(item)
+    ] if isinstance(value.get("linked_concept_keys"), list) else []
+    linked_thread_keys = [
+        _clean_text(item)
+        for item in value.get("linked_thread_keys", [])
+        if _clean_text(item)
+    ] if isinstance(value.get("linked_thread_keys"), list) else []
+    if linked_concept_keys:
+        item["linked_concept_keys"] = linked_concept_keys
+    if linked_thread_keys:
+        item["linked_thread_keys"] = linked_thread_keys
+    if not _has_live_question_fields(item) and not _clean_text(item.get("statement")):
+        return None
+    return item
 
 
 def _normalize_chapter_consolidation_result(payload: object) -> ChapterConsolidationResult:
@@ -1309,7 +1383,7 @@ def apply_cross_chapter_carry_forward(
     active_attention: ActiveAttention,
     carry_forward: list[ActiveAttentionItem],
 ) -> ActiveAttention:
-    """Replace active-attention items while preserving evidence for carried items."""
+    """Replace active-attention items while preserving live-question fields and evidence."""
 
     existing_by_id = {
         _clean_text(item.get("item_id")): item
@@ -1318,9 +1392,29 @@ def apply_cross_chapter_carry_forward(
     }
     carried_items: list[ActiveAttentionItem] = []
     for item in carry_forward:
-        carried_item = dict(item)
-        item_id = _clean_text(carried_item.get("item_id"))
+        item_id = _clean_text(item.get("item_id"))
+        if not item_id:
+            continue
         existing = existing_by_id.get(item_id, {})
+        if not existing and not _has_live_question_fields(item):
+            continue
+        carried_item: ActiveAttentionItem = {
+            "item_id": item_id,
+            "attention_tags": _merge_unique_texts(existing.get("attention_tags"), item.get("attention_tags")),
+            "question_from": _clean_text(item.get("question_from")) or _clean_text(existing.get("question_from")),
+            "driving_question": _clean_text(item.get("driving_question")) or _clean_text(existing.get("driving_question")),
+            "working_answer": _clean_text(item.get("working_answer")) or _clean_text(existing.get("working_answer")),
+            "statement": _clean_text(item.get("statement")) or _clean_text(existing.get("statement")),
+            "linked_concept_keys": _merge_unique_texts(
+                existing.get("linked_concept_keys"),
+                item.get("linked_concept_keys"),
+            ),
+            "linked_thread_keys": _merge_unique_texts(
+                existing.get("linked_thread_keys"),
+                item.get("linked_thread_keys"),
+            ),
+            "status": _clean_text(item.get("status")) or _clean_text(existing.get("status")) or "open",
+        }
         carried_item["source_refs"] = dedupe_source_refs(
             [
                 *(
@@ -1329,8 +1423,22 @@ def apply_cross_chapter_carry_forward(
                     else []
                 ),
                 *(
-                    carried_item.get("source_refs", [])
-                    if isinstance(carried_item.get("source_refs"), list)
+                    item.get("source_refs", [])
+                    if isinstance(item.get("source_refs"), list)
+                    else []
+                ),
+            ]
+        )
+        carried_item["answer_source_refs"] = dedupe_source_refs(
+            [
+                *(
+                    existing.get("answer_source_refs", [])
+                    if isinstance(existing.get("answer_source_refs"), list)
+                    else []
+                ),
+                *(
+                    item.get("answer_source_refs", [])
+                    if isinstance(item.get("answer_source_refs"), list)
                     else []
                 ),
             ]

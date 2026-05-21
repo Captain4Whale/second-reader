@@ -314,6 +314,9 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
 - `reading_impression` is a temporary natural-language read-after impression, not a new durable memory layer.
   - It exists as the immediate reader-like impression after one unit.
   - Durable memory changes only through `memory_uptake_ops` into the existing primary state layers.
+  - Current Read-owned `memory_uptake_ops` may write only to `active_attention`, `concept_registry`, and `thread_trace`.
+    - `concept_digest`, `thread_digest`, and `active_focus_digest` are prompt-facing projections derived from state; they are not writable stores.
+    - Unsupported Read target stores or unsupported operation/store pairings are dropped at admission and recorded as diagnostics rather than being treated as accepted updates.
   - Visible reactions and memory uptake come from the same reading experience, but a surfaced reaction is already persisted as a reaction record and is not automatically copied into concept or thread memory.
   - Author-given structures such as stage models, classifications, core definitions, named distinctions, or chapter roadmaps may enter memory even when they do not produce a visible reaction.
 - `Express` is now best understood as historical intermediate compatibility-first territory rather than a live mechanism node.
@@ -528,6 +531,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
     - `concept_registry`
     - `thread_trace`
     - `reflective_frames`
+    - `concept_registry` and `thread_trace` use canonical `summary` text fields in write payloads; older alias fields such as `definition`, `core_content`, `expansion_content`, `framework_extension`, or `rationale` are compatibility inputs, not the prompt contract for new runs
   - `artifacts / history`
     - `reaction_records`
     - `read_audit`
@@ -537,8 +541,10 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - Its id is deterministically derived from the paragraph-offset span, for example `src:c1:p3@12-p3@48`.
   - New runtime truth does not write or require an `anchor_bank.json` artifact.
   - Chapter-end carry-forward preserves existing `active_attention` source refs by deterministic `item_id` merge after cooling, so a `chapter_consolidation` omission cannot erase evidence coordinates for a carried item.
-  - Carry-forward does not fuzzy-match by statement and does not invent source refs for newly introduced items.
+  - Chapter-end carry-forward is live-question native: it preserves and merges `question_from`, `driving_question`, `working_answer`, `source_refs`, `answer_source_refs`, linked keys, and status.
+  - Carry-forward does not fuzzy-match by statement and does not invent source refs for newly introduced items; new statement-only carry-forward items are rejected instead of becoming current Active Attention.
   - Active-question merges preserve `question_from`, update `working_answer` only when the payload explicitly provides one, and dedupe both `source_refs` and `answer_source_refs`.
+  - Read-output `source_quote` / `answer_source_quote` are resolved into paragraph-offset `SourceRef` objects before settlement; malformed model-emitted `source_refs` lists do not block that resolution.
 - Ownership is now:
   - `Navigate`
     - owns `local_continuity`

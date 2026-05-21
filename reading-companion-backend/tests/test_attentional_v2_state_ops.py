@@ -380,6 +380,43 @@ def test_concept_registry_lifecycle_is_store_specific_and_non_destructive():
     assert [entry["concept_key"] for entry in dropped["entries"]] == ["concept-preserve", "concept-other"]
 
 
+def test_concept_registry_maps_legacy_payload_aliases_to_summary():
+    """Legacy LLM payload aliases should not create empty concept summaries."""
+
+    state = apply_concept_registry_operations(
+        {"entries": []},
+        [
+            {
+                "operation_type": "update",
+                "target_store": "concept_registry",
+                "item_id": "camp-reaction-stages",
+                "payload": {
+                    "concept_type": "framework",
+                    "definition": "The text introduces a three-stage prisoner-response model.",
+                    "source_refs": [_source_ref("three stages")],
+                },
+            },
+            {
+                "operation_type": "update",
+                "target_store": "concept_registry",
+                "item_id": "protective-apathy",
+                "payload": {
+                    "concept_type": "concept",
+                    "framework_extension": {
+                        "stage": "second stage",
+                        "meaning": "apathy functions as a protective shell",
+                    },
+                },
+            },
+        ],
+    )
+
+    first = _find(state["entries"], "concept_key", "camp-reaction-stages")
+    second = _find(state["entries"], "concept_key", "protective-apathy")
+    assert first["summary"] == "The text introduces a three-stage prisoner-response model."
+    assert second["summary"] == "stage: second stage; meaning: apathy functions as a protective shell"
+
+
 def test_thread_trace_lifecycle_is_store_specific_and_non_destructive():
     """Thread lifecycle operations should remain deterministic within the thread store."""
 
@@ -465,6 +502,29 @@ def test_thread_trace_lifecycle_is_store_specific_and_non_destructive():
         ],
     )
     assert [entry["thread_key"] for entry in dropped["entries"]] == ["thread-preserve", "thread-other"]
+
+
+def test_thread_trace_maps_legacy_payload_aliases_to_summary():
+    """Legacy thread payload aliases should not create empty thread summaries."""
+
+    state = apply_thread_trace_operations(
+        {"entries": []},
+        [
+            {
+                "operation_type": "update",
+                "target_store": "thread_trace",
+                "item_id": "adaptation-arc",
+                "payload": {
+                    "thread_type": "development",
+                    "current_state": "The first shock is giving way to adaptation.",
+                    "source_refs": [_source_ref("adaptation")],
+                },
+            }
+        ],
+    )
+
+    thread = _find(state["entries"], "thread_key", "adaptation-arc")
+    assert thread["summary"] == "The first shock is giving way to adaptation."
 
 
 def test_activation_helpers_upsert_source_refs_by_id():

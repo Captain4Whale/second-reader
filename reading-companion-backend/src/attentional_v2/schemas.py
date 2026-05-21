@@ -331,7 +331,13 @@ class ReadUnitResult(TypedDict, total=False):
     detour_need: "DetourNeed" | None
 
 
-MemoryUptakeAdmissionStatus = Literal["accepted", "dropped_unknown_operation", "dropped_malformed_operation"]
+MemoryUptakeAdmissionStatus = Literal[
+    "accepted",
+    "dropped_unknown_operation",
+    "dropped_malformed_operation",
+    "dropped_unsupported_target_store",
+    "dropped_unsupported_operation_for_target_store",
+]
 MemoryUptakeOperationStorePolicy = Literal["supported", "unsupported_target_store", "unsupported_operation_for_target_store"]
 
 

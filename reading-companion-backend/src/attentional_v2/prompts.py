@@ -7,14 +7,14 @@ from dataclasses import dataclass
 from src.prompts.shared import LANGUAGE_OUTPUT_CONTRACT
 
 
-ATTENTIONAL_V2_PROMPTSET_VERSION = "attentional_v2-phase6-v25"
+ATTENTIONAL_V2_PROMPTSET_VERSION = "attentional_v2-phase6-v26"
 SURVEY_CHAPTER_ZONE_PROMPT_VERSION = "attentional_v2.survey_chapter_zone.v1"
 NAVIGATE_CHOOSE_NEXT_UNIT_PROMPT_VERSION = "attentional_v2.navigate_choose_next_unit.v1"
-READ_UNIT_PROMPT_VERSION = "attentional_v2.read.v16"
+READ_UNIT_PROMPT_VERSION = "attentional_v2.read.v17"
 BRIDGE_RESOLUTION_PROMPT_VERSION = "attentional_v2.bridge_resolution.v5"
 REFLECTIVE_PROMOTION_PROMPT_VERSION = "attentional_v2.reflective_promotion.v1"
 RECONSOLIDATION_PROMPT_VERSION = "attentional_v2.reconsolidation.v1"
-CHAPTER_CONSOLIDATION_PROMPT_VERSION = "attentional_v2.chapter_consolidation.v4"
+CHAPTER_CONSOLIDATION_PROMPT_VERSION = "attentional_v2.chapter_consolidation.v5"
 
 
 @dataclass(frozen=True)
@@ -253,6 +253,7 @@ Rules:
   - `active_attention`
   - `concept_registry`
   - `thread_trace`
+- Do not target `concept_digest`, `thread_digest`, `active_focus_digest`, or report/projection fields. Digests are prompt projections, not writable memory stores.
 - `active_attention` is the reader's live question set, not recent memory and not a summary cache.
 - Write to `active_attention` only when already-read text raises a question that still pulls the reader forward to seek an answer, confirmation, reversal, or continuation.
 - Active-attention payloads must use `question_from`, `driving_question`, and `working_answer`; do not create new `statement`-only active-attention items.
@@ -344,6 +345,34 @@ Return JSON:
       "target_key": "<existing active question item_id>",
       "reason": "<why this question no longer drives later reading>",
       "payload": {}
+    },
+    {
+      "op": "update",
+      "target_store": "concept_registry",
+      "target_key": "concept-key",
+      "reason": "<why this reusable concept/model/definition should remain available>",
+      "payload": {
+        "concept_key": "concept-key",
+        "concept_type": "concept",
+        "summary": "<canonical concept summary; do not use definition/core_content/expansion_content>",
+        "status": "active",
+        "source_quote": "<exact quote from current unit>",
+        "source_role": "support"
+      }
+    },
+    {
+      "op": "update",
+      "target_store": "thread_trace",
+      "target_key": "thread-key",
+      "reason": "<why this cross-passage line should remain available>",
+      "payload": {
+        "thread_key": "thread-key",
+        "thread_type": "development",
+        "summary": "<canonical thread summary>",
+        "status": "active",
+        "source_quote": "<exact quote from current unit>",
+        "source_role": "support"
+      }
     }
   ],
   "detour_need": null
@@ -571,8 +600,11 @@ Return JSON:
     {
       "item_id": "<reuse an existing active item id when carrying an existing item>",
       "attention_tags": [],
-      "statement": "<live near-term item to carry forward>",
+      "question_from": "<what already-read source moment raised this question>",
+      "driving_question": "<what the reader is still trying to answer>",
+      "working_answer": "<current best answer, or empty if still unanswered>",
       "source_refs": [],
+      "answer_source_refs": [],
       "status": "open"
     }
   ],

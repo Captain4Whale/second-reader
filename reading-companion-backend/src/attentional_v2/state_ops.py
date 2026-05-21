@@ -133,6 +133,41 @@ def _merge_source_refs(*values: object) -> list[SourceRef]:
     return dedupe_source_refs(merged)
 
 
+def _compact_text(value: object) -> str:
+    """Return a compact text representation for legacy alias payloads."""
+
+    if isinstance(value, str):
+        return value.strip()
+    if isinstance(value, dict):
+        parts: list[str] = []
+        for key, nested_value in value.items():
+            nested_text = _compact_text(nested_value)
+            if nested_text:
+                parts.append(f"{key}: {nested_text}")
+        return "; ".join(parts)
+    if isinstance(value, list):
+        return "; ".join(text for text in (_compact_text(item) for item in value) if text)
+    return str(value or "").strip()
+
+
+def _summary_from_payload(
+    existing: dict[str, object],
+    payload: dict[str, object],
+    *,
+    aliases: tuple[str, ...],
+) -> str:
+    """Prefer canonical summary, then legacy aliases, then existing summary."""
+
+    summary = _compact_text(payload.get("summary"))
+    if summary:
+        return summary
+    for alias in aliases:
+        alias_summary = _compact_text(payload.get(alias))
+        if alias_summary:
+            return alias_summary
+    return _compact_text(existing.get("summary"))
+
+
 def _merge_text_field(existing: dict[str, object], payload: dict[str, object], key: str) -> str:
     """Return payload text when explicitly provided, otherwise preserve existing text."""
 
@@ -476,7 +511,11 @@ def _upsert_concept_entry(
         "status": str(
             payload.get("status", "") or existing.get("status", "") or ("resolved" if normalized_operation == "resolve" else "active")
         ),
-        "summary": str(payload.get("summary", "") or existing.get("summary", "")),
+        "summary": _summary_from_payload(
+            existing,
+            payload,
+            aliases=("definition", "core_content", "expansion_content", "framework_extension", "rationale"),
+        ),
         "source_refs": _merge_source_refs(existing.get("source_refs"), payload.get("source_refs")),
         "linked_thread_ids": _merge_linked_ids(existing, payload, "linked_thread_ids"),
     }
@@ -542,7 +581,11 @@ def _upsert_thread_entry(
         "status": str(
             payload.get("status", "") or existing.get("status", "") or ("resolved" if normalized_operation == "resolve" else "active")
         ),
-        "summary": str(payload.get("summary", "") or existing.get("summary", "")),
+        "summary": _summary_from_payload(
+            existing,
+            payload,
+            aliases=("development", "current_state", "core_content", "expansion_content", "framework_extension", "rationale"),
+        ),
         "source_refs": _merge_source_refs(existing.get("source_refs"), payload.get("source_refs")),
         "linked_concept_keys": _merge_linked_ids(existing, payload, "linked_concept_keys"),
     }

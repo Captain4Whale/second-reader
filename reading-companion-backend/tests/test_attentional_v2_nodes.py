@@ -508,7 +508,10 @@ def test_read_unit_filters_unanchored_surface_and_uses_naturalized_contract(tmp_
     assert "`implicit_uptake_ops`" not in captured["system_prompt"]
     assert "Do not decide or name the next route." in captured["system_prompt"]
     assert "`pressure_signals`" not in captured["system_prompt"]
-    assert manifest["prompt_version"] == "attentional_v2.read.v16"
+    assert "\"target_store\": \"concept_registry\"" in captured["prompt"]
+    assert "\"target_store\": \"thread_trace\"" in captured["prompt"]
+    assert "Do not target `concept_digest`, `thread_digest`, `active_focus_digest`" in captured["system_prompt"]
+    assert manifest["prompt_version"] == "attentional_v2.read.v17"
 
 
 def test_read_unit_contract_preserves_source_given_stage_model_as_memory_uptake(tmp_path: Path, monkeypatch):
@@ -530,7 +533,7 @@ def test_read_unit_contract_preserves_source_given_stage_model_as_memory_uptake(
                     "reason": "The three-stage structure will organize later reading.",
                     "payload": {
                         "thread_key": "camp_reaction_stages",
-                        "statement": "囚徒对集中营生活的精神反应被作者划分为收容、适应、释放与解放三个阶段。",
+                        "summary": "囚徒对集中营生活的精神反应被作者划分为收容、适应、释放与解放三个阶段。",
                         "source_quote": "三个阶段：收容阶段、适应阶段、释放与解放阶段",
                     },
                 }
@@ -565,7 +568,7 @@ def test_read_unit_contract_preserves_source_given_stage_model_as_memory_uptake(
     assert "even when they do not call for a visible reaction" in captured["system_prompt"]
     assert result["surfaced_reactions"] == []
     assert result["memory_uptake_ops"][0]["target_store"] == "thread_trace"
-    assert "三个阶段" in result["memory_uptake_ops"][0]["payload"]["statement"]
+    assert "三个阶段" in result["memory_uptake_ops"][0]["payload"]["summary"]
 
 
 def test_read_unit_marks_missing_target_store_as_compatibility_default(tmp_path: Path, monkeypatch):
@@ -715,6 +718,40 @@ def test_read_unit_resolves_active_question_answer_source_refs(tmp_path: Path, m
     assert payload["answer_source_refs"][0]["role"] == "answer_support"
 
 
+def test_memory_uptake_source_ref_normalization_repairs_malformed_ref_lists():
+    """Malformed SourceRef lists should not block source_quote resolution."""
+
+    normalized_ops = runner_module._normalize_memory_uptake_ops_source_refs(
+        [
+            {
+                "op": "update",
+                "target_store": "concept_registry",
+                "target_key": "concept-1",
+                "payload": {
+                    "summary": "The premise is now grounded.",
+                    "source_quote": "The premise appears here.",
+                    "source_refs": ["src:legacy-string"],
+                    "answer_source_quote": "The answer appears here.",
+                    "answer_source_refs": [],
+                },
+            }
+        ],
+        source_unit={
+            "source_text": "The premise appears here. The answer appears here.",
+            "source_span": {
+                "start_cursor": {"chapter_id": 1, "chapter_ref": "Chapter 1", "paragraph_index": 1, "char_offset": 0},
+                "end_cursor": {"chapter_id": 1, "chapter_ref": "Chapter 1", "paragraph_index": 1, "char_offset": 49},
+            },
+            "paragraph_offsets": [{"paragraph_index": 1, "start": 0, "end": 49}],
+        },
+    )
+
+    payload = normalized_ops[0]["payload"]
+    assert payload["source_refs"][0]["quote"] == "The premise appears here."
+    assert payload["source_refs"][0]["source_span_id"].startswith("src:c1:p1@")
+    assert payload["answer_source_refs"][0]["quote"] == "The answer appears here."
+
+
 def test_read_unit_records_dropped_memory_uptake_admission_events(tmp_path: Path, monkeypatch):
     """Unknown and malformed raw ops stay dropped but become visible in audit metadata."""
 
@@ -777,18 +814,18 @@ def test_read_unit_records_dropped_memory_uptake_admission_events(tmp_path: Path
     assert all("payload" not in event for event in admission_events)
 
 
-def test_read_unit_records_unsupported_target_store_policy_warning(tmp_path: Path, monkeypatch):
-    """Unsupported stores remain normalized while admission audit shows policy risk."""
+def test_read_unit_drops_unsupported_target_store_with_admission_diagnostic(tmp_path: Path, monkeypatch):
+    """Unsupported stores should not masquerade as accepted memory updates."""
 
     def fake_invoke_json(system_prompt: str, prompt: str, default: object) -> object:
         return {
-            "reading_impression": "A reflective frame is mentioned but not a read-path target.",
+            "reading_impression": "A digest projection is mentioned but not a read-path target.",
             "surfaced_reactions": [],
             "memory_uptake_ops": [
                 {
                     "op": "append",
-                    "target_store": "reflective_frames",
-                    "target_key": "frame-1",
+                    "target_store": "concept_digest",
+                    "target_key": "digest-1",
                     "payload": {"summary": "This should not become a raw audit dump."},
                 }
             ],
@@ -798,7 +835,7 @@ def test_read_unit_records_unsupported_target_store_policy_warning(tmp_path: Pat
 
     result = read_unit(
         current_unit_sentences=[
-            _sentence("c1-s1", "The passage tempts a reflective frame.", sentence_index=1, paragraph_index=1),
+            _sentence("c1-s1", "The passage tempts a digest write.", sentence_index=1, paragraph_index=1),
         ],
         carry_forward_context={"packet_version": STATE_PACKET_VERSION, "refs": []},
         reader_policy=build_default_reader_policy(),
@@ -806,21 +843,20 @@ def test_read_unit_records_unsupported_target_store_policy_warning(tmp_path: Pat
         output_dir=tmp_path,
     )
 
-    op = result["memory_uptake_ops"][0]
-    assert op["target_store"] == "reflective_frames"
-    assert op["compatibility_warnings"] == ["unsupported_target_store"]
+    assert result["memory_uptake_ops"] == []
 
     admission_event = result["memory_uptake_admission_events"][0]
-    assert admission_event["admission_status"] == "accepted"
+    assert admission_event["admission_status"] == "dropped_unsupported_target_store"
     assert admission_event["target_store_supported"] is False
     assert admission_event["operation_store_policy"] == "unsupported_target_store"
     assert admission_event["policy_warnings"] == ["unsupported_target_store"]
     assert admission_event["compatibility_warnings"] == ["unsupported_target_store"]
+    assert admission_event["drop_reason"] == "unsupported_target_store"
     assert "payload" not in admission_event
 
 
-def test_read_unit_records_unsupported_operation_store_policy_warning(tmp_path: Path, monkeypatch):
-    """Unsupported operation-store pairings remain normalized but visible."""
+def test_read_unit_drops_unsupported_operation_store_pair_with_admission_diagnostic(tmp_path: Path, monkeypatch):
+    """Unsupported operation-store pairings should not reach state apply."""
 
     def fake_invoke_json(system_prompt: str, prompt: str, default: object) -> object:
         return {
@@ -848,16 +884,15 @@ def test_read_unit_records_unsupported_operation_store_policy_warning(tmp_path: 
         output_dir=tmp_path,
     )
 
-    op = result["memory_uptake_ops"][0]
-    assert op["target_store"] == "concept_registry"
-    assert op["compatibility_warnings"] == ["unsupported_operation_for_target_store"]
+    assert result["memory_uptake_ops"] == []
 
     admission_event = result["memory_uptake_admission_events"][0]
-    assert admission_event["admission_status"] == "accepted"
+    assert admission_event["admission_status"] == "dropped_unsupported_operation_for_target_store"
     assert admission_event["target_store_supported"] is True
     assert admission_event["operation_store_policy"] == "unsupported_operation_for_target_store"
     assert admission_event["policy_warnings"] == ["unsupported_operation_for_target_store"]
     assert admission_event["compatibility_warnings"] == ["unsupported_operation_for_target_store"]
+    assert admission_event["drop_reason"] == "unsupported_operation_for_target_store"
 
 
 def test_read_unit_records_supported_store_policy_without_warning(tmp_path: Path, monkeypatch):

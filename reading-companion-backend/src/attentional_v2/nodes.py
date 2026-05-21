@@ -557,6 +557,8 @@ def _memory_uptake_admission_event(
 
 def _normalize_state_operations_with_admission(
     value: object,
+    *,
+    enforce_read_store_policy: bool = False,
 ) -> tuple[list[StateOperation], list[MemoryUptakeAdmissionEvent]]:
     """Normalize explicit state operations and capture audit-only admission events."""
 
@@ -620,6 +622,30 @@ def _normalize_state_operations_with_admission(
             effective_target_store,
         )
         compatibility_warnings.extend(policy_warnings)
+        if enforce_read_store_policy and operation_store_policy != "supported":
+            drop_status = (
+                "dropped_unsupported_target_store"
+                if operation_store_policy == _UNSUPPORTED_TARGET_STORE_WARNING
+                else "dropped_unsupported_operation_for_target_store"
+            )
+            admission_events.append(
+                _memory_uptake_admission_event(
+                    operation_index=operation_index,
+                    admission_status=drop_status,
+                    operation_type_emitted=operation_type_emitted,
+                    operation_type_normalized=operation_type,
+                    target_store_emitted=target_store_emitted,
+                    effective_target_store=effective_target_store,
+                    target_key=target_key,
+                    item_id=target_key,
+                    compatibility_warnings=compatibility_warnings,
+                    drop_reason=operation_store_policy,
+                    target_store_supported=target_store_supported,
+                    operation_store_policy=operation_store_policy,
+                    policy_warnings=policy_warnings,
+                )
+            )
+            continue
         operations.append(
             {
                 "op": operation_type,  # type: ignore[typeddict-item]
@@ -1303,7 +1329,8 @@ def read_unit(
     )
     reading_impression = _clean_text(payload.get("reading_impression")) if isinstance(payload, dict) else ""
     memory_uptake_ops, memory_uptake_admission_events = _normalize_state_operations_with_admission(
-        payload.get("memory_uptake_ops") if isinstance(payload, dict) else None
+        payload.get("memory_uptake_ops") if isinstance(payload, dict) else None,
+        enforce_read_store_policy=True,
     )
     result: ReadUnitResult = {
         "reading_impression": reading_impression,
