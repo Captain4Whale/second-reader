@@ -2165,37 +2165,18 @@ def _normalize_memory_uptake_ops_source_refs(
 
         source_quote = _clean_text(payload.get("source_quote") or payload.get("quote") or payload.get("evidence_quote"))
         source_role = _clean_text(payload.get("source_role")) or "support"
-        source_refs = payload.get("source_refs")
-        source_refs_structured = (
-            isinstance(source_refs, list)
-            and bool(source_refs)
-            and all(isinstance(ref, dict) and (ref.get("source_span") or ref.get("source_span_id")) for ref in source_refs)
-        )
-        should_resolve_source_quote = bool(source_quote) or (
-            target_store == "active_attention" and operation_type in {"append", "create", "reactivate"}
-        )
-        if isinstance(source_unit, dict) and source_unit and should_resolve_source_quote and not source_refs_structured:
+        if isinstance(source_unit, dict) and source_unit and source_quote:
             payload["source_refs"] = [source_ref_from_unit(source_unit, quote=source_quote, role=source_role)]
+        elif "source_refs" in payload:
+            payload.pop("source_refs", None)
         answer_source_quote = _clean_text(payload.get("answer_source_quote"))
         answer_source_role = _clean_text(payload.get("answer_source_role")) or "answer_support"
-        answer_source_refs = payload.get("answer_source_refs")
-        answer_source_refs_structured = (
-            isinstance(answer_source_refs, list)
-            and bool(answer_source_refs)
-            and all(
-                isinstance(ref, dict) and (ref.get("source_span") or ref.get("source_span_id"))
-                for ref in answer_source_refs
-            )
-        )
-        if (
-            isinstance(source_unit, dict)
-            and source_unit
-            and answer_source_quote
-            and not answer_source_refs_structured
-        ):
+        if isinstance(source_unit, dict) and source_unit and answer_source_quote:
             payload["answer_source_refs"] = [
                 source_ref_from_unit(source_unit, quote=answer_source_quote, role=answer_source_role)
             ]
+        elif "answer_source_refs" in payload:
+            payload.pop("answer_source_refs", None)
         if target_store == "active_attention":
             unit_span = _unit_span()
             unit_span_id = _unit_span_id()

@@ -2754,7 +2754,7 @@ This new direction is design frozen but not yet implemented as a formal benchmar
 **Period**: May 21, 2026, after reviewing the Retry2 micro-eval output and deciding that predeclaring an answer boundary added unnecessary design weight. The simpler product-aligned rule is that the reader carries open inquiries, then explains why an inquiry is answered or no longer useful when it terminates.
 
 **Clarification**: Active Attention remains the reader's carry-forward open-inquiry layer. New prompts should not require `answer_boundary` as the core contract. `answer_boundary` may remain on old artifacts and compatibility paths, but the current lifecycle contract is:
-- `create` opens one source-triggered inquiry with `question_from`, `driving_question`, `working_answer`, and source evidence.
+- `create` opens one prompt-context-grounded inquiry with `question_from`, `driving_question`, `working_answer`, and available source / framing / memory evidence.
 - `update` records partial progress in `working_answer` and answer source evidence while keeping the item open.
 - `resolve` is a soft terminal state that requires `answered_reason`, answer source evidence, and answered source/unit coordinates.
 - `close` is a soft terminal state that requires `closed_reason` and closed source/unit coordinates when the inquiry no longer drives reading but is not claimed as answered.
@@ -2777,7 +2777,7 @@ This new direction is design frozen but not yet implemented as a formal benchmar
 
 ## Entry 91
 **ID**: DEC-094
-**Status**: active
+**Status**: superseded by DEC-095
 
 **Decision / Clarification**: Treat Active Attention as coherent reading forward-pull, not a formal Q&A tracker.
 
@@ -2795,3 +2795,27 @@ This new direction is design frozen but not yet implemented as a formal benchmar
 - `reading-companion-backend/docs/evaluation/reporting_standard.md`
 - `reading-companion-backend/src/attentional_v2/source_spans.py`
 - `reading-companion-backend/src/attentional_v2/prompts.py`
+
+## Entry 92
+**ID**: DEC-095
+**Status**: active
+
+**Decision / Clarification**: Treat Active Attention as prompt-context-grounded forward-pull.
+
+**Period**: May 22, 2026, after reviewing Retry4 and clarifying that Active Attention should not be limited to the current source unit alone. A reader may legitimately carry a forward-pull created by the current source together with visible title / chapter framing or prior memory, but should not import outside book knowledge that was not present in the prompt.
+
+**Clarification**: Active Attention remains the reader's carry-forward open-inquiry layer, and it remains a coherent reading forward-pull rather than a formal Q&A tracker. The grounding boundary is now prompt-visible context: current source unit, prompt-visible book or chapter framing, and existing memory state shown in the read context packet. `question_from` should honestly name that basis. If the item is grounded in title/framing/prior memory rather than a current-source phrase, `Read` should omit `source_quote` instead of pretending there is a precise quote.
+
+**Grounding rule**: The LLM provides exact contiguous `source_quote` / `answer_source_quote` snippets only when it is citing the current source unit. The runtime owns paragraph-char coordinate resolution and does not trust model-emitted source coordinates. Missing quotes keep unit lifecycle coordinates for audit but do not create fake precise `source_refs`.
+
+**Lifecycle rule**: `resolve` requires a grounded `answered_reason` explaining why cited evidence directly satisfies the carried forward-pull. Evidence that is only a precondition, setup, clue, partial explanation, or reframing should update `working_answer` and keep the item open.
+
+**Why this path won**: This is the simplest general rule that preserves reader-like behavior without overfitting to one book. It lets titles, framing, and prior memory matter when they are truly in context, while still preventing the model from smuggling in outside knowledge or closing an inquiry on merely preparatory evidence.
+
+**Primary evidence**:
+- `docs/backend-reading-mechanisms/attentional_v2.md`
+- `docs/backend-reader-evaluation.md`
+- `reading-companion-backend/docs/evaluation/reporting_standard.md`
+- `reading-companion-backend/src/attentional_v2/prompts.py`
+- `reading-companion-backend/src/attentional_v2/runner.py`
+- `reading-companion-backend/tests/test_attentional_v2_nodes.py`

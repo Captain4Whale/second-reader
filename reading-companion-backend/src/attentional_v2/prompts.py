@@ -7,10 +7,10 @@ from dataclasses import dataclass
 from src.prompts.shared import LANGUAGE_OUTPUT_CONTRACT
 
 
-ATTENTIONAL_V2_PROMPTSET_VERSION = "attentional_v2-phase6-v29"
+ATTENTIONAL_V2_PROMPTSET_VERSION = "attentional_v2-phase6-v30"
 SURVEY_CHAPTER_ZONE_PROMPT_VERSION = "attentional_v2.survey_chapter_zone.v1"
 NAVIGATE_CHOOSE_NEXT_UNIT_PROMPT_VERSION = "attentional_v2.navigate_choose_next_unit.v1"
-READ_UNIT_PROMPT_VERSION = "attentional_v2.read.v21"
+READ_UNIT_PROMPT_VERSION = "attentional_v2.read.v22"
 BRIDGE_RESOLUTION_PROMPT_VERSION = "attentional_v2.bridge_resolution.v5"
 REFLECTIVE_PROMOTION_PROMPT_VERSION = "attentional_v2.reflective_promotion.v1"
 RECONSOLIDATION_PROMPT_VERSION = "attentional_v2.reconsolidation.v1"
@@ -255,14 +255,17 @@ Rules:
   - `thread_trace`
 - Do not target `concept_digest`, `thread_digest`, `active_focus_digest`, or report/projection fields. Digests are prompt projections, not writable memory stores.
 - `active_attention` is the reader's carry-forward set of live inquiries, not recent memory and not a summary cache.
-- After reading this unit, pause as a curious reader. Ask whether the passage left you wanting to understand something later: what happens next, why this matters, how a tension resolves, whether a claim will be answered, or how a developing pattern will turn.
+- After reading this unit, pause as a curious reader. Ask whether the prompt-visible context left you wanting to understand something later: what happens next, why this matters, how a tension resolves, whether a claim will be answered, or how a developing pattern will turn.
+- Prompt-visible context includes the current source unit, book or chapter framing shown in this prompt, and existing memory state shown in the read context packet.
 - Write to `active_attention` only when an inquiry or reading tension is still alive after this unit and would shape how you read forward.
+- Do not import outside knowledge about the book, author, or later chapters unless that information is present in this prompt.
 - An active item does not have to be phrased with a question mark. It may be a question, tension, suspense, or watchpoint, but it must still carry forward a reader's interest rather than summarize what is already stable.
-- One active item = one coherent source-triggered forward-pull. It may have a few closely related sides, but do not bundle independent tensions that would need different later evidence to satisfy.
-- Good active inquiries feel like something a reader naturally carries forward:
+- One active item = one coherent prompt-context-grounded forward-pull. It may have a few closely related sides, but do not bundle independent tensions that would need different later evidence to satisfy.
+- Good active inquiries feel like something a reader naturally carries forward from the visible reading context:
   - narrative tension: a bomb is placed on the table, so the reader carries "when or whether will it explode?"
   - argument tension: the author poses a problem, so the reader carries "how will the author answer this?"
-  - `活出生命的意义`: "the text says prisoners are still in the first psychological stage" may open one forward-pull about how the next psychological stage will change the reader's understanding; when later text satisfies that pull, resolve it with a reason and create a separate later-stage item only if a new tension genuinely opens.
+  - title/framing tension: if a title or chapter frame visible in the prompt points to meaning, and the current source shows bodily or psychological adaptation, the reader may carry how this visible framing and current source will connect; say that basis in `question_from` rather than pretending it came from one source quote.
+  - `活出生命的意义`: if the visible title/framing and current text together raise a meaning-related forward-pull, keep it honest about that basis; when current text only gives a precondition or partial clue, update the item and keep it open rather than resolving it.
 - Do not create an active inquiry merely because the passage is important. Importance alone belongs in `reading_impression`, `concept_registry`, or `thread_trace`; `active_attention` requires forward pull.
 - Active-attention create payloads must use `question_from`, `driving_question`, and `working_answer`; do not create new `statement`-only active-attention items.
 - `question_from` says what already-read source moment raised the inquiry. It is normally stable.
@@ -271,16 +274,18 @@ Rules:
 - Before creating new active inquiries, inspect existing `active_questions` in the read context packet. For each one, ask whether this unit advances, corrects, reverses, weakens, answers, or makes it irrelevant. Emit an `update`, `resolve`, `close`, or `drop` operation for that existing `item_id` when appropriate.
 - Use `create` / `append` when this unit opens a still-unanswered inquiry that will guide later reading.
 - Use `update` / `reactivate` when this unit changes the current best answer, reshapes what the reader is tracking, or rekindles an older inquiry.
-- Use `resolve` only when this unit gives a make-sense answer that the reader no longer needs to carry as open. A resolve payload must include `answered_reason`, `working_answer`, and an exact `answer_source_quote`. If you cannot explain why the inquiry is answered, do not resolve it.
-- If the unit satisfies only part of a forward-pull, use `update` with the better `working_answer` and keep the item open.
+- Use `resolve` only when this unit gives a direct, make-sense answer that satisfies the carried forward-pull so the reader no longer needs to carry it as open. A resolve payload must include `answered_reason`, `working_answer`, and an exact `answer_source_quote`.
+- The `answered_reason` must explain why the cited evidence directly satisfies the forward-pull. If the evidence is only a precondition, setup, clue, partial explanation, or reframing, do not resolve; use `update` with the better `working_answer` and keep the item open.
+- If you cannot explain why the inquiry is answered with current prompt-visible evidence, do not resolve it.
 - Use `close` when the inquiry no longer helps reading forward, but not because it was fully answered. A close payload must include `closed_reason`.
 - If an answer becomes durable, write the durable content to `concept_registry` or `thread_trace`, add `derived_from_active_attention_ids` on that downstream concept/thread entry, and close or resolve the active inquiry. Do not use `promote` as an active-attention operation.
 - Do not create an active inquiry when the current unit raises and answers the inquiry locally.
 - Do not store stable concepts, definitions, chapter summaries, or surfaced reactions in `active_attention`.
 - Use `concept_registry` for reusable concepts, models, definitions, or distinctions.
 - Use `thread_trace` for cross-passage or cross-chapter lines of development.
-- When an operation needs source evidence, add `source_quote` and optionally `source_role` inside the payload. The quote should be a short exact span copied from the current unit: no ellipses, no stitched fragments, no paraphrase. The runner will resolve it to paragraph + char-offset `source_refs`.
-- When an operation answers an active inquiry, add `answer_source_quote` and optionally `answer_source_role`; use the same short exact-quote rule. The runner will resolve it to `answer_source_refs`.
+- When an operation needs current-source evidence, add `source_quote` and optionally `source_role` inside the payload. The quote must be a short exact contiguous span copied from the current unit: no ellipses, no stitched fragments, no paraphrase, no translation. The runner will resolve it to paragraph + char-offset `source_refs`; never invent source coordinates yourself.
+- If the basis is title/framing/prior memory rather than a current-source phrase, explain that basis in `question_from` and omit `source_quote`.
+- When an operation answers an active inquiry, add `answer_source_quote` and optionally `answer_source_role`; use the same short exact contiguous quote rule. The runner will resolve it to `answer_source_refs`; never invent answer source coordinates yourself.
 - Ordinary passing understanding belongs in `reading_impression`, not in persistent memory.
 - Active-attention item payloads may still use `attention_tags` as lightweight labels, but the live question fields are authoritative.
 - Do not use legacy active-attention bucket/list fields in new state operations.
@@ -337,7 +342,7 @@ Return JSON:
         "working_answer": "",
         "status": "open",
         "attention_tags": ["question"],
-        "source_quote": "<optional exact quote from current unit>",
+        "source_quote": "<optional exact contiguous quote from current unit; omit if grounded in title/framing/prior memory>",
         "source_role": "support"
       }
     },
@@ -348,7 +353,7 @@ Return JSON:
       "reason": "<how the current unit advances the question>",
       "payload": {
         "working_answer": "<current best partial answer>",
-        "answer_source_quote": "<exact quote from current unit that supports this answer>",
+        "answer_source_quote": "<exact contiguous quote from current unit that supports this answer>",
         "answer_source_role": "answer_support"
       }
     },
@@ -359,8 +364,8 @@ Return JSON:
       "reason": "<why the current unit answers the question enough to stop carrying it as open>",
       "payload": {
         "working_answer": "<final current answer>",
-        "answered_reason": "<why this answer is sufficient and the inquiry no longer needs to be carried>",
-        "answer_source_quote": "<exact quote from current unit that answers the question>",
+        "answered_reason": "<why this cited evidence directly satisfies the forward-pull, not just a precondition or clue>",
+        "answer_source_quote": "<exact contiguous quote from current unit that answers the question>",
         "answer_source_role": "answer_support"
       }
     },

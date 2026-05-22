@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-05-21T21:30:00+08:00`
+Last updated: `2026-05-22T23:12:00+08:00`
 
 ## Status Values
 - `active`
@@ -19,6 +19,21 @@ Last updated: `2026-05-21T21:30:00+08:00`
 - `cancelled`
 
 ## Active
+
+### `TASK-SECOND-READER-ACTIVE-ATTENTION-PROMPT-CONTEXT-DIAGNOSTIC-RETRY1-20260522` — Run Active Attention prompt-context full-window diagnostic Retry1
+- Status: `active`
+- Lane: `mechanism_eval`
+- Priority: `high`
+- Detail: `reading-companion-backend/docs/evaluation/run_ledger.md`
+- Next: five retry1 diagnostic shards are running in parallel with fresh run ids. Monitor registered jobs to terminal status; do not terminate solely because summary files are absent before completion. After terminal status, run strict LLM health checks, update run ledger/current-state/task registry, and produce a retry1 post-run report. Do not update the evidence catalog, promote Long Span vNext, or claim product quality.
+- Jobs:
+  - `bgjob_active_attention_prompt_context_window_diagnostic_20260522_retry1_huochu` (`running`)
+  - `bgjob_active_attention_prompt_context_window_diagnostic_20260522_retry1_mangge` (`running`)
+  - `bgjob_active_attention_prompt_context_window_diagnostic_20260522_retry1_nawaer` (`running`)
+  - `bgjob_active_attention_prompt_context_window_diagnostic_20260522_retry1_value_of_others` (`running`)
+  - `bgjob_active_attention_prompt_context_window_diagnostic_20260522_retry1_xidaduo` (`running`)
+- Evidence:
+  - `reading-companion-backend/docs/evaluation/run_ledger.md`
 
 ### `TASK-ATTENTIONAL-V2-STRUCTURAL-REWORK` — Execute the post-Phase-9 structural rework of `attentional_v2`
 - Status: `active`
@@ -484,6 +499,22 @@ Last updated: `2026-05-21T21:30:00+08:00`
 
 ## Waiting
 
+### `TASK-SECOND-READER-ACTIVE-ATTENTION-PROMPT-CONTEXT-DIAGNOSTIC-REPORT-REVIEW` — Review Active Attention prompt-context full-window diagnostic report
+- Status: `waiting`
+- Lane: `mechanism_eval`
+- Priority: `high`
+- Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Prompt-Context-Grounded-Full-Window-Diagnostic-Post-run-Report v0.md`
+- Next: review the v22 prompt-context grounding repair and the invalidated five-window diagnostic attempt. The code-side repair is implemented and tested, but all five full-window diagnostic shards were manually terminated before summary generation, so the attempt is not Active Attention behavior evidence. Do not reuse these run ids, update the evidence catalog, promote Long Span vNext, launch broader eval, or claim product quality without explicit approval.
+- Jobs:
+  - `bgjob_active_attention_prompt_context_window_diagnostic_20260522_huochu` (`failed`, exit `-15`)
+  - `bgjob_active_attention_prompt_context_window_diagnostic_20260522_mangge` (`failed`, exit `-15`)
+  - `bgjob_active_attention_prompt_context_window_diagnostic_20260522_nawaer` (`failed`, exit `-15`)
+  - `bgjob_active_attention_prompt_context_window_diagnostic_20260522_value_of_others` (`failed`, exit `-15`)
+  - `bgjob_active_attention_prompt_context_window_diagnostic_20260522_xidaduo` (`failed`, exit `-15`)
+- Evidence:
+  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Prompt-Context-Grounded-Full-Window-Diagnostic-Post-run-Report v0.md`
+  - `reading-companion-backend/docs/evaluation/run_ledger.md`
+
 ### `TASK-SECOND-READER-ACTIVE-ATTENTION-FORWARD-PULL-RETRY4-REPORT-REVIEW` — Review Active Attention forward-pull Retry4 report
 - Status: `waiting`
 - Lane: `mechanism_eval`
@@ -540,6 +571,26 @@ Last updated: `2026-05-21T21:30:00+08:00`
   - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_long_span_post_slice8h_20260519_xidaduo/summary/aggregate.json`
 
 ## Done
+
+### `TASK-SECOND-READER-ACTIVE-ATTENTION-PROMPT-CONTEXT-DIAGNOSTIC-20260522` — Implement Active Attention prompt-context grounding repair and attempt five-window diagnostic
+- Status: `done`
+- Lane: `mechanism_eval`
+- Priority: `high`
+- Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Prompt-Context-Grounded-Full-Window-Diagnostic-Post-run-Report v0.md`
+- Next: implementation and diagnostic attempt are recorded in `TASK-SECOND-READER-ACTIVE-ATTENTION-PROMPT-CONTEXT-DIAGNOSTIC-REPORT-REVIEW`. Treat the five-window diagnostic as invalidated because all shards were manually terminated before terminal summaries; do not treat partial traces as behavior evidence or catalog input.
+- Jobs:
+  - `bgjob_active_attention_prompt_context_window_diagnostic_20260522_huochu` (`failed`, exit `-15`)
+  - `bgjob_active_attention_prompt_context_window_diagnostic_20260522_mangge` (`failed`, exit `-15`)
+  - `bgjob_active_attention_prompt_context_window_diagnostic_20260522_nawaer` (`failed`, exit `-15`)
+  - `bgjob_active_attention_prompt_context_window_diagnostic_20260522_value_of_others` (`failed`, exit `-15`)
+  - `bgjob_active_attention_prompt_context_window_diagnostic_20260522_xidaduo` (`failed`, exit `-15`)
+- Evidence:
+  - `docs/backend-reading-mechanisms/attentional_v2.md`
+  - `docs/backend-reader-evaluation.md`
+  - `docs/history/decision-log.md`
+  - `reading-companion-backend/docs/evaluation/reporting_standard.md`
+  - `reading-companion-backend/docs/evaluation/run_ledger.md`
+  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Prompt-Context-Grounded-Full-Window-Diagnostic-Post-run-Report v0.md`
 
 ### `TASK-SECOND-READER-ACTIVE-ATTENTION-FORWARD-PULL-RETRY4-20260521` — Implement Active Attention source-grounding / forward-pull repair and run Retry4 micro eval on `huochu`
 - Status: `done`

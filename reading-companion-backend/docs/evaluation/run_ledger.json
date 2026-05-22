@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-05-22T00:11:56.124987Z",
+  "updated_at": "2026-05-22T15:12:24.833333Z",
   "entries": [
     {
       "run_id": "attentional_v2_excerpt_surface_v1_1_judged_20260406",
@@ -1246,6 +1246,454 @@
       "local_missing_allowed": [],
       "metadata": {},
       "updated_at": "2026-05-22T00:11:56.124692Z"
+    },
+    {
+      "run_id": "attentional_v2_active_attention_prompt_context_window_diagnostic_20260522",
+      "date": "2026-05-22",
+      "surface": "active_attention_prompt_context_diagnostic",
+      "lane": "mechanism_eval",
+      "status": "invalidated",
+      "mechanisms": [
+        "attentional_v2"
+      ],
+      "dataset_or_manifest": [
+        "eval/manifests/probes/memory_quality_semantic_probe_plan_20260504.json",
+        "eval/manifests/splits/attentional_v2_user_level_selective_v1_draft.json"
+      ],
+      "run_dir": "",
+      "summary_paths": {},
+      "job_ids": [
+        "bgjob_active_attention_prompt_context_window_diagnostic_20260522_huochu",
+        "bgjob_active_attention_prompt_context_window_diagnostic_20260522_mangge",
+        "bgjob_active_attention_prompt_context_window_diagnostic_20260522_nawaer",
+        "bgjob_active_attention_prompt_context_window_diagnostic_20260522_value_of_others",
+        "bgjob_active_attention_prompt_context_window_diagnostic_20260522_xidaduo"
+      ],
+      "report_paths": [
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Prompt-Context-Grounded-Full-Window-Diagnostic-Post-run-Report v0.md"
+      ],
+      "catalog_status": "not_cataloged",
+      "notes": "Parent entry for the five-shard Active Attention prompt-context diagnostic. The attempt was invalidated for evaluation purposes because all shards were manually terminated with exit -15 before summaries, Memory Quality results, reaction audit results, or complete lifecycle audits were produced. Partial traces are operational artifacts only.",
+      "parent_run_id": "",
+      "child_run_ids": [
+        "attentional_v2_active_attention_prompt_context_window_diagnostic_20260522_huochu",
+        "attentional_v2_active_attention_prompt_context_window_diagnostic_20260522_mangge",
+        "attentional_v2_active_attention_prompt_context_window_diagnostic_20260522_nawaer",
+        "attentional_v2_active_attention_prompt_context_window_diagnostic_20260522_value_of_others",
+        "attentional_v2_active_attention_prompt_context_window_diagnostic_20260522_xidaduo"
+      ],
+      "synthetic": true,
+      "local_missing_allowed": [],
+      "metadata": {},
+      "updated_at": "2026-05-22T00:58:05.071650Z"
+    },
+    {
+      "run_id": "attentional_v2_active_attention_prompt_context_window_diagnostic_20260522_huochu",
+      "date": "2026-05-22",
+      "surface": "active_attention_prompt_context_diagnostic",
+      "lane": "mechanism_eval",
+      "status": "invalidated",
+      "mechanisms": [
+        "attentional_v2"
+      ],
+      "dataset_or_manifest": [
+        "eval/manifests/probes/memory_quality_semantic_probe_plan_20260504.json",
+        "eval/manifests/splits/attentional_v2_user_level_selective_v1_draft.json"
+      ],
+      "run_dir": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_prompt_context_window_diagnostic_20260522_huochu",
+      "summary_paths": {},
+      "job_ids": [
+        "bgjob_active_attention_prompt_context_window_diagnostic_20260522_huochu"
+      ],
+      "report_paths": [
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Prompt-Context-Grounded-Full-Window-Diagnostic-Post-run-Report v0.md",
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_prompt_context_window_diagnostic_20260522_huochu/analysis/active_attention_lifecycle_audit/README.md"
+      ],
+      "catalog_status": "not_cataloged",
+      "notes": "Invalidated diagnostic shard for huochu_shengming_de_yiyi_private_zh__segment_1. The job was manually terminated with exit -15 before summary generation; partial traces observed 44 LLM rows, 37 activity rows, and 1 same-tier failover rows, but no terminal runner outputs. Do not use as Active Attention behavior evidence.",
+      "parent_run_id": "attentional_v2_active_attention_prompt_context_window_diagnostic_20260522",
+      "child_run_ids": [],
+      "synthetic": false,
+      "local_missing_allowed": [
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_prompt_context_window_diagnostic_20260522_huochu/summary/aggregate.json",
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_prompt_context_window_diagnostic_20260522_huochu/summary/report.md",
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_prompt_context_window_diagnostic_20260522_huochu/summary/llm_usage.json"
+      ],
+      "metadata": {
+        "segment_id": "huochu_shengming_de_yiyi_private_zh__segment_1",
+        "llm_trace_rows": 44,
+        "activity_rows": 37,
+        "same_tier_failover_rows": 1
+      },
+      "updated_at": "2026-05-22T00:58:05.115325Z"
+    },
+    {
+      "run_id": "attentional_v2_active_attention_prompt_context_window_diagnostic_20260522_mangge",
+      "date": "2026-05-22",
+      "surface": "active_attention_prompt_context_diagnostic",
+      "lane": "mechanism_eval",
+      "status": "invalidated",
+      "mechanisms": [
+        "attentional_v2"
+      ],
+      "dataset_or_manifest": [
+        "eval/manifests/probes/memory_quality_semantic_probe_plan_20260504.json",
+        "eval/manifests/splits/attentional_v2_user_level_selective_v1_draft.json"
+      ],
+      "run_dir": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_prompt_context_window_diagnostic_20260522_mangge",
+      "summary_paths": {},
+      "job_ids": [
+        "bgjob_active_attention_prompt_context_window_diagnostic_20260522_mangge"
+      ],
+      "report_paths": [
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Prompt-Context-Grounded-Full-Window-Diagnostic-Post-run-Report v0.md",
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_prompt_context_window_diagnostic_20260522_mangge/analysis/active_attention_lifecycle_audit/README.md"
+      ],
+      "catalog_status": "not_cataloged",
+      "notes": "Invalidated diagnostic shard for mangge_zhi_dao_private_zh__segment_1. The job was manually terminated with exit -15 before summary generation; partial traces observed 58 LLM rows, 34 activity rows, and 0 same-tier failover rows, but no terminal runner outputs. Do not use as Active Attention behavior evidence.",
+      "parent_run_id": "attentional_v2_active_attention_prompt_context_window_diagnostic_20260522",
+      "child_run_ids": [],
+      "synthetic": false,
+      "local_missing_allowed": [
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_prompt_context_window_diagnostic_20260522_mangge/summary/aggregate.json",
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_prompt_context_window_diagnostic_20260522_mangge/summary/report.md",
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_prompt_context_window_diagnostic_20260522_mangge/summary/llm_usage.json"
+      ],
+      "metadata": {
+        "segment_id": "mangge_zhi_dao_private_zh__segment_1",
+        "llm_trace_rows": 58,
+        "activity_rows": 34,
+        "same_tier_failover_rows": 0
+      },
+      "updated_at": "2026-05-22T00:58:05.158323Z"
+    },
+    {
+      "run_id": "attentional_v2_active_attention_prompt_context_window_diagnostic_20260522_nawaer",
+      "date": "2026-05-22",
+      "surface": "active_attention_prompt_context_diagnostic",
+      "lane": "mechanism_eval",
+      "status": "invalidated",
+      "mechanisms": [
+        "attentional_v2"
+      ],
+      "dataset_or_manifest": [
+        "eval/manifests/probes/memory_quality_semantic_probe_plan_20260504.json",
+        "eval/manifests/splits/attentional_v2_user_level_selective_v1_draft.json"
+      ],
+      "run_dir": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_prompt_context_window_diagnostic_20260522_nawaer",
+      "summary_paths": {},
+      "job_ids": [
+        "bgjob_active_attention_prompt_context_window_diagnostic_20260522_nawaer"
+      ],
+      "report_paths": [
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Prompt-Context-Grounded-Full-Window-Diagnostic-Post-run-Report v0.md",
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_prompt_context_window_diagnostic_20260522_nawaer/analysis/active_attention_lifecycle_audit/README.md"
+      ],
+      "catalog_status": "not_cataloged",
+      "notes": "Invalidated diagnostic shard for nawaer_baodian_private_zh__segment_1. The job was manually terminated with exit -15 before summary generation; partial traces observed 58 LLM rows, 40 activity rows, and 1 same-tier failover rows, but no terminal runner outputs. Do not use as Active Attention behavior evidence.",
+      "parent_run_id": "attentional_v2_active_attention_prompt_context_window_diagnostic_20260522",
+      "child_run_ids": [],
+      "synthetic": false,
+      "local_missing_allowed": [
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_prompt_context_window_diagnostic_20260522_nawaer/summary/aggregate.json",
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_prompt_context_window_diagnostic_20260522_nawaer/summary/report.md",
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_prompt_context_window_diagnostic_20260522_nawaer/summary/llm_usage.json"
+      ],
+      "metadata": {
+        "segment_id": "nawaer_baodian_private_zh__segment_1",
+        "llm_trace_rows": 58,
+        "activity_rows": 40,
+        "same_tier_failover_rows": 1
+      },
+      "updated_at": "2026-05-22T00:58:05.204306Z"
+    },
+    {
+      "run_id": "attentional_v2_active_attention_prompt_context_window_diagnostic_20260522_retry1",
+      "date": "2026-05-22",
+      "surface": "active_attention_prompt_context_diagnostic",
+      "lane": "mechanism_eval",
+      "status": "running",
+      "mechanisms": [
+        "attentional_v2"
+      ],
+      "dataset_or_manifest": [
+        "eval/manifests/probes/memory_quality_semantic_probe_plan_20260504.json",
+        "eval/manifests/splits/attentional_v2_user_level_selective_v1_draft.json"
+      ],
+      "run_dir": "",
+      "summary_paths": {},
+      "job_ids": [
+        "bgjob_active_attention_prompt_context_window_diagnostic_20260522_retry1_huochu",
+        "bgjob_active_attention_prompt_context_window_diagnostic_20260522_retry1_mangge",
+        "bgjob_active_attention_prompt_context_window_diagnostic_20260522_retry1_nawaer",
+        "bgjob_active_attention_prompt_context_window_diagnostic_20260522_retry1_value_of_others",
+        "bgjob_active_attention_prompt_context_window_diagnostic_20260522_retry1_xidaduo"
+      ],
+      "report_paths": [],
+      "catalog_status": "not_cataloged",
+      "notes": "Parent ledger entry for retry1 of the Active Attention prompt-context grounded five-window diagnostic. Five registered jobs are running in parallel with fresh run ids after the invalidated first attempt.",
+      "parent_run_id": "",
+      "child_run_ids": [
+        "attentional_v2_active_attention_prompt_context_window_diagnostic_20260522_retry1_huochu",
+        "attentional_v2_active_attention_prompt_context_window_diagnostic_20260522_retry1_mangge",
+        "attentional_v2_active_attention_prompt_context_window_diagnostic_20260522_retry1_nawaer",
+        "attentional_v2_active_attention_prompt_context_window_diagnostic_20260522_retry1_value_of_others",
+        "attentional_v2_active_attention_prompt_context_window_diagnostic_20260522_retry1_xidaduo"
+      ],
+      "synthetic": true,
+      "local_missing_allowed": [],
+      "metadata": {},
+      "updated_at": "2026-05-22T15:12:24.647050Z"
+    },
+    {
+      "run_id": "attentional_v2_active_attention_prompt_context_window_diagnostic_20260522_retry1_huochu",
+      "date": "2026-05-22",
+      "surface": "active_attention_prompt_context_diagnostic",
+      "lane": "mechanism_eval",
+      "status": "running",
+      "mechanisms": [
+        "attentional_v2"
+      ],
+      "dataset_or_manifest": [
+        "eval/manifests/probes/memory_quality_semantic_probe_plan_20260504.json",
+        "eval/manifests/splits/attentional_v2_user_level_selective_v1_draft.json"
+      ],
+      "run_dir": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_prompt_context_window_diagnostic_20260522_retry1_huochu",
+      "summary_paths": {},
+      "job_ids": [
+        "bgjob_active_attention_prompt_context_window_diagnostic_20260522_retry1_huochu"
+      ],
+      "report_paths": [],
+      "catalog_status": "not_cataloged",
+      "notes": "Retry1 Active Attention prompt-context grounded diagnostic shard for huochu_shengming_de_yiyi_private_zh__segment_1; running as a fresh retry after invalidated first attempt.",
+      "parent_run_id": "attentional_v2_active_attention_prompt_context_window_diagnostic_20260522_retry1",
+      "child_run_ids": [],
+      "synthetic": false,
+      "local_missing_allowed": [
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_prompt_context_window_diagnostic_20260522_retry1_huochu/summary/aggregate.json",
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_prompt_context_window_diagnostic_20260522_retry1_huochu/summary/report.md",
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_prompt_context_window_diagnostic_20260522_retry1_huochu/summary/llm_usage.json"
+      ],
+      "metadata": {
+        "segment_id": "huochu_shengming_de_yiyi_private_zh__segment_1"
+      },
+      "updated_at": "2026-05-22T15:12:24.684994Z"
+    },
+    {
+      "run_id": "attentional_v2_active_attention_prompt_context_window_diagnostic_20260522_retry1_mangge",
+      "date": "2026-05-22",
+      "surface": "active_attention_prompt_context_diagnostic",
+      "lane": "mechanism_eval",
+      "status": "running",
+      "mechanisms": [
+        "attentional_v2"
+      ],
+      "dataset_or_manifest": [
+        "eval/manifests/probes/memory_quality_semantic_probe_plan_20260504.json",
+        "eval/manifests/splits/attentional_v2_user_level_selective_v1_draft.json"
+      ],
+      "run_dir": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_prompt_context_window_diagnostic_20260522_retry1_mangge",
+      "summary_paths": {},
+      "job_ids": [
+        "bgjob_active_attention_prompt_context_window_diagnostic_20260522_retry1_mangge"
+      ],
+      "report_paths": [],
+      "catalog_status": "not_cataloged",
+      "notes": "Retry1 Active Attention prompt-context grounded diagnostic shard for mangge_zhi_dao_private_zh__segment_1; running as a fresh retry after invalidated first attempt.",
+      "parent_run_id": "attentional_v2_active_attention_prompt_context_window_diagnostic_20260522_retry1",
+      "child_run_ids": [],
+      "synthetic": false,
+      "local_missing_allowed": [
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_prompt_context_window_diagnostic_20260522_retry1_mangge/summary/aggregate.json",
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_prompt_context_window_diagnostic_20260522_retry1_mangge/summary/report.md",
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_prompt_context_window_diagnostic_20260522_retry1_mangge/summary/llm_usage.json"
+      ],
+      "metadata": {
+        "segment_id": "mangge_zhi_dao_private_zh__segment_1"
+      },
+      "updated_at": "2026-05-22T15:12:24.720747Z"
+    },
+    {
+      "run_id": "attentional_v2_active_attention_prompt_context_window_diagnostic_20260522_retry1_nawaer",
+      "date": "2026-05-22",
+      "surface": "active_attention_prompt_context_diagnostic",
+      "lane": "mechanism_eval",
+      "status": "running",
+      "mechanisms": [
+        "attentional_v2"
+      ],
+      "dataset_or_manifest": [
+        "eval/manifests/probes/memory_quality_semantic_probe_plan_20260504.json",
+        "eval/manifests/splits/attentional_v2_user_level_selective_v1_draft.json"
+      ],
+      "run_dir": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_prompt_context_window_diagnostic_20260522_retry1_nawaer",
+      "summary_paths": {},
+      "job_ids": [
+        "bgjob_active_attention_prompt_context_window_diagnostic_20260522_retry1_nawaer"
+      ],
+      "report_paths": [],
+      "catalog_status": "not_cataloged",
+      "notes": "Retry1 Active Attention prompt-context grounded diagnostic shard for nawaer_baodian_private_zh__segment_1; running as a fresh retry after invalidated first attempt.",
+      "parent_run_id": "attentional_v2_active_attention_prompt_context_window_diagnostic_20260522_retry1",
+      "child_run_ids": [],
+      "synthetic": false,
+      "local_missing_allowed": [
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_prompt_context_window_diagnostic_20260522_retry1_nawaer/summary/aggregate.json",
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_prompt_context_window_diagnostic_20260522_retry1_nawaer/summary/report.md",
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_prompt_context_window_diagnostic_20260522_retry1_nawaer/summary/llm_usage.json"
+      ],
+      "metadata": {
+        "segment_id": "nawaer_baodian_private_zh__segment_1"
+      },
+      "updated_at": "2026-05-22T15:12:24.757657Z"
+    },
+    {
+      "run_id": "attentional_v2_active_attention_prompt_context_window_diagnostic_20260522_retry1_value_of_others",
+      "date": "2026-05-22",
+      "surface": "active_attention_prompt_context_diagnostic",
+      "lane": "mechanism_eval",
+      "status": "running",
+      "mechanisms": [
+        "attentional_v2"
+      ],
+      "dataset_or_manifest": [
+        "eval/manifests/probes/memory_quality_semantic_probe_plan_20260504.json",
+        "eval/manifests/splits/attentional_v2_user_level_selective_v1_draft.json"
+      ],
+      "run_dir": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_prompt_context_window_diagnostic_20260522_retry1_value_of_others",
+      "summary_paths": {},
+      "job_ids": [
+        "bgjob_active_attention_prompt_context_window_diagnostic_20260522_retry1_value_of_others"
+      ],
+      "report_paths": [],
+      "catalog_status": "not_cataloged",
+      "notes": "Retry1 Active Attention prompt-context grounded diagnostic shard for value_of_others_private_en__segment_1; running as a fresh retry after invalidated first attempt.",
+      "parent_run_id": "attentional_v2_active_attention_prompt_context_window_diagnostic_20260522_retry1",
+      "child_run_ids": [],
+      "synthetic": false,
+      "local_missing_allowed": [
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_prompt_context_window_diagnostic_20260522_retry1_value_of_others/summary/aggregate.json",
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_prompt_context_window_diagnostic_20260522_retry1_value_of_others/summary/report.md",
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_prompt_context_window_diagnostic_20260522_retry1_value_of_others/summary/llm_usage.json"
+      ],
+      "metadata": {
+        "segment_id": "value_of_others_private_en__segment_1"
+      },
+      "updated_at": "2026-05-22T15:12:24.795894Z"
+    },
+    {
+      "run_id": "attentional_v2_active_attention_prompt_context_window_diagnostic_20260522_retry1_xidaduo",
+      "date": "2026-05-22",
+      "surface": "active_attention_prompt_context_diagnostic",
+      "lane": "mechanism_eval",
+      "status": "running",
+      "mechanisms": [
+        "attentional_v2"
+      ],
+      "dataset_or_manifest": [
+        "eval/manifests/probes/memory_quality_semantic_probe_plan_20260504.json",
+        "eval/manifests/splits/attentional_v2_user_level_selective_v1_draft.json"
+      ],
+      "run_dir": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_prompt_context_window_diagnostic_20260522_retry1_xidaduo",
+      "summary_paths": {},
+      "job_ids": [
+        "bgjob_active_attention_prompt_context_window_diagnostic_20260522_retry1_xidaduo"
+      ],
+      "report_paths": [],
+      "catalog_status": "not_cataloged",
+      "notes": "Retry1 Active Attention prompt-context grounded diagnostic shard for xidaduo_private_zh__segment_1; running as a fresh retry after invalidated first attempt.",
+      "parent_run_id": "attentional_v2_active_attention_prompt_context_window_diagnostic_20260522_retry1",
+      "child_run_ids": [],
+      "synthetic": false,
+      "local_missing_allowed": [
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_prompt_context_window_diagnostic_20260522_retry1_xidaduo/summary/aggregate.json",
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_prompt_context_window_diagnostic_20260522_retry1_xidaduo/summary/report.md",
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_prompt_context_window_diagnostic_20260522_retry1_xidaduo/summary/llm_usage.json"
+      ],
+      "metadata": {
+        "segment_id": "xidaduo_private_zh__segment_1"
+      },
+      "updated_at": "2026-05-22T15:12:24.832998Z"
+    },
+    {
+      "run_id": "attentional_v2_active_attention_prompt_context_window_diagnostic_20260522_value_of_others",
+      "date": "2026-05-22",
+      "surface": "active_attention_prompt_context_diagnostic",
+      "lane": "mechanism_eval",
+      "status": "invalidated",
+      "mechanisms": [
+        "attentional_v2"
+      ],
+      "dataset_or_manifest": [
+        "eval/manifests/probes/memory_quality_semantic_probe_plan_20260504.json",
+        "eval/manifests/splits/attentional_v2_user_level_selective_v1_draft.json"
+      ],
+      "run_dir": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_prompt_context_window_diagnostic_20260522_value_of_others",
+      "summary_paths": {},
+      "job_ids": [
+        "bgjob_active_attention_prompt_context_window_diagnostic_20260522_value_of_others"
+      ],
+      "report_paths": [
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Prompt-Context-Grounded-Full-Window-Diagnostic-Post-run-Report v0.md",
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_prompt_context_window_diagnostic_20260522_value_of_others/analysis/active_attention_lifecycle_audit/README.md"
+      ],
+      "catalog_status": "not_cataloged",
+      "notes": "Invalidated diagnostic shard for value_of_others_private_en__segment_1. The job was manually terminated with exit -15 before summary generation; partial traces observed 49 LLM rows, 30 activity rows, and 0 same-tier failover rows, but no terminal runner outputs. Do not use as Active Attention behavior evidence.",
+      "parent_run_id": "attentional_v2_active_attention_prompt_context_window_diagnostic_20260522",
+      "child_run_ids": [],
+      "synthetic": false,
+      "local_missing_allowed": [
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_prompt_context_window_diagnostic_20260522_value_of_others/summary/aggregate.json",
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_prompt_context_window_diagnostic_20260522_value_of_others/summary/report.md",
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_prompt_context_window_diagnostic_20260522_value_of_others/summary/llm_usage.json"
+      ],
+      "metadata": {
+        "segment_id": "value_of_others_private_en__segment_1",
+        "llm_trace_rows": 49,
+        "activity_rows": 30,
+        "same_tier_failover_rows": 0
+      },
+      "updated_at": "2026-05-22T00:58:05.248421Z"
+    },
+    {
+      "run_id": "attentional_v2_active_attention_prompt_context_window_diagnostic_20260522_xidaduo",
+      "date": "2026-05-22",
+      "surface": "active_attention_prompt_context_diagnostic",
+      "lane": "mechanism_eval",
+      "status": "invalidated",
+      "mechanisms": [
+        "attentional_v2"
+      ],
+      "dataset_or_manifest": [
+        "eval/manifests/probes/memory_quality_semantic_probe_plan_20260504.json",
+        "eval/manifests/splits/attentional_v2_user_level_selective_v1_draft.json"
+      ],
+      "run_dir": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_prompt_context_window_diagnostic_20260522_xidaduo",
+      "summary_paths": {},
+      "job_ids": [
+        "bgjob_active_attention_prompt_context_window_diagnostic_20260522_xidaduo"
+      ],
+      "report_paths": [
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Prompt-Context-Grounded-Full-Window-Diagnostic-Post-run-Report v0.md",
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_prompt_context_window_diagnostic_20260522_xidaduo/analysis/active_attention_lifecycle_audit/README.md"
+      ],
+      "catalog_status": "not_cataloged",
+      "notes": "Invalidated diagnostic shard for xidaduo_private_zh__segment_1. The job was manually terminated with exit -15 before summary generation; partial traces observed 52 LLM rows, 28 activity rows, and 3 same-tier failover rows, but no terminal runner outputs. Do not use as Active Attention behavior evidence.",
+      "parent_run_id": "attentional_v2_active_attention_prompt_context_window_diagnostic_20260522",
+      "child_run_ids": [],
+      "synthetic": false,
+      "local_missing_allowed": [
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_prompt_context_window_diagnostic_20260522_xidaduo/summary/aggregate.json",
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_prompt_context_window_diagnostic_20260522_xidaduo/summary/report.md",
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_prompt_context_window_diagnostic_20260522_xidaduo/summary/llm_usage.json"
+      ],
+      "metadata": {
+        "segment_id": "xidaduo_private_zh__segment_1",
+        "llm_trace_rows": 52,
+        "activity_rows": 28,
+        "same_tier_failover_rows": 3
+      },
+      "updated_at": "2026-05-22T00:58:05.291810Z"
     }
   ]
 }

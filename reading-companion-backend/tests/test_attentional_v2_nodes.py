@@ -477,23 +477,29 @@ def test_read_unit_filters_unanchored_surface_and_uses_naturalized_contract(tmp_
     assert "After the impression and any surfaced reactions, maintain memory deliberately." in captured["system_prompt"]
     assert "reader's carry-forward set of live inquiries" in captured["system_prompt"]
     assert "pause as a curious reader" in captured["system_prompt"]
-    assert "left you wanting to understand something later" in captured["system_prompt"]
+    assert "prompt-visible context left you wanting to understand something later" in captured["system_prompt"]
+    assert "current source unit, book or chapter framing shown in this prompt" in captured["system_prompt"]
+    assert "existing memory state shown in the read context packet" in captured["system_prompt"]
+    assert "Do not import outside knowledge about the book, author, or later chapters" in captured["system_prompt"]
     assert "still alive after this unit" in captured["system_prompt"]
     assert "would shape how you read forward" in captured["system_prompt"]
     assert "question_from" in captured["system_prompt"]
     assert "driving_question" in captured["system_prompt"]
     assert "answer_boundary" not in captured["system_prompt"]
     assert "working_answer" in captured["system_prompt"]
-    assert "One active item = one coherent source-triggered forward-pull." in captured["system_prompt"]
+    assert "One active item = one coherent prompt-context-grounded forward-pull." in captured["system_prompt"]
     assert "does not have to be phrased with a question mark" in captured["system_prompt"]
     assert "different later evidence to satisfy" in captured["system_prompt"]
     assert "answered_reason" in captured["system_prompt"]
     assert "closed_reason" in captured["system_prompt"]
-    assert "short exact span copied from the current unit" in captured["system_prompt"]
+    assert "short exact contiguous span copied from the current unit" in captured["system_prompt"]
+    assert "If the basis is title/framing/prior memory" in captured["system_prompt"]
+    assert "never invent source coordinates yourself" in captured["system_prompt"]
+    assert "precondition, setup, clue, partial explanation, or reframing" in captured["system_prompt"]
     assert "when or whether will it explode?" in captured["system_prompt"]
     assert "how will the author answer this?" in captured["system_prompt"]
-    assert "the text says prisoners are still in the first psychological stage" in captured["system_prompt"]
-    assert "create a separate later-stage item" in captured["system_prompt"]
+    assert "title/framing tension" in captured["system_prompt"]
+    assert "keep it honest about that basis" in captured["system_prompt"]
     assert "Importance alone belongs" in captured["system_prompt"]
     assert "Do not create an active inquiry when the current unit raises and answers the inquiry locally." in captured[
         "system_prompt"
@@ -528,7 +534,7 @@ def test_read_unit_filters_unanchored_surface_and_uses_naturalized_contract(tmp_
     assert "\"target_store\": \"concept_registry\"" in captured["prompt"]
     assert "\"target_store\": \"thread_trace\"" in captured["prompt"]
     assert "Do not target `concept_digest`, `thread_digest`, `active_focus_digest`" in captured["system_prompt"]
-    assert manifest["prompt_version"] == "attentional_v2.read.v21"
+    assert manifest["prompt_version"] == "attentional_v2.read.v22"
 
 
 def test_read_unit_contract_preserves_source_given_stage_model_as_memory_uptake(tmp_path: Path, monkeypatch):
@@ -742,7 +748,7 @@ def test_read_unit_resolves_active_question_answer_source_refs(tmp_path: Path, m
 
 
 def test_memory_uptake_source_ref_normalization_repairs_malformed_ref_lists():
-    """Malformed SourceRef lists should not block source_quote resolution."""
+    """Model-emitted SourceRef lists should not override source_quote resolution."""
 
     normalized_ops = runner_module._normalize_memory_uptake_ops_source_refs(
         [
@@ -753,9 +759,45 @@ def test_memory_uptake_source_ref_normalization_repairs_malformed_ref_lists():
                 "payload": {
                     "summary": "The premise is now grounded.",
                     "source_quote": "The premise appears here.",
-                    "source_refs": ["src:legacy-string"],
+                    "source_refs": [
+                        {
+                            "source_span_id": "src:c99:p99@0-p99@9",
+                            "source_span": {
+                                "start_cursor": {
+                                    "chapter_id": 99,
+                                    "chapter_ref": "Wrong",
+                                    "paragraph_index": 99,
+                                    "char_offset": 0,
+                                },
+                                "end_cursor": {
+                                    "chapter_id": 99,
+                                    "chapter_ref": "Wrong",
+                                    "paragraph_index": 99,
+                                    "char_offset": 9,
+                                },
+                            },
+                        }
+                    ],
                     "answer_source_quote": "The answer appears here.",
-                    "answer_source_refs": [],
+                    "answer_source_refs": [
+                        {
+                            "source_span_id": "src:c99:p99@9-p99@18",
+                            "source_span": {
+                                "start_cursor": {
+                                    "chapter_id": 99,
+                                    "chapter_ref": "Wrong",
+                                    "paragraph_index": 99,
+                                    "char_offset": 9,
+                                },
+                                "end_cursor": {
+                                    "chapter_id": 99,
+                                    "chapter_ref": "Wrong",
+                                    "paragraph_index": 99,
+                                    "char_offset": 18,
+                                },
+                            },
+                        }
+                    ],
                 },
             }
         ],
@@ -773,6 +815,58 @@ def test_memory_uptake_source_ref_normalization_repairs_malformed_ref_lists():
     assert payload["source_refs"][0]["quote"] == "The premise appears here."
     assert payload["source_refs"][0]["source_span_id"].startswith("src:c1:p1@")
     assert payload["answer_source_refs"][0]["quote"] == "The answer appears here."
+    assert payload["answer_source_refs"][0]["source_span_id"].startswith("src:c1:p1@")
+
+
+def test_active_attention_create_without_quote_keeps_unit_coordinates_without_fake_source_refs():
+    """Prompt-context-grounded active items may omit source_quote without inventing precise source refs."""
+
+    normalized_ops = runner_module._normalize_memory_uptake_ops_source_refs(
+        [
+            {
+                "op": "create",
+                "target_store": "active_attention",
+                "target_key": "framing-question",
+                "payload": {
+                    "question_from": "The visible title and current unit together raise this forward-pull.",
+                    "driving_question": "How will the framing connect to this local adaptation?",
+                    "working_answer": "",
+                    "source_refs": [
+                        {
+                            "source_span_id": "src:c99:p99@0-p99@9",
+                            "source_span": {
+                                "start_cursor": {
+                                    "chapter_id": 99,
+                                    "chapter_ref": "Wrong",
+                                    "paragraph_index": 99,
+                                    "char_offset": 0,
+                                },
+                                "end_cursor": {
+                                    "chapter_id": 99,
+                                    "chapter_ref": "Wrong",
+                                    "paragraph_index": 99,
+                                    "char_offset": 9,
+                                },
+                            },
+                        }
+                    ],
+                },
+            }
+        ],
+        source_unit={
+            "source_text": "The premise appears here. The answer appears here.",
+            "source_span": {
+                "start_cursor": {"chapter_id": 1, "chapter_ref": "Chapter 1", "paragraph_index": 1, "char_offset": 0},
+                "end_cursor": {"chapter_id": 1, "chapter_ref": "Chapter 1", "paragraph_index": 1, "char_offset": 49},
+            },
+            "paragraph_offsets": [{"paragraph_index": 1, "start": 0, "end": 49}],
+        },
+    )
+
+    payload = normalized_ops[0]["payload"]
+    assert "source_refs" not in payload
+    assert payload["opened_at_source_span_id"].startswith("src:c1:p1@")
+    assert payload["opened_at_unit_span_id"].startswith("src:c1:p1@")
 
 
 def test_active_attention_lifecycle_coordinates_are_added_from_current_unit():

@@ -1,7 +1,38 @@
 {
   "version": 1,
-  "updated_at": "2026-05-21T02:53:00Z",
+  "updated_at": "2026-05-22T15:12:00Z",
   "tasks": [
+    {
+      "id": "TASK-SECOND-READER-ACTIVE-ATTENTION-PROMPT-CONTEXT-DIAGNOSTIC-RETRY1-20260522",
+      "title": "Run Active Attention prompt-context full-window diagnostic Retry1",
+      "status": "active",
+      "lane": "mechanism_eval",
+      "priority": "high",
+      "detail_ref": "reading-companion-backend/docs/evaluation/run_ledger.md",
+      "truth_refs": [
+        "docs/current-state.md",
+        "docs/tasks/registry.md",
+        "reading-companion-backend/docs/evaluation/run_ledger.md"
+      ],
+      "decision_refs": [
+        "DEC-095"
+      ],
+      "job_refs": [
+        "bgjob_active_attention_prompt_context_window_diagnostic_20260522_retry1_huochu",
+        "bgjob_active_attention_prompt_context_window_diagnostic_20260522_retry1_mangge",
+        "bgjob_active_attention_prompt_context_window_diagnostic_20260522_retry1_nawaer",
+        "bgjob_active_attention_prompt_context_window_diagnostic_20260522_retry1_value_of_others",
+        "bgjob_active_attention_prompt_context_window_diagnostic_20260522_retry1_xidaduo"
+      ],
+      "acceptance_ref": "",
+      "next_action": "Five retry1 diagnostic shards are running in parallel with fresh run ids. Monitor registered jobs to terminal status; do not terminate solely because summary files are absent before completion. After terminal status, run strict LLM health checks, update run ledger/current-state/task registry, and produce a retry1 post-run report. Do not update the evidence catalog, promote Long Span vNext, or claim product quality.",
+      "blocked_by": [],
+      "evidence_refs": [
+        "reading-companion-backend/docs/evaluation/run_ledger.md"
+      ],
+      "last_updated": "2026-05-22T15:12:00Z",
+      "last_updated_by": "codex"
+    },
     {
       "id": "TASK-SECOND-READER-MEMORY-PLANNING-FEASIBILITY-AUDIT",
       "title": "Run Implementation Feasibility & Delta Audit for Second Reader Memory-Planning optimization",
@@ -3325,6 +3356,43 @@
       "last_updated_by": "codex"
     },
     {
+      "id": "TASK-SECOND-READER-ACTIVE-ATTENTION-PROMPT-CONTEXT-DIAGNOSTIC-REPORT-REVIEW",
+      "title": "Review Active Attention prompt-context full-window diagnostic report",
+      "status": "waiting",
+      "lane": "mechanism_eval",
+      "priority": "high",
+      "detail_ref": "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Prompt-Context-Grounded-Full-Window-Diagnostic-Post-run-Report v0.md",
+      "truth_refs": [
+        "docs/current-state.md",
+        "docs/tasks/registry.md",
+        "docs/backend-reading-mechanisms/attentional_v2.md",
+        "docs/backend-reader-evaluation.md",
+        "docs/history/decision-log.md",
+        "reading-companion-backend/docs/evaluation/reporting_standard.md",
+        "reading-companion-backend/docs/evaluation/run_ledger.md",
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Prompt-Context-Grounded-Full-Window-Diagnostic-Post-run-Report v0.md"
+      ],
+      "decision_refs": [
+        "DEC-095"
+      ],
+      "job_refs": [
+        "bgjob_active_attention_prompt_context_window_diagnostic_20260522_huochu",
+        "bgjob_active_attention_prompt_context_window_diagnostic_20260522_mangge",
+        "bgjob_active_attention_prompt_context_window_diagnostic_20260522_nawaer",
+        "bgjob_active_attention_prompt_context_window_diagnostic_20260522_value_of_others",
+        "bgjob_active_attention_prompt_context_window_diagnostic_20260522_xidaduo"
+      ],
+      "acceptance_ref": "",
+      "next_action": "Review the v22 prompt-context grounding repair and the invalidated five-window diagnostic attempt. The code-side repair is implemented and tested, but all five full-window diagnostic shards were manually terminated before summary generation, so the attempt is not Active Attention behavior evidence. Do not reuse these run ids, update the evidence catalog, promote Long Span vNext, launch broader eval, or claim product quality without explicit approval.",
+      "blocked_by": [],
+      "evidence_refs": [
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Prompt-Context-Grounded-Full-Window-Diagnostic-Post-run-Report v0.md",
+        "reading-companion-backend/docs/evaluation/run_ledger.md"
+      ],
+      "last_updated": "2026-05-22T00:56:00Z",
+      "last_updated_by": "codex"
+    },
+    {
       "id": "TASK-SECOND-READER-ACTIVE-ATTENTION-FORWARD-PULL-RETRY4-REPORT-REVIEW",
       "title": "Review Active Attention forward-pull Retry4 report",
       "status": "waiting",
@@ -3411,6 +3479,47 @@
         "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_live_question_micro_huochu_20260521_retry1/analysis/active_attention_lifecycle_audit/README.md"
       ],
       "last_updated": "2026-05-21T12:35:00Z",
+      "last_updated_by": "codex"
+    },
+    {
+      "id": "TASK-SECOND-READER-ACTIVE-ATTENTION-PROMPT-CONTEXT-DIAGNOSTIC-20260522",
+      "title": "Implement Active Attention prompt-context grounding repair and attempt five-window diagnostic",
+      "status": "done",
+      "lane": "mechanism_eval",
+      "priority": "high",
+      "detail_ref": "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Prompt-Context-Grounded-Full-Window-Diagnostic-Post-run-Report v0.md",
+      "truth_refs": [
+        "docs/current-state.md",
+        "docs/tasks/registry.md",
+        "docs/backend-reading-mechanisms/attentional_v2.md",
+        "docs/backend-reader-evaluation.md",
+        "docs/history/decision-log.md",
+        "reading-companion-backend/docs/evaluation/reporting_standard.md",
+        "reading-companion-backend/docs/evaluation/run_ledger.md",
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Prompt-Context-Grounded-Full-Window-Diagnostic-Post-run-Report v0.md"
+      ],
+      "decision_refs": [
+        "DEC-095"
+      ],
+      "job_refs": [
+        "bgjob_active_attention_prompt_context_window_diagnostic_20260522_huochu",
+        "bgjob_active_attention_prompt_context_window_diagnostic_20260522_mangge",
+        "bgjob_active_attention_prompt_context_window_diagnostic_20260522_nawaer",
+        "bgjob_active_attention_prompt_context_window_diagnostic_20260522_value_of_others",
+        "bgjob_active_attention_prompt_context_window_diagnostic_20260522_xidaduo"
+      ],
+      "acceptance_ref": "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Prompt-Context-Grounded-Full-Window-Diagnostic-Post-run-Report v0.md",
+      "next_action": "Implementation and diagnostic attempt are recorded in TASK-SECOND-READER-ACTIVE-ATTENTION-PROMPT-CONTEXT-DIAGNOSTIC-REPORT-REVIEW. Treat the five-window diagnostic as invalidated because all shards were manually terminated before terminal summaries; do not treat partial traces as behavior evidence or catalog input.",
+      "blocked_by": [],
+      "evidence_refs": [
+        "docs/backend-reading-mechanisms/attentional_v2.md",
+        "docs/backend-reader-evaluation.md",
+        "docs/history/decision-log.md",
+        "reading-companion-backend/docs/evaluation/reporting_standard.md",
+        "reading-companion-backend/docs/evaluation/run_ledger.md",
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Prompt-Context-Grounded-Full-Window-Diagnostic-Post-run-Report v0.md"
+      ],
+      "last_updated": "2026-05-22T00:56:00Z",
       "last_updated_by": "codex"
     },
     {

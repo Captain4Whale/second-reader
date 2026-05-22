@@ -7,34 +7,61 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-05-22T08:12:00+08:00`
+Last verified: `2026-05-22T23:12:00+08:00`
 
 ## Current Objective
-- Active Attention grounding and forward-pull repair completed through Retry4; retry4 report is pending human review.
-  - status:
-    - source grounding repair: `source_ref_from_unit` now attempts raw exact match, normalized exact match, and ordered-fragment match before falling back to unit span
-    - prompt / semantics repair: Read prompt bumped to `attentional_v2.read.v21`; Active Attention is framed as one coherent source-triggered reading forward-pull rather than a formal Q&A tracker
-    - run id: `attentional_v2_active_attention_live_question_micro_huochu_20260521_retry4`
-    - job id: `bgjob_active_attention_live_question_micro_huochu_20260521_retry4`
-    - source: diagnostic micro excerpt from `huochu` original paragraphs `p45-p61`
-    - run directory: `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_live_question_micro_huochu_20260521_retry4`
-    - post-run report: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Forward-Pull-Micro-Eval-Huochu-Retry4-Post-run-Report v0.md`
-    - run-local audit: `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_live_question_micro_huochu_20260521_retry4/analysis/active_attention_lifecycle_audit/README.md`
-  - diagnostic facts:
-    - job completed successfully with expected summary outputs
-    - strict LLM health passed: `26 / 26` successful traces, `0` errors, `0` retries, `0` fallback-backed evidence
-    - Memory Quality ran on `full_probe_time_memory_state`, `5` probes, average MQ `3.25`
-    - reaction audit observed `17` visible reactions, `6` grounded callbacks, `1` weak callback, and `0` false visible integrations
-    - source grounding improved materially: Active Attention `answer_source_refs` were all exact matches; the remaining Active Attention fallback was an opening source cue that was paraphrased rather than quoted
-    - lifecycle / semantics result is mixed: the run kept a broad forward-pull open, but it also extrapolated a `meaning finding / third stage` inquiry beyond what this short source excerpt directly established
-    - Retry3 is preserved as answered-reason diagnostic evidence:
-      - run id: `attentional_v2_active_attention_live_question_micro_huochu_20260521_retry3`
-      - report: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Answered-Reason-Micro-Eval-Huochu-Retry3-Post-run-Report v0.md`
-      - key result: `answered_reason` lifecycle worked, but source grounding still had fallback caveats
+- Active Attention prompt-context grounding retry1 full-window diagnostic is running in five parallel registered jobs.
+  - active run ids:
+    - `attentional_v2_active_attention_prompt_context_window_diagnostic_20260522_retry1_huochu`
+    - `attentional_v2_active_attention_prompt_context_window_diagnostic_20260522_retry1_mangge`
+    - `attentional_v2_active_attention_prompt_context_window_diagnostic_20260522_retry1_nawaer`
+    - `attentional_v2_active_attention_prompt_context_window_diagnostic_20260522_retry1_value_of_others`
+    - `attentional_v2_active_attention_prompt_context_window_diagnostic_20260522_retry1_xidaduo`
+  - active job ids:
+    - `bgjob_active_attention_prompt_context_window_diagnostic_20260522_retry1_huochu`
+    - `bgjob_active_attention_prompt_context_window_diagnostic_20260522_retry1_mangge`
+    - `bgjob_active_attention_prompt_context_window_diagnostic_20260522_retry1_nawaer`
+    - `bgjob_active_attention_prompt_context_window_diagnostic_20260522_retry1_value_of_others`
+    - `bgjob_active_attention_prompt_context_window_diagnostic_20260522_retry1_xidaduo`
+  - launch facts:
+    - preflight found no active background jobs
+    - live LLM target check passed for both MiniMax targets
+    - fresh retry1 run directories were absent before launch
+    - run ledger entries are recorded as `running`
+    - command shape: `run_long_span_vnext.py --v2-only --workers 1 --judge-mode llm --output-attempts 1 --output-retry-sleep-seconds 0 --reaction-reuse-run-root ""`
   - next step:
-    - human review of the Retry4 forward-pull micro eval post-run report
-    - if accepted, any next repair should be prompt-level source-local restraint, not another new field or metric
-    - no evidence catalog update, broader eval, Long Span vNext formal promotion, or product-quality claim is authorized from this diagnostic micro eval without explicit human approval
+    - monitor with `cd reading-companion-backend && .venv/bin/python scripts/check_background_jobs.py --job-id bgjob_active_attention_prompt_context_window_diagnostic_20260522_retry1_huochu --job-id bgjob_active_attention_prompt_context_window_diagnostic_20260522_retry1_mangge --job-id bgjob_active_attention_prompt_context_window_diagnostic_20260522_retry1_nawaer --job-id bgjob_active_attention_prompt_context_window_diagnostic_20260522_retry1_value_of_others --job-id bgjob_active_attention_prompt_context_window_diagnostic_20260522_retry1_xidaduo`
+    - do not stop solely because summary files are absent before terminal completion
+    - wait for terminal status, then run strict LLM health checks and produce the retry1 post-run report
+    - do not update evidence catalog, promote Long Span vNext, or claim product quality
+- Active Attention prompt-context grounding repair has landed; the first 5-window diagnostic attempt is invalidated and pending human review.
+  - implementation status:
+    - Read prompt bumped to `attentional_v2.read.v22`
+    - Active Attention is now defined as a prompt-context-grounded reading forward-pull, not source-only and not a formal Q&A tracker
+    - prompt-visible grounding may come from the current source unit, book/chapter framing, or prior memory shown in the Read prompt
+    - outside knowledge about the book, author, or later chapters is explicitly forbidden unless present in prompt context
+    - runtime normalization no longer trusts model-emitted `source_refs` / `answer_source_refs`; exact current-unit quotes are resolved programmatically, and absent quotes do not create fake precise refs
+    - targeted test suite passed: `103 passed, 6 warnings`
+  - attempted diagnostic:
+    - parent run id: `attentional_v2_active_attention_prompt_context_window_diagnostic_20260522`
+    - jobs:
+      - `bgjob_active_attention_prompt_context_window_diagnostic_20260522_huochu` (`failed`, exit `-15`)
+      - `bgjob_active_attention_prompt_context_window_diagnostic_20260522_mangge` (`failed`, exit `-15`)
+      - `bgjob_active_attention_prompt_context_window_diagnostic_20260522_nawaer` (`failed`, exit `-15`)
+      - `bgjob_active_attention_prompt_context_window_diagnostic_20260522_value_of_others` (`failed`, exit `-15`)
+      - `bgjob_active_attention_prompt_context_window_diagnostic_20260522_xidaduo` (`failed`, exit `-15`)
+    - all five full-window diagnostic shards were manually terminated before terminal runner outputs
+    - each shard preserved partial runtime traces, but none produced `summary/aggregate.json`, `summary/report.md`, `summary/llm_usage.json`, Memory Quality results, reaction audit results, or complete lifecycle audit evidence
+    - post-run report: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Prompt-Context-Grounded-Full-Window-Diagnostic-Post-run-Report v0.md`
+    - run ledger status: `invalidated`
+  - preserved prior diagnostic context:
+    - Retry4 remains the latest completed micro diagnostic: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Forward-Pull-Micro-Eval-Huochu-Retry4-Post-run-Report v0.md`
+    - Retry4 showed materially improved source grounding but mixed semantics on a short excerpt; it is diagnostic only
+  - next step:
+    - human review of the v22 repair and invalidated full-window diagnostic report
+    - do not reuse the five `20260522` full-window run ids as evidence
+    - if retrying the full-window diagnostic, use fresh run ids and consider a stricter first-trace / progress watchdog or one-window-to-terminal sanity check before five-way parallelism
+    - no evidence catalog update, broader eval, Long Span vNext formal promotion, or product-quality claim is authorized from this invalidated diagnostic attempt
 - Post-Slice8H Eval-1 Retry1 high-parallel full active evaluation completed and is pending human review.
   - status:
     - no active Eval-1 background jobs remain in the registry
