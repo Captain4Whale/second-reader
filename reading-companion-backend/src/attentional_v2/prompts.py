@@ -7,10 +7,10 @@ from dataclasses import dataclass
 from src.prompts.shared import LANGUAGE_OUTPUT_CONTRACT
 
 
-ATTENTIONAL_V2_PROMPTSET_VERSION = "attentional_v2-phase6-v28"
+ATTENTIONAL_V2_PROMPTSET_VERSION = "attentional_v2-phase6-v29"
 SURVEY_CHAPTER_ZONE_PROMPT_VERSION = "attentional_v2.survey_chapter_zone.v1"
 NAVIGATE_CHOOSE_NEXT_UNIT_PROMPT_VERSION = "attentional_v2.navigate_choose_next_unit.v1"
-READ_UNIT_PROMPT_VERSION = "attentional_v2.read.v19"
+READ_UNIT_PROMPT_VERSION = "attentional_v2.read.v21"
 BRIDGE_RESOLUTION_PROMPT_VERSION = "attentional_v2.bridge_resolution.v5"
 REFLECTIVE_PROMOTION_PROMPT_VERSION = "attentional_v2.reflective_promotion.v1"
 RECONSOLIDATION_PROMPT_VERSION = "attentional_v2.reconsolidation.v1"
@@ -256,25 +256,25 @@ Rules:
 - Do not target `concept_digest`, `thread_digest`, `active_focus_digest`, or report/projection fields. Digests are prompt projections, not writable memory stores.
 - `active_attention` is the reader's carry-forward set of live inquiries, not recent memory and not a summary cache.
 - After reading this unit, pause as a curious reader. Ask whether the passage left you wanting to understand something later: what happens next, why this matters, how a tension resolves, whether a claim will be answered, or how a developing pattern will turn.
-- Write to `active_attention` only when an inquiry is still alive after this unit and would shape how you read forward.
-- An active item does not have to be phrased with a question mark. It must express an answer-seeking tension: what the reader is now trying to find out, judge, or watch resolve.
-- One active item = one source-triggered inquiry + one answer boundary. If one candidate item has multiple independent answer boundaries, split it into multiple active items or keep only the single inquiry that most immediately shapes the next read.
+- Write to `active_attention` only when an inquiry or reading tension is still alive after this unit and would shape how you read forward.
+- An active item does not have to be phrased with a question mark. It may be a question, tension, suspense, or watchpoint, but it must still carry forward a reader's interest rather than summarize what is already stable.
+- One active item = one coherent source-triggered forward-pull. It may have a few closely related sides, but do not bundle independent tensions that would need different later evidence to satisfy.
 - Good active inquiries feel like something a reader naturally carries forward:
   - narrative tension: a bomb is placed on the table, so the reader carries "when or whether will it explode?"
   - argument tension: the author poses a problem, so the reader carries "how will the author answer this?"
-  - `活出生命的意义`: "the text says prisoners are still in the first psychological stage" may open one inquiry about what follows that first stage; when the second stage is answered, create a separate later-stage inquiry instead of expanding the old item.
+  - `活出生命的意义`: "the text says prisoners are still in the first psychological stage" may open one forward-pull about how the next psychological stage will change the reader's understanding; when later text satisfies that pull, resolve it with a reason and create a separate later-stage item only if a new tension genuinely opens.
 - Do not create an active inquiry merely because the passage is important. Importance alone belongs in `reading_impression`, `concept_registry`, or `thread_trace`; `active_attention` requires forward pull.
-- Active-attention create payloads must use `question_from`, `driving_question`, `answer_boundary`, and `working_answer`; do not create new `statement`-only active-attention items.
+- Active-attention create payloads must use `question_from`, `driving_question`, and `working_answer`; do not create new `statement`-only active-attention items.
 - `question_from` says what already-read source moment raised the inquiry. It is normally stable.
-- `driving_question` says what the reader is now trying to find out. It may be phrased as a question, tension, or watchpoint, but it must be one inquiry.
-- `answer_boundary` says what kind of later source evidence would advance, answer, or close this inquiry.
+- `driving_question` says what the reader is now carrying forward. It may be phrased as a question, tension, suspense, or watchpoint; the field name is legacy-stable, but the content does not need to be a literal question.
 - `working_answer` says the current best partial answer. It may be empty for a newly opened question and should be updated when the text advances it.
-- Before creating new active inquiries, inspect existing `active_questions` in the read context packet. For each one, use its `answer_boundary` to ask whether this unit advances, corrects, reverses, weakens, answers, or makes it irrelevant. Emit an `update`, `resolve`, `close`, or `drop` operation for that existing `item_id` when appropriate.
+- Before creating new active inquiries, inspect existing `active_questions` in the read context packet. For each one, ask whether this unit advances, corrects, reverses, weakens, answers, or makes it irrelevant. Emit an `update`, `resolve`, `close`, or `drop` operation for that existing `item_id` when appropriate.
 - Use `create` / `append` when this unit opens a still-unanswered inquiry that will guide later reading.
-- Use `update` / `reactivate` when this unit changes the current best answer or rekindles an older inquiry.
-- Use `resolve` only when this unit satisfies the active item's answer boundary enough that the reader no longer needs to carry it as open. If the unit answers only part of a broad candidate inquiry, update the current item and keep it open, or resolve the answered item and create a new narrower follow-up inquiry.
-- Use `close` when the inquiry no longer helps reading forward, but not because it was fully answered.
-- If an answer becomes durable, write the durable content to `concept_registry` or `thread_trace`, include `linked_concept_keys` or `linked_thread_keys` on the active-attention resolve/close payload when possible, and close the active inquiry. Do not use `promote` as an active-attention operation.
+- Use `update` / `reactivate` when this unit changes the current best answer, reshapes what the reader is tracking, or rekindles an older inquiry.
+- Use `resolve` only when this unit gives a make-sense answer that the reader no longer needs to carry as open. A resolve payload must include `answered_reason`, `working_answer`, and an exact `answer_source_quote`. If you cannot explain why the inquiry is answered, do not resolve it.
+- If the unit satisfies only part of a forward-pull, use `update` with the better `working_answer` and keep the item open.
+- Use `close` when the inquiry no longer helps reading forward, but not because it was fully answered. A close payload must include `closed_reason`.
+- If an answer becomes durable, write the durable content to `concept_registry` or `thread_trace`, add `derived_from_active_attention_ids` on that downstream concept/thread entry, and close or resolve the active inquiry. Do not use `promote` as an active-attention operation.
 - Do not create an active inquiry when the current unit raises and answers the inquiry locally.
 - Do not store stable concepts, definitions, chapter summaries, or surfaced reactions in `active_attention`.
 - Use `concept_registry` for reusable concepts, models, definitions, or distinctions.
@@ -333,8 +333,7 @@ Return JSON:
       "reason": "<brief reason>",
       "payload": {
         "question_from": "<what already-read source moment raised this question>",
-        "driving_question": "<one inquiry the reader is now trying to resolve; question mark not required>",
-        "answer_boundary": "<what later source evidence would advance, answer, or close this inquiry>",
+        "driving_question": "<one coherent forward-pull the reader is now carrying; question mark not required>",
         "working_answer": "",
         "status": "open",
         "attention_tags": ["question"],
@@ -349,7 +348,6 @@ Return JSON:
       "reason": "<how the current unit advances the question>",
       "payload": {
         "working_answer": "<current best partial answer>",
-        "answer_boundary": "<optional updated boundary if the inquiry narrowed without becoming a new item>",
         "answer_source_quote": "<exact quote from current unit that supports this answer>",
         "answer_source_role": "answer_support"
       }
@@ -361,8 +359,7 @@ Return JSON:
       "reason": "<why the current unit answers the question enough to stop carrying it as open>",
       "payload": {
         "working_answer": "<final current answer>",
-        "linked_concept_keys": [],
-        "linked_thread_keys": [],
+        "answered_reason": "<why this answer is sufficient and the inquiry no longer needs to be carried>",
         "answer_source_quote": "<exact quote from current unit that answers the question>",
         "answer_source_role": "answer_support"
       }
@@ -372,7 +369,9 @@ Return JSON:
       "target_store": "active_attention",
       "target_key": "<existing active question item_id>",
       "reason": "<why this question no longer drives later reading>",
-      "payload": {}
+      "payload": {
+        "closed_reason": "<why this inquiry is no longer useful to carry forward>"
+      }
     },
     {
       "op": "update",
@@ -384,6 +383,7 @@ Return JSON:
         "concept_type": "concept",
         "summary": "<canonical concept summary; do not use definition/core_content/expansion_content>",
         "status": "active",
+        "derived_from_active_attention_ids": [],
         "source_quote": "<exact quote from current unit>",
         "source_role": "support"
       }
@@ -398,6 +398,7 @@ Return JSON:
         "thread_type": "development",
         "summary": "<canonical thread summary>",
         "status": "active",
+        "derived_from_active_attention_ids": [],
         "source_quote": "<exact quote from current unit>",
         "source_role": "support"
       }
@@ -629,13 +630,10 @@ Return JSON:
       "item_id": "<reuse an existing active item id when carrying an existing item>",
       "attention_tags": [],
       "question_from": "<what already-read source moment raised this question>",
-      "driving_question": "<one inquiry the reader is still trying to resolve>",
-      "answer_boundary": "<what later source evidence would advance, answer, or close this inquiry>",
+      "driving_question": "<one coherent forward-pull the reader is still carrying>",
       "working_answer": "<current best answer, or empty if still unanswered>",
       "source_refs": [],
       "answer_source_refs": [],
-      "linked_concept_keys": [],
-      "linked_thread_keys": [],
       "status": "open"
     }
   ],

@@ -1263,11 +1263,30 @@ def _normalize_carry_forward_item(value: object) -> ActiveAttentionItem | None:
         "driving_question",
         "answer_boundary",
         "working_answer",
+        "answered_reason",
+        "closed_reason",
         "statement",
+        "opened_at_source_span_id",
+        "opened_at_unit_span_id",
+        "answered_at_source_span_id",
+        "answered_at_unit_span_id",
+        "closed_at_source_span_id",
+        "closed_at_unit_span_id",
     ):
         text = _clean_text(value.get(field))
         if text:
             item[field] = text  # type: ignore[literal-required]
+    for field in (
+        "opened_at_source_span",
+        "opened_at_unit_span",
+        "answered_at_source_span",
+        "answered_at_unit_span",
+        "closed_at_source_span",
+        "closed_at_unit_span",
+    ):
+        raw = value.get(field)
+        if isinstance(raw, dict):
+            item[field] = dict(raw)  # type: ignore[literal-required]
     linked_concept_keys = [
         _clean_text(item)
         for item in value.get("linked_concept_keys", [])
@@ -1406,7 +1425,15 @@ def apply_cross_chapter_carry_forward(
             "driving_question": _clean_text(item.get("driving_question")) or _clean_text(existing.get("driving_question")),
             "answer_boundary": _clean_text(item.get("answer_boundary")) or _clean_text(existing.get("answer_boundary")),
             "working_answer": _clean_text(item.get("working_answer")) or _clean_text(existing.get("working_answer")),
+            "answered_reason": _clean_text(item.get("answered_reason")) or _clean_text(existing.get("answered_reason")),
+            "closed_reason": _clean_text(item.get("closed_reason")) or _clean_text(existing.get("closed_reason")),
             "statement": _clean_text(item.get("statement")) or _clean_text(existing.get("statement")),
+            "opened_at_source_span_id": _clean_text(item.get("opened_at_source_span_id")) or _clean_text(existing.get("opened_at_source_span_id")),
+            "opened_at_unit_span_id": _clean_text(item.get("opened_at_unit_span_id")) or _clean_text(existing.get("opened_at_unit_span_id")),
+            "answered_at_source_span_id": _clean_text(item.get("answered_at_source_span_id")) or _clean_text(existing.get("answered_at_source_span_id")),
+            "answered_at_unit_span_id": _clean_text(item.get("answered_at_unit_span_id")) or _clean_text(existing.get("answered_at_unit_span_id")),
+            "closed_at_source_span_id": _clean_text(item.get("closed_at_source_span_id")) or _clean_text(existing.get("closed_at_source_span_id")),
+            "closed_at_unit_span_id": _clean_text(item.get("closed_at_unit_span_id")) or _clean_text(existing.get("closed_at_unit_span_id")),
             "linked_concept_keys": _merge_unique_texts(
                 existing.get("linked_concept_keys"),
                 item.get("linked_concept_keys"),
@@ -1417,6 +1444,19 @@ def apply_cross_chapter_carry_forward(
             ),
             "status": _clean_text(item.get("status")) or _clean_text(existing.get("status")) or "open",
         }
+        for field in (
+            "opened_at_source_span",
+            "opened_at_unit_span",
+            "answered_at_source_span",
+            "answered_at_unit_span",
+            "closed_at_source_span",
+            "closed_at_unit_span",
+        ):
+            raw = item.get(field)
+            if not isinstance(raw, dict):
+                raw = existing.get(field)
+            if isinstance(raw, dict):
+                carried_item[field] = dict(raw)  # type: ignore[literal-required]
         carried_item["source_refs"] = dedupe_source_refs(
             [
                 *(

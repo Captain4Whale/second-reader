@@ -2723,7 +2723,7 @@ This new direction is design frozen but not yet implemented as a formal benchmar
 
 ## Entry 89
 **ID**: DEC-092
-**Status**: active
+**Status**: superseded by DEC-093
 
 **Decision / Clarification**: Tighten Active Attention from broad live-question state to one carried inquiry with one answer boundary.
 
@@ -2744,3 +2744,54 @@ This new direction is design frozen but not yet implemented as a formal benchmar
 - `reading-companion-backend/src/attentional_v2/state_ops.py`
 - `reading-companion-backend/src/attentional_v2/state_projection.py`
 - `reading-companion-backend/src/attentional_v2/slow_cycle.py`
+
+## Entry 90
+**ID**: DEC-093
+**Status**: active
+
+**Decision / Clarification**: Demote `answer_boundary` to compatibility metadata and use answered/closed reasons for Active Attention lifecycle.
+
+**Period**: May 21, 2026, after reviewing the Retry2 micro-eval output and deciding that predeclaring an answer boundary added unnecessary design weight. The simpler product-aligned rule is that the reader carries open inquiries, then explains why an inquiry is answered or no longer useful when it terminates.
+
+**Clarification**: Active Attention remains the reader's carry-forward open-inquiry layer. New prompts should not require `answer_boundary` as the core contract. `answer_boundary` may remain on old artifacts and compatibility paths, but the current lifecycle contract is:
+- `create` opens one source-triggered inquiry with `question_from`, `driving_question`, `working_answer`, and source evidence.
+- `update` records partial progress in `working_answer` and answer source evidence while keeping the item open.
+- `resolve` is a soft terminal state that requires `answered_reason`, answer source evidence, and answered source/unit coordinates.
+- `close` is a soft terminal state that requires `closed_reason` and closed source/unit coordinates when the inquiry no longer drives reading but is not claimed as answered.
+- `drop` is reserved for mistaken, invalid, or obsolete items that should be removed from current state.
+
+**Lineage rule**: Downstream durable memory should own lineage to Active Attention. `concept_registry` and `thread_trace` may record `derived_from_active_attention_ids`; new prompts should not require Active Attention items to link backward to downstream concept/thread keys.
+
+**Why this path won**: The user-facing ontology is simpler: Active Attention is what the reader is still carrying, not a precomputed answer-contract object. The semantic burden belongs at termination time, where `Read` must justify why the inquiry can stop being carried. This reduces overfitting to any single example while making premature resolution auditable.
+
+**Primary evidence**:
+- `docs/backend-reading-mechanisms/attentional_v2.md`
+- `docs/backend-reader-evaluation.md`
+- `reading-companion-backend/docs/evaluation/reporting_standard.md`
+- `reading-companion-backend/src/attentional_v2/schemas.py`
+- `reading-companion-backend/src/attentional_v2/prompts.py`
+- `reading-companion-backend/src/attentional_v2/state_ops.py`
+- `reading-companion-backend/src/attentional_v2/state_projection.py`
+- `reading-companion-backend/src/attentional_v2/runner.py`
+- `reading-companion-backend/src/attentional_v2/slow_cycle.py`
+
+## Entry 91
+**ID**: DEC-094
+**Status**: active
+
+**Decision / Clarification**: Treat Active Attention as coherent reading forward-pull, not a formal Q&A tracker.
+
+**Period**: May 21-22, 2026, after Retry3 showed that answered-reason lifecycle worked but also made the design risk visible: if every active item is treated as a narrowly answerable question, the mechanism can drift away from reader interest and toward maintenance-friendly exam items.
+
+**Clarification**: Active Attention remains the reader's carry-forward open-inquiry layer, but the unit is a coherent source-triggered forward pull: a question, tension, suspense, or watchpoint that makes the reader keep reading. `driving_question` remains the field name for compatibility, but the value does not need to be a literal question. One item may carry closely related sides of the same pull; it should not bundle independent tensions that need different later evidence to satisfy.
+
+**Grounding rule**: The LLM cites source text snippets through `source_quote` and `answer_source_quote`; the runtime resolves paragraph-char coordinates. The runtime may use raw exact match, normalized exact match, and ordered-fragment matching for stitched-but-source-real snippets. If resolution still fails, the artifact should expose `fallback_unit_span` as a grounding caveat, not as precise evidence.
+
+**Why this path won**: This keeps Active Attention close to product intent: it is the living curiosity and attention that drives reading forward. Lifecycle operations remain auditable through `answered_reason` / `closed_reason`, but the ontology is not reduced to predeclared answer boundaries or formal Q&A.
+
+**Primary evidence**:
+- `docs/backend-reading-mechanisms/attentional_v2.md`
+- `docs/backend-reader-evaluation.md`
+- `reading-companion-backend/docs/evaluation/reporting_standard.md`
+- `reading-companion-backend/src/attentional_v2/source_spans.py`
+- `reading-companion-backend/src/attentional_v2/prompts.py`

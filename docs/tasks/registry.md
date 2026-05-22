@@ -484,6 +484,20 @@ Last updated: `2026-05-21T21:30:00+08:00`
 
 ## Waiting
 
+### `TASK-SECOND-READER-ACTIVE-ATTENTION-FORWARD-PULL-RETRY4-REPORT-REVIEW` — Review Active Attention forward-pull Retry4 report
+- Status: `waiting`
+- Lane: `mechanism_eval`
+- Priority: `high`
+- Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Forward-Pull-Micro-Eval-Huochu-Retry4-Post-run-Report v0.md`
+- Next: review the completed Retry4 diagnostic micro eval. Source grounding improved materially, but Active Attention semantics remain mixed because the run extrapolated a meaning-finding / third-stage forward-pull beyond this short source excerpt. Do not update the evidence catalog, promote Long Span vNext, run broader eval, or claim product quality from this diagnostic run without explicit approval.
+- Jobs:
+  - `bgjob_active_attention_live_question_micro_huochu_20260521_retry4` (`completed`)
+- Evidence:
+  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Forward-Pull-Micro-Eval-Huochu-Retry4-Post-run-Report v0.md`
+  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Answered-Reason-Micro-Eval-Huochu-Retry3-Post-run-Report v0.md`
+  - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_live_question_micro_huochu_20260521_retry4/summary/aggregate.json`
+  - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_live_question_micro_huochu_20260521_retry4/analysis/active_attention_lifecycle_audit/README.md`
+
 ### `TASK-SECOND-READER-ACTIVE-ATTENTION-INQUIRY-BOUNDARY-REPAIR-RETRY2-REPORT-REVIEW` — Review Active Attention inquiry-boundary repair Retry2 report
 - Status: `waiting`
 - Lane: `mechanism_eval`
@@ -526,6 +540,36 @@ Last updated: `2026-05-21T21:30:00+08:00`
   - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_long_span_post_slice8h_20260519_xidaduo/summary/aggregate.json`
 
 ## Done
+
+### `TASK-SECOND-READER-ACTIVE-ATTENTION-FORWARD-PULL-RETRY4-20260521` — Implement Active Attention source-grounding / forward-pull repair and run Retry4 micro eval on `huochu`
+- Status: `done`
+- Lane: `mechanism_eval`
+- Priority: `high`
+- Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Forward-Pull-Micro-Eval-Huochu-Retry4-Post-run-Report v0.md`
+- Next: Retry4 diagnostic execution is complete and recorded in `TASK-SECOND-READER-ACTIVE-ATTENTION-FORWARD-PULL-RETRY4-REPORT-REVIEW`. Treat the result as mixed diagnostic evidence: source grounding improved, but Active Attention can still over-import book-level themes. Do not treat it as cataloged evidence, product-quality proof, or authorization for broader eval.
+- Jobs:
+  - `bgjob_active_attention_live_question_micro_huochu_20260521_retry4` (`completed`)
+- Evidence:
+  - `reading-companion-backend/docs/evaluation/run_ledger.md`
+  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Forward-Pull-Micro-Eval-Huochu-Retry4-Post-run-Report v0.md`
+  - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_live_question_micro_huochu_20260521_retry4/summary/aggregate.json`
+  - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_live_question_micro_huochu_20260521_retry4/summary/llm_usage.json`
+  - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_live_question_micro_huochu_20260521_retry4/analysis/active_attention_lifecycle_audit/README.md`
+
+### `TASK-SECOND-READER-ACTIVE-ATTENTION-ANSWERED-REASON-RETRY3-20260521` — Implement Active Attention answered-reason repair and run Retry3 micro eval on `huochu`
+- Status: `done`
+- Lane: `mechanism_eval`
+- Priority: `high`
+- Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Answered-Reason-Micro-Eval-Huochu-Retry3-Post-run-Report v0.md`
+- Next: Retry3 diagnostic execution is complete and is now supporting evidence for Retry4 review. The result was partial-positive: live-inquiry creation/update/answered lifecycle worked, while source grounding still had fallback caveats and close/downstream lineage were not exercised.
+- Jobs:
+  - `bgjob_active_attention_live_question_micro_huochu_20260521_retry3` (`completed`)
+- Evidence:
+  - `reading-companion-backend/docs/evaluation/run_ledger.md`
+  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Answered-Reason-Micro-Eval-Huochu-Retry3-Post-run-Report v0.md`
+  - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_live_question_micro_huochu_20260521_retry3/summary/aggregate.json`
+  - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_live_question_micro_huochu_20260521_retry3/summary/llm_usage.json`
+  - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_live_question_micro_huochu_20260521_retry3/analysis/active_attention_lifecycle_audit/README.md`
 
 ### `TASK-SECOND-READER-ACTIVE-ATTENTION-INQUIRY-BOUNDARY-REPAIR-RETRY2-20260521` — Implement Active Attention inquiry-boundary repair and run Retry2 micro eval on `huochu`
 - Status: `done`

@@ -1109,7 +1109,6 @@ def test_attentional_v2_read_book_runs_live_loop_and_persists_compatibility_resu
                     "payload": {
                         "question_from": f"The unit raises: {anchor_quote[:24]}",
                         "driving_question": "How will this point shape the next read?",
-                        "answer_boundary": "Later source advances or closes this point.",
                         "working_answer": "",
                         "attention_tags": ["motif"],
                         "last_touched_sentence_id": focal_sentence.get("sentence_id"),

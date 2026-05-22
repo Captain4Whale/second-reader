@@ -176,6 +176,16 @@ def _merge_text_field(existing: dict[str, object], payload: dict[str, object], k
     return str(existing.get(key) or "").strip()
 
 
+def _merge_dict_field(existing: dict[str, object], payload: dict[str, object], key: str) -> dict[str, object]:
+    """Return payload dict when explicitly provided, otherwise preserve existing dict."""
+
+    if isinstance(payload.get(key), dict):
+        return dict(payload[key])  # type: ignore[index]
+    if isinstance(existing.get(key), dict):
+        return dict(existing[key])  # type: ignore[index]
+    return {}
+
+
 def _merge_active_item(
     existing: dict[str, object],
     payload: dict[str, object],
@@ -191,12 +201,26 @@ def _merge_active_item(
         "driving_question": _merge_text_field(existing, payload, "driving_question"),
         "answer_boundary": _merge_text_field(existing, payload, "answer_boundary"),
         "working_answer": _merge_text_field(existing, payload, "working_answer"),
+        "answered_reason": _merge_text_field(existing, payload, "answered_reason"),
+        "closed_reason": _merge_text_field(existing, payload, "closed_reason"),
         "statement": _merge_text_field(existing, payload, "statement"),
         "source_refs": _merge_source_refs(existing.get("source_refs"), payload.get("source_refs")),
         "answer_source_refs": _merge_source_refs(
             existing.get("answer_source_refs"),
             payload.get("answer_source_refs"),
         ),
+        "opened_at_source_span_id": _merge_text_field(existing, payload, "opened_at_source_span_id"),
+        "opened_at_source_span": _merge_dict_field(existing, payload, "opened_at_source_span"),
+        "opened_at_unit_span_id": _merge_text_field(existing, payload, "opened_at_unit_span_id"),
+        "opened_at_unit_span": _merge_dict_field(existing, payload, "opened_at_unit_span"),
+        "answered_at_source_span_id": _merge_text_field(existing, payload, "answered_at_source_span_id"),
+        "answered_at_source_span": _merge_dict_field(existing, payload, "answered_at_source_span"),
+        "answered_at_unit_span_id": _merge_text_field(existing, payload, "answered_at_unit_span_id"),
+        "answered_at_unit_span": _merge_dict_field(existing, payload, "answered_at_unit_span"),
+        "closed_at_source_span_id": _merge_text_field(existing, payload, "closed_at_source_span_id"),
+        "closed_at_source_span": _merge_dict_field(existing, payload, "closed_at_source_span"),
+        "closed_at_unit_span_id": _merge_text_field(existing, payload, "closed_at_unit_span_id"),
+        "closed_at_unit_span": _merge_dict_field(existing, payload, "closed_at_unit_span"),
         "linked_concept_keys": _merge_unique_ids(existing.get("linked_concept_keys"), payload.get("linked_concept_keys")),
         "linked_thread_keys": _merge_unique_ids(existing.get("linked_thread_keys"), payload.get("linked_thread_keys")),
         "status": str(payload.get("status", "") or existing.get("status", "") or "").strip(),
@@ -519,6 +543,11 @@ def _upsert_concept_entry(
         ),
         "source_refs": _merge_source_refs(existing.get("source_refs"), payload.get("source_refs")),
         "linked_thread_ids": _merge_linked_ids(existing, payload, "linked_thread_ids"),
+        "derived_from_active_attention_ids": _merge_linked_ids(
+            existing,
+            payload,
+            "derived_from_active_attention_ids",
+        ),
     }
     if normalized_operation == "reactivate" and not payload.get("status"):
         merged["status"] = "active"
@@ -589,6 +618,11 @@ def _upsert_thread_entry(
         ),
         "source_refs": _merge_source_refs(existing.get("source_refs"), payload.get("source_refs")),
         "linked_concept_keys": _merge_linked_ids(existing, payload, "linked_concept_keys"),
+        "derived_from_active_attention_ids": _merge_linked_ids(
+            existing,
+            payload,
+            "derived_from_active_attention_ids",
+        ),
     }
     if normalized_operation == "reactivate" and not payload.get("status"):
         merged["status"] = "active"

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from typing import Mapping, TypedDict
 
 from .schemas import ReaderPolicy, SourceRef
@@ -69,6 +70,74 @@ def _int(value: object, default: int = 0) -> int:
         return int(value or default)
     except (TypeError, ValueError):
         return default
+
+
+_NORMALIZED_CHAR_MAP = {
+    "“": '"',
+    "”": '"',
+    "„": '"',
+    "＂": '"',
+    "‘": "'",
+    "’": "'",
+    "‚": "'",
+    "，": ",",
+    "、": ",",
+    "；": ";",
+    "：": ":",
+    "。": ".",
+    "！": "!",
+    "？": "?",
+    "（": "(",
+    "）": ")",
+    "【": "[",
+    "】": "]",
+    "—": "-",
+    "–": "-",
+    "－": "-",
+    "…": "...",
+}
+
+
+def _normalized_text_with_map(text: str) -> tuple[str, list[int]]:
+    """Normalize quote text while preserving normalized-char -> source-char mapping."""
+
+    normalized: list[str] = []
+    source_indexes: list[int] = []
+    previous_space = False
+    for index, char in enumerate(text):
+        if char.isspace():
+            if normalized and not previous_space:
+                normalized.append(" ")
+                source_indexes.append(index)
+                previous_space = True
+            continue
+        mapped = _NORMALIZED_CHAR_MAP.get(char, char)
+        for mapped_char in mapped:
+            normalized.append(mapped_char)
+            source_indexes.append(index)
+        previous_space = False
+    if normalized and normalized[-1] == " ":
+        normalized.pop()
+        source_indexes.pop()
+    return "".join(normalized), source_indexes
+
+
+def _find_all(text: str, needle: str, *, start: int = 0) -> list[int]:
+    matches: list[int] = []
+    if not needle:
+        return matches
+    cursor = max(0, start)
+    while True:
+        index = text.find(needle, cursor)
+        if index < 0:
+            return matches
+        matches.append(index)
+        cursor = index + max(1, len(needle))
+
+
+def _quote_fragments(quote: str) -> list[str]:
+    parts = re.split(r"[\n\r。！？!?；;]+", quote)
+    return [part.strip() for part in parts if len(part.strip()) >= 4]
 
 
 def readable_paragraphs(chapter: Mapping[str, object]) -> list[dict[str, object]]:
@@ -231,35 +300,85 @@ def source_ref_from_unit(
             resolution={"status": "fallback_unit_span", "method": "missing_quote"},
         )
 
-    matches: list[int] = []
-    start = 0
-    while True:
-        index = unit_text.find(clean_quote, start)
-        if index < 0:
-            break
-        matches.append(index)
-        start = index + max(1, len(clean_quote))
-    if not matches:
-        return source_ref_from_span(
-            unit_span,
-            quote=clean_quote,
-            role=role,
-            resolution={"status": "fallback_unit_span", "method": "quote_not_found", "match_count": 0},
+    def _ref_from_offsets(
+        start_offset: int,
+        end_offset: int,
+        *,
+        status: str,
+        method: str,
+        resolution_extra: Mapping[str, object] | None = None,
+    ) -> SourceRef:
+        quote_span = {
+            "start_cursor": _cursor_from_source_unit_flat_offset(source_unit, start_offset),
+            "end_cursor": _cursor_from_source_unit_flat_offset(source_unit, end_offset),
+        }
+        resolution: dict[str, object] = {"status": status, "method": method}
+        if resolution_extra:
+            resolution.update(dict(resolution_extra))
+        return source_ref_from_span(quote_span, quote=clean_quote, role=role, resolution=resolution)
+
+    matches = _find_all(unit_text, clean_quote)
+    if matches:
+        status = "matched" if len(matches) == 1 else "ambiguous_first_match"
+        return _ref_from_offsets(
+            matches[0],
+            matches[0] + len(clean_quote),
+            status=status,
+            method="exact_text",
+            resolution_extra={"match_count": len(matches)},
         )
 
-    match_start = matches[0]
-    start_cursor = _cursor_from_source_unit_flat_offset(source_unit, match_start)
-    end_cursor = _cursor_from_source_unit_flat_offset(source_unit, match_start + len(clean_quote))
-    quote_span = {
-        "start_cursor": start_cursor,
-        "end_cursor": end_cursor,
-    }
-    status = "matched" if len(matches) == 1 else "ambiguous_first_match"
+    normalized_unit_text, normalized_unit_map = _normalized_text_with_map(unit_text)
+    normalized_quote, normalized_quote_map = _normalized_text_with_map(clean_quote)
+    normalized_matches = _find_all(normalized_unit_text, normalized_quote)
+    if normalized_matches and normalized_quote_map:
+        normalized_start = normalized_matches[0]
+        normalized_end = normalized_start + len(normalized_quote) - 1
+        start_offset = normalized_unit_map[normalized_start]
+        end_offset = normalized_unit_map[normalized_end] + 1
+        status = "matched" if len(normalized_matches) == 1 else "ambiguous_first_match"
+        return _ref_from_offsets(
+            start_offset,
+            end_offset,
+            status=status,
+            method="normalized_exact_text",
+            resolution_extra={"match_count": len(normalized_matches)},
+        )
+
+    fragments = _quote_fragments(clean_quote)
+    if len(fragments) >= 2:
+        fragment_matches: list[tuple[int, int, str]] = []
+        search_start = 0
+        for fragment in fragments:
+            normalized_fragment, normalized_fragment_map = _normalized_text_with_map(fragment)
+            if not (normalized_fragment and normalized_fragment_map):
+                fragment_matches = []
+                break
+            fragment_match_indexes = _find_all(normalized_unit_text, normalized_fragment, start=search_start)
+            if not fragment_match_indexes:
+                fragment_matches = []
+                break
+            fragment_start = fragment_match_indexes[0]
+            fragment_end = fragment_start + len(normalized_fragment) - 1
+            fragment_matches.append((normalized_unit_map[fragment_start], normalized_unit_map[fragment_end] + 1, fragment))
+            search_start = fragment_end + 1
+        if len(fragment_matches) == len(fragments):
+            return _ref_from_offsets(
+                fragment_matches[0][0],
+                fragment_matches[-1][1],
+                status="ordered_fragment_match",
+                method="ordered_fragment_text",
+                resolution_extra={
+                    "fragment_count": len(fragment_matches),
+                    "matched_fragments": [item[2] for item in fragment_matches],
+                },
+            )
+
     return source_ref_from_span(
-        quote_span,
+        unit_span,
         quote=clean_quote,
         role=role,
-        resolution={"status": status, "method": "exact_text", "match_count": len(matches)},
+        resolution={"status": "fallback_unit_span", "method": "quote_not_found", "match_count": 0},
     )
 
 

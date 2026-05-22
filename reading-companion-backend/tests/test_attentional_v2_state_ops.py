@@ -65,9 +65,9 @@ def test_apply_active_attention_operations_handles_append_update_close_link_and_
                     "attention_tags": ["motif"],
                     "question_from": "The chapter introduces value as a recurring problem.",
                     "driving_question": "How will value narrow as the chapter develops?",
-                    "answer_boundary": "Later source distinguishes value from broad social wanting.",
                     "working_answer": "",
                     "source_refs": [_source_ref()],
+                    "opened_at_unit_span_id": "unit:c1:p1@0-p1@36",
                 },
             }
         ],
@@ -83,15 +83,13 @@ def test_apply_active_attention_operations_handles_append_update_close_link_and_
                 "payload": {
                     "working_answer": "Value is becoming a social exchange problem.",
                     "answer_source_refs": [_source_ref("Value is mediated by other people.")],
-                    "linked_concept_keys": ["concept:value"],
-                    "linked_thread_keys": ["thread:value"],
                 },
             },
             {
                 "operation_type": "close",
                 "target_store": "active_attention",
                 "item_id": "m-1",
-                "payload": {},
+                "payload": {"closed_reason": "The later text stops using this as a live question."},
             },
         ],
     )
@@ -113,11 +111,10 @@ def test_apply_active_attention_operations_handles_append_update_close_link_and_
     assert state["active_items"][0]["attention_tags"] == ["motif"]
     assert state["active_items"][0]["question_from"] == "The chapter introduces value as a recurring problem."
     assert state["active_items"][0]["driving_question"] == "How will value narrow as the chapter develops?"
-    assert state["active_items"][0]["answer_boundary"] == "Later source distinguishes value from broad social wanting."
     assert state["active_items"][0]["working_answer"] == "Value is becoming a social exchange problem."
     assert state["active_items"][0]["status"] == "closed"
-    assert state["active_items"][0]["linked_concept_keys"] == ["concept:value"]
-    assert state["active_items"][0]["linked_thread_keys"] == ["thread:value"]
+    assert state["active_items"][0]["closed_reason"] == "The later text stops using this as a live question."
+    assert state["active_items"][0]["opened_at_unit_span_id"] == "unit:c1:p1@0-p1@36"
     assert state["active_items"][0]["source_refs"][0]["source_span_id"] == "src:c1:p1@0-p1@36"
     assert state["active_items"][0]["answer_source_refs"][0]["quote"] == "Value is mediated by other people."
     assert "bucket" not in state["active_items"][0]
@@ -212,21 +209,23 @@ def test_active_attention_lifecycle_states_preserve_items_until_explicit_drop():
                 "operation_type": "resolve",
                 "target_store": "active_attention",
                 "item_id": "cooling-question",
-                "payload": {},
+                "payload": {"answered_reason": "The current unit gives enough answer to stop carrying it."},
             },
             {
                 "operation_type": "close",
                 "target_store": "active_attention",
                 "item_id": "closing-thread",
-                "payload": {},
+                "payload": {"closed_reason": "The thread is no longer shaping the next read."},
             },
         ],
     )
     resolved_item = _find(resolved["active_items"], "item_id", "cooling-question")
     closed_item = _find(resolved["active_items"], "item_id", "closing-thread")
     assert resolved_item["status"] == "answered"
+    assert resolved_item["answered_reason"] == "The current unit gives enough answer to stop carrying it."
     assert resolved_item["source_refs"][0]["quote"] == "Cooling question."
     assert closed_item["status"] == "closed"
+    assert closed_item["closed_reason"] == "The thread is no longer shaping the next read."
     assert closed_item["linked_thread_keys"] == ["thread:closing"]
 
     dropped = apply_active_attention_operations(
@@ -316,6 +315,7 @@ def test_concept_registry_lifecycle_is_store_specific_and_non_destructive():
                 "summary": "A concept ready to resolve.",
                 "source_refs": [_source_ref("Concept close.")],
                 "linked_thread_ids": ["thread:shared"],
+                "derived_from_active_attention_ids": ["active:old"],
             },
             {
                 "concept_key": "concept-other",
@@ -360,7 +360,11 @@ def test_concept_registry_lifecycle_is_store_specific_and_non_destructive():
                 "operation_type": "close",
                 "target_store": "concept_registry",
                 "item_id": "concept-close",
-                "payload": {"status": "resolved", "summary": "Resolved concept."},
+                "payload": {
+                    "status": "resolved",
+                    "summary": "Resolved concept.",
+                    "derived_from_active_attention_ids": ["active:new"],
+                },
             }
         ],
     )
@@ -369,6 +373,7 @@ def test_concept_registry_lifecycle_is_store_specific_and_non_destructive():
     assert resolved_concept["summary"] == "Resolved concept."
     assert resolved_concept["source_refs"][0]["quote"] == "Concept close."
     assert resolved_concept["linked_thread_ids"] == ["thread:shared"]
+    assert resolved_concept["derived_from_active_attention_ids"] == ["active:old", "active:new"]
 
     dropped = apply_concept_registry_operations(
         resolved,
@@ -440,6 +445,7 @@ def test_thread_trace_lifecycle_is_store_specific_and_non_destructive():
                 "summary": "A thread ready to resolve.",
                 "source_refs": [_source_ref("Thread close.")],
                 "linked_concept_keys": ["concept:shared"],
+                "derived_from_active_attention_ids": ["active:old"],
             },
             {
                 "thread_key": "thread-other",
@@ -484,7 +490,11 @@ def test_thread_trace_lifecycle_is_store_specific_and_non_destructive():
                 "operation_type": "close",
                 "target_store": "thread_trace",
                 "item_id": "thread-close",
-                "payload": {"status": "resolved", "summary": "Resolved thread."},
+                "payload": {
+                    "status": "resolved",
+                    "summary": "Resolved thread.",
+                    "derived_from_active_attention_ids": ["active:new"],
+                },
             }
         ],
     )
@@ -493,6 +503,7 @@ def test_thread_trace_lifecycle_is_store_specific_and_non_destructive():
     assert resolved_thread["summary"] == "Resolved thread."
     assert resolved_thread["source_refs"][0]["quote"] == "Thread close."
     assert resolved_thread["linked_concept_keys"] == ["concept:shared"]
+    assert resolved_thread["derived_from_active_attention_ids"] == ["active:old", "active:new"]
 
     dropped = apply_thread_trace_operations(
         resolved,

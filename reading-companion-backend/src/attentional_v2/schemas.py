@@ -66,17 +66,33 @@ class SourceRef(TypedDict, total=False):
 
 
 class ActiveAttentionItem(TypedDict, total=False):
-    """One live question carried in active attention."""
+    """One live inquiry carried in active attention."""
 
     item_id: str
     attention_tags: list[str]
     question_from: str
     driving_question: str
+    # Legacy compatibility: new prompts should not require a predeclared answer boundary.
     answer_boundary: str
     working_answer: str
+    answered_reason: str
+    closed_reason: str
     statement: str
     source_refs: list[SourceRef]
     answer_source_refs: list[SourceRef]
+    opened_at_source_span_id: str
+    opened_at_source_span: dict[str, object]
+    opened_at_unit_span_id: str
+    opened_at_unit_span: dict[str, object]
+    answered_at_source_span_id: str
+    answered_at_source_span: dict[str, object]
+    answered_at_unit_span_id: str
+    answered_at_unit_span: dict[str, object]
+    closed_at_source_span_id: str
+    closed_at_source_span: dict[str, object]
+    closed_at_unit_span_id: str
+    closed_at_unit_span: dict[str, object]
+    # Legacy compatibility: downstream lineage should prefer derived_from_active_attention_ids.
     linked_concept_keys: list[str]
     linked_thread_keys: list[str]
     status: str
@@ -631,6 +647,7 @@ class ConceptRegistryEntry(TypedDict, total=False):
     summary: str
     source_refs: list[SourceRef]
     linked_thread_ids: list[str]
+    derived_from_active_attention_ids: list[str]
 
 
 class ConceptRegistryState(TypedDict, total=False):
@@ -651,6 +668,7 @@ class ThreadTraceEntry(TypedDict, total=False):
     summary: str
     source_refs: list[SourceRef]
     linked_concept_keys: list[str]
+    derived_from_active_attention_ids: list[str]
 
 
 class ThreadTraceState(TypedDict, total=False):

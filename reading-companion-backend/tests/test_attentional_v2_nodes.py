@@ -482,16 +482,18 @@ def test_read_unit_filters_unanchored_surface_and_uses_naturalized_contract(tmp_
     assert "would shape how you read forward" in captured["system_prompt"]
     assert "question_from" in captured["system_prompt"]
     assert "driving_question" in captured["system_prompt"]
-    assert "answer_boundary" in captured["system_prompt"]
+    assert "answer_boundary" not in captured["system_prompt"]
     assert "working_answer" in captured["system_prompt"]
-    assert "One active item = one source-triggered inquiry + one answer boundary." in captured["system_prompt"]
+    assert "One active item = one coherent source-triggered forward-pull." in captured["system_prompt"]
     assert "does not have to be phrased with a question mark" in captured["system_prompt"]
-    assert "multiple independent answer boundaries" in captured["system_prompt"]
+    assert "different later evidence to satisfy" in captured["system_prompt"]
+    assert "answered_reason" in captured["system_prompt"]
+    assert "closed_reason" in captured["system_prompt"]
     assert "short exact span copied from the current unit" in captured["system_prompt"]
     assert "when or whether will it explode?" in captured["system_prompt"]
     assert "how will the author answer this?" in captured["system_prompt"]
     assert "the text says prisoners are still in the first psychological stage" in captured["system_prompt"]
-    assert "create a separate later-stage inquiry" in captured["system_prompt"]
+    assert "create a separate later-stage item" in captured["system_prompt"]
     assert "Importance alone belongs" in captured["system_prompt"]
     assert "Do not create an active inquiry when the current unit raises and answers the inquiry locally." in captured[
         "system_prompt"
@@ -526,7 +528,7 @@ def test_read_unit_filters_unanchored_surface_and_uses_naturalized_contract(tmp_
     assert "\"target_store\": \"concept_registry\"" in captured["prompt"]
     assert "\"target_store\": \"thread_trace\"" in captured["prompt"]
     assert "Do not target `concept_digest`, `thread_digest`, `active_focus_digest`" in captured["system_prompt"]
-    assert manifest["prompt_version"] == "attentional_v2.read.v19"
+    assert manifest["prompt_version"] == "attentional_v2.read.v21"
 
 
 def test_read_unit_contract_preserves_source_given_stage_model_as_memory_uptake(tmp_path: Path, monkeypatch):
@@ -693,11 +695,13 @@ def test_read_unit_resolves_active_question_answer_source_refs(tmp_path: Path, m
             "surfaced_reactions": [],
             "memory_uptake_ops": [
                 {
-                    "op": "update",
+                    "op": "resolve",
                     "target_store": "active_attention",
                     "target_key": "bomb-question",
+                    "reason": "The current unit gives enough answer to stop carrying the question.",
                     "payload": {
                         "working_answer": "Someone has noticed the bomb but has not disarmed it.",
+                        "answered_reason": "The current unit explicitly answers who noticed the bomb.",
                         "answer_source_quote": "Someone noticed the bomb.",
                     },
                 }
@@ -731,6 +735,10 @@ def test_read_unit_resolves_active_question_answer_source_refs(tmp_path: Path, m
     payload = normalized_ops[0]["payload"]
     assert payload["answer_source_refs"][0]["quote"] == "Someone noticed the bomb."
     assert payload["answer_source_refs"][0]["role"] == "answer_support"
+    assert payload["answered_reason"] == "The current unit explicitly answers who noticed the bomb."
+    assert payload["answered_at_source_span_id"].startswith("src:c1:p1@")
+    assert payload["answered_at_source_span"]["start_cursor"]["paragraph_index"] == 1
+    assert payload["answered_at_unit_span_id"].startswith("src:c1:p1@")
 
 
 def test_memory_uptake_source_ref_normalization_repairs_malformed_ref_lists():
@@ -765,6 +773,50 @@ def test_memory_uptake_source_ref_normalization_repairs_malformed_ref_lists():
     assert payload["source_refs"][0]["quote"] == "The premise appears here."
     assert payload["source_refs"][0]["source_span_id"].startswith("src:c1:p1@")
     assert payload["answer_source_refs"][0]["quote"] == "The answer appears here."
+
+
+def test_active_attention_lifecycle_coordinates_are_added_from_current_unit():
+    """Active-attention create and close ops should carry source-native lifecycle coordinates."""
+
+    normalized_ops = runner_module._normalize_memory_uptake_ops_source_refs(
+        [
+            {
+                "op": "create",
+                "target_store": "active_attention",
+                "target_key": "live-question",
+                "payload": {
+                    "question_from": "The premise appears here.",
+                    "driving_question": "How will this premise develop?",
+                    "working_answer": "",
+                    "source_quote": "The premise appears here.",
+                },
+            },
+            {
+                "op": "close",
+                "target_store": "active_attention",
+                "target_key": "old-question",
+                "reason": "The old question no longer shapes the next read.",
+                "payload": {},
+            },
+        ],
+        source_unit={
+            "source_text": "The premise appears here. The answer appears here.",
+            "source_span": {
+                "start_cursor": {"chapter_id": 1, "chapter_ref": "Chapter 1", "paragraph_index": 1, "char_offset": 0},
+                "end_cursor": {"chapter_id": 1, "chapter_ref": "Chapter 1", "paragraph_index": 1, "char_offset": 49},
+            },
+            "paragraph_offsets": [{"paragraph_index": 1, "start": 0, "end": 49}],
+        },
+    )
+
+    create_payload = normalized_ops[0]["payload"]
+    close_payload = normalized_ops[1]["payload"]
+    assert create_payload["opened_at_source_span_id"].startswith("src:c1:p1@")
+    assert create_payload["opened_at_unit_span_id"].startswith("src:c1:p1@")
+    assert create_payload["source_refs"][0]["quote"] == "The premise appears here."
+    assert close_payload["closed_reason"] == "The old question no longer shapes the next read."
+    assert close_payload["closed_at_source_span_id"].startswith("src:c1:p1@")
+    assert close_payload["closed_at_unit_span_id"].startswith("src:c1:p1@")
 
 
 def test_read_unit_records_dropped_memory_uptake_admission_events(tmp_path: Path, monkeypatch):

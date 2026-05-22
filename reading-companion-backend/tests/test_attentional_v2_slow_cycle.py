@@ -611,7 +611,8 @@ def test_run_phase6_chapter_cycle_applies_cooling_promotion_and_optional_reactio
     assert result["compatibility_payload"]["visible_reaction_count"] == 1
     assert chapter_manifest["prompt_version"] == "attentional_v2.chapter_consolidation.v5"
     assert '"question_from"' in chapter_manifest["system_prompt"] or '"question_from"' in chapter_manifest["user_prompt"]
-    assert '"answer_boundary"' in chapter_manifest["system_prompt"] or '"answer_boundary"' in chapter_manifest["user_prompt"]
+    assert '"answer_boundary"' not in chapter_manifest["system_prompt"]
+    assert '"answer_boundary": "<what later source evidence would advance, answer, or close this inquiry>"' not in chapter_manifest["user_prompt"]
     assert '"statement": "<live near-term item to carry forward>"' not in chapter_manifest["user_prompt"]
     assert promotion_manifest["prompt_version"] == "attentional_v2.reflective_promotion.v1"
 

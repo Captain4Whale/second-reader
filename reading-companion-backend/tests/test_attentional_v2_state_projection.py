@@ -391,7 +391,6 @@ def test_build_read_prompt_packet_projects_compact_always_carry_and_selective_ca
             "item_id": "question-1",
             "question_from": "The opener introduces a practical dilemma.",
             "driving_question": "Why does the chapter turn here?",
-            "answer_boundary": "A later unit explains the reason for the turn.",
             "working_answer": "",
         }
     ]
@@ -459,7 +458,6 @@ def test_read_prompt_packet_includes_all_open_questions_without_runtime_fields()
         "item_id",
         "question_from",
         "driving_question",
-        "answer_boundary",
         "working_answer",
     }
 

@@ -151,6 +151,57 @@ def test_source_ref_from_unit_resolves_cross_paragraph_quote() -> None:
     assert source_ref["resolution"]["status"] == "matched"
 
 
+def test_source_ref_from_unit_resolves_normalized_quote() -> None:
+    chapter = {
+        "id": 1,
+        "title": "Chapter 1",
+        "paragraphs": [{"paragraph_index": 1, "text": "他说：“能学会。”", "text_role": "body"}],
+    }
+    span = {
+        "start_cursor": {"chapter_id": 1, "chapter_ref": "Chapter 1", "paragraph_index": 1, "char_offset": 0},
+        "end_cursor": {"chapter_id": 1, "chapter_ref": "Chapter 1", "paragraph_index": 1, "char_offset": len("他说：“能学会。”")},
+    }
+    source_unit = source_unit_from_span(chapter=chapter, source_span=span)
+
+    source_ref = source_ref_from_unit(source_unit, quote='他说:"能学会."', role="support")
+
+    assert source_ref["source_span_id"] == f"src:c1:p1@0-p1@{len('他说：“能学会。”')}"
+    assert source_ref["resolution"]["status"] == "matched"
+    assert source_ref["resolution"]["method"] == "normalized_exact_text"
+
+
+def test_source_ref_from_unit_resolves_ordered_fragment_quote() -> None:
+    chapter = {
+        "id": 1,
+        "title": "Chapter 1",
+        "paragraphs": [
+            {
+                "paragraph_index": 1,
+                "text": "有人夺走死者剩下的土豆泥；有人认为木鞋更好；有人换走死者的上衣；连只拿到细绳的人都会沾沾自喜。",
+                "text_role": "body",
+            }
+        ],
+    }
+    text = str(chapter["paragraphs"][0]["text"])
+    span = {
+        "start_cursor": {"chapter_id": 1, "chapter_ref": "Chapter 1", "paragraph_index": 1, "char_offset": 0},
+        "end_cursor": {"chapter_id": 1, "chapter_ref": "Chapter 1", "paragraph_index": 1, "char_offset": len(text)},
+    }
+    source_unit = source_unit_from_span(chapter=chapter, source_span=span)
+
+    source_ref = source_ref_from_unit(
+        source_unit,
+        quote="有人夺走死者剩下的土豆泥；有人换走死者的上衣；连只拿到细绳的人都会沾沾自喜",
+        role="answer_support",
+    )
+
+    expected_end = text.find("连只拿到细绳的人都会沾沾自喜") + len("连只拿到细绳的人都会沾沾自喜")
+    assert source_ref["source_span_id"] == f"src:c1:p1@0-p1@{expected_end}"
+    assert source_ref["resolution"]["status"] == "ordered_fragment_match"
+    assert source_ref["resolution"]["method"] == "ordered_fragment_text"
+    assert source_ref["resolution"]["fragment_count"] == 3
+
+
 def test_source_ref_from_unit_marks_repeated_quote_and_missing_quote_fallback() -> None:
     chapter = {
         "id": 1,

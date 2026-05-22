@@ -187,14 +187,13 @@ def _is_open_active_attention_item(item: dict[str, object]) -> bool:
 
 
 def _has_live_question_fields(item: dict[str, object]) -> bool:
-    """Return whether an item uses the live-question schema rather than legacy statement-only shape."""
+    """Return whether an item uses the live-inquiry schema rather than legacy sidecars only."""
 
     return any(
         clean_text(item.get(key))
         for key in (
             "question_from",
             "driving_question",
-            "answer_boundary",
             "working_answer",
         )
     )
@@ -215,7 +214,6 @@ def _active_question_prompt_items(active_attention_digest: ActiveAttentionDigest
                 "item_id": item_id,
                 "question_from": clean_text(item.get("question_from")),
                 "driving_question": clean_text(item.get("driving_question")),
-                "answer_boundary": clean_text(item.get("answer_boundary")),
                 "working_answer": clean_text(item.get("working_answer")),
             }
         )
@@ -279,10 +277,36 @@ def _build_active_attention_digest(
             "driving_question": clean_text(item.get("driving_question")),
             "answer_boundary": clean_text(item.get("answer_boundary")),
             "working_answer": clean_text(item.get("working_answer")),
+            "answered_reason": clean_text(item.get("answered_reason")),
+            "closed_reason": clean_text(item.get("closed_reason")),
             "statement": clean_text(item.get("statement")),
             "status": clean_text(item.get("status")),
             "source_refs": _source_refs(item.get("source_refs"))[:3],
             "answer_source_refs": _source_refs(item.get("answer_source_refs"))[:3],
+            "opened_at_source_span_id": clean_text(item.get("opened_at_source_span_id")),
+            "opened_at_source_span": dict(item.get("opened_at_source_span"))
+            if isinstance(item.get("opened_at_source_span"), dict)
+            else {},
+            "opened_at_unit_span_id": clean_text(item.get("opened_at_unit_span_id")),
+            "opened_at_unit_span": dict(item.get("opened_at_unit_span"))
+            if isinstance(item.get("opened_at_unit_span"), dict)
+            else {},
+            "answered_at_source_span_id": clean_text(item.get("answered_at_source_span_id")),
+            "answered_at_source_span": dict(item.get("answered_at_source_span"))
+            if isinstance(item.get("answered_at_source_span"), dict)
+            else {},
+            "answered_at_unit_span_id": clean_text(item.get("answered_at_unit_span_id")),
+            "answered_at_unit_span": dict(item.get("answered_at_unit_span"))
+            if isinstance(item.get("answered_at_unit_span"), dict)
+            else {},
+            "closed_at_source_span_id": clean_text(item.get("closed_at_source_span_id")),
+            "closed_at_source_span": dict(item.get("closed_at_source_span"))
+            if isinstance(item.get("closed_at_source_span"), dict)
+            else {},
+            "closed_at_unit_span_id": clean_text(item.get("closed_at_unit_span_id")),
+            "closed_at_unit_span": dict(item.get("closed_at_unit_span"))
+            if isinstance(item.get("closed_at_unit_span"), dict)
+            else {},
             "linked_concept_keys": list(item.get("linked_concept_keys", []))
             if isinstance(item.get("linked_concept_keys"), list)
             else [],
@@ -300,9 +324,9 @@ def _build_active_attention_digest(
                 "kind": "active_attention",
                 "item_id": item_id,
                 "summary": clean_text(item.get("driving_question"))
-                or clean_text(item.get("answer_boundary"))
                 or clean_text(item.get("working_answer"))
                 or clean_text(item.get("question_from"))
+                or clean_text(item.get("answer_boundary"))
                 or clean_text(item.get("statement"))
                 or ", ".join(_item_tags(item)),
                 "source_span_id": clean_text((_source_refs(item.get("source_refs")) or [{}])[0].get("source_span_id")),

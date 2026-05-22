@@ -2132,11 +2132,36 @@ def _normalize_memory_uptake_ops_source_refs(
     if not isinstance(memory_uptake_ops, list):
         return []
     normalized: list[dict[str, object]] = []
+
+    def _unit_span() -> dict[str, object]:
+        source_span = source_unit.get("source_span") if isinstance(source_unit, dict) else {}
+        return dict(source_span) if isinstance(source_span, dict) else {}
+
+    def _unit_span_id() -> str:
+        if not isinstance(source_unit, dict):
+            return ""
+        return _clean_text(source_unit.get("source_span_id")) or source_span_id(_unit_span())
+
+    def _first_ref_span(refs: object) -> tuple[str, dict[str, object]]:
+        if not isinstance(refs, list):
+            return "", {}
+        for ref in refs:
+            if not isinstance(ref, dict):
+                continue
+            ref_span = ref.get("source_span")
+            span = dict(ref_span) if isinstance(ref_span, dict) else {}
+            span_id = _clean_text(ref.get("source_span_id")) or source_span_id(span)
+            if span_id or span:
+                return span_id, span
+        return "", {}
+
     for item in memory_uptake_ops:
         if not isinstance(item, dict):
             continue
         operation = dict(item)
         payload = dict(operation.get("payload", {})) if isinstance(operation.get("payload"), dict) else {}
+        operation_type = _clean_text(operation.get("op") or operation.get("operation_type")).lower().replace("-", "_")
+        target_store = _clean_text(operation.get("target_store") or operation.get("effective_target_store"))
 
         source_quote = _clean_text(payload.get("source_quote") or payload.get("quote") or payload.get("evidence_quote"))
         source_role = _clean_text(payload.get("source_role")) or "support"
@@ -2146,7 +2171,10 @@ def _normalize_memory_uptake_ops_source_refs(
             and bool(source_refs)
             and all(isinstance(ref, dict) and (ref.get("source_span") or ref.get("source_span_id")) for ref in source_refs)
         )
-        if isinstance(source_unit, dict) and source_unit and not source_refs_structured:
+        should_resolve_source_quote = bool(source_quote) or (
+            target_store == "active_attention" and operation_type in {"append", "create", "reactivate"}
+        )
+        if isinstance(source_unit, dict) and source_unit and should_resolve_source_quote and not source_refs_structured:
             payload["source_refs"] = [source_ref_from_unit(source_unit, quote=source_quote, role=source_role)]
         answer_source_quote = _clean_text(payload.get("answer_source_quote"))
         answer_source_role = _clean_text(payload.get("answer_source_role")) or "answer_support"
@@ -2168,6 +2196,32 @@ def _normalize_memory_uptake_ops_source_refs(
             payload["answer_source_refs"] = [
                 source_ref_from_unit(source_unit, quote=answer_source_quote, role=answer_source_role)
             ]
+        if target_store == "active_attention":
+            unit_span = _unit_span()
+            unit_span_id = _unit_span_id()
+            if operation_type in {"append", "create", "reactivate"}:
+                source_span_ref_id, source_span_ref = _first_ref_span(payload.get("source_refs"))
+                payload.setdefault("opened_at_source_span_id", source_span_ref_id or unit_span_id)
+                payload.setdefault("opened_at_source_span", source_span_ref or unit_span)
+                payload.setdefault("opened_at_unit_span_id", unit_span_id)
+                payload.setdefault("opened_at_unit_span", unit_span)
+            if operation_type == "resolve":
+                if not _clean_text(payload.get("answered_reason")):
+                    payload["answered_reason"] = _clean_text(operation.get("reason"))
+                answer_span_ref_id, answer_span_ref = _first_ref_span(payload.get("answer_source_refs"))
+                source_span_ref_id, source_span_ref = _first_ref_span(payload.get("source_refs"))
+                payload.setdefault("answered_at_source_span_id", answer_span_ref_id or source_span_ref_id or unit_span_id)
+                payload.setdefault("answered_at_source_span", answer_span_ref or source_span_ref or unit_span)
+                payload.setdefault("answered_at_unit_span_id", unit_span_id)
+                payload.setdefault("answered_at_unit_span", unit_span)
+            if operation_type == "close":
+                if not _clean_text(payload.get("closed_reason")):
+                    payload["closed_reason"] = _clean_text(operation.get("reason"))
+                source_span_ref_id, source_span_ref = _first_ref_span(payload.get("source_refs"))
+                payload.setdefault("closed_at_source_span_id", source_span_ref_id or unit_span_id)
+                payload.setdefault("closed_at_source_span", source_span_ref or unit_span)
+                payload.setdefault("closed_at_unit_span_id", unit_span_id)
+                payload.setdefault("closed_at_unit_span", unit_span)
         operation["payload"] = payload
         normalized.append(operation)
     return normalized
