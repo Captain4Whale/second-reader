@@ -104,6 +104,27 @@ class ActiveAttention(TypedDict, total=False):
     active_items: list[ActiveAttentionItem]
 
 
+class RecentReadingMemoryEntry(TypedDict, total=False):
+    """One append-only near-term memory entry created after reading a unit."""
+
+    entry_id: str
+    source_unit_span_id: str
+    kind: str
+    memory_text: str
+    status: str
+    created_at_unit_index: int
+    archived_by_consolidation_id: str | None
+
+
+class RecentReadingMemoryState(TypedDict, total=False):
+    """Near-term semantic memory of just-read units before consolidation."""
+
+    schema_version: int
+    mechanism_version: str
+    updated_at: str
+    entries: list[RecentReadingMemoryEntry]
+
+
 class LocalBufferSentence(TypedDict, total=False):
     """One recently seen sentence carried in the rolling local buffer."""
 
@@ -225,6 +246,7 @@ class ContinuationCapsule(TypedDict, total=False):
     current_sentence_id: str
     session_continuity_capsule: SessionContinuityCapsule
     active_attention_digest: "ActiveAttentionDigest"
+    recent_reading_memory: "RecentReadingMemoryDigest"
     chapter_reflective_frame: "ReflectiveFrameDigest"
     active_focus_digest: "ActiveFocusDigest"
     concept_digest: list["ConceptDigestItem"]
@@ -238,6 +260,13 @@ class ActiveAttentionDigest(TypedDict, total=False):
 
     active_items: list[dict[str, object]]
     hot_items: list[dict[str, object]]
+
+
+class RecentReadingMemoryDigest(TypedDict, total=False):
+    """Prompt-facing digest of active recent reading memory entries."""
+
+    active_entries: list[dict[str, object]]
+    active_entry_count: int
 
 
 class ReflectiveFrameDigest(TypedDict, total=False):
@@ -284,6 +313,7 @@ class CarryForwardContext(TypedDict, total=False):
     continuation_capsule: ContinuationCapsule
     session_continuity_capsule: SessionContinuityCapsule
     active_attention_digest: ActiveAttentionDigest
+    recent_reading_memory: RecentReadingMemoryDigest
     chapter_reflective_frame: ReflectiveFrameDigest
     active_focus_digest: ActiveFocusDigest
     concept_digest: list[ConceptDigestItem]
@@ -301,6 +331,7 @@ class NavigationContext(TypedDict, total=False):
     continuation_capsule: ContinuationCapsule
     session_continuity_capsule: SessionContinuityCapsule
     active_attention_digest: ActiveAttentionDigest
+    recent_reading_memory: RecentReadingMemoryDigest
     chapter_reflective_frame: ReflectiveFrameDigest
     active_focus_digest: ActiveFocusDigest
     concept_digest: list[ConceptDigestItem]
@@ -896,6 +927,7 @@ class FullCheckpointState(TypedDict, total=False):
     local_continuity: LocalContinuityState
     continuation_capsule: ContinuationCapsule
     active_attention: ActiveAttention
+    recent_reading_memory: RecentReadingMemoryState
     concept_registry: ConceptRegistryState
     thread_trace: ThreadTraceState
     reflective_frames: ReflectiveFramesState
@@ -915,6 +947,20 @@ def build_empty_active_attention(*, mechanism_version: str = ATTENTIONAL_V2_MECH
         "mechanism_version": mechanism_version,
         "updated_at": _timestamp(),
         "active_items": [],
+    }
+
+
+def build_empty_recent_reading_memory(
+    *,
+    mechanism_version: str = ATTENTIONAL_V2_MECHANISM_VERSION,
+) -> RecentReadingMemoryState:
+    """Return the default append-only recent reading memory state."""
+
+    return {
+        "schema_version": ATTENTIONAL_V2_SCHEMA_VERSION,
+        "mechanism_version": mechanism_version,
+        "updated_at": _timestamp(),
+        "entries": [],
     }
 
 
@@ -991,6 +1037,10 @@ def build_empty_continuation_capsule(
         "active_attention_digest": {
             "active_items": [],
             "hot_items": [],
+        },
+        "recent_reading_memory": {
+            "active_entries": [],
+            "active_entry_count": 0,
         },
         "chapter_reflective_frame": {
             "chapter_frames": [],

@@ -19,7 +19,7 @@ The documents in this directory are the result of a follow-up loop: external evi
 1. Current repo implementation facts.
 2. Stable project docs.
 3. `C设计0-Second Reader Shared Memory–Planning Mechanism Charter v0.md`.
-4. `C设计1` through `C设计9` accepted design chain.
+4. `C设计1` through `C设计10` accepted design chain; `C设计10` first-half formation is implemented while consolidation remains deferred.
 5. `E实施0-Implementation Roadmap & Handoff v0.md`.
 6. `B分析` assessment reports.
 7. `A调研` evidence packs, background only.
@@ -89,6 +89,7 @@ Evidence packs are external evidence indexes, not implementation sources. Review
 | `C设计7-Memory Retrieval & Utilization Design v0.md` | design | accepted memory retrieval and utilization design | accepted design |
 | `C设计8-Slow-cycle : Macro-planning Design v0.md` | design | accepted slow-cycle and macro-planning design | accepted design |
 | `C设计9-Evaluation Calibration & Minimal Eval Suite v0.md` | design | accepted evaluation calibration and minimal eval implementation guidance | accepted design, evaluation implementation guidance |
+| `C设计10-Recent Reading Memory Design v0.md` | design | near-term Recent Reading Memory definition, prompt, structure, and active/archive management | accepted; first-half formation implemented, consolidation deferred |
 | `B分析-Memory Mechanism Project Assessment & Improvement Directions.md` | assessment | memory mechanism assessment background | background |
 | `B分析-Planning Mechanism Project Assessment & Improvement Directions.md` | assessment | planning mechanism assessment background | background |
 | `A调研-Memory External Evidence Pack v1.md` | evidence | external memory evidence index | background only |
@@ -102,7 +103,7 @@ Evidence packs are external evidence indexes, not implementation sources. Review
 ## Current Next Step
 
 Current next step:
-Memory / Planning / Minimal Eval implementation track is closed after Slice 8H. The current follow-ups are human review of the post-Slice8H Eval-1 Retry1 report and human review of the Active Attention reader-native prompt repair Retry1 micro-eval report. These follow-ups are outside the closed Slice 8 implementation track and do not authorize catalog update, formal promotion, broader eval, or product-quality claims by themselves.
+Memory / Planning / Minimal Eval implementation track is closed after Slice 8H. The `recent_reading_memory` follow-up has now implemented its first half: Read-time formation, append-only persistence, prompt projection, checkpoint/resume carriage, settlement audit visibility, and Memory Quality full-state snapshot inclusion. `C设计10-Recent Reading Memory Design v0.md` remains the design authority for definition, Read prompt formation, entry structure, and active/archive management. Consolidation from active Recent Memory into long-distance memory is still not designed or implemented; do not implement archival/consolidation behavior, remove `active_attention`, run eval, update the evidence catalog, promote formal authority, or claim product quality without a separate accepted plan.
 
 Post-Slice8H Eval-1 full active evaluation was attempted later and stopped before completion. The conservative Lane A / Lane B jobs and the optimized Long Span producer job are all recorded as `abandoned`; the optimized producer generated only partial local artifacts and no `summary/aggregate.json`, `summary/report.md`, or `summary/llm_usage.json`. Its partial outputs must not be treated as valid full-evaluation evidence or reused as Lane A source outputs.
 
@@ -110,7 +111,7 @@ The LLM-health / eval-strictness repair is accepted. It adds strict eval output 
 
 Eval-1 Retry1 high-parallel full active evaluation completed after the repair with fresh `20260519` run ids. It ran five Long Span producer windows in parallel, validated each producer with strict LLM health checks, and then ran five Lane A reuse shards from matching producer outputs. The post-run report is pending human review. No evidence catalog update, Long Span formal-authority promotion, or product-quality claim is authorized before that review.
 
-Active Attention reader-native prompt repair is landed as a targeted post-Eval-1 mechanism fix. It updates the Read prompt to create Active Attention from the reader's naturally carried-forward open questions rather than from a mechanical memory gate. The Retry1 `huochu p45-p61` diagnostic micro eval completed with positive lifecycle evidence: live-question-native Active Attention items were created, updated, resolved, source-grounded, and present across probe snapshots. The report is pending human review and remains diagnostic only.
+Active Attention / ActiveTension is now deprecated as the primary near-term memory direction. Existing diagnostics remain useful historical evidence, but further work should continue through Recent Reading Memory consolidation and later cleanup, not further ActiveTension expansion.
 
 Slice 4A implementation direction and precision patch are accepted. Slice 4B Pre-implementation Brief is accepted, Slice 4B implementation has landed, and the Slice 4B Post-implementation Report is accepted. Slice 5A Pre-implementation Brief is accepted, Slice 5A implementation has landed, and the Slice 5A Post-implementation Report is accepted. Slice 5B Pre-implementation Brief is accepted, Slice 5B implementation has landed, and the Slice 5B Post-implementation Report is accepted. Slice 6A Pre-implementation Brief is accepted, Slice 6A implementation has landed, the Slice 6A Post-implementation Report implementation direction is accepted with a requested carried SourceRef audit precision patch, and the Slice 6A patch report is accepted. Slice 6B no-code closure brief is accepted; Slice 6 is closed with no additional runtime implementation. Slice 7A minimal eval asset inventory and evidence wiring brief is accepted, Slice 7A implementation has landed, and the Slice 7A Post-implementation Report is accepted. Slice 7B minimal eval smoke harness and evidence availability validation brief is accepted, Slice 7B implementation has landed, and the Slice 7B Post-implementation Report is accepted. Slice 8A post-implementation review and minimal eval readiness gate brief is accepted, Slice 8A doc-only readiness gate has landed, and the Slice 8A Post-implementation Report is accepted. Slice 8B minimal eval suite run brief and execution guardrails is accepted. Slice 8C minimal eval suite execution preflight and bounded run brief is accepted, the bounded Lane A execution was attempted, Lane A failed after the fresh `attentional_v2` read completed because a visible reaction lacked a usable source-span locator for user-level selective matching, Lane B was not launched, and the Slice 8C Post-implementation Report is accepted as failed execution evidence. Slice 8D Lane A source-locator compatibility patch is implemented, and the Slice 8D Post-implementation Report is accepted. Slice 8E Lane A `_retry1` bounded execution completed successfully, and the Slice 8E Post-run Report is accepted. Slice 8F Lane B bounded diagnostic smoke completed successfully, and the Slice 8F Post-run Report is accepted. Slice 8G Minimal Eval Suite smoke closure and evidence interpretation report is accepted. Slice 8H diagnostic evidence catalog entry brief is accepted, the catalog entry has landed, and the Slice 8H Post-implementation Report is accepted. The Memory / Planning / Minimal Eval implementation track is closed after Slice 8H.
 
@@ -119,9 +120,9 @@ The completed Slice 8C through Slice 8G Minimal Eval Suite smoke is cataloged as
 ## Non-goals
 
 - No direct code implementation from this README.
-- No new Memory design.
+- No additional Memory design beyond the review-pending `C设计10` without a separate request.
 - No new Planning design.
-- No `C设计10` / `C设计11` full pages unless later needed.
+- No `C设计11` full page unless later needed.
 - No vector DB / graph DB / Memory OS.
 - No manager agent / planner agent / retriever agent.
 - No route steering UI.

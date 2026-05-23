@@ -63,6 +63,7 @@ from .schemas import (
     build_empty_reflective_summaries,
     build_empty_resume_metadata,
     build_empty_active_attention,
+    build_empty_recent_reading_memory,
 )
 from .slow_cycle import (
     apply_cross_chapter_carry_forward,
@@ -85,6 +86,7 @@ from .state_ops import (
     append_reaction_record,
     append_reconsolidation_record,
     apply_active_attention_operations,
+    apply_recent_reading_memory_operations,
     close_local_meaning_unit,
     push_local_buffer_sentence,
     replace_policy_section,
@@ -115,6 +117,7 @@ __all__ = [
     "apply_reconsolidation",
     "apply_reflective_promotion",
     "apply_active_attention_operations",
+    "apply_recent_reading_memory_operations",
     "close_local_meaning_unit",
     "artifact_map",
     "build_default_reader_policy",
@@ -134,6 +137,7 @@ __all__ = [
     "build_empty_reflective_summaries",
     "build_empty_resume_metadata",
     "build_empty_active_attention",
+    "build_empty_recent_reading_memory",
     "chapter_consolidation",
     "compat_reaction_family",
     "compat_search_query",

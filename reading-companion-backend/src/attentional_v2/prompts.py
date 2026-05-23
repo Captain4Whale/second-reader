@@ -7,10 +7,10 @@ from dataclasses import dataclass
 from src.prompts.shared import LANGUAGE_OUTPUT_CONTRACT
 
 
-ATTENTIONAL_V2_PROMPTSET_VERSION = "attentional_v2-phase6-v31"
+ATTENTIONAL_V2_PROMPTSET_VERSION = "attentional_v2-phase6-v32"
 SURVEY_CHAPTER_ZONE_PROMPT_VERSION = "attentional_v2.survey_chapter_zone.v1"
 NAVIGATE_CHOOSE_NEXT_UNIT_PROMPT_VERSION = "attentional_v2.navigate_choose_next_unit.v1"
-READ_UNIT_PROMPT_VERSION = "attentional_v2.read.v23"
+READ_UNIT_PROMPT_VERSION = "attentional_v2.read.v24"
 BRIDGE_RESOLUTION_PROMPT_VERSION = "attentional_v2.bridge_resolution.v5"
 REFLECTIVE_PROMOTION_PROMPT_VERSION = "attentional_v2.reflective_promotion.v1"
 RECONSOLIDATION_PROMPT_VERSION = "attentional_v2.reconsolidation.v1"
@@ -246,10 +246,23 @@ Rules:
 - After the impression and any surfaced reactions, maintain memory deliberately.
 - `memory_uptake_ops` records only what should remain available after this unit. Do not maintain state for its own sake.
 - A surfaced reaction is already persisted as a reaction record. Do not copy it into `concept_registry` or `thread_trace` just because it was strong.
-- Create a memory operation only when the reading experience yields something that should continue shaping later reading: an open question, a reusable concept/model/definition, or an unfolding thread.
+- First maintain Recent Reading Memory: after reading this unit, write one Recent Reading Memory entry for your future self unless the unit is empty or purely structural.
+- Assume the exact source text of this unit may not be shown again in the next Read step. Record what you now understand from this unit that should remain available for coherent continued reading.
+- Compress meaning, not wording. Do not copy the whole passage. Do not write a visible reaction. Do not predict whether something will matter later. Do not import outside knowledge.
+- Write Recent Reading Memory so your future self can understand it from the memory packet, not from the vanished source unit.
+- Be context-resolvable, not standalone exhaustive.
+- If a person, concept, thread, or situation is already stable in the prompt-visible concept/thread context, use its stable name and only record what changed or was newly learned.
+- If something is newly introduced in this unit, name or describe it clearly enough for a later Read step to understand.
+- Avoid bare pronouns or vague references such as "he", "this", "that", or "the above situation" unless the referent is explicit in the same entry or stable in concept/thread context.
+- Capture new events, claims, explanations, facts, changes in a person/situation/argument/relationship/emotional state, definitions, distinctions, causal links, stages, examples, local tensions, images, unresolved lines, or updates to earlier context.
+- If the unit mostly elaborates something already known, write the memory as the current best understanding rather than duplicating fragments.
+- Usually write one Recent Reading Memory entry for this unit. Split into multiple entries only when the unit contains distinct meanings that a future reader would naturally remember and use separately. Do not split by sentence or paragraph, and do not create many small note fragments.
+- Recent Reading Memory entries are grounded in the current read unit as a whole. You do not need exact source quotes for them; the runner owns `source_unit_span_id`.
+- Create other memory operations only when the reading experience yields something that should continue shaping later reading: an open tension, a reusable concept/model/definition, or an unfolding thread.
 - Explicit source structures can be worth remembering even when they do not call for a visible reaction: stage models, classifications, core definitions, named distinctions, chapter roadmaps, and other author-given frameworks may belong in durable memory.
 - Do not disguise plainly stated source material as your own interpretation. Preserve source-given structure as source-given structure.
 - `memory_uptake_ops` must stay explicit and bounded. Only target:
+  - `recent_reading_memory`
   - `active_attention`
   - `concept_registry`
   - `thread_trace`
@@ -338,6 +351,15 @@ Return JSON:
     }
   ],
   "memory_uptake_ops": [
+    {
+      "op": "append",
+      "target_store": "recent_reading_memory",
+      "reason": "<what this unit adds to near-term reading memory>",
+      "payload": {
+        "kind": "event_or_situation|claim_or_argument|definition_or_distinction|causal_or_structural_link|character_or_relationship|emotional_or_tonal_shift|image_or_scene|local_pattern_or_thread|fact|other",
+        "memory_text": "<one context-resolvable near-term memory from this unit>"
+      }
+    },
     {
       "op": "create",
       "target_store": "active_attention",

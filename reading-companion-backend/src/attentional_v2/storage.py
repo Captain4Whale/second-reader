@@ -20,6 +20,7 @@ from .schemas import (
     build_empty_knowledge_activations,
     build_empty_reaction_records,
     build_empty_reconsolidation_records,
+    build_empty_recent_reading_memory,
     build_empty_reflective_frames,
     build_empty_resume_metadata,
     build_empty_thread_trace,
@@ -82,6 +83,12 @@ def active_attention_file(output_dir: Path) -> Path:
     """Return the primary active-attention path."""
 
     return runtime_dir(output_dir) / "active_attention.json"
+
+
+def recent_reading_memory_file(output_dir: Path) -> Path:
+    """Return the near-term recent reading memory path."""
+
+    return runtime_dir(output_dir) / "recent_reading_memory.json"
 
 
 def local_buffer_file(output_dir: Path) -> Path:
@@ -246,6 +253,7 @@ def artifact_map(output_dir: Path) -> dict[str, str]:
         "local_continuity": str(local_continuity_file(output_dir).relative_to(output_dir)),
         "continuation_capsule": str(continuation_capsule_file(output_dir).relative_to(output_dir)),
         "active_attention": str(active_attention_file(output_dir).relative_to(output_dir)),
+        "recent_reading_memory": str(recent_reading_memory_file(output_dir).relative_to(output_dir)),
         "concept_registry": str(concept_registry_file(output_dir).relative_to(output_dir)),
         "thread_trace": str(thread_trace_file(output_dir).relative_to(output_dir)),
         "reflective_frames": str(reflective_frames_file(output_dir).relative_to(output_dir)),
@@ -361,6 +369,10 @@ def initialize_artifact_tree(
         build_empty_continuation_capsule(mechanism_version=mechanism_version),
     )
     ensure_json(active_attention_file(output_dir), build_empty_active_attention(mechanism_version=mechanism_version))
+    ensure_json(
+        recent_reading_memory_file(output_dir),
+        build_empty_recent_reading_memory(mechanism_version=mechanism_version),
+    )
     ensure_json(concept_registry_file(output_dir), build_empty_concept_registry(mechanism_version=mechanism_version))
     ensure_json(thread_trace_file(output_dir), build_empty_thread_trace(mechanism_version=mechanism_version))
     ensure_json(

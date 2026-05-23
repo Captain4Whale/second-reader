@@ -25,6 +25,7 @@ from .schemas import (
     LocalContinuityState,
     ReactionRecordsState,
     ReaderPolicy,
+    RecentReadingMemoryState,
     ReflectiveFramesState,
     ThreadTraceState,
     UnitizeDecision,
@@ -35,6 +36,7 @@ from .storage import append_jsonl, event_stream_file, read_audit_file, settlemen
 _MISSING_TARGET_STORE_WARNING = "missing_target_store_defaulted"
 _SETTLED_STORE_ID_KEYS = {
     "active_attention": "item_id",
+    "recent_reading_memory": "entry_id",
     "concept_registry": "concept_key",
     "thread_trace": "thread_key",
 }
@@ -223,6 +225,8 @@ def _operation_target_identifier(operation: Mapping[str, object], effective_targ
         return _clean_text(payload.get("concept_key"))
     if effective_target_store == "thread_trace":
         return _clean_text(payload.get("thread_key"))
+    if effective_target_store == "recent_reading_memory":
+        return _clean_text(payload.get("entry_id")) or explicit_id
     return _clean_text(payload.get("item_id"))
 
 
@@ -597,6 +601,8 @@ def record_settlement(
     memory_uptake_ops: object,
     before_active_attention: ActiveAttention,
     after_active_attention: ActiveAttention,
+    before_recent_reading_memory: RecentReadingMemoryState | None = None,
+    after_recent_reading_memory: RecentReadingMemoryState | None = None,
     before_concept_registry: ConceptRegistryState,
     after_concept_registry: ConceptRegistryState,
     before_thread_trace: ThreadTraceState,
@@ -617,6 +623,11 @@ def record_settlement(
             before_active_attention.get("active_items", []),
             after_active_attention.get("active_items", []),
             id_key="item_id",
+        ),
+        "recent_reading_memory": _id_delta(
+            (before_recent_reading_memory or {}).get("entries", []),
+            (after_recent_reading_memory or {}).get("entries", []),
+            id_key="entry_id",
         ),
         "concept_registry": _id_delta(
             before_concept_registry.get("entries", []),
@@ -674,6 +685,7 @@ def maybe_capture_memory_quality_probe(
     local_buffer: LocalBufferState,
     local_continuity: LocalContinuityState,
     active_attention: ActiveAttention,
+    recent_reading_memory: RecentReadingMemoryState | None = None,
     concept_registry: ConceptRegistryState,
     thread_trace: ThreadTraceState,
     reflective_frames: ReflectiveFramesState,
@@ -694,6 +706,7 @@ def maybe_capture_memory_quality_probe(
         local_buffer=local_buffer,
         local_continuity=local_continuity,
         active_attention=active_attention,
+        recent_reading_memory=recent_reading_memory or {},
         concept_registry=concept_registry,
         thread_trace=thread_trace,
         reflective_frames=reflective_frames,

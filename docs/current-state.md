@@ -7,25 +7,39 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-05-23T19:33:40+08:00`
+Last verified: `2026-05-23T21:11:00+08:00`
 
 ## Current Objective
+- Recent Reading Memory first-half formation is implemented.
+  - design doc:
+    - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/C设计10-Recent Reading Memory Design v0.md`
+  - implementation scope:
+    - `recent_reading_memory` is now a runtime store for near-term semantic memory of just-read units
+    - Read prompt `attentional_v2.read.v24` asks for one or a small number of context-resolvable Recent Reading Memory entries per unit
+    - Read may append entries through `memory_uptake_ops[]` with `target_store="recent_reading_memory"` and `op="append"`
+    - the LLM supplies only `kind` and `memory_text`; runner/state code owns `entry_id`, `source_unit_span_id`, `created_at_unit_index`, `status`, and `archived_by_consolidation_id`
+    - only `active` entries are projected into subsequent Read prompt packets
+    - runtime persistence, checkpoint/resume carriage, settlement audit deltas, and Memory Quality full-state snapshots now include `recent_reading_memory`
+  - explicit exclusions:
+    - consolidation into `concept_registry`, `thread_trace`, or `reflective_frames` is not implemented yet
+    - no nested `memory_points`, recent-to-recent links, candidate concept/thread links, default fine-grained `source_refs`, eval run, evidence catalog update, or product-quality claim is included
+  - next step:
+    - design the Recent Memory -> long-distance-memory consolidation pass before implementing archival/consolidation behavior
 - Active Attention / ActiveTension is now deprecated as a primary memory layer in the stable docs.
   - current decision:
     - keep the runtime store key `active_attention` only until a replacement and removal plan is implemented
     - do not expand ActiveTension with new fields, metrics, report contracts, or evaluation authority
-    - let future `recent_reading_memory` own near-term per-unit semantic memory
+    - let current `recent_reading_memory` own near-term per-unit semantic memory
     - let `thread_trace` inherit long-lived tensions, arcs, watchpoints, and unresolved pulls
-    - clean up `active_attention` after `recent_reading_memory` is designed, implemented, and validated
+    - clean up `active_attention` after `recent_reading_memory` formation is validated, consolidation is designed, and a removal patch is explicitly approved
     - do not preserve old Active Attention state compatibility in new product runs unless a future task explicitly approves old-run migration / resume support
   - decision refs:
     - `DEC-097` supersedes the earlier Active Attention / ActiveTension-forward design direction from `DEC-095` and `DEC-096`
   - boundaries:
-    - this status update is docs-only
-    - no runtime code, prompt, eval runner, or evidence catalog change is authorized by this note
-    - no eval run, new run directory, Long Span formal promotion, or product-quality claim is authorized
+    - the current implementation is code/docs only
+    - no eval run, evidence catalog update, Long Span formal promotion, or product-quality claim is authorized by this note
   - next step:
-    - design `recent_reading_memory` as the near-term reading memory layer before making more Active Attention changes
+    - design Recent Memory consolidation before making more Active Attention cleanup changes
 - Active Attention prompt-context grounding retry1 full-window diagnostic completed and is now review-pending.
   - completed run ids:
     - `attentional_v2_active_attention_prompt_context_window_diagnostic_20260522_retry1_huochu`

@@ -475,6 +475,11 @@ def test_read_unit_filters_unanchored_surface_and_uses_naturalized_contract(tmp_
     assert "not as a field-filling task" in captured["system_prompt"]
     assert "Let `reading_impression` be the brief natural impression" in captured["system_prompt"]
     assert "After the impression and any surfaced reactions, maintain memory deliberately." in captured["system_prompt"]
+    assert "First maintain Recent Reading Memory" in captured["system_prompt"]
+    assert "Compress meaning, not wording" in captured["system_prompt"]
+    assert "Be context-resolvable, not standalone exhaustive" in captured["system_prompt"]
+    assert "Avoid bare pronouns or vague references" in (captured["system_prompt"] + captured["prompt"])
+    assert "\"target_store\": \"recent_reading_memory\"" in captured["prompt"]
     assert "stores ActiveTension" in captured["system_prompt"]
     assert "pause as a reader" in captured["system_prompt"]
     assert "Notice what still holds your attention after the unit is over." in captured["system_prompt"]
@@ -535,7 +540,7 @@ def test_read_unit_filters_unanchored_surface_and_uses_naturalized_contract(tmp_
     assert "\"target_store\": \"concept_registry\"" in captured["prompt"]
     assert "\"target_store\": \"thread_trace\"" in captured["prompt"]
     assert "Do not target `concept_digest`, `thread_digest`, `active_focus_digest`" in captured["system_prompt"]
-    assert manifest["prompt_version"] == "attentional_v2.read.v23"
+    assert manifest["prompt_version"] == "attentional_v2.read.v24"
 
 
 def test_read_unit_contract_preserves_source_given_stage_model_as_memory_uptake(tmp_path: Path, monkeypatch):
@@ -817,6 +822,42 @@ def test_memory_uptake_source_ref_normalization_repairs_malformed_ref_lists():
     assert payload["source_refs"][0]["source_span_id"].startswith("src:c1:p1@")
     assert payload["development_source_refs"][0]["quote"] == "The answer appears here."
     assert payload["development_source_refs"][0]["source_span_id"].startswith("src:c1:p1@")
+
+
+def test_recent_reading_memory_normalization_uses_unit_level_provenance_only():
+    """Recent Reading Memory should not carry model-emitted fine-grained source refs."""
+
+    normalized_ops = runner_module._normalize_memory_uptake_ops_source_refs(
+        [
+            {
+                "op": "append",
+                "target_store": "recent_reading_memory",
+                "target_key": "model-ignored",
+                "payload": {
+                    "kind": "event_or_situation",
+                    "memory_text": "The current unit establishes the prisoners' initial adaptation pressure.",
+                    "source_quote": "The current unit",
+                    "source_refs": [{"source_span_id": "model:wrong"}],
+                    "development_source_quote": "adaptation pressure",
+                    "development_source_refs": [{"source_span_id": "model:wrong-development"}],
+                },
+            }
+        ],
+        source_unit={
+            "source_text": "The current unit establishes the prisoners' initial adaptation pressure.",
+            "source_span": {
+                "start_cursor": {"chapter_id": 1, "chapter_ref": "Chapter 1", "paragraph_index": 45, "char_offset": 0},
+                "end_cursor": {"chapter_id": 1, "chapter_ref": "Chapter 1", "paragraph_index": 45, "char_offset": 71},
+            },
+            "paragraph_offsets": [{"paragraph_index": 45, "start": 0, "end": 71}],
+        },
+    )
+
+    payload = normalized_ops[0]["payload"]
+    assert payload == {
+        "kind": "event_or_situation",
+        "memory_text": "The current unit establishes the prisoners' initial adaptation pressure.",
+    }
 
 
 def test_active_attention_create_without_quote_keeps_unit_coordinates_without_fake_source_refs():

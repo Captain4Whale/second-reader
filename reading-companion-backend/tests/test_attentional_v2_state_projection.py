@@ -9,6 +9,7 @@ from src.attentional_v2.schemas import (
     build_empty_concept_registry,
     build_empty_local_buffer,
     build_empty_reaction_records,
+    build_empty_recent_reading_memory,
     build_empty_reflective_frames,
     build_empty_thread_trace,
     build_empty_active_attention,
@@ -85,6 +86,27 @@ def test_build_carry_forward_context_exposes_phase_c1_packet_shape():
             "source_refs": [_source_ref("Cooling sentence.")],
             "status": "cooling",
         }
+    ]
+    recent_reading_memory = build_empty_recent_reading_memory()
+    recent_reading_memory["entries"] = [
+        {
+            "entry_id": "recent:c1:u0001:m1",
+            "source_unit_span_id": "unit:c1:p1@0-p1@15",
+            "kind": "event_or_situation",
+            "memory_text": "The opener introduces a practical dilemma that the next unit can build on.",
+            "status": "active",
+            "created_at_unit_index": 1,
+            "archived_by_consolidation_id": None,
+        },
+        {
+            "entry_id": "recent:c1:u0000:m1",
+            "source_unit_span_id": "unit:c1:p0@0-p0@10",
+            "kind": "background",
+            "memory_text": "Archived material should not enter Read.",
+            "status": "archived",
+            "created_at_unit_index": 0,
+            "archived_by_consolidation_id": "consolidation:c1:batch1",
+        },
     ]
 
     concept_registry = build_empty_concept_registry()
@@ -174,6 +196,7 @@ def test_build_carry_forward_context_exposes_phase_c1_packet_shape():
         current_unit_sentence_ids=["c1-s2"],
         local_buffer=local_buffer,
         active_attention=active_attention,
+        recent_reading_memory=recent_reading_memory,
         concept_registry=concept_registry,
         thread_trace=thread_trace,
         reflective_frames=reflective_frames,
@@ -299,6 +322,27 @@ def test_build_read_prompt_packet_projects_compact_always_carry_and_selective_ca
             "status": "open",
         }
     ]
+    recent_reading_memory = build_empty_recent_reading_memory()
+    recent_reading_memory["entries"] = [
+        {
+            "entry_id": "recent:c1:u0001:m1",
+            "source_unit_span_id": "unit:c1:p1@0-p1@15",
+            "kind": "event_or_situation",
+            "memory_text": "The opener introduces a practical dilemma that the next unit can build on.",
+            "status": "active",
+            "created_at_unit_index": 1,
+            "archived_by_consolidation_id": None,
+        },
+        {
+            "entry_id": "recent:c1:u0000:m1",
+            "source_unit_span_id": "unit:c1:p0@0-p0@10",
+            "kind": "background",
+            "memory_text": "Archived material should not enter Read.",
+            "status": "archived",
+            "created_at_unit_index": 0,
+            "archived_by_consolidation_id": "consolidation:c1:batch1",
+        },
+    ]
 
     concept_registry = build_empty_concept_registry()
     concept_registry["entries"] = [
@@ -349,6 +393,7 @@ def test_build_read_prompt_packet_projects_compact_always_carry_and_selective_ca
         current_unit_sentence_ids=["c1-s2"],
         local_buffer=local_buffer,
         active_attention=active_attention,
+        recent_reading_memory=recent_reading_memory,
         concept_registry=concept_registry,
         thread_trace=thread_trace,
         reflective_frames=reflective_frames,
@@ -390,6 +435,18 @@ def test_build_read_prompt_packet_projects_compact_always_carry_and_selective_ca
     ]
     assert prompt_packet["active_attention"]["open_tension_count"] == 1
     assert prompt_packet["active_attention"]["projection_warning"] == ""
+    assert prompt_packet["recent_reading_memory"] == {
+        "active_entries": [
+            {
+                "entry_id": "recent:c1:u0001:m1",
+                "kind": "event_or_situation",
+                "memory_text": "The opener introduces a practical dilemma that the next unit can build on.",
+                "source_unit_span_id": "unit:c1:p1@0-p1@15",
+                "created_at_unit_index": 1,
+            }
+        ],
+        "active_entry_count": 1,
+    }
     assert prompt_packet["concept_digest"][0]["concept_key"] == "promise"
     assert prompt_packet["concept_digest"][0]["support_status"] == "source_backed"
     assert prompt_packet["thread_digest"][0]["thread_key"]

@@ -7,6 +7,7 @@ from src.attentional_v2.schemas import (
     build_empty_knowledge_activations,
     build_empty_local_buffer,
     build_empty_reaction_records,
+    build_empty_recent_reading_memory,
     build_empty_reconsolidation_records,
     build_empty_reflective_summaries,
     build_empty_active_attention,
@@ -16,6 +17,7 @@ from src.attentional_v2.state_ops import (
     append_reconsolidation_record,
     apply_active_attention_operations,
     apply_concept_registry_operations,
+    apply_recent_reading_memory_operations,
     apply_thread_trace_operations,
     close_local_meaning_unit,
     push_local_buffer_sentence,
@@ -120,6 +122,60 @@ def test_apply_active_attention_operations_handles_append_update_close_link_and_
     assert "bucket" not in state["active_items"][0]
     assert "kind" not in state["active_items"][0]
     assert dropped["active_items"] == []
+
+
+def test_apply_recent_reading_memory_operations_appends_unit_level_entries_only():
+    """Recent Reading Memory is append-only before consolidation and uses unit-level provenance."""
+
+    state = build_empty_recent_reading_memory()
+    next_state = apply_recent_reading_memory_operations(
+        state,
+        [
+            {
+                "op": "append",
+                "target_store": "recent_reading_memory",
+                "payload": {
+                    "kind": "event_or_situation",
+                    "memory_text": "The prisoners begin adapting to camp shock through a staged psychological response.",
+                    "source_refs": [{"source_span_id": "should-not-be-carried"}],
+                },
+            },
+            {
+                "op": "update",
+                "target_store": "recent_reading_memory",
+                "payload": {"memory_text": "Updates are ignored before consolidation."},
+            },
+        ],
+        source_unit_span_id="unit:c1:p45@0-p61@120",
+        created_at_unit_index=7,
+    )
+
+    assert next_state is not state
+    assert len(next_state["entries"]) == 1
+    entry = next_state["entries"][0]
+    assert entry == {
+        "entry_id": "recent:c1:u0007:m1",
+        "source_unit_span_id": "unit:c1:p45@0-p61@120",
+        "kind": "event_or_situation",
+        "memory_text": "The prisoners begin adapting to camp shock through a staged psychological response.",
+        "status": "active",
+        "created_at_unit_index": 7,
+        "archived_by_consolidation_id": None,
+    }
+
+    source_span_state = apply_recent_reading_memory_operations(
+        build_empty_recent_reading_memory(),
+        [
+            {
+                "op": "append",
+                "target_store": "recent_reading_memory",
+                "payload": {"kind": "fact", "memory_text": "A source-span id also preserves the chapter token."},
+            }
+        ],
+        source_unit_span_id="src:c2:p3@0-p3@40",
+        created_at_unit_index=2,
+    )
+    assert source_span_state["entries"][0]["entry_id"] == "recent:c2:u0002:m1"
 
 
 def test_active_attention_text_fields_preserve_by_default_and_allow_explicit_clear():

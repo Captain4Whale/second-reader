@@ -13,11 +13,59 @@ Stable mechanism behavior changes still need to be promoted to the relevant stab
 ## Current Status
 
 ```text
-Current phase: Memory / Planning / Minimal Eval implementation track closed after Slice 8H
-Implementation status: Slice 1 accepted; Slice 2A accepted; Slice 2B accepted; Slice 3A accepted; Slice 3B accepted; Slice 4A accepted including precision patch; Slice 4B accepted; Slice 5A accepted; Slice 5B accepted; Slice 6A accepted including carried SourceRef audit precision patch; Slice 6B no-code closure brief accepted; Slice 6 closed; Slice 7A accepted; Slice 7B accepted; Slice 8A accepted; Slice 8B accepted; Slice 8C execution brief accepted; Slice 8C bounded Lane A execution attempted and failed before summary generation; Slice 8C report accepted as failed execution evidence; Slice 8D Lane A source-locator compatibility patch accepted; Slice 8E Lane A `_retry1` accepted; Slice 8F Lane B bounded diagnostic smoke accepted; Slice 8G closure report accepted; Slice 8H diagnostic evidence catalog entry brief accepted; Slice 8H diagnostic catalog entry report accepted; implementation track closed; post-Slice8H Eval-1 broader active evaluation attempt stopped and recorded as aborted operational evidence; Eval-1 LLM-health / eval-strictness repair accepted; Eval-1 Retry1 high-parallel full active evaluation completed and is pending human review; Active Attention reader-native prompt repair landed and Retry1 micro eval completed with positive diagnostic lifecycle evidence pending human review
-Next action: human review of `ActiveAttention-Live-Question-Micro-Eval-Huochu-Retry1-Post-run-Report v0.md` and `Eval1-Full-Active-Evaluation-Post-Slice8H-Retry1-High-Parallel-Post-run-Report v0.md`; do not update the evidence catalog, promote Long Span vNext, launch broader eval, or claim product quality before explicit review
-Full AI Evaluation: post-Slice8H Eval-1 Retry1 completed the current active Lane A / Lane B scope for `attentional_v2`; the Active Attention retry1 micro eval is targeted diagnostic validation only; neither result is automatic product-quality proof or formal benchmark authority
+Current phase: Memory / Planning / Minimal Eval implementation track closed after Slice 8H; post-track memory ontology follow-up is active
+Implementation status: Slice 1 accepted; Slice 2A accepted; Slice 2B accepted; Slice 3A accepted; Slice 3B accepted; Slice 4A accepted including precision patch; Slice 4B accepted; Slice 5A accepted; Slice 5B accepted; Slice 6A accepted including carried SourceRef audit precision patch; Slice 6B no-code closure brief accepted; Slice 6 closed; Slice 7A accepted; Slice 7B accepted; Slice 8A accepted; Slice 8B accepted; Slice 8C execution brief accepted; Slice 8C bounded Lane A execution attempted and failed before summary generation; Slice 8C report accepted as failed execution evidence; Slice 8D Lane A source-locator compatibility patch accepted; Slice 8E Lane A `_retry1` accepted; Slice 8F Lane B bounded diagnostic smoke accepted; Slice 8G closure report accepted; Slice 8H diagnostic evidence catalog entry brief accepted; Slice 8H diagnostic catalog entry report accepted; implementation track closed; post-Slice8H Eval-1 broader active evaluation attempt stopped and recorded as aborted operational evidence; Eval-1 LLM-health / eval-strictness repair accepted; Eval-1 Retry1 high-parallel full active evaluation completed and is pending human review; Active Attention reader-native prompt repair landed and Retry1 micro eval completed with positive diagnostic lifecycle evidence pending human review; Active Attention / ActiveTension is now deprecated as the target near-term memory layer; Recent Reading Memory first-half formation is implemented
+Next action: design Recent Reading Memory consolidation into long-distance memory; do not implement consolidation, remove `active_attention`, run eval, update the evidence catalog, promote Long Span vNext, or claim product quality without a separate accepted plan
+Full AI Evaluation: post-Slice8H Eval-1 Retry1 completed the current active Lane A / Lane B scope for `attentional_v2`; Recent Reading Memory formation has not been evaluated with a fresh AI run; no result is automatic product-quality proof or formal benchmark authority
 ```
+
+## Entry 2026-05-23 — Recent Reading Memory first-half formation implemented
+
+Type:
+- mechanism runtime / prompt / artifact implementation
+
+Related docs:
+- Design: `../C设计10-Recent Reading Memory Design v0.md`
+- Mechanism doc: `docs/backend-reading-mechanisms/attentional_v2.md`
+- Decision log: `docs/history/decision-log.md` (`DEC-098`)
+
+Files changed:
+- `reading-companion-backend/src/attentional_v2/schemas.py`
+- `reading-companion-backend/src/attentional_v2/prompts.py`
+- `reading-companion-backend/src/attentional_v2/state_ops.py`
+- `reading-companion-backend/src/attentional_v2/state_projection.py`
+- `reading-companion-backend/src/attentional_v2/runner.py`
+- `reading-companion-backend/src/attentional_v2/resume.py`
+- `reading-companion-backend/src/attentional_v2/storage.py`
+- `reading-companion-backend/src/attentional_v2/observability.py`
+- `reading-companion-backend/src/attentional_v2/benchmark_probes.py`
+- `reading-companion-backend/eval/attentional_v2/run_long_span_vnext.py`
+- targeted tests and stable docs
+
+Design contracts addressed:
+- `recent_reading_memory` is the near-term semantic memory of just-read units.
+- Read appends one or a small number of context-resolvable entries per completed unit.
+- The LLM provides only `kind` and `memory_text`; runner/state code owns `entry_id`, `source_unit_span_id`, `created_at_unit_index`, `status`, and `archived_by_consolidation_id`.
+- Before consolidation, Recent Reading Memory is append-only. Read does not update, merge, resolve, close, drop, or route recent entries into concept/thread destinations.
+- Only `status="active"` entries enter later Read prompt context.
+- Consolidation / archival into long-distance memory remains deferred.
+
+Engineering tests:
+- Commands run: `cd reading-companion-backend && .venv/bin/python -m pytest tests/test_attentional_v2_state_ops.py tests/test_attentional_v2_nodes.py tests/test_attentional_v2_state_projection.py tests/test_attentional_v2_slow_cycle.py tests/test_attentional_v2_scaffold.py tests/test_long_span_vnext.py -q`
+- Result: `95 passed`
+
+AI Evaluation:
+- Full eval run? no
+- Smoke only? no
+- Eval lane affected: none
+- Notes: this implementation does not create run directories, update the evidence catalog, or claim product quality.
+
+Known gaps:
+- Recent Memory -> `concept_registry` / `thread_trace` / `reflective_frames` consolidation is not designed or implemented.
+- `active_attention` remains in runtime until consolidation is designed, Recent Memory formation is validated, and a separate cleanup removal patch is approved.
+
+Next recommended step:
+- Design the deferred consolidation pass for active `recent_reading_memory` batches into long-distance memory.
 
 ## Entry 2026-05-21 — Active Attention reader-native prompt repair and retry1 micro eval
 

@@ -14,6 +14,7 @@ from src.attentional_v2.schemas import (
     build_empty_knowledge_activations,
     build_empty_local_buffer,
     build_empty_reaction_records,
+    build_empty_recent_reading_memory,
     build_empty_reflective_summaries,
     build_empty_active_attention,
 )
@@ -248,7 +249,7 @@ def test_read_unit_projects_compact_packet_and_returns_f1_surface_contract(tmp_p
     assert "\"earlier_excerpts\"" in captured["prompt"]
     assert "\"refs\": [" not in captured["prompt"]
     assert "\"anchor_bank_digest\"" not in captured["prompt"]
-    assert manifest["prompt_version"] == "attentional_v2.read.v23"
+    assert manifest["prompt_version"] == "attentional_v2.read.v24"
     assert result["reading_impression"] == "The second sentence sharpens the first one."
     assert result["surfaced_reactions"][0]["source_quote"] == "Beta sentence."
     assert result["surfaced_reactions"][0]["prior_link"]["ref_ids"] == ["lookback:sentence:c1-s1"]
@@ -438,6 +439,7 @@ def test_run_read_with_context_loop_reads_once_and_persists_f1_audit(tmp_path, m
         local_buffer=build_empty_local_buffer(),
         continuation_capsule={},
         active_attention=build_empty_active_attention(),
+        recent_reading_memory=build_empty_recent_reading_memory(),
         concept_registry=concept_registry,
         thread_trace=thread_trace,
         reflective_frames=reflective_frames,

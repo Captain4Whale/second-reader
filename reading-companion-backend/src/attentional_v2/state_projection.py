@@ -18,6 +18,8 @@ from .schemas import (
     ReflectiveFramesState,
     ReflectiveItem,
     ReflectiveSummariesState,
+    RecentReadingMemoryDigest,
+    RecentReadingMemoryState,
     RehydrationEntry,
     SourceRef,
     ThreadTraceState,
@@ -25,6 +27,7 @@ from .schemas import (
     ActiveAttention,
     ActiveAttentionDigest,
     build_empty_active_attention,
+    build_empty_recent_reading_memory,
 )
 from .source_spans import dedupe_source_refs
 from .state_migration import migrate_reflective_summaries_to_frames, normalize_active_tension_state
@@ -218,6 +221,36 @@ def _active_tension_prompt_items(active_attention_digest: ActiveAttentionDigest)
             }
         )
     return prompt_items
+
+
+def _build_recent_reading_memory_digest(
+    recent_reading_memory: RecentReadingMemoryState,
+) -> RecentReadingMemoryDigest:
+    """Build the prompt-facing active recent reading memory packet."""
+
+    active_entries: list[dict[str, object]] = []
+    for entry in recent_reading_memory.get("entries", []):
+        if not isinstance(entry, dict):
+            continue
+        if clean_text(entry.get("status")).lower() != "active":
+            continue
+        entry_id = clean_text(entry.get("entry_id"))
+        memory_text = clean_text(entry.get("memory_text"))
+        if not entry_id or not memory_text:
+            continue
+        active_entries.append(
+            {
+                "entry_id": entry_id,
+                "kind": clean_text(entry.get("kind")) or "other",
+                "memory_text": memory_text,
+                "source_unit_span_id": clean_text(entry.get("source_unit_span_id")),
+                "created_at_unit_index": int(entry.get("created_at_unit_index", 0) or 0),
+            }
+        )
+    return {
+        "active_entries": active_entries,
+        "active_entry_count": len(active_entries),
+    }
 
 
 def _status_by_key(entries: list[object], key_name: str) -> dict[str, str]:
@@ -696,6 +729,7 @@ def build_continuation_capsule(
     chapter_ref: str,
     local_buffer: LocalBufferState,
     active_attention_digest: ActiveAttentionDigest,
+    recent_reading_memory_digest: RecentReadingMemoryDigest,
     chapter_reflective_frame: ReflectiveFrameDigest,
     active_focus_digest: ActiveFocusDigest,
     concept_digest: list[ConceptDigestItem],
@@ -714,6 +748,7 @@ def build_continuation_capsule(
         "current_sentence_id": clean_text(local_buffer.get("current_sentence_id")),
         "session_continuity_capsule": dict(session_continuity_capsule),
         "active_attention_digest": dict(active_attention_digest),
+        "recent_reading_memory": dict(recent_reading_memory_digest),
         "chapter_reflective_frame": dict(chapter_reflective_frame),
         "active_focus_digest": dict(active_focus_digest),
         "concept_digest": [dict(item) for item in concept_digest if isinstance(item, dict)],
@@ -732,6 +767,7 @@ def build_carry_forward_context(
     current_unit_sentence_ids: list[str],
     local_buffer: LocalBufferState,
     active_attention: ActiveAttention | None = None,
+    recent_reading_memory: RecentReadingMemoryState | None = None,
     concept_registry: ConceptRegistryState | None = None,
     thread_trace: ThreadTraceState | None = None,
     reflective_frames: ReflectiveFramesState | None = None,
@@ -745,6 +781,11 @@ def build_carry_forward_context(
     primary_active_attention = (
         dict(active_attention) if isinstance(active_attention, dict) else build_empty_active_attention()
     )
+    primary_recent_reading_memory = (
+        dict(recent_reading_memory)
+        if isinstance(recent_reading_memory, dict)
+        else build_empty_recent_reading_memory()
+    )
     primary_reflective_frames = (
         dict(reflective_frames)
         if isinstance(reflective_frames, dict)
@@ -756,6 +797,7 @@ def build_carry_forward_context(
     excluded_sentence_ids = {clean_text(item) for item in current_unit_sentence_ids if clean_text(item)}
     refs: list[CarryForwardRef] = []
     active_attention_digest = _build_active_attention_digest(primary_active_attention, refs=refs)
+    recent_reading_memory_digest = _build_recent_reading_memory_digest(primary_recent_reading_memory)
     chapter_reflective_frame = _build_reflective_frame_digest(primary_reflective_frames, chapter_ref=chapter_ref, refs=refs)
     concept_digest = _build_concept_digest(primary_concept_registry, refs=refs)
     thread_digest = _build_thread_digest(primary_thread_trace, refs=refs)
@@ -776,6 +818,7 @@ def build_carry_forward_context(
             chapter_ref=chapter_ref,
             local_buffer=local_buffer,
             active_attention_digest=active_attention_digest,
+            recent_reading_memory_digest=recent_reading_memory_digest,
             chapter_reflective_frame=chapter_reflective_frame,
             active_focus_digest=active_focus_digest,
             concept_digest=concept_digest,
@@ -827,6 +870,7 @@ def build_carry_forward_context(
         "continuation_capsule": primary_continuation_capsule,
         "session_continuity_capsule": marked_session_continuity_capsule,
         "active_attention_digest": marked_active_attention_digest,
+        "recent_reading_memory": recent_reading_memory_digest,
         "chapter_reflective_frame": marked_chapter_reflective_frame,
         "active_focus_digest": marked_active_focus_digest,
         "concept_digest": marked_concept_digest,
@@ -999,6 +1043,9 @@ def build_read_prompt_packet(
             "open_tension_count": len(active_tensions),
             "projection_warning": active_tension_warning,
         },
+        "recent_reading_memory": dict(carry_forward_context.get("recent_reading_memory", {}))
+        if isinstance(carry_forward_context.get("recent_reading_memory"), dict)
+        else {"active_entries": [], "active_entry_count": 0},
         "concept_digest": [
             dict(item)
             for item in carry_forward_context.get("concept_digest", [])
@@ -1040,6 +1087,7 @@ def build_navigation_context(
     current_sentence_id: str,
     local_buffer: LocalBufferState,
     active_attention: ActiveAttention | None = None,
+    recent_reading_memory: RecentReadingMemoryState | None = None,
     concept_registry: ConceptRegistryState | None = None,
     thread_trace: ThreadTraceState | None = None,
     reflective_frames: ReflectiveFramesState | None = None,
@@ -1055,6 +1103,7 @@ def build_navigation_context(
         current_unit_sentence_ids=[current_sentence_id] if current_sentence_id else [],
         local_buffer=local_buffer,
         active_attention=active_attention,
+        recent_reading_memory=recent_reading_memory,
         concept_registry=concept_registry,
         thread_trace=thread_trace,
         reflective_frames=reflective_frames,
@@ -1068,6 +1117,7 @@ def build_navigation_context(
         "continuation_capsule": dict(carry_forward_context.get("continuation_capsule", {})),
         "session_continuity_capsule": dict(carry_forward_context.get("session_continuity_capsule", {})),
         "active_attention_digest": dict(carry_forward_context.get("active_attention_digest", {})),
+        "recent_reading_memory": dict(carry_forward_context.get("recent_reading_memory", {})),
         "chapter_reflective_frame": dict(carry_forward_context.get("chapter_reflective_frame", {})),
         "active_focus_digest": dict(carry_forward_context.get("active_focus_digest", {})),
         "concept_digest": [dict(item) for item in carry_forward_context.get("concept_digest", []) if isinstance(item, dict)],

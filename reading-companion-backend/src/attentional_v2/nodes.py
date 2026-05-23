@@ -485,8 +485,9 @@ def _fallback_unitize_decision(preview_sentences: list[dict[str, object]]) -> Un
 _MISSING_TARGET_STORE_WARNING = "missing_target_store_defaulted"
 _UNSUPPORTED_TARGET_STORE_WARNING = "unsupported_target_store"
 _UNSUPPORTED_OPERATION_STORE_WARNING = "unsupported_operation_for_target_store"
-_MEMORY_UPTAKE_TARGET_STORES = {"active_attention", "concept_registry", "thread_trace"}
+_MEMORY_UPTAKE_TARGET_STORES = {"active_attention", "recent_reading_memory", "concept_registry", "thread_trace"}
 _MEMORY_UPTAKE_OPERATION_STORE_POLICY = {
+    "recent_reading_memory": {"append"},
     "active_attention": {
         "append",
         "create",

@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-05-23T19:33:40+08:00`
+Last updated: `2026-05-23T21:11:00+08:00`
 
 ## Status Values
 - `active`
@@ -484,13 +484,15 @@ Last updated: `2026-05-23T19:33:40+08:00`
 
 ## Waiting
 
-### `TASK-SECOND-READER-RECENT-READING-MEMORY-DESIGN-20260523` — Design near-term recent reading memory and Active Attention deprecation cleanup path
+### `TASK-SECOND-READER-RECENT-READING-MEMORY-CONSOLIDATION-DESIGN-20260523` — Design Recent Reading Memory consolidation into long-distance memory
 - Status: `waiting`
 - Lane: `mechanism_runtime`
 - Priority: `high`
-- Detail: `docs/backend-reading-mechanisms/attentional_v2.md`
-- Next: prepare a focused design / pre-implementation brief for `recent_reading_memory` as the near-term per-unit semantic memory layer. Treat `active_attention / ActiveTension` as deprecated and pending removal; do not expand it further, do not preserve old-state compatibility, and do not clean it up, run eval, or update the evidence catalog until the recent-memory design and removal plan are accepted.
+- Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/C设计10-Recent Reading Memory Design v0.md`
+- Next: design the deferred consolidation pass for active `recent_reading_memory` batches into `concept_registry`, `thread_trace`, and/or `reflective_frames`. Do not implement archival/consolidation behavior, remove `active_attention`, run eval, or update the evidence catalog until that consolidation design is accepted.
 - Evidence:
+  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/C设计10-Recent Reading Memory Design v0.md`
+  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
   - `docs/backend-reading-mechanisms/attentional_v2.md`
   - `docs/backend-reader-evaluation.md`
   - `reading-companion-backend/docs/evaluation/reporting_standard.md`
@@ -584,6 +586,24 @@ Last updated: `2026-05-23T19:33:40+08:00`
   - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_long_span_post_slice8h_20260519_xidaduo/summary/aggregate.json`
 
 ## Done
+
+### `TASK-SECOND-READER-RECENT-READING-MEMORY-DESIGN-20260523` — Design and implement first-half Recent Reading Memory formation
+- Status: `done`
+- Lane: `mechanism_runtime`
+- Priority: `high`
+- Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/C设计10-Recent Reading Memory Design v0.md`
+- Next: first-half formation is implemented and tested. The remaining follow-up is `TASK-SECOND-READER-RECENT-READING-MEMORY-CONSOLIDATION-DESIGN-20260523`; do not implement consolidation, remove `active_attention`, run eval, update the evidence catalog, or claim product quality without a separate accepted plan.
+- Evidence:
+  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/C设计10-Recent Reading Memory Design v0.md`
+  - `docs/backend-reading-mechanisms/attentional_v2.md`
+  - `docs/backend-reader-evaluation.md`
+  - `reading-companion-backend/docs/evaluation/reporting_standard.md`
+  - `docs/history/decision-log.md`
+  - `reading-companion-backend/src/attentional_v2/schemas.py`
+  - `reading-companion-backend/src/attentional_v2/prompts.py`
+  - `reading-companion-backend/src/attentional_v2/state_ops.py`
+  - `reading-companion-backend/src/attentional_v2/state_projection.py`
+  - `reading-companion-backend/src/attentional_v2/runner.py`
 
 ### `TASK-SECOND-READER-ACTIVE-ATTENTION-PROMPT-CONTEXT-DIAGNOSTIC-20260522` — Implement Active Attention prompt-context grounding repair and attempt five-window diagnostic
 - Status: `done`

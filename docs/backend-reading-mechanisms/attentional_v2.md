@@ -131,11 +131,12 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
 - The post-F4 cleanup has also retired the old gate/pressure sidecar from current state.
   - Current code may still write `active_attention.active_items`, but Active Attention / ActiveTension is now deprecated as the primary hot-state design.
   - `Working State` was the historical name for this hot layer; later runs used `Active Attention`, then ActiveTension semantics. Those names now describe deprecated artifacts rather than the forward architecture.
-  - The next design target is `recent_reading_memory`: a near-term memory layer that records compact semantic memory from each read unit so later reads do not behave as if earlier units vanished.
+  - `recent_reading_memory` is now the current first-half near-term memory layer: Read can append compact semantic memory from each unit so later reads do not behave as if earlier units vanished.
+  - The implementation currently covers Read-time formation, append-only persistence, prompt projection, checkpoint / resume carriage, settlement audit visibility, and evaluation snapshot inclusion. Periodic consolidation into long-distance memory remains deferred.
   - Long-lived readerly tensions, unresolved arcs, watchpoints, and patterns should settle into `thread_trace`; stable concepts and frameworks belong in `concept_registry`; visible reactions belong in `reaction_records`.
   - Do not expand ActiveTension to cover these needs. Keep its existing fields (`tension_from`, `tension_focus`, `working_interpretation`, `source_refs`, `development_source_refs`, terminal reasons / coordinates, `status`, and legacy inputs) only as deprecated data until cleanup.
   - `question_from`, `driving_question`, `working_answer`, `answer_source_refs`, `answer_boundary`, and `statement` are old artifact inputs only.
-  - `local_hypotheses` / `live_hypotheses` are historical names only. Hypothesis-like material should become future recent memory, `thread_trace`, or `concept_registry` depending on its durability, not another ActiveTension expansion.
+  - `local_hypotheses` / `live_hypotheses` are historical names only. Hypothesis-like material should become `recent_reading_memory`, `thread_trace`, or `concept_registry` depending on its durability, not another ActiveTension expansion.
   - `gate_state`, `pressure_snapshot`, and the old working-pressure file are historical trigger/watch/zoom design artifacts, not current runtime or prompt inputs.
   - `pressure_signals` were the intermediate one-step `Read -> Navigate.route` signals; they are now historical after the forward-settlement cutover.
 - The forward-settlement cutover is now landed.
@@ -513,19 +514,26 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - `search_now` is a rare escape hatch for interpretation-blocking references or allusions rather than a normal reading behavior.
 
 ## State Layers, Ownership, And Detour Logic
-- The mechanism now distinguishes four state territories plus inline source evidence:
+- The mechanism now distinguishes five state territories plus inline source evidence:
   - `local_continuity`
     - reading-flow position, paragraph-offset `mainline_cursor`, recent unit boundaries, active detour trace, and return semantics
   - `active_attention` (deprecated store, pending removal)
     - `active_attention` / ActiveTension was an attempted hot attention layer, but it is no longer the target architecture for near-term reading memory
-    - keep the runtime store only until `recent_reading_memory` is designed, implemented, and a cleanup removal is approved
+    - keep the runtime store only until `recent_reading_memory` formation is validated, consolidation is designed, and a cleanup removal is approved
     - new post-cleanup product runs should write the new state shape only; do not preserve `active_attention` for old-state compatibility unless a future task explicitly approves old-run migration / resume support
     - do not add new capabilities, metrics, or report contracts that make `active_attention` the primary short-term memory layer again
     - native runtime truth remains `active_attention.active_items[]` while the current code path still writes it
     - existing item labels and fields (`attention_tags[]`, `tension_from`, `tension_focus`, `working_interpretation`, `source_refs`, `development_source_refs`, terminal reasons / coordinates, and `status`) are deprecated shape, not a forward design target
     - empty, `active`, `cooling`, and `open` are treated as prompt-eligible open statuses while the deprecated projection still exists; `answered`, `resolved`, and `closed` are lineage/history and are not carried into the Read prompt
-    - future near-term continuity should be owned by a dedicated `recent_reading_memory` layer that records the compact semantic memory of each read unit
+    - near-term continuity is now owned by `recent_reading_memory`; do not use new ActiveTension design work to cover per-unit semantic memory
     - long-lived tensions, arcs, watchpoints, and unresolved thematic/narrative pulls should be inherited by `thread_trace`, not kept alive in a separate ActiveTension layer
+  - `recent_reading_memory`
+    - owns near-term semantic memory of just-read units
+    - Read appends one or a small number of entries per completed unit through `memory_uptake_ops[]` with `target_store="recent_reading_memory"` and `op="append"`
+    - the LLM provides only `kind` and `memory_text`; the runner owns `entry_id`, `source_unit_span_id`, `created_at_unit_index`, `status`, and `archived_by_consolidation_id`
+    - entries are grounded by the accepted read unit span as a whole; the first implementation does not require fine-grained `source_refs` or quote matching
+    - before consolidation, this store is append-only: Read does not update, merge, resolve, close, link, or route recent entries into concept/thread destinations
+    - `status="active"` entries are carried into the next Read prompt; future consolidation will mark processed entries as `archived`, and archived entries are retained for audit but not prompt-carried
   - `long-distance memory`
     - `concept_registry`
     - `thread_trace`
@@ -554,7 +562,9 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - `Read`
     - owns current-unit understanding
     - owns surfaced reactions
+    - owns appending `recent_reading_memory`
     - owns updates into `concept_registry / thread_trace` and, temporarily until removal, `active_attention`
+    - must write Recent Reading Memory as compressed, context-resolvable semantic memory for the future reader; it should not copy the source passage, predict future importance, guess concept/thread targets, or create nested memory points
     - owns deprecated active-tension lifecycle intent while `active_attention` remains in the runtime:
       - `create` / `append` creates a new open ActiveTension when prompt-visible context leaves readerly charge that has not yet been fully digested
       - `update` / `reactivate` advances, corrects, reverses, weakens, or rekindles the `working_interpretation` or what the reader is currently tracking
@@ -562,7 +572,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
       - `close` marks an inquiry no longer driving the reading, without implying it was fully answered; the payload must explain this with `closed_reason`
       - `drop` removes a mistaken or obsolete inquiry
       - durable answers should be written to `concept_registry` or `thread_trace`; do not use an active-attention `promote` path
-      - future work should replace this compatibility path with `recent_reading_memory` for per-unit near-term memory and `thread_trace` for durable tensions / arcs
+      - future cleanup should remove this compatibility path after `recent_reading_memory` formation is validated and consolidation / archival behavior is designed
     - may request later detour by emitting `detour_need`
   - `slow cycle`
     - owns chapter-end cooling, promotion, reconsolidation, and `reflective_frames`

@@ -290,7 +290,8 @@ For the current Memory / Planning / Evaluation implementation guidance chain, se
     - capture is an opt-in observability consumer: product runs without `memory_quality_probe_export.enabled` and explicit `probe_targets` do not build probe snapshots
     - old hard-ratio probe reports remain historical evidence and are not rewritten
   - Memory Quality probe snapshots should score complete probe-time memory state:
-    - `scoring_memory_state.active_attention` (deprecated store until `recent_reading_memory` exists)
+    - `scoring_memory_state.recent_reading_memory` for current near-term per-unit semantic memory
+    - `scoring_memory_state.active_attention` as deprecated ActiveTension evidence while the cleanup path remains incomplete
     - `scoring_memory_state.concept_registry`
     - `scoring_memory_state.thread_trace`
     - `scoring_memory_state.reflective_frames`
@@ -299,9 +300,9 @@ For the current Memory / Planning / Evaluation implementation guidance chain, se
     - old digest-only Memory Quality runs should be labeled with `memory_snapshot_basis=legacy_digest_snapshot`, while new full-state runs should record `memory_snapshot_basis=full_probe_time_memory_state`
     - old `gate_state`, `pressure_snapshot`, and working-pressure artifacts are not current evidence fields
     - Active Attention / ActiveTension is now deprecated as a primary memory layer. Existing artifacts may still contain `active_attention` items with `tension_from`, `tension_focus`, `working_interpretation`, source evidence, and terminal `answered_reason` / `closed_reason`; reports may interpret those fields for historical or diagnostic review, but should label the store as deprecated evidence rather than the target near-term memory design.
-    - Future near-term-memory evaluation should target the planned `recent_reading_memory` layer once it is designed and implemented. Long-lived tensions, narrative arcs, watchpoints, and recurring unresolved pulls should be evaluated through `thread_trace` rather than by extending ActiveTension.
+    - Future near-term-memory evaluation should foreground `recent_reading_memory`, which is now implemented for Read-time formation and prompt carriage. Long-lived tensions, narrative arcs, watchpoints, and recurring unresolved pulls should be evaluated through `thread_trace` rather than by extending ActiveTension.
     - Active Attention source coordinates in existing artifacts are program-resolved from model-cited exact `source_quote` / `development_source_quote`; reports should distinguish exact/normalized/ordered-fragment matches from `fallback_unit_span` grounding caveats. If an item is grounded in title/framing/prior memory rather than a current-source phrase, reports should say so instead of treating unit coordinates as precise source evidence.
-  - New probe evidence generated after the Read naturalization and SourceRef cutovers should use `reading_impression` for read-audit / probe-facing local interpretation, and `memory_uptake_ops` for the bounded memory-update operations that feed active attention, concept, and thread layers with inline source refs.
+  - New probe evidence generated after the Read naturalization, SourceRef, and Recent Reading Memory formation cutovers should use `reading_impression` for read-audit / probe-facing local interpretation, and `memory_uptake_ops` for the bounded memory-update operations that feed recent memory, active attention, concept, and thread layers.
     - Older reports that show `unit_delta` or `implicit_uptake_ops` are historical artifacts from the pre-cutover contract, not current field names.
   - Memory Quality evidence reports have a fixed writing contract:
     - `reading-companion-backend/docs/evaluation/long_span/memory_quality_report_contract.md`

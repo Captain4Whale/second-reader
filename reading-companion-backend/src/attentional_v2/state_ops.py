@@ -21,6 +21,8 @@ from .schemas import (
     ReaderPolicy,
     ReconsolidationRecord,
     ReconsolidationRecordsState,
+    RecentReadingMemoryEntry,
+    RecentReadingMemoryState,
     ReflectiveItem,
     ReflectiveFramesState,
     ReflectiveSummariesState,
@@ -337,6 +339,74 @@ def apply_active_attention_operations(
         operations,
         allowed_target_stores={"active_attention"},
     )  # type: ignore[return-value]
+
+
+def _recent_memory_entries(state: RecentReadingMemoryState) -> list[RecentReadingMemoryEntry]:
+    """Return normalized recent-reading-memory entries."""
+
+    return [dict(item) for item in state.get("entries", []) if isinstance(item, dict)]  # type: ignore[return-value]
+
+
+def _chapter_token_from_unit_span_id(source_unit_span_id: str) -> str:
+    """Return a compact chapter token from a unit span id when present."""
+
+    parts = str(source_unit_span_id or "").split(":")
+    if len(parts) >= 2 and parts[0] in {"unit", "src"} and parts[1]:
+        return parts[1]
+    return "c0"
+
+
+def apply_recent_reading_memory_operations(
+    state: RecentReadingMemoryState,
+    operations: list[StateOperation],
+    *,
+    source_unit_span_id: str,
+    created_at_unit_index: int,
+) -> RecentReadingMemoryState:
+    """Append Recent Reading Memory entries produced by one completed Read unit."""
+
+    entries = _recent_memory_entries(state)
+    touched = False
+    appended_for_unit = 0
+    chapter_token = _chapter_token_from_unit_span_id(source_unit_span_id)
+    unit_index = max(0, int(created_at_unit_index or 0))
+
+    for operation in operations:
+        if str(operation.get("target_store", "") or "") != "recent_reading_memory":
+            continue
+        operation_type = (
+            str(operation.get("op", "") or operation.get("operation_type", "") or "")
+            .strip()
+            .lower()
+            .replace("-", "_")
+        )
+        if operation_type != "append":
+            continue
+        payload = operation.get("payload")
+        if not isinstance(payload, dict):
+            continue
+        memory_text = _compact_text(payload.get("memory_text"))
+        if not memory_text:
+            continue
+        appended_for_unit += 1
+        entry_id = f"recent:{chapter_token}:u{unit_index:04d}:m{appended_for_unit}"
+        entry: RecentReadingMemoryEntry = {
+            "entry_id": entry_id,
+            "source_unit_span_id": str(source_unit_span_id or "").strip(),
+            "kind": _compact_text(payload.get("kind")) or "other",
+            "memory_text": memory_text,
+            "status": "active",
+            "created_at_unit_index": unit_index,
+            "archived_by_consolidation_id": None,
+        }
+        entries.append(entry)
+        touched = True
+
+    if not touched:
+        return state
+    next_state = _touch_state(state)
+    next_state["entries"] = entries
+    return next_state  # type: ignore[return-value]
 
 
 def push_local_buffer_sentence(

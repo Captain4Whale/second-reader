@@ -2864,3 +2864,30 @@ This new direction is design frozen but not yet implemented as a formal benchmar
 - `reading-companion-backend/docs/evaluation/reporting_standard.md`
 - `docs/current-state.md`
 - `docs/tasks/registry.md`
+
+## Entry 95
+**ID**: DEC-098
+**Status**: active
+
+**Decision / Clarification**: Implement first-half Recent Reading Memory formation for `attentional_v2`.
+
+**Period**: May 23, 2026, after accepting the Recent Reading Memory design as the replacement direction for near-term per-unit memory, while explicitly deferring consolidation into long-distance memory.
+
+**Decision**: `recent_reading_memory` is now a first-class runtime store for near-term semantic memory of just-read units. `Read` may append one or a small number of entries per unit through `memory_uptake_ops[]` with `target_store="recent_reading_memory"` and `op="append"`. The LLM supplies only `kind` and `memory_text`; the runner fills `entry_id`, `source_unit_span_id`, `created_at_unit_index`, `status`, and `archived_by_consolidation_id`.
+
+**Formation rule**: Recent Reading Memory should be compressed meaning, not copied wording. It must be context-resolvable for future Read steps, but not standalone exhaustive. It should name newly introduced people, situations, claims, events, or concepts clearly enough for a future reader to understand, while relying on prompt-visible concept/thread context when that context already makes a referent stable.
+
+**State rule**: Before consolidation, Recent Reading Memory is append-only. Read does not update, merge, resolve, close, drop, or link existing recent entries, and it does not guess future concept/thread destinations. Only `status="active"` entries are projected into Read prompt context. Future consolidation may archive processed entries; that consolidation prompt and lineage policy remain a later design.
+
+**Why this path won**: This gives the mechanism the missing near-term memory layer without expanding deprecated ActiveTension into a catch-all. It keeps the memory hierarchy simple: Recent Reading Memory for short-range continuity, `concept_registry` / `thread_trace` for structured long-distance memory, and reflective/chapter frames for macro understanding.
+
+**Primary evidence**:
+- `docs/implementation/new-reading-mechanism/second-reader-memory-planning/C设计10-Recent Reading Memory Design v0.md`
+- `docs/backend-reading-mechanisms/attentional_v2.md`
+- `docs/backend-reader-evaluation.md`
+- `reading-companion-backend/docs/evaluation/reporting_standard.md`
+- `reading-companion-backend/src/attentional_v2/schemas.py`
+- `reading-companion-backend/src/attentional_v2/prompts.py`
+- `reading-companion-backend/src/attentional_v2/state_ops.py`
+- `reading-companion-backend/src/attentional_v2/state_projection.py`
+- `reading-companion-backend/src/attentional_v2/runner.py`

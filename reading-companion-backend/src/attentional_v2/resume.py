@@ -36,6 +36,7 @@ from .schemas import (
     build_empty_local_continuity,
     build_empty_reaction_records,
     build_empty_reconsolidation_records,
+    build_empty_recent_reading_memory,
     build_empty_reflective_frames,
     build_empty_resume_metadata,
     build_empty_thread_trace,
@@ -54,6 +55,7 @@ from .storage import (
     local_buffer_file,
     local_continuity_file,
     reaction_records_file,
+    recent_reading_memory_file,
     reader_policy_file,
     reconsolidation_records_file,
     reflective_frames_file,
@@ -93,6 +95,9 @@ def _state_builders() -> dict[str, Callable[[], dict[str, object]]]:
         "local_continuity": lambda: build_empty_local_continuity(mechanism_version=ATTENTIONAL_V2_MECHANISM_VERSION),
         "continuation_capsule": lambda: build_empty_continuation_capsule(mechanism_version=ATTENTIONAL_V2_MECHANISM_VERSION),
         "active_attention": lambda: build_empty_active_attention(mechanism_version=ATTENTIONAL_V2_MECHANISM_VERSION),
+        "recent_reading_memory": lambda: build_empty_recent_reading_memory(
+            mechanism_version=ATTENTIONAL_V2_MECHANISM_VERSION
+        ),
         "concept_registry": lambda: build_empty_concept_registry(mechanism_version=ATTENTIONAL_V2_MECHANISM_VERSION),
         "thread_trace": lambda: build_empty_thread_trace(mechanism_version=ATTENTIONAL_V2_MECHANISM_VERSION),
         "reflective_frames": lambda: build_empty_reflective_frames(mechanism_version=ATTENTIONAL_V2_MECHANISM_VERSION),
@@ -118,6 +123,7 @@ def _state_paths(output_dir: Path) -> dict[str, Path]:
         "local_continuity": local_continuity_file(output_dir),
         "continuation_capsule": continuation_capsule_file(output_dir),
         "active_attention": active_attention_file(output_dir),
+        "recent_reading_memory": recent_reading_memory_file(output_dir),
         "concept_registry": concept_registry_file(output_dir),
         "thread_trace": thread_trace_file(output_dir),
         "reflective_frames": reflective_frames_file(output_dir),
@@ -309,6 +315,7 @@ def _build_runtime_continuation_capsule(
     local_buffer: LocalBufferState,
     local_continuity: LocalContinuityState,
     active_attention: dict[str, object],
+    recent_reading_memory: dict[str, object],
     concept_registry: dict[str, object],
     thread_trace: dict[str, object],
     reflective_frames: dict[str, object],
@@ -321,6 +328,7 @@ def _build_runtime_continuation_capsule(
         current_unit_sentence_ids=[],
         local_buffer=local_buffer,
         active_attention=active_attention,
+        recent_reading_memory=recent_reading_memory,
         concept_registry=concept_registry,
         thread_trace=thread_trace,
         reflective_frames=reflective_frames,
@@ -491,12 +499,14 @@ def write_full_checkpoint(
             local_buffer=bundle["local_buffer"],  # type: ignore[arg-type]
             local_continuity=continuity,  # type: ignore[arg-type]
             active_attention=bundle["active_attention"],
+            recent_reading_memory=bundle["recent_reading_memory"],
             concept_registry=bundle["concept_registry"],
             thread_trace=bundle["thread_trace"],
             reflective_frames=bundle["reflective_frames"],
             reaction_records=bundle["reaction_records"],
         ),  # type: ignore[typeddict-item]
         "active_attention": bundle["active_attention"],  # type: ignore[typeddict-item]
+        "recent_reading_memory": bundle["recent_reading_memory"],  # type: ignore[typeddict-item]
         "concept_registry": bundle["concept_registry"],  # type: ignore[typeddict-item]
         "thread_trace": bundle["thread_trace"],  # type: ignore[typeddict-item]
         "reflective_frames": bundle["reflective_frames"],  # type: ignore[typeddict-item]
@@ -800,6 +810,7 @@ def resume_from_checkpoint(
         "local_continuity": live_bundle["local_continuity"],
         "continuation_capsule": live_bundle["continuation_capsule"],
         "active_attention": live_bundle["active_attention"],
+        "recent_reading_memory": live_bundle["recent_reading_memory"],
         "concept_registry": live_bundle["concept_registry"],
         "thread_trace": live_bundle["thread_trace"],
         "reflective_frames": live_bundle["reflective_frames"],
@@ -814,6 +825,7 @@ def resume_from_checkpoint(
         **fallback_checkpoint_source,
         "continuation_capsule": dict((checkpoint or {}).get("continuation_capsule", live_bundle["continuation_capsule"])),
         "active_attention": dict((checkpoint or {}).get("active_attention", live_bundle["active_attention"])),
+        "recent_reading_memory": dict((checkpoint or {}).get("recent_reading_memory", live_bundle["recent_reading_memory"])),
         "concept_registry": dict((checkpoint or {}).get("concept_registry", live_bundle["concept_registry"])),
         "thread_trace": dict((checkpoint or {}).get("thread_trace", live_bundle["thread_trace"])),
         "reflective_frames": dict((checkpoint or {}).get("reflective_frames", live_bundle["reflective_frames"])),
@@ -834,6 +846,9 @@ def resume_from_checkpoint(
             local_buffer=local_buffer,  # type: ignore[arg-type]
             local_continuity=continuity,  # type: ignore[arg-type]
             active_attention=dict(checkpoint_source.get("active_attention", live_bundle["active_attention"])),
+            recent_reading_memory=dict(
+                checkpoint_source.get("recent_reading_memory", live_bundle["recent_reading_memory"])
+            ),
             concept_registry=dict(checkpoint_source.get("concept_registry", live_bundle["concept_registry"])),
             thread_trace=dict(checkpoint_source.get("thread_trace", live_bundle["thread_trace"])),
             reflective_frames=dict(checkpoint_source.get("reflective_frames", live_bundle["reflective_frames"])),
@@ -889,6 +904,9 @@ def resume_from_checkpoint(
             local_buffer=local_buffer,  # type: ignore[arg-type]
             local_continuity=continuity,  # type: ignore[arg-type]
             active_attention=dict(checkpoint_source.get("active_attention", live_bundle["active_attention"])),
+            recent_reading_memory=dict(
+                checkpoint_source.get("recent_reading_memory", live_bundle["recent_reading_memory"])
+            ),
             concept_registry=dict(checkpoint_source.get("concept_registry", live_bundle["concept_registry"])),
             thread_trace=dict(checkpoint_source.get("thread_trace", live_bundle["thread_trace"])),
             reflective_frames=dict(checkpoint_source.get("reflective_frames", live_bundle["reflective_frames"])),
@@ -900,6 +918,9 @@ def resume_from_checkpoint(
         "local_continuity": continuity,
         "continuation_capsule": continuation_capsule,
         "active_attention": dict(checkpoint_source.get("active_attention", live_bundle["active_attention"])),
+        "recent_reading_memory": dict(
+            checkpoint_source.get("recent_reading_memory", live_bundle["recent_reading_memory"])
+        ),
         "concept_registry": dict(checkpoint_source.get("concept_registry", live_bundle["concept_registry"])),
         "thread_trace": dict(checkpoint_source.get("thread_trace", live_bundle["thread_trace"])),
         "reflective_frames": dict(checkpoint_source.get("reflective_frames", live_bundle["reflective_frames"])),

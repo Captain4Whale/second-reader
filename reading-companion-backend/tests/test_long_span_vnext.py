@@ -15,6 +15,7 @@ from src.attentional_v2.schemas import (
     build_empty_local_buffer,
     build_empty_local_continuity,
     build_empty_reaction_records,
+    build_empty_recent_reading_memory,
     build_empty_reflective_frames,
     build_empty_thread_trace,
     build_empty_active_attention,
@@ -336,6 +337,7 @@ def test_source_native_memory_quality_probe_fires_by_source_cursor(tmp_path: Pat
     assert snapshot["capture_source_span_id"] == "src:c1:p2@6-p2@13"
     assert snapshot["recent_reading_orientation"]["current_source_span_id"] == "src:c1:p2@6-p2@13"
     assert snapshot["scoring_memory_state"]["active_attention"]["active_items"][0]["item_id"] == "active-a"
+    assert snapshot["scoring_memory_state"]["recent_reading_memory"]["entries"] == []
     assert snapshot["scoring_memory_state"]["concept_registry"]["entries"][0]["concept_key"] == "concept-a"
     assert snapshot["scoring_memory_state"]["thread_trace"]["entries"][0]["thread_key"] == "thread-a"
     assert snapshot["scoring_memory_state"]["reflective_frames"]["chapter_understandings"][0]["frame_id"] == "frame-a"
@@ -533,7 +535,7 @@ def test_memory_quality_judge_prompt_defines_score_scale(tmp_path: Path, monkeyp
 
     assert "Higher is better" in captured["system_prompt"]
     assert "complete probe-time memory state" in captured["system_prompt"]
-    assert "active_attention, concept_registry, thread_trace, and reflective_frames" in captured["system_prompt"]
+    assert "active_attention, recent_reading_memory, concept_registry, thread_trace, and reflective_frames" in captured["system_prompt"]
     assert "legacy_digest_snapshot" in captured["system_prompt"]
     assert "1 = poor / absent" in captured["system_prompt"]
     assert "3 = adequate / useful" in captured["system_prompt"]
@@ -681,6 +683,7 @@ def test_memory_quality_judge_prefers_full_probe_time_memory_state() -> None:
         {
             "scoring_memory_state": {
                 "active_attention": {"active_items": [{"item_id": "full-active"}]},
+                "recent_reading_memory": {"entries": [{"entry_id": "recent:c1:u0001:m1"}]},
                 "concept_registry": {"entries": [{"concept_key": "full-concept"}]},
                 "thread_trace": {"entries": [{"thread_key": "full-thread"}]},
                 "reflective_frames": {"chapter_understandings": [{"frame_id": "full-frame"}]},
@@ -691,6 +694,7 @@ def test_memory_quality_judge_prefers_full_probe_time_memory_state() -> None:
 
     assert basis == runner.MEMORY_SNAPSHOT_BASIS_FULL_STATE
     assert memory_snapshot["active_attention"]["active_items"][0]["item_id"] == "full-active"
+    assert memory_snapshot["recent_reading_memory"]["entries"][0]["entry_id"] == "recent:c1:u0001:m1"
     assert "active_attention_digest" not in memory_snapshot
 
 
@@ -914,6 +918,7 @@ def test_run_long_span_vnext_writes_separated_memory_and_reaction_outputs(tmp_pa
                         "capture_source_span_id": "src:c1:p1@7-p1@12",
                         "scoring_memory_state": {
                             "active_attention": {"active_items": [{"item_id": "full-active"}]},
+                            "recent_reading_memory": {"entries": [{"entry_id": "recent:c1:u0001:m1"}]},
                             "concept_registry": {"entries": [{"concept_key": "full-concept"}]},
                             "thread_trace": {"entries": [{"thread_key": "full-thread"}]},
                             "reflective_frames": {"chapter_understandings": [{"frame_id": "full-frame"}]},
