@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-05-23T15:52:00+08:00`
+Last updated: `2026-05-23T19:33:40+08:00`
 
 ## Status Values
 - `active`
@@ -484,12 +484,24 @@ Last updated: `2026-05-23T15:52:00+08:00`
 
 ## Waiting
 
+### `TASK-SECOND-READER-RECENT-READING-MEMORY-DESIGN-20260523` — Design near-term recent reading memory and Active Attention deprecation cleanup path
+- Status: `waiting`
+- Lane: `mechanism_runtime`
+- Priority: `high`
+- Detail: `docs/backend-reading-mechanisms/attentional_v2.md`
+- Next: prepare a focused design / pre-implementation brief for `recent_reading_memory` as the near-term per-unit semantic memory layer. Treat `active_attention / ActiveTension` as deprecated and pending removal; do not expand it further, do not preserve old-state compatibility, and do not clean it up, run eval, or update the evidence catalog until the recent-memory design and removal plan are accepted.
+- Evidence:
+  - `docs/backend-reading-mechanisms/attentional_v2.md`
+  - `docs/backend-reader-evaluation.md`
+  - `reading-companion-backend/docs/evaluation/reporting_standard.md`
+  - `docs/history/decision-log.md`
+
 ### `TASK-SECOND-READER-ACTIVE-ATTENTION-PROMPT-CONTEXT-DIAGNOSTIC-RETRY1-20260522` — Review ActiveTension lifecycle review for full-window diagnostic Retry1
 - Status: `waiting`
 - Lane: `mechanism_eval`
 - Priority: `high`
 - Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Prompt-Context-Grounded-Full-Window-Diagnostic-Retry1-ActiveTension-Lifecycle-Review v0.md`
-- Next: review the completed five-window retry1 diagnostic and the ActiveTension lifecycle review. All five registered jobs completed with exit code `0`, expected summary outputs exist, and run ledger entries are `review_pending`. Treat this as diagnostic review material only; do not update the evidence catalog, promote Long Span vNext, launch broader eval, or claim product quality without explicit approval. The next design discussion is ActiveTension operation-set simplification and `update` semantics.
+- Next: review the completed five-window retry1 diagnostic and the ActiveTension lifecycle review as historical diagnostic material. All five registered jobs completed with exit code `0`, expected summary outputs exist, and run ledger entries are `review_pending`. ActiveTension is now deprecated as primary short-term memory; the next mechanism-design task is `recent_reading_memory`, not further ActiveTension expansion. Do not update the evidence catalog, promote Long Span vNext, launch broader eval, or claim product quality without explicit approval.
 - Jobs:
   - `bgjob_active_attention_prompt_context_window_diagnostic_20260522_retry1_huochu` (`completed`)
   - `bgjob_active_attention_prompt_context_window_diagnostic_20260522_retry1_mangge` (`completed`)

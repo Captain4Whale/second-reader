@@ -129,18 +129,13 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - The live Reading Runner no longer projects into legacy state stores in order to execute helpers.
   - Live runtime loading and resume now reject pre-`Phase C.3` runtime/checkpoint shapes instead of migrating them on the live path.
 - The post-F4 cleanup has also retired the old gate/pressure sidecar from current state.
-  - Current hot state is `active_attention.active_items`.
-  - `Working State` was the historical name for this hot layer; current code, prompts, runtime artifacts, checkpoints, and Memory Quality snapshots use `Active Attention`.
-  - Active Attention is now interpreted as **ActiveTension**: a point that still hangs in the reader's attention after a unit.
-  - The creation trigger is reader-native, not a mechanical memory gate: create an active item when prompt-visible context leaves readerly charge such as curiosity, beauty, unease, surprise, suspense, unresolved meaning, emotional force, a vivid image, a distinctive character, an unusual event, a recurring pattern, or an unsettled claim.
-  - Prompt-visible context may include the current source unit, book / chapter framing shown to `Read`, and existing memory state in the read context packet. Active Attention must not import outside knowledge about the book, author, or later chapters unless that information is present in the prompt.
-  - An ActiveTension does not have to be a question, does not have to wait for an answer, and does not require `Read` to predict whether it will matter later. It only needs to still feel alive in the reader's attention right now.
-  - Importance alone is not enough. Stable concepts, frameworks, chapter summaries, and visible reactions belong in `reading_impression`, `concept_registry`, `thread_trace`, or `reaction_records`, not in `active_attention`.
-  - A current active item should use `tension_from`, `tension_focus`, `working_interpretation`, `source_refs`, `development_source_refs`, and `status`; terminal items should also carry `answered_reason` or `closed_reason` plus opened / terminal source coordinates when available.
-  - `question_from`, `driving_question`, `working_answer`, and `answer_source_refs` are legacy entrance fields only. Load / normalization boundaries migrate them to the current ActiveTension fields, and new persisted state should not write them back out.
-  - `answer_boundary` and `statement` are old artifact inputs only; new prompts, projections, and reports should not treat them as current structure.
-  - Each active item may still carry lightweight `attention_tags[]`, but tags are not the ontology. The governing shape is the readerly charge and its current interpretation.
-  - `local_hypotheses` / `live_hypotheses` are historical names only. Hypothesis-like material is current only if it is framed as ActiveTension in `active_attention.active_items[]`; if it becomes stable and reusable, it should move into `concept_registry` or `thread_trace` instead of remaining as hot-state tension.
+  - Current code may still write `active_attention.active_items`, but Active Attention / ActiveTension is now deprecated as the primary hot-state design.
+  - `Working State` was the historical name for this hot layer; later runs used `Active Attention`, then ActiveTension semantics. Those names now describe deprecated artifacts rather than the forward architecture.
+  - The next design target is `recent_reading_memory`: a near-term memory layer that records compact semantic memory from each read unit so later reads do not behave as if earlier units vanished.
+  - Long-lived readerly tensions, unresolved arcs, watchpoints, and patterns should settle into `thread_trace`; stable concepts and frameworks belong in `concept_registry`; visible reactions belong in `reaction_records`.
+  - Do not expand ActiveTension to cover these needs. Keep its existing fields (`tension_from`, `tension_focus`, `working_interpretation`, `source_refs`, `development_source_refs`, terminal reasons / coordinates, `status`, and legacy inputs) only as deprecated data until cleanup.
+  - `question_from`, `driving_question`, `working_answer`, `answer_source_refs`, `answer_boundary`, and `statement` are old artifact inputs only.
+  - `local_hypotheses` / `live_hypotheses` are historical names only. Hypothesis-like material should become future recent memory, `thread_trace`, or `concept_registry` depending on its durability, not another ActiveTension expansion.
   - `gate_state`, `pressure_snapshot`, and the old working-pressure file are historical trigger/watch/zoom design artifacts, not current runtime or prompt inputs.
   - `pressure_signals` were the intermediate one-step `Read -> Navigate.route` signals; they are now historical after the forward-settlement cutover.
 - The forward-settlement cutover is now landed.
@@ -482,8 +477,9 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - `always carry`
     - `current_unit`
     - a compact `local_continuity` summary
-    - all open ActiveTension items from `active_attention`, not a top-N truncation
-      - prompt-visible fields are only `item_id`, `tension_from`, `tension_focus`, and `working_interpretation`
+    - deprecated open items from `active_attention` while the store remains in the runtime before removal
+      - `active_attention` is no longer the target near-term memory design; do not expand it as the primary short-term memory layer
+      - prompt-visible fields, where still carried for compatibility, are only `item_id`, `tension_from`, `tension_focus`, and `working_interpretation`
       - source refs, development source refs, linked keys, statuses, and projection markers remain in runtime/audit/report artifacts rather than the Read prompt
       - if the open-tension set grows too large, the projection should warn rather than silently omit items
     - compact `concept_digest`
@@ -520,23 +516,16 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
 - The mechanism now distinguishes four state territories plus inline source evidence:
   - `local_continuity`
     - reading-flow position, paragraph-offset `mainline_cursor`, recent unit boundaries, active detour trace, and return semantics
-  - `active_attention`
-    - the current ActiveTension items that still hang in reader attention
-    - native truth is `active_attention.active_items[]`
-    - item labels are lightweight `attention_tags[]`, not fixed routing buckets
-    - core current fields are:
-      - `tension_from`: what prompt-visible source, framing, or memory left this charge
-      - `tension_focus`: what remains alive in attention; this may be a question, image, beauty, character trait, unusual event, emotional pressure, pattern, or watchpoint
-      - `working_interpretation`: the current tentative interpretation, if one has formed
-      - `source_refs`: paragraph-offset evidence for `tension_from`
-      - `development_source_refs`: paragraph-offset evidence for later development of `working_interpretation`
-      - `answered_reason`: why `Read` judged the inquiry sufficiently answered when resolving it
-      - `closed_reason`: why `Read` judged the inquiry no longer useful to carry when closing it without claiming an answer
-      - `opened_at_source_span(_id)` / `opened_at_unit_span(_id)`: where the inquiry was opened
-      - `answered_at_source_span(_id)` / `answered_at_unit_span(_id)`: where the inquiry was answered, for resolved items
-      - `closed_at_source_span(_id)` / `closed_at_unit_span(_id)`: where the inquiry was closed, for closed items
-      - `status`: `open`, `answered`, `closed`, or legacy equivalents
-    - empty, `active`, `cooling`, and `open` are treated as prompt-eligible open statuses; `answered`, `resolved`, and `closed` are lineage/history and are not carried into the Read prompt
+  - `active_attention` (deprecated store, pending removal)
+    - `active_attention` / ActiveTension was an attempted hot attention layer, but it is no longer the target architecture for near-term reading memory
+    - keep the runtime store only until `recent_reading_memory` is designed, implemented, and a cleanup removal is approved
+    - new post-cleanup product runs should write the new state shape only; do not preserve `active_attention` for old-state compatibility unless a future task explicitly approves old-run migration / resume support
+    - do not add new capabilities, metrics, or report contracts that make `active_attention` the primary short-term memory layer again
+    - native runtime truth remains `active_attention.active_items[]` while the current code path still writes it
+    - existing item labels and fields (`attention_tags[]`, `tension_from`, `tension_focus`, `working_interpretation`, `source_refs`, `development_source_refs`, terminal reasons / coordinates, and `status`) are deprecated shape, not a forward design target
+    - empty, `active`, `cooling`, and `open` are treated as prompt-eligible open statuses while the deprecated projection still exists; `answered`, `resolved`, and `closed` are lineage/history and are not carried into the Read prompt
+    - future near-term continuity should be owned by a dedicated `recent_reading_memory` layer that records the compact semantic memory of each read unit
+    - long-lived tensions, arcs, watchpoints, and unresolved thematic/narrative pulls should be inherited by `thread_trace`, not kept alive in a separate ActiveTension layer
   - `long-distance memory`
     - `concept_registry`
     - `thread_trace`
@@ -550,10 +539,10 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - A `SourceRef` is an inline citation shape, not a registry entry.
   - Its id is deterministically derived from the paragraph-offset span, for example `src:c1:p3@12-p3@48`.
   - New runtime truth does not write or require an `anchor_bank.json` artifact.
-  - Chapter-end carry-forward preserves existing `active_attention` source refs by deterministic `item_id` merge after cooling, so a `chapter_consolidation` omission cannot erase evidence coordinates for a carried item.
-    - Chapter-end carry-forward is ActiveTension-native: it preserves and merges `tension_from`, `tension_focus`, `working_interpretation`, `source_refs`, `development_source_refs`, terminal reasons / coordinates, legacy linked keys, and status.
+  - Chapter-end carry-forward preserves existing `active_attention` source refs by deterministic `item_id` merge after cooling, so a `chapter_consolidation` omission cannot erase evidence coordinates while the deprecated store still exists.
+    - This preservation is temporary deprecated-store behavior only; it should not be extended into a new ActiveTension design line.
   - Carry-forward does not fuzzy-match by statement and does not invent source refs for newly introduced items; new statement-only carry-forward items are rejected instead of becoming current Active Attention.
-  - ActiveTension merges preserve `tension_from`, update `working_interpretation` only when the payload explicitly provides one, preserve terminal reasons / coordinates, and dedupe both `source_refs` and `development_source_refs`.
+  - Deprecated-store ActiveTension merges preserve `tension_from`, update `working_interpretation` only when the payload explicitly provides one, preserve terminal reasons / coordinates, and dedupe both `source_refs` and `development_source_refs`.
   - Read-output `source_quote` / `development_source_quote` are resolved into paragraph-offset `SourceRef` objects before settlement; model-emitted `source_refs` / `development_source_refs` coordinates are not trusted.
     - The LLM is responsible for citing exact source text snippets, not for producing trusted coordinates.
     - If an active item is grounded in title / chapter framing / prior memory rather than a current-source phrase, `Read` should explain that basis in `tension_from` and omit `source_quote`; the runtime records unit lifecycle coordinates without manufacturing precise `source_refs`.
@@ -565,14 +554,15 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - `Read`
     - owns current-unit understanding
     - owns surfaced reactions
-    - owns updates into `active_attention / concept_registry / thread_trace`
-    - owns active-tension lifecycle intent:
+    - owns updates into `concept_registry / thread_trace` and, temporarily until removal, `active_attention`
+    - owns deprecated active-tension lifecycle intent while `active_attention` remains in the runtime:
       - `create` / `append` creates a new open ActiveTension when prompt-visible context leaves readerly charge that has not yet been fully digested
       - `update` / `reactivate` advances, corrects, reverses, weakens, or rekindles the `working_interpretation` or what the reader is currently tracking
       - `resolve` marks an inquiry answered enough that it no longer needs to be carried as open; the payload must explain with `answered_reason` why cited evidence directly satisfies the forward pull, not merely a precondition, setup, clue, partial explanation, or reframing
       - `close` marks an inquiry no longer driving the reading, without implying it was fully answered; the payload must explain this with `closed_reason`
       - `drop` removes a mistaken or obsolete inquiry
-      - durable answers should be written to `concept_registry` or `thread_trace`, with downstream `derived_from_active_attention_ids` when the content came from a resolved active inquiry; do not use an active-attention `promote` path
+      - durable answers should be written to `concept_registry` or `thread_trace`; do not use an active-attention `promote` path
+      - future work should replace this compatibility path with `recent_reading_memory` for per-unit near-term memory and `thread_trace` for durable tensions / arcs
     - may request later detour by emitting `detour_need`
   - `slow cycle`
     - owns chapter-end cooling, promotion, reconsolidation, and `reflective_frames`

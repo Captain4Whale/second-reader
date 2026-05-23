@@ -2798,7 +2798,7 @@ This new direction is design frozen but not yet implemented as a formal benchmar
 
 ## Entry 92
 **ID**: DEC-095
-**Status**: active
+**Status**: superseded by DEC-097
 
 **Decision / Clarification**: Treat Active Attention as prompt-context-grounded forward-pull.
 
@@ -2822,7 +2822,7 @@ This new direction is design frozen but not yet implemented as a formal benchmar
 
 ## Entry 93
 **ID**: DEC-096
-**Status**: active
+**Status**: superseded by DEC-097
 
 **Decision / Clarification**: Rename the Active Attention contract to ActiveTension semantics while keeping the runtime store key `active_attention`.
 
@@ -2843,3 +2843,24 @@ This new direction is design frozen but not yet implemented as a formal benchmar
 - `reading-companion-backend/src/attentional_v2/state_migration.py`
 - `reading-companion-backend/src/attentional_v2/state_projection.py`
 - `reading-companion-backend/tests/test_attentional_v2_nodes.py`
+
+## Entry 94
+**ID**: DEC-097
+**Status**: active
+
+**Decision / Clarification**: Deprecate Active Attention / ActiveTension as a primary memory layer.
+
+**Period**: May 23, 2026, after discussing the larger near-term memory architecture and concluding that ActiveTension overlaps with two cleaner responsibilities: per-unit recent reading memory and durable thread memory.
+
+**Decision**: `active_attention` remains in the runtime and artifacts for now, but it is deprecated as the target short-term memory design and is pending removal after its replacement lands. Do not keep expanding Active Attention / ActiveTension with new fields, metrics, or report contracts. First design and implement a `recent_reading_memory` layer that records the compact semantic memory of each read unit. Let `thread_trace` inherit long-lived tensions, narrative arcs, watchpoints, and unresolved pulls that need to persist beyond near-term continuity.
+
+**Rationale**: The product goal is a reader that remembers what it has just read without rereading the whole book every turn. ActiveTension captured some lingering attention, but it does not cover ordinary key information from each unit and can over-direct attention if treated as the main short-term context. A simpler hierarchy is: recent reading memory for near-term continuity, concept / thread memory for structured long-distance understanding, and chapter / reflective summaries for macro structure.
+
+**Removal boundary**: Do not delete `active_attention` in this docs-only clarification. Old artifacts and current code paths may still contain it until `recent_reading_memory` is designed, implemented, validated, and a removal patch is explicitly approved. New post-cleanup product runs should write the new state only; do not keep an old-state compatibility tail unless a future task explicitly approves old-run migration / resume support. Existing ActiveTension reports remain useful diagnostic evidence, but future design work should not treat them as the canonical memory target.
+
+**Primary evidence**:
+- `docs/backend-reading-mechanisms/attentional_v2.md`
+- `docs/backend-reader-evaluation.md`
+- `reading-companion-backend/docs/evaluation/reporting_standard.md`
+- `docs/current-state.md`
+- `docs/tasks/registry.md`

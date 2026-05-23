@@ -1,7 +1,36 @@
 {
   "version": 1,
-  "updated_at": "2026-05-23T07:52:00Z",
+  "updated_at": "2026-05-23T11:33:40Z",
   "tasks": [
+    {
+      "id": "TASK-SECOND-READER-RECENT-READING-MEMORY-DESIGN-20260523",
+      "title": "Design near-term recent reading memory and Active Attention deprecation cleanup path",
+      "status": "waiting",
+      "lane": "mechanism_runtime",
+      "priority": "high",
+      "detail_ref": "docs/backend-reading-mechanisms/attentional_v2.md",
+      "truth_refs": [
+        "docs/current-state.md",
+        "docs/tasks/registry.md",
+        "docs/backend-reading-mechanisms/attentional_v2.md",
+        "docs/backend-reader-evaluation.md"
+      ],
+      "decision_refs": [
+        "DEC-097"
+      ],
+      "job_refs": [],
+      "acceptance_ref": "",
+      "next_action": "Prepare a focused design / pre-implementation brief for recent_reading_memory as the near-term per-unit semantic memory layer. Treat active_attention / ActiveTension as deprecated and pending removal; do not expand it further, do not preserve old-state compatibility, and do not clean it up, run eval, or update the evidence catalog until the recent-memory design and removal plan are accepted.",
+      "blocked_by": [],
+      "evidence_refs": [
+        "docs/backend-reading-mechanisms/attentional_v2.md",
+        "docs/backend-reader-evaluation.md",
+        "reading-companion-backend/docs/evaluation/reporting_standard.md",
+        "docs/history/decision-log.md"
+      ],
+      "last_updated": "2026-05-23T11:33:40Z",
+      "last_updated_by": "codex"
+    },
     {
       "id": "TASK-SECOND-READER-ACTIVE-ATTENTION-PROMPT-CONTEXT-DIAGNOSTIC-RETRY1-20260522",
       "title": "Review ActiveTension lifecycle review for full-window diagnostic Retry1",
@@ -16,7 +45,8 @@
       ],
       "decision_refs": [
         "DEC-095",
-        "DEC-096"
+        "DEC-096",
+        "DEC-097"
       ],
       "job_refs": [
         "bgjob_active_attention_prompt_context_window_diagnostic_20260522_retry1_huochu",
@@ -26,7 +56,7 @@
         "bgjob_active_attention_prompt_context_window_diagnostic_20260522_retry1_xidaduo"
       ],
       "acceptance_ref": "",
-      "next_action": "Review the completed five-window retry1 diagnostic and the ActiveTension lifecycle review. All five registered jobs completed with exit code 0, expected summary outputs exist, and run ledger entries are review_pending. Treat this as diagnostic review material only; do not update the evidence catalog, promote Long Span vNext, launch broader eval, or claim product quality without explicit approval. The next design discussion is ActiveTension operation-set simplification and update semantics.",
+      "next_action": "Review the completed five-window retry1 diagnostic and the ActiveTension lifecycle review as historical diagnostic material. All five registered jobs completed with exit code 0, expected summary outputs exist, and run ledger entries are review_pending. ActiveTension is now deprecated as primary short-term memory; the next mechanism-design task is recent_reading_memory, not further ActiveTension expansion. Do not update the evidence catalog, promote Long Span vNext, launch broader eval, or claim product quality without explicit approval.",
       "blocked_by": [],
       "evidence_refs": [
         "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Prompt-Context-Grounded-Full-Window-Diagnostic-Retry1-ActiveTension-Lifecycle-Review v0.md",

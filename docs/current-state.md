@@ -7,28 +7,25 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-05-23T15:52:00+08:00`
+Last verified: `2026-05-23T19:33:40+08:00`
 
 ## Current Objective
-- ActiveTension definition / field cleanup / Read prompt repair is implemented and pending human review.
-  - implementation facts:
-    - the runtime store key remains `active_attention`, but the mechanism semantics are now **ActiveTension**
-    - new `active_attention` items use `tension_from`, `tension_focus`, `working_interpretation`, and `development_source_refs`
-    - old question-only fields (`question_from`, `driving_question`, `working_answer`, `answer_source_refs`) are migration inputs at load / normalization boundaries only and are not the current prompt / persisted-state contract
-    - `statement` and `answer_boundary` are old artifact inputs, not current ActiveTension structure
-    - Read prompt is bumped to `attentional_v2.read.v23`
-    - prompt wording now uses reader-native `readerly charge`: question, suspense, striking image, beauty, unusual character/event, emotional pressure, recurring pattern, or unsettled claim
-    - ActiveTension no longer requires a literal question, a future answer, or a prediction that the point will matter later
-    - stable docs and decision log record this as DEC-096
-  - validation:
-    - targeted runtime / prompt / projection / slow-cycle / Long Span tests passed: `93 passed, 6 warnings`
-    - run ledger check passed
+- Active Attention / ActiveTension is now deprecated as a primary memory layer in the stable docs.
+  - current decision:
+    - keep the runtime store key `active_attention` only until a replacement and removal plan is implemented
+    - do not expand ActiveTension with new fields, metrics, report contracts, or evaluation authority
+    - let future `recent_reading_memory` own near-term per-unit semantic memory
+    - let `thread_trace` inherit long-lived tensions, arcs, watchpoints, and unresolved pulls
+    - clean up `active_attention` after `recent_reading_memory` is designed, implemented, and validated
+    - do not preserve old Active Attention state compatibility in new product runs unless a future task explicitly approves old-run migration / resume support
+  - decision refs:
+    - `DEC-097` supersedes the earlier Active Attention / ActiveTension-forward design direction from `DEC-095` and `DEC-096`
   - boundaries:
-    - no eval was run for this repair
-    - no eval run directories were created by this repair
-    - no evidence catalog update, Long Span formal promotion, or product-quality claim is authorized
+    - this status update is docs-only
+    - no runtime code, prompt, eval runner, or evidence catalog change is authorized by this note
+    - no eval run, new run directory, Long Span formal promotion, or product-quality claim is authorized
   - next step:
-    - discuss the second issue separately: ActiveTension operation-set simplification and whether `update` should overwrite/rewrite instead of append-like accumulation
+    - design `recent_reading_memory` as the near-term reading memory layer before making more Active Attention changes
 - Active Attention prompt-context grounding retry1 full-window diagnostic completed and is now review-pending.
   - completed run ids:
     - `attentional_v2_active_attention_prompt_context_window_diagnostic_20260522_retry1_huochu`
