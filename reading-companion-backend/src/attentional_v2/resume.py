@@ -43,6 +43,7 @@ from .schemas import (
     build_default_reader_policy,
 )
 from .state_projection import build_carry_forward_context
+from .state_migration import normalize_active_tension_state
 from .storage import (
     ATTENTIONAL_V2_MECHANISM_KEY,
     concept_registry_file,
@@ -385,6 +386,7 @@ def _load_runtime_bundle(output_dir: Path) -> dict[str, dict[str, object]]:
         )
     for name in ("active_attention", "concept_registry", "thread_trace", "reflective_frames"):
         bundle[name] = loaded_new.get(name) or builders[name]()
+    bundle["active_attention"] = normalize_active_tension_state(bundle["active_attention"])
     return bundle
 
 
@@ -394,6 +396,8 @@ def _save_runtime_bundle(output_dir: Path, bundle: dict[str, dict[str, object]])
     for name, path in _state_paths(output_dir).items():
         payload = bundle.get(name)
         if payload is not None:
+            if name == "active_attention":
+                payload = normalize_active_tension_state(payload)
             save_json(path, payload)
 
 
@@ -424,6 +428,10 @@ def load_full_checkpoint(output_dir: Path, checkpoint_id: str | None = None) -> 
     if isinstance(checkpoint, dict) and ("route_history" in checkpoint or "move_history" in checkpoint):
         raise RuntimeError(
             "Pre-forward-settlement attentional_v2 route checkpoints are no longer supported; rerun to create a current checkpoint."
+        )
+    if isinstance(checkpoint, dict):
+        checkpoint["active_attention"] = normalize_active_tension_state(
+            checkpoint.get("active_attention") if isinstance(checkpoint.get("active_attention"), dict) else None
         )
     return checkpoint  # type: ignore[return-value]
 

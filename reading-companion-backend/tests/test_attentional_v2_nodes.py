@@ -475,33 +475,34 @@ def test_read_unit_filters_unanchored_surface_and_uses_naturalized_contract(tmp_
     assert "not as a field-filling task" in captured["system_prompt"]
     assert "Let `reading_impression` be the brief natural impression" in captured["system_prompt"]
     assert "After the impression and any surfaced reactions, maintain memory deliberately." in captured["system_prompt"]
-    assert "reader's carry-forward set of live inquiries" in captured["system_prompt"]
-    assert "pause as a curious reader" in captured["system_prompt"]
-    assert "prompt-visible context left you wanting to understand something later" in captured["system_prompt"]
+    assert "stores ActiveTension" in captured["system_prompt"]
+    assert "pause as a reader" in captured["system_prompt"]
+    assert "Notice what still holds your attention after the unit is over." in captured["system_prompt"]
+    assert "Do not require yourself to know whether it will matter later." in captured["system_prompt"]
     assert "current source unit, book or chapter framing shown in this prompt" in captured["system_prompt"]
     assert "existing memory state shown in the read context packet" in captured["system_prompt"]
     assert "Do not import outside knowledge about the book, author, or later chapters" in captured["system_prompt"]
-    assert "still alive after this unit" in captured["system_prompt"]
-    assert "would shape how you read forward" in captured["system_prompt"]
-    assert "question_from" in captured["system_prompt"]
-    assert "driving_question" in captured["system_prompt"]
+    assert "readerly charge" in captured["system_prompt"]
+    assert "tension_from" in captured["system_prompt"]
+    assert "tension_focus" in captured["system_prompt"]
     assert "answer_boundary" not in captured["system_prompt"]
-    assert "working_answer" in captured["system_prompt"]
-    assert "One active item = one coherent prompt-context-grounded forward-pull." in captured["system_prompt"]
-    assert "does not have to be phrased with a question mark" in captured["system_prompt"]
-    assert "different later evidence to satisfy" in captured["system_prompt"]
+    assert "question_from" not in captured["system_prompt"]
+    assert "working_interpretation" in captured["system_prompt"]
+    assert "does not have to be phrased as a question" in captured["system_prompt"]
+    assert "does not require you to predict whether it will shape later reading" in captured["system_prompt"]
     assert "answered_reason" in captured["system_prompt"]
     assert "closed_reason" in captured["system_prompt"]
     assert "short exact contiguous span copied from the current unit" in captured["system_prompt"]
     assert "If the basis is title/framing/prior memory" in captured["system_prompt"]
     assert "never invent source coordinates yourself" in captured["system_prompt"]
     assert "precondition, setup, clue, partial explanation, or reframing" in captured["system_prompt"]
-    assert "when or whether will it explode?" in captured["system_prompt"]
-    assert "how will the author answer this?" in captured["system_prompt"]
-    assert "title/framing tension" in captured["system_prompt"]
-    assert "keep it honest about that basis" in captured["system_prompt"]
+    assert "a bomb is placed on the table" in captured["system_prompt"]
+    assert "the author poses a problem or claim" in captured["system_prompt"]
+    assert "a landscape or image is unusually vivid" in captured["system_prompt"]
+    assert "a person or event feels distinctive" in captured["system_prompt"]
+    assert "keep the basis honest in `tension_from`" in captured["system_prompt"]
     assert "Importance alone belongs" in captured["system_prompt"]
-    assert "Do not create an active inquiry when the current unit raises and answers the inquiry locally." in captured[
+    assert "Do not create an ActiveTension when the current unit raises and fully digests it locally." in captured[
         "system_prompt"
     ]
     assert "\"op\": \"resolve\"" in captured["prompt"]
@@ -534,7 +535,7 @@ def test_read_unit_filters_unanchored_surface_and_uses_naturalized_contract(tmp_
     assert "\"target_store\": \"concept_registry\"" in captured["prompt"]
     assert "\"target_store\": \"thread_trace\"" in captured["prompt"]
     assert "Do not target `concept_digest`, `thread_digest`, `active_focus_digest`" in captured["system_prompt"]
-    assert manifest["prompt_version"] == "attentional_v2.read.v22"
+    assert manifest["prompt_version"] == "attentional_v2.read.v23"
 
 
 def test_read_unit_contract_preserves_source_given_stage_model_as_memory_uptake(tmp_path: Path, monkeypatch):
@@ -692,8 +693,8 @@ def test_read_unit_admits_resolve_memory_operation(tmp_path: Path, monkeypatch):
     ]
 
 
-def test_read_unit_resolves_active_question_answer_source_refs(tmp_path: Path, monkeypatch):
-    """Read-output source normalization should keep question and answer evidence separate."""
+def test_read_unit_resolves_active_tension_development_source_refs(tmp_path: Path, monkeypatch):
+    """Read-output source normalization should keep opening and development evidence separate."""
 
     def fake_invoke_json(system_prompt: str, prompt: str, default: object) -> object:
         return {
@@ -706,9 +707,9 @@ def test_read_unit_resolves_active_question_answer_source_refs(tmp_path: Path, m
                     "target_key": "bomb-question",
                     "reason": "The current unit gives enough answer to stop carrying the question.",
                     "payload": {
-                        "working_answer": "Someone has noticed the bomb but has not disarmed it.",
+                        "working_interpretation": "Someone has noticed the bomb but has not disarmed it.",
                         "answered_reason": "The current unit explicitly answers who noticed the bomb.",
-                        "answer_source_quote": "Someone noticed the bomb.",
+                        "development_source_quote": "Someone noticed the bomb.",
                     },
                 }
             ],
@@ -739,8 +740,8 @@ def test_read_unit_resolves_active_question_answer_source_refs(tmp_path: Path, m
     )
 
     payload = normalized_ops[0]["payload"]
-    assert payload["answer_source_refs"][0]["quote"] == "Someone noticed the bomb."
-    assert payload["answer_source_refs"][0]["role"] == "answer_support"
+    assert payload["development_source_refs"][0]["quote"] == "Someone noticed the bomb."
+    assert payload["development_source_refs"][0]["role"] == "development_support"
     assert payload["answered_reason"] == "The current unit explicitly answers who noticed the bomb."
     assert payload["answered_at_source_span_id"].startswith("src:c1:p1@")
     assert payload["answered_at_source_span"]["start_cursor"]["paragraph_index"] == 1
@@ -778,8 +779,8 @@ def test_memory_uptake_source_ref_normalization_repairs_malformed_ref_lists():
                             },
                         }
                     ],
-                    "answer_source_quote": "The answer appears here.",
-                    "answer_source_refs": [
+                    "development_source_quote": "The answer appears here.",
+                    "development_source_refs": [
                         {
                             "source_span_id": "src:c99:p99@9-p99@18",
                             "source_span": {
@@ -814,8 +815,8 @@ def test_memory_uptake_source_ref_normalization_repairs_malformed_ref_lists():
     payload = normalized_ops[0]["payload"]
     assert payload["source_refs"][0]["quote"] == "The premise appears here."
     assert payload["source_refs"][0]["source_span_id"].startswith("src:c1:p1@")
-    assert payload["answer_source_refs"][0]["quote"] == "The answer appears here."
-    assert payload["answer_source_refs"][0]["source_span_id"].startswith("src:c1:p1@")
+    assert payload["development_source_refs"][0]["quote"] == "The answer appears here."
+    assert payload["development_source_refs"][0]["source_span_id"].startswith("src:c1:p1@")
 
 
 def test_active_attention_create_without_quote_keeps_unit_coordinates_without_fake_source_refs():
@@ -828,9 +829,9 @@ def test_active_attention_create_without_quote_keeps_unit_coordinates_without_fa
                 "target_store": "active_attention",
                 "target_key": "framing-question",
                 "payload": {
-                    "question_from": "The visible title and current unit together raise this forward-pull.",
-                    "driving_question": "How will the framing connect to this local adaptation?",
-                    "working_answer": "",
+                    "tension_from": "The visible title and current unit together raise this charge.",
+                    "tension_focus": "How the framing connects to this local adaptation.",
+                    "working_interpretation": "",
                     "source_refs": [
                         {
                             "source_span_id": "src:c99:p99@0-p99@9",
@@ -879,9 +880,9 @@ def test_active_attention_lifecycle_coordinates_are_added_from_current_unit():
                 "target_store": "active_attention",
                 "target_key": "live-question",
                 "payload": {
-                    "question_from": "The premise appears here.",
-                    "driving_question": "How will this premise develop?",
-                    "working_answer": "",
+                    "tension_from": "The premise appears here.",
+                    "tension_focus": "How this premise develops.",
+                    "working_interpretation": "",
                     "source_quote": "The premise appears here.",
                 },
             },

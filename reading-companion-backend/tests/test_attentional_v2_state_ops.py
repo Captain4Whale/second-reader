@@ -63,9 +63,9 @@ def test_apply_active_attention_operations_handles_append_update_close_link_and_
                 "reason": "motif became active",
                 "payload": {
                     "attention_tags": ["motif"],
-                    "question_from": "The chapter introduces value as a recurring problem.",
-                    "driving_question": "How will value narrow as the chapter develops?",
-                    "working_answer": "",
+                    "tension_from": "The chapter introduces value as a recurring problem.",
+                    "tension_focus": "How will value narrow as the chapter develops?",
+                    "working_interpretation": "",
                     "source_refs": [_source_ref()],
                     "opened_at_unit_span_id": "unit:c1:p1@0-p1@36",
                 },
@@ -81,8 +81,8 @@ def test_apply_active_attention_operations_handles_append_update_close_link_and_
                 "target_store": "active_attention",
                 "item_id": "m-1",
                 "payload": {
-                    "working_answer": "Value is becoming a social exchange problem.",
-                    "answer_source_refs": [_source_ref("Value is mediated by other people.")],
+                    "working_interpretation": "Value is becoming a social exchange problem.",
+                    "development_source_refs": [_source_ref("Value is mediated by other people.")],
                 },
             },
             {
@@ -109,14 +109,14 @@ def test_apply_active_attention_operations_handles_append_update_close_link_and_
 
     assert state["active_items"][0]["item_id"] == "m-1"
     assert state["active_items"][0]["attention_tags"] == ["motif"]
-    assert state["active_items"][0]["question_from"] == "The chapter introduces value as a recurring problem."
-    assert state["active_items"][0]["driving_question"] == "How will value narrow as the chapter develops?"
-    assert state["active_items"][0]["working_answer"] == "Value is becoming a social exchange problem."
+    assert state["active_items"][0]["tension_from"] == "The chapter introduces value as a recurring problem."
+    assert state["active_items"][0]["tension_focus"] == "How will value narrow as the chapter develops?"
+    assert state["active_items"][0]["working_interpretation"] == "Value is becoming a social exchange problem."
     assert state["active_items"][0]["status"] == "closed"
     assert state["active_items"][0]["closed_reason"] == "The later text stops using this as a live question."
     assert state["active_items"][0]["opened_at_unit_span_id"] == "unit:c1:p1@0-p1@36"
     assert state["active_items"][0]["source_refs"][0]["source_span_id"] == "src:c1:p1@0-p1@36"
-    assert state["active_items"][0]["answer_source_refs"][0]["quote"] == "Value is mediated by other people."
+    assert state["active_items"][0]["development_source_refs"][0]["quote"] == "Value is mediated by other people."
     assert "bucket" not in state["active_items"][0]
     assert "kind" not in state["active_items"][0]
     assert dropped["active_items"] == []
@@ -134,10 +134,9 @@ def test_active_attention_text_fields_preserve_by_default_and_allow_explicit_cle
                 "target_store": "active_attention",
                 "item_id": "q-1",
                 "payload": {
-                    "question_from": "A bomb is placed under the table.",
-                    "driving_question": "When will the bomb explode?",
-                    "answer_boundary": "A later passage reveals the timer, detonation, or disarming outcome.",
-                    "working_answer": "No timing clue yet.",
+                    "tension_from": "A bomb is placed under the table.",
+                    "tension_focus": "When will the bomb explode?",
+                    "working_interpretation": "No timing clue yet.",
                 },
             }
         ],
@@ -149,16 +148,46 @@ def test_active_attention_text_fields_preserve_by_default_and_allow_explicit_cle
                 "operation_type": "update",
                 "target_store": "active_attention",
                 "item_id": "q-1",
-                "payload": {"working_answer": ""},
+                "payload": {"working_interpretation": ""},
             }
         ],
     )
 
     item = _find(state["active_items"], "item_id", "q-1")
-    assert item["question_from"] == "A bomb is placed under the table."
-    assert item["driving_question"] == "When will the bomb explode?"
-    assert item["answer_boundary"] == "A later passage reveals the timer, detonation, or disarming outcome."
-    assert item["working_answer"] == ""
+    assert item["tension_from"] == "A bomb is placed under the table."
+    assert item["tension_focus"] == "When will the bomb explode?"
+    assert item["working_interpretation"] == ""
+    assert "answer_boundary" not in item
+
+
+def test_legacy_question_fields_are_migrated_out_of_active_tension_state():
+    """Legacy question-only fields should be cleaned at the active-tension state boundary."""
+
+    state = apply_active_attention_operations(
+        build_empty_active_attention(),
+        [
+            {
+                "operation_type": "create",
+                "target_store": "active_attention",
+                "item_id": "legacy-q",
+                "payload": {
+                    "question_from": "The old prompt raised a question.",
+                    "driving_question": "What will happen next?",
+                    "working_answer": "No clue yet.",
+                    "answer_boundary": "Old boundary text.",
+                    "answer_source_refs": [_source_ref("Old answer evidence.")],
+                },
+            }
+        ],
+    )
+
+    item = _find(state["active_items"], "item_id", "legacy-q")
+    assert item["tension_from"] == "The old prompt raised a question."
+    assert item["tension_focus"] == "What will happen next?"
+    assert item["working_interpretation"] == "No clue yet."
+    assert item["development_source_refs"][0]["quote"] == "Old answer evidence."
+    for legacy_key in ("question_from", "driving_question", "working_answer", "answer_boundary", "answer_source_refs"):
+        assert legacy_key not in item
 
 
 def test_active_attention_lifecycle_states_preserve_items_until_explicit_drop():
@@ -198,7 +227,8 @@ def test_active_attention_lifecycle_states_preserve_items_until_explicit_drop():
     )
     cooled_item = _find(cooled["active_items"], "item_id", "cooling-question")
     assert cooled_item["status"] == "cooling"
-    assert cooled_item["statement"] == "This question is cooling but still part of lineage."
+    assert cooled_item["tension_focus"] == "This question is cooling but still part of lineage."
+    assert "statement" not in cooled_item
     assert cooled_item["source_refs"][0]["source_span_id"] == "src:c1:p1@0-p1@36"
     assert cooled_item["linked_concept_keys"] == ["concept:question"]
 
@@ -251,7 +281,7 @@ def test_state_ops_already_apply_resolve_operations():
         "active_items": [
             {
                 "item_id": "hot-question",
-                "statement": "A live question.",
+                "tension_focus": "A live tension.",
                 "status": "active",
             }
         ]

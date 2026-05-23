@@ -27,7 +27,7 @@ from .schemas import (
     build_empty_active_attention,
 )
 from .source_spans import dedupe_source_refs
-from .state_migration import migrate_reflective_summaries_to_frames
+from .state_migration import migrate_reflective_summaries_to_frames, normalize_active_tension_state
 
 
 STATE_PACKET_VERSION = "attentional_v2.state_packet.v1"
@@ -45,7 +45,7 @@ _LINEAGE_ONLY_STATUSES = {
     "retired",
 }
 _OPEN_ACTIVE_ATTENTION_STATUSES = {"", "active", "cooling", "open"}
-_ACTIVE_QUESTION_SOFT_LIMIT = 6
+_ACTIVE_TENSION_SOFT_LIMIT = 6
 
 
 def clean_text(value: object) -> str:
@@ -187,20 +187,20 @@ def _is_open_active_attention_item(item: dict[str, object]) -> bool:
 
 
 def _has_live_question_fields(item: dict[str, object]) -> bool:
-    """Return whether an item uses the live-inquiry schema rather than legacy sidecars only."""
+    """Return whether an item uses the ActiveTension schema rather than sidecars only."""
 
     return any(
         clean_text(item.get(key))
         for key in (
-            "question_from",
-            "driving_question",
-            "working_answer",
+            "tension_from",
+            "tension_focus",
+            "working_interpretation",
         )
     )
 
 
-def _active_question_prompt_items(active_attention_digest: ActiveAttentionDigest) -> list[dict[str, object]]:
-    """Project all open live inquiries into the narrow Read-node prompt shape."""
+def _active_tension_prompt_items(active_attention_digest: ActiveAttentionDigest) -> list[dict[str, object]]:
+    """Project all open ActiveTension items into the narrow Read-node prompt shape."""
 
     prompt_items: list[dict[str, object]] = []
     for item in active_attention_digest.get("active_items", []):
@@ -212,9 +212,9 @@ def _active_question_prompt_items(active_attention_digest: ActiveAttentionDigest
         prompt_items.append(
             {
                 "item_id": item_id,
-                "question_from": clean_text(item.get("question_from")),
-                "driving_question": clean_text(item.get("driving_question")),
-                "working_answer": clean_text(item.get("working_answer")),
+                "tension_from": clean_text(item.get("tension_from")),
+                "tension_focus": clean_text(item.get("tension_focus")),
+                "working_interpretation": clean_text(item.get("working_interpretation")),
             }
         )
     return prompt_items
@@ -261,7 +261,7 @@ def _build_active_attention_digest(
 ) -> ActiveAttentionDigest:
     """Build the prompt-facing digest of the current hot active-attention state."""
 
-    active_items = _active_attention_items(active_attention)
+    active_items = _active_attention_items(normalize_active_tension_state(active_attention))
     hot_items: list[dict[str, object]] = []
     digest_active_items: list[dict[str, object]] = []
     for item in active_items:
@@ -273,16 +273,14 @@ def _build_active_attention_digest(
             "ref_id": ref_id,
             "item_id": item_id,
             "attention_tags": _item_tags(item),
-            "question_from": clean_text(item.get("question_from")),
-            "driving_question": clean_text(item.get("driving_question")),
-            "answer_boundary": clean_text(item.get("answer_boundary")),
-            "working_answer": clean_text(item.get("working_answer")),
+            "tension_from": clean_text(item.get("tension_from")),
+            "tension_focus": clean_text(item.get("tension_focus")),
+            "working_interpretation": clean_text(item.get("working_interpretation")),
             "answered_reason": clean_text(item.get("answered_reason")),
             "closed_reason": clean_text(item.get("closed_reason")),
-            "statement": clean_text(item.get("statement")),
             "status": clean_text(item.get("status")),
             "source_refs": _source_refs(item.get("source_refs"))[:3],
-            "answer_source_refs": _source_refs(item.get("answer_source_refs"))[:3],
+            "development_source_refs": _source_refs(item.get("development_source_refs"))[:3],
             "opened_at_source_span_id": clean_text(item.get("opened_at_source_span_id")),
             "opened_at_source_span": dict(item.get("opened_at_source_span"))
             if isinstance(item.get("opened_at_source_span"), dict)
@@ -323,11 +321,9 @@ def _build_active_attention_digest(
                 "ref_id": ref_id,
                 "kind": "active_attention",
                 "item_id": item_id,
-                "summary": clean_text(item.get("driving_question"))
-                or clean_text(item.get("working_answer"))
-                or clean_text(item.get("question_from"))
-                or clean_text(item.get("answer_boundary"))
-                or clean_text(item.get("statement"))
+                "summary": clean_text(item.get("tension_focus"))
+                or clean_text(item.get("working_interpretation"))
+                or clean_text(item.get("tension_from"))
                 or ", ".join(_item_tags(item)),
                 "source_span_id": clean_text((_source_refs(item.get("source_refs")) or [{}])[0].get("source_span_id")),
                 "source_ref": (_source_refs(item.get("source_refs")) or [{}])[0],
@@ -987,10 +983,10 @@ def build_read_prompt_packet(
         if isinstance(carry_forward_context.get("active_attention_digest"), dict)
         else {}
     )
-    active_questions = _active_question_prompt_items(active_attention_digest)
-    active_question_warning = (
-        "open_active_question_count_exceeds_soft_limit"
-        if len(active_questions) > _ACTIVE_QUESTION_SOFT_LIMIT
+    active_tensions = _active_tension_prompt_items(active_attention_digest)
+    active_tension_warning = (
+        "open_active_tension_count_exceeds_soft_limit"
+        if len(active_tensions) > _ACTIVE_TENSION_SOFT_LIMIT
         else ""
     )
     packet: dict[str, object] = {
@@ -999,9 +995,9 @@ def build_read_prompt_packet(
         if isinstance(carry_forward_context.get("session_continuity_capsule"), dict)
         else {},
         "active_attention": {
-            "active_questions": active_questions,
-            "open_question_count": len(active_questions),
-            "projection_warning": active_question_warning,
+            "active_tensions": active_tensions,
+            "open_tension_count": len(active_tensions),
+            "projection_warning": active_tension_warning,
         },
         "concept_digest": [
             dict(item)

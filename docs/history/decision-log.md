@@ -2819,3 +2819,27 @@ This new direction is design frozen but not yet implemented as a formal benchmar
 - `reading-companion-backend/src/attentional_v2/prompts.py`
 - `reading-companion-backend/src/attentional_v2/runner.py`
 - `reading-companion-backend/tests/test_attentional_v2_nodes.py`
+
+## Entry 93
+**ID**: DEC-096
+**Status**: active
+
+**Decision / Clarification**: Rename the Active Attention contract to ActiveTension semantics while keeping the runtime store key `active_attention`.
+
+**Period**: May 23, 2026, after reviewing the full-window Active Attention lifecycle diagnostic and concluding that the prior inquiry/question framing was still too narrow. The user clarified that a reader may carry not only answer-seeking questions, but also beauty, vivid images, unusual events, distinctive characters, emotional residue, or unsettled patterns.
+
+**Clarification**: Current `active_attention` state should be interpreted as ActiveTension: points that still hang in the reader's attention after a unit. An ActiveTension does not need to be phrased as a question, does not need to wait for an answer, and does not require `Read` to predict whether it will matter later. The creation test is whether the prompt-visible source/framing/memory leaves readerly charge that has not been fully digested into an ordinary fact, stable concept, chapter summary, or visible reaction.
+
+**Field rule**: New prompts, projections, persisted state, and reviewer-facing reports should use `tension_from`, `tension_focus`, `working_interpretation`, and `development_source_refs`. Old question-only fields (`question_from`, `driving_question`, `working_answer`, `answer_source_refs`) are migration inputs at load / normalization boundaries only and should not be written back as current state. `statement` and `answer_boundary` are old artifact inputs, not current ActiveTension structure.
+
+**Why this path won**: This preserves the product goal of a thoughtful co-reader. It avoids overfitting the memory state into a formal Q&A tracker, while still giving the runtime and reports a concrete, auditable structure for what is lingering in attention.
+
+**Primary evidence**:
+- `docs/backend-reading-mechanisms/attentional_v2.md`
+- `docs/backend-reader-evaluation.md`
+- `reading-companion-backend/docs/evaluation/reporting_standard.md`
+- `reading-companion-backend/src/attentional_v2/schemas.py`
+- `reading-companion-backend/src/attentional_v2/prompts.py`
+- `reading-companion-backend/src/attentional_v2/state_migration.py`
+- `reading-companion-backend/src/attentional_v2/state_projection.py`
+- `reading-companion-backend/tests/test_attentional_v2_nodes.py`

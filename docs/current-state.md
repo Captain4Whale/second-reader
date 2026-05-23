@@ -7,61 +7,50 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-05-22T23:12:00+08:00`
+Last verified: `2026-05-23T15:52:00+08:00`
 
 ## Current Objective
-- Active Attention prompt-context grounding retry1 full-window diagnostic is running in five parallel registered jobs.
-  - active run ids:
+- ActiveTension definition / field cleanup / Read prompt repair is implemented and pending human review.
+  - implementation facts:
+    - the runtime store key remains `active_attention`, but the mechanism semantics are now **ActiveTension**
+    - new `active_attention` items use `tension_from`, `tension_focus`, `working_interpretation`, and `development_source_refs`
+    - old question-only fields (`question_from`, `driving_question`, `working_answer`, `answer_source_refs`) are migration inputs at load / normalization boundaries only and are not the current prompt / persisted-state contract
+    - `statement` and `answer_boundary` are old artifact inputs, not current ActiveTension structure
+    - Read prompt is bumped to `attentional_v2.read.v23`
+    - prompt wording now uses reader-native `readerly charge`: question, suspense, striking image, beauty, unusual character/event, emotional pressure, recurring pattern, or unsettled claim
+    - ActiveTension no longer requires a literal question, a future answer, or a prediction that the point will matter later
+    - stable docs and decision log record this as DEC-096
+  - validation:
+    - targeted runtime / prompt / projection / slow-cycle / Long Span tests passed: `93 passed, 6 warnings`
+    - run ledger check passed
+  - boundaries:
+    - no eval was run for this repair
+    - no eval run directories were created by this repair
+    - no evidence catalog update, Long Span formal promotion, or product-quality claim is authorized
+  - next step:
+    - discuss the second issue separately: ActiveTension operation-set simplification and whether `update` should overwrite/rewrite instead of append-like accumulation
+- Active Attention prompt-context grounding retry1 full-window diagnostic completed and is now review-pending.
+  - completed run ids:
     - `attentional_v2_active_attention_prompt_context_window_diagnostic_20260522_retry1_huochu`
     - `attentional_v2_active_attention_prompt_context_window_diagnostic_20260522_retry1_mangge`
     - `attentional_v2_active_attention_prompt_context_window_diagnostic_20260522_retry1_nawaer`
     - `attentional_v2_active_attention_prompt_context_window_diagnostic_20260522_retry1_value_of_others`
     - `attentional_v2_active_attention_prompt_context_window_diagnostic_20260522_retry1_xidaduo`
-  - active job ids:
+  - completed job ids:
     - `bgjob_active_attention_prompt_context_window_diagnostic_20260522_retry1_huochu`
     - `bgjob_active_attention_prompt_context_window_diagnostic_20260522_retry1_mangge`
     - `bgjob_active_attention_prompt_context_window_diagnostic_20260522_retry1_nawaer`
     - `bgjob_active_attention_prompt_context_window_diagnostic_20260522_retry1_value_of_others`
     - `bgjob_active_attention_prompt_context_window_diagnostic_20260522_retry1_xidaduo`
-  - launch facts:
-    - preflight found no active background jobs
-    - live LLM target check passed for both MiniMax targets
-    - fresh retry1 run directories were absent before launch
-    - run ledger entries are recorded as `running`
-    - command shape: `run_long_span_vnext.py --v2-only --workers 1 --judge-mode llm --output-attempts 1 --output-retry-sleep-seconds 0 --reaction-reuse-run-root ""`
-  - next step:
-    - monitor with `cd reading-companion-backend && .venv/bin/python scripts/check_background_jobs.py --job-id bgjob_active_attention_prompt_context_window_diagnostic_20260522_retry1_huochu --job-id bgjob_active_attention_prompt_context_window_diagnostic_20260522_retry1_mangge --job-id bgjob_active_attention_prompt_context_window_diagnostic_20260522_retry1_nawaer --job-id bgjob_active_attention_prompt_context_window_diagnostic_20260522_retry1_value_of_others --job-id bgjob_active_attention_prompt_context_window_diagnostic_20260522_retry1_xidaduo`
-    - do not stop solely because summary files are absent before terminal completion
-    - wait for terminal status, then run strict LLM health checks and produce the retry1 post-run report
-    - do not update evidence catalog, promote Long Span vNext, or claim product quality
-- Active Attention prompt-context grounding repair has landed; the first 5-window diagnostic attempt is invalidated and pending human review.
-  - implementation status:
-    - Read prompt bumped to `attentional_v2.read.v22`
-    - Active Attention is now defined as a prompt-context-grounded reading forward-pull, not source-only and not a formal Q&A tracker
-    - prompt-visible grounding may come from the current source unit, book/chapter framing, or prior memory shown in the Read prompt
-    - outside knowledge about the book, author, or later chapters is explicitly forbidden unless present in prompt context
-    - runtime normalization no longer trusts model-emitted `source_refs` / `answer_source_refs`; exact current-unit quotes are resolved programmatically, and absent quotes do not create fake precise refs
-    - targeted test suite passed: `103 passed, 6 warnings`
-  - attempted diagnostic:
-    - parent run id: `attentional_v2_active_attention_prompt_context_window_diagnostic_20260522`
-    - jobs:
-      - `bgjob_active_attention_prompt_context_window_diagnostic_20260522_huochu` (`failed`, exit `-15`)
-      - `bgjob_active_attention_prompt_context_window_diagnostic_20260522_mangge` (`failed`, exit `-15`)
-      - `bgjob_active_attention_prompt_context_window_diagnostic_20260522_nawaer` (`failed`, exit `-15`)
-      - `bgjob_active_attention_prompt_context_window_diagnostic_20260522_value_of_others` (`failed`, exit `-15`)
-      - `bgjob_active_attention_prompt_context_window_diagnostic_20260522_xidaduo` (`failed`, exit `-15`)
-    - all five full-window diagnostic shards were manually terminated before terminal runner outputs
-    - each shard preserved partial runtime traces, but none produced `summary/aggregate.json`, `summary/report.md`, `summary/llm_usage.json`, Memory Quality results, reaction audit results, or complete lifecycle audit evidence
-    - post-run report: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Prompt-Context-Grounded-Full-Window-Diagnostic-Post-run-Report v0.md`
-    - run ledger status: `invalidated`
-  - preserved prior diagnostic context:
-    - Retry4 remains the latest completed micro diagnostic: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Forward-Pull-Micro-Eval-Huochu-Retry4-Post-run-Report v0.md`
-    - Retry4 showed materially improved source grounding but mixed semantics on a short excerpt; it is diagnostic only
-  - next step:
-    - human review of the v22 repair and invalidated full-window diagnostic report
-    - do not reuse the five `20260522` full-window run ids as evidence
-    - if retrying the full-window diagnostic, use fresh run ids and consider a stricter first-trace / progress watchdog or one-window-to-terminal sanity check before five-way parallelism
-    - no evidence catalog update, broader eval, Long Span vNext formal promotion, or product-quality claim is authorized from this invalidated diagnostic attempt
+  - status facts:
+    - all five jobs completed with exit code `0`
+    - expected `summary/aggregate.json`, `summary/report.md`, and `summary/llm_usage.json` outputs exist for all five shards
+    - run ledger entries are now `review_pending`
+    - lifecycle review aid:
+      - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Prompt-Context-Grounded-Full-Window-Diagnostic-Retry1-ActiveTension-Lifecycle-Review v0.md`
+  - boundaries:
+    - the retry1 diagnostic remains diagnostic only and is not cataloged evidence
+    - no evidence catalog update, broader eval, Long Span formal promotion, or product-quality claim is authorized from this diagnostic without explicit human review
 - Post-Slice8H Eval-1 Retry1 high-parallel full active evaluation completed and is pending human review.
   - status:
     - no active Eval-1 background jobs remain in the registry

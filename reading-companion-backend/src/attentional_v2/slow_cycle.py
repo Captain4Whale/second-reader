@@ -56,6 +56,7 @@ from .state_ops import (
     supersede_reflective_item,
     upsert_reflective_item,
 )
+from .state_migration import normalize_active_tension_item, normalize_active_tension_state
 from .storage import append_jsonl, chapter_result_compatibility_file, save_json, slow_cycle_audit_file
 from .source_spans import dedupe_source_refs, source_ref_from_span
 
@@ -106,14 +107,14 @@ def _source_ref_evidence(source_refs: object) -> tuple[int, list[str], str]:
 
 
 def _has_live_question_fields(item: Mapping[str, object]) -> bool:
-    """Return whether a carry-forward item uses the current live-question schema."""
+    """Return whether a carry-forward item uses the current ActiveTension schema."""
 
     return any(
         _clean_text(item.get(field))
         for field in (
-            "question_from",
-            "driving_question",
-            "working_answer",
+            "tension_from",
+            "tension_focus",
+            "working_interpretation",
         )
     )
 
@@ -1231,79 +1232,31 @@ def _normalize_carry_forward_item(value: object) -> ActiveAttentionItem | None:
 
     if not isinstance(value, dict):
         return None
-    item_id = _clean_text(value.get("item_id"))
-    if not item_id:
-        return None
-    attention_tags = [
-        _clean_text(item)
-        for item in value.get("attention_tags", [])
-        if _clean_text(item)
-    ] if isinstance(value.get("attention_tags"), list) else []
-    item: ActiveAttentionItem = {
-        "item_id": item_id,
-        "attention_tags": attention_tags,
-        "source_refs": [
+    normalized = dict(value)
+    if isinstance(value.get("source_refs"), list):
+        normalized["source_refs"] = [
             build_reaction_source_ref(item)
             for item in value.get("source_refs", [])
             if isinstance(item, dict)
         ]
-        if isinstance(value.get("source_refs"), list)
-        else [],
-        "answer_source_refs": [
+    if isinstance(value.get("development_source_refs"), list) or isinstance(value.get("answer_source_refs"), list):
+        normalized["development_source_refs"] = [
             build_reaction_source_ref(item)
-            for item in value.get("answer_source_refs", [])
+            for item in [
+                *(
+                    value.get("development_source_refs", [])
+                    if isinstance(value.get("development_source_refs"), list)
+                    else []
+                ),
+                *(
+                    value.get("answer_source_refs", [])
+                    if isinstance(value.get("answer_source_refs"), list)
+                    else []
+                ),
+            ]
             if isinstance(item, dict)
         ]
-        if isinstance(value.get("answer_source_refs"), list)
-        else [],
-        "status": _clean_text(value.get("status")) or "open",
-    }
-    for field in (
-        "question_from",
-        "driving_question",
-        "answer_boundary",
-        "working_answer",
-        "answered_reason",
-        "closed_reason",
-        "statement",
-        "opened_at_source_span_id",
-        "opened_at_unit_span_id",
-        "answered_at_source_span_id",
-        "answered_at_unit_span_id",
-        "closed_at_source_span_id",
-        "closed_at_unit_span_id",
-    ):
-        text = _clean_text(value.get(field))
-        if text:
-            item[field] = text  # type: ignore[literal-required]
-    for field in (
-        "opened_at_source_span",
-        "opened_at_unit_span",
-        "answered_at_source_span",
-        "answered_at_unit_span",
-        "closed_at_source_span",
-        "closed_at_unit_span",
-    ):
-        raw = value.get(field)
-        if isinstance(raw, dict):
-            item[field] = dict(raw)  # type: ignore[literal-required]
-    linked_concept_keys = [
-        _clean_text(item)
-        for item in value.get("linked_concept_keys", [])
-        if _clean_text(item)
-    ] if isinstance(value.get("linked_concept_keys"), list) else []
-    linked_thread_keys = [
-        _clean_text(item)
-        for item in value.get("linked_thread_keys", [])
-        if _clean_text(item)
-    ] if isinstance(value.get("linked_thread_keys"), list) else []
-    if linked_concept_keys:
-        item["linked_concept_keys"] = linked_concept_keys
-    if linked_thread_keys:
-        item["linked_thread_keys"] = linked_thread_keys
-    if not _has_live_question_fields(item) and not _clean_text(item.get("statement")):
-        return None
-    return item
+    return normalize_active_tension_item(normalized)
 
 
 def _normalize_chapter_consolidation_result(payload: object) -> ChapterConsolidationResult:
@@ -1403,8 +1356,9 @@ def apply_cross_chapter_carry_forward(
     active_attention: ActiveAttention,
     carry_forward: list[ActiveAttentionItem],
 ) -> ActiveAttention:
-    """Replace active-attention items while preserving live-question fields and evidence."""
+    """Replace active-attention items while preserving ActiveTension fields and evidence."""
 
+    active_attention = normalize_active_tension_state(active_attention)
     existing_by_id = {
         _clean_text(item.get("item_id")): item
         for item in active_attention.get("active_items", [])
@@ -1421,13 +1375,11 @@ def apply_cross_chapter_carry_forward(
         carried_item: ActiveAttentionItem = {
             "item_id": item_id,
             "attention_tags": _merge_unique_texts(existing.get("attention_tags"), item.get("attention_tags")),
-            "question_from": _clean_text(item.get("question_from")) or _clean_text(existing.get("question_from")),
-            "driving_question": _clean_text(item.get("driving_question")) or _clean_text(existing.get("driving_question")),
-            "answer_boundary": _clean_text(item.get("answer_boundary")) or _clean_text(existing.get("answer_boundary")),
-            "working_answer": _clean_text(item.get("working_answer")) or _clean_text(existing.get("working_answer")),
+            "tension_from": _clean_text(item.get("tension_from")) or _clean_text(existing.get("tension_from")),
+            "tension_focus": _clean_text(item.get("tension_focus")) or _clean_text(existing.get("tension_focus")),
+            "working_interpretation": _clean_text(item.get("working_interpretation")) or _clean_text(existing.get("working_interpretation")),
             "answered_reason": _clean_text(item.get("answered_reason")) or _clean_text(existing.get("answered_reason")),
             "closed_reason": _clean_text(item.get("closed_reason")) or _clean_text(existing.get("closed_reason")),
-            "statement": _clean_text(item.get("statement")) or _clean_text(existing.get("statement")),
             "opened_at_source_span_id": _clean_text(item.get("opened_at_source_span_id")) or _clean_text(existing.get("opened_at_source_span_id")),
             "opened_at_unit_span_id": _clean_text(item.get("opened_at_unit_span_id")) or _clean_text(existing.get("opened_at_unit_span_id")),
             "answered_at_source_span_id": _clean_text(item.get("answered_at_source_span_id")) or _clean_text(existing.get("answered_at_source_span_id")),
@@ -1471,16 +1423,16 @@ def apply_cross_chapter_carry_forward(
                 ),
             ]
         )
-        carried_item["answer_source_refs"] = dedupe_source_refs(
+        carried_item["development_source_refs"] = dedupe_source_refs(
             [
                 *(
-                    existing.get("answer_source_refs", [])
-                    if isinstance(existing.get("answer_source_refs"), list)
+                    existing.get("development_source_refs", [])
+                    if isinstance(existing.get("development_source_refs"), list)
                     else []
                 ),
                 *(
-                    item.get("answer_source_refs", [])
-                    if isinstance(item.get("answer_source_refs"), list)
+                    item.get("development_source_refs", [])
+                    if isinstance(item.get("development_source_refs"), list)
                     else []
                 ),
             ]

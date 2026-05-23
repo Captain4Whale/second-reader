@@ -32,6 +32,7 @@ from .schemas import (
     StateOperation,
 )
 from .source_spans import dedupe_source_refs
+from .state_migration import normalize_active_tension_state
 
 
 ReflectiveBucket = Literal[
@@ -90,7 +91,8 @@ def _remove_by_id(items: list[dict[str, object]], item_id: str, *, id_key: str) 
 def _active_attention_items(state: ActiveAttention) -> list[ActiveAttentionItem]:
     """Return the normalized active-items view over active attention."""
 
-    active_items = [dict(item) for item in state.get("active_items", []) if isinstance(item, dict)]
+    normalized_state = normalize_active_tension_state(state)
+    active_items = [dict(item) for item in normalized_state.get("active_items", []) if isinstance(item, dict)]
     return active_items  # type: ignore[return-value]
 
 
@@ -186,6 +188,33 @@ def _merge_dict_field(existing: dict[str, object], payload: dict[str, object], k
     return {}
 
 
+def _normalize_active_tension_payload(payload: dict[str, object]) -> dict[str, object]:
+    """Map legacy read-output fields to the current ActiveTension payload shape."""
+
+    normalized = dict(payload)
+    if "tension_from" not in normalized and str(normalized.get("question_from") or "").strip():
+        normalized["tension_from"] = normalized.get("question_from")
+    if "tension_focus" not in normalized:
+        for legacy_key in ("driving_question", "statement", "answer_boundary"):
+            if str(normalized.get(legacy_key) or "").strip():
+                normalized["tension_focus"] = normalized.get(legacy_key)
+                break
+    if "working_interpretation" not in normalized and "working_answer" in normalized:
+        normalized["working_interpretation"] = normalized.get("working_answer")
+    if "development_source_refs" not in normalized and "answer_source_refs" in normalized:
+        normalized["development_source_refs"] = normalized.get("answer_source_refs")
+    for legacy_key in (
+        "question_from",
+        "driving_question",
+        "working_answer",
+        "answer_source_refs",
+        "statement",
+        "answer_boundary",
+    ):
+        normalized.pop(legacy_key, None)
+    return normalized
+
+
 def _merge_active_item(
     existing: dict[str, object],
     payload: dict[str, object],
@@ -194,20 +223,22 @@ def _merge_active_item(
 ) -> ActiveAttentionItem:
     """Merge one active-item payload on top of an existing entry."""
 
+    normalized_existing_items = normalize_active_tension_state({"active_items": [existing]}).get("active_items", [])
+    existing = dict(normalized_existing_items[0]) if normalized_existing_items else {}
+    payload = _normalize_active_tension_payload(payload)
+
     merged: ActiveAttentionItem = {
         "item_id": item_id,
         "attention_tags": _merge_unique_ids(existing.get("attention_tags"), payload.get("attention_tags")),
-        "question_from": _merge_text_field(existing, payload, "question_from"),
-        "driving_question": _merge_text_field(existing, payload, "driving_question"),
-        "answer_boundary": _merge_text_field(existing, payload, "answer_boundary"),
-        "working_answer": _merge_text_field(existing, payload, "working_answer"),
+        "tension_from": _merge_text_field(existing, payload, "tension_from"),
+        "tension_focus": _merge_text_field(existing, payload, "tension_focus"),
+        "working_interpretation": _merge_text_field(existing, payload, "working_interpretation"),
         "answered_reason": _merge_text_field(existing, payload, "answered_reason"),
         "closed_reason": _merge_text_field(existing, payload, "closed_reason"),
-        "statement": _merge_text_field(existing, payload, "statement"),
         "source_refs": _merge_source_refs(existing.get("source_refs"), payload.get("source_refs")),
-        "answer_source_refs": _merge_source_refs(
-            existing.get("answer_source_refs"),
-            payload.get("answer_source_refs"),
+        "development_source_refs": _merge_source_refs(
+            existing.get("development_source_refs"),
+            payload.get("development_source_refs"),
         ),
         "opened_at_source_span_id": _merge_text_field(existing, payload, "opened_at_source_span_id"),
         "opened_at_source_span": _merge_dict_field(existing, payload, "opened_at_source_span"),
@@ -236,8 +267,9 @@ def _apply_active_attention_operations(
 ) -> ActiveAttention:
     """Apply explicit active-attention mutations from node outputs."""
 
-    next_state = dict(state)
-    active_items = [dict(item) for item in _active_attention_items(state)]
+    normalized_state = normalize_active_tension_state(state)
+    next_state = dict(normalized_state)
+    active_items = [dict(item) for item in _active_attention_items(normalized_state)]
     touched = False
     for operation in operations:
         if str(operation.get("target_store", "") or "") not in allowed_target_stores:

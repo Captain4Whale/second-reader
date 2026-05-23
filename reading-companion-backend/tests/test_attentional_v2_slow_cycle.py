@@ -84,22 +84,21 @@ def _source_ref(quote: str, paragraph_index: int, *, role: str = "primary") -> d
 
 
 def test_apply_cross_chapter_carry_forward_preserves_existing_source_refs():
-    """Chapter carry-forward should not erase live-question fields or source evidence."""
+    """Chapter carry-forward should not erase ActiveTension fields or source evidence."""
 
     existing_ref = _source_ref("Markets begin as relations among people.", 1, role="support")
-    answer_ref = _source_ref("Later the author narrows what counts as value.", 2, role="answer_support")
+    answer_ref = _source_ref("Later the author narrows what counts as value.", 2, role="development_support")
     active_attention = {
         **build_empty_active_attention(),
         "active_items": [
             {
                 "item_id": "q-1",
                 "attention_tags": ["question"],
-                "question_from": "The chapter opens with value as a social relation.",
-                "driving_question": "How narrow will the later book make value?",
-                "answer_boundary": "Later source defines the narrowed scope of value.",
-                "working_answer": "No narrowing clue yet.",
+                "tension_from": "The chapter opens with value as a social relation.",
+                "tension_focus": "How narrow the later book makes value remains alive.",
+                "working_interpretation": "No narrowing clue yet.",
                 "source_refs": [existing_ref],
-                "answer_source_refs": [answer_ref],
+                "development_source_refs": [answer_ref],
                 "status": "open",
             }
         ],
@@ -111,7 +110,7 @@ def test_apply_cross_chapter_carry_forward_preserves_existing_source_refs():
             {
                 "item_id": "q-1",
                 "attention_tags": ["focus"],
-                "working_answer": "The later line starts narrowing value.",
+                "working_interpretation": "The later line starts narrowing value.",
                 "source_refs": [],
                 "status": "open",
             }
@@ -119,13 +118,12 @@ def test_apply_cross_chapter_carry_forward_preserves_existing_source_refs():
     )
 
     carried = result["active_items"][0]
-    assert carried["question_from"] == "The chapter opens with value as a social relation."
-    assert carried["driving_question"] == "How narrow will the later book make value?"
-    assert carried["answer_boundary"] == "Later source defines the narrowed scope of value."
-    assert carried["working_answer"] == "The later line starts narrowing value."
+    assert carried["tension_from"] == "The chapter opens with value as a social relation."
+    assert carried["tension_focus"] == "How narrow the later book makes value remains alive."
+    assert carried["working_interpretation"] == "The later line starts narrowing value."
     assert carried["attention_tags"] == ["question", "focus"]
     assert carried["source_refs"] == [existing_ref]
-    assert carried["answer_source_refs"] == [answer_ref]
+    assert carried["development_source_refs"] == [answer_ref]
 
 
 def test_apply_cross_chapter_carry_forward_merges_and_dedupes_source_refs():
@@ -139,10 +137,9 @@ def test_apply_cross_chapter_carry_forward_merges_and_dedupes_source_refs():
             {
                 "item_id": "q-1",
                 "attention_tags": ["question"],
-                "question_from": "The chapter opens with value as a social relation.",
-                "driving_question": "How narrow will the later book make value?",
-                "answer_boundary": "Later source defines the narrowed scope of value.",
-                "working_answer": "",
+                "tension_from": "The chapter opens with value as a social relation.",
+                "tension_focus": "How narrow the later book makes value remains alive.",
+                "working_interpretation": "",
                 "source_refs": [existing_ref],
                 "status": "open",
             }
@@ -155,7 +152,7 @@ def test_apply_cross_chapter_carry_forward_merges_and_dedupes_source_refs():
             {
                 "item_id": "q-1",
                 "attention_tags": ["focus"],
-                "working_answer": "The later line starts narrowing value.",
+                "working_interpretation": "The later line starts narrowing value.",
                 "source_refs": [existing_ref, new_ref],
                 "status": "open",
             }
@@ -174,10 +171,9 @@ def test_apply_cross_chapter_carry_forward_rejects_new_statement_only_items():
             {
                 "item_id": "q-1",
                 "attention_tags": ["question"],
-                "question_from": "The chapter opens with value as a social relation.",
-                "driving_question": "How narrow will the later book make value?",
-                "answer_boundary": "Later source defines the narrowed scope of value.",
-                "working_answer": "",
+                "tension_from": "The chapter opens with value as a social relation.",
+                "tension_focus": "How narrow the later book makes value remains alive.",
+                "working_interpretation": "",
                 "source_refs": [_source_ref("Markets begin as relations among people.", 1, role="support")],
                 "status": "open",
             }
@@ -487,10 +483,9 @@ def test_run_phase6_chapter_cycle_applies_cooling_promotion_and_optional_reactio
                     {
                         "item_id": "q-1",
                         "attention_tags": ["question"],
-                        "question_from": "The chapter opens with value as a social relation.",
-                        "driving_question": "How narrow will the later book make value?",
-                        "answer_boundary": "Later source defines the narrowed scope of value.",
-                        "working_answer": "The later sentence starts narrowing value.",
+                        "tension_from": "The chapter opens with value as a social relation.",
+                        "tension_focus": "How narrow the later book makes value remains alive.",
+                        "working_interpretation": "The later sentence starts narrowing value.",
                         "source_refs": [],
                         "status": "open",
                     }
@@ -562,10 +557,9 @@ def test_run_phase6_chapter_cycle_applies_cooling_promotion_and_optional_reactio
                 {
                     "item_id": "q-1",
                     "attention_tags": ["question"],
-                    "question_from": "The chapter opens with value as a social relation.",
-                    "driving_question": "How narrow will the later book make value?",
-                    "answer_boundary": "Later source defines the narrowed scope of value.",
-                    "working_answer": "",
+                    "tension_from": "The chapter opens with value as a social relation.",
+                    "tension_focus": "How narrow the later book makes value remains alive.",
+                    "working_interpretation": "",
                     "source_refs": [_source_ref("Later the author narrows what counts as value.", 2, role="support")],
                     "status": "active",
                 }
@@ -598,10 +592,9 @@ def test_run_phase6_chapter_cycle_applies_cooling_promotion_and_optional_reactio
     assert result["chapter_consolidation"]["chapter_summary_note"] == "The chapter narrows its own opening frame."
     assert [item["item_id"] for item in result["active_attention"]["active_items"]] == ["q-1"]
     assert result["active_attention"]["active_items"][0]["attention_tags"] == ["question"]
-    assert result["active_attention"]["active_items"][0]["question_from"] == "The chapter opens with value as a social relation."
-    assert result["active_attention"]["active_items"][0]["driving_question"] == "How narrow will the later book make value?"
-    assert result["active_attention"]["active_items"][0]["answer_boundary"] == "Later source defines the narrowed scope of value."
-    assert result["active_attention"]["active_items"][0]["working_answer"] == "The later sentence starts narrowing value."
+    assert result["active_attention"]["active_items"][0]["tension_from"] == "The chapter opens with value as a social relation."
+    assert result["active_attention"]["active_items"][0]["tension_focus"] == "How narrow the later book makes value remains alive."
+    assert result["active_attention"]["active_items"][0]["working_interpretation"] == "The later sentence starts narrowing value."
     assert result["active_attention"]["active_items"][0]["source_refs"] == [
         _source_ref("Later the author narrows what counts as value.", 2, role="support")
     ]
@@ -610,7 +603,7 @@ def test_run_phase6_chapter_cycle_applies_cooling_promotion_and_optional_reactio
     assert result["reaction_records"]["records"][0]["type"] == "retrospect"
     assert result["compatibility_payload"]["visible_reaction_count"] == 1
     assert chapter_manifest["prompt_version"] == "attentional_v2.chapter_consolidation.v5"
-    assert '"question_from"' in chapter_manifest["system_prompt"] or '"question_from"' in chapter_manifest["user_prompt"]
+    assert '"tension_from"' in chapter_manifest["system_prompt"] or '"tension_from"' in chapter_manifest["user_prompt"]
     assert '"answer_boundary"' not in chapter_manifest["system_prompt"]
     assert '"answer_boundary": "<what later source evidence would advance, answer, or close this inquiry>"' not in chapter_manifest["user_prompt"]
     assert '"statement": "<live near-term item to carry forward>"' not in chapter_manifest["user_prompt"]

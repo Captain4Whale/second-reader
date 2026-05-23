@@ -66,20 +66,17 @@ class SourceRef(TypedDict, total=False):
 
 
 class ActiveAttentionItem(TypedDict, total=False):
-    """One live inquiry carried in active attention."""
+    """One ActiveTension item carried in active attention."""
 
     item_id: str
     attention_tags: list[str]
-    question_from: str
-    driving_question: str
-    # Legacy compatibility: new prompts should not require a predeclared answer boundary.
-    answer_boundary: str
-    working_answer: str
+    tension_from: str
+    tension_focus: str
+    working_interpretation: str
     answered_reason: str
     closed_reason: str
-    statement: str
     source_refs: list[SourceRef]
-    answer_source_refs: list[SourceRef]
+    development_source_refs: list[SourceRef]
     opened_at_source_span_id: str
     opened_at_source_span: dict[str, object]
     opened_at_unit_span_id: str
@@ -99,7 +96,7 @@ class ActiveAttentionItem(TypedDict, total=False):
 
 
 class ActiveAttention(TypedDict, total=False):
-    """Primary open-question state for items still driving near-term reading."""
+    """Primary ActiveTension state for readerly charges still alive in attention."""
 
     schema_version: int
     mechanism_version: str

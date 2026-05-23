@@ -1107,9 +1107,9 @@ def test_attentional_v2_read_book_runs_live_loop_and_persists_compatibility_resu
                     "target_store": "active_attention",
                     "target_key": f"hot-{focal_sentence.get('sentence_id')}",
                     "payload": {
-                        "question_from": f"The unit raises: {anchor_quote[:24]}",
-                        "driving_question": "How will this point shape the next read?",
-                        "working_answer": "",
+                        "tension_from": f"The unit leaves a charge around: {anchor_quote[:24]}",
+                        "tension_focus": "This point remains alive in attention.",
+                        "working_interpretation": "",
                         "attention_tags": ["motif"],
                         "last_touched_sentence_id": focal_sentence.get("sentence_id"),
                     },

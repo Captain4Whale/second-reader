@@ -7,10 +7,10 @@ from dataclasses import dataclass
 from src.prompts.shared import LANGUAGE_OUTPUT_CONTRACT
 
 
-ATTENTIONAL_V2_PROMPTSET_VERSION = "attentional_v2-phase6-v30"
+ATTENTIONAL_V2_PROMPTSET_VERSION = "attentional_v2-phase6-v31"
 SURVEY_CHAPTER_ZONE_PROMPT_VERSION = "attentional_v2.survey_chapter_zone.v1"
 NAVIGATE_CHOOSE_NEXT_UNIT_PROMPT_VERSION = "attentional_v2.navigate_choose_next_unit.v1"
-READ_UNIT_PROMPT_VERSION = "attentional_v2.read.v22"
+READ_UNIT_PROMPT_VERSION = "attentional_v2.read.v23"
 BRIDGE_RESOLUTION_PROMPT_VERSION = "attentional_v2.bridge_resolution.v5"
 REFLECTIVE_PROMOTION_PROMPT_VERSION = "attentional_v2.reflective_promotion.v1"
 RECONSOLIDATION_PROMPT_VERSION = "attentional_v2.reconsolidation.v1"
@@ -254,40 +254,47 @@ Rules:
   - `concept_registry`
   - `thread_trace`
 - Do not target `concept_digest`, `thread_digest`, `active_focus_digest`, or report/projection fields. Digests are prompt projections, not writable memory stores.
-- `active_attention` is the reader's carry-forward set of live inquiries, not recent memory and not a summary cache.
-- After reading this unit, pause as a curious reader. Ask whether the prompt-visible context left you wanting to understand something later: what happens next, why this matters, how a tension resolves, whether a claim will be answered, or how a developing pattern will turn.
+- `active_attention` stores ActiveTension: points that still hang in the reader's attention after a unit, not recent memory and not a summary cache.
+- After reading this unit, pause as a reader.
+- Notice what still holds your attention after the unit is over.
+- It may be a question, suspense, an unusual character, a striking image, a beautiful scene, a strange event, an emotional pressure, a recurring pattern, or a claim that has not yet settled.
+- Do not require yourself to know whether it will matter later.
+- You only need to judge whether it still feels alive in your reading attention right now.
 - Prompt-visible context includes the current source unit, book or chapter framing shown in this prompt, and existing memory state shown in the read context packet.
-- Write to `active_attention` only when an inquiry or reading tension is still alive after this unit and would shape how you read forward.
 - Do not import outside knowledge about the book, author, or later chapters unless that information is present in this prompt.
-- An active item does not have to be phrased with a question mark. It may be a question, tension, suspense, or watchpoint, but it must still carry forward a reader's interest rather than summarize what is already stable.
-- One active item = one coherent prompt-context-grounded forward-pull. It may have a few closely related sides, but do not bundle independent tensions that would need different later evidence to satisfy.
-- Good active inquiries feel like something a reader naturally carries forward from the visible reading context:
-  - narrative tension: a bomb is placed on the table, so the reader carries "when or whether will it explode?"
-  - argument tension: the author poses a problem, so the reader carries "how will the author answer this?"
-  - title/framing tension: if a title or chapter frame visible in the prompt points to meaning, and the current source shows bodily or psychological adaptation, the reader may carry how this visible framing and current source will connect; say that basis in `question_from` rather than pretending it came from one source quote.
-  - `活出生命的意义`: if the visible title/framing and current text together raise a meaning-related forward-pull, keep it honest about that basis; when current text only gives a precondition or partial clue, update the item and keep it open rather than resolving it.
-- Do not create an active inquiry merely because the passage is important. Importance alone belongs in `reading_impression`, `concept_registry`, or `thread_trace`; `active_attention` requires forward pull.
-- Active-attention create payloads must use `question_from`, `driving_question`, and `working_answer`; do not create new `statement`-only active-attention items.
-- `question_from` says what already-read source moment raised the inquiry. It is normally stable.
-- `driving_question` says what the reader is now carrying forward. It may be phrased as a question, tension, suspense, or watchpoint; the field name is legacy-stable, but the content does not need to be a literal question.
-- `working_answer` says the current best partial answer. It may be empty for a newly opened question and should be updated when the text advances it.
-- Before creating new active inquiries, inspect existing `active_questions` in the read context packet. For each one, ask whether this unit advances, corrects, reverses, weakens, answers, or makes it irrelevant. Emit an `update`, `resolve`, `close`, or `drop` operation for that existing `item_id` when appropriate.
-- Use `create` / `append` when this unit opens a still-unanswered inquiry that will guide later reading.
-- Use `update` / `reactivate` when this unit changes the current best answer, reshapes what the reader is tracking, or rekindles an older inquiry.
-- Use `resolve` only when this unit gives a direct, make-sense answer that satisfies the carried forward-pull so the reader no longer needs to carry it as open. A resolve payload must include `answered_reason`, `working_answer`, and an exact `answer_source_quote`.
-- The `answered_reason` must explain why the cited evidence directly satisfies the forward-pull. If the evidence is only a precondition, setup, clue, partial explanation, or reframing, do not resolve; use `update` with the better `working_answer` and keep the item open.
-- If you cannot explain why the inquiry is answered with current prompt-visible evidence, do not resolve it.
-- Use `close` when the inquiry no longer helps reading forward, but not because it was fully answered. A close payload must include `closed_reason`.
-- If an answer becomes durable, write the durable content to `concept_registry` or `thread_trace`, add `derived_from_active_attention_ids` on that downstream concept/thread entry, and close or resolve the active inquiry. Do not use `promote` as an active-attention operation.
-- Do not create an active inquiry when the current unit raises and answers the inquiry locally.
+- Record an ActiveTension when something remains alive in attention after the unit: it is not fully digested as a stable fact, summary, or concept yet.
+- Do not record every important statement.
+- Do not record ordinary facts just because they are useful.
+- Use ActiveTension for points that still have readerly charge: curiosity, beauty, unease, surprise, suspense, unresolved meaning, emotional force, or a vivid image/person/event that lingers.
+- An ActiveTension does not have to be phrased as a question, does not have to wait for an answer, and does not require you to predict whether it will shape later reading.
+- Good ActiveTensions feel like something a reader naturally carries after the visible reading context:
+  - narrative suspense: a bomb is placed on the table, so the reader carries that possible explosion as live tension.
+  - argument promise: the author poses a problem or claim, so the reader carries how it may be developed.
+  - image or beauty: a landscape or image is unusually vivid and keeps resonating even if it does not ask a question.
+  - character or strange event: a person or event feels distinctive, unsettling, or memorable enough to linger.
+  - `活出生命的意义`: visible title/framing plus current text about prisoner adaptation, emotional numbness, and meaning can create a reading pull; keep the basis honest in `tension_from`.
+- Do not create an ActiveTension merely because the passage is important. Importance alone belongs in `reading_impression`, `concept_registry`, or `thread_trace`; ActiveTension requires readerly charge.
+- ActiveTension create payloads must use `tension_from`, `tension_focus`, and `working_interpretation`; do not create new `statement`-only or question-only active-attention items.
+- `tension_from` says what prompt-visible source, framing, or memory left this charge.
+- `tension_focus` says what remains alive in attention; it may be a question, tension, image, beauty, character trait, unusual event, emotional pressure, pattern, or watchpoint.
+- `working_interpretation` says the current tentative interpretation, if one has formed. It may be empty for a newly opened tension.
+- Before creating new ActiveTensions, inspect existing `active_tensions` in the read context packet. For each one, ask whether this unit advances, corrects, reverses, weakens, answers, or makes it irrelevant. Emit an `update`, `resolve`, `close`, or `drop` operation for that existing `item_id` when appropriate.
+- Use `create` / `append` when this unit leaves a still-live ActiveTension that has not yet settled into an ordinary fact, stable concept, summary, or reaction.
+- Use `update` / `reactivate` when this unit changes the current interpretation, reshapes what the reader is tracking, or rekindles an older ActiveTension.
+- Use `resolve` only when this unit gives a direct, make-sense answer that satisfies the carried forward-pull so the reader no longer needs to carry it as open. A resolve payload must include `answered_reason`, `working_interpretation`, and an exact `development_source_quote`.
+- The `answered_reason` must explain why the cited evidence directly satisfies the forward-pull. If the evidence is only a precondition, setup, clue, partial explanation, or reframing, do not resolve; use `update` with the better `working_interpretation` and keep the item open.
+- If you cannot explain why the tension is settled with current prompt-visible evidence, do not resolve it.
+- Use `close` when the tension no longer remains alive in attention, but not because it was fully answered or settled. A close payload must include `closed_reason`.
+- If an interpretation becomes durable, write the durable content to `concept_registry` or `thread_trace`, add `derived_from_active_attention_ids` on that downstream concept/thread entry, and close or resolve the ActiveTension. Do not use `promote` as an active-attention operation.
+- Do not create an ActiveTension when the current unit raises and fully digests it locally.
 - Do not store stable concepts, definitions, chapter summaries, or surfaced reactions in `active_attention`.
 - Use `concept_registry` for reusable concepts, models, definitions, or distinctions.
 - Use `thread_trace` for cross-passage or cross-chapter lines of development.
 - When an operation needs current-source evidence, add `source_quote` and optionally `source_role` inside the payload. The quote must be a short exact contiguous span copied from the current unit: no ellipses, no stitched fragments, no paraphrase, no translation. The runner will resolve it to paragraph + char-offset `source_refs`; never invent source coordinates yourself.
-- If the basis is title/framing/prior memory rather than a current-source phrase, explain that basis in `question_from` and omit `source_quote`.
-- When an operation answers an active inquiry, add `answer_source_quote` and optionally `answer_source_role`; use the same short exact contiguous quote rule. The runner will resolve it to `answer_source_refs`; never invent answer source coordinates yourself.
+- If the basis is title/framing/prior memory rather than a current-source phrase, explain that basis in `tension_from` and omit `source_quote`.
+- When an operation develops or settles an ActiveTension, add `development_source_quote` and optionally `development_source_role`; use the same short exact contiguous quote rule. The runner will resolve it to `development_source_refs`; never invent source coordinates yourself.
 - Ordinary passing understanding belongs in `reading_impression`, not in persistent memory.
-- Active-attention item payloads may still use `attention_tags` as lightweight labels, but the live question fields are authoritative.
+- ActiveTension item payloads may still use `attention_tags` as lightweight labels, but the ActiveTension fields are authoritative.
 - Do not use legacy active-attention bucket/list fields in new state operations.
 - Do not write `reflective_frames`, `reaction_records`, or history/audit layers here.
 - Propose operations, not whole-object rewrites.
@@ -337,11 +344,11 @@ Return JSON:
       "target_key": "item-key",
       "reason": "<brief reason>",
       "payload": {
-        "question_from": "<what already-read source moment raised this question>",
-        "driving_question": "<one coherent forward-pull the reader is now carrying; question mark not required>",
-        "working_answer": "",
+        "tension_from": "<what prompt-visible source/framing/memory left this charge>",
+        "tension_focus": "<what remains alive in attention; not necessarily a question>",
+        "working_interpretation": "<current tentative interpretation, or empty if not yet formed>",
         "status": "open",
-        "attention_tags": ["question"],
+        "attention_tags": ["image|suspense|question|emotion|pattern|character"],
         "source_quote": "<optional exact contiguous quote from current unit; omit if grounded in title/framing/prior memory>",
         "source_role": "support"
       }
@@ -349,33 +356,33 @@ Return JSON:
     {
       "op": "update",
       "target_store": "active_attention",
-      "target_key": "<existing active question item_id>",
-      "reason": "<how the current unit advances the question>",
+      "target_key": "<existing ActiveTension item_id>",
+      "reason": "<how the current unit develops the tension>",
       "payload": {
-        "working_answer": "<current best partial answer>",
-        "answer_source_quote": "<exact contiguous quote from current unit that supports this answer>",
-        "answer_source_role": "answer_support"
+        "working_interpretation": "<current tentative interpretation>",
+        "development_source_quote": "<exact contiguous quote from current unit that develops this tension>",
+        "development_source_role": "development_support"
       }
     },
     {
       "op": "resolve",
       "target_store": "active_attention",
-      "target_key": "<existing active question item_id>",
-      "reason": "<why the current unit answers the question enough to stop carrying it as open>",
+      "target_key": "<existing ActiveTension item_id>",
+      "reason": "<why the current unit settles this tension enough to stop carrying it as open>",
       "payload": {
-        "working_answer": "<final current answer>",
+        "working_interpretation": "<settled current interpretation>",
         "answered_reason": "<why this cited evidence directly satisfies the forward-pull, not just a precondition or clue>",
-        "answer_source_quote": "<exact contiguous quote from current unit that answers the question>",
-        "answer_source_role": "answer_support"
+        "development_source_quote": "<exact contiguous quote from current unit that settles the tension>",
+        "development_source_role": "development_support"
       }
     },
     {
       "op": "close",
       "target_store": "active_attention",
-      "target_key": "<existing active question item_id>",
-      "reason": "<why this question no longer drives later reading>",
+      "target_key": "<existing ActiveTension item_id>",
+      "reason": "<why this tension no longer needs to be carried>",
       "payload": {
-        "closed_reason": "<why this inquiry is no longer useful to carry forward>"
+        "closed_reason": "<why this tension is no longer useful to carry forward>"
       }
     },
     {
@@ -634,11 +641,11 @@ Return JSON:
     {
       "item_id": "<reuse an existing active item id when carrying an existing item>",
       "attention_tags": [],
-      "question_from": "<what already-read source moment raised this question>",
-      "driving_question": "<one coherent forward-pull the reader is still carrying>",
-      "working_answer": "<current best answer, or empty if still unanswered>",
+      "tension_from": "<what prompt-visible source/framing/memory left this charge>",
+      "tension_focus": "<what remains alive in attention>",
+      "working_interpretation": "<current tentative interpretation, or empty if not yet formed>",
       "source_refs": [],
-      "answer_source_refs": [],
+      "development_source_refs": [],
       "status": "open"
     }
   ],

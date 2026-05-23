@@ -131,17 +131,16 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
 - The post-F4 cleanup has also retired the old gate/pressure sidecar from current state.
   - Current hot state is `active_attention.active_items`.
   - `Working State` was the historical name for this hot layer; current code, prompts, runtime artifacts, checkpoints, and Memory Quality snapshots use `Active Attention`.
-  - Active Attention is now the reader's carry-forward set of live inquiries: prompt-context-grounded tensions, questions, suspense, or watchpoints that create a coherent forward pull while reading.
-  - The creation trigger is reader-native, not a mechanical memory gate: create an active item only when prompt-visible context leaves an unanswered question, tension, claim, or developing pattern that makes the reader want to find out what happens, why it matters, or how it resolves later.
+  - Active Attention is now interpreted as **ActiveTension**: a point that still hangs in the reader's attention after a unit.
+  - The creation trigger is reader-native, not a mechanical memory gate: create an active item when prompt-visible context leaves readerly charge such as curiosity, beauty, unease, surprise, suspense, unresolved meaning, emotional force, a vivid image, a distinctive character, an unusual event, a recurring pattern, or an unsettled claim.
   - Prompt-visible context may include the current source unit, book / chapter framing shown to `Read`, and existing memory state in the read context packet. Active Attention must not import outside knowledge about the book, author, or later chapters unless that information is present in the prompt.
-  - Each current active item should represent one coherent prompt-context-grounded forward pull that is still being carried by the reader. It does not need to end with a question mark, but it must make clear what the reader is trying to find out, judge, or watch resolve. One item may carry closely related sides of the same pull, but should not bundle independent tensions that need different later evidence to satisfy.
+  - An ActiveTension does not have to be a question, does not have to wait for an answer, and does not require `Read` to predict whether it will matter later. It only needs to still feel alive in the reader's attention right now.
   - Importance alone is not enough. Stable concepts, frameworks, chapter summaries, and visible reactions belong in `reading_impression`, `concept_registry`, `thread_trace`, or `reaction_records`, not in `active_attention`.
-  - A current active item should use `question_from`, `driving_question`, `working_answer`, `source_refs`, `answer_source_refs`, and `status`; terminal items should also carry `answered_reason` or `closed_reason` plus opened / terminal source coordinates when available.
-  - The field name `driving_question` is stable for compatibility, but the content may be a readable tension, suspense, or watchpoint rather than a literal question.
-  - `answer_boundary` is now compatibility-only. New prompts and reports should not require it as the core lifecycle rule.
-  - `statement` remains a legacy compatibility field for old artifacts and warm resume only; new Read outputs should not create statement-only active items.
-  - Each active item may still carry lightweight `attention_tags[]`, but tags are not the ontology. The governing shape is the open question and its current answer.
-  - `local_hypotheses` / `live_hypotheses` are historical names only. Hypothesis-like material is current only if it is framed as a live inquiry in `active_attention.active_items[]`; if it becomes stable and reusable, it should move into `concept_registry` or `thread_trace` instead of remaining as a hot-state inquiry.
+  - A current active item should use `tension_from`, `tension_focus`, `working_interpretation`, `source_refs`, `development_source_refs`, and `status`; terminal items should also carry `answered_reason` or `closed_reason` plus opened / terminal source coordinates when available.
+  - `question_from`, `driving_question`, `working_answer`, and `answer_source_refs` are legacy entrance fields only. Load / normalization boundaries migrate them to the current ActiveTension fields, and new persisted state should not write them back out.
+  - `answer_boundary` and `statement` are old artifact inputs only; new prompts, projections, and reports should not treat them as current structure.
+  - Each active item may still carry lightweight `attention_tags[]`, but tags are not the ontology. The governing shape is the readerly charge and its current interpretation.
+  - `local_hypotheses` / `live_hypotheses` are historical names only. Hypothesis-like material is current only if it is framed as ActiveTension in `active_attention.active_items[]`; if it becomes stable and reusable, it should move into `concept_registry` or `thread_trace` instead of remaining as hot-state tension.
   - `gate_state`, `pressure_snapshot`, and the old working-pressure file are historical trigger/watch/zoom design artifacts, not current runtime or prompt inputs.
   - `pressure_signals` were the intermediate one-step `Read -> Navigate.route` signals; they are now historical after the forward-settlement cutover.
 - The forward-settlement cutover is now landed.
@@ -483,10 +482,10 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - `always carry`
     - `current_unit`
     - a compact `local_continuity` summary
-    - all open active inquiries from `active_attention`, not a top-N truncation
-      - prompt-visible fields are only `item_id`, `question_from`, `driving_question`, and `working_answer`
-      - source refs, answer source refs, linked keys, statuses, and projection markers remain in runtime/audit/report artifacts rather than the Read prompt
-      - if the open-inquiry set grows too large, the projection should warn rather than silently omit inquiries
+    - all open ActiveTension items from `active_attention`, not a top-N truncation
+      - prompt-visible fields are only `item_id`, `tension_from`, `tension_focus`, and `working_interpretation`
+      - source refs, development source refs, linked keys, statuses, and projection markers remain in runtime/audit/report artifacts rather than the Read prompt
+      - if the open-tension set grows too large, the projection should warn rather than silently omit items
     - compact `concept_digest`
     - compact `thread_digest`
     - compact `reflective_digest`
@@ -522,15 +521,15 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - `local_continuity`
     - reading-flow position, paragraph-offset `mainline_cursor`, recent unit boundaries, active detour trace, and return semantics
   - `active_attention`
-    - the current live inquiries that may still shape the next reads
+    - the current ActiveTension items that still hang in reader attention
     - native truth is `active_attention.active_items[]`
     - item labels are lightweight `attention_tags[]`, not fixed routing buckets
     - core current fields are:
-      - `question_from`: what prompt-visible source, framing, or memory raised the inquiry
-      - `driving_question`: what the reader is now trying to answer or watch resolve; it may be phrased as a question, tension, or watchpoint
-      - `working_answer`: the best current answer, if the reading has started to answer it
-      - `source_refs`: paragraph-offset evidence for `question_from`
-      - `answer_source_refs`: paragraph-offset evidence for `working_answer`
+      - `tension_from`: what prompt-visible source, framing, or memory left this charge
+      - `tension_focus`: what remains alive in attention; this may be a question, image, beauty, character trait, unusual event, emotional pressure, pattern, or watchpoint
+      - `working_interpretation`: the current tentative interpretation, if one has formed
+      - `source_refs`: paragraph-offset evidence for `tension_from`
+      - `development_source_refs`: paragraph-offset evidence for later development of `working_interpretation`
       - `answered_reason`: why `Read` judged the inquiry sufficiently answered when resolving it
       - `closed_reason`: why `Read` judged the inquiry no longer useful to carry when closing it without claiming an answer
       - `opened_at_source_span(_id)` / `opened_at_unit_span(_id)`: where the inquiry was opened
@@ -552,12 +551,12 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - Its id is deterministically derived from the paragraph-offset span, for example `src:c1:p3@12-p3@48`.
   - New runtime truth does not write or require an `anchor_bank.json` artifact.
   - Chapter-end carry-forward preserves existing `active_attention` source refs by deterministic `item_id` merge after cooling, so a `chapter_consolidation` omission cannot erase evidence coordinates for a carried item.
-    - Chapter-end carry-forward is live-inquiry native: it preserves and merges `question_from`, `driving_question`, `working_answer`, `source_refs`, `answer_source_refs`, terminal reasons / coordinates, legacy linked keys, legacy `answer_boundary`, and status.
+    - Chapter-end carry-forward is ActiveTension-native: it preserves and merges `tension_from`, `tension_focus`, `working_interpretation`, `source_refs`, `development_source_refs`, terminal reasons / coordinates, legacy linked keys, and status.
   - Carry-forward does not fuzzy-match by statement and does not invent source refs for newly introduced items; new statement-only carry-forward items are rejected instead of becoming current Active Attention.
-  - Active-inquiry merges preserve `question_from`, update `working_answer` only when the payload explicitly provides one, preserve terminal reasons / coordinates, and dedupe both `source_refs` and `answer_source_refs`.
-  - Read-output `source_quote` / `answer_source_quote` are resolved into paragraph-offset `SourceRef` objects before settlement; model-emitted `source_refs` / `answer_source_refs` coordinates are not trusted.
+  - ActiveTension merges preserve `tension_from`, update `working_interpretation` only when the payload explicitly provides one, preserve terminal reasons / coordinates, and dedupe both `source_refs` and `development_source_refs`.
+  - Read-output `source_quote` / `development_source_quote` are resolved into paragraph-offset `SourceRef` objects before settlement; model-emitted `source_refs` / `development_source_refs` coordinates are not trusted.
     - The LLM is responsible for citing exact source text snippets, not for producing trusted coordinates.
-    - If an active item is grounded in title / chapter framing / prior memory rather than a current-source phrase, `Read` should explain that basis in `question_from` and omit `source_quote`; the runtime records unit lifecycle coordinates without manufacturing precise `source_refs`.
+    - If an active item is grounded in title / chapter framing / prior memory rather than a current-source phrase, `Read` should explain that basis in `tension_from` and omit `source_quote`; the runtime records unit lifecycle coordinates without manufacturing precise `source_refs`.
     - The runtime resolves coordinates by raw exact match, normalized exact match, then ordered-fragment match for stitched-but-source-real snippets. If none match, the run keeps a `fallback_unit_span` caveat rather than pretending to have precise evidence.
 - Ownership is now:
   - `Navigate`
@@ -567,9 +566,9 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
     - owns current-unit understanding
     - owns surfaced reactions
     - owns updates into `active_attention / concept_registry / thread_trace`
-    - owns active-inquiry lifecycle intent:
-      - `create` / `append` creates a new open inquiry when prompt-visible context leaves an unanswered question, tension, claim, or watchpoint that would shape how the reader reads forward
-      - `update` / `reactivate` advances, corrects, reverses, weakens, or rekindles the `working_answer` or what the reader is currently tracking
+    - owns active-tension lifecycle intent:
+      - `create` / `append` creates a new open ActiveTension when prompt-visible context leaves readerly charge that has not yet been fully digested
+      - `update` / `reactivate` advances, corrects, reverses, weakens, or rekindles the `working_interpretation` or what the reader is currently tracking
       - `resolve` marks an inquiry answered enough that it no longer needs to be carried as open; the payload must explain with `answered_reason` why cited evidence directly satisfies the forward pull, not merely a precondition, setup, clue, partial explanation, or reframing
       - `close` marks an inquiry no longer driving the reading, without implying it was fully answered; the payload must explain this with `closed_reason`
       - `drop` removes a mistaken or obsolete inquiry

@@ -105,6 +105,7 @@ from .state_ops import (
     close_local_meaning_unit,
     apply_active_attention_operations,
 )
+from .state_migration import normalize_active_tension_state
 from .state_projection import build_navigation_context
 from .storage import (
     chapter_result_compatibility_file,
@@ -744,6 +745,7 @@ def _load_runtime_bundle(output_dir: Path) -> dict[str, dict[str, object]]:
         )
     for name in ("active_attention", "concept_registry", "thread_trace", "reflective_frames"):
         bundle[name] = loaded_new.get(name) or _default_builder(name)()
+    bundle["active_attention"] = normalize_active_tension_state(bundle["active_attention"])
     return bundle
 
 
@@ -753,7 +755,7 @@ def _save_runtime_bundle(output_dir: Path, bundle: dict[str, dict[str, object]])
     save_json(local_buffer_file(output_dir), bundle["local_buffer"])
     save_json(local_continuity_file(output_dir), bundle["local_continuity"])
     save_json(continuation_capsule_file(output_dir), bundle["continuation_capsule"])
-    save_json(active_attention_file(output_dir), bundle["active_attention"])
+    save_json(active_attention_file(output_dir), normalize_active_tension_state(bundle["active_attention"]))
     save_json(concept_registry_file(output_dir), bundle["concept_registry"])
     save_json(thread_trace_file(output_dir), bundle["thread_trace"])
     save_json(reflective_frames_file(output_dir), bundle["reflective_frames"])
@@ -2162,6 +2164,25 @@ def _normalize_memory_uptake_ops_source_refs(
         payload = dict(operation.get("payload", {})) if isinstance(operation.get("payload"), dict) else {}
         operation_type = _clean_text(operation.get("op") or operation.get("operation_type")).lower().replace("-", "_")
         target_store = _clean_text(operation.get("target_store") or operation.get("effective_target_store"))
+        if target_store == "active_attention":
+            if "tension_from" not in payload and _clean_text(payload.get("question_from")):
+                payload["tension_from"] = _clean_text(payload.get("question_from"))
+            if "tension_focus" not in payload:
+                for legacy_key in ("driving_question", "statement", "answer_boundary"):
+                    if _clean_text(payload.get(legacy_key)):
+                        payload["tension_focus"] = _clean_text(payload.get(legacy_key))
+                        break
+            if "working_interpretation" not in payload and "working_answer" in payload:
+                payload["working_interpretation"] = _clean_text(payload.get("working_answer"))
+            for legacy_key in (
+                "question_from",
+                "driving_question",
+                "working_answer",
+                "answer_source_refs",
+                "statement",
+                "answer_boundary",
+            ):
+                payload.pop(legacy_key, None)
 
         source_quote = _clean_text(payload.get("source_quote") or payload.get("quote") or payload.get("evidence_quote"))
         source_role = _clean_text(payload.get("source_role")) or "support"
@@ -2169,14 +2190,18 @@ def _normalize_memory_uptake_ops_source_refs(
             payload["source_refs"] = [source_ref_from_unit(source_unit, quote=source_quote, role=source_role)]
         elif "source_refs" in payload:
             payload.pop("source_refs", None)
-        answer_source_quote = _clean_text(payload.get("answer_source_quote"))
-        answer_source_role = _clean_text(payload.get("answer_source_role")) or "answer_support"
-        if isinstance(source_unit, dict) and source_unit and answer_source_quote:
-            payload["answer_source_refs"] = [
-                source_ref_from_unit(source_unit, quote=answer_source_quote, role=answer_source_role)
+        development_source_quote = _clean_text(payload.get("development_source_quote") or payload.get("answer_source_quote"))
+        development_source_role = (
+            _clean_text(payload.get("development_source_role") or payload.get("answer_source_role"))
+            or "development_support"
+        )
+        if isinstance(source_unit, dict) and source_unit and development_source_quote:
+            payload["development_source_refs"] = [
+                source_ref_from_unit(source_unit, quote=development_source_quote, role=development_source_role)
             ]
-        elif "answer_source_refs" in payload:
-            payload.pop("answer_source_refs", None)
+        else:
+            payload.pop("development_source_refs", None)
+        payload.pop("answer_source_refs", None)
         if target_store == "active_attention":
             unit_span = _unit_span()
             unit_span_id = _unit_span_id()
@@ -2189,7 +2214,7 @@ def _normalize_memory_uptake_ops_source_refs(
             if operation_type == "resolve":
                 if not _clean_text(payload.get("answered_reason")):
                     payload["answered_reason"] = _clean_text(operation.get("reason"))
-                answer_span_ref_id, answer_span_ref = _first_ref_span(payload.get("answer_source_refs"))
+                answer_span_ref_id, answer_span_ref = _first_ref_span(payload.get("development_source_refs"))
                 source_span_ref_id, source_span_ref = _first_ref_span(payload.get("source_refs"))
                 payload.setdefault("answered_at_source_span_id", answer_span_ref_id or source_span_ref_id or unit_span_id)
                 payload.setdefault("answered_at_source_span", answer_span_ref or source_span_ref or unit_span)

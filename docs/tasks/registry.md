@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-05-22T23:12:00+08:00`
+Last updated: `2026-05-23T15:52:00+08:00`
 
 ## Status Values
 - `active`
@@ -19,21 +19,6 @@ Last updated: `2026-05-22T23:12:00+08:00`
 - `cancelled`
 
 ## Active
-
-### `TASK-SECOND-READER-ACTIVE-ATTENTION-PROMPT-CONTEXT-DIAGNOSTIC-RETRY1-20260522` — Run Active Attention prompt-context full-window diagnostic Retry1
-- Status: `active`
-- Lane: `mechanism_eval`
-- Priority: `high`
-- Detail: `reading-companion-backend/docs/evaluation/run_ledger.md`
-- Next: five retry1 diagnostic shards are running in parallel with fresh run ids. Monitor registered jobs to terminal status; do not terminate solely because summary files are absent before completion. After terminal status, run strict LLM health checks, update run ledger/current-state/task registry, and produce a retry1 post-run report. Do not update the evidence catalog, promote Long Span vNext, or claim product quality.
-- Jobs:
-  - `bgjob_active_attention_prompt_context_window_diagnostic_20260522_retry1_huochu` (`running`)
-  - `bgjob_active_attention_prompt_context_window_diagnostic_20260522_retry1_mangge` (`running`)
-  - `bgjob_active_attention_prompt_context_window_diagnostic_20260522_retry1_nawaer` (`running`)
-  - `bgjob_active_attention_prompt_context_window_diagnostic_20260522_retry1_value_of_others` (`running`)
-  - `bgjob_active_attention_prompt_context_window_diagnostic_20260522_retry1_xidaduo` (`running`)
-- Evidence:
-  - `reading-companion-backend/docs/evaluation/run_ledger.md`
 
 ### `TASK-ATTENTIONAL-V2-STRUCTURAL-REWORK` — Execute the post-Phase-9 structural rework of `attentional_v2`
 - Status: `active`
@@ -498,6 +483,22 @@ Last updated: `2026-05-22T23:12:00+08:00`
   - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_full_long_span_vnext_post_slice8h_20260518_parallel5/meta/selected_windows.json`
 
 ## Waiting
+
+### `TASK-SECOND-READER-ACTIVE-ATTENTION-PROMPT-CONTEXT-DIAGNOSTIC-RETRY1-20260522` — Review ActiveTension lifecycle review for full-window diagnostic Retry1
+- Status: `waiting`
+- Lane: `mechanism_eval`
+- Priority: `high`
+- Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Prompt-Context-Grounded-Full-Window-Diagnostic-Retry1-ActiveTension-Lifecycle-Review v0.md`
+- Next: review the completed five-window retry1 diagnostic and the ActiveTension lifecycle review. All five registered jobs completed with exit code `0`, expected summary outputs exist, and run ledger entries are `review_pending`. Treat this as diagnostic review material only; do not update the evidence catalog, promote Long Span vNext, launch broader eval, or claim product quality without explicit approval. The next design discussion is ActiveTension operation-set simplification and `update` semantics.
+- Jobs:
+  - `bgjob_active_attention_prompt_context_window_diagnostic_20260522_retry1_huochu` (`completed`)
+  - `bgjob_active_attention_prompt_context_window_diagnostic_20260522_retry1_mangge` (`completed`)
+  - `bgjob_active_attention_prompt_context_window_diagnostic_20260522_retry1_nawaer` (`completed`)
+  - `bgjob_active_attention_prompt_context_window_diagnostic_20260522_retry1_value_of_others` (`completed`)
+  - `bgjob_active_attention_prompt_context_window_diagnostic_20260522_retry1_xidaduo` (`completed`)
+- Evidence:
+  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Prompt-Context-Grounded-Full-Window-Diagnostic-Retry1-ActiveTension-Lifecycle-Review v0.md`
+  - `reading-companion-backend/docs/evaluation/run_ledger.md`
 
 ### `TASK-SECOND-READER-ACTIVE-ATTENTION-PROMPT-CONTEXT-DIAGNOSTIC-REPORT-REVIEW` — Review Active Attention prompt-context full-window diagnostic report
 - Status: `waiting`
