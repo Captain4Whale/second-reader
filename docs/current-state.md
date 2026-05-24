@@ -15,11 +15,12 @@ Last verified: `2026-05-24T12:32:17+08:00`
     - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/C设计10-Recent Reading Memory Design v0.md`
   - implementation scope:
     - `recent_reading_memory` is now a runtime store for near-term semantic memory of just-read units
-    - Read prompt `attentional_v2.read.v28` asks for one or a small number of context-resolvable Recent Reading Memory entries per unit
+    - Read prompt `attentional_v2.read.v29` asks for one or a small number of context-resolvable Recent Reading Memory entries per unit
     - `read.v25` tightened the formation wording so Recent Reading Memory should be source-grounded understanding rather than essay-like analysis; it should record what the source establishes / shows / says / names / contrasts / changes, stay complete enough for future reading, and avoid unsupported analytic upgrades
     - `read.v26` adds the continuity balance: Read should orient through the full prompt-visible reading context, treat that context as already-carried reading state, and still write the memory for the current unit itself rather than recapping prior context
     - `read.v27` removes operation-level `reason` from Recent Reading Memory append examples and contract; `memory_text` is the retained content, while runner/state code preserves unit-level provenance
     - `read.v28` tightens writing style: Recent Reading Memory should start from source-established content, add interpretation only when needed to preserve that content, remember author stance / evidence-boundary / intended-reader units, and avoid abstract upgrades unless the source directly supports them
+    - `read.v29` simplifies the writing rule after retry2: focus on the current unit's contribution, use prompt-visible context as carried memory, and stop once source-established content is clear instead of adding abstract closing labels such as "this is a mechanism" or "this forms a tension"
     - Read may append entries through `memory_uptake_ops[]` with `target_store="recent_reading_memory"` and `op="append"`
     - the LLM supplies only `kind` and `memory_text`; runner/state code owns `entry_id`, `source_unit_span_id`, `created_at_unit_index`, `status`, and `archived_by_consolidation_id`
     - only `active` entries are projected into subsequent Read prompt packets

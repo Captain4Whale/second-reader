@@ -69,52 +69,41 @@ The Read prompt should frame Recent Reading Memory as a reader leaving memory fo
 Agreed prompt wording:
 
 ```text
-After reading this unit, write a Recent Reading Memory entry for your future self.
+After reading this unit, write what your future reading self should remember from this unit unless the unit is empty or purely structural.
 
+Recent Reading Memory is near-term memory for continuing this book.
 Assume the exact source text of this unit may not be shown again in the next Read step.
-Record what you now understand from this unit that should remain available for coherent continued reading.
 
-Compress meaning, not wording.
+Focus on the current unit's contribution: what it newly establishes, develops, clarifies, changes, contrasts, withholds, or explicitly frames.
+
+Record source-established content before interpretation:
+- what happened;
+- who or what appeared;
+- what the author claims or explains;
+- what distinction, stage, example, condition, or consequence is introduced;
+- what changes in a person, situation, argument, relationship, or emotional state;
+- what author stance, evidence boundary, writing method, intended reader, or scope limit is declared.
+
+Use the prompt-visible reading context as your carried memory.
+Let that context help you understand the current unit as part of the unfolding book, but do not recap prior context for its own sake.
+Mention prior context only when it makes the current unit's contribution understandable.
+
+Write the memory so a future Read step can understand it from the memory packet.
+If something is already stable in prompt-visible concept/thread context, use its stable name without retelling its whole history.
+If something is newly introduced in this unit, name or briefly describe it clearly enough for later reading.
+
+Compress source meaning into clear memory.
 Do not copy the whole passage.
 Do not write a visible reaction.
 Do not predict whether something will matter later.
 Do not import outside knowledge.
-Write Recent Reading Memory as source-established content first, not essay-like analysis.
-First record what the source directly establishes for future reading: who or what appears, what happened, what the author claims, what distinction / stage / example is introduced, what condition or consequence is stated, or what writing position / evidence boundary / reader-orientation is declared.
-Add interpretation only when it is needed to preserve source-established meaning. Do not start from your theory of the passage.
-Record what the source establishes, shows, says, names, contrasts, changes, withholds, or explicitly frames.
+
+Do not turn the entry into an essay or theory about the passage.
+Once the source-established content is clear, stop.
+Do not add a closing label such as "this is a mechanism", "this reveals the essence", "this forms a tension", "this is a system", or "this proves..." unless the source itself explicitly names or frames it that way.
+
+Avoid bare pronouns or vague references such as "he", "this", "that", or "the above situation" unless the referent is explicit in the same entry or stable in prompt-visible concept/thread context.
 Keep the memory complete enough for future reading; do not make it artificially short.
-Before writing Recent Reading Memory, orient yourself with the prompt-visible reading context.
-Treat the provided context as what you already carry from the reading so far.
-Use that context to understand the current unit as part of the unfolding book.
-But write the memory for the current unit itself: record what this unit newly establishes, develops, specifies, contrasts, changes, or makes memorable.
-Do not turn the entry into a recap of the context.
-Do not force every entry to mention prior memory or framing.
-Only mention a connection to prior context when it helps make the current unit's meaning clear.
-The entry should answer: "What should my future self remember from this unit, given the reading context I already carried into it?" not "What can I say again about the prior context?"
-
-Write the memory so your future self can understand it from the memory packet, not from the vanished source unit.
-Be context-resolvable, not standalone exhaustive.
-If a person, concept, thread, or situation is already stable in the prompt-visible concept/thread context, use its stable name and only record what changed or was newly learned.
-If something is newly introduced in this unit, name or describe it clearly enough for a later Read step to understand.
-Avoid bare pronouns or vague references such as "he", "this", "that", or "the above situation" unless the referent is explicit in the same entry or stable in concept/thread context.
-
-Capture:
-- new events, claims, explanations, or facts introduced here
-- changes in a person, situation, argument, relationship, or emotional state
-- definitions, distinctions, causal links, stages, or examples that clarify the text
-- local tensions, promises, images, or unresolved lines that should remain in mind
-- author stance, evidence boundaries, reader-orientation notes, writing-method declarations, or explicit scope limits
-- updates to something remembered from earlier context
-
-Do not over-explain the hidden mechanism behind the passage.
-Do not turn a concrete scene into an abstract theory unless the source itself names or strongly frames it that way.
-Prefer source-facing phrasing such as "the text says", "the text shows", "the text names", or "the text contrasts" when useful.
-Avoid unsupported analytic upgrades such as "the essence is", "this proves", "this is an operation mechanism", or "the passage actively trains" unless the unit explicitly supports that wording.
-Avoid abstract upgrades such as "psychological pressure weapon", "inner subject process", "systemic refusal", or "moral judgment is abandoned" unless the source itself directly establishes that abstraction. Prefer the concrete source memory first: for example, "the guards identify prisoners by number and never ask their names" before any theory about dehumanization.
-Author-facing or method-facing units still count as meaningful content. If the unit declares the author's witness position, evidence boundary, writing method, intended reader, or what the book will / will not explain, remember that as source-established content instead of treating it as empty structure.
-
-If the unit mostly elaborates something already known, rewrite the memory as the current best understanding rather than duplicating fragments.
 ```
 
 Granularity wording:
@@ -363,7 +352,7 @@ Requirements:
 
 Style guardrail:
 
-> Recent Reading Memory should remember what the source content establishes, not convert every unit into an explanatory mini-essay. It should start with the concrete source contribution before interpretation: who / what appeared, what happened, what claim or distinction was made, what example or stage was introduced, what condition or consequence was stated, or what authorial evidence boundary / reader-orientation was declared. It should avoid unsupported analytic upgrades such as "the essence is", "this proves", "this is an operation mechanism", "psychological pressure weapon", "inner subject process", "systemic refusal", or "moral judgment is abandoned" unless the source itself clearly supports that framing.
+> Recent Reading Memory should remember what the source content establishes, not convert every unit into an explanatory mini-essay. It should start with the current unit's concrete contribution before interpretation: who / what appeared, what happened, what claim or distinction was made, what example or stage was introduced, what condition or consequence was stated, or what authorial evidence boundary / reader-orientation was declared. Once the source-established content is clear, stop. Do not add a closing label such as "this is a mechanism", "this reveals the essence", "this forms a tension", "this is a system", or "this proves..." unless the source itself explicitly names or frames it that way.
 
 Continuity guardrail:
 

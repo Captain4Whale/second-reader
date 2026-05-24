@@ -2912,6 +2912,27 @@ This new direction is design frozen but not yet implemented as a formal benchmar
 - `reading-companion-backend/src/attentional_v2/prompts.py`
 - `reading-companion-backend/tests/test_attentional_v2_nodes.py`
 
+## Entry 98
+**ID**: DEC-101
+**Status**: active
+
+**Decision / Clarification**: Keep Recent Reading Memory source-established and stop after the current unit's contribution is clear.
+
+**Period**: May 24, 2026, after reviewing the `read.v28` beginning-of-book `huochu p1-p24` retry2 diagnostic.
+
+**Decision**: Update the Read prompt to `attentional_v2.read.v29`. Recent Reading Memory should remain a compact near-term memory for continuing the book: it uses prompt-visible context as carried memory, but primarily records the current unit's contribution. It should compress source meaning into clear memory, not produce an essay or theory about the passage.
+
+**Boundary**: Once source-established content is clear, stop. Do not add a closing label such as "this is a mechanism", "this reveals the essence", "this forms a tension", "this is a system", or "this proves..." unless the source itself explicitly names or frames that abstraction. This is not a move toward mechanical extraction: the memory can still be readable and interpretively coherent, but it should not force every unit into a named concept or abstract explanation.
+
+**Why this path won**: Retry2 improved coverage and remembered the previously missed author-method / evidence-boundary material, but several entries still ended by naming or elevating the source content into an abstract label. The chosen repair follows simplicity and universality: remember what the current unit establishes for future reading, use context to understand it, and stop when the source-established contribution is clear.
+
+**Primary evidence**:
+- `docs/implementation/new-reading-mechanism/second-reader-memory-planning/C设计10-Recent Reading Memory Design v0.md`
+- `docs/backend-reading-mechanisms/attentional_v2.md`
+- `reading-companion-backend/docs/evaluation/reporting_standard.md`
+- `reading-companion-backend/src/attentional_v2/prompts.py`
+- `reading-companion-backend/tests/test_attentional_v2_nodes.py`
+
 ## Entry 97
 **ID**: DEC-100
 **Status**: active
