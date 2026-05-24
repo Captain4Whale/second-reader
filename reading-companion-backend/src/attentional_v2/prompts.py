@@ -7,10 +7,10 @@ from dataclasses import dataclass
 from src.prompts.shared import LANGUAGE_OUTPUT_CONTRACT
 
 
-ATTENTIONAL_V2_PROMPTSET_VERSION = "attentional_v2-phase6-v37"
+ATTENTIONAL_V2_PROMPTSET_VERSION = "attentional_v2-phase6-v38"
 SURVEY_CHAPTER_ZONE_PROMPT_VERSION = "attentional_v2.survey_chapter_zone.v1"
 NAVIGATE_CHOOSE_NEXT_UNIT_PROMPT_VERSION = "attentional_v2.navigate_choose_next_unit.v1"
-READ_UNIT_PROMPT_VERSION = "attentional_v2.read.v29"
+READ_UNIT_PROMPT_VERSION = "attentional_v2.read.v30"
 BRIDGE_RESOLUTION_PROMPT_VERSION = "attentional_v2.bridge_resolution.v5"
 REFLECTIVE_PROMOTION_PROMPT_VERSION = "attentional_v2.reflective_promotion.v1"
 RECONSOLIDATION_PROMPT_VERSION = "attentional_v2.reconsolidation.v1"
@@ -246,16 +246,37 @@ Rules:
 - After the impression and any surfaced reactions, maintain memory deliberately.
 - `memory_uptake_ops` records only what should remain available after this unit. Do not maintain state for its own sake.
 - A surfaced reaction is already persisted as a reaction record. Do not copy it into `concept_registry` or `thread_trace` just because it was strong.
-- First maintain Recent Reading Memory: after reading this unit, write what your future reading self should remember from this unit unless the unit is empty or purely structural.
-- Recent Reading Memory is near-term memory for continuing this book. Assume the exact source text of this unit may not be shown again in the next Read step.
-- Focus on the current unit's contribution: what it newly establishes, develops, clarifies, changes, contrasts, withholds, or explicitly frames.
-- Record source-established content before interpretation: what happened, who or what appeared, what the author claims or explains, what distinction / stage / example / condition / consequence is introduced, what changes in a person / situation / argument / relationship / emotional state, or what author stance / evidence boundary / writing method / intended reader / scope limit is declared.
-- Use the prompt-visible reading context as your carried memory. Let that context help you understand the current unit as part of the unfolding book, but do not recap prior context for its own sake. Mention prior context only when it makes the current unit's contribution understandable.
-- Write the memory so a future Read step can understand it from the memory packet. If something is already stable in prompt-visible concept/thread context, use its stable name without retelling its whole history. If something is newly introduced in this unit, name or briefly describe it clearly enough for later reading.
-- Compress source meaning into clear memory. Do not copy the whole passage. Do not write a visible reaction. Do not predict whether something will matter later. Do not import outside knowledge.
-- Do not turn the entry into an essay or theory about the passage. Once the source-established content is clear, stop. Do not add a closing label such as "this is a mechanism", "this reveals the essence", "this forms a tension", "this is a system", or "this proves..." unless the source itself explicitly names or frames it that way.
-- Avoid bare pronouns or vague references such as "he", "this", "that", or "the above situation" unless the referent is explicit in the same entry or stable in prompt-visible concept/thread context.
+- First maintain Recent Reading Memory: after reading this unit, write one Recent Reading Memory entry for your future self unless the unit is empty or purely structural.
+- Assume the exact source text of this unit may not be shown again in the next Read step. Record what you now understand from this unit that should remain available for coherent continued reading.
+- Write Recent Reading Memory as source-established content first, not essay-like analysis.
+- First record what the source directly establishes for future reading: who or what appears, what happened, what the author claims, what distinction / stage / example is introduced, what condition or consequence is stated, or what writing position / evidence boundary / reader-orientation is declared.
+- Add interpretation only when it is needed to preserve source-established meaning. Do not start from your theory of the passage.
+- Record what the source establishes, shows, says, names, contrasts, changes, withholds, or explicitly frames.
+- Compress meaning, not wording. Do not copy the whole passage. Do not write a visible reaction. Do not predict whether something will matter later. Do not import outside knowledge.
 - Keep the memory complete enough for future reading; do not make it artificially short.
+- Before writing Recent Reading Memory, orient yourself with the prompt-visible reading context. Treat the provided context as what you already carry from the reading so far.
+- Use that context to understand the current unit as part of the unfolding book.
+- But write the memory for the current unit itself: record what this unit newly establishes, develops, specifies, contrasts, changes, or makes memorable.
+- Do not turn the entry into a recap of the context.
+- Do not force every entry to mention prior memory or framing.
+- Only mention a connection to prior context when it helps make the current unit's meaning clear.
+- The entry should answer: "What should my future self remember from this unit, given the reading context I already carried into it?" not "What can I say again about the prior context?"
+- Write Recent Reading Memory so your future self can understand it from the memory packet, not from the vanished source unit.
+- Be context-resolvable, not standalone exhaustive.
+- Write Recent Reading Memory as natural memory sentences or a short paragraph, not as a heading followed by explanation.
+- Do not default to `<label>: <explanation>` or `<abstract name>: <explanation>` style.
+- Use a colon only when the source itself names a term, stage, framework, or quoted source term such as `Transfer` / `Selection`.
+- If a person, concept, thread, or situation is already stable in the prompt-visible concept/thread context, use its stable name and only record what changed or was newly learned.
+- If something is newly introduced in this unit, name or describe it clearly enough for a later Read step to understand.
+- Avoid bare pronouns or vague references such as "he", "this", "that", or "the above situation" unless the referent is explicit in the same entry or stable in concept/thread context.
+- Capture new events, claims, explanations, facts, changes in a person/situation/argument/relationship/emotional state, definitions, distinctions, causal links, stages, examples, source-explicit tensions, images, source-explicit unresolved lines, author stance, evidence boundaries, reader-orientation notes, or updates to earlier context.
+- Do not over-explain the hidden mechanism behind the passage.
+- Do not turn a concrete scene into an abstract theory unless the source itself names or strongly frames it that way.
+- Prefer source-facing phrasing such as "the text says", "the text shows", "the text names", or "the text contrasts" when useful.
+- Avoid unsupported analytic upgrades such as "the essence is", "this proves", "this is an operation mechanism", or "the passage actively trains" unless the unit explicitly supports that wording.
+- Avoid abstract upgrades such as "psychological pressure weapon", "inner subject process", "systemic refusal", or "moral judgment is abandoned" unless the source itself directly establishes that abstraction. Prefer the concrete source memory first: for example, "the guards identify prisoners by number and never ask their names" before any theory about dehumanization.
+- Author-facing or method-facing units still count as meaningful content. If the unit declares the author's witness position, evidence boundary, writing method, intended reader, or what the book will / will not explain, remember that as source-established content instead of treating it as empty structure.
+- If the unit mostly elaborates something already known, write the memory as the current best understanding rather than duplicating fragments.
 - Usually write one Recent Reading Memory entry for this unit. Split into multiple entries only when the unit contains distinct meanings that a future reader would naturally remember and use separately. Do not split by sentence or paragraph, and do not create many small note fragments.
 - Recent Reading Memory entries are grounded in the current read unit as a whole. You do not need exact source quotes for them; the runner owns `source_unit_span_id`.
 - Recent Reading Memory append operations do not need an operation-level `reason`. The `memory_text` is the content to keep; do not spend attention justifying why you wrote it.

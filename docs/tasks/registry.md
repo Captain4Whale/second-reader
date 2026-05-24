@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-05-24T09:20:07+08:00`
+Last updated: `2026-05-24T13:52:00+08:00`
 
 ## Status Values
 - `active`
@@ -503,13 +503,13 @@ Last updated: `2026-05-24T09:20:07+08:00`
 - Lane: `mechanism_eval`
 - Priority: `high`
 - Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/RecentReadingMemory-Micro-Diagnostic-Huochu-Post-run-Report v0.md`
-- Next: review the completed Recent Reading Memory micro diagnostics. The `huochu p45-p61` run completed with exit code `0`, LLM health passed with `24` successes and `0` fallback, and `8` read units produced `10` active Recent Reading Memory entries. The first beginning-of-book `huochu p1-p24` run completed with exit code `0`, LLM health passed with `22` successes and `0` fallback, and `10` read units produced `10` active Recent Reading Memory entries, but Unit 1 produced no Recent Memory. The `read.v27` retry1 beginning diagnostic completed with exit code `0`, LLM health passed with `39` successes and `0` fallback, and `18` read units produced `18` active Recent Reading Memory entries; Unit 1 now records the opening frame / core question, and `0 / 18` Recent Memory append ops carried operation-level `reason`. The `read.v28` retry2 beginning diagnostic completed with exit code `0`, LLM health passed with `26` successes and `0` fallback, and `12` broader read units produced `16` active Recent Reading Memory entries; the previously missed author-method / evidence-boundary material is now remembered, but some entries still end with abstract interpretive labels. The `read.v29` retry3 beginning diagnostic completed with exit code `0`, LLM health passed with `29` successes and `0` fallback, and `13` read units produced `17` active Recent Reading Memory entries; author-method material no longer ends with a forced `张力` label, but residual `mechanism` / `logic` / `paradox` phrasing remains in several entries. These diagnostics validate formation only, not consolidation; do not update the evidence catalog, remove `active_attention`, promote Long Span vNext, run broader eval, or claim product quality without explicit approval.
+- Next: run the fresh `read.v30` retry4 beginning diagnostic after the prompt repair is committed. The `huochu p45-p61` run completed with exit code `0`, LLM health passed with `24` successes and `0` fallback, and `8` read units produced `10` active Recent Reading Memory entries. The first beginning-of-book `huochu p1-p24` run completed with exit code `0`, LLM health passed with `22` successes and `0` fallback, and `10` read units produced `10` active Recent Reading Memory entries, but Unit 1 produced no Recent Memory. The `read.v27` retry1 beginning diagnostic completed with exit code `0`, LLM health passed with `39` successes and `0` fallback, and `18` read units produced `18` active Recent Reading Memory entries; Unit 1 now records the opening frame / core question, and `0 / 18` Recent Memory append ops carried operation-level `reason`. The `read.v28` retry2 beginning diagnostic completed with exit code `0`, LLM health passed with `26` successes and `0` fallback, and `12` broader read units produced `16` active Recent Reading Memory entries; the previously missed author-method / evidence-boundary material is now remembered, but some entries still end with abstract interpretive labels. The `read.v29` retry3 beginning diagnostic completed with exit code `0`, LLM health passed with `29` successes and `0` fallback, and `13` read units produced `17` active Recent Reading Memory entries; retry3 is preserved as superseded diagnostic history because the broader rewrite felt formulaic and is not the future prompt direction. These diagnostics validate formation only, not consolidation; do not update the evidence catalog, remove `active_attention`, promote Long Span vNext, run broader eval, or claim product quality without explicit approval.
 - Jobs:
   - `bgjob_recent_reading_memory_micro_huochu_20260523` (`completed`)
   - `bgjob_recent_reading_memory_beginning_huochu_20260524` (`completed`)
   - `bgjob_recent_reading_memory_beginning_huochu_20260524_retry1` (`completed`)
   - `bgjob_recent_reading_memory_beginning_huochu_20260524_retry2` (`completed`)
-  - `bgjob_recent_reading_memory_beginning_huochu_20260524_retry3` (`completed`)
+  - `bgjob_recent_reading_memory_beginning_huochu_20260524_retry3` (`completed / superseded prompt direction`)
 - Evidence:
   - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/RecentReadingMemory-Micro-Diagnostic-Huochu-Post-run-Report v0.md`
   - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/RecentReadingMemory-Beginning-Micro-Diagnostic-Huochu-Post-run-Report v0.md`

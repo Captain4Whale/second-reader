@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-05-24T05:24:00Z",
+  "updated_at": "2026-05-24T05:52:00Z",
   "tasks": [
     {
       "id": "TASK-SECOND-READER-RECENT-READING-MEMORY-CONSOLIDATION-DESIGN-20260523",
@@ -18,7 +18,8 @@
       ],
       "decision_refs": [
         "DEC-097",
-        "DEC-098"
+        "DEC-098",
+        "DEC-102"
       ],
       "job_refs": [],
       "acceptance_ref": "",
@@ -48,7 +49,8 @@
         "reading-companion-backend/docs/evaluation/run_ledger.md"
       ],
       "decision_refs": [
-        "DEC-098"
+        "DEC-098",
+        "DEC-102"
       ],
       "job_refs": [
         "bgjob_recent_reading_memory_micro_huochu_20260523",
@@ -58,7 +60,7 @@
         "bgjob_recent_reading_memory_beginning_huochu_20260524_retry3"
       ],
       "acceptance_ref": "",
-      "next_action": "Review the completed Recent Reading Memory micro diagnostics. The huochu p45-p61 run completed with exit code 0, LLM health passed with 24 successes and 0 fallback, and 8 read units produced 10 active Recent Reading Memory entries. The first beginning-of-book huochu p1-p24 run completed with exit code 0, LLM health passed with 22 successes and 0 fallback, and 10 read units produced 10 active Recent Reading Memory entries, but Unit 1 produced no Recent Memory. The read.v27 retry1 beginning diagnostic completed with exit code 0, LLM health passed with 39 successes and 0 fallback, and 18 read units produced 18 active Recent Reading Memory entries; Unit 1 now records the opening frame / core question, and 0 / 18 Recent Memory append ops carried operation-level reason. The read.v28 retry2 beginning diagnostic completed with exit code 0, LLM health passed with 26 successes and 0 fallback, and 12 broader read units produced 16 active Recent Reading Memory entries; the previously missed author-method / evidence-boundary material is now remembered, but some entries still end with abstract interpretive labels. The read.v29 retry3 beginning diagnostic completed with exit code 0, LLM health passed with 29 successes and 0 fallback, and 13 read units produced 17 active Recent Reading Memory entries; author-method material no longer ends with a forced 张力 label, but residual mechanism / logic / paradox phrasing remains in several entries. These diagnostics validate formation only, not consolidation; do not update the evidence catalog, remove active_attention, promote Long Span vNext, run broader eval, or claim product quality without explicit approval.",
+      "next_action": "Run the fresh read.v30 retry4 beginning diagnostic after the prompt repair is committed. The huochu p45-p61 run completed with exit code 0, LLM health passed with 24 successes and 0 fallback, and 8 read units produced 10 active Recent Reading Memory entries. The first beginning-of-book huochu p1-p24 run completed with exit code 0, LLM health passed with 22 successes and 0 fallback, and 10 read units produced 10 active Recent Reading Memory entries, but Unit 1 produced no Recent Memory. The read.v27 retry1 beginning diagnostic completed with exit code 0, LLM health passed with 39 successes and 0 fallback, and 18 read units produced 18 active Recent Reading Memory entries; Unit 1 now records the opening frame / core question, and 0 / 18 Recent Memory append ops carried operation-level reason. The read.v28 retry2 beginning diagnostic completed with exit code 0, LLM health passed with 26 successes and 0 fallback, and 12 broader read units produced 16 active Recent Reading Memory entries; the previously missed author-method / evidence-boundary material is now remembered, but some entries still end with abstract interpretive labels. The read.v29 retry3 beginning diagnostic completed with exit code 0, LLM health passed with 29 successes and 0 fallback, and 13 read units produced 17 active Recent Reading Memory entries; retry3 is preserved as superseded diagnostic history because the broader rewrite felt formulaic and is not the future prompt direction. These diagnostics validate formation only, not consolidation; do not update the evidence catalog, remove active_attention, promote Long Span vNext, run broader eval, or claim product quality without explicit approval.",
       "blocked_by": [],
       "evidence_refs": [
         "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/RecentReadingMemory-Micro-Diagnostic-Huochu-Post-run-Report v0.md",
@@ -78,7 +80,7 @@
         "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_recent_reading_memory_beginning_huochu_20260524_retry3/summary/aggregate.json",
         "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_recent_reading_memory_beginning_huochu_20260524_retry3/summary/llm_usage.json"
       ],
-      "last_updated": "2026-05-24T05:24:00Z",
+      "last_updated": "2026-05-24T05:52:00Z",
       "last_updated_by": "codex"
     },
     {
@@ -97,7 +99,8 @@
       ],
       "decision_refs": [
         "DEC-097",
-        "DEC-098"
+        "DEC-098",
+        "DEC-102"
       ],
       "job_refs": [],
       "acceptance_ref": "",

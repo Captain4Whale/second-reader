@@ -69,42 +69,68 @@ The Read prompt should frame Recent Reading Memory as a reader leaving memory fo
 Agreed prompt wording:
 
 ```text
-After reading this unit, write what your future reading self should remember from this unit unless the unit is empty or purely structural.
+After reading this unit, write one Recent Reading Memory entry for your future self unless the unit is empty or purely structural.
 
-Recent Reading Memory is near-term memory for continuing this book.
 Assume the exact source text of this unit may not be shown again in the next Read step.
+Record what you now understand from this unit that should remain available for coherent continued reading.
 
-Focus on the current unit's contribution: what it newly establishes, develops, clarifies, changes, contrasts, withholds, or explicitly frames.
+Write Recent Reading Memory as source-established content first, not essay-like analysis.
 
-Record source-established content before interpretation:
+First record what the source directly establishes for future reading:
 - what happened;
 - who or what appeared;
-- what the author claims or explains;
-- what distinction, stage, example, condition, or consequence is introduced;
-- what changes in a person, situation, argument, relationship, or emotional state;
-- what author stance, evidence boundary, writing method, intended reader, or scope limit is declared.
+- what the author claims;
+- what distinction, stage, example, condition, or consequence is introduced or stated;
+- what writing position, evidence boundary, or reader-orientation is declared.
 
-Use the prompt-visible reading context as your carried memory.
-Let that context help you understand the current unit as part of the unfolding book, but do not recap prior context for its own sake.
-Mention prior context only when it makes the current unit's contribution understandable.
+Add interpretation only when it is needed to preserve source-established meaning.
+Do not start from your theory of the passage.
+Record what the source establishes, shows, says, names, contrasts, changes, withholds, or explicitly frames.
 
-Write the memory so a future Read step can understand it from the memory packet.
-If something is already stable in prompt-visible concept/thread context, use its stable name without retelling its whole history.
-If something is newly introduced in this unit, name or briefly describe it clearly enough for later reading.
-
-Compress source meaning into clear memory.
+Compress meaning, not wording.
 Do not copy the whole passage.
 Do not write a visible reaction.
 Do not predict whether something will matter later.
 Do not import outside knowledge.
+Keep the memory complete enough for future reading; do not make it artificially short.
 
-Do not turn the entry into an essay or theory about the passage.
-Once the source-established content is clear, stop.
-Do not add a closing label such as "this is a mechanism", "this reveals the essence", "this forms a tension", "this is a system", or "this proves..." unless the source itself explicitly names or frames it that way.
+Before writing Recent Reading Memory, orient yourself with the prompt-visible reading context.
+Treat the provided context as what you already carry from the reading so far.
+Use that context to understand the current unit as part of the unfolding book.
+But write the memory for the current unit itself: record what this unit newly establishes, develops, specifies, contrasts, changes, or makes memorable.
+Do not turn the entry into a recap of the context.
+Do not force every entry to mention prior memory or framing.
+Only mention a connection to prior context when it helps make the current unit's meaning clear.
+The entry should answer: "What should my future self remember from this unit, given the reading context I already carried into it?" not "What can I say again about the prior context?"
+
+Write Recent Reading Memory so your future self can understand it from the memory packet, not from the vanished source unit.
+Be context-resolvable, not standalone exhaustive.
+Write Recent Reading Memory as natural memory sentences or a short paragraph, not as a heading followed by explanation.
+Do not default to "<label>: <explanation>" or "<abstract name>: <explanation>" style.
+Use a colon only when the source itself names a term, stage, framework, or quoted source term such as `Transfer` / `Selection`.
+
+If a person, concept, thread, or situation is already stable in prompt-visible concept/thread context, use its stable name and only record what changed or was newly learned.
+If something is newly introduced in this unit, name or describe it clearly enough for a later Read step to understand.
+
+Capture new events, claims, explanations, facts, changes in a person/situation/argument/relationship/emotional state, definitions, distinctions, causal links, stages, examples, source-explicit tensions, images, source-explicit unresolved lines, author stance, evidence boundaries, reader-orientation notes, or updates to earlier context.
+
+Do not over-explain the hidden mechanism behind the passage.
+Do not turn a concrete scene into an abstract theory unless the source itself names or strongly frames it that way.
+Prefer source-facing phrasing such as "the text says", "the text shows", "the text names", or "the text contrasts" when useful.
+Avoid unsupported analytic upgrades such as "the essence is", "this proves", "this is an operation mechanism", or "the passage actively trains" unless the unit explicitly supports that wording.
+Avoid abstract upgrades such as "psychological pressure weapon", "inner subject process", "systemic refusal", or "moral judgment is abandoned" unless the source itself directly establishes that abstraction. Prefer the concrete source memory first.
+
+Author-facing or method-facing units still count as meaningful content. If the unit declares the author's witness position, evidence boundary, writing method, intended reader, or what the book will / will not explain, remember that as source-established content instead of treating it as empty structure.
+If the unit mostly elaborates something already known, write the memory as the current best understanding rather than duplicating fragments.
 
 Avoid bare pronouns or vague references such as "he", "this", "that", or "the above situation" unless the referent is explicit in the same entry or stable in prompt-visible concept/thread context.
-Keep the memory complete enough for future reading; do not make it artificially short.
 ```
+
+Current prompt direction:
+
+- `read.v29` tried a broader rewrite that told the model to stop after the current unit's contribution was clear, but the retry3 diagnostic made the entries feel too formulaic and did not improve overall quality enough.
+- `read.v30` therefore returns to the `read.v28` shape above, with one small additional style constraint: do not default to small-title-colon entries unless the source itself names the term / stage / framework.
+- The retry3 report is retained as historical diagnostic evidence, but it is superseded by the `read.v30` direction and should not be used as the next prompt style target.
 
 Granularity wording:
 
@@ -352,7 +378,7 @@ Requirements:
 
 Style guardrail:
 
-> Recent Reading Memory should remember what the source content establishes, not convert every unit into an explanatory mini-essay. It should start with the current unit's concrete contribution before interpretation: who / what appeared, what happened, what claim or distinction was made, what example or stage was introduced, what condition or consequence was stated, or what authorial evidence boundary / reader-orientation was declared. Once the source-established content is clear, stop. Do not add a closing label such as "this is a mechanism", "this reveals the essence", "this forms a tension", "this is a system", or "this proves..." unless the source itself explicitly names or frames it that way.
+> Recent Reading Memory should remember what the source content establishes, not convert every unit into an explanatory mini-essay or an abstract title. It should start with the current unit's concrete contribution before interpretation: who / what appeared, what happened, what claim or distinction was made, what example or stage was introduced, what condition or consequence was stated, or what authorial evidence boundary / reader-orientation was declared. Write it as natural memory sentences or a short paragraph. Do not default to `<label>: <explanation>` or `<abstract name>: <explanation>`; use a colon only when the source itself names a term, stage, framework, or quoted source term.
 
 Continuity guardrail:
 

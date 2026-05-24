@@ -2914,7 +2914,7 @@ This new direction is design frozen but not yet implemented as a formal benchmar
 
 ## Entry 98
 **ID**: DEC-101
-**Status**: active
+**Status**: superseded
 
 **Decision / Clarification**: Keep Recent Reading Memory source-established and stop after the current unit's contribution is clear.
 
@@ -2932,6 +2932,28 @@ This new direction is design frozen but not yet implemented as a formal benchmar
 - `reading-companion-backend/docs/evaluation/reporting_standard.md`
 - `reading-companion-backend/src/attentional_v2/prompts.py`
 - `reading-companion-backend/tests/test_attentional_v2_nodes.py`
+
+## Entry 99
+**ID**: DEC-102
+**Status**: active
+
+**Decision / Clarification**: Revert the Recent Reading Memory prompt direction to the `read.v28` shape, with a narrow no-default-heading-colon style constraint.
+
+**Period**: May 24, 2026, after reviewing the `read.v29` beginning-of-book `huochu p1-p24` retry3 diagnostic and comparing it against the stronger `read.v28` retry2 behavior.
+
+**Decision**: Update the Read prompt to `attentional_v2.read.v30`. The new prompt keeps the `read.v28` formation shape: Recent Reading Memory is source-established, context-resolvable, complete enough for future reading, and oriented through prompt-visible reading context while still recording the current unit itself. The rejected `read.v29` holistic rewrite is not the next prompt direction.
+
+**Boundary**: The only new style constraint on top of `read.v28` is that Recent Memory should be written as natural memory sentences or a short paragraph, not as a default `<label>: <explanation>` or `<abstract name>: <explanation>` pattern. A colon is appropriate when the source itself names a term, stage, framework, or quoted source term; otherwise the model should not force a small title onto the memory. The retry3 report remains historical diagnostic evidence, but its prompt direction is superseded.
+
+**Why this path won**: The retry3 run reduced some forced abstract endings, but the broader rewrite made entries feel more formulaic and did not improve overall quality. The simpler and more universal repair is to return to the more readable `read.v28` body and add only the specific anti-pattern rule that the reviewer identified.
+
+**Primary evidence**:
+- `docs/implementation/new-reading-mechanism/second-reader-memory-planning/C设计10-Recent Reading Memory Design v0.md`
+- `docs/backend-reading-mechanisms/attentional_v2.md`
+- `reading-companion-backend/docs/evaluation/reporting_standard.md`
+- `reading-companion-backend/src/attentional_v2/prompts.py`
+- `reading-companion-backend/tests/test_attentional_v2_nodes.py`
+- `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/RecentReadingMemory-Beginning-Micro-Diagnostic-Huochu-Retry3-Post-run-Report v0.md`
 
 ## Entry 97
 **ID**: DEC-100

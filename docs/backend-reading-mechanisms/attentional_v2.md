@@ -565,9 +565,10 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
     - owns surfaced reactions
     - owns appending `recent_reading_memory`
     - owns updates into `concept_registry / thread_trace` and, temporarily until removal, `active_attention`
-    - must write Recent Reading Memory as compressed, context-resolvable, source-established content for the future reader; it should orient through the full prompt-visible reading context, but still primarily record what the current unit newly establishes, develops, clarifies, changes, contrasts, withholds, or explicitly frames
+    - must write Recent Reading Memory as compressed, context-resolvable, source-established content for the future reader; it should orient through the full prompt-visible reading context, but still record what the current unit itself newly establishes, develops, specifies, contrasts, changes, or makes memorable
     - should not emit or rely on an operation-level `reason` for `recent_reading_memory`; the `memory_text` itself is the retained content
-    - Recent Reading Memory should not copy the source passage, predict future importance, guess concept/thread targets, create nested memory points, recap prior context for its own sake, or turn a concrete source unit into unsupported essay-like analysis; it should stop once source-established content is clear instead of adding closing labels such as "this is a mechanism", "this forms a tension", or "this proves..." unless the source explicitly names or frames that abstraction
+    - Recent Reading Memory should be written as natural memory sentences or a short paragraph, not as a default `<label>: <explanation>` heading pattern; colons are appropriate only when the source itself names a term, stage, framework, or quoted source term
+    - Recent Reading Memory should not copy the source passage, predict future importance, guess concept/thread targets, create nested memory points, recap prior context for its own sake, or turn a concrete source unit into unsupported essay-like analysis or forced abstract naming
     - author stance, evidence boundaries, writing method, intended reader, and explicit scope limits count as meaningful source-established content rather than empty structure
     - owns deprecated active-tension lifecycle intent while `active_attention` remains in the runtime:
       - `create` / `append` creates a new open ActiveTension when prompt-visible context leaves readerly charge that has not yet been fully digested

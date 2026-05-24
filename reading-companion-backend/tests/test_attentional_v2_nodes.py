@@ -476,19 +476,24 @@ def test_read_unit_filters_unanchored_surface_and_uses_naturalized_contract(tmp_
     assert "Let `reading_impression` be the brief natural impression" in captured["system_prompt"]
     assert "After the impression and any surfaced reactions, maintain memory deliberately." in captured["system_prompt"]
     assert "First maintain Recent Reading Memory" in captured["system_prompt"]
-    assert "Recent Reading Memory is near-term memory for continuing this book." in captured["system_prompt"]
-    assert "Focus on the current unit's contribution" in captured["system_prompt"]
-    assert "Record source-established content before interpretation" in captured["system_prompt"]
-    assert "Use the prompt-visible reading context as your carried memory." in captured["system_prompt"]
-    assert "Compress source meaning into clear memory." in captured["system_prompt"]
-    assert "Once the source-established content is clear, stop." in captured["system_prompt"]
-    assert "Do not add a closing label such as" in captured["system_prompt"]
-    assert "unless the source itself explicitly names or frames it that way" in captured["system_prompt"]
+    assert "write one Recent Reading Memory entry for your future self" in captured["system_prompt"]
+    assert "Record what you now understand from this unit" in captured["system_prompt"]
+    assert "Write Recent Reading Memory as source-established content first" in captured["system_prompt"]
+    assert "what the source directly establishes for future reading" in captured["system_prompt"]
+    assert "Before writing Recent Reading Memory, orient yourself with the prompt-visible reading context." in captured[
+        "system_prompt"
+    ]
+    assert "Compress meaning, not wording." in captured["system_prompt"]
+    assert "Write Recent Reading Memory as natural memory sentences or a short paragraph" in captured["system_prompt"]
+    assert "Do not default to `<label>: <explanation>`" in captured["system_prompt"]
+    assert "Use a colon only when the source itself names a term" in captured["system_prompt"]
+    assert "Focus on the current unit's contribution" not in captured["system_prompt"]
+    assert "Once the source-established content is clear, stop" not in captured["system_prompt"]
     assert "do not make it artificially short" in captured["system_prompt"]
     assert "part of the unfolding book" in captured["system_prompt"]
-    assert "do not recap prior context for its own sake" in captured["system_prompt"]
-    assert "evidence boundary / writing method / intended reader / scope limit" in captured["system_prompt"]
-    assert "future Read step can understand it from the memory packet" in captured["system_prompt"]
+    assert "Do not turn the entry into a recap of the context." in captured["system_prompt"]
+    assert "writing position / evidence boundary / reader-orientation" in captured["system_prompt"]
+    assert "future self can understand it from the memory packet" in captured["system_prompt"]
     assert "Avoid bare pronouns or vague references" in (captured["system_prompt"] + captured["prompt"])
     assert "Recent Reading Memory append operations do not need an operation-level `reason`." in captured[
         "system_prompt"
@@ -531,6 +536,18 @@ def test_read_unit_filters_unanchored_surface_and_uses_naturalized_contract(tmp_
     ]
     assert "\"op\": \"resolve\"" in captured["prompt"]
     assert "A surfaced reaction is already persisted as a reaction record." in captured["system_prompt"]
+    assert "write one Recent Reading Memory entry for your future self" in captured["system_prompt"]
+    assert "Record what you now understand from this unit" in captured["system_prompt"]
+    assert "Write Recent Reading Memory as source-established content first" in captured["system_prompt"]
+    assert "what the source directly establishes for future reading" in captured["system_prompt"]
+    assert "given the reading context I already carried into it" in captured["system_prompt"]
+    assert "Write Recent Reading Memory as natural memory sentences or a short paragraph" in captured["system_prompt"]
+    assert "Do not default to `<label>: <explanation>`" in captured["system_prompt"]
+    assert "Use a colon only when the source itself names a term" in captured["system_prompt"]
+    assert "source-explicit tensions" in captured["system_prompt"]
+    assert "source-explicit unresolved lines" in captured["system_prompt"]
+    assert "Focus on the current unit's contribution" not in captured["system_prompt"]
+    assert "Once the source-established content is clear, stop" not in captured["system_prompt"]
     assert "Explicit source structures can be worth remembering" in captured["system_prompt"]
     assert "Keep proportion around thin structural units." in captured["system_prompt"]
     assert "Do not inflate a bare heading or structural cue" in captured["system_prompt"]
@@ -559,7 +576,7 @@ def test_read_unit_filters_unanchored_surface_and_uses_naturalized_contract(tmp_
     assert "\"target_store\": \"concept_registry\"" in captured["prompt"]
     assert "\"target_store\": \"thread_trace\"" in captured["prompt"]
     assert "Do not target `concept_digest`, `thread_digest`, `active_focus_digest`" in captured["system_prompt"]
-    assert manifest["prompt_version"] == "attentional_v2.read.v29"
+    assert manifest["prompt_version"] == "attentional_v2.read.v30"
 
 
 def test_read_unit_contract_preserves_source_given_stage_model_as_memory_uptake(tmp_path: Path, monkeypatch):
