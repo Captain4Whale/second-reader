@@ -7,6 +7,15 @@ from pathlib import Path
 
 import pytest
 
+from src.attentional_v2.prompts import (
+    ATTENTIONAL_V2_PROMPTS,
+    READ_UNIT_PROMPT_VERSION,
+    PromptFragment,
+    PromptFragmentRegistry,
+    PromptXmlNode,
+    render_prompt_xml,
+    render_read_xml_prompt_example,
+)
 from src.attentional_v2 import runner as runner_module
 from src.attentional_v2.slow_cycle import project_chapter_result_compatibility
 from src.attentional_v2.schemas import (
@@ -49,6 +58,86 @@ from src.reading_mechanisms.attentional_v2 import AttentionalV2Mechanism
 from src.reading_runtime.provisioning import ProvisionedBook
 from src.reading_runtime.artifacts import checkpoint_summary_file, mechanism_manifest_file, runtime_shell_file
 from src.reading_runtime.shell_state import load_runtime_shell
+
+
+def test_prompt_xml_resolves_fragments_and_escapes_dynamic_values() -> None:
+    registry = PromptFragmentRegistry(
+        [
+            PromptFragment(
+                fragment_id="test.read.role.v1",
+                text="Fixed <role> & instruction text.",
+            )
+        ]
+    )
+
+    rendered = render_prompt_xml(
+        [
+            PromptXmlNode(
+                tag="RoleAndInstruction",
+                children=[
+                    PromptXmlNode(tag="Role", fragment_id="test.read.role.v1"),
+                    PromptXmlNode(tag="ReadBehavior", value="Read A & B < carefully."),
+                ],
+            ),
+            PromptXmlNode(tag="CurrentFocus", value="Current unit text."),
+        ],
+        registry=registry,
+    )
+
+    assert "<RoleAndInstruction>" in rendered
+    assert "<Role>" in rendered
+    assert "Fixed &lt;role&gt; &amp; instruction text." in rendered
+    assert "Read A &amp; B &lt; carefully." in rendered
+    assert rendered.index("<RoleAndInstruction>") < rendered.index("<CurrentFocus>")
+    assert "fragment_id" not in rendered
+    assert "ref=" not in rendered
+    assert "test.read.role.v1" not in rendered
+
+
+def test_prompt_xml_missing_fragment_fails_fast() -> None:
+    with pytest.raises(KeyError, match="missing.fragment"):
+        render_prompt_xml(
+            [PromptXmlNode(tag="Role", fragment_id="missing.fragment")],
+            registry=PromptFragmentRegistry([]),
+        )
+
+
+def test_prompt_xml_empty_value_policy_is_explicit() -> None:
+    rendered = render_prompt_xml(
+        [
+            PromptXmlNode(tag="EmptyValue", value=""),
+            PromptXmlNode(tag="SkippedValue", value="", skip_if_empty=True),
+        ],
+        registry=PromptFragmentRegistry([]),
+    )
+
+    assert "<EmptyValue>" in rendered
+    assert "</EmptyValue>" in rendered
+    assert "SkippedValue" not in rendered
+
+
+def test_read_xml_prompt_example_does_not_replace_live_read_prompt() -> None:
+    rendered = render_read_xml_prompt_example(
+        book_and_chapter_info='{"title": "Demo & Book"}',
+        reading_state='{"recent_reading_memory": []}',
+        current_focus='{"reading_object": "Alpha < Beta"}',
+        output_contract='{"return": "json"}',
+    )
+
+    assert "<RoleAndInstruction>" in rendered
+    assert "<BookAndChapterInfo>" in rendered
+    assert "<ReadingState>" in rendered
+    assert "<CurrentFocus>" in rendered
+    assert "<OutputContract>" in rendered
+    assert "&amp;" in rendered
+    assert "&lt;" in rendered
+    assert "fragment_id" not in rendered
+    assert "ref=" not in rendered
+    assert "attentional_v2.read.role_and_instruction.example.v1" not in rendered
+    assert READ_UNIT_PROMPT_VERSION == "attentional_v2.read.v30"
+    assert ATTENTIONAL_V2_PROMPTS.read_unit_version == READ_UNIT_PROMPT_VERSION
+    assert ATTENTIONAL_V2_PROMPTS.read_unit_system.startswith("You are a careful reader")
+    assert "Structural frame:" in ATTENTIONAL_V2_PROMPTS.read_unit_prompt
 
 
 def _fixture_epub() -> Path:
