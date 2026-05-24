@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-05-24T04:32:12.750234Z",
+  "updated_at": "2026-05-24T05:23:28.181854Z",
   "entries": [
     {
       "run_id": "attentional_v2_excerpt_surface_v1_1_judged_20260406",
@@ -1859,6 +1859,43 @@
       "local_missing_allowed": [],
       "metadata": {},
       "updated_at": "2026-05-24T04:32:12.749695Z"
+    },
+    {
+      "run_id": "attentional_v2_recent_reading_memory_beginning_huochu_20260524_retry3",
+      "date": "2026-05-24",
+      "surface": "recent_reading_memory_micro_diagnostic",
+      "lane": "mechanism_eval",
+      "status": "review_pending",
+      "mechanisms": [
+        "attentional_v2"
+      ],
+      "dataset_or_manifest": [
+        "state/eval_local_datasets/diagnostic_micro/recent_reading_memory_beginning_huochu_20260524/probe_plan.json",
+        "state/eval_local_datasets/diagnostic_micro/recent_reading_memory_beginning_huochu_20260524/split_manifest.json"
+      ],
+      "run_dir": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_recent_reading_memory_beginning_huochu_20260524_retry3",
+      "summary_paths": {
+        "aggregate": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_recent_reading_memory_beginning_huochu_20260524_retry3/summary/aggregate.json",
+        "llm_usage": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_recent_reading_memory_beginning_huochu_20260524_retry3/summary/llm_usage.json",
+        "memory_quality_results": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_recent_reading_memory_beginning_huochu_20260524_retry3/summary/memory_quality_results.jsonl",
+        "reaction_audit_results": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_recent_reading_memory_beginning_huochu_20260524_retry3/summary/reaction_audit_results.jsonl",
+        "reaction_window_summaries": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_recent_reading_memory_beginning_huochu_20260524_retry3/summary/reaction_window_summaries.jsonl",
+        "report": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_recent_reading_memory_beginning_huochu_20260524_retry3/summary/report.md"
+      },
+      "job_ids": [
+        "bgjob_recent_reading_memory_beginning_huochu_20260524_retry3"
+      ],
+      "report_paths": [
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/RecentReadingMemory-Beginning-Micro-Diagnostic-Huochu-Retry3-Post-run-Report v0.md"
+      ],
+      "catalog_status": "not_cataloged",
+      "notes": "Retry3 diagnostic for read.v29 simplified Recent Memory style on huochu p1-p24 completed with exit code 0; 13 read units, 17 active recent_reading_memory entries, LLM health ok with 29 successes and 0 fallback. Author-method entry no longer ends with forced tension label, but residual mechanism/logic/paradox phrasing remains. Diagnostic only; no evidence catalog update or product-quality claim.",
+      "parent_run_id": "",
+      "child_run_ids": [],
+      "synthetic": false,
+      "local_missing_allowed": [],
+      "metadata": {},
+      "updated_at": "2026-05-24T05:23:28.181469Z"
     }
   ]
 }
