@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-05-23T07:52:29.137408Z",
+  "updated_at": "2026-05-23T13:35:48.822620Z",
   "entries": [
     {
       "run_id": "attentional_v2_excerpt_surface_v1_1_judged_20260406",
@@ -1711,6 +1711,42 @@
         "same_tier_failover_rows": 3
       },
       "updated_at": "2026-05-22T00:58:05.291810Z"
+    },
+    {
+      "run_id": "attentional_v2_recent_reading_memory_micro_huochu_20260523",
+      "date": "2026-05-23",
+      "surface": "recent_reading_memory_micro_diagnostic",
+      "lane": "mechanism_eval",
+      "status": "review_pending",
+      "mechanisms": [
+        "attentional_v2"
+      ],
+      "dataset_or_manifest": [
+        "state/eval_local_datasets/diagnostic_micro/active_attention_live_question_huochu_20260521/split_manifest.json"
+      ],
+      "run_dir": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_recent_reading_memory_micro_huochu_20260523",
+      "summary_paths": {
+        "aggregate": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_recent_reading_memory_micro_huochu_20260523/summary/aggregate.json",
+        "llm_usage": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_recent_reading_memory_micro_huochu_20260523/summary/llm_usage.json",
+        "memory_quality_results": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_recent_reading_memory_micro_huochu_20260523/summary/memory_quality_results.jsonl",
+        "reaction_audit_results": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_recent_reading_memory_micro_huochu_20260523/summary/reaction_audit_results.jsonl",
+        "reaction_window_summaries": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_recent_reading_memory_micro_huochu_20260523/summary/reaction_window_summaries.jsonl",
+        "report": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_recent_reading_memory_micro_huochu_20260523/summary/report.md"
+      },
+      "job_ids": [
+        "bgjob_recent_reading_memory_micro_huochu_20260523"
+      ],
+      "report_paths": [
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/RecentReadingMemory-Micro-Diagnostic-Huochu-Post-run-Report v0.md"
+      ],
+      "catalog_status": "not_cataloged",
+      "notes": "Completed diagnostic-only micro run validating Recent Reading Memory formation quality on huochu p45-p61. 8 read units produced 10 active recent-memory entries; LLM health ok with 24 successes, 0 errors, 0 fallback. Consolidation not validated; no evidence catalog update or product-quality claim.",
+      "parent_run_id": "",
+      "child_run_ids": [],
+      "synthetic": false,
+      "local_missing_allowed": [],
+      "metadata": {},
+      "updated_at": "2026-05-23T13:35:48.822279Z"
     }
   ]
 }

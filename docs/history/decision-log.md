@@ -2891,3 +2891,23 @@ This new direction is design frozen but not yet implemented as a formal benchmar
 - `reading-companion-backend/src/attentional_v2/state_ops.py`
 - `reading-companion-backend/src/attentional_v2/state_projection.py`
 - `reading-companion-backend/src/attentional_v2/runner.py`
+
+## Entry 96
+**ID**: DEC-099
+**Status**: active
+
+**Decision / Clarification**: Tighten Recent Reading Memory formation toward source-grounded understanding instead of essay-like analysis.
+
+**Period**: May 24, 2026, after reviewing the first `huochu p45-p61` Recent Reading Memory micro diagnostic.
+
+**Decision**: Keep the Recent Reading Memory state shape and append-only first-half behavior unchanged, but update the Read prompt to `attentional_v2.read.v25`. The prompt now states that Recent Reading Memory should record what the source establishes, shows, says, names, contrasts, or changes. It should remain complete enough for future reading and should use prior recent memory / concept / thread context only when the current unit or prompt-visible memory directly supports that continuity.
+
+**Boundary**: Recent Reading Memory is not a place for essay-like explanation, unsupported hidden-mechanism claims, or abstract theory upgrades. It may compress meaning, but it should not turn a concrete source scene into claims such as "the essence is", "this proves", "this is an operation mechanism", or "the passage actively trains" unless the source itself clearly supports that wording.
+
+**Why this path won**: The micro diagnostic showed that formation and continuity worked, but some entries sounded too analytical for a near-term memory layer. The product need is simpler: remember what was just read in a form that later Read steps can understand, without rereading the source and without converting every unit into a mini-interpretive essay.
+
+**Primary evidence**:
+- `docs/implementation/new-reading-mechanism/second-reader-memory-planning/C设计10-Recent Reading Memory Design v0.md`
+- `docs/backend-reading-mechanisms/attentional_v2.md`
+- `reading-companion-backend/src/attentional_v2/prompts.py`
+- `reading-companion-backend/tests/test_attentional_v2_nodes.py`

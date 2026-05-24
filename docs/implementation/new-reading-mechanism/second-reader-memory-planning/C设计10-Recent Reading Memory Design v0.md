@@ -79,6 +79,10 @@ Do not copy the whole passage.
 Do not write a visible reaction.
 Do not predict whether something will matter later.
 Do not import outside knowledge.
+Write Recent Reading Memory as source-grounded understanding, not essay-like analysis.
+Record what the source establishes, shows, says, names, contrasts, or changes.
+Keep the memory complete enough for future reading; do not make it artificially short.
+Use prior Recent Reading Memory, concept, or thread context when it helps continuity, but connect only when the current unit or prompt-visible memory directly supports the connection.
 
 Write the memory so your future self can understand it from the memory packet, not from the vanished source unit.
 Be context-resolvable, not standalone exhaustive.
@@ -92,6 +96,11 @@ Capture:
 - definitions, distinctions, causal links, stages, or examples that clarify the text
 - local tensions, promises, images, or unresolved lines that should remain in mind
 - updates to something remembered from earlier context
+
+Do not over-explain the hidden mechanism behind the passage.
+Do not turn a concrete scene into an abstract theory unless the source itself names or strongly frames it that way.
+Prefer source-facing phrasing such as "the text says", "the text shows", "the text names", or "the text contrasts" when useful.
+Avoid unsupported analytic upgrades such as "the essence is", "this proves", "this is an operation mechanism", or "the passage actively trains" unless the unit explicitly supports that wording.
 
 If the unit mostly elaborates something already known, rewrite the memory as the current best understanding rather than duplicating fragments.
 ```
@@ -295,9 +304,11 @@ Requirements:
 
 - readable;
 - compressed;
+- source-grounded understanding rather than essay-like analysis;
 - semantically faithful;
 - context-resolvable from the future Read memory packet;
 - not standalone exhaustive;
+- complete enough for future reading, not artificially shortened;
 - clear about newly introduced people, objects, events, claims, and situations;
 - allowed to use stable concept/thread names without restating their full history;
 - avoids bare pronouns or vague local references unless the referent is explicit in the same entry or stable in prompt-visible concept/thread context;
@@ -305,6 +316,10 @@ Requirements:
 - shorter than the source;
 - not a visible reaction;
 - not a prediction of importance.
+
+Style guardrail:
+
+> Recent Reading Memory should remember what the source content establishes, not convert every unit into an explanatory mini-essay. It should avoid unsupported analytic upgrades such as "the essence is", "this proves", "this is an operation mechanism", or "the passage actively trains" unless the source itself clearly supports that framing.
 
 ### `status`
 

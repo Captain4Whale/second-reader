@@ -564,7 +564,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
     - owns surfaced reactions
     - owns appending `recent_reading_memory`
     - owns updates into `concept_registry / thread_trace` and, temporarily until removal, `active_attention`
-    - must write Recent Reading Memory as compressed, context-resolvable semantic memory for the future reader; it should not copy the source passage, predict future importance, guess concept/thread targets, or create nested memory points
+    - must write Recent Reading Memory as compressed, context-resolvable, source-grounded understanding for the future reader; it should not copy the source passage, predict future importance, guess concept/thread targets, create nested memory points, or turn a concrete source unit into unsupported essay-like analysis
     - owns deprecated active-tension lifecycle intent while `active_attention` remains in the runtime:
       - `create` / `append` creates a new open ActiveTension when prompt-visible context leaves readerly charge that has not yet been fully digested
       - `update` / `reactivate` advances, corrects, reverses, weakens, or rekindles the `working_interpretation` or what the reader is currently tracking

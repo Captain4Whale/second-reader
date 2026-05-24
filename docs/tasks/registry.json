@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-05-23T13:11:00Z",
+  "updated_at": "2026-05-24T00:49:33Z",
   "tasks": [
     {
       "id": "TASK-SECOND-READER-RECENT-READING-MEMORY-CONSOLIDATION-DESIGN-20260523",
@@ -33,6 +33,36 @@
         "docs/history/decision-log.md"
       ],
       "last_updated": "2026-05-23T13:11:00Z",
+      "last_updated_by": "codex"
+    },
+    {
+      "id": "TASK-SECOND-READER-RECENT-READING-MEMORY-MICRO-DIAGNOSTIC-REVIEW-20260523",
+      "title": "Review Recent Reading Memory micro diagnostic",
+      "status": "waiting",
+      "lane": "mechanism_eval",
+      "priority": "high",
+      "detail_ref": "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/RecentReadingMemory-Micro-Diagnostic-Huochu-Post-run-Report v0.md",
+      "truth_refs": [
+        "docs/current-state.md",
+        "docs/tasks/registry.md",
+        "reading-companion-backend/docs/evaluation/run_ledger.md"
+      ],
+      "decision_refs": [
+        "DEC-098"
+      ],
+      "job_refs": [
+        "bgjob_recent_reading_memory_micro_huochu_20260523"
+      ],
+      "acceptance_ref": "",
+      "next_action": "Review the completed huochu p45-p61 micro diagnostic. The run completed with exit code 0, LLM health passed with 24 successes and 0 fallback, and 8 read units produced 10 active Recent Reading Memory entries. That read.v24 diagnostic validated formation and continuity, but also exposed that entries could drift toward essay-like analysis; read.v25 now tightens the prompt toward source-grounded understanding. This still validates formation only, not consolidation; do not update the evidence catalog, remove active_attention, promote Long Span vNext, run broader eval, or claim product quality without explicit approval.",
+      "blocked_by": [],
+      "evidence_refs": [
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/RecentReadingMemory-Micro-Diagnostic-Huochu-Post-run-Report v0.md",
+        "reading-companion-backend/docs/evaluation/run_ledger.md",
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_recent_reading_memory_micro_huochu_20260523/summary/aggregate.json",
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_recent_reading_memory_micro_huochu_20260523/summary/llm_usage.json"
+      ],
+      "last_updated": "2026-05-24T00:49:33Z",
       "last_updated_by": "codex"
     },
     {

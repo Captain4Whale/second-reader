@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-05-23T21:11:00+08:00`
+Last verified: `2026-05-24T08:49:33+08:00`
 
 ## Current Objective
 - Recent Reading Memory first-half formation is implemented.
@@ -15,7 +15,8 @@ Last verified: `2026-05-23T21:11:00+08:00`
     - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/C设计10-Recent Reading Memory Design v0.md`
   - implementation scope:
     - `recent_reading_memory` is now a runtime store for near-term semantic memory of just-read units
-    - Read prompt `attentional_v2.read.v24` asks for one or a small number of context-resolvable Recent Reading Memory entries per unit
+    - Read prompt `attentional_v2.read.v25` asks for one or a small number of context-resolvable Recent Reading Memory entries per unit
+    - `read.v25` tightens the formation wording so Recent Reading Memory should be source-grounded understanding rather than essay-like analysis; it should record what the source establishes / shows / says / names / contrasts / changes, stay complete enough for future reading, and avoid unsupported analytic upgrades
     - Read may append entries through `memory_uptake_ops[]` with `target_store="recent_reading_memory"` and `op="append"`
     - the LLM supplies only `kind` and `memory_text`; runner/state code owns `entry_id`, `source_unit_span_id`, `created_at_unit_index`, `status`, and `archived_by_consolidation_id`
     - only `active` entries are projected into subsequent Read prompt packets
@@ -25,6 +26,22 @@ Last verified: `2026-05-23T21:11:00+08:00`
     - no nested `memory_points`, recent-to-recent links, candidate concept/thread links, default fine-grained `source_refs`, eval run, evidence catalog update, or product-quality claim is included
   - next step:
     - design the Recent Memory -> long-distance-memory consolidation pass before implementing archival/consolidation behavior
+- Recent Reading Memory micro diagnostic completed and is pending review.
+  - run id:
+    - `attentional_v2_recent_reading_memory_micro_huochu_20260523`
+  - job id:
+    - `bgjob_recent_reading_memory_micro_huochu_20260523`
+  - report:
+    - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/RecentReadingMemory-Micro-Diagnostic-Huochu-Post-run-Report v0.md`
+  - status facts:
+    - diagnostic run completed with exit code `0`
+    - strict LLM health passed: `24` traces, `24` successes, `0` errors, `0` fallback-backed evidence
+    - `8` read units produced `10` active `recent_reading_memory` entries
+    - settlement audit shows append-only behavior before consolidation: entries were added, not updated or removed
+    - Memory Quality probe snapshots include `recent_reading_memory` in `scoring_memory_state`
+  - boundaries:
+    - this validates formation only, not consolidation
+    - no evidence catalog update, Long Span formal promotion, or product-quality claim is authorized by this diagnostic
 - Active Attention / ActiveTension is now deprecated as a primary memory layer in the stable docs.
   - current decision:
     - keep the runtime store key `active_attention` only until a replacement and removal plan is implemented

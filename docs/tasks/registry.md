@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-05-23T21:11:00+08:00`
+Last updated: `2026-05-24T08:49:33+08:00`
 
 ## Status Values
 - `active`
@@ -497,6 +497,20 @@ Last updated: `2026-05-23T21:11:00+08:00`
   - `docs/backend-reader-evaluation.md`
   - `reading-companion-backend/docs/evaluation/reporting_standard.md`
   - `docs/history/decision-log.md`
+
+### `TASK-SECOND-READER-RECENT-READING-MEMORY-MICRO-DIAGNOSTIC-REVIEW-20260523` — Review Recent Reading Memory micro diagnostic
+- Status: `waiting`
+- Lane: `mechanism_eval`
+- Priority: `high`
+- Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/RecentReadingMemory-Micro-Diagnostic-Huochu-Post-run-Report v0.md`
+- Next: review the completed `huochu p45-p61` micro diagnostic. The run completed with exit code `0`, LLM health passed with `24` successes and `0` fallback, and `8` read units produced `10` active Recent Reading Memory entries. That `read.v24` diagnostic validated formation and continuity, but also exposed that entries could drift toward essay-like analysis; `read.v25` now tightens the prompt toward source-grounded understanding. This still validates formation only, not consolidation; do not update the evidence catalog, remove `active_attention`, promote Long Span vNext, run broader eval, or claim product quality without explicit approval.
+- Jobs:
+  - `bgjob_recent_reading_memory_micro_huochu_20260523` (`completed`)
+- Evidence:
+  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/RecentReadingMemory-Micro-Diagnostic-Huochu-Post-run-Report v0.md`
+  - `reading-companion-backend/docs/evaluation/run_ledger.md`
+  - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_recent_reading_memory_micro_huochu_20260523/summary/aggregate.json`
+  - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_recent_reading_memory_micro_huochu_20260523/summary/llm_usage.json`
 
 ### `TASK-SECOND-READER-ACTIVE-ATTENTION-PROMPT-CONTEXT-DIAGNOSTIC-RETRY1-20260522` — Review ActiveTension lifecycle review for full-window diagnostic Retry1
 - Status: `waiting`
