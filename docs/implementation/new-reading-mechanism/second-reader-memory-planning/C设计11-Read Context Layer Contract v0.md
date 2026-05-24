@@ -71,34 +71,234 @@ The recommended rule is:
 
 ## Current Accepted Boundary
 
-Only the expression method is accepted here:
+The following Read prompt structure decisions are accepted here:
 
 - outer structure should use XML-style tags;
+- no single outer root tag is required;
 - inner machine values may remain JSON;
-- Read context should be organized by semantic role rather than by incidental implementation packet names;
+- Read context should be organized by product-semantic role rather than by incidental implementation packet names or provider API message split;
+- the top-level XML blocks are `RoleDefinition`, `SourceContext`, `ReadingState`, `CurrentFocus`, and `OutputContract`;
+- `RoleDefinition` and `OutputContract` are prompt structure, not reading input data;
 - code should not be changed until the actual Read context layer taxonomy is accepted.
 
-This document does **not** yet settle the final top-level layer names or exact skeleton.
+This document now settles the initial readable skeleton, but not the exact field-level projection policy or implementation details.
 
-## Open Design Direction Under Discussion
+## Accepted Read Prompt Structure
 
-The current working direction from discussion is that Read context should be organized around product-semantic roles, not around the underlying LLM API message split.
+The Read node prompt should be expressed as several semantically structured XML blocks:
 
-The candidate top-level semantic areas under discussion are:
+```xml
+<RoleDefinition>...</RoleDefinition>
+<SourceContext>...</SourceContext>
+<ReadingState>...</ReadingState>
+<CurrentFocus>...</CurrentFocus>
+<OutputContract>...</OutputContract>
+```
 
-- role / reader instruction;
-- book or source metadata;
-- reading state, including reading memory;
-- current focus, including current path, reading position, reading object, and optional reading intent.
+This structure is product-semantic. It is not a statement about whether the underlying provider call uses `system`, `user`, or any other message role.
 
-This is not yet an implementation contract. It should be refined before any prompt code changes.
+### 1. `RoleDefinition`
+
+`RoleDefinition` explains what the Read node is and how it should behave as a reader.
+
+It should include stable behavior such as:
+
+- Read is a continuous reader moving through a book, not a generic summarizer, highlighter, or field-filling worker;
+- Read should understand the current source unit in light of the prompt-visible reading state;
+- Read should write Recent Reading Memory for the future reader when the unit contains source-established content worth carrying;
+- Read should keep source grounding honest and avoid prompt-external book, author, or later-chapter knowledge;
+- Read should not treat surfaced reactions, audit traces, or runtime ids as semantic memory;
+- Read should focus on understanding the current unit, not on maintaining state for its own sake.
+
+This layer is stable and low-churn. It should not contain the current source unit. It is part of the prompt contract, not part of the reading input data.
+
+### 2. `SourceContext`
+
+`SourceContext` describes the book/source frame for the current Read call.
+
+It should include low-change metadata such as:
+
+- book title;
+- author;
+- chapter title or chapter path;
+- source language / output language when relevant;
+- broad source position if it helps reader orientation.
+
+It should not foreground dense machine coordinates. Exact paragraph-char spans, sentence ids, and ref ids are useful for program audit and source anchoring, but they are not semantic substitutes for the source text.
+
+### 3. `ReadingState`
+
+`ReadingState` contains what the reader already carries from prior reading.
+
+It should center on `ReadingMemory`:
+
+- `NearTermMemory`
+  - active `recent_reading_memory` entries;
+  - near-term semantic memory from just-read units;
+  - intended to help the next Read call continue the book without rereading all prior source text.
+- `LongDistanceMemory`
+  - `ConceptMemory`: durable concepts, definitions, entities, models, or distinctions;
+  - `ThreadMemory`: durable arcs, tensions, watchpoints, narrative/argument lines, or cross-passage developments;
+  - `StructuralMemory`: chapter / macro / reflective understanding.
+
+This layer should not default-carry:
+
+- deprecated `active_attention`;
+- `local_continuity`;
+- recent visible reactions;
+- audit/debug traces;
+- full source-ref history;
+- navigation trace data.
+
+If any of those contain content that future Read calls should understand, that content should be represented through Recent Reading Memory, Concept Memory, Thread Memory, Structural Memory, or explicit current-focus evidence.
+
+### 4. `CurrentFocus`
+
+`CurrentFocus` describes what this Read call is currently reading and why.
+
+It should include:
+
+- `ReadingPath`
+  - whether the reader is on the mainline path, a detour, a look-back, or another explicitly supported path;
+  - any active path state needed to understand why this unit is being read.
+- `ReadingPosition`
+  - human-readable position such as chapter and paragraph/range orientation;
+  - machine spans may appear as audit handles, but should not dominate the layer.
+- `ReadingObject`
+  - the current source unit text;
+  - paragraph slices or source-native structure needed to read the unit.
+- `ReadingIntent`
+  - optional;
+  - used when this read is not simply mainline continuation, for example when a detour or look-back is trying to answer a specific uncertainty.
+- `OptionalSourceEvidence`
+  - optional;
+  - bounded earlier source excerpts, source-ref details, or book-local evidence needed for this current read;
+  - belongs here because it serves this current reading path/intention, not because it is durable memory.
+
+### 5. `OutputContract`
+
+`OutputContract` describes what Read must return after reading.
+
+It should include:
+
+- output language contract;
+- JSON-only requirement;
+- `reading_impression` contract while that field remains in use;
+- `surfaced_reactions` contract;
+- `memory_uptake_ops` contract;
+- Recent Reading Memory append format;
+- concept / thread update formats;
+- source quote rules;
+- `detour_need` contract.
+
+This layer is separate because it is not reading context or reading input data. It tells Read how to return the result after using the preceding context.
+
+## XML Skeleton Example
+
+The following is a readable target shape, not yet an implementation patch:
+
+```xml
+<RoleDefinition>
+  Read as a continuous reader moving through this book.
+  Use the prompt-visible reading state to understand the current source unit.
+  Keep source grounding honest.
+  Write useful Recent Reading Memory for your future reading self when the unit establishes something worth carrying.
+</RoleDefinition>
+
+<SourceContext>
+  {
+    "book_title": "...",
+    "author": "...",
+    "chapter_title": "...",
+    "source_language": "...",
+    "output_language": "..."
+  }
+</SourceContext>
+
+<ReadingState>
+  <ReadingMemory>
+    <NearTermMemory>
+      {
+        "recent_reading_memory": {
+          "active_entries": []
+        }
+      }
+    </NearTermMemory>
+
+    <LongDistanceMemory>
+      <ConceptMemory>
+        {
+          "concept_digest": []
+        }
+      </ConceptMemory>
+
+      <ThreadMemory>
+        {
+          "thread_digest": []
+        }
+      </ThreadMemory>
+
+      <StructuralMemory>
+        {
+          "reflective_digest": {}
+        }
+      </StructuralMemory>
+    </LongDistanceMemory>
+  </ReadingMemory>
+</ReadingState>
+
+<CurrentFocus>
+  <ReadingPath>
+    {
+      "mode": "mainline"
+    }
+  </ReadingPath>
+
+  <ReadingPosition>
+    {
+      "chapter_title": "...",
+      "paragraph_range": "...",
+      "machine_source_span": {}
+    }
+  </ReadingPosition>
+
+  <ReadingObject>
+    {
+      "source_text": "...",
+      "paragraph_slices": []
+    }
+  </ReadingObject>
+
+  <ReadingIntent>
+    {
+      "intent": "read_current_object_in_sequence"
+    }
+  </ReadingIntent>
+
+  <OptionalSourceEvidence>
+    {}
+  </OptionalSourceEvidence>
+</CurrentFocus>
+
+<OutputContract>
+  {
+    "return": "JSON only",
+    "fields": [
+      "reading_impression",
+      "surfaced_reactions",
+      "memory_uptake_ops",
+      "detour_need"
+    ]
+  }
+</OutputContract>
+```
+
+The example keeps JSON inside layers where the values are program-owned. Final implementation may adjust exact field names, payload compaction, or omission rules after review.
 
 ## Current Non-Decisions
 
 The following are intentionally not decided yet:
 
-- exact top-level XML layer names;
-- exact nested memory structure;
 - how much `recent_reading_memory` to carry before consolidation;
 - how to prioritize Recent Memory vs concept / thread / structural memory;
 - whether any local orientation signal remains needed after Recent Memory consolidation;
@@ -128,8 +328,8 @@ The following are intentionally not decided yet:
 Add later accepted discussion decisions here, instead of scattering them across chat:
 
 - accepted: XML-style outer tags and JSON inner payloads;
-- pending: final layer names;
-- pending: exact XML skeleton;
+- accepted: no single `ReadInput` root tag;
+- accepted: top-level sibling XML blocks `RoleDefinition`, `SourceContext`, `ReadingState`, `CurrentFocus`, and `OutputContract`;
 - pending: Recent Memory projection policy;
 - pending: long-distance memory projection policy;
 - pending: local continuity / visible trace boundary;
