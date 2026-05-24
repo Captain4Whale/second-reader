@@ -503,18 +503,22 @@ Last updated: `2026-05-24T09:20:07+08:00`
 - Lane: `mechanism_eval`
 - Priority: `high`
 - Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/RecentReadingMemory-Micro-Diagnostic-Huochu-Post-run-Report v0.md`
-- Next: review the completed Recent Reading Memory micro diagnostics. The `huochu p45-p61` run completed with exit code `0`, LLM health passed with `24` successes and `0` fallback, and `8` read units produced `10` active Recent Reading Memory entries. The beginning-of-book `huochu p1-p24` run also completed with exit code `0`, LLM health passed with `22` successes and `0` fallback, and `10` read units produced `10` active Recent Reading Memory entries. The latest `read.v26` beginning diagnostic shows better continuity across entries, but unit 1 produced no Recent Memory despite containing the opening frame / core question, and some entries still drift toward analysis-heavy phrasing. These diagnostics validate formation only, not consolidation; do not update the evidence catalog, remove `active_attention`, promote Long Span vNext, run broader eval, or claim product quality without explicit approval.
+- Next: review the completed Recent Reading Memory micro diagnostics. The `huochu p45-p61` run completed with exit code `0`, LLM health passed with `24` successes and `0` fallback, and `8` read units produced `10` active Recent Reading Memory entries. The first beginning-of-book `huochu p1-p24` run completed with exit code `0`, LLM health passed with `22` successes and `0` fallback, and `10` read units produced `10` active Recent Reading Memory entries, but Unit 1 produced no Recent Memory. The `read.v27` retry1 beginning diagnostic completed with exit code `0`, LLM health passed with `39` successes and `0` fallback, and `18` read units produced `18` active Recent Reading Memory entries; Unit 1 now records the opening frame / core question, and `0 / 18` Recent Memory append ops carried operation-level `reason`. These diagnostics validate formation only, not consolidation; do not update the evidence catalog, remove `active_attention`, promote Long Span vNext, run broader eval, or claim product quality without explicit approval.
 - Jobs:
   - `bgjob_recent_reading_memory_micro_huochu_20260523` (`completed`)
   - `bgjob_recent_reading_memory_beginning_huochu_20260524` (`completed`)
+  - `bgjob_recent_reading_memory_beginning_huochu_20260524_retry1` (`completed`)
 - Evidence:
   - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/RecentReadingMemory-Micro-Diagnostic-Huochu-Post-run-Report v0.md`
   - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/RecentReadingMemory-Beginning-Micro-Diagnostic-Huochu-Post-run-Report v0.md`
+  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/RecentReadingMemory-Beginning-Micro-Diagnostic-Huochu-Retry1-Post-run-Report v0.md`
   - `reading-companion-backend/docs/evaluation/run_ledger.md`
   - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_recent_reading_memory_micro_huochu_20260523/summary/aggregate.json`
   - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_recent_reading_memory_micro_huochu_20260523/summary/llm_usage.json`
   - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_recent_reading_memory_beginning_huochu_20260524/summary/aggregate.json`
   - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_recent_reading_memory_beginning_huochu_20260524/summary/llm_usage.json`
+  - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_recent_reading_memory_beginning_huochu_20260524_retry1/summary/aggregate.json`
+  - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_recent_reading_memory_beginning_huochu_20260524_retry1/summary/llm_usage.json`
 
 ### `TASK-SECOND-READER-READING-IMPRESSION-REACTION-CONTRACT-CLEANUP-20260524` — Revisit `reading_impression` during reaction/read-contract tuning
 - Status: `waiting`

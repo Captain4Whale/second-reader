@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-05-24T10:32:13+08:00`
+Last verified: `2026-05-24T10:57:39+08:00`
 
 ## Current Objective
 - Recent Reading Memory first-half formation is implemented.
@@ -41,18 +41,24 @@ Last verified: `2026-05-24T10:32:13+08:00`
   - run ids:
     - `attentional_v2_recent_reading_memory_micro_huochu_20260523`
     - `attentional_v2_recent_reading_memory_beginning_huochu_20260524`
+    - `attentional_v2_recent_reading_memory_beginning_huochu_20260524_retry1`
   - job ids:
     - `bgjob_recent_reading_memory_micro_huochu_20260523`
     - `bgjob_recent_reading_memory_beginning_huochu_20260524`
+    - `bgjob_recent_reading_memory_beginning_huochu_20260524_retry1`
   - reports:
     - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/RecentReadingMemory-Micro-Diagnostic-Huochu-Post-run-Report v0.md`
     - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/RecentReadingMemory-Beginning-Micro-Diagnostic-Huochu-Post-run-Report v0.md`
+    - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/RecentReadingMemory-Beginning-Micro-Diagnostic-Huochu-Retry1-Post-run-Report v0.md`
   - status facts:
     - `p45-p61` diagnostic completed with exit code `0`; strict LLM health passed with `24` traces, `24` successes, `0` errors, and `0` fallback-backed evidence
     - `p45-p61` covered `8` read units and produced `10` active `recent_reading_memory` entries; settlement audit showed append-only behavior before consolidation
     - beginning-of-book `p1-p24` diagnostic completed with exit code `0`; strict LLM health passed with `22` traces, `22` successes, `0` errors, and `0` fallback-backed evidence
     - beginning-of-book `p1-p24` covered `10` read units and produced `10` active `recent_reading_memory` entries; unit 1 produced no Recent Memory despite containing the opening frame / core question
     - the beginning diagnostic shows continuity across later entries, but still surfaces analysis-heavy phrasing in some entries
+    - `read.v27` retry1 beginning-of-book `p1-p24` diagnostic completed with exit code `0`; strict LLM health passed with `39` traces, `39` successes, `0` errors, `1` retry, and `0` fallback-backed evidence
+    - `read.v27` retry1 covered `18` read units and produced `18` active `recent_reading_memory` entries; Unit 1 now recorded the book opening / core question, and `0 / 18` Recent Memory append ops carried operation-level `reason`
+    - `read.v27` retry1 confirms the no-reason contract, but some entries still drift toward interpretive phrasing inside `memory_text`
     - Memory Quality probe snapshots include `recent_reading_memory` in `scoring_memory_state`; the beginning diagnostic used `judge-mode none`, so MQ / Callback / FVI labels from that run are not interpreted
   - boundaries:
     - these diagnostics validate formation only, not consolidation
