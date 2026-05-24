@@ -482,6 +482,14 @@ def test_read_unit_filters_unanchored_surface_and_uses_naturalized_contract(tmp_
     ]
     assert "Compress meaning, not wording" in captured["system_prompt"]
     assert "do not make it artificially short" in captured["system_prompt"]
+    assert "orient yourself with the prompt-visible reading context" in captured["system_prompt"]
+    assert "Treat the provided context as what you already carry from the reading so far." in captured["system_prompt"]
+    assert "current unit as part of the unfolding book" in captured["system_prompt"]
+    assert "write the memory for the current unit itself" in captured["system_prompt"]
+    assert "Do not turn the entry into a recap of the context." in captured["system_prompt"]
+    assert "Do not force every entry to mention prior memory or framing." in captured["system_prompt"]
+    assert "What should my future self remember from this unit" in captured["system_prompt"]
+    assert "What can I say again about the prior context" in captured["system_prompt"]
     assert "Do not over-explain the hidden mechanism behind the passage." in captured["system_prompt"]
     assert "Avoid unsupported analytic upgrades" in captured["system_prompt"]
     assert "Be context-resolvable, not standalone exhaustive" in captured["system_prompt"]
@@ -547,7 +555,7 @@ def test_read_unit_filters_unanchored_surface_and_uses_naturalized_contract(tmp_
     assert "\"target_store\": \"concept_registry\"" in captured["prompt"]
     assert "\"target_store\": \"thread_trace\"" in captured["prompt"]
     assert "Do not target `concept_digest`, `thread_digest`, `active_focus_digest`" in captured["system_prompt"]
-    assert manifest["prompt_version"] == "attentional_v2.read.v25"
+    assert manifest["prompt_version"] == "attentional_v2.read.v26"
 
 
 def test_read_unit_contract_preserves_source_given_stage_model_as_memory_uptake(tmp_path: Path, monkeypatch):

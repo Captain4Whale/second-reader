@@ -2900,11 +2900,31 @@ This new direction is design frozen but not yet implemented as a formal benchmar
 
 **Period**: May 24, 2026, after reviewing the first `huochu p45-p61` Recent Reading Memory micro diagnostic.
 
-**Decision**: Keep the Recent Reading Memory state shape and append-only first-half behavior unchanged, but update the Read prompt to `attentional_v2.read.v25`. The prompt now states that Recent Reading Memory should record what the source establishes, shows, says, names, contrasts, or changes. It should remain complete enough for future reading and should use prior recent memory / concept / thread context only when the current unit or prompt-visible memory directly supports that continuity.
+**Decision**: Keep the Recent Reading Memory state shape and append-only first-half behavior unchanged, but update the Read prompt to `attentional_v2.read.v25`. The prompt now states that Recent Reading Memory should record what the source establishes, shows, says, names, contrasts, or changes. It should remain complete enough for future reading. A later clarification in DEC-100 generalizes the continuity wording to the full prompt-visible reading context rather than a hard-coded store list.
 
 **Boundary**: Recent Reading Memory is not a place for essay-like explanation, unsupported hidden-mechanism claims, or abstract theory upgrades. It may compress meaning, but it should not turn a concrete source scene into claims such as "the essence is", "this proves", "this is an operation mechanism", or "the passage actively trains" unless the source itself clearly supports that wording.
 
 **Why this path won**: The micro diagnostic showed that formation and continuity worked, but some entries sounded too analytical for a near-term memory layer. The product need is simpler: remember what was just read in a form that later Read steps can understand, without rereading the source and without converting every unit into a mini-interpretive essay.
+
+**Primary evidence**:
+- `docs/implementation/new-reading-mechanism/second-reader-memory-planning/C设计10-Recent Reading Memory Design v0.md`
+- `docs/backend-reading-mechanisms/attentional_v2.md`
+- `reading-companion-backend/src/attentional_v2/prompts.py`
+- `reading-companion-backend/tests/test_attentional_v2_nodes.py`
+
+## Entry 97
+**ID**: DEC-100
+**Status**: active
+
+**Decision / Clarification**: Clarify Recent Reading Memory continuity as prompt-context orientation with current-unit primacy.
+
+**Period**: May 24, 2026, after discussing whether Recent Reading Memory should read like isolated notes or like a continuous unfolding reading.
+
+**Decision**: Update the Read prompt to `attentional_v2.read.v26`. Before writing Recent Reading Memory, `Read` should orient through the full prompt-visible reading context and treat that context as what the reader already carries from the reading so far. This is intentionally universal: the rule applies to whatever context the program assembled, not to a hard-coded list of stores such as Recent Memory, Concept, Thread, chapter map, or book framing.
+
+**Boundary**: Continuity is an orientation layer, not the output target. The entry should still primarily record what the current unit newly establishes, develops, specifies, contrasts, changes, or makes memorable. It should not become a recap of prior context, and it should not force every entry to mention earlier memory or framing. A good entry answers: "What should my future self remember from this unit, given the reading context I already carried into it?" rather than "What can I say again about the prior context?"
+
+**Why this path won**: This keeps Recent Reading Memory simple and universal. The program owns context assembly; the reader model should use whatever prompt-visible state it receives to understand the current unit as part of the book, without turning the memory layer into explicit recent-to-recent links, a relationship graph, or a per-entry context-expansion task.
 
 **Primary evidence**:
 - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/C设计10-Recent Reading Memory Design v0.md`

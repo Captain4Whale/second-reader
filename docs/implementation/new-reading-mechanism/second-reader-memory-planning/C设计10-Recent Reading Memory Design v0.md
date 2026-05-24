@@ -82,7 +82,14 @@ Do not import outside knowledge.
 Write Recent Reading Memory as source-grounded understanding, not essay-like analysis.
 Record what the source establishes, shows, says, names, contrasts, or changes.
 Keep the memory complete enough for future reading; do not make it artificially short.
-Use prior Recent Reading Memory, concept, or thread context when it helps continuity, but connect only when the current unit or prompt-visible memory directly supports the connection.
+Before writing Recent Reading Memory, orient yourself with the prompt-visible reading context.
+Treat the provided context as what you already carry from the reading so far.
+Use that context to understand the current unit as part of the unfolding book.
+But write the memory for the current unit itself: record what this unit newly establishes, develops, specifies, contrasts, changes, or makes memorable.
+Do not turn the entry into a recap of the context.
+Do not force every entry to mention prior memory or framing.
+Only mention a connection to prior context when it helps make the current unit's meaning clear.
+The entry should answer: "What should my future self remember from this unit, given the reading context I already carried into it?" not "What can I say again about the prior context?"
 
 Write the memory so your future self can understand it from the memory packet, not from the vanished source unit.
 Be context-resolvable, not standalone exhaustive.
@@ -320,6 +327,10 @@ Requirements:
 Style guardrail:
 
 > Recent Reading Memory should remember what the source content establishes, not convert every unit into an explanatory mini-essay. It should avoid unsupported analytic upgrades such as "the essence is", "this proves", "this is an operation mechanism", or "the passage actively trains" unless the source itself clearly supports that framing.
+
+Continuity guardrail:
+
+> Recent Reading Memory should be written by a reader who carries the full prompt-visible reading context, not by a reader seeing an isolated excerpt. However, continuity is an orientation layer, not the output target. The entry should still primarily record what the current unit contributes, and should mention prior context only when that connection clarifies the current unit's meaning.
 
 ### `status`
 

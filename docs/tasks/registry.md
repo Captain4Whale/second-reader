@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-05-24T08:49:33+08:00`
+Last updated: `2026-05-24T09:20:07+08:00`
 
 ## Status Values
 - `active`
@@ -503,7 +503,7 @@ Last updated: `2026-05-24T08:49:33+08:00`
 - Lane: `mechanism_eval`
 - Priority: `high`
 - Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/RecentReadingMemory-Micro-Diagnostic-Huochu-Post-run-Report v0.md`
-- Next: review the completed `huochu p45-p61` micro diagnostic. The run completed with exit code `0`, LLM health passed with `24` successes and `0` fallback, and `8` read units produced `10` active Recent Reading Memory entries. That `read.v24` diagnostic validated formation and continuity, but also exposed that entries could drift toward essay-like analysis; `read.v25` now tightens the prompt toward source-grounded understanding. This still validates formation only, not consolidation; do not update the evidence catalog, remove `active_attention`, promote Long Span vNext, run broader eval, or claim product quality without explicit approval.
+- Next: review the completed `huochu p45-p61` micro diagnostic. The run completed with exit code `0`, LLM health passed with `24` successes and `0` fallback, and `8` read units produced `10` active Recent Reading Memory entries. That `read.v24` diagnostic validated formation and continuity, but also exposed that entries could drift toward essay-like analysis; `read.v25` tightened the prompt toward source-grounded understanding, and `read.v26` now clarifies that continuity comes from orienting through all prompt-visible reading context while still writing the memory for the current unit itself. This still validates formation only, not consolidation; do not update the evidence catalog, remove `active_attention`, promote Long Span vNext, run broader eval, or claim product quality without explicit approval.
 - Jobs:
   - `bgjob_recent_reading_memory_micro_huochu_20260523` (`completed`)
 - Evidence:

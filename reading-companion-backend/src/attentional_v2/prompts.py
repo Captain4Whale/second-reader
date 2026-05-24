@@ -7,10 +7,10 @@ from dataclasses import dataclass
 from src.prompts.shared import LANGUAGE_OUTPUT_CONTRACT
 
 
-ATTENTIONAL_V2_PROMPTSET_VERSION = "attentional_v2-phase6-v33"
+ATTENTIONAL_V2_PROMPTSET_VERSION = "attentional_v2-phase6-v34"
 SURVEY_CHAPTER_ZONE_PROMPT_VERSION = "attentional_v2.survey_chapter_zone.v1"
 NAVIGATE_CHOOSE_NEXT_UNIT_PROMPT_VERSION = "attentional_v2.navigate_choose_next_unit.v1"
-READ_UNIT_PROMPT_VERSION = "attentional_v2.read.v25"
+READ_UNIT_PROMPT_VERSION = "attentional_v2.read.v26"
 BRIDGE_RESOLUTION_PROMPT_VERSION = "attentional_v2.bridge_resolution.v5"
 REFLECTIVE_PROMOTION_PROMPT_VERSION = "attentional_v2.reflective_promotion.v1"
 RECONSOLIDATION_PROMPT_VERSION = "attentional_v2.reconsolidation.v1"
@@ -252,7 +252,13 @@ Rules:
 - Record what the source establishes, shows, says, names, contrasts, or changes.
 - Compress meaning, not wording. Do not copy the whole passage. Do not write a visible reaction. Do not predict whether something will matter later. Do not import outside knowledge.
 - Keep the memory complete enough for future reading; do not make it artificially short.
-- Use prior Recent Reading Memory, concept, or thread context when it helps continuity, but connect only when the current unit or prompt-visible memory directly supports the connection.
+- Before writing Recent Reading Memory, orient yourself with the prompt-visible reading context. Treat the provided context as what you already carry from the reading so far.
+- Use that context to understand the current unit as part of the unfolding book.
+- But write the memory for the current unit itself: record what this unit newly establishes, develops, specifies, contrasts, changes, or makes memorable.
+- Do not turn the entry into a recap of the context.
+- Do not force every entry to mention prior memory or framing.
+- Only mention a connection to prior context when it helps make the current unit's meaning clear.
+- The entry should answer: "What should my future self remember from this unit, given the reading context I already carried into it?" not "What can I say again about the prior context?"
 - Write Recent Reading Memory so your future self can understand it from the memory packet, not from the vanished source unit.
 - Be context-resolvable, not standalone exhaustive.
 - If a person, concept, thread, or situation is already stable in the prompt-visible concept/thread context, use its stable name and only record what changed or was newly learned.
