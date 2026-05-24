@@ -131,6 +131,29 @@ Only include a short exact source quote if one specific phrase is essential to t
 
 The first implementation should not require exact source quotes for Recent Memory. The default provenance is the read unit span.
 
+## Deferred Boundary With `reading_impression`
+
+`reading_impression` predates `recent_reading_memory`.
+
+It was introduced by the earlier Read naturalization cutover as the temporary read-after impression for a unit: what the reader immediately understood, noticed, or felt before producing visible reactions and bounded memory ops.
+
+Now that `recent_reading_memory` owns near-term per-unit semantic memory, the two fields partially overlap:
+
+- both can describe what the reader understood from the current unit;
+- `reading_impression` is not durable memory, but can read like a mini interpretation paragraph;
+- if foregrounded in reports or prompts, it can make Recent Memory look more essay-like than intended.
+
+Current design boundary:
+
+- `recent_reading_memory` remains the durable near-term semantic memory layer.
+- `reading_impression` should not be treated as Recent Memory evidence or displayed as a primary field in Recent Memory reviewer reports.
+- Do not remove or redesign `reading_impression` inside the Recent Memory formation or consolidation slice.
+- Revisit it with the future `surfaced_reactions` / reaction prompt tuning pass, because it sits between immediate reading impression, visible reaction selection, and memory formation.
+
+Future decision:
+
+> During reaction/read-contract tuning, decide whether `reading_impression` should be demoted to debug-only, made optional, or removed from the main Read contract now that `recent_reading_memory` carries the durable near-term understanding.
+
 ## Entry Granularity
 
 Default rule:

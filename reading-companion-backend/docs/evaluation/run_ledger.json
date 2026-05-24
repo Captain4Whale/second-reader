@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-05-23T13:35:48.822620Z",
+  "updated_at": "2026-05-24T01:45:26.917120Z",
   "entries": [
     {
       "run_id": "attentional_v2_excerpt_surface_v1_1_judged_20260406",
@@ -1747,6 +1747,44 @@
       "local_missing_allowed": [],
       "metadata": {},
       "updated_at": "2026-05-23T13:35:48.822279Z"
+    },
+    {
+      "run_id": "attentional_v2_recent_reading_memory_beginning_huochu_20260524",
+      "date": "2026-05-24",
+      "surface": "recent_reading_memory_micro_diagnostic",
+      "lane": "mechanism_eval",
+      "status": "review_pending",
+      "mechanisms": [
+        "attentional_v2"
+      ],
+      "dataset_or_manifest": [
+        "state/eval_local_datasets/diagnostic_micro/recent_reading_memory_beginning_huochu_20260524/probe_plan.json",
+        "state/eval_local_datasets/diagnostic_micro/recent_reading_memory_beginning_huochu_20260524/split_manifest.json"
+      ],
+      "run_dir": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_recent_reading_memory_beginning_huochu_20260524",
+      "summary_paths": {
+        "aggregate": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_recent_reading_memory_beginning_huochu_20260524/summary/aggregate.json",
+        "llm_usage": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_recent_reading_memory_beginning_huochu_20260524/summary/llm_usage.json",
+        "memory_quality_results": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_recent_reading_memory_beginning_huochu_20260524/summary/memory_quality_results.jsonl",
+        "reaction_audit_results": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_recent_reading_memory_beginning_huochu_20260524/summary/reaction_audit_results.jsonl",
+        "reaction_window_summaries": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_recent_reading_memory_beginning_huochu_20260524/summary/reaction_window_summaries.jsonl",
+        "report": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_recent_reading_memory_beginning_huochu_20260524/summary/report.md"
+      },
+      "job_ids": [
+        "bgjob_recent_reading_memory_beginning_huochu_20260524"
+      ],
+      "report_paths": [
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/RecentReadingMemory-Beginning-Micro-Diagnostic-Huochu-Post-run-Report v0.md",
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_recent_reading_memory_beginning_huochu_20260524/analysis/recent_reading_memory_review/README.md"
+      ],
+      "catalog_status": "not_cataloged",
+      "notes": "Completed diagnostic-only Recent Reading Memory beginning-of-book micro run on huochu p1-p24 using read.v26. Focus is formation continuity; 10 read units produced 10 active recent_reading_memory entries, Unit 1 produced no entry, LLM health passed with 22 successes and 0 fallback. Judge-mode none; MQ and Callback/FVI scores are not interpreted. No consolidation, evidence catalog update, Long Span formal authority, or product-quality claim.",
+      "parent_run_id": "",
+      "child_run_ids": [],
+      "synthetic": false,
+      "local_missing_allowed": [],
+      "metadata": {},
+      "updated_at": "2026-05-24T01:45:26.916698Z"
     }
   ]
 }
