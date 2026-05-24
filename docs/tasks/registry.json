@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-05-24T02:59:42Z",
+  "updated_at": "2026-05-24T03:31:54Z",
   "tasks": [
     {
       "id": "TASK-SECOND-READER-RECENT-READING-MEMORY-CONSOLIDATION-DESIGN-20260523",
@@ -56,7 +56,7 @@
         "bgjob_recent_reading_memory_beginning_huochu_20260524_retry1"
       ],
       "acceptance_ref": "",
-      "next_action": "Review the completed Recent Reading Memory micro diagnostics. The huochu p45-p61 run completed with exit code 0, LLM health passed with 24 successes and 0 fallback, and 8 read units produced 10 active Recent Reading Memory entries. The first beginning-of-book huochu p1-p24 run completed with exit code 0, LLM health passed with 22 successes and 0 fallback, and 10 read units produced 10 active Recent Reading Memory entries, but Unit 1 produced no Recent Memory. The read.v27 retry1 beginning diagnostic completed with exit code 0, LLM health passed with 39 successes and 0 fallback, and 18 read units produced 18 active Recent Reading Memory entries; Unit 1 now records the opening frame / core question, and 0 / 18 Recent Memory append ops carried operation-level reason. These diagnostics validate formation only, not consolidation; do not update the evidence catalog, remove active_attention, promote Long Span vNext, run broader eval, or claim product quality without explicit approval.",
+      "next_action": "Review the completed Recent Reading Memory micro diagnostics, then run a fresh read.v28 retry if human review wants empirical confirmation of the source-established-content style repair. The huochu p45-p61 run completed with exit code 0, LLM health passed with 24 successes and 0 fallback, and 8 read units produced 10 active Recent Reading Memory entries. The first beginning-of-book huochu p1-p24 run completed with exit code 0, LLM health passed with 22 successes and 0 fallback, and 10 read units produced 10 active Recent Reading Memory entries, but Unit 1 produced no Recent Memory. The read.v27 retry1 beginning diagnostic completed with exit code 0, LLM health passed with 39 successes and 0 fallback, and 18 read units produced 18 active Recent Reading Memory entries; Unit 1 now records the opening frame / core question, and 0 / 18 Recent Memory append ops carried operation-level reason. read.v28 is implemented to reduce interpretive drift by making Recent Memory start from source-established content and remember author/evidence-boundary units. These diagnostics validate formation only, not consolidation; do not update the evidence catalog, remove active_attention, promote Long Span vNext, run broader eval, or claim product quality without explicit approval.",
       "blocked_by": [],
       "evidence_refs": [
         "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/RecentReadingMemory-Micro-Diagnostic-Huochu-Post-run-Report v0.md",
@@ -70,7 +70,7 @@
         "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_recent_reading_memory_beginning_huochu_20260524_retry1/summary/aggregate.json",
         "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_recent_reading_memory_beginning_huochu_20260524_retry1/summary/llm_usage.json"
       ],
-      "last_updated": "2026-05-24T02:59:42Z",
+      "last_updated": "2026-05-24T03:31:54Z",
       "last_updated_by": "codex"
     },
     {
