@@ -498,23 +498,6 @@ def test_read_unit_filters_unanchored_surface_and_uses_naturalized_contract(tmp_
     assert "Recent Reading Memory append operations do not need an operation-level `reason`." in captured[
         "system_prompt"
     ]
-    assert "<read_context>" in captured["prompt"]
-    assert "<role_instruction>" in captured["prompt"]
-    assert "<book_context>" in captured["prompt"]
-    assert "<reading_state>" in captured["prompt"]
-    assert "<current_focus>" in captured["prompt"]
-    assert "<runtime_policy>" in captured["prompt"]
-    assert "<output_contract>" in captured["prompt"]
-    assert "\"reading_memory\"" in captured["prompt"]
-    assert "\"near_term_memory\"" in captured["prompt"]
-    assert "\"long_distance_memory\"" in captured["prompt"]
-    assert "\"reading_object\"" in captured["prompt"]
-    assert "\"reading_intent\"" in captured["prompt"]
-    assert "\"deprecated_active_attention\"" not in captured["prompt"]
-    assert "\"local_orientation\"" not in captured["prompt"]
-    assert "Stable Read role, reader stance, memory-formation rules" in captured["prompt"]
-    assert "Treat machine coordinates as audit handles" in captured["prompt"]
-    assert "Read context packet:" not in captured["prompt"]
     assert "\"target_store\": \"recent_reading_memory\"" in captured["prompt"]
     recent_memory_example = captured["prompt"].split('"target_store": "recent_reading_memory"', 1)[1].split(
         '"target_store": "active_attention"',
@@ -593,7 +576,7 @@ def test_read_unit_filters_unanchored_surface_and_uses_naturalized_contract(tmp_
     assert "\"target_store\": \"concept_registry\"" in captured["prompt"]
     assert "\"target_store\": \"thread_trace\"" in captured["prompt"]
     assert "Do not target `concept_digest`, `thread_digest`, `active_focus_digest`" in captured["system_prompt"]
-    assert manifest["prompt_version"] == "attentional_v2.read.v31"
+    assert manifest["prompt_version"] == "attentional_v2.read.v30"
 
 
 def test_read_unit_contract_preserves_source_given_stage_model_as_memory_uptake(tmp_path: Path, monkeypatch):

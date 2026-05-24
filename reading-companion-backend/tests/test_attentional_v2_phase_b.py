@@ -242,16 +242,14 @@ def test_read_unit_projects_compact_packet_and_returns_f1_surface_contract(tmp_p
     )
 
     assert "\"packet_version\": \"attentional_v2.state_packet.v1\"" in captured["prompt"]
-    assert "\"active_tensions\"" not in captured["prompt"]
-    assert "\"deprecated_active_attention\"" not in captured["prompt"]
-    assert "\"local_orientation\"" not in captured["prompt"]
+    assert "\"active_tensions\"" in captured["prompt"]
     assert "\"tension_focus\": \"Why the chapter turns here remains alive in attention.\"" in captured["prompt"]
     assert "\"answer_boundary\": \"A later unit explains why the turn matters.\"" not in captured["prompt"]
     assert "\"concept_key\": \"promise\"" in captured["prompt"]
     assert "\"earlier_excerpts\"" in captured["prompt"]
     assert "\"refs\": [" not in captured["prompt"]
     assert "\"anchor_bank_digest\"" not in captured["prompt"]
-    assert manifest["prompt_version"] == "attentional_v2.read.v31"
+    assert manifest["prompt_version"] == "attentional_v2.read.v30"
     assert result["reading_impression"] == "The second sentence sharpens the first one."
     assert result["surfaced_reactions"][0]["source_quote"] == "Beta sentence."
     assert result["surfaced_reactions"][0]["prior_link"]["ref_ids"] == ["lookback:sentence:c1-s1"]

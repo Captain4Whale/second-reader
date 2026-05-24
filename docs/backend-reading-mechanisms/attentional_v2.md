@@ -475,16 +475,14 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
     - historical route/move audit ledgers
     - audit/debug ledgers
 - `Read` should carry:
-  - context expression
-    - prompt `attentional_v2.read.v31` keeps the already tuned Read system prompt as the stable home for role, reader stance, memory-formation rules, source-grounding rules, and the JSON output contract
-    - the user prompt now wraps the concrete per-call context in XML-style outer layers: `read_context`, `role_instruction`, `book_context`, `reading_state`, `current_focus`, `runtime_policy`, and `output_contract`
-    - XML owns the outer role boundaries; JSON remains the inner shape for machine-produced values
-    - `reading_state.reading_memory` groups both near-term and long-distance memory, rather than putting Recent Memory, Concept, Thread, and Reflective material beside each other as unrelated root fields
-    - `current_focus` owns the high-churn reading object: path, position, source unit, and optional book-local evidence / detour intent
-    - machine coordinates shown in `current_focus.reading_position` are audit and source-anchoring handles, not semantic content that replaces the supplied source text
   - `always carry`
     - `current_unit`
-    - active `recent_reading_memory`
+    - a compact `local_continuity` summary
+    - deprecated open items from `active_attention` while the store remains in the runtime before removal
+      - `active_attention` is no longer the target near-term memory design; do not expand it as the primary short-term memory layer
+      - prompt-visible fields, where still carried for compatibility, are only `item_id`, `tension_from`, `tension_focus`, and `working_interpretation`
+      - source refs, development source refs, linked keys, statuses, and projection markers remain in runtime/audit/report artifacts rather than the Read prompt
+      - if the open-tension set grows too large, the projection should warn rather than silently omit items
     - compact `concept_digest`
     - compact `thread_digest`
     - compact `reflective_digest`
@@ -497,8 +495,6 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
     - full `reaction_records`
     - full `read_audit`
     - full source-reference history
-    - `local_continuity`
-    - deprecated `active_attention` state
 - `slow cycle` may carry a broader chapter slice because it is the dedicated chapter-end maintenance pass.
 - Default carried context must stay small and stable.
   - long-distance memory should travel as compact digests, not as full registries

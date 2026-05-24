@@ -20,11 +20,10 @@ The documents in this directory are the result of a follow-up loop: external evi
 2. Stable project docs.
 3. `C设计0-Second Reader Shared Memory–Planning Mechanism Charter v0.md`.
 4. `C设计1` through `C设计10` accepted design chain; `C设计10` first-half formation is implemented while consolidation remains deferred.
-5. `C设计11` draft Read Context Layer Contract; first Read packaging pass implemented, broader context contract remains design-in-progress.
-6. `E实施0-Implementation Roadmap & Handoff v0.md`.
-7. `B分析` assessment reports.
-8. `A调研` evidence packs, background only.
-9. `D审核` review docs, historical only.
+5. `E实施0-Implementation Roadmap & Handoff v0.md`.
+6. `B分析` assessment reports.
+7. `A调研` evidence packs, background only.
+8. `D审核` review docs, historical only.
 
 Evidence packs are external evidence indexes, not implementation sources. Review docs are historical review records and do not override the accepted design chain. `E实施0` is an implementation roadmap and handoff, not a final PR plan. `codex/E实施1-Implementation Feasibility & Delta Audit v0.md` is the accepted code-grounded feasibility and delta audit for the first implementation stage.
 
@@ -91,7 +90,6 @@ Evidence packs are external evidence indexes, not implementation sources. Review
 | `C设计8-Slow-cycle : Macro-planning Design v0.md` | design | accepted slow-cycle and macro-planning design | accepted design |
 | `C设计9-Evaluation Calibration & Minimal Eval Suite v0.md` | design | accepted evaluation calibration and minimal eval implementation guidance | accepted design, evaluation implementation guidance |
 | `C设计10-Recent Reading Memory Design v0.md` | design | near-term Recent Reading Memory definition, prompt, structure, and active/archive management | accepted; first-half formation implemented, consolidation deferred |
-| `C设计11-Read Context Layer Contract v0.md` | design draft | Read context layer taxonomy and XML-outer / JSON-inner expression decision | first Read packaging pass implemented; broader contract still design-in-progress |
 | `B分析-Memory Mechanism Project Assessment & Improvement Directions.md` | assessment | memory mechanism assessment background | background |
 | `B分析-Planning Mechanism Project Assessment & Improvement Directions.md` | assessment | planning mechanism assessment background | background |
 | `A调研-Memory External Evidence Pack v1.md` | evidence | external memory evidence index | background only |

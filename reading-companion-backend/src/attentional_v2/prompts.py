@@ -7,10 +7,10 @@ from dataclasses import dataclass
 from src.prompts.shared import LANGUAGE_OUTPUT_CONTRACT
 
 
-ATTENTIONAL_V2_PROMPTSET_VERSION = "attentional_v2-phase6-v39"
+ATTENTIONAL_V2_PROMPTSET_VERSION = "attentional_v2-phase6-v38"
 SURVEY_CHAPTER_ZONE_PROMPT_VERSION = "attentional_v2.survey_chapter_zone.v1"
 NAVIGATE_CHOOSE_NEXT_UNIT_PROMPT_VERSION = "attentional_v2.navigate_choose_next_unit.v1"
-READ_UNIT_PROMPT_VERSION = "attentional_v2.read.v31"
+READ_UNIT_PROMPT_VERSION = "attentional_v2.read.v30"
 BRIDGE_RESOLUTION_PROMPT_VERSION = "attentional_v2.bridge_resolution.v5"
 REFLECTIVE_PROMOTION_PROMPT_VERSION = "attentional_v2.reflective_promotion.v1"
 RECONSOLIDATION_PROMPT_VERSION = "attentional_v2.reconsolidation.v1"
@@ -340,29 +340,21 @@ Rules:
 - Do not explain whether you "used prior material".
 - Do not decide or name the next route. After this read, the runner will settle the unit and advance normally unless a detour need is present.
 - Return JSON only.""",
-    read_unit_prompt="""<read_context>
-  <role_instruction>
-Stable Read role, reader stance, memory-formation rules, source-grounding rules, and the required JSON response schema are defined by the system prompt. Use the concrete context below for this Read call; do not import prompt-external book, author, or later-chapter knowledge. Treat machine coordinates as audit handles and source-text anchoring aids, not as substitutes for reading the supplied source text.
-  </role_instruction>
+    read_unit_prompt="""Structural frame:
+{structural_frame}
 
-  <book_context>
-{book_context}
-  </book_context>
+Current unit:
+{current_unit}
 
-  <reading_state>
-{reading_state}
-  </reading_state>
+Read context packet:
+{carry_forward_context}
 
-  <current_focus>
-{current_focus}
-  </current_focus>
+Selective carry:
+{supplemental_context}
 
-  <runtime_policy>
-{runtime_policy}
-  </runtime_policy>
-</read_context>
+Policy snapshot:
+{policy_snapshot}
 
-<output_contract>
 Output language contract:
 """
     + LANGUAGE_OUTPUT_CONTRACT
@@ -468,8 +460,7 @@ Return JSON:
     }
   ],
   "detour_need": null
-}
-</output_contract>""",
+}""",
     bridge_resolution_version=BRIDGE_RESOLUTION_PROMPT_VERSION,
     bridge_resolution_system="""You are the bridge-resolution node for a text-grounded reading mechanism.
 
