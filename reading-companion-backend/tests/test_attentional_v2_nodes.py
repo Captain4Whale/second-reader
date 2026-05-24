@@ -494,7 +494,15 @@ def test_read_unit_filters_unanchored_surface_and_uses_naturalized_contract(tmp_
     assert "Avoid unsupported analytic upgrades" in captured["system_prompt"]
     assert "Be context-resolvable, not standalone exhaustive" in captured["system_prompt"]
     assert "Avoid bare pronouns or vague references" in (captured["system_prompt"] + captured["prompt"])
+    assert "Recent Reading Memory append operations do not need an operation-level `reason`." in captured[
+        "system_prompt"
+    ]
     assert "\"target_store\": \"recent_reading_memory\"" in captured["prompt"]
+    recent_memory_example = captured["prompt"].split('"target_store": "recent_reading_memory"', 1)[1].split(
+        '"target_store": "active_attention"',
+        1,
+    )[0]
+    assert '"reason"' not in recent_memory_example
     assert "stores ActiveTension" in captured["system_prompt"]
     assert "pause as a reader" in captured["system_prompt"]
     assert "Notice what still holds your attention after the unit is over." in captured["system_prompt"]
@@ -555,7 +563,7 @@ def test_read_unit_filters_unanchored_surface_and_uses_naturalized_contract(tmp_
     assert "\"target_store\": \"concept_registry\"" in captured["prompt"]
     assert "\"target_store\": \"thread_trace\"" in captured["prompt"]
     assert "Do not target `concept_digest`, `thread_digest`, `active_focus_digest`" in captured["system_prompt"]
-    assert manifest["prompt_version"] == "attentional_v2.read.v26"
+    assert manifest["prompt_version"] == "attentional_v2.read.v27"
 
 
 def test_read_unit_contract_preserves_source_given_stage_model_as_memory_uptake(tmp_path: Path, monkeypatch):
@@ -873,6 +881,34 @@ def test_recent_reading_memory_normalization_uses_unit_level_provenance_only():
         "kind": "event_or_situation",
         "memory_text": "The current unit establishes the prisoners' initial adaptation pressure.",
     }
+
+
+def test_recent_reading_memory_operation_normalization_drops_op_reason():
+    """Recent Reading Memory content should live in memory_text, not a generated op reason."""
+
+    normalized_ops, admission_events = nodes_module._normalize_state_operations_with_admission(  # noqa: SLF001
+        [
+            {
+                "op": "append",
+                "target_store": "recent_reading_memory",
+                "reason": "The model should not be asked to justify creating this memory.",
+                "payload": {
+                    "kind": "event_or_situation",
+                    "memory_text": "The current unit establishes the prisoners' initial adaptation pressure.",
+                },
+            }
+        ],
+        enforce_read_store_policy=True,
+    )
+
+    assert len(normalized_ops) == 1
+    assert normalized_ops[0]["target_store"] == "recent_reading_memory"
+    assert "reason" not in normalized_ops[0]
+    assert normalized_ops[0]["payload"] == {
+        "kind": "event_or_situation",
+        "memory_text": "The current unit establishes the prisoners' initial adaptation pressure.",
+    }
+    assert admission_events[0]["admission_status"] == "accepted"
 
 
 def test_active_attention_create_without_quote_keeps_unit_coordinates_without_fake_source_refs():

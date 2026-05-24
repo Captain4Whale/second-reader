@@ -647,20 +647,20 @@ def _normalize_state_operations_with_admission(
                 )
             )
             continue
-        operations.append(
-            {
-                "op": operation_type,  # type: ignore[typeddict-item]
-                "operation_type": operation_type,  # type: ignore[typeddict-item]
-                "target_store": effective_target_store,
-                "target_store_emitted": target_store_emitted,
-                "effective_target_store": effective_target_store,
-                "target_key": target_key,
-                "item_id": target_key,
-                "reason": _clean_text(item.get("reason")),
-                "compatibility_warnings": compatibility_warnings,
-                "payload": dict(payload) if isinstance(payload, dict) else {},
-            }
-        )
+        operation: StateOperation = {
+            "op": operation_type,  # type: ignore[typeddict-item]
+            "operation_type": operation_type,  # type: ignore[typeddict-item]
+            "target_store": effective_target_store,
+            "target_store_emitted": target_store_emitted,
+            "effective_target_store": effective_target_store,
+            "target_key": target_key,
+            "item_id": target_key,
+            "compatibility_warnings": compatibility_warnings,
+            "payload": dict(payload) if isinstance(payload, dict) else {},
+        }
+        if effective_target_store != "recent_reading_memory":
+            operation["reason"] = _clean_text(item.get("reason"))
+        operations.append(operation)
         admission_events.append(
             _memory_uptake_admission_event(
                 operation_index=operation_index,

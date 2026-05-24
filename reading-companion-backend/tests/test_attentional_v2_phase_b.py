@@ -249,7 +249,7 @@ def test_read_unit_projects_compact_packet_and_returns_f1_surface_contract(tmp_p
     assert "\"earlier_excerpts\"" in captured["prompt"]
     assert "\"refs\": [" not in captured["prompt"]
     assert "\"anchor_bank_digest\"" not in captured["prompt"]
-    assert manifest["prompt_version"] == "attentional_v2.read.v26"
+    assert manifest["prompt_version"] == "attentional_v2.read.v27"
     assert result["reading_impression"] == "The second sentence sharpens the first one."
     assert result["surfaced_reactions"][0]["source_quote"] == "Beta sentence."
     assert result["surfaced_reactions"][0]["prior_link"]["ref_ids"] == ["lookback:sentence:c1-s1"]

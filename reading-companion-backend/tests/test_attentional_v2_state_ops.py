@@ -134,6 +134,7 @@ def test_apply_recent_reading_memory_operations_appends_unit_level_entries_only(
             {
                 "op": "append",
                 "target_store": "recent_reading_memory",
+                "reason": "This should not be persisted as part of the memory entry.",
                 "payload": {
                     "kind": "event_or_situation",
                     "memory_text": "The prisoners begin adapting to camp shock through a staged psychological response.",

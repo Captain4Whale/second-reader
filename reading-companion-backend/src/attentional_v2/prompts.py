@@ -7,10 +7,10 @@ from dataclasses import dataclass
 from src.prompts.shared import LANGUAGE_OUTPUT_CONTRACT
 
 
-ATTENTIONAL_V2_PROMPTSET_VERSION = "attentional_v2-phase6-v34"
+ATTENTIONAL_V2_PROMPTSET_VERSION = "attentional_v2-phase6-v35"
 SURVEY_CHAPTER_ZONE_PROMPT_VERSION = "attentional_v2.survey_chapter_zone.v1"
 NAVIGATE_CHOOSE_NEXT_UNIT_PROMPT_VERSION = "attentional_v2.navigate_choose_next_unit.v1"
-READ_UNIT_PROMPT_VERSION = "attentional_v2.read.v26"
+READ_UNIT_PROMPT_VERSION = "attentional_v2.read.v27"
 BRIDGE_RESOLUTION_PROMPT_VERSION = "attentional_v2.bridge_resolution.v5"
 REFLECTIVE_PROMOTION_PROMPT_VERSION = "attentional_v2.reflective_promotion.v1"
 RECONSOLIDATION_PROMPT_VERSION = "attentional_v2.reconsolidation.v1"
@@ -272,6 +272,7 @@ Rules:
 - If the unit mostly elaborates something already known, write the memory as the current best understanding rather than duplicating fragments.
 - Usually write one Recent Reading Memory entry for this unit. Split into multiple entries only when the unit contains distinct meanings that a future reader would naturally remember and use separately. Do not split by sentence or paragraph, and do not create many small note fragments.
 - Recent Reading Memory entries are grounded in the current read unit as a whole. You do not need exact source quotes for them; the runner owns `source_unit_span_id`.
+- Recent Reading Memory append operations do not need an operation-level `reason`. The `memory_text` is the content to keep; do not spend attention justifying why you wrote it.
 - Create other memory operations only when the reading experience yields something that should continue shaping later reading: an open tension, a reusable concept/model/definition, or an unfolding thread.
 - Explicit source structures can be worth remembering even when they do not call for a visible reaction: stage models, classifications, core definitions, named distinctions, chapter roadmaps, and other author-given frameworks may belong in durable memory.
 - Do not disguise plainly stated source material as your own interpretation. Preserve source-given structure as source-given structure.
@@ -368,7 +369,6 @@ Return JSON:
     {
       "op": "append",
       "target_store": "recent_reading_memory",
-      "reason": "<what this unit adds to near-term reading memory>",
       "payload": {
         "kind": "event_or_situation|claim_or_argument|definition_or_distinction|causal_or_structural_link|character_or_relationship|emotional_or_tonal_shift|image_or_scene|local_pattern_or_thread|fact|other",
         "memory_text": "<one context-resolvable near-term memory from this unit>"

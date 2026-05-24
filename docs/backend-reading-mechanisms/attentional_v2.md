@@ -530,7 +530,8 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - `recent_reading_memory`
     - owns near-term semantic memory of just-read units
     - Read appends one or a small number of entries per completed unit through `memory_uptake_ops[]` with `target_store="recent_reading_memory"` and `op="append"`
-    - the LLM provides only `kind` and `memory_text`; the runner owns `entry_id`, `source_unit_span_id`, `created_at_unit_index`, `status`, and `archived_by_consolidation_id`
+    - the LLM provides only `kind` and `memory_text`; Recent Memory append operations do not use an operation-level `reason`
+    - the runner owns `entry_id`, `source_unit_span_id`, `created_at_unit_index`, `status`, and `archived_by_consolidation_id`
     - entries are grounded by the accepted read unit span as a whole; the first implementation does not require fine-grained `source_refs` or quote matching
     - before consolidation, this store is append-only: Read does not update, merge, resolve, close, link, or route recent entries into concept/thread destinations
     - `status="active"` entries are carried into the next Read prompt; future consolidation will mark processed entries as `archived`, and archived entries are retained for audit but not prompt-carried
@@ -565,6 +566,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
     - owns appending `recent_reading_memory`
     - owns updates into `concept_registry / thread_trace` and, temporarily until removal, `active_attention`
     - must write Recent Reading Memory as compressed, context-resolvable, source-grounded understanding for the future reader; it should orient through the full prompt-visible reading context, but still primarily record what the current unit newly establishes, develops, specifies, contrasts, changes, or makes memorable
+    - should not emit or rely on an operation-level `reason` for `recent_reading_memory`; the `memory_text` itself is the retained content
     - Recent Reading Memory should not copy the source passage, predict future importance, guess concept/thread targets, create nested memory points, recap prior context for its own sake, or turn a concrete source unit into unsupported essay-like analysis
     - owns deprecated active-tension lifecycle intent while `active_attention` remains in the runtime:
       - `create` / `append` creates a new open ActiveTension when prompt-visible context leaves readerly charge that has not yet been fully digested

@@ -131,6 +131,15 @@ Only include a short exact source quote if one specific phrase is essential to t
 
 The first implementation should not require exact source quotes for Recent Memory. The default provenance is the read unit span.
 
+Operation-reason boundary:
+
+```text
+Recent Reading Memory append operations do not need an operation-level reason.
+The memory_text is the content to keep; do not spend attention justifying why you wrote it.
+```
+
+This is intentional. Recent Reading Memory is the reader's near-term semantic record, not a decision log. The Read node should spend its attention on writing the memory entry itself. If a review report needs to judge whether an entry is good, it should compare `memory_text` against the source unit and surrounding context, not foreground a generated "why I wrote this memory" explanation.
+
 ## Deferred Boundary With `reading_impression`
 
 `reading_impression` predates `recent_reading_memory`.
