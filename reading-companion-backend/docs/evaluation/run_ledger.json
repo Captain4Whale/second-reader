@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-05-24T05:52:52.006385Z",
+  "updated_at": "2026-05-24T06:08:44.374881Z",
   "entries": [
     {
       "run_id": "attentional_v2_excerpt_surface_v1_1_judged_20260406",
@@ -1896,6 +1896,43 @@
       "local_missing_allowed": [],
       "metadata": {},
       "updated_at": "2026-05-24T05:52:52.006008Z"
+    },
+    {
+      "run_id": "attentional_v2_recent_reading_memory_beginning_huochu_20260524_retry4",
+      "date": "2026-05-24",
+      "surface": "recent_reading_memory_micro_diagnostic",
+      "lane": "mechanism_eval",
+      "status": "review_pending",
+      "mechanisms": [
+        "attentional_v2"
+      ],
+      "dataset_or_manifest": [
+        "state/eval_local_datasets/diagnostic_micro/recent_reading_memory_beginning_huochu_20260524/probe_plan.json",
+        "state/eval_local_datasets/diagnostic_micro/recent_reading_memory_beginning_huochu_20260524/split_manifest.json"
+      ],
+      "run_dir": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_recent_reading_memory_beginning_huochu_20260524_retry4",
+      "summary_paths": {
+        "aggregate": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_recent_reading_memory_beginning_huochu_20260524_retry4/summary/aggregate.json",
+        "llm_usage": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_recent_reading_memory_beginning_huochu_20260524_retry4/summary/llm_usage.json",
+        "memory_quality_results": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_recent_reading_memory_beginning_huochu_20260524_retry4/summary/memory_quality_results.jsonl",
+        "reaction_audit_results": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_recent_reading_memory_beginning_huochu_20260524_retry4/summary/reaction_audit_results.jsonl",
+        "reaction_window_summaries": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_recent_reading_memory_beginning_huochu_20260524_retry4/summary/reaction_window_summaries.jsonl",
+        "report": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_recent_reading_memory_beginning_huochu_20260524_retry4/summary/report.md"
+      },
+      "job_ids": [
+        "bgjob_recent_reading_memory_beginning_huochu_20260524_retry4"
+      ],
+      "report_paths": [
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/RecentReadingMemory-Beginning-Micro-Diagnostic-Huochu-Retry4-Post-run-Report v0.md"
+      ],
+      "catalog_status": "not_cataloged",
+      "notes": "Retry4 diagnostic for read.v30 restored v28-shape Recent Memory style on huochu p1-p24 completed with exit code 0; 13 read-audit rows, 13 active recent_reading_memory entries, LLM health ok with 28 successes, 0 errors, 1 retry, and 0 fallback. Coverage and continuity are generally strong, but the no-default-heading-colon style rule was only partially effective and Unit 1 still produced no Recent Memory. Diagnostic only; no evidence catalog update or product-quality claim.",
+      "parent_run_id": "",
+      "child_run_ids": [],
+      "synthetic": false,
+      "local_missing_allowed": [],
+      "metadata": {},
+      "updated_at": "2026-05-24T06:08:44.374482Z"
     }
   ]
 }

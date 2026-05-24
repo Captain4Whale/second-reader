@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-05-24T13:52:00+08:00`
+Last verified: `2026-05-24T14:08:00+08:00`
 
 ## Current Objective
 - Recent Reading Memory first-half formation is implemented.
@@ -47,18 +47,21 @@ Last verified: `2026-05-24T13:52:00+08:00`
     - `attentional_v2_recent_reading_memory_beginning_huochu_20260524_retry1`
     - `attentional_v2_recent_reading_memory_beginning_huochu_20260524_retry2`
     - `attentional_v2_recent_reading_memory_beginning_huochu_20260524_retry3`
+    - `attentional_v2_recent_reading_memory_beginning_huochu_20260524_retry4`
   - job ids:
     - `bgjob_recent_reading_memory_micro_huochu_20260523`
     - `bgjob_recent_reading_memory_beginning_huochu_20260524`
     - `bgjob_recent_reading_memory_beginning_huochu_20260524_retry1`
     - `bgjob_recent_reading_memory_beginning_huochu_20260524_retry2`
     - `bgjob_recent_reading_memory_beginning_huochu_20260524_retry3`
+    - `bgjob_recent_reading_memory_beginning_huochu_20260524_retry4`
   - reports:
     - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/RecentReadingMemory-Micro-Diagnostic-Huochu-Post-run-Report v0.md`
     - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/RecentReadingMemory-Beginning-Micro-Diagnostic-Huochu-Post-run-Report v0.md`
     - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/RecentReadingMemory-Beginning-Micro-Diagnostic-Huochu-Retry1-Post-run-Report v0.md`
     - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/RecentReadingMemory-Beginning-Micro-Diagnostic-Huochu-Retry2-Post-run-Report v0.md`
     - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/RecentReadingMemory-Beginning-Micro-Diagnostic-Huochu-Retry3-Post-run-Report v0.md`
+    - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/RecentReadingMemory-Beginning-Micro-Diagnostic-Huochu-Retry4-Post-run-Report v0.md`
   - status facts:
     - `p45-p61` diagnostic completed with exit code `0`; strict LLM health passed with `24` traces, `24` successes, `0` errors, and `0` fallback-backed evidence
     - `p45-p61` covered `8` read units and produced `10` active `recent_reading_memory` entries; settlement audit showed append-only behavior before consolidation
@@ -72,7 +75,8 @@ Last verified: `2026-05-24T13:52:00+08:00`
     - `read.v28` retry2 covered `12` broader read units and produced `16` active `recent_reading_memory` entries; the previously missed author-method / evidence-boundary material is now remembered, but some entries still end with abstract interpretive labels
     - `read.v29` retry3 beginning-of-book `p1-p24` diagnostic completed with exit code `0`; strict LLM health passed with `29` traces, `29` successes, `0` errors, `0` retries, and `0` fallback-backed evidence
     - `read.v29` retry3 covered `13` read units and produced `17` active `recent_reading_memory` entries; author-method material no longer ends with a forced `张力` label, but the broader rewrite felt formulaic and residual `mechanism` / `logic` / `paradox` phrasing remained, so retry3 is preserved as superseded diagnostic history rather than the future prompt direction
-    - `read.v30` is ready for a fresh retry4 beginning-of-book diagnostic on `huochu p1-p24`; do not reuse retry3 outputs
+    - `read.v30` retry4 beginning-of-book `p1-p24` diagnostic completed with exit code `0`; strict LLM health passed with `28` traces, `28` successes, `0` errors, `1` retry, and `0` fallback-backed evidence
+    - `read.v30` retry4 covered `13` read-audit rows and produced `13` active `recent_reading_memory` entries; coverage and continuity are generally strong, but the no-default-heading-colon style rule was only partially effective and Unit 1 still produced no Recent Memory
     - Memory Quality probe snapshots include `recent_reading_memory` in `scoring_memory_state`; the beginning diagnostic used `judge-mode none`, so MQ / Callback / FVI labels from that run are not interpreted
   - boundaries:
     - these diagnostics validate formation only, not consolidation
