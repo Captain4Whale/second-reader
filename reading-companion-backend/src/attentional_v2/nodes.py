@@ -132,6 +132,109 @@ def _structural_frame(
     }
 
 
+def _reading_state_prompt_context(prompt_packet: dict[str, object]) -> dict[str, object]:
+    """Group prompt-visible carried state by semantic role for Read."""
+
+    return {
+        "packet_version": prompt_packet.get("packet_version"),
+        "reading_memory": {
+            "near_term_memory": prompt_packet.get("recent_reading_memory")
+            if isinstance(prompt_packet.get("recent_reading_memory"), dict)
+            else {"active_entries": [], "active_entry_count": 0},
+            "long_distance_memory": {
+                "concept_memory": prompt_packet.get("concept_digest")
+                if isinstance(prompt_packet.get("concept_digest"), list)
+                else [],
+                "thread_memory": prompt_packet.get("thread_digest")
+                if isinstance(prompt_packet.get("thread_digest"), list)
+                else [],
+                "structural_memory": prompt_packet.get("reflective_digest")
+                if isinstance(prompt_packet.get("reflective_digest"), dict)
+                else {},
+            },
+        },
+    }
+
+
+def _reading_position_from_current_unit(
+    *,
+    current_unit_payload: object,
+    chapter_title: str,
+) -> dict[str, object]:
+    """Build a human-readable current-position hint plus audit handles."""
+
+    if isinstance(current_unit_payload, dict):
+        source_span = current_unit_payload.get("source_span")
+        paragraph_slices = current_unit_payload.get("paragraph_slices")
+        paragraph_indexes = (
+            [
+                item.get("paragraph_index")
+                for item in paragraph_slices
+                if isinstance(item, dict) and item.get("paragraph_index") is not None
+            ]
+            if isinstance(paragraph_slices, list)
+            else []
+        )
+        unique_paragraphs = list(dict.fromkeys(paragraph_indexes))
+        return {
+            "chapter_title": chapter_title,
+            "paragraph_indexes": unique_paragraphs,
+            "machine_source_span": source_span if isinstance(source_span, dict) else {},
+            "coordinate_note": "machine_source_span is for audit / source anchoring, not semantic meaning by itself",
+        }
+    if isinstance(current_unit_payload, list):
+        sentence_ids = [
+            _clean_text(sentence.get("sentence_id"))
+            for sentence in current_unit_payload
+            if isinstance(sentence, dict) and _clean_text(sentence.get("sentence_id"))
+        ]
+        return {
+            "chapter_title": chapter_title,
+            "legacy_sentence_ids": sentence_ids,
+            "coordinate_note": "legacy_sentence_ids are orientation metadata, not canonical source meaning",
+        }
+    return {"chapter_title": chapter_title}
+
+
+def _current_focus_prompt_context(
+    *,
+    current_unit_payload: object,
+    prompt_packet: dict[str, object],
+    detour_context: dict[str, object] | None,
+    chapter_title: str,
+) -> dict[str, object]:
+    """Group the high-churn current reading object and optional intent/evidence."""
+
+    selective_carry = prompt_packet.get("selective_carry")
+    active_detour_need = (
+        detour_context.get("active_detour_need")
+        if isinstance(detour_context, dict)
+        else None
+    )
+    reading_path: dict[str, object] = {
+        "mode": "detour" if isinstance(active_detour_need, dict) and active_detour_need else "mainline"
+    }
+    if isinstance(active_detour_need, dict) and active_detour_need:
+        reading_path["active_detour_need"] = dict(active_detour_need)
+
+    reading_intent: dict[str, object] = {"intent": "read_current_object_in_sequence"}
+    if isinstance(selective_carry, dict) and selective_carry:
+        reading_intent = {
+            "intent": "read_current_object_with_optional_book-local_evidence",
+            "optional_source_evidence": selective_carry,
+        }
+
+    return {
+        "reading_path": reading_path,
+        "reading_position": _reading_position_from_current_unit(
+            current_unit_payload=current_unit_payload,
+            chapter_title=chapter_title,
+        ),
+        "reading_object": current_unit_payload,
+        "reading_intent": reading_intent,
+    }
+
+
 def _anchor_context(anchor_memory: AnchorMemoryState | AnchorBankState, *, limit: int = 4) -> list[dict[str, object]]:
     """Build a compact anchor context packet."""
 
@@ -1286,13 +1389,19 @@ def read_unit(
         chapter_title=chapter_title,
         output_language=output_language,
     )
+    reading_state_context = _reading_state_prompt_context(prompt_packet)
+    current_focus_context = _current_focus_prompt_context(
+        current_unit_payload=current_unit_payload,
+        prompt_packet=prompt_packet,
+        detour_context=detour_context,
+        chapter_title=chapter_title,
+    )
     user_prompt = _render_prompt(
         prompts.read_unit_prompt,
-        structural_frame=_json_block(structural_frame),
-        current_unit=_json_block(current_unit_payload),
-        carry_forward_context=_json_block(prompt_packet),
-        supplemental_context=_json_block(dict(prompt_packet.get("selective_carry", {}))),
-        policy_snapshot=_json_block(reader_policy),
+        book_context=_json_block(structural_frame),
+        reading_state=_json_block(reading_state_context),
+        current_focus=_json_block(current_focus_context),
+        runtime_policy=_json_block(reader_policy),
         output_language_name=language_name(output_language),
     )
     _write_prompt_manifest(

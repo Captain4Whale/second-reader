@@ -2912,6 +2912,27 @@ This new direction is design frozen but not yet implemented as a formal benchmar
 - `reading-companion-backend/src/attentional_v2/prompts.py`
 - `reading-companion-backend/tests/test_attentional_v2_nodes.py`
 
+## Entry 100
+**ID**: DEC-103
+**Status**: active
+
+**Decision / Clarification**: Package Read prompt context with XML outer layers and JSON inner payloads.
+
+**Period**: May 24, 2026, after deciding that the Read node context needed clearer role boundaries without rewriting the already tuned Read system prompt.
+
+**Decision**: Update the Read prompt to `attentional_v2.read.v31`. The stable role, reader stance, memory formation rules, source grounding rules, and JSON response contract remain in the system prompt. The user prompt now wraps concrete per-call context in XML-style outer layers: `read_context`, `role_instruction`, `book_context`, `reading_state`, `current_focus`, `runtime_policy`, and `output_contract`. Inner program-owned values remain JSON.
+
+**Boundary**: This is a prompt packaging / context-expression change, not a rewrite of the Recent Reading Memory formation wording. Near-term and long-distance memory are grouped under `reading_state.reading_memory`. The current source object, path, position, and optional book-local evidence are grouped under `current_focus`. Deprecated `active_attention` state and `local_continuity` are not carried as Read context layers. Machine coordinates are visible only as audit / source-anchoring handles and should not substitute for the supplied source text.
+
+**Why this path won**: The previous Read user prompt was structured but flat: structural frame, current unit, read context packet, selective carry, and policy snapshot were side by side. The XML outer layer makes responsibility and change frequency clearer for the model: stable role pointer, book context, carried reading state, current focus, runtime policy, and output contract each have a visible boundary.
+
+**Primary evidence**:
+- `docs/implementation/new-reading-mechanism/second-reader-memory-planning/C设计11-Read Context Layer Contract v0.md`
+- `docs/backend-reading-mechanisms/attentional_v2.md`
+- `reading-companion-backend/src/attentional_v2/prompts.py`
+- `reading-companion-backend/src/attentional_v2/nodes.py`
+- `reading-companion-backend/tests/test_attentional_v2_nodes.py`
+
 ## Entry 98
 **ID**: DEC-101
 **Status**: superseded

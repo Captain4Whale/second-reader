@@ -15,13 +15,14 @@ Last verified: `2026-05-24T14:08:00+08:00`
     - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/C设计10-Recent Reading Memory Design v0.md`
   - implementation scope:
     - `recent_reading_memory` is now a runtime store for near-term semantic memory of just-read units
-    - Read prompt `attentional_v2.read.v30` asks for one or a small number of context-resolvable Recent Reading Memory entries per unit
+    - Read prompt `attentional_v2.read.v31` asks for one or a small number of context-resolvable Recent Reading Memory entries per unit
     - `read.v25` tightened the formation wording so Recent Reading Memory should be source-grounded understanding rather than essay-like analysis; it should record what the source establishes / shows / says / names / contrasts / changes, stay complete enough for future reading, and avoid unsupported analytic upgrades
     - `read.v26` adds the continuity balance: Read should orient through the full prompt-visible reading context, treat that context as already-carried reading state, and still write the memory for the current unit itself rather than recapping prior context
     - `read.v27` removes operation-level `reason` from Recent Reading Memory append examples and contract; `memory_text` is the retained content, while runner/state code preserves unit-level provenance
     - `read.v28` tightens writing style: Recent Reading Memory should start from source-established content, add interpretation only when needed to preserve that content, remember author stance / evidence-boundary / intended-reader units, and avoid abstract upgrades unless the source directly supports them
     - `read.v29` simplified the writing rule after retry2, but retry3 made the entries feel too formulaic and is now superseded as a prompt direction
     - `read.v30` restores the stronger `read.v28` prompt shape and adds only a narrow style constraint: Recent Reading Memory should be natural memory sentences / short paragraphs, not default `<label>: <explanation>` entries unless the source itself names the term, stage, or framework
+    - `read.v31` keeps the tuned Read system prompt content but changes user-prompt context packaging to XML-style outer layers: stable role pointer, book context, reading state / memory, current focus, runtime policy, and output contract; deprecated `active_attention` state and `local_continuity` are not carried as Read context layers
     - Read may append entries through `memory_uptake_ops[]` with `target_store="recent_reading_memory"` and `op="append"`
     - the LLM supplies only `kind` and `memory_text`; runner/state code owns `entry_id`, `source_unit_span_id`, `created_at_unit_index`, `status`, and `archived_by_consolidation_id`
     - only `active` entries are projected into subsequent Read prompt packets
