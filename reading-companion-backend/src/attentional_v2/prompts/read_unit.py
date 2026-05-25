@@ -240,13 +240,22 @@ def _target_source_grounding_text() -> str:
     )
 
 
+READ_TARGET_MEMORY_BOUNDARY_FRAGMENT = PromptFragment(
+    fragment_id="read.memory_general_policy",
+    text="""- After the impression and any surfaced reactions, maintain Recent Reading Memory deliberately.
+- `memory_uptake_ops` in the target Read contract should append only what should remain available after this unit.
+- Do not maintain state for its own sake.
+- Do not copy surfaced reactions into memory just because they were strong.""",
+)
+
+
 READ_ROLE_AND_INSTRUCTION_FRAGMENT_REGISTRY = PromptFragmentRegistry(
     [
         _fragment_by_id("read.role_and_stance"),
         _fragment_by_id("read.reading_impression_policy"),
         _fragment_by_id("read.surfaced_reaction_policy"),
         _fragment_by_id("read.reaction_anchor_and_callback_policy"),
-        _fragment_by_id("read.memory_general_policy"),
+        READ_TARGET_MEMORY_BOUNDARY_FRAGMENT,
         _fragment_by_id("read.recent_reading_memory_policy"),
         PromptFragment(
             fragment_id="read.source_grounding_policy",

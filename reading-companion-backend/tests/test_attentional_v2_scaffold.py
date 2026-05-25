@@ -211,6 +211,8 @@ def test_read_role_and_instruction_xml_renders_target_structure_without_live_mig
     assert "<ActiveTension>" not in rendered
     assert "ActiveTension" not in rendered
     assert "active_attention" not in rendered
+    assert "concept_registry" not in rendered
+    assert "thread_trace" not in rendered
     assert "read.durable_memory_policy" not in rendered
     assert "read.active_tension_policy" not in rendered
     assert "prompt_fragment_ref" not in rendered
