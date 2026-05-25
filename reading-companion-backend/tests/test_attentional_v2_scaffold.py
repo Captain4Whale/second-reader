@@ -12,6 +12,8 @@ from src.attentional_v2.prompts import (
     ATTENTIONAL_V2_PROMPTSET_VERSION,
     ATTENTIONAL_V2_PROMPT_REGISTRY,
     READ_UNIT_PROMPT_VERSION,
+    READ_UNIT_ROLE_AND_INSTRUCTION_FRAGMENTS,
+    READ_UNIT_SYSTEM_PROMPT,
     PromptFragment,
     PromptFragmentRegistry,
     PromptRegistry,
@@ -141,6 +143,30 @@ def test_read_xml_prompt_example_does_not_replace_live_read_prompt() -> None:
     assert ATTENTIONAL_V2_PROMPTS.read_unit_version == READ_UNIT_PROMPT_VERSION
     assert ATTENTIONAL_V2_PROMPTS.read_unit_system.startswith("You are a careful reader")
     assert "Structural frame:" in ATTENTIONAL_V2_PROMPTS.read_unit_prompt
+
+
+def test_read_unit_role_and_instruction_fragments_are_lossless() -> None:
+    fragment_ids = [fragment.fragment_id for fragment in READ_UNIT_ROLE_AND_INSTRUCTION_FRAGMENTS]
+
+    assert fragment_ids == [
+        "read.role_and_stance",
+        "read.reading_impression_policy",
+        "read.surfaced_reaction_policy",
+        "read.reaction_anchor_and_callback_policy",
+        "read.memory_general_policy",
+        "read.recent_reading_memory_policy",
+        "read.durable_memory_policy",
+        "read.active_tension_policy",
+        "read.source_grounding_policy",
+        "read.detour_and_routing_boundary",
+        "read.output_behavior_policy",
+    ]
+    assert len(set(fragment_ids)) == len(fragment_ids)
+    assert READ_UNIT_SYSTEM_PROMPT == "\n".join(
+        fragment.text for fragment in READ_UNIT_ROLE_AND_INSTRUCTION_FRAGMENTS
+    )
+    assert ATTENTIONAL_V2_PROMPTS.read_unit_system == READ_UNIT_SYSTEM_PROMPT
+    assert READ_UNIT_SYSTEM_PROMPT.startswith("You are a careful reader")
 
 
 def test_attentional_v2_prompt_registry_contains_node_definitions() -> None:

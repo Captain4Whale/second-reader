@@ -160,8 +160,8 @@ Rules:
 - `ATTENTIONAL_V2_PROMPTS` remains as a legacy projection over that registry for existing runtime call sites; new prompt-management work should prefer prompt definitions / registry.
 - Current implementation also has a reusable prompt assembly infrastructure: `PromptFragment`, `PromptFragmentRegistry`, `PromptXmlNode`, and `render_prompt_xml(...)`.
 - That infrastructure can resolve fixed fragments and render sibling / nested XML blocks without leaking template ids into model-facing text.
-- It is not yet connected to the live Read prompt. `read_unit_system` and `read_unit_prompt` still use the old flat live path, and `READ_UNIT_PROMPT_VERSION` is unchanged.
-- Current implementation has not yet split `read_unit_system` into physical fragments. The fragment structure below remains the migration target that preserves the current prompt content while making its functional sections explicit.
+- It is not yet connected to the live XML Read prompt. `READ_UNIT_PROMPT_VERSION` is unchanged.
+- Current implementation has split `read_unit_system` into lossless physical `PromptFragment` sections under `READ_UNIT_ROLE_AND_INSTRUCTION_FRAGMENTS`; the legacy projection still reconstructs the exact same `ATTENTIONAL_V2_PROMPTS.read_unit_system` string for live runtime calls.
 
 ### 1. `RoleAndInstruction`
 
@@ -175,20 +175,23 @@ Current source:
 - current value at this design point: `attentional_v2.read.v30`
 - promptset field: `ATTENTIONAL_V2_PROMPTSET_VERSION`
 
-Current implementation note: prompts are now managed as per-node definitions, but these functional sections are not yet physically separate prompt fragments. They are currently contiguous text inside the `attentional_v2.read_unit` definition's `system_prompt`; the section names below are the target migration structure for future prompt assembly.
+Current implementation note: prompts are now managed as per-node definitions, and the live `read_unit.system_prompt` is reconstructed from fixed role / instruction fragments without changing model-facing text.
 
-Target structure:
+Current fixed fragment order:
 
-```xml
-<RoleAndInstruction>
-  <Role>...</Role>
-  <ReadBehavior>...</ReadBehavior>
-  <ReactionInstruction>...</ReactionInstruction>
-  <RecentMemoryInstruction>...</RecentMemoryInstruction>
-  <MemoryOperationInstruction>...</MemoryOperationInstruction>
-  <DetourAndRoutingInstruction>...</DetourAndRoutingInstruction>
-</RoleAndInstruction>
-```
+1. `read.role_and_stance`
+2. `read.reading_impression_policy`
+3. `read.surfaced_reaction_policy`
+4. `read.reaction_anchor_and_callback_policy`
+5. `read.memory_general_policy`
+6. `read.recent_reading_memory_policy`
+7. `read.durable_memory_policy`
+8. `read.active_tension_policy`
+9. `read.source_grounding_policy`
+10. `read.detour_and_routing_boundary`
+11. `read.output_behavior_policy`
+
+Future XML assembly should reference these fragments under `RoleAndInstruction` rather than copying their text into the XML template.
 
 #### 1.1 `Role`
 
@@ -840,5 +843,6 @@ Add later accepted discussion decisions here, instead of scattering them across 
 - pending: long-distance memory projection policy;
 - pending: local continuity / visible trace boundary;
 - implemented prompt management: attentional_v2 prompts moved from one large `prompts.py` bundle into per-node `PromptDefinition` files plus `ATTENTIONAL_V2_PROMPT_REGISTRY`; `ATTENTIONAL_V2_PROMPTS` remains a compatibility projection only;
+- implemented prompt management: `read_unit.system_prompt` is now a lossless sequence of role / instruction `PromptFragment` sections for future standalone reference, while the live reconstructed prompt text remains unchanged;
 - implemented infrastructure: fixed prompt fragment resolution and generic XML prompt assembly helper exist, with tests, but are not connected to the live Read prompt;
 - pending: prompt migration plan and test plan for connecting the live Read prompt to this assembly layer.
