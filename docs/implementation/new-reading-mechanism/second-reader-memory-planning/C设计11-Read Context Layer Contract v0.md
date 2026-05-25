@@ -106,24 +106,33 @@ Some top-level XML blocks contain fixed instruction text rather than per-call re
 The design needs two distinct layers:
 
 1. **Template assembly layer**
-   - May use stable prompt fragment ids such as `attentional_v2.read.role.v30`.
-   - The id is an assembly key, not text for the model.
-   - Program code resolves each id through a prompt fragment registry / prompt bundle before the final prompt is sent.
+   - Uses a static `PromptTemplateNode` tree, not ad-hoc string concatenation.
+   - `element_name` is the XML element name that the model will eventually see.
+   - `prompt_fragment_ref` points to a fixed prompt fragment in the prompt library.
+   - `value_slot` points to dynamic per-call data supplied by the Read node.
+   - `literal_value` is reserved for rare short fixed text.
+   - `prompt_fragment_ref` / `value_slot` are assembly keys, not text for the model.
+   - Program code resolves all refs and slots before the final prompt is sent.
    - A template may therefore look like:
 
-```xml
-<RoleAndInstruction>
-  <Role ref="attentional_v2.read.role.v30" />
-  <ReadBehavior ref="attentional_v2.read.behavior.v30" />
-  <ReactionInstruction ref="attentional_v2.read.reaction.v30" />
-  <RecentMemoryInstruction ref="attentional_v2.read.recent_memory.v30" />
-  <MemoryOperationInstruction ref="attentional_v2.read.memory_ops.v30" />
-  <DetourAndRoutingInstruction ref="attentional_v2.read.detour.v30" />
-</RoleAndInstruction>
+```python
+PromptTemplateNode(
+    element_name="RoleAndInstruction",
+    children=(
+        PromptTemplateNode(
+            element_name="Role",
+            prompt_fragment_ref="attentional_v2.read.role.v30",
+        ),
+        PromptTemplateNode(
+            element_name="ReadBehavior",
+            prompt_fragment_ref="attentional_v2.read.behavior.v30",
+        ),
+    ),
+)
 ```
 
 2. **Final model-facing prompt layer**
-   - Must not expose `ref` attributes or fragment ids.
+   - Must not expose `prompt_fragment_ref`, `value_slot`, XML `ref` attributes, slot names, or fragment ids.
    - Contains the resolved prompt text inside the XML tags.
    - The final prompt sent to the model should therefore look like:
 
@@ -152,14 +161,14 @@ The design needs two distinct layers:
 
 Rules:
 
-- `ref` is a program-side template mechanism only.
-- The model-facing prompt must not include fragment ids, file paths, Python variable names, or prompt registry handles.
+- `prompt_fragment_ref` and `value_slot` are program-side template mechanisms only.
+- The model-facing prompt must not include fragment ids, slot names, file paths, Python variable names, or prompt registry handles.
 - Fragment ids should be stable enough for tests, audits, and prompt manifests.
 - Fragment ids should not encode filesystem paths. The registry can map ids to code, files, or generated prompt fragments internally.
 - Current implementation now stores attentional_v2 prompts as per-node `PromptDefinition` objects in `src/attentional_v2/prompts/`, with `ATTENTIONAL_V2_PROMPT_REGISTRY` as the management entrypoint.
 - `ATTENTIONAL_V2_PROMPTS` remains as a legacy projection over that registry for existing runtime call sites; new prompt-management work should prefer prompt definitions / registry.
-- Current implementation also has a reusable prompt assembly infrastructure: `PromptFragment`, `PromptFragmentRegistry`, `PromptXmlNode`, and `render_prompt_xml(...)`.
-- That infrastructure can resolve fixed fragments and render sibling / nested XML blocks without leaking template ids into model-facing text.
+- Current implementation also has a reusable prompt assembly infrastructure: `PromptFragment`, `PromptFragmentRegistry`, `PromptTemplateNode`, and `render_prompt_template_xml(...)`.
+- That infrastructure can resolve fixed fragments, inject dynamic value slots, and render sibling / nested XML blocks without leaking template ids into model-facing text.
 - It is not yet connected to the live XML Read prompt. `READ_UNIT_PROMPT_VERSION` is unchanged.
 - Current implementation has split `read_unit_system` into lossless physical `PromptFragment` sections under `READ_UNIT_ROLE_AND_INSTRUCTION_FRAGMENTS`; the legacy projection still reconstructs the exact same `ATTENTIONAL_V2_PROMPTS.read_unit_system` string for live runtime calls.
 

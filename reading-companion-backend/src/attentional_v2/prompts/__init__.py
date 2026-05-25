@@ -3,8 +3,8 @@
 from .assembly import (
     PromptFragment,
     PromptFragmentRegistry,
-    PromptXmlNode,
-    render_prompt_xml,
+    PromptTemplateNode,
+    render_prompt_template_xml,
     render_read_xml_prompt_example,
 )
 from .registry import (
@@ -43,7 +43,7 @@ __all__ = [
     "PromptRegistry",
     "PromptFragment",
     "PromptFragmentRegistry",
-    "PromptXmlNode",
-    "render_prompt_xml",
+    "PromptTemplateNode",
+    "render_prompt_template_xml",
     "render_read_xml_prompt_example",
 ]

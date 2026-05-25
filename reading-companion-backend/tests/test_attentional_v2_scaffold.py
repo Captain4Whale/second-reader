@@ -17,8 +17,8 @@ from src.attentional_v2.prompts import (
     PromptFragment,
     PromptFragmentRegistry,
     PromptRegistry,
-    PromptXmlNode,
-    render_prompt_xml,
+    PromptTemplateNode,
+    render_prompt_template_xml,
     render_read_xml_prompt_example,
 )
 from src.attentional_v2 import runner as runner_module
@@ -65,7 +65,7 @@ from src.reading_runtime.artifacts import checkpoint_summary_file, mechanism_man
 from src.reading_runtime.shell_state import load_runtime_shell
 
 
-def test_prompt_xml_resolves_fragments_and_escapes_dynamic_values() -> None:
+def test_prompt_template_xml_resolves_fragments_slots_and_literals() -> None:
     registry = PromptFragmentRegistry(
         [
             PromptFragment(
@@ -75,45 +75,82 @@ def test_prompt_xml_resolves_fragments_and_escapes_dynamic_values() -> None:
         ]
     )
 
-    rendered = render_prompt_xml(
+    rendered = render_prompt_template_xml(
         [
-            PromptXmlNode(
-                tag="RoleAndInstruction",
+            PromptTemplateNode(
+                element_name="RoleAndInstruction",
                 children=[
-                    PromptXmlNode(tag="Role", fragment_id="test.read.role.v1"),
-                    PromptXmlNode(tag="ReadBehavior", value="Read A & B < carefully."),
+                    PromptTemplateNode(element_name="Role", prompt_fragment_ref="test.read.role.v1"),
+                    PromptTemplateNode(element_name="ReadBehavior", value_slot="read_behavior"),
+                    PromptTemplateNode(element_name="LiteralHint", literal_value="Use fixed literal text."),
                 ],
             ),
-            PromptXmlNode(tag="CurrentFocus", value="Current unit text."),
+            PromptTemplateNode(element_name="CurrentFocus", value_slot="current_focus"),
         ],
         registry=registry,
+        slot_values={
+            "read_behavior": "Read A & B < carefully.",
+            "current_focus": "Current unit text.",
+        },
     )
 
     assert "<RoleAndInstruction>" in rendered
     assert "<Role>" in rendered
     assert "Fixed &lt;role&gt; &amp; instruction text." in rendered
     assert "Read A &amp; B &lt; carefully." in rendered
+    assert "Use fixed literal text." in rendered
     assert rendered.index("<RoleAndInstruction>") < rendered.index("<CurrentFocus>")
-    assert "fragment_id" not in rendered
+    assert "prompt_fragment_ref" not in rendered
+    assert "value_slot" not in rendered
     assert "ref=" not in rendered
     assert "test.read.role.v1" not in rendered
+    assert "read_behavior" not in rendered
+    assert "current_focus" not in rendered
 
 
-def test_prompt_xml_missing_fragment_fails_fast() -> None:
+def test_prompt_template_xml_missing_fragment_fails_fast() -> None:
     with pytest.raises(KeyError, match="missing.fragment"):
-        render_prompt_xml(
-            [PromptXmlNode(tag="Role", fragment_id="missing.fragment")],
+        render_prompt_template_xml(
+            [PromptTemplateNode(element_name="Role", prompt_fragment_ref="missing.fragment")],
             registry=PromptFragmentRegistry([]),
+            slot_values={},
         )
 
 
-def test_prompt_xml_empty_value_policy_is_explicit() -> None:
-    rendered = render_prompt_xml(
+def test_prompt_template_xml_missing_value_slot_fails_fast() -> None:
+    with pytest.raises(KeyError, match="missing_slot"):
+        render_prompt_template_xml(
+            [PromptTemplateNode(element_name="Role", value_slot="missing_slot")],
+            registry=PromptFragmentRegistry([]),
+            slot_values={},
+        )
+
+
+def test_prompt_template_xml_rejects_multiple_content_sources() -> None:
+    with pytest.raises(ValueError, match="must use only one content source"):
+        render_prompt_template_xml(
+            [
+                PromptTemplateNode(
+                    element_name="Role",
+                    prompt_fragment_ref="test.read.role.v1",
+                    value_slot="role_slot",
+                )
+            ],
+            registry=PromptFragmentRegistry(
+                [PromptFragment(fragment_id="test.read.role.v1", text="Role text.")]
+            ),
+            slot_values={"role_slot": "Role slot text."},
+        )
+
+
+def test_prompt_template_xml_empty_value_policy_is_explicit() -> None:
+    rendered = render_prompt_template_xml(
         [
-            PromptXmlNode(tag="EmptyValue", value=""),
-            PromptXmlNode(tag="SkippedValue", value="", skip_if_empty=True),
+            PromptTemplateNode(element_name="EmptyValue", literal_value=""),
+            PromptTemplateNode(element_name="SkippedValue", value_slot="skipped_value", skip_if_empty=True),
         ],
         registry=PromptFragmentRegistry([]),
+        slot_values={"skipped_value": ""},
     )
 
     assert "<EmptyValue>" in rendered
@@ -137,8 +174,14 @@ def test_read_xml_prompt_example_does_not_replace_live_read_prompt() -> None:
     assert "&amp;" in rendered
     assert "&lt;" in rendered
     assert "fragment_id" not in rendered
+    assert "prompt_fragment_ref" not in rendered
+    assert "value_slot" not in rendered
     assert "ref=" not in rendered
     assert "attentional_v2.read.role_and_instruction.example.v1" not in rendered
+    assert "book_and_chapter_info" not in rendered
+    assert "reading_state" not in rendered
+    assert "current_focus" not in rendered
+    assert "output_contract" not in rendered
     assert READ_UNIT_PROMPT_VERSION == "attentional_v2.read.v30"
     assert ATTENTIONAL_V2_PROMPTS.read_unit_version == READ_UNIT_PROMPT_VERSION
     assert ATTENTIONAL_V2_PROMPTS.read_unit_system.startswith("You are a careful reader")

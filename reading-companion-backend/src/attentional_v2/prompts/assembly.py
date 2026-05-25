@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Iterable, Sequence
+from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from html import escape
 
@@ -39,29 +39,30 @@ class PromptFragmentRegistry:
 
 
 @dataclass(frozen=True)
-class PromptXmlNode:
-    """Template node for model-facing XML prompt assembly.
+class PromptTemplateNode:
+    """Static template node for model-facing XML prompt assembly.
 
-    The assembly layer may point at fragment ids, but the rendered prompt only
-    contains XML tags and resolved text.
+    Template nodes may point at prompt fragment references or dynamic value
+    slots, but the rendered prompt only contains XML elements and resolved text.
     """
 
-    tag: str
-    fragment_id: str | None = None
-    value: str | None = None
-    children: Sequence["PromptXmlNode"] = ()
+    element_name: str
+    prompt_fragment_ref: str | None = None
+    value_slot: str | None = None
+    literal_value: str | None = None
+    children: Sequence["PromptTemplateNode"] = ()
     skip_if_empty: bool = False
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "children", tuple(self.children))
 
 
-def _validate_xml_tag(tag: str) -> str:
-    cleaned = tag.strip()
+def _validate_xml_element_name(element_name: str) -> str:
+    cleaned = element_name.strip()
     if not cleaned:
-        raise ValueError("Prompt XML tag must not be empty")
+        raise ValueError("Prompt XML element name must not be empty")
     if any(char in cleaned for char in "<>/ \t\r\n"):
-        raise ValueError(f"Invalid prompt XML tag: {tag}")
+        raise ValueError(f"Invalid prompt XML element name: {element_name}")
     return cleaned
 
 
@@ -71,52 +72,102 @@ def _escape_prompt_text(text: str, *, indent_level: int) -> str:
     return "\n".join(f"{indent}{line}" if line else "" for line in escaped.splitlines())
 
 
-def _render_prompt_xml_node(node: PromptXmlNode, *, registry: PromptFragmentRegistry, indent_level: int) -> str:
-    tag = _validate_xml_tag(node.tag)
+def _render_prompt_template_node(
+    node: PromptTemplateNode,
+    *,
+    registry: PromptFragmentRegistry,
+    slot_values: Mapping[str, str],
+    indent_level: int,
+) -> str:
+    element_name = _validate_xml_element_name(node.element_name)
     content_sources = sum(
         [
-            node.fragment_id is not None,
-            node.value is not None,
+            node.prompt_fragment_ref is not None,
+            node.value_slot is not None,
+            node.literal_value is not None,
             bool(node.children),
         ]
     )
     if content_sources > 1:
-        raise ValueError(f"Prompt XML node <{tag}> must use only one content source")
+        raise ValueError(f"Prompt template node <{element_name}> must use only one content source")
 
     indent = "  " * indent_level
-    if node.fragment_id is not None:
-        raw_text = registry.resolve(node.fragment_id)
+    if node.prompt_fragment_ref is not None:
+        raw_text = registry.resolve(node.prompt_fragment_ref)
         if not raw_text and node.skip_if_empty:
             return ""
-        return f"{indent}<{tag}>\n{_escape_prompt_text(raw_text, indent_level=indent_level + 1)}\n{indent}</{tag}>"
+        return (
+            f"{indent}<{element_name}>\n"
+            f"{_escape_prompt_text(raw_text, indent_level=indent_level + 1)}\n"
+            f"{indent}</{element_name}>"
+        )
 
-    if node.value is not None:
-        if not node.value and node.skip_if_empty:
+    if node.value_slot is not None:
+        value_slot = node.value_slot.strip()
+        if not value_slot:
+            raise ValueError(f"Prompt template node <{element_name}> value_slot must not be empty")
+        try:
+            raw_text = slot_values[value_slot]
+        except KeyError as exc:
+            raise KeyError(f"Missing prompt template value slot: {value_slot}") from exc
+        if not raw_text and node.skip_if_empty:
             return ""
-        return f"{indent}<{tag}>\n{_escape_prompt_text(node.value, indent_level=indent_level + 1)}\n{indent}</{tag}>"
+        return (
+            f"{indent}<{element_name}>\n"
+            f"{_escape_prompt_text(raw_text, indent_level=indent_level + 1)}\n"
+            f"{indent}</{element_name}>"
+        )
+
+    if node.literal_value is not None:
+        if not node.literal_value and node.skip_if_empty:
+            return ""
+        return (
+            f"{indent}<{element_name}>\n"
+            f"{_escape_prompt_text(node.literal_value, indent_level=indent_level + 1)}\n"
+            f"{indent}</{element_name}>"
+        )
 
     if node.children:
         rendered_children = [
             rendered
             for child in node.children
-            if (rendered := _render_prompt_xml_node(child, registry=registry, indent_level=indent_level + 1))
+            if (
+                rendered := _render_prompt_template_node(
+                    child,
+                    registry=registry,
+                    slot_values=slot_values,
+                    indent_level=indent_level + 1,
+                )
+            )
         ]
         if not rendered_children and node.skip_if_empty:
             return ""
-        return f"{indent}<{tag}>\n" + "\n".join(rendered_children) + f"\n{indent}</{tag}>"
+        return f"{indent}<{element_name}>\n" + "\n".join(rendered_children) + f"\n{indent}</{element_name}>"
 
     if node.skip_if_empty:
         return ""
-    return f"{indent}<{tag}></{tag}>"
+    return f"{indent}<{element_name}></{element_name}>"
 
 
-def render_prompt_xml(nodes: Sequence[PromptXmlNode], *, registry: PromptFragmentRegistry) -> str:
-    """Render sibling XML prompt nodes with all fragment ids resolved."""
+def render_prompt_template_xml(
+    nodes: Sequence[PromptTemplateNode],
+    *,
+    registry: PromptFragmentRegistry,
+    slot_values: Mapping[str, str],
+) -> str:
+    """Render sibling XML prompt nodes with all fragment refs and value slots resolved."""
 
     return "\n\n".join(
         rendered
         for node in nodes
-        if (rendered := _render_prompt_xml_node(node, registry=registry, indent_level=0))
+        if (
+            rendered := _render_prompt_template_node(
+                node,
+                registry=registry,
+                slot_values=slot_values,
+                indent_level=0,
+            )
+        )
     )
 
 READ_XML_EXAMPLE_FRAGMENT_REGISTRY = PromptFragmentRegistry(
@@ -126,6 +177,23 @@ READ_XML_EXAMPLE_FRAGMENT_REGISTRY = PromptFragmentRegistry(
             text="Fixed Read role and instruction text resolved by the prompt assembly layer.",
         )
     ]
+)
+
+
+READ_XML_EXAMPLE_TEMPLATE = (
+    PromptTemplateNode(
+        element_name="RoleAndInstruction",
+        children=(
+            PromptTemplateNode(
+                element_name="Instruction",
+                prompt_fragment_ref="attentional_v2.read.role_and_instruction.example.v1",
+            ),
+        ),
+    ),
+    PromptTemplateNode(element_name="BookAndChapterInfo", value_slot="book_and_chapter_info"),
+    PromptTemplateNode(element_name="ReadingState", value_slot="reading_state"),
+    PromptTemplateNode(element_name="CurrentFocus", value_slot="current_focus"),
+    PromptTemplateNode(element_name="OutputContract", value_slot="output_contract"),
 )
 
 
@@ -139,21 +207,13 @@ def render_read_xml_prompt_example(
 ) -> str:
     """Render the future Read XML shape without connecting it to the live Read node."""
 
-    return render_prompt_xml(
-        [
-            PromptXmlNode(
-                tag="RoleAndInstruction",
-                children=[
-                    PromptXmlNode(
-                        tag="Instruction",
-                        fragment_id="attentional_v2.read.role_and_instruction.example.v1",
-                    )
-                ],
-            ),
-            PromptXmlNode(tag="BookAndChapterInfo", value=book_and_chapter_info),
-            PromptXmlNode(tag="ReadingState", value=reading_state),
-            PromptXmlNode(tag="CurrentFocus", value=current_focus),
-            PromptXmlNode(tag="OutputContract", value=output_contract),
-        ],
+    return render_prompt_template_xml(
+        READ_XML_EXAMPLE_TEMPLATE,
         registry=registry,
+        slot_values={
+            "book_and_chapter_info": book_and_chapter_info,
+            "reading_state": reading_state,
+            "current_focus": current_focus,
+            "output_contract": output_contract,
+        },
     )
