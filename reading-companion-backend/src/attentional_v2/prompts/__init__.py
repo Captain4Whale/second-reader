@@ -23,12 +23,12 @@ from .registry import (
     PromptRegistry,
 )
 from .read_unit import (
-    READ_BOOK_AND_CHAPTER_INFO_TEMPLATE,
+    READ_BOOK_INFO_TEMPLATE,
     READ_ROLE_AND_INSTRUCTION_FRAGMENT_REGISTRY,
     READ_ROLE_AND_INSTRUCTION_TEMPLATE,
     READ_UNIT_ROLE_AND_INSTRUCTION_FRAGMENTS,
     READ_UNIT_SYSTEM_PROMPT,
-    render_read_book_and_chapter_info_xml,
+    render_read_book_info_xml,
     render_read_role_and_instruction_xml,
 )
 
@@ -42,11 +42,11 @@ __all__ = [
     "READ_UNIT_PROMPT_VERSION",
     "READ_ROLE_AND_INSTRUCTION_FRAGMENT_REGISTRY",
     "READ_ROLE_AND_INSTRUCTION_TEMPLATE",
-    "READ_BOOK_AND_CHAPTER_INFO_TEMPLATE",
+    "READ_BOOK_INFO_TEMPLATE",
     "READ_UNIT_ROLE_AND_INSTRUCTION_FRAGMENTS",
     "READ_UNIT_SYSTEM_PROMPT",
     "render_read_role_and_instruction_xml",
-    "render_read_book_and_chapter_info_xml",
+    "render_read_book_info_xml",
     "BRIDGE_RESOLUTION_PROMPT_VERSION",
     "REFLECTIVE_PROMOTION_PROMPT_VERSION",
     "RECONSOLIDATION_PROMPT_VERSION",

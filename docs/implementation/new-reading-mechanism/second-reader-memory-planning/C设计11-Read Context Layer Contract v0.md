@@ -77,7 +77,7 @@ The following Read prompt structure decisions are accepted here:
 - no single outer root tag is required;
 - inner machine values may remain JSON;
 - Read context should be organized by product-semantic role rather than by incidental implementation packet names or provider API message split;
-- the top-level XML blocks are `RoleAndInstruction`, `BookAndChapterInfo`, `ReadingState`, `CurrentFocus`, and `OutputContract`;
+- the top-level XML blocks are `RoleAndInstruction`, `BookInfo`, `ReadingState`, `CurrentFocus`, and `OutputContract`;
 - `RoleAndInstruction` and `OutputContract` are prompt structure, not reading input data;
 - code should not be changed until the actual Read context layer taxonomy is accepted.
 
@@ -89,7 +89,7 @@ The Read node prompt should be expressed as several semantically structured XML 
 
 ```xml
 <RoleAndInstruction>...</RoleAndInstruction>
-<BookAndChapterInfo>...</BookAndChapterInfo>
+<BookInfo>...</BookInfo>
 <ReadingState>...</ReadingState>
 <CurrentFocus>...</CurrentFocus>
 <OutputContract>...</OutputContract>
@@ -179,8 +179,8 @@ Rules:
 - Current implementation has split `read_unit_system` into lossless physical `PromptFragment` sections under `READ_UNIT_ROLE_AND_INSTRUCTION_FRAGMENTS`; the legacy projection still reconstructs the exact same `ATTENTIONAL_V2_PROMPTS.read_unit_system` string for live runtime calls.
 - Current implementation now also exposes `READ_ROLE_AND_INSTRUCTION_TEMPLATE`, `READ_ROLE_AND_INSTRUCTION_FRAGMENT_REGISTRY`, and `render_read_role_and_instruction_xml()` for the accepted target `RoleAndInstruction` XML assembly.
 - This target renderer excludes `DurableMemory` and `ActiveTension`, keeps `SourceGrounding` directly under `RoleAndInstruction`, uses target-specific MemoryBoundary text that does not mention concept/thread durable writes, and remains disconnected from live Read prompt assembly.
-- The target renderer also includes a short `ContextUseGuide` immediately after `ReaderRole`, so the model knows how to use `BookAndChapterInfo`, `ReadingState`, `CurrentFocus`, and `OutputContract` without turning every data tag into a separate explanation block.
-- Current implementation also exposes `READ_BOOK_AND_CHAPTER_INFO_TEMPLATE` and `render_read_book_and_chapter_info_xml(...)` for the accepted target `BookAndChapterInfo` XML assembly. It is dynamic slot injection only and remains disconnected from live Read prompt assembly.
+- The target renderer also includes a short `ContextUseGuide` immediately after `ReaderRole`, so the model knows how to use `BookInfo`, `ReadingState`, `CurrentFocus`, and `OutputContract` without turning every data tag into a separate explanation block.
+- Current implementation exposes `READ_BOOK_INFO_TEMPLATE` and `render_read_book_info_xml(...)` for the accepted target `BookInfo` XML assembly. It is dynamic slot injection only and remains disconnected from live Read prompt assembly.
 
 ### 1. `RoleAndInstruction`
 
@@ -226,7 +226,7 @@ Future XML assembly should reference only the accepted target fragments under `R
 | XML template path | `prompt_fragment_ref` | Purpose |
 | --- | --- | --- |
 | `RoleAndInstruction/ReaderRole` | `read.role_and_stance` | Reader identity, current-unit reading stance, and "not a field-filling task" boundary. |
-| `RoleAndInstruction/ContextUseGuide` | `read.context_use_guide` | Lightweight guide for how to treat `BookAndChapterInfo`, `ReadingState`, `CurrentFocus`, `ReadingObject`, and `OutputContract`. |
+| `RoleAndInstruction/ContextUseGuide` | `read.context_use_guide` | Lightweight guide for how to treat `BookInfo`, `ReadingState`, `CurrentFocus`, `ReadingObject`, and `OutputContract`. |
 | `RoleAndInstruction/ReadingBehavior/ReadingImpression` | `read.reading_impression_policy` | `reading_impression` as natural post-reading impression, not summary or evaluator voice. |
 | `RoleAndInstruction/ReadingBehavior/SurfacedReaction/ReactionSelection` | `read.surfaced_reaction_policy` | When to surface a reaction, density, anchor sizing, and swallowed-line / premise-plus-sharpening checks. |
 | `RoleAndInstruction/ReadingBehavior/SurfacedReaction/ReactionGroundingAndCallback` | `read.reaction_anchor_and_callback_policy` | Prior callback visible-text boundary, internal-id suppression, and positive / negative examples. |
@@ -314,31 +314,31 @@ READ_ROLE_AND_INSTRUCTION_TEMPLATE = (
 
 Rendered model-facing XML must not expose `prompt_fragment_ref`, fragment ids, slot names, or Python variable names. The renderer resolves each fragment into the element body before sending the prompt to the model.
 
-### 2. `BookAndChapterInfo`
+### 2. `BookInfo`
 
-`BookAndChapterInfo` orients Read inside the book and current chapter. It should stay light and should not become a coordinate dump, table-of-contents dump, or runtime-state packet.
+`BookInfo` orients Read inside the stable book identity. It should stay light and should not become a coordinate dump, table-of-contents dump, chapter-position packet, or runtime-state packet.
 
 Current source:
 
 - current old prompt input: `nodes._structural_frame(...)`
 - current old fields: `book_title`, `author`, `chapter_title`, `output_language`
 - target value source:
-  - `book_title` and `author` come from book-level parsed / provisioned metadata (`ProvisionedBook` / canonical `book_document.metadata`);
-  - `chapter_title` comes from the runner's current chapter object.
+  - `book_title` and `author` come from book-level parsed / provisioned metadata (`ProvisionedBook` / canonical `book_document.metadata`).
+
+Design decision: current chapter identity is not stable book metadata. It changes with the current reading call, so it belongs in `CurrentFocus/ReadingPosition`, not in `BookInfo`.
 
 Target structure:
 
 ```xml
-<BookAndChapterInfo>
+<BookInfo>
   <BookIdentity>{...}</BookIdentity>
-  <ChapterIdentity>{...}</ChapterIdentity>
-</BookAndChapterInfo>
+</BookInfo>
 ```
 
 Current implementation now has a non-live renderer for this target structure:
 
-- template: `READ_BOOK_AND_CHAPTER_INFO_TEMPLATE`
-- renderer: `render_read_book_and_chapter_info_xml(book_title=..., author=..., chapter_title=...)`
+- template: `READ_BOOK_INFO_TEMPLATE`
+- renderer: `render_read_book_info_xml(book_title=..., author=...)`
 - live status: not connected to `ATTENTIONAL_V2_PROMPTS.read_unit_prompt`
 - prompt version impact: none; `READ_UNIT_PROMPT_VERSION` remains `attentional_v2.read.v30`
 
@@ -359,25 +359,12 @@ Target payload:
 }
 ```
 
-#### 2.2 `ChapterIdentity`
-
-Purpose: identify the current chapter in human-readable terms.
-
-Current value source: the runner's current chapter object, currently passed to `read_unit(...)` as `chapter_title`.
-
-Target payload:
-
-```json
-{
-  "chapter_title": "..."
-}
-```
-
-#### 2.3 Explicit exclusions
+#### 2.2 Explicit exclusions
 
 - `output_language` currently lives in the old structural frame, but semantically belongs under `OutputContract`.
 - `book_language` / source language is parsed book metadata, but it is not needed in this light orientation block for now.
-- `chapter_ref` is a user-facing chapter reference available in current code, but it is not needed unless later review shows `chapter_title` alone is insufficient.
+- `chapter_title` belongs under `CurrentFocus/ReadingPosition`, not here.
+- `chapter_ref` is a user-facing chapter reference available in current code, but it is not needed unless later review shows `chapter_title` / human-readable position is insufficient.
 - `chapter_path`, table-of-contents data, neighboring chapters, and full chapter lists are not included in this first target shape.
 - Exact `source_span`, sentence ids, source span ids, and other machine coordinates should not be foregrounded here.
 
@@ -542,7 +529,9 @@ If any content from these fields is semantically needed by future Read calls, re
 
 ### 4. `CurrentFocus`
 
-`CurrentFocus` describes what this Read call is currently reading and why.
+`CurrentFocus` describes the immediate reading scene for this Read call: which reading path is active, where the reader is now, what source text should be read, and why this unit is being read.
+
+It is runtime-provided and call-specific. It is not stable book metadata, not carried memory, and not an output contract.
 
 Target structure:
 
@@ -552,7 +541,6 @@ Target structure:
   <ReadingPosition>...</ReadingPosition>
   <ReadingObject>...</ReadingObject>
   <ReadingIntent>...</ReadingIntent>
-  <OptionalSourceEvidence>...</OptionalSourceEvidence>
 </CurrentFocus>
 ```
 
@@ -569,15 +557,15 @@ Target payload:
 
 ```json
 {
-  "mode": "mainline|detour|look_back",
-  "active_detour_need": {}
+  "mode": "mainline|detour|look_back"
 }
 ```
 
 Value rules:
 
 - default to `mainline` when no detour/look-back intent is active;
-- include detour state only when this Read call is actually serving that path.
+- include detour / look-back state only when this Read call is actually serving that path;
+- do not include broad route history, navigation trace, or future route choice here.
 
 #### 4.2 `ReadingPosition`
 
@@ -585,25 +573,27 @@ Purpose: orient the current unit in human-readable reading position.
 
 Current source:
 
+- `chapter_title` currently passed to `read_unit(...)`;
 - `current_unit_source.source_span`
 - `current_unit_source.source_span_id`
-- chapter title / chapter path from source metadata when available
+- source paragraph range from `current_unit_source.paragraph_slices[]` when available
 
 Target payload:
 
 ```json
 {
   "chapter_title": "...",
-  "human_position": "...",
-  "source_unit_span_id": "..."
+  "human_position": "..."
 }
 ```
 
 Value rules:
 
-- prefer human-readable position such as chapter and paragraph range;
-- keep precise paragraph-char spans as program/audit metadata;
-- do not ask Read to reason from coordinates when the task is to read the current unit.
+- `chapter_title` lives here, not in `BookInfo`, because it is part of the current reading location;
+- prefer human-readable position such as chapter title and paragraph range;
+- do not foreground precise paragraph-char spans, sentence ids, or source span ids in the model-facing prompt;
+- keep precise spans and ids in runtime / audit artifacts for matching, resume, and review;
+- do not ask Read to reason from coordinates when the task is to read the current source unit.
 
 #### 4.3 `ReadingObject`
 
@@ -634,6 +624,7 @@ Value rules:
 - Do not foreground `start_char`, `end_char`, or full `source_span` inside the reading object.
 - Program code can retain source spans and char offsets for matching, audit, and resume.
 - Sentence-shaped fallback is compatibility only, not the target context contract.
+- If paragraph numbers are available, use them as light orientation labels; do not make them the semantic center.
 
 #### 4.4 `ReadingIntent`
 
@@ -658,35 +649,33 @@ Value rules:
 
 - for normal mainline reading, keep this minimal;
 - for detour/look-back reading, include the specific uncertainty or target.
+- if no special intent exists, do not inflate the block with empty policy prose.
 
-#### 4.5 `OptionalSourceEvidence`
+#### 4.5 Optional source evidence placement
 
-Purpose: provide bounded earlier source evidence only when the current read path needs it.
+There is no top-level `OptionalSourceEvidence` child in the current target `CurrentFocus` structure.
 
-Current source:
+Reason:
 
-- `state_projection.build_supplemental_selective_carry(...)`
-- possible fields: `earlier_excerpts`, `source_ref_details`, `supporting_refs`, `retrieval_context`
-- `detour_context` may add `mainline_background` and `detour_trace_summary`
+- for normal mainline reading, optional earlier evidence should usually be absent;
+- for detour / look-back reading, earlier source evidence is part of that specific reading purpose, not a default focus layer;
+- if needed later, bounded earlier source evidence should be placed under `ReadingIntent` or as a clearly named supplemental source block inside `ReadingObject`, rather than as an always-present empty top-level child.
 
-Target payload:
+Possible future shape:
 
-```json
-{
-  "earlier_excerpts": [],
-  "source_ref_details": [],
-  "supporting_refs": [],
-  "retrieval_context": {},
-  "mainline_background": {},
-  "detour_trace_summary": []
-}
+```xml
+<ReadingIntent>
+  {"intent": "look_back_to_check_prior_evidence", "question_or_uncertainty": "..."}
+</ReadingIntent>
+<ReadingObject>
+  <SourceUnit>...</SourceUnit>
+  <SupplementalSourceUnit purpose="look_back_evidence">...</SupplementalSourceUnit>
+</ReadingObject>
 ```
 
-Value rules:
+Current non-goal:
 
-- optional; omit when not needed;
-- not durable memory;
-- not a backdoor for recent reactions, audit dumps, or broad prior-source replay.
+- do not route recent reactions, audit dumps, broad source replay, or memory digests into `CurrentFocus` as "optional evidence."
 
 ### 5. `OutputContract`
 
@@ -718,7 +707,7 @@ Purpose: define output language.
 
 Current source: shared `LANGUAGE_OUTPUT_CONTRACT` and the current `output_language` value.
 
-Value rule: `output_language` belongs here, not in `BookAndChapterInfo`.
+Value rule: `output_language` belongs here, not in `BookInfo`.
 
 #### 5.2 `ReturnFormat`
 
@@ -780,7 +769,7 @@ Current source: old `read_unit_prompt` receives `policy_snapshot={reader_policy}
 Current design status:
 
 - `Policy snapshot` is real current input, but it does not yet have an accepted top-level XML block.
-- It should not be hidden inside `BookAndChapterInfo` or `ReadingObject`.
+- It should not be hidden inside `BookInfo` or `ReadingObject`.
 - Candidate future placement:
   - a separate `ReadingPolicy` block; or
   - split stable policy into `RoleAndInstruction` and per-call response limits into `OutputContract`.
@@ -794,7 +783,7 @@ The following is a readable target shape, not yet an implementation patch:
 ```xml
 <RoleAndInstruction>
   <Role>Read as a continuous reader moving through this book.</Role>
-  <ContextUseGuide>Treat BookAndChapterInfo as orientation, ReadingState as carried understanding, CurrentFocus/ReadingObject as the current source text, and OutputContract as response requirements.</ContextUseGuide>
+  <ContextUseGuide>Treat BookInfo as stable book identity, ReadingState as carried understanding, CurrentFocus/ReadingObject as the current source text, and OutputContract as response requirements.</ContextUseGuide>
   <ReadBehavior>Use the prompt-visible reading state to understand the current source unit.</ReadBehavior>
   <ReactionInstruction>Surface only bounded current-unit reactions that naturally feel worth marking.</ReactionInstruction>
   <RecentMemoryInstruction>Write useful Recent Reading Memory for your future reading self when the unit establishes something worth carrying.</RecentMemoryInstruction>
@@ -803,10 +792,9 @@ The following is a readable target shape, not yet an implementation patch:
   <DetourAndRoutingInstruction>Emit detour_need only when needed; do not secretly route by yourself.</DetourAndRoutingInstruction>
 </RoleAndInstruction>
 
-<BookAndChapterInfo>
+<BookInfo>
   <BookIdentity>{"book_title": "...", "author": "..."}</BookIdentity>
-  <ChapterIdentity>{"chapter_title": "..."}</ChapterIdentity>
-</BookAndChapterInfo>
+</BookInfo>
 
 <ReadingState>
   <ReadingMemory>
@@ -835,14 +823,13 @@ The following is a readable target shape, not yet an implementation patch:
 
 <CurrentFocus>
   <ReadingPath>{"mode": "mainline"}</ReadingPath>
-  <ReadingPosition>{"chapter_title": "...", "human_position": "...", "source_unit_span_id": "..."}</ReadingPosition>
+  <ReadingPosition>{"chapter_title": "...", "human_position": "..."}</ReadingPosition>
   <ReadingObject>
     <SourceUnit>
       <Paragraph n="...">...</Paragraph>
     </SourceUnit>
   </ReadingObject>
   <ReadingIntent>{"intent": "read_current_source_unit_in_sequence"}</ReadingIntent>
-  <OptionalSourceEvidence>{}</OptionalSourceEvidence>
 </CurrentFocus>
 
 <OutputContract>
@@ -888,10 +875,13 @@ Add later accepted discussion decisions here, instead of scattering them across 
 
 - accepted: XML-style outer tags and JSON inner payloads;
 - accepted: no single `ReadInput` root tag;
-- accepted: top-level sibling XML blocks `RoleAndInstruction`, `BookAndChapterInfo`, `ReadingState`, `CurrentFocus`, and `OutputContract`;
+- accepted: top-level sibling XML blocks `RoleAndInstruction`, `BookInfo`, `ReadingState`, `CurrentFocus`, and `OutputContract`;
 - accepted: Read-facing `ReadingObject` should expose the source unit as readable source text / paragraph blocks, not as implementation-shaped `paragraph_slices`;
 - accepted: precise source coordinates are program/audit metadata and should not dominate the Read-facing prompt;
-- accepted: `BookAndChapterInfo` stays light: `BookIdentity` uses parsed / provisioned book metadata (`book_title`, `author`), and `ChapterIdentity` uses only the current `chapter_title`;
+- accepted: `BookInfo` stays light: `BookIdentity` uses parsed / provisioned book metadata (`book_title`, `author`) only;
+- accepted: current chapter information belongs in `CurrentFocus/ReadingPosition`, not in `BookInfo`;
+- accepted: `CurrentFocus` has four target children for now: `ReadingPath`, `ReadingPosition`, `ReadingObject`, and `ReadingIntent`;
+- accepted: no default `OptionalSourceEvidence` child under `CurrentFocus`; detour / look-back evidence should be modeled later as a specific reading intent and supplemental reading object if needed;
 - accepted: `RoleAndInstruction` should not include DurableMemory as a Read-owned responsibility; Recent Memory to durable memory consolidation belongs to a future dedicated consolidation node / slow-cycle pass;
 - accepted: `RoleAndInstruction` should not include ActiveTension / `active_attention`; that store is deprecated and excluded from the target Read context structure;
 - accepted: `SourceGrounding` sits directly under `RoleAndInstruction`, not under `MemoryInstruction`, because it governs both reaction evidence and memory-operation evidence;
@@ -904,5 +894,5 @@ Add later accepted discussion decisions here, instead of scattering them across 
 - implemented prompt management: `read_unit.system_prompt` is now a lossless sequence of role / instruction `PromptFragment` sections for future standalone reference, while the live reconstructed prompt text remains unchanged;
 - implemented infrastructure: fixed prompt fragment resolution and generic XML prompt assembly helper exist, with tests, but are not connected to the live Read prompt;
 - implemented infrastructure: target `RoleAndInstruction` XML assembly exists for the accepted fragment mapping, excludes DurableMemory / ActiveTension, keeps MemoryBoundary Recent-Memory-only, and is not connected to the live Read prompt;
-- implemented infrastructure: target `BookAndChapterInfo` XML assembly exists for `BookIdentity` (`book_title`, `author`) and `ChapterIdentity` (`chapter_title`), and is not connected to the live Read prompt;
+- implemented infrastructure: target `BookInfo` XML assembly exists for `BookIdentity` (`book_title`, `author`) and is not connected to the live Read prompt;
 - pending: prompt migration plan and test plan for connecting the live Read prompt to this assembly layer.

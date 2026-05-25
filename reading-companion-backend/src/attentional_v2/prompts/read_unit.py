@@ -253,7 +253,7 @@ READ_TARGET_MEMORY_BOUNDARY_FRAGMENT = PromptFragment(
 
 READ_CONTEXT_USE_GUIDE_FRAGMENT = PromptFragment(
     fragment_id="read.context_use_guide",
-    text="""- Treat BookAndChapterInfo as orientation for the book and chapter, not as source text.
+    text="""- Treat BookInfo as orientation for stable book identity, not as source text.
 - Treat ReadingState as carried understanding from prior reading. Use it to read continuously, but do not let it override the current source unit.
 - Treat CurrentFocus as the immediate reading task: path, position, object, and intent.
 - Treat CurrentFocus/ReadingObject as the source text to read now.
@@ -354,12 +354,11 @@ def render_read_role_and_instruction_xml() -> str:
     )
 
 
-READ_BOOK_AND_CHAPTER_INFO_TEMPLATE = (
+READ_BOOK_INFO_TEMPLATE = (
     PromptTemplateNode(
-        element_name="BookAndChapterInfo",
+        element_name="BookInfo",
         children=(
             PromptTemplateNode(element_name="BookIdentity", value_slot="book_identity"),
-            PromptTemplateNode(element_name="ChapterIdentity", value_slot="chapter_identity"),
         ),
     ),
 )
@@ -371,27 +370,21 @@ def _json_prompt_payload(payload: dict[str, str]) -> str:
     return json.dumps(payload, ensure_ascii=False, indent=2)
 
 
-def render_read_book_and_chapter_info_xml(
+def render_read_book_info_xml(
     *,
     book_title: str,
     author: str,
-    chapter_title: str,
 ) -> str:
-    """Render target BookAndChapterInfo XML without changing live Read prompts."""
+    """Render target BookInfo XML without changing live Read prompts."""
 
     return render_prompt_template_xml(
-        READ_BOOK_AND_CHAPTER_INFO_TEMPLATE,
+        READ_BOOK_INFO_TEMPLATE,
         registry=PromptFragmentRegistry([]),
         slot_values={
             "book_identity": _json_prompt_payload(
                 {
                     "book_title": book_title,
                     "author": author,
-                }
-            ),
-            "chapter_identity": _json_prompt_payload(
-                {
-                    "chapter_title": chapter_title,
                 }
             ),
         },

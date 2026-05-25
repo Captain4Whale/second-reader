@@ -11,7 +11,7 @@ from src.attentional_v2.prompts import (
     ATTENTIONAL_V2_PROMPTS,
     ATTENTIONAL_V2_PROMPTSET_VERSION,
     ATTENTIONAL_V2_PROMPT_REGISTRY,
-    READ_BOOK_AND_CHAPTER_INFO_TEMPLATE,
+    READ_BOOK_INFO_TEMPLATE,
     READ_ROLE_AND_INSTRUCTION_FRAGMENT_REGISTRY,
     READ_ROLE_AND_INSTRUCTION_TEMPLATE,
     READ_UNIT_PROMPT_VERSION,
@@ -22,7 +22,7 @@ from src.attentional_v2.prompts import (
     PromptRegistry,
     PromptTemplateNode,
     render_prompt_template_xml,
-    render_read_book_and_chapter_info_xml,
+    render_read_book_info_xml,
     render_read_role_and_instruction_xml,
     render_read_xml_prompt_example,
 )
@@ -165,14 +165,14 @@ def test_prompt_template_xml_empty_value_policy_is_explicit() -> None:
 
 def test_read_xml_prompt_example_does_not_replace_live_read_prompt() -> None:
     rendered = render_read_xml_prompt_example(
-        book_and_chapter_info='{"title": "Demo & Book"}',
+        book_info='{"title": "Demo & Book"}',
         reading_state='{"recent_reading_memory": []}',
         current_focus='{"reading_object": "Alpha < Beta"}',
         output_contract='{"return": "json"}',
     )
 
     assert "<RoleAndInstruction>" in rendered
-    assert "<BookAndChapterInfo>" in rendered
+    assert "<BookInfo>" in rendered
     assert "<ReadingState>" in rendered
     assert "<CurrentFocus>" in rendered
     assert "<OutputContract>" in rendered
@@ -183,7 +183,7 @@ def test_read_xml_prompt_example_does_not_replace_live_read_prompt() -> None:
     assert "value_slot" not in rendered
     assert "ref=" not in rendered
     assert "attentional_v2.read.role_and_instruction.example.v1" not in rendered
-    assert "book_and_chapter_info" not in rendered
+    assert "book_info" not in rendered
     assert "reading_state" not in rendered
     assert "current_focus" not in rendered
     assert "output_contract" not in rendered
@@ -228,7 +228,7 @@ def test_read_role_and_instruction_xml_renders_target_structure_without_live_mig
     assert "Structural frame:" in ATTENTIONAL_V2_PROMPTS.read_unit_prompt
     assert rendered.index("<ReaderRole>") < rendered.index("<ContextUseGuide>")
     assert rendered.index("<ContextUseGuide>") < rendered.index("<ReadingBehavior>")
-    assert "BookAndChapterInfo as orientation" in rendered
+    assert "BookInfo as orientation" in rendered
     assert "ReadingState as carried understanding" in rendered
     assert "CurrentFocus/ReadingObject as the source text to read now" in rendered
     assert "OutputContract as the required response shape" in rendered
@@ -246,20 +246,18 @@ def test_read_role_and_instruction_xml_template_uses_only_target_fragment_refs()
     assert "read.active_tension_policy" not in rendered
 
 
-def test_read_book_and_chapter_info_xml_renders_light_orientation_block() -> None:
-    rendered = render_read_book_and_chapter_info_xml(
+def test_read_book_info_xml_renders_light_orientation_block() -> None:
+    rendered = render_read_book_info_xml(
         book_title="活出生命的意义 & More",
         author="Viktor <Frankl>",
-        chapter_title="第一章",
     )
 
-    assert "<BookAndChapterInfo>" in rendered
+    assert "<BookInfo>" in rendered
     assert "<BookIdentity>" in rendered
-    assert "<ChapterIdentity>" in rendered
-    assert rendered.index("<BookIdentity>") < rendered.index("<ChapterIdentity>")
     assert '"book_title": "活出生命的意义 &amp; More"' in rendered
     assert '"author": "Viktor &lt;Frankl&gt;"' in rendered
-    assert '"chapter_title": "第一章"' in rendered
+    assert "ChapterIdentity" not in rendered
+    assert "chapter_title" not in rendered
     assert "output_language" not in rendered
     assert "book_language" not in rendered
     assert "chapter_ref" not in rendered
@@ -275,12 +273,12 @@ def test_read_book_and_chapter_info_xml_renders_light_orientation_block() -> Non
     assert "Structural frame:" in ATTENTIONAL_V2_PROMPTS.read_unit_prompt
 
 
-def test_read_book_and_chapter_info_template_uses_only_dynamic_slots() -> None:
-    root = READ_BOOK_AND_CHAPTER_INFO_TEMPLATE[0]
+def test_read_book_info_template_uses_only_dynamic_slots() -> None:
+    root = READ_BOOK_INFO_TEMPLATE[0]
 
-    assert root.element_name == "BookAndChapterInfo"
-    assert [child.element_name for child in root.children] == ["BookIdentity", "ChapterIdentity"]
-    assert [child.value_slot for child in root.children] == ["book_identity", "chapter_identity"]
+    assert root.element_name == "BookInfo"
+    assert [child.element_name for child in root.children] == ["BookIdentity"]
+    assert [child.value_slot for child in root.children] == ["book_identity"]
     assert all(child.prompt_fragment_ref is None for child in root.children)
 
 

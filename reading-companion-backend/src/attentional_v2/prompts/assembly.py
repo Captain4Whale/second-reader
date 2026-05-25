@@ -190,7 +190,7 @@ READ_XML_EXAMPLE_TEMPLATE = (
             ),
         ),
     ),
-    PromptTemplateNode(element_name="BookAndChapterInfo", value_slot="book_and_chapter_info"),
+    PromptTemplateNode(element_name="BookInfo", value_slot="book_info"),
     PromptTemplateNode(element_name="ReadingState", value_slot="reading_state"),
     PromptTemplateNode(element_name="CurrentFocus", value_slot="current_focus"),
     PromptTemplateNode(element_name="OutputContract", value_slot="output_contract"),
@@ -199,7 +199,7 @@ READ_XML_EXAMPLE_TEMPLATE = (
 
 def render_read_xml_prompt_example(
     *,
-    book_and_chapter_info: str,
+    book_info: str,
     reading_state: str,
     current_focus: str,
     output_contract: str,
@@ -211,7 +211,7 @@ def render_read_xml_prompt_example(
         READ_XML_EXAMPLE_TEMPLATE,
         registry=registry,
         slot_values={
-            "book_and_chapter_info": book_and_chapter_info,
+            "book_info": book_info,
             "reading_state": reading_state,
             "current_focus": current_focus,
             "output_contract": output_contract,
