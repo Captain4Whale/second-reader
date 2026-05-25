@@ -151,8 +151,11 @@ PromptTemplateNode(
     ...
   </RecentMemoryInstruction>
   <MemoryOperationInstruction>
-    ...
+    Append Recent Reading Memory only; durable consolidation is not a Read responsibility.
   </MemoryOperationInstruction>
+  <SourceGroundingInstruction>
+    ...
+  </SourceGroundingInstruction>
   <DetourAndRoutingInstruction>
     ...
   </DetourAndRoutingInstruction>
@@ -186,7 +189,7 @@ Current source:
 
 Current implementation note: prompts are now managed as per-node definitions, and the live `read_unit.system_prompt` is reconstructed from fixed role / instruction fragments without changing model-facing text.
 
-Current fixed fragment order:
+Current code-side fixed fragment inventory:
 
 1. `read.role_and_stance`
 2. `read.reading_impression_policy`
@@ -200,7 +203,16 @@ Current fixed fragment order:
 10. `read.detour_and_routing_boundary`
 11. `read.output_behavior_policy`
 
-Future XML assembly should reference these fragments under `RoleAndInstruction` rather than copying their text into the XML template. The flat fragment list is the code-side prompt library order; the XML structure below is the model-facing semantic organization.
+This inventory records current code facts. The target XML structure below is the model-facing semantic organization and does **not** need to preserve every current fragment as a future Read responsibility.
+
+Target design decision for this pass:
+
+- `Read` should not be instructed to consolidate or generate durable memory from Recent Reading Memory.
+- `recent_reading_memory -> concept_registry / thread_trace / reflective_frames` consolidation should be handled by a later dedicated consolidation node / slow-cycle pass, not by the Read node.
+- `active_attention` / ActiveTension is deprecated and should not be included in the new Read `RoleAndInstruction` structure.
+- Current fragments `read.durable_memory_policy` and `read.active_tension_policy` are therefore treated as legacy / transitional prompt inventory, not target XML mapping entries.
+
+Future XML assembly should reference only the accepted target fragments under `RoleAndInstruction` rather than copying their text into the XML template. The flat fragment list is the code-side prompt library order; the XML structure below is the model-facing semantic organization.
 
 #### 1.1 `RoleAndInstruction` fragment mapping
 
@@ -212,13 +224,16 @@ Future XML assembly should reference these fragments under `RoleAndInstruction` 
 | `RoleAndInstruction/ReadingBehavior/SurfacedReaction/ReactionGroundingAndCallback` | `read.reaction_anchor_and_callback_policy` | Prior callback visible-text boundary, internal-id suppression, and positive / negative examples. |
 | `RoleAndInstruction/MemoryInstruction/MemoryBoundary` | `read.memory_general_policy` | General boundary for `memory_uptake_ops`: keep only what should remain available, and do not duplicate surfaced reactions into memory. |
 | `RoleAndInstruction/MemoryInstruction/RecentReadingMemory` | `read.recent_reading_memory_policy` | Recent Reading Memory formation, continuity, source-established writing, natural sentences, and no operation-level reason. |
-| `RoleAndInstruction/MemoryInstruction/DurableMemory` | `read.durable_memory_policy` | Durable memory write boundary for concept / thread style memory and "digest is projection, not writable store" rules. |
-| `RoleAndInstruction/MemoryInstruction/ActiveTension` | `read.active_tension_policy` | Current ActiveTension compatibility rules and lifecycle operations while the state remains in code. |
-| `RoleAndInstruction/MemoryInstruction/SourceGrounding` | `read.source_grounding_policy` | Exact quote responsibility for LLM output and program-owned SourceRef resolution. |
+| `RoleAndInstruction/SourceGrounding` | `read.source_grounding_policy` | Exact quote responsibility for LLM output and program-owned SourceRef resolution. |
 | `RoleAndInstruction/RouteBoundary` | `read.detour_and_routing_boundary` | Detour emission boundary: Read may emit a need but must not route secretly or name the next route. |
 | `RoleAndInstruction/ResponseDiscipline` | `read.output_behavior_policy` | Output discipline such as no broad chapter summary, no prior-material explanation, and JSON-only behavior. |
 
-Current placement note: `SourceGrounding` is nested under `MemoryInstruction` because the current fragment mostly governs memory operation evidence (`source_quote`, `development_source_quote`, and SourceRef resolution). If a later contract unifies reaction and memory source grounding, this element may move directly under `RoleAndInstruction`.
+Current placement note: `SourceGrounding` sits directly under `RoleAndInstruction`, not under `MemoryInstruction`, because exact quote discipline and program-owned SourceRef resolution apply to both visible reaction evidence and memory operation evidence. Before live migration, this fragment should be reviewed so it does not reintroduce deprecated ActiveTension-only wording.
+
+Explicit target exclusions:
+
+- `RoleAndInstruction/MemoryInstruction/DurableMemory` is not part of the target Read XML structure. Durable memory consolidation belongs to a future consolidation node / slow-cycle pass.
+- `RoleAndInstruction/MemoryInstruction/ActiveTension` is not part of the target Read XML structure. ActiveTension is deprecated and should not be strengthened by the context redesign.
 
 #### 1.2 Static template expression
 
@@ -266,19 +281,11 @@ READ_ROLE_AND_INSTRUCTION_TEMPLATE = (
                         element_name="RecentReadingMemory",
                         prompt_fragment_ref="read.recent_reading_memory_policy",
                     ),
-                    PromptTemplateNode(
-                        element_name="DurableMemory",
-                        prompt_fragment_ref="read.durable_memory_policy",
-                    ),
-                    PromptTemplateNode(
-                        element_name="ActiveTension",
-                        prompt_fragment_ref="read.active_tension_policy",
-                    ),
-                    PromptTemplateNode(
-                        element_name="SourceGrounding",
-                        prompt_fragment_ref="read.source_grounding_policy",
-                    ),
                 ),
+            ),
+            PromptTemplateNode(
+                element_name="SourceGrounding",
+                prompt_fragment_ref="read.source_grounding_policy",
             ),
             PromptTemplateNode(
                 element_name="RouteBoundary",
@@ -735,8 +742,10 @@ Current source: `memory_uptake_ops` examples and admission policy.
 
 Value rules:
 
-- durable target stores include `recent_reading_memory`, `concept_registry`, and `thread_trace`;
-- `active_attention` still exists in current code, but is deprecated as a primary memory layer and should not be strengthened by this context redesign;
+- target Read contract should treat `recent_reading_memory` append as the normal memory operation;
+- direct `concept_registry` / `thread_trace` writes are current-runtime transitional behavior, not the target Read context responsibility;
+- durable consolidation from Recent Reading Memory into concept / thread / reflective memory belongs to a future dedicated consolidation node / slow-cycle pass;
+- `active_attention` still exists in current code, but is deprecated as a primary memory layer and is excluded from the target Read context structure;
 - digests such as `concept_digest` and `thread_digest` are prompt projections, not writable stores.
 
 #### 5.6 `DetourNeedContract`
@@ -771,7 +780,8 @@ The following is a readable target shape, not yet an implementation patch:
   <ReadBehavior>Use the prompt-visible reading state to understand the current source unit.</ReadBehavior>
   <ReactionInstruction>Surface only bounded current-unit reactions that naturally feel worth marking.</ReactionInstruction>
   <RecentMemoryInstruction>Write useful Recent Reading Memory for your future reading self when the unit establishes something worth carrying.</RecentMemoryInstruction>
-  <MemoryOperationInstruction>Use explicit bounded memory operations; prompt digests are projections, not writable stores.</MemoryOperationInstruction>
+  <MemoryOperationInstruction>Append Recent Reading Memory for the current unit. Do not consolidate durable memory here.</MemoryOperationInstruction>
+  <SourceGroundingInstruction>Give exact current-source quotes when evidence is needed; program code resolves source coordinates.</SourceGroundingInstruction>
   <DetourAndRoutingInstruction>Emit detour_need only when needed; do not secretly route by yourself.</DetourAndRoutingInstruction>
 </RoleAndInstruction>
 
@@ -864,6 +874,9 @@ Add later accepted discussion decisions here, instead of scattering them across 
 - accepted: top-level sibling XML blocks `RoleAndInstruction`, `BookAndChapterInfo`, `ReadingState`, `CurrentFocus`, and `OutputContract`;
 - accepted: Read-facing `ReadingObject` should expose the source unit as readable source text / paragraph blocks, not as implementation-shaped `paragraph_slices`;
 - accepted: precise source coordinates are program/audit metadata and should not dominate the Read-facing prompt;
+- accepted: `RoleAndInstruction` should not include DurableMemory as a Read-owned responsibility; Recent Memory to durable memory consolidation belongs to a future dedicated consolidation node / slow-cycle pass;
+- accepted: `RoleAndInstruction` should not include ActiveTension / `active_attention`; that store is deprecated and excluded from the target Read context structure;
+- accepted: `SourceGrounding` sits directly under `RoleAndInstruction`, not under `MemoryInstruction`, because it governs both reaction evidence and memory-operation evidence;
 - pending: placement of current `policy_snapshot` in the target structure;
 - pending: Recent Memory projection policy;
 - pending: long-distance memory projection policy;
