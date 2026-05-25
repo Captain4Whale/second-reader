@@ -24,11 +24,13 @@ from .registry import (
 )
 from .read_unit import (
     READ_BOOK_INFO_TEMPLATE,
+    READ_CURRENT_FOCUS_TEMPLATE,
     READ_ROLE_AND_INSTRUCTION_FRAGMENT_REGISTRY,
     READ_ROLE_AND_INSTRUCTION_TEMPLATE,
     READ_UNIT_ROLE_AND_INSTRUCTION_FRAGMENTS,
     READ_UNIT_SYSTEM_PROMPT,
     render_read_book_info_xml,
+    render_read_current_focus_xml,
     render_read_role_and_instruction_xml,
 )
 
@@ -43,10 +45,12 @@ __all__ = [
     "READ_ROLE_AND_INSTRUCTION_FRAGMENT_REGISTRY",
     "READ_ROLE_AND_INSTRUCTION_TEMPLATE",
     "READ_BOOK_INFO_TEMPLATE",
+    "READ_CURRENT_FOCUS_TEMPLATE",
     "READ_UNIT_ROLE_AND_INSTRUCTION_FRAGMENTS",
     "READ_UNIT_SYSTEM_PROMPT",
     "render_read_role_and_instruction_xml",
     "render_read_book_info_xml",
+    "render_read_current_focus_xml",
     "BRIDGE_RESOLUTION_PROMPT_VERSION",
     "REFLECTIVE_PROMOTION_PROMPT_VERSION",
     "RECONSOLIDATION_PROMPT_VERSION",

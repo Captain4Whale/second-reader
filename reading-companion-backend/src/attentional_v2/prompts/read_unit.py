@@ -370,6 +370,12 @@ def _json_prompt_payload(payload: dict[str, str]) -> str:
     return json.dumps(payload, ensure_ascii=False, indent=2)
 
 
+def _json_prompt_object(payload: dict[str, object]) -> str:
+    """Return stable JSON for dynamic prompt objects."""
+
+    return json.dumps(payload, ensure_ascii=False, indent=2)
+
+
 def render_read_book_info_xml(
     *,
     book_title: str,
@@ -386,6 +392,191 @@ def render_read_book_info_xml(
                     "book_title": book_title,
                     "author": author,
                 }
+            ),
+        },
+    )
+
+
+def _clean_prompt_value(value: object) -> str:
+    return str(value or "").strip()
+
+
+def _compact_prompt_object(payload: dict[str, object]) -> dict[str, object]:
+    return {
+        key: value
+        for key, value in payload.items()
+        if value not in ("", None, [], {})
+    }
+
+
+def _read_current_focus_template(reading_object_node: PromptTemplateNode) -> tuple[PromptTemplateNode, ...]:
+    return (
+        PromptTemplateNode(
+            element_name="CurrentFocus",
+            children=(
+                PromptTemplateNode(element_name="ReadingPath", value_slot="reading_path"),
+                PromptTemplateNode(element_name="ReadingPosition", value_slot="reading_position"),
+                reading_object_node,
+                PromptTemplateNode(element_name="ReadingIntent", value_slot="reading_intent"),
+            ),
+        ),
+    )
+
+
+READ_CURRENT_FOCUS_TEMPLATE = _read_current_focus_template(
+    PromptTemplateNode(
+        element_name="ReadingObject",
+        children=(
+            PromptTemplateNode(element_name="SourceUnit", value_slot="source_unit"),
+        ),
+    )
+)
+
+
+def _paragraph_nodes_from_source_unit(source_unit: dict[str, object]) -> tuple[PromptTemplateNode, ...]:
+    nodes: list[PromptTemplateNode] = []
+    for item in source_unit.get("paragraph_slices", []):
+        if not isinstance(item, dict):
+            continue
+        text = _clean_prompt_value(item.get("text"))
+        if not text:
+            continue
+        paragraph_index = _clean_prompt_value(item.get("paragraph_index"))
+        attributes = {"n": paragraph_index} if paragraph_index else {}
+        nodes.append(
+            PromptTemplateNode(
+                element_name="Paragraph",
+                attributes=attributes,
+                literal_value=text,
+            )
+        )
+    return tuple(nodes)
+
+
+def _source_unit_text_from_sentences(current_unit_sentences: list[dict[str, object]] | None) -> str:
+    return "\n".join(
+        _clean_prompt_value(sentence.get("text"))
+        for sentence in (current_unit_sentences or [])
+        if isinstance(sentence, dict) and _clean_prompt_value(sentence.get("text"))
+    )
+
+
+def _reading_object_node(
+    *,
+    current_unit_source: dict[str, object] | None,
+    current_unit_sentences: list[dict[str, object]] | None,
+) -> PromptTemplateNode:
+    source_unit = dict(current_unit_source or {}) if isinstance(current_unit_source, dict) else {}
+    paragraph_nodes = _paragraph_nodes_from_source_unit(source_unit)
+    if paragraph_nodes:
+        source_unit_node = PromptTemplateNode(
+            element_name="SourceUnit",
+            children=paragraph_nodes,
+        )
+    else:
+        source_text = _clean_prompt_value(source_unit.get("source_text"))
+        if not source_text:
+            source_text = _source_unit_text_from_sentences(current_unit_sentences)
+        source_unit_node = PromptTemplateNode(
+            element_name="SourceUnit",
+            literal_value=source_text,
+        )
+    return PromptTemplateNode(
+        element_name="ReadingObject",
+        children=(source_unit_node,),
+    )
+
+
+def _human_position(*, chapter_title: str, current_unit_source: dict[str, object] | None) -> str:
+    source_unit = dict(current_unit_source or {}) if isinstance(current_unit_source, dict) else {}
+    paragraph_indexes = [
+        _clean_prompt_value(item.get("paragraph_index"))
+        for item in source_unit.get("paragraph_slices", [])
+        if isinstance(item, dict) and _clean_prompt_value(item.get("paragraph_index"))
+    ]
+    if paragraph_indexes:
+        start = paragraph_indexes[0]
+        end = paragraph_indexes[-1]
+        paragraph_position = f"p{start}" if start == end else f"p{start}-p{end}"
+        return f"{chapter_title}, {paragraph_position}" if chapter_title else paragraph_position
+    return chapter_title
+
+
+def _reading_path_mode(
+    *,
+    reading_path_mode: str,
+    detour_context: dict[str, object] | None,
+) -> str:
+    mode = _clean_prompt_value(reading_path_mode)
+    if mode in {"mainline", "detour", "look_back"}:
+        return mode
+    if isinstance(detour_context, dict) and isinstance(detour_context.get("active_detour_need"), dict):
+        return "detour"
+    return "mainline"
+
+
+def _reading_intent_payload(
+    *,
+    mode: str,
+    detour_context: dict[str, object] | None,
+) -> dict[str, object]:
+    if mode == "mainline":
+        return {"intent": "read_current_source_unit_in_sequence"}
+    active_need = (
+        dict(detour_context.get("active_detour_need"))
+        if isinstance(detour_context, dict) and isinstance(detour_context.get("active_detour_need"), dict)
+        else {}
+    )
+    return _compact_prompt_object(
+        {
+            "intent": "look_back_or_detour",
+            "question_or_uncertainty": _clean_prompt_value(active_need.get("reason")),
+            "target_hint": _clean_prompt_value(active_need.get("target_hint")),
+        }
+    )
+
+
+def render_read_current_focus_xml(
+    *,
+    chapter_title: str,
+    current_unit_source: dict[str, object] | None = None,
+    current_unit_sentences: list[dict[str, object]] | None = None,
+    reading_path_mode: str = "mainline",
+    detour_context: dict[str, object] | None = None,
+) -> str:
+    """Render target CurrentFocus XML without changing live Read prompts."""
+
+    normalized_mode = _reading_path_mode(
+        reading_path_mode=reading_path_mode,
+        detour_context=detour_context,
+    )
+    template = _read_current_focus_template(
+        _reading_object_node(
+            current_unit_source=current_unit_source,
+            current_unit_sentences=current_unit_sentences,
+        )
+    )
+    return render_prompt_template_xml(
+        template,
+        registry=PromptFragmentRegistry([]),
+        slot_values={
+            "reading_path": _json_prompt_object({"mode": normalized_mode}),
+            "reading_position": _json_prompt_object(
+                _compact_prompt_object(
+                    {
+                        "chapter_title": _clean_prompt_value(chapter_title),
+                        "human_position": _human_position(
+                            chapter_title=_clean_prompt_value(chapter_title),
+                            current_unit_source=current_unit_source,
+                        ),
+                    }
+                )
+            ),
+            "reading_intent": _json_prompt_object(
+                _reading_intent_payload(
+                    mode=normalized_mode,
+                    detour_context=detour_context,
+                )
             ),
         },
     )

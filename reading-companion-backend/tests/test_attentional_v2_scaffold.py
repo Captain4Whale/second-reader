@@ -12,6 +12,7 @@ from src.attentional_v2.prompts import (
     ATTENTIONAL_V2_PROMPTSET_VERSION,
     ATTENTIONAL_V2_PROMPT_REGISTRY,
     READ_BOOK_INFO_TEMPLATE,
+    READ_CURRENT_FOCUS_TEMPLATE,
     READ_ROLE_AND_INSTRUCTION_FRAGMENT_REGISTRY,
     READ_ROLE_AND_INSTRUCTION_TEMPLATE,
     READ_UNIT_PROMPT_VERSION,
@@ -23,6 +24,7 @@ from src.attentional_v2.prompts import (
     PromptTemplateNode,
     render_prompt_template_xml,
     render_read_book_info_xml,
+    render_read_current_focus_xml,
     render_read_role_and_instruction_xml,
     render_read_xml_prompt_example,
 )
@@ -86,7 +88,11 @@ def test_prompt_template_xml_resolves_fragments_slots_and_literals() -> None:
                 element_name="RoleAndInstruction",
                 children=[
                     PromptTemplateNode(element_name="Role", prompt_fragment_ref="test.read.role.v1"),
-                    PromptTemplateNode(element_name="ReadBehavior", value_slot="read_behavior"),
+                    PromptTemplateNode(
+                        element_name="ReadBehavior",
+                        attributes={"kind": "A&B"},
+                        value_slot="read_behavior",
+                    ),
                     PromptTemplateNode(element_name="LiteralHint", literal_value="Use fixed literal text."),
                 ],
             ),
@@ -102,6 +108,7 @@ def test_prompt_template_xml_resolves_fragments_slots_and_literals() -> None:
     assert "<RoleAndInstruction>" in rendered
     assert "<Role>" in rendered
     assert "Fixed &lt;role&gt; &amp; instruction text." in rendered
+    assert '<ReadBehavior kind="A&amp;B">' in rendered
     assert "Read A &amp; B &lt; carefully." in rendered
     assert "Use fixed literal text." in rendered
     assert rendered.index("<RoleAndInstruction>") < rendered.index("<CurrentFocus>")
@@ -280,6 +287,101 @@ def test_read_book_info_template_uses_only_dynamic_slots() -> None:
     assert [child.element_name for child in root.children] == ["BookIdentity"]
     assert [child.value_slot for child in root.children] == ["book_identity"]
     assert all(child.prompt_fragment_ref is None for child in root.children)
+
+
+def test_read_current_focus_xml_renders_mainline_source_unit_with_paragraphs() -> None:
+    rendered = render_read_current_focus_xml(
+        chapter_title="第一章",
+        current_unit_source={
+            "source_span_id": "src:c1:p45@0-p46@24",
+            "source_span": {
+                "start_cursor": {"paragraph_index": 45, "char_offset": 0},
+                "end_cursor": {"paragraph_index": 46, "char_offset": 24},
+            },
+            "source_text": "第一段。\n\n第二段。",
+            "paragraph_slices": [
+                {
+                    "paragraph_index": 45,
+                    "text_role": "body",
+                    "start_char": 0,
+                    "end_char": 3,
+                    "text": "第一段 & A。",
+                },
+                {
+                    "paragraph_index": 46,
+                    "text_role": "body",
+                    "start_char": 0,
+                    "end_char": 3,
+                    "text": "第二段 <B>。",
+                },
+            ],
+        },
+    )
+
+    assert "<CurrentFocus>" in rendered
+    assert "<ReadingPath>" in rendered
+    assert '"mode": "mainline"' in rendered
+    assert "<ReadingPosition>" in rendered
+    assert '"chapter_title": "第一章"' in rendered
+    assert '"human_position": "第一章, p45-p46"' in rendered
+    assert "<ReadingObject>" in rendered
+    assert "<SourceUnit>" in rendered
+    assert '<Paragraph n="45">' in rendered
+    assert '<Paragraph n="46">' in rendered
+    assert "第一段 &amp; A。" in rendered
+    assert "第二段 &lt;B&gt;。" in rendered
+    assert "<ReadingIntent>" in rendered
+    assert '"intent": "read_current_source_unit_in_sequence"' in rendered
+    assert "source_span_id" not in rendered
+    assert "source_span" not in rendered
+    assert "start_char" not in rendered
+    assert "end_char" not in rendered
+    assert "sentence_id" not in rendered
+    assert "paragraph_slices" not in rendered
+    assert "prompt_fragment_ref" not in rendered
+    assert "value_slot" not in rendered
+    assert "reading_path" not in rendered
+    assert "reading_position" not in rendered
+    assert "reading_intent" not in rendered
+    assert READ_UNIT_PROMPT_VERSION == "attentional_v2.read.v30"
+    assert "Structural frame:" in ATTENTIONAL_V2_PROMPTS.read_unit_prompt
+
+
+def test_read_current_focus_xml_renders_detour_intent_without_optional_evidence_layer() -> None:
+    rendered = render_read_current_focus_xml(
+        chapter_title="第一章",
+        current_unit_sentences=[
+            {"sentence_id": "c1-s1", "text": "Fallback sentence & text.", "text_role": "body"}
+        ],
+        reading_path_mode="",
+        detour_context={
+            "active_detour_need": {
+                "reason": "check an earlier claim <again>",
+                "target_hint": "ordinary prisoners",
+                "status": "open",
+            }
+        },
+    )
+
+    assert '"mode": "detour"' in rendered
+    assert '"intent": "look_back_or_detour"' in rendered
+    assert "check an earlier claim &lt;again&gt;" in rendered
+    assert '"target_hint": "ordinary prisoners"' in rendered
+    assert "Fallback sentence &amp; text." in rendered
+    assert "OptionalSourceEvidence" not in rendered
+    assert "sentence_id" not in rendered
+
+
+def test_read_current_focus_template_declares_target_children() -> None:
+    root = READ_CURRENT_FOCUS_TEMPLATE[0]
+
+    assert root.element_name == "CurrentFocus"
+    assert [child.element_name for child in root.children] == [
+        "ReadingPath",
+        "ReadingPosition",
+        "ReadingObject",
+        "ReadingIntent",
+    ]
 
 
 def test_read_unit_role_and_instruction_fragments_are_lossless() -> None:

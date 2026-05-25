@@ -50,11 +50,13 @@ class PromptTemplateNode:
     prompt_fragment_ref: str | None = None
     value_slot: str | None = None
     literal_value: str | None = None
+    attributes: Mapping[str, str] | None = None
     children: Sequence["PromptTemplateNode"] = ()
     skip_if_empty: bool = False
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "children", tuple(self.children))
+        object.__setattr__(self, "attributes", dict(self.attributes or {}))
 
 
 def _validate_xml_element_name(element_name: str) -> str:
@@ -64,6 +66,24 @@ def _validate_xml_element_name(element_name: str) -> str:
     if any(char in cleaned for char in "<>/ \t\r\n"):
         raise ValueError(f"Invalid prompt XML element name: {element_name}")
     return cleaned
+
+
+def _validate_xml_attribute_name(attribute_name: str) -> str:
+    cleaned = attribute_name.strip()
+    if not cleaned:
+        raise ValueError("Prompt XML attribute name must not be empty")
+    if any(char in cleaned for char in "<>/= \t\r\n"):
+        raise ValueError(f"Invalid prompt XML attribute name: {attribute_name}")
+    return cleaned
+
+
+def _render_xml_attributes(attributes: Mapping[str, str] | None) -> str:
+    rendered: list[str] = []
+    for raw_name, raw_value in (attributes or {}).items():
+        name = _validate_xml_attribute_name(raw_name)
+        value = escape(str(raw_value), quote=True)
+        rendered.append(f' {name}="{value}"')
+    return "".join(rendered)
 
 
 def _escape_prompt_text(text: str, *, indent_level: int) -> str:
@@ -80,6 +100,7 @@ def _render_prompt_template_node(
     indent_level: int,
 ) -> str:
     element_name = _validate_xml_element_name(node.element_name)
+    attributes = _render_xml_attributes(node.attributes)
     content_sources = sum(
         [
             node.prompt_fragment_ref is not None,
@@ -97,7 +118,7 @@ def _render_prompt_template_node(
         if not raw_text and node.skip_if_empty:
             return ""
         return (
-            f"{indent}<{element_name}>\n"
+            f"{indent}<{element_name}{attributes}>\n"
             f"{_escape_prompt_text(raw_text, indent_level=indent_level + 1)}\n"
             f"{indent}</{element_name}>"
         )
@@ -113,7 +134,7 @@ def _render_prompt_template_node(
         if not raw_text and node.skip_if_empty:
             return ""
         return (
-            f"{indent}<{element_name}>\n"
+            f"{indent}<{element_name}{attributes}>\n"
             f"{_escape_prompt_text(raw_text, indent_level=indent_level + 1)}\n"
             f"{indent}</{element_name}>"
         )
@@ -122,7 +143,7 @@ def _render_prompt_template_node(
         if not node.literal_value and node.skip_if_empty:
             return ""
         return (
-            f"{indent}<{element_name}>\n"
+            f"{indent}<{element_name}{attributes}>\n"
             f"{_escape_prompt_text(node.literal_value, indent_level=indent_level + 1)}\n"
             f"{indent}</{element_name}>"
         )
@@ -142,11 +163,11 @@ def _render_prompt_template_node(
         ]
         if not rendered_children and node.skip_if_empty:
             return ""
-        return f"{indent}<{element_name}>\n" + "\n".join(rendered_children) + f"\n{indent}</{element_name}>"
+        return f"{indent}<{element_name}{attributes}>\n" + "\n".join(rendered_children) + f"\n{indent}</{element_name}>"
 
     if node.skip_if_empty:
         return ""
-    return f"{indent}<{element_name}></{element_name}>"
+    return f"{indent}<{element_name}{attributes}></{element_name}>"
 
 
 def render_prompt_template_xml(

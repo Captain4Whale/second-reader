@@ -111,6 +111,7 @@ The design needs two distinct layers:
    - `prompt_fragment_ref` points to a fixed prompt fragment in the prompt library.
    - `value_slot` points to dynamic per-call data supplied by the Read node.
    - `literal_value` is reserved for rare short fixed text.
+   - `attributes` is reserved for rare lightweight XML attributes such as `Paragraph n="45"`.
    - `prompt_fragment_ref` / `value_slot` are assembly keys, not text for the model.
    - Program code resolves all refs and slots before the final prompt is sent.
    - A template may therefore look like:
@@ -181,6 +182,7 @@ Rules:
 - This target renderer excludes `DurableMemory` and `ActiveTension`, keeps `SourceGrounding` directly under `RoleAndInstruction`, uses target-specific MemoryBoundary text that does not mention concept/thread durable writes, and remains disconnected from live Read prompt assembly.
 - The target renderer also includes a short `ContextUseGuide` immediately after `ReaderRole`, so the model knows how to use `BookInfo`, `ReadingState`, `CurrentFocus`, and `OutputContract` without turning every data tag into a separate explanation block.
 - Current implementation exposes `READ_BOOK_INFO_TEMPLATE` and `render_read_book_info_xml(...)` for the accepted target `BookInfo` XML assembly. It is dynamic slot injection only and remains disconnected from live Read prompt assembly.
+- Current implementation exposes `READ_CURRENT_FOCUS_TEMPLATE` and `render_read_current_focus_xml(...)` for the accepted target `CurrentFocus` XML assembly. It renders `ReadingPath`, `ReadingPosition`, paragraph-shaped `ReadingObject`, and `ReadingIntent`, and remains disconnected from live Read prompt assembly.
 
 ### 1. `RoleAndInstruction`
 
@@ -544,6 +546,15 @@ Target structure:
 </CurrentFocus>
 ```
 
+Current implementation now has a non-live renderer for this target structure:
+
+- template: `READ_CURRENT_FOCUS_TEMPLATE`
+- renderer: `render_read_current_focus_xml(chapter_title=..., current_unit_source=..., current_unit_sentences=..., reading_path_mode=..., detour_context=...)`
+- live status: not connected to `ATTENTIONAL_V2_PROMPTS.read_unit_prompt`
+- prompt version impact: none; `READ_UNIT_PROMPT_VERSION` remains `attentional_v2.read.v30`
+
+The renderer uses runtime-owned values and emits only model-facing XML plus resolved JSON / paragraph text. It must not expose slot names, Python variable names, source span ids, sentence ids, paragraph-char offsets, or implementation packet names to the model.
+
 #### 4.1 `ReadingPath`
 
 Purpose: identify the current reading path.
@@ -552,6 +563,7 @@ Current source:
 
 - mainline/detour state from runner-local continuity and `detour_context`
 - `state_projection.build_read_prompt_packet(...).selective_carry.active_detour_need` when present
+- current renderer input: `reading_path_mode`, with detour fallback from `detour_context.active_detour_need`
 
 Target payload:
 
@@ -577,6 +589,7 @@ Current source:
 - `current_unit_source.source_span`
 - `current_unit_source.source_span_id`
 - source paragraph range from `current_unit_source.paragraph_slices[]` when available
+- current renderer input: `chapter_title` and `current_unit_source`
 
 Target payload:
 
@@ -604,6 +617,7 @@ Current source:
 - `current_unit_source.source_text`
 - current implementation also passes `current_unit_source.paragraph_slices[]`
 - legacy fallback: `current_unit_sentences[]` with `sentence_id`, `text`, and `text_role`
+- current renderer input: `current_unit_source`, with `current_unit_sentences` as compatibility fallback
 
 Target structure:
 
@@ -626,6 +640,22 @@ Value rules:
 - Sentence-shaped fallback is compatibility only, not the target context contract.
 - If paragraph numbers are available, use them as light orientation labels; do not make them the semantic center.
 
+Renderer rule:
+
+- when reliable paragraph slices exist, render:
+
+```xml
+<ReadingObject>
+  <SourceUnit>
+    <Paragraph n="45">...</Paragraph>
+    <Paragraph n="46">...</Paragraph>
+  </SourceUnit>
+</ReadingObject>
+```
+
+- when paragraph slices are unavailable but `source_text` exists, render that text directly inside `SourceUnit`;
+- when only legacy sentence input exists, join sentence text as compatibility source text and do not expose `sentence_id`.
+
 #### 4.4 `ReadingIntent`
 
 Purpose: state why this unit is being read now when the reason is not simple mainline continuation.
@@ -634,6 +664,7 @@ Current source:
 
 - default mainline read intent from runner path;
 - detour/look-back intent from `detour_context.active_detour_need` or related selective carry.
+- current renderer input: `reading_path_mode` and `detour_context.active_detour_need`
 
 Target payload:
 
@@ -895,4 +926,5 @@ Add later accepted discussion decisions here, instead of scattering them across 
 - implemented infrastructure: fixed prompt fragment resolution and generic XML prompt assembly helper exist, with tests, but are not connected to the live Read prompt;
 - implemented infrastructure: target `RoleAndInstruction` XML assembly exists for the accepted fragment mapping, excludes DurableMemory / ActiveTension, keeps MemoryBoundary Recent-Memory-only, and is not connected to the live Read prompt;
 - implemented infrastructure: target `BookInfo` XML assembly exists for `BookIdentity` (`book_title`, `author`) and is not connected to the live Read prompt;
+- implemented infrastructure: target `CurrentFocus` XML assembly exists for runtime-provided reading path, reading position, paragraph-shaped reading object, and reading intent, and is not connected to the live Read prompt;
 - pending: prompt migration plan and test plan for connecting the live Read prompt to this assembly layer.
