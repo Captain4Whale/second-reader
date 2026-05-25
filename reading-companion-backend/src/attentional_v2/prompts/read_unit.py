@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import json
+
 from .assembly import (
     PromptFragment,
     PromptFragmentRegistry,
@@ -349,6 +351,50 @@ def render_read_role_and_instruction_xml() -> str:
         READ_ROLE_AND_INSTRUCTION_TEMPLATE,
         registry=READ_ROLE_AND_INSTRUCTION_FRAGMENT_REGISTRY,
         slot_values={},
+    )
+
+
+READ_BOOK_AND_CHAPTER_INFO_TEMPLATE = (
+    PromptTemplateNode(
+        element_name="BookAndChapterInfo",
+        children=(
+            PromptTemplateNode(element_name="BookIdentity", value_slot="book_identity"),
+            PromptTemplateNode(element_name="ChapterIdentity", value_slot="chapter_identity"),
+        ),
+    ),
+)
+
+
+def _json_prompt_payload(payload: dict[str, str]) -> str:
+    """Return stable JSON for inner XML payloads."""
+
+    return json.dumps(payload, ensure_ascii=False, indent=2)
+
+
+def render_read_book_and_chapter_info_xml(
+    *,
+    book_title: str,
+    author: str,
+    chapter_title: str,
+) -> str:
+    """Render target BookAndChapterInfo XML without changing live Read prompts."""
+
+    return render_prompt_template_xml(
+        READ_BOOK_AND_CHAPTER_INFO_TEMPLATE,
+        registry=PromptFragmentRegistry([]),
+        slot_values={
+            "book_identity": _json_prompt_payload(
+                {
+                    "book_title": book_title,
+                    "author": author,
+                }
+            ),
+            "chapter_identity": _json_prompt_payload(
+                {
+                    "chapter_title": chapter_title,
+                }
+            ),
+        },
     )
 
 

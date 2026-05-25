@@ -11,6 +11,7 @@ from src.attentional_v2.prompts import (
     ATTENTIONAL_V2_PROMPTS,
     ATTENTIONAL_V2_PROMPTSET_VERSION,
     ATTENTIONAL_V2_PROMPT_REGISTRY,
+    READ_BOOK_AND_CHAPTER_INFO_TEMPLATE,
     READ_ROLE_AND_INSTRUCTION_FRAGMENT_REGISTRY,
     READ_ROLE_AND_INSTRUCTION_TEMPLATE,
     READ_UNIT_PROMPT_VERSION,
@@ -21,6 +22,7 @@ from src.attentional_v2.prompts import (
     PromptRegistry,
     PromptTemplateNode,
     render_prompt_template_xml,
+    render_read_book_and_chapter_info_xml,
     render_read_role_and_instruction_xml,
     render_read_xml_prompt_example,
 )
@@ -242,6 +244,44 @@ def test_read_role_and_instruction_xml_template_uses_only_target_fragment_refs()
     assert rendered == render_read_role_and_instruction_xml()
     assert "read.durable_memory_policy" not in rendered
     assert "read.active_tension_policy" not in rendered
+
+
+def test_read_book_and_chapter_info_xml_renders_light_orientation_block() -> None:
+    rendered = render_read_book_and_chapter_info_xml(
+        book_title="活出生命的意义 & More",
+        author="Viktor <Frankl>",
+        chapter_title="第一章",
+    )
+
+    assert "<BookAndChapterInfo>" in rendered
+    assert "<BookIdentity>" in rendered
+    assert "<ChapterIdentity>" in rendered
+    assert rendered.index("<BookIdentity>") < rendered.index("<ChapterIdentity>")
+    assert '"book_title": "活出生命的意义 &amp; More"' in rendered
+    assert '"author": "Viktor &lt;Frankl&gt;"' in rendered
+    assert '"chapter_title": "第一章"' in rendered
+    assert "output_language" not in rendered
+    assert "book_language" not in rendered
+    assert "chapter_ref" not in rendered
+    assert "chapter_path" not in rendered
+    assert "source_span" not in rendered
+    assert "sentence_id" not in rendered
+    assert "prompt_fragment_ref" not in rendered
+    assert "value_slot" not in rendered
+    assert "book_identity" not in rendered
+    assert "chapter_identity" not in rendered
+    assert "ref=" not in rendered
+    assert READ_UNIT_PROMPT_VERSION == "attentional_v2.read.v30"
+    assert "Structural frame:" in ATTENTIONAL_V2_PROMPTS.read_unit_prompt
+
+
+def test_read_book_and_chapter_info_template_uses_only_dynamic_slots() -> None:
+    root = READ_BOOK_AND_CHAPTER_INFO_TEMPLATE[0]
+
+    assert root.element_name == "BookAndChapterInfo"
+    assert [child.element_name for child in root.children] == ["BookIdentity", "ChapterIdentity"]
+    assert [child.value_slot for child in root.children] == ["book_identity", "chapter_identity"]
+    assert all(child.prompt_fragment_ref is None for child in root.children)
 
 
 def test_read_unit_role_and_instruction_fragments_are_lossless() -> None:
