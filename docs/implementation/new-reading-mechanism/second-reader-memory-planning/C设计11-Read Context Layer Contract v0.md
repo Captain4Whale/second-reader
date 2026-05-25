@@ -200,83 +200,100 @@ Current fixed fragment order:
 10. `read.detour_and_routing_boundary`
 11. `read.output_behavior_policy`
 
-Future XML assembly should reference these fragments under `RoleAndInstruction` rather than copying their text into the XML template.
+Future XML assembly should reference these fragments under `RoleAndInstruction` rather than copying their text into the XML template. The flat fragment list is the code-side prompt library order; the XML structure below is the model-facing semantic organization.
 
-#### 1.1 `Role`
+#### 1.1 `RoleAndInstruction` fragment mapping
 
-Purpose: tell the model what kind of actor Read is.
+| XML template path | `prompt_fragment_ref` | Purpose |
+| --- | --- | --- |
+| `RoleAndInstruction/ReaderRole` | `read.role_and_stance` | Reader identity, current-unit reading stance, and "not a field-filling task" boundary. |
+| `RoleAndInstruction/ReadingBehavior/ReadingImpression` | `read.reading_impression_policy` | `reading_impression` as natural post-reading impression, not summary or evaluator voice. |
+| `RoleAndInstruction/ReadingBehavior/SurfacedReaction/ReactionSelection` | `read.surfaced_reaction_policy` | When to surface a reaction, density, anchor sizing, and swallowed-line / premise-plus-sharpening checks. |
+| `RoleAndInstruction/ReadingBehavior/SurfacedReaction/ReactionGroundingAndCallback` | `read.reaction_anchor_and_callback_policy` | Prior callback visible-text boundary, internal-id suppression, and positive / negative examples. |
+| `RoleAndInstruction/MemoryInstruction/MemoryBoundary` | `read.memory_general_policy` | General boundary for `memory_uptake_ops`: keep only what should remain available, and do not duplicate surfaced reactions into memory. |
+| `RoleAndInstruction/MemoryInstruction/RecentReadingMemory` | `read.recent_reading_memory_policy` | Recent Reading Memory formation, continuity, source-established writing, natural sentences, and no operation-level reason. |
+| `RoleAndInstruction/MemoryInstruction/DurableMemory` | `read.durable_memory_policy` | Durable memory write boundary for concept / thread style memory and "digest is projection, not writable store" rules. |
+| `RoleAndInstruction/MemoryInstruction/ActiveTension` | `read.active_tension_policy` | Current ActiveTension compatibility rules and lifecycle operations while the state remains in code. |
+| `RoleAndInstruction/MemoryInstruction/SourceGrounding` | `read.source_grounding_policy` | Exact quote responsibility for LLM output and program-owned SourceRef resolution. |
+| `RoleAndInstruction/RouteBoundary` | `read.detour_and_routing_boundary` | Detour emission boundary: Read may emit a need but must not route secretly or name the next route. |
+| `RoleAndInstruction/ResponseDiscipline` | `read.output_behavior_policy` | Output discipline such as no broad chapter summary, no prior-material explanation, and JSON-only behavior. |
 
-Current value source: the opening role and job lines in `ATTENTIONAL_V2_PROMPTS.read_unit_system`.
+Current placement note: `SourceGrounding` is nested under `MemoryInstruction` because the current fragment mostly governs memory operation evidence (`source_quote`, `development_source_quote`, and SourceRef resolution). If a later contract unifies reaction and memory source grounding, this element may move directly under `RoleAndInstruction`.
 
-Value rule: Read is a careful continuous reader moving through a book, not a generic summarizer, highlighter, evaluator, or field-filling worker.
+#### 1.2 Static template expression
 
-#### 1.2 `ReadBehavior`
+`RoleAndInstruction` should be expressed as a static `PromptTemplateNode` tree. The template contains `prompt_fragment_ref` keys, but the model-facing prompt receives only XML elements and resolved text.
 
-Purpose: describe how Read should approach the current source unit.
+```python
+READ_ROLE_AND_INSTRUCTION_TEMPLATE = (
+    PromptTemplateNode(
+        element_name="RoleAndInstruction",
+        children=(
+            PromptTemplateNode(
+                element_name="ReaderRole",
+                prompt_fragment_ref="read.role_and_stance",
+            ),
+            PromptTemplateNode(
+                element_name="ReadingBehavior",
+                children=(
+                    PromptTemplateNode(
+                        element_name="ReadingImpression",
+                        prompt_fragment_ref="read.reading_impression_policy",
+                    ),
+                    PromptTemplateNode(
+                        element_name="SurfacedReaction",
+                        children=(
+                            PromptTemplateNode(
+                                element_name="ReactionSelection",
+                                prompt_fragment_ref="read.surfaced_reaction_policy",
+                            ),
+                            PromptTemplateNode(
+                                element_name="ReactionGroundingAndCallback",
+                                prompt_fragment_ref="read.reaction_anchor_and_callback_policy",
+                            ),
+                        ),
+                    ),
+                ),
+            ),
+            PromptTemplateNode(
+                element_name="MemoryInstruction",
+                children=(
+                    PromptTemplateNode(
+                        element_name="MemoryBoundary",
+                        prompt_fragment_ref="read.memory_general_policy",
+                    ),
+                    PromptTemplateNode(
+                        element_name="RecentReadingMemory",
+                        prompt_fragment_ref="read.recent_reading_memory_policy",
+                    ),
+                    PromptTemplateNode(
+                        element_name="DurableMemory",
+                        prompt_fragment_ref="read.durable_memory_policy",
+                    ),
+                    PromptTemplateNode(
+                        element_name="ActiveTension",
+                        prompt_fragment_ref="read.active_tension_policy",
+                    ),
+                    PromptTemplateNode(
+                        element_name="SourceGrounding",
+                        prompt_fragment_ref="read.source_grounding_policy",
+                    ),
+                ),
+            ),
+            PromptTemplateNode(
+                element_name="RouteBoundary",
+                prompt_fragment_ref="read.detour_and_routing_boundary",
+            ),
+            PromptTemplateNode(
+                element_name="ResponseDiscipline",
+                prompt_fragment_ref="read.output_behavior_policy",
+            ),
+        ),
+    ),
+)
+```
 
-Current value source: the early reading behavior rules in `read_unit_system`.
-
-Value rules:
-
-- read the current unit as the present reading object;
-- use prompt-visible reading state naturally when it helps;
-- do not collapse the unit into chapter summary or evaluator voice;
-- stay proportionate around thin headings / labels / structural cues.
-
-#### 1.3 `ReactionInstruction`
-
-Purpose: describe `reading_impression` and `surfaced_reactions`.
-
-Current value source: the reaction and source-quote rules in `read_unit_system`.
-
-Value rules:
-
-- `reading_impression` is the brief natural impression after reading;
-- surfaced reactions are optional, bounded, and anchored to the current unit;
-- each reaction's `source_quote` must be exact text from the current unit;
-- visible reaction text must not contain raw internal ids or source-coordinate handles;
-- reaction examples and negative examples should stay with this section rather than being split into an abstract negative-rules bucket.
-
-#### 1.4 `RecentMemoryInstruction`
-
-Purpose: describe what Recent Reading Memory Read should form after this unit.
-
-Current value source: the Recent Reading Memory section in `read_unit_system`, currently at `read.v30`.
-
-Value rules:
-
-- write Recent Reading Memory when the unit establishes content worth carrying;
-- write natural memory sentences / short paragraphs, not default `<label>: <explanation>` entries;
-- record source-established content first;
-- add interpretation only when needed to preserve source-established meaning;
-- keep entries context-resolvable for future Read calls.
-
-#### 1.5 `MemoryOperationInstruction`
-
-Purpose: describe memory operation output beyond the Recent Memory writing style.
-
-Current value source: the `memory_uptake_ops` rules and examples in `read_unit_system` and `read_unit_prompt`.
-
-Value rules:
-
-- allowed durable target stores currently include `recent_reading_memory`, `concept_registry`, and `thread_trace`;
-- `active_attention` still exists in current code but is deprecated as a primary memory layer and should not be strengthened by this context redesign;
-- digests such as `concept_digest`, `thread_digest`, and `active_focus_digest` are projections, not writable stores;
-- when an operation needs current-source evidence, the LLM should provide an exact quote and the program should resolve the quote into source refs;
-- the LLM should not invent source coordinates.
-
-#### 1.6 `DetourAndRoutingInstruction`
-
-Purpose: describe optional detour output and the boundary between Read and route control.
-
-Current value source: the `detour_need` and route-control rules near the end of `read_unit_system`.
-
-Value rules:
-
-- Read may emit `detour_need` when current understanding genuinely needs earlier material;
-- Read does not secretly route, resolve, or name the next route by itself;
-- after Read returns, the runner settles the unit and advances normally unless a detour need is present;
-- final return-format details belong in `OutputContract`, not here.
+Rendered model-facing XML must not expose `prompt_fragment_ref`, fragment ids, slot names, or Python variable names. The renderer resolves each fragment into the element body before sending the prompt to the model.
 
 ### 2. `BookAndChapterInfo`
 
