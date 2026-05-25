@@ -196,6 +196,7 @@ def test_read_role_and_instruction_xml_renders_target_structure_without_live_mig
 
     assert "<RoleAndInstruction>" in rendered
     assert "<ReaderRole>" in rendered
+    assert "<ContextUseGuide>" in rendered
     assert "<ReadingBehavior>" in rendered
     assert "<ReadingImpression>" in rendered
     assert "<SurfacedReaction>" in rendered
@@ -223,6 +224,12 @@ def test_read_role_and_instruction_xml_renders_target_structure_without_live_mig
     assert READ_UNIT_PROMPT_VERSION == "attentional_v2.read.v30"
     assert ATTENTIONAL_V2_PROMPTS.read_unit_system == READ_UNIT_SYSTEM_PROMPT
     assert "Structural frame:" in ATTENTIONAL_V2_PROMPTS.read_unit_prompt
+    assert rendered.index("<ReaderRole>") < rendered.index("<ContextUseGuide>")
+    assert rendered.index("<ContextUseGuide>") < rendered.index("<ReadingBehavior>")
+    assert "BookAndChapterInfo as orientation" in rendered
+    assert "ReadingState as carried understanding" in rendered
+    assert "CurrentFocus/ReadingObject as the source text to read now" in rendered
+    assert "OutputContract as the required response shape" in rendered
 
 
 def test_read_role_and_instruction_xml_template_uses_only_target_fragment_refs() -> None:

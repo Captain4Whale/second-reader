@@ -141,6 +141,9 @@ PromptTemplateNode(
   <Role>
     You are a careful reader moving through this book.
   </Role>
+  <ContextUseGuide>
+    ...
+  </ContextUseGuide>
   <ReadBehavior>
     ...
   </ReadBehavior>
@@ -176,6 +179,7 @@ Rules:
 - Current implementation has split `read_unit_system` into lossless physical `PromptFragment` sections under `READ_UNIT_ROLE_AND_INSTRUCTION_FRAGMENTS`; the legacy projection still reconstructs the exact same `ATTENTIONAL_V2_PROMPTS.read_unit_system` string for live runtime calls.
 - Current implementation now also exposes `READ_ROLE_AND_INSTRUCTION_TEMPLATE`, `READ_ROLE_AND_INSTRUCTION_FRAGMENT_REGISTRY`, and `render_read_role_and_instruction_xml()` for the accepted target `RoleAndInstruction` XML assembly.
 - This target renderer excludes `DurableMemory` and `ActiveTension`, keeps `SourceGrounding` directly under `RoleAndInstruction`, uses target-specific MemoryBoundary text that does not mention concept/thread durable writes, and remains disconnected from live Read prompt assembly.
+- The target renderer also includes a short `ContextUseGuide` immediately after `ReaderRole`, so the model knows how to use `BookAndChapterInfo`, `ReadingState`, `CurrentFocus`, and `OutputContract` without turning every data tag into a separate explanation block.
 
 ### 1. `RoleAndInstruction`
 
@@ -221,6 +225,7 @@ Future XML assembly should reference only the accepted target fragments under `R
 | XML template path | `prompt_fragment_ref` | Purpose |
 | --- | --- | --- |
 | `RoleAndInstruction/ReaderRole` | `read.role_and_stance` | Reader identity, current-unit reading stance, and "not a field-filling task" boundary. |
+| `RoleAndInstruction/ContextUseGuide` | `read.context_use_guide` | Lightweight guide for how to treat `BookAndChapterInfo`, `ReadingState`, `CurrentFocus`, `ReadingObject`, and `OutputContract`. |
 | `RoleAndInstruction/ReadingBehavior/ReadingImpression` | `read.reading_impression_policy` | `reading_impression` as natural post-reading impression, not summary or evaluator voice. |
 | `RoleAndInstruction/ReadingBehavior/SurfacedReaction/ReactionSelection` | `read.surfaced_reaction_policy` | When to surface a reaction, density, anchor sizing, and swallowed-line / premise-plus-sharpening checks. |
 | `RoleAndInstruction/ReadingBehavior/SurfacedReaction/ReactionGroundingAndCallback` | `read.reaction_anchor_and_callback_policy` | Prior callback visible-text boundary, internal-id suppression, and positive / negative examples. |
@@ -249,6 +254,10 @@ READ_ROLE_AND_INSTRUCTION_TEMPLATE = (
             PromptTemplateNode(
                 element_name="ReaderRole",
                 prompt_fragment_ref="read.role_and_stance",
+            ),
+            PromptTemplateNode(
+                element_name="ContextUseGuide",
+                prompt_fragment_ref="read.context_use_guide",
             ),
             PromptTemplateNode(
                 element_name="ReadingBehavior",
@@ -779,6 +788,7 @@ The following is a readable target shape, not yet an implementation patch:
 ```xml
 <RoleAndInstruction>
   <Role>Read as a continuous reader moving through this book.</Role>
+  <ContextUseGuide>Treat BookAndChapterInfo as orientation, ReadingState as carried understanding, CurrentFocus/ReadingObject as the current source text, and OutputContract as response requirements.</ContextUseGuide>
   <ReadBehavior>Use the prompt-visible reading state to understand the current source unit.</ReadBehavior>
   <ReactionInstruction>Surface only bounded current-unit reactions that naturally feel worth marking.</ReactionInstruction>
   <RecentMemoryInstruction>Write useful Recent Reading Memory for your future reading self when the unit establishes something worth carrying.</RecentMemoryInstruction>
@@ -879,6 +889,7 @@ Add later accepted discussion decisions here, instead of scattering them across 
 - accepted: `RoleAndInstruction` should not include DurableMemory as a Read-owned responsibility; Recent Memory to durable memory consolidation belongs to a future dedicated consolidation node / slow-cycle pass;
 - accepted: `RoleAndInstruction` should not include ActiveTension / `active_attention`; that store is deprecated and excluded from the target Read context structure;
 - accepted: `SourceGrounding` sits directly under `RoleAndInstruction`, not under `MemoryInstruction`, because it governs both reaction evidence and memory-operation evidence;
+- accepted: `RoleAndInstruction` includes a lightweight `ContextUseGuide` immediately after `ReaderRole` to explain how the top-level context blocks should be used;
 - pending: placement of current `policy_snapshot` in the target structure;
 - pending: Recent Memory projection policy;
 - pending: long-distance memory projection policy;

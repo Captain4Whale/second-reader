@@ -249,9 +249,20 @@ READ_TARGET_MEMORY_BOUNDARY_FRAGMENT = PromptFragment(
 )
 
 
+READ_CONTEXT_USE_GUIDE_FRAGMENT = PromptFragment(
+    fragment_id="read.context_use_guide",
+    text="""- Treat BookAndChapterInfo as orientation for the book and chapter, not as source text.
+- Treat ReadingState as carried understanding from prior reading. Use it to read continuously, but do not let it override the current source unit.
+- Treat CurrentFocus as the immediate reading task: path, position, object, and intent.
+- Treat CurrentFocus/ReadingObject as the source text to read now.
+- Treat OutputContract as the required response shape and output discipline.""",
+)
+
+
 READ_ROLE_AND_INSTRUCTION_FRAGMENT_REGISTRY = PromptFragmentRegistry(
     [
         _fragment_by_id("read.role_and_stance"),
+        READ_CONTEXT_USE_GUIDE_FRAGMENT,
         _fragment_by_id("read.reading_impression_policy"),
         _fragment_by_id("read.surfaced_reaction_policy"),
         _fragment_by_id("read.reaction_anchor_and_callback_policy"),
@@ -274,6 +285,10 @@ READ_ROLE_AND_INSTRUCTION_TEMPLATE = (
             PromptTemplateNode(
                 element_name="ReaderRole",
                 prompt_fragment_ref="read.role_and_stance",
+            ),
+            PromptTemplateNode(
+                element_name="ContextUseGuide",
+                prompt_fragment_ref="read.context_use_guide",
             ),
             PromptTemplateNode(
                 element_name="ReadingBehavior",
