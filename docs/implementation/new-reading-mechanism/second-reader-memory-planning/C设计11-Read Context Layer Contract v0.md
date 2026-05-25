@@ -174,6 +174,8 @@ Rules:
 - That infrastructure can resolve fixed fragments, inject dynamic value slots, and render sibling / nested XML blocks without leaking template ids into model-facing text.
 - It is not yet connected to the live XML Read prompt. `READ_UNIT_PROMPT_VERSION` is unchanged.
 - Current implementation has split `read_unit_system` into lossless physical `PromptFragment` sections under `READ_UNIT_ROLE_AND_INSTRUCTION_FRAGMENTS`; the legacy projection still reconstructs the exact same `ATTENTIONAL_V2_PROMPTS.read_unit_system` string for live runtime calls.
+- Current implementation now also exposes `READ_ROLE_AND_INSTRUCTION_TEMPLATE`, `READ_ROLE_AND_INSTRUCTION_FRAGMENT_REGISTRY`, and `render_read_role_and_instruction_xml()` for the accepted target `RoleAndInstruction` XML assembly.
+- This target renderer excludes `DurableMemory` and `ActiveTension`, keeps `SourceGrounding` directly under `RoleAndInstruction`, and remains disconnected from live Read prompt assembly.
 
 ### 1. `RoleAndInstruction`
 
@@ -884,4 +886,5 @@ Add later accepted discussion decisions here, instead of scattering them across 
 - implemented prompt management: attentional_v2 prompts moved from one large `prompts.py` bundle into per-node `PromptDefinition` files plus `ATTENTIONAL_V2_PROMPT_REGISTRY`; `ATTENTIONAL_V2_PROMPTS` remains a compatibility projection only;
 - implemented prompt management: `read_unit.system_prompt` is now a lossless sequence of role / instruction `PromptFragment` sections for future standalone reference, while the live reconstructed prompt text remains unchanged;
 - implemented infrastructure: fixed prompt fragment resolution and generic XML prompt assembly helper exist, with tests, but are not connected to the live Read prompt;
+- implemented infrastructure: target `RoleAndInstruction` XML assembly exists for the accepted fragment mapping and excludes DurableMemory / ActiveTension, but is not connected to the live Read prompt;
 - pending: prompt migration plan and test plan for connecting the live Read prompt to this assembly layer.

@@ -2,7 +2,12 @@
 
 from __future__ import annotations
 
-from .assembly import PromptFragment
+from .assembly import (
+    PromptFragment,
+    PromptFragmentRegistry,
+    PromptTemplateNode,
+    render_prompt_template_xml,
+)
 from .types import PromptDefinition
 
 
@@ -201,6 +206,126 @@ Rules:
 READ_UNIT_SYSTEM_PROMPT = "\n".join(
     fragment.text for fragment in READ_UNIT_ROLE_AND_INSTRUCTION_FRAGMENTS
 )
+
+
+def _fragment_by_id(fragment_id: str) -> PromptFragment:
+    """Return one read role fragment from the lossless live-prompt inventory."""
+
+    for fragment in READ_UNIT_ROLE_AND_INSTRUCTION_FRAGMENTS:
+        if fragment.fragment_id == fragment_id:
+            return fragment
+    raise KeyError(f"Unknown read role fragment id: {fragment_id}")
+
+
+def _target_source_grounding_text() -> str:
+    """Return the source-grounding text for the future XML Read context.
+
+    The live fragment still contains deprecated ActiveTension-specific source
+    guidance because the current live prompt has not been migrated. The future
+    RoleAndInstruction XML contract keeps only the shared quote / SourceRef
+    boundary.
+    """
+
+    live_text = _fragment_by_id("read.source_grounding_policy").text
+    excluded_markers = (
+        "title/framing/prior memory",
+        "ActiveTension",
+        "legacy active-attention",
+        "reflective_frames",
+    )
+    return "\n".join(
+        line
+        for line in live_text.splitlines()
+        if not any(marker in line for marker in excluded_markers)
+    )
+
+
+READ_ROLE_AND_INSTRUCTION_FRAGMENT_REGISTRY = PromptFragmentRegistry(
+    [
+        _fragment_by_id("read.role_and_stance"),
+        _fragment_by_id("read.reading_impression_policy"),
+        _fragment_by_id("read.surfaced_reaction_policy"),
+        _fragment_by_id("read.reaction_anchor_and_callback_policy"),
+        _fragment_by_id("read.memory_general_policy"),
+        _fragment_by_id("read.recent_reading_memory_policy"),
+        PromptFragment(
+            fragment_id="read.source_grounding_policy",
+            text=_target_source_grounding_text(),
+        ),
+        _fragment_by_id("read.detour_and_routing_boundary"),
+        _fragment_by_id("read.output_behavior_policy"),
+    ]
+)
+
+
+READ_ROLE_AND_INSTRUCTION_TEMPLATE = (
+    PromptTemplateNode(
+        element_name="RoleAndInstruction",
+        children=(
+            PromptTemplateNode(
+                element_name="ReaderRole",
+                prompt_fragment_ref="read.role_and_stance",
+            ),
+            PromptTemplateNode(
+                element_name="ReadingBehavior",
+                children=(
+                    PromptTemplateNode(
+                        element_name="ReadingImpression",
+                        prompt_fragment_ref="read.reading_impression_policy",
+                    ),
+                    PromptTemplateNode(
+                        element_name="SurfacedReaction",
+                        children=(
+                            PromptTemplateNode(
+                                element_name="ReactionSelection",
+                                prompt_fragment_ref="read.surfaced_reaction_policy",
+                            ),
+                            PromptTemplateNode(
+                                element_name="ReactionGroundingAndCallback",
+                                prompt_fragment_ref="read.reaction_anchor_and_callback_policy",
+                            ),
+                        ),
+                    ),
+                ),
+            ),
+            PromptTemplateNode(
+                element_name="MemoryInstruction",
+                children=(
+                    PromptTemplateNode(
+                        element_name="MemoryBoundary",
+                        prompt_fragment_ref="read.memory_general_policy",
+                    ),
+                    PromptTemplateNode(
+                        element_name="RecentReadingMemory",
+                        prompt_fragment_ref="read.recent_reading_memory_policy",
+                    ),
+                ),
+            ),
+            PromptTemplateNode(
+                element_name="SourceGrounding",
+                prompt_fragment_ref="read.source_grounding_policy",
+            ),
+            PromptTemplateNode(
+                element_name="RouteBoundary",
+                prompt_fragment_ref="read.detour_and_routing_boundary",
+            ),
+            PromptTemplateNode(
+                element_name="ResponseDiscipline",
+                prompt_fragment_ref="read.output_behavior_policy",
+            ),
+        ),
+    ),
+)
+
+
+def render_read_role_and_instruction_xml() -> str:
+    """Render the target RoleAndInstruction XML without changing live Read prompts."""
+
+    return render_prompt_template_xml(
+        READ_ROLE_AND_INSTRUCTION_TEMPLATE,
+        registry=READ_ROLE_AND_INSTRUCTION_FRAGMENT_REGISTRY,
+        slot_values={},
+    )
 
 
 READ_UNIT_PROMPT = PromptDefinition(

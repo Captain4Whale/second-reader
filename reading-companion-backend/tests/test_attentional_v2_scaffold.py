@@ -11,6 +11,8 @@ from src.attentional_v2.prompts import (
     ATTENTIONAL_V2_PROMPTS,
     ATTENTIONAL_V2_PROMPTSET_VERSION,
     ATTENTIONAL_V2_PROMPT_REGISTRY,
+    READ_ROLE_AND_INSTRUCTION_FRAGMENT_REGISTRY,
+    READ_ROLE_AND_INSTRUCTION_TEMPLATE,
     READ_UNIT_PROMPT_VERSION,
     READ_UNIT_ROLE_AND_INSTRUCTION_FRAGMENTS,
     READ_UNIT_SYSTEM_PROMPT,
@@ -19,6 +21,7 @@ from src.attentional_v2.prompts import (
     PromptRegistry,
     PromptTemplateNode,
     render_prompt_template_xml,
+    render_read_role_and_instruction_xml,
     render_read_xml_prompt_example,
 )
 from src.attentional_v2 import runner as runner_module
@@ -186,6 +189,50 @@ def test_read_xml_prompt_example_does_not_replace_live_read_prompt() -> None:
     assert ATTENTIONAL_V2_PROMPTS.read_unit_version == READ_UNIT_PROMPT_VERSION
     assert ATTENTIONAL_V2_PROMPTS.read_unit_system.startswith("You are a careful reader")
     assert "Structural frame:" in ATTENTIONAL_V2_PROMPTS.read_unit_prompt
+
+
+def test_read_role_and_instruction_xml_renders_target_structure_without_live_migration() -> None:
+    rendered = render_read_role_and_instruction_xml()
+
+    assert "<RoleAndInstruction>" in rendered
+    assert "<ReaderRole>" in rendered
+    assert "<ReadingBehavior>" in rendered
+    assert "<ReadingImpression>" in rendered
+    assert "<SurfacedReaction>" in rendered
+    assert "<ReactionSelection>" in rendered
+    assert "<ReactionGroundingAndCallback>" in rendered
+    assert "<MemoryInstruction>" in rendered
+    assert "<MemoryBoundary>" in rendered
+    assert "<RecentReadingMemory>" in rendered
+    assert "\n  <SourceGrounding>\n" in rendered
+    assert "<RouteBoundary>" in rendered
+    assert "<ResponseDiscipline>" in rendered
+    assert "<DurableMemory>" not in rendered
+    assert "<ActiveTension>" not in rendered
+    assert "ActiveTension" not in rendered
+    assert "active_attention" not in rendered
+    assert "read.durable_memory_policy" not in rendered
+    assert "read.active_tension_policy" not in rendered
+    assert "prompt_fragment_ref" not in rendered
+    assert "value_slot" not in rendered
+    assert "ref=" not in rendered
+    assert "READ_ROLE_AND_INSTRUCTION" not in rendered
+    assert "reading-companion-backend" not in rendered
+    assert READ_UNIT_PROMPT_VERSION == "attentional_v2.read.v30"
+    assert ATTENTIONAL_V2_PROMPTS.read_unit_system == READ_UNIT_SYSTEM_PROMPT
+    assert "Structural frame:" in ATTENTIONAL_V2_PROMPTS.read_unit_prompt
+
+
+def test_read_role_and_instruction_xml_template_uses_only_target_fragment_refs() -> None:
+    rendered = render_prompt_template_xml(
+        READ_ROLE_AND_INSTRUCTION_TEMPLATE,
+        registry=READ_ROLE_AND_INSTRUCTION_FRAGMENT_REGISTRY,
+        slot_values={},
+    )
+
+    assert rendered == render_read_role_and_instruction_xml()
+    assert "read.durable_memory_policy" not in rendered
+    assert "read.active_tension_policy" not in rendered
 
 
 def test_read_unit_role_and_instruction_fragments_are_lossless() -> None:
