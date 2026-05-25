@@ -1,0 +1,54 @@
+"""Prompt registry for attentional_v2."""
+
+from __future__ import annotations
+
+from src.prompts.shared import LANGUAGE_OUTPUT_CONTRACT
+
+from .bridge_resolution import BRIDGE_RESOLUTION_PROMPT, BRIDGE_RESOLUTION_PROMPT_VERSION
+from .chapter_consolidation import CHAPTER_CONSOLIDATION_PROMPT, CHAPTER_CONSOLIDATION_PROMPT_VERSION
+from .navigate_choose_next_unit import NAVIGATE_CHOOSE_NEXT_UNIT_PROMPT, NAVIGATE_CHOOSE_NEXT_UNIT_PROMPT_VERSION
+from .read_unit import READ_UNIT_PROMPT, READ_UNIT_PROMPT_VERSION
+from .reconsolidation import RECONSOLIDATION_PROMPT, RECONSOLIDATION_PROMPT_VERSION
+from .reflective_promotion import REFLECTIVE_PROMOTION_PROMPT, REFLECTIVE_PROMOTION_PROMPT_VERSION
+from .survey_chapter_zone import SURVEY_CHAPTER_ZONE_PROMPT, SURVEY_CHAPTER_ZONE_PROMPT_VERSION
+from .types import AttentionalV2PromptSet, PromptDefinition, PromptRegistry, build_legacy_prompt_set
+
+
+ATTENTIONAL_V2_PROMPTSET_VERSION = "attentional_v2-phase6-v38"
+
+
+ATTENTIONAL_V2_PROMPT_REGISTRY = PromptRegistry(
+    [
+        SURVEY_CHAPTER_ZONE_PROMPT,
+        NAVIGATE_CHOOSE_NEXT_UNIT_PROMPT,
+        READ_UNIT_PROMPT,
+        BRIDGE_RESOLUTION_PROMPT,
+        REFLECTIVE_PROMOTION_PROMPT,
+        RECONSOLIDATION_PROMPT,
+        CHAPTER_CONSOLIDATION_PROMPT,
+    ]
+)
+
+
+ATTENTIONAL_V2_PROMPTS: AttentionalV2PromptSet = build_legacy_prompt_set(
+    ATTENTIONAL_V2_PROMPT_REGISTRY,
+    language_output_contract=LANGUAGE_OUTPUT_CONTRACT,
+    promptset_version=ATTENTIONAL_V2_PROMPTSET_VERSION,
+)
+
+
+__all__ = [
+    "ATTENTIONAL_V2_PROMPTS",
+    "ATTENTIONAL_V2_PROMPTSET_VERSION",
+    "ATTENTIONAL_V2_PROMPT_REGISTRY",
+    "SURVEY_CHAPTER_ZONE_PROMPT_VERSION",
+    "NAVIGATE_CHOOSE_NEXT_UNIT_PROMPT_VERSION",
+    "READ_UNIT_PROMPT_VERSION",
+    "BRIDGE_RESOLUTION_PROMPT_VERSION",
+    "REFLECTIVE_PROMOTION_PROMPT_VERSION",
+    "RECONSOLIDATION_PROMPT_VERSION",
+    "CHAPTER_CONSOLIDATION_PROMPT_VERSION",
+    "AttentionalV2PromptSet",
+    "PromptDefinition",
+    "PromptRegistry",
+]

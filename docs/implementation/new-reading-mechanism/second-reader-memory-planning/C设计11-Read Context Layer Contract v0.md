@@ -156,7 +156,9 @@ Rules:
 - The model-facing prompt must not include fragment ids, file paths, Python variable names, or prompt registry handles.
 - Fragment ids should be stable enough for tests, audits, and prompt manifests.
 - Fragment ids should not encode filesystem paths. The registry can map ids to code, files, or generated prompt fragments internally.
-- Current implementation now has a reusable prompt assembly infrastructure: `PromptFragment`, `PromptFragmentRegistry`, `PromptXmlNode`, and `render_prompt_xml(...)`.
+- Current implementation now stores attentional_v2 prompts as per-node `PromptDefinition` objects in `src/attentional_v2/prompts/`, with `ATTENTIONAL_V2_PROMPT_REGISTRY` as the management entrypoint.
+- `ATTENTIONAL_V2_PROMPTS` remains as a legacy projection over that registry for existing runtime call sites; new prompt-management work should prefer prompt definitions / registry.
+- Current implementation also has a reusable prompt assembly infrastructure: `PromptFragment`, `PromptFragmentRegistry`, `PromptXmlNode`, and `render_prompt_xml(...)`.
 - That infrastructure can resolve fixed fragments and render sibling / nested XML blocks without leaking template ids into model-facing text.
 - It is not yet connected to the live Read prompt. `read_unit_system` and `read_unit_prompt` still use the old flat live path, and `READ_UNIT_PROMPT_VERSION` is unchanged.
 - Current implementation has not yet split `read_unit_system` into physical fragments. The fragment structure below remains the migration target that preserves the current prompt content while making its functional sections explicit.
@@ -167,12 +169,13 @@ Rules:
 
 Current source:
 
-- prompt library object: `ATTENTIONAL_V2_PROMPTS.read_unit_system`
+- prompt definition: `ATTENTIONAL_V2_PROMPT_REGISTRY.get("attentional_v2.read_unit")`
+- legacy projection: `ATTENTIONAL_V2_PROMPTS.read_unit_system`
 - prompt version field: `READ_UNIT_PROMPT_VERSION`
 - current value at this design point: `attentional_v2.read.v30`
 - promptset field: `ATTENTIONAL_V2_PROMPTSET_VERSION`
 
-Current implementation note: the generic fragment resolver and XML renderer exist in code, but these functional sections are not yet physically separate prompt fragments. They are currently contiguous text inside `read_unit_system`; the section names below are the target migration structure for future prompt assembly.
+Current implementation note: prompts are now managed as per-node definitions, but these functional sections are not yet physically separate prompt fragments. They are currently contiguous text inside the `attentional_v2.read_unit` definition's `system_prompt`; the section names below are the target migration structure for future prompt assembly.
 
 Target structure:
 
@@ -836,5 +839,6 @@ Add later accepted discussion decisions here, instead of scattering them across 
 - pending: Recent Memory projection policy;
 - pending: long-distance memory projection policy;
 - pending: local continuity / visible trace boundary;
+- implemented prompt management: attentional_v2 prompts moved from one large `prompts.py` bundle into per-node `PromptDefinition` files plus `ATTENTIONAL_V2_PROMPT_REGISTRY`; `ATTENTIONAL_V2_PROMPTS` remains a compatibility projection only;
 - implemented infrastructure: fixed prompt fragment resolution and generic XML prompt assembly helper exist, with tests, but are not connected to the live Read prompt;
 - pending: prompt migration plan and test plan for connecting the live Read prompt to this assembly layer.

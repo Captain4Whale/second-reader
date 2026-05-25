@@ -9,9 +9,12 @@ import pytest
 
 from src.attentional_v2.prompts import (
     ATTENTIONAL_V2_PROMPTS,
+    ATTENTIONAL_V2_PROMPTSET_VERSION,
+    ATTENTIONAL_V2_PROMPT_REGISTRY,
     READ_UNIT_PROMPT_VERSION,
     PromptFragment,
     PromptFragmentRegistry,
+    PromptRegistry,
     PromptXmlNode,
     render_prompt_xml,
     render_read_xml_prompt_example,
@@ -138,6 +141,48 @@ def test_read_xml_prompt_example_does_not_replace_live_read_prompt() -> None:
     assert ATTENTIONAL_V2_PROMPTS.read_unit_version == READ_UNIT_PROMPT_VERSION
     assert ATTENTIONAL_V2_PROMPTS.read_unit_system.startswith("You are a careful reader")
     assert "Structural frame:" in ATTENTIONAL_V2_PROMPTS.read_unit_prompt
+
+
+def test_attentional_v2_prompt_registry_contains_node_definitions() -> None:
+    definitions = ATTENTIONAL_V2_PROMPT_REGISTRY.list()
+    prompt_ids = [definition.prompt_id for definition in definitions]
+
+    assert len(definitions) == 7
+    assert len(set(prompt_ids)) == len(prompt_ids)
+    assert prompt_ids == [
+        "attentional_v2.survey_chapter_zone",
+        "attentional_v2.navigate_choose_next_unit",
+        "attentional_v2.read_unit",
+        "attentional_v2.bridge_resolution",
+        "attentional_v2.reflective_promotion",
+        "attentional_v2.reconsolidation",
+        "attentional_v2.chapter_consolidation",
+    ]
+    assert all(definition.status == "active" for definition in definitions)
+    assert all(definition.required_inputs for definition in definitions)
+    assert all(definition.output_contract.endswith("_v1") for definition in definitions)
+
+
+def test_attentional_v2_prompt_registry_projects_legacy_bundle() -> None:
+    read = ATTENTIONAL_V2_PROMPT_REGISTRY.get("attentional_v2.read_unit")
+    navigate = ATTENTIONAL_V2_PROMPT_REGISTRY.get("attentional_v2.navigate_choose_next_unit")
+    chapter = ATTENTIONAL_V2_PROMPT_REGISTRY.get("attentional_v2.chapter_consolidation")
+
+    assert ATTENTIONAL_V2_PROMPTSET_VERSION == "attentional_v2-phase6-v38"
+    assert ATTENTIONAL_V2_PROMPTS.promptset_version == ATTENTIONAL_V2_PROMPTSET_VERSION
+    assert read.version == READ_UNIT_PROMPT_VERSION == "attentional_v2.read.v30"
+    assert ATTENTIONAL_V2_PROMPTS.read_unit_version == read.version
+    assert ATTENTIONAL_V2_PROMPTS.read_unit_system == read.system_prompt
+    assert ATTENTIONAL_V2_PROMPTS.read_unit_prompt == read.user_prompt_template
+    assert ATTENTIONAL_V2_PROMPTS.navigate_choose_next_unit_system == navigate.system_prompt
+    assert ATTENTIONAL_V2_PROMPTS.chapter_consolidation_prompt == chapter.user_prompt_template
+
+
+def test_prompt_registry_rejects_duplicate_prompt_ids() -> None:
+    read = ATTENTIONAL_V2_PROMPT_REGISTRY.get("attentional_v2.read_unit")
+
+    with pytest.raises(ValueError, match="Duplicate prompt id"):
+        PromptRegistry([read, read])
 
 
 def _fixture_epub() -> Path:

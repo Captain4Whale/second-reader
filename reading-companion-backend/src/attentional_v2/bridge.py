@@ -698,7 +698,7 @@ def run_phase5_bridge_cycle(
     next_knowledge = apply_activation_operations(
         knowledge_activations,
         bridge_result.get("activation_updates", []),
-        current_sentence_id=source_sentence_id,
+        current_source_id=source_sentence_id,
         reader_policy=reader_policy,
     )
     next_knowledge = set_knowledge_use_mode(

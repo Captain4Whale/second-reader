@@ -1,0 +1,121 @@
+"""Prompt definition and registry types for attentional_v2."""
+
+from __future__ import annotations
+
+from collections.abc import Iterable, Iterator
+from dataclasses import dataclass
+
+
+@dataclass(frozen=True)
+class PromptDefinition:
+    """One managed prompt pair owned by an attentional_v2 node."""
+
+    prompt_id: str
+    version: str
+    owner_node: str
+    status: str
+    purpose: str
+    system_prompt: str
+    user_prompt_template: str
+    required_inputs: tuple[str, ...]
+    output_contract: str
+
+
+class PromptRegistry:
+    """Registry for attentional_v2 prompt definitions."""
+
+    def __init__(self, prompts: Iterable[PromptDefinition]) -> None:
+        self._prompts: dict[str, PromptDefinition] = {}
+        for prompt in prompts:
+            prompt_id = prompt.prompt_id.strip()
+            if not prompt_id:
+                raise ValueError("Prompt id must not be empty")
+            if prompt_id in self._prompts:
+                raise ValueError(f"Duplicate prompt id: {prompt_id}")
+            self._prompts[prompt_id] = prompt
+
+    def get(self, prompt_id: str) -> PromptDefinition:
+        prompt_id = prompt_id.strip()
+        if not prompt_id:
+            raise ValueError("Prompt id must not be empty")
+        try:
+            return self._prompts[prompt_id]
+        except KeyError as exc:
+            raise KeyError(f"Unknown prompt id: {prompt_id}") from exc
+
+    def list(self) -> tuple[PromptDefinition, ...]:
+        return tuple(self._prompts.values())
+
+    def __iter__(self) -> Iterator[PromptDefinition]:
+        return iter(self._prompts.values())
+
+
+@dataclass(frozen=True)
+class AttentionalV2PromptSet:
+    """Legacy prompt bundle projection used by current runtime call sites."""
+
+    language_output_contract: str
+    promptset_version: str
+    survey_chapter_zone_version: str
+    survey_chapter_zone_system: str
+    survey_chapter_zone_prompt: str
+    navigate_choose_next_unit_version: str
+    navigate_choose_next_unit_system: str
+    navigate_choose_next_unit_prompt: str
+    read_unit_version: str
+    read_unit_system: str
+    read_unit_prompt: str
+    bridge_resolution_version: str
+    bridge_resolution_system: str
+    bridge_resolution_prompt: str
+    reflective_promotion_version: str
+    reflective_promotion_system: str
+    reflective_promotion_prompt: str
+    reconsolidation_version: str
+    reconsolidation_system: str
+    reconsolidation_prompt: str
+    chapter_consolidation_version: str
+    chapter_consolidation_system: str
+    chapter_consolidation_prompt: str
+
+
+def build_legacy_prompt_set(
+    registry: PromptRegistry,
+    *,
+    language_output_contract: str,
+    promptset_version: str,
+) -> AttentionalV2PromptSet:
+    """Build the legacy dataclass from PromptRegistry definitions."""
+
+    survey = registry.get("attentional_v2.survey_chapter_zone")
+    navigate = registry.get("attentional_v2.navigate_choose_next_unit")
+    read = registry.get("attentional_v2.read_unit")
+    bridge = registry.get("attentional_v2.bridge_resolution")
+    reflective = registry.get("attentional_v2.reflective_promotion")
+    reconsolidation = registry.get("attentional_v2.reconsolidation")
+    chapter = registry.get("attentional_v2.chapter_consolidation")
+    return AttentionalV2PromptSet(
+        language_output_contract=language_output_contract,
+        promptset_version=promptset_version,
+        survey_chapter_zone_version=survey.version,
+        survey_chapter_zone_system=survey.system_prompt,
+        survey_chapter_zone_prompt=survey.user_prompt_template,
+        navigate_choose_next_unit_version=navigate.version,
+        navigate_choose_next_unit_system=navigate.system_prompt,
+        navigate_choose_next_unit_prompt=navigate.user_prompt_template,
+        read_unit_version=read.version,
+        read_unit_system=read.system_prompt,
+        read_unit_prompt=read.user_prompt_template,
+        bridge_resolution_version=bridge.version,
+        bridge_resolution_system=bridge.system_prompt,
+        bridge_resolution_prompt=bridge.user_prompt_template,
+        reflective_promotion_version=reflective.version,
+        reflective_promotion_system=reflective.system_prompt,
+        reflective_promotion_prompt=reflective.user_prompt_template,
+        reconsolidation_version=reconsolidation.version,
+        reconsolidation_system=reconsolidation.system_prompt,
+        reconsolidation_prompt=reconsolidation.user_prompt_template,
+        chapter_consolidation_version=chapter.version,
+        chapter_consolidation_system=chapter.system_prompt,
+        chapter_consolidation_prompt=chapter.user_prompt_template,
+    )
