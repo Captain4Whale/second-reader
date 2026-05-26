@@ -1,7 +1,44 @@
 {
   "version": 1,
-  "updated_at": "2026-05-24T05:52:00Z",
+  "updated_at": "2026-05-26T11:22:00Z",
   "tasks": [
+    {
+      "id": "TASK-SECOND-READER-READ-PROMPT-XML-FULL-ACTIVE-DIAGNOSTIC-20260526",
+      "title": "Run full active diagnostic for opt-in Read XML prompt assembly and Recent Reading Memory",
+      "status": "active",
+      "lane": "mechanism_eval",
+      "priority": "high",
+      "detail_ref": "docs/implementation/new-reading-mechanism/second-reader-memory-planning/C设计11-Read Context Layer Contract v0.md",
+      "truth_refs": [
+        "docs/current-state.md",
+        "docs/tasks/registry.md",
+        "reading-companion-backend/docs/evaluation/run_ledger.md",
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/C设计11-Read Context Layer Contract v0.md",
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/C设计12-Prompt Assembly Layer Design v0.md",
+        "docs/backend-reading-mechanisms/attentional_v2.md"
+      ],
+      "decision_refs": [
+        "DEC-097",
+        "DEC-098",
+        "DEC-102"
+      ],
+      "job_refs": [
+        "bgjob_read_prompt_xml_full_diagnostic_20260526_huochu",
+        "bgjob_read_prompt_xml_full_diagnostic_20260526_mangge",
+        "bgjob_read_prompt_xml_full_diagnostic_20260526_nawaer",
+        "bgjob_read_prompt_xml_full_diagnostic_20260526_value_of_others",
+        "bgjob_read_prompt_xml_full_diagnostic_20260526_xidaduo"
+      ],
+      "acceptance_ref": "",
+      "next_action": "Monitor the five registered pipeline jobs. Each job runs one LongSpan producer with ATTENTIONAL_V2_READ_PROMPT_ASSEMBLY_MODE=xml, checks strict LLM health, then runs the matching Lane A user-level selective reuse shard. After terminal status, update run_ledger.*, produce ReadPromptXML-Full-Active-Diagnostic-Post-run-Report v0.md, and do not update the evidence catalog without explicit review.",
+      "blocked_by": [],
+      "evidence_refs": [
+        "reading-companion-backend/docs/evaluation/run_ledger.md",
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ReadPromptXML-Full-Active-Diagnostic-Post-run-Report v0.md"
+      ],
+      "last_updated": "2026-05-26T11:22:00Z",
+      "last_updated_by": "codex"
+    },
     {
       "id": "TASK-SECOND-READER-RECENT-READING-MEMORY-CONSOLIDATION-DESIGN-20260523",
       "title": "Design Recent Reading Memory consolidation into long-distance memory",

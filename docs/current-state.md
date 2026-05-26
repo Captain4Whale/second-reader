@@ -7,9 +7,35 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-05-24T14:08:00+08:00`
+Last verified: `2026-05-26T19:22:00+08:00`
 
 ## Current Objective
+- Read XML prompt / Recent Reading Memory full active diagnostic is running in the background.
+  - purpose:
+    - validate the opt-in XML Read prompt assembly path after Recent Reading Memory formation work
+    - check whether basic Read behavior remains healthy
+    - compare visible reaction behavior against the expectation that reaction-selection prompt content was preserved
+    - inspect full-window Recent Reading Memory formation quality from fresh reading artifacts
+  - mode:
+    - diagnostic only, not evidence-catalog authority
+    - `ATTENTIONAL_V2_READ_PROMPT_ASSEMBLY_MODE=xml`
+    - 5 parallel registered pipeline jobs
+    - each pipeline runs one LongSpan producer first, runs strict LLM health on the producer, then runs the matching Lane A user-level selective reuse shard
+  - parent run id:
+    - `attentional_v2_read_prompt_xml_full_active_diagnostic_20260526`
+  - job ids:
+    - `bgjob_read_prompt_xml_full_diagnostic_20260526_huochu`
+    - `bgjob_read_prompt_xml_full_diagnostic_20260526_mangge`
+    - `bgjob_read_prompt_xml_full_diagnostic_20260526_nawaer`
+    - `bgjob_read_prompt_xml_full_diagnostic_20260526_value_of_others`
+    - `bgjob_read_prompt_xml_full_diagnostic_20260526_xidaduo`
+  - run ledger:
+    - `reading-companion-backend/docs/evaluation/run_ledger.md`
+  - next step:
+    - monitor the five registered jobs
+    - after terminal status, update run ledger statuses, run strict health checks, and produce:
+      - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ReadPromptXML-Full-Active-Diagnostic-Post-run-Report v0.md`
+    - do not update evidence catalog, promote Long Span, or claim product quality from this diagnostic without explicit human review
 - Recent Reading Memory first-half formation is implemented.
   - design doc:
     - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/C设计10-Recent Reading Memory Design v0.md`
