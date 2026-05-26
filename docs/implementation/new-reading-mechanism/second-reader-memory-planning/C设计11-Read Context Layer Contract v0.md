@@ -183,6 +183,7 @@ Rules:
 - The target renderer also includes a short `ContextUseGuide` immediately after `ReaderRole`, so the model knows how to use `BookInfo`, `ReadingState`, `CurrentFocus`, and `OutputContract` without turning every data tag into a separate explanation block.
 - Current implementation exposes `READ_BOOK_INFO_TEMPLATE` and `render_read_book_info_xml(...)` for the accepted target `BookInfo` XML assembly. It is dynamic slot injection only and remains disconnected from live Read prompt assembly.
 - Current implementation exposes `READ_CURRENT_FOCUS_TEMPLATE` and `render_read_current_focus_xml(...)` for the accepted target `CurrentFocus` XML assembly. It renders `ReadingPath`, `ReadingPosition`, paragraph-shaped `ReadingObject`, and `ReadingIntent`, and remains disconnected from live Read prompt assembly.
+- Current implementation exposes `READ_OUTPUT_CONTRACT_TEMPLATE`, `READ_OUTPUT_CONTRACT_FRAGMENT_REGISTRY`, and `render_read_output_contract_xml(...)` for the accepted target `OutputContract` XML assembly. It renders `OutputUseGuide`, dynamic `LanguageContract`, `ReturnFormat`, and `FieldContracts`, and remains disconnected from live Read prompt assembly.
 
 ### 1. `RoleAndInstruction`
 
@@ -723,16 +724,33 @@ Target structure:
 
 ```xml
 <OutputContract>
+  <OutputUseGuide>...</OutputUseGuide>
   <LanguageContract>...</LanguageContract>
   <ReturnFormat>...</ReturnFormat>
-  <ReadingImpressionContract>...</ReadingImpressionContract>
-  <SurfacedReactionContract>...</SurfacedReactionContract>
-  <MemoryUptakeContract>...</MemoryUptakeContract>
-  <DetourNeedContract>...</DetourNeedContract>
+  <FieldContracts>
+    <ReadingImpressionContract>...</ReadingImpressionContract>
+    <SurfacedReactionContract>...</SurfacedReactionContract>
+    <RecentReadingMemoryContract>...</RecentReadingMemoryContract>
+    <DetourNeedContract>...</DetourNeedContract>
+  </FieldContracts>
 </OutputContract>
 ```
 
-#### 5.1 `LanguageContract`
+Design rule: `OutputContract` should define the machine-readable return shape and language discipline. It should not repeat long reading-role guidance, reaction-selection policy, source-grounding policy, or memory ontology design that already belongs under `RoleAndInstruction`.
+
+Naming rule: when an instruction and an output field refer to the same capability, use the same stable concept name. For example, `RoleAndInstruction/MemoryInstruction/RecentReadingMemory` explains how to form Recent Reading Memory, while `OutputContract/FieldContracts/RecentReadingMemoryContract` defines the exact output field shape.
+
+#### 5.1 `OutputUseGuide`
+
+Purpose: lightly connect output shape to the instructions above without duplicating the instructions.
+
+Target text:
+
+```text
+Follow the instructions above when deciding what to produce; use this section for the exact JSON field names and shapes.
+```
+
+#### 5.2 `LanguageContract`
 
 Purpose: define output language.
 
@@ -740,58 +758,120 @@ Current source: shared `LANGUAGE_OUTPUT_CONTRACT` and the current `output_langua
 
 Value rule: `output_language` belongs here, not in `BookInfo`.
 
-#### 5.2 `ReturnFormat`
+#### 5.3 `ReturnFormat`
 
 Purpose: define the machine-readable result envelope.
 
 Current source: the `Return JSON` block in `ATTENTIONAL_V2_PROMPTS.read_unit_prompt`.
 
-Target top-level fields:
+Target contract:
+
+- return JSON only;
+- top-level fields remain:
 
 ```json
 {
   "reading_impression": "...",
   "surfaced_reactions": [],
-  "memory_uptake_ops": [],
+  "recent_reading_memory": [],
   "detour_need": null
 }
 ```
 
-#### 5.3 `ReadingImpressionContract`
+Value rule: `ReturnFormat` describes the envelope, not every nested field rule. Nested field rules belong under `FieldContracts`.
 
-Purpose: preserve the current `reading_impression` field while it remains in the contract.
+#### 5.4 `FieldContracts`
 
-Value rule: `reading_impression` is a brief natural impression, not a memory store. It overlaps with Recent Reading Memory and is already marked for future reaction/read-contract cleanup.
+Purpose: group the field-level output contracts under one layer so `OutputContract` is not a flat list of unrelated rules.
 
-#### 5.4 `SurfacedReactionContract`
+Target structure:
+
+```xml
+<FieldContracts>
+  <ReadingImpressionContract>...</ReadingImpressionContract>
+  <SurfacedReactionContract>...</SurfacedReactionContract>
+  <RecentReadingMemoryContract>...</RecentReadingMemoryContract>
+  <DetourNeedContract>...</DetourNeedContract>
+</FieldContracts>
+```
+
+##### 5.4.1 `ReadingImpressionContract`
+
+Purpose: define the reader's immediate unit-level subjective expression after reading.
+
+Value rules:
+
+- `reading_impression` is the reader's immediate expression after finishing the current unit: tone, felt pressure, atmosphere, affect, or overall impression;
+- it is not durable memory and is not Recent Reading Memory;
+- it should not be carried into later Read context by default;
+- it should not duplicate `surfaced_reactions`: if the expression is tied to a specific source span and worth showing as a visible margin-note-style output, use `surfaced_reactions`;
+- it should not duplicate `recent_reading_memory`: if the content should be remembered for coherent continued reading, write it as Recent Reading Memory.
+
+##### 5.4.2 `SurfacedReactionContract`
 
 Purpose: define visible reaction output.
 
 Current source: `surfaced_reactions` examples and source quote rules in `read_unit_system` / `read_unit_prompt`.
 
-Value rule: surfaced reactions must stay anchored to the current unit, and each `source_quote` must be exact text from the current unit.
+Target shape:
 
-#### 5.5 `MemoryUptakeContract`
+```json
+{
+  "source_quote": "...",
+  "content": "...",
+  "prior_link": null,
+  "outside_link": null,
+  "search_intent": null
+}
+```
 
-Purpose: define allowed memory operation output.
+Value rule: this block defines the field shape. Detailed reaction-selection and source-quote behavior live under `RoleAndInstruction`.
 
-Current source: `memory_uptake_ops` examples and admission policy.
+##### 5.4.3 `RecentReadingMemoryContract`
+
+Purpose: define the direct Recent Reading Memory output produced by Read.
+
+Current source: target design comes from the Recent Reading Memory design; current live runtime still uses `memory_uptake_ops` as a transitional operation-envelope shape.
 
 Value rules:
 
-- target Read contract should treat `recent_reading_memory` append as the normal memory operation;
+- target Read contract should output Recent Reading Memory directly, not through a generic memory-operation bus;
+- target shape:
+
+```json
+{
+  "recent_reading_memory": [
+    {
+    "kind": "event_or_situation|claim_or_argument|definition_or_distinction|causal_or_structural_link|character_or_relationship|emotional_or_tonal_shift|image_or_scene|local_pattern_or_thread|fact|other",
+    "memory_text": "..."
+    }
+  ]
+}
+```
+
+- current live runtime still accepts `memory_uptake_ops`; when the XML Read prompt becomes live, normalizer / apply code should migrate to the cleaner `recent_reading_memory` output field;
 - direct `concept_registry` / `thread_trace` writes are current-runtime transitional behavior, not the target Read context responsibility;
 - durable consolidation from Recent Reading Memory into concept / thread / reflective memory belongs to a future dedicated consolidation node / slow-cycle pass;
 - `active_attention` still exists in current code, but is deprecated as a primary memory layer and is excluded from the target Read context structure;
 - digests such as `concept_digest` and `thread_digest` are prompt projections, not writable stores.
 
-#### 5.6 `DetourNeedContract`
+##### 5.4.4 `DetourNeedContract`
 
 Purpose: define optional detour request output.
 
 Current source: `detour_need` rules in `read_unit_system` and `Return JSON`.
 
-Value rule: `detour_need` is output routing intent; it is not a memory store and not a self-routed action.
+Target shape:
+
+```json
+{
+  "reason": "...",
+  "target_hint": "...",
+  "status": "open|resolved|abandoned"
+}
+```
+
+Value rule: `detour_need` is output routing intent; it is not a memory store and not a self-routed action. Normal mainline output should use `null`.
 
 ### Pending placement: `Policy snapshot`
 
@@ -864,8 +944,15 @@ The following is a readable target shape, not yet an implementation patch:
 </CurrentFocus>
 
 <OutputContract>
+  <OutputUseGuide>...</OutputUseGuide>
   <LanguageContract>...</LanguageContract>
-  <ReturnFormat>{"fields": ["reading_impression", "surfaced_reactions", "memory_uptake_ops", "detour_need"]}</ReturnFormat>
+  <ReturnFormat>{"fields": ["reading_impression", "surfaced_reactions", "recent_reading_memory", "detour_need"]}</ReturnFormat>
+  <FieldContracts>
+    <ReadingImpressionContract>...</ReadingImpressionContract>
+    <SurfacedReactionContract>...</SurfacedReactionContract>
+    <RecentReadingMemoryContract>...</RecentReadingMemoryContract>
+    <DetourNeedContract>...</DetourNeedContract>
+  </FieldContracts>
 </OutputContract>
 ```
 
@@ -913,6 +1000,9 @@ Add later accepted discussion decisions here, instead of scattering them across 
 - accepted: current chapter information belongs in `CurrentFocus/ReadingPosition`, not in `BookInfo`;
 - accepted: `CurrentFocus` has four target children for now: `ReadingPath`, `ReadingPosition`, `ReadingObject`, and `ReadingIntent`;
 - accepted: no default `OptionalSourceEvidence` child under `CurrentFocus`; detour / look-back evidence should be modeled later as a specific reading intent and supplemental reading object if needed;
+- accepted: `OutputContract` has three target layers: `LanguageContract`, `ReturnFormat`, and `FieldContracts`;
+- accepted: `OutputContract` includes a short `OutputUseGuide` that connects field shapes to the instructions above without duplicating those instructions;
+- accepted: `OutputContract/FieldContracts/RecentReadingMemoryContract` should describe target Read memory output as direct `recent_reading_memory` entries; active attention, `memory_uptake_ops`, and direct durable-memory write examples are excluded from the target contract;
 - accepted: `RoleAndInstruction` should not include DurableMemory as a Read-owned responsibility; Recent Memory to durable memory consolidation belongs to a future dedicated consolidation node / slow-cycle pass;
 - accepted: `RoleAndInstruction` should not include ActiveTension / `active_attention`; that store is deprecated and excluded from the target Read context structure;
 - accepted: `SourceGrounding` sits directly under `RoleAndInstruction`, not under `MemoryInstruction`, because it governs both reaction evidence and memory-operation evidence;
@@ -927,4 +1017,5 @@ Add later accepted discussion decisions here, instead of scattering them across 
 - implemented infrastructure: target `RoleAndInstruction` XML assembly exists for the accepted fragment mapping, excludes DurableMemory / ActiveTension, keeps MemoryBoundary Recent-Memory-only, and is not connected to the live Read prompt;
 - implemented infrastructure: target `BookInfo` XML assembly exists for `BookIdentity` (`book_title`, `author`) and is not connected to the live Read prompt;
 - implemented infrastructure: target `CurrentFocus` XML assembly exists for runtime-provided reading path, reading position, paragraph-shaped reading object, and reading intent, and is not connected to the live Read prompt;
+- implemented infrastructure: target `OutputContract` XML assembly exists for `OutputUseGuide`, dynamic `LanguageContract`, target `ReturnFormat`, and field contracts for `reading_impression`, `surfaced_reactions`, `recent_reading_memory`, and `detour_need`; it is not connected to the live Read prompt;
 - pending: prompt migration plan and test plan for connecting the live Read prompt to this assembly layer.

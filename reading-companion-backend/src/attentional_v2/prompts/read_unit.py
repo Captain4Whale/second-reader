@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import json
 
+from src.prompts.shared import LANGUAGE_OUTPUT_CONTRACT
+
 from .assembly import (
     PromptFragment,
     PromptFragmentRegistry,
@@ -577,6 +579,153 @@ def render_read_current_focus_xml(
                     mode=normalized_mode,
                     detour_context=detour_context,
                 )
+            ),
+        },
+    )
+
+
+READ_OUTPUT_USE_GUIDE_FRAGMENT = PromptFragment(
+    fragment_id="read.output_use_guide",
+    text="Follow the instructions above when deciding what to produce; use this section for the exact JSON field names and shapes.",
+)
+
+
+READ_RETURN_FORMAT_FRAGMENT = PromptFragment(
+    fragment_id="read.return_format_contract",
+    text="""Return JSON only.
+Top-level fields:
+{
+  "reading_impression": "...",
+  "surfaced_reactions": [],
+  "recent_reading_memory": [],
+  "detour_need": null
+}""",
+)
+
+
+READ_READING_IMPRESSION_CONTRACT_FRAGMENT = PromptFragment(
+    fragment_id="read.reading_impression_contract",
+    text="""`reading_impression` is the reader's immediate expression after finishing the current unit: tone, felt pressure, atmosphere, affect, or overall impression.
+It is not durable memory and is not Recent Reading Memory.
+It should not be carried into later Read context by default.
+It should not duplicate `surfaced_reactions`: if the expression is tied to a specific source span and worth showing as a visible margin-note-style output, use `surfaced_reactions`.
+It should not duplicate `recent_reading_memory`: if the content should be remembered for coherent continued reading, write it as Recent Reading Memory.""",
+)
+
+
+READ_SURFACED_REACTION_CONTRACT_FRAGMENT = PromptFragment(
+    fragment_id="read.surfaced_reaction_contract",
+    text="""`surfaced_reactions` contains visible reaction output.
+Shape:
+{
+  "source_quote": "...",
+  "content": "...",
+  "prior_link": null,
+  "outside_link": null,
+  "search_intent": null
+}
+Detailed reaction-selection and source-quote behavior live under RoleAndInstruction.""",
+)
+
+
+READ_RECENT_READING_MEMORY_CONTRACT_FRAGMENT = PromptFragment(
+    fragment_id="read.recent_reading_memory_contract",
+    text="""`recent_reading_memory` contains direct Recent Reading Memory output produced by Read.
+Shape:
+{
+  "recent_reading_memory": [
+    {
+      "kind": "event_or_situation|claim_or_argument|definition_or_distinction|causal_or_structural_link|character_or_relationship|emotional_or_tonal_shift|image_or_scene|local_pattern_or_thread|fact|other",
+      "memory_text": "..."
+    }
+  ]
+}
+The target Read contract outputs Recent Reading Memory directly, not through a generic memory-operation bus.
+Current live runtime still accepts `memory_uptake_ops`; when the XML Read prompt becomes live, normalizer / apply code should migrate to this cleaner output field.
+Direct `concept_registry` / `thread_trace` writes are current-runtime transitional behavior, not the target Read context responsibility.
+Durable consolidation from Recent Reading Memory into concept / thread / reflective memory belongs to a future dedicated consolidation node or slow-cycle pass.
+`active_attention` still exists in current code, but is deprecated as a primary memory layer and excluded from the target Read context structure.
+Digests such as `concept_digest` and `thread_digest` are prompt projections, not writable stores.""",
+)
+
+
+READ_DETOUR_NEED_CONTRACT_FRAGMENT = PromptFragment(
+    fragment_id="read.detour_need_contract",
+    text="""`detour_need` is optional output routing intent.
+Shape:
+{
+  "reason": "...",
+  "target_hint": "...",
+  "status": "open|resolved|abandoned"
+}
+It is not a memory store and not a self-routed action.
+Normal mainline output should use null.""",
+)
+
+
+READ_OUTPUT_CONTRACT_FRAGMENT_REGISTRY = PromptFragmentRegistry(
+    [
+        READ_OUTPUT_USE_GUIDE_FRAGMENT,
+        READ_RETURN_FORMAT_FRAGMENT,
+        READ_READING_IMPRESSION_CONTRACT_FRAGMENT,
+        READ_SURFACED_REACTION_CONTRACT_FRAGMENT,
+        READ_RECENT_READING_MEMORY_CONTRACT_FRAGMENT,
+        READ_DETOUR_NEED_CONTRACT_FRAGMENT,
+    ]
+)
+
+
+READ_OUTPUT_CONTRACT_TEMPLATE = (
+    PromptTemplateNode(
+        element_name="OutputContract",
+        children=(
+            PromptTemplateNode(
+                element_name="OutputUseGuide",
+                prompt_fragment_ref="read.output_use_guide",
+            ),
+            PromptTemplateNode(
+                element_name="LanguageContract",
+                value_slot="language_contract",
+            ),
+            PromptTemplateNode(
+                element_name="ReturnFormat",
+                prompt_fragment_ref="read.return_format_contract",
+            ),
+            PromptTemplateNode(
+                element_name="FieldContracts",
+                children=(
+                    PromptTemplateNode(
+                        element_name="ReadingImpressionContract",
+                        prompt_fragment_ref="read.reading_impression_contract",
+                    ),
+                    PromptTemplateNode(
+                        element_name="SurfacedReactionContract",
+                        prompt_fragment_ref="read.surfaced_reaction_contract",
+                    ),
+                    PromptTemplateNode(
+                        element_name="RecentReadingMemoryContract",
+                        prompt_fragment_ref="read.recent_reading_memory_contract",
+                    ),
+                    PromptTemplateNode(
+                        element_name="DetourNeedContract",
+                        prompt_fragment_ref="read.detour_need_contract",
+                    ),
+                ),
+            ),
+        ),
+    ),
+)
+
+
+def render_read_output_contract_xml(*, output_language_name: str) -> str:
+    """Render target OutputContract XML without changing live Read prompts."""
+
+    return render_prompt_template_xml(
+        READ_OUTPUT_CONTRACT_TEMPLATE,
+        registry=READ_OUTPUT_CONTRACT_FRAGMENT_REGISTRY,
+        slot_values={
+            "language_contract": LANGUAGE_OUTPUT_CONTRACT.format(
+                output_language_name=_clean_prompt_value(output_language_name)
             ),
         },
     )

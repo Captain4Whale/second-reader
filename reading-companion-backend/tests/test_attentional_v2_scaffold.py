@@ -13,6 +13,8 @@ from src.attentional_v2.prompts import (
     ATTENTIONAL_V2_PROMPT_REGISTRY,
     READ_BOOK_INFO_TEMPLATE,
     READ_CURRENT_FOCUS_TEMPLATE,
+    READ_OUTPUT_CONTRACT_FRAGMENT_REGISTRY,
+    READ_OUTPUT_CONTRACT_TEMPLATE,
     READ_ROLE_AND_INSTRUCTION_FRAGMENT_REGISTRY,
     READ_ROLE_AND_INSTRUCTION_TEMPLATE,
     READ_UNIT_PROMPT_VERSION,
@@ -25,6 +27,7 @@ from src.attentional_v2.prompts import (
     render_prompt_template_xml,
     render_read_book_info_xml,
     render_read_current_focus_xml,
+    render_read_output_contract_xml,
     render_read_role_and_instruction_xml,
     render_read_xml_prompt_example,
 )
@@ -382,6 +385,64 @@ def test_read_current_focus_template_declares_target_children() -> None:
         "ReadingObject",
         "ReadingIntent",
     ]
+
+
+def test_read_output_contract_xml_renders_target_contract_without_live_migration() -> None:
+    rendered = render_read_output_contract_xml(output_language_name="Chinese")
+
+    assert "<OutputContract>" in rendered
+    assert "<OutputUseGuide>" in rendered
+    assert "<LanguageContract>" in rendered
+    assert "必须使用 Chinese" in rendered
+    assert "<ReturnFormat>" in rendered
+    assert '"reading_impression": "..."' in rendered
+    assert '"surfaced_reactions": []' in rendered
+    assert '"recent_reading_memory": []' in rendered
+    assert '"detour_need": null' in rendered
+    assert '"memory_uptake_ops"' not in rendered
+    assert "<FieldContracts>" in rendered
+    assert "<ReadingImpressionContract>" in rendered
+    assert "immediate expression after finishing the current unit" in rendered
+    assert "not durable memory and is not Recent Reading Memory" in rendered
+    assert "not be carried into later Read context" in rendered
+    assert "<SurfacedReactionContract>" in rendered
+    assert '"source_quote": "..."' in rendered
+    assert "<RecentReadingMemoryContract>" in rendered
+    assert "outputs Recent Reading Memory directly" in rendered
+    assert "<DetourNeedContract>" in rendered
+    assert "Normal mainline output should use null" in rendered
+    assert "prompt_fragment_ref" not in rendered
+    assert "value_slot" not in rendered
+    assert "language_contract" not in rendered
+    assert "read.output_use_guide" not in rendered
+    assert "ref=" not in rendered
+    assert READ_UNIT_PROMPT_VERSION == "attentional_v2.read.v30"
+    assert ATTENTIONAL_V2_PROMPTS.read_unit_system == READ_UNIT_SYSTEM_PROMPT
+    assert "Structural frame:" in ATTENTIONAL_V2_PROMPTS.read_unit_prompt
+
+
+def test_read_output_contract_template_declares_target_children() -> None:
+    root = READ_OUTPUT_CONTRACT_TEMPLATE[0]
+
+    assert root.element_name == "OutputContract"
+    assert [child.element_name for child in root.children] == [
+        "OutputUseGuide",
+        "LanguageContract",
+        "ReturnFormat",
+        "FieldContracts",
+    ]
+    field_contracts = root.children[3]
+    assert [child.element_name for child in field_contracts.children] == [
+        "ReadingImpressionContract",
+        "SurfacedReactionContract",
+        "RecentReadingMemoryContract",
+        "DetourNeedContract",
+    ]
+    assert render_prompt_template_xml(
+        READ_OUTPUT_CONTRACT_TEMPLATE,
+        registry=READ_OUTPUT_CONTRACT_FRAGMENT_REGISTRY,
+        slot_values={"language_contract": "Use Chinese."},
+    ).startswith("<OutputContract>")
 
 
 def test_read_unit_role_and_instruction_fragments_are_lossless() -> None:
