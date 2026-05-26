@@ -79,7 +79,7 @@ The following Read prompt structure decisions are accepted here:
 - Read context should be organized by product-semantic role rather than by incidental implementation packet names or provider API message split;
 - the top-level XML blocks are `RoleAndInstruction`, `BookInfo`, `ReadingState`, `CurrentFocus`, and `OutputContract`;
 - `RoleAndInstruction` and `OutputContract` are prompt structure, not reading input data;
-- code should not be changed until the actual Read context layer taxonomy is accepted.
+- code may expose an opt-in XML assembly path after the exact Read context taxonomy is accepted, but the product default should remain legacy until diagnostic runs validate the new path.
 
 This document now settles the initial readable skeleton, but not the exact field-level projection policy or implementation details.
 
@@ -97,7 +97,7 @@ The Read node prompt should be expressed as several semantically structured XML 
 
 This structure is product-semantic. It is not a statement about whether the underlying provider call uses `system`, `user`, or any other message role.
 
-Current code fact: `read_unit` still renders the old flat prompt from `ATTENTIONAL_V2_PROMPTS.read_unit_prompt` with `Structural frame`, `Current unit`, `Read context packet`, `Selective carry`, `Policy snapshot`, `Output language contract`, and `Return JSON`. The target structure preserves useful information from those sections, but not their incidental implementation-shaped names.
+Current code fact: `read_unit` still defaults to the old flat prompt from `ATTENTIONAL_V2_PROMPTS.read_unit_prompt` with `Structural frame`, `Current unit`, `Read context packet`, `Selective carry`, `Policy snapshot`, `Output language contract`, and `Return JSON`. The target XML assembly path is now available behind `READ_UNIT_PROMPT_ASSEMBLY_MODE` / `ATTENTIONAL_V2_READ_PROMPT_ASSEMBLY_MODE=xml`, but it is opt-in and not the product default. The target structure preserves useful information from the old sections, but not their incidental implementation-shaped names.
 
 ## Fixed Prompt Fragment Referencing
 
@@ -176,14 +176,15 @@ Rules:
 - `ATTENTIONAL_V2_PROMPTS` remains as a legacy projection over that registry for existing runtime call sites; new prompt-management work should prefer prompt definitions / registry.
 - Current implementation also has a reusable prompt assembly infrastructure: `PromptFragment`, `PromptFragmentRegistry`, `PromptTemplateNode`, and `render_prompt_template_xml(...)`.
 - That infrastructure can resolve fixed fragments, inject dynamic value slots, and render sibling / nested XML blocks without leaking template ids into model-facing text.
-- It is not yet connected to the live XML Read prompt. `READ_UNIT_PROMPT_VERSION` is unchanged.
+- It now supports an opt-in XML Read path; the product default is still legacy, and `READ_UNIT_PROMPT_VERSION` is unchanged.
 - Current implementation has split `read_unit_system` into lossless physical `PromptFragment` sections under `READ_UNIT_ROLE_AND_INSTRUCTION_FRAGMENTS`; the legacy projection still reconstructs the exact same `ATTENTIONAL_V2_PROMPTS.read_unit_system` string for live runtime calls.
 - Current implementation now also exposes `READ_ROLE_AND_INSTRUCTION_TEMPLATE`, `READ_ROLE_AND_INSTRUCTION_FRAGMENT_REGISTRY`, and `render_read_role_and_instruction_xml()` for the accepted target `RoleAndInstruction` XML assembly.
-- This target renderer excludes `DurableMemory` and `ActiveTension`, keeps `SourceGrounding` directly under `RoleAndInstruction`, uses target-specific MemoryBoundary text that does not mention concept/thread durable writes, and remains disconnected from live Read prompt assembly.
+- This target renderer excludes `DurableMemory` and `ActiveTension`, keeps `SourceGrounding` directly under `RoleAndInstruction`, uses target-specific MemoryBoundary text that does not mention concept/thread durable writes, and is used by the opt-in full Read XML path.
 - The target renderer also includes a short `ContextUseGuide` immediately after `ReaderRole`, so the model knows how to use `BookInfo`, `ReadingState`, `CurrentFocus`, and `OutputContract` without turning every data tag into a separate explanation block.
-- Current implementation exposes `READ_BOOK_INFO_TEMPLATE` and `render_read_book_info_xml(...)` for the accepted target `BookInfo` XML assembly. It is dynamic slot injection only and remains disconnected from live Read prompt assembly.
-- Current implementation exposes `READ_CURRENT_FOCUS_TEMPLATE` and `render_read_current_focus_xml(...)` for the accepted target `CurrentFocus` XML assembly. It renders `ReadingPath`, `ReadingPosition`, paragraph-shaped `ReadingObject`, and `ReadingIntent`, and remains disconnected from live Read prompt assembly.
-- Current implementation exposes `READ_OUTPUT_CONTRACT_TEMPLATE`, `READ_OUTPUT_CONTRACT_FRAGMENT_REGISTRY`, and `render_read_output_contract_xml(...)` for the accepted target `OutputContract` XML assembly. It renders `OutputUseGuide`, dynamic `LanguageContract`, `ReturnFormat`, and `FieldContracts`, and remains disconnected from live Read prompt assembly.
+- Current implementation exposes `READ_BOOK_INFO_TEMPLATE` and `render_read_book_info_xml(...)` for the accepted target `BookInfo` XML assembly. It is dynamic slot injection only, is used by the opt-in full Read XML path, and is not the default product path yet.
+- Current implementation exposes `READ_CURRENT_FOCUS_TEMPLATE` and `render_read_current_focus_xml(...)` for the accepted target `CurrentFocus` XML assembly. It renders `ReadingPath`, `ReadingPosition`, paragraph-shaped `ReadingObject`, and `ReadingIntent`; it is used by the opt-in full Read XML path and is not the default product path yet.
+- Current implementation exposes `READ_OUTPUT_CONTRACT_TEMPLATE`, `READ_OUTPUT_CONTRACT_FRAGMENT_REGISTRY`, and `render_read_output_contract_xml(...)` for the accepted target `OutputContract` XML assembly. It renders `OutputUseGuide`, dynamic `LanguageContract`, `ReturnFormat`, and `FieldContracts`.
+- Current implementation exposes `render_read_prompt_xml(...)`, which assembles all five accepted top-level XML blocks through the generic Prompt Assembly layer. `read_unit` can use this path only when `READ_UNIT_PROMPT_ASSEMBLY_MODE` or `ATTENTIONAL_V2_READ_PROMPT_ASSEMBLY_MODE` is set to `xml`; default product behavior remains legacy.
 
 ### 1. `RoleAndInstruction`
 
@@ -338,11 +339,11 @@ Target structure:
 </BookInfo>
 ```
 
-Current implementation now has a non-live renderer for this target structure:
+Current implementation now has a renderer for this target structure:
 
 - template: `READ_BOOK_INFO_TEMPLATE`
 - renderer: `render_read_book_info_xml(book_title=..., author=...)`
-- live status: not connected to `ATTENTIONAL_V2_PROMPTS.read_unit_prompt`
+- live status: used by the opt-in full Read XML path; default `ATTENTIONAL_V2_PROMPTS.read_unit_prompt` path remains unchanged
 - prompt version impact: none; `READ_UNIT_PROMPT_VERSION` remains `attentional_v2.read.v30`
 
 The renderer uses `value_slot` injection in the template layer and emits only model-facing XML plus resolved JSON text. It must not expose slot names, Python variable names, prompt refs, file paths, or runtime object names to the model.
@@ -543,11 +544,11 @@ Target structure:
 </CurrentFocus>
 ```
 
-Current implementation now has a non-live renderer for this target structure:
+Current implementation now has a renderer for this target structure:
 
 - template: `READ_CURRENT_FOCUS_TEMPLATE`
 - renderer: `render_read_current_focus_xml(chapter_title=..., current_unit_source=..., current_unit_sentences=..., reading_path_mode=..., detour_context=...)`
-- live status: not connected to `ATTENTIONAL_V2_PROMPTS.read_unit_prompt`
+- live status: used by the opt-in full Read XML path; default `ATTENTIONAL_V2_PROMPTS.read_unit_prompt` path remains unchanged
 - prompt version impact: none; `READ_UNIT_PROMPT_VERSION` remains `attentional_v2.read.v30`
 
 The renderer uses runtime-owned values and emits only model-facing XML plus resolved JSON / paragraph text. It must not expose slot names, Python variable names, source span ids, sentence ids, paragraph-char offsets, or implementation packet names to the model.
@@ -827,7 +828,7 @@ Value rule: this block defines the field shape. Detailed reaction-selection and 
 
 Purpose: define the direct Recent Reading Memory output produced by Read.
 
-Current source: target design comes from the Recent Reading Memory design; current live runtime still uses `memory_uptake_ops` as a transitional operation-envelope shape.
+Current source: target design comes from the Recent Reading Memory design. The opt-in XML Read path now asks the model for direct `recent_reading_memory` output and then converts those entries into current runtime recent-memory append operations before state application.
 
 Value rules:
 
@@ -845,11 +846,9 @@ Value rules:
 }
 ```
 
-- current live runtime still accepts `memory_uptake_ops`; when the XML Read prompt becomes live, normalizer / apply code should migrate to the cleaner `recent_reading_memory` output field;
-- direct `concept_registry` / `thread_trace` writes are current-runtime transitional behavior, not the target Read context responsibility;
-- durable consolidation from Recent Reading Memory into concept / thread / reflective memory belongs to a future dedicated consolidation node / slow-cycle pass;
-- `active_attention` still exists in current code, but is deprecated as a primary memory layer and is excluded from the target Read context structure;
-- digests such as `concept_digest` and `thread_digest` are prompt projections, not writable stores.
+- the model-facing target contract should not mention transitional implementation details such as old operation buses or deprecated stores;
+- the opt-in XML path bridges direct `recent_reading_memory` output back into current runtime append operations internally;
+- durable consolidation from Recent Reading Memory into concept / thread / reflective memory belongs to a future dedicated consolidation node / slow-cycle pass.
 
 ##### 5.4.4 `DetourNeedContract`
 
@@ -1000,10 +999,11 @@ Add later accepted discussion decisions here, instead of scattering them across 
 - pending: local continuity / visible trace boundary;
 - implemented prompt management: attentional_v2 prompts moved from one large `prompts.py` bundle into per-node `PromptDefinition` files plus `ATTENTIONAL_V2_PROMPT_REGISTRY`; `ATTENTIONAL_V2_PROMPTS` remains a compatibility projection only;
 - implemented prompt management: `read_unit.system_prompt` is now a lossless sequence of role / instruction `PromptFragment` sections for future standalone reference, while the live reconstructed prompt text remains unchanged;
-- implemented infrastructure: fixed prompt fragment resolution and generic XML prompt assembly helper exist, with tests, but are not connected to the live Read prompt;
-- implemented infrastructure: target `RoleAndInstruction` XML assembly exists for the accepted fragment mapping, excludes DurableMemory / ActiveTension, keeps MemoryBoundary Recent-Memory-only, and is not connected to the live Read prompt;
-- implemented infrastructure: target `BookInfo` XML assembly exists for `BookIdentity` (`book_title`, `author`) and is not connected to the live Read prompt;
-- implemented infrastructure: target `CurrentFocus` XML assembly exists for runtime-provided reading path, reading position, paragraph-shaped reading object, and reading intent, and is not connected to the live Read prompt;
-- implemented infrastructure: target `OutputContract` XML assembly exists for `OutputUseGuide`, dynamic `LanguageContract`, target `ReturnFormat`, and field contracts for `reading_impression`, `surfaced_reactions`, `recent_reading_memory`, and `detour_need`; it is not connected to the live Read prompt;
-- implemented infrastructure: target `ReadingState` XML assembly exists for the accepted `RecentMemory` subset and renders only active recent-memory text strings; `DurableMemory` assembly remains pending and is not connected to the live Read prompt;
-- pending: prompt migration plan and test plan for connecting the live Read prompt to this assembly layer.
+- implemented infrastructure: fixed prompt fragment resolution, generic XML prompt assembly helper, node-level `PromptAssembler`, and full target Read XML assembly exist with tests;
+- implemented infrastructure: target `RoleAndInstruction` XML assembly exists for the accepted fragment mapping, excludes DurableMemory / ActiveTension, keeps MemoryBoundary Recent-Memory-only, and is used by the opt-in full Read XML path;
+- implemented infrastructure: target `BookInfo` XML assembly exists for `BookIdentity` (`book_title`, `author`) and is used by the opt-in full Read XML path;
+- implemented infrastructure: target `CurrentFocus` XML assembly exists for runtime-provided reading path, reading position, paragraph-shaped reading object, and reading intent, and is used by the opt-in full Read XML path;
+- implemented infrastructure: target `OutputContract` XML assembly exists for `OutputUseGuide`, dynamic `LanguageContract`, target `ReturnFormat`, and field contracts for `reading_impression`, `surfaced_reactions`, `recent_reading_memory`, and `detour_need`;
+- implemented infrastructure: target `ReadingState` XML assembly exists for the accepted `RecentMemory` subset and renders only active recent-memory text strings; `DurableMemory` assembly remains pending, and the accepted subset is used by the opt-in full Read XML path;
+- implemented opt-in path: `read_unit` defaults to legacy assembly, but `READ_UNIT_PROMPT_ASSEMBLY_MODE` or `ATTENTIONAL_V2_READ_PROMPT_ASSEMBLY_MODE=xml` switches it to the target XML assembly path and records assembly metadata in the prompt manifest;
+- pending: diagnostic run and review before making XML assembly the default or removing the legacy prompt assembly path.

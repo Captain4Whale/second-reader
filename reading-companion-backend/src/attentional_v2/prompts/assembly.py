@@ -37,6 +37,11 @@ class PromptFragmentRegistry:
         except KeyError as exc:
             raise KeyError(f"Unknown prompt fragment id: {fragment_id}") from exc
 
+    def list(self) -> tuple[PromptFragment, ...]:
+        """Return registered fragments in declaration order."""
+
+        return tuple(self._fragments.values())
+
 
 @dataclass(frozen=True)
 class PromptTemplateNode:

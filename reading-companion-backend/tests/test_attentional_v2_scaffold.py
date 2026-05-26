@@ -21,6 +21,8 @@ from src.attentional_v2.prompts import (
     READ_UNIT_PROMPT_VERSION,
     READ_UNIT_ROLE_AND_INSTRUCTION_FRAGMENTS,
     READ_UNIT_SYSTEM_PROMPT,
+    READ_XML_PROMPTSET_VERSION,
+    READ_XML_PROMPT_VERSION,
     PromptAssembler,
     PromptAssemblySpec,
     PromptFragment,
@@ -31,6 +33,7 @@ from src.attentional_v2.prompts import (
     render_read_book_info_xml,
     render_read_current_focus_xml,
     render_read_output_contract_xml,
+    render_read_prompt_xml,
     render_read_reading_state_xml,
     render_read_role_and_instruction_xml,
     render_read_xml_prompt_example,
@@ -125,6 +128,7 @@ def test_prompt_template_xml_resolves_fragments_slots_and_literals() -> None:
     assert "test.read.role.v1" not in rendered
     assert "read_behavior" not in rendered
     assert "current_focus" not in rendered
+    assert [fragment.fragment_id for fragment in registry.list()] == ["test.read.role.v1"]
 
 
 def test_prompt_template_xml_missing_fragment_fails_fast() -> None:
@@ -330,6 +334,62 @@ def test_read_xml_prompt_example_does_not_replace_live_read_prompt() -> None:
     assert ATTENTIONAL_V2_PROMPTS.read_unit_version == READ_UNIT_PROMPT_VERSION
     assert ATTENTIONAL_V2_PROMPTS.read_unit_system.startswith("You are a careful reader")
     assert "Structural frame:" in ATTENTIONAL_V2_PROMPTS.read_unit_prompt
+
+
+def test_full_read_prompt_xml_assembly_renders_all_target_blocks_without_live_migration() -> None:
+    result = render_read_prompt_xml(
+        book_title="Demo Book",
+        author="Tester",
+        chapter_title="Chapter 1",
+        output_language_name="English",
+        recent_reading_memory={
+            "active_entries": [
+                {"memory_text": "The author frames the opening as testimony."},
+            ]
+        },
+        current_unit_source={
+            "paragraph_slices": [
+                {"paragraph_index": 1, "text": "Alpha <source> & line."},
+            ]
+        },
+    )
+
+    assert result.spec_id == "attentional_v2.read_unit.xml.v1"
+    assert result.owner_node == "read_unit"
+    assert result.prompt_version == READ_XML_PROMPT_VERSION
+    assert result.promptset_version == READ_XML_PROMPTSET_VERSION
+    assert result.output_contract == "read_unit_xml_json_v1"
+    assert result.rendered_blocks == (
+        "RoleAndInstruction",
+        "BookInfo",
+        "ReadingState",
+        "CurrentFocus",
+        "OutputContract",
+    )
+    assert result.used_slot_names == (
+        "book_identity",
+        "recent_memory",
+        "reading_path",
+        "reading_position",
+        "reading_intent",
+        "language_contract",
+    )
+    assert "<RoleAndInstruction>" in result.rendered_text
+    assert "<BookInfo>" in result.rendered_text
+    assert "<ReadingState>" in result.rendered_text
+    assert "<CurrentFocus>" in result.rendered_text
+    assert "<OutputContract>" in result.rendered_text
+    assert "Alpha &lt;source&gt; &amp; line." in result.rendered_text
+    assert "The author frames the opening as testimony." in result.rendered_text
+    assert '"recent_reading_memory": []' in result.rendered_text
+    assert '"memory_uptake_ops"' not in result.rendered_text
+    assert "memory_uptake_ops" not in result.rendered_text
+    assert "prompt_fragment_ref" not in result.rendered_text
+    assert "value_slot" not in result.rendered_text
+    assert "book_identity" not in result.rendered_text
+    assert "read.role_and_stance" not in result.rendered_text
+    assert READ_UNIT_PROMPT_VERSION == "attentional_v2.read.v30"
+    assert ATTENTIONAL_V2_PROMPTS.read_unit_system == READ_UNIT_SYSTEM_PROMPT
 
 
 def test_read_role_and_instruction_xml_renders_target_structure_without_live_migration() -> None:
@@ -598,7 +658,8 @@ def test_read_output_contract_xml_renders_target_contract_without_live_migration
     assert "<SurfacedReactionContract>" in rendered
     assert '"source_quote": "..."' in rendered
     assert "<RecentReadingMemoryContract>" in rendered
-    assert "outputs Recent Reading Memory directly" in rendered
+    assert "Write only Recent Reading Memory entries here." in rendered
+    assert "Do not include operation-level reasons." in rendered
     assert "<DetourNeedContract>" in rendered
     assert "Normal mainline output should use null" in rendered
     assert "prompt_fragment_ref" not in rendered

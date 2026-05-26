@@ -3,13 +3,19 @@
 from __future__ import annotations
 
 import json
+import os
 import re
 from datetime import datetime, timezone
 from pathlib import Path
 from src.iterator_reader.language import language_name
 from src.iterator_reader.llm_utils import LLMTraceContext, ReaderLLMError, invoke_json, llm_invocation_scope
 
-from .prompts import ATTENTIONAL_V2_PROMPTS
+from .prompts import (
+    ATTENTIONAL_V2_PROMPTS,
+    READ_XML_PROMPT_VERSION,
+    READ_XML_TRANSPORT_SYSTEM_PROMPT,
+    render_read_prompt_xml,
+)
 from .skills.schemas import SkillRequest
 from .state_projection import build_read_prompt_packet
 from .schemas import (
@@ -77,6 +83,9 @@ _VISIBLE_INTERNAL_REFERENCE_PATTERNS = (
     re.compile(r"\bc\d+-s\d+(?:-\d+)?(?:-c\d+-s\d+(?:-\d+)?)?\b", re.IGNORECASE),
     re.compile(r"\b(?:anchor|thread|concept|reaction|move|ref|source):[A-Za-z0-9._:@-]+\b", re.IGNORECASE),
 )
+READ_UNIT_PROMPT_ASSEMBLY_MODE = "legacy"
+_READ_PROMPT_ASSEMBLY_MODE_ENV = "ATTENTIONAL_V2_READ_PROMPT_ASSEMBLY_MODE"
+_READ_PROMPT_ASSEMBLY_MODES = {"legacy", "xml"}
 
 
 def _timestamp() -> str:
@@ -203,6 +212,7 @@ def _write_prompt_manifest(
     system_prompt: str,
     user_prompt: str,
     promptset_version: str,
+    prompt_assembly: dict[str, object] | None = None,
 ) -> None:
     """Persist one node-level prompt manifest when an output directory is available."""
 
@@ -217,8 +227,23 @@ def _write_prompt_manifest(
             "generated_at": _timestamp(),
             "system_prompt": system_prompt,
             "user_prompt": user_prompt,
+            **({"prompt_assembly": prompt_assembly} if prompt_assembly else {}),
         },
     )
+
+
+def _read_prompt_assembly_mode() -> str:
+    """Return the active Read prompt assembly mode.
+
+    The module variable keeps tests and future code cleanup simple; the env var
+    allows local diagnostic runs without editing source.
+    """
+
+    raw_mode = os.getenv(_READ_PROMPT_ASSEMBLY_MODE_ENV, READ_UNIT_PROMPT_ASSEMBLY_MODE)
+    mode = _clean_text(raw_mode).lower().replace("-", "_")
+    if mode in _READ_PROMPT_ASSEMBLY_MODES:
+        return mode
+    return "legacy"
 
 
 def _sentence_id(sentence: dict[str, object]) -> str:
@@ -1223,6 +1248,46 @@ def _route_targets_from_ref_ids(
     return target_anchor_id, target_sentence_id
 
 
+def _recent_reading_memory_output_to_ops(value: object) -> list[dict[str, object]]:
+    """Convert target XML Read output into current runtime memory ops."""
+
+    if not isinstance(value, list):
+        return []
+    operations: list[dict[str, object]] = []
+    for item in value:
+        if not isinstance(item, dict):
+            continue
+        memory_text = _clean_text(item.get("memory_text"))
+        if not memory_text:
+            continue
+        kind = _clean_text(item.get("kind")) or "other"
+        operations.append(
+            {
+                "op": "append",
+                "target_store": "recent_reading_memory",
+                "payload": {
+                    "kind": kind,
+                    "memory_text": memory_text,
+                },
+            }
+        )
+    return operations
+
+
+def _read_memory_ops_from_payload(payload: object, *, prompt_assembly_mode: str) -> object:
+    """Return raw memory ops from either legacy or target XML Read output."""
+
+    if not isinstance(payload, dict):
+        return None
+    legacy_ops = payload.get("memory_uptake_ops")
+    if prompt_assembly_mode != "xml":
+        return legacy_ops
+    converted_ops = _recent_reading_memory_output_to_ops(payload.get("recent_reading_memory"))
+    if isinstance(legacy_ops, list):
+        return [*converted_ops, *legacy_ops]
+    return converted_ops
+
+
 def read_unit(
     *,
     carry_forward_context: CarryForwardContext,
@@ -1286,25 +1351,59 @@ def read_unit(
         chapter_title=chapter_title,
         output_language=output_language,
     )
-    user_prompt = _render_prompt(
-        prompts.read_unit_prompt,
-        structural_frame=_json_block(structural_frame),
-        current_unit=_json_block(current_unit_payload),
-        carry_forward_context=_json_block(prompt_packet),
-        supplemental_context=_json_block(dict(prompt_packet.get("selective_carry", {}))),
-        policy_snapshot=_json_block(reader_policy),
-        output_language_name=language_name(output_language),
-    )
+    prompt_assembly_mode = _read_prompt_assembly_mode()
+    prompt_assembly_metadata: dict[str, object] | None = None
+    if prompt_assembly_mode == "xml":
+        assembly_result = render_read_prompt_xml(
+            book_title=book_title,
+            author=author,
+            chapter_title=chapter_title,
+            output_language_name=language_name(output_language),
+            recent_reading_memory=prompt_packet.get("recent_reading_memory")
+            if isinstance(prompt_packet.get("recent_reading_memory"), dict)
+            else None,
+            current_unit_source=source_unit,
+            current_unit_sentences=sentence_unit,
+            detour_context=detour_context,
+        )
+        system_prompt = READ_XML_TRANSPORT_SYSTEM_PROMPT
+        user_prompt = assembly_result.rendered_text
+        prompt_version = READ_XML_PROMPT_VERSION
+        promptset_version = assembly_result.promptset_version
+        prompt_assembly_metadata = {
+            "mode": prompt_assembly_mode,
+            "spec_id": assembly_result.spec_id,
+            "owner_node": assembly_result.owner_node,
+            "output_contract": assembly_result.output_contract,
+            "rendered_blocks": list(assembly_result.rendered_blocks),
+            "used_fragment_ids": list(assembly_result.used_fragment_ids),
+            "used_slot_names": list(assembly_result.used_slot_names),
+        }
+    else:
+        system_prompt = prompts.read_unit_system
+        user_prompt = _render_prompt(
+            prompts.read_unit_prompt,
+            structural_frame=_json_block(structural_frame),
+            current_unit=_json_block(current_unit_payload),
+            carry_forward_context=_json_block(prompt_packet),
+            supplemental_context=_json_block(dict(prompt_packet.get("selective_carry", {}))),
+            policy_snapshot=_json_block(reader_policy),
+            output_language_name=language_name(output_language),
+        )
+        prompt_version = prompts.read_unit_version
+        promptset_version = prompts.promptset_version
+        prompt_assembly_metadata = {"mode": prompt_assembly_mode}
     _write_prompt_manifest(
         output_dir,
         node_name="read_unit",
-        prompt_version=prompts.read_unit_version,
-        system_prompt=prompts.read_unit_system,
+        prompt_version=prompt_version,
+        system_prompt=system_prompt,
         user_prompt=user_prompt,
-        promptset_version=prompts.promptset_version,
+        promptset_version=promptset_version,
+        prompt_assembly=prompt_assembly_metadata,
     )
     with llm_invocation_scope(trace_context=LLMTraceContext(stage="phase4", node="read_unit")):
-        payload = invoke_json(prompts.read_unit_system, user_prompt, default={})
+        payload = invoke_json(system_prompt, user_prompt, default={})
 
     allowed_ref_ids = {
         _clean_text(ref.get("ref_id"))
@@ -1329,8 +1428,9 @@ def read_unit(
         allowed_ref_ids=allowed_ref_ids,
     )
     reading_impression = _clean_text(payload.get("reading_impression")) if isinstance(payload, dict) else ""
+    raw_memory_ops = _read_memory_ops_from_payload(payload, prompt_assembly_mode=prompt_assembly_mode)
     memory_uptake_ops, memory_uptake_admission_events = _normalize_state_operations_with_admission(
-        payload.get("memory_uptake_ops") if isinstance(payload, dict) else None,
+        raw_memory_ops,
         enforce_read_store_policy=True,
     )
     result: ReadUnitResult = {

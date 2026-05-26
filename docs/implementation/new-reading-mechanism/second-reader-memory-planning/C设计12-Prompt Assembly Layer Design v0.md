@@ -73,7 +73,7 @@ Current Read XML target helpers:
 
 Important current limitation:
 
-> The generic Prompt Assembly infrastructure now exists, but no live Read or Navigate call path uses it yet. Current Read XML helpers still prove individual blocks, and the next implementation step is to fold those blocks into one Read assembly spec without changing live model input.
+> The generic Prompt Assembly infrastructure now exists, and Read now has an opt-in XML assembly path behind `READ_UNIT_PROMPT_ASSEMBLY_MODE` / `ATTENTIONAL_V2_READ_PROMPT_ASSEMBLY_MODE=xml`. Default product behavior remains the legacy prompt assembly path. Navigate has not yet been migrated.
 
 ## External Reference Pattern
 
@@ -508,11 +508,20 @@ render_read_prompt_xml(...)
 
 Still keep live Read prompt unchanged.
 
+Implementation status: completed as an opt-in path. `render_read_prompt_xml(...)` assembles the accepted Read XML blocks through `PromptAssembler`, and `read_unit` can use it when explicitly switched to `xml`. The default remains `legacy`, so normal model input is unchanged until diagnostic review approves the switch.
+
 ### Step 4 - Diagnostic Read XML Path
 
 Add an explicit diagnostic / opt-in path to render and inspect the full XML prompt.
 
 Do not switch product runtime by default.
+
+Implementation status: completed at code level. The switch is:
+
+- module variable: `READ_UNIT_PROMPT_ASSEMBLY_MODE = "legacy" | "xml"`;
+- environment override: `ATTENTIONAL_V2_READ_PROMPT_ASSEMBLY_MODE=xml`.
+
+When XML mode is used, prompt manifests include `prompt_assembly` metadata with spec id, rendered blocks, used fragments, and used slots. Direct `recent_reading_memory` model output is converted internally into current runtime recent-memory append operations.
 
 ### Step 5 - Navigate Assembly Spec
 

@@ -13,10 +13,15 @@ from .assembly import (
     PromptTemplateNode,
     render_prompt_template_xml,
 )
+from .assembler import PromptAssembler, PromptAssemblyResult, PromptAssemblySpec
 from .types import PromptDefinition
 
 
 READ_UNIT_PROMPT_VERSION = 'attentional_v2.read.v30'
+READ_XML_PROMPT_VERSION = "attentional_v2.read.xml.v1"
+READ_XML_PROMPT_ASSEMBLY_SPEC_ID = "attentional_v2.read_unit.xml.v1"
+READ_XML_PROMPTSET_VERSION = "attentional_v2-phase6-v38"
+READ_XML_TRANSPORT_SYSTEM_PROMPT = "Follow the structured Read prompt in the user message. Return JSON only."
 
 
 # These fragments are a lossless management split of the read_unit system prompt.
@@ -248,7 +253,7 @@ def _target_source_grounding_text() -> str:
 READ_TARGET_MEMORY_BOUNDARY_FRAGMENT = PromptFragment(
     fragment_id="read.memory_general_policy",
     text="""- After the impression and any surfaced reactions, maintain Recent Reading Memory deliberately.
-- `memory_uptake_ops` in the target Read contract should append only what should remain available after this unit.
+- The target Read contract writes Recent Reading Memory directly in `recent_reading_memory`.
 - Do not maintain state for its own sake.
 - Do not copy surfaced reactions into memory just because they were strong.""",
 )
@@ -691,7 +696,7 @@ Detailed reaction-selection and source-quote behavior live under RoleAndInstruct
 
 READ_RECENT_READING_MEMORY_CONTRACT_FRAGMENT = PromptFragment(
     fragment_id="read.recent_reading_memory_contract",
-    text="""`recent_reading_memory` contains direct Recent Reading Memory output produced by Read.
+    text="""`recent_reading_memory` contains the Recent Reading Memory output produced by Read.
 Shape:
 {
   "recent_reading_memory": [
@@ -701,12 +706,9 @@ Shape:
     }
   ]
 }
-The target Read contract outputs Recent Reading Memory directly, not through a generic memory-operation bus.
-Current live runtime still accepts `memory_uptake_ops`; when the XML Read prompt becomes live, normalizer / apply code should migrate to this cleaner output field.
-Direct `concept_registry` / `thread_trace` writes are current-runtime transitional behavior, not the target Read context responsibility.
-Durable consolidation from Recent Reading Memory into concept / thread / reflective memory belongs to a future dedicated consolidation node or slow-cycle pass.
-`active_attention` still exists in current code, but is deprecated as a primary memory layer and excluded from the target Read context structure.
-Digests such as `concept_digest` and `thread_digest` are prompt projections, not writable stores.""",
+Write only Recent Reading Memory entries here.
+Do not include operation-level reasons.
+Do not write durable memory, digests, hidden routing state, or other memory stores in this field.""",
 )
 
 
@@ -785,6 +787,125 @@ def render_read_output_contract_xml(*, output_language_name: str) -> str:
         READ_OUTPUT_CONTRACT_TEMPLATE,
         registry=READ_OUTPUT_CONTRACT_FRAGMENT_REGISTRY,
         slot_values={
+            "language_contract": LANGUAGE_OUTPUT_CONTRACT.format(
+                output_language_name=_clean_prompt_value(output_language_name)
+            ),
+        },
+    )
+
+
+def _read_prompt_assembly_template(
+    *,
+    current_unit_source: dict[str, object] | None,
+    current_unit_sentences: list[dict[str, object]] | None,
+) -> tuple[PromptTemplateNode, ...]:
+    return (
+        *READ_ROLE_AND_INSTRUCTION_TEMPLATE,
+        *READ_BOOK_INFO_TEMPLATE,
+        *READ_READING_STATE_TEMPLATE,
+        *_read_current_focus_template(
+            _reading_object_node(
+                current_unit_source=current_unit_source,
+                current_unit_sentences=current_unit_sentences,
+            )
+        ),
+        *READ_OUTPUT_CONTRACT_TEMPLATE,
+    )
+
+
+def _read_prompt_fragment_registry() -> PromptFragmentRegistry:
+    return PromptFragmentRegistry(
+        [
+            *READ_ROLE_AND_INSTRUCTION_FRAGMENT_REGISTRY.list(),
+            *READ_OUTPUT_CONTRACT_FRAGMENT_REGISTRY.list(),
+        ]
+    )
+
+
+def build_read_prompt_assembly_spec(
+    *,
+    current_unit_source: dict[str, object] | None = None,
+    current_unit_sentences: list[dict[str, object]] | None = None,
+) -> PromptAssemblySpec:
+    """Build the full target Read XML prompt spec for one current unit.
+
+    The current source unit may render as paragraph children, so this spec is
+    built per call while remaining disconnected from the live legacy prompt.
+    """
+
+    return PromptAssemblySpec(
+        spec_id=READ_XML_PROMPT_ASSEMBLY_SPEC_ID,
+        owner_node="read_unit",
+        prompt_version=READ_XML_PROMPT_VERSION,
+        promptset_version=READ_XML_PROMPTSET_VERSION,
+        template_nodes=_read_prompt_assembly_template(
+            current_unit_source=current_unit_source,
+            current_unit_sentences=current_unit_sentences,
+        ),
+        fragment_registry=_read_prompt_fragment_registry(),
+        required_slots=(
+            "book_identity",
+            "recent_memory",
+            "reading_path",
+            "reading_position",
+            "reading_intent",
+            "language_contract",
+        ),
+        output_contract="read_unit_xml_json_v1",
+    )
+
+
+def render_read_prompt_xml(
+    *,
+    book_title: str,
+    author: str,
+    chapter_title: str,
+    output_language_name: str,
+    recent_reading_memory: Mapping[str, object] | None = None,
+    current_unit_source: dict[str, object] | None = None,
+    current_unit_sentences: list[dict[str, object]] | None = None,
+    reading_path_mode: str = "mainline",
+    detour_context: dict[str, object] | None = None,
+) -> PromptAssemblyResult:
+    """Render the full target Read XML prompt without changing legacy defaults."""
+
+    normalized_mode = _reading_path_mode(
+        reading_path_mode=reading_path_mode,
+        detour_context=detour_context,
+    )
+    return PromptAssembler().assemble(
+        build_read_prompt_assembly_spec(
+            current_unit_source=current_unit_source,
+            current_unit_sentences=current_unit_sentences,
+        ),
+        slot_values={
+            "book_identity": _json_prompt_payload(
+                {
+                    "book_title": book_title,
+                    "author": author,
+                }
+            ),
+            "recent_memory": _json_prompt_value(
+                _recent_memory_texts_for_read(recent_reading_memory)
+            ),
+            "reading_path": _json_prompt_object({"mode": normalized_mode}),
+            "reading_position": _json_prompt_object(
+                _compact_prompt_object(
+                    {
+                        "chapter_title": _clean_prompt_value(chapter_title),
+                        "human_position": _human_position(
+                            chapter_title=_clean_prompt_value(chapter_title),
+                            current_unit_source=current_unit_source,
+                        ),
+                    }
+                )
+            ),
+            "reading_intent": _json_prompt_object(
+                _reading_intent_payload(
+                    mode=normalized_mode,
+                    detour_context=detour_context,
+                )
+            ),
             "language_contract": LANGUAGE_OUTPUT_CONTRACT.format(
                 output_language_name=_clean_prompt_value(output_language_name)
             ),

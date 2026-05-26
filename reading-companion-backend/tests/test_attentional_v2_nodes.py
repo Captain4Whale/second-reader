@@ -579,6 +579,116 @@ def test_read_unit_filters_unanchored_surface_and_uses_naturalized_contract(tmp_
     assert manifest["prompt_version"] == "attentional_v2.read.v30"
 
 
+def test_read_unit_can_use_xml_prompt_assembly_mode_without_changing_default(tmp_path: Path, monkeypatch):
+    """The XML Read prompt path is opt-in and converts target recent memory output."""
+
+    monkeypatch.delenv("ATTENTIONAL_V2_READ_PROMPT_ASSEMBLY_MODE", raising=False)
+    monkeypatch.setattr(nodes_module, "READ_UNIT_PROMPT_ASSEMBLY_MODE", "xml")
+    captured: dict[str, str] = {}
+
+    def fake_invoke_json(system_prompt: str, prompt: str, default: object) -> object:
+        captured["system_prompt"] = system_prompt
+        captured["prompt"] = prompt
+        return {
+            "reading_impression": "The opening frames the reading as testimony.",
+            "surfaced_reactions": [
+                {
+                    "source_quote": "Alpha source.",
+                    "content": "This line establishes the witness frame.",
+                }
+            ],
+            "recent_reading_memory": [
+                {
+                    "kind": "claim_or_argument",
+                    "memory_text": "The current unit frames the book as witness testimony.",
+                }
+            ],
+            "detour_need": None,
+        }
+
+    monkeypatch.setattr(nodes_module, "invoke_json", fake_invoke_json)
+
+    result = read_unit(
+        current_unit_source={
+            "source_span": {
+                "start_cursor": {"paragraph_index": 1, "char_offset": 0},
+                "end_cursor": {"paragraph_index": 1, "char_offset": 13},
+            },
+            "source_text": "Alpha source.",
+            "paragraph_slices": [
+                {
+                    "paragraph_index": 1,
+                    "text_role": "body",
+                    "start_char": 0,
+                    "end_char": 13,
+                    "text": "Alpha source.",
+                }
+            ],
+        },
+        carry_forward_context={
+            "packet_version": STATE_PACKET_VERSION,
+            "refs": [],
+            "recent_reading_memory": {
+                "active_entries": [
+                    {
+                        "entry_id": "recent:c1:u0001:m1",
+                        "kind": "claim_or_argument",
+                        "memory_text": "The previous unit established the author's witness boundary.",
+                        "status": "active",
+                    }
+                ],
+                "active_entry_count": 1,
+            },
+        },
+        reader_policy=build_default_reader_policy(),
+        output_language="en",
+        output_dir=tmp_path,
+        book_title="Demo Book",
+        author="Tester",
+        chapter_title="Chapter 1",
+    )
+
+    manifest = json.loads((tmp_path / "_mechanisms" / "attentional_v2" / "internal" / "prompt_manifests" / "read_unit.json").read_text(encoding="utf-8"))
+
+    assert captured["system_prompt"] == "Follow the structured Read prompt in the user message. Return JSON only."
+    assert "<RoleAndInstruction>" in captured["prompt"]
+    assert "<BookInfo>" in captured["prompt"]
+    assert "<ReadingState>" in captured["prompt"]
+    assert "<CurrentFocus>" in captured["prompt"]
+    assert "<OutputContract>" in captured["prompt"]
+    assert "The previous unit established the author's witness boundary." in captured["prompt"]
+    assert "Alpha source." in captured["prompt"]
+    assert "Structural frame:" not in captured["prompt"]
+    assert "Read context packet:" not in captured["prompt"]
+    assert '"memory_uptake_ops"' not in captured["prompt"]
+    assert "memory_uptake_ops" not in captured["prompt"]
+    assert "active_attention" not in captured["prompt"]
+    assert "prompt_fragment_ref" not in captured["prompt"]
+    assert "value_slot" not in captured["prompt"]
+    assert len(result["memory_uptake_ops"]) == 1
+    op = result["memory_uptake_ops"][0]
+    assert op["op"] == "append"
+    assert op["operation_type"] == "append"
+    assert op["target_store"] == "recent_reading_memory"
+    assert op["target_store_emitted"] == "recent_reading_memory"
+    assert op["effective_target_store"] == "recent_reading_memory"
+    assert op["compatibility_warnings"] == []
+    assert op["payload"] == {
+        "kind": "claim_or_argument",
+        "memory_text": "The current unit frames the book as witness testimony.",
+    }
+    assert manifest["prompt_version"] == "attentional_v2.read.xml.v1"
+    assert manifest["prompt_assembly"]["mode"] == "xml"
+    assert manifest["prompt_assembly"]["spec_id"] == "attentional_v2.read_unit.xml.v1"
+    assert manifest["prompt_assembly"]["rendered_blocks"] == [
+        "RoleAndInstruction",
+        "BookInfo",
+        "ReadingState",
+        "CurrentFocus",
+        "OutputContract",
+    ]
+
+
 def test_read_unit_contract_preserves_source_given_stage_model_as_memory_uptake(tmp_path: Path, monkeypatch):
     """Source-given structural frameworks should be allowed to settle into memory without requiring a reaction."""
 

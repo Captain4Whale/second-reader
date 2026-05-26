@@ -457,6 +457,10 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
 
 ## Context Packaging
 - Each node should receive a role-specific projection rather than the full persisted state bundle.
+- Prompt assembly now has two Read paths:
+  - default `legacy` path: current product runs still use `ATTENTIONAL_V2_PROMPTS.read_unit_system` plus the legacy `read_unit_prompt` template
+  - opt-in `xml` path: `READ_UNIT_PROMPT_ASSEMBLY_MODE="xml"` or `ATTENTIONAL_V2_READ_PROMPT_ASSEMBLY_MODE=xml` assembles the target Read XML blocks through the generic Prompt Assembly layer and records `prompt_assembly` metadata in the prompt manifest
+  - the opt-in path is for diagnostic validation before becoming default; do not remove the legacy path until a separate switch/cleanup decision is accepted
 - The stable carry taxonomy is now:
   - `always carry`
   - `selective carry`
