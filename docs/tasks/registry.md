@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-05-26T21:45:00+08:00`
+Last updated: `2026-05-27T00:00:00+08:00`
 
 ## Status Values
 - `active`
@@ -25,7 +25,7 @@ Last updated: `2026-05-26T21:45:00+08:00`
 - Lane: `mechanism_eval`
 - Priority: `high`
 - Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/C设计11-Read Context Layer Contract v0.md`
-- Next: machine execution is complete; produce `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ReadPromptXML-Full-Active-Diagnostic-Post-run-Report v0.md`. Completion snapshot: all five pipeline jobs finished with exit code `0`; all five LongSpan producers and all five Lane A reuse shards have summary outputs; strict LLM health passed for all ten run dirs with `0` fallback-backed evidence. Keep this diagnostic out of the evidence catalog until explicit review.
+- Next: review `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ReadPromptXML-Full-Active-Diagnostic-Post-run-Report v0.md` plus the full reactions / Recent Memory listing at `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ReadPromptXML-Full-Active-Diagnostic-Reactions-And-RecentMemory-Full-Review v0.md`. Completion snapshot: all five pipeline jobs finished with exit code `0`; all five LongSpan producers and all five Lane A reuse shards have summary outputs; strict LLM health passed for all ten run dirs with `0` fallback-backed evidence. Keep this diagnostic out of the evidence catalog until explicit review.
 - Jobs:
   - `bgjob_read_prompt_xml_full_diagnostic_20260526_huochu`
   - `bgjob_read_prompt_xml_full_diagnostic_20260526_mangge`

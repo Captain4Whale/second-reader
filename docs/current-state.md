@@ -7,10 +7,10 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-05-26T21:45:00+08:00`
+Last verified: `2026-05-27T00:00:00+08:00`
 
 ## Current Objective
-- Read XML prompt / Recent Reading Memory full active diagnostic machine run has completed; post-run report is pending.
+- Read XML prompt / Recent Reading Memory full active diagnostic machine run has completed; post-run report is ready for review.
   - purpose:
     - validate the opt-in XML Read prompt assembly path after Recent Reading Memory formation work
     - check whether basic Read behavior remains healthy
@@ -35,9 +35,11 @@ Last verified: `2026-05-26T21:45:00+08:00`
     - LongSpan producers: `5 / 5` completed; each emitted `summary/aggregate.json`, `summary/report.md`, `summary/llm_usage.json`, and `5` Memory Quality probe rows
     - Lane A reuse shards: `5 / 5` completed; note-case counts are `40 / 25 / 23 / 94 / 20`, total `202`
     - strict LLM health: `10 / 10` run dirs checked `ok`, with `0` fallback-backed evidence
+  - report:
+    - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ReadPromptXML-Full-Active-Diagnostic-Post-run-Report v0.md`
+    - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ReadPromptXML-Full-Active-Diagnostic-Reactions-And-RecentMemory-Full-Review v0.md`
   - next step:
-    - produce:
-      - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ReadPromptXML-Full-Active-Diagnostic-Post-run-Report v0.md`
+    - review the post-run report and the full reactions / Recent Memory listing before deciding whether to keep iterating on Read XML context assembly, inspect Recent Reading Memory quality more deeply, or continue durable-memory consolidation design
     - do not update evidence catalog, promote Long Span, or claim product quality from this diagnostic without explicit human review
 - Recent Reading Memory first-half formation is implemented.
   - design doc:

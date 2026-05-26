@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-05-26T13:45:53.869527Z",
+  "updated_at": "2026-05-26T23:02:11.897895Z",
   "entries": [
     {
       "run_id": "attentional_v2_excerpt_surface_v1_1_judged_20260406",
@@ -1957,10 +1957,11 @@
         "bgjob_read_prompt_xml_full_diagnostic_20260526_xidaduo"
       ],
       "report_paths": [
-        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ReadPromptXML-Full-Active-Diagnostic-Post-run-Report v0.md"
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ReadPromptXML-Full-Active-Diagnostic-Post-run-Report v0.md",
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ReadPromptXML-Full-Active-Diagnostic-Reactions-And-RecentMemory-Full-Review v0.md"
       ],
       "catalog_status": "not_cataloged",
-      "notes": "Read XML prompt / Recent Reading Memory full active diagnostic machine runs completed successfully. Five pipeline jobs finished with exit code 0, each LongSpan producer emitted aggregate/report/llm_usage plus 5 MQ probes, each Lane A reuse shard emitted aggregate/report/llm_usage, and strict LLM health passed with zero fallback-backed evidence. Post-run report and human interpretation remain pending; diagnostic only, no evidence catalog update or product-quality claim.",
+      "notes": "Read XML prompt / Recent Reading Memory full active diagnostic completed. Post-run report and full reactions/recent-memory review document are available. Five pipeline jobs finished with exit code 0; all LongSpan producers and Lane A reuse shards emitted summary outputs; strict LLM health passed with zero fallback-backed evidence. Diagnostic only; no evidence catalog update or product-quality claim.",
       "parent_run_id": "",
       "child_run_ids": [
         "attentional_v2_read_prompt_xml_long_span_diagnostic_20260526_huochu",
@@ -1975,11 +1976,9 @@
         "attentional_v2_read_prompt_xml_user_level_reuse_diagnostic_20260526_xidaduo"
       ],
       "synthetic": true,
-      "local_missing_allowed": [
-        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ReadPromptXML-Full-Active-Diagnostic-Post-run-Report v0.md"
-      ],
+      "local_missing_allowed": [],
       "metadata": {},
-      "updated_at": "2026-05-26T13:45:53.376725Z"
+      "updated_at": "2026-05-26T23:02:11.897488Z"
     },
     {
       "run_id": "attentional_v2_read_prompt_xml_long_span_diagnostic_20260526_huochu",
