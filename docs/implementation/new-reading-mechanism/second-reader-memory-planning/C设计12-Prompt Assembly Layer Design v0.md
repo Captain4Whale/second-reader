@@ -56,6 +56,13 @@ Current template rendering primitives:
   - `PromptTemplateNode`
   - `render_prompt_template_xml(...)`
 
+Current node-level assembly infrastructure:
+
+- `src/attentional_v2/prompts/assembler.py`
+  - `PromptAssemblySpec`
+  - `PromptAssemblyResult`
+  - `PromptAssembler`
+
 Current Read XML target helpers:
 
 - `render_read_role_and_instruction_xml(...)`
@@ -66,7 +73,7 @@ Current Read XML target helpers:
 
 Important current limitation:
 
-> These helpers prove individual Read XML blocks can render correctly, but they are not yet a full Prompt Assembly layer. They do not yet produce one full node-level assembly result, carry assembly metadata, define node-specific specs, or separate semantic assembly from provider transport.
+> The generic Prompt Assembly infrastructure now exists, but no live Read or Navigate call path uses it yet. Current Read XML helpers still prove individual blocks, and the next implementation step is to fold those blocks into one Read assembly spec without changing live model input.
 
 ## External Reference Pattern
 
@@ -488,6 +495,8 @@ Add:
 - `PromptAssembler`
 
 Keep it disconnected from live Read / Navigate calls.
+
+Implementation status: completed in `src/attentional_v2/prompts/assembler.py`. The generic assembler validates required slots, delegates XML rendering to the existing template renderer, returns rendered text with assembly metadata, and remains disconnected from live model calls.
 
 ### Step 3 - Read Assembly Spec
 

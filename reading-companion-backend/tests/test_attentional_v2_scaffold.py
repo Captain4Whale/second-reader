@@ -21,6 +21,8 @@ from src.attentional_v2.prompts import (
     READ_UNIT_PROMPT_VERSION,
     READ_UNIT_ROLE_AND_INSTRUCTION_FRAGMENTS,
     READ_UNIT_SYSTEM_PROMPT,
+    PromptAssembler,
+    PromptAssemblySpec,
     PromptFragment,
     PromptFragmentRegistry,
     PromptRegistry,
@@ -173,6 +175,131 @@ def test_prompt_template_xml_empty_value_policy_is_explicit() -> None:
     assert "<EmptyValue>" in rendered
     assert "</EmptyValue>" in rendered
     assert "SkippedValue" not in rendered
+
+
+def test_prompt_assembler_renders_spec_and_metadata_without_live_migration() -> None:
+    spec = PromptAssemblySpec(
+        spec_id="attentional_v2.test_node.xml.v1",
+        owner_node="test_node",
+        prompt_version="attentional_v2.test.v1",
+        promptset_version=ATTENTIONAL_V2_PROMPTSET_VERSION,
+        template_nodes=(
+            PromptTemplateNode(
+                element_name="RoleAndInstruction",
+                children=(
+                    PromptTemplateNode(element_name="Role", prompt_fragment_ref="test.role.v1"),
+                    PromptTemplateNode(element_name="Behavior", prompt_fragment_ref="test.behavior.v1"),
+                ),
+            ),
+            PromptTemplateNode(element_name="CurrentFocus", value_slot="current_focus"),
+            PromptTemplateNode(element_name="OutputContract", literal_value="Return JSON only."),
+        ),
+        fragment_registry=PromptFragmentRegistry(
+            [
+                PromptFragment(fragment_id="test.role.v1", text="Read carefully."),
+                PromptFragment(fragment_id="test.behavior.v1", text="Use A & B < safely."),
+            ]
+        ),
+        required_slots=("current_focus",),
+        output_contract="test_output_v1",
+    )
+
+    result = PromptAssembler().assemble(
+        spec,
+        slot_values={"current_focus": "Current unit <text> & intent."},
+    )
+
+    assert result.rendered_text.startswith("<RoleAndInstruction>")
+    assert "<CurrentFocus>" in result.rendered_text
+    assert "Use A &amp; B &lt; safely." in result.rendered_text
+    assert "Current unit &lt;text&gt; &amp; intent." in result.rendered_text
+    assert "Return JSON only." in result.rendered_text
+    assert result.spec_id == "attentional_v2.test_node.xml.v1"
+    assert result.owner_node == "test_node"
+    assert result.prompt_version == "attentional_v2.test.v1"
+    assert result.promptset_version == ATTENTIONAL_V2_PROMPTSET_VERSION
+    assert result.output_contract == "test_output_v1"
+    assert result.rendered_blocks == ("RoleAndInstruction", "CurrentFocus", "OutputContract")
+    assert result.used_fragment_ids == ("test.role.v1", "test.behavior.v1")
+    assert result.used_slot_names == ("current_focus",)
+    assert "prompt_fragment_ref" not in result.rendered_text
+    assert "value_slot" not in result.rendered_text
+    assert "test.role.v1" not in result.rendered_text
+    assert "current_focus" not in result.rendered_text
+    assert "ref=" not in result.rendered_text
+    assert READ_UNIT_PROMPT_VERSION == "attentional_v2.read.v30"
+    assert ATTENTIONAL_V2_PROMPTS.read_unit_system == READ_UNIT_SYSTEM_PROMPT
+    assert "Structural frame:" in ATTENTIONAL_V2_PROMPTS.read_unit_prompt
+
+
+def test_prompt_assembler_missing_required_slot_fails_fast_before_rendering() -> None:
+    spec = PromptAssemblySpec(
+        spec_id="attentional_v2.test_node.xml.v1",
+        owner_node="test_node",
+        prompt_version="attentional_v2.test.v1",
+        promptset_version=ATTENTIONAL_V2_PROMPTSET_VERSION,
+        template_nodes=(PromptTemplateNode(element_name="CurrentFocus", value_slot="current_focus"),),
+        fragment_registry=PromptFragmentRegistry([]),
+        required_slots=("current_focus",),
+        output_contract="test_output_v1",
+    )
+
+    with pytest.raises(KeyError, match="current_focus"):
+        PromptAssembler().assemble(spec, slot_values={})
+
+
+def test_prompt_assembler_missing_fragment_ref_fails_fast_during_rendering() -> None:
+    spec = PromptAssemblySpec(
+        spec_id="attentional_v2.test_node.xml.v1",
+        owner_node="test_node",
+        prompt_version="attentional_v2.test.v1",
+        promptset_version=ATTENTIONAL_V2_PROMPTSET_VERSION,
+        template_nodes=(PromptTemplateNode(element_name="Role", prompt_fragment_ref="missing.fragment"),),
+        fragment_registry=PromptFragmentRegistry([]),
+        required_slots=(),
+        output_contract="test_output_v1",
+    )
+
+    with pytest.raises(KeyError, match="missing.fragment"):
+        PromptAssembler().assemble(spec, slot_values={})
+
+
+def test_prompt_assembly_spec_validation_rejects_empty_or_duplicate_contract_parts() -> None:
+    with pytest.raises(ValueError, match="spec_id"):
+        PromptAssemblySpec(
+            spec_id="",
+            owner_node="test_node",
+            prompt_version="attentional_v2.test.v1",
+            promptset_version=ATTENTIONAL_V2_PROMPTSET_VERSION,
+            template_nodes=(PromptTemplateNode(element_name="Role", literal_value="x"),),
+            fragment_registry=PromptFragmentRegistry([]),
+            required_slots=(),
+            output_contract="test_output_v1",
+        )
+
+    with pytest.raises(ValueError, match="required_slots must be unique"):
+        PromptAssemblySpec(
+            spec_id="attentional_v2.test_node.xml.v1",
+            owner_node="test_node",
+            prompt_version="attentional_v2.test.v1",
+            promptset_version=ATTENTIONAL_V2_PROMPTSET_VERSION,
+            template_nodes=(PromptTemplateNode(element_name="Role", literal_value="x"),),
+            fragment_registry=PromptFragmentRegistry([]),
+            required_slots=("same", "same"),
+            output_contract="test_output_v1",
+        )
+
+    with pytest.raises(ValueError, match="template_nodes"):
+        PromptAssemblySpec(
+            spec_id="attentional_v2.test_node.xml.v1",
+            owner_node="test_node",
+            prompt_version="attentional_v2.test.v1",
+            promptset_version=ATTENTIONAL_V2_PROMPTSET_VERSION,
+            template_nodes=(),
+            fragment_registry=PromptFragmentRegistry([]),
+            required_slots=(),
+            output_contract="test_output_v1",
+        )
 
 
 def test_read_xml_prompt_example_does_not_replace_live_read_prompt() -> None:

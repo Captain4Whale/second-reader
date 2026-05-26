@@ -7,6 +7,11 @@ from .assembly import (
     render_prompt_template_xml,
     render_read_xml_prompt_example,
 )
+from .assembler import (
+    PromptAssembler,
+    PromptAssemblyResult,
+    PromptAssemblySpec,
+)
 from .registry import (
     ATTENTIONAL_V2_PROMPTS,
     ATTENTIONAL_V2_PROMPTSET_VERSION,
@@ -71,6 +76,9 @@ __all__ = [
     "PromptFragment",
     "PromptFragmentRegistry",
     "PromptTemplateNode",
+    "PromptAssembler",
+    "PromptAssemblyResult",
+    "PromptAssemblySpec",
     "render_prompt_template_xml",
     "render_read_xml_prompt_example",
 ]
