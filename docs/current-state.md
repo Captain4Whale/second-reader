@@ -7,10 +7,10 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-05-26T19:22:00+08:00`
+Last verified: `2026-05-26T21:45:00+08:00`
 
 ## Current Objective
-- Read XML prompt / Recent Reading Memory full active diagnostic is running in the background.
+- Read XML prompt / Recent Reading Memory full active diagnostic machine run has completed; post-run report is pending.
   - purpose:
     - validate the opt-in XML Read prompt assembly path after Recent Reading Memory formation work
     - check whether basic Read behavior remains healthy
@@ -19,8 +19,8 @@ Last verified: `2026-05-26T19:22:00+08:00`
   - mode:
     - diagnostic only, not evidence-catalog authority
     - `ATTENTIONAL_V2_READ_PROMPT_ASSEMBLY_MODE=xml`
-    - 5 parallel registered pipeline jobs
-    - each pipeline runs one LongSpan producer first, runs strict LLM health on the producer, then runs the matching Lane A user-level selective reuse shard
+    - 5 registered pipeline jobs completed with exit code `0`
+    - each pipeline ran one LongSpan producer first, ran strict LLM health on the producer, then ran the matching Lane A user-level selective reuse shard
   - parent run id:
     - `attentional_v2_read_prompt_xml_full_active_diagnostic_20260526`
   - job ids:
@@ -31,9 +31,12 @@ Last verified: `2026-05-26T19:22:00+08:00`
     - `bgjob_read_prompt_xml_full_diagnostic_20260526_xidaduo`
   - run ledger:
     - `reading-companion-backend/docs/evaluation/run_ledger.md`
+  - completion snapshot:
+    - LongSpan producers: `5 / 5` completed; each emitted `summary/aggregate.json`, `summary/report.md`, `summary/llm_usage.json`, and `5` Memory Quality probe rows
+    - Lane A reuse shards: `5 / 5` completed; note-case counts are `40 / 25 / 23 / 94 / 20`, total `202`
+    - strict LLM health: `10 / 10` run dirs checked `ok`, with `0` fallback-backed evidence
   - next step:
-    - monitor the five registered jobs
-    - after terminal status, update run ledger statuses, run strict health checks, and produce:
+    - produce:
       - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ReadPromptXML-Full-Active-Diagnostic-Post-run-Report v0.md`
     - do not update evidence catalog, promote Long Span, or claim product quality from this diagnostic without explicit human review
 - Recent Reading Memory first-half formation is implemented.

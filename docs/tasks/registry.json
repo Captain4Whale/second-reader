@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-05-26T11:22:00Z",
+  "updated_at": "2026-05-26T13:45:00Z",
   "tasks": [
     {
       "id": "TASK-SECOND-READER-READ-PROMPT-XML-FULL-ACTIVE-DIAGNOSTIC-20260526",
@@ -30,13 +30,23 @@
         "bgjob_read_prompt_xml_full_diagnostic_20260526_xidaduo"
       ],
       "acceptance_ref": "",
-      "next_action": "Monitor the five registered pipeline jobs. Each job runs one LongSpan producer with ATTENTIONAL_V2_READ_PROMPT_ASSEMBLY_MODE=xml, checks strict LLM health, then runs the matching Lane A user-level selective reuse shard. After terminal status, update run_ledger.*, produce ReadPromptXML-Full-Active-Diagnostic-Post-run-Report v0.md, and do not update the evidence catalog without explicit review.",
+      "next_action": "Machine execution is complete. Produce ReadPromptXML-Full-Active-Diagnostic-Post-run-Report v0.md. Completion snapshot: all five pipeline jobs finished with exit code 0; all five LongSpan producers and all five Lane A reuse shards have summary outputs; strict LLM health passed for all ten run dirs with 0 fallback-backed evidence. Keep this diagnostic out of the evidence catalog until explicit review.",
       "blocked_by": [],
       "evidence_refs": [
         "reading-companion-backend/docs/evaluation/run_ledger.md",
-        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ReadPromptXML-Full-Active-Diagnostic-Post-run-Report v0.md"
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ReadPromptXML-Full-Active-Diagnostic-Post-run-Report v0.md",
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_read_prompt_xml_long_span_diagnostic_20260526_huochu/summary/aggregate.json",
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_read_prompt_xml_long_span_diagnostic_20260526_mangge/summary/aggregate.json",
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_read_prompt_xml_long_span_diagnostic_20260526_nawaer/summary/aggregate.json",
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_read_prompt_xml_long_span_diagnostic_20260526_value_of_others/summary/aggregate.json",
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_read_prompt_xml_long_span_diagnostic_20260526_xidaduo/summary/aggregate.json",
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_read_prompt_xml_user_level_reuse_diagnostic_20260526_huochu/summary/aggregate.json",
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_read_prompt_xml_user_level_reuse_diagnostic_20260526_mangge/summary/aggregate.json",
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_read_prompt_xml_user_level_reuse_diagnostic_20260526_nawaer/summary/aggregate.json",
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_read_prompt_xml_user_level_reuse_diagnostic_20260526_value_of_others/summary/aggregate.json",
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_read_prompt_xml_user_level_reuse_diagnostic_20260526_xidaduo/summary/aggregate.json"
       ],
-      "last_updated": "2026-05-26T11:22:00Z",
+      "last_updated": "2026-05-26T13:45:00Z",
       "last_updated_by": "codex"
     },
     {

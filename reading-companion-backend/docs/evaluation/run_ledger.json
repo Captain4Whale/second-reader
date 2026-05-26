@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-05-26T11:23:46.420080Z",
+  "updated_at": "2026-05-26T13:45:53.869527Z",
   "entries": [
     {
       "run_id": "attentional_v2_excerpt_surface_v1_1_judged_20260406",
@@ -1939,7 +1939,7 @@
       "date": "2026-05-26",
       "surface": "read_prompt_xml_full_active_diagnostic",
       "lane": "mechanism_eval",
-      "status": "running",
+      "status": "review_pending",
       "mechanisms": [
         "attentional_v2"
       ],
@@ -1960,7 +1960,7 @@
         "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ReadPromptXML-Full-Active-Diagnostic-Post-run-Report v0.md"
       ],
       "catalog_status": "not_cataloged",
-      "notes": "Parent ledger entry for the Read XML prompt / Recent Reading Memory full active diagnostic. Five parallel pipeline jobs run LongSpan producers with ATTENTIONAL_V2_READ_PROMPT_ASSEMBLY_MODE=xml, then corresponding Lane A reuse shards. Diagnostic only; no evidence catalog update or product-quality claim.",
+      "notes": "Read XML prompt / Recent Reading Memory full active diagnostic machine runs completed successfully. Five pipeline jobs finished with exit code 0, each LongSpan producer emitted aggregate/report/llm_usage plus 5 MQ probes, each Lane A reuse shard emitted aggregate/report/llm_usage, and strict LLM health passed with zero fallback-backed evidence. Post-run report and human interpretation remain pending; diagnostic only, no evidence catalog update or product-quality claim.",
       "parent_run_id": "",
       "child_run_ids": [
         "attentional_v2_read_prompt_xml_long_span_diagnostic_20260526_huochu",
@@ -1979,14 +1979,14 @@
         "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ReadPromptXML-Full-Active-Diagnostic-Post-run-Report v0.md"
       ],
       "metadata": {},
-      "updated_at": "2026-05-26T11:23:46.419648Z"
+      "updated_at": "2026-05-26T13:45:53.376725Z"
     },
     {
       "run_id": "attentional_v2_read_prompt_xml_long_span_diagnostic_20260526_huochu",
       "date": "2026-05-26",
       "surface": "read_prompt_xml_full_active_diagnostic",
       "lane": "lane_b_long_span_vnext_producer",
-      "status": "running",
+      "status": "review_pending",
       "mechanisms": [
         "attentional_v2"
       ],
@@ -1995,28 +1995,33 @@
         "eval/manifests/splits/attentional_v2_user_level_selective_v1_draft.json"
       ],
       "run_dir": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_read_prompt_xml_long_span_diagnostic_20260526_huochu",
-      "summary_paths": {},
+      "summary_paths": {
+        "aggregate": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_read_prompt_xml_long_span_diagnostic_20260526_huochu/summary/aggregate.json",
+        "llm_usage": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_read_prompt_xml_long_span_diagnostic_20260526_huochu/summary/llm_usage.json",
+        "memory_quality_results": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_read_prompt_xml_long_span_diagnostic_20260526_huochu/summary/memory_quality_results.jsonl",
+        "reaction_audit_results": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_read_prompt_xml_long_span_diagnostic_20260526_huochu/summary/reaction_audit_results.jsonl",
+        "reaction_window_summaries": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_read_prompt_xml_long_span_diagnostic_20260526_huochu/summary/reaction_window_summaries.jsonl",
+        "report": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_read_prompt_xml_long_span_diagnostic_20260526_huochu/summary/report.md"
+      },
       "job_ids": [
         "bgjob_read_prompt_xml_full_diagnostic_20260526_huochu"
       ],
       "report_paths": [],
       "catalog_status": "not_cataloged",
-      "notes": "Read XML prompt diagnostic LongSpan producer for huochu_shengming_de_yiyi_private_zh__segment_1; uses ATTENTIONAL_V2_READ_PROMPT_ASSEMBLY_MODE=xml and v2-only fresh reading. Diagnostic only.",
+      "notes": "Read XML prompt diagnostic LongSpan producer for huochu; completed with ATTENTIONAL_V2_READ_PROMPT_ASSEMBLY_MODE=xml, summary outputs present, 5 MQ probe rows, fresh MQ judge and reaction audit, and strict LLM health ok with zero fallback. Diagnostic only.",
       "parent_run_id": "attentional_v2_read_prompt_xml_full_active_diagnostic_20260526",
       "child_run_ids": [],
       "synthetic": false,
-      "local_missing_allowed": [
-        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_read_prompt_xml_long_span_diagnostic_20260526_huochu"
-      ],
+      "local_missing_allowed": [],
       "metadata": {},
-      "updated_at": "2026-05-26T11:22:28.121107Z"
+      "updated_at": "2026-05-26T13:45:53.426939Z"
     },
     {
       "run_id": "attentional_v2_read_prompt_xml_long_span_diagnostic_20260526_mangge",
       "date": "2026-05-26",
       "surface": "read_prompt_xml_full_active_diagnostic",
       "lane": "lane_b_long_span_vnext_producer",
-      "status": "running",
+      "status": "review_pending",
       "mechanisms": [
         "attentional_v2"
       ],
@@ -2025,28 +2030,33 @@
         "eval/manifests/splits/attentional_v2_user_level_selective_v1_draft.json"
       ],
       "run_dir": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_read_prompt_xml_long_span_diagnostic_20260526_mangge",
-      "summary_paths": {},
+      "summary_paths": {
+        "aggregate": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_read_prompt_xml_long_span_diagnostic_20260526_mangge/summary/aggregate.json",
+        "llm_usage": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_read_prompt_xml_long_span_diagnostic_20260526_mangge/summary/llm_usage.json",
+        "memory_quality_results": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_read_prompt_xml_long_span_diagnostic_20260526_mangge/summary/memory_quality_results.jsonl",
+        "reaction_audit_results": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_read_prompt_xml_long_span_diagnostic_20260526_mangge/summary/reaction_audit_results.jsonl",
+        "reaction_window_summaries": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_read_prompt_xml_long_span_diagnostic_20260526_mangge/summary/reaction_window_summaries.jsonl",
+        "report": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_read_prompt_xml_long_span_diagnostic_20260526_mangge/summary/report.md"
+      },
       "job_ids": [
         "bgjob_read_prompt_xml_full_diagnostic_20260526_mangge"
       ],
       "report_paths": [],
       "catalog_status": "not_cataloged",
-      "notes": "Read XML prompt diagnostic LongSpan producer for mangge_zhi_dao_private_zh__segment_1; uses ATTENTIONAL_V2_READ_PROMPT_ASSEMBLY_MODE=xml and v2-only fresh reading. Diagnostic only.",
+      "notes": "Read XML prompt diagnostic LongSpan producer for mangge; completed with ATTENTIONAL_V2_READ_PROMPT_ASSEMBLY_MODE=xml, summary outputs present, 5 MQ probe rows, fresh MQ judge and reaction audit, and strict LLM health ok with zero fallback. Diagnostic only.",
       "parent_run_id": "attentional_v2_read_prompt_xml_full_active_diagnostic_20260526",
       "child_run_ids": [],
       "synthetic": false,
-      "local_missing_allowed": [
-        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_read_prompt_xml_long_span_diagnostic_20260526_mangge"
-      ],
+      "local_missing_allowed": [],
       "metadata": {},
-      "updated_at": "2026-05-26T11:22:28.214204Z"
+      "updated_at": "2026-05-26T13:45:53.526311Z"
     },
     {
       "run_id": "attentional_v2_read_prompt_xml_long_span_diagnostic_20260526_nawaer",
       "date": "2026-05-26",
       "surface": "read_prompt_xml_full_active_diagnostic",
       "lane": "lane_b_long_span_vnext_producer",
-      "status": "running",
+      "status": "review_pending",
       "mechanisms": [
         "attentional_v2"
       ],
@@ -2055,28 +2065,33 @@
         "eval/manifests/splits/attentional_v2_user_level_selective_v1_draft.json"
       ],
       "run_dir": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_read_prompt_xml_long_span_diagnostic_20260526_nawaer",
-      "summary_paths": {},
+      "summary_paths": {
+        "aggregate": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_read_prompt_xml_long_span_diagnostic_20260526_nawaer/summary/aggregate.json",
+        "llm_usage": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_read_prompt_xml_long_span_diagnostic_20260526_nawaer/summary/llm_usage.json",
+        "memory_quality_results": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_read_prompt_xml_long_span_diagnostic_20260526_nawaer/summary/memory_quality_results.jsonl",
+        "reaction_audit_results": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_read_prompt_xml_long_span_diagnostic_20260526_nawaer/summary/reaction_audit_results.jsonl",
+        "reaction_window_summaries": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_read_prompt_xml_long_span_diagnostic_20260526_nawaer/summary/reaction_window_summaries.jsonl",
+        "report": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_read_prompt_xml_long_span_diagnostic_20260526_nawaer/summary/report.md"
+      },
       "job_ids": [
         "bgjob_read_prompt_xml_full_diagnostic_20260526_nawaer"
       ],
       "report_paths": [],
       "catalog_status": "not_cataloged",
-      "notes": "Read XML prompt diagnostic LongSpan producer for nawaer_baodian_private_zh__segment_1; uses ATTENTIONAL_V2_READ_PROMPT_ASSEMBLY_MODE=xml and v2-only fresh reading. Diagnostic only.",
+      "notes": "Read XML prompt diagnostic LongSpan producer for nawaer; completed with ATTENTIONAL_V2_READ_PROMPT_ASSEMBLY_MODE=xml, summary outputs present, 5 MQ probe rows, fresh MQ judge and reaction audit, and strict LLM health ok with zero fallback. Diagnostic only.",
       "parent_run_id": "attentional_v2_read_prompt_xml_full_active_diagnostic_20260526",
       "child_run_ids": [],
       "synthetic": false,
-      "local_missing_allowed": [
-        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_read_prompt_xml_long_span_diagnostic_20260526_nawaer"
-      ],
+      "local_missing_allowed": [],
       "metadata": {},
-      "updated_at": "2026-05-26T11:22:28.304327Z"
+      "updated_at": "2026-05-26T13:45:53.624683Z"
     },
     {
       "run_id": "attentional_v2_read_prompt_xml_long_span_diagnostic_20260526_value_of_others",
       "date": "2026-05-26",
       "surface": "read_prompt_xml_full_active_diagnostic",
       "lane": "lane_b_long_span_vnext_producer",
-      "status": "running",
+      "status": "review_pending",
       "mechanisms": [
         "attentional_v2"
       ],
@@ -2085,28 +2100,33 @@
         "eval/manifests/splits/attentional_v2_user_level_selective_v1_draft.json"
       ],
       "run_dir": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_read_prompt_xml_long_span_diagnostic_20260526_value_of_others",
-      "summary_paths": {},
+      "summary_paths": {
+        "aggregate": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_read_prompt_xml_long_span_diagnostic_20260526_value_of_others/summary/aggregate.json",
+        "llm_usage": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_read_prompt_xml_long_span_diagnostic_20260526_value_of_others/summary/llm_usage.json",
+        "memory_quality_results": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_read_prompt_xml_long_span_diagnostic_20260526_value_of_others/summary/memory_quality_results.jsonl",
+        "reaction_audit_results": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_read_prompt_xml_long_span_diagnostic_20260526_value_of_others/summary/reaction_audit_results.jsonl",
+        "reaction_window_summaries": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_read_prompt_xml_long_span_diagnostic_20260526_value_of_others/summary/reaction_window_summaries.jsonl",
+        "report": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_read_prompt_xml_long_span_diagnostic_20260526_value_of_others/summary/report.md"
+      },
       "job_ids": [
         "bgjob_read_prompt_xml_full_diagnostic_20260526_value_of_others"
       ],
       "report_paths": [],
       "catalog_status": "not_cataloged",
-      "notes": "Read XML prompt diagnostic LongSpan producer for value_of_others_private_en__segment_1; uses ATTENTIONAL_V2_READ_PROMPT_ASSEMBLY_MODE=xml and v2-only fresh reading. Diagnostic only.",
+      "notes": "Read XML prompt diagnostic LongSpan producer for value_of_others; completed with ATTENTIONAL_V2_READ_PROMPT_ASSEMBLY_MODE=xml, summary outputs present, 5 MQ probe rows, fresh MQ judge and reaction audit, and strict LLM health ok with zero fallback. Diagnostic only.",
       "parent_run_id": "attentional_v2_read_prompt_xml_full_active_diagnostic_20260526",
       "child_run_ids": [],
       "synthetic": false,
-      "local_missing_allowed": [
-        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_read_prompt_xml_long_span_diagnostic_20260526_value_of_others"
-      ],
+      "local_missing_allowed": [],
       "metadata": {},
-      "updated_at": "2026-05-26T11:22:28.395302Z"
+      "updated_at": "2026-05-26T13:45:53.721573Z"
     },
     {
       "run_id": "attentional_v2_read_prompt_xml_long_span_diagnostic_20260526_xidaduo",
       "date": "2026-05-26",
       "surface": "read_prompt_xml_full_active_diagnostic",
       "lane": "lane_b_long_span_vnext_producer",
-      "status": "running",
+      "status": "review_pending",
       "mechanisms": [
         "attentional_v2"
       ],
@@ -2115,166 +2135,186 @@
         "eval/manifests/splits/attentional_v2_user_level_selective_v1_draft.json"
       ],
       "run_dir": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_read_prompt_xml_long_span_diagnostic_20260526_xidaduo",
-      "summary_paths": {},
+      "summary_paths": {
+        "aggregate": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_read_prompt_xml_long_span_diagnostic_20260526_xidaduo/summary/aggregate.json",
+        "llm_usage": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_read_prompt_xml_long_span_diagnostic_20260526_xidaduo/summary/llm_usage.json",
+        "memory_quality_results": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_read_prompt_xml_long_span_diagnostic_20260526_xidaduo/summary/memory_quality_results.jsonl",
+        "reaction_audit_results": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_read_prompt_xml_long_span_diagnostic_20260526_xidaduo/summary/reaction_audit_results.jsonl",
+        "reaction_window_summaries": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_read_prompt_xml_long_span_diagnostic_20260526_xidaduo/summary/reaction_window_summaries.jsonl",
+        "report": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_read_prompt_xml_long_span_diagnostic_20260526_xidaduo/summary/report.md"
+      },
       "job_ids": [
         "bgjob_read_prompt_xml_full_diagnostic_20260526_xidaduo"
       ],
       "report_paths": [],
       "catalog_status": "not_cataloged",
-      "notes": "Read XML prompt diagnostic LongSpan producer for xidaduo_private_zh__segment_1; uses ATTENTIONAL_V2_READ_PROMPT_ASSEMBLY_MODE=xml and v2-only fresh reading. Diagnostic only.",
+      "notes": "Read XML prompt diagnostic LongSpan producer for xidaduo; completed with ATTENTIONAL_V2_READ_PROMPT_ASSEMBLY_MODE=xml, summary outputs present, 5 MQ probe rows, fresh MQ judge and reaction audit, and strict LLM health ok with zero fallback. Diagnostic only.",
       "parent_run_id": "attentional_v2_read_prompt_xml_full_active_diagnostic_20260526",
       "child_run_ids": [],
       "synthetic": false,
-      "local_missing_allowed": [
-        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_read_prompt_xml_long_span_diagnostic_20260526_xidaduo"
-      ],
+      "local_missing_allowed": [],
       "metadata": {},
-      "updated_at": "2026-05-26T11:22:28.487791Z"
+      "updated_at": "2026-05-26T13:45:53.819787Z"
     },
     {
       "run_id": "attentional_v2_read_prompt_xml_user_level_reuse_diagnostic_20260526_huochu",
       "date": "2026-05-26",
       "surface": "read_prompt_xml_full_active_diagnostic",
       "lane": "lane_a_local_user_level_selective_reuse",
-      "status": "planned",
+      "status": "review_pending",
       "mechanisms": [
         "attentional_v2"
       ],
       "dataset_or_manifest": [
+        "eval/manifests/probes/memory_quality_semantic_probe_plan_20260504.json",
         "eval/manifests/splits/attentional_v2_user_level_selective_v1_draft.json"
       ],
       "run_dir": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_read_prompt_xml_user_level_reuse_diagnostic_20260526_huochu",
-      "summary_paths": {},
+      "summary_paths": {
+        "aggregate": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_read_prompt_xml_user_level_reuse_diagnostic_20260526_huochu/summary/aggregate.json",
+        "llm_usage": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_read_prompt_xml_user_level_reuse_diagnostic_20260526_huochu/summary/llm_usage.json",
+        "report": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_read_prompt_xml_user_level_reuse_diagnostic_20260526_huochu/summary/report.md"
+      },
       "job_ids": [
         "bgjob_read_prompt_xml_full_diagnostic_20260526_huochu"
       ],
       "report_paths": [],
       "catalog_status": "not_cataloged",
-      "notes": "Planned Lane A reuse shard for huochu_shengming_de_yiyi_private_zh__segment_1; pipeline starts after corresponding LongSpan producer passes health. Diagnostic only.",
+      "notes": "Read XML prompt diagnostic Lane A reuse shard for huochu; completed after corresponding LongSpan producer health passed, summary outputs present, and strict LLM health ok with zero fallback. Diagnostic only.",
       "parent_run_id": "attentional_v2_read_prompt_xml_full_active_diagnostic_20260526",
       "child_run_ids": [],
       "synthetic": false,
-      "local_missing_allowed": [
-        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_read_prompt_xml_user_level_reuse_diagnostic_20260526_huochu"
-      ],
+      "local_missing_allowed": [],
       "metadata": {},
-      "updated_at": "2026-05-26T11:22:28.165530Z"
+      "updated_at": "2026-05-26T13:45:53.475688Z"
     },
     {
       "run_id": "attentional_v2_read_prompt_xml_user_level_reuse_diagnostic_20260526_mangge",
       "date": "2026-05-26",
       "surface": "read_prompt_xml_full_active_diagnostic",
       "lane": "lane_a_local_user_level_selective_reuse",
-      "status": "planned",
+      "status": "review_pending",
       "mechanisms": [
         "attentional_v2"
       ],
       "dataset_or_manifest": [
+        "eval/manifests/probes/memory_quality_semantic_probe_plan_20260504.json",
         "eval/manifests/splits/attentional_v2_user_level_selective_v1_draft.json"
       ],
       "run_dir": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_read_prompt_xml_user_level_reuse_diagnostic_20260526_mangge",
-      "summary_paths": {},
+      "summary_paths": {
+        "aggregate": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_read_prompt_xml_user_level_reuse_diagnostic_20260526_mangge/summary/aggregate.json",
+        "llm_usage": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_read_prompt_xml_user_level_reuse_diagnostic_20260526_mangge/summary/llm_usage.json",
+        "report": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_read_prompt_xml_user_level_reuse_diagnostic_20260526_mangge/summary/report.md"
+      },
       "job_ids": [
         "bgjob_read_prompt_xml_full_diagnostic_20260526_mangge"
       ],
       "report_paths": [],
       "catalog_status": "not_cataloged",
-      "notes": "Planned Lane A reuse shard for mangge_zhi_dao_private_zh__segment_1; pipeline starts after corresponding LongSpan producer passes health. Diagnostic only.",
+      "notes": "Read XML prompt diagnostic Lane A reuse shard for mangge; completed after corresponding LongSpan producer health passed, summary outputs present, and strict LLM health ok with zero fallback. Diagnostic only.",
       "parent_run_id": "attentional_v2_read_prompt_xml_full_active_diagnostic_20260526",
       "child_run_ids": [],
       "synthetic": false,
-      "local_missing_allowed": [
-        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_read_prompt_xml_user_level_reuse_diagnostic_20260526_mangge"
-      ],
+      "local_missing_allowed": [],
       "metadata": {},
-      "updated_at": "2026-05-26T11:22:28.259447Z"
+      "updated_at": "2026-05-26T13:45:53.575993Z"
     },
     {
       "run_id": "attentional_v2_read_prompt_xml_user_level_reuse_diagnostic_20260526_nawaer",
       "date": "2026-05-26",
       "surface": "read_prompt_xml_full_active_diagnostic",
       "lane": "lane_a_local_user_level_selective_reuse",
-      "status": "planned",
+      "status": "review_pending",
       "mechanisms": [
         "attentional_v2"
       ],
       "dataset_or_manifest": [
+        "eval/manifests/probes/memory_quality_semantic_probe_plan_20260504.json",
         "eval/manifests/splits/attentional_v2_user_level_selective_v1_draft.json"
       ],
       "run_dir": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_read_prompt_xml_user_level_reuse_diagnostic_20260526_nawaer",
-      "summary_paths": {},
+      "summary_paths": {
+        "aggregate": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_read_prompt_xml_user_level_reuse_diagnostic_20260526_nawaer/summary/aggregate.json",
+        "llm_usage": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_read_prompt_xml_user_level_reuse_diagnostic_20260526_nawaer/summary/llm_usage.json",
+        "report": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_read_prompt_xml_user_level_reuse_diagnostic_20260526_nawaer/summary/report.md"
+      },
       "job_ids": [
         "bgjob_read_prompt_xml_full_diagnostic_20260526_nawaer"
       ],
       "report_paths": [],
       "catalog_status": "not_cataloged",
-      "notes": "Planned Lane A reuse shard for nawaer_baodian_private_zh__segment_1; pipeline starts after corresponding LongSpan producer passes health. Diagnostic only.",
+      "notes": "Read XML prompt diagnostic Lane A reuse shard for nawaer; completed after corresponding LongSpan producer health passed, summary outputs present, and strict LLM health ok with zero fallback. Diagnostic only.",
       "parent_run_id": "attentional_v2_read_prompt_xml_full_active_diagnostic_20260526",
       "child_run_ids": [],
       "synthetic": false,
-      "local_missing_allowed": [
-        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_read_prompt_xml_user_level_reuse_diagnostic_20260526_nawaer"
-      ],
+      "local_missing_allowed": [],
       "metadata": {},
-      "updated_at": "2026-05-26T11:22:28.349586Z"
+      "updated_at": "2026-05-26T13:45:53.672622Z"
     },
     {
       "run_id": "attentional_v2_read_prompt_xml_user_level_reuse_diagnostic_20260526_value_of_others",
       "date": "2026-05-26",
       "surface": "read_prompt_xml_full_active_diagnostic",
       "lane": "lane_a_local_user_level_selective_reuse",
-      "status": "planned",
+      "status": "review_pending",
       "mechanisms": [
         "attentional_v2"
       ],
       "dataset_or_manifest": [
+        "eval/manifests/probes/memory_quality_semantic_probe_plan_20260504.json",
         "eval/manifests/splits/attentional_v2_user_level_selective_v1_draft.json"
       ],
       "run_dir": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_read_prompt_xml_user_level_reuse_diagnostic_20260526_value_of_others",
-      "summary_paths": {},
+      "summary_paths": {
+        "aggregate": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_read_prompt_xml_user_level_reuse_diagnostic_20260526_value_of_others/summary/aggregate.json",
+        "llm_usage": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_read_prompt_xml_user_level_reuse_diagnostic_20260526_value_of_others/summary/llm_usage.json",
+        "report": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_read_prompt_xml_user_level_reuse_diagnostic_20260526_value_of_others/summary/report.md"
+      },
       "job_ids": [
         "bgjob_read_prompt_xml_full_diagnostic_20260526_value_of_others"
       ],
       "report_paths": [],
       "catalog_status": "not_cataloged",
-      "notes": "Planned Lane A reuse shard for value_of_others_private_en__segment_1; pipeline starts after corresponding LongSpan producer passes health. Diagnostic only.",
+      "notes": "Read XML prompt diagnostic Lane A reuse shard for value_of_others; completed after corresponding LongSpan producer health passed, summary outputs present, and strict LLM health ok with zero fallback. Diagnostic only.",
       "parent_run_id": "attentional_v2_read_prompt_xml_full_active_diagnostic_20260526",
       "child_run_ids": [],
       "synthetic": false,
-      "local_missing_allowed": [
-        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_read_prompt_xml_user_level_reuse_diagnostic_20260526_value_of_others"
-      ],
+      "local_missing_allowed": [],
       "metadata": {},
-      "updated_at": "2026-05-26T11:22:28.441339Z"
+      "updated_at": "2026-05-26T13:45:53.769998Z"
     },
     {
       "run_id": "attentional_v2_read_prompt_xml_user_level_reuse_diagnostic_20260526_xidaduo",
       "date": "2026-05-26",
       "surface": "read_prompt_xml_full_active_diagnostic",
       "lane": "lane_a_local_user_level_selective_reuse",
-      "status": "planned",
+      "status": "review_pending",
       "mechanisms": [
         "attentional_v2"
       ],
       "dataset_or_manifest": [
+        "eval/manifests/probes/memory_quality_semantic_probe_plan_20260504.json",
         "eval/manifests/splits/attentional_v2_user_level_selective_v1_draft.json"
       ],
       "run_dir": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_read_prompt_xml_user_level_reuse_diagnostic_20260526_xidaduo",
-      "summary_paths": {},
+      "summary_paths": {
+        "aggregate": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_read_prompt_xml_user_level_reuse_diagnostic_20260526_xidaduo/summary/aggregate.json",
+        "llm_usage": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_read_prompt_xml_user_level_reuse_diagnostic_20260526_xidaduo/summary/llm_usage.json",
+        "report": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_read_prompt_xml_user_level_reuse_diagnostic_20260526_xidaduo/summary/report.md"
+      },
       "job_ids": [
         "bgjob_read_prompt_xml_full_diagnostic_20260526_xidaduo"
       ],
       "report_paths": [],
       "catalog_status": "not_cataloged",
-      "notes": "Planned Lane A reuse shard for xidaduo_private_zh__segment_1; pipeline starts after corresponding LongSpan producer passes health. Diagnostic only.",
+      "notes": "Read XML prompt diagnostic Lane A reuse shard for xidaduo; completed after corresponding LongSpan producer health passed, summary outputs present, and strict LLM health ok with zero fallback. Diagnostic only.",
       "parent_run_id": "attentional_v2_read_prompt_xml_full_active_diagnostic_20260526",
       "child_run_ids": [],
       "synthetic": false,
-      "local_missing_allowed": [
-        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_read_prompt_xml_user_level_reuse_diagnostic_20260526_xidaduo"
-      ],
+      "local_missing_allowed": [],
       "metadata": {},
-      "updated_at": "2026-05-26T11:22:28.534599Z"
+      "updated_at": "2026-05-26T13:45:53.869132Z"
     }
   ]
 }

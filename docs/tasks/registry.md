@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-05-26T19:22:00+08:00`
+Last updated: `2026-05-26T21:45:00+08:00`
 
 ## Status Values
 - `active`
@@ -25,7 +25,7 @@ Last updated: `2026-05-26T19:22:00+08:00`
 - Lane: `mechanism_eval`
 - Priority: `high`
 - Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/C设计11-Read Context Layer Contract v0.md`
-- Next: monitor the five registered pipeline jobs. Each job runs one LongSpan producer with `ATTENTIONAL_V2_READ_PROMPT_ASSEMBLY_MODE=xml`, checks strict LLM health, then runs the matching Lane A user-level selective reuse shard. After terminal status, update the run ledger, create `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ReadPromptXML-Full-Active-Diagnostic-Post-run-Report v0.md`, and keep this diagnostic out of the evidence catalog until explicit review.
+- Next: machine execution is complete; produce `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ReadPromptXML-Full-Active-Diagnostic-Post-run-Report v0.md`. Completion snapshot: all five pipeline jobs finished with exit code `0`; all five LongSpan producers and all five Lane A reuse shards have summary outputs; strict LLM health passed for all ten run dirs with `0` fallback-backed evidence. Keep this diagnostic out of the evidence catalog until explicit review.
 - Jobs:
   - `bgjob_read_prompt_xml_full_diagnostic_20260526_huochu`
   - `bgjob_read_prompt_xml_full_diagnostic_20260526_mangge`
@@ -33,6 +33,9 @@ Last updated: `2026-05-26T19:22:00+08:00`
   - `bgjob_read_prompt_xml_full_diagnostic_20260526_value_of_others`
   - `bgjob_read_prompt_xml_full_diagnostic_20260526_xidaduo`
   - parent ledger run: `attentional_v2_read_prompt_xml_full_active_diagnostic_20260526`
+- Artifacts:
+  - LongSpan producer run dirs: `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_read_prompt_xml_long_span_diagnostic_20260526_{huochu,mangge,nawaer,value_of_others,xidaduo}`
+  - Lane A reuse run dirs: `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_read_prompt_xml_user_level_reuse_diagnostic_20260526_{huochu,mangge,nawaer,value_of_others,xidaduo}`
 
 ### `TASK-ATTENTIONAL-V2-STRUCTURAL-REWORK` — Execute the post-Phase-9 structural rework of `attentional_v2`
 - Status: `active`
