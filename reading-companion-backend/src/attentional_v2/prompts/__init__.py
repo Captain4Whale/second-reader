@@ -27,6 +27,7 @@ from .read_unit import (
     READ_CURRENT_FOCUS_TEMPLATE,
     READ_OUTPUT_CONTRACT_FRAGMENT_REGISTRY,
     READ_OUTPUT_CONTRACT_TEMPLATE,
+    READ_READING_STATE_TEMPLATE,
     READ_ROLE_AND_INSTRUCTION_FRAGMENT_REGISTRY,
     READ_ROLE_AND_INSTRUCTION_TEMPLATE,
     READ_UNIT_ROLE_AND_INSTRUCTION_FRAGMENTS,
@@ -34,6 +35,7 @@ from .read_unit import (
     render_read_book_info_xml,
     render_read_current_focus_xml,
     render_read_output_contract_xml,
+    render_read_reading_state_xml,
     render_read_role_and_instruction_xml,
 )
 
@@ -49,6 +51,7 @@ __all__ = [
     "READ_ROLE_AND_INSTRUCTION_TEMPLATE",
     "READ_BOOK_INFO_TEMPLATE",
     "READ_CURRENT_FOCUS_TEMPLATE",
+    "READ_READING_STATE_TEMPLATE",
     "READ_OUTPUT_CONTRACT_FRAGMENT_REGISTRY",
     "READ_OUTPUT_CONTRACT_TEMPLATE",
     "READ_UNIT_ROLE_AND_INSTRUCTION_FRAGMENTS",
@@ -56,6 +59,7 @@ __all__ = [
     "render_read_role_and_instruction_xml",
     "render_read_book_info_xml",
     "render_read_current_focus_xml",
+    "render_read_reading_state_xml",
     "render_read_output_contract_xml",
     "BRIDGE_RESOLUTION_PROMPT_VERSION",
     "REFLECTIVE_PROMOTION_PROMPT_VERSION",

@@ -15,6 +15,7 @@ from src.attentional_v2.prompts import (
     READ_CURRENT_FOCUS_TEMPLATE,
     READ_OUTPUT_CONTRACT_FRAGMENT_REGISTRY,
     READ_OUTPUT_CONTRACT_TEMPLATE,
+    READ_READING_STATE_TEMPLATE,
     READ_ROLE_AND_INSTRUCTION_FRAGMENT_REGISTRY,
     READ_ROLE_AND_INSTRUCTION_TEMPLATE,
     READ_UNIT_PROMPT_VERSION,
@@ -28,6 +29,7 @@ from src.attentional_v2.prompts import (
     render_read_book_info_xml,
     render_read_current_focus_xml,
     render_read_output_contract_xml,
+    render_read_reading_state_xml,
     render_read_role_and_instruction_xml,
     render_read_xml_prompt_example,
 )
@@ -385,6 +387,67 @@ def test_read_current_focus_template_declares_target_children() -> None:
         "ReadingObject",
         "ReadingIntent",
     ]
+
+
+def test_read_reading_state_xml_projects_recent_memory_as_text_array_only() -> None:
+    rendered = render_read_reading_state_xml(
+        recent_reading_memory={
+            "active_entries": [
+                {
+                    "entry_id": "recent:c1:u0001:m1",
+                    "kind": "event_or_situation",
+                    "memory_text": "作者说明 A & B < C。",
+                    "source_unit_span_id": "src:c1:p1@0-p1@20",
+                    "created_at_unit_index": 1,
+                    "status": "active",
+                },
+                {
+                    "entry_id": "recent:c1:u0002:m1",
+                    "kind": "claim_or_argument",
+                    "memory_text": "第二个阅读单元把作者的证据边界说清楚。",
+                    "source_unit_span_id": "src:c1:p2@0-p2@20",
+                    "created_at_unit_index": 2,
+                    "status": "active",
+                },
+                {
+                    "entry_id": "recent:c1:u0003:m1",
+                    "kind": "other",
+                    "memory_text": "",
+                },
+            ],
+            "active_entry_count": 3,
+        }
+    )
+
+    assert "<ReadingState>" in rendered
+    assert "<ReadingMemory>" in rendered
+    assert "<RecentMemory>" in rendered
+    assert "作者说明 A &amp; B &lt; C。" in rendered
+    assert "第二个阅读单元把作者的证据边界说清楚。" in rendered
+    assert "recent:c1:u0001:m1" not in rendered
+    assert "event_or_situation" not in rendered
+    assert "source_unit_span_id" not in rendered
+    assert "created_at_unit_index" not in rendered
+    assert "active_entry_count" not in rendered
+    assert "active_entries" not in rendered
+    assert "status" not in rendered
+    assert "<DurableMemory>" not in rendered
+    assert "prompt_fragment_ref" not in rendered
+    assert "value_slot" not in rendered
+    assert "recent_memory" not in rendered
+    assert "ref=" not in rendered
+    assert READ_UNIT_PROMPT_VERSION == "attentional_v2.read.v30"
+    assert "Structural frame:" in ATTENTIONAL_V2_PROMPTS.read_unit_prompt
+
+
+def test_read_reading_state_template_declares_recent_memory_subset() -> None:
+    root = READ_READING_STATE_TEMPLATE[0]
+
+    assert root.element_name == "ReadingState"
+    assert [child.element_name for child in root.children] == ["ReadingMemory"]
+    reading_memory = root.children[0]
+    assert [child.element_name for child in reading_memory.children] == ["RecentMemory"]
+    assert reading_memory.children[0].value_slot == "recent_memory"
 
 
 def test_read_output_contract_xml_renders_target_contract_without_live_migration() -> None:

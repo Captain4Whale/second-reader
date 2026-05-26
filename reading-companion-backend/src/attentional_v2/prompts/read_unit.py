@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 import json
 
 from src.prompts.shared import LANGUAGE_OUTPUT_CONTRACT
@@ -378,6 +379,12 @@ def _json_prompt_object(payload: dict[str, object]) -> str:
     return json.dumps(payload, ensure_ascii=False, indent=2)
 
 
+def _json_prompt_value(payload: object) -> str:
+    """Return stable JSON for dynamic prompt values."""
+
+    return json.dumps(payload, ensure_ascii=False, indent=2)
+
+
 def render_read_book_info_xml(
     *,
     book_title: str,
@@ -394,6 +401,60 @@ def render_read_book_info_xml(
                     "book_title": book_title,
                     "author": author,
                 }
+            ),
+        },
+    )
+
+
+def _recent_memory_texts_for_read(recent_reading_memory: Mapping[str, object] | None) -> list[str]:
+    """Project Recent Reading Memory to the clean text list Read needs."""
+
+    if not isinstance(recent_reading_memory, Mapping):
+        return []
+    entries = recent_reading_memory.get("active_entries")
+    if not isinstance(entries, list):
+        return []
+    memory_texts: list[str] = []
+    for entry in entries:
+        if not isinstance(entry, Mapping):
+            continue
+        memory_text = _clean_prompt_value(entry.get("memory_text"))
+        if memory_text:
+            memory_texts.append(memory_text)
+    return memory_texts
+
+
+READ_READING_STATE_TEMPLATE = (
+    PromptTemplateNode(
+        element_name="ReadingState",
+        children=(
+            PromptTemplateNode(
+                element_name="ReadingMemory",
+                children=(
+                    PromptTemplateNode(element_name="RecentMemory", value_slot="recent_memory"),
+                ),
+            ),
+        ),
+    ),
+)
+
+
+def render_read_reading_state_xml(
+    *,
+    recent_reading_memory: Mapping[str, object] | None = None,
+) -> str:
+    """Render target ReadingState XML without changing live Read prompts.
+
+    The implemented target subset only includes RecentMemory. DurableMemory
+    remains a pending design / assembly slice.
+    """
+
+    return render_prompt_template_xml(
+        READ_READING_STATE_TEMPLATE,
+        registry=PromptFragmentRegistry([]),
+        slot_values={
+            "recent_memory": _json_prompt_value(
+                _recent_memory_texts_for_read(recent_reading_memory)
             ),
         },
     )

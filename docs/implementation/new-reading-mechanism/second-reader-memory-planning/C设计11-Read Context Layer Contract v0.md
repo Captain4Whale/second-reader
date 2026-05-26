@@ -49,7 +49,7 @@ XML-style tags are useful here because they are:
 
 - **self-describing**: the tag name says what role the block plays;
 - **visibly bounded**: the LLM can see where one context role ends and another begins;
-- **nestable**: memory can contain near-term and long-distance sublayers without flattening their roles;
+- **nestable**: memory can contain recent and durable sublayers without flattening their roles;
 - **compatible with JSON payloads**: the program can still emit strict JSON inside a tagged block;
 - **less ambiguous than a single large JSON packet** for mixed instruction / task / memory / evidence / output-contract material.
 
@@ -380,12 +380,12 @@ Target structure:
 ```xml
 <ReadingState>
   <ReadingMemory>
-    <NearTermMemory>...</NearTermMemory>
-    <LongDistanceMemory>
+    <RecentMemory>...</RecentMemory>
+    <DurableMemory>
       <ConceptMemory>...</ConceptMemory>
       <ThreadMemory>...</ThreadMemory>
       <StructuralMemory>...</StructuralMemory>
-    </LongDistanceMemory>
+    </DurableMemory>
   </ReadingMemory>
 </ReadingState>
 ```
@@ -394,11 +394,13 @@ Target structure:
 
 Purpose: group prior-reading memory under one semantic layer.
 
-Value rule: near-term and long-distance memory are both memory; they should not become separate top-level prompt layers.
+Value rule: recent and durable memory are both memory; they should not become separate top-level prompt layers.
 
-##### 3.1.1 `NearTermMemory`
+##### 3.1.1 `RecentMemory`
 
 Purpose: provide active Recent Reading Memory from just-read units.
+
+Naming rule: use `RecentMemory` instead of `NearTermMemory`. The layer carries recently read past units, not a future-near planning horizon, and it should line up with the existing `recent_reading_memory` store name.
 
 Current source:
 
@@ -409,32 +411,26 @@ Current source:
 Target payload:
 
 ```json
-{
-  "active_entries": [
-    {
-      "entry_id": "...",
-      "kind": "...",
-      "memory_text": "...",
-      "source_unit_span_id": "...",
-      "created_at_unit_index": 0
-    }
-  ],
-  "active_entry_count": 0
-}
+[
+  "..."
+]
 ```
 
 Value rules:
 
-- `memory_text` is the semantic content Read should use.
-- `kind` is a light category, not a replacement for `memory_text`.
-- `source_unit_span_id` and `created_at_unit_index` are provenance handles; they may remain in JSON for auditability but should not dominate the prompt.
+- Read receives only the `memory_text` strings from active Recent Reading Memory entries.
+- Runtime / audit / consolidation storage may keep `entry_id`, `kind`, `source_unit_span_id`, `created_at_unit_index`, `status`, and archive fields, but these are not useful for the Read node and should not be rendered into `RecentMemory`.
+- `kind` is useful in storage and review, but it is not needed in the Read context because the memory text itself is the semantic content.
+- `entry_id`, source span handles, status, and unit indexes are provenance / consolidation / audit fields, not reading context.
 - archived / consolidated entries should not be carried here.
 
-##### 3.1.2 `LongDistanceMemory`
+##### 3.1.2 `DurableMemory`
 
 Purpose: provide durable memory formed from prior reading.
 
 Value rule: this layer contains concept, thread, and structural memory.
+
+Naming rule: use `DurableMemory` instead of `LongDistanceMemory`. The distinguishing property is that the memory has been consolidated into a stable, reusable layer, not that it is far away in source distance. This also avoids confusion with Long Span / long-distance callback evaluation terminology.
 
 ###### 3.1.2.1 `ConceptMemory`
 
@@ -489,7 +485,7 @@ Target payload:
 Value rules:
 
 - `rationale` is the prompt-facing description of the continuing arc / line of development.
-- Thread memory is the long-distance place for recurring tensions, arcs, watchpoints, and unresolved lines after ActiveTension deprecation.
+- Thread memory is the durable place for recurring tensions, arcs, watchpoints, and unresolved lines after ActiveTension deprecation.
 - `source_refs` and `sample_quotes` provide grounding support but should not make the block look like a source-coordinate task.
 
 ###### 3.1.2.3 `StructuralMemory`
@@ -909,26 +905,17 @@ The following is a readable target shape, not yet an implementation patch:
 
 <ReadingState>
   <ReadingMemory>
-    <NearTermMemory>
-      {
-        "active_entries": [
-          {
-            "entry_id": "...",
-            "kind": "...",
-            "memory_text": "...",
-            "source_unit_span_id": "...",
-            "created_at_unit_index": 0
-          }
-        ],
-        "active_entry_count": 1
-      }
-    </NearTermMemory>
+    <RecentMemory>
+      [
+        "..."
+      ]
+    </RecentMemory>
 
-    <LongDistanceMemory>
+    <DurableMemory>
       <ConceptMemory>[]</ConceptMemory>
       <ThreadMemory>[]</ThreadMemory>
       <StructuralMemory>{"chapter_frames": [], "book_frames": [], "durable_definitions": []}</StructuralMemory>
-    </LongDistanceMemory>
+    </DurableMemory>
   </ReadingMemory>
 </ReadingState>
 
@@ -1007,9 +994,9 @@ Add later accepted discussion decisions here, instead of scattering them across 
 - accepted: `RoleAndInstruction` should not include ActiveTension / `active_attention`; that store is deprecated and excluded from the target Read context structure;
 - accepted: `SourceGrounding` sits directly under `RoleAndInstruction`, not under `MemoryInstruction`, because it governs both reaction evidence and memory-operation evidence;
 - accepted: `RoleAndInstruction` includes a lightweight `ContextUseGuide` immediately after `ReaderRole` to explain how the top-level context blocks should be used;
+- accepted: `ReadingState/ReadingMemory/RecentMemory` should render active Recent Reading Memory as a plain string array of `memory_text` values only; ids, kind, source span, unit index, status, and archive fields stay in runtime/audit/consolidation storage, not in Read context;
 - pending: placement of current `policy_snapshot` in the target structure;
-- pending: Recent Memory projection policy;
-- pending: long-distance memory projection policy;
+- pending: durable memory projection policy;
 - pending: local continuity / visible trace boundary;
 - implemented prompt management: attentional_v2 prompts moved from one large `prompts.py` bundle into per-node `PromptDefinition` files plus `ATTENTIONAL_V2_PROMPT_REGISTRY`; `ATTENTIONAL_V2_PROMPTS` remains a compatibility projection only;
 - implemented prompt management: `read_unit.system_prompt` is now a lossless sequence of role / instruction `PromptFragment` sections for future standalone reference, while the live reconstructed prompt text remains unchanged;
@@ -1018,4 +1005,5 @@ Add later accepted discussion decisions here, instead of scattering them across 
 - implemented infrastructure: target `BookInfo` XML assembly exists for `BookIdentity` (`book_title`, `author`) and is not connected to the live Read prompt;
 - implemented infrastructure: target `CurrentFocus` XML assembly exists for runtime-provided reading path, reading position, paragraph-shaped reading object, and reading intent, and is not connected to the live Read prompt;
 - implemented infrastructure: target `OutputContract` XML assembly exists for `OutputUseGuide`, dynamic `LanguageContract`, target `ReturnFormat`, and field contracts for `reading_impression`, `surfaced_reactions`, `recent_reading_memory`, and `detour_need`; it is not connected to the live Read prompt;
+- implemented infrastructure: target `ReadingState` XML assembly exists for the accepted `RecentMemory` subset and renders only active recent-memory text strings; `DurableMemory` assembly remains pending and is not connected to the live Read prompt;
 - pending: prompt migration plan and test plan for connecting the live Read prompt to this assembly layer.
