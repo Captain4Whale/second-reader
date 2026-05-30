@@ -3,9 +3,37 @@
   "updated_at": "2026-05-26T16:00:00Z",
   "tasks": [
     {
+      "id": "TASK-SECOND-READER-INGEST-DIGEST-REFRAME-AUDIT-20260530",
+      "title": "Start the narrowed note/highlight product-goal reframe with a read-only feasibility audit",
+      "status": "active",
+      "lane": "mechanism_runtime",
+      "priority": "high",
+      "detail_ref": "docs/current-state.md",
+      "truth_refs": [
+        "docs/current-state.md",
+        "docs/tasks/registry.md",
+        "docs/history/decision-log.md",
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md"
+      ],
+      "decision_refs": [
+        "DEC-103"
+      ],
+      "job_refs": [],
+      "acceptance_ref": "",
+      "next_action": "Begin a fresh read-only feasibility / delta audit for the narrowed product target: understand the current text and present valuable notes / highlights. Treat ingest -> digest, retrieval-first prior context, tool-owned non-text actions, and note/highlight output categories as the new design frame. Do not implement runtime code, launch eval, update evidence catalog, or continue C设计10 consolidation / C设计11 Read XML migration / C设计12 prompt assembly migration until that audit is accepted.",
+      "blocked_by": [],
+      "evidence_refs": [
+        "docs/current-state.md",
+        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md",
+        "docs/history/decision-log.md"
+      ],
+      "last_updated": "2026-05-30T00:00:00Z",
+      "last_updated_by": "codex"
+    },
+    {
       "id": "TASK-SECOND-READER-READ-PROMPT-XML-FULL-ACTIVE-DIAGNOSTIC-20260526",
       "title": "Run full active diagnostic for opt-in Read XML prompt assembly and Recent Reading Memory",
-      "status": "active",
+      "status": "parked",
       "lane": "mechanism_eval",
       "priority": "high",
       "detail_ref": "docs/implementation/new-reading-mechanism/second-reader-memory-planning/C设计11-Read Context Layer Contract v0.md",
@@ -20,7 +48,8 @@
       "decision_refs": [
         "DEC-097",
         "DEC-098",
-        "DEC-102"
+        "DEC-102",
+        "DEC-103"
       ],
       "job_refs": [
         "bgjob_read_prompt_xml_full_diagnostic_20260526_huochu",
@@ -30,7 +59,7 @@
         "bgjob_read_prompt_xml_full_diagnostic_20260526_xidaduo"
       ],
       "acceptance_ref": "",
-      "next_action": "Review ReadPromptXML-Full-Active-Diagnostic-Post-run-Report v0.md plus the full reactions / Recent Memory listing at ReadPromptXML-Full-Active-Diagnostic-Reactions-And-RecentMemory-Full-Review v0.md. Completion snapshot: all five pipeline jobs finished with exit code 0; all five LongSpan producers and all five Lane A reuse shards have summary outputs; strict LLM health passed for all ten run dirs with 0 fallback-backed evidence. Keep this diagnostic out of the evidence catalog until explicit review.",
+      "next_action": "Diagnostic completed and remains available as historical evidence, but it is no longer the next implementation driver after DEC-103. Do not continue Read XML prompt migration or Recent Memory consolidation from this task unless the new ingest/digest feasibility audit explicitly re-adopts a piece of it. Keep this diagnostic out of the evidence catalog until explicit review.",
       "blocked_by": [],
       "evidence_refs": [
         "reading-companion-backend/docs/evaluation/run_ledger.md",
@@ -47,13 +76,13 @@
         "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_read_prompt_xml_user_level_reuse_diagnostic_20260526_value_of_others/summary/aggregate.json",
         "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_read_prompt_xml_user_level_reuse_diagnostic_20260526_xidaduo/summary/aggregate.json"
       ],
-      "last_updated": "2026-05-26T16:00:00Z",
+      "last_updated": "2026-05-30T00:00:00Z",
       "last_updated_by": "codex"
     },
     {
       "id": "TASK-SECOND-READER-RECENT-READING-MEMORY-CONSOLIDATION-DESIGN-20260523",
       "title": "Design Recent Reading Memory consolidation into long-distance memory",
-      "status": "waiting",
+      "status": "parked",
       "lane": "mechanism_runtime",
       "priority": "high",
       "detail_ref": "docs/implementation/new-reading-mechanism/second-reader-memory-planning/C设计10-Recent Reading Memory Design v0.md",
@@ -67,11 +96,12 @@
       "decision_refs": [
         "DEC-097",
         "DEC-098",
-        "DEC-102"
+        "DEC-102",
+        "DEC-103"
       ],
       "job_refs": [],
       "acceptance_ref": "",
-      "next_action": "Design the deferred consolidation pass for active recent_reading_memory batches into concept_registry, thread_trace, and/or reflective_frames. Do not implement archival/consolidation behavior, remove active_attention, run eval, or update the evidence catalog until that consolidation design is accepted.",
+      "next_action": "Parked by DEC-103. Do not continue the Recent Memory -> long-distance-memory consolidation design as the next implementation path. Keep prior docs as historical/reference material unless a new ingest/digest feasibility audit explicitly re-adopts a slice.",
       "blocked_by": [],
       "evidence_refs": [
         "docs/implementation/new-reading-mechanism/second-reader-memory-planning/C设计10-Recent Reading Memory Design v0.md",
@@ -81,13 +111,13 @@
         "reading-companion-backend/docs/evaluation/reporting_standard.md",
         "docs/history/decision-log.md"
       ],
-      "last_updated": "2026-05-23T13:11:00Z",
+      "last_updated": "2026-05-30T00:00:00Z",
       "last_updated_by": "codex"
     },
     {
       "id": "TASK-SECOND-READER-RECENT-READING-MEMORY-MICRO-DIAGNOSTIC-REVIEW-20260523",
       "title": "Review Recent Reading Memory micro diagnostics",
-      "status": "waiting",
+      "status": "parked",
       "lane": "mechanism_eval",
       "priority": "high",
       "detail_ref": "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/RecentReadingMemory-Micro-Diagnostic-Huochu-Post-run-Report v0.md",
@@ -98,7 +128,8 @@
       ],
       "decision_refs": [
         "DEC-098",
-        "DEC-102"
+        "DEC-102",
+        "DEC-103"
       ],
       "job_refs": [
         "bgjob_recent_reading_memory_micro_huochu_20260523",
@@ -109,7 +140,7 @@
         "bgjob_recent_reading_memory_beginning_huochu_20260524_retry4"
       ],
       "acceptance_ref": "",
-      "next_action": "Review the fresh read.v30 retry4 beginning diagnostic. The huochu p45-p61 run completed with exit code 0, LLM health passed with 24 successes and 0 fallback, and 8 read units produced 10 active Recent Reading Memory entries. The first beginning-of-book huochu p1-p24 run completed with exit code 0, LLM health passed with 22 successes and 0 fallback, and 10 read units produced 10 active Recent Reading Memory entries, but Unit 1 produced no Recent Memory. The read.v27 retry1 beginning diagnostic completed with exit code 0, LLM health passed with 39 successes and 0 fallback, and 18 read units produced 18 active Recent Reading Memory entries; Unit 1 now records the opening frame / core question, and 0 / 18 Recent Memory append ops carried operation-level reason. The read.v28 retry2 beginning diagnostic completed with exit code 0, LLM health passed with 26 successes and 0 fallback, and 12 broader read units produced 16 active Recent Reading Memory entries; the previously missed author-method / evidence-boundary material is now remembered, but some entries still end with abstract interpretive labels. The read.v29 retry3 beginning diagnostic completed with exit code 0, LLM health passed with 29 successes and 0 fallback, and 13 read units produced 17 active Recent Reading Memory entries; retry3 is preserved as superseded diagnostic history because the broader rewrite felt formulaic and is not the future prompt direction. The read.v30 retry4 beginning diagnostic completed with exit code 0, LLM health passed with 28 successes, 0 errors, 1 retry, and 0 fallback, and 13 read-audit rows produced 13 active Recent Reading Memory entries; coverage and continuity are generally strong, but the no-default-heading-colon style rule was only partially effective and Unit 1 still produced no Recent Memory. These diagnostics validate formation only, not consolidation; do not update the evidence catalog, remove active_attention, promote Long Span vNext, run broader eval, or claim product quality without explicit approval.",
+      "next_action": "Parked by DEC-103. Keep the micro diagnostics as historical evidence about the paused Recent Reading Memory direction; do not use them as the next prompt/runtime implementation driver unless a new audit explicitly re-adopts the direction.",
       "blocked_by": [],
       "evidence_refs": [
         "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/RecentReadingMemory-Micro-Diagnostic-Huochu-Post-run-Report v0.md",
@@ -132,7 +163,7 @@
         "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_recent_reading_memory_beginning_huochu_20260524_retry4/summary/aggregate.json",
         "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_recent_reading_memory_beginning_huochu_20260524_retry4/summary/llm_usage.json"
       ],
-      "last_updated": "2026-05-24T06:08:00Z",
+      "last_updated": "2026-05-30T00:00:00Z",
       "last_updated_by": "codex"
     },
     {
@@ -152,11 +183,12 @@
       "decision_refs": [
         "DEC-097",
         "DEC-098",
-        "DEC-102"
+        "DEC-102",
+        "DEC-103"
       ],
       "job_refs": [],
       "acceptance_ref": "",
-      "next_action": "First-half formation is implemented and tested. The remaining follow-up is TASK-SECOND-READER-RECENT-READING-MEMORY-CONSOLIDATION-DESIGN-20260523; do not implement consolidation, remove active_attention, run eval, update the evidence catalog, or claim product quality without a separate accepted plan.",
+      "next_action": "First-half formation is implemented and tested, but the follow-up consolidation task is now parked by DEC-103. Do not continue this as the next mechanism path unless the new ingest/digest feasibility audit explicitly re-adopts a slice.",
       "blocked_by": [],
       "evidence_refs": [
         "docs/implementation/new-reading-mechanism/second-reader-memory-planning/C设计10-Recent Reading Memory Design v0.md",
@@ -170,13 +202,13 @@
         "reading-companion-backend/src/attentional_v2/state_projection.py",
         "reading-companion-backend/src/attentional_v2/runner.py"
       ],
-      "last_updated": "2026-05-23T13:11:00Z",
+      "last_updated": "2026-05-30T00:00:00Z",
       "last_updated_by": "codex"
     },
     {
       "id": "TASK-SECOND-READER-READING-IMPRESSION-REACTION-CONTRACT-CLEANUP-20260524",
       "title": "Revisit reading_impression during reaction/read-contract tuning",
-      "status": "waiting",
+      "status": "parked",
       "lane": "mechanism_runtime",
       "priority": "medium",
       "detail_ref": "docs/implementation/new-reading-mechanism/second-reader-memory-planning/C设计10-Recent Reading Memory Design v0.md",
@@ -187,24 +219,25 @@
         "docs/backend-reading-mechanisms/attentional_v2.md"
       ],
       "decision_refs": [
-        "DEC-098"
+        "DEC-098",
+        "DEC-103"
       ],
       "job_refs": [],
       "acceptance_ref": "",
-      "next_action": "During the next surfaced-reaction / Read-contract tuning pass, review whether reading_impression should remain in the main Read contract now that recent_reading_memory owns durable near-term semantic memory. It overlaps with Recent Memory and can encourage essay-like analysis if foregrounded in prompts or reports. Do not remove it inside the current Recent Memory formation or consolidation work; treat it as a deferred reaction/read-contract cleanup item.",
+      "next_action": "Parked by DEC-103. Revisit reading_impression only inside the new digest / reader-facing note contract design; do not clean it up as a continuation of the paused Recent Memory consolidation track.",
       "blocked_by": [],
       "evidence_refs": [
         "docs/implementation/new-reading-mechanism/second-reader-memory-planning/C设计10-Recent Reading Memory Design v0.md",
         "docs/backend-reading-mechanisms/attentional_v2.md",
         "docs/current-state.md"
       ],
-      "last_updated": "2026-05-24T02:20:48Z",
+      "last_updated": "2026-05-30T00:00:00Z",
       "last_updated_by": "codex"
     },
     {
       "id": "TASK-SECOND-READER-ACTIVE-ATTENTION-PROMPT-CONTEXT-DIAGNOSTIC-RETRY1-20260522",
       "title": "Review ActiveTension lifecycle review for full-window diagnostic Retry1",
-      "status": "waiting",
+      "status": "parked",
       "lane": "mechanism_eval",
       "priority": "high",
       "detail_ref": "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Prompt-Context-Grounded-Full-Window-Diagnostic-Retry1-ActiveTension-Lifecycle-Review v0.md",
@@ -216,7 +249,8 @@
       "decision_refs": [
         "DEC-095",
         "DEC-096",
-        "DEC-097"
+        "DEC-097",
+        "DEC-103"
       ],
       "job_refs": [
         "bgjob_active_attention_prompt_context_window_diagnostic_20260522_retry1_huochu",
@@ -226,13 +260,13 @@
         "bgjob_active_attention_prompt_context_window_diagnostic_20260522_retry1_xidaduo"
       ],
       "acceptance_ref": "",
-      "next_action": "Review the completed five-window retry1 diagnostic and the ActiveTension lifecycle review as historical diagnostic material. All five registered jobs completed with exit code 0, expected summary outputs exist, and run ledger entries are review_pending. ActiveTension is now deprecated as primary short-term memory; the next mechanism-design task is recent_reading_memory, not further ActiveTension expansion. Do not update the evidence catalog, promote Long Span vNext, launch broader eval, or claim product quality without explicit approval.",
+      "next_action": "Parked by DEC-103. Keep the completed retry1 diagnostic and lifecycle review as historical diagnostic material only. Do not expand ActiveTension or use this lane as the next mechanism-design direction.",
       "blocked_by": [],
       "evidence_refs": [
         "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Prompt-Context-Grounded-Full-Window-Diagnostic-Retry1-ActiveTension-Lifecycle-Review v0.md",
         "reading-companion-backend/docs/evaluation/run_ledger.md"
       ],
-      "last_updated": "2026-05-23T07:52:00Z",
+      "last_updated": "2026-05-30T00:00:00Z",
       "last_updated_by": "codex"
     },
     {
@@ -3560,7 +3594,7 @@
     {
       "id": "TASK-SECOND-READER-ACTIVE-ATTENTION-PROMPT-CONTEXT-DIAGNOSTIC-REPORT-REVIEW",
       "title": "Review Active Attention prompt-context full-window diagnostic report",
-      "status": "waiting",
+      "status": "parked",
       "lane": "mechanism_eval",
       "priority": "high",
       "detail_ref": "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Prompt-Context-Grounded-Full-Window-Diagnostic-Post-run-Report v0.md",
@@ -3575,7 +3609,8 @@
         "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Prompt-Context-Grounded-Full-Window-Diagnostic-Post-run-Report v0.md"
       ],
       "decision_refs": [
-        "DEC-095"
+        "DEC-095",
+        "DEC-103"
       ],
       "job_refs": [
         "bgjob_active_attention_prompt_context_window_diagnostic_20260522_huochu",
@@ -3585,19 +3620,19 @@
         "bgjob_active_attention_prompt_context_window_diagnostic_20260522_xidaduo"
       ],
       "acceptance_ref": "",
-      "next_action": "Review the v22 prompt-context grounding repair and the invalidated five-window diagnostic attempt. The code-side repair is implemented and tested, but all five full-window diagnostic shards were manually terminated before summary generation, so the attempt is not Active Attention behavior evidence. Do not reuse these run ids, update the evidence catalog, promote Long Span vNext, launch broader eval, or claim product quality without explicit approval.",
+      "next_action": "Parked by DEC-103. Preserve the report as historical repair/diagnostic material only; do not continue Active Attention prompt-context work as the next implementation path.",
       "blocked_by": [],
       "evidence_refs": [
         "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Prompt-Context-Grounded-Full-Window-Diagnostic-Post-run-Report v0.md",
         "reading-companion-backend/docs/evaluation/run_ledger.md"
       ],
-      "last_updated": "2026-05-22T00:56:00Z",
+      "last_updated": "2026-05-30T00:00:00Z",
       "last_updated_by": "codex"
     },
     {
       "id": "TASK-SECOND-READER-ACTIVE-ATTENTION-FORWARD-PULL-RETRY4-REPORT-REVIEW",
       "title": "Review Active Attention forward-pull Retry4 report",
-      "status": "waiting",
+      "status": "parked",
       "lane": "mechanism_eval",
       "priority": "high",
       "detail_ref": "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Forward-Pull-Micro-Eval-Huochu-Retry4-Post-run-Report v0.md",
@@ -3608,13 +3643,14 @@
         "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Forward-Pull-Micro-Eval-Huochu-Retry4-Post-run-Report v0.md"
       ],
       "decision_refs": [
-        "DEC-094"
+        "DEC-094",
+        "DEC-103"
       ],
       "job_refs": [
         "bgjob_active_attention_live_question_micro_huochu_20260521_retry4"
       ],
       "acceptance_ref": "",
-      "next_action": "Review the completed Retry4 diagnostic micro eval. Source grounding improved materially, but Active Attention semantics remain mixed because the run extrapolated a meaning-finding / third-stage forward-pull beyond this short source excerpt. Do not update the evidence catalog, promote Long Span vNext, run broader eval, or claim product quality from this diagnostic run without explicit approval.",
+      "next_action": "Parked by DEC-103. Preserve Retry4 as historical evidence about the abandoned Active Attention direction; do not continue this repair lane without a new accepted plan.",
       "blocked_by": [],
       "evidence_refs": [
         "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Forward-Pull-Micro-Eval-Huochu-Retry4-Post-run-Report v0.md",
@@ -3622,13 +3658,13 @@
         "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_live_question_micro_huochu_20260521_retry4/summary/aggregate.json",
         "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_live_question_micro_huochu_20260521_retry4/analysis/active_attention_lifecycle_audit/README.md"
       ],
-      "last_updated": "2026-05-22T00:12:00Z",
+      "last_updated": "2026-05-30T00:00:00Z",
       "last_updated_by": "codex"
     },
     {
       "id": "TASK-SECOND-READER-ACTIVE-ATTENTION-INQUIRY-BOUNDARY-REPAIR-RETRY2-REPORT-REVIEW",
       "title": "Review Active Attention inquiry-boundary repair Retry2 report",
-      "status": "waiting",
+      "status": "parked",
       "lane": "mechanism_eval",
       "priority": "high",
       "detail_ref": "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Inquiry-Boundary-Micro-Eval-Huochu-Retry2-Post-run-Report v0.md",
@@ -3639,26 +3675,27 @@
         "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Inquiry-Boundary-Micro-Eval-Huochu-Retry2-Post-run-Report v0.md"
       ],
       "decision_refs": [
-        "DEC-092"
+        "DEC-092",
+        "DEC-103"
       ],
       "job_refs": [
         "bgjob_active_attention_live_question_micro_huochu_20260521_retry2"
       ],
       "acceptance_ref": "",
-      "next_action": "Review the completed Retry2 diagnostic micro eval and inquiry-boundary repair. The contract is wired end to end and answer_boundary appears in probe-time state, but lifecycle judgment remains partial because stage_two_emotional_death resolved before the final protective-shell answer. Do not update the evidence catalog, promote Long Span vNext, run broader eval, or claim product quality from this diagnostic run without explicit approval.",
+      "next_action": "Parked by DEC-103. Preserve Retry2 as historical evidence about the abandoned Active Attention direction; do not continue this repair lane without a new accepted plan.",
       "blocked_by": [],
       "evidence_refs": [
         "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Inquiry-Boundary-Micro-Eval-Huochu-Retry2-Post-run-Report v0.md",
         "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_live_question_micro_huochu_20260521_retry2/summary/aggregate.json",
         "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_live_question_micro_huochu_20260521_retry2/analysis/active_attention_lifecycle_audit/README.md"
       ],
-      "last_updated": "2026-05-21T13:30:00Z",
+      "last_updated": "2026-05-30T00:00:00Z",
       "last_updated_by": "codex"
     },
     {
       "id": "TASK-SECOND-READER-ACTIVE-ATTENTION-MICRO-EVAL-RETRY1-REPORT-REVIEW",
       "title": "Review Active Attention live-question micro eval Retry1 report",
-      "status": "waiting",
+      "status": "parked",
       "lane": "mechanism_eval",
       "priority": "high",
       "detail_ref": "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Live-Question-Micro-Eval-Huochu-Retry1-Post-run-Report v0.md",
@@ -3668,19 +3705,21 @@
         "reading-companion-backend/docs/evaluation/run_ledger.md",
         "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Live-Question-Micro-Eval-Huochu-Retry1-Post-run-Report v0.md"
       ],
-      "decision_refs": [],
+      "decision_refs": [
+        "DEC-103"
+      ],
       "job_refs": [
         "bgjob_active_attention_live_question_micro_huochu_20260521_retry1"
       ],
       "acceptance_ref": "",
-      "next_action": "Review the completed Retry1 diagnostic micro eval. The reader-native prompt repair produced live-question-native Active Attention behavior in the targeted huochu micro window, but this remains diagnostic only. Do not launch broader eval, update the evidence catalog, promote Long Span vNext, or claim product quality from this diagnostic run without explicit approval.",
+      "next_action": "Parked by DEC-103. Preserve Retry1 as historical evidence about the abandoned Active Attention direction; do not continue this repair lane without a new accepted plan.",
       "blocked_by": [],
       "evidence_refs": [
         "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Live-Question-Micro-Eval-Huochu-Retry1-Post-run-Report v0.md",
         "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_live_question_micro_huochu_20260521_retry1/summary/aggregate.json",
         "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_live_question_micro_huochu_20260521_retry1/analysis/active_attention_lifecycle_audit/README.md"
       ],
-      "last_updated": "2026-05-21T12:35:00Z",
+      "last_updated": "2026-05-30T00:00:00Z",
       "last_updated_by": "codex"
     },
     {

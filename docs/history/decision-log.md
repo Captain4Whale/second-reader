@@ -2974,3 +2974,27 @@ This new direction is design frozen but not yet implemented as a formal benchmar
 - `docs/backend-reading-mechanisms/attentional_v2.md`
 - `reading-companion-backend/src/attentional_v2/prompts.py`
 - `reading-companion-backend/tests/test_attentional_v2_nodes.py`
+
+## Entry 100
+**ID**: DEC-103
+**Status**: active
+
+**Decision / Inflection**: Pause the Second Reader Memory / Planning implementation track and restart from a narrower product-goal frame.
+
+**Period**: May 30, 2026, after the Recent Reading Memory / Concept / Thread design discussion exposed that the mechanism work was drifting into an internal memory-ontology project rather than staying anchored to the user-facing note/highlight product value.
+
+**Decision**: Stop using the `second-reader-memory-planning` design chain as the primary source for the next implementation path. The next mechanism design should start from a narrowed product target: understand the currently read text and present valuable reader-facing notes / highlights. The next workflow exploration should use the `ingest -> digest` framing rather than continuing the old `navigate -> read` path-steering frame. Prior context should be retrieved as needed instead of driving the mechanism through live回读 path selection.
+
+**Boundary**: This does not delete previous code or invalidate all prior work. Eval health gates, run ledger discipline, source-coordinate governance, artifact-grounded reporting, and prompt assembly primitives remain potentially reusable. However, the previous ActiveTension, Recent Memory consolidation, Thread / Progression / Development memory, and Read XML context migration directions are paused as implementation authority until a new feasibility / delta audit explicitly re-adopts them.
+
+**Why this path won**: The product value is not that the agent owns a complete internal memory ontology. The value is that sequential reading can surface useful notes the user might not have thought of: viewpoint supplements, important-content catches, line-recall moments, argument-jump warnings, tone shifts, definitions, frameworks, and companionship. Continuing to refine internal durable-memory structures before re-grounding that product loop risks building a more elaborate mechanism than the narrowed product needs.
+
+**Next-start rule**: The next coding session should begin with a read-only feasibility / delta audit for the new direction. It should not implement code, launch eval, update the evidence catalog, or claim product quality before establishing how `ingest`, `digest`, retrieval, tool-owned non-text actions, and note/highlight output categories map onto the current codebase.
+
+**Primary evidence**:
+- `docs/current-state.md`
+- `docs/tasks/registry.md`
+- `docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
+- `docs/implementation/new-reading-mechanism/second-reader-memory-planning/C设计10-Recent Reading Memory Design v0.md`
+- `docs/implementation/new-reading-mechanism/second-reader-memory-planning/C设计11-Read Context Layer Contract v0.md`
+- `docs/implementation/new-reading-mechanism/second-reader-memory-planning/C设计12-Prompt Assembly Layer Design v0.md`

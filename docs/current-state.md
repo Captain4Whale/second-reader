@@ -7,9 +7,32 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-05-27T00:00:00+08:00`
+Last verified: `2026-05-30T00:00:00+08:00`
 
 ## Current Objective
+- Product goal and mechanism direction are being reset before further implementation.
+  - decision ref:
+    - `DEC-103`
+  - new product target:
+    - understand the currently read text and present valuable notes / highlights beside the source text
+    - prioritize viewpoint supplement, avoiding missed important content, and a sense of reading companionship
+    - treat note type / value rating / highlight presentation as product-facing outputs, not as secondary artifacts of an internal memory ontology
+  - proposed workflow direction:
+    - replace the old path-selection framing of `navigate -> read` with a narrower `ingest -> digest` design exploration
+    - `ingest` should determine the next reading unit and request retrieval/tools outside the model where needed
+    - `digest` should understand the target text and produce reader-facing reactions / notes / highlights
+    - prefer retrieving relevant prior memory/source objects over live "回读" path steering
+  - stop declaration:
+    - do not continue implementing `C设计10` consolidation, `C设计11` Read XML context migration, `C设计12` prompt assembly migration, ActiveTension expansion, Thread / Progression / Development memory, or broader Eval-1 follow-up as the next mechanism direction
+    - treat the Second Reader Memory / Planning design chain as historical/reference material and reusable infrastructure evidence, not as the primary implementation authority for the next code path
+    - keep the docs in place for traceability; do not move or delete them unless a later archival task explicitly approves it
+  - reusable learnings:
+    - eval health gates, run ledger discipline, source-coordinate governance, artifact-grounded reports, and prompt assembly primitives may still be reused selectively
+    - the previous memory ontology attempts are evidence that complex internal memory stores can easily overgrow the product goal
+  - next step:
+    - start a fresh Codex session with a read-only feasibility / delta audit for the new product-goal reframe
+    - first output should be a new scoped design / audit entrypoint for `ingest -> digest`, retrieval-first memory, note/highlight output classes, and tool-owned non-text actions
+    - no runtime code, eval run, evidence catalog update, or product-quality claim should happen before that new audit is accepted
 - Read XML prompt / Recent Reading Memory full active diagnostic machine run has completed; post-run report is ready for review.
   - purpose:
     - validate the opt-in XML Read prompt assembly path after Recent Reading Memory formation work
@@ -39,7 +62,8 @@ Last verified: `2026-05-27T00:00:00+08:00`
     - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ReadPromptXML-Full-Active-Diagnostic-Post-run-Report v0.md`
     - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ReadPromptXML-Full-Active-Diagnostic-Reactions-And-RecentMemory-Full-Review v0.md`
   - next step:
-    - review the post-run report and the full reactions / Recent Memory listing before deciding whether to keep iterating on Read XML context assembly, inspect Recent Reading Memory quality more deeply, or continue durable-memory consolidation design
+    - preserve the post-run report and the full reactions / Recent Memory listing as historical diagnostic evidence
+    - do not keep iterating on Read XML context assembly or Recent Memory consolidation as the next implementation path unless the new ingest/digest feasibility audit explicitly re-adopts a slice
     - do not update evidence catalog, promote Long Span, or claim product quality from this diagnostic without explicit human review
 - Recent Reading Memory first-half formation is implemented.
   - design doc:
@@ -61,7 +85,7 @@ Last verified: `2026-05-27T00:00:00+08:00`
     - consolidation into `concept_registry`, `thread_trace`, or `reflective_frames` is not implemented yet
     - no nested `memory_points`, recent-to-recent links, candidate concept/thread links, default fine-grained `source_refs`, eval run, evidence catalog update, or product-quality claim is included
   - next step:
-    - design the Recent Memory -> long-distance-memory consolidation pass before implementing archival/consolidation behavior
+    - parked by `DEC-103`; do not design or implement the Recent Memory -> long-distance-memory consolidation pass as the next mechanism path unless a new ingest/digest feasibility audit explicitly re-adopts it
 - `reading_impression` overlaps with the new `recent_reading_memory` layer and should be cleaned up during a future reaction/read-contract tuning pass.
   - current fact:
     - `reading_impression` predates `recent_reading_memory`; it was introduced as the temporary read-after impression for the naturalized Read contract
@@ -70,7 +94,7 @@ Last verified: `2026-05-27T00:00:00+08:00`
     - do not remove or change `reading_impression` in the current Recent Memory formation/consolidation task
     - do not use `reading_impression` as primary evidence in Recent Memory review reports
   - next step:
-    - revisit `reading_impression` together with `surfaced_reactions` / reaction prompt tuning, then decide whether to demote it to debug-only, make it optional, or remove it from the main Read contract
+    - revisit `reading_impression` only inside the new `digest` / reader-facing note contract design; do not clean it up as a continuation of the paused Recent Memory track
 - Recent Reading Memory micro diagnostics completed and are pending review.
   - run ids:
     - `attentional_v2_recent_reading_memory_micro_huochu_20260523`

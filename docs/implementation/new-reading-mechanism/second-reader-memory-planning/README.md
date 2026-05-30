@@ -8,6 +8,21 @@ This workspace is for tightening memory, planning, retrieval, slow-cycle, evalua
 
 Use this directory to prepare the next Codex feasibility audit and later small, staged, auditable, reversible PRs. Do not use it to silently redefine stable behavior before implementation lands.
 
+## 2026-05-30 Stop / Supersession Note
+
+This implementation track is now paused as the primary source for future code work after the product goal was narrowed again. The next mechanism exploration should start from the new product target: understand the currently read text and present valuable notes / highlights, with the reading loop reframed toward `ingest -> digest`, retrieval-first prior context, and tool-owned non-text actions.
+
+The documents in this directory remain valuable historical and reference material, but they must not be treated as the default implementation authority for the next code path. In particular, do not continue implementing `C设计10` consolidation, `C设计11` Read XML context migration, `C设计12` prompt assembly migration, ActiveTension expansion, or Thread / Progression / Development memory from this track unless a new accepted feasibility / delta audit explicitly re-adopts a slice.
+
+Reusable learnings from this track should be carried forward selectively:
+- strict eval LLM-health gates
+- run ledger and artifact organization discipline
+- source-coordinate governance
+- artifact-grounded reviewer reports
+- prompt assembly primitives where they fit the new `ingest -> digest` design
+
+Do not move or delete the existing docs by default. Keeping them in place is safer for traceability and makes the design reversal auditable. If future work wants a physical archive move, do it as a separate archival task with link repair and source-of-truth updates.
+
 ## Why This Exists
 
 This design chain was triggered by a real implementation mismatch observed while implementing the current memory mechanism: `memory_uptake_ops` could be produced by `Read`, but downstream memory/state persistence and projection structures did not always align with that write intent. That failure mode raised the question of whether the project-owned memory and planning design had become too inward-looking.
@@ -107,7 +122,10 @@ Evidence packs are external evidence indexes, not implementation sources. Review
 ## Current Next Step
 
 Current next step:
-Memory / Planning / Minimal Eval implementation track is closed after Slice 8H. The `recent_reading_memory` follow-up has now implemented its first half: Read-time formation, append-only persistence, prompt projection, checkpoint/resume carriage, settlement audit visibility, and Memory Quality full-state snapshot inclusion. `C设计10-Recent Reading Memory Design v0.md` remains the design authority for definition, Read prompt formation, entry structure, and active/archive management. Consolidation from active Recent Memory into long-distance memory is still not designed or implemented; do not implement archival/consolidation behavior, remove `active_attention`, run eval, update the evidence catalog, promote formal authority, or claim product quality without a separate accepted plan.
+Do not continue this track as the next implementation path. As of `2026-05-30`, the product goal has been narrowed again and the next work should begin in a fresh session with a read-only feasibility / delta audit for the new `ingest -> digest` direction. The old Memory / Planning / Recent Reading Memory / Read XML context chain is paused as implementation authority. Use it only as historical evidence and as a source of selectively reusable tooling / evaluation lessons until a new accepted plan explicitly re-adopts a part of it.
+
+Previous track state:
+Memory / Planning / Minimal Eval implementation track is closed after Slice 8H. The `recent_reading_memory` follow-up implemented its first half: Read-time formation, append-only persistence, prompt projection, checkpoint/resume carriage, settlement audit visibility, and Memory Quality full-state snapshot inclusion. Before the 2026-05-30 stop, `C设计10-Recent Reading Memory Design v0.md` was the authority for definition, Read prompt formation, entry structure, and active/archive management. After `DEC-103`, it is historical/reference material rather than the next implementation authority. Consolidation from active Recent Memory into long-distance memory is still not designed or implemented; do not implement archival/consolidation behavior, remove `active_attention`, run eval, update the evidence catalog, promote formal authority, or claim product quality without a separate accepted plan.
 
 Post-Slice8H Eval-1 full active evaluation was attempted later and stopped before completion. The conservative Lane A / Lane B jobs and the optimized Long Span producer job are all recorded as `abandoned`; the optimized producer generated only partial local artifacts and no `summary/aggregate.json`, `summary/report.md`, or `summary/llm_usage.json`. Its partial outputs must not be treated as valid full-evaluation evidence or reused as Lane A source outputs.
 
