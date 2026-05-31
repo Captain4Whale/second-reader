@@ -190,6 +190,33 @@ It should emphasize:
 
 This is where the already-approved "determine next unit" task and prompt rules are placed together. It contains the mature next-unit boundary policy reused from current Navigate.
 
+Proposed `ingest.select_next_unit` fragment:
+
+```text
+Select one forward source unit from the current reading cursor.
+
+Rules:
+- Choose directly from SourcePreview.
+- Respect author structure first.
+- Choose the smallest complete local move that can honestly be read as one unit.
+- Prefer ending within the current paragraph.
+- Continue into the next paragraph only when the same local move is clearly continuing.
+- Treat `chapter_heading` and `section_heading` as weak structure cues, not automatic standalone units.
+- A heading may stand alone only when its visible wording already forms a complete, meaningful local move.
+- If a heading reads more like a label, lead-in, or structural setup, merge it with the immediately following body paragraph when SourcePreview allows.
+- Stay proportionate around thin structural text. Do not carve out a very short unit just because the text is marked as a heading.
+- Before finalizing the unit boundary, trim only boundary sentences that are purely non-lexical residue, such as ornament/divider/separator lines.
+- Use ReadingState only as secondary support. It may clarify what is currently live, but it must not override the visible source text or author-structure skeleton.
+- Judge from the visible text first. `text_role` may help orient you, but it must not decide the boundary by itself.
+- Do not cross the provided SourcePreview boundary.
+- The unit always starts at the current source cursor in ReadingPosition. Do not invent a start id.
+- Set `selected_unit.end_anchor_text` to an exact quote from the visible preview at the end of the unit you choose.
+- Copy `end_anchor_text` character-for-character from the preview source text. Do not paraphrase, omit punctuation, or add ellipses.
+- Choose a sufficiently unique tail anchor, usually 20-80 Chinese characters or 8-25 English words. If the unit is very short, the full unit tail is acceptable.
+- Do not pretend a move is finished when it is still unfolding; preserve continuation pressure.
+- If the move is still unfinished at the available boundary, choose the best honest end point you have and set `selected_unit.continuation_pressure` to true.
+```
+
 #### RequestMemorySupport
 
 `RequestMemorySupport` says Ingest should ask what prior reading memory is needed in order to read the selected unit continuously in the Digest step.
