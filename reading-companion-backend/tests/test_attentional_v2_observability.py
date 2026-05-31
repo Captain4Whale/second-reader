@@ -107,7 +107,7 @@ def test_record_read_writes_memory_uptake_op_contracts(tmp_path: Path) -> None:
         chapter_ref="Chapter 1",
         unitize_decision={"boundary_type": "paragraph_end"},
         carry_forward_context={},
-        read_result={
+        digest_result={
             "reading_impression": "A hinge appears.",
             "surfaced_reactions": [],
             "memory_uptake_ops": [
@@ -219,7 +219,7 @@ def test_record_read_writes_compact_ingest_trace(tmp_path: Path) -> None:
         chapter_ref="Chapter 1",
         unitize_decision={"boundary_type": "paragraph_end"},
         carry_forward_context={},
-        read_result={
+        digest_result={
             "reading_impression": "A mainline unit lands.",
             "surfaced_reactions": [],
             "memory_uptake_ops": [],
@@ -277,7 +277,7 @@ def test_record_read_writes_source_context_retrieval_audit(tmp_path: Path) -> No
         },
         supplemental_satisfied=True,
         supplemental_steps=[{"kind": "source_context", "status": "resolved"}],
-        read_result={
+        digest_result={
             "reading_impression": "A hinge appears.",
             "surfaced_reactions": [],
             "memory_uptake_ops": [],
@@ -341,7 +341,7 @@ def test_record_read_writes_sparse_memory_context_retrieval_audit(tmp_path: Path
         },
         supplemental_satisfied=True,
         supplemental_steps=[{"kind": "memory_context", "status": "resolved"}],
-        read_result={
+        digest_result={
             "reading_impression": "A hinge appears.",
             "surfaced_reactions": [{"reaction_id": "reaction-1", "thought": "Still not proof of utilization."}],
             "memory_uptake_ops": [],
@@ -420,7 +420,7 @@ def test_record_read_writes_mixed_retrieval_audit_without_semantic_reaction_memo
             ],
         },
         supplemental_satisfied=True,
-        read_result={
+        digest_result={
             "reading_impression": "A hinge appears.",
             "surfaced_reactions": [],
             "memory_uptake_ops": [],

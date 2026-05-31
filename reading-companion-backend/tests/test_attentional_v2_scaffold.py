@@ -13,18 +13,16 @@ from src.attentional_v2.prompts import (
     ATTENTIONAL_V2_PROMPT_REGISTRY,
     INGEST_PROMPT_VERSION,
     READER_ROLE_FRAGMENT,
-    READ_BOOK_INFO_TEMPLATE,
-    READ_CURRENT_FOCUS_TEMPLATE,
-    READ_OUTPUT_CONTRACT_FRAGMENT_REGISTRY,
-    READ_OUTPUT_CONTRACT_TEMPLATE,
-    READ_READING_STATE_TEMPLATE,
-    READ_READER_ROLE_AND_INSTRUCTION_FRAGMENT_REGISTRY,
-    READ_READER_ROLE_AND_INSTRUCTION_TEMPLATE,
-    READ_UNIT_PROMPT_VERSION,
-    READ_UNIT_ROLE_AND_INSTRUCTION_FRAGMENTS,
-    READ_UNIT_SYSTEM_PROMPT,
-    READ_XML_PROMPTSET_VERSION,
-    READ_XML_PROMPT_VERSION,
+    DIGEST_BOOK_INFO_TEMPLATE,
+    DIGEST_CURRENT_FOCUS_TEMPLATE,
+    DIGEST_OUTPUT_CONTRACT_FRAGMENT_REGISTRY,
+    DIGEST_OUTPUT_CONTRACT_TEMPLATE,
+    DIGEST_READING_STATE_TEMPLATE,
+    DIGEST_READER_ROLE_AND_INSTRUCTION_FRAGMENT_REGISTRY,
+    DIGEST_READER_ROLE_AND_INSTRUCTION_TEMPLATE,
+    DIGEST_PROMPT_VERSION,
+    DIGEST_ROLE_AND_INSTRUCTION_FRAGMENTS,
+    DIGEST_XML_PROMPTSET_VERSION,
     PromptAssembler,
     PromptAssemblySpec,
     PromptFragment,
@@ -32,13 +30,13 @@ from src.attentional_v2.prompts import (
     PromptRegistry,
     PromptTemplateNode,
     render_prompt_template_xml,
-    render_read_book_info_xml,
-    render_read_current_focus_xml,
-    render_read_output_contract_xml,
-    render_read_prompt_xml,
-    render_read_reading_state_xml,
-    render_read_reader_role_and_instruction_xml,
-    render_read_xml_prompt_example,
+    render_digest_book_info_xml,
+    render_digest_current_focus_xml,
+    render_digest_output_contract_xml,
+    render_digest_prompt_xml,
+    render_digest_reading_state_xml,
+    render_digest_reader_role_and_instruction_xml,
+    render_digest_xml_prompt_example,
 )
 from src.attentional_v2 import runner as runner_module
 from src.attentional_v2.slow_cycle import project_chapter_result_compatibility
@@ -88,7 +86,7 @@ def test_prompt_template_xml_resolves_fragments_slots_and_literals() -> None:
     registry = PromptFragmentRegistry(
         [
             PromptFragment(
-                fragment_id="test.read.role.v1",
+                fragment_id="test.digest.role.v1",
                 text="Fixed <role> & instruction text.",
             )
         ]
@@ -98,7 +96,7 @@ def test_prompt_template_xml_resolves_fragments_slots_and_literals() -> None:
         [
             PromptTemplateNode(
                 element_name="ReaderRole",
-                prompt_fragment_ref="test.read.role.v1",
+                prompt_fragment_ref="test.digest.role.v1",
             ),
             PromptTemplateNode(
                 element_name="Instruction",
@@ -127,10 +125,10 @@ def test_prompt_template_xml_resolves_fragments_slots_and_literals() -> None:
     assert "prompt_fragment_ref" not in rendered
     assert "value_slot" not in rendered
     assert "ref=" not in rendered
-    assert "test.read.role.v1" not in rendered
+    assert "test.digest.role.v1" not in rendered
     assert "read_behavior" not in rendered
     assert "current_focus" not in rendered
-    assert [fragment.fragment_id for fragment in registry.list()] == ["test.read.role.v1"]
+    assert [fragment.fragment_id for fragment in registry.list()] == ["test.digest.role.v1"]
 
 
 def test_prompt_template_xml_missing_fragment_fails_fast() -> None:
@@ -157,12 +155,12 @@ def test_prompt_template_xml_rejects_multiple_content_sources() -> None:
             [
                 PromptTemplateNode(
                     element_name="Role",
-                    prompt_fragment_ref="test.read.role.v1",
+                    prompt_fragment_ref="test.digest.role.v1",
                     value_slot="role_slot",
                 )
             ],
             registry=PromptFragmentRegistry(
-                [PromptFragment(fragment_id="test.read.role.v1", text="Role text.")]
+                [PromptFragment(fragment_id="test.digest.role.v1", text="Role text.")]
             ),
             slot_values={"role_slot": "Role slot text."},
         )
@@ -236,9 +234,9 @@ def test_prompt_assembler_renders_spec_and_metadata_without_live_migration() -> 
     assert "test.role.v1" not in result.rendered_text
     assert "current_focus" not in result.rendered_text
     assert "ref=" not in result.rendered_text
-    assert READ_UNIT_PROMPT_VERSION == "attentional_v2.read.v33"
-    assert ATTENTIONAL_V2_PROMPTS.read_unit_system == READ_UNIT_SYSTEM_PROMPT
-    assert "Structural frame:" in ATTENTIONAL_V2_PROMPTS.read_unit_prompt
+    assert DIGEST_PROMPT_VERSION == "attentional_v2.digest.v1"
+    assert ATTENTIONAL_V2_PROMPTS.digest_system == "Follow the structured Digest prompt in the user message. Return JSON only."
+    assert "Structural frame:" not in ATTENTIONAL_V2_PROMPTS.digest_prompt
 
 
 def test_prompt_assembler_missing_required_slot_fails_fast_before_rendering() -> None:
@@ -311,8 +309,8 @@ def test_prompt_assembly_spec_validation_rejects_empty_or_duplicate_contract_par
         )
 
 
-def test_read_xml_prompt_example_does_not_replace_live_read_prompt() -> None:
-    rendered = render_read_xml_prompt_example(
+def test_digest_xml_prompt_example_renders_escaped_blocks() -> None:
+    rendered = render_digest_xml_prompt_example(
         book_info='{"title": "Demo & Book"}',
         reading_state='{"recent_reading_memory": []}',
         current_focus='{"reading_object": "Alpha < Beta"}',
@@ -331,20 +329,20 @@ def test_read_xml_prompt_example_does_not_replace_live_read_prompt() -> None:
     assert "prompt_fragment_ref" not in rendered
     assert "value_slot" not in rendered
     assert "ref=" not in rendered
-    assert "attentional_v2.read.reader_role.example.v1" not in rendered
-    assert "attentional_v2.read.instruction.example.v1" not in rendered
+    assert "attentional_v2.digest.reader_role.example.v1" not in rendered
+    assert "attentional_v2.digest.instruction.example.v1" not in rendered
     assert "book_info" not in rendered
     assert "reading_state" not in rendered
     assert "current_focus" not in rendered
     assert "output_contract" not in rendered
-    assert READ_UNIT_PROMPT_VERSION == "attentional_v2.read.v33"
-    assert ATTENTIONAL_V2_PROMPTS.read_unit_version == READ_UNIT_PROMPT_VERSION
-    assert ATTENTIONAL_V2_PROMPTS.read_unit_system.startswith("你是一个知识渊博")
-    assert "Structural frame:" in ATTENTIONAL_V2_PROMPTS.read_unit_prompt
+    assert DIGEST_PROMPT_VERSION == "attentional_v2.digest.v1"
+    assert ATTENTIONAL_V2_PROMPTS.digest_version == DIGEST_PROMPT_VERSION
+    assert ATTENTIONAL_V2_PROMPTS.digest_system == "Follow the structured Digest prompt in the user message. Return JSON only."
+    assert "Structural frame:" not in ATTENTIONAL_V2_PROMPTS.digest_prompt
 
 
-def test_full_read_prompt_xml_assembly_renders_all_target_blocks_without_live_migration() -> None:
-    result = render_read_prompt_xml(
+def test_full_digest_prompt_xml_assembly_renders_all_live_blocks() -> None:
+    result = render_digest_prompt_xml(
         book_title="Demo Book",
         author="Tester",
         chapter_title="Chapter 1",
@@ -361,11 +359,11 @@ def test_full_read_prompt_xml_assembly_renders_all_target_blocks_without_live_mi
         },
     )
 
-    assert result.spec_id == "attentional_v2.read_unit.xml.v5"
-    assert result.owner_node == "read_unit"
-    assert result.prompt_version == READ_XML_PROMPT_VERSION
-    assert result.promptset_version == READ_XML_PROMPTSET_VERSION
-    assert result.output_contract == "read_unit_xml_json_v3"
+    assert result.spec_id == "attentional_v2.digest.xml.v1"
+    assert result.owner_node == "digest"
+    assert result.prompt_version == DIGEST_PROMPT_VERSION
+    assert result.promptset_version == DIGEST_XML_PROMPTSET_VERSION
+    assert result.output_contract == "digest_xml_json_v1"
     assert result.rendered_blocks == (
         "ReaderRole",
         "Instruction",
@@ -396,13 +394,13 @@ def test_full_read_prompt_xml_assembly_renders_all_target_blocks_without_live_mi
     assert "prompt_fragment_ref" not in result.rendered_text
     assert "value_slot" not in result.rendered_text
     assert "book_identity" not in result.rendered_text
-    assert "read.role_and_stance" not in result.rendered_text
-    assert READ_UNIT_PROMPT_VERSION == "attentional_v2.read.v33"
-    assert ATTENTIONAL_V2_PROMPTS.read_unit_system == READ_UNIT_SYSTEM_PROMPT
+    assert "digest.role_and_stance" not in result.rendered_text
+    assert DIGEST_PROMPT_VERSION == "attentional_v2.digest.v1"
+    assert ATTENTIONAL_V2_PROMPTS.digest_system == "Follow the structured Digest prompt in the user message. Return JSON only."
 
 
-def test_read_reader_role_and_instruction_xml_renders_target_structure_without_live_migration() -> None:
-    rendered = render_read_reader_role_and_instruction_xml()
+def test_digest_reader_role_and_instruction_xml_renders_target_structure() -> None:
+    rendered = render_digest_reader_role_and_instruction_xml()
 
     assert "<RoleAndInstruction>" not in rendered
     assert "<ReaderRole>" in rendered
@@ -426,18 +424,18 @@ def test_read_reader_role_and_instruction_xml_renders_target_structure_without_l
     assert "active_attention" not in rendered
     assert "concept_registry" not in rendered
     assert "thread_trace" not in rendered
-    assert "read.durable_memory_policy" not in rendered
-    assert "read.active_tension_policy" not in rendered
+    assert "digest.durable_memory_policy" not in rendered
+    assert "digest.active_tension_policy" not in rendered
     assert "prompt_fragment_ref" not in rendered
     assert "value_slot" not in rendered
     assert "ref=" not in rendered
-    assert "READ_READER_ROLE_AND_INSTRUCTION" not in rendered
+    assert "DIGEST_READER_ROLE_AND_INSTRUCTION" not in rendered
     assert "reader.role" not in rendered
-    assert "read.instruction" not in rendered
+    assert "digest.instruction" not in rendered
     assert "reading-companion-backend" not in rendered
-    assert READ_UNIT_PROMPT_VERSION == "attentional_v2.read.v33"
-    assert ATTENTIONAL_V2_PROMPTS.read_unit_system == READ_UNIT_SYSTEM_PROMPT
-    assert "Structural frame:" in ATTENTIONAL_V2_PROMPTS.read_unit_prompt
+    assert DIGEST_PROMPT_VERSION == "attentional_v2.digest.v1"
+    assert ATTENTIONAL_V2_PROMPTS.digest_system == "Follow the structured Digest prompt in the user message. Return JSON only."
+    assert "Structural frame:" not in ATTENTIONAL_V2_PROMPTS.digest_prompt
     assert rendered.index("<ReaderRole>") < rendered.index("<Instruction>")
     assert rendered.index("<Instruction>") < rendered.index("<TaskOverview>")
     assert rendered.index("<TaskOverview>") < rendered.index("<ContextUseGuide>")
@@ -448,20 +446,20 @@ def test_read_reader_role_and_instruction_xml_renders_target_structure_without_l
     assert "OutputContract as the required response shape" in rendered
 
 
-def test_read_reader_role_and_instruction_xml_template_uses_only_target_fragment_refs() -> None:
+def test_digest_reader_role_and_instruction_xml_template_uses_only_target_fragment_refs() -> None:
     rendered = render_prompt_template_xml(
-        READ_READER_ROLE_AND_INSTRUCTION_TEMPLATE,
-        registry=READ_READER_ROLE_AND_INSTRUCTION_FRAGMENT_REGISTRY,
+        DIGEST_READER_ROLE_AND_INSTRUCTION_TEMPLATE,
+        registry=DIGEST_READER_ROLE_AND_INSTRUCTION_FRAGMENT_REGISTRY,
         slot_values={},
     )
 
-    assert rendered == render_read_reader_role_and_instruction_xml()
-    assert "read.durable_memory_policy" not in rendered
-    assert "read.active_tension_policy" not in rendered
+    assert rendered == render_digest_reader_role_and_instruction_xml()
+    assert "digest.durable_memory_policy" not in rendered
+    assert "digest.active_tension_policy" not in rendered
 
 
-def test_read_book_info_xml_renders_light_orientation_block() -> None:
-    rendered = render_read_book_info_xml(
+def test_digest_book_info_xml_renders_light_orientation_block() -> None:
+    rendered = render_digest_book_info_xml(
         book_title="活出生命的意义 & More",
         author="Viktor <Frankl>",
     )
@@ -483,12 +481,12 @@ def test_read_book_info_xml_renders_light_orientation_block() -> None:
     assert "book_identity" not in rendered
     assert "chapter_identity" not in rendered
     assert "ref=" not in rendered
-    assert READ_UNIT_PROMPT_VERSION == "attentional_v2.read.v33"
-    assert "Structural frame:" in ATTENTIONAL_V2_PROMPTS.read_unit_prompt
+    assert DIGEST_PROMPT_VERSION == "attentional_v2.digest.v1"
+    assert "Structural frame:" not in ATTENTIONAL_V2_PROMPTS.digest_prompt
 
 
-def test_read_book_info_template_uses_only_dynamic_slots() -> None:
-    root = READ_BOOK_INFO_TEMPLATE[0]
+def test_digest_book_info_template_uses_only_dynamic_slots() -> None:
+    root = DIGEST_BOOK_INFO_TEMPLATE[0]
 
     assert root.element_name == "BookInfo"
     assert [child.element_name for child in root.children] == ["BookIdentity"]
@@ -496,8 +494,8 @@ def test_read_book_info_template_uses_only_dynamic_slots() -> None:
     assert all(child.prompt_fragment_ref is None for child in root.children)
 
 
-def test_read_current_focus_xml_renders_mainline_source_unit_with_paragraphs() -> None:
-    rendered = render_read_current_focus_xml(
+def test_digest_current_focus_xml_renders_mainline_source_unit_with_paragraphs() -> None:
+    rendered = render_digest_current_focus_xml(
         chapter_title="第一章",
         current_unit_source={
             "source_span_id": "src:c1:p45@0-p46@24",
@@ -550,12 +548,12 @@ def test_read_current_focus_xml_renders_mainline_source_unit_with_paragraphs() -
     assert "reading_path" not in rendered
     assert "reading_position" not in rendered
     assert "reading_intent" not in rendered
-    assert READ_UNIT_PROMPT_VERSION == "attentional_v2.read.v33"
-    assert "Structural frame:" in ATTENTIONAL_V2_PROMPTS.read_unit_prompt
+    assert DIGEST_PROMPT_VERSION == "attentional_v2.digest.v1"
+    assert "Structural frame:" not in ATTENTIONAL_V2_PROMPTS.digest_prompt
 
 
-def test_read_current_focus_xml_renders_current_sentences_fallback() -> None:
-    rendered = render_read_current_focus_xml(
+def test_digest_current_focus_xml_renders_current_sentences_fallback() -> None:
+    rendered = render_digest_current_focus_xml(
         chapter_title="第一章",
         current_unit_sentences=[
             {"sentence_id": "c1-s1", "text": "Fallback sentence & text.", "text_role": "body"}
@@ -568,8 +566,8 @@ def test_read_current_focus_xml_renders_current_sentences_fallback() -> None:
     assert "sentence_id" not in rendered
 
 
-def test_read_current_focus_template_declares_target_children() -> None:
-    root = READ_CURRENT_FOCUS_TEMPLATE[0]
+def test_digest_current_focus_template_declares_target_children() -> None:
+    root = DIGEST_CURRENT_FOCUS_TEMPLATE[0]
 
     assert root.element_name == "CurrentFocus"
     assert [child.element_name for child in root.children] == [
@@ -580,8 +578,8 @@ def test_read_current_focus_template_declares_target_children() -> None:
     ]
 
 
-def test_read_reading_state_xml_projects_recent_memory_as_text_array_only() -> None:
-    rendered = render_read_reading_state_xml(
+def test_digest_reading_state_xml_projects_recent_memory_as_text_array_only() -> None:
+    rendered = render_digest_reading_state_xml(
         recent_reading_memory={
             "active_entries": [
                 {
@@ -627,12 +625,12 @@ def test_read_reading_state_xml_projects_recent_memory_as_text_array_only() -> N
     assert "value_slot" not in rendered
     assert "recent_memory" not in rendered
     assert "ref=" not in rendered
-    assert READ_UNIT_PROMPT_VERSION == "attentional_v2.read.v33"
-    assert "Structural frame:" in ATTENTIONAL_V2_PROMPTS.read_unit_prompt
+    assert DIGEST_PROMPT_VERSION == "attentional_v2.digest.v1"
+    assert "Structural frame:" not in ATTENTIONAL_V2_PROMPTS.digest_prompt
 
 
-def test_read_reading_state_template_declares_recent_memory_subset() -> None:
-    root = READ_READING_STATE_TEMPLATE[0]
+def test_digest_reading_state_template_declares_recent_memory_subset() -> None:
+    root = DIGEST_READING_STATE_TEMPLATE[0]
 
     assert root.element_name == "ReadingState"
     assert [child.element_name for child in root.children] == ["ReadingMemory"]
@@ -641,8 +639,8 @@ def test_read_reading_state_template_declares_recent_memory_subset() -> None:
     assert reading_memory.children[0].value_slot == "recent_memory"
 
 
-def test_read_output_contract_xml_renders_target_contract_without_live_migration() -> None:
-    rendered = render_read_output_contract_xml(output_language_name="Chinese")
+def test_digest_output_contract_xml_renders_target_contract() -> None:
+    rendered = render_digest_output_contract_xml(output_language_name="Chinese")
 
     assert "<OutputContract>" in rendered
     assert "<OutputUseGuide>" in rendered
@@ -657,7 +655,7 @@ def test_read_output_contract_xml_renders_target_contract_without_live_migration
     assert "<ReadingImpressionContract>" in rendered
     assert "immediate expression after finishing the current unit" in rendered
     assert "not durable memory and is not Recent Reading Memory" in rendered
-    assert "not be carried into later Read context" in rendered
+    assert "not be carried into later Digest context" in rendered
     assert "<SurfacedReactionContract>" in rendered
     assert '"source_quote": "..."' in rendered
     assert "<RecentReadingMemoryContract>" in rendered
@@ -666,15 +664,15 @@ def test_read_output_contract_xml_renders_target_contract_without_live_migration
     assert "prompt_fragment_ref" not in rendered
     assert "value_slot" not in rendered
     assert "language_contract" not in rendered
-    assert "read.output_use_guide" not in rendered
+    assert "digest.output_use_guide" not in rendered
     assert "ref=" not in rendered
-    assert READ_UNIT_PROMPT_VERSION == "attentional_v2.read.v33"
-    assert ATTENTIONAL_V2_PROMPTS.read_unit_system == READ_UNIT_SYSTEM_PROMPT
-    assert "Structural frame:" in ATTENTIONAL_V2_PROMPTS.read_unit_prompt
+    assert DIGEST_PROMPT_VERSION == "attentional_v2.digest.v1"
+    assert ATTENTIONAL_V2_PROMPTS.digest_system == "Follow the structured Digest prompt in the user message. Return JSON only."
+    assert "Structural frame:" not in ATTENTIONAL_V2_PROMPTS.digest_prompt
 
 
-def test_read_output_contract_template_declares_target_children() -> None:
-    root = READ_OUTPUT_CONTRACT_TEMPLATE[0]
+def test_digest_output_contract_template_declares_target_children() -> None:
+    root = DIGEST_OUTPUT_CONTRACT_TEMPLATE[0]
 
     assert root.element_name == "OutputContract"
     assert [child.element_name for child in root.children] == [
@@ -690,35 +688,34 @@ def test_read_output_contract_template_declares_target_children() -> None:
         "RecentReadingMemoryContract",
     ]
     assert render_prompt_template_xml(
-        READ_OUTPUT_CONTRACT_TEMPLATE,
-        registry=READ_OUTPUT_CONTRACT_FRAGMENT_REGISTRY,
+        DIGEST_OUTPUT_CONTRACT_TEMPLATE,
+        registry=DIGEST_OUTPUT_CONTRACT_FRAGMENT_REGISTRY,
         slot_values={"language_contract": "Use Chinese."},
     ).startswith("<OutputContract>")
 
 
-def test_read_unit_role_and_instruction_fragments_are_lossless() -> None:
-    fragment_ids = [fragment.fragment_id for fragment in READ_UNIT_ROLE_AND_INSTRUCTION_FRAGMENTS]
+def test_digest_role_and_instruction_fragments_are_lossless() -> None:
+    fragment_ids = [fragment.fragment_id for fragment in DIGEST_ROLE_AND_INSTRUCTION_FRAGMENTS]
 
     assert fragment_ids == [
         "reader.role",
-        "read.instruction",
-        "read.reading_impression_policy",
-        "read.surfaced_reaction_policy",
-        "read.reaction_anchor_and_callback_policy",
-        "read.memory_general_policy",
-        "read.recent_reading_memory_policy",
-        "read.durable_memory_policy",
-        "read.active_tension_policy",
-        "read.source_grounding_policy",
-        "read.output_behavior_policy",
+        "digest.instruction",
+        "digest.reading_impression_policy",
+        "digest.surfaced_reaction_policy",
+        "digest.reaction_anchor_and_callback_policy",
+        "digest.memory_general_policy",
+        "digest.recent_reading_memory_policy",
+        "digest.durable_memory_policy",
+        "digest.active_tension_policy",
+        "digest.source_grounding_policy",
+        "digest.output_behavior_policy",
     ]
     assert len(set(fragment_ids)) == len(fragment_ids)
-    assert READ_UNIT_SYSTEM_PROMPT == "\n".join(
-        fragment.text for fragment in READ_UNIT_ROLE_AND_INSTRUCTION_FRAGMENTS
+    assert "\n".join(fragment.text for fragment in DIGEST_ROLE_AND_INSTRUCTION_FRAGMENTS).startswith(
+        "你是一个知识渊博"
     )
-    assert ATTENTIONAL_V2_PROMPTS.read_unit_system == READ_UNIT_SYSTEM_PROMPT
-    assert READ_UNIT_ROLE_AND_INSTRUCTION_FRAGMENTS[0] == READER_ROLE_FRAGMENT
-    assert READ_UNIT_SYSTEM_PROMPT.startswith("你是一个知识渊博")
+    assert ATTENTIONAL_V2_PROMPTS.digest_system == "Follow the structured Digest prompt in the user message. Return JSON only."
+    assert DIGEST_ROLE_AND_INSTRUCTION_FRAGMENTS[0] == READER_ROLE_FRAGMENT
 
 
 def test_attentional_v2_prompt_registry_contains_node_definitions() -> None:
@@ -730,7 +727,7 @@ def test_attentional_v2_prompt_registry_contains_node_definitions() -> None:
     assert prompt_ids == [
         "attentional_v2.survey_chapter_zone",
         "attentional_v2.ingest",
-        "attentional_v2.read_unit",
+        "attentional_v2.digest",
         "attentional_v2.bridge_resolution",
         "attentional_v2.reflective_promotion",
         "attentional_v2.reconsolidation",
@@ -742,16 +739,16 @@ def test_attentional_v2_prompt_registry_contains_node_definitions() -> None:
 
 
 def test_attentional_v2_prompt_registry_projects_current_bundle() -> None:
-    read = ATTENTIONAL_V2_PROMPT_REGISTRY.get("attentional_v2.read_unit")
+    digest = ATTENTIONAL_V2_PROMPT_REGISTRY.get("attentional_v2.digest")
     ingest = ATTENTIONAL_V2_PROMPT_REGISTRY.get("attentional_v2.ingest")
     chapter = ATTENTIONAL_V2_PROMPT_REGISTRY.get("attentional_v2.chapter_consolidation")
 
-    assert ATTENTIONAL_V2_PROMPTSET_VERSION == "attentional_v2-phase6-v44"
+    assert ATTENTIONAL_V2_PROMPTSET_VERSION == "attentional_v2-phase6-v45"
     assert ATTENTIONAL_V2_PROMPTS.promptset_version == ATTENTIONAL_V2_PROMPTSET_VERSION
-    assert read.version == READ_UNIT_PROMPT_VERSION == "attentional_v2.read.v33"
-    assert ATTENTIONAL_V2_PROMPTS.read_unit_version == read.version
-    assert ATTENTIONAL_V2_PROMPTS.read_unit_system == read.system_prompt
-    assert ATTENTIONAL_V2_PROMPTS.read_unit_prompt == read.user_prompt_template
+    assert digest.version == DIGEST_PROMPT_VERSION == "attentional_v2.digest.v1"
+    assert ATTENTIONAL_V2_PROMPTS.digest_version == digest.version
+    assert ATTENTIONAL_V2_PROMPTS.digest_system == digest.system_prompt
+    assert ATTENTIONAL_V2_PROMPTS.digest_prompt == digest.user_prompt_template
     assert ingest.version == INGEST_PROMPT_VERSION == "attentional_v2.ingest.v1"
     assert ATTENTIONAL_V2_PROMPTS.ingest_version == ingest.version
     assert ATTENTIONAL_V2_PROMPTS.ingest_system == ingest.system_prompt
@@ -759,10 +756,10 @@ def test_attentional_v2_prompt_registry_projects_current_bundle() -> None:
 
 
 def test_prompt_registry_rejects_duplicate_prompt_ids() -> None:
-    read = ATTENTIONAL_V2_PROMPT_REGISTRY.get("attentional_v2.read_unit")
+    digest = ATTENTIONAL_V2_PROMPT_REGISTRY.get("attentional_v2.digest")
 
     with pytest.raises(ValueError, match="Duplicate prompt id"):
-        PromptRegistry([read, read])
+        PromptRegistry([digest, digest])
 
 
 def _fixture_epub() -> Path:
@@ -1278,7 +1275,7 @@ def test_attentional_v2_runner_prefers_main_body_before_supporting_chapters(tmp_
     monkeypatch.setattr(runner_module, "ensure_canonical_parse", lambda *args, **kwargs: _provisioned_book_with_supporting_chapters())
     chapter_read_order: list[str] = []
 
-    def fake_read_unit(**kwargs):
+    def fake_digest(**kwargs):
         focal_sentence = kwargs["current_unit_sentences"][-1]
         chapter_read_order.append(str(kwargs["chapter_title"]))
         return {
@@ -1320,7 +1317,7 @@ def test_attentional_v2_runner_prefers_main_body_before_supporting_chapters(tmp_
 
     monkeypatch.setattr(runner_module, "_call_ingest", _fake_single_sentence_ingest_boundary)
     monkeypatch.setattr(runner_module, "process_sentence_intake", fake_process_sentence_intake)
-    monkeypatch.setattr(runner_module, "read_unit", fake_read_unit)
+    monkeypatch.setattr(runner_module, "_call_digest", fake_digest)
     monkeypatch.setattr(runner_module, "run_phase6_chapter_cycle", fake_phase6_chapter_cycle)
 
     mechanism = AttentionalV2Mechanism()
@@ -1499,7 +1496,7 @@ def test_attentional_v2_read_book_runs_live_loop_and_persists_compatibility_resu
     captured_unit_reads: list[list[str]] = []
     captured_carry_forward_contexts: list[dict[str, object]] = []
 
-    def fake_read_unit(**kwargs):
+    def fake_digest(**kwargs):
         current_unit_sentences = kwargs["current_unit_sentences"]
         focal_sentence = current_unit_sentences[-1]
         anchor_quote = str(focal_sentence.get("text", "") or "").strip()[:80]
@@ -1568,7 +1565,7 @@ def test_attentional_v2_read_book_runs_live_loop_and_persists_compatibility_resu
 
     monkeypatch.setattr(runner_module, "_call_ingest", _fake_single_sentence_ingest_boundary)
     monkeypatch.setattr(runner_module, "process_sentence_intake", fake_process_sentence_intake)
-    monkeypatch.setattr(runner_module, "read_unit", fake_read_unit)
+    monkeypatch.setattr(runner_module, "_call_digest", fake_digest)
     monkeypatch.setattr(runner_module, "run_phase6_chapter_cycle", fake_phase6_chapter_cycle)
 
     mechanism = AttentionalV2Mechanism()
@@ -1632,12 +1629,12 @@ def test_attentional_v2_read_book_runs_live_loop_and_persists_compatibility_resu
 
 
 def test_attentional_v2_runner_persists_multiple_read_surface_reactions(tmp_path, monkeypatch):
-    """Read-owned surfaced reactions should persist directly without a separate express pass."""
+    """Digest-owned surfaced reactions should persist directly without a separate express pass."""
 
     monkeypatch.chdir(tmp_path)
     monkeypatch.setattr(runner_module, "ensure_canonical_parse", lambda *args, **kwargs: _provisioned_book())
 
-    def fake_read_unit(**kwargs):
+    def fake_digest(**kwargs):
         focal_sentence = kwargs["current_unit_sentences"][-1]
         anchor_quote = str(focal_sentence.get("text", "") or "").strip()[:80]
         return {
@@ -1693,7 +1690,7 @@ def test_attentional_v2_runner_persists_multiple_read_surface_reactions(tmp_path
 
     monkeypatch.setattr(runner_module, "_call_ingest", _fake_single_sentence_ingest_boundary)
     monkeypatch.setattr(runner_module, "process_sentence_intake", fake_process_sentence_intake)
-    monkeypatch.setattr(runner_module, "read_unit", fake_read_unit)
+    monkeypatch.setattr(runner_module, "_call_digest", fake_digest)
     monkeypatch.setattr(runner_module, "run_phase6_chapter_cycle", fake_phase6_chapter_cycle)
 
     mechanism = AttentionalV2Mechanism()
@@ -1718,7 +1715,7 @@ def test_attentional_v2_read_book_tolerates_missing_reaction_payload(tmp_path, m
     monkeypatch.chdir(tmp_path)
     monkeypatch.setattr(runner_module, "ensure_canonical_parse", lambda *args, **kwargs: _provisioned_book())
 
-    def fake_read_unit(**kwargs):
+    def fake_digest(**kwargs):
         focal_sentence = kwargs["current_unit_sentences"][-1]
         anchor_quote = str(focal_sentence.get("text", "") or "").strip()[:80]
         return {
@@ -1761,7 +1758,7 @@ def test_attentional_v2_read_book_tolerates_missing_reaction_payload(tmp_path, m
 
     monkeypatch.setattr(runner_module, "_call_ingest", _fake_single_sentence_ingest_boundary)
     monkeypatch.setattr(runner_module, "process_sentence_intake", fake_process_sentence_intake)
-    monkeypatch.setattr(runner_module, "read_unit", fake_read_unit)
+    monkeypatch.setattr(runner_module, "_call_digest", fake_digest)
     monkeypatch.setattr(runner_module, "run_phase6_chapter_cycle", fake_phase6_chapter_cycle)
 
     mechanism = AttentionalV2Mechanism()
@@ -1822,7 +1819,7 @@ def test_attentional_v2_read_book_runs_source_anchor_units_without_sentence_curs
 
     read_calls: list[list[str]] = []
 
-    def fake_read_unit(**kwargs):
+    def fake_digest(**kwargs):
         read_calls.append(
             [
                 str(sentence.get("sentence_id"))
@@ -1837,7 +1834,7 @@ def test_attentional_v2_read_book_runs_source_anchor_units_without_sentence_curs
 
     monkeypatch.setattr(runner_module, "_call_ingest", _fake_single_sentence_ingest_boundary)
     monkeypatch.setattr(runner_module, "process_sentence_intake", fake_process_sentence_intake)
-    monkeypatch.setattr(runner_module, "read_unit", fake_read_unit)
+    monkeypatch.setattr(runner_module, "_call_digest", fake_digest)
     monkeypatch.setattr(runner_module, "run_phase6_chapter_cycle", fake_phase6_chapter_cycle)
 
     mechanism = AttentionalV2Mechanism()
@@ -1876,7 +1873,7 @@ def test_attentional_v2_runner_stops_at_audit_window_cap_and_persists_partial_ou
     monkeypatch.setattr(runner_module, "ensure_canonical_parse", lambda *args, **kwargs: _provisioned_two_chapter_book())
     read_calls: list[list[str]] = []
 
-    def fake_read_unit(**kwargs):
+    def fake_digest(**kwargs):
         sentence_ids = [str(sentence.get("sentence_id")) for sentence in kwargs["current_unit_sentences"]]
         read_calls.append(sentence_ids)
         focal_sentence = kwargs["current_unit_sentences"][-1]
@@ -1904,7 +1901,7 @@ def test_attentional_v2_runner_stops_at_audit_window_cap_and_persists_partial_ou
 
     monkeypatch.setattr(runner_module, "_call_ingest", _fake_single_sentence_ingest_boundary)
     monkeypatch.setattr(runner_module, "process_sentence_intake", fake_process_sentence_intake)
-    monkeypatch.setattr(runner_module, "read_unit", fake_read_unit)
+    monkeypatch.setattr(runner_module, "_call_digest", fake_digest)
     monkeypatch.setattr(
         runner_module,
         "run_phase6_chapter_cycle",

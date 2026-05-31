@@ -30,7 +30,7 @@ from .evaluation import build_normalized_eval_bundle, persist_normalized_eval_bu
 from .intake import process_sentence_intake  # noqa: F401 - legacy monkeypatch seam for older tests
 from .llm_calls import (
     ingest as _call_ingest,
-    read_unit,
+    digest as _call_digest,
 )
 from .observability import (
     maybe_capture_memory_quality_probe,
@@ -72,7 +72,7 @@ from .schemas import (
     ReflectiveFramesState,
     ThreadTraceState,
     UnitizeDecision,
-    ReadUnitResult,
+    DigestResult,
     ActiveAttention,
     build_empty_continuation_capsule,
     build_empty_concept_registry,
@@ -1427,7 +1427,7 @@ def _normalize_memory_uptake_ops_source_refs(
 
 def _persist_surfaced_reactions(
     *,
-    read_result: ReadUnitResult,
+    digest_result: DigestResult,
     chosen_unit_sentences: list[dict[str, object]],
     focal_sentence: dict[str, object],
     chapter_id: int,
@@ -1437,13 +1437,13 @@ def _persist_surfaced_reactions(
     output_dir: Path,
     source_unit: dict[str, object] | None = None,
 ) -> tuple[ReactionRecordsState, list[AnchoredReactionRecord], dict[str, object] | None]:
-    """Persist read-owned surfaced reactions through one canonical builder path."""
+    """Persist Digest-owned surfaced reactions through one canonical builder path."""
 
     emitted_reactions: list[AnchoredReactionRecord] = []
     current_source_ref = None
     surfaced_reactions = [
         dict(item)
-        for item in read_result.get("surfaced_reactions", [])
+        for item in digest_result.get("surfaced_reactions", [])
         if isinstance(item, dict)
     ]
     chapter_reaction_count = len(reaction_records_for_chapter(reaction_records, chapter_ref=chapter_ref))
@@ -1451,7 +1451,7 @@ def _persist_surfaced_reactions(
         current_source_ref = _source_ref_from_surfaced_reaction(
             surfaced_reaction=surfaced_reaction,
             source_unit=source_unit,
-            reading_impression=_clean_text(read_result.get("reading_impression")),
+            reading_impression=_clean_text(digest_result.get("reading_impression")),
         )
         emitted_at = _clean_text(source_unit.get("source_span_id")) if isinstance(source_unit, dict) else ""
         emitted_reaction = build_reaction_record_from_surfaced_reaction(
@@ -1526,7 +1526,7 @@ def _build_runtime_continuation_capsule(
     return dict(capsule) if isinstance(capsule, dict) else {}
 
 
-def _run_read_with_context_loop(
+def _run_digest_for_source_unit(
     *,
     chapter: dict[str, object],
     unitize_decision: UnitizeDecision,
@@ -1541,7 +1541,6 @@ def _run_read_with_context_loop(
     reflective_frames: ReflectiveFramesState,
     knowledge_activations: KnowledgeActivationsState,
     reaction_records: ReactionRecordsState,
-    reader_policy: ReaderPolicy,
     output_language: str,
     output_dir: Path | None,
     book_title: str,
@@ -1549,8 +1548,8 @@ def _run_read_with_context_loop(
     chapter_id: int,
     chapter_ref: str,
     ingest_trace: list[dict[str, object]] | None = None,
-) -> tuple[ReadUnitResult, list[dict[str, str]]]:
-    """Run one authoritative read for the chosen unit and persist its private audit."""
+) -> tuple[DigestResult, list[dict[str, str]]]:
+    """Run Digest for the accepted source unit and persist the read-cycle audit."""
 
     chosen_unit_sentences = [dict(sentence) for sentence in (chosen_unit_sentences or []) if isinstance(sentence, dict)]
     current_unit_source = dict(current_unit_source or {}) if isinstance(current_unit_source, dict) else None
@@ -1572,27 +1571,25 @@ def _run_read_with_context_loop(
     )
     llm_fallbacks: list[dict[str, str]] = []
     try:
-        read_result = read_unit(
+        digest_result = _call_digest(
             current_unit_source=current_unit_source,
             current_unit_sentences=chosen_unit_sentences,
             carry_forward_context=carry_forward_context,
-            reader_policy=reader_policy,
             output_language=output_language,
-            supplemental_context=None,
             output_dir=output_dir,
             book_title=book_title,
             author=author,
             chapter_title=_clean_text(chapter.get("title")),
         )
     except ReaderLLMError as exc:
-        llm_fallbacks.append({"node": "read_unit", "problem_code": exc.problem_code})
-        read_result = {
+        llm_fallbacks.append({"node": "digest", "problem_code": exc.problem_code})
+        digest_result = {
             "reading_impression": "",
             "surfaced_reactions": [],
             "memory_uptake_ops": [],
         }
-    read_result["memory_uptake_ops"] = _normalize_memory_uptake_ops_source_refs(
-        read_result.get("memory_uptake_ops", []),
+    digest_result["memory_uptake_ops"] = _normalize_memory_uptake_ops_source_refs(
+        digest_result.get("memory_uptake_ops", []),
         source_unit=current_unit_source,
     )
 
@@ -1603,12 +1600,12 @@ def _run_read_with_context_loop(
         unitize_decision=unitize_decision,
         source_unit=current_unit_source,
         carry_forward_context=carry_forward_context,
-        read_result=read_result,
-        stop_reason="read_complete",
+        digest_result=digest_result,
+        stop_reason="digest_complete",
         llm_fallbacks=llm_fallbacks,
         ingest_trace=ingest_trace,
     )
-    return read_result, llm_fallbacks
+    return digest_result, llm_fallbacks
 
 
 def _settle_next_unit(
@@ -1771,7 +1768,7 @@ def _settle_next_unit(
         ),
     )
 
-    read_result, read_fallbacks = _run_read_with_context_loop(
+    digest_result, digest_fallbacks = _run_digest_for_source_unit(
         chapter=chapter,
         chosen_unit_sentences=chosen_unit_sentences,
         current_unit_source=selected_source_unit if has_selected_source_unit else None,
@@ -1785,7 +1782,6 @@ def _settle_next_unit(
         reflective_frames=reflective_frames,
         knowledge_activations=knowledge_activations,
         reaction_records=reaction_records,
-        reader_policy=reader_policy,
         output_language=output_language,
         output_dir=output_dir,
         book_title=provisioned.title,
@@ -1794,7 +1790,7 @@ def _settle_next_unit(
         chapter_ref=chapter_ref,
         ingest_trace=_compact_ingest_trace(prepared_source_unit.get("ingest_trace")),
     )
-    for fallback in read_fallbacks:
+    for fallback in digest_fallbacks:
         if not isinstance(fallback, dict):
             continue
         append_activity_event(
@@ -1804,7 +1800,7 @@ def _settle_next_unit(
                 "stream": "mindstream",
                 "kind": "transition",
                 "visibility": "hidden",
-                "message": f"Read fallback for {_clean_text(fallback.get('node')) or 'unknown_node'}.",
+                "message": f"Digest fallback for {_clean_text(fallback.get('node')) or 'unknown_node'}.",
                 "chapter_id": chapter_id,
                 "chapter_ref": chapter_ref,
                 "segment_ref": _compatibility_section_ref_for_source(chapter_id, selected_source_unit)
@@ -1822,7 +1818,7 @@ def _settle_next_unit(
             },
         )
 
-    memory_uptake_ops = read_result.get("memory_uptake_ops", [])
+    memory_uptake_ops = digest_result.get("memory_uptake_ops", [])
     before_active_attention = active_attention
     before_recent_reading_memory = recent_reading_memory
     before_concept_registry = concept_registry
@@ -1848,7 +1844,7 @@ def _settle_next_unit(
         memory_uptake_ops,
     )
     reaction_records, emitted_reactions, current_source_ref = _persist_surfaced_reactions(
-        read_result=read_result,
+        digest_result=digest_result,
         chosen_unit_sentences=chosen_unit_sentences,
         focal_sentence=focal_sentence,
         source_unit=selected_source_unit if has_selected_source_unit else None,
@@ -1899,7 +1895,7 @@ def _settle_next_unit(
                 "source_span_id": source_id,
                 "source_span": source_span,
                 "sentence_ids": [_clean_text(item.get("sentence_id")) for item in chosen_unit_sentences if _clean_text(item.get("sentence_id"))],
-                "summary": _clean_text(read_result.get("reading_impression")),
+                "summary": _clean_text(digest_result.get("reading_impression")),
             }
         )
     local_buffer = close_local_meaning_unit(local_buffer)

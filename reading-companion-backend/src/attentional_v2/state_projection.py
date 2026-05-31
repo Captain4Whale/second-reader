@@ -775,7 +775,7 @@ def build_carry_forward_context(
     reaction_records: ReactionRecordsState,
     continuation_capsule: ContinuationCapsule | None = None,
 ) -> CarryForwardContext:
-    """Build the bounded read-context packet from current persisted state."""
+    """Build the bounded carry-forward context packet from current persisted state."""
 
     primary_active_attention = (
         dict(active_attention) if isinstance(active_attention, dict) else build_empty_active_attention()
@@ -1013,7 +1013,7 @@ def build_supplemental_selective_carry(
     return selective_carry
 
 
-def build_read_prompt_packet(
+def build_digest_prompt_packet(
     *,
     carry_forward_context: CarryForwardContext,
     supplemental_context: dict[str, object] | None = None,

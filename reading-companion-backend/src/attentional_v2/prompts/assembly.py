@@ -201,28 +201,28 @@ def render_prompt_template_xml(
         )
     )
 
-READ_XML_EXAMPLE_FRAGMENT_REGISTRY = PromptFragmentRegistry(
+DIGEST_XML_EXAMPLE_FRAGMENT_REGISTRY = PromptFragmentRegistry(
     [
         PromptFragment(
-            fragment_id="attentional_v2.read.reader_role.example.v1",
-            text="Fixed Read reader role text resolved by the prompt assembly layer.",
+            fragment_id="attentional_v2.digest.reader_role.example.v1",
+            text="Fixed Digest reader role text resolved by the prompt assembly layer.",
         ),
         PromptFragment(
-            fragment_id="attentional_v2.read.instruction.example.v1",
-            text="Fixed Read instruction text resolved by the prompt assembly layer.",
+            fragment_id="attentional_v2.digest.instruction.example.v1",
+            text="Fixed Digest instruction text resolved by the prompt assembly layer.",
         ),
     ]
 )
 
 
-READ_XML_EXAMPLE_TEMPLATE = (
+DIGEST_XML_EXAMPLE_TEMPLATE = (
     PromptTemplateNode(
         element_name="ReaderRole",
-        prompt_fragment_ref="attentional_v2.read.reader_role.example.v1",
+        prompt_fragment_ref="attentional_v2.digest.reader_role.example.v1",
     ),
     PromptTemplateNode(
         element_name="Instruction",
-        prompt_fragment_ref="attentional_v2.read.instruction.example.v1",
+        prompt_fragment_ref="attentional_v2.digest.instruction.example.v1",
     ),
     PromptTemplateNode(element_name="BookInfo", value_slot="book_info"),
     PromptTemplateNode(element_name="ReadingState", value_slot="reading_state"),
@@ -231,18 +231,18 @@ READ_XML_EXAMPLE_TEMPLATE = (
 )
 
 
-def render_read_xml_prompt_example(
+def render_digest_xml_prompt_example(
     *,
     book_info: str,
     reading_state: str,
     current_focus: str,
     output_contract: str,
-    registry: PromptFragmentRegistry = READ_XML_EXAMPLE_FRAGMENT_REGISTRY,
+    registry: PromptFragmentRegistry = DIGEST_XML_EXAMPLE_FRAGMENT_REGISTRY,
 ) -> str:
-    """Render the future Read XML shape without connecting it to the live Read node."""
+    """Render a small Digest XML prompt shape example."""
 
     return render_prompt_template_xml(
-        READ_XML_EXAMPLE_TEMPLATE,
+        DIGEST_XML_EXAMPLE_TEMPLATE,
         registry=registry,
         slot_values={
             "book_info": book_info,

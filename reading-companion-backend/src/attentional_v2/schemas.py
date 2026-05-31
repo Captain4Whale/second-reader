@@ -197,7 +197,7 @@ class UnitizeDecision(TypedDict, total=False):
 
 
 class CarryForwardRef(TypedDict, total=False):
-    """One bounded carry-forward reference exposed to the read node."""
+    """One bounded carry-forward reference exposed to the Digest node."""
 
     ref_id: str
     kind: str
@@ -333,7 +333,7 @@ class ReadAnchorEvidence(TypedDict, total=False):
     why_it_matters: str
 
 
-class ReadUnitResult(TypedDict, total=False):
+class DigestResult(TypedDict, total=False):
     """Structured record of one reader-like pass over a chosen coverage unit."""
 
     reading_impression: str
@@ -386,7 +386,7 @@ class StateOperation(TypedDict, total=False):
 
 
 class SurfacedReaction(TypedDict, total=False):
-    """One visible in-the-moment reaction surfaced directly by the read node."""
+    """One visible in-the-moment reaction surfaced directly by Digest."""
 
     source_quote: str
     content: str

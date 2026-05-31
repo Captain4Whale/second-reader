@@ -10,9 +10,8 @@ from src.attentional_v2 import runner as runner_module
 from src.attentional_v2.llm_calls import (
     build_unitize_preview,
     ingest,
-    read_unit,
+    digest,
 )
-from src.attentional_v2.schemas import build_default_reader_policy
 from src.attentional_v2.state_projection import STATE_PACKET_VERSION
 
 
@@ -316,8 +315,8 @@ def test_ingest_fallback_allows_heading_only_when_no_body_follows(tmp_path: Path
     assert decision["reason"] == "ingest_llm_error"
 
 
-def test_read_unit_filters_unanchored_surface_and_uses_naturalized_contract(tmp_path: Path, monkeypatch):
-    """Read should keep only reader-facing surfaced reactions and use the current naturalized contract."""
+def test_digest_uses_live_xml_prompt_and_filters_surface_reactions(tmp_path: Path, monkeypatch):
+    """Digest uses XML prompt assembly and keeps only source-anchored reader-facing reactions."""
 
     captured: dict[str, str] = {}
 
@@ -337,31 +336,33 @@ def test_read_unit_filters_unanchored_surface_and_uses_naturalized_contract(tmp_
                     },
                 },
                 {
-                        "source_quote": "Beta consequence.",
+                    "source_quote": "Beta consequence.",
                     "content": "This pushes further than c1-s1135.",
                 },
                 {
-                        "source_quote": "Beta consequence.",
-                    "content": "This answers source:src:c1:p1@0-p1@12 directly.",
-                },
-                {
-                        "source_quote": "Quote outside unit",
+                    "source_quote": "Quote outside unit",
                     "content": "This one should be dropped.",
-                },
+                }
+            ],
+            "recent_reading_memory": [
+                {
+                    "kind": "claim_or_argument",
+                    "memory_text": "The current unit flips the frame around Alpha hinge.",
+                }
             ],
             "memory_uptake_ops": [
                 {
                     "op": "append",
                     "target_store": "active_attention",
-                    "target_key": "q-1",
-                    "payload": {"statement": "The frame just shifted."},
+                    "target_key": "legacy-ignored",
+                    "payload": {"statement": "This legacy field is ignored by Digest."},
                 }
             ],
         }
 
     monkeypatch.setattr(llm_calls_module, "invoke_json", fake_invoke_json)
 
-    result = read_unit(
+    result = digest(
         current_unit_sentences=[
             _sentence("c1-s1", "Alpha hinge.", sentence_index=1, paragraph_index=1),
             _sentence("c1-s2", "Beta consequence.", sentence_index=2, paragraph_index=1),
@@ -371,198 +372,14 @@ def test_read_unit_filters_unanchored_surface_and_uses_naturalized_contract(tmp_
             "refs": [
                 {"ref_id": "source:src:c1:p1@0-p1@12", "kind": "source"},
             ],
-        },
-        reader_policy=build_default_reader_policy(),
-        output_language="en",
-        output_dir=tmp_path,
-    )
-
-    manifest = json.loads((tmp_path / "_mechanisms" / "attentional_v2" / "internal" / "prompt_manifests" / "read_unit.json").read_text(encoding="utf-8"))
-
-    assert result["reading_impression"] == "The line flips the frame."
-    assert result["surfaced_reactions"] == [
-        {
-                "source_quote": "Alpha hinge.",
-            "content": "That phrase suddenly snaps the claim into place.",
-            "prior_link": {
-                    "ref_ids": ["source:src:c1:p1@0-p1@12"],
-                "relation": "callback",
-                "note": "It answers the earlier thread.",
-            },
-            "outside_link": None,
-            "search_intent": None,
-        }
-    ]
-    assert result["memory_uptake_ops"][0]["target_store"] == "active_attention"
-    assert "你是一个知识渊博、有深刻洞见的阅读爱好者。" in captured["system_prompt"]
-    assert "not as a field-filling task" in captured["system_prompt"]
-    assert "Let `reading_impression` be the brief natural impression" in captured["system_prompt"]
-    assert "After the impression and any surfaced reactions, maintain memory deliberately." in captured["system_prompt"]
-    assert "First maintain Recent Reading Memory" in captured["system_prompt"]
-    assert "write one Recent Reading Memory entry for your future self" in captured["system_prompt"]
-    assert "Record what you now understand from this unit" in captured["system_prompt"]
-    assert "Write Recent Reading Memory as source-established content first" in captured["system_prompt"]
-    assert "what the source directly establishes for future reading" in captured["system_prompt"]
-    assert "Before writing Recent Reading Memory, orient yourself with the prompt-visible reading context." in captured[
-        "system_prompt"
-    ]
-    assert "Compress meaning, not wording." in captured["system_prompt"]
-    assert "Write Recent Reading Memory as natural memory sentences or a short paragraph" in captured["system_prompt"]
-    assert "Do not default to `<label>: <explanation>`" in captured["system_prompt"]
-    assert "Use a colon only when the source itself names a term" in captured["system_prompt"]
-    assert "Focus on the current unit's contribution" not in captured["system_prompt"]
-    assert "Once the source-established content is clear, stop" not in captured["system_prompt"]
-    assert "do not make it artificially short" in captured["system_prompt"]
-    assert "part of the unfolding book" in captured["system_prompt"]
-    assert "Do not turn the entry into a recap of the context." in captured["system_prompt"]
-    assert "writing position / evidence boundary / reader-orientation" in captured["system_prompt"]
-    assert "future self can understand it from the memory packet" in captured["system_prompt"]
-    assert "Avoid bare pronouns or vague references" in (captured["system_prompt"] + captured["prompt"])
-    assert "Recent Reading Memory append operations do not need an operation-level `reason`." in captured[
-        "system_prompt"
-    ]
-    assert "\"target_store\": \"recent_reading_memory\"" in captured["prompt"]
-    recent_memory_example = captured["prompt"].split('"target_store": "recent_reading_memory"', 1)[1].split(
-        '"target_store": "active_attention"',
-        1,
-    )[0]
-    assert '"reason"' not in recent_memory_example
-    assert "stores ActiveTension" in captured["system_prompt"]
-    assert "pause as a reader" in captured["system_prompt"]
-    assert "Notice what still holds your attention after the unit is over." in captured["system_prompt"]
-    assert "Do not require yourself to know whether it will matter later." in captured["system_prompt"]
-    assert "current source unit, book or chapter framing shown in this prompt" in captured["system_prompt"]
-    assert "existing memory state shown in the read context packet" in captured["system_prompt"]
-    assert "Do not import outside knowledge about the book, author, or later chapters" in captured["system_prompt"]
-    assert "readerly charge" in captured["system_prompt"]
-    assert "tension_from" in captured["system_prompt"]
-    assert "tension_focus" in captured["system_prompt"]
-    assert "answer_boundary" not in captured["system_prompt"]
-    assert "question_from" not in captured["system_prompt"]
-    assert "working_interpretation" in captured["system_prompt"]
-    assert "does not have to be phrased as a question" in captured["system_prompt"]
-    assert "does not require you to predict whether it will shape later reading" in captured["system_prompt"]
-    assert "answered_reason" in captured["system_prompt"]
-    assert "closed_reason" in captured["system_prompt"]
-    assert "short exact contiguous span copied from the current unit" in captured["system_prompt"]
-    assert "If the basis is title/framing/prior memory" in captured["system_prompt"]
-    assert "never invent source coordinates yourself" in captured["system_prompt"]
-    assert "precondition, setup, clue, partial explanation, or reframing" in captured["system_prompt"]
-    assert "a bomb is placed on the table" in captured["system_prompt"]
-    assert "the author poses a problem or claim" in captured["system_prompt"]
-    assert "a landscape or image is unusually vivid" in captured["system_prompt"]
-    assert "a person or event feels distinctive" in captured["system_prompt"]
-    assert "keep the basis honest in `tension_from`" in captured["system_prompt"]
-    assert "Importance alone belongs" in captured["system_prompt"]
-    assert "Do not create an ActiveTension when the current unit raises and fully digests it locally." in captured[
-        "system_prompt"
-    ]
-    assert "\"op\": \"resolve\"" in captured["prompt"]
-    assert "A surfaced reaction is already persisted as a reaction record." in captured["system_prompt"]
-    assert "write one Recent Reading Memory entry for your future self" in captured["system_prompt"]
-    assert "Record what you now understand from this unit" in captured["system_prompt"]
-    assert "Write Recent Reading Memory as source-established content first" in captured["system_prompt"]
-    assert "what the source directly establishes for future reading" in captured["system_prompt"]
-    assert "given the reading context I already carried into it" in captured["system_prompt"]
-    assert "Write Recent Reading Memory as natural memory sentences or a short paragraph" in captured["system_prompt"]
-    assert "Do not default to `<label>: <explanation>`" in captured["system_prompt"]
-    assert "Use a colon only when the source itself names a term" in captured["system_prompt"]
-    assert "source-explicit tensions" in captured["system_prompt"]
-    assert "source-explicit unresolved lines" in captured["system_prompt"]
-    assert "Focus on the current unit's contribution" not in captured["system_prompt"]
-    assert "Once the source-established content is clear, stop" not in captured["system_prompt"]
-    assert "Explicit source structures can be worth remembering" in captured["system_prompt"]
-    assert "Keep proportion around thin structural units." in captured["system_prompt"]
-    assert "Do not inflate a bare heading or structural cue" in captured["system_prompt"]
-    assert "Choose each `source_quote` as the smallest self-sufficient span" in captured["system_prompt"]
-    assert "If a sentence would lose its meaning when isolated" in captured["system_prompt"]
-    assert "Do not let one sharper later sentence erase an earlier framing line" in captured["system_prompt"]
-    assert "If the unit contains multiple independently valuable local triggers" in captured["system_prompt"]
-    assert "do one last swallowed-line check" in captured["system_prompt"]
-    assert "it is often better to surface both" in captured["system_prompt"]
-    assert "A common version of this pattern is premise plus sharpening" in captured["system_prompt"]
-    assert "People want things from other people." in captured["system_prompt"]
-    assert "other people are typically a problem until they prove otherwise" in captured["system_prompt"]
-    assert "do not default to quoting only the sharper later line" in captured["system_prompt"]
-    assert "If one line already stands by itself, a single-sentence anchor is fine: `能学会。`" in captured["system_prompt"]
-    assert "Compressing a whole paragraph into one reaction" in captured["system_prompt"]
-    assert "Quoting only the later sharper line" in captured["system_prompt"]
-    assert "premise-plus-sharpening pair" in captured["system_prompt"]
-    assert "`prior_link.ref_ids` are internal system handles" in captured["system_prompt"]
-    assert "Never copy any `ref_id`, sentence id, source span id" in captured["system_prompt"]
-    assert "This pushes beyond the earlier 'irrecoverable' framing." in captured["system_prompt"]
-    assert "This answers source:src:c1:p1@0-p1@12 directly." in captured["system_prompt"]
-    assert "`unit_delta`" not in captured["system_prompt"]
-    assert "`implicit_uptake_ops`" not in captured["system_prompt"]
-    assert "Do not decide or name the next route." in captured["system_prompt"]
-    assert "`pressure_signals`" not in captured["system_prompt"]
-    assert "\"target_store\": \"concept_registry\"" in captured["prompt"]
-    assert "\"target_store\": \"thread_trace\"" in captured["prompt"]
-    assert "Do not target `concept_digest`, `thread_digest`, `active_focus_digest`" in captured["system_prompt"]
-    assert manifest["prompt_version"] == "attentional_v2.read.v33"
-
-
-def test_read_unit_can_use_xml_prompt_assembly_mode_without_changing_default(tmp_path: Path, monkeypatch):
-    """The XML Read prompt path is opt-in and converts target recent memory output."""
-
-    monkeypatch.delenv("ATTENTIONAL_V2_READ_PROMPT_ASSEMBLY_MODE", raising=False)
-    monkeypatch.setattr(llm_calls_module, "READ_UNIT_PROMPT_ASSEMBLY_MODE", "xml")
-    captured: dict[str, str] = {}
-
-    def fake_invoke_json(system_prompt: str, prompt: str, default: object) -> object:
-        captured["system_prompt"] = system_prompt
-        captured["prompt"] = prompt
-        return {
-            "reading_impression": "The opening frames the reading as testimony.",
-            "surfaced_reactions": [
-                {
-                    "source_quote": "Alpha source.",
-                    "content": "This line establishes the witness frame.",
-                }
-            ],
-            "recent_reading_memory": [
-                {
-                    "kind": "claim_or_argument",
-                    "memory_text": "The current unit frames the book as witness testimony.",
-                }
-            ],
-        }
-
-    monkeypatch.setattr(llm_calls_module, "invoke_json", fake_invoke_json)
-
-    result = read_unit(
-        current_unit_source={
-            "source_span": {
-                "start_cursor": {"paragraph_index": 1, "char_offset": 0},
-                "end_cursor": {"paragraph_index": 1, "char_offset": 13},
-            },
-            "source_text": "Alpha source.",
-            "paragraph_slices": [
-                {
-                    "paragraph_index": 1,
-                    "text_role": "body",
-                    "start_char": 0,
-                    "end_char": 13,
-                    "text": "Alpha source.",
-                }
-            ],
-        },
-        carry_forward_context={
-            "packet_version": STATE_PACKET_VERSION,
-            "refs": [],
             "recent_reading_memory": {
                 "active_entries": [
                     {
-                        "entry_id": "recent:c1:u0001:m1",
-                        "kind": "claim_or_argument",
                         "memory_text": "The previous unit established the author's witness boundary.",
-                        "status": "active",
                     }
                 ],
-                "active_entry_count": 1,
             },
         },
-        reader_policy=build_default_reader_policy(),
         output_language="en",
         output_dir=tmp_path,
         book_title="Demo Book",
@@ -570,10 +387,9 @@ def test_read_unit_can_use_xml_prompt_assembly_mode_without_changing_default(tmp
         chapter_title="Chapter 1",
     )
 
-    manifest = json.loads((tmp_path / "_mechanisms" / "attentional_v2" / "internal" / "prompt_manifests" / "read_unit.json").read_text(encoding="utf-8"))
+    manifest = json.loads((tmp_path / "_mechanisms" / "attentional_v2" / "internal" / "prompt_manifests" / "digest.json").read_text(encoding="utf-8"))
 
-    assert captured["system_prompt"] == "Follow the structured Read prompt in the user message. Return JSON only."
-    assert "<RoleAndInstruction>" not in captured["prompt"]
+    assert captured["system_prompt"] == "Follow the structured Digest prompt in the user message. Return JSON only."
     assert "<ReaderRole>" in captured["prompt"]
     assert "<Instruction>" in captured["prompt"]
     assert "<BookInfo>" in captured["prompt"]
@@ -581,29 +397,39 @@ def test_read_unit_can_use_xml_prompt_assembly_mode_without_changing_default(tmp
     assert "<CurrentFocus>" in captured["prompt"]
     assert "<OutputContract>" in captured["prompt"]
     assert "The previous unit established the author's witness boundary." in captured["prompt"]
-    assert "Alpha source." in captured["prompt"]
+    assert "Alpha hinge." in captured["prompt"]
     assert "Structural frame:" not in captured["prompt"]
-    assert "Read context packet:" not in captured["prompt"]
     assert '"memory_uptake_ops"' not in captured["prompt"]
     assert "memory_uptake_ops" not in captured["prompt"]
     assert "active_attention" not in captured["prompt"]
     assert "prompt_fragment_ref" not in captured["prompt"]
     assert "value_slot" not in captured["prompt"]
+    assert result["reading_impression"] == "The line flips the frame."
+    assert result["surfaced_reactions"] == [
+        {
+            "source_quote": "Alpha hinge.",
+            "content": "That phrase suddenly snaps the claim into place.",
+            "prior_link": {
+                "ref_ids": ["source:src:c1:p1@0-p1@12"],
+                "relation": "callback",
+                "note": "It answers the earlier thread.",
+            },
+            "outside_link": None,
+            "search_intent": None,
+        }
+    ]
     assert len(result["memory_uptake_ops"]) == 1
     op = result["memory_uptake_ops"][0]
-    assert op["op"] == "append"
-    assert op["operation_type"] == "append"
     assert op["target_store"] == "recent_reading_memory"
-    assert op["target_store_emitted"] == "recent_reading_memory"
-    assert op["effective_target_store"] == "recent_reading_memory"
-    assert op["compatibility_warnings"] == []
     assert op["payload"] == {
         "kind": "claim_or_argument",
-        "memory_text": "The current unit frames the book as witness testimony.",
+        "memory_text": "The current unit flips the frame around Alpha hinge.",
     }
-    assert manifest["prompt_version"] == "attentional_v2.read.xml.v5"
-    assert manifest["prompt_assembly"]["mode"] == "xml"
-    assert manifest["prompt_assembly"]["spec_id"] == "attentional_v2.read_unit.xml.v5"
+    assert op["target_key"] != "legacy-ignored"
+    assert manifest["node_name"] == "digest"
+    assert manifest["prompt_version"] == "attentional_v2.digest.v1"
+    assert manifest["prompt_assembly"]["spec_id"] == "attentional_v2.digest.xml.v1"
+    assert "mode" not in manifest["prompt_assembly"]
     assert manifest["prompt_assembly"]["rendered_blocks"] == [
         "ReaderRole",
         "Instruction",
@@ -614,197 +440,23 @@ def test_read_unit_can_use_xml_prompt_assembly_mode_without_changing_default(tmp
     ]
 
 
-def test_read_unit_contract_preserves_source_given_stage_model_as_memory_uptake(tmp_path: Path, monkeypatch):
-    """Source-given structural frameworks should be allowed to settle into memory without requiring a reaction."""
-
-    captured: dict[str, str] = {}
-
-    def fake_invoke_json(system_prompt: str, prompt: str, default: object) -> object:
-        captured["system_prompt"] = system_prompt
-        captured["prompt"] = prompt
-        return {
-            "reading_impression": "作者把集中营生活的精神反应先搭成三阶段框架，并开始进入第一阶段。",
-            "surfaced_reactions": [],
-            "memory_uptake_ops": [
-                {
-                    "op": "append",
-                    "target_store": "thread_trace",
-                    "target_key": "camp-reaction-stages",
-                    "reason": "The three-stage structure will organize later reading.",
-                    "payload": {
-                        "thread_key": "camp_reaction_stages",
-                        "summary": "囚徒对集中营生活的精神反应被作者划分为收容、适应、释放与解放三个阶段。",
-                        "source_quote": "三个阶段：收容阶段、适应阶段、释放与解放阶段",
-                    },
-                }
-            ],
-        }
-
-    monkeypatch.setattr(llm_calls_module, "invoke_json", fake_invoke_json)
-
-    result = read_unit(
-        current_unit_sentences=[
-            _sentence(
-                "c1-s1",
-                "囚徒对集中营生活的精神反应可以被划分为三个阶段：收容阶段、适应阶段、释放与解放阶段。",
-                sentence_index=1,
-                paragraph_index=1,
-            ),
-            _sentence(
-                "c1-s2",
-                "第一阶段显露的症状是惊恐。",
-                sentence_index=2,
-                paragraph_index=1,
-            ),
-        ],
-        carry_forward_context={"packet_version": STATE_PACKET_VERSION, "refs": []},
-        reader_policy=build_default_reader_policy(),
-        output_language="zh",
-        output_dir=tmp_path,
-        book_title="活出生命的意义",
-    )
-
-    assert "stage models" in captured["system_prompt"]
-    assert "even when they do not call for a visible reaction" in captured["system_prompt"]
-    assert result["surfaced_reactions"] == []
-    assert result["memory_uptake_ops"][0]["target_store"] == "thread_trace"
-    assert "三个阶段" in result["memory_uptake_ops"][0]["payload"]["summary"]
-
-
-def test_read_unit_marks_missing_target_store_as_compatibility_default(tmp_path: Path, monkeypatch):
-    """Missing target_store remains tolerated while becoming visible in audit metadata."""
-
-    def fake_invoke_json(system_prompt: str, prompt: str, default: object) -> object:
-        return {
-            "reading_impression": "The line opens a live question.",
-            "surfaced_reactions": [],
-            "memory_uptake_ops": [
-                {
-                    "op": "append",
-                    "target_key": "hot-missing-store",
-                    "payload": {"statement": "A live question should remain in attention."},
-                }
-            ],
-        }
-
-    monkeypatch.setattr(llm_calls_module, "invoke_json", fake_invoke_json)
-
-    result = read_unit(
-        current_unit_sentences=[
-            _sentence("c1-s1", "A live question appears.", sentence_index=1, paragraph_index=1),
-        ],
-        carry_forward_context={"packet_version": STATE_PACKET_VERSION, "refs": []},
-        reader_policy=build_default_reader_policy(),
-        output_language="en",
-        output_dir=tmp_path,
-    )
-
-    op = result["memory_uptake_ops"][0]
-    assert op["target_store"] == "active_attention"
-    assert op["target_store_emitted"] == ""
-    assert op["effective_target_store"] == "active_attention"
-    assert op["compatibility_warnings"] == ["missing_target_store_defaulted"]
-
-    admission_event = result["memory_uptake_admission_events"][0]
-    assert admission_event["admission_status"] == "accepted"
-    assert admission_event["target_store_emitted"] == ""
-    assert admission_event["effective_target_store"] == "active_attention"
-    assert admission_event["compatibility_warnings"] == ["missing_target_store_defaulted"]
-    assert admission_event["target_store_supported"] is True
-    assert admission_event["operation_store_policy"] == "supported"
-    assert admission_event["policy_warnings"] == []
-
-
-def test_read_unit_admits_resolve_memory_operation(tmp_path: Path, monkeypatch):
-    """Schema-valid resolve ops should not disappear at node normalization."""
-
-    def fake_invoke_json(system_prompt: str, prompt: str, default: object) -> object:
-        return {
-            "reading_impression": "The earlier question has been answered.",
-            "surfaced_reactions": [],
-            "memory_uptake_ops": [
-                {
-                    "op": "resolve",
-                    "target_store": "active_attention",
-                    "target_key": "hot-question",
-                    "payload": {"status": "resolved"},
-                }
-            ],
-        }
-
-    monkeypatch.setattr(llm_calls_module, "invoke_json", fake_invoke_json)
-
-    result = read_unit(
-        current_unit_sentences=[
-            _sentence("c1-s1", "The answer closes the earlier question.", sentence_index=1, paragraph_index=1),
-        ],
-        carry_forward_context={"packet_version": STATE_PACKET_VERSION, "refs": []},
-        reader_policy=build_default_reader_policy(),
-        output_language="en",
-        output_dir=tmp_path,
-    )
-
-    assert len(result["memory_uptake_ops"]) == 1
-    op = result["memory_uptake_ops"][0]
-    assert op["op"] == "resolve"
-    assert op["operation_type"] == "resolve"
-    assert op["target_store"] == "active_attention"
-
-    assert result["memory_uptake_admission_events"] == [
-        {
-            "operation_index": 0,
-            "admission_status": "accepted",
-            "operation_type_emitted": "resolve",
-            "operation_type_normalized": "resolve",
-            "target_store_emitted": "active_attention",
-            "effective_target_store": "active_attention",
-            "target_key": "hot-question",
-            "item_id": "hot-question",
-            "compatibility_warnings": [],
-            "drop_reason": "",
-            "target_store_supported": True,
-            "operation_store_policy": "supported",
-            "policy_warnings": [],
-        }
-    ]
-
-
-def test_read_unit_resolves_active_tension_development_source_refs(tmp_path: Path, monkeypatch):
-    """Read-output source normalization should keep opening and development evidence separate."""
-
-    def fake_invoke_json(system_prompt: str, prompt: str, default: object) -> object:
-        return {
-            "reading_impression": "The passage starts answering the open question.",
-            "surfaced_reactions": [],
-            "memory_uptake_ops": [
-                {
-                    "op": "resolve",
-                    "target_store": "active_attention",
-                    "target_key": "bomb-question",
-                    "reason": "The current unit gives enough answer to stop carrying the question.",
-                    "payload": {
-                        "working_interpretation": "Someone has noticed the bomb but has not disarmed it.",
-                        "answered_reason": "The current unit explicitly answers who noticed the bomb.",
-                        "development_source_quote": "Someone noticed the bomb.",
-                    },
-                }
-            ],
-        }
-
-    monkeypatch.setattr(llm_calls_module, "invoke_json", fake_invoke_json)
-
-    result = read_unit(
-        current_unit_sentences=[
-            _sentence("c1-s1", "Someone noticed the bomb.", sentence_index=1, paragraph_index=1),
-        ],
-        carry_forward_context={"packet_version": STATE_PACKET_VERSION, "refs": []},
-        reader_policy=build_default_reader_policy(),
-        output_language="en",
-        output_dir=tmp_path,
-    )
+def test_memory_uptake_source_ref_normalization_keeps_development_evidence_separate():
+    """Runtime source normalization should keep opening and development evidence separate."""
 
     normalized_ops = runner_module._normalize_memory_uptake_ops_source_refs(
-        result["memory_uptake_ops"],
+        [
+            {
+                "op": "resolve",
+                "target_store": "active_attention",
+                "target_key": "bomb-question",
+                "reason": "The current unit gives enough answer to stop carrying the question.",
+                "payload": {
+                    "working_interpretation": "Someone has noticed the bomb but has not disarmed it.",
+                    "answered_reason": "The current unit explicitly answers who noticed the bomb.",
+                    "development_source_quote": "Someone noticed the bomb.",
+                },
+            }
+        ],
         source_unit={
             "source_text": "Someone noticed the bomb.",
             "source_span": {
@@ -1052,184 +704,3 @@ def test_active_attention_lifecycle_coordinates_are_added_from_current_unit():
     assert close_payload["closed_reason"] == "The old question no longer shapes the next read."
     assert close_payload["closed_at_source_span_id"].startswith("src:c1:p1@")
     assert close_payload["closed_at_unit_span_id"].startswith("src:c1:p1@")
-
-
-def test_read_unit_records_dropped_memory_uptake_admission_events(tmp_path: Path, monkeypatch):
-    """Unknown and malformed raw ops stay dropped but become visible in audit metadata."""
-
-    def fake_invoke_json(system_prompt: str, prompt: str, default: object) -> object:
-        return {
-            "reading_impression": "Only one operation is admissible.",
-            "surfaced_reactions": [],
-            "memory_uptake_ops": [
-                "not an operation",
-                {
-                    "op": "invent",
-                    "target_store": "concept_registry",
-                    "target_key": "concept-unknown",
-                    "payload": {"summary": "This raw payload should not be copied into admission metadata."},
-                },
-                {
-                    "target_store": "thread_trace",
-                    "target_key": "thread-missing-op",
-                    "payload": {"summary": "Missing operation type."},
-                },
-                {
-                    "op": "append",
-                    "target_key": "hot-accepted",
-                    "payload": {"statement": "This remains admissible."},
-                },
-            ],
-        }
-
-    monkeypatch.setattr(llm_calls_module, "invoke_json", fake_invoke_json)
-
-    result = read_unit(
-        current_unit_sentences=[
-            _sentence("c1-s1", "A mixed set of memory ops appears.", sentence_index=1, paragraph_index=1),
-        ],
-        carry_forward_context={"packet_version": STATE_PACKET_VERSION, "refs": []},
-        reader_policy=build_default_reader_policy(),
-        output_language="en",
-        output_dir=tmp_path,
-    )
-
-    assert [op["target_key"] for op in result["memory_uptake_ops"]] == ["hot-accepted"]
-
-    admission_events = result["memory_uptake_admission_events"]
-    assert [event["admission_status"] for event in admission_events] == [
-        "dropped_malformed_operation",
-        "dropped_unknown_operation",
-        "dropped_malformed_operation",
-        "accepted",
-    ]
-    assert admission_events[0]["drop_reason"] == "operation_not_object"
-    assert admission_events[1]["operation_type_emitted"] == "invent"
-    assert admission_events[1]["operation_type_normalized"] == "invent"
-    assert admission_events[1]["drop_reason"] == "unknown_operation_type"
-    assert admission_events[2]["drop_reason"] == "missing_operation_type"
-    assert admission_events[3]["effective_target_store"] == "active_attention"
-    assert admission_events[3]["compatibility_warnings"] == ["missing_target_store_defaulted"]
-    assert admission_events[3]["target_store_supported"] is True
-    assert admission_events[3]["operation_store_policy"] == "supported"
-    assert admission_events[3]["policy_warnings"] == []
-    assert all("payload" not in event for event in admission_events)
-
-
-def test_read_unit_drops_unsupported_target_store_with_admission_diagnostic(tmp_path: Path, monkeypatch):
-    """Unsupported stores should not masquerade as accepted memory updates."""
-
-    def fake_invoke_json(system_prompt: str, prompt: str, default: object) -> object:
-        return {
-            "reading_impression": "A digest projection is mentioned but not a read-path target.",
-            "surfaced_reactions": [],
-            "memory_uptake_ops": [
-                {
-                    "op": "append",
-                    "target_store": "concept_digest",
-                    "target_key": "digest-1",
-                    "payload": {"summary": "This should not become a raw audit dump."},
-                }
-            ],
-        }
-
-    monkeypatch.setattr(llm_calls_module, "invoke_json", fake_invoke_json)
-
-    result = read_unit(
-        current_unit_sentences=[
-            _sentence("c1-s1", "The passage tempts a digest write.", sentence_index=1, paragraph_index=1),
-        ],
-        carry_forward_context={"packet_version": STATE_PACKET_VERSION, "refs": []},
-        reader_policy=build_default_reader_policy(),
-        output_language="en",
-        output_dir=tmp_path,
-    )
-
-    assert result["memory_uptake_ops"] == []
-
-    admission_event = result["memory_uptake_admission_events"][0]
-    assert admission_event["admission_status"] == "dropped_unsupported_target_store"
-    assert admission_event["target_store_supported"] is False
-    assert admission_event["operation_store_policy"] == "unsupported_target_store"
-    assert admission_event["policy_warnings"] == ["unsupported_target_store"]
-    assert admission_event["compatibility_warnings"] == ["unsupported_target_store"]
-    assert admission_event["drop_reason"] == "unsupported_target_store"
-    assert "payload" not in admission_event
-
-
-def test_read_unit_drops_unsupported_operation_store_pair_with_admission_diagnostic(tmp_path: Path, monkeypatch):
-    """Unsupported operation-store pairings should not reach state apply."""
-
-    def fake_invoke_json(system_prompt: str, prompt: str, default: object) -> object:
-        return {
-            "reading_impression": "A concept is cooling, but that pairing is only audit-visible here.",
-            "surfaced_reactions": [],
-            "memory_uptake_ops": [
-                {
-                    "op": "cool",
-                    "target_store": "concept_registry",
-                    "target_key": "concept-1",
-                    "payload": {"summary": "Cooling is not a concept-store admission policy op."},
-                }
-            ],
-        }
-
-    monkeypatch.setattr(llm_calls_module, "invoke_json", fake_invoke_json)
-
-    result = read_unit(
-        current_unit_sentences=[
-            _sentence("c1-s1", "The concept cools in importance.", sentence_index=1, paragraph_index=1),
-        ],
-        carry_forward_context={"packet_version": STATE_PACKET_VERSION, "refs": []},
-        reader_policy=build_default_reader_policy(),
-        output_language="en",
-        output_dir=tmp_path,
-    )
-
-    assert result["memory_uptake_ops"] == []
-
-    admission_event = result["memory_uptake_admission_events"][0]
-    assert admission_event["admission_status"] == "dropped_unsupported_operation_for_target_store"
-    assert admission_event["target_store_supported"] is True
-    assert admission_event["operation_store_policy"] == "unsupported_operation_for_target_store"
-    assert admission_event["policy_warnings"] == ["unsupported_operation_for_target_store"]
-    assert admission_event["compatibility_warnings"] == ["unsupported_operation_for_target_store"]
-    assert admission_event["drop_reason"] == "unsupported_operation_for_target_store"
-
-
-def test_read_unit_records_supported_store_policy_without_warning(tmp_path: Path, monkeypatch):
-    """Supported operation-store pairings include policy metadata without warnings."""
-
-    def fake_invoke_json(system_prompt: str, prompt: str, default: object) -> object:
-        return {
-            "reading_impression": "A concept is updated with stable admission policy.",
-            "surfaced_reactions": [],
-            "memory_uptake_ops": [
-                {
-                    "op": "update",
-                    "target_store": "concept_registry",
-                    "target_key": "concept-1",
-                    "payload": {"summary": "The concept stays aligned."},
-                }
-            ],
-        }
-
-    monkeypatch.setattr(llm_calls_module, "invoke_json", fake_invoke_json)
-
-    result = read_unit(
-        current_unit_sentences=[
-            _sentence("c1-s1", "The concept becomes clearer.", sentence_index=1, paragraph_index=1),
-        ],
-        carry_forward_context={"packet_version": STATE_PACKET_VERSION, "refs": []},
-        reader_policy=build_default_reader_policy(),
-        output_language="en",
-        output_dir=tmp_path,
-    )
-
-    op = result["memory_uptake_ops"][0]
-    assert op["compatibility_warnings"] == []
-
-    admission_event = result["memory_uptake_admission_events"][0]
-    assert admission_event["target_store_supported"] is True
-    assert admission_event["operation_store_policy"] == "supported"
-    assert admission_event["policy_warnings"] == []

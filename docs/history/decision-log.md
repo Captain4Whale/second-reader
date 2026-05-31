@@ -3100,3 +3100,29 @@ This new direction is design frozen but not yet implemented as a formal benchmar
 - `reading-companion-backend/src/attentional_v2/schemas.py`
 - `reading-companion-backend/tests/test_attentional_v2_llm_calls.py`
 - `reading-companion-backend/tests/test_attentional_v2_scaffold.py`
+
+## Entry 105
+**ID**: DEC-108
+**Status**: active
+
+**Decision / Inflection**: Rename the concrete per-unit interpretation LLM call from `Read` / `read_unit` to `Digest`, and make the XML Digest prompt the only live path.
+
+**Period**: May 31, 2026, after `DEC-107` renamed the forward boundary-selection LLM call to `Ingest` and the mechanism vocabulary settled on `Ingest -> Digest -> Reading Runner settlement`.
+
+**Decision**: In current `attentional_v2`, `Read` / `read` is reserved for the overall Agent Reader read action and read cycle. The concrete LLM call that carefully reads one accepted source unit is `Digest`, implemented at `llm_calls.digest(...)`. Its prompt manifest, trace node, prompt definition, prompt module, and result type use `digest` naming. Digest always uses the XML prompt assembly path with `ReaderRole`, `Instruction`, `BookInfo`, `ReadingState`, `CurrentFocus`, and `OutputContract`; the old legacy prompt assembly toggle and `read_unit` prompt manifest are no longer live interfaces.
+
+**Boundary**: This does not implement the new Ingest memory retrieval loop and does not change public API/frontend semantics. The mechanism-private `read_audit.jsonl` artifact remains named as a read-cycle audit because it records the whole cycle: Ingest trace, Digest output, and settlement inputs. Digest's LLM-facing output contract is `reading_impression`, `surfaced_reactions`, and `recent_reading_memory`; runtime still converts Recent Reading Memory entries into internal `memory_uptake_ops[]` for deterministic settlement.
+
+**Why this path won**: Keeping `Read` as both the whole Agent Reader action and the concrete LLM node made the implementation repeat the same boundary confusion that `DEC-106` fixed for Navigate. Naming the concrete node `Digest` clarifies the loop: Ingest selects and prepares the next reading object, Digest carefully reads that object, and Reading Runner settles state and cursor movement around the completed read cycle.
+
+**Primary evidence**:
+- `docs/current-state.md`
+- `docs/tasks/registry.md`
+- `docs/backend-reading-mechanisms/attentional_v2.md`
+- `reading-companion-backend/src/attentional_v2/llm_calls.py`
+- `reading-companion-backend/src/attentional_v2/prompts/digest.py`
+- `reading-companion-backend/src/attentional_v2/runner.py`
+- `reading-companion-backend/src/attentional_v2/observability.py`
+- `reading-companion-backend/src/attentional_v2/schemas.py`
+- `reading-companion-backend/tests/test_attentional_v2_llm_calls.py`
+- `reading-companion-backend/tests/test_attentional_v2_scaffold.py`

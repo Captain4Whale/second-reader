@@ -22,11 +22,11 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
 
 ## Mechanism-Internal Reading Runner Boundary
 - `Reading Runner` is the name for this mechanism's internal read-progress executor.
-  - It owns the live loop around `Ingest`, `Read`, post-read settlement, cursor advancement, and mechanism-private runtime persistence.
+  - It owns the live loop around `Ingest`, `Digest`, post-Digest settlement, cursor advancement, and mechanism-private runtime persistence.
   - It is not the shared runtime shell, the mechanism registry, or the thin mechanism adapter.
 - The shared runtime shell remains under `reading-companion-backend/src/reading_runtime/`.
 - The mechanism adapter remains under `reading-companion-backend/src/reading_mechanisms/attentional_v2.py`.
-- The current implementation still lives under the `attentional_v2` mechanism key and package for artifact/history continuity, but current behavior should be explained through `Reading Runner`, `Ingest`, `Read`, memory, and settlement roles rather than through rollout-phase labels or `V2` as a node name.
+- The current implementation still lives under the `attentional_v2` mechanism key and package for artifact/history continuity, but current behavior should be explained through `Reading Runner`, `Ingest`, `Digest`, memory, and settlement roles rather than through rollout-phase labels or `V2` as a node name.
 
 ## Purpose And Status
 - `attentional_v2` is the current live/default mechanism for the product's deep-reading path.
@@ -59,36 +59,35 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - This did not change the mechanism key or public compatibility surface.
   - It did change the live control skeleton:
     - heuristic trigger output no longer decides whether正文 receives formal reading
-    - at that point, the live loop routed through historical `Navigate.unitize -> read -> Reading Runner settlement`; the current loop routes through `Ingest -> read -> Reading Runner settlement`
+    - at that point, the live loop routed through historical `Navigate.unitize -> read -> Reading Runner settlement`; the current loop routes through `Ingest -> Digest -> Reading Runner settlement`
     - span authority is now tied to the exact chosen coverage unit rather than a reconstructed late tail
 - Phase B of the post-eval structural rework is now also landed.
-  - `read` is now the canonical owner of the current-unit read packet on the live path.
-  - Each formal unit read now receives a small `carry-forward context` built from persisted state.
+  - the concrete per-unit LLM call is now `Digest`, which owns the current-unit interpretation packet on the live path.
+  - Each formal unit Digest call receives a small `carry-forward context` built from persisted state.
   - old supplemental context helpers from that branch were removed from the current code surface by `DEC-105`; future `Ingest` retrieval is a separate design task.
   - private `read_audit` records capture context use.
   - that slice temporarily retained a `raw_reaction` compatibility shell, which was later removed from the live path by `Phase F3`.
 - Phase E1 through E3 are now preserved as a landed intermediate compatibility-first baseline.
-  - that branch routed through `Navigate.unitize -> read -> express(if needed) -> Navigate.route`
+  - that branch routed through `Navigate.unitize -> read -> express(if needed) -> Navigate.route`; this is historical naming, not the current live LLM-call identity
   - persisted visible reactions on that baseline now keep surfaced fields such as `prior_link`, `outside_link`, and `search_intent`
   - slow-cycle compatibility projection and normalized eval export now derive old family labels through one compat helper instead of treating legacy `type` as the internal truth
   - this branch is preserved as landed evidence, but it is no longer the approved end-state shape for the mechanism
 - Phase F1 of the post-E3 rework is now landed.
-  - the live per-unit loop was cut back to `Navigate.unitize -> read -> Navigate.route` at that point.
+  - the live per-unit loop was cut back to historical `Navigate.unitize -> read -> Navigate.route` at that point.
   - the later forward-settlement cutover retired that route layer from the current live path.
-  - `Read` now directly owns a naturalized reading-result contract:
+  - the current `Digest` call now directly owns a naturalized reading-result contract:
     - `reading_impression`
     - `surfaced_reactions`
-    - `memory_uptake_ops`
-    - `memory_uptake_ops`
+    - LLM-facing `recent_reading_memory`
   - the dedicated live `Express` node is no longer on the live Reading Runner path
-  - `Read` prompt packaging now follows the compact `always carry / selective carry / not carry` contract instead of receiving the broader intermediate packet wholesale
+  - current Digest prompt packaging uses XML blocks with compact carried reading state instead of receiving the broader intermediate packet wholesale
   - this removed the last live dependence on the temporary `Express` step
 - Phase F2 remains historical implementation evidence only.
   - it introduced a navigate-owned Detour cutover, source-skill loop, and `local_continuity` detour fields.
   - as of `DEC-104`, that Detour / source-backread behavior is retired from the live runtime path.
   - as of `DEC-105`, current code, prompts, schemas, audits, and tests no longer expose those retired interfaces.
 - Phase F3 is now landed as the reaction-persistence and compatibility reconvergence slice.
-  - persisted visible reactions now enter the system only through `Read.surfaced_reactions[]`
+  - persisted visible reactions now enter the system only through `Digest.surfaced_reactions[]`
   - persisted visible reactions now share one surfaced-native reaction-record builder for the current forward path; old detour reads remain historical artifacts only
   - chapter-result compatibility projection and normalized eval export now derive legacy family labels only through the compat helper
   - dead live ownership paths for the old `Express` persistence flow and `raw_reaction` fallback are now removed
@@ -110,12 +109,12 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
 - Phase C.1 of the post-eval structural rework is now landed.
   - Live prompt inputs now flow through a bounded internal `state_packet.v1` seam.
   - The then-current historical unitization helper began receiving packetized `navigation_context`; current `Ingest` no longer receives that state packet in the first slice.
-  - `read` now receives packetized read-context views that explicitly separate continuity, active-attention, reflective, active-focus, and source-ref digests.
+  - the then-current concrete reading node received packetized context views that explicitly separated continuity, active-attention, reflective, active-focus, and source-ref digests; current Digest has the XML context described below.
   - Persisted runtime files and public compatibility surfaces remain unchanged in this slice.
 - Phase C.2 of the post-eval structural rework is now also landed as the first state-territory slice.
   - Live state packets now derive a bounded `concept_digest` from the current `motif_index + unresolved_reference_index`.
   - Live state packets now derive a bounded `thread_digest` from the current `trace_links + unresolved_reference_index`.
-  - The Navigator and `read` both receive those concept/thread digests through the packet layer.
+  - The historical Navigator and concrete reading node both received those concept/thread digests through the packet layer at that time.
   - Persisted runtime files and public compatibility surfaces remain unchanged in this slice too.
 - Phase C.3 of the post-eval structural rework is now landed as the direct main-state cutover.
   - Newer runs first treated `active_attention / concept_registry / thread_trace / reflective_frames / anchor_bank` as the primary runtime and checkpoint truth; the current source-ref cutover retires `anchor_bank` from that truth set.
@@ -128,27 +127,27 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
 - The post-F4 cleanup has also retired the old gate/pressure sidecar from current state.
   - Current code may still write `active_attention.active_items`, but Active Attention / ActiveTension is now deprecated as the primary hot-state design.
   - `Working State` was the historical name for this hot layer; later runs used `Active Attention`, then ActiveTension semantics. Those names now describe deprecated artifacts rather than the forward architecture.
-  - `recent_reading_memory` is now the current first-half near-term memory layer: Read can append compact semantic memory from each unit so later reads do not behave as if earlier units vanished.
-  - The implementation currently covers Read-time formation, append-only persistence, prompt projection, checkpoint / resume carriage, settlement audit visibility, and evaluation snapshot inclusion. Periodic consolidation into long-distance memory remains deferred.
+  - `recent_reading_memory` is now the current first-half near-term memory layer: Digest can append compact semantic memory from each unit so later read cycles do not behave as if earlier units vanished.
+  - The implementation currently covers Digest-time formation, append-only persistence, prompt projection, checkpoint / resume carriage, settlement audit visibility, and evaluation snapshot inclusion. Periodic consolidation into long-distance memory remains deferred.
   - Long-lived readerly tensions, unresolved arcs, watchpoints, and patterns should settle into `thread_trace`; stable concepts and frameworks belong in `concept_registry`; visible reactions belong in `reaction_records`.
   - Do not expand ActiveTension to cover these needs. Keep its existing fields (`tension_from`, `tension_focus`, `working_interpretation`, `source_refs`, `development_source_refs`, terminal reasons / coordinates, `status`, and legacy inputs) only as deprecated data until cleanup.
   - `question_from`, `driving_question`, `working_answer`, `answer_source_refs`, `answer_boundary`, and `statement` are old artifact inputs only.
   - `local_hypotheses` / `live_hypotheses` are historical names only. Hypothesis-like material should become `recent_reading_memory`, `thread_trace`, or `concept_registry` depending on its durability, not another ActiveTension expansion.
   - `gate_state`, `pressure_snapshot`, and the old working-pressure file are historical trigger/watch/zoom design artifacts, not current runtime or prompt inputs.
-  - `pressure_signals` were the intermediate one-step `Read -> Navigate.route` signals; they are now historical after the forward-settlement cutover.
+  - `pressure_signals` were the intermediate one-step old concrete reading-node -> route signals; they are now historical after the forward-settlement cutover.
 - The forward-settlement cutover is now landed.
   - `Navigate.route`, `route_action`, and `route_history` are no longer part of the current live mechanism.
-  - `Read` no longer emits `pressure_signals`.
-  - After `Read`, the Reading Runner deterministically applies memory uptake, persists surfaced reactions, writes audit records, closes the current unit, and advances the cursor to the unit end.
+  - `Digest` no longer emits `pressure_signals`.
+  - After `Digest`, the Reading Runner deterministically applies memory uptake, persists surfaced reactions, writes audit records, closes the current unit, and advances the cursor to the unit end.
   - There is no replacement `forward` action.
   - There is no current live non-mainline scheduling mechanism; old Detour / source-backread is removed from the current runtime surface after `DEC-105`.
 - The `Ingest` LLM-call boundary is now landed.
   - The current Ingest contract is a pure LLM boundary call: **Choose the Boundary of the Next Unit That Should Be Read**.
   - Reading Runner owns runtime next-unit preparation through `prepare_next_source_unit_for_read` and consumes one `PreparedSourceUnit`.
-  - The runtime operation prepares source preview/context, calls `Ingest`, resolves or retries the returned anchor, applies fallback boundary governance when needed, and produces the accepted forward source unit for `Read`.
+  - The runtime operation prepares source preview/context, calls `Ingest`, resolves or retries the returned anchor, applies fallback boundary governance when needed, and produces the accepted forward source unit for `Digest`.
   - The current prompt and schema expose only boundary fields for that forward source unit: exact `end_anchor_text`, `boundary_type`, and `reason`.
 - Phase D of the post-eval structural rework is now landed as preserved intermediate continuity / recall / resume evidence.
-  - that branch added a budget-bounded multi-step supplemental loop around `read`.
+  - that branch added a budget-bounded multi-step supplemental loop around the old concrete reading node.
   - Runtime state and full checkpoints now persist a lightweight `continuation capsule` with explicit `rehydration entrypoints`.
   - Warm resume now restores the latest usable continuation capsule together with new-format runtime/checkpoint state.
   - old supplemental source-span helper interfaces from that branch are no longer current code, prompt, audit, or test surfaces after `DEC-105`.
@@ -171,10 +170,10 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
     - receives that already-prepared adaptive source preview in XML context
     - returns only boundary fields, including an exact `end_anchor_text` rather than sentence ids or raw numeric offsets
   - `Reading Runner` boundary governance resolves the returned anchor, retries once when the anchor is unresolved, falls back to a deterministic cursor boundary when needed, and produces the accepted `PreparedSourceUnit`
-  - mandatory formal unit read with bounded carry-forward context
-  - `read` directly surfaces zero-to-many reading-time reactions and emits bounded state ops
-  - `Reading Runner` invokes `Read` on the accepted source unit, applies memory uptake, persists reactions, writes audit, records the accepted unit span, and advances the cursor
-  - `Read` has no current path-redirection output contract; new read-audit rows do not emit retired path-redirection evidence
+  - mandatory `Digest` call with bounded carry-forward context
+  - `Digest` directly surfaces zero-to-many reading-time reactions and emits bounded Recent Reading Memory
+  - `Reading Runner` invokes `Digest` on the accepted source unit, applies converted memory uptake, persists reactions, writes audit, records the accepted unit span, and advances the cursor
+  - `Digest` has no current path-redirection output contract; new read-audit rows do not emit retired path-redirection evidence
   - chapter-end slow-cycle work such as `chapter_consolidation`, `reflective_promotion`, and `reconsolidation`
 - The old `trigger -> zoom_read -> meaning_unit_closure -> controller_decision -> reaction_emission` chain is now historical implementation vocabulary, not live runtime behavior.
   - Those names may still appear in historical docs, old artifacts, or decision entries.
@@ -190,7 +189,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - shape: `chapter_id`, `chapter_ref`, `paragraph_index`, `char_offset`
   - offsets are character offsets inside one source paragraph
 - `SourceSpan`
-  - the accepted unit range read by `Read`
+  - the accepted unit range digested by `Digest`
   - shape: `start_cursor`, `end_cursor`
   - ranges are end-exclusive: `[start, end)`
 - `coordinate boundary`
@@ -244,9 +243,9 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
     - if the anchor cannot be resolved, retry Ingest once with the failed resolution as source evidence
     - if retry still fails, fall back conservatively to the current paragraph end or preview boundary and record the resolution status
   - build a small `carry-forward context` from persisted state
-  - formally read the accepted source unit through `read`
-  - let `read` directly surface zero-to-many reading-time reactions for that exact unit
-  - accept only the current `Read` output contract: `reading_impression`, `surfaced_reactions`, and memory uptake output
+  - formally digest the accepted source unit through `Digest`
+  - let `Digest` directly surface zero-to-many reading-time reactions for that exact unit
+  - accept only the current `Digest` output contract: `reading_impression`, `surfaced_reactions`, and LLM-facing `recent_reading_memory`
   - `Reading Runner` post-read settlement closes the exact source unit, appends it to the Unit Span Ledger, and advances the cursor to `end_cursor`
 - Current capture/resume writes only the current forward continuity schema; old non-mainline checkpoint/artifact shapes are not a compatibility target after `DEC-105`.
 - Future `Ingest` memory retrieval should be designed separately rather than inherited from the retired source-skill loop by default.
@@ -278,14 +277,15 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
     - `survey` now classifies them into `front_support` or `back_support` when appropriate
     - `Reading Runner` then reads them after the `main_body` queue drains
     - explicit chapter-targeted runs may still select them directly
-- `read` remains the current formal unit-read call, but its prompt role is now reader-first rather than node-first.
-  - On the current live baseline, it directly produces `reading_impression`, `surfaced_reactions`, and `memory_uptake_ops`.
+- `Digest` is the current formal unit interpretation LLM call, with a reader-first prompt role rather than a node-first role.
+  - On the current live baseline, it directly produces `reading_impression`, `surfaced_reactions`, and LLM-facing `recent_reading_memory`.
+  - The runtime converts `recent_reading_memory[]` into internal `memory_uptake_ops[]` before settlement.
   - It should not behave like a control super-node or a checklist-filling state updater.
   - Its intended order is:
     - read the current unit as a reader
     - form a brief natural `reading_impression`
     - surface any underline / margin-note style reactions that genuinely arise
-    - let durable memory settle through bounded `memory_uptake_ops`
+    - record bounded Recent Reading Memory for continuity
     - avoid route selection; the Runner will advance deterministically after settlement
   - Legacy compatibility fields such as `raw_reaction`, `move_hint`, `prior_material_use`, `express_signal`, and `context_request` are now historical territory, not the live F3 contract.
   - It now also carries an explicit proportion rule for thin structural units:
@@ -294,9 +294,9 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
 - `reading_impression` is a temporary natural-language read-after impression, not a new durable memory layer.
   - It exists as the immediate reader-like impression after one unit.
   - Durable memory changes only through `memory_uptake_ops` into the existing primary state layers.
-  - Current Read-owned `memory_uptake_ops` may write only to `active_attention`, `concept_registry`, and `thread_trace`.
+  - Current Digest-owned `memory_uptake_ops` may write only to `active_attention`, `concept_registry`, and `thread_trace`.
     - `concept_digest`, `thread_digest`, and `active_focus_digest` are prompt-facing projections derived from state; they are not writable stores.
-    - Unsupported Read target stores or unsupported operation/store pairings are dropped at admission and recorded as diagnostics rather than being treated as accepted updates.
+    - Unsupported Digest target stores or unsupported operation/store pairings are dropped at admission and recorded as diagnostics rather than being treated as accepted updates.
   - Visible reactions and memory uptake come from the same reading experience, but a surfaced reaction is already persisted as a reaction record and is not automatically copied into concept or thread memory.
   - Author-given structures such as stage models, classifications, core definitions, named distinctions, or chapter roadmaps may enter memory even when they do not produce a visible reaction.
 - `Express` is now best understood as historical intermediate compatibility-first territory rather than a live mechanism node.
@@ -330,13 +330,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
 - The main LLM is now called for every formal coverage unit, not for every sentence.
 - The current live LLM-call bundle is:
   - `Ingest`
-  - `read_unit`
-  - `reflective_promotion`
-  - `reconsolidation`
-  - `chapter_consolidation`
-- The next follow-up LLM-call bundle after F1 is expected to remain:
-  - `Ingest`
-  - `read_unit`
+  - `Digest`
   - `reflective_promotion`
   - `reconsolidation`
   - `chapter_consolidation`
@@ -344,47 +338,47 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - paragraph-offset preview construction and cursor advancement run without LLM
   - `Ingest` decides the next coverage unit before formal reading begins
   - forward source-unit choice normally uses one Ingest LLM call and cannot request skills
-  - `read_unit` is now the only steady-state per-unit interpretation call
-  - surfaced reactions now come from that same read call rather than from a follow-on wording node
+  - `Digest` is now the only steady-state per-unit interpretation call
+  - surfaced reactions now come from that same Digest call rather than from a follow-on wording node
   - ordinary forward progression is deterministic Reading Runner settlement rather than a route action
 - Under the approved next shape:
   - `Ingest` owns forward next-unit selection and reserves memory-support retrieval for later design
-  - `read` owns current-unit reading impression, surfaced reactions, and memory uptake
+  - `Digest` owns current-unit reading impression, surfaced reactions, and memory uptake
   - `Reading Runner` owns post-read settlement and cursor advance
   - `slow cycle` owns chapter-end consolidation and promotion
 
 ## Frozen Next-Shape Contract
 - This section freezes the approved next target shape after the post-E3 quality review.
-- `ReadResult` should minimally expose:
+- `DigestResult` minimally exposes:
   - `reading_impression`
     - the temporary natural-language impression left by the current unit
     - this is intentionally not split into subfields; it is the reader's immediate understanding / noticing after the unit
   - `surfaced_reactions`
-    - zero to many visible reading-time reactions surfaced directly by `read`
+    - zero to many visible reading-time reactions surfaced directly by `Digest`
     - each surfaced reaction should carry:
       - `source_quote`
       - `content`
       - optional `prior_link`
       - optional `outside_link`
       - optional `search_intent`
-    - `read` still understands the whole `unit`, but each `source_quote` should be chosen as the smallest self-sufficient span that can honestly carry that surfaced reaction
+    - `Digest` still understands the whole `unit`, but each `source_quote` should be chosen as the smallest self-sufficient span that can honestly carry that surfaced reaction
       - if one sentence already stands on its own, it may anchor a surfaced reaction by itself
-      - if a sentence would lose meaning when isolated, `read` should use the smallest multi-sentence span that keeps the meaning intact
+      - if a sentence would lose meaning when isolated, `Digest` should use the smallest multi-sentence span that keeps the meaning intact
       - a larger paragraph-sized anchor is allowed only when that larger span is genuinely the smallest complete footing, not as a lazy default
     - one `unit` may legitimately yield more than one native surfaced reaction when it contains multiple independently complete local triggers
       - a sharper later sentence should not automatically swallow an earlier framing line, premise line, or hinge line that also stands on its own
-      - `read` should do a final swallowed-line check before it settles on one reaction: if an earlier line independently frames the later move, it should not be left stranded inside `reading_impression` merely because a later line sounds more dramatic
-      - this applies especially to premise-plus-sharpening pairs: when the earlier line states the premise and the later line cashes it out, `read` should not default to surfacing only the later line if both independently stand
+      - `Digest` should do a final swallowed-line check before it settles on one reaction: if an earlier line independently frames the later move, it should not be left stranded inside `reading_impression` merely because a later line sounds more dramatic
+      - this applies especially to premise-plus-sharpening pairs: when the earlier line states the premise and the later line cashes it out, `Digest` should not default to surfacing only the later line if both independently stand
       - this is bounded plurality, not pressure to spray reactions everywhere; the default density still stays low unless the unit honestly contains multiple independently valuable spans
     - the native surfaced-reaction shape does not carry a `type`
     - `content` must stay reader-facing and natural-language.
       - it may callback to earlier material, but it must not expose system handles such as sentence ids, `ref_ids`, anchor ids, thread ids, concept ids, or reaction ids
       - `prior_link.ref_ids` remain internal structured linkage for the runtime and audits, not wording that should leak into visible text
       - if visible wording briefly quotes earlier material, it should do so sparingly with a short fragment rather than pasting a whole earlier sentence back into the reaction
-  - `memory_uptake_ops`
-    - explicit patch/append/close/link operations against the durable state layers
-    - these express what naturally needs to remain available after the unit, not a checklist of every local understanding
-    - `read` should not rewrite whole state objects
+  - `recent_reading_memory`
+    - LLM-facing Recent Reading Memory entries with `kind` and `memory_text`
+    - the runtime converts these entries into internal `memory_uptake_ops[]` for deterministic settlement
+    - model-emitted legacy `memory_uptake_ops[]` are not part of the Digest output contract
 - surfaced reactions are now the primary visible-reaction truth in the approved contract.
   - for `attentional_v2`, native visible-reaction truth is the surfaced semantic payload itself, not a reaction-family label.
   - old family labels remain compatibility projections only.
@@ -412,32 +406,32 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
     - they are no longer prompt-time native generation families for `attentional_v2`
     - `highlight` now means a compat-projected local source-referenced reaction whose surfaced payload stays inside the current unit and does not explicitly surface `prior_link`, `outside_link`, or `search_intent`
     - `highlight` therefore may still contain real visible wording; it no longer means "only saved, nothing to say"
-    - `discern` remains a compat-side split for a more interpretively explicit local source-referenced reaction, not a native `Read`-time type field
+    - `discern` remains a compat-side split for a more interpretively explicit local source-referenced reaction, not a native Digest-time type field
 - This mapping is transitional.
   - It exists for slow-cycle aggregation, eval normalization, and UI adapter continuity.
   - It is now derived from persisted surfaced reaction records through one compat helper rather than treated as the persisted reaction truth.
-  - It must not become the governing shape of the new `Read` prompt.
+  - It must not become the governing shape of the current `Digest` prompt.
 - Default current call types are:
   - `Ingest`
     - choose the next exact coverage unit that should be read now
     - chooses from the bounded forward preview without skill use
-  - `formal read`
+  - `Digest`
     - interpret the chosen unit with compact carry-forward context
   - `chapter consolidation`
     - update broader hypotheses and unresolved tensions at a local milestone
 
 ## Context Packaging
 - Each LLM call should receive a role-specific projection rather than the full persisted state bundle.
-- Prompt assembly now has two Read paths:
-  - default `legacy` path: current product runs still use `ATTENTIONAL_V2_PROMPTS.read_unit_system` plus the legacy `read_unit_prompt` template
-  - opt-in `xml` path: `READ_UNIT_PROMPT_ASSEMBLY_MODE="xml"` or `ATTENTIONAL_V2_READ_PROMPT_ASSEMBLY_MODE=xml` assembles the target Read XML blocks through the generic Prompt Assembly layer and records `prompt_assembly` metadata in the prompt manifest
-  - the opt-in path is for diagnostic validation before becoming default; do not remove the legacy path until a separate switch/cleanup decision is accepted
+- Digest prompt assembly now has one live path:
+  - `llm_calls.digest(...)` always uses the XML prompt assembly path
+  - live prompt manifests are written to `prompt_manifests/digest.json`
+  - no live legacy assembly toggle or old concrete-node prompt manifest remains
 - Current prompt assembly separates the product-level `ReaderRole` from per-call `Instruction`.
   - The reader role fragment is `reader.role`, owned by `attentional_v2/prompts/reader_role.py`.
   - Ingest reuses the same reader role and supplies its own `Instruction` fragment.
   - Ingest XML context uses top-level `ReaderRole`, `Instruction`, `BookInfo`, `CurrentView`, an empty self-closing `RetrievalSurface`, and `OutputContract`.
   - The current Ingest output contract is flat JSON with `end_anchor_text`, `boundary_type`, and `reason`.
-  - Target Read XML now renders `ReaderRole` and `Instruction` as separate top-level blocks; all fixed non-role Read directions live under `Instruction`, while runtime context/data blocks remain separate.
+  - Digest XML renders `ReaderRole` and `Instruction` as separate top-level blocks; all fixed non-role Digest directions live under `Instruction`, while runtime context/data blocks remain separate.
 - The stable carry taxonomy is now:
   - `always carry`
   - `selective carry`
@@ -446,14 +440,14 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - Current `Ingest` carries only the source frontier needed to choose the next unit.
   - The first Ingest slice does not receive recent memory, active attention, concept/thread digests, or old navigation context.
   - Future Ingest memory retrieval will define a separate retrieval surface rather than inheriting the retired source-skill or backread path.
-- `Read` should carry:
+- `Digest` should carry:
   - `always carry`
     - `current_unit`
     - a compact `local_continuity` summary
     - deprecated open items from `active_attention` while the store remains in the runtime before removal
       - `active_attention` is no longer the target near-term memory design; do not expand it as the primary short-term memory layer
       - prompt-visible fields, where still carried for compatibility, are only `item_id`, `tension_from`, `tension_focus`, and `working_interpretation`
-      - source refs, development source refs, linked keys, statuses, and projection markers remain in runtime/audit/report artifacts rather than the Read prompt
+      - source refs, development source refs, linked keys, statuses, and projection markers remain in runtime/audit/report artifacts rather than the Digest prompt
       - if the open-tension set grows too large, the projection should warn rather than silently omit items
     - compact `concept_digest`
     - compact `thread_digest`
@@ -495,17 +489,17 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
     - do not add new capabilities, metrics, or report contracts that make `active_attention` the primary short-term memory layer again
     - native runtime truth remains `active_attention.active_items[]` while the current code path still writes it
     - existing item labels and fields (`attention_tags[]`, `tension_from`, `tension_focus`, `working_interpretation`, `source_refs`, `development_source_refs`, terminal reasons / coordinates, and `status`) are deprecated shape, not a forward design target
-    - empty, `active`, `cooling`, and `open` are treated as prompt-eligible open statuses while the deprecated projection still exists; `answered`, `resolved`, and `closed` are lineage/history and are not carried into the Read prompt
+    - empty, `active`, `cooling`, and `open` are treated as prompt-eligible open statuses while the deprecated projection still exists; `answered`, `resolved`, and `closed` are lineage/history and are not carried into the Digest prompt
     - near-term continuity is now owned by `recent_reading_memory`; do not use new ActiveTension design work to cover per-unit semantic memory
     - long-lived tensions, arcs, watchpoints, and unresolved thematic/narrative pulls should be inherited by `thread_trace`, not kept alive in a separate ActiveTension layer
   - `recent_reading_memory`
     - owns near-term semantic memory of just-read units
-    - Read appends one or a small number of entries per completed unit through `memory_uptake_ops[]` with `target_store="recent_reading_memory"` and `op="append"`
+    - Digest returns one or a small number of LLM-facing `recent_reading_memory[]` entries; runtime converts them into `memory_uptake_ops[]` with `target_store="recent_reading_memory"` and `op="append"`
     - the LLM provides only `kind` and `memory_text`; Recent Memory append operations do not use an operation-level `reason`
     - the runner owns `entry_id`, `source_unit_span_id`, `created_at_unit_index`, `status`, and `archived_by_consolidation_id`
     - entries are grounded by the accepted read unit span as a whole; the first implementation does not require fine-grained `source_refs` or quote matching
-    - before consolidation, this store is append-only: Read does not update, merge, resolve, close, link, or route recent entries into concept/thread destinations
-    - `status="active"` entries are carried into the next Read prompt; future consolidation will mark processed entries as `archived`, and archived entries are retained for audit but not prompt-carried
+    - before consolidation, this store is append-only: Digest does not update, merge, resolve, close, link, or route recent entries into concept/thread destinations
+    - `status="active"` entries are carried into the next Digest prompt; future consolidation will mark processed entries as `archived`, and archived entries are retained for audit but not prompt-carried
   - `long-distance memory`
     - `concept_registry`
     - `thread_trace`
@@ -523,9 +517,9 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
     - This preservation is temporary deprecated-store behavior only; it should not be extended into a new ActiveTension design line.
   - Carry-forward does not fuzzy-match by statement and does not invent source refs for newly introduced items; new statement-only carry-forward items are rejected instead of becoming current Active Attention.
   - Deprecated-store ActiveTension merges preserve `tension_from`, update `working_interpretation` only when the payload explicitly provides one, preserve terminal reasons / coordinates, and dedupe both `source_refs` and `development_source_refs`.
-  - Read-output `source_quote` / `development_source_quote` are resolved into paragraph-offset `SourceRef` objects before settlement; model-emitted `source_refs` / `development_source_refs` coordinates are not trusted.
+  - Digest-output `source_quote` values are resolved into paragraph-offset `SourceRef` objects before settlement; model-emitted coordinate objects are not trusted.
     - The LLM is responsible for citing exact source text snippets, not for producing trusted coordinates.
-    - If an active item is grounded in title / chapter framing / prior memory rather than a current-source phrase, `Read` should explain that basis in `tension_from` and omit `source_quote`; the runtime records unit lifecycle coordinates without manufacturing precise `source_refs`.
+    - If an active item is grounded in title / chapter framing / prior memory rather than a current-source phrase, the deprecated-store runtime records unit lifecycle coordinates without manufacturing precise `source_refs`.
     - The runtime resolves coordinates by raw exact match, normalized exact match, then ordered-fragment match for stitched-but-source-real snippets. If none match, the run keeps a `fallback_unit_span` caveat rather than pretending to have precise evidence.
 - Ownership is now:
   - `Ingest`
@@ -533,11 +527,10 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
     - will later own memory-support retrieval requests once the memory design lands
   - `Reading Runner`
     - owns `local_continuity`, cursor advancement, anchor resolution, retry/fallback, retrieval execution when it exists, and settlement
-  - `Read`
+  - `Digest`
     - owns current-unit understanding
     - owns surfaced reactions
-    - owns appending `recent_reading_memory`
-    - owns updates into `concept_registry / thread_trace` and, temporarily until removal, `active_attention`
+    - owns LLM-facing `recent_reading_memory`
     - must write Recent Reading Memory as compressed, context-resolvable, source-established content for the future reader; it should orient through the full prompt-visible reading context, but still record what the current unit itself newly establishes, develops, specifies, contrasts, changes, or makes memorable
     - should not emit or rely on an operation-level `reason` for `recent_reading_memory`; the `memory_text` itself is the retained content
     - Recent Reading Memory should be written as natural memory sentences or a short paragraph, not as a default `<label>: <explanation>` heading pattern; colons are appropriate only when the source itself names a term, stage, framework, or quoted source term
@@ -574,7 +567,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
 - `DEC-104` retired Detour search and source-backread from the live path.
 - `DEC-105` hard-purged the retired compatibility interfaces from current code, prompts, schemas, audits, and tests.
 - New live runs do not:
-  - prompt `Read` to emit path-redirection requests
+  - prompt `Digest` to emit path-redirection requests
   - write non-mainline path fields into new continuity state
   - call source skills from `Ingest`
   - return non-mainline selection modes from `Ingest`
@@ -616,12 +609,12 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
     - records `unit_id`, sequence index, start/end source cursors, preview cursors, char/paragraph counts, end anchor text, and resolution status
     - used for reading-history continuity and resume validation rather than treated as a debug-only stream
   - `_mechanisms/attentional_v2/runtime/read_audit.jsonl`
-    - canonical runtime audit for each formal `Read`
-    - records carry-forward refs, supplemental-context use, surfaced reactions, `reading_impression`, and the normalized `memory_uptake_ops` returned by `Read`
+    - canonical runtime audit for each whole read cycle
+    - records carry-forward refs, `ingest_trace`, surfaced reactions, `reading_impression`, and the normalized `memory_uptake_ops` converted from Digest output
     - also records the current source span when the read is mainline paragraph-offset reading
     - also records memory-op counts by target store so durable-memory settlement can be diagnosed without replaying raw model output
   - `_mechanisms/attentional_v2/runtime/settlement_audit.jsonl`
-    - canonical runtime audit for each completed `Read -> Reading Runner settlement` transaction
+    - canonical runtime audit for each completed `Digest -> Reading Runner settlement` transaction
     - records compact before/after counts and changed ids for active attention, concepts, threads, and reactions
     - also records the current source span when the settlement belongs to mainline paragraph-offset reading
     - does not persist full state snapshots, raw prompt/response payloads, or per-op accepted/skipped judgments
@@ -666,7 +659,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - `ingest`
     - current forward-only source boundary selector
     - outputs the accepted boundary fields for one unit from the bounded preview without skill use
-  - `read_unit`
+  - `digest`
   - `reflective_promotion`
   - `reconsolidation`
   - `chapter_consolidation`

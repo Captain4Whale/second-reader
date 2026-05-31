@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-import os
 import re
 from datetime import datetime, timezone
 from pathlib import Path
@@ -12,12 +11,11 @@ from src.iterator_reader.llm_utils import LLMTraceContext, ReaderLLMError, invok
 
 from .prompts import (
     ATTENTIONAL_V2_PROMPTS,
-    READ_XML_PROMPT_VERSION,
-    READ_XML_TRANSPORT_SYSTEM_PROMPT,
+    DIGEST_XML_TRANSPORT_SYSTEM_PROMPT,
     render_ingest_prompt_xml,
-    render_read_prompt_xml,
+    render_digest_prompt_xml,
 )
-from .state_projection import build_read_prompt_packet
+from .state_projection import build_digest_prompt_packet
 from .schemas import (
     AnchorBankState,
     AnchorMemoryState,
@@ -31,8 +29,7 @@ from .schemas import (
     PriorLink,
     ReactionCandidate,
     ReactionType,
-    ReadUnitResult,
-    ReaderPolicy,
+    DigestResult,
     SearchIntent,
     StateOperation,
     SurfacedReaction,
@@ -77,11 +74,6 @@ _VISIBLE_INTERNAL_REFERENCE_PATTERNS = (
     re.compile(r"\bc\d+-s\d+(?:-\d+)?(?:-c\d+-s\d+(?:-\d+)?)?\b", re.IGNORECASE),
     re.compile(r"\b(?:anchor|thread|concept|reaction|move|ref|source):[A-Za-z0-9._:@-]+\b", re.IGNORECASE),
 )
-READ_UNIT_PROMPT_ASSEMBLY_MODE = "legacy"
-_READ_PROMPT_ASSEMBLY_MODE_ENV = "ATTENTIONAL_V2_READ_PROMPT_ASSEMBLY_MODE"
-_READ_PROMPT_ASSEMBLY_MODES = {"legacy", "xml"}
-
-
 def _timestamp() -> str:
     """Return a stable UTC timestamp."""
 
@@ -101,38 +93,6 @@ def _contains_internal_reference_markup(text: str) -> bool:
     if not cleaned:
         return False
     return any(pattern.search(cleaned) for pattern in _VISIBLE_INTERNAL_REFERENCE_PATTERNS)
-
-
-def _json_block(value: object) -> str:
-    """Render one prompt context block as stable JSON."""
-
-    return json.dumps(value, ensure_ascii=False, indent=2)
-
-
-def _render_prompt(template: str, **replacements: str) -> str:
-    """Render one prompt template without treating JSON braces as format fields."""
-
-    rendered = template
-    for key, value in replacements.items():
-        rendered = rendered.replace(f"{{{key}}}", value)
-    return rendered
-
-
-def _structural_frame(
-    *,
-    book_title: str,
-    author: str,
-    chapter_title: str,
-    output_language: str,
-) -> dict[str, object]:
-    """Build the shared structural frame for LLM-call prompts."""
-
-    return {
-        "book_title": book_title,
-        "author": author,
-        "chapter_title": chapter_title,
-        "output_language": output_language,
-    }
 
 
 def _anchor_context(anchor_memory: AnchorMemoryState | AnchorBankState, *, limit: int = 4) -> list[dict[str, object]]:
@@ -226,18 +186,36 @@ def _write_prompt_manifest(
     )
 
 
-def _read_prompt_assembly_mode() -> str:
-    """Return the active Read prompt assembly mode.
+def _json_block(value: object) -> str:
+    """Render one stable JSON block for legacy-format non-Digest prompts."""
 
-    The module variable keeps tests and future code cleanup simple; the env var
-    allows local diagnostic runs without editing source.
-    """
+    return json.dumps(value, ensure_ascii=False, indent=2)
 
-    raw_mode = os.getenv(_READ_PROMPT_ASSEMBLY_MODE_ENV, READ_UNIT_PROMPT_ASSEMBLY_MODE)
-    mode = _clean_text(raw_mode).lower().replace("-", "_")
-    if mode in _READ_PROMPT_ASSEMBLY_MODES:
-        return mode
-    return "legacy"
+
+def _render_prompt(template: str, **replacements: str) -> str:
+    """Render one prompt template without treating JSON braces as format fields."""
+
+    rendered = template
+    for key, value in replacements.items():
+        rendered = rendered.replace(f"{{{key}}}", value)
+    return rendered
+
+
+def _structural_frame(
+    *,
+    book_title: str,
+    author: str,
+    chapter_title: str,
+    output_language: str,
+) -> dict[str, object]:
+    """Build the small shared structural frame used by non-Digest prompt templates."""
+
+    return {
+        "book_title": book_title,
+        "author": author,
+        "chapter_title": chapter_title,
+        "output_language": output_language,
+    }
 
 
 def _sentence_id(sentence: dict[str, object]) -> str:
@@ -814,7 +792,7 @@ def _route_targets_from_ref_ids(
 
 
 def _recent_reading_memory_output_to_ops(value: object) -> list[dict[str, object]]:
-    """Convert target XML Read output into current runtime memory ops."""
+    """Convert target XML Digest output into current runtime memory ops."""
 
     if not isinstance(value, list):
         return []
@@ -839,132 +817,72 @@ def _recent_reading_memory_output_to_ops(value: object) -> list[dict[str, object
     return operations
 
 
-def _read_memory_ops_from_payload(payload: object, *, prompt_assembly_mode: str) -> object:
-    """Return raw memory ops from either legacy or target XML Read output."""
+def _digest_memory_ops_from_payload(payload: object) -> object:
+    """Return runtime memory ops converted from Digest's XML output."""
 
     if not isinstance(payload, dict):
         return None
-    legacy_ops = payload.get("memory_uptake_ops")
-    if prompt_assembly_mode != "xml":
-        return legacy_ops
-    converted_ops = _recent_reading_memory_output_to_ops(payload.get("recent_reading_memory"))
-    if isinstance(legacy_ops, list):
-        return [*converted_ops, *legacy_ops]
-    return converted_ops
+    return _recent_reading_memory_output_to_ops(payload.get("recent_reading_memory"))
 
 
-def read_unit(
+def digest(
     *,
     carry_forward_context: CarryForwardContext,
-    reader_policy: ReaderPolicy,
     output_language: str,
     current_unit_source: dict[str, object] | None = None,
     current_unit_sentences: list[dict[str, object]] | None = None,
-    supplemental_context: dict[str, object] | None = None,
     output_dir: Path | None = None,
     book_title: str = "",
     author: str = "",
     chapter_title: str = "",
-) -> ReadUnitResult:
-    """Run the authoritative formal read for one chosen unit."""
+) -> DigestResult:
+    """Run the Digest LLM call for one accepted source unit."""
 
     prompts = ATTENTIONAL_V2_PROMPTS
     sentence_unit = [dict(sentence) for sentence in (current_unit_sentences or []) if isinstance(sentence, dict)]
     source_unit = dict(current_unit_source or {}) if isinstance(current_unit_source, dict) else {}
     if source_unit:
-        current_unit_payload: object = {
-            "source_span": dict(source_unit.get("source_span", {}))
-            if isinstance(source_unit.get("source_span"), dict)
-            else {},
-            "source_text": str(source_unit.get("source_text", "") or ""),
-            "paragraph_slices": [
-                {
-                    "paragraph_index": item.get("paragraph_index"),
-                    "text_role": _clean_text(item.get("text_role")),
-                    "start_char": item.get("start_char"),
-                    "end_char": item.get("end_char"),
-                    "text": str(item.get("text", "") or ""),
-                }
-                for item in source_unit.get("paragraph_slices", [])
-                if isinstance(item, dict)
-            ],
-        }
         current_unit_texts = [str(source_unit.get("source_text", "") or "")]
     else:
-        current_unit_payload = [
-            {
-                "sentence_id": _clean_text(sentence.get("sentence_id")),
-                "text": _clean_text(sentence.get("text")),
-                "text_role": _clean_text(sentence.get("text_role")),
-            }
-            for sentence in sentence_unit
-        ]
         current_unit_texts = [
             _clean_text(sentence.get("text"))
             for sentence in sentence_unit
             if _clean_text(sentence.get("text"))
         ]
-    prompt_packet = build_read_prompt_packet(
+    prompt_packet = build_digest_prompt_packet(
         carry_forward_context=carry_forward_context,
-        supplemental_context=supplemental_context,
     )
-    structural_frame = _structural_frame(
+    assembly_result = render_digest_prompt_xml(
         book_title=book_title,
         author=author,
         chapter_title=chapter_title,
-        output_language=output_language,
+        output_language_name=language_name(output_language),
+        recent_reading_memory=prompt_packet.get("recent_reading_memory")
+        if isinstance(prompt_packet.get("recent_reading_memory"), dict)
+        else None,
+        current_unit_source=source_unit,
+        current_unit_sentences=sentence_unit,
     )
-    prompt_assembly_mode = _read_prompt_assembly_mode()
-    prompt_assembly_metadata: dict[str, object] | None = None
-    if prompt_assembly_mode == "xml":
-        assembly_result = render_read_prompt_xml(
-            book_title=book_title,
-            author=author,
-            chapter_title=chapter_title,
-            output_language_name=language_name(output_language),
-            recent_reading_memory=prompt_packet.get("recent_reading_memory")
-            if isinstance(prompt_packet.get("recent_reading_memory"), dict)
-            else None,
-            current_unit_source=source_unit,
-            current_unit_sentences=sentence_unit,
-        )
-        system_prompt = READ_XML_TRANSPORT_SYSTEM_PROMPT
-        user_prompt = assembly_result.rendered_text
-        prompt_version = READ_XML_PROMPT_VERSION
-        promptset_version = assembly_result.promptset_version
-        prompt_assembly_metadata = {
-            "mode": prompt_assembly_mode,
-            "spec_id": assembly_result.spec_id,
-            "owner_node": assembly_result.owner_node,
-            "output_contract": assembly_result.output_contract,
-            "rendered_blocks": list(assembly_result.rendered_blocks),
-            "used_fragment_ids": list(assembly_result.used_fragment_ids),
-            "used_slot_names": list(assembly_result.used_slot_names),
-        }
-    else:
-        system_prompt = prompts.read_unit_system
-        user_prompt = _render_prompt(
-            prompts.read_unit_prompt,
-            structural_frame=_json_block(structural_frame),
-            current_unit=_json_block(current_unit_payload),
-            carry_forward_context=_json_block(prompt_packet),
-            supplemental_context=_json_block(dict(prompt_packet.get("selective_carry", {}))),
-            policy_snapshot=_json_block(reader_policy),
-            output_language_name=language_name(output_language),
-        )
-        prompt_version = prompts.read_unit_version
-        promptset_version = prompts.promptset_version
-        prompt_assembly_metadata = {"mode": prompt_assembly_mode}
+    system_prompt = DIGEST_XML_TRANSPORT_SYSTEM_PROMPT
+    user_prompt = assembly_result.rendered_text
+    prompt_assembly_metadata: dict[str, object] = {
+        "spec_id": assembly_result.spec_id,
+        "owner_node": assembly_result.owner_node,
+        "output_contract": assembly_result.output_contract,
+        "rendered_blocks": list(assembly_result.rendered_blocks),
+        "used_fragment_ids": list(assembly_result.used_fragment_ids),
+        "used_slot_names": list(assembly_result.used_slot_names),
+    }
     _write_prompt_manifest(
         output_dir,
-        node_name="read_unit",
-        prompt_version=prompt_version,
+        node_name="digest",
+        prompt_version=prompts.digest_version,
         system_prompt=system_prompt,
         user_prompt=user_prompt,
-        promptset_version=promptset_version,
+        promptset_version=prompts.promptset_version,
         prompt_assembly=prompt_assembly_metadata,
     )
-    with llm_invocation_scope(trace_context=LLMTraceContext(stage="phase4", node="read_unit")):
+    with llm_invocation_scope(trace_context=LLMTraceContext(stage="phase4", node="digest")):
         payload = invoke_json(system_prompt, user_prompt, default={})
 
     allowed_ref_ids = {
@@ -972,17 +890,6 @@ def read_unit(
         for ref in carry_forward_context.get("refs", [])
         if isinstance(ref, dict) and _clean_text(ref.get("ref_id"))
     }
-    if isinstance(supplemental_context, dict):
-        allowed_ref_ids.update(
-            _clean_text(ref.get("ref_id"))
-            for ref in supplemental_context.get("refs", [])
-            if isinstance(ref, dict) and _clean_text(ref.get("ref_id"))
-        )
-        allowed_ref_ids.update(
-            _clean_text(excerpt.get("ref_id"))
-            for excerpt in supplemental_context.get("excerpts", [])
-            if isinstance(excerpt, dict) and _clean_text(excerpt.get("ref_id"))
-        )
 
     surfaced_reactions = _normalize_surfaced_reactions(
         payload.get("surfaced_reactions") if isinstance(payload, dict) else None,
@@ -990,12 +897,12 @@ def read_unit(
         allowed_ref_ids=allowed_ref_ids,
     )
     reading_impression = _clean_text(payload.get("reading_impression")) if isinstance(payload, dict) else ""
-    raw_memory_ops = _read_memory_ops_from_payload(payload, prompt_assembly_mode=prompt_assembly_mode)
+    raw_memory_ops = _digest_memory_ops_from_payload(payload)
     memory_uptake_ops, memory_uptake_admission_events = _normalize_state_operations_with_admission(
         raw_memory_ops,
         enforce_read_store_policy=True,
     )
-    result: ReadUnitResult = {
+    result: DigestResult = {
         "reading_impression": reading_impression,
         "surfaced_reactions": surfaced_reactions,
         "memory_uptake_ops": memory_uptake_ops,

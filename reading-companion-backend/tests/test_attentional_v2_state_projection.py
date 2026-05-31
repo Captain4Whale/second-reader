@@ -14,7 +14,7 @@ from src.attentional_v2.schemas import (
 from src.attentional_v2.state_projection import (
     STATE_PACKET_VERSION,
     build_carry_forward_context,
-    build_read_prompt_packet,
+    build_digest_prompt_packet,
     build_supplemental_selective_carry,
 )
 
@@ -276,8 +276,8 @@ def test_build_carry_forward_context_exposes_phase_c1_packet_shape():
     assert "projection_role" not in persisted_reaction
 
 
-def test_build_read_prompt_packet_projects_compact_always_carry_and_selective_carry():
-    """The read prompt packet should expose compact digests and omit full state baggage."""
+def test_build_digest_prompt_packet_projects_compact_always_carry_and_selective_carry():
+    """The Digest prompt packet should expose compact digests and omit full state baggage."""
 
     local_buffer = build_empty_local_buffer()
     local_buffer["recent_sentences"] = [_sentence("c1-s1", "Alpha sentence.")]
@@ -373,7 +373,7 @@ def test_build_read_prompt_packet_projects_compact_always_carry_and_selective_ca
         reaction_records=reaction_records,
     )
 
-    prompt_packet = build_read_prompt_packet(
+    prompt_packet = build_digest_prompt_packet(
         carry_forward_context=carry_forward,
         supplemental_context={
             "refs": [
@@ -438,7 +438,7 @@ def test_build_read_prompt_packet_projects_compact_always_carry_and_selective_ca
 
 
 def test_read_prompt_packet_includes_all_open_questions_without_runtime_fields():
-    """Read prompt context should carry all open ActiveTensions, not the first six digest records."""
+    """Digest prompt context should carry all open ActiveTensions, not the first six digest records."""
 
     active_items = [
         {
@@ -464,7 +464,7 @@ def test_read_prompt_packet_includes_all_open_questions_without_runtime_fields()
         }
     )
 
-    prompt_packet = build_read_prompt_packet(
+    prompt_packet = build_digest_prompt_packet(
         carry_forward_context={
             "packet_version": STATE_PACKET_VERSION,
             "active_attention_digest": {"active_items": active_items},
@@ -484,7 +484,7 @@ def test_read_prompt_packet_includes_all_open_questions_without_runtime_fields()
     }
 
 
-def test_build_read_prompt_packet_exposes_retrieval_contract_without_full_memory_objects():
+def test_build_digest_prompt_packet_exposes_retrieval_contract_without_full_memory_objects():
     """Memory-context retrieval should expose metadata without full objects."""
 
     carry_forward = build_carry_forward_context(
@@ -534,7 +534,7 @@ def test_build_read_prompt_packet_exposes_retrieval_contract_without_full_memory
         ],
         "knowledge_activations": [{"activation_id": "knowledge-1"}],
     }
-    prompt_packet = build_read_prompt_packet(
+    prompt_packet = build_digest_prompt_packet(
         carry_forward_context=carry_forward,
         supplemental_context=supplemental_context,
     )
@@ -558,7 +558,7 @@ def test_build_read_prompt_packet_exposes_retrieval_contract_without_full_memory
     assert "knowledge_activations" not in prompt_packet
 
 
-def test_build_read_prompt_packet_uses_precise_sparse_retrieval_groups():
+def test_build_digest_prompt_packet_uses_precise_sparse_retrieval_groups():
     """Memory-context metadata should not list absent groups as not forwarded."""
 
     carry_forward = build_carry_forward_context(
@@ -592,7 +592,7 @@ def test_build_read_prompt_packet_uses_precise_sparse_retrieval_groups():
         ],
         "knowledge_activations": [{"activation_id": "knowledge-1"}],
     }
-    prompt_packet = build_read_prompt_packet(
+    prompt_packet = build_digest_prompt_packet(
         carry_forward_context=carry_forward,
         supplemental_context=supplemental_context,
     )

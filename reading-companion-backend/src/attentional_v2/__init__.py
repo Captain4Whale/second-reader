@@ -16,7 +16,7 @@ from .knowledge import (
 from .llm_calls import (
     build_unitize_preview,
     ingest,
-    read_unit,
+    digest,
 )
 from .observability import (
     append_debug_event,
@@ -36,7 +36,7 @@ from .prompts import (
     ATTENTIONAL_V2_PROMPTSET_VERSION,
     CHAPTER_CONSOLIDATION_PROMPT_VERSION,
     INGEST_PROMPT_VERSION,
-    READ_UNIT_PROMPT_VERSION,
+    DIGEST_PROMPT_VERSION,
     RECONSOLIDATION_PROMPT_VERSION,
     REFLECTIVE_PROMOTION_PROMPT_VERSION,
 )
@@ -106,7 +106,7 @@ __all__ = [
     "ATTENTIONAL_V2_SCHEMA_VERSION",
     "CHAPTER_CONSOLIDATION_PROMPT_VERSION",
     "INGEST_PROMPT_VERSION",
-    "READ_UNIT_PROMPT_VERSION",
+    "DIGEST_PROMPT_VERSION",
     "RECONSOLIDATION_PROMPT_VERSION",
     "REFLECTIVE_PROMOTION_PROMPT_VERSION",
     "apply_activation_operations",
@@ -157,7 +157,7 @@ __all__ = [
     "project_chapter_result_compatibility",
     "push_local_buffer_sentence",
     "reaction_records_for_chapter",
-    "read_unit",
+    "digest",
     "reading_locus_from_cursor",
     "record_read",
     "record_settlement",

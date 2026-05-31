@@ -29,7 +29,7 @@ The main change is not the boundary-selection content. The change is the node id
 - old role: choose the next readable unit
 - new role: choose the next readable unit; memory-support retrieval is an intended future extension after the memory design lands
 - old structure: flat prompt sections with JSON blocks
-- new structure: XML prompt assembly aligned with the newer Read prompt framework
+- new structure: XML prompt assembly aligned with the current Digest prompt framework
 - old context block: `navigation_context`
 - new split:
   - no direct carried reading-state block in the first Ingest slice
@@ -52,7 +52,7 @@ It receives the current reading frontier and a bounded forward source preview. E
 
 ## Target XML Context Shape
 
-The target Ingest prompt should follow the XML assembly discipline used by the newer Read prompt, but its top-level blocks should be semantically direct. `ReaderRole` and `Instruction` are both top-level prompt blocks; do not wrap them in a `RoleAndInstruction` container.
+The target Ingest prompt should follow the XML assembly discipline used by the current Digest prompt, but its top-level blocks should be semantically direct. `ReaderRole` and `Instruction` are both top-level prompt blocks; do not wrap them in a `RoleAndInstruction` container.
 
 Top-level rule:
 
@@ -96,7 +96,7 @@ Top-level rule:
 
 Rules:
 
-- must reference the same prompt fragment used by the current Read XML prompt: `reader.role`
+- must reference the same prompt fragment used by the current Digest XML prompt: `reader.role`
 - owned by `reading-companion-backend/src/attentional_v2/prompts/reader_role.py`
 - implementation should import `READER_ROLE_FRAGMENT` or include `READER_ROLE_FRAGMENT_REGISTRY` when building the Ingest prompt fragment registry
 - the Ingest prompt must not duplicate or locally redefine the role text
@@ -137,7 +137,7 @@ Target assembly shape:
 </Instruction>
 ```
 
-The `prompt_fragment_ref` attributes above are implementation-facing references in the assembly spec. The rendered model-facing XML should contain only resolved text, following the current Read XML assembly convention.
+The `prompt_fragment_ref` attributes above are implementation-facing references in the assembly spec. The rendered model-facing XML should contain only resolved text, following the current Digest XML assembly convention.
 
 Recommended `Instruction` child meanings:
 

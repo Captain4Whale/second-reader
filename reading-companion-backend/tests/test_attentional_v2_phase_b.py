@@ -1,4 +1,4 @@
-"""Tests for attentional_v2 read-contract helpers after the F1 cutover."""
+"""Tests for attentional_v2 Digest-contract helpers."""
 
 from __future__ import annotations
 
@@ -6,9 +6,8 @@ import json
 
 from src.attentional_v2 import llm_calls as llm_calls_module
 from src.attentional_v2 import runner as runner_module
-from src.attentional_v2.llm_calls import read_unit
+from src.attentional_v2.llm_calls import digest
 from src.attentional_v2.schemas import (
-    build_default_reader_policy,
     build_empty_anchor_memory,
     build_empty_knowledge_activations,
     build_empty_local_buffer,
@@ -85,8 +84,8 @@ def _anchor_record(anchor_id: str, sentence_id: str, quote: str) -> dict[str, ob
     }
 
 
-def test_read_unit_projects_compact_packet_and_returns_f1_surface_contract(tmp_path, monkeypatch):
-    """read_unit should render the compact prompt packet and return the new F1 fields."""
+def test_digest_projects_compact_packet_and_returns_f1_surface_contract(tmp_path, monkeypatch):
+    """Digest should render XML context and return the live Digest fields."""
 
     output_dir = tmp_path / "output" / "demo-book"
     AttentionalV2Mechanism().initialize_artifacts(output_dir)
@@ -98,7 +97,7 @@ def test_read_unit_projects_compact_packet_and_returns_f1_surface_contract(tmp_p
             "reading_impression": "The second sentence sharpens the first one.",
             "surfaced_reactions": [
                 {
-                    "anchor_quote": "Beta sentence.",
+                    "source_quote": "Beta sentence.",
                     "content": "This is where the move becomes visible.",
                     "prior_link": {
                         "ref_ids": ["anchor:a-1", "source:sentence:c1-s1"],
@@ -107,15 +106,10 @@ def test_read_unit_projects_compact_packet_and_returns_f1_surface_contract(tmp_p
                     },
                 }
             ],
-            "memory_uptake_ops": [
+            "recent_reading_memory": [
                 {
-                    "op": "update",
-                    "target_store": "active_attention",
-                    "target_key": "pressure-1",
-                    "payload": {
-                        "attention_tags": ["question"],
-                        "statement": "What changes here?",
-                    },
+                    "kind": "claim_or_argument",
+                    "memory_text": "The second sentence sharpens the first one.",
                 }
             ],
         }
@@ -189,7 +183,7 @@ def test_read_unit_projects_compact_packet_and_returns_f1_surface_contract(tmp_p
         reaction_records=reaction_records,
     )
 
-    result = read_unit(
+    result = digest(
         current_unit_sentences=[
             {
                 "sentence_id": "c1-s2",
@@ -200,30 +194,7 @@ def test_read_unit_projects_compact_packet_and_returns_f1_surface_contract(tmp_p
             }
         ],
         carry_forward_context=carry_forward,
-        reader_policy=build_default_reader_policy(),
         output_language="en",
-        supplemental_context={
-            "kind": "source_context",
-            "reason": "Need the exact wording.",
-            "refs": [
-                {
-                    "ref_id": "source:sentence:c1-s1",
-                    "kind": "source_excerpt",
-                    "item_id": "c1-s1",
-                    "summary": "Alpha sentence.",
-                    "sentence_id": "c1-s1",
-                }
-            ],
-            "excerpts": [
-                {
-                    "ref_id": "source:sentence:c1-s1",
-                    "source_kind": "sentence",
-                    "sentence_ids": ["c1-s1"],
-                    "chapter_ref": "Chapter 1",
-                    "excerpt_text": "Alpha sentence.",
-                }
-            ],
-        },
         output_dir=output_dir,
         book_title="Demo Book",
         author="Tester",
@@ -231,29 +202,30 @@ def test_read_unit_projects_compact_packet_and_returns_f1_surface_contract(tmp_p
     )
 
     manifest = json.loads(
-        (output_dir / "_mechanisms" / "attentional_v2" / "internal" / "prompt_manifests" / "read_unit.json").read_text(
+        (output_dir / "_mechanisms" / "attentional_v2" / "internal" / "prompt_manifests" / "digest.json").read_text(
             encoding="utf-8"
         )
     )
 
-    assert "\"packet_version\": \"attentional_v2.state_packet.v1\"" in captured["prompt"]
-    assert "\"active_tensions\"" in captured["prompt"]
-    assert "\"tension_focus\": \"Why the chapter turns here remains alive in attention.\"" in captured["prompt"]
-    assert "\"answer_boundary\": \"A later unit explains why the turn matters.\"" not in captured["prompt"]
-    assert "\"concept_key\": \"promise\"" in captured["prompt"]
-    assert "\"earlier_excerpts\"" in captured["prompt"]
+    assert "<ReaderRole>" in captured["prompt"]
+    assert "<Instruction>" in captured["prompt"]
+    assert "<ReadingState>" in captured["prompt"]
+    assert "The previous unit" not in captured["prompt"]
+    assert "Alpha sentence." not in captured["prompt"]
+    assert "\"active_tensions\"" not in captured["prompt"]
+    assert "\"concept_key\": \"promise\"" not in captured["prompt"]
+    assert "\"earlier_excerpts\"" not in captured["prompt"]
     assert "\"refs\": [" not in captured["prompt"]
-    assert "\"anchor_bank_digest\"" not in captured["prompt"]
-    assert manifest["prompt_version"] == "attentional_v2.read.v33"
+    assert manifest["node_name"] == "digest"
+    assert manifest["prompt_version"] == "attentional_v2.digest.v1"
     assert result["reading_impression"] == "The second sentence sharpens the first one."
     assert result["surfaced_reactions"][0]["source_quote"] == "Beta sentence."
-    assert result["surfaced_reactions"][0]["prior_link"]["ref_ids"] == ["source:sentence:c1-s1"]
-    assert result["memory_uptake_ops"][0]["op"] == "update"
-    assert result["memory_uptake_ops"][0]["target_store"] == "active_attention"
+    assert result["surfaced_reactions"][0]["prior_link"] is None
+    assert result["memory_uptake_ops"][0]["target_store"] == "recent_reading_memory"
 
 
-def test_run_read_with_context_loop_reads_once_and_persists_f1_audit(tmp_path, monkeypatch):
-    """The F1 live helper should read once and persist the new audit shape."""
+def test_run_digest_for_source_unit_reads_once_and_persists_read_cycle_audit(tmp_path, monkeypatch):
+    """The live helper should Digest once and persist the read-cycle audit shape."""
 
     output_dir = tmp_path / "output" / "demo-book"
     AttentionalV2Mechanism().initialize_artifacts(output_dir)
@@ -265,18 +237,17 @@ def test_run_read_with_context_loop_reads_once_and_persists_f1_audit(tmp_path, m
     reflective_frames = migrate_reflective_summaries_to_frames(build_empty_reflective_summaries())
     calls: list[dict[str, object]] = []
 
-    def fake_read_unit(**kwargs):
+    def fake_digest(**kwargs):
         calls.append(
             {
                 "unit_sentence_ids": [sentence["sentence_id"] for sentence in kwargs["current_unit_sentences"]],
-                "supplemental_context": kwargs.get("supplemental_context"),
             }
         )
         return {
             "reading_impression": "The unit becomes legible immediately.",
             "surfaced_reactions": [
                 {
-                    "anchor_quote": "Beta sentence.",
+                    "source_quote": "Beta sentence.",
                     "content": "The bridge is clear without a second pass.",
                 }
             ],
@@ -290,9 +261,9 @@ def test_run_read_with_context_loop_reads_once_and_persists_f1_audit(tmp_path, m
             ],
         }
 
-    monkeypatch.setattr(runner_module, "read_unit", fake_read_unit)
+    monkeypatch.setattr(runner_module, "_call_digest", fake_digest)
 
-    read_result, llm_fallbacks = runner_module._run_read_with_context_loop(
+    digest_result, llm_fallbacks = runner_module._run_digest_for_source_unit(
         chapter=chapter,
         chosen_unit_sentences=[chapter["sentences"][1]],
         unitize_decision={
@@ -312,7 +283,6 @@ def test_run_read_with_context_loop_reads_once_and_persists_f1_audit(tmp_path, m
         reflective_frames=reflective_frames,
         knowledge_activations=build_empty_knowledge_activations(),
         reaction_records=build_empty_reaction_records(),
-        reader_policy=build_default_reader_policy(),
         output_language="en",
         output_dir=output_dir,
         book_title="Demo Book",
@@ -325,12 +295,11 @@ def test_run_read_with_context_loop_reads_once_and_persists_f1_audit(tmp_path, m
 
     assert llm_fallbacks == []
     assert len(calls) == 1
-    assert calls[0]["supplemental_context"] is None
-    assert read_result["surfaced_reactions"][0]["anchor_quote"] == "Beta sentence."
-    assert read_result["memory_uptake_ops"][0]["op"] == "append"
-    assert audit_line["stop_reason"] == "read_complete"
+    assert digest_result["surfaced_reactions"][0]["source_quote"] == "Beta sentence."
+    assert digest_result["memory_uptake_ops"][0]["op"] == "append"
+    assert audit_line["stop_reason"] == "digest_complete"
     assert audit_line["surfaced_reaction_count"] == 1
-    assert audit_line["surfaced_reactions"][0]["anchor_quote"] == "Beta sentence."
+    assert audit_line["surfaced_reactions"][0]["source_quote"] == "Beta sentence."
     assert audit_line["memory_uptake_op_count"] == 1
     assert audit_line["memory_uptake_ops"][0]["target_store"] == "active_attention"
     assert audit_line["memory_uptake_ops_by_target_store"] == {"active_attention": 1}

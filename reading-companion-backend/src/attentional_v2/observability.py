@@ -129,16 +129,16 @@ def _normalized_operations(value: object) -> list[dict[str, object]]:
     return [dict(item) for item in value if isinstance(item, Mapping)]
 
 
-def _memory_uptake_ops(read_result: Mapping[str, object]) -> list[dict[str, object]]:
-    """Return normalized read memory operations for audit persistence."""
+def _memory_uptake_ops(digest_result: Mapping[str, object]) -> list[dict[str, object]]:
+    """Return normalized Digest memory operations for audit persistence."""
 
-    return _normalized_operations(read_result.get("memory_uptake_ops"))
+    return _normalized_operations(digest_result.get("memory_uptake_ops"))
 
 
-def _memory_uptake_admission_events(read_result: Mapping[str, object]) -> list[dict[str, object]]:
-    """Return audit-only admission metadata for read memory operations."""
+def _memory_uptake_admission_events(digest_result: Mapping[str, object]) -> list[dict[str, object]]:
+    """Return audit-only admission metadata for Digest memory operations."""
 
-    return _normalized_operations(read_result.get("memory_uptake_admission_events"))
+    return _normalized_operations(digest_result.get("memory_uptake_admission_events"))
 
 
 def _memory_uptake_ops_by_target_store(memory_uptake_ops: list[dict[str, object]]) -> dict[str, int]:
@@ -527,21 +527,21 @@ def record_read(
     supplemental_steps: list[dict[str, object]] | None = None,
     stop_reason: str = "",
     budget_exhausted: bool = False,
-    read_result: Mapping[str, object],
+    digest_result: Mapping[str, object],
     llm_fallbacks: list[dict[str, str]] | None = None,
     ingest_trace: list[dict[str, object]] | None = None,
 ) -> None:
-    """Append one mechanism-private read audit record."""
+    """Append one mechanism-private whole read-cycle audit record."""
 
     if output_dir is None:
         return
     surfaced_reactions = (
-        [dict(item) for item in read_result.get("surfaced_reactions", []) if isinstance(item, Mapping)]
-        if isinstance(read_result.get("surfaced_reactions"), list)
+        [dict(item) for item in digest_result.get("surfaced_reactions", []) if isinstance(item, Mapping)]
+        if isinstance(digest_result.get("surfaced_reactions"), list)
         else []
     )
-    memory_uptake_ops = _memory_uptake_ops(read_result)
-    memory_uptake_admission_events = _memory_uptake_admission_events(read_result)
+    memory_uptake_ops = _memory_uptake_ops(digest_result)
+    memory_uptake_admission_events = _memory_uptake_admission_events(digest_result)
     row = {
         "chapter_id": chapter_id,
         "chapter_ref": chapter_ref,
@@ -565,7 +565,7 @@ def record_read(
         "supplemental_steps": [dict(step) for step in (supplemental_steps or []) if isinstance(step, Mapping)],
         "stop_reason": _clean_text(stop_reason),
         "budget_exhausted": bool(budget_exhausted),
-        "reading_impression": _clean_text(read_result.get("reading_impression")),
+        "reading_impression": _clean_text(digest_result.get("reading_impression")),
         "surfaced_reaction_count": len(surfaced_reactions),
         "surfaced_reactions": surfaced_reactions,
         "memory_uptake_ops": memory_uptake_ops,

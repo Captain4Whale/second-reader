@@ -81,7 +81,7 @@ def _resolve_run_artifacts(*, runs_root: Path, run_id: str, case_id: str) -> Run
         read_audit_path=output_dir / "_mechanisms" / "attentional_v2" / "runtime" / "read_audit.jsonl",
         reaction_records_path=output_dir / "_mechanisms" / "attentional_v2" / "runtime" / "reaction_records.json",
         normalized_bundle_path=output_dir / "_mechanisms" / "attentional_v2" / "exports" / "normalized_eval_bundle.json",
-        prompt_manifest_path=output_dir / "_mechanisms" / "attentional_v2" / "internal" / "prompt_manifests" / "read_unit.json",
+        prompt_manifest_path=output_dir / "_mechanisms" / "attentional_v2" / "internal" / "prompt_manifests" / "digest.json",
         book_document_path=output_dir / "public" / "book_document.json",
     )
 

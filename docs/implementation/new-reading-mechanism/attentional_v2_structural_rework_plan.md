@@ -445,7 +445,8 @@ The minimum audit payload should include:
 #### Suggested code slices
 
 - `A1. skeleton and naming`
-  - introduce explicit `navigate_unitize`, `read_unit`, and `navigate_route` boundaries in code
+  - introduce explicit unitization, concrete reading-node, and routing boundaries in code
+  - current post-DEC-108 naming maps the concrete reading-node boundary to `Digest`
   - do not yet fully delete legacy helpers if adapters keep migration safer
 - `A2. mandatory coverage read`
   - remove heuristic trigger authority over whether正文 text gets real LLM reading
@@ -1061,10 +1062,10 @@ Frozen node projections:
 
 #### Implementation slices after the freeze
 
-##### Phase F1 — Read contract and prompt-packaging cutover (`landed`)
+##### Phase F1 — Concrete reading-node contract and prompt-packaging cutover (`landed`)
 
-- live per-unit loop now runs `Navigate.unitize -> read -> Navigate.route`
-- `Read` now owns:
+- historical live per-unit loop at the time ran unitization -> concrete reading node -> routing
+- that then-current concrete reading node owned:
   - `reading_impression`
   - `surfaced_reactions`
   - `memory_uptake_ops`
@@ -1072,7 +1073,7 @@ Frozen node projections:
   - optional `detour_need`
 - the live runner no longer calls the dedicated `Express` step
 - whole-object memory rewrites were replaced with explicit `append / update / close / link` operations
-- read prompt packaging now uses the frozen `always / selective / not` posture
+- concrete reading-node prompt packaging used the frozen `always / selective / not` posture
 - focused backend validation now covers:
   - scaffold live-path integration
   - read-contract prompt packaging

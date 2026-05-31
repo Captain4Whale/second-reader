@@ -1568,10 +1568,7 @@ def test_invoke_json_retries_after_unrecoverable_malformed_payload(
 
 
 def test_attentional_node_uses_shared_runtime_trace(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
-    from src.attentional_v2.llm_calls import read_unit
-    from src.attentional_v2.schemas import (
-        build_default_reader_policy,
-    )
+    from src.attentional_v2.llm_calls import digest
 
     monkeypatch.setenv("PRIMARY_KEY", "runtime-key")
     _set_registry(
@@ -1612,10 +1609,9 @@ def test_attentional_node_uses_shared_runtime_trace(tmp_path: Path, monkeypatch:
         profile_id=DEFAULT_RUNTIME_PROFILE_ID,
         trace_context=runtime_trace_context(output_dir, mechanism_key="attentional_v2", debug_enabled=True),
     ):
-        result = read_unit(
+        result = digest(
             current_unit_sentences=[{"sentence_id": "s1", "text": "Alpha hinge line.", "text_role": "body"}],
             carry_forward_context={"packet_version": "attentional_v2.state_packet.v1", "refs": []},
-            reader_policy=build_default_reader_policy(),
             output_language="en",
             output_dir=output_dir,
         )
@@ -1624,7 +1620,7 @@ def test_attentional_node_uses_shared_runtime_trace(tmp_path: Path, monkeypatch:
     assert result["reading_impression"] == "Focused on the hinge."
     assert standard_rows[-1]["mechanism_key"] == "attentional_v2"
     assert standard_rows[-1]["stage"] == "phase4"
-    assert standard_rows[-1]["node"] == "read_unit"
+    assert standard_rows[-1]["node"] == "digest"
 
 
 def test_iterator_parse_node_uses_shared_runtime_trace(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):

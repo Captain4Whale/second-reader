@@ -29,12 +29,12 @@ Last verified: `2026-05-31T19:42:26+08:00`
     - `DEC-107` replaces the old `Navigate` LLM identity with `Ingest`
     - current `llm_calls.ingest(...)` is the forward-only XML LLM boundary call: exact `end_anchor_text`, `boundary_type`, and `reason`
     - current LLM-call code now lives in `reading-companion-backend/src/attentional_v2/llm_calls.py`; the old ambiguous active module name is removed
-    - runtime next-unit preparation lives outside `Ingest` as `prepare_next_source_unit_for_read`: it prepares source preview/context, calls `Ingest`, performs anchor resolution/retry/fallback boundary governance, and hands the accepted source unit to `Read`
+    - runtime next-unit preparation lives outside `Ingest` as `prepare_next_source_unit_for_read`: it prepares source preview/context, calls `Ingest`, performs anchor resolution/retry/fallback boundary governance, and hands the accepted source unit to `Digest`
     - first-slice `Ingest` uses `ReaderRole`, `Instruction`, `BookInfo`, `CurrentView`, empty `RetrievalSurface`, and `OutputContract`; memory-retrieval request behavior is deferred until the new memory design lands
-    - current `Read` has no path-redirection output contract and the Runner/audit path emits no Detour or source-backread runtime artifacts for new runs
+    - current `Digest` has no path-redirection output contract and the Runner/audit path emits no Detour or source-backread runtime artifacts for new runs
     - current `local_continuity` contains only forward-reading continuity; old Detour-era checkpoint/artifact shapes are not a compatibility target
   - stop declaration:
-    - do not continue implementing `C设计10` consolidation, `C设计11` Read XML context migration, `C设计12` prompt assembly migration, ActiveTension expansion, Thread / Progression / Development memory, or broader Eval-1 follow-up as the next mechanism direction
+    - do not continue implementing `C设计10` consolidation, the old concrete-node XML context migration, `C设计12` prompt assembly migration, ActiveTension expansion, Thread / Progression / Development memory, or broader Eval-1 follow-up as the next mechanism direction
     - treat the Second Reader Memory / Planning design chain as historical/reference material and reusable infrastructure evidence, not as the primary implementation authority for the next code path
     - keep the docs in place for traceability; do not move or delete them unless a later archival task explicitly approves it
   - reusable learnings:
@@ -45,15 +45,15 @@ Last verified: `2026-05-31T19:42:26+08:00`
     - use `docs/implementation/new-reading-mechanism/ingest-context-and-navigate-mapping.md` as the implementation reference for the landed first-slice `Ingest` XML context and for the remaining retrieval-request design gap
     - next design work should define how `Ingest` requests memory retrieval for the selected next unit and how `Digest` turns the current unit into reader-facing notes / highlights
     - do not run eval, update evidence catalog, or claim product quality from the Detour hard-purge slice
-- Read XML prompt / Recent Reading Memory full active diagnostic machine run has completed; post-run report is ready for review.
+- Historical concrete-node XML prompt / Recent Reading Memory full active diagnostic machine run has completed; post-run report is preserved for reference.
   - purpose:
-    - validate the opt-in XML Read prompt assembly path after Recent Reading Memory formation work
-    - check whether basic Read behavior remains healthy
+    - validate the old opt-in XML prompt assembly path after Recent Reading Memory formation work
+    - check whether basic concrete-node reading behavior remained healthy
     - compare visible reaction behavior against the expectation that reaction-selection prompt content was preserved
     - inspect full-window Recent Reading Memory formation quality from fresh reading artifacts
   - mode:
     - diagnostic only, not evidence-catalog authority
-    - `ATTENTIONAL_V2_READ_PROMPT_ASSEMBLY_MODE=xml`
+    - historical XML toggle was used for that run; the current live Digest path is always XML and does not use a legacy prompt-assembly toggle
     - 5 registered pipeline jobs completed with exit code `0`
     - each pipeline ran one LongSpan producer first, ran strict LLM health on the producer, then ran the matching Lane A user-level selective reuse shard
   - parent run id:
@@ -75,32 +75,27 @@ Last verified: `2026-05-31T19:42:26+08:00`
     - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ReadPromptXML-Full-Active-Diagnostic-Reactions-And-RecentMemory-Full-Review v0.md`
   - next step:
     - preserve the post-run report and the full reactions / Recent Memory listing as historical diagnostic evidence
-    - do not keep iterating on Read XML context assembly or Recent Memory consolidation as the next implementation path unless the new ingest/digest feasibility audit explicitly re-adopts a slice
+    - do not keep iterating on the old concrete-node XML context assembly or Recent Memory consolidation as the next implementation path unless the new ingest/digest feasibility audit explicitly re-adopts a slice
     - do not update evidence catalog, promote Long Span, or claim product quality from this diagnostic without explicit human review
 - Recent Reading Memory first-half formation is implemented.
   - design doc:
     - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/C设计10-Recent Reading Memory Design v0.md`
   - implementation scope:
     - `recent_reading_memory` is now a runtime store for near-term semantic memory of just-read units
-    - Read prompt `attentional_v2.read.v30` asks for one or a small number of context-resolvable Recent Reading Memory entries per unit
-    - `read.v25` tightened the formation wording so Recent Reading Memory should be source-grounded understanding rather than essay-like analysis; it should record what the source establishes / shows / says / names / contrasts / changes, stay complete enough for future reading, and avoid unsupported analytic upgrades
-    - `read.v26` adds the continuity balance: Read should orient through the full prompt-visible reading context, treat that context as already-carried reading state, and still write the memory for the current unit itself rather than recapping prior context
-    - `read.v27` removes operation-level `reason` from Recent Reading Memory append examples and contract; `memory_text` is the retained content, while runner/state code preserves unit-level provenance
-    - `read.v28` tightens writing style: Recent Reading Memory should start from source-established content, add interpretation only when needed to preserve that content, remember author stance / evidence-boundary / intended-reader units, and avoid abstract upgrades unless the source directly supports them
-    - `read.v29` simplified the writing rule after retry2, but retry3 made the entries feel too formulaic and is now superseded as a prompt direction
-    - `read.v30` restores the stronger `read.v28` prompt shape and adds only a narrow style constraint: Recent Reading Memory should be natural memory sentences / short paragraphs, not default `<label>: <explanation>` entries unless the source itself names the term, stage, or framework
-    - Read may append entries through `memory_uptake_ops[]` with `target_store="recent_reading_memory"` and `op="append"`
+    - the historical concrete-node prompt series asked for one or a small number of context-resolvable Recent Reading Memory entries per unit
+    - that prompt series tightened source-grounding, continuity balance, no operation-level reason, natural-memory prose, and author/evidence-boundary handling
+    - current Digest still converts LLM-facing `recent_reading_memory[]` into runtime `memory_uptake_ops[]` with `target_store="recent_reading_memory"` and `op="append"`
     - the LLM supplies only `kind` and `memory_text`; runner/state code owns `entry_id`, `source_unit_span_id`, `created_at_unit_index`, `status`, and `archived_by_consolidation_id`
-    - only `active` entries are projected into subsequent Read prompt packets
+    - only `active` entries are projected into subsequent Digest prompt packets
     - runtime persistence, checkpoint/resume carriage, settlement audit deltas, and Memory Quality full-state snapshots now include `recent_reading_memory`
   - explicit exclusions:
     - consolidation into `concept_registry`, `thread_trace`, or `reflective_frames` is not implemented yet
     - no nested `memory_points`, recent-to-recent links, candidate concept/thread links, default fine-grained `source_refs`, eval run, evidence catalog update, or product-quality claim is included
   - next step:
     - parked by `DEC-103`; do not design or implement the Recent Memory -> long-distance-memory consolidation pass as the next mechanism path unless a new ingest/digest feasibility audit explicitly re-adopts it
-- `reading_impression` overlaps with the new `recent_reading_memory` layer and should be cleaned up during a future reaction/read-contract tuning pass.
+- `reading_impression` overlaps with the new `recent_reading_memory` layer and should be cleaned up during a future reaction/Digest-contract tuning pass.
   - current fact:
-    - `reading_impression` predates `recent_reading_memory`; it was introduced as the temporary read-after impression for the naturalized Read contract
+    - `reading_impression` predates `recent_reading_memory`; it was introduced as the temporary read-after impression for the naturalized Digest contract
     - now that `recent_reading_memory` owns near-term per-unit semantic memory, `reading_impression` can duplicate that role and can nudge reports / prompts toward essay-like analysis
   - current boundary:
     - do not remove or change `reading_impression` in the current Recent Memory formation/consolidation task
@@ -135,15 +130,7 @@ Last verified: `2026-05-31T19:42:26+08:00`
     - beginning-of-book `p1-p24` diagnostic completed with exit code `0`; strict LLM health passed with `22` traces, `22` successes, `0` errors, and `0` fallback-backed evidence
     - beginning-of-book `p1-p24` covered `10` read units and produced `10` active `recent_reading_memory` entries; unit 1 produced no Recent Memory despite containing the opening frame / core question
     - the beginning diagnostic shows continuity across later entries, but still surfaces analysis-heavy phrasing in some entries
-    - `read.v27` retry1 beginning-of-book `p1-p24` diagnostic completed with exit code `0`; strict LLM health passed with `39` traces, `39` successes, `0` errors, `1` retry, and `0` fallback-backed evidence
-    - `read.v27` retry1 covered `18` read units and produced `18` active `recent_reading_memory` entries; Unit 1 now recorded the book opening / core question, and `0 / 18` Recent Memory append ops carried operation-level `reason`
-    - `read.v27` retry1 confirms the no-reason contract, but some entries still drift toward interpretive phrasing inside `memory_text`
-    - `read.v28` retry2 beginning-of-book `p1-p24` diagnostic completed with exit code `0`; strict LLM health passed with `26` traces, `26` successes, `0` errors, `0` retries, and `0` fallback-backed evidence
-    - `read.v28` retry2 covered `12` broader read units and produced `16` active `recent_reading_memory` entries; the previously missed author-method / evidence-boundary material is now remembered, but some entries still end with abstract interpretive labels
-    - `read.v29` retry3 beginning-of-book `p1-p24` diagnostic completed with exit code `0`; strict LLM health passed with `29` traces, `29` successes, `0` errors, `0` retries, and `0` fallback-backed evidence
-    - `read.v29` retry3 covered `13` read units and produced `17` active `recent_reading_memory` entries; author-method material no longer ends with a forced `张力` label, but the broader rewrite felt formulaic and residual `mechanism` / `logic` / `paradox` phrasing remained, so retry3 is preserved as superseded diagnostic history rather than the future prompt direction
-    - `read.v30` retry4 beginning-of-book `p1-p24` diagnostic completed with exit code `0`; strict LLM health passed with `28` traces, `28` successes, `0` errors, `1` retry, and `0` fallback-backed evidence
-    - `read.v30` retry4 covered `13` read-audit rows and produced `13` active `recent_reading_memory` entries; coverage and continuity are generally strong, but the no-default-heading-colon style rule was only partially effective and Unit 1 still produced no Recent Memory
+    - historical retry diagnostics for the old concrete reading node are preserved as diagnostic history; they are superseded by the current Ingest / Digest naming and live XML Digest path
     - Memory Quality probe snapshots include `recent_reading_memory` in `scoring_memory_state`; the beginning diagnostic used `judge-mode none`, so MQ / Callback / FVI labels from that run are not interpreted
   - boundaries:
     - these diagnostics validate formation only, not consolidation
@@ -341,7 +328,7 @@ Last verified: `2026-05-31T19:42:26+08:00`
         - benchmark-only V2 probe snapshot export now uses explicit semantic probe targets from a versioned manifest, not hard `20% / 40% / 60% / 80% / window end` ratios
         - probe snapshot capture now runs through the `attentional_v2` runtime observability layer instead of being a direct Reading Runner benchmark call
         - normal product runs do not build Memory Quality snapshots unless `memory_quality_probe_export.enabled` and explicit semantic `probe_targets` are present
-        - standard runtime audit now links `Read` memory uptake to deterministic `Read -> Reading Runner settlement` transaction deltas through `read_audit.jsonl` and `settlement_audit.jsonl`
+        - standard runtime audit now links Digest memory uptake to deterministic Digest -> Reading Runner settlement transaction deltas through `read_audit.jsonl` and `settlement_audit.jsonl`
         - current `attentional_v2` mainline cursor semantics have now shifted from sentence-id traversal to paragraph-offset source spans:
           - `SourceCursor`: `chapter_id`, `chapter_ref`, `paragraph_index`, `char_offset`
           - `SourceSpan`: end-exclusive `[start_cursor, end_cursor)`
@@ -362,11 +349,11 @@ Last verified: `2026-05-31T19:42:26+08:00`
             - target-store distribution: `active_attention = 12`, `concept_registry = 18`, `thread_trace = 1`
             - settlement deltas materialized those ops into `active_attention`, `concept_registry`, and `thread_trace`; surfaced reactions were persisted with inline source refs
           - diagnostic finding:
-            - the earlier suspicion that `Read` emitted no `memory_uptake_ops` is not supported on this fresh run
-            - the concrete break was field-shape alignment for durable stores: fresh `Read` output proposed concept/thread payloads in a shape that did not line up with the fields persisted by `state_ops`
+            - the earlier suspicion that the old concrete reading node emitted no `memory_uptake_ops` was not supported on that fresh run
+            - the concrete break was field-shape alignment for durable stores: old concrete reading-node output proposed concept/thread payloads in a shape that did not line up with the fields persisted by `state_ops`
             - the current implementation has repaired the active schema path so memory ops normalize inline `source_refs[]` from unit-local source quotes before settlement
             - final `active_attention` dropping from `11` post-unit-settlement items to `4` runtime items is explained by chapter-end consolidation / cross-chapter carry-forward, not by per-unit settlement loss
-            - follow-up SourceRef smoke run `attentional_v2_source_ref_nawaer_smoke_20260506` proved the Read -> settlement -> concept/thread/reaction/probe SourceRef chain, but exposed that `active_attention` source refs could be erased at chapter-end carry-forward
+            - follow-up SourceRef smoke run `attentional_v2_source_ref_nawaer_smoke_20260506` proved the Digest -> settlement -> concept/thread/reaction/probe SourceRef chain, but exposed that `active_attention` source refs could be erased at chapter-end carry-forward
             - the current repair preserves carried `active_attention` source refs by deterministic `item_id` merge after cooling; `chapter_consolidation` still chooses what carries forward, but an omitted `source_refs` field no longer erases existing evidence coordinates
           - active verification job:
             - job id:
@@ -608,18 +595,18 @@ Last verified: `2026-05-31T19:42:26+08:00`
     - this phase introduced the backend loop skeleton now absorbed by `Ingest`:
       - `sentence intake` as pure `local_buffer` maintenance
       - `Ingest`
-      - `read`
+      - then-current concrete reading node, now `Digest`
       - Reading Runner post-read settlement
     - span authority is now tied to the exact chosen unit
   - `Phase B` is now also landed:
-    - `read` now owns the authoritative current-unit read packet on the live path
+    - the then-current concrete reading node owned the authoritative current-unit packet; current naming is `Digest`
     - the live runner now builds a bounded `carry-forward context` before each unit read
-    - `read` may request bounded supplemental context through `active recall` or `look-back`
+    - that branch allowed bounded supplemental context through `active recall` or `look-back`; those helpers are retired after `DEC-105`
     - private `read_audit` records now capture carried refs plus supplemental-context use; the temporary `raw_reaction` shell introduced at this stage was later retired by `Phase F3`
   - `Phase C.1` is now landed as the first packetization seam:
     - live prompt inputs are now built through a bounded internal state packet layer instead of ad hoc per-call context assembly
     - historical `Navigate.unitize` received a small `navigation_context`; current `Ingest` no longer receives that packet
-    - `read` now receives a `state_packet.v1` read-context packet that explicitly separates:
+    - the then-current concrete reading node received a `state_packet.v1` context packet that explicitly separated:
       - `session continuity capsule`
       - `active_attention` digest
       - `chapter reflective frame`
@@ -629,13 +616,13 @@ Last verified: `2026-05-31T19:42:26+08:00`
   - `Phase C.2` is now landed as the first state-territory slice:
     - live state packets now derive a bounded `concept_digest` from the current `motif_index + unresolved_reference_index`
     - live state packets now derive a bounded `thread_digest` from the current `trace_links + unresolved_reference_index`
-    - historical `Navigate.unitize` and `read` both received those small concept/thread digests through the packet layer
+    - historical `Navigate.unitize` and the then-current concrete reading node both received those small concept/thread digests through the packet layer
     - persisted runtime files and public compatibility surfaces still remain unchanged
   - `Phase C.3` is now landed as the direct main-state cutover:
     - new runs now treat `active_attention / concept_registry / thread_trace / reflective_frames` plus inline `source_refs[]` as the primary runtime and checkpoint truth
     - the old V2 state stores were demoted to cutover-only legacy territory
     - old supplemental retrieval helpers from that branch were removed from the current code surface by `DEC-105`; future `Ingest` retrieval is a separate design task
-    - `read` introduced explicit memory-update operations, then called `implicit_uptake`, into:
+    - the then-current concrete reading node introduced explicit memory-update operations, then called `implicit_uptake`, into:
       - `active_attention`
       - `concept_registry`
       - `thread_trace`
@@ -655,15 +642,15 @@ Last verified: `2026-05-31T19:42:26+08:00`
     - `attention_tags[]` are lightweight labels on active items; old fixed hot-state lists are historical only
     - residual `local_hypothesis` / `live_hypotheses` vocabulary is historical provenance only; current hypothesis-like material is a tagged `active_attention` item or, once stable, a `concept_registry` / `thread_trace` memory
     - old `gate_state`, `pressure_snapshot`, and working-pressure runtime artifacts are no longer schema, prompt, runtime, checkpoint, or Memory Quality evidence fields
-    - old `pressure_signals` were removed with the forward-settlement cutover; current `Read` emits only reading impression, surfaced reactions, and memory uptake
+    - old `pressure_signals` were removed with the forward-settlement cutover; current `Digest` emits only reading impression, surfaced reactions, and LLM-facing Recent Reading Memory
   - `Phase D` is now landed as the continuity / recall / resume polish slice:
-    - that branch explored a budget-bounded multi-step supplemental context loop around `read`
+    - that branch explored a budget-bounded multi-step supplemental context loop around the then-current concrete reading node
     - runtime and full checkpoints now persist a lightweight `continuation capsule` with explicit `rehydration entrypoints`
     - warm resume now restores new-format state together with the latest usable continuation capsule instead of relying only on raw runtime/checkpoint state
     - old supplemental source-span helper interfaces from that branch are no longer current code, prompt, audit, or test surfaces after `DEC-105`
     - public/frontend compatibility surfaces remain unchanged
   - `Phase E1` through `Phase E3` are now preserved as a landed intermediate branch:
-    - that branch retained the temporary `Read -> Express` split
+    - that branch retained the temporary old concrete reading-node -> Express split
     - persisted `reaction_records` now keep surfaced fields first:
       - `thought`
       - `prior_link`
@@ -671,30 +658,30 @@ Last verified: `2026-05-31T19:42:26+08:00`
       - `search_intent`
     - slow-cycle compatibility projection and normalized eval export now derive old family labels through one compat helper rather than treating legacy `type` as the internal truth
     - this branch remains valid historical evidence, but it is no longer the approved end-state shape
-  - `Phase F1` is now landed as the read-contract and prompt-packaging cutover:
+  - `Phase F1` is now landed as the concrete reading-node contract and prompt-packaging cutover:
     - the live per-unit loop was cut back to:
       - historical `Navigate.unitize -> read -> Reading Runner post-read settlement`
     - current code now exposes that selection step through:
-      - `Ingest -> read -> Reading Runner post-read settlement`
-    - `Read` now directly owns the current naturalized read contract:
+      - `Ingest -> Digest -> Reading Runner post-read settlement`
+    - `Digest` now directly owns the current naturalized reading contract:
       - `reading_impression`
       - `surfaced_reactions`
-      - `memory_uptake_ops`
+      - `recent_reading_memory`
     - the dedicated live `Express` node is no longer on the live path
-    - `Read` prompt packaging now uses compact `always carry / selective carry / not carry` projections instead of the broader intermediate packet
-  - Read naturalization is now landed:
-    - the `Read` prompt addresses the model as a reader moving through the book, not as a field-filling node
+    - `Digest` prompt packaging now uses XML context blocks and compact carried state instead of the broader intermediate packet
+  - Digest naturalization is now landed:
+    - the `Digest` prompt addresses the model as a reader moving through the book, not as a field-filling node
     - the old current-field names `unit_delta` and `implicit_uptake_ops` are historical
-    - new runs use `reading_impression` and `memory_uptake_ops`
-    - `memory_uptake_ops` should capture what naturally needs to remain available after the unit, including explicit source structures such as stage models, classifications, definitions, distinctions, and chapter roadmaps when they matter
+    - new runs use `reading_impression`, `surfaced_reactions`, and LLM-facing `recent_reading_memory`
+    - runtime `memory_uptake_ops` are converted from Digest output for settlement
   - `Phase F2` is now historical after `DEC-104`:
     - the old live Detour / source-backread path has been retired from the current runtime
     - `DEC-105` hard-purges the retired compatibility interfaces from current code, prompts, schemas, audits, and tests
     - `Ingest` now chooses only the next forward source unit
-    - current `Read` has no path-redirection output contract
+    - current `Digest` has no path-redirection output contract
     - current `local_continuity`, prompt manifests, and read audits do not emit retired Detour-era fields for new runs
   - `Phase F3` is now landed as the reaction-persistence and compatibility reconvergence slice:
-    - persisted visible reactions now enter the system only through `Read.surfaced_reactions[]`
+    - persisted visible reactions now enter the system only through `Digest.surfaced_reactions[]`
     - current forward reading uses one surfaced-native reaction-record builder; old non-mainline read artifacts are historical only
     - chapter-result compatibility projection and normalized eval export now read surfaced-native persisted records and derive old family labels only through the compat helper
     - dead live ownership paths for the old `Express` persistence flow and `raw_reaction` fallback are now removed
@@ -739,7 +726,7 @@ Last verified: `2026-05-31T19:42:26+08:00`
     - historical `Navigate.unitize` began treating heading roles as weak cues rather than automatic standalone units
     - meaningful headings may still stand alone, but label-like headings now prefer merging with the immediately following body paragraph when the preview allows
     - deterministic fallback now widens `heading + first body paragraph` instead of returning a bare heading when that body paragraph is already visible
-    - `Read` now explicitly stays proportionate around thin heading-like units and may remain silent there
+    - `Digest` now explicitly stays proportionate around thin heading-like units and may remain silent there
   - `Phase F4B` is now landed as the survey-led `body-first` scheduling slice:
     - `survey` now runs one narrow LLM-backed `chapter_zone` classifier over lightweight structural samples rather than relying only on heading-keyword heuristics
     - the legal survey scheduling zones are now:
@@ -755,9 +742,9 @@ Last verified: `2026-05-31T19:42:26+08:00`
     - explicit chapter-targeted runs and benchmark windows are not forcibly reordered by the body-first queue
     - resume/runtime shell now also record the current queue stage as `mainline` or `deferred_support`
   - the unit-internal anchor-selection repair is now also landed on that baseline:
-    - `Read` now prefers the smallest self-sufficient surfaced anchor inside a unit
+    - `Digest` now prefers the smallest self-sufficient surfaced anchor inside a unit
     - multiple independently complete anchors inside one unit are now explicitly allowed
-    - if a single sentence would lose its meaning in isolation, `Read` may instead use the smallest multi-sentence span that stays self-sufficient
+    - if a single sentence would lose its meaning in isolation, `Digest` may instead use the smallest multi-sentence span that stays self-sufficient
     - this repair is meant to stop a sharper later line from swallowing an earlier independently complete framing / hinge line
   - a focused two-window before/after spot check is now completed as the first repair-level validation:
     - before run:
@@ -787,7 +774,7 @@ Last verified: `2026-05-31T19:42:26+08:00`
       - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_post_phase_d_longspan_smoke_20260412/diagnostics/value_of_others_abnormal_call_snapshot_20260413.md`
       - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_post_phase_d_longspan_smoke_20260412/diagnostics/value_of_others_progress_and_latency_check_20260413.md`
     - the current diagnosis is:
-      - the slowest `read_unit` and `navigate_unitize` calls were not driven by abnormally large local正文 spans
+      - the slowest old concrete reading-node and unitization calls were not driven by abnormally large local正文 spans
       - full prompt baselines remain heavy because of carried context
       - the most extreme wall-clock outliers still look primarily like provider long-tail plus timeout/retry accumulation rather than simple local-span inflation
       - `attentional_v2` nevertheless completed all three representative smoke windows, so the core post-Phase-D question "`attentional_v2` can it run through representative long-span windows?" is now provisionally answered `yes`
@@ -1032,7 +1019,7 @@ Last verified: `2026-05-31T19:42:26+08:00`
 - Current mainline posture as of `2026-04-09`:
   - `backend structural rework` is now an active mainline in parallel:
     - keep `Phase A` as the landed control-skeleton baseline
-    - keep `Phase B` as the landed read-context baseline under the existing `attentional_v2` key
+    - keep `Phase B` as the landed concrete reading-node context baseline under the existing `attentional_v2` key
     - keep `Phase C.1` as the landed packetization seam
     - keep `Phase C.2` as the landed first state-territory slice where concept/thread digests now enter the live packet path
     - keep `Phase C.3` as the landed main-state cutover where the new semantic layers now own runtime/checkpoint truth
@@ -1042,10 +1029,10 @@ Last verified: `2026-05-31T19:42:26+08:00`
       - warm resume now restores the latest usable continuation capsule together with new-format runtime state
       - the old budget-bounded supplemental recall loop is no longer the live F1 baseline
     - `Phase F1` is now the live baseline:
-      - live per-unit path is `Ingest -> read -> Reading Runner post-read settlement`
-      - `Read` now owns surfaced reactions directly
+      - live per-unit path is `Ingest -> Digest -> Reading Runner post-read settlement`
+      - `Digest` now owns surfaced reactions directly
       - the dedicated live `Express` node is off the main path
-    - treat prior-material use as something that naturally happens inside `read`, not as a separate mechanism action
+    - treat prior-material use as something that naturally happens inside `Digest`, not as a separate mechanism action
   - `excerpt` is currently in a hold posture:
     - keep the completed formal excerpt run as the main product/demo evidence bundle
     - do not reopen another repair round unless later long-span or cutover discussion makes it necessary
