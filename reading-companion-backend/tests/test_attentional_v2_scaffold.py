@@ -354,7 +354,7 @@ def test_full_read_prompt_xml_assembly_renders_all_target_blocks_without_live_mi
         },
     )
 
-    assert result.spec_id == "attentional_v2.read_unit.xml.v2"
+    assert result.spec_id == "attentional_v2.read_unit.xml.v3"
     assert result.owner_node == "read_unit"
     assert result.prompt_version == READ_XML_PROMPT_VERSION
     assert result.promptset_version == READ_XML_PROMPTSET_VERSION
@@ -397,6 +397,7 @@ def test_read_role_and_instruction_xml_renders_target_structure_without_live_mig
 
     assert "<RoleAndInstruction>" in rendered
     assert "<ReaderRole>" in rendered
+    assert "<Instruction>" in rendered
     assert "<ContextUseGuide>" in rendered
     assert "<ReadingBehavior>" in rendered
     assert "<ReadingImpression>" in rendered
@@ -421,11 +422,14 @@ def test_read_role_and_instruction_xml_renders_target_structure_without_live_mig
     assert "value_slot" not in rendered
     assert "ref=" not in rendered
     assert "READ_ROLE_AND_INSTRUCTION" not in rendered
+    assert "reader.shared_role" not in rendered
+    assert "read.instruction" not in rendered
     assert "reading-companion-backend" not in rendered
     assert READ_UNIT_PROMPT_VERSION == "attentional_v2.read.v32"
     assert ATTENTIONAL_V2_PROMPTS.read_unit_system == READ_UNIT_SYSTEM_PROMPT
     assert "Structural frame:" in ATTENTIONAL_V2_PROMPTS.read_unit_prompt
-    assert rendered.index("<ReaderRole>") < rendered.index("<ContextUseGuide>")
+    assert rendered.index("<ReaderRole>") < rendered.index("<Instruction>")
+    assert rendered.index("<Instruction>") < rendered.index("<ContextUseGuide>")
     assert rendered.index("<ContextUseGuide>") < rendered.index("<ReadingBehavior>")
     assert "BookInfo as orientation" in rendered
     assert "ReadingState as carried understanding" in rendered
@@ -685,7 +689,8 @@ def test_read_unit_role_and_instruction_fragments_are_lossless() -> None:
     fragment_ids = [fragment.fragment_id for fragment in READ_UNIT_ROLE_AND_INSTRUCTION_FRAGMENTS]
 
     assert fragment_ids == [
-        "read.role_and_stance",
+        "reader.shared_role",
+        "read.instruction",
         "read.reading_impression_policy",
         "read.surfaced_reaction_policy",
         "read.reaction_anchor_and_callback_policy",

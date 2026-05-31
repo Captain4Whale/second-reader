@@ -573,9 +573,9 @@ def test_read_unit_can_use_xml_prompt_assembly_mode_without_changing_default(tmp
         "kind": "claim_or_argument",
         "memory_text": "The current unit frames the book as witness testimony.",
     }
-    assert manifest["prompt_version"] == "attentional_v2.read.xml.v2"
+    assert manifest["prompt_version"] == "attentional_v2.read.xml.v3"
     assert manifest["prompt_assembly"]["mode"] == "xml"
-    assert manifest["prompt_assembly"]["spec_id"] == "attentional_v2.read_unit.xml.v2"
+    assert manifest["prompt_assembly"]["spec_id"] == "attentional_v2.read_unit.xml.v3"
     assert manifest["prompt_assembly"]["rendered_blocks"] == [
         "RoleAndInstruction",
         "BookInfo",

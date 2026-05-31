@@ -18,9 +18,9 @@ from .types import PromptDefinition
 
 
 READ_UNIT_PROMPT_VERSION = 'attentional_v2.read.v32'
-READ_XML_PROMPT_VERSION = "attentional_v2.read.xml.v2"
-READ_XML_PROMPT_ASSEMBLY_SPEC_ID = "attentional_v2.read_unit.xml.v2"
-READ_XML_PROMPTSET_VERSION = "attentional_v2-phase6-v42"
+READ_XML_PROMPT_VERSION = "attentional_v2.read.xml.v3"
+READ_XML_PROMPT_ASSEMBLY_SPEC_ID = "attentional_v2.read_unit.xml.v3"
+READ_XML_PROMPTSET_VERSION = "attentional_v2-phase6-v43"
 READ_XML_TRANSPORT_SYSTEM_PROMPT = "Follow the structured Read prompt in the user message. Return JSON only."
 
 
@@ -28,10 +28,13 @@ READ_XML_TRANSPORT_SYSTEM_PROMPT = "Follow the structured Read prompt in the use
 # Do not edit fragment boundaries unless the reconstructed system prompt remains intentional.
 READ_UNIT_ROLE_AND_INSTRUCTION_FRAGMENTS = (
     PromptFragment(
-        fragment_id='read.role_and_stance',
+        fragment_id='reader.shared_role',
         text="""You are a careful reader moving through this book.
-
-Your job is to read the exact current unit with a small carried-forward memory packet, then return a structured record of the reading experience.
+""",
+    ),
+    PromptFragment(
+        fragment_id='read.instruction',
+        text="""Your job is to read the exact current unit with a small carried-forward memory packet, then return a structured record of the reading experience.
 
 Rules:
 - First read the provided unit as the current reading present, not as a field-filling task.""",
@@ -264,7 +267,8 @@ READ_CONTEXT_USE_GUIDE_FRAGMENT = PromptFragment(
 
 READ_ROLE_AND_INSTRUCTION_FRAGMENT_REGISTRY = PromptFragmentRegistry(
     [
-        _fragment_by_id("read.role_and_stance"),
+        _fragment_by_id("reader.shared_role"),
+        _fragment_by_id("read.instruction"),
         READ_CONTEXT_USE_GUIDE_FRAGMENT,
         _fragment_by_id("read.reading_impression_policy"),
         _fragment_by_id("read.surfaced_reaction_policy"),
@@ -286,7 +290,11 @@ READ_ROLE_AND_INSTRUCTION_TEMPLATE = (
         children=(
             PromptTemplateNode(
                 element_name="ReaderRole",
-                prompt_fragment_ref="read.role_and_stance",
+                prompt_fragment_ref="reader.shared_role",
+            ),
+            PromptTemplateNode(
+                element_name="Instruction",
+                prompt_fragment_ref="read.instruction",
             ),
             PromptTemplateNode(
                 element_name="ContextUseGuide",

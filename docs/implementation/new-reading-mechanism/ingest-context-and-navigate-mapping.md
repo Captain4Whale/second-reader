@@ -56,7 +56,8 @@ The target Ingest prompt should follow the same top-level block discipline as th
 
 ```xml
 <RoleAndInstruction>
-  <IngestRole>...</IngestRole>
+  <ReaderRole>...</ReaderRole>
+  <Instruction>...</Instruction>
   <ContextUseGuide>...</ContextUseGuide>
   <BoundarySelection>...</BoundarySelection>
   <MemoryRetrievalPlanning>...</MemoryRetrievalPlanning>
@@ -100,7 +101,11 @@ The target Ingest prompt should follow the same top-level block discipline as th
 
 Recommended sub-blocks:
 
-- `IngestRole`
+- `ReaderRole`
+  - shared product-level reader role
+  - should reference the same prompt fragment used by the current Read XML prompt: `reader.shared_role`
+  - current shared role text is: `You are a careful reader moving through this book.`
+- `Instruction`
   - says that Ingest prepares the next reading object for Digest
   - says that Ingest selects a forward source unit and requests memory support
 - `ContextUseGuide`
@@ -229,7 +234,7 @@ Target top-level fields:
 
 | Current Navigate prompt surface | Target Ingest XML surface | Notes |
 | --- | --- | --- |
-| `You are Navigate...` | `RoleAndInstruction / IngestRole` | Rename role from path navigation to reading-object ingestion. |
+| `You are Navigate...` | `RoleAndInstruction / ReaderRole` plus `RoleAndInstruction / Instruction` | Replace the old node-specific role with the shared reader role fragment `reader.shared_role`; put the Ingest-specific task in `Instruction`. |
 | Boundary-selection rules | `RoleAndInstruction / BoundarySelection` | Reuse almost directly. |
 | `Structural frame` | `BookInfo / BookIdentity` | Move output-language concerns to `OutputContract`. |
 | `Reading position` | `CurrentFocus / ReadingPosition` | Keep current cursor and retry feedback here. |
