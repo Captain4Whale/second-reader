@@ -431,9 +431,9 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - default `legacy` path: current product runs still use `ATTENTIONAL_V2_PROMPTS.read_unit_system` plus the legacy `read_unit_prompt` template
   - opt-in `xml` path: `READ_UNIT_PROMPT_ASSEMBLY_MODE="xml"` or `ATTENTIONAL_V2_READ_PROMPT_ASSEMBLY_MODE=xml` assembles the target Read XML blocks through the generic Prompt Assembly layer and records `prompt_assembly` metadata in the prompt manifest
   - the opt-in path is for diagnostic validation before becoming default; do not remove the legacy path until a separate switch/cleanup decision is accepted
-- Current prompt assembly separates the shared product-level `ReaderRole` from per-call `Instruction`.
-  - The shared role fragment is `reader.shared_role`.
-  - Ingest should reuse the same shared role and supply its own `Instruction` fragment when implemented.
+- Current prompt assembly separates the product-level `ReaderRole` from per-call `Instruction`.
+  - The reader role fragment is `reader.role`, owned by `attentional_v2/prompts/reader_role.py`.
+  - Ingest should reuse the same reader role and supply its own `Instruction` fragment when implemented.
 - The stable carry taxonomy is now:
   - `always carry`
   - `selective carry`

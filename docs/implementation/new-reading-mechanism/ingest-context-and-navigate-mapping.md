@@ -102,9 +102,10 @@ The target Ingest prompt should follow the same top-level block discipline as th
 Recommended sub-blocks:
 
 - `ReaderRole`
-  - shared product-level reader role
-  - should reference the same prompt fragment used by the current Read XML prompt: `reader.shared_role`
-  - current shared role text is: `你是一个知识渊博、有深刻洞见的阅读爱好者。当前你正在深入阅读一本书，在理解这本书内容的同时，积极对其进行思考，沉淀有价值的理解，并产生有价值的输出，从而获得最大的求知乐趣与自我提升。你的阅读可能分为多个步骤，具体每一步的活动请参考具体指令。`
+  - product-level reader role
+  - should reference the same prompt fragment used by the current Read XML prompt: `reader.role`
+  - owned by `reading-companion-backend/src/attentional_v2/prompts/reader_role.py`
+  - current reader role text is: `你是一个知识渊博、有深刻洞见的阅读爱好者。当前你正在深入阅读一本书，在理解这本书内容的同时，积极对其进行思考，沉淀有价值的理解，并产生有价值的输出，从而获得最大的求知乐趣与自我提升。你的阅读可能分为多个步骤，具体每一步的活动请参考具体指令。`
 - `Instruction`
   - says that Ingest prepares the next reading object for Digest
   - says that Ingest selects a forward source unit and requests memory support
@@ -234,7 +235,7 @@ Target top-level fields:
 
 | Current Navigate prompt surface | Target Ingest XML surface | Notes |
 | --- | --- | --- |
-| `You are Navigate...` | `RoleAndInstruction / ReaderRole` plus `RoleAndInstruction / Instruction` | Replace the old node-specific role with the shared reader role fragment `reader.shared_role`; put the Ingest-specific task in `Instruction`. |
+| `You are Navigate...` | `RoleAndInstruction / ReaderRole` plus `RoleAndInstruction / Instruction` | Replace the old node-specific role with the reader role fragment `reader.role`; put the Ingest-specific task in `Instruction`. |
 | Boundary-selection rules | `RoleAndInstruction / BoundarySelection` | Reuse almost directly. |
 | `Structural frame` | `BookInfo / BookIdentity` | Move output-language concerns to `OutputContract`. |
 | `Reading position` | `CurrentFocus / ReadingPosition` | Keep current cursor and retry feedback here. |

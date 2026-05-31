@@ -11,6 +11,7 @@ from src.attentional_v2.prompts import (
     ATTENTIONAL_V2_PROMPTS,
     ATTENTIONAL_V2_PROMPTSET_VERSION,
     ATTENTIONAL_V2_PROMPT_REGISTRY,
+    READER_ROLE_FRAGMENT,
     READ_BOOK_INFO_TEMPLATE,
     READ_CURRENT_FOCUS_TEMPLATE,
     READ_OUTPUT_CONTRACT_FRAGMENT_REGISTRY,
@@ -422,7 +423,7 @@ def test_read_role_and_instruction_xml_renders_target_structure_without_live_mig
     assert "value_slot" not in rendered
     assert "ref=" not in rendered
     assert "READ_ROLE_AND_INSTRUCTION" not in rendered
-    assert "reader.shared_role" not in rendered
+    assert "reader.role" not in rendered
     assert "read.instruction" not in rendered
     assert "reading-companion-backend" not in rendered
     assert READ_UNIT_PROMPT_VERSION == "attentional_v2.read.v33"
@@ -689,7 +690,7 @@ def test_read_unit_role_and_instruction_fragments_are_lossless() -> None:
     fragment_ids = [fragment.fragment_id for fragment in READ_UNIT_ROLE_AND_INSTRUCTION_FRAGMENTS]
 
     assert fragment_ids == [
-        "reader.shared_role",
+        "reader.role",
         "read.instruction",
         "read.reading_impression_policy",
         "read.surfaced_reaction_policy",
@@ -706,6 +707,7 @@ def test_read_unit_role_and_instruction_fragments_are_lossless() -> None:
         fragment.text for fragment in READ_UNIT_ROLE_AND_INSTRUCTION_FRAGMENTS
     )
     assert ATTENTIONAL_V2_PROMPTS.read_unit_system == READ_UNIT_SYSTEM_PROMPT
+    assert READ_UNIT_ROLE_AND_INSTRUCTION_FRAGMENTS[0] == READER_ROLE_FRAGMENT
     assert READ_UNIT_SYSTEM_PROMPT.startswith("你是一个知识渊博")
 
 

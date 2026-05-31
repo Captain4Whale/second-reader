@@ -14,6 +14,7 @@ from .assembly import (
     render_prompt_template_xml,
 )
 from .assembler import PromptAssembler, PromptAssemblyResult, PromptAssemblySpec
+from .reader_role import READER_ROLE_FRAGMENT
 from .types import PromptDefinition
 
 
@@ -24,14 +25,10 @@ READ_XML_PROMPTSET_VERSION = "attentional_v2-phase6-v44"
 READ_XML_TRANSPORT_SYSTEM_PROMPT = "Follow the structured Read prompt in the user message. Return JSON only."
 
 
-# These fragments are a lossless management split of the read_unit system prompt.
+# These fragments are a lossless management split of the Read-specific system prompt.
 # Do not edit fragment boundaries unless the reconstructed system prompt remains intentional.
 READ_UNIT_ROLE_AND_INSTRUCTION_FRAGMENTS = (
-    PromptFragment(
-        fragment_id='reader.shared_role',
-        text="""你是一个知识渊博、有深刻洞见的阅读爱好者。当前你正在深入阅读一本书，在理解这本书内容的同时，积极对其进行思考，沉淀有价值的理解，并产生有价值的输出，从而获得最大的求知乐趣与自我提升。你的阅读可能分为多个步骤，具体每一步的活动请参考具体指令。
-""",
-    ),
+    READER_ROLE_FRAGMENT,
     PromptFragment(
         fragment_id='read.instruction',
         text="""Your job is to read the exact current unit with a small carried-forward memory packet, then return a structured record of the reading experience.
@@ -215,7 +212,7 @@ READ_UNIT_SYSTEM_PROMPT = "\n".join(
 
 
 def _fragment_by_id(fragment_id: str) -> PromptFragment:
-    """Return one read role fragment from the lossless live-prompt inventory."""
+    """Return one read prompt fragment from the lossless live-prompt inventory."""
 
     for fragment in READ_UNIT_ROLE_AND_INSTRUCTION_FRAGMENTS:
         if fragment.fragment_id == fragment_id:
@@ -267,7 +264,7 @@ READ_CONTEXT_USE_GUIDE_FRAGMENT = PromptFragment(
 
 READ_ROLE_AND_INSTRUCTION_FRAGMENT_REGISTRY = PromptFragmentRegistry(
     [
-        _fragment_by_id("reader.shared_role"),
+        READER_ROLE_FRAGMENT,
         _fragment_by_id("read.instruction"),
         READ_CONTEXT_USE_GUIDE_FRAGMENT,
         _fragment_by_id("read.reading_impression_policy"),
@@ -290,7 +287,7 @@ READ_ROLE_AND_INSTRUCTION_TEMPLATE = (
         children=(
             PromptTemplateNode(
                 element_name="ReaderRole",
-                prompt_fragment_ref="reader.shared_role",
+                prompt_fragment_ref="reader.role",
             ),
             PromptTemplateNode(
                 element_name="Instruction",
