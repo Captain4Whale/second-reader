@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-05-31T14:08:45+08:00`
+Last verified: `2026-05-31T14:42:14+08:00`
 
 ## Current Objective
 - Product goal and mechanism direction are being reset before further implementation.
@@ -40,6 +40,7 @@ Last verified: `2026-05-31T14:08:45+08:00`
     - the previous memory ontology attempts are evidence that complex internal memory stores can easily overgrow the product goal
   - next step:
     - continue with the new product-goal reframe from the now-forward-only `Ingest` baseline
+    - use `docs/implementation/new-reading-mechanism/ingest-context-and-navigate-mapping.md` as the current working design note for mapping the existing `Navigate` boundary-selection prompt into the proposed `Ingest` XML context and retrieval-request contract
     - next design work should define how `Ingest` requests memory retrieval for the selected next unit and how `Digest` turns the current unit into reader-facing notes / highlights
     - do not run eval, update evidence catalog, or claim product quality from the Detour hard-purge slice
 - Read XML prompt / Recent Reading Memory full active diagnostic machine run has completed; post-run report is ready for review.

@@ -33,6 +33,9 @@ Update when: the design capture, plan, tracker, or open-question set changes dur
 - `design-capture.md`
   - repo-local structured capture of the Notion design
   - includes the source-to-workstream coverage map so scope does not disappear
+- `ingest-context-and-navigate-mapping.md`
+  - first working design note for mapping the current forward-only `Navigate` prompt into the proposed `Ingest` XML context and retrieval-request contract
+  - use before implementation work that renames or restructures the current boundary-selection LLM call
 - `requirement-ledger.md`
   - atomic traceability ledger mapping design points to implementation, deferral, rejection, or stable-doc promotion
 - `implementation-plan.md`
@@ -104,21 +107,22 @@ Update when: the design capture, plan, tracker, or open-question set changes dur
 
 ## Recommended Reading Order For This Project
 1. `design-capture.md`
-2. `coverage-policy.md`
-3. `requirement-ledger.md`
-4. `implementation-plan.md`
-5. `new-reading-mechanism-execution-tracker.md`
-6. `phase9-compat-cutover-roadmap.md`
-7. `open-questions.md`
-8. `evaluation-question-map.md`
-9. `evaluation-corpus-requirements.md`
-10. `modern-nonfiction-expansion-booklist.md`
-11. `evaluation-dataset-layout.md`
-12. `dataset-platform-closed-loop.md`
-13. `question-aligned-case-construction.md`
-14. `dataset-quality-hardening.md`
-15. `post-recovery-gate-review-checklist.md`
-16. `mechanism-pattern-ledger.md`
-17. `runtime-artifact-map.md`
-18. `second-reader-memory-planning/README.md`
-19. Stable docs listed above, as required by the task at hand
+2. `ingest-context-and-navigate-mapping.md`
+3. `coverage-policy.md`
+4. `requirement-ledger.md`
+5. `implementation-plan.md`
+6. `new-reading-mechanism-execution-tracker.md`
+7. `phase9-compat-cutover-roadmap.md`
+8. `open-questions.md`
+9. `evaluation-question-map.md`
+10. `evaluation-corpus-requirements.md`
+11. `modern-nonfiction-expansion-booklist.md`
+12. `evaluation-dataset-layout.md`
+13. `dataset-platform-closed-loop.md`
+14. `question-aligned-case-construction.md`
+15. `dataset-quality-hardening.md`
+16. `post-recovery-gate-review-checklist.md`
+17. `mechanism-pattern-ledger.md`
+18. `runtime-artifact-map.md`
+19. `second-reader-memory-planning/README.md`
+20. Stable docs listed above, as required by the task at hand

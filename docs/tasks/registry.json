@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-05-31T06:08:45Z",
+  "updated_at": "2026-05-31T06:42:14Z",
   "tasks": [
     {
       "id": "TASK-SECOND-READER-INGEST-DIGEST-REFRAME-AUDIT-20260530",
@@ -13,6 +13,7 @@
         "docs/current-state.md",
         "docs/tasks/registry.md",
         "docs/history/decision-log.md",
+        "docs/implementation/new-reading-mechanism/ingest-context-and-navigate-mapping.md",
         "docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md"
       ],
       "decision_refs": [
@@ -23,14 +24,15 @@
       ],
       "job_refs": [],
       "acceptance_ref": "",
-      "next_action": "Continue the narrowed product-goal reframe from the forward-only Ingest baseline. DEC-104 retired live Detour / source-backread from attentional_v2, DEC-105 hard-purged the retired compatibility interfaces, and DEC-106 keeps llm_calls.navigate(...) / Navigate as a pure LLM boundary call while runtime source-unit preparation lives in prepare_next_source_unit_for_read; active LLM calls now live under llm_calls.py. Next design work should specify how Ingest requests memory retrieval for the selected next unit and how Digest produces reader-facing notes / highlights. Do not launch eval, update evidence catalog, or continue C设计10 consolidation / C设计11 Read XML migration / C设计12 prompt assembly migration unless explicitly re-adopted.",
+      "next_action": "Continue the narrowed product-goal reframe from the forward-only Ingest baseline. DEC-104 retired live Detour / source-backread from attentional_v2, DEC-105 hard-purged the retired compatibility interfaces, and DEC-106 keeps llm_calls.navigate(...) / Navigate as a pure LLM boundary call while runtime source-unit preparation lives in prepare_next_source_unit_for_read; active LLM calls now live under llm_calls.py. Use docs/implementation/new-reading-mechanism/ingest-context-and-navigate-mapping.md as the current working design note for mapping the existing boundary-selection prompt into proposed Ingest XML context and retrieval-request shape. Next design work should specify how Ingest requests memory retrieval for the selected next unit and how Digest produces reader-facing notes / highlights. Do not launch eval, update evidence catalog, or continue C设计10 consolidation / C设计11 Read XML migration / C设计12 prompt assembly migration unless explicitly re-adopted.",
       "blocked_by": [],
       "evidence_refs": [
         "docs/current-state.md",
+        "docs/implementation/new-reading-mechanism/ingest-context-and-navigate-mapping.md",
         "docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md",
         "docs/history/decision-log.md"
       ],
-      "last_updated": "2026-05-31T06:08:45Z",
+      "last_updated": "2026-05-31T06:42:14Z",
       "last_updated_by": "codex"
     },
     {
