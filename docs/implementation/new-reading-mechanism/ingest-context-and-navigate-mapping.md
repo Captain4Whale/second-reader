@@ -32,7 +32,7 @@ The main change is not the boundary-selection content. The change is the node id
 - new structure: XML prompt assembly aligned with the newer Read prompt framework
 - old context block: `navigation_context`
 - new split:
-  - `ReadingState` for carried reading continuity used while choosing the unit
+  - no direct carried reading-state block in the first Ingest slice
   - `RetrievalSurface` for memory indexes / retrieval policy used to request support for Digest
 
 ## Target Ingest Definition
@@ -58,7 +58,7 @@ Top-level rule:
 
 - `ReaderRole` owns the stable reader identity.
 - `Instruction` owns all fixed non-role directions for this LLM call.
-- Runtime context/data blocks stay outside `Instruction`: `BookInfo`, `ReadingState`, `CurrentView`, `RetrievalSurface`, and `OutputContract`.
+- Runtime context/data blocks stay outside `Instruction`: `BookInfo`, `CurrentView`, `RetrievalSurface`, and `OutputContract`.
 
 ```xml
 <ReaderRole>...</ReaderRole>
@@ -74,11 +74,6 @@ Top-level rule:
 <BookInfo>
   <BookIdentity>{...}</BookIdentity>
 </BookInfo>
-
-<ReadingState>
-  <ContinuityState>{...}</ContinuityState>
-  <PriorReadingState>{...}</PriorReadingState>
-</ReadingState>
 
 <CurrentView>
   <Position>{...}</Position>
@@ -174,13 +169,13 @@ Your work in this call has two outputs:
 
 #### ContextUseGuide
 
-`ContextUseGuide` tells the model how to use `BookInfo`, `ReadingState`, `CurrentView`, `RetrievalSurface`, and `OutputContract`.
+`ContextUseGuide` tells the model how to use `BookInfo`, `CurrentView`, `RetrievalSurface`, and `OutputContract`.
 
 It should emphasize:
 
 - the visible source preview is primary
-- prior state can support boundary/retrieval judgment
-- prior state must not override the source text
+- book identity is orientation, not source text
+- retrieval information is only for requesting support, not for replacing source judgment
 
 #### SelectNextUnit
 
@@ -196,7 +191,6 @@ Select one forward source unit from the current reading cursor.
 Priority order:
 - Judge from the visible source text first.
 - Respect author structure before local convenience.
-- Use ReadingState only as secondary support. It may clarify what is currently live, but it must not override the visible source text or author-structure skeleton.
 
 Source range:
 - Choose directly from `CurrentView / Content`.
@@ -279,28 +273,6 @@ Target fields:
 `BookInfo` should match the Read XML pattern: it identifies the stable book, not the current reading location.
 
 `chapter_title` belongs in `CurrentView / Position`, because it describes the current location in the reading flow. `output_language` should move out of `BookInfo` and into `OutputContract / LanguageContract`.
-
-### ReadingState
-
-Maps from the old `navigation_context`, but only the continuity-bearing subset belongs here.
-
-#### ContinuityState
-
-`ContinuityState` carries compact local/session continuity and current forward cursor continuity if useful.
-
-#### PriorReadingState
-
-`PriorReadingState` carries compact prior-reading state useful for continuity and memory-support judgment.
-
-Candidate contents:
-
-- compact `recent_reading_memory` digest or active entries
-- thin `active_attention` digest while that store remains active
-- compact `concept_digest`
-- compact `thread_digest`
-- compact reflective/chapter frame when useful
-
-This block supports unit-boundary judgment and helps Ingest decide what memory support might matter. It should not contain large source excerpts, audit ledgers, reaction history, or historical route/move data.
 
 ### CurrentView
 
@@ -428,7 +400,7 @@ Each request contains:
 | `Reading position` | `CurrentView / Position` | Keep current cursor and retry feedback here. |
 | `Mainline preview` | `CurrentView / Content` | Prefer paragraph XML nodes over one JSON blob. |
 | `Mainline cursor` | `CurrentView / Position` | Keep only cursor facts needed to understand where the preview starts; do not revive mode/decision fields. |
-| `Navigation context` | `ReadingState` plus `RetrievalSurface` | Split continuity state from retrieval discoverability. |
+| `Navigation context` | not carried as a first-slice state block; later retrieval discoverability belongs in `RetrievalSurface` | Do not inject recent-memory or continuity summaries into Ingest by default. |
 | `Policy snapshot` | `Instruction / SelectNextUnit` policy plus `RetrievalSurface / RetrievalPolicy` | Separate boundary policy from retrieval budget. |
 | `Output language contract` | `OutputContract / LanguageContract` | Follow Read XML structure. |
 | `end_anchor_text` | `selected_unit.end_anchor_text` | Same semantics: exact quote from preview tail. |
@@ -469,7 +441,7 @@ The following current Navigate prompt material should move or be adjusted:
 
 - `You are Navigate...` should not carry forward as text. The product-level identity comes from top-level `<ReaderRole>` / `reader.role`; the step framing comes from `Instruction / CurrentStep`.
 - `Your single job is to choose...` should be replaced by the Ingest instruction charter, because Ingest now has two outputs: selected unit and memory retrieval requests.
-- `Use navigation context only as secondary support...` should become `Use ReadingState only as secondary support...`; the rule still belongs in `Instruction / SelectNextUnit`.
+- `Use navigation context only as secondary support...` should not carry forward in the first Ingest slice, because the current target context has no carried reading-state block.
 - `Do not request tools or external web search` should not be copied unchanged. It should become:
 
 ```text
