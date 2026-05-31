@@ -25,6 +25,9 @@ Update when: document layering, reading order, task routing, or cross-project co
   - backend contract changes require frontend route/client review
   - frontend integration changes require backend contract verification
 - Prefer codifying workflows in root scripts and docs instead of leaving process knowledge only in chat.
+- After completing a task that changes tracked files, run the appropriate checks, stage only the files related to the task, and create a git commit automatically unless the user explicitly asks not to commit.
+  - Do not auto-push unless the user explicitly asks for a push.
+  - If checks cannot be run or fail for reasons outside the task scope, report that clearly before committing.
 - Long-running eval or dataset jobs should not live only in chat memory.
   - If a task is expected to run longer than roughly `10-15` minutes, register it in the backend background-job registry before or immediately after launch.
   - Before starting overlapping long-running work, check the active registry first so a new agent does not duplicate or lose an in-flight run.
