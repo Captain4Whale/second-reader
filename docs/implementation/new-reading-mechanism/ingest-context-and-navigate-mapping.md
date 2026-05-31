@@ -109,15 +109,17 @@ Recommended sub-blocks:
   - the Ingest prompt must not duplicate or locally redefine the role text
   - current reader role text is: `你是一个知识渊博、有深刻洞见的阅读爱好者。当前你正在深入阅读一本书，在理解这本书内容的同时，积极对其进行思考，沉淀有价值的理解，并产生有价值的输出，从而获得最大的求知乐趣与自我提升。你的阅读可能分为多个步骤，具体每一步的活动请参考具体指令。`
 - `Instruction`
-  - should be one Ingest-specific fixed fragment, proposed id: `ingest.instruction`
-  - rendered inside `<Instruction>`; do not create step-specific tag names such as `<IngestInstruction>`
-  - should state the task charter only:
-    - Ingest prepares the next reading object for Digest
-    - Ingest selects one forward source unit from the current frontier
-    - Ingest requests prior-reading memory support that would help Digest read that selected unit continuously
-    - Ingest does not interpret the unit, write notes, update memory, execute retrieval, resolve anchors, settle runtime state, or advance the cursor
-  - should not contain the detailed boundary-selection rules; those belong in `BoundarySelection`
-  - should not contain memory retrieval policy details; those belong in `MemoryRetrievalPlanning`
+  - should be a nested block, not one undifferentiated paragraph
+  - tag name remains `<Instruction>`; do not create step-specific top-level names such as `<IngestInstruction>`
+  - recommended child blocks:
+    - `StepPosition`
+    - `TaskOverview`
+    - `NextUnitSelection`
+    - `MemorySupportTask`
+    - `ResponsibilityBoundary`
+  - the child blocks should state the task charter and division of work, not the full rule text for every subtask
+  - detailed next-unit selection rules belong in `BoundarySelection`
+  - detailed memory-query rules belong in `MemoryRetrievalPlanning`
 - `ContextUseGuide`
   - tells the model how to use `BookInfo`, `ReadingState`, `CurrentFocus`, `RetrievalSurface`, and `OutputContract`
   - emphasizes that the visible source preview is primary
@@ -139,7 +141,13 @@ Target assembly shape:
 ```xml
 <RoleAndInstruction>
   <ReaderRole prompt_fragment_ref="reader.role" />
-  <Instruction prompt_fragment_ref="ingest.instruction" />
+  <Instruction>
+    <StepPosition prompt_fragment_ref="ingest.step_position" />
+    <TaskOverview prompt_fragment_ref="ingest.task_overview" />
+    <NextUnitSelection prompt_fragment_ref="ingest.next_unit_selection" />
+    <MemorySupportTask prompt_fragment_ref="ingest.memory_support_task" />
+    <ResponsibilityBoundary prompt_fragment_ref="ingest.responsibility_boundary" />
+  </Instruction>
   <ContextUseGuide prompt_fragment_ref="ingest.context_use_guide" />
   <BoundarySelection prompt_fragment_ref="ingest.boundary_selection_policy" />
   <MemoryRetrievalPlanning prompt_fragment_ref="ingest.memory_retrieval_planning" />
@@ -148,6 +156,32 @@ Target assembly shape:
 ```
 
 The `prompt_fragment_ref` attributes above are implementation-facing references in the assembly spec. The rendered model-facing XML should contain only resolved text, following the current Read XML assembly convention.
+
+Recommended `Instruction` child meanings:
+
+- `StepPosition`
+  - says the model is in the `Ingest` step of a sequential deep-reading loop
+  - says this step happens before `Digest`
+  - says the model is previewing the next forward source area, not yet producing the final reading of that unit
+- `TaskOverview`
+  - says Ingest prepares the next reading object and support packet for Digest
+  - says the two outputs are:
+    - selected next source unit boundary
+    - prior-reading memory retrieval requests for that selected unit
+- `NextUnitSelection`
+  - says Ingest must select one forward source unit from the current frontier
+  - says the unit starts at the current source cursor and ends at an exact visible anchor
+  - points to `BoundarySelection` for the mature boundary policy reused from current Navigate
+  - this is where the already-approved "determine next unit" task is named at the instruction level
+- `MemorySupportTask`
+  - says Ingest should ask what prior reading memory Digest will need in order to read the selected unit continuously
+  - says Ingest only emits retrieval queries / requests; actual retrieval is outside this LLM call
+  - points to `MemoryRetrievalPlanning` for the detailed recall-query policy
+  - this is where the new "recall relevant memory" task is named at the instruction level
+- `ResponsibilityBoundary`
+  - says Ingest does not interpret the selected unit for the reader
+  - says Ingest does not write notes, highlights, surfaced reactions, or memory updates
+  - says Ingest does not execute retrieval, resolve anchors, retry/fallback, settle runtime state, or advance the cursor
 
 ### BookInfo
 
@@ -259,8 +293,11 @@ Target top-level fields:
 
 | Current Navigate prompt surface | Target Ingest XML surface | Notes |
 | --- | --- | --- |
-| `You are Navigate...` | `RoleAndInstruction / ReaderRole` plus `RoleAndInstruction / Instruction` | Replace the old node-specific role with the reader role fragment `reader.role`; put the Ingest-specific task in `Instruction`. |
-| Boundary-selection rules | `RoleAndInstruction / BoundarySelection` | Reuse almost directly. |
+| `You are Navigate...` | `RoleAndInstruction / ReaderRole` plus `RoleAndInstruction / Instruction / StepPosition` | Replace the old node-specific role with the reader role fragment `reader.role`; put the Ingest step position in `StepPosition`. |
+| `Your single job is to choose...` | `RoleAndInstruction / Instruction / TaskOverview` | Replace with the two-part Ingest task: select the next source unit and request memory support. |
+| Next-unit task framing | `RoleAndInstruction / Instruction / NextUnitSelection` | Name the task here, but keep detailed rules in `BoundarySelection`. |
+| Boundary-selection rules | `RoleAndInstruction / BoundarySelection` | Reuse almost directly. This is where the already-approved next-unit selection prompt content belongs. |
+| no old equivalent | `RoleAndInstruction / Instruction / MemorySupportTask` plus `RoleAndInstruction / MemoryRetrievalPlanning` | Name the recall task in `MemorySupportTask`; put the detailed retrieval-query policy in `MemoryRetrievalPlanning`. |
 | `Structural frame` | `BookInfo / BookIdentity` | Move output-language concerns to `OutputContract`. |
 | `Reading position` | `CurrentFocus / ReadingPosition` | Keep current cursor and retry feedback here. |
 | `Mainline preview` | `CurrentFocus / SourcePreview` | Prefer paragraph XML nodes over one JSON blob. |
