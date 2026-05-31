@@ -332,7 +332,7 @@ def apply_active_attention_operations(
     state: ActiveAttention,
     operations: list[StateOperation],
 ) -> ActiveAttention:
-    """Apply explicit active-attention mutations from read outputs."""
+    """Apply explicit active-attention mutations from internal settlement operations."""
 
     return _apply_active_attention_operations(
         state,
@@ -363,7 +363,7 @@ def apply_recent_reading_memory_operations(
     source_unit_span_id: str,
     created_at_unit_index: int,
 ) -> RecentReadingMemoryState:
-    """Append Recent Reading Memory entries produced by one completed Read unit."""
+    """Append Recent Reading Memory entries produced by one completed Digest unit."""
 
     entries = _recent_memory_entries(state)
     touched = False
@@ -660,7 +660,7 @@ def apply_concept_registry_operations(
     state: ConceptRegistryState,
     operations: list[StateOperation],
 ) -> ConceptRegistryState:
-    """Apply explicit concept-registry mutations from read outputs."""
+    """Apply explicit concept-registry mutations from internal settlement operations."""
 
     next_state = dict(state)
     entries = [dict(entry) for entry in state.get("entries", []) if isinstance(entry, dict)]
@@ -735,7 +735,7 @@ def apply_thread_trace_operations(
     state: ThreadTraceState,
     operations: list[StateOperation],
 ) -> ThreadTraceState:
-    """Apply explicit thread-trace mutations from read outputs."""
+    """Apply explicit thread-trace mutations from internal settlement operations."""
 
     next_state = dict(state)
     entries = [dict(entry) for entry in state.get("entries", []) if isinstance(entry, dict)]

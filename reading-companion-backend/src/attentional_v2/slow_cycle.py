@@ -590,7 +590,7 @@ def build_reaction_record_from_surfaced_reaction(
     ordinal: int | None = None,
     compat_family_override: str | None = None,
 ) -> AnchoredReactionRecord | None:
-    """Build one native persisted reaction record directly from read-owned surfaced output."""
+    """Build one native persisted reaction record directly from Digest-owned surfaced output."""
 
     thought = _clean_text(reaction.get("content"))
     if not thought:

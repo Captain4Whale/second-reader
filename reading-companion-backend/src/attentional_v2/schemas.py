@@ -1114,10 +1114,6 @@ def build_default_reader_policy(
             "preview_hard_max_chars": 4000,
             "max_lookahead_paragraphs": 4,
         },
-        "read": {
-            "supplemental_context_budget": 4,
-            "supplemental_context_emergency_cap": 4,
-        },
         "knowledge": {
             "default_mode": "book_grounded_only",
             "allow_prior_knowledge_when_warranted": True,

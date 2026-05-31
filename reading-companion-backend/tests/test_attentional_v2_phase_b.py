@@ -254,9 +254,11 @@ def test_run_digest_for_source_unit_reads_once_and_persists_read_cycle_audit(tmp
             "memory_uptake_ops": [
                 {
                     "op": "append",
-                    "target_store": "active_attention",
-                    "target_key": "pressure-1",
-                    "payload": {"attention_tags": ["question"], "statement": "What changes here?"},
+                    "target_store": "recent_reading_memory",
+                    "payload": {
+                        "kind": "event_or_situation",
+                        "memory_text": "The Beta sentence makes the bridge legible.",
+                    },
                 }
             ],
         }
@@ -301,6 +303,5 @@ def test_run_digest_for_source_unit_reads_once_and_persists_read_cycle_audit(tmp
     assert audit_line["surfaced_reaction_count"] == 1
     assert audit_line["surfaced_reactions"][0]["source_quote"] == "Beta sentence."
     assert audit_line["memory_uptake_op_count"] == 1
-    assert audit_line["memory_uptake_ops"][0]["target_store"] == "active_attention"
-    assert audit_line["memory_uptake_ops_by_target_store"] == {"active_attention": 1}
-    assert audit_line["supplemental_satisfied"] is False
+    assert audit_line["memory_uptake_ops"][0]["target_store"] == "recent_reading_memory"
+    assert audit_line["memory_uptake_ops_by_target_store"] == {"recent_reading_memory": 1}

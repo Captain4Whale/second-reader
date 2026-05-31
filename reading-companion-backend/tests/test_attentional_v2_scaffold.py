@@ -703,10 +703,7 @@ def test_digest_role_and_instruction_fragments_are_lossless() -> None:
         "digest.reading_impression_policy",
         "digest.surfaced_reaction_policy",
         "digest.reaction_anchor_and_callback_policy",
-        "digest.memory_general_policy",
         "digest.recent_reading_memory_policy",
-        "digest.durable_memory_policy",
-        "digest.active_tension_policy",
         "digest.source_grounding_policy",
         "digest.output_behavior_policy",
     ]
@@ -1518,14 +1515,10 @@ def test_attentional_v2_read_book_runs_live_loop_and_persists_compatibility_resu
             "memory_uptake_ops": [
                 {
                     "operation_type": "append",
-                    "target_store": "active_attention",
-                    "target_key": f"hot-{focal_sentence.get('sentence_id')}",
+                    "target_store": "recent_reading_memory",
                     "payload": {
-                        "tension_from": f"The unit leaves a charge around: {anchor_quote[:24]}",
-                        "tension_focus": "This point remains alive in attention.",
-                        "working_interpretation": "",
-                        "attention_tags": ["motif"],
-                        "last_touched_sentence_id": focal_sentence.get("sentence_id"),
+                        "kind": "event_or_situation",
+                        "memory_text": f"The unit leaves a remembered point around: {anchor_quote[:24]}",
                     },
                 }
             ],
@@ -1608,9 +1601,9 @@ def test_attentional_v2_read_book_runs_live_loop_and_persists_compatibility_resu
     assert all(audit["surfaced_reaction_count"] == 1 for audit in read_audits)
     assert all(audit["source_span_id"] for audit in read_audits)
     assert read_audits[1]["carry_forward_ref_ids"]
-    assert settlement_audits[0]["memory_uptake_ops_by_target_store"] == {"active_attention": 1}
+    assert settlement_audits[0]["memory_uptake_ops_by_target_store"] == {"recent_reading_memory": 1}
     assert settlement_audits[0]["source_span_id"] == unit_spans[0]["source_span_id"]
-    assert settlement_audits[0]["state_deltas"]["active_attention"]["added_ids"] == ["hot-c1-s1"]
+    assert settlement_audits[0]["state_deltas"]["recent_reading_memory"]["added_ids"] == ["recent:c1:u0001:m1"]
     assert settlement_audits[0]["state_deltas"]["reaction_records"]["added_ids"]
     assert "anchor_bank" not in settlement_audits[0]["state_deltas"]
     shell = load_runtime_shell(runtime_shell_file(result.output_dir))

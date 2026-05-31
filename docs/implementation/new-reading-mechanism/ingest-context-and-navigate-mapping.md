@@ -17,6 +17,7 @@ Update when: the Ingest role, XML context shape, retrieval-request contract, or 
   - `DEC-105` hard-purges retired Detour / backread / source-skill interfaces.
   - `DEC-106` separates the LLM call from runtime preparation / boundary governance.
   - `DEC-107` lands `llm_calls.ingest(...)` as the current LLM call, using this XML context shape.
+  - `DEC-108` renames the concrete per-unit interpretation call to `llm_calls.digest(...)`, so this document's `Ingest -> Digest` vocabulary is current.
 
 ## Design Claim
 
@@ -265,7 +266,7 @@ Target fields:
 }
 ```
 
-`BookInfo` should match the Read XML pattern: it identifies the stable book, not the current reading location.
+`BookInfo` should match the Digest XML pattern: it identifies the stable book, not the current reading location.
 
 `chapter_title` belongs in `CurrentView / Position`, because it describes the current location in the reading flow. `output_language` is not part of the first-slice Ingest context.
 
@@ -453,5 +454,5 @@ Digest should not receive the entire Ingest preview, all candidate memory indexe
 - no ActiveRecall / look_back revival
 - no eval run
 - no evidence catalog update
-- no claim that the new Ingest prompt is implemented
+- no claim that future Ingest memory retrieval is implemented
 - no final Digest prompt design

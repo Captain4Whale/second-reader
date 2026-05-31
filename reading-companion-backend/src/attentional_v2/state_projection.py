@@ -202,7 +202,7 @@ def _has_live_question_fields(item: dict[str, object]) -> bool:
 
 
 def _active_tension_prompt_items(active_attention_digest: ActiveAttentionDigest) -> list[dict[str, object]]:
-    """Project all open ActiveTension items into the narrow Read-node prompt shape."""
+    """Project all open ActiveTension items into the narrow Digest prompt shape."""
 
     prompt_items: list[dict[str, object]] = []
     for item in active_attention_digest.get("active_items", []):
@@ -881,144 +881,11 @@ def build_carry_forward_context(
     }
 
 
-def _clean_string_list(value: object) -> list[str]:
-    """Return compact string items while preserving input order."""
-
-    if not isinstance(value, list):
-        return []
-    cleaned: list[str] = []
-    seen: set[str] = set()
-    for item in value:
-        text = clean_text(item)
-        if not text or text in seen:
-            continue
-        seen.add(text)
-        cleaned.append(text)
-    return cleaned
-
-
-def _retrieval_events_from_supplemental_context(
-    supplemental_context: dict[str, object],
-) -> list[dict[str, object]]:
-    """Return compact supplemental retrieval events, if available."""
-
-    events = [
-        dict(item)
-        for item in supplemental_context.get("retrieval_events", [])
-        if isinstance(item, dict)
-    ]
-    if events:
-        return events
-    retrieval_intent = clean_text(supplemental_context.get("retrieval_intent"))
-    result_boundary = clean_text(supplemental_context.get("result_boundary"))
-    result_groups = _clean_string_list(supplemental_context.get("result_groups"))
-    kind = clean_text(supplemental_context.get("kind"))
-    if not any((retrieval_intent, result_boundary, result_groups)):
-        return []
-    return [
-        {
-            "kind": kind,
-            "retrieval_intent": retrieval_intent,
-            "result_boundary": result_boundary,
-            "result_groups": result_groups,
-        }
-    ]
-
-
-def _result_groups_from_events(events: list[dict[str, object]]) -> list[str]:
-    """Return an order-preserving union of retrieval result groups."""
-
-    groups: list[str] = []
-    seen: set[str] = set()
-    for event in events:
-        for group in _clean_string_list(event.get("result_groups")):
-            if group in seen:
-                continue
-            seen.add(group)
-            groups.append(group)
-    return groups
-
-
-def _build_retrieval_context_contract(
-    *,
-    supplemental_context: dict[str, object],
-    selective_carry: dict[str, object],
-) -> dict[str, object]:
-    """Expose compact prompt-facing retrieval contract metadata."""
-
-    events = _retrieval_events_from_supplemental_context(supplemental_context)
-    result_groups = _clean_string_list(supplemental_context.get("result_groups")) or _result_groups_from_events(events)
-    retrieval_intent = clean_text(supplemental_context.get("retrieval_intent"))
-    result_boundary = clean_text(supplemental_context.get("result_boundary"))
-    if not any((events, result_groups, retrieval_intent, result_boundary)):
-        return {}
-
-    forwarded_groups: list[str] = []
-    if selective_carry.get("source_ref_details"):
-        forwarded_groups.append("source_refs")
-    if selective_carry.get("earlier_excerpts"):
-        forwarded_groups.append("excerpts")
-    if selective_carry.get("supporting_refs"):
-        forwarded_groups.append("refs")
-    forwarded_set = set(forwarded_groups)
-    not_forwarded_groups = [
-        group
-        for group in result_groups
-        if group not in forwarded_set
-    ]
-
-    return {
-        "retrieval_intent": retrieval_intent,
-        "result_boundary": result_boundary,
-        "result_groups": result_groups,
-        "retrieval_events": events,
-        "forwarded_result_groups": forwarded_groups,
-        "not_forwarded_result_groups": not_forwarded_groups,
-        "full_objects_forwarded": False,
-    }
-
-
-def build_supplemental_selective_carry(
-    supplemental_context: dict[str, object] | None,
-) -> dict[str, object]:
-    """Project supplemental context into the prompt-facing selective-carry shape."""
-
-    selective_carry: dict[str, object] = {}
-    if not isinstance(supplemental_context, dict):
-        return selective_carry
-    if isinstance(supplemental_context.get("excerpts"), list):
-        selective_carry["earlier_excerpts"] = [
-            dict(item)
-            for item in supplemental_context.get("excerpts", [])
-            if isinstance(item, dict)
-        ][:4]
-    if isinstance(supplemental_context.get("source_refs"), list):
-        selective_carry["source_ref_details"] = [
-            dict(item)
-            for item in supplemental_context.get("source_refs", [])
-            if isinstance(item, dict)
-        ][:4]
-    if isinstance(supplemental_context.get("refs"), list):
-        selective_carry["supporting_refs"] = [
-            dict(item)
-            for item in supplemental_context.get("refs", [])
-            if isinstance(item, dict)
-        ][:6]
-    retrieval_context = _build_retrieval_context_contract(
-        supplemental_context=supplemental_context,
-        selective_carry=selective_carry,
-    )
-    if retrieval_context:
-        selective_carry["retrieval_context"] = retrieval_context
-    return selective_carry
-
-
 def build_digest_prompt_packet(
     *,
     carry_forward_context: CarryForwardContext,
-    supplemental_context: dict[str, object] | None = None,
 ) -> dict[str, object]:
-    """Project persisted state into the narrow read-node prompt view."""
+    """Project persisted state into the narrow Digest prompt view."""
     active_attention_digest = (
         dict(carry_forward_context.get("active_attention_digest", {}))
         if isinstance(carry_forward_context.get("active_attention_digest"), dict)
@@ -1058,9 +925,6 @@ def build_digest_prompt_packet(
         else {},
     }
 
-    selective_carry = build_supplemental_selective_carry(supplemental_context)
-    if selective_carry:
-        packet["selective_carry"] = selective_carry
     return packet
 
 

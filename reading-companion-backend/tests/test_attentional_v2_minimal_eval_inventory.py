@@ -18,7 +18,6 @@ REQUIRED_LANES = {
 REQUIRED_EVIDENCE_SURFACES = {
     "read_audit",
     "settlement_audit",
-    "supplemental_retrieval",
     "ingest_trace",
     "slow_cycle_audit",
     "source_ref_binding_resolution_markers",

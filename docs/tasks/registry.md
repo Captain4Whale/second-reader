@@ -42,10 +42,10 @@ Last updated: `2026-05-31T19:42:26+08:00`
 - Status: `active`
 - Lane: `mechanism_runtime`
 - Priority: `high`
-- Detail: `docs/implementation/new-reading-mechanism/attentional_v2_structural_rework_plan.md`
-- Next: continue implementation from the new post-Phase-9 structural rework plan:
+- Detail: `docs/implementation/new-reading-mechanism/attentional_v2_structural_rework_plan.md` (historical slice ledger after `DEC-108`)
+- Next: continue implementation from the current `Ingest -> Digest -> Reading Runner settlement` baseline:
   - keep the work under the existing `attentional_v2` mechanism key rather than minting `attentional_v3`
-  - treat this plan as backend-only
+  - treat the structural rework plan as backend-only historical context; current mechanism authority lives in `docs/backend-reading-mechanisms/attentional_v2.md`
   - keep the existing frontend lane active in parallel under `TASK-V2-NATIVE-READING-PRESENTATION`
   - `Phase A` is now landed:
     - heuristic trigger output no longer suppresses formal正文 reading
@@ -372,7 +372,7 @@ Last updated: `2026-05-31T19:42:26+08:00`
       - Memory Quality evidence report contract:
         - `reading-companion-backend/docs/evaluation/long_span/memory_quality_report_contract.md`
         - future reports should use one full source document per window with probe markers, and label recent route explanations as `route reason` rather than generic `statement`
-      - current Navigator source-skill posture:
+      - historical Navigator source-skill posture:
         - superseded by `DEC-104` and hard-purged by `DEC-105`
         - `Ingest` is forward-only and does not call source skills
         - the old mechanism-private Skill Runtime is not a current code, prompt, audit, or test interface

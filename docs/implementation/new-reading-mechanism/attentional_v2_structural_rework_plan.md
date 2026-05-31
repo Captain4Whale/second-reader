@@ -5,7 +5,7 @@ Use when: deciding backend implementation order, checking which mechanism change
 Not for: stable mechanism authority, frontend redesign planning, per-probe evidence, or final project history.
 Update when: the backend implementation sequence, code-slice boundaries, success criteria, or rollout posture materially changes.
 
-Status: `in_progress`
+Status: `historical_reference_after_DEC-108`
 
 Mechanism key: `attentional_v2`
 
@@ -13,11 +13,13 @@ Scope: `post-Phase-9 backend structural rework under the existing attentional_v2
 
 Current authority note:
 
-- As of `2026-05-31`, `DEC-103` through `DEC-106` supersede this plan's older Detour / source-backread / source-skill and architecture-level Navigator-entrypoint assumptions.
-- Treat below references to active Detour, source skills, `NavigateNextUnitResult`, or `navigate_choose_next_unit_act` as historical implementation checkpoints unless a later task explicitly re-adopts them.
-- Current stable mechanism authority is `docs/backend-reading-mechanisms/attentional_v2.md`: `llm_calls.navigate(...)` / `Navigate` is the LLM boundary call, while Reading Runner owns `prepare_next_source_unit_for_read` preparation and boundary governance.
+- As of `2026-05-31`, `DEC-103` through `DEC-108` supersede this plan's older Detour / source-backread / source-skill, Navigator, and concrete `Read`-node assumptions.
+- Treat below references to active Detour, source skills, `active_recall`, `look_back`, `NavigateNextUnitResult`, `navigate_choose_next_unit_act`, `Navigate`, or concrete-node `Read` as historical implementation checkpoints unless a later task explicitly re-adopts them.
+- Current stable mechanism authority is `docs/backend-reading-mechanisms/attentional_v2.md`: the live loop is `Ingest -> Digest -> Reading Runner settlement`, `llm_calls.ingest(...)` is the boundary-selection LLM call, `llm_calls.digest(...)` is the per-unit interpretation LLM call, and Reading Runner owns `prepare_next_source_unit_for_read` preparation / boundary governance.
 
-Implementation checkpoint:
+Historical implementation checkpoint:
+
+The items below preserve the sequence of landed historical slices. Local words such as "current", "now", `Navigate`, `read`, or Detour/source-skill references describe the slice at the time it landed, not the current post-`DEC-108` live surface unless the authority note above says so.
 
 - `Phase A` is landed:
   - trigger output no longer gates whether正文 text gets formal reading
@@ -99,8 +101,8 @@ Implementation checkpoint:
   - ordinary forward progression is Reading Runner-owned cursor advancement, not a semantic action
   - `Detour` remains the only current non-mainline scheduling mechanism
 - `Navigate` cutover is now landed:
-  - current Navigator contract is `Choose Next Unit That Should Be Read`
-  - Reading Runner calls one architecture-level Navigator entrypoint and receives one `NavigateNextUnitResult`
+  - historical Navigator contract was `Choose Next Unit That Should Be Read`
+  - Reading Runner called one architecture-level Navigator entrypoint and received one `NavigateNextUnitResult`
   - mainline unitization and detour search remain private implementation helpers under that entrypoint
   - mainline and landed-detour reads now share the same Reading Runner settlement path
 - Reading Runner naming boundary is now landed:
@@ -113,8 +115,8 @@ Implementation checkpoint:
   - `Reading Runner` executes one requested book-local skill through the mechanism-private Skill Runtime and feeds the result back to `Navigate.detour_search`
   - the first supported skills are `source_map_overview`, `source_scope_drilldown`, `source_window_fetch`, and `anchor_resolve`
   - skills provide bounded source evidence only; final `land_region / narrow_scope / defer_detour` decisions remain Navigate-owned
-- next after the source-skill slice:
-  - validate detour quality with real examples before deciding whether Read or future WebSearch should join the same skill framework
+- historical next after the source-skill slice:
+  - this next step is superseded by `DEC-104` / `DEC-105`; do not validate or extend the retired Detour/source-skill framework unless a future decision explicitly re-adopts it
 
 Primary upstream evidence:
 

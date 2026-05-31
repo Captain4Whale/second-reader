@@ -1,6 +1,6 @@
 # Attentional V2 Mechanism
 
-Purpose: define the current default attention-frontier reading mechanism that reads from a paragraph-offset source cursor, lets `Ingest` choose the next source span, reasons mainly over meaning units, and moves forward through deterministic post-read settlement rather than fixed section traversal.
+Purpose: define the current default attention-frontier reading mechanism that reads from a paragraph-offset source cursor, lets `Ingest` choose the next source span, reasons mainly over meaning units, and moves forward through deterministic post-Digest settlement rather than fixed section traversal.
 Use when: changing the live `attentional_v2` parse/read path, clarifying its ontology, or updating its mechanism-private runtime behavior.
 Not for: shared mechanism-platform rules or the internals of `iterator_v1`.
 Update when: the live ontology, progression logic, LLM schedule, memory model, unsupported modes, or artifact design for `attentional_v2` materially changes.
@@ -246,7 +246,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - formally digest the accepted source unit through `Digest`
   - let `Digest` directly surface zero-to-many reading-time reactions for that exact unit
   - accept only the current `Digest` output contract: `reading_impression`, `surfaced_reactions`, and LLM-facing `recent_reading_memory`
-  - `Reading Runner` post-read settlement closes the exact source unit, appends it to the Unit Span Ledger, and advances the cursor to `end_cursor`
+  - `Reading Runner` post-Digest settlement closes the exact source unit, appends it to the Unit Span Ledger, and advances the cursor to `end_cursor`
 - Current capture/resume writes only the current forward continuity schema; old non-mainline checkpoint/artifact shapes are not a compatibility target after `DEC-105`.
 - Future `Ingest` memory retrieval should be designed separately rather than inherited from the retired source-skill loop by default.
 - `Ingest` is now the sole current selector of the next coverage unit.
@@ -293,16 +293,15 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
     - the mechanism should not inflate that kind of unit into review voice or manufactured gravitas unless the wording itself genuinely carries local force
 - `reading_impression` is a temporary natural-language read-after impression, not a new durable memory layer.
   - It exists as the immediate reader-like impression after one unit.
-  - Durable memory changes only through `memory_uptake_ops` into the existing primary state layers.
-  - Current Digest-owned `memory_uptake_ops` may write only to `active_attention`, `concept_registry`, and `thread_trace`.
-    - `concept_digest`, `thread_digest`, and `active_focus_digest` are prompt-facing projections derived from state; they are not writable stores.
-    - Unsupported Digest target stores or unsupported operation/store pairings are dropped at admission and recorded as diagnostics rather than being treated as accepted updates.
-  - Visible reactions and memory uptake come from the same reading experience, but a surfaced reaction is already persisted as a reaction record and is not automatically copied into concept or thread memory.
-  - Author-given structures such as stage models, classifications, core definitions, named distinctions, or chapter roadmaps may enter memory even when they do not produce a visible reaction.
+  - The LLM-facing Digest output maintains `recent_reading_memory[]`, not legacy store-targeted memory operations.
+  - Runtime converts `recent_reading_memory[]` into internal `memory_uptake_ops[]` for deterministic settlement into the Recent Reading Memory store.
+  - Model-emitted legacy `memory_uptake_ops[]` are ignored by the current Digest call.
+  - Visible reactions and Recent Reading Memory come from the same reading experience, but a surfaced reaction is already persisted as a reaction record and is not automatically copied into memory.
+  - Author-given structures such as stage models, classifications, core definitions, named distinctions, or chapter roadmaps may enter Recent Reading Memory even when they do not produce a visible reaction.
 - `Express` is now best understood as historical intermediate compatibility-first territory rather than a live mechanism node.
   - It helped isolate visible wording while the system proved out surfaced-reaction persistence.
   - But the approved next shape no longer treats a dedicated `Express` step as the mechanism's stable center of gravity, and F1 has already removed it from the live Reading Runner path.
-- The Reading Runner now owns post-read settlement for that same chosen unit.
+- The Reading Runner now owns post-Digest settlement for that same chosen unit.
   - It deterministically applies `memory_uptake_ops`, persists surfaced reactions, writes audit records, closes the current unit, appends the accepted mainline unit to the Unit Span Ledger, and advances the paragraph-offset cursor to the unit's `end_cursor`.
   - It does not ask an LLM whether ordinary forward reading should continue.
   - It does not record a replacement `forward` action; forward progression is the default program behavior.
@@ -343,8 +342,8 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - ordinary forward progression is deterministic Reading Runner settlement rather than a route action
 - Under the approved next shape:
   - `Ingest` owns forward next-unit selection and reserves memory-support retrieval for later design
-  - `Digest` owns current-unit reading impression, surfaced reactions, and memory uptake
-  - `Reading Runner` owns post-read settlement and cursor advance
+  - `Digest` owns current-unit reading impression, surfaced reactions, and LLM-facing Recent Reading Memory
+  - `Reading Runner` owns post-Digest settlement and cursor advance
   - `slow cycle` owns chapter-end consolidation and promotion
 
 ## Frozen Next-Shape Contract

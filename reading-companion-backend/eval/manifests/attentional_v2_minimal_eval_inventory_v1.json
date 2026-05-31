@@ -136,7 +136,6 @@
       "evidence_surface_ids": [
         "read_audit",
         "settlement_audit",
-        "supplemental_retrieval",
         "ingest_trace",
         "slow_cycle_audit",
         "source_ref_binding_resolution_markers",
@@ -199,15 +198,6 @@
         "lane_b_long_span_mq_callback_fvi"
       ],
       "evidence_role": "read-to-state settlement deltas and memory uptake operation outcomes"
-    },
-    {
-      "id": "supplemental_retrieval",
-      "artifact_or_field": "read_audit.supplemental_retrieval",
-      "available_after_slice": "Slice 4B",
-      "maps_to": [
-        "lane_b_long_span_mq_callback_fvi"
-      ],
-      "evidence_role": "retrieval intent/result-boundary availability, not utilization success"
     },
     {
       "id": "ingest_trace",

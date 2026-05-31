@@ -26,7 +26,6 @@ REQUIRED_LANES = {
 REQUIRED_EVIDENCE_SURFACES = {
     "read_audit",
     "settlement_audit",
-    "supplemental_retrieval",
     "ingest_trace",
     "slow_cycle_audit",
     "source_ref_binding_resolution_markers",
@@ -48,7 +47,6 @@ REQUIRED_GUARDS = {
 EXPECTED_ARTIFACT_TOKENS = {
     "read_audit": ("read_audit.jsonl",),
     "settlement_audit": ("settlement_audit.jsonl",),
-    "supplemental_retrieval": ("read_audit.supplemental_retrieval",),
     "ingest_trace": ("read_audit.ingest_trace",),
     "slow_cycle_audit": ("slow_cycle_audit.jsonl",),
     "source_ref_binding_resolution_markers": ("source_refs", "SourceRef"),

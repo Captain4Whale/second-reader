@@ -92,12 +92,6 @@ Rules:
   - `Earlier the text said "..."` followed by a long pasted sentence from earlier material.""",
     ),
     PromptFragment(
-        fragment_id='digest.memory_general_policy',
-        text="""- After the impression and any surfaced reactions, maintain memory deliberately.
-- `memory_uptake_ops` records only what should remain available after this unit. Do not maintain state for its own sake.
-- A surfaced reaction is already persisted as a reaction record. Do not copy it into `concept_registry` or `thread_trace` just because it was strong.""",
-    ),
-    PromptFragment(
         fragment_id='digest.recent_reading_memory_policy',
         text="""- First maintain Recent Reading Memory: after reading this unit, write one Recent Reading Memory entry for your future self unless the unit is empty or purely structural.
 - Assume the exact source text of this unit may not be shown again in the next Digest step. Record what you now understand from this unit that should remain available for coherent continued reading.
@@ -135,65 +129,10 @@ Rules:
 - Recent Reading Memory append operations do not need an operation-level `reason`. The `memory_text` is the content to keep; do not spend attention justifying why you wrote it.""",
     ),
     PromptFragment(
-        fragment_id='digest.durable_memory_policy',
-        text="""- Create other memory operations only when the reading experience yields something that should continue shaping later reading: an open tension, a reusable concept/model/definition, or an unfolding thread.
-- Explicit source structures can be worth remembering even when they do not call for a visible reaction: stage models, classifications, core definitions, source-named distinctions, chapter roadmaps, and other author-given frameworks may belong in durable memory.
-- Do not disguise plainly stated source material as your own interpretation. Preserve source-given structure as source-given structure.
-- `memory_uptake_ops` must stay explicit and bounded. Only target:
-  - `recent_reading_memory`
-  - `active_attention`
-  - `concept_registry`
-  - `thread_trace`
-- Do not target `concept_digest`, `thread_digest`, `active_focus_digest`, or report/projection fields. Digests are prompt projections, not writable memory stores.""",
-    ),
-    PromptFragment(
-        fragment_id='digest.active_tension_policy',
-        text="""- `active_attention` stores ActiveTension: points that still hang in the reader's attention after a unit, not recent memory and not a summary cache.
-- After reading this unit, pause as a reader.
-- Notice what still holds your attention after the unit is over.
-- It may be a question, suspense, an unusual character, a striking image, a beautiful scene, a strange event, an emotional pressure, a recurring pattern, or a claim that has not yet settled.
-- Do not require yourself to know whether it will matter later.
-- You only need to judge whether it still feels alive in your reading attention right now.
-- Prompt-visible context includes the current source unit, book or chapter framing shown in this prompt, and existing memory state shown in the Digest context packet.
-- Do not import outside knowledge about the book, author, or later chapters unless that information is present in this prompt.
-- Record an ActiveTension when something remains alive in attention after the unit: it is not fully digested as a stable fact, summary, or concept yet.
-- Do not record every important statement.
-- Do not record ordinary facts just because they are useful.
-- Use ActiveTension for points that still have readerly charge: curiosity, beauty, unease, surprise, suspense, unresolved meaning, emotional force, or a vivid image/person/event that lingers.
-- An ActiveTension does not have to be phrased as a question, does not have to wait for an answer, and does not require you to predict whether it will shape later reading.
-- Good ActiveTensions feel like something a reader naturally carries after the visible reading context:
-  - narrative suspense: a bomb is placed on the table, so the reader carries that possible explosion as live tension.
-  - argument promise: the author poses a problem or claim, so the reader carries how it may be developed.
-  - image or beauty: a landscape or image is unusually vivid and keeps resonating even if it does not ask a question.
-  - character or strange event: a person or event feels distinctive, unsettling, or memorable enough to linger.
-  - `活出生命的意义`: visible title/framing plus current text about prisoner adaptation, emotional numbness, and meaning can create a reading pull; keep the basis honest in `tension_from`.
-- Do not create an ActiveTension merely because the passage is important. Importance alone belongs in `reading_impression`, `concept_registry`, or `thread_trace`; ActiveTension requires readerly charge.
-- ActiveTension create payloads must use `tension_from`, `tension_focus`, and `working_interpretation`; do not create new `statement`-only or question-only active-attention items.
-- `tension_from` says what prompt-visible source, framing, or memory left this charge.
-- `tension_focus` says what remains alive in attention; it may be a question, tension, image, beauty, character trait, unusual event, emotional pressure, pattern, or watchpoint.
-- `working_interpretation` says the current tentative interpretation, if one has formed. It may be empty for a newly opened tension.
-- Before creating new ActiveTensions, inspect existing `active_tensions` in the Digest context packet. For each one, ask whether this unit advances, corrects, reverses, weakens, answers, or makes it irrelevant. Emit an `update`, `resolve`, `close`, or `drop` operation for that existing `item_id` when appropriate.
-- Use `create` / `append` when this unit leaves a still-live ActiveTension that has not yet settled into an ordinary fact, stable concept, summary, or reaction.
-- Use `update` / `reactivate` when this unit changes the current interpretation, reshapes what the reader is tracking, or rekindles an older ActiveTension.
-- Use `resolve` only when this unit gives a direct, make-sense answer that satisfies the carried forward-pull so the reader no longer needs to carry it as open. A resolve payload must include `answered_reason`, `working_interpretation`, and an exact `development_source_quote`.
-- The `answered_reason` must explain why the cited evidence directly satisfies the forward-pull. If the evidence is only a precondition, setup, clue, partial explanation, or reframing, do not resolve; use `update` with the better `working_interpretation` and keep the item open.
-- If you cannot explain why the tension is settled with current prompt-visible evidence, do not resolve it.
-- Use `close` when the tension no longer remains alive in attention, but not because it was fully answered or settled. A close payload must include `closed_reason`.
-- If an interpretation becomes durable, write the durable content to `concept_registry` or `thread_trace`, add `derived_from_active_attention_ids` on that downstream concept/thread entry, and close or resolve the ActiveTension. Do not use `promote` as an active-attention operation.
-- Do not create an ActiveTension when the current unit raises and fully digests it locally.
-- Do not store stable concepts, definitions, chapter summaries, or surfaced reactions in `active_attention`.
-- Use `concept_registry` for reusable concepts, models, definitions, or distinctions.
-- Use `thread_trace` for cross-passage or cross-chapter lines of development.""",
-    ),
-    PromptFragment(
         fragment_id='digest.source_grounding_policy',
-        text="""- When an operation needs current-source evidence, add `source_quote` and optionally `source_role` inside the payload. The quote must be a short exact contiguous span copied from the current unit: no ellipses, no stitched fragments, no paraphrase, no translation. The runner will resolve it to paragraph + char-offset `source_refs`; never invent source coordinates yourself.
-- If the basis is title/framing/prior memory rather than a current-source phrase, explain that basis in `tension_from` and omit `source_quote`.
-- When an operation develops or settles an ActiveTension, add `development_source_quote` and optionally `development_source_role`; use the same short exact contiguous quote rule. The runner will resolve it to `development_source_refs`; never invent source coordinates yourself.
-- Ordinary passing understanding belongs in `reading_impression`, not in persistent memory.
-- ActiveTension item payloads may still use `attention_tags` as lightweight labels, but the ActiveTension fields are authoritative.
-- Do not use legacy active-attention bucket/list fields in new state operations.
-- Do not write `reflective_frames`, `reaction_records`, or history/audit layers here.""",
+        text="""- `surfaced_reactions[].source_quote` must be a short exact contiguous span copied from the current unit: no ellipses, no stitched fragments, no paraphrase, no translation.
+- Never invent source coordinates. The runner resolves source quotes to paragraph + char-offset `SourceRef` objects after Digest returns.
+- Recent Reading Memory entries are grounded in the current source unit as a whole; they do not need exact source quotes.""",
     ),
     PromptFragment(
         fragment_id='digest.output_behavior_policy',
@@ -215,25 +154,9 @@ def _fragment_by_id(fragment_id: str) -> PromptFragment:
 
 
 def _target_source_grounding_text() -> str:
-    """Return the source-grounding text for the live Digest XML context.
+    """Return the source-grounding text for the live Digest XML context."""
 
-    The live fragment still contains deprecated ActiveTension-specific source
-    guidance because the XML Digest contract keeps only the shared quote /
-    SourceRef boundary.
-    """
-
-    live_text = _fragment_by_id("digest.source_grounding_policy").text
-    excluded_markers = (
-        "title/framing/prior memory",
-        "ActiveTension",
-        "legacy active-attention",
-        "reflective_frames",
-    )
-    return "\n".join(
-        line
-        for line in live_text.splitlines()
-        if not any(marker in line for marker in excluded_markers)
-    )
+    return _fragment_by_id("digest.source_grounding_policy").text
 
 
 DIGEST_TARGET_MEMORY_BOUNDARY_FRAGMENT = PromptFragment(

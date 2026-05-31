@@ -345,7 +345,7 @@ def _memory_uptake_store_policy(
     operation_type: str,
     effective_target_store: str,
 ) -> tuple[bool, str, list[str]]:
-    """Return conservative read-path admission policy metadata."""
+    """Return conservative Digest-path admission policy metadata."""
 
     if effective_target_store not in _MEMORY_UPTAKE_TARGET_STORES:
         return False, _UNSUPPORTED_TARGET_STORE_WARNING, [_UNSUPPORTED_TARGET_STORE_WARNING]
@@ -370,7 +370,7 @@ def _memory_uptake_admission_event(
     operation_store_policy: str = "",
     policy_warnings: list[str] | None = None,
 ) -> MemoryUptakeAdmissionEvent:
-    """Build compact audit metadata for read-output operation admission."""
+    """Build compact audit metadata for Digest-output operation admission."""
 
     event: MemoryUptakeAdmissionEvent = {
         "operation_index": operation_index,
@@ -661,7 +661,7 @@ def _normalize_surfaced_reaction(
     current_unit_texts: list[str],
     allowed_ref_ids: set[str],
 ) -> SurfacedReaction | None:
-    """Normalize one surfaced read-owned reaction."""
+    """Normalize one surfaced Digest-owned reaction."""
 
     if not isinstance(value, dict):
         return None
@@ -688,7 +688,7 @@ def _normalize_surfaced_reactions(
     current_unit_texts: list[str],
     allowed_ref_ids: set[str],
 ) -> list[SurfacedReaction]:
-    """Normalize the surfaced reactions emitted directly by the read step."""
+    """Normalize the surfaced reactions emitted directly by Digest."""
 
     reactions: list[SurfacedReaction] = []
     if not isinstance(value, list):

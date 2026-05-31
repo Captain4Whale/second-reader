@@ -1285,7 +1285,7 @@ def _source_ref_from_surfaced_reaction(
     source_unit: dict[str, object] | None = None,
     reading_impression: str = "",
 ) -> dict[str, object]:
-    """Build one deterministic source ref from a read-owned surfaced reaction."""
+    """Build one deterministic source ref from a Digest-owned surfaced reaction."""
 
     source_quote = _clean_text((surfaced_reaction or {}).get("source_quote") or (surfaced_reaction or {}).get("anchor_quote"))
     if isinstance(source_unit, dict) and source_unit:
@@ -1303,7 +1303,7 @@ def _normalize_memory_uptake_ops_source_refs(
     *,
     source_unit: dict[str, object] | None,
 ) -> list[dict[str, object]]:
-    """Resolve read-proposed source quotes into inline source refs before settlement."""
+    """Resolve Digest-proposed source quotes into inline source refs before settlement."""
 
     if not isinstance(memory_uptake_ops, list):
         return []

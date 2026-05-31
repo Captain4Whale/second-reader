@@ -244,7 +244,7 @@ Last verified: `2026-05-31T19:42:26+08:00`
     - `Slice4B-Retrieval-Utilization-Trace-and-Read-audit-Evidence-Pre-implementation-Brief v0.md` is accepted
     - Slice 4B retrieval utilization trace and read-audit evidence is implemented, and `Slice4B-Retrieval-Utilization-Trace-and-Read-audit-Evidence-Post-implementation-Report v0.md` is accepted
     - Slice 4B adds compact mechanism-private `read_audit` retrieval evidence only when supplemental retrieval metadata exists; it does not create a supplemental retrieval loop
-    - current runner main read path still passes `supplemental_context=None`
+    - historical implementation note: Slice 4B carried a supplemental retrieval placeholder; after `DEC-105` that audit surface is no longer a current code, prompt, audit, or test interface
     - Slice 4B does not claim actual model utilization from retrieval availability; `utilization_observed=false` and `utilization_basis=not_claimed_by_read_output` remain explicit
     - `Slice5A-Detour-Lifecycle-and-Navigation-Trace-Audit-Hardening-Pre-implementation-Brief v0.md` is accepted
     - Slice 5A detour lifecycle and navigation trace audit hardening is implemented, and `Slice5A-Detour-Lifecycle-and-Navigation-Trace-Audit-Hardening-Post-implementation-Report v0.md` is accepted as historical evidence
@@ -395,7 +395,7 @@ Last verified: `2026-05-31T19:42:26+08:00`
       - Memory Quality evidence report contract:
         - `reading-companion-backend/docs/evaluation/long_span/memory_quality_report_contract.md`
         - future reports should use one full source document per window with probe markers and should not include current `Recent Routes` / `route_action` evidence blocks
-      - current Navigator source-skill posture:
+      - historical Navigator source-skill posture:
         - superseded by `DEC-104` and hard-purged by `DEC-105`
         - `Ingest` is forward-only and does not call source skills
         - the old mechanism-private Skill Runtime is not a current code, prompt, audit, or test interface
@@ -586,7 +586,7 @@ Last verified: `2026-05-31T19:42:26+08:00`
   - long-span evidence cleanup is now complete, and it is not a blocker on using the new default path
 - A new post-Phase-9 implementation line is now opening for `attentional_v2`:
   - evolve `attentional_v2` in place rather than minting `attentional_v3`
-  - use `docs/implementation/new-reading-mechanism/attentional_v2_structural_rework_plan.md` as the execution blueprint
+  - keep `docs/implementation/new-reading-mechanism/attentional_v2_structural_rework_plan.md` as a historical execution blueprint; current implementation authority is `docs/backend-reading-mechanisms/attentional_v2.md` plus the active `DEC-103` through `DEC-108` direction
   - treat it as a backend structural rework plan, not a frontend work plan
   - keep the existing frontend lane active in parallel under its own docs and tasks
   - keep the long-span after-eval memo as mechanism-evidence input rather than as the execution plan
@@ -596,7 +596,7 @@ Last verified: `2026-05-31T19:42:26+08:00`
       - `sentence intake` as pure `local_buffer` maintenance
       - `Ingest`
       - then-current concrete reading node, now `Digest`
-      - Reading Runner post-read settlement
+      - Reading Runner post-Digest settlement
     - span authority is now tied to the exact chosen unit
   - `Phase B` is now also landed:
     - the then-current concrete reading node owned the authoritative current-unit packet; current naming is `Digest`
@@ -662,7 +662,7 @@ Last verified: `2026-05-31T19:42:26+08:00`
     - the live per-unit loop was cut back to:
       - historical `Navigate.unitize -> read -> Reading Runner post-read settlement`
     - current code now exposes that selection step through:
-      - `Ingest -> Digest -> Reading Runner post-read settlement`
+      - `Ingest -> Digest -> Reading Runner post-Digest settlement`
     - `Digest` now directly owns the current naturalized reading contract:
       - `reading_impression`
       - `surfaced_reactions`
@@ -850,7 +850,7 @@ Last verified: `2026-05-31T19:42:26+08:00`
   - the next backend code slice should build on the cleaned F4A baseline:
     - keep the new surfaced-reaction persistence path as the only internal truth
     - do not reopen trigger/watch ownership or the retired local-cycle chain
-    - use the cleaned Runner/Navigate contract as the base for the next special-content unitization policy
+    - use the cleaned Reading Runner / Ingest contract as the base for the next special-content unitization policy
 - Frontend direction is now fixed for the next product lane:
   - do not keep the old `iterator_v1` / section-first presentation as a co-equal product model
   - keep that older presentation shape only as a compatibility shell while V2-native surfaces are being built
@@ -1029,7 +1029,7 @@ Last verified: `2026-05-31T19:42:26+08:00`
       - warm resume now restores the latest usable continuation capsule together with new-format runtime state
       - the old budget-bounded supplemental recall loop is no longer the live F1 baseline
     - `Phase F1` is now the live baseline:
-      - live per-unit path is `Ingest -> Digest -> Reading Runner post-read settlement`
+      - live per-unit path is `Ingest -> Digest -> Reading Runner post-Digest settlement`
       - `Digest` now owns surfaced reactions directly
       - the dedicated live `Express` node is off the main path
     - treat prior-material use as something that naturally happens inside `Digest`, not as a separate mechanism action
@@ -3217,7 +3217,7 @@ Last verified: `2026-05-31T19:42:26+08:00`
 11. `reading-companion-backend/docs/evaluation/long_span/target_centered_accumulation_v2_design.md`
 12. `reading-companion-backend/docs/evaluation/long_span/target_centered_candidate_review.md`
 13. `docs/backend-reading-mechanisms/attentional_v2.md`
-14. `docs/implementation/new-reading-mechanism/attentional_v2_structural_rework_plan.md`
+14. `docs/implementation/new-reading-mechanism/attentional_v2_structural_rework_plan.md` (historical/reference only after `DEC-108`)
 
 ## Machine-Readable Appendix
 ```json
