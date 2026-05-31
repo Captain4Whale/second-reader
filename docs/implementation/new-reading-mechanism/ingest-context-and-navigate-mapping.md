@@ -52,17 +52,28 @@ It receives the current reading frontier, a bounded forward source preview, comp
 
 ## Target XML Context Shape
 
-The target Ingest prompt should follow the same top-level block discipline as the newer Read XML prompt:
+The target Ingest prompt should follow the XML assembly discipline used by the newer Read prompt, but its top-level blocks should be semantically direct. `ReaderRole` and `Instruction` are both top-level prompt blocks; do not wrap them in a `RoleAndInstruction` container.
+
+Top-level rule:
+
+- `ReaderRole` owns the stable reader identity.
+- `Instruction` owns all fixed non-role directions for this LLM call.
+- Runtime context/data blocks stay outside `Instruction`: `BookInfo`, `ReadingState`, `CurrentFocus`, `RetrievalSurface`, and `OutputContract`.
 
 ```xml
-<RoleAndInstruction>
-  <ReaderRole>...</ReaderRole>
-  <Instruction>...</Instruction>
+<ReaderRole>...</ReaderRole>
+
+<Instruction>
+  <StepPosition>...</StepPosition>
+  <TaskOverview>...</TaskOverview>
   <ContextUseGuide>...</ContextUseGuide>
+  <NextUnitSelection>...</NextUnitSelection>
   <BoundarySelection>...</BoundarySelection>
+  <MemorySupportTask>...</MemorySupportTask>
   <MemoryRetrievalPlanning>...</MemoryRetrievalPlanning>
+  <ResponsibilityBoundary>...</ResponsibilityBoundary>
   <ResponseDiscipline>...</ResponseDiscipline>
-</RoleAndInstruction>
+</Instruction>
 
 <BookInfo>
   <BookIdentity>{...}</BookIdentity>
@@ -95,31 +106,36 @@ The target Ingest prompt should follow the same top-level block discipline as th
 </OutputContract>
 ```
 
-### RoleAndInstruction
+### ReaderRole
 
-`RoleAndInstruction` should contain fixed prompt fragments, not runtime state.
+`ReaderRole` should contain the fixed product-level reader identity, not runtime state.
 
-Recommended sub-blocks:
+Rules:
 
-- `ReaderRole`
-  - product-level reader role
-  - must reference the same prompt fragment used by the current Read XML prompt: `reader.role`
-  - owned by `reading-companion-backend/src/attentional_v2/prompts/reader_role.py`
-  - implementation should import `READER_ROLE_FRAGMENT` or include `READER_ROLE_FRAGMENT_REGISTRY` when building the Ingest prompt fragment registry
-  - the Ingest prompt must not duplicate or locally redefine the role text
-  - current reader role text is: `你是一个知识渊博、有深刻洞见的阅读爱好者。当前你正在深入阅读一本书，在理解这本书内容的同时，积极对其进行思考，沉淀有价值的理解，并产生有价值的输出，从而获得最大的求知乐趣与自我提升。你的阅读可能分为多个步骤，具体每一步的活动请参考具体指令。`
-- `Instruction`
-  - should be a nested block, not one undifferentiated paragraph
-  - tag name remains `<Instruction>`; do not create step-specific top-level names such as `<IngestInstruction>`
-  - recommended child blocks:
-    - `StepPosition`
-    - `TaskOverview`
-    - `NextUnitSelection`
-    - `MemorySupportTask`
-    - `ResponsibilityBoundary`
-  - the child blocks should state the task charter and division of work, not the full rule text for every subtask
-  - detailed next-unit selection rules belong in `BoundarySelection`
-  - detailed memory-query rules belong in `MemoryRetrievalPlanning`
+- must reference the same prompt fragment used by the current Read XML prompt: `reader.role`
+- owned by `reading-companion-backend/src/attentional_v2/prompts/reader_role.py`
+- implementation should import `READER_ROLE_FRAGMENT` or include `READER_ROLE_FRAGMENT_REGISTRY` when building the Ingest prompt fragment registry
+- the Ingest prompt must not duplicate or locally redefine the role text
+- current reader role text is: `你是一个知识渊博、有深刻洞见的阅读爱好者。当前你正在深入阅读一本书，在理解这本书内容的同时，积极对其进行思考，沉淀有价值的理解，并产生有价值的输出，从而获得最大的求知乐趣与自我提升。你的阅读可能分为多个步骤，具体每一步的活动请参考具体指令。`
+
+### Instruction
+
+`Instruction` is a top-level prompt block. It may be internally nested, but it should not sit under a `RoleAndInstruction` wrapper.
+
+Recommended child blocks:
+
+- `StepPosition`
+- `TaskOverview`
+- `ContextUseGuide`
+- `NextUnitSelection`
+- `BoundarySelection`
+- `MemorySupportTask`
+- `MemoryRetrievalPlanning`
+- `ResponsibilityBoundary`
+- `ResponseDiscipline`
+
+The child blocks should separate task charter, context-use rules, unit-boundary rules, memory-query rules, responsibility boundaries, and response discipline. This keeps `Instruction` as the single fixed-instruction container while still avoiding one undifferentiated paragraph.
+
 - `ContextUseGuide`
   - tells the model how to use `BookInfo`, `ReadingState`, `CurrentFocus`, `RetrievalSurface`, and `OutputContract`
   - emphasizes that the visible source preview is primary
@@ -139,20 +155,19 @@ Recommended sub-blocks:
 Target assembly shape:
 
 ```xml
-<RoleAndInstruction>
-  <ReaderRole prompt_fragment_ref="reader.role" />
-  <Instruction>
-    <StepPosition prompt_fragment_ref="ingest.step_position" />
-    <TaskOverview prompt_fragment_ref="ingest.task_overview" />
-    <NextUnitSelection prompt_fragment_ref="ingest.next_unit_selection" />
-    <MemorySupportTask prompt_fragment_ref="ingest.memory_support_task" />
-    <ResponsibilityBoundary prompt_fragment_ref="ingest.responsibility_boundary" />
-  </Instruction>
+<ReaderRole prompt_fragment_ref="reader.role" />
+
+<Instruction>
+  <StepPosition prompt_fragment_ref="ingest.step_position" />
+  <TaskOverview prompt_fragment_ref="ingest.task_overview" />
   <ContextUseGuide prompt_fragment_ref="ingest.context_use_guide" />
+  <NextUnitSelection prompt_fragment_ref="ingest.next_unit_selection" />
   <BoundarySelection prompt_fragment_ref="ingest.boundary_selection_policy" />
+  <MemorySupportTask prompt_fragment_ref="ingest.memory_support_task" />
   <MemoryRetrievalPlanning prompt_fragment_ref="ingest.memory_retrieval_planning" />
+  <ResponsibilityBoundary prompt_fragment_ref="ingest.responsibility_boundary" />
   <ResponseDiscipline prompt_fragment_ref="ingest.response_discipline" />
-</RoleAndInstruction>
+</Instruction>
 ```
 
 The `prompt_fragment_ref` attributes above are implementation-facing references in the assembly spec. The rendered model-facing XML should contain only resolved text, following the current Read XML assembly convention.
@@ -173,15 +188,25 @@ Recommended `Instruction` child meanings:
   - says the unit starts at the current source cursor and ends at an exact visible anchor
   - points to `BoundarySelection` for the mature boundary policy reused from current Navigate
   - this is where the already-approved "determine next unit" task is named at the instruction level
+- `BoundarySelection`
+  - contains the mature next-unit boundary policy reused from current Navigate
+  - this is where the already-approved "determine next unit" prompt rules are actually placed
 - `MemorySupportTask`
   - says Ingest should ask what prior reading memory Digest will need in order to read the selected unit continuously
   - says Ingest only emits retrieval queries / requests; actual retrieval is outside this LLM call
   - points to `MemoryRetrievalPlanning` for the detailed recall-query policy
   - this is where the new "recall relevant memory" task is named at the instruction level
+- `MemoryRetrievalPlanning`
+  - contains the detailed recall-query policy
+  - this is where the new memory-support prompt rules are actually placed
 - `ResponsibilityBoundary`
   - says Ingest does not interpret the selected unit for the reader
   - says Ingest does not write notes, highlights, surfaced reactions, or memory updates
   - says Ingest does not execute retrieval, resolve anchors, retry/fallback, settle runtime state, or advance the cursor
+- `ResponseDiscipline`
+  - says Ingest must return JSON only
+  - says Ingest must not request external search
+  - says Ingest must not produce interpretation, note writing, or memory mutation
 
 ### BookInfo
 
@@ -293,17 +318,17 @@ Target top-level fields:
 
 | Current Navigate prompt surface | Target Ingest XML surface | Notes |
 | --- | --- | --- |
-| `You are Navigate...` | `RoleAndInstruction / ReaderRole` plus `RoleAndInstruction / Instruction / StepPosition` | Replace the old node-specific role with the reader role fragment `reader.role`; put the Ingest step position in `StepPosition`. |
-| `Your single job is to choose...` | `RoleAndInstruction / Instruction / TaskOverview` | Replace with the two-part Ingest task: select the next source unit and request memory support. |
-| Next-unit task framing | `RoleAndInstruction / Instruction / NextUnitSelection` | Name the task here, but keep detailed rules in `BoundarySelection`. |
-| Boundary-selection rules | `RoleAndInstruction / BoundarySelection` | Reuse almost directly. This is where the already-approved next-unit selection prompt content belongs. |
-| no old equivalent | `RoleAndInstruction / Instruction / MemorySupportTask` plus `RoleAndInstruction / MemoryRetrievalPlanning` | Name the recall task in `MemorySupportTask`; put the detailed retrieval-query policy in `MemoryRetrievalPlanning`. |
+| `You are Navigate...` | `ReaderRole` plus `Instruction / StepPosition` | Replace the old node-specific role with the reader role fragment `reader.role`; put the Ingest step position in `StepPosition`. |
+| `Your single job is to choose...` | `Instruction / TaskOverview` | Replace with the two-part Ingest task: select the next source unit and request memory support. |
+| Next-unit task framing | `Instruction / NextUnitSelection` | Name the task here, but keep detailed rules in `BoundarySelection`. |
+| Boundary-selection rules | `Instruction / BoundarySelection` | Reuse almost directly. This is where the already-approved next-unit selection prompt content belongs. |
+| no old equivalent | `Instruction / MemorySupportTask` plus `Instruction / MemoryRetrievalPlanning` | Name the recall task in `MemorySupportTask`; put the detailed retrieval-query policy in `MemoryRetrievalPlanning`. |
 | `Structural frame` | `BookInfo / BookIdentity` | Move output-language concerns to `OutputContract`. |
 | `Reading position` | `CurrentFocus / ReadingPosition` | Keep current cursor and retry feedback here. |
 | `Mainline preview` | `CurrentFocus / SourcePreview` | Prefer paragraph XML nodes over one JSON blob. |
 | `Mainline cursor` | `CurrentFocus / ReadingPath` and `ReadingPosition` | Keep forward-only cursor facts; do not revive mode/decision fields. |
 | `Navigation context` | `ReadingState` plus `RetrievalSurface` | Split continuity state from retrieval discoverability. |
-| `Policy snapshot` | `BoundarySelection` policy plus `RetrievalPolicy` | Separate boundary budget from retrieval budget. |
+| `Policy snapshot` | `Instruction / BoundarySelection` policy plus `RetrievalSurface / RetrievalPolicy` | Separate boundary policy from retrieval budget. |
 | `Output language contract` | `OutputContract / LanguageContract` | Follow Read XML structure. |
 | `end_anchor_text` | `selected_unit.end_anchor_text` | Same semantics: exact quote from preview tail. |
 | `boundary_type` | `selected_unit.boundary_type` | Same boundary vocabulary unless later simplified. |
@@ -313,7 +338,7 @@ Target top-level fields:
 
 ## Boundary-Selection Content To Reuse
 
-The current Navigate policy should carry forward into `BoundarySelection` rather than being rewritten into the new `Instruction`.
+The current Navigate policy should carry forward into `Instruction / BoundarySelection` rather than being mixed into `Instruction / TaskOverview` or `Instruction / NextUnitSelection`.
 
 Reuse rule:
 
@@ -341,16 +366,16 @@ The following current Navigate rules should carry forward almost directly:
 
 The following current Navigate prompt material should move or be adjusted:
 
-- `You are Navigate...` should not carry forward as text. The product-level identity comes from `<ReaderRole>` / `reader.role`; the step task comes from `<Instruction>` / `ingest.instruction`.
+- `You are Navigate...` should not carry forward as text. The product-level identity comes from top-level `<ReaderRole>` / `reader.role`; the step task comes from top-level `<Instruction>`.
 - `Your single job is to choose...` should be replaced by the Ingest instruction charter, because Ingest now has two outputs: selected unit and memory retrieval requests.
-- `Use navigation context only as secondary support...` should become `Use ReadingState only as secondary support...`; the rule still belongs in `BoundarySelection`.
+- `Use navigation context only as secondary support...` should become `Use ReadingState only as secondary support...`; the rule still belongs in `Instruction / BoundarySelection`.
 - `Do not request tools or external web search` should not be copied unchanged. It should become:
 
 ```text
 Do not request external web search. Request only prior-reading memory support through memory_retrieval_requests.
 ```
 
-- `Return JSON only` belongs in `ResponseDiscipline`.
+- `Return JSON only` belongs in `Instruction / ResponseDiscipline`.
 - The old flat return JSON example belongs in `OutputContract`, nested under `selected_unit` plus `memory_retrieval_requests`.
 
 ## Runtime Boundary
