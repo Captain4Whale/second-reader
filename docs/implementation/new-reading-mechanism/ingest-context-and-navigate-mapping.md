@@ -199,7 +199,7 @@ Unit size:
 - Choose the smallest complete local move that can honestly be read as one unit.
 - Prefer ending within the current paragraph.
 - Continue into the next paragraph only when the same local move is clearly continuing.
-- Do not pretend a move is finished when it is still unfolding; preserve continuation pressure.
+- Do not pretend a move is finished when it is still unfolding; choose the best honest boundary available.
 
 Structural cues:
 - Treat `chapter_heading` and `section_heading` as weak structure cues, not automatic standalone units.
@@ -245,7 +245,7 @@ Do not read or interpret the selected unit as the final reading. Do not write re
 
 Do not perform runtime work. Do not resolve anchors, retry or choose fallback boundaries, advance the cursor, settle state, or execute memory retrieval.
 
-Do not use external web search or request tools outside the allowed prior-reading memory request fields.
+Do not use external web search or request tools. Memory retrieval request behavior is deferred until the memory design lands.
 
 Return only the JSON described by OutputContract. Do not include markdown, commentary, hidden reasoning, or fields that are not requested.
 ```
@@ -342,10 +342,6 @@ The output preserves the current Navigate boundary semantics for:
 - `end_anchor_text`
 - `boundary_type`
 - `reason`
-
-#### MemoryRetrievalRequests
-
-Deferred. Do not specify this field's concrete shape until the new memory retrieval design is ready.
 
 ## Old-To-New Mapping
 
