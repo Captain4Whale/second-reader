@@ -118,11 +118,6 @@ def test_read_unit_projects_compact_packet_and_returns_f1_surface_contract(tmp_p
                     },
                 }
             ],
-            "detour_need": {
-                "reason": "Need the exact earlier wording.",
-                "target_hint": "the earlier promise line",
-                "status": "open",
-            },
         }
 
     monkeypatch.setattr(nodes_module, "invoke_json", fake_invoke_json)
@@ -249,13 +244,13 @@ def test_read_unit_projects_compact_packet_and_returns_f1_surface_contract(tmp_p
     assert "\"earlier_excerpts\"" in captured["prompt"]
     assert "\"refs\": [" not in captured["prompt"]
     assert "\"anchor_bank_digest\"" not in captured["prompt"]
-    assert manifest["prompt_version"] == "attentional_v2.read.v30"
+    assert manifest["prompt_version"] == "attentional_v2.read.v31"
     assert result["reading_impression"] == "The second sentence sharpens the first one."
     assert result["surfaced_reactions"][0]["source_quote"] == "Beta sentence."
     assert result["surfaced_reactions"][0]["prior_link"]["ref_ids"] == ["lookback:sentence:c1-s1"]
     assert result["memory_uptake_ops"][0]["op"] == "update"
     assert result["memory_uptake_ops"][0]["target_store"] == "active_attention"
-    assert result["detour_need"]["status"] == "open"
+    assert result["detour_need"] is None
 
 
 def test_resolve_context_request_returns_exact_look_back_excerpt_and_none_when_unresolved():
@@ -447,7 +442,6 @@ def test_run_read_with_context_loop_reads_once_and_persists_f1_audit(tmp_path, m
         reaction_records=build_empty_reaction_records(),
         reader_policy=build_default_reader_policy(),
         output_language="en",
-        detour_context=None,
         output_dir=output_dir,
         book_title="Demo Book",
         author="Tester",
@@ -462,12 +456,14 @@ def test_run_read_with_context_loop_reads_once_and_persists_f1_audit(tmp_path, m
     assert calls[0]["supplemental_context"] is None
     assert read_result["surfaced_reactions"][0]["anchor_quote"] == "Beta sentence."
     assert read_result["memory_uptake_ops"][0]["op"] == "append"
-    assert read_result["detour_need"]["status"] == "open"
+    assert read_result["detour_need"] is None
+    assert read_result["deprecated_detour_need_ignored"]["status"] == "open"
     assert audit_line["stop_reason"] == "read_complete"
     assert audit_line["surfaced_reaction_count"] == 1
     assert audit_line["surfaced_reactions"][0]["anchor_quote"] == "Beta sentence."
     assert audit_line["memory_uptake_op_count"] == 1
     assert audit_line["memory_uptake_ops"][0]["target_store"] == "active_attention"
     assert audit_line["memory_uptake_ops_by_target_store"] == {"active_attention": 1}
-    assert audit_line["detour_need"]["target_hint"] == "the opening sentence"
+    assert "detour_need" not in audit_line
+    assert audit_line["deprecated_detour_need_ignored"]["target_hint"] == "the opening sentence"
     assert audit_line["supplemental_satisfied"] is False

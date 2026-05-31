@@ -1,4 +1,4 @@
-"""Deterministic carry-forward and supplemental-context helpers."""
+"""Deterministic carry-forward and deprecated supplemental-context helpers."""
 
 from __future__ import annotations
 
@@ -20,8 +20,8 @@ from .schemas import (
 from .source_spans import dedupe_source_refs, source_unit_from_span
 from .state_projection import build_carry_forward_context, clean_text, matching_chapter_items  # noqa: F401
 
-_LOOK_BACK_RETRIEVAL_INTENT = "source_calibration"
-_ACTIVE_RECALL_RETRIEVAL_INTENT = "memory_recovery"
+_LOOK_BACK_RETRIEVAL_INTENT = "source_calibration"  # Deprecated after DEC-103/DEC-104: legacy source calibration helper.
+_ACTIVE_RECALL_RETRIEVAL_INTENT = "memory_recovery"  # Deprecated after DEC-103/DEC-104: not the future Ingest retrieval design.
 _LOOK_BACK_RESULT_BOUNDARY = "source_refs_and_excerpts"
 _ACTIVE_RECALL_RESULT_BOUNDARY = "settled_memory_refs_and_visible_trace_refs"
 _VISIBLE_TRACE_RESULT_ROLE = "visible_trace"

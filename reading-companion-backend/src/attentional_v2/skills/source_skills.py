@@ -1,4 +1,4 @@
-"""Book-local source skills used by Navigate."""
+"""Deprecated after DEC-103/DEC-104: book-local source skills formerly used by Navigate."""
 
 from __future__ import annotations
 

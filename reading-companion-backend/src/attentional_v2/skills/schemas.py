@@ -1,4 +1,4 @@
-"""Skill request/result contracts for attentional_v2."""
+"""Deprecated after DEC-103/DEC-104: legacy skill request/result contracts for attentional_v2."""
 
 from __future__ import annotations
 
@@ -14,7 +14,7 @@ SkillStatus = Literal["ok", "error"]
 
 
 class SkillRequest(TypedDict, total=False):
-    """One bounded request for a mechanism-internal skill."""
+    """Deprecated after DEC-103/DEC-104: one legacy mechanism-internal skill request."""
 
     skill_name: SkillName | str
     reason: str
@@ -22,7 +22,7 @@ class SkillRequest(TypedDict, total=False):
 
 
 class SkillResult(TypedDict, total=False):
-    """One source-grounded skill execution result."""
+    """Deprecated after DEC-103/DEC-104: one legacy source-grounded skill execution result."""
 
     skill_name: SkillName | str
     status: SkillStatus

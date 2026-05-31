@@ -76,8 +76,10 @@ _STATE_OPERATION_TYPES = {
     "resolve",
 }
 _DETOUR_STATUSES = {"open", "resolved", "abandoned"}
-_NAVIGATE_ACT_DECISIONS = {"choose_unit", "request_skill", "defer_detour"}
-_NAVIGATE_SELECTION_MODES = {"mainline", "detour"}
+_NAVIGATE_ACT_DECISIONS = {"choose_unit"}
+_DEPRECATED_NAVIGATE_ACT_DECISIONS = {"request_skill", "defer_detour"}
+_NAVIGATE_SELECTION_MODES = {"mainline"}
+_DEPRECATED_NAVIGATE_SELECTION_MODES = {"detour", "deferred"}
 _LEXICAL_CONTENT_RE = re.compile(r"[A-Za-z0-9\u4e00-\u9fff]")
 _VISIBLE_INTERNAL_REFERENCE_PATTERNS = (
     re.compile(r"\bc\d+-s\d+(?:-\d+)?(?:-c\d+-s\d+(?:-\d+)?)?\b", re.IGNORECASE),
@@ -894,7 +896,7 @@ def _normalize_surfaced_reactions(
 
 
 def _normalize_detour_need(value: object) -> DetourNeed | None:
-    """Normalize one optional detour-need request."""
+    """Deprecated after DEC-103/DEC-104: normalize one historical detour-need request."""
 
     if not isinstance(value, dict):
         return None
@@ -914,7 +916,7 @@ def _normalize_detour_need(value: object) -> DetourNeed | None:
 
 
 def _normalize_skill_request(value: object) -> SkillRequest | None:
-    """Normalize one bounded Navigate-requested skill packet."""
+    """Deprecated after DEC-103/DEC-104: normalize one legacy Navigate-requested skill packet."""
 
     if not isinstance(value, dict):
         return None
@@ -982,136 +984,60 @@ def _normalize_navigate_act_result(
     default_selection_mode: str,
     skills_allowed: bool,
 ) -> NavigateActResult:
-    """Normalize one Navigate.choose_next_unit act result against the current visible space."""
+    """Normalize one Navigate.choose_next_unit act result against the current forward-only act space."""
 
-    if default_selection_mode == "mainline":
-        if not isinstance(value, dict):
-            if available_sentences:
-                decision = _unitize_decision_from_navigate_act(
-                    {},
-                    preview_sentences=available_sentences,
-                    reader_policy=reader_policy,
-                    fallback_reason="navigate_choose_next_unit_llm_empty_fallback",
-                )
-                return {
-                    "decision": "choose_unit",
-                    "selection_mode": "mainline",
-                    **decision,
-                }
-            return {
-                "decision": "choose_unit",
-                "selection_mode": "mainline",
-                "reason": "navigate_choose_next_unit_empty_source_anchor",
-                "end_anchor_text": "",
-                "boundary_type": "paragraph_end",
-                "continuation_pressure": False,
-            }
-        decision = _clean_text(value.get("decision")).lower().replace("-", "_")
-        if decision not in _NAVIGATE_ACT_DECISIONS or decision != "choose_unit":
-            decision = "choose_unit"
-        if (
-            available_sentences
-            and _clean_text(value.get("start_sentence_id"))
-            and _clean_text(value.get("end_sentence_id"))
-        ):
-            unitize_decision = _unitize_decision_from_navigate_act(
-                value,
+    del allowed_sentence_ids, default_selection_mode, skills_allowed
+    if not isinstance(value, dict):
+        if available_sentences:
+            decision = _unitize_decision_from_navigate_act(
+                {},
                 preview_sentences=available_sentences,
                 reader_policy=reader_policy,
-                fallback_reason="navigate_choose_next_unit_sentence_compat_fallback",
+                fallback_reason="navigate_choose_next_unit_llm_empty_fallback",
             )
             return {
                 "decision": "choose_unit",
                 "selection_mode": "mainline",
-                **unitize_decision,
+                **decision,
             }
         return {
             "decision": "choose_unit",
             "selection_mode": "mainline",
-            "reason": _clean_text(value.get("reason")),
-            "end_anchor_text": _clean_text(
-                value.get("end_anchor_text")
-                or value.get("end_after_text")
-                or value.get("unit_text_tail")
-            ),
-            "boundary_type": _normalize_unitize_boundary_type(value.get("boundary_type")),
-            "continuation_pressure": bool(value.get("continuation_pressure")),
+            "reason": "navigate_choose_next_unit_empty_source_anchor",
+            "end_anchor_text": "",
+            "boundary_type": "paragraph_end",
+            "continuation_pressure": False,
         }
-
-    if not isinstance(value, dict):
-        return {
-            "decision": "defer_detour",
-            "selection_mode": "detour",
-            "reason": "navigate_choose_next_unit_empty_result",
-        }
-
     decision = _clean_text(value.get("decision")).lower().replace("-", "_")
-    if decision not in _NAVIGATE_ACT_DECISIONS:
-        decision = "choose_unit" if default_selection_mode == "mainline" else "defer_detour"
-
-    selection_mode = _clean_text(value.get("selection_mode")).lower().replace("-", "_") or default_selection_mode
-    if selection_mode not in _NAVIGATE_SELECTION_MODES:
-        selection_mode = default_selection_mode
-    if default_selection_mode == "mainline":
-        selection_mode = "mainline"
-
-    if decision == "request_skill":
-        if not skills_allowed:
-            decision = "defer_detour"
-        else:
-            skill_request = _normalize_skill_request(value.get("skill_request"))
-            if skill_request is None:
-                return {
-                    "decision": "defer_detour",
-                    "selection_mode": "detour",
-                    "reason": "skill_request_missing_skill_name",
-                }
-            return {
-                "decision": "request_skill",
-                "selection_mode": "detour",
-                "reason": _clean_text(value.get("reason")) or _clean_text(skill_request.get("reason")),
-                "skill_request": dict(skill_request),
-            }
-
-    if decision == "defer_detour":
-        return {
-            "decision": "defer_detour",
-            "selection_mode": "detour",
-            "reason": _clean_text(value.get("reason")),
-        }
-
-    raw_start_sentence_id = _clean_text(value.get("start_sentence_id"))
-    raw_end_sentence_id = _clean_text(value.get("end_sentence_id"))
-    if default_selection_mode == "detour" and (
-        not raw_start_sentence_id
-        or not raw_end_sentence_id
-        or raw_start_sentence_id not in allowed_sentence_ids
-        or raw_end_sentence_id not in allowed_sentence_ids
+    if decision not in _NAVIGATE_ACT_DECISIONS or decision != "choose_unit":
+        decision = "choose_unit"
+    if (
+        available_sentences
+        and _clean_text(value.get("start_sentence_id"))
+        and _clean_text(value.get("end_sentence_id"))
     ):
+        unitize_decision = _unitize_decision_from_navigate_act(
+            value,
+            preview_sentences=available_sentences,
+            reader_policy=reader_policy,
+            fallback_reason="navigate_choose_next_unit_sentence_compat_fallback",
+        )
         return {
-            "decision": "defer_detour",
-            "selection_mode": "detour",
-            "reason": "chosen_unit_outside_allowed_source_evidence",
-        }
-
-    unitize_decision = _unitize_decision_from_navigate_act(
-        value,
-        preview_sentences=available_sentences,
-        reader_policy=reader_policy,
-        fallback_reason="navigate_choose_next_unit_choose_unit_fallback",
-    )
-    start_sentence_id = _clean_text(unitize_decision.get("start_sentence_id"))
-    end_sentence_id = _clean_text(unitize_decision.get("end_sentence_id"))
-    if not allowed_sentence_ids or start_sentence_id not in allowed_sentence_ids or end_sentence_id not in allowed_sentence_ids:
-        return {
-            "decision": "defer_detour",
-            "selection_mode": "detour",
-            "reason": "chosen_unit_outside_allowed_source_evidence",
+            "decision": "choose_unit",
+            "selection_mode": "mainline",
+            **unitize_decision,
         }
     return {
         "decision": "choose_unit",
-        "selection_mode": selection_mode,  # type: ignore[typeddict-item]
-        **unitize_decision,
+        "selection_mode": "mainline",
+        "reason": _clean_text(value.get("reason")),
+        "end_anchor_text": _clean_text(
+            value.get("end_anchor_text")
+            or value.get("end_after_text")
+            or value.get("unit_text_tail")
+        ),
+        "boundary_type": _normalize_unitize_boundary_type(value.get("boundary_type")),
+        "continuation_pressure": bool(value.get("continuation_pressure")),
     }
 
 
@@ -1155,6 +1081,11 @@ def navigate_choose_next_unit_act(
 ) -> NavigateActResult:
     """Run one unified Navigate.choose_next_unit agent act."""
 
+    active_detour_need = None
+    default_selection_mode = "mainline"
+    skills_allowed = False
+    skill_catalog = []
+    skill_results_so_far = []
     prompts = ATTENTIONAL_V2_PROMPTS
     structural_frame = _structural_frame(
         book_title=book_title,
@@ -1200,31 +1131,25 @@ def navigate_choose_next_unit_act(
             skills_allowed=skills_allowed,
         )
     except ReaderLLMError:
-        if default_selection_mode == "mainline":
-            if available:
-                fallback = _unitize_decision_from_navigate_act(
-                    {},
-                    preview_sentences=available,
-                    reader_policy=reader_policy,
-                    fallback_reason="navigate_choose_next_unit_llm_error_fallback",
-                )
-                return {
-                    "decision": "choose_unit",
-                    "selection_mode": "mainline",
-                    **fallback,
-                }
+        if available:
+            fallback = _unitize_decision_from_navigate_act(
+                {},
+                preview_sentences=available,
+                reader_policy=reader_policy,
+                fallback_reason="navigate_choose_next_unit_llm_error_fallback",
+            )
             return {
                 "decision": "choose_unit",
                 "selection_mode": "mainline",
-                "reason": "navigate_choose_next_unit_llm_error",
-                "end_anchor_text": "",
-                "boundary_type": "paragraph_end",
-                "continuation_pressure": False,
+                **fallback,
             }
         return {
-            "decision": "defer_detour",
-            "selection_mode": "detour",
+            "decision": "choose_unit",
+            "selection_mode": "mainline",
             "reason": "navigate_choose_next_unit_llm_error",
+            "end_anchor_text": "",
+            "boundary_type": "paragraph_end",
+            "continuation_pressure": False,
         }
 
 

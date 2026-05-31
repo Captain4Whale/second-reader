@@ -17,10 +17,10 @@ UnitizeBoundaryType = Literal[
     "section_end",
     "budget_cap",
 ]
-ContextRequestKind = Literal["active_recall", "look_back"]
-DetourStatus = Literal["open", "resolved", "abandoned"]
-NavigateActDecision = Literal["choose_unit", "request_skill", "defer_detour"]
-NavigateSelectionMode = Literal["mainline", "detour", "deferred"]
+ContextRequestKind = Literal["active_recall", "look_back"]  # Deprecated after DEC-103/DEC-104: supplemental context helpers only.
+DetourStatus = Literal["open", "resolved", "abandoned"]  # Deprecated after DEC-103/DEC-104: historical detour artifacts only.
+NavigateActDecision = Literal["choose_unit", "request_skill", "defer_detour"]  # `request_skill` / `defer_detour` are deprecated compatibility literals.
+NavigateSelectionMode = Literal["mainline", "detour", "deferred"]  # `detour` / `deferred` are deprecated compatibility literals.
 StateOperationType = Literal[
     "append",
     "update",
@@ -171,9 +171,9 @@ class LocalContinuityState(TypedDict, total=False):
     current_source_span: dict[str, object]
     current_source_span_id: str
     reading_queue_stage: str
-    active_detour_id: str
-    active_detour_need: "DetourNeed" | None
-    detour_trace: list["DetourTraceEntry"]
+    active_detour_id: str  # Deprecated after DEC-103/DEC-104: ignored on new live runs.
+    active_detour_need: "DetourNeed" | None  # Deprecated after DEC-103/DEC-104: ignored on new live runs.
+    detour_trace: list["DetourTraceEntry"]  # Deprecated after DEC-103/DEC-104: ignored on new live runs.
     is_reconstructed: bool
     reconstructed_from_checkpoint_id: str | None
     last_resume_kind: ResumeKind | None
@@ -373,7 +373,7 @@ class ReadUnitResult(TypedDict, total=False):
     surfaced_reactions: list["SurfacedReaction"]
     memory_uptake_ops: list["StateOperation"]
     memory_uptake_admission_events: list["MemoryUptakeAdmissionEvent"]
-    detour_need: "DetourNeed" | None
+    detour_need: "DetourNeed" | None  # Deprecated after DEC-103/DEC-104: ignored by live runner.
 
 
 MemoryUptakeAdmissionStatus = Literal[
@@ -430,7 +430,7 @@ class SurfacedReaction(TypedDict, total=False):
 
 
 class DetourNeed(TypedDict, total=False):
-    """One bounded desire to detour away from the mainline to resolve a live need."""
+    """Deprecated after DEC-103/DEC-104: historical desire to detour away from the mainline."""
 
     reason: str
     target_hint: str
@@ -438,7 +438,7 @@ class DetourNeed(TypedDict, total=False):
 
 
 class DetourTraceEntry(TypedDict, total=False):
-    """One lightweight detour trace record owned by navigation continuity state."""
+    """Deprecated after DEC-103/DEC-104: historical detour trace record."""
 
     detour_id: str
     origin_cursor: SharedRunCursor
@@ -508,7 +508,7 @@ class NavigateNextUnitResult(TypedDict, total=False):
     unitize_decision: UnitizeDecision
     navigate_trace: list[NavigateActTraceEntry]
     defer_reason: str
-    detour_context: dict[str, object] | None
+    detour_context: dict[str, object] | None  # Deprecated after DEC-103/DEC-104: historical artifact compatibility only.
 
 
 class BridgeCandidate(TypedDict, total=False):
@@ -1008,9 +1008,6 @@ def build_empty_local_continuity(
             "chapter_ref": "",
         },
         "reading_queue_stage": "",
-        "active_detour_id": "",
-        "active_detour_need": None,
-        "detour_trace": [],
         "is_reconstructed": False,
         "reconstructed_from_checkpoint_id": None,
         "last_resume_kind": None,

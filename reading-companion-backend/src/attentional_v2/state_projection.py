@@ -1022,6 +1022,7 @@ def build_read_prompt_packet(
 ) -> dict[str, object]:
     """Project the persisted state packet into the narrow read-node prompt view."""
 
+    del detour_context
     active_attention_digest = (
         dict(carry_forward_context.get("active_attention_digest", {}))
         if isinstance(carry_forward_context.get("active_attention_digest"), dict)
@@ -1062,20 +1063,6 @@ def build_read_prompt_packet(
     }
 
     selective_carry = build_supplemental_selective_carry(supplemental_context)
-    if isinstance(detour_context, dict):
-        active_detour_need = detour_context.get("active_detour_need")
-        if isinstance(active_detour_need, dict):
-            selective_carry["active_detour_need"] = dict(active_detour_need)
-        mainline_background = detour_context.get("mainline_background")
-        if isinstance(mainline_background, dict):
-            selective_carry["mainline_background"] = dict(mainline_background)
-        detour_trace_summary = detour_context.get("detour_trace_summary")
-        if isinstance(detour_trace_summary, list):
-            selective_carry["detour_trace_summary"] = [
-                dict(item)
-                for item in detour_trace_summary
-                if isinstance(item, dict)
-            ][:4]
     if selective_carry:
         packet["selective_carry"] = selective_carry
     return packet

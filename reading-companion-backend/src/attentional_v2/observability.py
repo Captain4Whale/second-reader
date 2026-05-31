@@ -535,6 +535,7 @@ def record_read(
 ) -> None:
     """Append one mechanism-private read audit record."""
 
+    del detour_trace_evidence
     if output_dir is None:
         return
     surfaced_reactions = (
@@ -575,19 +576,16 @@ def record_read(
         "memory_uptake_ops_by_target_store": _memory_uptake_ops_by_target_store(memory_uptake_ops),
         "memory_uptake_op_contracts": _memory_uptake_op_contracts(memory_uptake_ops),
         "memory_uptake_admission_events": memory_uptake_admission_events,
-        "detour_need": dict(read_result.get("detour_need") or {})
-        if isinstance(read_result.get("detour_need"), Mapping)
-        else {},
         "llm_fallbacks": [dict(item) for item in (llm_fallbacks or []) if isinstance(item, Mapping)],
     }
+    if isinstance(read_result.get("deprecated_detour_need_ignored"), Mapping):
+        row["deprecated_detour_need_ignored"] = dict(read_result["deprecated_detour_need_ignored"])
     supplemental_retrieval = _supplemental_retrieval_audit(supplemental_context)
     if supplemental_retrieval:
         row["supplemental_retrieval"] = supplemental_retrieval
     compact_navigation_trace = [dict(item) for item in (navigation_trace or []) if isinstance(item, Mapping)]
     if compact_navigation_trace:
         row["navigation_trace"] = compact_navigation_trace
-    if isinstance(detour_trace_evidence, Mapping) and detour_trace_evidence:
-        row["detour_trace_evidence"] = dict(detour_trace_evidence)
     append_jsonl(read_audit_file(output_dir), row)
 
 

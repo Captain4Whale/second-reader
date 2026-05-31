@@ -74,7 +74,6 @@ Use `docs/backend-sequential-lifecycle.md` for the job-level workflow over time.
     - `Navigate.choose_next_unit`
     - `read`
     - `Reading Runner post-read settlement`
-    - active-detour mode
     - `surfaced reactions`
     - `chapter-end slow cycle`
   - If a mechanism doc mentions older labels such as `trigger`, `zoom_read`, `meaning_unit_closure`, `controller_decision`, `Navigate.route`, or `bridge_resolution`, it should make clear whether those are historical module-family terms or still-live runtime concepts.

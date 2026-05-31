@@ -231,7 +231,7 @@ def test_prompt_assembler_renders_spec_and_metadata_without_live_migration() -> 
     assert "test.role.v1" not in result.rendered_text
     assert "current_focus" not in result.rendered_text
     assert "ref=" not in result.rendered_text
-    assert READ_UNIT_PROMPT_VERSION == "attentional_v2.read.v30"
+    assert READ_UNIT_PROMPT_VERSION == "attentional_v2.read.v31"
     assert ATTENTIONAL_V2_PROMPTS.read_unit_system == READ_UNIT_SYSTEM_PROMPT
     assert "Structural frame:" in ATTENTIONAL_V2_PROMPTS.read_unit_prompt
 
@@ -330,7 +330,7 @@ def test_read_xml_prompt_example_does_not_replace_live_read_prompt() -> None:
     assert "reading_state" not in rendered
     assert "current_focus" not in rendered
     assert "output_contract" not in rendered
-    assert READ_UNIT_PROMPT_VERSION == "attentional_v2.read.v30"
+    assert READ_UNIT_PROMPT_VERSION == "attentional_v2.read.v31"
     assert ATTENTIONAL_V2_PROMPTS.read_unit_version == READ_UNIT_PROMPT_VERSION
     assert ATTENTIONAL_V2_PROMPTS.read_unit_system.startswith("You are a careful reader")
     assert "Structural frame:" in ATTENTIONAL_V2_PROMPTS.read_unit_prompt
@@ -358,7 +358,7 @@ def test_full_read_prompt_xml_assembly_renders_all_target_blocks_without_live_mi
     assert result.owner_node == "read_unit"
     assert result.prompt_version == READ_XML_PROMPT_VERSION
     assert result.promptset_version == READ_XML_PROMPTSET_VERSION
-    assert result.output_contract == "read_unit_xml_json_v1"
+    assert result.output_contract == "read_unit_xml_json_v2"
     assert result.rendered_blocks == (
         "RoleAndInstruction",
         "BookInfo",
@@ -388,7 +388,7 @@ def test_full_read_prompt_xml_assembly_renders_all_target_blocks_without_live_mi
     assert "value_slot" not in result.rendered_text
     assert "book_identity" not in result.rendered_text
     assert "read.role_and_stance" not in result.rendered_text
-    assert READ_UNIT_PROMPT_VERSION == "attentional_v2.read.v30"
+    assert READ_UNIT_PROMPT_VERSION == "attentional_v2.read.v31"
     assert ATTENTIONAL_V2_PROMPTS.read_unit_system == READ_UNIT_SYSTEM_PROMPT
 
 
@@ -407,7 +407,7 @@ def test_read_role_and_instruction_xml_renders_target_structure_without_live_mig
     assert "<MemoryBoundary>" in rendered
     assert "<RecentReadingMemory>" in rendered
     assert "\n  <SourceGrounding>\n" in rendered
-    assert "<RouteBoundary>" in rendered
+    assert "<RouteBoundary>" not in rendered
     assert "<ResponseDiscipline>" in rendered
     assert "<DurableMemory>" not in rendered
     assert "<ActiveTension>" not in rendered
@@ -422,7 +422,7 @@ def test_read_role_and_instruction_xml_renders_target_structure_without_live_mig
     assert "ref=" not in rendered
     assert "READ_ROLE_AND_INSTRUCTION" not in rendered
     assert "reading-companion-backend" not in rendered
-    assert READ_UNIT_PROMPT_VERSION == "attentional_v2.read.v30"
+    assert READ_UNIT_PROMPT_VERSION == "attentional_v2.read.v31"
     assert ATTENTIONAL_V2_PROMPTS.read_unit_system == READ_UNIT_SYSTEM_PROMPT
     assert "Structural frame:" in ATTENTIONAL_V2_PROMPTS.read_unit_prompt
     assert rendered.index("<ReaderRole>") < rendered.index("<ContextUseGuide>")
@@ -468,7 +468,7 @@ def test_read_book_info_xml_renders_light_orientation_block() -> None:
     assert "book_identity" not in rendered
     assert "chapter_identity" not in rendered
     assert "ref=" not in rendered
-    assert READ_UNIT_PROMPT_VERSION == "attentional_v2.read.v30"
+    assert READ_UNIT_PROMPT_VERSION == "attentional_v2.read.v31"
     assert "Structural frame:" in ATTENTIONAL_V2_PROMPTS.read_unit_prompt
 
 
@@ -535,11 +535,11 @@ def test_read_current_focus_xml_renders_mainline_source_unit_with_paragraphs() -
     assert "reading_path" not in rendered
     assert "reading_position" not in rendered
     assert "reading_intent" not in rendered
-    assert READ_UNIT_PROMPT_VERSION == "attentional_v2.read.v30"
+    assert READ_UNIT_PROMPT_VERSION == "attentional_v2.read.v31"
     assert "Structural frame:" in ATTENTIONAL_V2_PROMPTS.read_unit_prompt
 
 
-def test_read_current_focus_xml_renders_detour_intent_without_optional_evidence_layer() -> None:
+def test_read_current_focus_xml_ignores_deprecated_detour_context() -> None:
     rendered = render_read_current_focus_xml(
         chapter_title="第一章",
         current_unit_sentences=[
@@ -555,10 +555,10 @@ def test_read_current_focus_xml_renders_detour_intent_without_optional_evidence_
         },
     )
 
-    assert '"mode": "detour"' in rendered
-    assert '"intent": "look_back_or_detour"' in rendered
-    assert "check an earlier claim &lt;again&gt;" in rendered
-    assert '"target_hint": "ordinary prisoners"' in rendered
+    assert '"mode": "mainline"' in rendered
+    assert '"intent": "read_current_source_unit_in_sequence"' in rendered
+    assert "check an earlier claim &lt;again&gt;" not in rendered
+    assert '"target_hint": "ordinary prisoners"' not in rendered
     assert "Fallback sentence &amp; text." in rendered
     assert "OptionalSourceEvidence" not in rendered
     assert "sentence_id" not in rendered
@@ -623,7 +623,7 @@ def test_read_reading_state_xml_projects_recent_memory_as_text_array_only() -> N
     assert "value_slot" not in rendered
     assert "recent_memory" not in rendered
     assert "ref=" not in rendered
-    assert READ_UNIT_PROMPT_VERSION == "attentional_v2.read.v30"
+    assert READ_UNIT_PROMPT_VERSION == "attentional_v2.read.v31"
     assert "Structural frame:" in ATTENTIONAL_V2_PROMPTS.read_unit_prompt
 
 
@@ -648,7 +648,7 @@ def test_read_output_contract_xml_renders_target_contract_without_live_migration
     assert '"reading_impression": "..."' in rendered
     assert '"surfaced_reactions": []' in rendered
     assert '"recent_reading_memory": []' in rendered
-    assert '"detour_need": null' in rendered
+    assert '"detour_need": null' not in rendered
     assert '"memory_uptake_ops"' not in rendered
     assert "<FieldContracts>" in rendered
     assert "<ReadingImpressionContract>" in rendered
@@ -660,14 +660,14 @@ def test_read_output_contract_xml_renders_target_contract_without_live_migration
     assert "<RecentReadingMemoryContract>" in rendered
     assert "Write only Recent Reading Memory entries here." in rendered
     assert "Do not include operation-level reasons." in rendered
-    assert "<DetourNeedContract>" in rendered
-    assert "Normal mainline output should use null" in rendered
+    assert "<DetourNeedContract>" not in rendered
+    assert "Normal mainline output should use null" not in rendered
     assert "prompt_fragment_ref" not in rendered
     assert "value_slot" not in rendered
     assert "language_contract" not in rendered
     assert "read.output_use_guide" not in rendered
     assert "ref=" not in rendered
-    assert READ_UNIT_PROMPT_VERSION == "attentional_v2.read.v30"
+    assert READ_UNIT_PROMPT_VERSION == "attentional_v2.read.v31"
     assert ATTENTIONAL_V2_PROMPTS.read_unit_system == READ_UNIT_SYSTEM_PROMPT
     assert "Structural frame:" in ATTENTIONAL_V2_PROMPTS.read_unit_prompt
 
@@ -687,7 +687,6 @@ def test_read_output_contract_template_declares_target_children() -> None:
         "ReadingImpressionContract",
         "SurfacedReactionContract",
         "RecentReadingMemoryContract",
-        "DetourNeedContract",
     ]
     assert render_prompt_template_xml(
         READ_OUTPUT_CONTRACT_TEMPLATE,
@@ -709,7 +708,6 @@ def test_read_unit_role_and_instruction_fragments_are_lossless() -> None:
         "read.durable_memory_policy",
         "read.active_tension_policy",
         "read.source_grounding_policy",
-        "read.detour_and_routing_boundary",
         "read.output_behavior_policy",
     ]
     assert len(set(fragment_ids)) == len(fragment_ids)
@@ -737,7 +735,7 @@ def test_attentional_v2_prompt_registry_contains_node_definitions() -> None:
     ]
     assert all(definition.status == "active" for definition in definitions)
     assert all(definition.required_inputs for definition in definitions)
-    assert all(definition.output_contract.endswith("_v1") for definition in definitions)
+    assert all(definition.output_contract.endswith(("_v1", "_v2")) for definition in definitions)
 
 
 def test_attentional_v2_prompt_registry_projects_legacy_bundle() -> None:
@@ -745,9 +743,9 @@ def test_attentional_v2_prompt_registry_projects_legacy_bundle() -> None:
     navigate = ATTENTIONAL_V2_PROMPT_REGISTRY.get("attentional_v2.navigate_choose_next_unit")
     chapter = ATTENTIONAL_V2_PROMPT_REGISTRY.get("attentional_v2.chapter_consolidation")
 
-    assert ATTENTIONAL_V2_PROMPTSET_VERSION == "attentional_v2-phase6-v38"
+    assert ATTENTIONAL_V2_PROMPTSET_VERSION == "attentional_v2-phase6-v39"
     assert ATTENTIONAL_V2_PROMPTS.promptset_version == ATTENTIONAL_V2_PROMPTSET_VERSION
-    assert read.version == READ_UNIT_PROMPT_VERSION == "attentional_v2.read.v30"
+    assert read.version == READ_UNIT_PROMPT_VERSION == "attentional_v2.read.v31"
     assert ATTENTIONAL_V2_PROMPTS.read_unit_version == read.version
     assert ATTENTIONAL_V2_PROMPTS.read_unit_system == read.system_prompt
     assert ATTENTIONAL_V2_PROMPTS.read_unit_prompt == read.user_prompt_template
@@ -1184,8 +1182,9 @@ def test_attentional_v2_initialization_writes_mechanism_artifacts(tmp_path):
 
     local_continuity = json.loads(local_continuity_file(output_dir).read_text(encoding="utf-8"))
     assert local_continuity["recent_sentence_ids"] == []
-    assert local_continuity["active_detour_id"] == ""
-    assert local_continuity["detour_trace"] == []
+    assert "active_detour_id" not in local_continuity
+    assert "active_detour_need" not in local_continuity
+    assert "detour_trace" not in local_continuity
 
     concept_registry = json.loads(concept_registry_file(output_dir).read_text(encoding="utf-8"))
     assert concept_registry["entries"] == []
@@ -1440,8 +1439,8 @@ def test_navigate_choose_next_unit_selects_mainline_unit_without_active_detour(t
     assert [sentence["sentence_id"] for sentence in result["selected_unit_sentences"]] == ["c2-s1"]
 
 
-def test_navigate_choose_next_unit_lands_detour_then_unitizes_inside_region(tmp_path, monkeypatch):
-    """An active detour should be located first, then unitized through the same next-unit contract."""
+def test_navigate_choose_next_unit_ignores_legacy_active_detour_state(tmp_path, monkeypatch):
+    """Legacy active-detour continuity should not trigger backread or source-skill routing."""
 
     provisioned = _provisioned_book_with_detour()
     document = provisioned.book_document
@@ -1455,27 +1454,18 @@ def test_navigate_choose_next_unit_lands_detour_then_unitizes_inside_region(tmp_
         "sentence_id": "c2-s1",
         "sentence_index": 1,
     }
-    local_continuity = runner_module._apply_detour_need(  # noqa: SLF001
-        local_continuity,
-        {
-            "reason": "Need the opening setup.",
-            "target_hint": "opening setup",
-            "status": "open",
-        },
-    )
+    local_continuity["active_detour_id"] = "detour:2:c2-s1:1"
+    local_continuity["active_detour_need"] = {
+        "reason": "Need the opening setup.",
+        "target_hint": "opening setup",
+        "status": "open",
+    }
+    local_continuity["detour_trace"] = [{"detour_id": "detour:2:c2-s1:1", "status": "open"}]
+    calls: list[dict[str, object]] = []
 
     def fake_choose_next_unit_act(**kwargs):
-        assert kwargs["active_detour_need"]["target_hint"] == "opening setup"
-        return {
-            "decision": "choose_unit",
-            "selection_mode": "detour",
-            "reason": "Chapter 1 contains the setup.",
-            "start_sentence_id": "c1-s1",
-            "end_sentence_id": "c1-s2",
-            "boundary_type": "paragraph_end",
-            "evidence_sentence_ids": ["c1-s1", "c1-s2"],
-            "continuation_pressure": False,
-        }
+        calls.append(dict(kwargs))
+        return _fake_single_sentence_navigate_act(**kwargs)
 
     monkeypatch.setattr(runner_module, "navigate_choose_next_unit_act", fake_choose_next_unit_act)
 
@@ -1501,288 +1491,14 @@ def test_navigate_choose_next_unit_lands_detour_then_unitizes_inside_region(tmp_
         author=provisioned.author,
     )
 
-    assert result["selection_mode"] == "detour"
-    assert result["chapter_id"] == 1
-    assert [sentence["sentence_id"] for sentence in result["selected_unit_sentences"]] == ["c1-s1", "c1-s2"]
-    assert result["navigate_trace"][0]["decision"] == "choose_unit"
-    navigation_trace = runner_module._compact_navigation_trace(result["navigate_trace"])  # noqa: SLF001
-    assert navigation_trace[0]["source_scent"] == "present"
-    assert navigation_trace[0]["detour_value"] == "source_support_available"
-    assert navigation_trace[0]["active_recall_needed"] is False
-    assert navigation_trace[0]["look_back_needed"] is False
-
-
-def test_navigate_choose_next_unit_uses_one_detour_skill_before_landing(tmp_path, monkeypatch):
-    """Navigate can request one book-local skill result before landing a detour region."""
-
-    provisioned = _provisioned_book_with_detour()
-    document = provisioned.book_document
-    sentence_lookup, chapter_lookup = runner_module._build_sentence_lookup(document)  # noqa: SLF001
-    state = _empty_choose_next_unit_state()
-    local_continuity = state["local_continuity"]  # type: ignore[assignment]
-    local_continuity["mainline_cursor"] = {
-        "position_kind": "sentence",
-        "chapter_id": 2,
-        "chapter_ref": "Chapter 2",
-        "sentence_id": "c2-s1",
-        "sentence_index": 1,
-    }
-    local_continuity = runner_module._apply_detour_need(  # noqa: SLF001
-        local_continuity,
-        {
-            "reason": "Need the opening setup.",
-            "target_hint": "opening setup",
-            "status": "open",
-        },
-    )
-    saw_skill_result: list[bool] = []
-
-    def fake_choose_next_unit_act(**kwargs):
-        skill_results = kwargs.get("skill_results_so_far") or []
-        saw_skill_result.append(bool(skill_results))
-        if not skill_results:
-            return {
-                "decision": "request_skill",
-                "selection_mode": "detour",
-                "reason": "Need exact opening text before landing.",
-                "skill_request": {
-                    "skill_name": "source_window_fetch",
-                    "reason": "Fetch the candidate opening.",
-                    "arguments": {
-                        "start_sentence_id": "c1-s1",
-                        "end_sentence_id": "c1-s2",
-                    },
-                },
-            }
-        return {
-            "decision": "choose_unit",
-            "selection_mode": "detour",
-            "reason": "Fetched source confirms the setup.",
-            "start_sentence_id": "c1-s1",
-            "end_sentence_id": "c1-s2",
-            "boundary_type": "paragraph_end",
-            "evidence_sentence_ids": ["c1-s1", "c1-s2"],
-            "continuation_pressure": False,
-        }
-
-    monkeypatch.setattr(runner_module, "navigate_choose_next_unit_act", fake_choose_next_unit_act)
-
-    result = runner_module.navigate_choose_next_unit(
-        document=document,
-        survey_map={},
-        sentence_lookup=sentence_lookup,
-        chapter_lookup=chapter_lookup,
-        current_chapter=document["chapters"][1],
-        current_cursor=0,
-        local_buffer=state["local_buffer"],  # type: ignore[arg-type]
-        continuation_capsule=state["continuation_capsule"],
-        active_attention=state["active_attention"],  # type: ignore[arg-type]
-        concept_registry=state["concept_registry"],  # type: ignore[arg-type]
-        thread_trace=state["thread_trace"],  # type: ignore[arg-type]
-        reflective_frames=state["reflective_frames"],  # type: ignore[arg-type]
-        reaction_records=state["reaction_records"],  # type: ignore[arg-type]
-        local_continuity=local_continuity,
-        reader_policy=runner_module.build_default_reader_policy(),
-        output_language=provisioned.output_language,
-        output_dir=tmp_path,
-        book_title=provisioned.title,
-        author=provisioned.author,
-    )
-
-    assert saw_skill_result == [False, True]
-    assert result["selection_mode"] == "detour"
-    assert result["navigate_trace"][0]["decision"] == "request_skill"
-    assert result["navigate_trace"][0]["skill_result"]["status"] == "ok"
-    assert result["navigate_trace"][1]["decision"] == "choose_unit"
-    navigation_trace = runner_module._compact_navigation_trace(result["navigate_trace"])  # noqa: SLF001
-    assert navigation_trace[0]["source_scent"] == "present"
-    assert navigation_trace[0]["detour_value"] == "source_support_requested"
-    assert navigation_trace[0]["look_back_needed"] is True
-    assert navigation_trace[0]["active_recall_needed"] is False
-    assert navigation_trace[1]["source_scent"] == "present"
-    assert navigation_trace[1]["continuity_cost"] == "budget_used"
-    detour_evidence = runner_module._detour_trace_evidence(  # noqa: SLF001
-        selection_result=result,
-        local_continuity=local_continuity,
-    )
-    assert detour_evidence["detour_value"] == "source_support_available"
-    assert detour_evidence["support_signal_reason"] == "source_evidence_available"
-    assert "detour_value" not in local_continuity["detour_trace"][0]
-
-
-def test_navigate_choose_next_unit_defers_repeated_detour_skill_request(tmp_path, monkeypatch):
-    """A second skill request in one search attempt should defer instead of deadlocking."""
-
-    provisioned = _provisioned_book_with_detour()
-    document = provisioned.book_document
-    sentence_lookup, chapter_lookup = runner_module._build_sentence_lookup(document)  # noqa: SLF001
-    state = _empty_choose_next_unit_state()
-    local_continuity = state["local_continuity"]  # type: ignore[assignment]
-    local_continuity["mainline_cursor"] = {
-        "position_kind": "sentence",
-        "chapter_id": 2,
-        "chapter_ref": "Chapter 2",
-        "sentence_id": "c2-s1",
-        "sentence_index": 1,
-    }
-    local_continuity = runner_module._apply_detour_need(  # noqa: SLF001
-        local_continuity,
-        {
-            "reason": "Need the opening setup.",
-            "target_hint": "opening setup",
-            "status": "open",
-        },
-    )
-
-    monkeypatch.setattr(
-        runner_module,
-        "navigate_choose_next_unit_act",
-        lambda **_kwargs: {
-            "decision": "request_skill",
-            "selection_mode": "detour",
-            "reason": "Still asking for more source.",
-            "skill_request": {
-                "skill_name": "source_window_fetch",
-                "reason": "Fetch opening.",
-                "arguments": {
-                    "start_sentence_id": "c1-s1",
-                    "end_sentence_id": "c1-s2",
-                },
-            },
-        },
-    )
-
-    result = runner_module.navigate_choose_next_unit(
-        document=document,
-        survey_map={},
-        sentence_lookup=sentence_lookup,
-        chapter_lookup=chapter_lookup,
-        current_chapter=document["chapters"][1],
-        current_cursor=0,
-        local_buffer=state["local_buffer"],  # type: ignore[arg-type]
-        continuation_capsule=state["continuation_capsule"],
-        active_attention=state["active_attention"],  # type: ignore[arg-type]
-        concept_registry=state["concept_registry"],  # type: ignore[arg-type]
-        thread_trace=state["thread_trace"],  # type: ignore[arg-type]
-        reflective_frames=state["reflective_frames"],  # type: ignore[arg-type]
-        reaction_records=state["reaction_records"],  # type: ignore[arg-type]
-        local_continuity=local_continuity,
-        reader_policy=runner_module.build_default_reader_policy(),
-        output_language=provisioned.output_language,
-        output_dir=tmp_path,
-        book_title=provisioned.title,
-        author=provisioned.author,
-    )
-
-    assert result["selection_mode"] == "deferred"
-    assert result["defer_reason"] == "navigate_choose_next_unit_budget_exhausted"
-    assert result["navigate_trace"][0]["decision"] == "request_skill"
-    assert result["navigate_trace"][0]["skill_result"]["status"] == "ok"
-    assert result["navigate_trace"][-1]["decision"] == "request_skill"
-    navigation_trace = runner_module._compact_navigation_trace(result["navigate_trace"])  # noqa: SLF001
-    assert navigation_trace[0]["look_back_needed"] is True
-    assert navigation_trace[0]["active_recall_needed"] is False
-    assert navigation_trace[-1]["budget_stop_reason"] == "navigate_skill_budget_exhausted"
-    assert navigation_trace[-1]["continuity_cost"] == "budget_stop"
-    assert not any(isinstance(entry.get("continuity_cost"), (int, float)) for entry in navigation_trace)
-
-
-def test_navigate_choose_next_unit_defers_unlanded_detour(tmp_path, monkeypatch):
-    """A detour that cannot land should return a deferred next-unit result instead of running read."""
-
-    provisioned = _provisioned_book_with_detour()
-    document = provisioned.book_document
-    sentence_lookup, chapter_lookup = runner_module._build_sentence_lookup(document)  # noqa: SLF001
-    state = _empty_choose_next_unit_state()
-    local_continuity = state["local_continuity"]  # type: ignore[assignment]
-    local_continuity["mainline_cursor"] = {
-        "position_kind": "sentence",
-        "chapter_id": 2,
-        "chapter_ref": "Chapter 2",
-        "sentence_id": "c2-s1",
-        "sentence_index": 1,
-    }
-    local_continuity = runner_module._apply_detour_need(  # noqa: SLF001
-        local_continuity,
-        {
-            "reason": "Need the opening setup.",
-            "target_hint": "opening setup",
-            "status": "open",
-        },
-    )
-
-    monkeypatch.setattr(
-        runner_module,
-        "navigate_choose_next_unit_act",
-        lambda **_kwargs: {
-            "decision": "defer_detour",
-            "selection_mode": "detour",
-            "reason": "not enough grounded evidence",
-        },
-    )
-
-    result = runner_module.navigate_choose_next_unit(
-        document=document,
-        survey_map={},
-        sentence_lookup=sentence_lookup,
-        chapter_lookup=chapter_lookup,
-        current_chapter=document["chapters"][1],
-        current_cursor=0,
-        local_buffer=state["local_buffer"],  # type: ignore[arg-type]
-        continuation_capsule=state["continuation_capsule"],
-        active_attention=state["active_attention"],  # type: ignore[arg-type]
-        concept_registry=state["concept_registry"],  # type: ignore[arg-type]
-        thread_trace=state["thread_trace"],  # type: ignore[arg-type]
-        reflective_frames=state["reflective_frames"],  # type: ignore[arg-type]
-        reaction_records=state["reaction_records"],  # type: ignore[arg-type]
-        local_continuity=local_continuity,
-        reader_policy=runner_module.build_default_reader_policy(),
-        output_language=provisioned.output_language,
-        output_dir=tmp_path,
-        book_title=provisioned.title,
-        author=provisioned.author,
-    )
-
-    assert result["selection_mode"] == "deferred"
-    assert result["defer_reason"] == "not enough grounded evidence"
-    assert result["selected_unit_sentences"] == []
-    assert result["navigate_trace"][0]["decision"] == "defer_detour"
-    assert local_continuity["detour_trace"][0]["open_reason"] == "Need the opening setup."
-
-    navigation_trace = runner_module._compact_navigation_trace(result["navigate_trace"])  # noqa: SLF001
-    last_navigation = navigation_trace[-1]
-    assert last_navigation["source_scent"] == "not_assessed"
-    assert last_navigation["detour_value"] == "not_assessed"
-    assert last_navigation["active_recall_needed"] is False
-    assert last_navigation["look_back_needed"] is False
-    detour_evidence = runner_module._detour_trace_evidence(  # noqa: SLF001
-        selection_result=result,
-        local_continuity=local_continuity,
-    )
-    assert detour_evidence["source_scent"] == "not_assessed"
-    assert detour_evidence["detour_value"] == "not_assessed"
-    assert detour_evidence["active_recall_needed"] is False
-    abandoned_continuity = runner_module._apply_detour_need(  # noqa: SLF001
-        local_continuity,
-        {
-            "reason": result["defer_reason"],
-            "defer_reason": result["defer_reason"],
-            "target_hint": "opening setup",
-            "status": "abandoned",
-            "last_navigation_decision": last_navigation["decision"],
-            "last_navigation_reason": last_navigation["reason"],
-        },
-    )
-
-    abandoned_trace = abandoned_continuity["detour_trace"][0]
-    assert abandoned_trace["status"] == "abandoned"
-    assert abandoned_trace["defer_reason"] == "not enough grounded evidence"
-    assert abandoned_trace["abandon_reason"] == "not enough grounded evidence"
-    assert abandoned_trace["last_navigation_decision"] == "defer_detour"
-    assert abandoned_trace["last_navigation_reason"] == "not enough grounded evidence"
-    assert "detour_value" not in abandoned_trace
-    assert "continuity_cost" not in abandoned_trace
-    assert abandoned_continuity["active_detour_id"] == ""
+    assert len(calls) == 1
+    assert calls[0]["active_detour_need"] is None
+    assert calls[0]["default_selection_mode"] == "mainline"
+    assert calls[0]["skills_allowed"] is False
+    assert calls[0]["skill_catalog"] == []
+    assert result["selection_mode"] == "mainline"
+    assert result["chapter_id"] == 2
+    assert [sentence["sentence_id"] for sentence in result["selected_unit_sentences"]] == ["c2-s1"]
 
 
 def test_attentional_v2_read_book_runs_live_loop_and_persists_compatibility_results(tmp_path, monkeypatch):
@@ -2167,31 +1883,31 @@ def test_attentional_v2_read_book_runs_source_anchor_units_without_sentence_curs
     assert read_calls == [["c1-s1"], ["c1-s2"]]
 
 
-def test_attentional_v2_runner_executes_detour_search_and_returns_to_mainline(tmp_path, monkeypatch):
-    """An open detour need should trigger bounded detour search, a detour read, and then resume mainline."""
+def test_attentional_v2_runner_ignores_read_detour_need_and_continues_mainline(tmp_path, monkeypatch):
+    """Read-emitted legacy detour needs should not mutate continuity or trigger backread."""
 
     monkeypatch.chdir(tmp_path)
     monkeypatch.setattr(runner_module, "ensure_canonical_parse", lambda *args, **kwargs: _provisioned_book_with_detour())
     read_sequence: list[tuple[list[str], bool]] = []
-    navigate_detour_calls: list[dict[str, object]] = []
+    navigate_calls: list[dict[str, object]] = []
 
     def fake_read_unit(**kwargs):
         sentence_ids = [str(sentence.get("sentence_id")) for sentence in kwargs["current_unit_sentences"]]
         is_detour = bool(kwargs.get("detour_context"))
         read_sequence.append((sentence_ids, is_detour))
         focal_sentence_id = sentence_ids[-1]
-        if focal_sentence_id == "c2-s1" and not is_detour:
+        if focal_sentence_id in {"c2-s1", "c2-s2"} and not is_detour:
             return {
-                "reading_impression": "The later question clearly points back to the setup.",
+                "reading_impression": "The later unit would have opened a legacy detour.",
                 "surfaced_reactions": [
                     {
-                            "source_quote": "Later question.",
-                        "content": "This question is still leaning on something earlier.",
+                        "source_quote": str(kwargs["current_unit_sentences"][-1].get("text")),
+                        "content": "This legacy detour request is ignored.",
                     }
                 ],
                 "memory_uptake_ops": [],
                 "detour_need": {
-                    "reason": "The later question depends on the opening setup.",
+                    "reason": f"Legacy detour from {focal_sentence_id}.",
                     "target_hint": "opening setup",
                     "status": "open",
                 },
@@ -2199,8 +1915,8 @@ def test_attentional_v2_runner_executes_detour_search_and_returns_to_mainline(tm
         return {
             "reading_impression": f"Read {focal_sentence_id}.",
             "surfaced_reactions": [
-                    {
-                        "source_quote": str(kwargs["current_unit_sentences"][-1].get("text")),
+                {
+                    "source_quote": str(kwargs["current_unit_sentences"][-1].get("text")),
                     "content": f"Read noticed {focal_sentence_id}.",
                 }
             ],
@@ -2220,144 +1936,8 @@ def test_attentional_v2_runner_executes_detour_search_and_returns_to_mainline(tm
         return next_buffer
 
     def fake_choose_next_unit_act(**kwargs):
-        if kwargs.get("default_selection_mode") != "detour":
-            return _fake_single_sentence_navigate_act(**kwargs)
-        navigate_detour_calls.append(
-            {
-                "target_hint": kwargs["active_detour_need"]["target_hint"],
-            }
-        )
-        return {
-            "decision": "choose_unit",
-            "selection_mode": "detour",
-            "reason": "The opening setup is the right earlier region.",
-            "start_sentence_id": "c1-s1",
-            "end_sentence_id": "c1-s1",
-            "boundary_type": "paragraph_end",
-            "evidence_sentence_ids": ["c1-s1"],
-            "continuation_pressure": False,
-        }
-
-    def fake_phase6_chapter_cycle(**kwargs):
-        compatibility_payload = project_chapter_result_compatibility(
-            book_id=kwargs["book_id"],
-            chapter=kwargs["chapter"],
-            reaction_records=kwargs["reaction_records"],
-            output_language=kwargs["output_language"],
-            output_dir=kwargs["output_dir"],
-            persist=True,
-        )
-        return {
-            "chapter_consolidation": {"chapter_ref": kwargs["chapter"].get("reference", "")},
-            "promotion_results": [],
-            "active_attention": kwargs["active_attention"],
-            "concept_registry": kwargs["concept_registry"],
-            "thread_trace": kwargs["thread_trace"],
-            "reflective_frames": kwargs["reflective_frames"],
-            "knowledge_activations": kwargs["knowledge_activations"],
-            "reaction_records": kwargs["reaction_records"],
-            "compatibility_payload": compatibility_payload,
-        }
-
-    monkeypatch.setattr(runner_module, "navigate_choose_next_unit_act", fake_choose_next_unit_act)
-    monkeypatch.setattr(runner_module, "process_sentence_intake", fake_process_sentence_intake)
-    monkeypatch.setattr(runner_module, "read_unit", fake_read_unit)
-    monkeypatch.setattr(runner_module, "run_phase6_chapter_cycle", fake_phase6_chapter_cycle)
-
-    mechanism = AttentionalV2Mechanism()
-    result = mechanism.read_book(
-        ReadRequest(
-            book_path=_fixture_epub(),
-            mechanism_key=ATTENTIONAL_V2_MECHANISM_KEY,
-            mechanism_config={},
-        )
-    )
-
-    assert result.normalized_eval_bundle is not None
-    assert read_sequence == [
-        (["c1-s1"], False),
-        (["c1-s2"], False),
-        (["c2-s1"], False),
-        (["c1-s1"], True),
-        (["c2-s2"], False),
-    ]
-    assert [call["target_hint"] for call in navigate_detour_calls] == ["opening setup"]
-    continuity = json.loads(local_continuity_file(result.output_dir).read_text(encoding="utf-8"))
-    assert continuity["active_detour_id"] == ""
-    assert continuity["detour_trace"][-1]["status"] == "resolved"
-    assert continuity["detour_trace"][-1]["open_reason"] == "The later question depends on the opening setup."
-    assert continuity["detour_trace"][-1]["resolve_reason"] == "detour_unit_read_without_new_detour_need"
-    assert continuity["detour_trace"][-1]["restore_mainline_reason"] == "detour_unit_read_without_new_detour_need"
-    assert continuity["detour_trace"][-1]["last_navigation_decision"] == "choose_unit"
-    assert continuity["detour_trace"][-1]["last_navigation_reason"] == "The opening setup is the right earlier region."
-
-
-def test_attentional_v2_runner_drains_last_unit_detour_before_chapter_close(tmp_path, monkeypatch):
-    """A detour opened on the last mainline unit should still run before chapter slow-cycle closes."""
-
-    monkeypatch.chdir(tmp_path)
-    monkeypatch.setattr(runner_module, "ensure_canonical_parse", lambda *args, **kwargs: _provisioned_book_with_detour())
-    read_sequence: list[tuple[list[str], bool]] = []
-    navigate_detour_calls: list[dict[str, object]] = []
-
-    def fake_read_unit(**kwargs):
-        sentence_ids = [str(sentence.get("sentence_id")) for sentence in kwargs["current_unit_sentences"]]
-        is_detour = bool(kwargs.get("detour_context"))
-        read_sequence.append((sentence_ids, is_detour))
-        focal_sentence_id = sentence_ids[-1]
-        if focal_sentence_id == "c2-s2" and not is_detour:
-            return {
-                "reading_impression": "The chapter ending points back to the opening setup.",
-                "surfaced_reactions": [
-                    {
-                            "source_quote": "Later answer.",
-                        "content": "This answer still depends on the opening setup.",
-                    }
-                ],
-                "memory_uptake_ops": [],
-                "detour_need": {
-                    "reason": "The chapter ending still depends on the opening setup.",
-                    "target_hint": "opening setup",
-                    "status": "open",
-                },
-            }
-        return {
-            "reading_impression": f"Read {focal_sentence_id}.",
-            "surfaced_reactions": [
-                    {
-                        "source_quote": str(kwargs["current_unit_sentences"][-1].get("text")),
-                    "content": f"Read noticed {focal_sentence_id}.",
-                }
-            ],
-            "memory_uptake_ops": [],
-            "detour_need": None,
-        }
-
-    def fake_process_sentence_intake(sentence, *, local_buffer, window_size=6):
-        next_buffer = {
-            **local_buffer,
-            "current_sentence_id": sentence["sentence_id"],
-            "current_sentence_index": sentence["sentence_index"],
-            "recent_sentences": [*local_buffer.get("recent_sentences", []), dict(sentence)][-window_size:],
-            "open_meaning_unit_sentence_ids": [sentence["sentence_id"]],
-            "seen_sentence_ids": [*local_buffer.get("seen_sentence_ids", []), sentence["sentence_id"]],
-        }
-        return next_buffer
-
-    def fake_choose_next_unit_act(**kwargs):
-        if kwargs.get("default_selection_mode") != "detour":
-            return _fake_single_sentence_navigate_act(**kwargs)
-        navigate_detour_calls.append({"target_hint": kwargs["active_detour_need"]["target_hint"]})
-        return {
-            "decision": "choose_unit",
-            "selection_mode": "detour",
-            "reason": "The opening setup is the right earlier region.",
-            "start_sentence_id": "c1-s1",
-            "end_sentence_id": "c1-s1",
-            "boundary_type": "paragraph_end",
-            "evidence_sentence_ids": ["c1-s1"],
-            "continuation_pressure": False,
-        }
+        navigate_calls.append(dict(kwargs))
+        return _fake_single_sentence_navigate_act(**kwargs)
 
     def fake_phase6_chapter_cycle(**kwargs):
         compatibility_payload = project_chapter_result_compatibility(
@@ -2400,15 +1980,26 @@ def test_attentional_v2_runner_drains_last_unit_detour_before_chapter_close(tmp_
         (["c1-s2"], False),
         (["c2-s1"], False),
         (["c2-s2"], False),
-        (["c1-s1"], True),
     ]
-    assert [call["target_hint"] for call in navigate_detour_calls] == ["opening setup"]
+    assert all(call["active_detour_need"] is None for call in navigate_calls)
+    assert all(call["default_selection_mode"] == "mainline" for call in navigate_calls)
+    assert all(call["skills_allowed"] is False for call in navigate_calls)
     continuity = json.loads(local_continuity_file(result.output_dir).read_text(encoding="utf-8"))
-    assert continuity["active_detour_id"] == ""
-    assert continuity["detour_trace"][-1]["status"] == "resolved"
-    assert continuity["detour_trace"][-1]["open_reason"] == "The chapter ending still depends on the opening setup."
-    assert continuity["detour_trace"][-1]["resolve_reason"] == "detour_unit_read_without_new_detour_need"
-    assert continuity["detour_trace"][-1]["restore_mainline_reason"] == "detour_unit_read_without_new_detour_need"
+    assert "active_detour_id" not in continuity
+    assert "active_detour_need" not in continuity
+    assert "detour_trace" not in continuity
+    read_audit_entries = [
+        json.loads(line)
+        for line in read_audit_file(result.output_dir).read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    ]
+    ignored = [entry for entry in read_audit_entries if "deprecated_detour_need_ignored" in entry]
+    assert [entry["deprecated_detour_need_ignored"]["reason"] for entry in ignored] == [
+        "Legacy detour from c2-s1.",
+        "Legacy detour from c2-s2.",
+    ]
+    assert all("detour_need" not in entry for entry in read_audit_entries)
+    assert all("detour_trace_evidence" not in entry for entry in read_audit_entries)
 
 
 def test_attentional_v2_runner_stops_at_audit_window_cap_and_persists_partial_outputs(tmp_path, monkeypatch):

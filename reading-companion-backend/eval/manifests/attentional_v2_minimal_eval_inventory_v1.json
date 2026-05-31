@@ -138,7 +138,6 @@
         "settlement_audit",
         "supplemental_retrieval",
         "navigation_trace",
-        "detour_trace_evidence",
         "slow_cycle_audit",
         "source_ref_binding_resolution_markers",
         "projection_markers",
@@ -221,16 +220,6 @@
       "evidence_role": "navigation trace availability for diagnostic review, not planning quality score"
     },
     {
-      "id": "detour_trace_evidence",
-      "artifact_or_field": "read_audit.detour_trace_evidence",
-      "available_after_slice": "Slice 5A and Slice 5B",
-      "maps_to": [
-        "lane_b_long_span_mq_callback_fvi",
-        "planning_trace_quality"
-      ],
-      "evidence_role": "detour lifecycle evidence for diagnostic review, not route recommendation or route quality score"
-    },
-    {
       "id": "slow_cycle_audit",
       "artifact_or_field": "_mechanisms/attentional_v2/runtime/slow_cycle_audit.jsonl",
       "available_after_slice": "Slice 6A plus carried SourceRef evidence precision patch",
@@ -278,8 +267,7 @@
       "quality_score": false,
       "evidence_availability_only": true,
       "evidence_surface_ids": [
-        "navigation_trace",
-        "detour_trace_evidence"
+        "navigation_trace"
       ],
       "interpretation": "Trace presence can support later review, but trace existence is not planning quality."
     },

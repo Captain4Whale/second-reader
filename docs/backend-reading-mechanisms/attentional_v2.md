@@ -14,12 +14,13 @@ Update when: the live ontology, progression logic, LLM schedule, memory model, u
 Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `docs/backend-state-aggregation.md` for shared public-state surfaces.
 
 ## Implementation Guidance Note
-- For the current Memory / Planning contract hardening design chain and implementation handoff, see `docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`.
-- That directory is implementation guidance for optimizing existing `attentional_v2`; stable mechanism behavior remains defined here and should be updated only when implementation lands.
+- `DEC-103` pauses the old Second Reader Memory / Planning implementation track as the default source for future work.
+- `DEC-104` retires live Detour / source-backread from `attentional_v2`; older detour artifacts and helper code are historical/reference compatibility surfaces only.
+- Stable live behavior remains defined here and should be updated only when implementation lands.
 
 ## Mechanism-Internal Reading Runner Boundary
 - `Reading Runner` is the name for this mechanism's internal read-progress executor.
-  - It owns the live loop around `Navigate.choose_next_unit`, `Read`, post-read settlement, cursor advancement, detour state handoff, and mechanism-private runtime persistence.
+  - It owns the live loop around `Navigate.choose_next_unit`, `Read`, post-read settlement, cursor advancement, and mechanism-private runtime persistence.
   - It is not the shared runtime shell, the mechanism registry, or the thin mechanism adapter.
 - The shared runtime shell remains under `reading-companion-backend/src/reading_runtime/`.
 - The mechanism adapter remains under `reading-companion-backend/src/reading_mechanisms/attentional_v2.py`.
@@ -35,7 +36,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - They still appear in code and docs because some landed module families kept their rollout-era names.
   - When describing live reading behavior, prefer the runtime loop and node names below over the `Phase N` shorthand.
   - The landed implementation includes:
-  - shared chapter / paragraph substrate, with parse-time sentence records retained as compatibility and detour-evidence handles rather than the mainline reading lattice
+  - shared chapter / paragraph substrate, with parse-time sentence records retained as compatibility and historical evidence handles rather than the mainline reading lattice
   - shared canonical parse/provisioning and shared manifest/run-state shells
   - orientation-only survey artifacts
   - deterministic intake/retrieval helpers
@@ -76,23 +77,17 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
     - `reading_impression`
     - `surfaced_reactions`
     - `memory_uptake_ops`
-    - optional `detour_need`
+    - `memory_uptake_ops`
   - the dedicated live `Express` node is no longer on the live Reading Runner path
   - `Read` prompt packaging now follows the compact `always carry / selective carry / not carry` contract instead of receiving the broader intermediate packet wholesale
-  - this removed the last live dependence on the temporary `Express` step, but left detour routing as the next ownership cut
-- Phase F2 is now landed as the navigate-owned detour cutover.
-  - its original implementation used separate unitize and detour-search helpers, but those have since been absorbed into the unified `Navigate.choose_next_unit` act loop.
-  - `Read` now emits `detour_need` directly on the live path instead of the transitional `revisit_need`
-  - `Navigate` owns detour localization and dispatch through `Navigate.choose_next_unit`
-  - `local_continuity` now persists:
-    - `mainline_cursor`
-    - `active_detour_id`
-    - `active_detour_need`
-    - `detour_trace`
-  - once a detour unit is chosen, the mechanism reads it through the same normal `Navigate.choose_next_unit -> read -> Reading Runner settlement` loop instead of inventing a second reading path
+  - this removed the last live dependence on the temporary `Express` step
+- Phase F2 remains historical implementation evidence only.
+  - it introduced a navigate-owned Detour cutover, source-skill loop, and `local_continuity` detour fields.
+  - as of `DEC-104`, that Detour / source-backread behavior is deprecated and no longer part of the live runtime path.
+  - new live runs no longer prompt `Read` to emit `detour_need`, no longer persist active detour continuity, and no longer use `Navigate` source skills.
 - Phase F3 is now landed as the reaction-persistence and compatibility reconvergence slice.
   - persisted visible reactions now enter the system only through `Read.surfaced_reactions[]`
-  - mainline and detour reading now share one surfaced-native reaction-record builder
+  - persisted visible reactions now share one surfaced-native reaction-record builder for the current forward path; old detour reads remain historical artifacts only
   - chapter-result compatibility projection and normalized eval export now derive legacy family labels only through the compat helper
   - dead live ownership paths for the old `Express` persistence flow and `raw_reaction` fallback are now removed
 - Phase F4B is now landed as the survey-led `body-first` chapter scheduling slice.
@@ -144,12 +139,12 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - `Read` no longer emits `pressure_signals`.
   - After `Read`, the Reading Runner deterministically applies memory uptake, persists surfaced reactions, writes audit records, closes the current unit, and advances the cursor to the unit end.
   - There is no replacement `forward` action.
-  - `Detour` remains the only current non-mainline scheduling mechanism.
+  - There is no current live non-mainline scheduling mechanism; old Detour / source-backread is deprecated after `DEC-104`.
 - The `Navigate.choose_next_unit` cutover is now landed.
   - The current Navigator contract is **Choose Next Unit That Should Be Read**.
   - Reading Runner calls one architecture-level Navigator entrypoint and consumes one `NavigateNextUnitResult`.
-  - Mainline unitization and detour localization are implementation strategies inside that entrypoint, not parallel live mechanism nodes.
-  - Landed detours and ordinary mainline reads now enter the same `Read -> Reading Runner settlement` path.
+  - The live entrypoint now chooses only the next forward source unit.
+  - Deprecated model outputs such as `request_skill`, `defer_detour`, `detour`, or `deferred` are normalized back into safe mainline selection.
 - Phase D of the post-eval structural rework is now landed as preserved intermediate continuity / recall / resume evidence.
   - that branch added a budget-bounded multi-step supplemental loop around `read`.
   - Runtime state and full checkpoints now persist a lightweight `continuation capsule` with explicit `rehydration entrypoints`.
@@ -161,7 +156,8 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
 - The current Navigator capability name in stable docs is `Navigate.choose_next_unit`.
   - It means: choose the next unit that should be read.
   - It is now one unified Navigator agent act loop, not a Python semantic dispatch between separate live prompt families.
-  - Mainline forward reading and active detour reading are modes inside this one act.
+  - Mainline forward reading is the only current live mode inside this act.
+  - Active detour reading is historical after `DEC-104`.
   - The historical `navigate_unitize` and `navigate_detour_search` prompt families are no longer current live prompt families.
 - `Navigate.route` is historical route-layer vocabulary after the forward-settlement cutover.
 - The current prompt manifest node name and trace node id for Navigator selection are `navigate_choose_next_unit`.
@@ -173,7 +169,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - mandatory formal unit read with bounded carry-forward context
   - `read` directly surfaces zero-to-many reading-time reactions and emits bounded state ops
   - `Reading Runner` resolves the returned anchor into an end-exclusive `SourceSpan`, invokes `Read` on that accepted source unit, applies memory uptake, persists reactions, writes audit, records the accepted unit span, and advances the cursor
-  - optional `detour_need` may redirect the next normal `Navigate.choose_next_unit` call through the live Navigator-owned detour path
+  - deprecated `detour_need` output, if produced by an older model-shaped response, is ignored by the Runner and may be recorded only as an ignored compatibility field in audit
   - chapter-end slow-cycle work such as `chapter_consolidation`, `reflective_promotion`, and `reconsolidation`
 - The old `trigger -> zoom_read -> meaning_unit_closure -> controller_decision -> reaction_emission` chain is now historical implementation vocabulary, not live runtime behavior.
   - Those names may still appear in historical docs, old artifacts, or decision entries.
@@ -183,7 +179,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
 - `paragraph substrate`
   - the mainline source substrate for the current mechanism
   - produced by the shared parse as `chapters[].paragraphs[]`
-  - `attentional_v2` treats it as the stable reading lattice for forward progress; parse-time sentence records are compatibility / detour-evidence handles, not the mainline cursor system
+  - `attentional_v2` treats it as the stable reading lattice for forward progress; parse-time sentence records are compatibility / historical evidence handles, not the mainline cursor system
 - `SourceCursor`
   - the mechanism-internal mainline coordinate
   - shape: `chapter_id`, `chapter_ref`, `paragraph_index`, `char_offset`
@@ -195,7 +191,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
 - `coordinate boundary`
   - paragraph-offset `SourceCursor` / `SourceSpan` is the authoritative coordinate system for current mainline reading progress
   - inline paragraph-offset `SourceRef` is the authoritative source-evidence coordinate for current memory, reaction, and probe-facing state
-  - parse-time sentence ids may still appear in compatibility projections, local-buffer sentence fields, detour evidence, semantic probe locators, and reviewer orientation text
+  - parse-time sentence ids may still appear in compatibility projections, local-buffer sentence fields, old detour evidence, semantic probe locators, and reviewer orientation text
   - seeing `sentence_id`, `target_sentence_id`, or `cN-sM` in an artifact does not mean the current mainline reader is sentence-driven
   - new mechanism design and reviewer-facing reports should present paragraph-char / source-span coordinates as canonical and label sentence ids as compatibility or orientation metadata
 - `Unit Span Ledger`
@@ -210,7 +206,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - built from chapter order, headings, openings, closings, and obvious pivots
 - `attention candidate`
   - a span that may deserve focused reading next
-  - can represent a fresh local span or a detour target
+  - current live selection is forward-only from the mainline preview
 - `attention frontier`
   - the ranked set of current attention candidates
   - this is the mechanism's main control surface for choosing what deserves thought next
@@ -218,13 +214,12 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - an unresolved interpretive pressure such as contradiction, ambiguity, instability, motif recurrence, or unexplained significance
 - `working hypothesis`
   - a provisional claim about what the chapter or book is doing
-- `detour need`
-  - a reading-time need to leave the mainline reading path because the current unit now points toward some other non-mainline region that matters
-  - it is a request for future navigation, not a completed jump
-- `detour`
-  - a normal reading redirection away from the mainline cursor
-  - it is not a private supplemental fetch or a second-class side channel
-  - once a detour region is chosen, it is read through the same `Navigate.choose_next_unit -> read -> Reading Runner settlement` loop as any other unit
+- `detour need` (deprecated after `DEC-104`)
+  - historical reading-time request to leave the mainline reading path
+  - new live runs do not create, persist, or act on this field
+- `detour` (deprecated after `DEC-104`)
+  - historical non-mainline reading redirection away from the mainline cursor
+  - it is not part of the current live runtime; the future replacement direction is retrieval through the forthcoming `Ingest` design, not live backread path steering
 
 ## Reading Progression Logic
 - The mechanism starts with a survey pass.
@@ -241,36 +236,25 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - Within whichever chapter is currently active, the cursor is `paragraph_index + char_offset`.
   - Coverage-unit selection is the reasoning-entry discipline; the cursor only guarantees ordered coverage and exact resume position.
   - The mainline loop no longer pre-ingests every sentence as the progress primitive.
-  - Legacy sentence records may still support detour source skills, compatibility projection, old eval manifests, or old public surfaces, but they do not define mainline progress.
+  - Legacy sentence records may still support compatibility projection, old eval manifests, old public surfaces, or historical detour artifacts, but they do not define mainline progress.
 - The current live forward-settlement baseline now runs:
   - build an adaptive paragraph-offset preview from the current `SourceCursor`
   - call `Navigate.choose_next_unit`
-    - without an open detour, the single Navigate act chooses a source unit by returning `end_anchor_text`
-    - with an open detour, the same Navigate act loop may request bounded source evidence, choose a detour unit, or defer the detour
+    - the single Navigate act chooses a forward source unit by returning `end_anchor_text`
+    - old skill-request / detour / deferred outputs are treated as deprecated compatibility shapes and normalized to mainline fallback behavior
   - deterministically resolve `end_anchor_text` against the preview and map it to an end-exclusive `end_cursor`
     - if the anchor cannot be resolved, retry Navigate once with the failed resolution as source evidence
     - if retry still fails, fall back conservatively to the current paragraph end or preview boundary and record the resolution status
   - build a small `carry-forward context` from persisted state
   - formally read the accepted source unit through `read`
   - let `read` directly surface zero-to-many reading-time reactions for that exact unit
-  - persist any `detour_need` into `local_continuity` instead of privately resolving it inside `Read`
+  - ignore any deprecated `detour_need` returned by a stale Read-shaped response; do not write it into `local_continuity`
   - `Reading Runner` post-read settlement closes the exact source unit, appends it to the Unit Span Ledger, and advances the cursor to `end_cursor`
-- Current detour state remains in `local_continuity`, but detour localization is no longer a separate live prompt family beside mainline unitization.
-- The current book-local Skill Runtime is a controlled source-evidence layer under `Navigate.choose_next_unit`.
-  - It is not a generic tool loop and does not add WebSearch or Read-owned skills yet.
-  - In this first slice, only active-detour Navigate acts may request skills, and only when the current source evidence is not enough to choose a grounded detour unit.
-  - Legal first-phase skills are:
-    - `source_map_overview`: return already-read book/chapter cards inside the mainline boundary
-    - `source_scope_drilldown`: expand the current bounded scope into finer source cards
-    - `source_window_fetch`: fetch a bounded already-read source window
-  - Skills only read the book substrate and current runtime state.
-    - They do not read future text beyond `mainline_cursor`.
-    - They do not make semantic relevance judgments.
-    - They do not call external network services.
-  - `Navigate.choose_next_unit` may output `request_skill` with one `skill_request`.
-    - `Reading Runner` executes that request through the Skill Runtime and feeds the `skill_result` back to the same Navigate act loop.
-    - Skill results are evidence, not answers; the final `choose_unit` or `defer_detour` decision remains Navigate's LLM judgment over source-grounded evidence.
-    - Each `Navigate.choose_next_unit` call has a bounded act/skill budget so skill failures or weak evidence cannot stall the reading loop.
+- Deprecated detour continuity fields (`active_detour_id`, `active_detour_need`, `detour_trace`) may appear in old artifacts, but new live capture/resume drops or ignores them so they cannot reactivate Detour behavior.
+- The old book-local source Skill Runtime is deprecated after `DEC-104`.
+  - It remains code-level historical/reference surface only.
+  - It is not called by the live `Navigate.choose_next_unit` path.
+  - Future Ingest memory retrieval should be designed separately rather than inherited from this source-skill loop by default.
 - `Navigate.choose_next_unit` is now the sole current selector of the next coverage unit.
   - Boundary choice is prompt-led and semantic.
   - Runtime guardrails only keep the unit from running away.
@@ -300,14 +284,14 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
     - `Reading Runner` then reads them after the `main_body` queue drains
     - explicit chapter-targeted runs may still select them directly
 - `read` remains the current formal unit-read call, but its prompt role is now reader-first rather than node-first.
-  - On the current live baseline, it directly produces `reading_impression`, `surfaced_reactions`, `memory_uptake_ops`, and optional `detour_need`.
+  - On the current live baseline, it directly produces `reading_impression`, `surfaced_reactions`, and `memory_uptake_ops`.
   - It should not behave like a control super-node or a checklist-filling state updater.
   - Its intended order is:
     - read the current unit as a reader
     - form a brief natural `reading_impression`
     - surface any underline / margin-note style reactions that genuinely arise
     - let durable memory settle through bounded `memory_uptake_ops`
-    - emit a `detour_need` only when the next reading step should leave the mainline path
+    - avoid route selection or backread requests; the Runner will advance deterministically after settlement
   - Legacy compatibility fields such as `raw_reaction`, `move_hint`, `prior_material_use`, `express_signal`, and `context_request` are now historical territory, not the live F3 contract.
   - It now also carries an explicit proportion rule for thin structural units:
     - a bare heading, label, or similarly slight structural cue may legitimately produce no surfaced reaction
@@ -364,14 +348,13 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
 - The runtime schedule is intentionally narrower than the old node inventory:
   - paragraph-offset preview construction and cursor advancement run without LLM
   - `Navigate.choose_next_unit` decides the next coverage unit before formal reading begins
-  - ordinary mainline choice normally uses one Navigate LLM act and cannot request skills
-  - an active detour uses the same Navigate act loop and may request bounded source-evidence skills before choosing or deferring
+  - forward mainline choice normally uses one Navigate LLM act and cannot request skills
   - `read_unit` is now the only steady-state per-unit interpretation call
   - surfaced reactions now come from that same read call rather than from a follow-on wording node
   - ordinary forward progression is deterministic Reading Runner settlement rather than a route action
 - Under the approved next shape:
-  - `Navigate.choose_next_unit` owns next-unit selection across mainline and explicit detour cases
-  - `read` owns current-unit reading impression, surfaced reactions, memory uptake, and detour signaling
+  - `Navigate.choose_next_unit` owns forward next-unit selection
+  - `read` owns current-unit reading impression, surfaced reactions, and memory uptake
   - `Reading Runner` owns post-read settlement and cursor advance
   - `slow cycle` owns chapter-end consolidation and promotion
 
@@ -407,12 +390,6 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
     - explicit patch/append/close/link operations against the durable state layers
     - these express what naturally needs to remain available after the unit, not a checklist of every local understanding
     - `read` should not rewrite whole state objects
-  - optional `detour_need`
-    - a bounded request for later detour handling by `navigate`
-- `detour_need` should minimally answer:
-  - why the current read wants to leave the mainline path
-  - what it is trying to find (`target_hint`)
-  - the current status of that need
 - surfaced reactions are now the primary visible-reaction truth in the approved contract.
   - for `attentional_v2`, native visible-reaction truth is the surfaced semantic payload itself, not a reaction-family label.
   - old family labels remain compatibility projections only.
@@ -448,8 +425,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
 - Default current call types are:
   - `Navigate.choose_next_unit`
     - choose the next exact coverage unit that should be read now
-    - in ordinary mainline mode, this chooses from the bounded preview without skill use
-    - when an explicit detour need is active, this may request bounded book-local source evidence before choosing a detour unit or deferring
+    - chooses from the bounded forward preview without skill use
   - `formal read`
     - interpret the chosen unit with compact carry-forward context
   - `chapter consolidation`
@@ -466,13 +442,13 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - `selective carry`
   - `not carry`
 - Persisted state is therefore not the same thing as prompt-visible state.
-- `Navigate` should carry:
+  - `Navigate` should carry:
   - `always carry`
     - `local_continuity`
     - one thin routing digest from `active_attention`
   - `selective carry`
     - structure-map cards
-    - minimal source-ref/thread/concept handles only when needed to localize a detour target
+    - minimal source-ref/thread/concept handles when needed to choose the next forward unit
   - `not carry`
     - large earlier source excerpts
     - full reaction history
@@ -491,7 +467,6 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
     - compact `thread_digest`
     - compact `reflective_digest`
   - `selective carry`
-    - one bounded detour-context excerpt or source-ref detail when the current unit has been redirected by `Navigate`
     - specific source-ref detail
     - sparse supporting refs
   - `not carry`
@@ -517,10 +492,10 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - `defer_search` is used for genuine curiosity when text-grounded reading can continue honestly.
   - `search_now` is a rare escape hatch for interpretation-blocking references or allusions rather than a normal reading behavior.
 
-## State Layers, Ownership, And Detour Logic
+## State Layers And Ownership
 - The mechanism now distinguishes five state territories plus inline source evidence:
   - `local_continuity`
-    - reading-flow position, paragraph-offset `mainline_cursor`, recent unit boundaries, active detour trace, and return semantics
+    - reading-flow position, paragraph-offset `mainline_cursor`, recent unit boundaries, and resume semantics
   - `active_attention` (deprecated store, pending removal)
     - `active_attention` / ActiveTension was an attempted hot attention layer, but it is no longer the target architecture for near-term reading memory
     - keep the runtime store only until `recent_reading_memory` formation is validated, consolidation is designed, and a cleanup removal is approved
@@ -563,7 +538,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
 - Ownership is now:
   - `Navigate`
     - owns `local_continuity`
-    - owns detour search and dispatch
+    - owns forward next-unit selection
   - `Read`
     - owns current-unit understanding
     - owns surfaced reactions
@@ -582,7 +557,6 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
       - `drop` removes a mistaken or obsolete inquiry
       - durable answers should be written to `concept_registry` or `thread_trace`; do not use an active-attention `promote` path
       - future cleanup should remove this compatibility path after `recent_reading_memory` formation is validated and consolidation / archival behavior is designed
-    - may request later detour by emitting `detour_need`
   - `slow cycle`
     - owns chapter-end cooling, promotion, reconsolidation, and `reflective_frames`
   - `Reading Runner`
@@ -591,12 +565,10 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
 - `Anchor Bank` is historical after the source-ref cutover.
   - Older reports and older runtime trees may still contain anchor wording.
   - New `attentional_v2` runs cite source through paragraph-offset `SourceRef` fields embedded directly in `active_attention`, `concept_registry`, `thread_trace`, `reflective_frames`, `knowledge_activations`, and `reaction_records`.
-- `Detour` is the approved stable concept for non-mainline jump reading.
-  - It replaces the narrower planned `revisit` vocabulary in the approved next shape.
-  - A detour is still normal reading, not a side-channel retrieval action.
-  - `Read` should not privately complete a detour on its own.
-  - It should only surface a `detour_need`.
-  - `Navigate` is the node that decides how to search, where to land, whether to continue detouring, and when to return to the mainline cursor.
+- `Detour` is deprecated after `DEC-104`.
+  - It remains historical/reference vocabulary for old artifacts and old helper code.
+  - New live runs do not use it for non-mainline jump reading, do not route `Read.detour_need`, and do not invoke source-backread skills.
+  - Future prior-context support should be introduced through a new Ingest retrieval design rather than by reviving live path steering.
 - Sentence intake no longer runs a parallel heuristic trigger layer.
   - Protection against missing a crucial single sentence now comes from bounded preview construction plus semantic unitization, not from a separate `zoom_now` gate.
 - Historical bridge-resolution helpers may still appear in old reports or archives.
@@ -604,45 +576,22 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - the current live Runner no longer invokes the old Anchor Bank relation-writing Bridge path
   - current callback honesty is handled by surfaced reaction linkage, inline source refs, and evaluation/audit evidence rather than by a post-read route action
 
-## Detour Search
-- `Detour` search is intentionally different from ordinary mainline unitization.
-  - mainline unitization only needs to choose the next local span from the current forward position
-  - detour search must localize a semantically motivated non-mainline region
-- The live F2 shape is:
-  - `Read` emits `detour_need`
-- For active detours, `Navigate.choose_next_unit` performs a bounded source-grounded semantic search through its own act loop.
-  - if a detour region is found, `Navigate` redirects the next normal reading step there
-- The search posture is:
-  - semantic and LLM-led, not program-led candidate recall
-  - bounded by act/skill budgets, not one unbounded global hunt
-  - allowed to fail honestly and return to the mainline
-- Program logic and skills should supply only the source-evidence substrate:
-  - bounded preview / source evidence packets
-  - compact long-distance-memory digests
-  - source-grounded `SourceRef` handles
-  - detour-trace state
-- `Navigate` should do the semantic work of:
-  - deciding whether the current evidence is enough to choose a readable unit
-  - deferring a detour when the current evidence is too weak (`defer_detour`)
-  - requesting one bounded book-local source skill when the current source evidence is not enough (`request_skill`)
-- In the current skill-enabled slice, the available detour-search source skills are:
-  - `source_map_overview`
-  - `source_scope_drilldown`
-  - `source_window_fetch`
-  - their results are provenance-bearing evidence, not route decisions
-- Search calls should be bounded.
-  - the target is one call when memory and structure make the target obvious
-  - two calls are normal for ambiguous cases
-  - three calls is the hard upper bound before best-effort landing or defer-to-mainline behavior
-- Detour search is allowed to be non-productive without counting as a mechanism error.
-  - a failed detour may still refresh context and change the reader's understanding
-  - if the search remains too vague, the mechanism should return to the mainline rather than searching indefinitely
+## Deprecated Detour / Source Backread
+- Detour search and source-backread were retired from the live path by `DEC-104`.
+- New live runs no longer:
+  - prompt `Read` to emit `detour_need`
+  - write `active_detour_id`, `active_detour_need`, or `detour_trace` into new continuity state
+  - call `Navigate` source skills such as `source_map_overview`, `source_scope_drilldown`, or `source_window_fetch`
+  - return `detour` / `deferred` as current `Navigate.choose_next_unit` selection modes
+  - drain chapter-tail detours before chapter slow-cycle close
+- Historical helper code, literal values, and old artifact readers may remain only as explicitly deprecated compatibility/reference surfaces.
+- Prior context that previously motivated backread should be handled by the forthcoming `Ingest` memory-retrieval design, not by reviving live non-mainline path selection.
 
 ## Runtime Artifacts
 - Shared substrate dependency
   - `public/book_document.json`
   - The shared substrate includes canonical chapter order and paragraph records. Those paragraphs are the current `attentional_v2` mainline substrate.
-  - Parse-time sentence records with stable ids and locators may still exist in the same document, but for this mechanism they are compatibility and detour-evidence handles, not the mainline reading lattice.
+  - Parse-time sentence records with stable ids and locators may still exist in the same document, but for this mechanism they are compatibility and historical-evidence handles, not the mainline reading lattice.
   - `text_role` on paragraph records is a weak structure cue. `auxiliary` paragraphs are filtered before mainline preview construction, so footnote-like or apparatus-like content that survives only as `auxiliary` never reaches `Navigate` on the live mainline path.
 - Current scaffolded mechanism-private derived artifacts
   - `_mechanisms/attentional_v2/derived/survey_map.json`
@@ -653,16 +602,17 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
       - one machine-readable `reading_plan`
 - `_mechanisms/attentional_v2/derived/revisit_index.json`
   - historical/transition artifact from the pre-detour vocabulary
-  - the live F2 loop no longer treats `revisit` as the active navigation concept, but this historical file is retained for compatibility territory until a later cleanup slice
+  - this historical file is retained for compatibility territory until a later cleanup slice
 - `_mechanisms/attentional_v2/derived/chapter_result_compatibility/*.json`
   - live compatibility chapter results used by current chapter/detail and marks surfaces when `attentional_v2` is the active mechanism
 - Current scaffolded mechanism-private runtime artifacts
   - `_mechanisms/attentional_v2/runtime/local_buffer.json`
     - rolling intake buffer only
   - `_mechanisms/attentional_v2/runtime/local_continuity.json`
-    - compact continuity plus detour ownership state
+    - compact continuity for forward mainline reading
     - persists the paragraph-offset `mainline_cursor` for current runs
     - also carries the current `reading_queue_stage` (`mainline` or `deferred_support`) for resume/observability
+    - deprecated detour fields from old artifacts are dropped/ignored on new capture or resume
   - `_mechanisms/attentional_v2/runtime/continuation_capsule.json`
   - `_mechanisms/attentional_v2/runtime/unitization_audit.jsonl`
     - canonical runtime audit for Navigate's raw selection and resolver outcome
@@ -719,10 +669,10 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - `_mechanisms/attentional_v2/internal/prompt_manifests/*.json`
 - Current scaffolded prompt manifests now include:
   - `navigate_choose_next_unit`
-    - current unified Navigator agent act
-    - outputs `choose_unit`, `request_skill`, or `defer_detour`
-    - mainline calls normally choose a unit from the bounded preview without skill use
-    - active-detour calls may request bounded book-local source evidence before choosing or deferring
+    - current forward-only Navigator agent act
+    - outputs `choose_unit`
+    - chooses a unit from the bounded preview without skill use
+    - deprecated `request_skill` / `defer_detour` / `detour` / `deferred` outputs are normalized into safe mainline fallback behavior
   - `read_unit`
   - `reflective_promotion`
   - `reconsolidation`
@@ -793,7 +743,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
 - `forward_settlement_integrity`
   - After each read, does the Reading Runner settle the exact chosen unit, apply memory updates, persist visible reactions, and advance the cursor without inventing a second route taxonomy?
 - `callback_grounding_honesty`
-  - When the mechanism links backward through surfaced reactions or detour evidence, are those links source-grounded and interpretively justified rather than merely suggestive?
+  - When the mechanism links backward through surfaced reactions or retrieved memory, are those links source-grounded and interpretively justified rather than merely suggestive?
 - `reaction_selectivity_and_anchor_fidelity`
   - When the mechanism emits visible thoughts, are they selective, worthwhile, and honestly anchored to the text?
 - `reconsolidation_integrity`
@@ -828,4 +778,4 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
 - The survey stage must stay coarse enough that it does not become hidden full-book cheating.
   - even with the new LLM-based `chapter_zone` classifier, the survey pass is still limited to bounded structural samples and scheduling output
   - it must not turn into chapter summarization, theme extraction, or durable understanding
-- Retrieval pressure, rare-search gating, and detour behavior will likely need careful budget control during implementation.
+- Retrieval pressure and rare-search gating will likely need careful budget control during future Ingest / Digest work.

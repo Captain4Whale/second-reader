@@ -231,19 +231,6 @@ def capture_local_continuity(
         "reading_queue_stage": _clean_text(prior_continuity.get("reading_queue_stage"))
         if isinstance(prior_continuity, dict)
         else "",
-        "active_detour_id": _clean_text(prior_continuity.get("active_detour_id"))
-        if isinstance(prior_continuity, dict)
-        else "",
-        "active_detour_need": dict(prior_continuity.get("active_detour_need", {}))
-        if isinstance(prior_continuity, dict) and isinstance(prior_continuity.get("active_detour_need"), dict)
-        else None,
-        "detour_trace": [
-            dict(item)
-            for item in prior_continuity.get("detour_trace", [])
-            if isinstance(item, dict)
-        ]
-        if isinstance(prior_continuity, dict) and isinstance(prior_continuity.get("detour_trace"), list)
-        else [],
         "is_reconstructed": bool(local_buffer.get("is_reconstructed", False)),
         "reconstructed_from_checkpoint_id": local_buffer.get("reconstructed_from_checkpoint_id"),
         "last_resume_kind": local_buffer.get("last_resume_kind"),
@@ -768,7 +755,12 @@ def _mark_local_continuity(
     next_continuity["is_reconstructed"] = reconstructed
     next_continuity["reconstructed_from_checkpoint_id"] = checkpoint_id
     next_continuity["last_resume_kind"] = resume_kind
+    next_continuity.pop("active_detour_id", None)
+    next_continuity.pop("active_detour_need", None)
+    next_continuity.pop("detour_trace", None)
     return next_continuity  # type: ignore[return-value]
+
+
 def resume_from_checkpoint(
     output_dir: Path,
     *,

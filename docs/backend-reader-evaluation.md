@@ -540,7 +540,7 @@ For the current Memory / Planning / Evaluation implementation guidance chain, se
 - When a non-judged focused quality audit is used ahead of a broader rerun, the audit summary should explicitly record:
   - visible reaction density
   - silent-unit count
-  - whether detour behavior actually activated
+  - whether any deprecated detour/backread fields appeared unexpectedly
   - whether optional surfaced semantics such as `prior_link / outside_link / search_intent` appeared
   - whether compatibility exports such as chapter-result projection and normalized eval bundles still materialized
 - Full excerpt-surface judged reruns should resume only after the current mechanism and launch posture can complete the smaller slice within an iteration budget the project is actually willing to repeat.

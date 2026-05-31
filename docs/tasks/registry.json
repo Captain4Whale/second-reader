@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-05-26T16:00:00Z",
+  "updated_at": "2026-05-31T01:10:54Z",
   "tasks": [
     {
       "id": "TASK-SECOND-READER-INGEST-DIGEST-REFRAME-AUDIT-20260530",
@@ -15,19 +15,20 @@
         "docs/history/decision-log.md",
         "docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md"
       ],
-      "decision_refs": [
-        "DEC-103"
-      ],
+    "decision_refs": [
+      "DEC-103",
+      "DEC-104"
+    ],
       "job_refs": [],
       "acceptance_ref": "",
-      "next_action": "Begin a fresh read-only feasibility / delta audit for the narrowed product target: understand the current text and present valuable notes / highlights. Treat ingest -> digest, retrieval-first prior context, tool-owned non-text actions, and note/highlight output categories as the new design frame. Do not implement runtime code, launch eval, update evidence catalog, or continue C设计10 consolidation / C设计11 Read XML migration / C设计12 prompt assembly migration until that audit is accepted.",
+    "next_action": "Continue the narrowed product-goal reframe from the forward-only Ingest baseline. The first cleanup slice has retired live Detour / source-backread from attentional_v2; next design work should specify how Ingest requests memory retrieval for the selected next unit and how Digest produces reader-facing notes / highlights. Do not launch eval, update evidence catalog, or continue C设计10 consolidation / C设计11 Read XML migration / C设计12 prompt assembly migration unless explicitly re-adopted.",
       "blocked_by": [],
       "evidence_refs": [
         "docs/current-state.md",
         "docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md",
         "docs/history/decision-log.md"
       ],
-      "last_updated": "2026-05-30T00:00:00Z",
+    "last_updated": "2026-05-31T01:10:54Z",
       "last_updated_by": "codex"
     },
     {
@@ -2194,7 +2195,8 @@
         "DEC-077",
         "DEC-079",
         "DEC-087",
-        "DEC-088"
+        "DEC-088",
+        "DEC-104"
       ],
       "job_refs": [
         "bgjob_post_phase_d_longspan_smoke_20260412",
@@ -2210,7 +2212,7 @@
         "bgjob_attentional_v2_source_ref_nawaer_active_attention_fix_20260506"
       ],
       "acceptance_ref": "docs/implementation/new-reading-mechanism/attentional_v2_structural_rework_plan.md",
-      "next_action": "Continue under the existing attentional_v2 mechanism key. Current landed runtime shape: Navigate.choose_next_unit -> Read -> Reading Runner settlement, with mainline progress using paragraph-offset SourceCursor/SourceSpan instead of sentence-id traversal. Navigate receives an adaptive paragraph-offset preview and returns exact end_anchor_text; Reading Runner resolves it, advances to the accepted end_cursor, and appends _mechanisms/attentional_v2/runtime/unit_span_ledger.jsonl as a core runtime fact. SourceRef cutover is now landed: memory, reaction, context, probe, and public API source evidence use inline SourceRef payloads (source_span_id, source_span, quote, role) derived from paragraph-offset spans. Anchor Bank is no longer a canonical runtime artifact, checkpoint key, prompt/context substrate, or public API fact source for new runs; old anchor-bank runtimes should be rerun rather than migrated. Next focused implementation target: rerun durable-memory diagnostics under the SourceRef runtime and repair any remaining durable-store memory-op schema alignment issues before spending a scored long-span rerun. Follow-up SourceRef smoke attentional_v2_source_ref_nawaer_smoke_20260506 proved the SourceRef chain for concept/thread/reaction/probe but exposed a chapter-end active_attention gap: cross-chapter carry-forward could erase existing source_refs when chapter_consolidation omitted them. The repair preserves active_attention source_refs by deterministic item_id merge after cooling. Active verification job bgjob_attentional_v2_source_ref_nawaer_active_attention_fix_20260506 is running attentional_v2_source_ref_nawaer_active_attention_fix_20260506 as a V2-only no-judge nawaer smoke; if it passes, run focused huochu before any all-window rerun.",
+      "next_action": "Continue under the existing attentional_v2 mechanism key. Current landed runtime shape: Navigate.choose_next_unit -> Read -> Reading Runner settlement, with mainline progress using paragraph-offset SourceCursor/SourceSpan instead of sentence-id traversal. Navigate is now forward-only after DEC-104: no live Detour / source-backread, no source-skill loop, and deprecated detour-shaped outputs are normalized to safe mainline fallback. Read no longer has a current detour_need prompt contract; stale detour_need output is ignored and does not mutate local_continuity.",
       "blocked_by": [],
       "evidence_refs": [
         "docs/implementation/new-reading-mechanism/attentional_v2_structural_rework_plan.md",
@@ -2257,7 +2259,7 @@
         "reading-companion-backend/tests/test_attentional_v2_source_spans.py",
         "contract/openapi.public.snapshot.json"
       ],
-      "last_updated": "2026-05-06T12:22:35Z",
+      "last_updated": "2026-05-31T01:10:54Z",
       "last_updated_by": "codex"
     },
     {

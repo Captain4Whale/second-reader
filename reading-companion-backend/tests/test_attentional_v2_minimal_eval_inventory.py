@@ -20,7 +20,6 @@ REQUIRED_EVIDENCE_SURFACES = {
     "settlement_audit",
     "supplemental_retrieval",
     "navigation_trace",
-    "detour_trace_evidence",
     "slow_cycle_audit",
     "source_ref_binding_resolution_markers",
     "projection_markers",

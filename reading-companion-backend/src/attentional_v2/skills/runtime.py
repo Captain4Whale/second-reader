@@ -1,4 +1,4 @@
-"""Skill runtime for attentional_v2 book-local source skills."""
+"""Deprecated after DEC-103/DEC-104: runtime for legacy Navigate source skills."""
 
 from __future__ import annotations
 
@@ -78,7 +78,7 @@ def execute_skill_request(
     mainline_cursor: SharedRunCursor,
     current_scope: dict[str, object] | None = None,
 ) -> SkillResult:
-    """Execute one bounded Navigate-requested source skill."""
+    """Deprecated after DEC-103/DEC-104: execute one bounded legacy source skill."""
 
     if not isinstance(skill_request, dict):
         return _error_result("", "skill_request_must_be_object")

@@ -195,8 +195,8 @@ def test_persist_reading_position_recreates_missing_runtime_shell_with_default_s
     assert shell["cursor"]["sentence_id"] == "c1-s6"
 
 
-def test_persist_reading_position_preserves_detour_state(tmp_path: Path):
-    """Persisting position should carry detour state through local continuity snapshots."""
+def test_persist_reading_position_drops_legacy_detour_state(tmp_path: Path):
+    """Persisting position should not carry legacy detour state into live continuity snapshots."""
 
     output_dir = tmp_path / "output" / "demo-book"
     AttentionalV2Mechanism().initialize_artifacts(output_dir)
@@ -243,12 +243,9 @@ def test_persist_reading_position_preserves_detour_state(tmp_path: Path):
     continuity = persisted["local_continuity"]
     shell = load_runtime_shell(runtime_shell_file(output_dir))
     assert continuity["reading_queue_stage"] == "deferred_support"
-    assert continuity["active_detour_id"] == "detour:1:c1-s6:1"
-    assert continuity["active_detour_need"]["target_hint"] == "the opening setup"
-    assert continuity["detour_trace"][0]["status"] == "open"
-    assert continuity["detour_trace"][0]["open_reason"] == "Need to revisit the earlier setup."
-    assert continuity["detour_trace"][0]["last_navigation_decision"] == "request_skill"
-    assert continuity["detour_trace"][0]["last_navigation_reason"] == "Fetch opening context."
+    assert "active_detour_id" not in continuity
+    assert "active_detour_need" not in continuity
+    assert "detour_trace" not in continuity
     assert shell["reading_queue_stage"] == "deferred_support"
 
 

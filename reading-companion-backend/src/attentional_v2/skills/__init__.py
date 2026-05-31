@@ -1,4 +1,4 @@
-"""Mechanism-internal skill runtime for attentional_v2."""
+"""Deprecated after DEC-103/DEC-104: legacy skill runtime for attentional_v2."""
 
 from .runtime import execute_skill_request
 from .schemas import SkillRequest, SkillResult, SkillName, SkillStatus

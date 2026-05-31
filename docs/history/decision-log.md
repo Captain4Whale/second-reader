@@ -2998,3 +2998,28 @@ This new direction is design frozen but not yet implemented as a formal benchmar
 - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/C设计10-Recent Reading Memory Design v0.md`
 - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/C设计11-Read Context Layer Contract v0.md`
 - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/C设计12-Prompt Assembly Layer Design v0.md`
+
+## Entry 101
+**ID**: DEC-104
+**Status**: active
+
+**Decision / Inflection**: Retire live Detour / source-backread from `attentional_v2` and make `Navigate.choose_next_unit` forward-only.
+
+**Period**: May 31, 2026, during the first implementation slice after the `ingest -> digest` reframe began.
+
+**Decision**: Remove Detour, source-backread, chapter-tail detour drain, and Navigate source-skill behavior from the live runtime path. The current live loop is now forward-only: `Navigate.choose_next_unit -> Read -> Reading Runner settlement`. `Navigate.choose_next_unit` selects the next forward source unit and no longer supports live `request_skill`, `defer_detour`, `detour`, or `deferred` behavior. `Read` is no longer prompted to emit `detour_need`; if a stale model-shaped response includes it, the Runner ignores it and does not mutate `local_continuity`.
+
+**Boundary**: Historical Detour helper code, literal values, and old artifact readers may remain only as explicitly deprecated compatibility/reference surfaces. New live runs must not create or advance `active_detour_id`, `active_detour_need`, or `detour_trace`, must not emit new `detour_trace_evidence`, and must not use old source-skill runtime as the default basis for future Ingest retrieval design.
+
+**Why this path won**: The new product direction replaces live回读 path steering with retrieval-first prior-context support. Keeping Detour alive inside Navigate would preserve the old path-selection center of gravity and make the first `Ingest` slice inherit the wrong control shape. A forward-only baseline makes the next design question crisp: which memories should Ingest retrieve for the selected unit, and how should Digest turn that context into useful reader-facing notes / highlights?
+
+**Primary evidence**:
+- `docs/current-state.md`
+- `docs/tasks/registry.md`
+- `docs/backend-reading-mechanisms/attentional_v2.md`
+- `docs/backend-reading-mechanism.md`
+- `docs/backend-reader-evaluation.md`
+- `reading-companion-backend/src/attentional_v2/runner.py`
+- `reading-companion-backend/src/attentional_v2/nodes.py`
+- `reading-companion-backend/src/attentional_v2/prompts/navigate_choose_next_unit.py`
+- `reading-companion-backend/src/attentional_v2/prompts/read_unit.py`

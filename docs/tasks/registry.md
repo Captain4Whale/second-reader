@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-05-30T00:00:00+08:00`
+Last updated: `2026-05-31T09:10:54+08:00`
 
 ## Status Values
 - `active`
@@ -25,10 +25,11 @@ Last updated: `2026-05-30T00:00:00+08:00`
 - Lane: `mechanism_runtime`
 - Priority: `high`
 - Detail: `docs/current-state.md`
-- Next: begin a fresh read-only feasibility / delta audit for the narrowed product target: understand the current text and present valuable notes / highlights. Treat `ingest -> digest`, retrieval-first prior context, tool-owned non-text actions, and note/highlight output categories as the new design frame. Do not implement runtime code, launch eval, update evidence catalog, or continue `C设计10` consolidation / `C设计11` Read XML migration / `C设计12` prompt assembly migration until that audit is accepted.
+- Next: continue the narrowed product-goal reframe from the forward-only `Ingest` baseline. The first cleanup slice has retired live Detour / source-backread from `attentional_v2`; next design work should specify how `Ingest` requests memory retrieval for the selected next unit and how `Digest` produces reader-facing notes / highlights. Do not launch eval, update evidence catalog, or continue `C设计10` consolidation / `C设计11` Read XML migration / `C设计12` prompt assembly migration unless explicitly re-adopted.
 - Jobs: none
 - Evidence:
   - `DEC-103`
+  - `DEC-104`
   - `docs/current-state.md`
   - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
 
@@ -73,7 +74,7 @@ Last updated: `2026-05-30T00:00:00+08:00`
     - active items now carry lightweight `attention_tags[]`; old `working_state` naming and fixed lists are historical
     - residual `local_hypothesis` / `live_hypotheses` vocabulary has been retired from current provenance; hypothesis-like material is a tagged active-attention item or later concept/thread memory
     - old `gate_state`, `pressure_snapshot`, and working-pressure runtime artifacts are no longer current schema, prompt, runtime, checkpoint, or Memory Quality evidence fields
-    - old `pressure_signals` were removed with the forward-settlement cutover; current `Read` emits reading impression, surfaced reactions, memory uptake, and optional detour need
+    - old `pressure_signals` were removed with the forward-settlement cutover; current `Read` emits reading impression, surfaced reactions, and memory uptake
   - `Phase D` is now landed:
     - `read` now supports a budget-bounded multi-step supplemental recall loop instead of a single extra pass
     - runtime state and full checkpoints now persist a lightweight `continuation capsule` with rehydration entrypoints
@@ -86,32 +87,31 @@ Last updated: `2026-05-30T00:00:00+08:00`
     - this branch remains valuable evidence, but it is no longer the approved end-state target
   - `Phase F1` is now landed:
     - the live per-unit loop was cut back to `Navigate.unitize -> read -> Reading Runner post-read settlement`; current code now calls it through `Navigate.choose_next_unit -> read -> Reading Runner post-read settlement`
-    - `Read` now owns `reading_impression`, surfaced reactions, memory uptake ops, and optional `detour_need`
+    - `Read` now owns `reading_impression`, surfaced reactions, and memory uptake ops
     - the dedicated live `Express` node is no longer on the runner path
     - `Read` prompt packaging now follows compact `always carry / selective carry / not carry` projections
   - Read naturalization is now landed on top of the F-line:
     - the prompt now frames `read` as a reader moving through the book rather than a field-filling node
     - current output fields are `reading_impression` and `memory_uptake_ops`; `unit_delta` and `implicit_uptake_ops` are historical field names
     - explicit source structures that matter later, such as stage models or classifications, can settle into memory even without a visible reaction
-  - `Phase F2` is now landed:
-    - the live `Read` contract now emits `detour_need`
-    - `Navigate.choose_next_unit` now owns detour localization as one mode inside the unified Navigator act loop
-    - `local_continuity` now persists `mainline_cursor / active_detour_id / active_detour_need / detour_trace`
-    - active-detour Navigate acts can choose a source-grounded unit, request bounded source-evidence skills, or defer the detour
-    - detour regions are now read through the same normal `Navigate.choose_next_unit -> read -> Reading Runner post-read settlement` loop
-    - chapter-tail detours are now drained before slow-cycle close
+  - `Phase F2` is now historical after `DEC-104`:
+    - the old live Detour / source-backread path has been retired from the current runtime
+    - `Navigate.choose_next_unit` now chooses only the next forward source unit
+    - deprecated `request_skill` / `defer_detour` / `detour` / `deferred` outputs are normalized into safe mainline fallback behavior
+    - `Read.detour_need` is no longer a current prompt contract; stale output is ignored and does not mutate `local_continuity`
+    - old `active_detour_id`, `active_detour_need`, and `detour_trace` fields are dropped/ignored on new capture or resume
   - Paragraph-offset mainline cursor and SourceRef cutover are now landed:
     - `SourceCursor` uses `chapter_id`, `chapter_ref`, `paragraph_index`, and `char_offset`
     - `Navigate.choose_next_unit` receives an adaptive paragraph-offset preview and returns exact `end_anchor_text`
     - `Reading Runner` resolves that source anchor into an end-exclusive `SourceSpan`, advances to `end_cursor`, and records accepted units in `_mechanisms/attentional_v2/runtime/unit_span_ledger.jsonl`
-    - sentence ids remain available for legacy/eval/detour compatibility, but no longer define the `attentional_v2` mainline cursor
+    - sentence ids remain available for legacy/eval/historical-detour compatibility, but no longer define the `attentional_v2` mainline cursor
     - memory/reaction/probe-facing source evidence now uses inline `SourceRef` values (`source_span_id`, `source_span`, `quote`, `role`)
     - `anchor_bank.json` is no longer a canonical runtime artifact or checkpoint key for new runs; old anchor-bank runtimes must be rerun
     - chapter-end `active_attention` carry-forward now preserves inline `source_refs[]` by deterministic `item_id` merge after cooling; `chapter_consolidation` still decides what carries forward, but omission of `source_refs` no longer erases existing evidence coordinates
     - active verification job `bgjob_attentional_v2_source_ref_nawaer_active_attention_fix_20260506` is running `attentional_v2_source_ref_nawaer_active_attention_fix_20260506` as a V2-only no-judge `nawaer` smoke; if it passes, run focused `huochu` before any all-window rerun
   - `Phase F3` is now landed:
     - persisted visible reactions now enter the system only through `Read.surfaced_reactions[]`
-    - mainline and detour reading now share one surfaced-native reaction-record builder
+    - current forward reading uses one surfaced-native reaction-record builder; old detour reads remain historical artifacts only
     - chapter-result compatibility projection and normalized eval export now read surfaced-native persisted records and derive old family labels only through the compat helper
     - dead live ownership paths for the old `Express` persistence flow and `raw_reaction` fallback are now removed
   - `Phase F4A` is now landed as the first focused quality-audit pack:
@@ -369,10 +369,9 @@ Last updated: `2026-05-30T00:00:00+08:00`
         - `reading-companion-backend/docs/evaluation/long_span/memory_quality_report_contract.md`
         - future reports should use one full source document per window with probe markers, and label recent route explanations as `route reason` rather than generic `statement`
       - current Navigator source-skill posture:
-        - `Navigate.choose_next_unit` is now one unified Navigator act loop, not a Python-level dispatch between separate mainline unitize and detour-search prompt families
-        - first-phase Skill Runtime is mechanism-private and currently serves active-detour Navigate acts only
-        - supported book-local skills are `source_map_overview`, `source_scope_drilldown`, and `source_window_fetch`
-        - `Reading Runner` dispatches skill requests and returns `skill_result` evidence to Navigate; skills do not choose the detour target and do not read future text past `mainline_cursor`
+        - superseded by `DEC-104`
+        - `Navigate.choose_next_unit` is now forward-only and does not call source skills
+        - the old mechanism-private Skill Runtime and supported book-local skills remain deprecated historical/reference surfaces only
       - result:
         - `Memory Quality` average overall score: `3.48`
         - probe count: `25`

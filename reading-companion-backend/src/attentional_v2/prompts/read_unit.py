@@ -17,10 +17,10 @@ from .assembler import PromptAssembler, PromptAssemblyResult, PromptAssemblySpec
 from .types import PromptDefinition
 
 
-READ_UNIT_PROMPT_VERSION = 'attentional_v2.read.v30'
+READ_UNIT_PROMPT_VERSION = 'attentional_v2.read.v31'
 READ_XML_PROMPT_VERSION = "attentional_v2.read.xml.v1"
 READ_XML_PROMPT_ASSEMBLY_SPEC_ID = "attentional_v2.read_unit.xml.v1"
-READ_XML_PROMPTSET_VERSION = "attentional_v2-phase6-v38"
+READ_XML_PROMPTSET_VERSION = "attentional_v2-phase6-v39"
 READ_XML_TRANSPORT_SYSTEM_PROMPT = "Follow the structured Read prompt in the user message. Return JSON only."
 
 
@@ -197,17 +197,10 @@ Rules:
 - Do not write `reflective_frames`, `reaction_records`, or history/audit layers here.""",
     ),
     PromptFragment(
-        fragment_id='read.detour_and_routing_boundary',
-        text="""- Propose operations, not whole-object rewrites.
-- If the current understanding genuinely needs a detour into earlier material, emit `detour_need`. Do not secretly route or resolve it yourself.
-- If you are currently reading inside an active detour and the driving uncertainty is now resolved, set `detour_need.status` to `resolved`.
-- If you are currently reading inside an active detour and it no longer seems worth pursuing, set `detour_need.status` to `abandoned`.""",
-    ),
-    PromptFragment(
         fragment_id='read.output_behavior_policy',
         text="""- Do not output broad chapter summary.
 - Do not explain whether you "used prior material".
-- Do not decide or name the next route. After this read, the runner will settle the unit and advance normally unless a detour need is present.
+- Do not decide or name the next route. After this read, the runner will settle the unit and advance normally.
 - Return JSON only.""",
     ),
 )
@@ -282,7 +275,6 @@ READ_ROLE_AND_INSTRUCTION_FRAGMENT_REGISTRY = PromptFragmentRegistry(
             fragment_id="read.source_grounding_policy",
             text=_target_source_grounding_text(),
         ),
-        _fragment_by_id("read.detour_and_routing_boundary"),
         _fragment_by_id("read.output_behavior_policy"),
     ]
 )
@@ -338,10 +330,6 @@ READ_ROLE_AND_INSTRUCTION_TEMPLATE = (
             PromptTemplateNode(
                 element_name="SourceGrounding",
                 prompt_fragment_ref="read.source_grounding_policy",
-            ),
-            PromptTemplateNode(
-                element_name="RouteBoundary",
-                prompt_fragment_ref="read.detour_and_routing_boundary",
             ),
             PromptTemplateNode(
                 element_name="ResponseDiscipline",
@@ -575,11 +563,7 @@ def _reading_path_mode(
     reading_path_mode: str,
     detour_context: dict[str, object] | None,
 ) -> str:
-    mode = _clean_prompt_value(reading_path_mode)
-    if mode in {"mainline", "detour", "look_back"}:
-        return mode
-    if isinstance(detour_context, dict) and isinstance(detour_context.get("active_detour_need"), dict):
-        return "detour"
+    del reading_path_mode, detour_context
     return "mainline"
 
 
@@ -588,20 +572,8 @@ def _reading_intent_payload(
     mode: str,
     detour_context: dict[str, object] | None,
 ) -> dict[str, object]:
-    if mode == "mainline":
-        return {"intent": "read_current_source_unit_in_sequence"}
-    active_need = (
-        dict(detour_context.get("active_detour_need"))
-        if isinstance(detour_context, dict) and isinstance(detour_context.get("active_detour_need"), dict)
-        else {}
-    )
-    return _compact_prompt_object(
-        {
-            "intent": "look_back_or_detour",
-            "question_or_uncertainty": _clean_prompt_value(active_need.get("reason")),
-            "target_hint": _clean_prompt_value(active_need.get("target_hint")),
-        }
-    )
+    del mode, detour_context
+    return {"intent": "read_current_source_unit_in_sequence"}
 
 
 def render_read_current_focus_xml(
@@ -663,8 +635,7 @@ Top-level fields:
 {
   "reading_impression": "...",
   "surfaced_reactions": [],
-  "recent_reading_memory": [],
-  "detour_need": null
+  "recent_reading_memory": []
 }""",
 )
 
@@ -714,7 +685,7 @@ Do not write durable memory, digests, hidden routing state, or other memory stor
 
 READ_DETOUR_NEED_CONTRACT_FRAGMENT = PromptFragment(
     fragment_id="read.detour_need_contract",
-    text="""`detour_need` is optional output routing intent.
+    text="""Deprecated after DEC-103/DEC-104: `detour_need` was an optional output routing intent.
 Shape:
 {
   "reason": "...",
@@ -733,7 +704,6 @@ READ_OUTPUT_CONTRACT_FRAGMENT_REGISTRY = PromptFragmentRegistry(
         READ_READING_IMPRESSION_CONTRACT_FRAGMENT,
         READ_SURFACED_REACTION_CONTRACT_FRAGMENT,
         READ_RECENT_READING_MEMORY_CONTRACT_FRAGMENT,
-        READ_DETOUR_NEED_CONTRACT_FRAGMENT,
     ]
 )
 
@@ -768,10 +738,6 @@ READ_OUTPUT_CONTRACT_TEMPLATE = (
                     PromptTemplateNode(
                         element_name="RecentReadingMemoryContract",
                         prompt_fragment_ref="read.recent_reading_memory_contract",
-                    ),
-                    PromptTemplateNode(
-                        element_name="DetourNeedContract",
-                        prompt_fragment_ref="read.detour_need_contract",
                     ),
                 ),
             ),
@@ -851,7 +817,7 @@ def build_read_prompt_assembly_spec(
             "reading_intent",
             "language_contract",
         ),
-        output_contract="read_unit_xml_json_v1",
+        output_contract="read_unit_xml_json_v2",
     )
 
 
@@ -915,7 +881,7 @@ def render_read_prompt_xml(
 
 READ_UNIT_PROMPT = PromptDefinition(
     prompt_id='attentional_v2.read_unit',
-    version='attentional_v2.read.v30',
+    version=READ_UNIT_PROMPT_VERSION,
     owner_node='read_unit',
     status='active',
     purpose='Read one current source unit and return a structured reading record.',
@@ -1040,9 +1006,8 @@ Return JSON:
         "source_role": "support"
       }
     }
-  ],
-  "detour_need": null
+  ]
 }""",
     required_inputs=('structural_frame', 'current_unit', 'carry_forward_context', 'supplemental_context', 'policy_snapshot', 'output_language_name'),
-    output_contract='read_unit_json_v1',
+    output_contract='read_unit_json_v2',
 )

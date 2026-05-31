@@ -50,7 +50,8 @@ def _navigation_context() -> dict[str, object]:
 def test_navigate_act_space_remains_bounded() -> None:
     """Navigate should keep the accepted bounded act space."""
 
-    assert nodes_module._NAVIGATE_ACT_DECISIONS == {"choose_unit", "request_skill", "defer_detour"}  # noqa: SLF001
+    assert nodes_module._NAVIGATE_ACT_DECISIONS == {"choose_unit"}  # noqa: SLF001
+    assert nodes_module._DEPRECATED_NAVIGATE_ACT_DECISIONS == {"request_skill", "defer_detour"}  # noqa: SLF001
 
 
 def _navigate_act(
@@ -178,7 +179,7 @@ def test_navigate_choose_next_unit_writes_manifest_and_applies_sentence_cap(tmp_
     assert "Use them as structural cues, not content" in captured["system_prompt"]
     assert "Never trim symbols or unusual characters that belong to a substantive sentence" in captured["system_prompt"]
     assert "Mainline preview" in captured["prompt"]
-    assert manifest["prompt_version"] == "attentional_v2.navigate_choose_next_unit.v1"
+    assert manifest["prompt_version"] == "attentional_v2.navigate_choose_next_unit.v2"
 
 
 def test_navigate_choose_next_unit_can_trim_leading_boundary_residue(tmp_path: Path, monkeypatch):
@@ -307,8 +308,8 @@ def test_navigate_choose_next_unit_fallback_allows_heading_only_when_no_body_fol
     assert decision["reason"] == "unitize_fallback_current_paragraph"
 
 
-def test_navigate_choose_next_unit_detour_refuses_out_of_scope_unit(tmp_path: Path, monkeypatch):
-    """Detour Navigate should refuse to choose outside current source evidence."""
+def test_navigate_choose_next_unit_deprecated_detour_output_normalizes_to_mainline(tmp_path: Path, monkeypatch):
+    """Deprecated detour-shaped Navigate output should fall back to a safe forward unit."""
 
     monkeypatch.setattr(
         nodes_module,
@@ -333,11 +334,10 @@ def test_navigate_choose_next_unit_detour_refuses_out_of_scope_unit(tmp_path: Pa
         skills_allowed=True,
     )
 
-    assert result == {
-        "decision": "defer_detour",
-        "selection_mode": "detour",
-        "reason": "chosen_unit_outside_allowed_source_evidence",
-    }
+    assert result["decision"] == "choose_unit"
+    assert result["selection_mode"] == "mainline"
+    assert result["end_sentence_id"] == "c1-s2"
+    assert result["reason"] == "Try a sentence that was not offered."
     manifest = json.loads(
         (
             tmp_path
@@ -348,15 +348,15 @@ def test_navigate_choose_next_unit_detour_refuses_out_of_scope_unit(tmp_path: Pa
             / "navigate_choose_next_unit.json"
         ).read_text(encoding="utf-8")
     )
-    assert manifest["prompt_version"] == "attentional_v2.navigate_choose_next_unit.v1"
+    assert manifest["prompt_version"] == "attentional_v2.navigate_choose_next_unit.v2"
     assert "choose the next readable unit" in manifest["system_prompt"]
-    assert "Available skills in detour mode only" in manifest["system_prompt"]
-    assert "source_window_fetch" in manifest["system_prompt"]
-    assert "Skill results so far" in manifest["user_prompt"]
+    assert "Available skills in detour mode only" not in manifest["system_prompt"]
+    assert "source_window_fetch" not in manifest["system_prompt"]
+    assert "Skill results so far" not in manifest["user_prompt"]
 
 
-def test_navigate_choose_next_unit_detour_can_request_one_skill(tmp_path: Path, monkeypatch):
-    """Detour Navigate may request one bounded book-local source skill."""
+def test_navigate_choose_next_unit_deprecated_skill_request_normalizes_to_mainline(tmp_path: Path, monkeypatch):
+    """Deprecated skill requests are ignored instead of entering a source-skill loop."""
 
     monkeypatch.setattr(
         nodes_module,
@@ -385,12 +385,10 @@ def test_navigate_choose_next_unit_detour_can_request_one_skill(tmp_path: Path, 
         skills_allowed=True,
     )
 
-    assert result["decision"] == "request_skill"
-    assert result["skill_request"]["skill_name"] == "source_window_fetch"
-    assert result["skill_request"]["arguments"] == {
-        "start_sentence_id": "c1-s1",
-        "end_sentence_id": "c1-s2",
-    }
+    assert result["decision"] == "choose_unit"
+    assert result["selection_mode"] == "mainline"
+    assert "skill_request" not in result
+    assert result["reason"] == "Need exact source text before landing."
 
 
 def test_read_unit_filters_unanchored_surface_and_uses_naturalized_contract(tmp_path: Path, monkeypatch):
@@ -576,7 +574,7 @@ def test_read_unit_filters_unanchored_surface_and_uses_naturalized_contract(tmp_
     assert "\"target_store\": \"concept_registry\"" in captured["prompt"]
     assert "\"target_store\": \"thread_trace\"" in captured["prompt"]
     assert "Do not target `concept_digest`, `thread_digest`, `active_focus_digest`" in captured["system_prompt"]
-    assert manifest["prompt_version"] == "attentional_v2.read.v30"
+    assert manifest["prompt_version"] == "attentional_v2.read.v31"
 
 
 def test_read_unit_can_use_xml_prompt_assembly_mode_without_changing_default(tmp_path: Path, monkeypatch):

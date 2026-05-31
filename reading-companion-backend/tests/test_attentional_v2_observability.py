@@ -211,7 +211,7 @@ def test_record_read_writes_memory_uptake_op_contracts(tmp_path: Path) -> None:
     assert "detour_trace_evidence" not in audit_line
 
 
-def test_record_read_writes_compact_navigation_and_detour_evidence(tmp_path: Path) -> None:
+def test_record_read_writes_compact_navigation_and_ignores_detour_evidence(tmp_path: Path) -> None:
     output_dir = tmp_path / "output"
 
     record_read(
@@ -221,41 +221,25 @@ def test_record_read_writes_compact_navigation_and_detour_evidence(tmp_path: Pat
         unitize_decision={"boundary_type": "paragraph_end"},
         carry_forward_context={},
         read_result={
-            "reading_impression": "A detour lands.",
+            "reading_impression": "A mainline unit lands.",
             "surfaced_reactions": [],
             "memory_uptake_ops": [],
             "memory_uptake_admission_events": [],
+            "deprecated_detour_need_ignored": {
+                "reason": "Legacy detour request.",
+                "target_hint": "opening setup",
+                "status": "open",
+            },
         },
         navigation_trace=[
             {
-                "decision": "request_skill",
-                "selection_mode": "detour",
-                "reason": "Need source evidence.",
-                "skill_result": {
-                    "status": "ok",
-                    "result_summary": {"card_count": 1},
-                },
-                "budget_state": {"mode": "detour", "act_index": 1},
-                "source_scent": "present",
-                "detour_value": "source_support_requested",
+                "decision": "choose_unit",
+                "selection_mode": "mainline",
+                "reason": "The next source unit is ready.",
+                "budget_state": {"mode": "mainline", "act_index": 1},
                 "continuity_cost": "not_assessed",
                 "active_recall_needed": False,
-                "look_back_needed": True,
-                "support_signal_reason": "source_skill_requested",
-            },
-            {
-                "decision": "choose_unit",
-                "selection_mode": "detour",
-                "reason": "Source evidence is sufficient.",
-                "start_sentence_id": "c1-s1",
-                "end_sentence_id": "c1-s2",
-                "budget_state": {"mode": "detour", "act_index": 2},
-                "source_scent": "present",
-                "detour_value": "source_support_available",
-                "continuity_cost": "budget_used",
-                "active_recall_needed": False,
                 "look_back_needed": False,
-                "support_signal_reason": "source_evidence_available",
             },
         ],
         detour_trace_evidence={
@@ -283,18 +267,12 @@ def test_record_read_writes_compact_navigation_and_detour_evidence(tmp_path: Pat
     assert audit_line["memory_uptake_ops"] == []
     assert audit_line["memory_uptake_op_count"] == 0
     assert audit_line["memory_uptake_ops_by_target_store"] == {}
-    assert audit_line["navigation_trace"][0]["decision"] == "request_skill"
-    assert audit_line["navigation_trace"][0]["skill_result"]["result_summary"] == {"card_count": 1}
-    assert audit_line["navigation_trace"][0]["look_back_needed"] is True
+    assert audit_line["navigation_trace"][0]["decision"] == "choose_unit"
+    assert audit_line["navigation_trace"][0]["selection_mode"] == "mainline"
     assert audit_line["navigation_trace"][0]["active_recall_needed"] is False
-    assert audit_line["navigation_trace"][0]["detour_value"] == "source_support_requested"
-    assert audit_line["navigation_trace"][1]["decision"] == "choose_unit"
-    assert audit_line["navigation_trace"][1]["source_scent"] == "present"
-    assert audit_line["navigation_trace"][1]["continuity_cost"] == "budget_used"
-    assert audit_line["detour_trace_evidence"]["active_detour_id"] == "detour:2:c2-s1:1"
-    assert audit_line["detour_trace_evidence"]["detour_trace_summary"][0]["open_reason"] == "Need the opening setup."
-    assert audit_line["detour_trace_evidence"]["detour_value"] == "source_support_available"
-    assert isinstance(audit_line["detour_trace_evidence"]["continuity_cost"], str)
+    assert audit_line["deprecated_detour_need_ignored"]["target_hint"] == "opening setup"
+    assert "detour_trace_evidence" not in audit_line
+    assert "detour_need" not in audit_line
 
 
 def test_record_read_writes_look_back_supplemental_retrieval_audit(tmp_path: Path) -> None:
