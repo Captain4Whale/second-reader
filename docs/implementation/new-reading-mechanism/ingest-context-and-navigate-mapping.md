@@ -169,10 +169,8 @@ You are in the Ingest step of a sequential deep-reading loop.
 This step happens before Digest. You are not yet reading the selected unit for interpretation or reader-facing output. You are previewing the bounded forward source area from the current reading cursor in order to prepare Digest.
 
 Your work in this call has two outputs:
-- select the next forward source unit that should be read by Digest;
-- request prior-reading memory support that would help Digest read that selected unit continuously.
-
-The memory support you output is only a retrieval request/query plan. Do not perform retrieval yourself; the runtime will execute allowed memory retrieval after it resolves and accepts the selected unit.
+- select the next forward source unit that you should read carefully in the Digest step;
+- request prior-reading memory support that would help you read that selected unit continuously in the Digest step.
 ```
 
 - `ContextUseGuide`
