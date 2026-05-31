@@ -40,7 +40,6 @@ from .prompts import (
     RECONSOLIDATION_PROMPT_VERSION,
     REFLECTIVE_PROMOTION_PROMPT_VERSION,
 )
-from .read_context import build_carry_forward_context, resolve_context_request
 from .resume import (
     build_shared_cursor,
     capture_local_continuity,
@@ -94,7 +93,7 @@ from .state_ops import (
     upsert_knowledge_activation,
     upsert_reflective_item,
 )
-from .state_projection import STATE_PACKET_VERSION, build_navigation_context, context_ref_ids
+from .state_projection import STATE_PACKET_VERSION, build_carry_forward_context, build_navigation_context, context_ref_ids
 from .survey import build_book_survey, build_revisit_index, write_book_survey_artifacts
 from .storage import ATTENTIONAL_V2_MECHANISM_KEY, artifact_map, initialize_artifact_tree
 
@@ -170,7 +169,6 @@ __all__ = [
     "replace_policy_section",
     "reflective_promotion",
     "resolve_search_policy_mode",
-    "resolve_context_request",
     "run_phase6_chapter_cycle",
     "run_mechanism_integrity_checks",
     "set_knowledge_use_mode",

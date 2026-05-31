@@ -17,10 +17,10 @@ from .assembler import PromptAssembler, PromptAssemblyResult, PromptAssemblySpec
 from .types import PromptDefinition
 
 
-READ_UNIT_PROMPT_VERSION = 'attentional_v2.read.v31'
-READ_XML_PROMPT_VERSION = "attentional_v2.read.xml.v1"
-READ_XML_PROMPT_ASSEMBLY_SPEC_ID = "attentional_v2.read_unit.xml.v1"
-READ_XML_PROMPTSET_VERSION = "attentional_v2-phase6-v39"
+READ_UNIT_PROMPT_VERSION = 'attentional_v2.read.v32'
+READ_XML_PROMPT_VERSION = "attentional_v2.read.xml.v2"
+READ_XML_PROMPT_ASSEMBLY_SPEC_ID = "attentional_v2.read_unit.xml.v2"
+READ_XML_PROMPTSET_VERSION = "attentional_v2-phase6-v40"
 READ_XML_TRANSPORT_SYSTEM_PROMPT = "Follow the structured Read prompt in the user message. Return JSON only."
 
 
@@ -558,21 +558,7 @@ def _human_position(*, chapter_title: str, current_unit_source: dict[str, object
     return chapter_title
 
 
-def _reading_path_mode(
-    *,
-    reading_path_mode: str,
-    detour_context: dict[str, object] | None,
-) -> str:
-    del reading_path_mode, detour_context
-    return "mainline"
-
-
-def _reading_intent_payload(
-    *,
-    mode: str,
-    detour_context: dict[str, object] | None,
-) -> dict[str, object]:
-    del mode, detour_context
+def _reading_intent_payload() -> dict[str, object]:
     return {"intent": "read_current_source_unit_in_sequence"}
 
 
@@ -581,15 +567,9 @@ def render_read_current_focus_xml(
     chapter_title: str,
     current_unit_source: dict[str, object] | None = None,
     current_unit_sentences: list[dict[str, object]] | None = None,
-    reading_path_mode: str = "mainline",
-    detour_context: dict[str, object] | None = None,
 ) -> str:
     """Render target CurrentFocus XML without changing live Read prompts."""
 
-    normalized_mode = _reading_path_mode(
-        reading_path_mode=reading_path_mode,
-        detour_context=detour_context,
-    )
     template = _read_current_focus_template(
         _reading_object_node(
             current_unit_source=current_unit_source,
@@ -600,7 +580,7 @@ def render_read_current_focus_xml(
         template,
         registry=PromptFragmentRegistry([]),
         slot_values={
-            "reading_path": _json_prompt_object({"mode": normalized_mode}),
+            "reading_path": _json_prompt_object({"mode": "mainline"}),
             "reading_position": _json_prompt_object(
                 _compact_prompt_object(
                     {
@@ -612,12 +592,7 @@ def render_read_current_focus_xml(
                     }
                 )
             ),
-            "reading_intent": _json_prompt_object(
-                _reading_intent_payload(
-                    mode=normalized_mode,
-                    detour_context=detour_context,
-                )
-            ),
+            "reading_intent": _json_prompt_object(_reading_intent_payload()),
         },
     )
 
@@ -680,20 +655,6 @@ Shape:
 Write only Recent Reading Memory entries here.
 Do not include operation-level reasons.
 Do not write durable memory, digests, hidden routing state, or other memory stores in this field.""",
-)
-
-
-READ_DETOUR_NEED_CONTRACT_FRAGMENT = PromptFragment(
-    fragment_id="read.detour_need_contract",
-    text="""Deprecated after DEC-103/DEC-104: `detour_need` was an optional output routing intent.
-Shape:
-{
-  "reason": "...",
-  "target_hint": "...",
-  "status": "open|resolved|abandoned"
-}
-It is not a memory store and not a self-routed action.
-Normal mainline output should use null.""",
 )
 
 
@@ -817,7 +778,7 @@ def build_read_prompt_assembly_spec(
             "reading_intent",
             "language_contract",
         ),
-        output_contract="read_unit_xml_json_v2",
+        output_contract="read_unit_xml_json_v3",
     )
 
 
@@ -830,15 +791,9 @@ def render_read_prompt_xml(
     recent_reading_memory: Mapping[str, object] | None = None,
     current_unit_source: dict[str, object] | None = None,
     current_unit_sentences: list[dict[str, object]] | None = None,
-    reading_path_mode: str = "mainline",
-    detour_context: dict[str, object] | None = None,
 ) -> PromptAssemblyResult:
     """Render the full target Read XML prompt without changing legacy defaults."""
 
-    normalized_mode = _reading_path_mode(
-        reading_path_mode=reading_path_mode,
-        detour_context=detour_context,
-    )
     return PromptAssembler().assemble(
         build_read_prompt_assembly_spec(
             current_unit_source=current_unit_source,
@@ -854,7 +809,7 @@ def render_read_prompt_xml(
             "recent_memory": _json_prompt_value(
                 _recent_memory_texts_for_read(recent_reading_memory)
             ),
-            "reading_path": _json_prompt_object({"mode": normalized_mode}),
+            "reading_path": _json_prompt_object({"mode": "mainline"}),
             "reading_position": _json_prompt_object(
                 _compact_prompt_object(
                     {
@@ -866,12 +821,7 @@ def render_read_prompt_xml(
                     }
                 )
             ),
-            "reading_intent": _json_prompt_object(
-                _reading_intent_payload(
-                    mode=normalized_mode,
-                    detour_context=detour_context,
-                )
-            ),
+            "reading_intent": _json_prompt_object(_reading_intent_payload()),
             "language_contract": LANGUAGE_OUTPUT_CONTRACT.format(
                 output_language_name=_clean_prompt_value(output_language_name)
             ),

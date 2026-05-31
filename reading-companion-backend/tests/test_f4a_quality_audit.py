@@ -69,7 +69,6 @@ def test_load_case_summary_reports_artifact_flags_and_surfaced_semantic_counts(t
     output_dir = tmp_path / "outputs" / "demo" / "attentional_v2"
     read_audit_path = module.read_audit_file(output_dir)
     reaction_records_path = module.reaction_records_file(output_dir)
-    local_continuity_path = module.local_continuity_file(output_dir)
     normalized_path = module.normalized_eval_bundle_file(output_dir)
     chapter_result_path = module.chapter_result_compatibility_file(output_dir, 1)
 
@@ -81,8 +80,6 @@ def test_load_case_summary_reports_artifact_flags_and_surfaced_semantic_counts(t
                     {
                         "surfaced_reaction_count": 0,
                         "pressure_signals": {"continuation_pressure": False, "backward_pull": True, "frame_shift_pressure": False},
-                        "deprecated_context": "historical_detour_need_fixture_after_DEC_104",
-                        "detour_need": {"status": "open"},
                     },
                     ensure_ascii=False,
                 ),
@@ -90,8 +87,6 @@ def test_load_case_summary_reports_artifact_flags_and_surfaced_semantic_counts(t
                     {
                         "surfaced_reaction_count": 2,
                         "pressure_signals": {"continuation_pressure": True, "backward_pull": False, "frame_shift_pressure": True},
-                        "deprecated_context": "historical_detour_need_fixture_after_DEC_104",
-                        "detour_need": {"status": "resolved"},
                     },
                     ensure_ascii=False,
                 ),
@@ -123,17 +118,6 @@ def test_load_case_summary_reports_artifact_flags_and_surfaced_semantic_counts(t
                         "search_intent": {"query": "what next"},
                     },
                 ]
-            },
-            ensure_ascii=False,
-        )
-        + "\n",
-        encoding="utf-8",
-    )
-    local_continuity_path.write_text(
-        json.dumps(
-            {
-                "deprecated_context": "historical_detour_trace_fixture_after_DEC_104",
-                "detour_trace": [{"detour_id": "d1"}],
             },
             ensure_ascii=False,
         )
@@ -178,7 +162,6 @@ def test_load_case_summary_reports_artifact_flags_and_surfaced_semantic_counts(t
         "backward_pull": 1,
         "frame_shift_pressure": 1,
     }
-    assert summary["detour_status_counts"] == {"open": 1, "resolved": 1, "abandoned": 0}
     assert summary["prior_link_count"] == 1
     assert summary["outside_link_count"] == 1
     assert summary["search_intent_count"] == 1

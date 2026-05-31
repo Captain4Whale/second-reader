@@ -208,10 +208,9 @@ def test_record_read_writes_memory_uptake_op_contracts(tmp_path: Path) -> None:
     ]
     assert "supplemental_retrieval" not in audit_line
     assert "navigation_trace" not in audit_line
-    assert "detour_trace_evidence" not in audit_line
 
 
-def test_record_read_writes_compact_navigation_and_ignores_detour_evidence(tmp_path: Path) -> None:
+def test_record_read_writes_compact_navigation(tmp_path: Path) -> None:
     output_dir = tmp_path / "output"
 
     record_read(
@@ -225,11 +224,6 @@ def test_record_read_writes_compact_navigation_and_ignores_detour_evidence(tmp_p
             "surfaced_reactions": [],
             "memory_uptake_ops": [],
             "memory_uptake_admission_events": [],
-            "deprecated_detour_need_ignored": {
-                "reason": "Legacy detour request.",
-                "target_hint": "opening setup",
-                "status": "open",
-            },
         },
         navigation_trace=[
             {
@@ -238,28 +232,9 @@ def test_record_read_writes_compact_navigation_and_ignores_detour_evidence(tmp_p
                 "reason": "The next source unit is ready.",
                 "budget_state": {"mode": "mainline", "act_index": 1},
                 "continuity_cost": "not_assessed",
-                "active_recall_needed": False,
-                "look_back_needed": False,
+                "extra_marker": "ignored",
             },
         ],
-        detour_trace_evidence={
-            "selection_mode": "detour",
-            "active_detour_id": "detour:2:c2-s1:1",
-            "detour_trace_summary": [
-                {
-                    "detour_id": "detour:2:c2-s1:1",
-                    "origin_target_hint": "opening setup",
-                    "status": "open",
-                    "open_reason": "Need the opening setup.",
-                }
-            ],
-            "source_scent": "present",
-            "detour_value": "source_support_available",
-            "continuity_cost": "budget_used",
-            "active_recall_needed": False,
-            "look_back_needed": False,
-            "support_signal_reason": "source_evidence_available",
-        },
     )
 
     audit_line = json.loads(read_audit_file(output_dir).read_text(encoding="utf-8").strip())
@@ -269,14 +244,17 @@ def test_record_read_writes_compact_navigation_and_ignores_detour_evidence(tmp_p
     assert audit_line["memory_uptake_ops_by_target_store"] == {}
     assert audit_line["navigation_trace"][0]["decision"] == "choose_unit"
     assert audit_line["navigation_trace"][0]["selection_mode"] == "mainline"
-    assert audit_line["navigation_trace"][0]["active_recall_needed"] is False
-    assert audit_line["deprecated_detour_need_ignored"]["target_hint"] == "opening setup"
-    assert "detour_trace_evidence" not in audit_line
-    assert "detour_need" not in audit_line
+    assert set(audit_line["navigation_trace"][0]) == {
+        "decision",
+        "selection_mode",
+        "reason",
+        "budget_state",
+        "continuity_cost",
+    }
 
 
-def test_record_read_writes_look_back_supplemental_retrieval_audit(tmp_path: Path) -> None:
-    """Deprecated look_back compatibility remains visible in historical read audit."""
+def test_record_read_writes_source_context_retrieval_audit(tmp_path: Path) -> None:
+    """Source-context retrieval audit keeps compact availability metadata."""
 
     output_dir = tmp_path / "output"
 
@@ -286,16 +264,16 @@ def test_record_read_writes_look_back_supplemental_retrieval_audit(tmp_path: Pat
         chapter_ref="Chapter 1",
         unitize_decision={"boundary_type": "paragraph_end"},
         carry_forward_context={},
-        context_request={"kind": "look_back", "reason": "Need exact wording."},
+        context_request={"kind": "source_context", "reason": "Need exact wording."},
         supplemental_context={
-            "kind": "look_back",
+            "kind": "source_context",
             "reason": "Need exact wording.",
             "retrieval_intent": "source_calibration",
             "result_boundary": "source_refs_and_excerpts",
             "result_groups": ["source_refs", "excerpts", "refs"],
             "retrieval_events": [
                 {
-                    "kind": "look_back",
+                    "kind": "source_context",
                     "retrieval_intent": "source_calibration",
                     "result_boundary": "source_refs_and_excerpts",
                     "result_groups": ["source_refs", "excerpts", "refs"],
@@ -306,7 +284,7 @@ def test_record_read_writes_look_back_supplemental_retrieval_audit(tmp_path: Pat
             "refs": [{"ref_id": "source:alpha", "kind": "source", "source_span_id": "src:c1:p1"}],
         },
         supplemental_satisfied=True,
-        supplemental_steps=[{"kind": "look_back", "status": "resolved"}],
+        supplemental_steps=[{"kind": "source_context", "status": "resolved"}],
         read_result={
             "reading_impression": "A hinge appears.",
             "surfaced_reactions": [],
@@ -317,10 +295,10 @@ def test_record_read_writes_look_back_supplemental_retrieval_audit(tmp_path: Pat
 
     audit_line = json.loads(read_audit_file(output_dir).read_text(encoding="utf-8").strip())
 
-    assert audit_line["context_request"]["kind"] == "look_back"
+    assert audit_line["context_request"]["kind"] == "source_context"
     assert audit_line["supplemental_ref_ids"] == ["source:alpha"]
     assert audit_line["supplemental_satisfied"] is True
-    assert audit_line["supplemental_steps"] == [{"kind": "look_back", "status": "resolved"}]
+    assert audit_line["supplemental_steps"] == [{"kind": "source_context", "status": "resolved"}]
     assert audit_line["memory_uptake_ops"] == []
     supplemental_retrieval = audit_line["supplemental_retrieval"]
     assert supplemental_retrieval["retrieval_intent"] == "source_calibration"
@@ -340,8 +318,8 @@ def test_record_read_writes_look_back_supplemental_retrieval_audit(tmp_path: Pat
     assert supplemental_retrieval["utilization_basis"] == "not_claimed_by_read_output"
 
 
-def test_record_read_writes_sparse_active_recall_retrieval_audit(tmp_path: Path) -> None:
-    """Deprecated active_recall compatibility remains visible in historical read audit."""
+def test_record_read_writes_sparse_memory_context_retrieval_audit(tmp_path: Path) -> None:
+    """Memory-context retrieval audit keeps metadata without forwarding full objects."""
 
     output_dir = tmp_path / "output"
 
@@ -351,16 +329,16 @@ def test_record_read_writes_sparse_active_recall_retrieval_audit(tmp_path: Path)
         chapter_ref="Chapter 1",
         unitize_decision={"boundary_type": "paragraph_end"},
         carry_forward_context={},
-        context_request={"kind": "active_recall", "reason": "Need prior memory."},
+        context_request={"kind": "memory_context", "reason": "Need prior memory."},
         supplemental_context={
-            "kind": "active_recall",
+            "kind": "memory_context",
             "reason": "Need prior memory.",
             "retrieval_intent": "memory_recovery",
             "result_boundary": "settled_memory_refs_and_visible_trace_refs",
             "result_groups": ["concepts", "refs"],
             "retrieval_events": [
                 {
-                    "kind": "active_recall",
+                    "kind": "memory_context",
                     "retrieval_intent": "memory_recovery",
                     "result_boundary": "settled_memory_refs_and_visible_trace_refs",
                     "result_groups": ["concepts", "refs"],
@@ -370,7 +348,7 @@ def test_record_read_writes_sparse_active_recall_retrieval_audit(tmp_path: Path)
             "refs": [{"ref_id": "concept:promise", "kind": "concept", "summary": "A promise remains active."}],
         },
         supplemental_satisfied=True,
-        supplemental_steps=[{"kind": "active_recall", "status": "resolved"}],
+        supplemental_steps=[{"kind": "memory_context", "status": "resolved"}],
         read_result={
             "reading_impression": "A hinge appears.",
             "surfaced_reactions": [{"reaction_id": "reaction-1", "thought": "Still not proof of utilization."}],
@@ -415,13 +393,13 @@ def test_record_read_writes_mixed_retrieval_audit_without_semantic_reaction_memo
             "result_groups": ["source_refs", "excerpts", "refs", "concepts", "reactions"],
             "retrieval_events": [
                 {
-                    "kind": "look_back",
+                    "kind": "source_context",
                     "retrieval_intent": "source_calibration",
                     "result_boundary": "source_refs_and_excerpts",
                     "result_groups": ["source_refs", "excerpts", "refs"],
                 },
                 {
-                    "kind": "active_recall",
+                    "kind": "memory_context",
                     "retrieval_intent": "memory_recovery",
                     "result_boundary": "settled_memory_refs_and_visible_trace_refs",
                     "result_groups": ["concepts", "reactions", "refs"],
@@ -461,7 +439,7 @@ def test_record_read_writes_mixed_retrieval_audit_without_semantic_reaction_memo
     audit_line = json.loads(read_audit_file(output_dir).read_text(encoding="utf-8").strip())
     supplemental_retrieval = audit_line["supplemental_retrieval"]
 
-    assert [event["kind"] for event in supplemental_retrieval["retrieval_events"]] == ["look_back", "active_recall"]
+    assert [event["kind"] for event in supplemental_retrieval["retrieval_events"]] == ["source_context", "memory_context"]
     assert supplemental_retrieval["retrieval_intent"] == "mixed"
     assert supplemental_retrieval["result_boundary"] == "supplemental_bundle"
     assert supplemental_retrieval["forwarded_result_groups"] == ["source_refs", "excerpts", "refs"]

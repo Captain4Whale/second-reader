@@ -40,6 +40,7 @@ Update when: document layering, reading order, task routing, or cross-project co
 - The repo-local Memory / Planning / Evaluation optimization design chain lives at `docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`.
 - As of `DEC-103`, this track is paused / superseded as the default source for new mechanism implementation.
 - Treat ActiveTension expansion, Recent Reading Memory consolidation, Thread / Progression / Development memory, Read XML context migration, Detour, and source-backread work in that track as historical/reference material unless a later task explicitly re-adopts a slice.
+- As of `DEC-105`, retired Detour / source-backread / source-skill compatibility interfaces are not a current `attentional_v2` code, prompt, schema, audit, or test surface.
 - Current mechanism-direction authority lives in `docs/current-state.md`, `docs/tasks/registry.md`, and the relevant stable mechanism docs.
 - Do not continue implementation from the paused Memory / Planning track by inertia; new work should follow the user's current product goal and mechanism design instructions.
 

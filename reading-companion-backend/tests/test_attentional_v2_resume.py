@@ -195,8 +195,8 @@ def test_persist_reading_position_recreates_missing_runtime_shell_with_default_s
     assert shell["cursor"]["sentence_id"] == "c1-s6"
 
 
-def test_persist_reading_position_drops_legacy_detour_state(tmp_path: Path):
-    """Persisting position should not carry legacy detour state into live continuity snapshots."""
+def test_persist_reading_position_keeps_only_current_continuity_fields(tmp_path: Path):
+    """Persisting position should drop unknown continuity fields from live snapshots."""
 
     output_dir = tmp_path / "output" / "demo-book"
     AttentionalV2Mechanism().initialize_artifacts(output_dir)
@@ -215,37 +215,18 @@ def test_persist_reading_position_drops_legacy_detour_state(tmp_path: Path):
                 "sentence_id": "c1-s6",
             },
             "reading_queue_stage": "deferred_support",
-            "active_detour_id": "detour:1:c1-s6:1",
-            "active_detour_need": {
-                "reason": "Need to revisit the earlier setup.",
-                "target_hint": "the opening setup",
-                "status": "open",
-            },
-            "detour_trace": [
-                {
-                    "detour_id": "detour:1:c1-s6:1",
-                    "origin_cursor": {
-                        "position_kind": "sentence",
-                        "chapter_id": 1,
-                        "chapter_ref": "Chapter 1",
-                        "sentence_id": "c1-s6",
-                    },
-                    "origin_target_hint": "the opening setup",
-                    "status": "open",
-                    "open_reason": "Need to revisit the earlier setup.",
-                    "last_navigation_decision": "request_skill",
-                    "last_navigation_reason": "Fetch opening context.",
-                }
-            ],
+            "stale_route_id": "old-route",
+            "stale_route_payload": {"status": "open"},
+            "stale_route_trace": [{"status": "open"}],
         },
     )
 
     continuity = persisted["local_continuity"]
     shell = load_runtime_shell(runtime_shell_file(output_dir))
     assert continuity["reading_queue_stage"] == "deferred_support"
-    assert "active_detour_id" not in continuity
-    assert "active_detour_need" not in continuity
-    assert "detour_trace" not in continuity
+    assert "stale_route_id" not in continuity
+    assert "stale_route_payload" not in continuity
+    assert "stale_route_trace" not in continuity
     assert shell["reading_queue_stage"] == "deferred_support"
 
 

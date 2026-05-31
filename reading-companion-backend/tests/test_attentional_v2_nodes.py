@@ -51,7 +51,6 @@ def test_navigate_act_space_remains_bounded() -> None:
     """Navigate should keep the accepted bounded act space."""
 
     assert nodes_module._NAVIGATE_ACT_DECISIONS == {"choose_unit"}  # noqa: SLF001
-    assert nodes_module._DEPRECATED_NAVIGATE_ACT_DECISIONS == {"request_skill", "defer_detour"}  # noqa: SLF001
 
 
 def _navigate_act(
@@ -59,13 +58,10 @@ def _navigate_act(
     tmp_path: Path,
     preview_sentences: list[dict[str, object]],
     output_language: str = "en",
-    active_detour_need: dict[str, object] | None = None,
-    skills_allowed: bool = False,
-    allowed_sentence_ids: set[str] | None = None,
 ) -> dict[str, object]:
     return navigate_choose_next_unit_act(
         reading_position={
-            "mode": "detour" if active_detour_need else "mainline",
+            "mode": "mainline",
             "current_sentence_id": preview_sentences[0]["sentence_id"] if preview_sentences else "",
         },
         mainline_preview={
@@ -76,20 +72,12 @@ def _navigate_act(
             },
             "preview_sentences": preview_sentences,
         },
-        active_detour_need=active_detour_need,
         mainline_cursor={"chapter_id": 2, "sentence_id": "c2-s1"},
         navigation_context=_navigation_context(),
-        source_evidence={},
-        skill_catalog=[{"skill_name": "source_window_fetch"}] if skills_allowed else [],
-        skill_results_so_far=[],
-        budget_state={"skills_allowed": skills_allowed},
+        budget_state={"mode": "mainline", "act_index": 1, "max_acts": 1},
         reader_policy=build_default_reader_policy(),
         output_language=output_language,
         output_dir=tmp_path,
-        available_sentences=preview_sentences,
-        allowed_sentence_ids=allowed_sentence_ids or {str(sentence["sentence_id"]) for sentence in preview_sentences},
-        default_selection_mode="detour" if active_detour_need else "mainline",
-        skills_allowed=skills_allowed,
     )
 
 
@@ -117,8 +105,8 @@ def test_build_unitize_preview_stays_within_current_and_next_non_heading_paragra
     }
 
 
-def test_navigate_choose_next_unit_writes_manifest_and_applies_sentence_cap(tmp_path: Path, monkeypatch):
-    """Navigate should honor the prompt result, then clamp it to the emergency coverage ceiling."""
+def test_navigate_choose_next_unit_writes_manifest_and_uses_anchor_contract(tmp_path: Path, monkeypatch):
+    """Navigate should write a prompt manifest and keep the current forward anchor contract."""
 
     captured: dict[str, str] = {}
 
@@ -126,10 +114,10 @@ def test_navigate_choose_next_unit_writes_manifest_and_applies_sentence_cap(tmp_
         captured["system_prompt"] = system_prompt
         captured["prompt"] = prompt
         return {
-            "start_sentence_id": "c1-s1",
-            "end_sentence_id": "c1-s2",
+            "decision": "choose_unit",
+            "selection_mode": "mainline",
+            "end_anchor_text": "Beta.",
             "boundary_type": "cross_paragraph_continuation",
-            "evidence_sentence_ids": ["c1-s1", "c1-s2"],
             "reason": "The line clearly keeps running.",
             "continuation_pressure": True,
         }
@@ -150,28 +138,19 @@ def test_navigate_choose_next_unit_writes_manifest_and_applies_sentence_cap(tmp_
             "preview_range": {"start_sentence_id": "c1-s1", "end_sentence_id": "c1-s2"},
             "preview_sentences": preview_sentences,
         },
-        active_detour_need=None,
         mainline_cursor={},
         navigation_context=_navigation_context(),
-        source_evidence={},
-        skill_catalog=[],
-        skill_results_so_far=[],
-        budget_state={"skills_allowed": False},
+        budget_state={"mode": "mainline", "act_index": 1, "max_acts": 1},
         reader_policy=reader_policy,
         output_language="en",
         output_dir=tmp_path,
-        available_sentences=preview_sentences,
-        allowed_sentence_ids={"c1-s1", "c1-s2"},
-        default_selection_mode="mainline",
-        skills_allowed=False,
     )
 
     manifest = json.loads((tmp_path / "_mechanisms" / "attentional_v2" / "internal" / "prompt_manifests" / "navigate_choose_next_unit.json").read_text(encoding="utf-8"))
 
     assert decision["decision"] == "choose_unit"
-    assert decision["start_sentence_id"] == "c1-s1"
-    assert decision["end_sentence_id"] == "c1-s1"
-    assert decision["preview_range"]["end_sentence_id"] == "c1-s2"
+    assert decision["selection_mode"] == "mainline"
+    assert decision["end_anchor_text"] == "Beta."
     assert decision["continuation_pressure"] is True
     assert "\"packet_version\": \"attentional_v2.state_packet.v1\"" in captured["prompt"]
     assert "weak structure cues, not automatic permission to cut a standalone unit" in captured["system_prompt"]
@@ -179,18 +158,18 @@ def test_navigate_choose_next_unit_writes_manifest_and_applies_sentence_cap(tmp_
     assert "Use them as structural cues, not content" in captured["system_prompt"]
     assert "Never trim symbols or unusual characters that belong to a substantive sentence" in captured["system_prompt"]
     assert "Mainline preview" in captured["prompt"]
-    assert manifest["prompt_version"] == "attentional_v2.navigate_choose_next_unit.v2"
+    assert manifest["prompt_version"] == "attentional_v2.navigate_choose_next_unit.v3"
 
 
 def test_navigate_choose_next_unit_can_trim_leading_boundary_residue(tmp_path: Path, monkeypatch):
-    """Navigate may start after a pure separator when the LLM treats it as boundary residue."""
+    """Navigate preserves the selected end anchor for a short structural unit."""
 
     def fake_invoke_json(_system_prompt: str, _prompt: str, default: object) -> object:
         return {
-            "start_sentence_id": "c1-s2",
-            "end_sentence_id": "c1-s2",
+            "decision": "choose_unit",
+            "selection_mode": "mainline",
+            "end_anchor_text": "运用专长，发挥杠杆效应，最终你会得到自己应得的。",
             "boundary_type": "paragraph_end",
-            "evidence_sentence_ids": ["c1-s2"],
             "reason": "The divider is a structural cue, not content.",
             "continuation_pressure": False,
         }
@@ -204,22 +183,21 @@ def test_navigate_choose_next_unit_can_trim_leading_boundary_residue(tmp_path: P
 
     decision = _navigate_act(tmp_path=tmp_path, preview_sentences=preview_sentences, output_language="zh")
 
-    assert decision["preview_range"]["start_sentence_id"] == "c1-s1"
-    assert decision["start_sentence_id"] == "c1-s2"
-    assert decision["end_sentence_id"] == "c1-s2"
-    assert decision["evidence_sentence_ids"] == ["c1-s2"]
+    assert decision["decision"] == "choose_unit"
+    assert decision["selection_mode"] == "mainline"
+    assert decision["end_anchor_text"] == "运用专长，发挥杠杆效应，最终你会得到自己应得的。"
 
 
 def test_navigate_choose_next_unit_refuses_to_trim_leading_lexical_content(tmp_path: Path, monkeypatch):
-    """A shifted start is accepted only when skipped leading sentences are pure residue."""
+    """Navigate no longer exposes a separate mutable start boundary."""
 
     def fake_invoke_json(_system_prompt: str, _prompt: str, default: object) -> object:
         return {
-            "start_sentence_id": "c1-s2",
-            "end_sentence_id": "c1-s2",
+            "decision": "choose_unit",
+            "selection_mode": "mainline",
+            "end_anchor_text": "Other people are typically a problem until they prove otherwise.",
             "boundary_type": "paragraph_end",
-            "evidence_sentence_ids": ["c1-s2"],
-            "reason": "Badly tries to skip normal content.",
+            "reason": "The visible sentence completes the local move.",
             "continuation_pressure": False,
         }
 
@@ -232,13 +210,12 @@ def test_navigate_choose_next_unit_refuses_to_trim_leading_lexical_content(tmp_p
 
     decision = _navigate_act(tmp_path=tmp_path, preview_sentences=preview_sentences)
 
-    assert decision["start_sentence_id"] == "c1-s1"
-    assert decision["end_sentence_id"] == "c1-s2"
-    assert decision["evidence_sentence_ids"] == ["c1-s1", "c1-s2"]
+    assert decision["end_anchor_text"] == "Other people are typically a problem until they prove otherwise."
+    assert "start_sentence_id" not in decision
 
 
 def test_navigate_choose_next_unit_fallback_merges_heading_with_following_body(tmp_path: Path, monkeypatch):
-    """Heading-only fallback should widen to heading plus the next body paragraph when available."""
+    """LLM failure should fall back to an empty anchor and safe forward act shape."""
 
     monkeypatch.setattr(
         nodes_module,
@@ -256,14 +233,14 @@ def test_navigate_choose_next_unit_fallback_merges_heading_with_following_body(t
 
     decision = _navigate_act(tmp_path=tmp_path, preview_sentences=preview_sentences, output_language="zh")
 
-    assert decision["start_sentence_id"] == "c1-s1"
-    assert decision["end_sentence_id"] == "c1-s3"
-    assert decision["evidence_sentence_ids"] == ["c1-s1", "c1-s2", "c1-s3"]
-    assert decision["reason"] == "unitize_fallback_heading_with_body"
+    assert decision["decision"] == "choose_unit"
+    assert decision["selection_mode"] == "mainline"
+    assert decision["end_anchor_text"] == ""
+    assert decision["reason"] == "navigate_choose_next_unit_llm_error"
 
 
 def test_navigate_choose_next_unit_fallback_keeps_body_paragraph_behavior(tmp_path: Path, monkeypatch):
-    """Ordinary body fallback should still stop at the current paragraph end."""
+    """Ordinary body fallback keeps the same safe forward act shape."""
 
     monkeypatch.setattr(
         nodes_module,
@@ -281,13 +258,13 @@ def test_navigate_choose_next_unit_fallback_keeps_body_paragraph_behavior(tmp_pa
 
     decision = _navigate_act(tmp_path=tmp_path, preview_sentences=preview_sentences)
 
-    assert decision["end_sentence_id"] == "c1-s2"
-    assert decision["evidence_sentence_ids"] == ["c1-s1", "c1-s2"]
-    assert decision["reason"] == "unitize_fallback_current_paragraph"
+    assert decision["end_anchor_text"] == ""
+    assert decision["boundary_type"] == "paragraph_end"
+    assert decision["reason"] == "navigate_choose_next_unit_llm_error"
 
 
 def test_navigate_choose_next_unit_fallback_allows_heading_only_when_no_body_follows(tmp_path: Path, monkeypatch):
-    """Heading fallback may remain isolated when the preview does not contain a following body paragraph."""
+    """Heading-only fallback keeps the same safe forward act shape."""
 
     monkeypatch.setattr(
         nodes_module,
@@ -303,92 +280,8 @@ def test_navigate_choose_next_unit_fallback_allows_heading_only_when_no_body_fol
 
     decision = _navigate_act(tmp_path=tmp_path, preview_sentences=preview_sentences)
 
-    assert decision["end_sentence_id"] == "c1-s1"
-    assert decision["evidence_sentence_ids"] == ["c1-s1"]
-    assert decision["reason"] == "unitize_fallback_current_paragraph"
-
-
-def test_navigate_choose_next_unit_deprecated_detour_output_normalizes_to_mainline(tmp_path: Path, monkeypatch):
-    """Deprecated detour-shaped Navigate output should fall back to a safe forward unit."""
-
-    monkeypatch.setattr(
-        nodes_module,
-        "invoke_json",
-        lambda *_args, **_kwargs: {
-            "decision": "choose_unit",
-            "selection_mode": "detour",
-            "reason": "Try a sentence that was not offered.",
-            "start_sentence_id": "missing-s1",
-            "end_sentence_id": "missing-s2",
-        },
-    )
-
-    result = _navigate_act(
-        tmp_path=tmp_path,
-        preview_sentences=[
-            _sentence("c1-s1", "Opening setup.", sentence_index=1, paragraph_index=1),
-            _sentence("c1-s2", "More setup.", sentence_index=2, paragraph_index=1),
-        ],
-        active_detour_need={"reason": "Need the setup again.", "target_hint": "opening setup", "status": "open"},
-        allowed_sentence_ids={"c1-s1", "c1-s2"},
-        skills_allowed=True,
-    )
-
-    assert result["decision"] == "choose_unit"
-    assert result["selection_mode"] == "mainline"
-    assert result["end_sentence_id"] == "c1-s2"
-    assert result["reason"] == "Try a sentence that was not offered."
-    manifest = json.loads(
-        (
-            tmp_path
-            / "_mechanisms"
-            / "attentional_v2"
-            / "internal"
-            / "prompt_manifests"
-            / "navigate_choose_next_unit.json"
-        ).read_text(encoding="utf-8")
-    )
-    assert manifest["prompt_version"] == "attentional_v2.navigate_choose_next_unit.v2"
-    assert "choose the next readable unit" in manifest["system_prompt"]
-    assert "Available skills in detour mode only" not in manifest["system_prompt"]
-    assert "source_window_fetch" not in manifest["system_prompt"]
-    assert "Skill results so far" not in manifest["user_prompt"]
-
-
-def test_navigate_choose_next_unit_deprecated_skill_request_normalizes_to_mainline(tmp_path: Path, monkeypatch):
-    """Deprecated skill requests are ignored instead of entering a source-skill loop."""
-
-    monkeypatch.setattr(
-        nodes_module,
-        "invoke_json",
-        lambda *_args, **_kwargs: {
-            "decision": "request_skill",
-            "reason": "Need exact source text before landing.",
-            "skill_request": {
-                "skill_name": "source_window_fetch",
-                "reason": "Fetch the candidate range.",
-                "arguments": {
-                    "start_sentence_id": "c1-s1",
-                    "end_sentence_id": "c1-s2",
-                },
-            },
-        },
-    )
-
-    result = _navigate_act(
-        tmp_path=tmp_path,
-        preview_sentences=[
-            _sentence("c1-s1", "Opening setup.", sentence_index=1, paragraph_index=1),
-            _sentence("c1-s2", "More setup.", sentence_index=2, paragraph_index=1),
-        ],
-        active_detour_need={"reason": "Need the setup again.", "target_hint": "opening setup", "status": "open"},
-        skills_allowed=True,
-    )
-
-    assert result["decision"] == "choose_unit"
-    assert result["selection_mode"] == "mainline"
-    assert "skill_request" not in result
-    assert result["reason"] == "Need exact source text before landing."
+    assert decision["end_anchor_text"] == ""
+    assert decision["reason"] == "navigate_choose_next_unit_llm_error"
 
 
 def test_read_unit_filters_unanchored_surface_and_uses_naturalized_contract(tmp_path: Path, monkeypatch):
@@ -574,7 +467,7 @@ def test_read_unit_filters_unanchored_surface_and_uses_naturalized_contract(tmp_
     assert "\"target_store\": \"concept_registry\"" in captured["prompt"]
     assert "\"target_store\": \"thread_trace\"" in captured["prompt"]
     assert "Do not target `concept_digest`, `thread_digest`, `active_focus_digest`" in captured["system_prompt"]
-    assert manifest["prompt_version"] == "attentional_v2.read.v31"
+    assert manifest["prompt_version"] == "attentional_v2.read.v32"
 
 
 def test_read_unit_can_use_xml_prompt_assembly_mode_without_changing_default(tmp_path: Path, monkeypatch):
@@ -601,7 +494,6 @@ def test_read_unit_can_use_xml_prompt_assembly_mode_without_changing_default(tmp
                     "memory_text": "The current unit frames the book as witness testimony.",
                 }
             ],
-            "detour_need": None,
         }
 
     monkeypatch.setattr(nodes_module, "invoke_json", fake_invoke_json)
@@ -675,9 +567,9 @@ def test_read_unit_can_use_xml_prompt_assembly_mode_without_changing_default(tmp
         "kind": "claim_or_argument",
         "memory_text": "The current unit frames the book as witness testimony.",
     }
-    assert manifest["prompt_version"] == "attentional_v2.read.xml.v1"
+    assert manifest["prompt_version"] == "attentional_v2.read.xml.v2"
     assert manifest["prompt_assembly"]["mode"] == "xml"
-    assert manifest["prompt_assembly"]["spec_id"] == "attentional_v2.read_unit.xml.v1"
+    assert manifest["prompt_assembly"]["spec_id"] == "attentional_v2.read_unit.xml.v2"
     assert manifest["prompt_assembly"]["rendered_blocks"] == [
         "RoleAndInstruction",
         "BookInfo",

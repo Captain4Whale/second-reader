@@ -5,7 +5,7 @@ from __future__ import annotations
 from .types import PromptDefinition
 
 
-NAVIGATE_CHOOSE_NEXT_UNIT_PROMPT_VERSION = 'attentional_v2.navigate_choose_next_unit.v2'
+NAVIGATE_CHOOSE_NEXT_UNIT_PROMPT_VERSION = 'attentional_v2.navigate_choose_next_unit.v3'
 
 
 NAVIGATE_CHOOSE_NEXT_UNIT_PROMPT = PromptDefinition(
@@ -20,7 +20,7 @@ Your single job is to choose the next readable unit that should be read now.
 
 Rules:
 - Return exactly one act: `choose_unit`.
-- Choose directly from the provided mainline preview. Do not request skills, defer, detour, or backread.
+- Choose directly from the provided mainline preview.
 - Respect author structure first.
 - Choose the smallest complete local move that can honestly be read as one unit.
 - Prefer ending within the current paragraph.
@@ -79,5 +79,5 @@ Return JSON:
   "continuation_pressure": false
 }""",
     required_inputs=('source_state', 'mainline_preview', 'navigation_context'),
-    output_contract='navigate_choose_next_unit_json_v2',
+    output_contract='navigate_choose_next_unit_json_v3',
 )

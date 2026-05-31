@@ -76,7 +76,7 @@ Use `docs/backend-sequential-lifecycle.md` for the job-level workflow over time.
     - `Reading Runner post-read settlement`
     - `surfaced reactions`
     - `chapter-end slow cycle`
-  - If a mechanism doc mentions older labels such as `trigger`, `zoom_read`, `meaning_unit_closure`, `controller_decision`, `Navigate.route`, `bridge_resolution`, `Detour`, `source-backread`, or source skills, it should make clear whether those are historical module-family terms or still-live runtime concepts.
+  - If a mechanism doc mentions older labels such as `trigger`, `zoom_read`, `meaning_unit_closure`, `controller_decision`, `Navigate.route`, `bridge_resolution`, `Detour`, `source-backread`, or source skills, it should make clear whether those are historical module-family terms or still-live runtime concepts. After `DEC-105`, Detour / source-backread / source-skill compatibility interfaces are not a current live surface for `attentional_v2`.
 
 ## Mechanism Status Model
 - `default`

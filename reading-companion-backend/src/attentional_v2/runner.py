@@ -39,9 +39,7 @@ from .observability import (
     record_settlement,
     record_unitization,
 )
-from .read_context import build_carry_forward_context
 from .resume import persist_reading_position, resume_from_checkpoint, write_full_checkpoint
-from .skills.source_skills import resolve_visible_sentence_range
 from .source_spans import (
     build_paragraph_offset_preview,
     chapter_end_cursor,
@@ -63,7 +61,6 @@ from .schemas import (
     ATTENTIONAL_V2_POLICY_VERSION,
     AnchoredReactionRecord,
     ConceptRegistryState,
-    DetourNeed,
     KnowledgeActivationsState,
     LocalBufferState,
     LocalContinuityState,
@@ -108,7 +105,7 @@ from .state_ops import (
     apply_active_attention_operations,
 )
 from .state_migration import normalize_active_tension_state
-from .state_projection import build_navigation_context
+from .state_projection import build_carry_forward_context, build_navigation_context
 from .storage import (
     chapter_result_compatibility_file,
     checkpoints_dir,
@@ -239,7 +236,7 @@ def _compat_sentence_cursor_for_source_cursor(
     source_cursor: dict[str, object],
     fallback_cursor: dict[str, object],
 ) -> dict[str, object]:
-    """Deprecated after DEC-103/DEC-104: project a cursor for legacy detour skills."""
+    """Project a paragraph-offset cursor back to the nearest sentence cursor."""
 
     if _clean_text(fallback_cursor.get("sentence_id")):
         return dict(fallback_cursor)
@@ -267,150 +264,6 @@ def _compat_sentence_cursor_for_source_cursor(
             sentence=selected,
         )
     )
-
-
-def _local_continuity_detour_trace(local_continuity: LocalContinuityState) -> list[dict[str, object]]:
-    """Deprecated after DEC-103/DEC-104: historical detour trace reader."""
-
-    if not isinstance(local_continuity.get("detour_trace"), list):
-        local_continuity["detour_trace"] = []
-    return [
-        dict(item)
-        for item in local_continuity.get("detour_trace", [])
-        if isinstance(item, dict)
-    ]
-
-
-def _compact_detour_trace_entry(entry: dict[str, object]) -> dict[str, object]:
-    """Deprecated after DEC-103/DEC-104: compact one historical detour trace entry."""
-
-    compact: dict[str, object] = {
-        "detour_id": _clean_text(entry.get("detour_id")),
-        "origin_cursor": dict(entry.get("origin_cursor", {})) if isinstance(entry.get("origin_cursor"), dict) else {},
-        "origin_target_hint": _clean_text(entry.get("origin_target_hint")),
-        "status": _clean_text(entry.get("status")),
-    }
-    for key in (
-        "open_reason",
-        "defer_reason",
-        "resolve_reason",
-        "abandon_reason",
-        "restore_mainline_reason",
-        "last_navigation_decision",
-        "last_navigation_reason",
-    ):
-        value = _clean_text(entry.get(key))
-        if value:
-            compact[key] = value
-    return compact
-
-
-def _compact_detour_trace(local_continuity: LocalContinuityState, *, limit: int = 4) -> list[dict[str, object]]:
-    """Deprecated after DEC-103/DEC-104: compact historical detour lifecycle trace."""
-
-    return [
-        _compact_detour_trace_entry(entry)
-        for entry in _local_continuity_detour_trace(local_continuity)
-    ][-limit:]
-
-
-def _active_detour_need(local_continuity: LocalContinuityState) -> DetourNeed | None:
-    """Deprecated after DEC-103/DEC-104: live runs no longer activate detours."""
-
-    active_detour_need = local_continuity.get("active_detour_need")
-    if not isinstance(active_detour_need, dict):
-        return None
-    if _clean_text(active_detour_need.get("status")).lower() != "open":
-        return None
-    return dict(active_detour_need)  # type: ignore[return-value]
-
-
-def _sync_active_detour_from_trace(local_continuity: LocalContinuityState) -> LocalContinuityState:
-    """Deprecated after DEC-103/DEC-104: historical detour compatibility only."""
-
-    trace = _local_continuity_detour_trace(local_continuity)
-    for entry in reversed(trace):
-        if _clean_text(entry.get("status")).lower() != "open":
-            continue
-        local_continuity["active_detour_id"] = _clean_text(entry.get("detour_id"))
-        local_continuity["active_detour_need"] = {
-            "reason": _clean_text(entry.get("open_reason")),
-            "target_hint": _clean_text(entry.get("origin_target_hint")),
-            "status": "open",
-        }
-        local_continuity["detour_trace"] = trace
-        return local_continuity
-    local_continuity["active_detour_id"] = ""
-    local_continuity["active_detour_need"] = None
-    local_continuity["detour_trace"] = trace
-    return local_continuity
-
-
-def _apply_detour_need(
-    local_continuity: LocalContinuityState,
-    detour_need: DetourNeed | None,
-) -> LocalContinuityState:
-    """Deprecated after DEC-103/DEC-104: live reads ignore detour needs."""
-
-    if not isinstance(detour_need, dict):
-        return local_continuity
-    status = _clean_text(detour_need.get("status")).lower() or "open"
-    if status not in {"open", "resolved", "abandoned"}:
-        status = "open"
-    trace = _local_continuity_detour_trace(local_continuity)
-    if status == "open":
-        origin_cursor = (
-            dict(local_continuity.get("mainline_cursor", {}))
-            if isinstance(local_continuity.get("mainline_cursor"), dict)
-            else {}
-        )
-        origin_chapter_id = origin_cursor.get("chapter_id")
-        origin_sentence_id = _clean_text(origin_cursor.get("sentence_id"))
-        detour_id = f"detour:{int(origin_chapter_id or 0)}:{origin_sentence_id or 'chapter'}:{len(trace) + 1}"
-        trace.append(
-            {
-                "detour_id": detour_id,
-                "origin_cursor": origin_cursor,
-                "origin_target_hint": _clean_text(detour_need.get("target_hint")),
-                "status": "open",
-                "open_reason": _clean_text(detour_need.get("reason")),
-            }
-        )
-        local_continuity["detour_trace"] = trace
-        local_continuity["active_detour_id"] = detour_id
-        local_continuity["active_detour_need"] = {
-            "reason": _clean_text(detour_need.get("reason")),
-            "target_hint": _clean_text(detour_need.get("target_hint")),
-            "status": "open",
-        }
-        return local_continuity
-
-    active_detour_id = _clean_text(local_continuity.get("active_detour_id"))
-    for entry in trace:
-        if _clean_text(entry.get("detour_id")) != active_detour_id:
-            continue
-        entry["status"] = status
-        reason = _clean_text(detour_need.get("reason"))
-        defer_reason = _clean_text(detour_need.get("defer_reason"))
-        if status == "resolved":
-            entry["resolve_reason"] = reason
-            entry["restore_mainline_reason"] = (
-                _clean_text(detour_need.get("restore_mainline_reason"))
-                or reason
-                or "detour_resolved"
-            )
-        if status == "abandoned":
-            entry["abandon_reason"] = reason
-            entry["defer_reason"] = defer_reason or reason
-        last_navigation_decision = _clean_text(detour_need.get("last_navigation_decision"))
-        if last_navigation_decision:
-            entry["last_navigation_decision"] = last_navigation_decision
-        last_navigation_reason = _clean_text(detour_need.get("last_navigation_reason"))
-        if last_navigation_reason:
-            entry["last_navigation_reason"] = last_navigation_reason
-        break
-    local_continuity["detour_trace"] = trace
-    return _sync_active_detour_from_trace(local_continuity)
 
 
 def _chapter_statuses(document: BookDocument, output_dir: Path) -> dict[int, str]:
@@ -1130,148 +983,6 @@ def _build_sentence_lookup(
     return sentence_lookup, chapter_lookup
 
 
-def _build_detour_navigation_packet(
-    *,
-    chapter_ref: str,
-    local_buffer: LocalBufferState,
-    active_attention: ActiveAttention,
-    recent_reading_memory: RecentReadingMemoryState | None = None,
-    concept_registry: ConceptRegistryState,
-    thread_trace: ThreadTraceState,
-    reflective_frames: ReflectiveFramesState,
-    reaction_records: ReactionRecordsState,
-    continuation_capsule: dict[str, object],
-    local_continuity: LocalContinuityState,
-) -> dict[str, object]:
-    """Deprecated after DEC-103/DEC-104: historical detour-search packet builder."""
-
-    carry_forward_context = build_carry_forward_context(
-        chapter_ref=chapter_ref,
-        current_unit_sentence_ids=[],
-        local_buffer=local_buffer,
-        active_attention=active_attention,
-        recent_reading_memory=recent_reading_memory,
-        concept_registry=concept_registry,
-        thread_trace=thread_trace,
-        reflective_frames=reflective_frames,
-        reaction_records=reaction_records,
-        continuation_capsule=continuation_capsule,
-    )
-    refs = [
-        dict(ref)
-        for ref in carry_forward_context.get("refs", [])
-        if isinstance(ref, dict) and _clean_text(ref.get("kind")) in {"source", "concept", "thread", "reaction"}
-    ][:8]
-    detour_trace_summary = _compact_detour_trace(local_continuity)
-    return {
-        "packet_version": _clean_text(carry_forward_context.get("packet_version")),
-        "mainline_cursor": dict(local_continuity.get("mainline_cursor", {}))
-        if isinstance(local_continuity.get("mainline_cursor"), dict)
-        else {},
-        "active_detour_id": _clean_text(local_continuity.get("active_detour_id")),
-        "active_detour_need": dict(local_continuity.get("active_detour_need", {}))
-        if isinstance(local_continuity.get("active_detour_need"), dict)
-        else {},
-        "detour_trace": detour_trace_summary,
-        "active_attention": {
-            "active_items": [
-                dict(item)
-                for item in carry_forward_context.get("active_attention_digest", {}).get("active_items", [])
-                if isinstance(item, dict)
-            ][:6]
-            if isinstance(carry_forward_context.get("active_attention_digest"), dict)
-            else [],
-        },
-        "recent_reading_memory": dict(carry_forward_context.get("recent_reading_memory", {}))
-        if isinstance(carry_forward_context.get("recent_reading_memory"), dict)
-        else {"active_entries": [], "active_entry_count": 0},
-        "concept_digest": [
-            dict(item)
-            for item in carry_forward_context.get("concept_digest", [])
-            if isinstance(item, dict)
-        ][:3],
-        "thread_digest": [
-            dict(item)
-            for item in carry_forward_context.get("thread_digest", [])
-            if isinstance(item, dict)
-        ][:3],
-        "reflective_digest": dict(carry_forward_context.get("chapter_reflective_frame", {}))
-        if isinstance(carry_forward_context.get("chapter_reflective_frame"), dict)
-        else {},
-        "anchor_handles": refs,
-    }
-
-
-def _build_detour_read_context(local_continuity: LocalContinuityState) -> dict[str, object]:
-    """Deprecated after DEC-103/DEC-104: live reads no longer receive detour context."""
-
-    return {
-        "active_detour_need": dict(local_continuity.get("active_detour_need", {}))
-        if isinstance(local_continuity.get("active_detour_need"), dict)
-        else {},
-        "mainline_background": {
-            "mainline_cursor": dict(local_continuity.get("mainline_cursor", {}))
-            if isinstance(local_continuity.get("mainline_cursor"), dict)
-            else {},
-        },
-        "detour_trace_summary": _compact_detour_trace(local_continuity),
-    }
-
-
-def _skill_result_trace(skill_result: dict[str, object]) -> dict[str, object]:
-    """Deprecated after DEC-103/DEC-104: summarize legacy source-skill results."""
-
-    result = skill_result.get("result") if isinstance(skill_result, dict) else {}
-    result_summary: dict[str, object] = {}
-    if isinstance(result, dict):
-        cards = result.get("cards")
-        sentences = result.get("sentences")
-        if isinstance(cards, list):
-            result_summary["card_count"] = len(cards)
-            result_summary["cards"] = [
-                {
-                    "card_id": _clean_text(card.get("card_id")),
-                    "start_sentence_id": _clean_text(card.get("start_sentence_id")),
-                    "end_sentence_id": _clean_text(card.get("end_sentence_id")),
-                }
-                for card in cards[:5]
-                if isinstance(card, dict)
-            ]
-        if isinstance(sentences, list):
-            result_summary["sentence_count"] = len(sentences)
-            result_summary["start_sentence_id"] = _clean_text(result.get("start_sentence_id"))
-            result_summary["end_sentence_id"] = _clean_text(result.get("end_sentence_id"))
-    return {
-        "skill_name": _clean_text(skill_result.get("skill_name")) if isinstance(skill_result, dict) else "",
-        "status": _clean_text(skill_result.get("status")) if isinstance(skill_result, dict) else "error",
-        "error": _clean_text(skill_result.get("error")) if isinstance(skill_result, dict) else "",
-        "result_summary": result_summary,
-        "provenance": dict(skill_result.get("provenance", {})) if isinstance(skill_result.get("provenance"), dict) else {},
-    }
-
-
-def _navigate_skill_catalog() -> list[dict[str, object]]:
-    """Deprecated after DEC-103/DEC-104: source skills are not on the live path."""
-
-    return [
-        {
-            "skill_name": "source_map_overview",
-            "purpose": "Inspect already-read chapter cards within the mainline boundary.",
-            "arguments": {},
-        },
-        {
-            "skill_name": "source_scope_drilldown",
-            "purpose": "Expand a current source card or sentence range into smaller source cards.",
-            "arguments": {"card_id": "optional", "start_sentence_id": "optional", "end_sentence_id": "optional"},
-        },
-        {
-            "skill_name": "source_window_fetch",
-            "purpose": "Fetch visible source text for a bounded sentence range.",
-            "arguments": {"card_id": "optional", "start_sentence_id": "optional", "end_sentence_id": "optional"},
-        },
-    ]
-
-
 def _mainline_cursor_from_continuity(local_continuity: LocalContinuityState) -> dict[str, object]:
     """Return the active mainline cursor packet."""
 
@@ -1280,34 +991,6 @@ def _mainline_cursor_from_continuity(local_continuity: LocalContinuityState) -> 
         if isinstance(local_continuity.get("mainline_cursor"), dict)
         else {}
     )
-
-
-def _mainline_preview_packet(
-    *,
-    current_sentence: dict[str, object],
-    preview_sentences: list[dict[str, object]],
-    preview_range: dict[str, object],
-) -> dict[str, object]:
-    """Build the source preview packet for one Navigate act."""
-
-    return {
-        "current_sentence": {
-            "sentence_id": _sentence_id(current_sentence),
-            "text": _clean_text(current_sentence.get("text")),
-            "text_role": _clean_text(current_sentence.get("text_role")),
-            "paragraph_index": _sentence_paragraph_index(current_sentence),
-        },
-        "preview_range": dict(preview_range),
-        "preview_sentences": [
-            {
-                "sentence_id": _sentence_id(sentence),
-                "text": _clean_text(sentence.get("text")),
-                "text_role": _clean_text(sentence.get("text_role")),
-                "paragraph_index": _sentence_paragraph_index(sentence),
-            }
-            for sentence in preview_sentences
-        ],
-    }
 
 
 def _mainline_source_preview_packet(preview: dict[str, object]) -> dict[str, object]:
@@ -1338,244 +1021,26 @@ def _mainline_source_preview_packet(preview: dict[str, object]) -> dict[str, obj
     }
 
 
-def _skill_results_prompt_summary(skill_results: list[dict[str, object]]) -> list[dict[str, object]]:
-    """Deprecated after DEC-103/DEC-104: summarize legacy source-skill prompt evidence."""
-
-    summary: list[dict[str, object]] = []
-    for skill_result in skill_results[-3:]:
-        if not isinstance(skill_result, dict):
-            continue
-        result = skill_result.get("result")
-        compact_result: dict[str, object] = {}
-        if isinstance(result, dict):
-            if isinstance(result.get("cards"), list):
-                compact_result["scope_kind"] = _clean_text(result.get("scope_kind"))
-                compact_result["reason"] = _clean_text(result.get("reason"))
-                compact_result["cards"] = [
-                    {
-                        "card_id": _clean_text(card.get("card_id")),
-                        "label": _clean_text(card.get("label")),
-                        "summary": _clean_text(card.get("summary")),
-                        "start_sentence_id": _clean_text(card.get("start_sentence_id")),
-                        "end_sentence_id": _clean_text(card.get("end_sentence_id")),
-                    }
-                    for card in result.get("cards", [])[:8]
-                    if isinstance(card, dict)
-                ]
-            if isinstance(result.get("sentences"), list):
-                compact_result["chapter_id"] = result.get("chapter_id")
-                compact_result["chapter_ref"] = _clean_text(result.get("chapter_ref"))
-                compact_result["start_sentence_id"] = _clean_text(result.get("start_sentence_id"))
-                compact_result["end_sentence_id"] = _clean_text(result.get("end_sentence_id"))
-                compact_result["sentences"] = [
-                    {
-                        "sentence_id": _clean_text(sentence.get("sentence_id")),
-                        "text": _clean_text(sentence.get("text")),
-                        "text_role": _clean_text(sentence.get("text_role")),
-                        "paragraph_index": sentence.get("paragraph_index"),
-                    }
-                    for sentence in result.get("sentences", [])[:24]
-                    if isinstance(sentence, dict)
-                ]
-            if isinstance(result.get("source_window"), dict):
-                compact_result["source_window"] = result.get("source_window")
-        summary.append(
-            {
-                "skill_name": _clean_text(skill_result.get("skill_name")),
-                "status": _clean_text(skill_result.get("status")),
-                "error": _clean_text(skill_result.get("error")),
-                "result": compact_result,
-                "provenance": dict(skill_result.get("provenance", {})) if isinstance(skill_result.get("provenance"), dict) else {},
-            }
-        )
-    return summary
-
-
-def _latest_scope_from_skill_results(skill_results: list[dict[str, object]]) -> dict[str, object] | None:
-    """Deprecated after DEC-103/DEC-104: inspect legacy source-skill scope results."""
-
-    for skill_result in reversed(skill_results):
-        result = skill_result.get("result") if isinstance(skill_result, dict) else None
-        if isinstance(result, dict) and isinstance(result.get("cards"), list):
-            return dict(result)
-    return None
-
-
-def _allowed_detour_sentence_ids(skill_results: list[dict[str, object]]) -> set[str]:
-    """Deprecated after DEC-103/DEC-104: return legacy detour-evidence sentence ids."""
-
-    allowed: set[str] = set()
-    for skill_result in skill_results:
-        result = skill_result.get("result") if isinstance(skill_result, dict) else None
-        if not isinstance(result, dict):
-            continue
-        cards = result.get("cards")
-        if isinstance(cards, list):
-            for card in cards:
-                if not isinstance(card, dict):
-                    continue
-                for key in ("start_sentence_id", "end_sentence_id"):
-                    sentence_id = _clean_text(card.get(key))
-                    if sentence_id:
-                        allowed.add(sentence_id)
-        sentences = result.get("sentences")
-        if isinstance(sentences, list):
-            for sentence in sentences:
-                if not isinstance(sentence, dict):
-                    continue
-                sentence_id = _clean_text(sentence.get("sentence_id"))
-                if sentence_id:
-                    allowed.add(sentence_id)
-        source_window = result.get("source_window")
-        if isinstance(source_window, dict):
-            for key in ("start_sentence_id", "end_sentence_id"):
-                sentence_id = _clean_text(source_window.get(key))
-                if sentence_id:
-                    allowed.add(sentence_id)
-            for sentence in source_window.get("sentences", []):
-                if isinstance(sentence, dict) and _clean_text(sentence.get("sentence_id")):
-                    allowed.add(_clean_text(sentence.get("sentence_id")))
-    return allowed
-
-
-def _detour_available_sentences(skill_results: list[dict[str, object]]) -> list[dict[str, object]]:
-    """Deprecated after DEC-103/DEC-104: return fetched source text for legacy detour guardrails."""
-
-    for skill_result in reversed(skill_results):
-        result = skill_result.get("result") if isinstance(skill_result, dict) else None
-        if not isinstance(result, dict):
-            continue
-        sentences = result.get("sentences")
-        if isinstance(sentences, list) and sentences:
-            return [dict(sentence) for sentence in sentences if isinstance(sentence, dict)]
-        source_window = result.get("source_window")
-        if isinstance(source_window, dict) and isinstance(source_window.get("sentences"), list):
-            return [dict(sentence) for sentence in source_window.get("sentences", []) if isinstance(sentence, dict)]
-    return []
-
-
 def _navigate_trace_entry(
     act_result: NavigateActResult,
     *,
     budget_state: dict[str, object],
-    skill_result: dict[str, object] | None = None,
     error: str = "",
 ) -> NavigateActTraceEntry:
-    """Return compact Navigate trace, preserving deprecated skill fields only as compatibility."""
+    """Return a compact Navigate trace entry."""
 
     entry: NavigateActTraceEntry = {
         "decision": _clean_text(act_result.get("decision")),  # type: ignore[typeddict-item]
         "selection_mode": _clean_text(act_result.get("selection_mode")),  # type: ignore[typeddict-item]
         "reason": _clean_text(act_result.get("reason")),
         "end_anchor_text": _clean_text(act_result.get("end_anchor_text")),
-        "start_sentence_id": _clean_text(act_result.get("start_sentence_id")),
-        "end_sentence_id": _clean_text(act_result.get("end_sentence_id")),
         "source_span_id": _clean_text(act_result.get("source_span_id")),
         "resolution": dict(act_result.get("resolution", {})) if isinstance(act_result.get("resolution"), dict) else {},
         "budget_state": dict(budget_state),
     }
-    if isinstance(act_result.get("skill_request"), dict):
-        entry["skill_request"] = dict(act_result["skill_request"])
-    if isinstance(skill_result, dict):
-        entry["skill_result"] = _skill_result_trace(skill_result)
     if error:
         entry["error"] = error
     return entry
-
-
-_PLANNING_SUPPORT_MARKER_KEYS = (
-    "source_scent",
-    "detour_value",
-    "continuity_cost",
-    "active_recall_needed",
-    "look_back_needed",
-    "support_signal_reason",
-    "budget_stop_reason",
-)
-
-
-def _navigation_budget_stop_reason(entry: dict[str, object]) -> str:
-    """Return deterministic budget stop evidence, if the trace entry has it."""
-
-    error = _clean_text(entry.get("error"))
-    if error == "navigate_skill_budget_exhausted":
-        return error
-    reason = _clean_text(entry.get("reason"))
-    if reason == "navigate_choose_next_unit_budget_exhausted":
-        return reason
-    return ""
-
-
-def _safe_int(value: object) -> int:
-    """Return an int for compact audit math, or zero when the value is not numeric."""
-
-    if isinstance(value, bool):
-        return int(value)
-    if isinstance(value, int):
-        return value
-    if isinstance(value, str) and value.isdigit():
-        return int(value)
-    return 0
-
-
-def _navigation_planning_support_markers(entry: dict[str, object]) -> dict[str, object]:
-    """Deprecated after DEC-103/DEC-104: preserve legacy detour/source-skill audit markers."""
-
-    decision = _clean_text(entry.get("decision"))
-    selection_mode = _clean_text(entry.get("selection_mode"))
-    if selection_mode != "detour" and decision not in {"request_skill", "defer_detour"} and not entry.get("error"):
-        return {}
-
-    skill_request = entry.get("skill_request") if isinstance(entry.get("skill_request"), dict) else {}
-    skill_result = entry.get("skill_result") if isinstance(entry.get("skill_result"), dict) else {}
-    budget_state = entry.get("budget_state") if isinstance(entry.get("budget_state"), dict) else {}
-    has_source_reference = bool(
-        _clean_text(entry.get("source_span_id"))
-        or _clean_text(entry.get("start_sentence_id"))
-        or _clean_text(entry.get("end_sentence_id"))
-    )
-    has_skill_evidence = bool(skill_result)
-    budget_stop_reason = _navigation_budget_stop_reason(entry)
-
-    source_scent = "not_assessed"
-    if has_source_reference or has_skill_evidence:
-        source_scent = "present"
-    elif skill_request:
-        source_scent = "requested"
-
-    detour_value = "not_assessed"
-    if decision == "request_skill":
-        detour_value = "source_support_requested"
-    elif decision == "choose_unit" and has_source_reference:
-        detour_value = "source_support_available"
-
-    continuity_cost = "not_assessed"
-    if budget_stop_reason:
-        continuity_cost = "budget_stop"
-    elif _safe_int(budget_state.get("act_index")) > 1 or _safe_int(budget_state.get("skill_requests_used")) > 0:
-        continuity_cost = "budget_used"
-
-    support_signal_reason = "not_assessed"
-    if budget_stop_reason:
-        support_signal_reason = "budget_stop"
-    elif skill_request:
-        support_signal_reason = "source_skill_requested"
-    elif decision == "choose_unit" and has_source_reference:
-        support_signal_reason = "source_evidence_available"
-    elif decision == "defer_detour":
-        support_signal_reason = _clean_text(entry.get("reason")) or "detour_deferred"
-
-    markers: dict[str, object] = {
-        "source_scent": source_scent,
-        "detour_value": detour_value,
-        "continuity_cost": continuity_cost,
-        "active_recall_needed": False,
-        "look_back_needed": bool(skill_request or has_skill_evidence),
-        "support_signal_reason": support_signal_reason,
-    }
-    if budget_stop_reason:
-        markers["budget_stop_reason"] = budget_stop_reason
-    return markers
 
 
 def _compact_navigation_trace(navigate_trace: object) -> list[dict[str, object]]:
@@ -1593,12 +1058,8 @@ def _compact_navigation_trace(navigate_trace: object) -> list[dict[str, object]]
             "selection_mode",
             "reason",
             "end_anchor_text",
-            "start_sentence_id",
-            "end_sentence_id",
             "source_span_id",
             "resolution",
-            "skill_request",
-            "skill_result",
             "error",
             "budget_state",
         ):
@@ -1612,112 +1073,8 @@ def _compact_navigation_trace(navigate_trace: object) -> list[dict[str, object]]
             elif value not in (None, "", [], {}):
                 entry[key] = value
         if entry:
-            entry.update(_navigation_planning_support_markers(entry))
             compact_entries.append(entry)
     return compact_entries
-
-
-def _detour_planning_support_markers(
-    *,
-    selection_result: NavigateNextUnitResult,
-    navigation_trace: list[dict[str, object]],
-) -> dict[str, object]:
-    """Deprecated after DEC-103/DEC-104: return audit-only markers for legacy detour evidence."""
-
-    selection_mode = _clean_text(selection_result.get("selection_mode"))
-    if selection_mode not in {"detour", "deferred"}:
-        return {}
-    markers = {
-        key: value
-        for key, value in (navigation_trace[-1] if navigation_trace else {}).items()
-        if key in _PLANNING_SUPPORT_MARKER_KEYS
-    }
-    defer_reason = _clean_text(selection_result.get("defer_reason"))
-    if defer_reason == "navigate_choose_next_unit_budget_exhausted":
-        markers["budget_stop_reason"] = defer_reason
-        markers["continuity_cost"] = "budget_stop"
-        markers["support_signal_reason"] = "budget_stop"
-    return {
-        "source_scent": markers.get("source_scent", "not_assessed"),
-        "detour_value": markers.get("detour_value", "not_assessed"),
-        "continuity_cost": markers.get("continuity_cost", "not_assessed"),
-        "active_recall_needed": bool(markers.get("active_recall_needed", False)),
-        "look_back_needed": bool(markers.get("look_back_needed", False)),
-        "support_signal_reason": markers.get("support_signal_reason", "not_assessed"),
-        **({"budget_stop_reason": markers["budget_stop_reason"]} if _clean_text(markers.get("budget_stop_reason")) else {}),
-    }
-
-
-def _detour_trace_evidence(
-    *,
-    selection_result: NavigateNextUnitResult,
-    local_continuity: LocalContinuityState,
-) -> dict[str, object]:
-    """Deprecated after DEC-103/DEC-104: new live reads do not emit detour evidence."""
-
-    selection_mode = _clean_text(selection_result.get("selection_mode"))
-    if selection_mode not in {"detour", "deferred"}:
-        return {}
-    evidence: dict[str, object] = {
-        "selection_mode": selection_mode,
-        "active_detour_id": _clean_text(local_continuity.get("active_detour_id")),
-        "detour_trace_summary": _compact_detour_trace(local_continuity),
-    }
-    if isinstance(local_continuity.get("active_detour_need"), dict):
-        evidence["active_detour_need"] = dict(local_continuity["active_detour_need"])
-    defer_reason = _clean_text(selection_result.get("defer_reason"))
-    if defer_reason:
-        evidence["defer_reason"] = defer_reason
-    evidence.update(
-        _detour_planning_support_markers(
-            selection_result=selection_result,
-            navigation_trace=_compact_navigation_trace(selection_result.get("navigate_trace")),
-        )
-    )
-    return evidence
-
-
-def _resolve_detour_act_region(
-    *,
-    sentence_lookup: dict[str, dict[str, object]],
-    chapter_lookup: dict[int, dict[str, object]],
-    mainline_cursor: dict[str, object],
-    act_result: NavigateActResult,
-    reader_policy: ReaderPolicy,
-) -> tuple[dict[str, object], list[dict[str, object]], UnitizeDecision] | None:
-    """Deprecated after DEC-103/DEC-104: live Navigate no longer lands detour units."""
-
-    start_sentence_id = _clean_text(act_result.get("start_sentence_id"))
-    end_sentence_id = _clean_text(act_result.get("end_sentence_id"))
-    chapter, selected_sentences, error = resolve_visible_sentence_range(
-        sentence_lookup=sentence_lookup,
-        chapter_lookup=chapter_lookup,
-        mainline_cursor=mainline_cursor,  # type: ignore[arg-type]
-        start_sentence_id=start_sentence_id,
-        end_sentence_id=end_sentence_id,
-    )
-    if error or not isinstance(chapter, dict) or not selected_sentences:
-        return None
-    max_sentences = int(reader_policy.get("unitize", {}).get("max_coverage_unit_sentences", 12) or 12)
-    if max_sentences <= 0:
-        max_sentences = 12
-    capped = [dict(sentence) for sentence in selected_sentences[:max_sentences]]
-    boundary_type = _clean_text(act_result.get("boundary_type")) or "paragraph_end"
-    if len(selected_sentences) > max_sentences:
-        boundary_type = "budget_cap"
-    unitize_decision: UnitizeDecision = {
-        "start_sentence_id": _sentence_id(capped[0]),
-        "end_sentence_id": _sentence_id(capped[-1]),
-        "preview_range": {
-            "start_sentence_id": _sentence_id(selected_sentences[0]),
-            "end_sentence_id": _sentence_id(selected_sentences[-1]),
-        },
-        "boundary_type": boundary_type,  # type: ignore[typeddict-item]
-        "evidence_sentence_ids": [_sentence_id(sentence) for sentence in capped if _sentence_id(sentence)],
-        "reason": _clean_text(act_result.get("reason")),
-        "continuation_pressure": bool(act_result.get("continuation_pressure")) or len(selected_sentences) > max_sentences,
-    }
-    return chapter, capped, unitize_decision
 
 
 def _resolve_mainline_source_unit(
@@ -1731,61 +1088,6 @@ def _resolve_mainline_source_unit(
     """Resolve Navigate's source-text tail anchor into an accepted unit span."""
 
     selected_result = dict(retry_act_result or act_result)
-    legacy_end_sentence_id = _clean_text(selected_result.get("end_sentence_id"))
-    if legacy_end_sentence_id:
-        legacy_sentences = [
-            dict(sentence)
-            for sentence in chapter.get("sentences", [])
-            if isinstance(sentence, dict)
-        ]
-        end_sentence = next((sentence for sentence in legacy_sentences if _sentence_id(sentence) == legacy_end_sentence_id), None)
-        locator = end_sentence.get("locator") if isinstance(end_sentence, dict) else None
-        if isinstance(locator, dict):
-            end_cursor = {
-                "chapter_id": int(chapter.get("id", 0) or 0),
-                "chapter_ref": _chapter_ref(chapter),
-                "paragraph_index": int(locator.get("paragraph_index", 0) or locator.get("paragraph_start", 0) or 0),
-                "char_offset": int(locator.get("char_end", 0) or 0),
-            }
-            source_span = {
-                "start_cursor": dict(start_cursor),
-                "end_cursor": end_cursor,
-            }
-            source_unit = source_unit_from_span(chapter=chapter, source_span=source_span)
-            source_id = source_span_id(source_span)
-            resolution = {
-                "status": "matched",
-                "method": "legacy_sentence_compat",
-                "end_cursor": end_cursor,
-                "end_sentence_id": legacy_end_sentence_id,
-            }
-            unitize_decision: UnitizeDecision = {
-                "end_anchor_text": _clean_text(selected_result.get("end_anchor_text")),
-                "source_span": source_span,
-                "source_span_id": source_id,
-                "preview_range": {
-                    "start_cursor": dict(preview.get("preview_start_cursor", {}))
-                    if isinstance(preview.get("preview_start_cursor"), dict)
-                    else {},
-                    "end_cursor": dict(preview.get("preview_end_cursor", {}))
-                    if isinstance(preview.get("preview_end_cursor"), dict)
-                    else {},
-                },
-                "boundary_type": _clean_text(selected_result.get("boundary_type")) or "paragraph_end",  # type: ignore[typeddict-item]
-                "reason": _clean_text(selected_result.get("reason")),
-                "continuation_pressure": bool(selected_result.get("continuation_pressure")),
-                "resolution": resolution,
-                "start_sentence_id": _clean_text(selected_result.get("start_sentence_id")),
-                "end_sentence_id": legacy_end_sentence_id,
-                "evidence_sentence_ids": [
-                    _clean_text(item)
-                    for item in selected_result.get("evidence_sentence_ids", [])
-                    if _clean_text(item)
-                ] if isinstance(selected_result.get("evidence_sentence_ids"), list) else [],
-            }
-            source_unit["unitize_decision"] = dict(unitize_decision)
-            return source_unit, unitize_decision
-
     end_anchor_text = _clean_text(selected_result.get("end_anchor_text"))
     resolution = resolve_end_anchor_text(
         preview=preview,
@@ -1843,10 +1145,6 @@ def _resolve_mainline_source_unit(
 
 def navigate_choose_next_unit(
     *,
-    document: BookDocument,
-    survey_map: dict[str, object],
-    sentence_lookup: dict[str, dict[str, object]],
-    chapter_lookup: dict[int, dict[str, object]],
     current_chapter: dict[str, object],
     current_cursor: dict[str, object],
     local_buffer: LocalBufferState,
@@ -1892,11 +1190,8 @@ def navigate_choose_next_unit(
     )
     budget_state = {
         "mode": "mainline",
-        "skills_allowed": False,
         "act_index": 1,
         "max_acts": 1,
-        "skill_requests_used": 0,
-        "max_skill_requests": 0,
     }
     act_result = navigate_choose_next_unit_act(
         reading_position={
@@ -1906,12 +1201,8 @@ def navigate_choose_next_unit(
             "current_cursor": dict(source_cursor),
         },
         mainline_preview=mainline_preview,
-        active_detour_need=None,
         mainline_cursor=mainline_cursor,
         navigation_context=navigation_context,
-        source_evidence={},
-        skill_catalog=[],
-        skill_results_so_far=[],
         budget_state=budget_state,
         reader_policy=reader_policy,
         output_language=output_language,
@@ -1919,10 +1210,6 @@ def navigate_choose_next_unit(
         book_title=book_title,
         author=author,
         chapter_title=_clean_text(current_chapter.get("title")),
-        available_sentences=[],
-        allowed_sentence_ids=set(),
-        default_selection_mode="mainline",
-        skills_allowed=False,
     )
     resolution = resolve_end_anchor_text(
         preview=preview,
@@ -1937,18 +1224,13 @@ def navigate_choose_next_unit(
                 "current_chapter_ref": current_chapter_ref,
                 "current_cursor": dict(source_cursor),
                 "retry": True,
-            },
-            mainline_preview=mainline_preview,
-            active_detour_need=None,
-            mainline_cursor=mainline_cursor,
-            navigation_context=navigation_context,
-            source_evidence={
                 "previous_end_anchor_text": _clean_text(act_result.get("end_anchor_text")),
                 "previous_resolution": dict(resolution),
                 "retry_instruction": "Return a longer, unique end_anchor_text copied exactly from the end of the chosen unit.",
             },
-            skill_catalog=[],
-            skill_results_so_far=[],
+            mainline_preview=mainline_preview,
+            mainline_cursor=mainline_cursor,
+            navigation_context=navigation_context,
             budget_state={**budget_state, "act_index": 2, "max_acts": 2},
             reader_policy=reader_policy,
             output_language=output_language,
@@ -1956,10 +1238,6 @@ def navigate_choose_next_unit(
             book_title=book_title,
             author=author,
             chapter_title=_clean_text(current_chapter.get("title")),
-            available_sentences=[],
-            allowed_sentence_ids=set(),
-            default_selection_mode="mainline",
-            skills_allowed=False,
         )
     selected_source_unit, unitize_decision = _resolve_mainline_source_unit(
         chapter=current_chapter,
@@ -1988,7 +1266,6 @@ def navigate_choose_next_unit(
         "preview": dict(preview),
         "unitize_decision": unitize_decision,  # type: ignore[typeddict-item]
         "navigate_trace": navigate_trace,
-        "detour_context": None,
     }
 
 
@@ -2290,9 +1567,8 @@ def _run_read_with_context_loop(
             current_unit_sentences=chosen_unit_sentences,
             carry_forward_context=carry_forward_context,
             reader_policy=reader_policy,
-        output_language=output_language,
-        supplemental_context=None,
-        detour_context=None,
+            output_language=output_language,
+            supplemental_context=None,
             output_dir=output_dir,
             book_title=book_title,
             author=author,
@@ -2304,11 +1580,7 @@ def _run_read_with_context_loop(
             "reading_impression": "",
             "surfaced_reactions": [],
             "memory_uptake_ops": [],
-            "detour_need": None,
         }
-    if isinstance(read_result.get("detour_need"), dict):
-        read_result["deprecated_detour_need_ignored"] = dict(read_result["detour_need"])  # type: ignore[index]
-        read_result["detour_need"] = None
     read_result["memory_uptake_ops"] = _normalize_memory_uptake_ops_source_refs(
         read_result.get("memory_uptake_ops", []),
         source_unit=current_unit_source,
@@ -2325,7 +1597,6 @@ def _run_read_with_context_loop(
         stop_reason="read_complete",
         llm_fallbacks=llm_fallbacks,
         navigation_trace=navigation_trace,
-        detour_trace_evidence=None,
     )
     return read_result, llm_fallbacks
 
@@ -2932,10 +2203,6 @@ def run_reading_runner(request: ReadRequest, mechanism: MechanismInfo) -> ReadRe
                 local_continuity["mainline_cursor"] = _shared_cursor_for_source_cursor(cursor)
                 bundle["local_continuity"] = local_continuity
                 selection_result = navigate_choose_next_unit(
-                    document=provisioned.book_document,
-                    survey_map=survey_map,
-                    sentence_lookup=sentence_lookup,
-                    chapter_lookup=chapter_lookup,
                     current_chapter=chapter,
                     current_cursor=cursor,
                     local_buffer=local_buffer,

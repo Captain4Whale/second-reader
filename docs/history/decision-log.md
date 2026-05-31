@@ -3023,3 +3023,30 @@ This new direction is design frozen but not yet implemented as a formal benchmar
 - `reading-companion-backend/src/attentional_v2/nodes.py`
 - `reading-companion-backend/src/attentional_v2/prompts/navigate_choose_next_unit.py`
 - `reading-companion-backend/src/attentional_v2/prompts/read_unit.py`
+
+## Entry 102
+**ID**: DEC-105
+**Status**: active
+
+**Decision / Inflection**: Hard-purge retired Detour / source-backread compatibility interfaces from current `attentional_v2`.
+
+**Period**: May 31, 2026, immediately after the first DEC-104 cleanup revealed that deprecated compatibility literals, audit fields, tests, and helper modules still made the retired path visible as if it were a current interface.
+
+**Decision**: Current `attentional_v2` no longer exposes Detour / source-backread / source-skill / `look_back` / `active_recall` interfaces in live code, prompts, schemas, audits, or tests. `NavigateActDecision` is narrowed to `choose_unit`; `NavigateSelectionMode` is narrowed to `mainline`; `LocalContinuityState` no longer has Detour continuity fields; `ReadUnitResult` no longer has `detour_need`; `Read` prompt packets and manifests no longer include path-redirection contracts; and the source-skill runtime / read-context compatibility helpers are removed.
+
+**Compatibility boundary**: Old Detour-era checkpoints and private runtime artifacts are not a current compatibility target. Historical docs, old reports, old run outputs, and previous decision entries may still mention the retired mechanism for traceability, but stable current docs should describe it only as removed from the live surface. Future `Ingest` memory retrieval must be designed as a new retrieval surface rather than inherited from the retired helper loop by default.
+
+**Why this path won**: Keeping deprecated literals and ignored fields in the current interface preserved the old path-selection center of gravity and made the new `Ingest -> Digest` design easier to confuse with the retired backread path. A hard purge gives the next design slice a clean baseline: `Navigate.choose_next_unit -> Read -> Reading Runner settlement`, with prior context to be supplied later through an explicit retrieval design.
+
+**Primary evidence**:
+- `docs/current-state.md`
+- `docs/tasks/registry.md`
+- `docs/backend-reading-mechanisms/attentional_v2.md`
+- `reading-companion-backend/src/attentional_v2/schemas.py`
+- `reading-companion-backend/src/attentional_v2/nodes.py`
+- `reading-companion-backend/src/attentional_v2/runner.py`
+- `reading-companion-backend/src/attentional_v2/observability.py`
+- `reading-companion-backend/src/attentional_v2/prompts/navigate_choose_next_unit.py`
+- `reading-companion-backend/src/attentional_v2/prompts/read_unit.py`
+- `reading-companion-backend/tests/test_attentional_v2_nodes.py`
+- `reading-companion-backend/tests/test_attentional_v2_scaffold.py`

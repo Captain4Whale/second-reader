@@ -65,9 +65,9 @@ CASE_GOALS = {
     "supremacy_private_en__chapter_13": "Reaction-density regression against the old low-expression problem.",
     "value_of_others_private_en__8_10": "English cross-chapter carryover style and prior-link audit.",
     "huochu_shengming_de_yiyi_private_zh__segment_1": "Chinese restrained mainline sample.",
-    "xidaduo_private_zh__segment_1": "Historical/deprecated Detour narrow-scope to land-region sample.",
+    "xidaduo_private_zh__segment_1": "Chinese narrow-scope source-window sample.",
     "nawaer_baodian_private_zh__segment_1": "Short local anchored reactions and prior-link sample.",
-    "mangge_zhi_dao_private_zh__segment_1": "Historical/deprecated defer-detour and outside-link/search-intent risk sample.",
+    "mangge_zhi_dao_private_zh__segment_1": "Outside-link and search-intent risk sample.",
 }
 ALL_CASE_IDS = tuple(CASE_TARGET_ASSIGNMENTS.keys())
 
@@ -285,32 +285,11 @@ def _pressure_signal_counts(read_audit_entries: list[dict[str, Any]]) -> dict[st
     return counts
 
 
-def _detour_status_counts(read_audit_entries: list[dict[str, Any]]) -> dict[str, int]:
-    """Deprecated after DEC-103/DEC-104: count historical detour_need audit fields."""
-
-    counts = {
-        "open": 0,
-        "resolved": 0,
-        "abandoned": 0,
-    }
-    for entry in read_audit_entries:
-        detour_need = entry.get("detour_need") or {}
-        if not isinstance(detour_need, dict):
-            continue
-        status = _clean_text(detour_need.get("status")).lower()
-        if status in counts:
-            counts[status] += 1
-    return counts
-
-
 def _load_case_summary(*, case: AuditCase, output_dir: Path) -> dict[str, Any]:
     read_audit_entries = _jsonl_load(read_audit_file(output_dir)) if read_audit_file(output_dir).exists() else []
     reaction_payload = _json_load(reaction_records_file(output_dir)) if reaction_records_file(output_dir).exists() else {"records": []}
     reaction_records = [dict(item) for item in reaction_payload.get("records", []) if isinstance(item, dict)]
-    local_continuity = _json_load(local_continuity_file(output_dir)) if local_continuity_file(output_dir).exists() else {}
     normalized_bundle = _json_load(normalized_eval_bundle_file(output_dir)) if normalized_eval_bundle_file(output_dir).exists() else {}
-    # Deprecated after DEC-103/DEC-104: F4A may inspect old detour_trace artifacts only.
-    detour_trace = [dict(item) for item in local_continuity.get("detour_trace", []) if isinstance(item, dict)]
     chapter_outputs_dir = chapter_result_compatibility_file(output_dir, 1).parent
     chapter_output_paths = sorted(str(path) for path in chapter_outputs_dir.glob("chapter-*.json"))
     surfaced_reaction_counts = [
@@ -335,10 +314,7 @@ def _load_case_summary(*, case: AuditCase, output_dir: Path) -> dict[str, Any]:
         "formal_units_read": len(read_audit_entries),
         "visible_reaction_count": len(reaction_records),
         "silent_unit_count": sum(1 for count in surfaced_reaction_counts if count == 0),
-        "detour_trace_count": len(detour_trace),
-        "detour_trace": detour_trace,
         "pressure_signal_counts": _pressure_signal_counts(read_audit_entries),
-        "detour_status_counts": _detour_status_counts(read_audit_entries),
         "prior_link_count": _count_truthy_mappings(reaction_records, "prior_link"),
         "outside_link_count": _count_truthy_mappings(reaction_records, "outside_link"),
         "search_intent_count": _count_truthy_mappings(reaction_records, "search_intent"),
@@ -427,7 +403,6 @@ def _report_text(summary: dict[str, Any]) -> str:
                 f"- formal_units_read: `{case.get('formal_units_read', 0)}` / cap `{cap_label}`",
                 f"- visible_reaction_count: `{case.get('visible_reaction_count', 0)}`",
                 f"- silent_unit_count: `{case.get('silent_unit_count', 0)}`",
-                f"- detour_trace_count: `{case.get('detour_trace_count', 0)}`",
                 f"- prior_link / outside_link / search_intent: `{case.get('prior_link_count', 0)} / {case.get('outside_link_count', 0)} / {case.get('search_intent_count', 0)}`",
                 f"- compat_projection_available: `{case.get('compat_projection_available', False)}`",
                 f"- normalized_eval_available: `{case.get('normalized_eval_available', False)}`",

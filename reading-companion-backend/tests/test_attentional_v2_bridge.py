@@ -49,9 +49,9 @@ def _candidate_set() -> dict[str, object]:
                 "overlap_score": 3,
             }
         ],
-        "lookback_candidates": [
+        "prior_source_candidates": [
             {
-                "candidate_kind": "source_lookback",
+                "candidate_kind": "prior_source",
                 "sentence_id": "c1-s2",
                 "chapter_id": 1,
                 "chapter_title": "Chapter 1",
@@ -230,7 +230,7 @@ def test_generate_candidate_set_treats_qianmian_as_explicit_callback_marker():
 
     assert any(
         candidate.get("candidate_kind") == "source_callback" and candidate.get("sentence_id") == "c1-s2"
-        for candidate in result["lookback_candidates"]
+        for candidate in result["prior_source_candidates"]
     )
 
 

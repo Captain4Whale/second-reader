@@ -125,7 +125,7 @@ def flatten_sentence_inventory(document: BookDocument) -> list[dict[str, object]
     return flattened
 
 
-def bounded_lookback_source_space(
+def bounded_prior_source_space(
     document: BookDocument,
     *,
     current_sentence_id: str,
@@ -153,7 +153,7 @@ def generate_candidate_set(
     concept_registry: ConceptRegistryState | None = None,
     thread_trace: ThreadTraceState | None = None,
     max_memory_candidates: int = 3,
-    max_lookback_candidates: int = 12,
+    max_prior_source_candidates: int = 12,
 ) -> dict[str, object]:
     """Generate deterministic bridge candidates without performing bridge judgment."""
 
@@ -222,20 +222,20 @@ def generate_candidate_set(
         return {
             "current_sentence_id": current_sentence_id,
             "memory_candidates": memory_candidates,
-            "lookback_candidates": [],
+            "prior_source_candidates": [],
         }
 
-    lookback_window = bounded_lookback_source_space(
+    prior_source_window = bounded_prior_source_space(
         document,
         current_sentence_id=current_sentence_id,
-        max_candidates=max_lookback_candidates,
+        max_candidates=max_prior_source_candidates,
     )
     local_window_ids = {
         str(sentence.get("sentence_id", "") or "")
-        for sentence in lookback_window
+        for sentence in prior_source_window
         if isinstance(sentence, dict)
     }
-    lookback_candidates: list[dict[str, object]] = []
+    prior_source_candidates: list[dict[str, object]] = []
     callback_search_active = _has_callback_marker(current_text)
     for index, sentence in enumerate(sentences[:current_index]):
         sentence_id = str(sentence.get("sentence_id", "") or "")
@@ -245,16 +245,16 @@ def generate_candidate_set(
             current_text=current_text,
             candidate_text=candidate_text,
             distance=current_index - index,
-            local_window_size=max(1, int(max_lookback_candidates)),
+            local_window_size=max(1, int(max_prior_source_candidates)),
         )
         if overlap <= 0:
             continue
         if sentence_id not in local_window_ids and not callback_search_active:
             continue
         is_callback_candidate = sentence_id not in local_window_ids
-        lookback_candidates.append(
+        prior_source_candidates.append(
             {
-                "candidate_kind": "source_callback" if is_callback_candidate else "source_lookback",
+                "candidate_kind": "source_callback" if is_callback_candidate else "prior_source",
                 "sentence_id": sentence_id,
                 "chapter_id": int(sentence.get("chapter_id", 0) or 0),
                 "chapter_title": str(sentence.get("chapter_title", "") or ""),
@@ -262,12 +262,12 @@ def generate_candidate_set(
                 "text_role": str(sentence.get("text_role", "") or ""),
                 "locator": dict(sentence.get("locator", {})) if isinstance(sentence.get("locator"), dict) else {},
                 "overlap_score": score,
-                "retrieval_channel": "source_callback" if is_callback_candidate else "source_lookback",
+                "retrieval_channel": "source_callback" if is_callback_candidate else "prior_source",
                 "relation_type": "callback" if is_callback_candidate else "echo",
             }
         )
 
-    lookback_candidates.sort(
+    prior_source_candidates.sort(
         key=lambda candidate: (
             -float(candidate.get("overlap_score", 0) or 0.0),
             str(candidate.get("candidate_kind", "") or ""),
@@ -278,5 +278,5 @@ def generate_candidate_set(
     return {
         "current_sentence_id": current_sentence_id,
         "memory_candidates": memory_candidates,
-        "lookback_candidates": lookback_candidates[: max(1, int(max_lookback_candidates))],
+        "prior_source_candidates": prior_source_candidates[: max(1, int(max_prior_source_candidates))],
     }

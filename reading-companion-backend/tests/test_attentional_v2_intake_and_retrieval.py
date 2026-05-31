@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from src.attentional_v2.intake import process_sentence_intake
-from src.attentional_v2.retrieval import bounded_lookback_source_space, generate_candidate_set
+from src.attentional_v2.retrieval import bounded_prior_source_space, generate_candidate_set
 from src.attentional_v2.schemas import (
     build_empty_anchor_bank,
     build_empty_local_buffer,
@@ -85,8 +85,8 @@ def test_process_sentence_intake_slides_recent_window_and_accumulates_open_unit(
     assert local_buffer["open_meaning_unit_sentence_ids"] == [f"c1-s{sentence_index}" for sentence_index in range(1, 9)]
 
 
-def test_generate_candidate_set_is_memory_first_then_bounded_lookback():
-    """Candidate generation should separate anchor-bank candidates from source look-back candidates."""
+def test_generate_candidate_set_is_memory_first_then_bounded_prior_source():
+    """Candidate generation should separate anchor-bank candidates from prior-source candidates."""
 
     anchor_bank = build_empty_anchor_bank()
     anchor_bank["anchor_records"] = [
@@ -112,18 +112,18 @@ def test_generate_candidate_set_is_memory_first_then_bounded_lookback():
         current_text="Value in relationships creates friction.",
         anchor_bank=anchor_bank,
         max_memory_candidates=2,
-        max_lookback_candidates=2,
+        max_prior_source_candidates=2,
     )
 
-    lookback = bounded_lookback_source_space(
+    prior_source = bounded_prior_source_space(
         _book_document(),  # type: ignore[arg-type]
         current_sentence_id="c1-s4",
         max_candidates=2,
     )
 
     assert [candidate["anchor_id"] for candidate in candidates["memory_candidates"]] == ["a-2"]
-    assert [candidate["sentence_id"] for candidate in candidates["lookback_candidates"]] == ["c1-s2", "c1-s3"]
-    assert [sentence["sentence_id"] for sentence in lookback] == ["c1-s2", "c1-s3"]
+    assert [candidate["sentence_id"] for candidate in candidates["prior_source_candidates"]] == ["c1-s2", "c1-s3"]
+    assert [sentence["sentence_id"] for sentence in prior_source] == ["c1-s2", "c1-s3"]
 
 
 def test_generate_candidate_set_can_surface_nonlocal_callback_candidates():
@@ -159,8 +159,8 @@ def test_generate_candidate_set_can_surface_nonlocal_callback_candidates():
         current_text="唐敖自從那日同多九公尋訪林之洋下落，訪來訪去，絕無消息。",
         anchor_bank=build_empty_anchor_bank(),
         max_memory_candidates=0,
-        max_lookback_candidates=2,
+        max_prior_source_candidates=2,
     )
 
-    assert candidates["lookback_candidates"][0]["sentence_id"] == "c1-s1"
-    assert candidates["lookback_candidates"][0]["candidate_kind"] == "source_callback"
+    assert candidates["prior_source_candidates"][0]["sentence_id"] == "c1-s1"
+    assert candidates["prior_source_candidates"][0]["candidate_kind"] == "source_callback"

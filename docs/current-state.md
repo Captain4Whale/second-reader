@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-05-31T09:23:05+08:00`
+Last verified: `2026-05-31T10:36:48+08:00`
 
 ## Current Objective
 - Product goal and mechanism direction are being reset before further implementation.
@@ -24,10 +24,10 @@ Last verified: `2026-05-31T09:23:05+08:00`
     - prefer retrieving relevant prior memory/source objects over live "回读" path steering
   - live cleanup landed:
     - `DEC-104` retires live Detour / source-backread behavior from `attentional_v2`
-    - current `Navigate.choose_next_unit` is forward-only next-unit selection and does not call source skills
-    - deprecated `request_skill` / `defer_detour` / `detour` / `deferred` outputs are normalized to safe mainline fallback behavior
-    - current `Read` is no longer prompted to emit `detour_need`; stale `detour_need` output is ignored by the Runner and does not mutate `local_continuity`
-    - old `active_detour_id`, `active_detour_need`, and `detour_trace` fields are dropped/ignored on new capture or resume
+    - `DEC-105` hard-purges the retired Detour / source-backread / source-skill compatibility interfaces from current `attentional_v2` code, prompts, schemas, audits, and tests
+    - current `Navigate.choose_next_unit` is forward-only next-unit selection: `choose_unit`, `mainline`, exact `end_anchor_text`
+    - current `Read` has no path-redirection output contract and the Runner/audit path emits no Detour or source-backread runtime artifacts for new runs
+    - current `local_continuity` contains only forward-reading continuity; old Detour-era checkpoint/artifact shapes are not a compatibility target
   - stop declaration:
     - do not continue implementing `C设计10` consolidation, `C设计11` Read XML context migration, `C设计12` prompt assembly migration, ActiveTension expansion, Thread / Progression / Development memory, or broader Eval-1 follow-up as the next mechanism direction
     - treat the Second Reader Memory / Planning design chain as historical/reference material and reusable infrastructure evidence, not as the primary implementation authority for the next code path
@@ -38,7 +38,7 @@ Last verified: `2026-05-31T09:23:05+08:00`
   - next step:
     - continue with the new product-goal reframe from the now-forward-only `Ingest` baseline
     - next design work should define how `Ingest` requests memory retrieval for the selected next unit and how `Digest` turns the current unit into reader-facing notes / highlights
-    - do not run eval, update evidence catalog, or claim product quality from the Detour retirement slice
+    - do not run eval, update evidence catalog, or claim product quality from the Detour hard-purge slice
 - Read XML prompt / Recent Reading Memory full active diagnostic machine run has completed; post-run report is ready for review.
   - purpose:
     - validate the opt-in XML Read prompt assembly path after Recent Reading Memory formation work
@@ -255,11 +255,11 @@ Last verified: `2026-05-31T09:23:05+08:00`
     - Slice 4B does not claim actual model utilization from retrieval availability; `utilization_observed=false` and `utilization_basis=not_claimed_by_read_output` remain explicit
     - `Slice5A-Detour-Lifecycle-and-Navigation-Trace-Audit-Hardening-Pre-implementation-Brief v0.md` is accepted
     - Slice 5A detour lifecycle and navigation trace audit hardening is implemented, and `Slice5A-Detour-Lifecycle-and-Navigation-Trace-Audit-Hardening-Post-implementation-Report v0.md` is accepted as historical evidence
-    - Slice 5A's compact detour lifecycle metadata and compact `read_audit` navigation/detour evidence are deprecated after `DEC-104`
+    - Slice 5A's compact detour lifecycle metadata and compact `read_audit` navigation/detour evidence are historical after `DEC-105` and no longer current runtime/audit surfaces
     - Slice 5A does not introduce new planner behavior, new Navigate decisions, durable `deferred` status, retrieval loop, prompt text/version change, public API/frontend/eval runner change, or full AI Evaluation
     - `Slice5B-Planning-Support-Signals-and-Detour-Value-Cost-Audit-Markers-Pre-implementation-Brief v0.md` is accepted
     - Slice 5B planning support signals and detour value-cost audit markers are implemented, and `Slice5B-Planning-Support-Signals-and-Detour-Value-Cost-Audit-Markers-Post-implementation-Report v0.md` is accepted as historical evidence
-    - Slice 5B's detour-specific audit markers are deprecated after `DEC-104`; current live runs keep only forward navigation trace evidence
+    - Slice 5B's detour-specific audit markers are historical after `DEC-105`; current live runs keep only forward navigation trace evidence
     - `Slice6A-Slow-cycle-Candidate-and-Settlement-Audit-Envelope-Foundations-Pre-implementation-Brief v0.md` is accepted
     - Slice 6A slow-cycle candidate and settlement audit envelope foundations are implemented, and `Slice6A-Slow-cycle-Candidate-and-Settlement-Audit-Envelope-Foundations-Post-implementation-Report v0.md` has been reviewed; the implementation direction is accepted with a requested carried SourceRef audit precision patch before the next slice
     - Slice 6A carried SourceRef audit precision patch is implemented, and `Slice6A-Patch-Carry-forward-Settled-SourceRef-Evidence-Precision-Report v0.md` is accepted
@@ -341,7 +341,7 @@ Last verified: `2026-05-31T09:23:05+08:00`
           - `SourceSpan`: end-exclusive `[start_cursor, end_cursor)`
           - `Navigate.choose_next_unit` sees an adaptive paragraph-offset preview and returns `end_anchor_text`
           - `Reading Runner` resolves that anchor into an accepted unit span, advances the source cursor, and appends `_mechanisms/attentional_v2/runtime/unit_span_ledger.jsonl`
-          - sentence ids remain in legacy/eval/historical-detour compatibility territory, not the mainline reading lattice
+          - sentence ids remain in legacy/eval/reviewer-orientation territory, not the mainline reading lattice
           - SourceRef cutover is now landed: memory/reaction/probe-facing source evidence uses inline paragraph-offset `source_refs[]`, and new `attentional_v2` runtime/checkpoint truth no longer includes `anchor_bank`
         - first no-judge settlement-audit diagnostic:
           - run id:
@@ -403,9 +403,9 @@ Last verified: `2026-05-31T09:23:05+08:00`
         - `reading-companion-backend/docs/evaluation/long_span/memory_quality_report_contract.md`
         - future reports should use one full source document per window with probe markers and should not include current `Recent Routes` / `route_action` evidence blocks
       - current Navigator source-skill posture:
-        - superseded by `DEC-104`
+        - superseded by `DEC-104` and hard-purged by `DEC-105`
         - `Navigate.choose_next_unit` is now forward-only and does not call source skills
-        - the old mechanism-private Skill Runtime and supported book-local skills remain deprecated historical/reference surfaces only
+        - the old mechanism-private Skill Runtime is not a current code, prompt, audit, or test interface
       - result:
         - `Memory Quality` average overall score: `3.48`
         - probe count: `25`
@@ -628,7 +628,7 @@ Last verified: `2026-05-31T09:23:05+08:00`
   - `Phase C.3` is now landed as the direct main-state cutover:
     - new runs now treat `active_attention / concept_registry / thread_trace / reflective_frames` plus inline `source_refs[]` as the primary runtime and checkpoint truth
     - the old V2 state stores were demoted to cutover-only legacy territory
-    - the historical `active_recall` helper surfaced first-class `concepts` and `threads` from the new state layers; after `DEC-104`, it is deprecated supplemental-context evidence, not the future `Ingest` retrieval mechanism
+    - old supplemental retrieval helpers from that branch were removed from the current code surface by `DEC-105`; future `Ingest` retrieval is a separate design task
     - `read` introduced explicit memory-update operations, then called `implicit_uptake`, into:
       - `active_attention`
       - `concept_registry`
@@ -651,10 +651,10 @@ Last verified: `2026-05-31T09:23:05+08:00`
     - old `gate_state`, `pressure_snapshot`, and working-pressure runtime artifacts are no longer schema, prompt, runtime, checkpoint, or Memory Quality evidence fields
     - old `pressure_signals` were removed with the forward-settlement cutover; current `Read` emits only reading impression, surfaced reactions, and memory uptake
   - `Phase D` is now landed as the continuity / recall / resume polish slice:
-    - `read` now runs under a budget-bounded multi-step supplemental loop instead of a single extra pass
+    - that branch explored a budget-bounded multi-step supplemental context loop around `read`
     - runtime and full checkpoints now persist a lightweight `continuation capsule` with explicit `rehydration entrypoints`
     - warm resume now restores new-format state together with the latest usable continuation capsule instead of relying only on raw runtime/checkpoint state
-    - the historical `look_back` helper returned one bounded earlier source span, and `read_audit` recorded per-step supplemental activity, stop reason, and budget exhaustion; after `DEC-104`, this is deprecated supplemental-context evidence, not current live backread behavior
+    - old supplemental source-span helper interfaces from that branch are no longer current code, prompt, audit, or test surfaces after `DEC-105`
     - public/frontend compatibility surfaces remain unchanged
   - `Phase E1` through `Phase E3` are now preserved as a landed intermediate branch:
     - that branch retained the temporary `Read -> Express` split
@@ -683,13 +683,13 @@ Last verified: `2026-05-31T09:23:05+08:00`
     - `memory_uptake_ops` should capture what naturally needs to remain available after the unit, including explicit source structures such as stage models, classifications, definitions, distinctions, and chapter roadmaps when they matter
   - `Phase F2` is now historical after `DEC-104`:
     - the old live Detour / source-backread path has been retired from the current runtime
+    - `DEC-105` hard-purges the retired compatibility interfaces from current code, prompts, schemas, audits, and tests
     - `Navigate.choose_next_unit` now chooses only the next forward source unit
-    - deprecated `request_skill` / `defer_detour` / `detour` / `deferred` outputs are normalized into safe mainline fallback behavior
-    - `Read.detour_need` is no longer a current prompt contract; stale output is ignored and does not mutate `local_continuity`
-    - old `active_detour_id`, `active_detour_need`, and `detour_trace` fields are dropped/ignored on new capture or resume
+    - current `Read` has no path-redirection output contract
+    - current `local_continuity`, prompt manifests, and read audits do not emit retired Detour-era fields for new runs
   - `Phase F3` is now landed as the reaction-persistence and compatibility reconvergence slice:
     - persisted visible reactions now enter the system only through `Read.surfaced_reactions[]`
-    - current forward reading uses one surfaced-native reaction-record builder; old detour reads remain historical artifacts only
+    - current forward reading uses one surfaced-native reaction-record builder; old non-mainline read artifacts are historical only
     - chapter-result compatibility projection and normalized eval export now read surfaced-native persisted records and derive old family labels only through the compat helper
     - dead live ownership paths for the old `Express` persistence flow and `raw_reaction` fallback are now removed
   - `Phase F4A` is now landed as the first focused quality-audit pack:
@@ -709,10 +709,9 @@ Last verified: `2026-05-31T09:23:05+08:00`
         - `mangge_zhi_dao_private_zh__segment_1`: `4` reactions over `8` units
       - sampled wording is mostly back in reading-time territory rather than broad review / chapter-summary voice
       - chapter-result compatibility projection and normalized eval export both materialized for all six shards
-      - but no shard emitted a real detour:
-        - `detour_trace_count = 0`
+      - non-mainline path behavior from the historical F2 branch was not treated as validated product evidence
+        - every shard stayed on the forward reading path
         - `backward_pull = 0`
-        - `detour_need.status = open|resolved|abandoned = 0`
       - surfaced optional semantics also stayed absent in the pack:
         - `prior_link_count = 0`
         - `outside_link_count = 0`

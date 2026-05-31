@@ -19,7 +19,6 @@ from .schemas import (
     ActiveAttention,
     CarryForwardContext,
     ConceptRegistryState,
-    ContextRequest,
     FullCheckpointState,
     LocalBufferState,
     LocalContinuityState,
@@ -522,7 +521,7 @@ def record_read(
     unitize_decision: UnitizeDecision,
     carry_forward_context: CarryForwardContext,
     source_unit: Mapping[str, object] | None = None,
-    context_request: ContextRequest | None = None,
+    context_request: Mapping[str, object] | None = None,
     supplemental_context: dict[str, object] | None = None,
     supplemental_satisfied: bool = False,
     supplemental_steps: list[dict[str, object]] | None = None,
@@ -531,15 +530,9 @@ def record_read(
     read_result: Mapping[str, object],
     llm_fallbacks: list[dict[str, str]] | None = None,
     navigation_trace: list[dict[str, object]] | None = None,
-    detour_trace_evidence: dict[str, object] | None = None,
 ) -> None:
-    """Append one mechanism-private read audit record.
+    """Append one mechanism-private read audit record."""
 
-    Deprecated after DEC-103/DEC-104: `detour_trace_evidence` is accepted only
-    for historical call-site compatibility and is ignored.
-    """
-
-    del detour_trace_evidence
     if output_dir is None:
         return
     surfaced_reactions = (
@@ -582,12 +575,30 @@ def record_read(
         "memory_uptake_admission_events": memory_uptake_admission_events,
         "llm_fallbacks": [dict(item) for item in (llm_fallbacks or []) if isinstance(item, Mapping)],
     }
-    if isinstance(read_result.get("deprecated_detour_need_ignored"), Mapping):
-        row["deprecated_detour_need_ignored"] = dict(read_result["deprecated_detour_need_ignored"])
     supplemental_retrieval = _supplemental_retrieval_audit(supplemental_context)
     if supplemental_retrieval:
         row["supplemental_retrieval"] = supplemental_retrieval
-    compact_navigation_trace = [dict(item) for item in (navigation_trace or []) if isinstance(item, Mapping)]
+    navigation_trace_fields = {
+        "decision",
+        "selection_mode",
+        "reason",
+        "end_anchor_text",
+        "source_span_id",
+        "resolution",
+        "error",
+        "budget_state",
+        "continuity_cost",
+    }
+    compact_navigation_trace = [
+        {
+            key: dict(value) if isinstance(value, Mapping) else value
+            for key, value in item.items()
+            if key in navigation_trace_fields and value not in (None, "", [], {})
+        }
+        for item in (navigation_trace or [])
+        if isinstance(item, Mapping)
+    ]
+    compact_navigation_trace = [item for item in compact_navigation_trace if item]
     if compact_navigation_trace:
         row["navigation_trace"] = compact_navigation_trace
     append_jsonl(read_audit_file(output_dir), row)

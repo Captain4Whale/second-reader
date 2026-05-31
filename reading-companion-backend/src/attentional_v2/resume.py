@@ -734,7 +734,31 @@ def _mark_local_continuity(
 ) -> LocalContinuityState:
     """Return the post-resume compact continuity state."""
 
-    next_continuity = dict(continuity)
+    allowed_keys = {
+        "schema_version",
+        "mechanism_version",
+        "updated_at",
+        "chapter_id",
+        "chapter_ref",
+        "current_sentence_id",
+        "current_sentence_index",
+        "recent_sentence_ids",
+        "open_meaning_unit_sentence_ids",
+        "recent_meaning_units",
+        "last_meaning_unit_closed_at_sentence_id",
+        "mainline_cursor",
+        "current_source_span",
+        "current_source_span_id",
+        "reading_queue_stage",
+        "is_reconstructed",
+        "reconstructed_from_checkpoint_id",
+        "last_resume_kind",
+    }
+    next_continuity = {
+        key: value
+        for key, value in continuity.items()
+        if key in allowed_keys
+    }
     if window_sentence_ids is not None:
         allowed_ids = set(window_sentence_ids)
         next_continuity["recent_sentence_ids"] = list(window_sentence_ids)
@@ -755,9 +779,6 @@ def _mark_local_continuity(
     next_continuity["is_reconstructed"] = reconstructed
     next_continuity["reconstructed_from_checkpoint_id"] = checkpoint_id
     next_continuity["last_resume_kind"] = resume_kind
-    next_continuity.pop("active_detour_id", None)
-    next_continuity.pop("active_detour_need", None)
-    next_continuity.pop("detour_trace", None)
     return next_continuity  # type: ignore[return-value]
 
 

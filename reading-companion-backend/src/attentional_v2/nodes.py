@@ -16,14 +16,12 @@ from .prompts import (
     READ_XML_TRANSPORT_SYSTEM_PROMPT,
     render_read_prompt_xml,
 )
-from .skills.schemas import SkillRequest
 from .state_projection import build_read_prompt_packet
 from .schemas import (
     AnchorBankState,
     AnchorMemoryState,
     BridgeCandidate,
     CarryForwardContext,
-    DetourNeed,
     KnowledgeActivationsState,
     MemoryUptakeAdmissionEvent,
     NavigationContext,
@@ -75,12 +73,8 @@ _STATE_OPERATION_TYPES = {
     "reactivate",
     "resolve",
 }
-_DETOUR_STATUSES = {"open", "resolved", "abandoned"}
 _NAVIGATE_ACT_DECISIONS = {"choose_unit"}
-_DEPRECATED_NAVIGATE_ACT_DECISIONS = {"request_skill", "defer_detour"}
 _NAVIGATE_SELECTION_MODES = {"mainline"}
-_DEPRECATED_NAVIGATE_SELECTION_MODES = {"detour", "deferred"}
-_LEXICAL_CONTENT_RE = re.compile(r"[A-Za-z0-9\u4e00-\u9fff]")
 _VISIBLE_INTERNAL_REFERENCE_PATTERNS = (
     re.compile(r"\bc\d+-s\d+(?:-\d+)?(?:-c\d+-s\d+(?:-\d+)?)?\b", re.IGNORECASE),
     re.compile(r"\b(?:anchor|thread|concept|reaction|move|ref|source):[A-Za-z0-9._:@-]+\b", re.IGNORECASE),
@@ -339,45 +333,6 @@ def build_unitize_preview(
     }
 
 
-def _current_paragraph_end_sentence_id(preview_sentences: list[dict[str, object]]) -> str:
-    """Return the sentence id at the end of the current paragraph preview slice."""
-
-    if not preview_sentences:
-        return ""
-    first_paragraph_index = _sentence_paragraph_index(preview_sentences[0])
-    current_paragraph = [
-        sentence
-        for sentence in preview_sentences
-        if _sentence_paragraph_index(sentence) == first_paragraph_index
-    ]
-    if not current_paragraph:
-        return _sentence_id(preview_sentences[-1])
-    return _sentence_id(current_paragraph[-1])
-
-
-def _paragraph_sentences_from_preview(
-    preview_sentences: list[dict[str, object]],
-) -> list[list[dict[str, object]]]:
-    """Return ordered paragraph buckets from one preview slice."""
-
-    return [bucket for _paragraph_index, bucket in _sentences_by_paragraph(preview_sentences)]
-
-
-def _is_heading_paragraph(paragraph_sentences: list[dict[str, object]]) -> bool:
-    """Return whether one preview paragraph is entirely heading-like."""
-
-    if not paragraph_sentences:
-        return False
-    roles = {_clean_text(sentence.get("text_role")) for sentence in paragraph_sentences}
-    return bool(roles) and roles.issubset({"chapter_heading", "section_heading"})
-
-
-def _has_body_sentence(paragraph_sentences: list[dict[str, object]]) -> bool:
-    """Return whether one preview paragraph contains body text."""
-
-    return any(_clean_text(sentence.get("text_role")) == "body" for sentence in paragraph_sentences)
-
-
 def _normalize_unitize_boundary_type(value: object) -> UnitizeBoundaryType:
     """Normalize one unitize boundary type with a conservative fallback."""
 
@@ -385,128 +340,6 @@ def _normalize_unitize_boundary_type(value: object) -> UnitizeBoundaryType:
     if normalized in _UNITIZE_BOUNDARY_TYPES:
         return normalized  # type: ignore[return-value]
     return "paragraph_end"
-
-
-def _is_pure_non_lexical_boundary_residue(sentence: dict[str, object]) -> bool:
-    """Return true only for standalone symbol/divider residue with no lexical content."""
-
-    text = _clean_text(sentence.get("text"))
-    return bool(text) and _LEXICAL_CONTENT_RE.search(text) is None
-
-
-def _apply_unitize_guardrail(
-    decision: UnitizeDecision,
-    *,
-    preview_sentences: list[dict[str, object]],
-    reader_policy: ReaderPolicy,
-) -> UnitizeDecision:
-    """Clamp a semantic unitize choice to Phase A's emergency sentence ceiling."""
-
-    if not preview_sentences:
-        return decision
-    max_sentences = int(reader_policy.get("unitize", {}).get("max_coverage_unit_sentences", 12) or 12)
-    if max_sentences <= 0:
-        max_sentences = 12
-
-    preview_ids = [_sentence_id(sentence) for sentence in preview_sentences if _sentence_id(sentence)]
-    preview_start = preview_ids[0]
-    preview_end = preview_ids[-1]
-    chosen_start = _clean_text(decision.get("start_sentence_id")) or preview_start
-    chosen_end = _clean_text(decision.get("end_sentence_id")) or _current_paragraph_end_sentence_id(preview_sentences) or preview_end
-    if chosen_start not in preview_ids:
-        chosen_start = preview_start
-    if chosen_end not in preview_ids:
-        chosen_end = _current_paragraph_end_sentence_id(preview_sentences) or preview_end
-
-    start_index = preview_ids.index(chosen_start)
-    end_index = preview_ids.index(chosen_end)
-    if start_index > 0 and not all(
-        _is_pure_non_lexical_boundary_residue(sentence)
-        for sentence in preview_sentences[:start_index]
-    ):
-        chosen_start = preview_start
-        start_index = 0
-    if end_index < start_index:
-        chosen_start = preview_start
-        start_index = 0
-
-    if end_index - start_index + 1 > max_sentences:
-        bounded_end = preview_sentences[start_index + max_sentences - 1]
-        bounded_ids = preview_ids[start_index : start_index + max_sentences]
-        return {
-            **decision,
-            "start_sentence_id": chosen_start,
-            "end_sentence_id": _sentence_id(bounded_end),
-            "preview_range": {
-                "start_sentence_id": preview_start,
-                "end_sentence_id": preview_end,
-            },
-            "boundary_type": "budget_cap",
-            "evidence_sentence_ids": bounded_ids,
-            "continuation_pressure": True,
-            "reason": _clean_text(decision.get("reason")) or "unitize_budget_cap",
-        }
-
-    evidence_sentence_ids = [
-        sentence_id
-        for sentence_id in decision.get("evidence_sentence_ids", [])
-        if sentence_id in preview_ids[start_index : end_index + 1]
-    ]
-    if not evidence_sentence_ids or evidence_sentence_ids[0] != chosen_start:
-        evidence_sentence_ids = preview_ids[start_index : end_index + 1]
-    return {
-        **decision,
-        "start_sentence_id": chosen_start,
-        "end_sentence_id": chosen_end,
-        "preview_range": {
-            "start_sentence_id": preview_start,
-            "end_sentence_id": preview_end,
-        },
-        "boundary_type": _normalize_unitize_boundary_type(decision.get("boundary_type")),
-        "evidence_sentence_ids": evidence_sentence_ids,
-        "continuation_pressure": bool(decision.get("continuation_pressure")),
-        "reason": _clean_text(decision.get("reason")),
-    }
-
-
-def _fallback_unitize_decision(preview_sentences: list[dict[str, object]]) -> UnitizeDecision:
-    """Return a deterministic paragraph-bounded fallback decision."""
-
-    if not preview_sentences:
-        return {
-            "start_sentence_id": "",
-            "end_sentence_id": "",
-            "preview_range": {"start_sentence_id": "", "end_sentence_id": ""},
-            "boundary_type": "paragraph_end",
-            "evidence_sentence_ids": [],
-            "reason": "unitize_fallback_empty_preview",
-            "continuation_pressure": False,
-        }
-    paragraph_end_sentence_id = _current_paragraph_end_sentence_id(preview_sentences) or _sentence_id(preview_sentences[-1])
-    preview_ids = [_sentence_id(sentence) for sentence in preview_sentences if _sentence_id(sentence)]
-    fallback_reason = "unitize_fallback_current_paragraph"
-
-    preview_paragraphs = _paragraph_sentences_from_preview(preview_sentences)
-    if len(preview_paragraphs) >= 2:
-        first_paragraph = preview_paragraphs[0]
-        second_paragraph = preview_paragraphs[1]
-        if _is_heading_paragraph(first_paragraph) and _has_body_sentence(second_paragraph):
-            paragraph_end_sentence_id = _sentence_id(second_paragraph[-1]) or paragraph_end_sentence_id
-            fallback_reason = "unitize_fallback_heading_with_body"
-
-    end_index = preview_ids.index(paragraph_end_sentence_id) if paragraph_end_sentence_id in preview_ids else len(preview_ids) - 1
-    return {
-        "start_sentence_id": _sentence_id(preview_sentences[0]),
-        "end_sentence_id": paragraph_end_sentence_id,
-        "preview_range": {
-            "start_sentence_id": _sentence_id(preview_sentences[0]),
-            "end_sentence_id": _sentence_id(preview_sentences[-1]),
-        },
-        "boundary_type": "paragraph_end",
-        "evidence_sentence_ids": preview_ids[: end_index + 1],
-        "reason": fallback_reason,
-        "continuation_pressure": False,
-    }
 
 
 _MISSING_TARGET_STORE_WARNING = "missing_target_store_defaulted"
@@ -895,111 +728,12 @@ def _normalize_surfaced_reactions(
     return reactions
 
 
-def _normalize_detour_need(value: object) -> DetourNeed | None:
-    """Deprecated after DEC-103/DEC-104: normalize one historical detour-need request."""
-
-    if not isinstance(value, dict):
-        return None
-    reason = _clean_text(value.get("reason"))
-    target_hint = _clean_text(value.get("target_hint"))
-    status = _clean_text(value.get("status")).lower().replace("-", "_")
-    if status not in _DETOUR_STATUSES:
-        status = "open"
-    if not any((reason, target_hint)):
-        return None
-    result: DetourNeed = {
-        "reason": reason,
-        "target_hint": target_hint,
-        "status": status,  # type: ignore[typeddict-item]
-    }
-    return result
-
-
-def _normalize_skill_request(value: object) -> SkillRequest | None:
-    """Deprecated after DEC-103/DEC-104: normalize one legacy Navigate-requested skill packet."""
-
-    if not isinstance(value, dict):
-        return None
-    arguments = value.get("arguments")
-    skill_request: SkillRequest = {
-        "skill_name": _clean_text(value.get("skill_name")),
-        "reason": _clean_text(value.get("reason")),
-        "arguments": dict(arguments) if isinstance(arguments, dict) else {},
-    }
-    if not _clean_text(skill_request.get("skill_name")):
-        return None
-    return skill_request
-
-
-def _unitize_decision_from_navigate_act(
-    value: object,
-    *,
-    preview_sentences: list[dict[str, object]],
-    reader_policy: ReaderPolicy,
-    fallback_reason: str,
-) -> UnitizeDecision:
-    """Normalize a Navigate choose-unit act into the existing unitize decision shape."""
-
-    fallback = _fallback_unitize_decision(preview_sentences)
-    if not isinstance(value, dict):
-        return fallback
-    start_sentence_id = _clean_text(value.get("start_sentence_id"))
-    end_sentence_id = _clean_text(value.get("end_sentence_id"))
-    if not start_sentence_id or not end_sentence_id:
-        return fallback
-    raw_evidence = value.get("evidence_sentence_ids")
-    evidence_sentence_ids = [
-        _clean_text(item)
-        for item in raw_evidence
-        if _clean_text(item)
-    ] if isinstance(raw_evidence, list) else []
-    decision: UnitizeDecision = {
-        "start_sentence_id": start_sentence_id,
-        "end_sentence_id": end_sentence_id,
-        "preview_range": {
-            "start_sentence_id": _sentence_id(preview_sentences[0]) if preview_sentences else "",
-            "end_sentence_id": _sentence_id(preview_sentences[-1]) if preview_sentences else "",
-        },
-        "boundary_type": _normalize_unitize_boundary_type(value.get("boundary_type")),
-        "evidence_sentence_ids": evidence_sentence_ids,
-        "reason": _clean_text(value.get("reason")) or fallback_reason,
-        "continuation_pressure": bool(value.get("continuation_pressure")),
-    }
-    return _apply_unitize_guardrail(
-        {
-            **fallback,
-            **decision,
-        },
-        preview_sentences=preview_sentences,
-        reader_policy=reader_policy,
-    )
-
-
 def _normalize_navigate_act_result(
     value: object,
-    *,
-    allowed_sentence_ids: set[str],
-    available_sentences: list[dict[str, object]],
-    reader_policy: ReaderPolicy,
-    default_selection_mode: str,
-    skills_allowed: bool,
 ) -> NavigateActResult:
     """Normalize one Navigate.choose_next_unit act result against the current forward-only act space."""
 
-    del allowed_sentence_ids, default_selection_mode, skills_allowed
     if not isinstance(value, dict):
-        if available_sentences:
-            decision = _unitize_decision_from_navigate_act(
-                {},
-                preview_sentences=available_sentences,
-                reader_policy=reader_policy,
-                fallback_reason="navigate_choose_next_unit_llm_empty_fallback",
-            )
-            return {
-                "decision": "choose_unit",
-                "selection_mode": "mainline",
-                **decision,
-            }
         return {
             "decision": "choose_unit",
             "selection_mode": "mainline",
@@ -1009,51 +743,15 @@ def _normalize_navigate_act_result(
             "continuation_pressure": False,
         }
     decision = _clean_text(value.get("decision")).lower().replace("-", "_")
-    if decision not in _NAVIGATE_ACT_DECISIONS or decision != "choose_unit":
+    if decision not in _NAVIGATE_ACT_DECISIONS:
         decision = "choose_unit"
-    if (
-        available_sentences
-        and _clean_text(value.get("start_sentence_id"))
-        and _clean_text(value.get("end_sentence_id"))
-    ):
-        unitize_decision = _unitize_decision_from_navigate_act(
-            value,
-            preview_sentences=available_sentences,
-            reader_policy=reader_policy,
-            fallback_reason="navigate_choose_next_unit_sentence_compat_fallback",
-        )
-        return {
-            "decision": "choose_unit",
-            "selection_mode": "mainline",
-            **unitize_decision,
-        }
     return {
-        "decision": "choose_unit",
+        "decision": decision,  # type: ignore[typeddict-item]
         "selection_mode": "mainline",
         "reason": _clean_text(value.get("reason")),
-        "end_anchor_text": _clean_text(
-            value.get("end_anchor_text")
-            or value.get("end_after_text")
-            or value.get("unit_text_tail")
-        ),
+        "end_anchor_text": _clean_text(value.get("end_anchor_text")),
         "boundary_type": _normalize_unitize_boundary_type(value.get("boundary_type")),
         "continuation_pressure": bool(value.get("continuation_pressure")),
-    }
-
-
-def _fallback_read_unit_result(
-    *,
-    current_unit_sentences: list[dict[str, object]],
-    continuation_pressure: bool = False,
-    reason: str = "",
-) -> ReadUnitResult:
-    """Return one conservative fallback read result."""
-
-    return {
-        "reading_impression": _clean_text(reason),
-        "surfaced_reactions": [],
-        "memory_uptake_ops": [],
-        "detour_need": None,
     }
 
 
@@ -1061,12 +759,8 @@ def navigate_choose_next_unit_act(
     *,
     reading_position: dict[str, object],
     mainline_preview: dict[str, object],
-    active_detour_need: DetourNeed | None,
     mainline_cursor: dict[str, object],
     navigation_context: NavigationContext | dict[str, object] | None = None,
-    source_evidence: dict[str, object] | None = None,
-    skill_catalog: list[dict[str, object]] | None = None,
-    skill_results_so_far: list[dict[str, object]] | None = None,
     budget_state: dict[str, object] | None = None,
     reader_policy: ReaderPolicy,
     output_language: str,
@@ -1074,22 +768,9 @@ def navigate_choose_next_unit_act(
     book_title: str = "",
     author: str = "",
     chapter_title: str = "",
-    available_sentences: list[dict[str, object]] | None = None,
-    allowed_sentence_ids: set[str] | None = None,
-    default_selection_mode: str = "mainline",
-    skills_allowed: bool = False,
 ) -> NavigateActResult:
-    """Run the forward-only Navigate.choose_next_unit act.
+    """Run the forward-only Navigate.choose_next_unit act."""
 
-    Deprecated after DEC-103/DEC-104: detour/source-skill inputs are retained in
-    the signature for compatibility but are cleared before prompt assembly.
-    """
-
-    active_detour_need = None
-    default_selection_mode = "mainline"
-    skills_allowed = False
-    skill_catalog = []
-    skill_results_so_far = []
     prompts = ATTENTIONAL_V2_PROMPTS
     structural_frame = _structural_frame(
         book_title=book_title,
@@ -1097,19 +778,13 @@ def navigate_choose_next_unit_act(
         chapter_title=chapter_title,
         output_language=output_language,
     )
-    available = [dict(sentence) for sentence in available_sentences or [] if isinstance(sentence, dict)]
-    allowed_ids = set(allowed_sentence_ids or {_sentence_id(sentence) for sentence in available if _sentence_id(sentence)})
     user_prompt = _render_prompt(
         prompts.navigate_choose_next_unit_prompt,
         structural_frame=_json_block(structural_frame),
         reading_position=_json_block(reading_position),
         mainline_preview=_json_block(mainline_preview),
-        active_detour_need=_json_block(dict(active_detour_need or {})),
         mainline_cursor=_json_block(dict(mainline_cursor or {})),
         navigation_context=_json_block(dict(navigation_context or {})),
-        source_evidence=_json_block(dict(source_evidence or {})),
-        skill_catalog=_json_block(skill_catalog or []),
-        skill_results_so_far=_json_block(skill_results_so_far or []),
         budget_state=_json_block(dict(budget_state or {})),
         policy_snapshot=_json_block(reader_policy),
         output_language_name=language_name(output_language),
@@ -1128,25 +803,8 @@ def navigate_choose_next_unit_act(
             payload = invoke_json(prompts.navigate_choose_next_unit_system, user_prompt, default={})
         return _normalize_navigate_act_result(
             payload,
-            allowed_sentence_ids=allowed_ids,
-            available_sentences=available,
-            reader_policy=reader_policy,
-            default_selection_mode=default_selection_mode,
-            skills_allowed=skills_allowed,
         )
     except ReaderLLMError:
-        if available:
-            fallback = _unitize_decision_from_navigate_act(
-                {},
-                preview_sentences=available,
-                reader_policy=reader_policy,
-                fallback_reason="navigate_choose_next_unit_llm_error_fallback",
-            )
-            return {
-                "decision": "choose_unit",
-                "selection_mode": "mainline",
-                **fallback,
-            }
         return {
             "decision": "choose_unit",
             "selection_mode": "mainline",
@@ -1168,10 +826,10 @@ def _route_targets_from_ref_ids(
         cleaned = _clean_text(ref_id)
         if cleaned.startswith("anchor:") and not target_anchor_id:
             target_anchor_id = cleaned.split("anchor:", 1)[1]
-        elif cleaned.startswith("lookback:anchor:") and not target_anchor_id:
-            target_anchor_id = cleaned.split("lookback:anchor:", 1)[1]
-        elif cleaned.startswith("lookback:sentence:") and not target_sentence_id:
-            target_sentence_id = cleaned.split("lookback:sentence:", 1)[1]
+        elif cleaned.startswith("source:anchor:") and not target_anchor_id:
+            target_anchor_id = cleaned.split("source:anchor:", 1)[1]
+        elif cleaned.startswith("source:sentence:") and not target_sentence_id:
+            target_sentence_id = cleaned.split("source:sentence:", 1)[1]
         elif cleaned.startswith("sentence:") and not target_sentence_id:
             target_sentence_id = cleaned.split("sentence:", 1)[1]
     return target_anchor_id, target_sentence_id
@@ -1225,7 +883,6 @@ def read_unit(
     current_unit_source: dict[str, object] | None = None,
     current_unit_sentences: list[dict[str, object]] | None = None,
     supplemental_context: dict[str, object] | None = None,
-    detour_context: dict[str, object] | None = None,
     output_dir: Path | None = None,
     book_title: str = "",
     author: str = "",
@@ -1272,7 +929,6 @@ def read_unit(
     prompt_packet = build_read_prompt_packet(
         carry_forward_context=carry_forward_context,
         supplemental_context=supplemental_context,
-        detour_context=detour_context,
     )
     structural_frame = _structural_frame(
         book_title=book_title,
@@ -1293,7 +949,6 @@ def read_unit(
             else None,
             current_unit_source=source_unit,
             current_unit_sentences=sentence_unit,
-            detour_context=detour_context,
         )
         system_prompt = READ_XML_TRANSPORT_SYSTEM_PROMPT
         user_prompt = assembly_result.rendered_text
@@ -1367,6 +1022,5 @@ def read_unit(
         "surfaced_reactions": surfaced_reactions,
         "memory_uptake_ops": memory_uptake_ops,
         "memory_uptake_admission_events": memory_uptake_admission_events,
-        "detour_need": _normalize_detour_need(payload.get("detour_need")) if isinstance(payload, dict) else None,
     }
     return result

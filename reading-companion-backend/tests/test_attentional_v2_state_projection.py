@@ -405,8 +405,8 @@ def test_build_read_prompt_packet_projects_compact_always_carry_and_selective_ca
         supplemental_context={
             "refs": [
                 {
-                    "ref_id": "lookback:sentence:c1-s1",
-                    "kind": "look_back_excerpt",
+                    "ref_id": "source:sentence:c1-s1",
+                    "kind": "source_excerpt",
                     "item_id": "c1-s1",
                     "summary": "Alpha sentence.",
                     "sentence_id": "c1-s1",
@@ -414,7 +414,7 @@ def test_build_read_prompt_packet_projects_compact_always_carry_and_selective_ca
             ],
             "excerpts": [
                 {
-                    "ref_id": "lookback:sentence:c1-s1",
+                    "ref_id": "source:sentence:c1-s1",
                     "source_kind": "sentence",
                     "sentence_ids": ["c1-s1"],
                     "chapter_ref": "Chapter 1",
@@ -453,8 +453,8 @@ def test_build_read_prompt_packet_projects_compact_always_carry_and_selective_ca
     assert prompt_packet["thread_digest"][0]["projection_role"] == "current_support"
     assert prompt_packet["reflective_digest"]["chapter_frames"][0]["item_id"] == "frame-1"
     assert prompt_packet["reflective_digest"]["chapter_frames"][0]["projection_role"] == "current_support"
-    assert prompt_packet["selective_carry"]["earlier_excerpts"][0]["ref_id"] == "lookback:sentence:c1-s1"
-    assert prompt_packet["selective_carry"]["supporting_refs"][0]["ref_id"] == "lookback:sentence:c1-s1"
+    assert prompt_packet["selective_carry"]["earlier_excerpts"][0]["ref_id"] == "source:sentence:c1-s1"
+    assert prompt_packet["selective_carry"]["supporting_refs"][0]["ref_id"] == "source:sentence:c1-s1"
     assert "refs" not in prompt_packet
     assert "anchor_bank_digest" not in prompt_packet
     assert prompt_packet["local_continuity"]["recent_reactions"][0]["reaction_id"] == "reaction-1"
@@ -511,8 +511,8 @@ def test_read_prompt_packet_includes_all_open_questions_without_runtime_fields()
     }
 
 
-def test_build_read_prompt_packet_exposes_retrieval_contract_without_full_active_recall_objects():
-    """Deprecated active_recall compatibility should expose metadata without full objects."""
+def test_build_read_prompt_packet_exposes_retrieval_contract_without_full_memory_objects():
+    """Memory-context retrieval should expose metadata without full objects."""
 
     carry_forward = build_carry_forward_context(
         chapter_ref="Chapter 1",
@@ -526,14 +526,14 @@ def test_build_read_prompt_packet_exposes_retrieval_contract_without_full_active
     )
 
     supplemental_context = {
-        "kind": "active_recall",
+        "kind": "memory_context",
         "reason": "Need prior memory.",
         "retrieval_intent": "memory_recovery",
         "result_boundary": "settled_memory_refs_and_visible_trace_refs",
         "result_groups": ["concepts", "threads", "reactions", "refs"],
         "retrieval_events": [
             {
-                "kind": "active_recall",
+                "kind": "memory_context",
                 "retrieval_intent": "memory_recovery",
                 "result_boundary": "settled_memory_refs_and_visible_trace_refs",
                 "result_groups": ["concepts", "threads", "reactions", "refs"],
@@ -573,10 +573,10 @@ def test_build_read_prompt_packet_exposes_retrieval_contract_without_full_active
     assert retrieval_context["retrieval_intent"] == "memory_recovery"
     assert retrieval_context["result_boundary"] == "settled_memory_refs_and_visible_trace_refs"
     assert retrieval_context["result_groups"] == ["concepts", "threads", "reactions", "refs"]
-    assert retrieval_context["retrieval_events"][0]["kind"] == "active_recall"
+    assert retrieval_context["retrieval_events"][0]["kind"] == "memory_context"
     assert retrieval_context["forwarded_result_groups"] == ["refs"]
     assert retrieval_context["not_forwarded_result_groups"] == ["concepts", "threads", "reactions"]
-    assert retrieval_context["active_recall_full_objects_forwarded"] is False
+    assert retrieval_context["full_objects_forwarded"] is False
     assert "concepts" not in selective_carry
     assert "threads" not in selective_carry
     assert "reactions" not in selective_carry
@@ -586,7 +586,7 @@ def test_build_read_prompt_packet_exposes_retrieval_contract_without_full_active
 
 
 def test_build_read_prompt_packet_uses_precise_sparse_retrieval_groups():
-    """Deprecated active_recall metadata should not list absent groups as not forwarded."""
+    """Memory-context metadata should not list absent groups as not forwarded."""
 
     carry_forward = build_carry_forward_context(
         chapter_ref="Chapter 1",
@@ -600,14 +600,14 @@ def test_build_read_prompt_packet_uses_precise_sparse_retrieval_groups():
     )
 
     supplemental_context = {
-        "kind": "active_recall",
+        "kind": "memory_context",
         "reason": "Need prior memory.",
         "retrieval_intent": "memory_recovery",
         "result_boundary": "settled_memory_refs_and_visible_trace_refs",
         "result_groups": ["concepts", "refs"],
         "retrieval_events": [
             {
-                "kind": "active_recall",
+                "kind": "memory_context",
                 "retrieval_intent": "memory_recovery",
                 "result_boundary": "settled_memory_refs_and_visible_trace_refs",
                 "result_groups": ["concepts", "refs"],
@@ -632,7 +632,7 @@ def test_build_read_prompt_packet_uses_precise_sparse_retrieval_groups():
     assert retrieval_context["not_forwarded_result_groups"] == ["concepts"]
     assert "threads" not in retrieval_context["not_forwarded_result_groups"]
     assert "reactions" not in retrieval_context["not_forwarded_result_groups"]
-    assert retrieval_context["active_recall_full_objects_forwarded"] is False
+    assert retrieval_context["full_objects_forwarded"] is False
     assert "concepts" not in selective_carry
     assert "threads" not in selective_carry
     assert "reactions" not in selective_carry
@@ -657,7 +657,6 @@ def test_navigate_choose_next_unit_prompt_receives_navigation_context(monkeypatc
             "preview_range": {"start_sentence_id": "c1-s1", "end_sentence_id": "c1-s1"},
             "preview_sentences": [_sentence("c1-s1", "Alpha sentence.")],
         },
-        active_detour_need=None,
         mainline_cursor={},
         navigation_context={
             "packet_version": STATE_PACKET_VERSION,
@@ -671,16 +670,9 @@ def test_navigate_choose_next_unit_prompt_receives_navigation_context(monkeypatc
             "source_ref_digest": [],
             "refs": [],
         },
-        source_evidence={},
-        skill_catalog=[],
-        skill_results_so_far=[],
-        budget_state={"skills_allowed": False},
+        budget_state={"mode": "mainline", "act_index": 1, "max_acts": 1},
         reader_policy=build_default_reader_policy(),
         output_language="en",
-        available_sentences=[_sentence("c1-s1", "Alpha sentence.")],
-        allowed_sentence_ids={"c1-s1"},
-        default_selection_mode="mainline",
-        skills_allowed=False,
     )
 
     assert "Navigation context" in captured["prompt"]

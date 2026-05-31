@@ -7,7 +7,6 @@ import json
 from src.attentional_v2 import nodes as nodes_module
 from src.attentional_v2 import runner as runner_module
 from src.attentional_v2.nodes import read_unit
-from src.attentional_v2.read_context import build_carry_forward_context, resolve_context_request
 from src.attentional_v2.schemas import (
     build_default_reader_policy,
     build_empty_anchor_memory,
@@ -18,6 +17,7 @@ from src.attentional_v2.schemas import (
     build_empty_reflective_summaries,
     build_empty_active_attention,
 )
+from src.attentional_v2.state_projection import build_carry_forward_context
 from src.attentional_v2.state_migration import (
     migrate_anchor_memory_to_new_layers,
     migrate_reflective_summaries_to_frames,
@@ -101,7 +101,7 @@ def test_read_unit_projects_compact_packet_and_returns_f1_surface_contract(tmp_p
                     "anchor_quote": "Beta sentence.",
                     "content": "This is where the move becomes visible.",
                     "prior_link": {
-                        "ref_ids": ["anchor:a-1", "lookback:sentence:c1-s1"],
+                        "ref_ids": ["anchor:a-1", "source:sentence:c1-s1"],
                         "relation": "callback",
                         "note": "The earlier anchor clarifies the shift.",
                     },
@@ -203,12 +203,12 @@ def test_read_unit_projects_compact_packet_and_returns_f1_surface_contract(tmp_p
         reader_policy=build_default_reader_policy(),
         output_language="en",
         supplemental_context={
-            "kind": "look_back",
+            "kind": "source_context",
             "reason": "Need the exact wording.",
             "refs": [
                 {
-                    "ref_id": "lookback:sentence:c1-s1",
-                    "kind": "look_back_excerpt",
+                    "ref_id": "source:sentence:c1-s1",
+                    "kind": "source_excerpt",
                     "item_id": "c1-s1",
                     "summary": "Alpha sentence.",
                     "sentence_id": "c1-s1",
@@ -216,7 +216,7 @@ def test_read_unit_projects_compact_packet_and_returns_f1_surface_contract(tmp_p
             ],
             "excerpts": [
                 {
-                    "ref_id": "lookback:sentence:c1-s1",
+                    "ref_id": "source:sentence:c1-s1",
                     "source_kind": "sentence",
                     "sentence_ids": ["c1-s1"],
                     "chapter_ref": "Chapter 1",
@@ -244,134 +244,12 @@ def test_read_unit_projects_compact_packet_and_returns_f1_surface_contract(tmp_p
     assert "\"earlier_excerpts\"" in captured["prompt"]
     assert "\"refs\": [" not in captured["prompt"]
     assert "\"anchor_bank_digest\"" not in captured["prompt"]
-    assert manifest["prompt_version"] == "attentional_v2.read.v31"
+    assert manifest["prompt_version"] == "attentional_v2.read.v32"
     assert result["reading_impression"] == "The second sentence sharpens the first one."
     assert result["surfaced_reactions"][0]["source_quote"] == "Beta sentence."
-    assert result["surfaced_reactions"][0]["prior_link"]["ref_ids"] == ["lookback:sentence:c1-s1"]
+    assert result["surfaced_reactions"][0]["prior_link"]["ref_ids"] == ["source:sentence:c1-s1"]
     assert result["memory_uptake_ops"][0]["op"] == "update"
     assert result["memory_uptake_ops"][0]["target_store"] == "active_attention"
-    assert result["detour_need"] is None
-
-
-def test_resolve_context_request_returns_exact_look_back_excerpt_and_none_when_unresolved():
-    """Deprecated look_back compatibility resolves exact earlier source text only with refs."""
-
-    book_document = _book_document()
-    anchor_memory = build_empty_anchor_memory()
-    anchor_memory["anchor_records"].append(_anchor_record("a-1", "c1-s1", "Alpha sentence."))
-    anchor_bank, concept_registry, thread_trace = migrate_anchor_memory_to_new_layers(anchor_memory)
-    reflective_frames = migrate_reflective_summaries_to_frames(build_empty_reflective_summaries())
-    carry_forward = build_carry_forward_context(
-        chapter_ref="Chapter 1",
-        current_unit_sentence_ids=["c1-s2"],
-        local_buffer=build_empty_local_buffer(),
-        active_attention=build_empty_active_attention(),
-        anchor_memory=anchor_memory,
-        reflective_summaries=build_empty_reflective_summaries(),
-        reaction_records=build_empty_reaction_records(),
-    )
-
-    resolved = resolve_context_request(
-        context_request={
-            "kind": "look_back",
-            "reason": "Need the earlier line verbatim.",
-            "source_spans": [
-                {
-                    "start_cursor": {
-                        "chapter_id": 1,
-                        "chapter_ref": "Chapter 1",
-                        "paragraph_index": 1,
-                        "char_offset": 0,
-                    },
-                    "end_cursor": {
-                        "chapter_id": 1,
-                        "chapter_ref": "Chapter 1",
-                        "paragraph_index": 1,
-                        "char_offset": len("Alpha sentence."),
-                    },
-                }
-            ],
-        },
-        carry_forward_context=carry_forward,
-        book_document=book_document,
-        chapter_ref="Chapter 1",
-        concept_registry=concept_registry,
-        thread_trace=thread_trace,
-        reflective_frames=reflective_frames,
-        reaction_records=build_empty_reaction_records(),
-    )
-
-    assert resolved is not None
-    assert resolved["kind"] == "look_back"
-    assert len(resolved["excerpts"]) == 1
-    assert resolved["excerpts"][0]["text"] == "Alpha sentence."
-
-    unresolved = resolve_context_request(
-        context_request={
-            "kind": "look_back",
-            "reason": "Need a missing excerpt.",
-            "anchor_ids": ["missing-anchor"],
-            "sentence_ids": ["missing-sentence"],
-        },
-        carry_forward_context=carry_forward,
-        book_document=book_document,
-        chapter_ref="Chapter 1",
-        concept_registry=concept_registry,
-        thread_trace=thread_trace,
-        reflective_frames=reflective_frames,
-        reaction_records=build_empty_reaction_records(),
-    )
-
-    assert unresolved is None
-
-
-def test_resolve_context_request_active_recall_surfaces_concepts_and_threads():
-    """Deprecated active_recall compatibility surfaces bounded concept/thread material."""
-
-    anchor_memory = build_empty_anchor_memory()
-    anchor_memory["anchor_records"] = [
-        _anchor_record("a-1", "c1-s1", "Alpha sentence."),
-        _anchor_record("a-2", "c1-s2", "Beta sentence."),
-    ]
-    anchor_memory["motif_index"] = {"promise": ["a-1", "a-2"]}
-    anchor_memory["unresolved_reference_index"] = {"promise": ["a-2"]}
-    anchor_memory["trace_links"] = {"a-1": ["a-2"]}
-    anchor_bank, concept_registry, thread_trace = migrate_anchor_memory_to_new_layers(anchor_memory)
-    reflective_frames = migrate_reflective_summaries_to_frames(build_empty_reflective_summaries())
-
-    carry_forward = build_carry_forward_context(
-        chapter_ref="Chapter 1",
-        current_unit_sentence_ids=["c1-s2"],
-        local_buffer=build_empty_local_buffer(),
-        active_attention=build_empty_active_attention(),
-        anchor_memory=anchor_memory,
-        reflective_summaries=build_empty_reflective_summaries(),
-        reaction_records=build_empty_reaction_records(),
-    )
-
-    resolved = resolve_context_request(
-        context_request={
-            "kind": "active_recall",
-            "reason": "Need more prior structure.",
-            "anchor_ids": [],
-            "sentence_ids": [],
-        },
-        carry_forward_context=carry_forward,
-        book_document=_book_document(),
-        chapter_ref="Chapter 1",
-        concept_registry=concept_registry,
-        thread_trace=thread_trace,
-        reflective_frames=reflective_frames,
-        reaction_records=build_empty_reaction_records(),
-        current_unit_sentence_ids=["c1-s2"],
-    )
-
-    assert resolved is not None
-    assert resolved["kind"] == "active_recall"
-    assert resolved["concepts"][0]["concept_key"] == "promise"
-    assert resolved["threads"][0]["thread_key"]
-    assert any(ref["kind"] == "concept" for ref in resolved["refs"])
-    assert any(ref["kind"] == "thread" for ref in resolved["refs"])
 
 
 def test_run_read_with_context_loop_reads_once_and_persists_f1_audit(tmp_path, monkeypatch):
@@ -410,11 +288,6 @@ def test_run_read_with_context_loop_reads_once_and_persists_f1_audit(tmp_path, m
                     "payload": {"attention_tags": ["question"], "statement": "What changes here?"},
                 }
             ],
-            "detour_need": {
-                "reason": "A later detour may still help compare the earlier line.",
-                "target_hint": "the opening sentence",
-                "status": "open",
-            },
         }
 
     monkeypatch.setattr(runner_module, "read_unit", fake_read_unit)
@@ -456,14 +329,10 @@ def test_run_read_with_context_loop_reads_once_and_persists_f1_audit(tmp_path, m
     assert calls[0]["supplemental_context"] is None
     assert read_result["surfaced_reactions"][0]["anchor_quote"] == "Beta sentence."
     assert read_result["memory_uptake_ops"][0]["op"] == "append"
-    assert read_result["detour_need"] is None
-    assert read_result["deprecated_detour_need_ignored"]["status"] == "open"
     assert audit_line["stop_reason"] == "read_complete"
     assert audit_line["surfaced_reaction_count"] == 1
     assert audit_line["surfaced_reactions"][0]["anchor_quote"] == "Beta sentence."
     assert audit_line["memory_uptake_op_count"] == 1
     assert audit_line["memory_uptake_ops"][0]["target_store"] == "active_attention"
     assert audit_line["memory_uptake_ops_by_target_store"] == {"active_attention": 1}
-    assert "detour_need" not in audit_line
-    assert audit_line["deprecated_detour_need_ignored"]["target_hint"] == "the opening sentence"
     assert audit_line["supplemental_satisfied"] is False

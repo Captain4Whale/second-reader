@@ -15,7 +15,8 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
 
 ## Implementation Guidance Note
 - `DEC-103` pauses the old Second Reader Memory / Planning implementation track as the default source for future work.
-- `DEC-104` retires live Detour / source-backread from `attentional_v2`; older detour artifacts and helper code are historical/reference compatibility surfaces only.
+- `DEC-104` retires live Detour / source-backread from `attentional_v2`.
+- `DEC-105` hard-purges the retired Detour / source-backread / source-skill compatibility interfaces from current code, prompts, schemas, audits, and tests. Old artifacts and reports are historical only, not a supported live compatibility target.
 - Stable live behavior remains defined here and should be updated only when implementation lands.
 
 ## Mechanism-Internal Reading Runner Boundary
@@ -62,8 +63,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
 - Phase B of the post-eval structural rework is now also landed.
   - `read` is now the canonical owner of the current-unit read packet on the live path.
   - Each formal unit read now receives a small `carry-forward context` built from persisted state.
-  - that branch allowed `read` to request bounded supplemental context through `active_recall` or `look_back`.
-  - after `DEC-104`, `active_recall` / `look_back` are deprecated supplemental helpers, not the future `Ingest` retrieval design and not part of the current live read loop.
+  - old supplemental context helpers from that branch were removed from the current code surface by `DEC-105`; future `Ingest` retrieval is a separate design task.
   - private `read_audit` records capture context use.
   - that slice temporarily retained a `raw_reaction` compatibility shell, which was later removed from the live path by `Phase F3`.
 - Phase E1 through E3 are now preserved as a landed intermediate compatibility-first baseline.
@@ -84,8 +84,8 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - this removed the last live dependence on the temporary `Express` step
 - Phase F2 remains historical implementation evidence only.
   - it introduced a navigate-owned Detour cutover, source-skill loop, and `local_continuity` detour fields.
-  - as of `DEC-104`, that Detour / source-backread behavior is deprecated and no longer part of the live runtime path.
-  - new live runs no longer prompt `Read` to emit `detour_need`, no longer persist active detour continuity, and no longer use `Navigate` source skills.
+  - as of `DEC-104`, that Detour / source-backread behavior is retired from the live runtime path.
+  - as of `DEC-105`, current code, prompts, schemas, audits, and tests no longer expose those retired interfaces.
 - Phase F3 is now landed as the reaction-persistence and compatibility reconvergence slice.
   - persisted visible reactions now enter the system only through `Read.surfaced_reactions[]`
   - persisted visible reactions now share one surfaced-native reaction-record builder for the current forward path; old detour reads remain historical artifacts only
@@ -118,7 +118,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - Persisted runtime files and public compatibility surfaces remain unchanged in this slice too.
 - Phase C.3 of the post-eval structural rework is now landed as the direct main-state cutover.
   - Newer runs first treated `active_attention / concept_registry / thread_trace / reflective_frames / anchor_bank` as the primary runtime and checkpoint truth; the current source-ref cutover retires `anchor_bank` from that truth set.
-  - the historical `active_recall` helper exposed first-class `concepts` and `threads` from those new layers; it is deprecated after `DEC-104` as a supplemental helper and should not be treated as the forthcoming `Ingest` retrieval mechanism.
+  - old supplemental retrieval helpers from that branch are not a current code surface after `DEC-105` and should not be treated as the forthcoming `Ingest` retrieval mechanism.
   - Newly written checkpoints use only the new primary state keys.
 - Phase C.4 of the post-eval structural rework is now also landed as the helper-contract cutover.
   - Sentence-intake and chapter slow-cycle now execute directly on the new primary state layers; the old bridge helper is paused after the SourceRef cutover instead of being carried forward as an Anchor Bank relation writer.
@@ -140,17 +140,17 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - `Read` no longer emits `pressure_signals`.
   - After `Read`, the Reading Runner deterministically applies memory uptake, persists surfaced reactions, writes audit records, closes the current unit, and advances the cursor to the unit end.
   - There is no replacement `forward` action.
-  - There is no current live non-mainline scheduling mechanism; old Detour / source-backread is deprecated after `DEC-104`.
+  - There is no current live non-mainline scheduling mechanism; old Detour / source-backread is removed from the current runtime surface after `DEC-105`.
 - The `Navigate.choose_next_unit` cutover is now landed.
   - The current Navigator contract is **Choose Next Unit That Should Be Read**.
   - Reading Runner calls one architecture-level Navigator entrypoint and consumes one `NavigateNextUnitResult`.
   - The live entrypoint now chooses only the next forward source unit.
-  - Deprecated model outputs such as `request_skill`, `defer_detour`, `detour`, or `deferred` are normalized back into safe mainline selection.
+  - The current prompt and schema expose only the forward `choose_unit` / `mainline` act.
 - Phase D of the post-eval structural rework is now landed as preserved intermediate continuity / recall / resume evidence.
   - that branch added a budget-bounded multi-step supplemental loop around `read`.
   - Runtime state and full checkpoints now persist a lightweight `continuation capsule` with explicit `rehydration entrypoints`.
   - Warm resume now restores the latest usable continuation capsule together with new-format runtime/checkpoint state.
-  - the historical `look_back` helper resolved one bounded earlier source span, and `read_audit` recorded per-step supplemental activity plus stop reasons; after `DEC-104`, this is deprecated supplemental-context evidence, not current live backread behavior.
+  - old supplemental source-span helper interfaces from that branch are no longer current code, prompt, audit, or test surfaces after `DEC-105`.
 
 ## Naming Note
 - `Phase 3`, `Phase 4`, `Phase 5`, and `Phase 6` in this document refer to historical implementation-stage groupings, not to a user-facing or mechanism-intrinsic sequence of named runtime phases.
@@ -158,8 +158,8 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - It means: choose the next unit that should be read.
   - It is now one unified Navigator agent act loop, not a Python semantic dispatch between separate live prompt families.
   - Mainline forward reading is the only current live mode inside this act.
-  - Active detour reading is historical after `DEC-104`.
-  - The historical `navigate_unitize` and `navigate_detour_search` prompt families are no longer current live prompt families.
+  - Historical non-mainline jump reading is removed from the current code and prompt surface after `DEC-105`.
+  - The historical `navigate_unitize` and non-mainline prompt families are no longer current live prompt families.
 - `Navigate.route` is historical route-layer vocabulary after the forward-settlement cutover.
 - The current prompt manifest node name and trace node id for Navigator selection are `navigate_choose_next_unit`.
 - The live runtime should be explained as a reading loop:
@@ -170,7 +170,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - mandatory formal unit read with bounded carry-forward context
   - `read` directly surfaces zero-to-many reading-time reactions and emits bounded state ops
   - `Reading Runner` resolves the returned anchor into an end-exclusive `SourceSpan`, invokes `Read` on that accepted source unit, applies memory uptake, persists reactions, writes audit, records the accepted unit span, and advances the cursor
-  - deprecated `detour_need` output, if produced by an older model-shaped response, is ignored by the Runner and may be recorded only as an ignored compatibility field in audit
+  - `Read` has no current path-redirection output contract; new read-audit rows do not emit retired path-redirection evidence
   - chapter-end slow-cycle work such as `chapter_consolidation`, `reflective_promotion`, and `reconsolidation`
 - The old `trigger -> zoom_read -> meaning_unit_closure -> controller_decision -> reaction_emission` chain is now historical implementation vocabulary, not live runtime behavior.
   - Those names may still appear in historical docs, old artifacts, or decision entries.
@@ -192,7 +192,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
 - `coordinate boundary`
   - paragraph-offset `SourceCursor` / `SourceSpan` is the authoritative coordinate system for current mainline reading progress
   - inline paragraph-offset `SourceRef` is the authoritative source-evidence coordinate for current memory, reaction, and probe-facing state
-  - parse-time sentence ids may still appear in compatibility projections, local-buffer sentence fields, old detour evidence, semantic probe locators, and reviewer orientation text
+  - parse-time sentence ids may still appear in compatibility projections, local-buffer sentence fields, semantic probe locators, and reviewer orientation text
   - seeing `sentence_id`, `target_sentence_id`, or `cN-sM` in an artifact does not mean the current mainline reader is sentence-driven
   - new mechanism design and reviewer-facing reports should present paragraph-char / source-span coordinates as canonical and label sentence ids as compatibility or orientation metadata
 - `Unit Span Ledger`
@@ -215,13 +215,6 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - an unresolved interpretive pressure such as contradiction, ambiguity, instability, motif recurrence, or unexplained significance
 - `working hypothesis`
   - a provisional claim about what the chapter or book is doing
-- `detour need` (deprecated after `DEC-104`)
-  - historical reading-time request to leave the mainline reading path
-  - new live runs do not create, persist, or act on this field
-- `detour` (deprecated after `DEC-104`)
-  - historical non-mainline reading redirection away from the mainline cursor
-  - it is not part of the current live runtime; the future replacement direction is retrieval through the forthcoming `Ingest` design, not live backread path steering
-
 ## Reading Progression Logic
 - The mechanism starts with a survey pass.
   - It uses the shared `book document` to build a rough structural map of chapters, headings, likely pivots, and a narrow `chapter_zone` classification for scheduling.
@@ -237,25 +230,22 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - Within whichever chapter is currently active, the cursor is `paragraph_index + char_offset`.
   - Coverage-unit selection is the reasoning-entry discipline; the cursor only guarantees ordered coverage and exact resume position.
   - The mainline loop no longer pre-ingests every sentence as the progress primitive.
-  - Legacy sentence records may still support compatibility projection, old eval manifests, old public surfaces, or historical detour artifacts, but they do not define mainline progress.
+  - Legacy sentence records may still support compatibility projection, old eval manifests, old public surfaces, or reviewer orientation, but they do not define mainline progress.
 - The current live forward-settlement baseline now runs:
   - build an adaptive paragraph-offset preview from the current `SourceCursor`
   - call `Navigate.choose_next_unit`
     - the single Navigate act chooses a forward source unit by returning `end_anchor_text`
-    - old skill-request / detour / deferred outputs are treated as deprecated compatibility shapes and normalized to mainline fallback behavior
+    - the current interface exposes no non-mainline routing or source-skill action
   - deterministically resolve `end_anchor_text` against the preview and map it to an end-exclusive `end_cursor`
     - if the anchor cannot be resolved, retry Navigate once with the failed resolution as source evidence
     - if retry still fails, fall back conservatively to the current paragraph end or preview boundary and record the resolution status
   - build a small `carry-forward context` from persisted state
   - formally read the accepted source unit through `read`
   - let `read` directly surface zero-to-many reading-time reactions for that exact unit
-  - ignore any deprecated `detour_need` returned by a stale Read-shaped response; do not write it into `local_continuity`
+  - accept only the current `Read` output contract: `reading_impression`, `surfaced_reactions`, and memory uptake output
   - `Reading Runner` post-read settlement closes the exact source unit, appends it to the Unit Span Ledger, and advances the cursor to `end_cursor`
-- Deprecated detour continuity fields (`active_detour_id`, `active_detour_need`, `detour_trace`) may appear in old artifacts, but new live capture/resume drops or ignores them so they cannot reactivate Detour behavior.
-- The old book-local source Skill Runtime is deprecated after `DEC-104`.
-  - It remains code-level historical/reference surface only.
-  - It is not called by the live `Navigate.choose_next_unit` path.
-  - Future Ingest memory retrieval should be designed separately rather than inherited from this source-skill loop by default.
+- Current capture/resume writes only the current forward continuity schema; old non-mainline checkpoint/artifact shapes are not a compatibility target after `DEC-105`.
+- Future `Ingest` memory retrieval should be designed separately rather than inherited from the retired source-skill loop by default.
 - `Navigate.choose_next_unit` is now the sole current selector of the next coverage unit.
   - Boundary choice is prompt-led and semantic.
   - Runtime guardrails only keep the unit from running away.
@@ -292,7 +282,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
     - form a brief natural `reading_impression`
     - surface any underline / margin-note style reactions that genuinely arise
     - let durable memory settle through bounded `memory_uptake_ops`
-    - avoid route selection or backread requests; the Runner will advance deterministically after settlement
+    - avoid route selection; the Runner will advance deterministically after settlement
   - Legacy compatibility fields such as `raw_reaction`, `move_hint`, `prior_material_use`, `express_signal`, and `context_request` are now historical territory, not the live F3 contract.
   - It now also carries an explicit proportion rule for thin structural units:
     - a bare heading, label, or similarly slight structural cue may legitimately produce no surfaced reaction
@@ -566,9 +556,9 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
 - `Anchor Bank` is historical after the source-ref cutover.
   - Older reports and older runtime trees may still contain anchor wording.
   - New `attentional_v2` runs cite source through paragraph-offset `SourceRef` fields embedded directly in `active_attention`, `concept_registry`, `thread_trace`, `reflective_frames`, `knowledge_activations`, and `reaction_records`.
-- `Detour` is deprecated after `DEC-104`.
-  - It remains historical/reference vocabulary for old artifacts and old helper code.
-  - New live runs do not use it for non-mainline jump reading, do not route `Read.detour_need`, and do not invoke source-backread skills.
+- Non-mainline jump-reading interfaces are removed from the current live surface after `DEC-105`.
+  - Old Detour/source-backread vocabulary remains only in historical docs, old reports, and old output trees.
+  - New live runs do not use non-mainline jump reading, path-redirection read output, or source-backread skills.
   - Future prior-context support should be introduced through a new Ingest retrieval design rather than by reviving live path steering.
 - Sentence intake no longer runs a parallel heuristic trigger layer.
   - Protection against missing a crucial single sentence now comes from bounded preview construction plus semantic unitization, not from a separate `zoom_now` gate.
@@ -577,16 +567,17 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - the current live Runner no longer invokes the old Anchor Bank relation-writing Bridge path
   - current callback honesty is handled by surfaced reaction linkage, inline source refs, and evaluation/audit evidence rather than by a post-read route action
 
-## Deprecated Detour / Source Backread
-- Detour search and source-backread were retired from the live path by `DEC-104`.
-- New live runs no longer:
-  - prompt `Read` to emit `detour_need`
-  - write `active_detour_id`, `active_detour_need`, or `detour_trace` into new continuity state
-  - call `Navigate` source skills such as `source_map_overview`, `source_scope_drilldown`, or `source_window_fetch`
-  - return `detour` / `deferred` as current `Navigate.choose_next_unit` selection modes
-  - drain chapter-tail detours before chapter slow-cycle close
-- Historical helper code, literal values, and old artifact readers may remain only as explicitly deprecated compatibility/reference surfaces.
-- Prior context that previously motivated backread should be handled by the forthcoming `Ingest` memory-retrieval design, not by reviving live non-mainline path selection.
+## Removed Non-Mainline Path Interfaces
+- `DEC-104` retired Detour search and source-backread from the live path.
+- `DEC-105` hard-purged the retired compatibility interfaces from current code, prompts, schemas, audits, and tests.
+- New live runs do not:
+  - prompt `Read` to emit path-redirection requests
+  - write non-mainline path fields into new continuity state
+  - call `Navigate` source skills
+  - return non-mainline selection modes from `Navigate.choose_next_unit`
+  - drain chapter-tail non-mainline reads before chapter slow-cycle close
+- Old output trees from before `DEC-105` are historical artifacts, not current resume/checkpoint compatibility targets.
+- Prior context that previously motivated live backread should be handled by the forthcoming `Ingest` memory-retrieval design, not by reviving live non-mainline path selection.
 
 ## Runtime Artifacts
 - Shared substrate dependency
@@ -602,7 +593,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
       - `zone_reason`
       - one machine-readable `reading_plan`
 - `_mechanisms/attentional_v2/derived/revisit_index.json`
-  - historical/transition artifact from the pre-detour vocabulary
+  - historical/transition artifact from earlier revisit vocabulary
   - this historical file is retained for compatibility territory until a later cleanup slice
 - `_mechanisms/attentional_v2/derived/chapter_result_compatibility/*.json`
   - live compatibility chapter results used by current chapter/detail and marks surfaces when `attentional_v2` is the active mechanism
@@ -613,7 +604,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
     - compact continuity for forward mainline reading
     - persists the paragraph-offset `mainline_cursor` for current runs
     - also carries the current `reading_queue_stage` (`mainline` or `deferred_support`) for resume/observability
-    - deprecated detour fields from old artifacts are dropped/ignored on new capture or resume
+    - current schema contains no non-mainline path fields
   - `_mechanisms/attentional_v2/runtime/continuation_capsule.json`
   - `_mechanisms/attentional_v2/runtime/unitization_audit.jsonl`
     - canonical runtime audit for Navigate's raw selection and resolver outcome
@@ -673,7 +664,6 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
     - current forward-only Navigator agent act
     - outputs `choose_unit`
     - chooses a unit from the bounded preview without skill use
-    - deprecated `request_skill` / `defer_detour` / `detour` / `deferred` outputs are normalized into safe mainline fallback behavior
   - `read_unit`
   - `reflective_promotion`
   - `reconsolidation`

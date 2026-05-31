@@ -975,7 +975,7 @@ def _build_retrieval_context_contract(
         "retrieval_events": events,
         "forwarded_result_groups": forwarded_groups,
         "not_forwarded_result_groups": not_forwarded_groups,
-        "active_recall_full_objects_forwarded": False,
+        "full_objects_forwarded": False,
     }
 
 
@@ -1018,15 +1018,8 @@ def build_read_prompt_packet(
     *,
     carry_forward_context: CarryForwardContext,
     supplemental_context: dict[str, object] | None = None,
-    detour_context: dict[str, object] | None = None,
 ) -> dict[str, object]:
-    """Project persisted state into the narrow read-node prompt view.
-
-    Deprecated after DEC-103/DEC-104: `detour_context` is accepted only for
-    historical call-site compatibility and is ignored.
-    """
-
-    del detour_context
+    """Project persisted state into the narrow read-node prompt view."""
     active_attention_digest = (
         dict(carry_forward_context.get("active_attention_digest", {}))
         if isinstance(carry_forward_context.get("active_attention_digest"), dict)

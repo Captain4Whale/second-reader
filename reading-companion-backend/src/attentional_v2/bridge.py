@@ -145,15 +145,15 @@ def candidate_pool_for_bridge_resolution(
                 "quote": _clean_text(candidate.get("quote")),
             }
         )
-    for candidate in candidate_set.get("lookback_candidates", []):
+    for candidate in candidate_set.get("prior_source_candidates", []):
         if not isinstance(candidate, dict):
             continue
         pool.append(
             {
-                "candidate_kind": _clean_text(candidate.get("candidate_kind")) or "source_lookback",
+                "candidate_kind": _clean_text(candidate.get("candidate_kind")) or "prior_source",
                 "target_anchor_id": "",
                 "target_sentence_id": _clean_text(candidate.get("sentence_id")),
-                "retrieval_channel": _clean_text(candidate.get("retrieval_channel")) or "source_lookback",
+                "retrieval_channel": _clean_text(candidate.get("retrieval_channel")) or "prior_source",
                 "relation_type": _clean_text(candidate.get("relation_type")) or "echo",
                 "score": float(candidate.get("overlap_score", 0) or 0.0),
                 "why_now": "",

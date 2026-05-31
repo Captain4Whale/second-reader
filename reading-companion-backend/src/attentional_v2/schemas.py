@@ -17,10 +17,8 @@ UnitizeBoundaryType = Literal[
     "section_end",
     "budget_cap",
 ]
-ContextRequestKind = Literal["active_recall", "look_back"]  # Deprecated after DEC-103/DEC-104: supplemental context helpers only.
-DetourStatus = Literal["open", "resolved", "abandoned"]  # Deprecated after DEC-103/DEC-104: historical detour artifacts only.
-NavigateActDecision = Literal["choose_unit", "request_skill", "defer_detour"]  # Deprecated after DEC-103/DEC-104: `request_skill` / `defer_detour` are compatibility literals.
-NavigateSelectionMode = Literal["mainline", "detour", "deferred"]  # Deprecated after DEC-103/DEC-104: `detour` / `deferred` are compatibility literals.
+NavigateActDecision = Literal["choose_unit"]
+NavigateSelectionMode = Literal["mainline"]
 StateOperationType = Literal[
     "append",
     "update",
@@ -171,9 +169,6 @@ class LocalContinuityState(TypedDict, total=False):
     current_source_span: dict[str, object]
     current_source_span_id: str
     reading_queue_stage: str
-    active_detour_id: str  # Deprecated after DEC-103/DEC-104: ignored on new live runs.
-    active_detour_need: "DetourNeed" | None  # Deprecated after DEC-103/DEC-104: ignored on new live runs.
-    detour_trace: list["DetourTraceEntry"]  # Deprecated after DEC-103/DEC-104: ignored on new live runs.
     is_reconstructed: bool
     reconstructed_from_checkpoint_id: str | None
     last_resume_kind: ResumeKind | None
@@ -348,15 +343,6 @@ class PriorMaterialUse(TypedDict, total=False):
     supporting_ref_ids: list[str]
 
 
-class ContextRequest(TypedDict, total=False):
-    """Optional request for one bounded supplemental-context pass."""
-
-    kind: ContextRequestKind
-    reason: str
-    source_ref_ids: list[str]
-    source_spans: list[dict[str, object]]
-
-
 class ReadAnchorEvidence(TypedDict, total=False):
     """One exact unit-local anchor cited by the read step."""
 
@@ -373,7 +359,6 @@ class ReadUnitResult(TypedDict, total=False):
     surfaced_reactions: list["SurfacedReaction"]
     memory_uptake_ops: list["StateOperation"]
     memory_uptake_admission_events: list["MemoryUptakeAdmissionEvent"]
-    detour_need: "DetourNeed" | None  # Deprecated after DEC-103/DEC-104: ignored by live runner.
 
 
 MemoryUptakeAdmissionStatus = Literal[
@@ -429,71 +414,28 @@ class SurfacedReaction(TypedDict, total=False):
     search_intent: "SearchIntent" | None
 
 
-class DetourNeed(TypedDict, total=False):
-    """Deprecated after DEC-103/DEC-104: historical desire to detour away from the mainline."""
-
-    reason: str
-    target_hint: str
-    status: DetourStatus
-
-
-class DetourTraceEntry(TypedDict, total=False):
-    """Deprecated after DEC-103/DEC-104: historical detour trace record."""
-
-    detour_id: str
-    origin_cursor: SharedRunCursor
-    origin_target_hint: str
-    status: DetourStatus
-    open_reason: str
-    defer_reason: str
-    resolve_reason: str
-    abandon_reason: str
-    restore_mainline_reason: str
-    last_navigation_decision: str
-    last_navigation_reason: str
-
-
 class NavigateActResult(TypedDict, total=False):
-    """One bounded Navigate.choose_next_unit act; detour/source-skill fields are deprecated compatibility."""
+    """One bounded Navigate.choose_next_unit act."""
 
     decision: NavigateActDecision
     selection_mode: NavigateSelectionMode
     reason: str
     end_anchor_text: str
-    start_sentence_id: str
-    end_sentence_id: str
-    source_span: dict[str, object]
-    source_span_id: str
-    resolution: dict[str, object]
     boundary_type: UnitizeBoundaryType
-    evidence_sentence_ids: list[str]
     continuation_pressure: bool
-    skill_request: dict[str, object]  # Deprecated after DEC-103/DEC-104: legacy source-skill compatibility only.
-    skill_result: dict[str, object]  # Deprecated after DEC-103/DEC-104: legacy source-skill compatibility only.
 
 
 class NavigateActTraceEntry(TypedDict, total=False):
-    """One compact Navigate trace entry; detour/source-skill audit fields are deprecated compatibility."""
+    """One compact Navigate trace entry."""
 
     decision: NavigateActDecision
     selection_mode: NavigateSelectionMode
     reason: str
     end_anchor_text: str
-    start_sentence_id: str
-    end_sentence_id: str
     source_span_id: str
     resolution: dict[str, object]
-    skill_request: dict[str, object]  # Deprecated after DEC-103/DEC-104: legacy source-skill compatibility only.
-    skill_result: dict[str, object]  # Deprecated after DEC-103/DEC-104: legacy source-skill compatibility only.
     error: str
     budget_state: dict[str, object]
-    source_scent: str
-    detour_value: str  # Deprecated after DEC-103/DEC-104: legacy detour audit marker.
-    continuity_cost: str
-    active_recall_needed: bool  # Deprecated after DEC-103/DEC-104: legacy supplemental-context marker.
-    look_back_needed: bool  # Deprecated after DEC-103/DEC-104: legacy supplemental-context/source-skill marker.
-    support_signal_reason: str
-    budget_stop_reason: str
 
 
 class NavigateNextUnitResult(TypedDict, total=False):
@@ -507,8 +449,6 @@ class NavigateNextUnitResult(TypedDict, total=False):
     preview: dict[str, object]
     unitize_decision: UnitizeDecision
     navigate_trace: list[NavigateActTraceEntry]
-    defer_reason: str
-    detour_context: dict[str, object] | None  # Deprecated after DEC-103/DEC-104: historical artifact compatibility only.
 
 
 class BridgeCandidate(TypedDict, total=False):
@@ -1203,7 +1143,6 @@ def build_default_reader_policy(
         "read": {
             "supplemental_context_budget": 4,
             "supplemental_context_emergency_cap": 4,
-            "look_back_max_sentences": 8,
         },
         "knowledge": {
             "default_mode": "book_grounded_only",
