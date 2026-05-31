@@ -137,7 +137,7 @@
         "read_audit",
         "settlement_audit",
         "supplemental_retrieval",
-        "navigation_trace",
+        "ingest_trace",
         "slow_cycle_audit",
         "source_ref_binding_resolution_markers",
         "projection_markers",
@@ -210,8 +210,8 @@
       "evidence_role": "retrieval intent/result-boundary availability, not utilization success"
     },
     {
-      "id": "navigation_trace",
-      "artifact_or_field": "read_audit.navigation_trace",
+      "id": "ingest_trace",
+      "artifact_or_field": "read_audit.ingest_trace",
       "available_after_slice": "Slice 5A and Slice 5B",
       "maps_to": [
         "lane_b_long_span_mq_callback_fvi",
@@ -267,7 +267,7 @@
       "quality_score": false,
       "evidence_availability_only": true,
       "evidence_surface_ids": [
-        "navigation_trace"
+        "ingest_trace"
       ],
       "interpretation": "Trace presence can support later review, but trace existence is not planning quality."
     },

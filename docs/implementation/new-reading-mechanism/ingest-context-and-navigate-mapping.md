@@ -1,22 +1,22 @@
 # Ingest Context And Navigate Mapping
 
-Purpose: capture the first design mapping from the current forward-only `Navigate` prompt to the proposed `Ingest` LLM call before implementation.
-Use when: designing the `Ingest -> Digest` prompt/context split, migrating the current Navigate boundary-selection prompt into XML assembly, or checking what existing boundary-selection behavior should be reused.
-Not for: stable mechanism authority, final prompt text, runtime implementation status, or evidence-catalog claims.
-Update when: the Ingest role, XML context shape, retrieval-request contract, or mapping from old Navigate fields changes before implementation.
+Purpose: capture the first design mapping from the old forward-only `Navigate` prompt to the first implemented `Ingest` LLM call.
+Use when: designing the next `Ingest -> Digest` prompt/context split, checking the landed first-slice Ingest XML context, or deciding how future memory retrieval should attach to Ingest.
+Not for: stable mechanism authority, broad runtime behavior, or evidence-catalog claims.
+Update when: the Ingest role, XML context shape, retrieval-request contract, or mapping from old Navigate fields changes.
 
 ## Status
 
 - Date: `2026-05-31`
-- Status: working design note.
-- Code status: not implemented.
+- Status: implemented first-slice reference.
+- Code status: implemented after `DEC-107`.
 - Evaluation status: no eval run, no evidence-catalog update.
 - Current basis:
   - `DEC-103` pauses the old Second Reader Memory / Planning implementation track as the default direction.
   - `DEC-104` retires live Detour / source-backread.
   - `DEC-105` hard-purges retired Detour / backread / source-skill interfaces.
   - `DEC-106` separates the LLM call from runtime preparation / boundary governance.
-  - Current code keeps the mature forward boundary-selection logic in `llm_calls.navigate(...)`.
+  - `DEC-107` lands `llm_calls.ingest(...)` as the current LLM call, using this XML context shape.
 
 ## Design Claim
 

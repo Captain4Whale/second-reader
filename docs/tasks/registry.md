@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-05-31T14:42:14+08:00`
+Last updated: `2026-05-31T19:42:26+08:00`
 
 ## Status Values
 - `active`
@@ -25,13 +25,14 @@ Last updated: `2026-05-31T14:42:14+08:00`
 - Lane: `mechanism_runtime`
 - Priority: `high`
 - Detail: `docs/current-state.md`
-- Next: continue the narrowed product-goal reframe from the forward-only `Ingest` baseline. `DEC-104` retired live Detour / source-backread from `attentional_v2`, `DEC-105` hard-purged the retired compatibility interfaces, and `DEC-106` keeps `llm_calls.navigate(...)` / `Navigate` as a pure LLM boundary call while runtime source-unit preparation lives in `prepare_next_source_unit_for_read`; active LLM calls now live under `llm_calls.py`. Use `docs/implementation/new-reading-mechanism/ingest-context-and-navigate-mapping.md` as the current working design note for mapping the existing boundary-selection prompt into proposed `Ingest` XML context and retrieval-request shape. Next design work should specify how `Ingest` requests memory retrieval for the selected next unit and how `Digest` produces reader-facing notes / highlights. Do not launch eval, update evidence catalog, or continue `C设计10` consolidation / `C设计11` Read XML migration / `C设计12` prompt assembly migration unless explicitly re-adopted.
+- Next: continue the narrowed product-goal reframe from the forward-only `Ingest` baseline. `DEC-104` retired live Detour / source-backread from `attentional_v2`, `DEC-105` hard-purged the retired compatibility interfaces, `DEC-106` split LLM calls from runner preparation/governance, and `DEC-107` replaces the old `Navigate` LLM identity with `llm_calls.ingest(...)`. Runtime source-unit preparation still lives in `prepare_next_source_unit_for_read`; active LLM calls live under `llm_calls.py`. Use `docs/implementation/new-reading-mechanism/ingest-context-and-navigate-mapping.md` as the implementation reference for the landed first-slice `Ingest` XML context and the remaining retrieval-request design gap. Next design work should specify how `Ingest` requests memory retrieval for the selected next unit and how `Digest` produces reader-facing notes / highlights. Do not launch eval, update evidence catalog, or continue `C设计10` consolidation / `C设计11` Read XML migration / `C设计12` prompt assembly migration unless explicitly re-adopted.
 - Jobs: none
 - Evidence:
   - `DEC-103`
   - `DEC-104`
   - `DEC-105`
   - `DEC-106`
+  - `DEC-107`
   - `docs/current-state.md`
   - `docs/implementation/new-reading-mechanism/ingest-context-and-navigate-mapping.md`
   - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
@@ -47,21 +48,21 @@ Last updated: `2026-05-31T14:42:14+08:00`
   - keep the existing frontend lane active in parallel under `TASK-V2-NATIVE-READING-PRESENTATION`
   - `Phase A` is now landed:
     - heuristic trigger output no longer suppresses formal正文 reading
-    - this phase introduced the `Navigate.unitize + read + Reading Runner post-read settlement` skeleton that is now absorbed into `Navigate + read + Reading Runner post-read settlement`
+    - this phase introduced the historical `Navigate.unitize + read + Reading Runner post-read settlement` skeleton that is now absorbed into `Ingest + read + Reading Runner post-read settlement`
     - span authority now matches the exact chosen unit
   - `Phase B` is now landed:
     - `read` now owns the authoritative current-unit packet on the live path
     - the live runner now builds bounded carry-forward context from current state projections
-    - mechanism-private `read_audit` records now capture carried refs and current navigation trace shape; the temporary `raw_reaction` shell from that slice was later retired by `Phase F3`
+    - mechanism-private `read_audit` records now capture carried refs and current `ingest_trace` shape; the temporary `raw_reaction` shell from that slice was later retired by `Phase F3`
   - `Phase C.1` is now landed:
     - live prompt inputs now flow through a bounded internal `state_packet.v1` layer
-    - `Navigate.unitize` now receives a small `navigation_context`
+    - historical `Navigate.unitize` received a small `navigation_context`; current `Ingest` no longer receives that packet
     - `read` now receives a packetized read context that explicitly separates continuity capsule, active-attention digest, reflective frame, active focus, and source-ref digest
     - persisted runtime files and public/frontend compatibility surfaces remain unchanged
   - `Phase C.2` is now landed as the first state-territory slice:
     - live state packets now derive a bounded `concept_digest` from the current `motif_index + unresolved_reference_index`
     - live state packets now derive a bounded `thread_digest` from the current `trace_links + unresolved_reference_index`
-    - `Navigate.unitize` and `read` now both receive those small concept/thread digests without changing persisted runtime files or public surfaces
+    - historical `Navigate.unitize` and `read` both received those small concept/thread digests without changing persisted runtime files or public surfaces
   - `Phase C.3` is now landed:
     - new runs now treat `active_attention / concept_registry / thread_trace / reflective_frames` plus inline `source_refs[]` as the primary runtime and checkpoint truth
     - old V2 state stores were demoted to cutover-only legacy territory during the cutover
@@ -89,7 +90,7 @@ Last updated: `2026-05-31T14:42:14+08:00`
     - slow-cycle compatibility projection and normalized eval export now derive old family labels through one compat helper instead of treating legacy `type` as the internal truth
     - this branch remains valuable evidence, but it is no longer the approved end-state target
   - `Phase F1` is now landed:
-    - the live per-unit loop was cut back to `Navigate.unitize -> read -> Reading Runner post-read settlement`; current code now calls it through `Navigate -> read -> Reading Runner post-read settlement`
+    - the live per-unit loop was historically cut back to `Navigate.unitize -> read -> Reading Runner post-read settlement`; current code now calls it through `Ingest -> read -> Reading Runner post-read settlement`
     - `Read` now owns `reading_impression`, surfaced reactions, and memory uptake ops
     - the dedicated live `Express` node is no longer on the runner path
     - `Read` prompt packaging now follows compact `always carry / selective carry / not carry` projections
@@ -100,12 +101,12 @@ Last updated: `2026-05-31T14:42:14+08:00`
   - `Phase F2` is now historical after `DEC-104`:
     - the old live Detour / source-backread path has been retired from the current runtime
     - `DEC-105` hard-purges the retired compatibility interfaces from current code, prompts, schemas, audits, and tests
-    - `Navigate` now chooses only the next forward source unit
+    - `Ingest` now chooses only the next forward source unit
     - current `Read` has no path-redirection output contract
     - current `local_continuity`, prompt manifests, and read audits do not emit retired Detour-era fields for new runs
   - Paragraph-offset mainline cursor and SourceRef cutover are now landed:
     - `SourceCursor` uses `chapter_id`, `chapter_ref`, `paragraph_index`, and `char_offset`
-    - `Navigate` receives an adaptive paragraph-offset preview and returns exact `end_anchor_text`
+    - `Ingest` receives an adaptive paragraph-offset preview and returns exact `end_anchor_text`
     - `Reading Runner` resolves that source anchor into an end-exclusive `SourceSpan`, advances to `end_cursor`, and records accepted units in `_mechanisms/attentional_v2/runtime/unit_span_ledger.jsonl`
     - sentence ids remain available for eval and reviewer orientation, but no longer define the `attentional_v2` mainline cursor
     - memory/reaction/probe-facing source evidence now uses inline `SourceRef` values (`source_span_id`, `source_span`, `quote`, `role`)
@@ -145,11 +146,11 @@ Last updated: `2026-05-31T14:42:14+08:00`
   - trigger/watch cleanup now also landed on top of the F4A baseline:
     - sentence intake is now pure `local_buffer` ingest
     - live runtime / checkpoint / resume no longer carry `trigger_state`
-    - `Navigate.unitize` no longer receives heuristic `watch_state`
+    - historical `Navigate.unitize` stopped receiving heuristic `watch_state`
     - the dead `trigger -> zoom_read -> meaning_unit_closure -> controller_decision -> reaction_emission` path has been removed from live code
     - `text_role` is now explicitly documented as an inherited block-level weak cue
   - the first special-content handling slice is now also landed on that cleaned baseline:
-    - `Navigate.unitize` now treats heading roles as weak cues rather than automatic standalone units
+    - historical `Navigate.unitize` began treating heading roles as weak cues rather than automatic standalone units
     - meaningful headings may still stand alone, but label-like headings now prefer merging with the immediately following body paragraph when the preview allows
     - deterministic fallback now widens `heading + first body paragraph` instead of returning a bare heading when that body paragraph is already visible
     - `Read` now explicitly stays proportionate around thin heading-like units and may remain silent there
@@ -372,7 +373,7 @@ Last updated: `2026-05-31T14:42:14+08:00`
         - future reports should use one full source document per window with probe markers, and label recent route explanations as `route reason` rather than generic `statement`
       - current Navigator source-skill posture:
         - superseded by `DEC-104` and hard-purged by `DEC-105`
-        - `Navigate` is now forward-only and does not call source skills
+        - `Ingest` is forward-only and does not call source skills
         - the old mechanism-private Skill Runtime is not a current code, prompt, audit, or test interface
       - result:
         - `Memory Quality` average overall score: `3.48`

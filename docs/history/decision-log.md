@@ -3074,3 +3074,29 @@ This new direction is design frozen but not yet implemented as a formal benchmar
 - `reading-companion-backend/src/attentional_v2/schemas.py`
 - `reading-companion-backend/tests/test_attentional_v2_llm_calls.py`
 - `reading-companion-backend/tests/test_attentional_v2_scaffold.py`
+
+## Entry 104
+**ID**: DEC-107
+**Status**: active
+
+**Decision / Inflection**: Replace the current `Navigate` LLM identity with `Ingest`.
+
+**Period**: May 31, 2026, after `DEC-106` separated the LLM-call boundary from Reading Runner preparation/governance and the next product direction settled on an `Ingest -> Digest` framing.
+
+**Decision**: The current boundary-selection LLM call is now `Ingest`, implemented at `llm_calls.ingest(...)`. It uses an XML prompt assembled through the prompt assembly framework with top-level `ReaderRole`, `Instruction`, `BookInfo`, `CurrentView`, an empty self-closing `RetrievalSurface`, and `OutputContract`. The first implemented slice keeps only forward next-unit boundary selection and returns flat JSON with `end_anchor_text`, `boundary_type`, and `reason`.
+
+**Boundary**: This does not implement memory retrieval yet. `RetrievalSurface` is intentionally empty until the new memory design defines available stores, indexes, request shape, budget, and runtime tool behavior. Reading Runner still owns prompt preparation, anchor resolution, retry/fallback, accepted source-unit assembly, cursor advancement, audit, and settlement.
+
+**Why this path won**: The project is no longer designing a path-navigation agent. The useful surviving behavior is the ability to choose the next forward semantic source unit; the next product step is to support that future read with relevant memory. Naming the LLM call `Ingest` makes the next-node boundary explicit: it prepares the reading object and later memory support for `Digest`, while deterministic runtime work stays outside the LLM-node identity.
+
+**Primary evidence**:
+- `docs/current-state.md`
+- `docs/tasks/registry.md`
+- `docs/backend-reading-mechanisms/attentional_v2.md`
+- `docs/implementation/new-reading-mechanism/ingest-context-and-navigate-mapping.md`
+- `reading-companion-backend/src/attentional_v2/llm_calls.py`
+- `reading-companion-backend/src/attentional_v2/prompts/ingest.py`
+- `reading-companion-backend/src/attentional_v2/runner.py`
+- `reading-companion-backend/src/attentional_v2/schemas.py`
+- `reading-companion-backend/tests/test_attentional_v2_llm_calls.py`
+- `reading-companion-backend/tests/test_attentional_v2_scaffold.py`

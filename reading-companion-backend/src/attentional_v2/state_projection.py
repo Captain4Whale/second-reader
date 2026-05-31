@@ -12,7 +12,6 @@ from .schemas import (
     ConceptRegistryState,
     ConceptDigestItem,
     LocalBufferState,
-    NavigationContext,
     ReactionRecordsState,
     ReflectiveFrameDigest,
     ReflectiveFramesState,
@@ -1063,52 +1062,6 @@ def build_read_prompt_packet(
     if selective_carry:
         packet["selective_carry"] = selective_carry
     return packet
-
-
-def build_navigation_context(
-    *,
-    chapter_ref: str,
-    current_sentence_id: str,
-    local_buffer: LocalBufferState,
-    active_attention: ActiveAttention | None = None,
-    recent_reading_memory: RecentReadingMemoryState | None = None,
-    concept_registry: ConceptRegistryState | None = None,
-    thread_trace: ThreadTraceState | None = None,
-    reflective_frames: ReflectiveFramesState | None = None,
-    anchor_memory: AnchorMemoryState | None = None,
-    reflective_summaries: ReflectiveSummariesState | None = None,
-    reaction_records: ReactionRecordsState,
-    continuation_capsule: ContinuationCapsule | None = None,
-) -> NavigationContext:
-    """Build the bounded navigation packet used by Navigate.unitize."""
-
-    carry_forward_context = build_carry_forward_context(
-        chapter_ref=chapter_ref,
-        current_unit_sentence_ids=[current_sentence_id] if current_sentence_id else [],
-        local_buffer=local_buffer,
-        active_attention=active_attention,
-        recent_reading_memory=recent_reading_memory,
-        concept_registry=concept_registry,
-        thread_trace=thread_trace,
-        reflective_frames=reflective_frames,
-        anchor_memory=anchor_memory,
-        reflective_summaries=reflective_summaries,
-        reaction_records=reaction_records,
-        continuation_capsule=continuation_capsule,
-    )
-    return {
-        "packet_version": STATE_PACKET_VERSION,
-        "continuation_capsule": dict(carry_forward_context.get("continuation_capsule", {})),
-        "session_continuity_capsule": dict(carry_forward_context.get("session_continuity_capsule", {})),
-        "active_attention_digest": dict(carry_forward_context.get("active_attention_digest", {})),
-        "recent_reading_memory": dict(carry_forward_context.get("recent_reading_memory", {})),
-        "chapter_reflective_frame": dict(carry_forward_context.get("chapter_reflective_frame", {})),
-        "active_focus_digest": dict(carry_forward_context.get("active_focus_digest", {})),
-        "concept_digest": [dict(item) for item in carry_forward_context.get("concept_digest", []) if isinstance(item, dict)],
-        "thread_digest": [dict(item) for item in carry_forward_context.get("thread_digest", []) if isinstance(item, dict)],
-        "source_ref_digest": [dict(item) for item in carry_forward_context.get("source_ref_digest", []) if isinstance(item, dict)],
-        "refs": [dict(ref) for ref in carry_forward_context.get("refs", []) if isinstance(ref, dict)],
-    }
 
 
 def context_ref_ids(*contexts: dict[str, object] | None) -> set[str]:

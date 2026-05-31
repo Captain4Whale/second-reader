@@ -15,7 +15,7 @@ from .knowledge import (
 )
 from .llm_calls import (
     build_unitize_preview,
-    navigate,
+    ingest,
     read_unit,
 )
 from .observability import (
@@ -35,7 +35,7 @@ from .prompts import (
     ATTENTIONAL_V2_PROMPTS,
     ATTENTIONAL_V2_PROMPTSET_VERSION,
     CHAPTER_CONSOLIDATION_PROMPT_VERSION,
-    NAVIGATE_PROMPT_VERSION,
+    INGEST_PROMPT_VERSION,
     READ_UNIT_PROMPT_VERSION,
     RECONSOLIDATION_PROMPT_VERSION,
     REFLECTIVE_PROMOTION_PROMPT_VERSION,
@@ -93,7 +93,7 @@ from .state_ops import (
     upsert_knowledge_activation,
     upsert_reflective_item,
 )
-from .state_projection import STATE_PACKET_VERSION, build_carry_forward_context, build_navigation_context, context_ref_ids
+from .state_projection import STATE_PACKET_VERSION, build_carry_forward_context, context_ref_ids
 from .survey import build_book_survey, build_revisit_index, write_book_survey_artifacts
 from .storage import ATTENTIONAL_V2_MECHANISM_KEY, artifact_map, initialize_artifact_tree
 
@@ -105,7 +105,7 @@ __all__ = [
     "ATTENTIONAL_V2_PROMPTSET_VERSION",
     "ATTENTIONAL_V2_SCHEMA_VERSION",
     "CHAPTER_CONSOLIDATION_PROMPT_VERSION",
-    "NAVIGATE_PROMPT_VERSION",
+    "INGEST_PROMPT_VERSION",
     "READ_UNIT_PROMPT_VERSION",
     "RECONSOLIDATION_PROMPT_VERSION",
     "REFLECTIVE_PROMOTION_PROMPT_VERSION",
@@ -121,7 +121,6 @@ __all__ = [
     "artifact_map",
     "build_default_reader_policy",
     "build_book_survey",
-    "build_navigation_context",
     "build_unitize_preview",
     "build_normalized_eval_bundle",
     "build_shared_cursor",
@@ -152,7 +151,7 @@ __all__ = [
     "load_full_checkpoint",
     "capture_local_continuity",
     "context_ref_ids",
-    "navigate",
+    "ingest",
     "persist_reading_position",
     "persist_normalized_eval_bundle",
     "project_chapter_result_compatibility",

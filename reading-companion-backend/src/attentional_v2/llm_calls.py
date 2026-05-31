@@ -14,6 +14,7 @@ from .prompts import (
     ATTENTIONAL_V2_PROMPTS,
     READ_XML_PROMPT_VERSION,
     READ_XML_TRANSPORT_SYSTEM_PROMPT,
+    render_ingest_prompt_xml,
     render_read_prompt_xml,
 )
 from .state_projection import build_read_prompt_packet
@@ -24,8 +25,7 @@ from .schemas import (
     CarryForwardContext,
     KnowledgeActivationsState,
     MemoryUptakeAdmissionEvent,
-    NavigationContext,
-    NavigateBoundaryResult,
+    IngestBoundaryResult,
     OutsideLink,
     PreviewRange,
     PriorLink,
@@ -726,79 +726,70 @@ def _normalize_surfaced_reactions(
     return reactions
 
 
-def _normalize_navigate_boundary_result(
+def _normalize_ingest_boundary_result(
     value: object,
-) -> NavigateBoundaryResult:
-    """Normalize one Navigate boundary result."""
+) -> IngestBoundaryResult:
+    """Normalize one Ingest boundary result."""
 
     if not isinstance(value, dict):
         return {
-            "reason": "navigate_empty_source_anchor",
+            "reason": "ingest_empty_source_anchor",
             "end_anchor_text": "",
             "boundary_type": "paragraph_end",
-            "continuation_pressure": False,
         }
     return {
         "reason": _clean_text(value.get("reason")),
         "end_anchor_text": _clean_text(value.get("end_anchor_text")),
         "boundary_type": _normalize_unitize_boundary_type(value.get("boundary_type")),
-        "continuation_pressure": bool(value.get("continuation_pressure")),
     }
 
 
-def navigate(
+def ingest(
     *,
-    reading_position: dict[str, object],
-    mainline_preview: dict[str, object],
-    mainline_cursor: dict[str, object],
-    navigation_context: NavigationContext | dict[str, object] | None = None,
-    reader_policy: ReaderPolicy,
-    output_language: str,
+    current_view_position: dict[str, object],
+    current_view_content: dict[str, object],
     output_dir: Path | None = None,
     book_title: str = "",
     author: str = "",
-    chapter_title: str = "",
-) -> NavigateBoundaryResult:
-    """Run the forward-only Navigate LLM boundary call."""
+) -> IngestBoundaryResult:
+    """Run the Ingest LLM boundary call."""
 
     prompts = ATTENTIONAL_V2_PROMPTS
-    structural_frame = _structural_frame(
+    prompt_assembly = render_ingest_prompt_xml(
         book_title=book_title,
         author=author,
-        chapter_title=chapter_title,
-        output_language=output_language,
+        current_view_position=current_view_position,
+        current_view_content=current_view_content,
     )
-    user_prompt = _render_prompt(
-        prompts.navigate_prompt,
-        structural_frame=_json_block(structural_frame),
-        reading_position=_json_block(reading_position),
-        mainline_preview=_json_block(mainline_preview),
-        mainline_cursor=_json_block(dict(mainline_cursor or {})),
-        navigation_context=_json_block(dict(navigation_context or {})),
-        policy_snapshot=_json_block(reader_policy),
-        output_language_name=language_name(output_language),
-    )
+    user_prompt = prompt_assembly.rendered_text
     _write_prompt_manifest(
         output_dir,
-        node_name="navigate",
-        prompt_version=prompts.navigate_version,
-        system_prompt=prompts.navigate_system,
+        node_name="ingest",
+        prompt_version=prompts.ingest_version,
+        system_prompt=prompts.ingest_system,
         user_prompt=user_prompt,
         promptset_version=prompts.promptset_version,
+        prompt_assembly={
+            "spec_id": prompt_assembly.spec_id,
+            "owner_node": prompt_assembly.owner_node,
+            "output_contract": prompt_assembly.output_contract,
+            "rendered_blocks": list(prompt_assembly.rendered_blocks),
+            "used_fragment_ids": list(prompt_assembly.used_fragment_ids),
+            "used_slot_names": list(prompt_assembly.used_slot_names),
+        },
     )
 
     try:
-        with llm_invocation_scope(trace_context=LLMTraceContext(stage="phase4", node="navigate")):
-            payload = invoke_json(prompts.navigate_system, user_prompt, default={})
-        return _normalize_navigate_boundary_result(
+        with llm_invocation_scope(trace_context=LLMTraceContext(stage="phase4", node="ingest")):
+            payload = invoke_json(prompts.ingest_system, user_prompt, default={})
+        return _normalize_ingest_boundary_result(
             payload,
         )
     except ReaderLLMError:
         return {
-            "reason": "navigate_llm_error",
+            "reason": "ingest_llm_error",
             "end_anchor_text": "",
             "boundary_type": "paragraph_end",
-            "continuation_pressure": False,
         }
 
 

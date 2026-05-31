@@ -19,7 +19,7 @@ REQUIRED_EVIDENCE_SURFACES = {
     "read_audit",
     "settlement_audit",
     "supplemental_retrieval",
-    "navigation_trace",
+    "ingest_trace",
     "slow_cycle_audit",
     "source_ref_binding_resolution_markers",
     "projection_markers",

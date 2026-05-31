@@ -25,7 +25,7 @@ class SourceSpan(TypedDict, total=False):
 
 
 class PreviewParagraphSlice(TypedDict, total=False):
-    """One paragraph slice exposed inside a Navigate preview."""
+    """One paragraph slice exposed inside an Ingest preview."""
 
     paragraph_index: int
     text_role: str
@@ -540,7 +540,7 @@ def build_paragraph_offset_preview(
     current_cursor: Mapping[str, object],
     reader_policy: ReaderPolicy | Mapping[str, object] | None = None,
 ) -> ParagraphOffsetPreview:
-    """Build the adaptive source preview visible to Navigate."""
+    """Build the adaptive source preview visible to Ingest."""
 
     start_cursor = normalize_cursor_for_chapter(chapter, current_cursor)
     chapter_id = _chapter_id(chapter)
@@ -727,7 +727,7 @@ def resolve_end_anchor_text(
 
 
 def fallback_end_cursor_for_preview(preview: Mapping[str, object]) -> SourceCursor:
-    """Return a conservative end cursor for unresolved Navigate output."""
+    """Return a conservative end cursor for unresolved Ingest output."""
 
     start = preview.get("preview_start_cursor")
     if not isinstance(start, Mapping):

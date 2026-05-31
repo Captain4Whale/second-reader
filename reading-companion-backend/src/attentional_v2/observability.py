@@ -529,7 +529,7 @@ def record_read(
     budget_exhausted: bool = False,
     read_result: Mapping[str, object],
     llm_fallbacks: list[dict[str, str]] | None = None,
-    navigation_trace: list[dict[str, object]] | None = None,
+    ingest_trace: list[dict[str, object]] | None = None,
 ) -> None:
     """Append one mechanism-private read audit record."""
 
@@ -578,7 +578,7 @@ def record_read(
     supplemental_retrieval = _supplemental_retrieval_audit(supplemental_context)
     if supplemental_retrieval:
         row["supplemental_retrieval"] = supplemental_retrieval
-    navigation_trace_fields = {
+    ingest_trace_fields = {
         "reason",
         "end_anchor_text",
         "source_span_id",
@@ -586,18 +586,18 @@ def record_read(
         "error",
         "continuity_cost",
     }
-    compact_navigation_trace = [
+    compact_ingest_trace = [
         {
             key: dict(value) if isinstance(value, Mapping) else value
             for key, value in item.items()
-            if key in navigation_trace_fields and value not in (None, "", [], {})
+            if key in ingest_trace_fields and value not in (None, "", [], {})
         }
-        for item in (navigation_trace or [])
+        for item in (ingest_trace or [])
         if isinstance(item, Mapping)
     ]
-    compact_navigation_trace = [item for item in compact_navigation_trace if item]
-    if compact_navigation_trace:
-        row["navigation_trace"] = compact_navigation_trace
+    compact_ingest_trace = [item for item in compact_ingest_trace if item]
+    if compact_ingest_trace:
+        row["ingest_trace"] = compact_ingest_trace
     append_jsonl(read_audit_file(output_dir), row)
 
 

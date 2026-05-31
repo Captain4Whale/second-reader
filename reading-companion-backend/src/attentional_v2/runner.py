@@ -29,7 +29,7 @@ from src.iterator_reader.llm_utils import ReaderLLMError, llm_invocation_scope, 
 from .evaluation import build_normalized_eval_bundle, persist_normalized_eval_bundle
 from .intake import process_sentence_intake  # noqa: F401 - legacy monkeypatch seam for older tests
 from .llm_calls import (
-    navigate as _call_navigate,
+    ingest as _call_ingest,
     read_unit,
 )
 from .observability import (
@@ -64,8 +64,8 @@ from .schemas import (
     KnowledgeActivationsState,
     LocalBufferState,
     LocalContinuityState,
-    NavigateBoundaryResult,
-    NavigateBoundaryTraceEntry,
+    IngestBoundaryResult,
+    IngestTraceEntry,
     PreparedSourceUnit,
     ReactionRecordsState,
     ReaderPolicy,
@@ -105,7 +105,7 @@ from .state_ops import (
     apply_active_attention_operations,
 )
 from .state_migration import normalize_active_tension_state
-from .state_projection import build_carry_forward_context, build_navigation_context
+from .state_projection import build_carry_forward_context
 from .storage import (
     chapter_result_compatibility_file,
     checkpoints_dir,
@@ -983,18 +983,8 @@ def _build_sentence_lookup(
     return sentence_lookup, chapter_lookup
 
 
-def _mainline_cursor_from_continuity(local_continuity: LocalContinuityState) -> dict[str, object]:
-    """Return the active mainline cursor packet."""
-
-    return (
-        dict(local_continuity.get("mainline_cursor", {}))
-        if isinstance(local_continuity.get("mainline_cursor"), dict)
-        else {}
-    )
-
-
-def _mainline_source_preview_packet(preview: dict[str, object]) -> dict[str, object]:
-    """Build the paragraph-offset source preview packet for Navigate."""
+def _current_view_content_packet(preview: dict[str, object]) -> dict[str, object]:
+    """Build the paragraph-offset source preview packet for Ingest."""
 
     return {
         "preview_start_cursor": dict(preview.get("preview_start_cursor", {}))
@@ -1021,24 +1011,14 @@ def _mainline_source_preview_packet(preview: dict[str, object]) -> dict[str, obj
     }
 
 
-def _build_navigate_boundary_preparation(
+def _build_ingest_boundary_preparation(
     *,
     current_chapter: dict[str, object],
     current_cursor: dict[str, object],
-    local_buffer: LocalBufferState,
-    continuation_capsule: dict[str, object],
-    active_attention: ActiveAttention,
-    recent_reading_memory: RecentReadingMemoryState | None,
-    concept_registry: ConceptRegistryState,
-    thread_trace: ThreadTraceState,
-    reflective_frames: ReflectiveFramesState,
-    reaction_records: ReactionRecordsState,
-    local_continuity: LocalContinuityState,
     reader_policy: ReaderPolicy,
 ) -> dict[str, object]:
-    """Prepare the runtime packet consumed by the Navigate LLM boundary call."""
+    """Prepare the runtime packet consumed by the Ingest LLM boundary call."""
 
-    recent_reading_memory = recent_reading_memory or build_empty_recent_reading_memory()
     source_cursor = normalize_cursor_for_chapter(current_chapter, current_cursor)
     preview = build_paragraph_offset_preview(
         chapter=current_chapter,
@@ -1047,44 +1027,32 @@ def _build_navigate_boundary_preparation(
     )
     current_chapter_id = int(current_chapter.get("id", 0) or 0)
     current_chapter_ref = _chapter_ref(current_chapter)
-    navigation_context = build_navigation_context(
-        chapter_ref=current_chapter_ref,
-        current_sentence_id=_clean_text(source_cursor.get("sentence_id")) or _clean_text(local_buffer.get("current_sentence_id")),
-        local_buffer=local_buffer,
-        active_attention=active_attention,
-        recent_reading_memory=recent_reading_memory,
-        concept_registry=concept_registry,
-        thread_trace=thread_trace,
-        reflective_frames=reflective_frames,
-        reaction_records=reaction_records,
-        continuation_capsule=continuation_capsule,
-    )
+    chapter_title = _clean_text(current_chapter.get("title"))
     return {
         "chapter_id": current_chapter_id,
         "chapter_ref": current_chapter_ref,
-        "chapter_title": _clean_text(current_chapter.get("title")),
+        "chapter_title": chapter_title,
         "source_cursor": dict(source_cursor),
         "preview": dict(preview),
-        "mainline_preview": _mainline_source_preview_packet(dict(preview)),
-        "mainline_cursor": _mainline_cursor_from_continuity(local_continuity),
-        "navigation_context": navigation_context,
-        "reading_position": {
-            "mode": "mainline",
+        "current_view_content": _current_view_content_packet(dict(preview)),
+        "current_view_position": {
             "current_chapter_id": current_chapter_id,
             "current_chapter_ref": current_chapter_ref,
+            "chapter_title": chapter_title,
             "current_cursor": dict(source_cursor),
+            "retry": False,
         },
     }
 
 
-def _boundary_trace_entry(
-    boundary_result: NavigateBoundaryResult,
+def _ingest_trace_entry(
+    boundary_result: IngestBoundaryResult,
     *,
     error: str = "",
-) -> NavigateBoundaryTraceEntry:
-    """Return a compact Navigate boundary trace entry."""
+) -> IngestTraceEntry:
+    """Return a compact Ingest boundary trace entry."""
 
-    entry: NavigateBoundaryTraceEntry = {
+    entry: IngestTraceEntry = {
         "reason": _clean_text(boundary_result.get("reason")),
         "end_anchor_text": _clean_text(boundary_result.get("end_anchor_text")),
         "source_span_id": _clean_text(boundary_result.get("source_span_id")),
@@ -1095,13 +1063,13 @@ def _boundary_trace_entry(
     return entry
 
 
-def _compact_boundary_trace(boundary_trace: object) -> list[dict[str, object]]:
+def _compact_ingest_trace(ingest_trace: object) -> list[dict[str, object]]:
     """Return compact boundary trace entries safe for read-audit persistence."""
 
-    if not isinstance(boundary_trace, list):
+    if not isinstance(ingest_trace, list):
         return []
     compact_entries: list[dict[str, object]] = []
-    for item in boundary_trace:
+    for item in ingest_trace:
         if not isinstance(item, dict):
             continue
         entry: dict[str, object] = {}
@@ -1126,15 +1094,15 @@ def _compact_boundary_trace(boundary_trace: object) -> list[dict[str, object]]:
     return compact_entries
 
 
-def _resolve_navigate_boundary(
+def _resolve_ingest_boundary(
     *,
     chapter: dict[str, object],
     start_cursor: dict[str, object],
     preview: dict[str, object],
-    boundary_result: NavigateBoundaryResult,
-    retry_boundary_result: NavigateBoundaryResult | None = None,
+    boundary_result: IngestBoundaryResult,
+    retry_boundary_result: IngestBoundaryResult | None = None,
 ) -> tuple[dict[str, object], UnitizeDecision]:
-    """Resolve Navigate's source-text tail anchor into an accepted unit span."""
+    """Resolve Ingest's source-text tail anchor into an accepted unit span."""
 
     selected_result = dict(retry_boundary_result or boundary_result)
     end_anchor_text = _clean_text(selected_result.get("end_anchor_text"))
@@ -1185,24 +1153,23 @@ def _resolve_navigate_boundary(
         },
         "boundary_type": _clean_text(selected_result.get("boundary_type")) or "paragraph_end",  # type: ignore[typeddict-item]
         "reason": _clean_text(selected_result.get("reason")),
-        "continuation_pressure": bool(selected_result.get("continuation_pressure")),
         "resolution": resolution,
     }
     source_unit["unitize_decision"] = dict(unitize_decision)
     return source_unit, unitize_decision
 
 
-def _accept_navigate_boundary(
+def _accept_ingest_boundary(
     *,
     chapter: dict[str, object],
     start_cursor: dict[str, object],
     preview: dict[str, object],
-    boundary_result: NavigateBoundaryResult,
-    retry_boundary_result: NavigateBoundaryResult | None = None,
-) -> tuple[dict[str, object], UnitizeDecision, list[NavigateBoundaryTraceEntry]]:
-    """Accept a Navigate boundary result as a runtime source unit."""
+    boundary_result: IngestBoundaryResult,
+    retry_boundary_result: IngestBoundaryResult | None = None,
+) -> tuple[dict[str, object], UnitizeDecision, list[IngestTraceEntry]]:
+    """Accept an Ingest boundary result as a runtime source unit."""
 
-    selected_source_unit, unitize_decision = _resolve_navigate_boundary(
+    selected_source_unit, unitize_decision = _resolve_ingest_boundary(
         chapter=chapter,
         start_cursor=start_cursor,
         preview=preview,
@@ -1213,10 +1180,10 @@ def _accept_navigate_boundary(
     selected_boundary["source_span_id"] = _clean_text(unitize_decision.get("source_span_id"))
     selected_boundary["source_span"] = dict(unitize_decision.get("source_span", {}))
     selected_boundary["resolution"] = dict(unitize_decision.get("resolution", {}))
-    boundary_trace = [_boundary_trace_entry(boundary_result)]
+    ingest_trace = [_ingest_trace_entry(boundary_result)]
     if retry_boundary_result is not None:
-        boundary_trace.append(_boundary_trace_entry(retry_boundary_result))
-    return selected_source_unit, unitize_decision, boundary_trace
+        ingest_trace.append(_ingest_trace_entry(retry_boundary_result))
+    return selected_source_unit, unitize_decision, ingest_trace
 
 
 def prepare_next_source_unit_for_read(
@@ -1240,63 +1207,39 @@ def prepare_next_source_unit_for_read(
 ) -> PreparedSourceUnit:
     """Prepare the next forward source unit that should be read."""
 
-    preparation = _build_navigate_boundary_preparation(
+    preparation = _build_ingest_boundary_preparation(
         current_chapter=current_chapter,
         current_cursor=current_cursor,
-        local_buffer=local_buffer,
-        continuation_capsule=continuation_capsule,
-        active_attention=active_attention,
-        recent_reading_memory=recent_reading_memory,
-        concept_registry=concept_registry,
-        thread_trace=thread_trace,
-        reflective_frames=reflective_frames,
-        reaction_records=reaction_records,
-        local_continuity=local_continuity,
         reader_policy=reader_policy,
     )
     preview = dict(preparation.get("preview", {})) if isinstance(preparation.get("preview"), dict) else {}
     source_cursor = dict(preparation.get("source_cursor", {})) if isinstance(preparation.get("source_cursor"), dict) else {}
     chapter_id = int(preparation.get("chapter_id", 0) or 0)
     chapter_ref = _clean_text(preparation.get("chapter_ref"))
-    reading_position = (
-        dict(preparation.get("reading_position", {}))
-        if isinstance(preparation.get("reading_position"), dict)
+    current_view_position = (
+        dict(preparation.get("current_view_position", {}))
+        if isinstance(preparation.get("current_view_position"), dict)
         else {}
     )
-    mainline_preview = (
-        dict(preparation.get("mainline_preview", {}))
-        if isinstance(preparation.get("mainline_preview"), dict)
+    current_view_content = (
+        dict(preparation.get("current_view_content", {}))
+        if isinstance(preparation.get("current_view_content"), dict)
         else {}
     )
-    mainline_cursor = (
-        dict(preparation.get("mainline_cursor", {}))
-        if isinstance(preparation.get("mainline_cursor"), dict)
-        else {}
-    )
-    navigation_context = (
-        dict(preparation.get("navigation_context", {}))
-        if isinstance(preparation.get("navigation_context"), dict)
-        else {}
-    )
-    boundary_result = _call_navigate(
-        reading_position=reading_position,
-        mainline_preview=mainline_preview,
-        mainline_cursor=mainline_cursor,
-        navigation_context=navigation_context,
-        reader_policy=reader_policy,
-        output_language=output_language,
+    boundary_result = _call_ingest(
+        current_view_position=current_view_position,
+        current_view_content=current_view_content,
         output_dir=output_dir,
         book_title=book_title,
         author=author,
-        chapter_title=_clean_text(preparation.get("chapter_title")),
     )
     resolution = resolve_end_anchor_text(
         preview=preview,
         end_anchor_text=_clean_text(boundary_result.get("end_anchor_text")),
     )
-    retry_boundary_result: NavigateBoundaryResult | None = None
+    retry_boundary_result: IngestBoundaryResult | None = None
     if _clean_text(resolution.get("status")) != "matched":
-        retry_position = dict(reading_position)
+        retry_position = dict(current_view_position)
         retry_position.update(
             {
                 "retry": True,
@@ -1305,21 +1248,16 @@ def prepare_next_source_unit_for_read(
                 "retry_instruction": "Return a longer, unique end_anchor_text copied exactly from the end of the chosen unit.",
             }
         )
-        retry_boundary_result = _call_navigate(
-            reading_position={
+        retry_boundary_result = _call_ingest(
+            current_view_position={
                 **retry_position,
             },
-            mainline_preview=mainline_preview,
-            mainline_cursor=mainline_cursor,
-            navigation_context=navigation_context,
-            reader_policy=reader_policy,
-            output_language=output_language,
+            current_view_content=current_view_content,
             output_dir=output_dir,
             book_title=book_title,
             author=author,
-            chapter_title=_clean_text(preparation.get("chapter_title")),
         )
-    selected_source_unit, unitize_decision, boundary_trace = _accept_navigate_boundary(
+    selected_source_unit, unitize_decision, ingest_trace = _accept_ingest_boundary(
         chapter=current_chapter,
         start_cursor=dict(source_cursor),
         preview=dict(preview),
@@ -1337,7 +1275,7 @@ def prepare_next_source_unit_for_read(
         "selected_source_unit": selected_source_unit,
         "preview": dict(preview),
         "unitize_decision": unitize_decision,  # type: ignore[typeddict-item]
-        "boundary_trace": boundary_trace,
+        "ingest_trace": ingest_trace,
     }
 
 
@@ -1610,7 +1548,7 @@ def _run_read_with_context_loop(
     author: str,
     chapter_id: int,
     chapter_ref: str,
-    boundary_trace: list[dict[str, object]] | None = None,
+    ingest_trace: list[dict[str, object]] | None = None,
 ) -> tuple[ReadUnitResult, list[dict[str, str]]]:
     """Run one authoritative read for the chosen unit and persist its private audit."""
 
@@ -1668,7 +1606,7 @@ def _run_read_with_context_loop(
         read_result=read_result,
         stop_reason="read_complete",
         llm_fallbacks=llm_fallbacks,
-        navigation_trace=boundary_trace,
+        ingest_trace=ingest_trace,
     )
     return read_result, llm_fallbacks
 
@@ -1854,7 +1792,7 @@ def _settle_next_unit(
         author=provisioned.author,
         chapter_id=chapter_id,
         chapter_ref=chapter_ref,
-        boundary_trace=_compact_boundary_trace(prepared_source_unit.get("boundary_trace")),
+        ingest_trace=_compact_ingest_trace(prepared_source_unit.get("ingest_trace")),
     )
     for fallback in read_fallbacks:
         if not isinstance(fallback, dict):

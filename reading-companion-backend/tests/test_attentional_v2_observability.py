@@ -207,10 +207,10 @@ def test_record_read_writes_memory_uptake_op_contracts(tmp_path: Path) -> None:
         },
     ]
     assert "supplemental_retrieval" not in audit_line
-    assert "navigation_trace" not in audit_line
+    assert "ingest_trace" not in audit_line
 
 
-def test_record_read_writes_compact_navigation(tmp_path: Path) -> None:
+def test_record_read_writes_compact_ingest_trace(tmp_path: Path) -> None:
     output_dir = tmp_path / "output"
 
     record_read(
@@ -225,7 +225,7 @@ def test_record_read_writes_compact_navigation(tmp_path: Path) -> None:
             "memory_uptake_ops": [],
             "memory_uptake_admission_events": [],
         },
-        navigation_trace=[
+        ingest_trace=[
             {
                 "reason": "The next source unit is ready.",
                 "continuity_cost": "not_assessed",
@@ -239,7 +239,7 @@ def test_record_read_writes_compact_navigation(tmp_path: Path) -> None:
     assert audit_line["memory_uptake_ops"] == []
     assert audit_line["memory_uptake_op_count"] == 0
     assert audit_line["memory_uptake_ops_by_target_store"] == {}
-    assert set(audit_line["navigation_trace"][0]) == {
+    assert set(audit_line["ingest_trace"][0]) == {
         "reason",
         "continuity_cost",
     }

@@ -302,7 +302,6 @@ def test_run_read_with_context_loop_reads_once_and_persists_f1_audit(tmp_path, m
             "boundary_type": "paragraph_end",
             "evidence_sentence_ids": ["c1-s2"],
             "reason": "phase-f1-test",
-            "continuation_pressure": False,
         },
         local_buffer=build_empty_local_buffer(),
         continuation_capsule={},

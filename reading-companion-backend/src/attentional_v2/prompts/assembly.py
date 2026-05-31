@@ -58,6 +58,7 @@ class PromptTemplateNode:
     attributes: Mapping[str, str] | None = None
     children: Sequence["PromptTemplateNode"] = ()
     skip_if_empty: bool = False
+    self_closing: bool = False
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "children", tuple(self.children))
@@ -116,6 +117,8 @@ def _render_prompt_template_node(
     )
     if content_sources > 1:
         raise ValueError(f"Prompt template node <{element_name}> must use only one content source")
+    if node.self_closing and content_sources:
+        raise ValueError(f"Prompt template node <{element_name}> cannot be self-closing with content")
 
     indent = "  " * indent_level
     if node.prompt_fragment_ref is not None:
@@ -172,6 +175,8 @@ def _render_prompt_template_node(
 
     if node.skip_if_empty:
         return ""
+    if node.self_closing:
+        return f"{indent}<{element_name}{attributes} />"
     return f"{indent}<{element_name}{attributes}></{element_name}>"
 
 

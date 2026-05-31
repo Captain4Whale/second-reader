@@ -194,7 +194,6 @@ class UnitizeDecision(TypedDict, total=False):
     boundary_type: UnitizeBoundaryType
     evidence_sentence_ids: list[str]
     reason: str
-    continuation_pressure: bool
 
 
 class CarryForwardRef(TypedDict, total=False):
@@ -317,22 +316,6 @@ class CarryForwardContext(TypedDict, total=False):
     refs: list[CarryForwardRef]
 
 
-class NavigationContext(TypedDict, total=False):
-    """Small navigation packet used by Navigate.unitize before the unit is chosen."""
-
-    packet_version: str
-    continuation_capsule: ContinuationCapsule
-    session_continuity_capsule: SessionContinuityCapsule
-    active_attention_digest: ActiveAttentionDigest
-    recent_reading_memory: RecentReadingMemoryDigest
-    chapter_reflective_frame: ReflectiveFrameDigest
-    active_focus_digest: ActiveFocusDigest
-    concept_digest: list[ConceptDigestItem]
-    thread_digest: list[ThreadDigestItem]
-    source_ref_digest: list[dict[str, object]]
-    refs: list[CarryForwardRef]
-
-
 class PriorMaterialUse(TypedDict, total=False):
     """Observation of whether prior material materially informed the current read."""
 
@@ -412,17 +395,16 @@ class SurfacedReaction(TypedDict, total=False):
     search_intent: "SearchIntent" | None
 
 
-class NavigateBoundaryResult(TypedDict, total=False):
-    """One bounded Navigate LLM boundary result."""
+class IngestBoundaryResult(TypedDict, total=False):
+    """One bounded Ingest LLM boundary result."""
 
     reason: str
     end_anchor_text: str
     boundary_type: UnitizeBoundaryType
-    continuation_pressure: bool
 
 
-class NavigateBoundaryTraceEntry(TypedDict, total=False):
-    """One compact Navigate boundary trace entry."""
+class IngestTraceEntry(TypedDict, total=False):
+    """One compact Ingest boundary trace entry."""
 
     reason: str
     end_anchor_text: str
@@ -440,7 +422,7 @@ class PreparedSourceUnit(TypedDict, total=False):
     selected_source_unit: dict[str, object]
     preview: dict[str, object]
     unitize_decision: UnitizeDecision
-    boundary_trace: list[NavigateBoundaryTraceEntry]
+    ingest_trace: list[IngestTraceEntry]
 
 
 class BridgeCandidate(TypedDict, total=False):

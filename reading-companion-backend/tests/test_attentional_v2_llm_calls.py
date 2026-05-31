@@ -9,7 +9,7 @@ from src.attentional_v2 import llm_calls as llm_calls_module
 from src.attentional_v2 import runner as runner_module
 from src.attentional_v2.llm_calls import (
     build_unitize_preview,
-    navigate,
+    ingest,
     read_unit,
 )
 from src.attentional_v2.schemas import build_default_reader_policy
@@ -33,60 +33,52 @@ def _sentence(
     }
 
 
-def _navigation_context() -> dict[str, object]:
-    return {
-        "packet_version": STATE_PACKET_VERSION,
-        "session_continuity_capsule": {"recent_sentence_ids": ["c0-s9"]},
-        "active_attention_digest": {"active_items": []},
-        "chapter_reflective_frame": {"chapter_frames": []},
-        "active_focus_digest": {"recent_reactions": []},
-        "concept_digest": [],
-        "thread_digest": [],
-        "source_ref_digest": [],
-        "refs": [],
-    }
+def test_ingest_boundary_contract_has_only_boundary_fields() -> None:
+    """Ingest should expose only boundary fields for the current forward selector."""
 
-
-def test_navigate_boundary_contract_has_no_action_or_mode() -> None:
-    """Navigate should expose only boundary fields for the current forward selector."""
-
-    payload = llm_calls_module._normalize_navigate_boundary_result(  # noqa: SLF001
+    payload = llm_calls_module._normalize_ingest_boundary_result(  # noqa: SLF001
         {
             "end_anchor_text": "Beta.",
             "boundary_type": "paragraph_end",
             "reason": "Done.",
-            "continuation_pressure": False,
+            "continuation" + "_pressure": True,
+            "extra": "ignored",
         }
     )
     assert "decision" not in payload
     assert "selection" + "_mode" not in payload
+    assert "continuation" + "_pressure" not in payload
     assert payload["end_anchor_text"] == "Beta."
 
 
-def _navigate_boundary_call(
+def _ingest_boundary_call(
     *,
     tmp_path: Path,
     preview_sentences: list[dict[str, object]],
-    output_language: str = "en",
 ) -> dict[str, object]:
-    return navigate(
-        reading_position={
-            "mode": "mainline",
-            "current_sentence_id": preview_sentences[0]["sentence_id"] if preview_sentences else "",
+    return ingest(
+        current_view_position={
+            "current_chapter_id": 2,
+            "current_chapter_ref": "Chapter 2",
+            "chapter_title": "Chapter 2",
+            "current_cursor": {"paragraph_index": 1, "char_offset": 0},
+            "retry": False,
         },
-        mainline_preview={
-            "current_sentence": preview_sentences[0] if preview_sentences else {},
-            "preview_range": {
-                "start_sentence_id": preview_sentences[0]["sentence_id"] if preview_sentences else "",
-                "end_sentence_id": preview_sentences[-1]["sentence_id"] if preview_sentences else "",
-            },
-            "preview_sentences": preview_sentences,
+        current_view_content={
+            "paragraph_slices": [
+                {
+                    "paragraph_index": sentence.get("paragraph_index"),
+                    "text_role": sentence.get("text_role"),
+                    "start_char": 0,
+                    "end_char": len(str(sentence.get("text", "") or "")),
+                    "text": sentence.get("text"),
+                }
+                for sentence in preview_sentences
+            ],
         },
-        mainline_cursor={"chapter_id": 2, "sentence_id": "c2-s1"},
-        navigation_context=_navigation_context(),
-        reader_policy=build_default_reader_policy(),
-        output_language=output_language,
         output_dir=tmp_path,
+        book_title="Demo Book",
+        author="Tester",
     )
 
 
@@ -114,8 +106,8 @@ def test_build_unitize_preview_stays_within_current_and_next_non_heading_paragra
     }
 
 
-def test_navigate_writes_manifest_and_uses_anchor_contract(tmp_path: Path, monkeypatch):
-    """Navigate should write a prompt manifest and keep the current forward anchor contract."""
+def test_ingest_writes_manifest_and_uses_xml_anchor_contract(tmp_path: Path, monkeypatch):
+    """Ingest should write a prompt manifest and keep the current forward anchor contract."""
 
     captured: dict[str, str] = {}
 
@@ -126,60 +118,95 @@ def test_navigate_writes_manifest_and_uses_anchor_contract(tmp_path: Path, monke
             "end_anchor_text": "Beta.",
             "boundary_type": "cross_paragraph_continuation",
             "reason": "The line clearly keeps running.",
-            "continuation_pressure": True,
+            "continuation" + "_pressure": True,
         }
 
     monkeypatch.setattr(llm_calls_module, "invoke_json", fake_invoke_json)
 
-    reader_policy = build_default_reader_policy()
-    reader_policy["unitize"]["max_coverage_unit_sentences"] = 1
     preview_sentences = [
         _sentence("c1-s1", "Alpha.", sentence_index=1, paragraph_index=1),
         _sentence("c1-s2", "Beta.", sentence_index=2, paragraph_index=1),
     ]
 
-    decision = navigate(
-        reading_position={"mode": "mainline", "current_sentence_id": "c1-s1"},
-        mainline_preview={
-            "current_sentence": preview_sentences[0],
-            "preview_range": {"start_sentence_id": "c1-s1", "end_sentence_id": "c1-s2"},
-            "preview_sentences": preview_sentences,
+    decision = ingest(
+        current_view_position={
+            "current_chapter_id": 1,
+            "current_chapter_ref": "Chapter 1",
+            "chapter_title": "Chapter 1",
+            "current_cursor": {"paragraph_index": 1, "char_offset": 0},
+            "retry": False,
         },
-        mainline_cursor={},
-        navigation_context=_navigation_context(),
-        reader_policy=reader_policy,
-        output_language="en",
+        current_view_content={
+            "paragraph_slices": [
+                {
+                    "paragraph_index": sentence.get("paragraph_index"),
+                    "text_role": sentence.get("text_role"),
+                    "start_char": 0,
+                    "end_char": len(str(sentence.get("text", "") or "")),
+                    "text": sentence.get("text"),
+                }
+                for sentence in preview_sentences
+            ],
+        },
         output_dir=tmp_path,
+        book_title="Demo Book",
+        author="Tester",
     )
 
-    manifest = json.loads((tmp_path / "_mechanisms" / "attentional_v2" / "internal" / "prompt_manifests" / "navigate.json").read_text(encoding="utf-8"))
+    manifest = json.loads((tmp_path / "_mechanisms" / "attentional_v2" / "internal" / "prompt_manifests" / "ingest.json").read_text(encoding="utf-8"))
 
     assert "decision" not in decision
     assert "selection" + "_mode" not in decision
+    assert "continuation" + "_pressure" not in decision
     assert decision["end_anchor_text"] == "Beta."
-    assert decision["continuation_pressure"] is True
-    assert "\"packet_version\": \"attentional_v2.state_packet.v1\"" in captured["prompt"]
+    assert captured["system_prompt"] == "Follow the structured Ingest prompt in the user message. Return JSON only."
+    assert "<ReaderRole>" in captured["prompt"]
+    assert "<Instruction>" in captured["prompt"]
+    assert "<CurrentStep>" in captured["prompt"]
+    assert "<ContextUseGuide>" in captured["prompt"]
+    assert "<SelectNextUnit>" in captured["prompt"]
+    assert "<RequestMemorySupport>" in captured["prompt"]
+    assert "<ExecutionLimits>" in captured["prompt"]
+    assert "<BookInfo>" in captured["prompt"]
+    assert "<BookIdentity>" in captured["prompt"]
+    assert "<CurrentView>" in captured["prompt"]
+    assert "<Position>" in captured["prompt"]
+    assert '<Paragraph n="1" role="body" start_char="0" end_char="6">' in captured["prompt"]
+    assert "<RetrievalSurface />" in captured["prompt"]
+    assert "<OutputContract>" in captured["prompt"]
+    assert "<OutputFields>" in captured["prompt"]
+    assert "<ReturnFormat>" in captured["prompt"]
+    assert "You are in the Ingest step of a sequential deep-reading loop." in captured["prompt"]
+    assert "Select one forward source unit from the current reading cursor." in captured["prompt"]
+    assert "Memory-retrieval support is an intended future Ingest responsibility" in captured["prompt"]
+    assert "Do not resolve anchors, retry or choose fallback boundaries" in captured["prompt"]
+    assert "Navigation context" not in captured["prompt"]
+    assert "ReadingState" not in captured["prompt"]
+    assert "LanguageContract" not in captured["prompt"]
+    assert "FieldContracts" not in captured["prompt"]
+    assert "selected_unit" not in captured["prompt"]
+    assert "continuation" + "_pressure" not in captured["prompt"]
+    assert "You are " + "Navi" + "gate" not in captured["prompt"]
     assert "Budget " + "state" not in captured["prompt"]
     assert "choose" + "_unit" not in captured["prompt"]
     assert "selection" + "_mode" not in captured["prompt"]
-    assert "Return exactly one act" not in captured["system_prompt"]
-    assert "weak structure cues, not automatic permission to cut a standalone unit" in captured["system_prompt"]
-    assert "purely non-lexical residue" in captured["system_prompt"]
-    assert "Use them as structural cues, not content" in captured["system_prompt"]
-    assert "Never trim symbols or unusual characters that belong to a substantive sentence" in captured["system_prompt"]
-    assert "Mainline preview" in captured["prompt"]
-    assert manifest["prompt_version"] == "attentional_v2.navigate.v4"
+    assert "Return exactly one act" not in captured["prompt"]
+    assert "weak structure cues, not automatic standalone units" in captured["prompt"]
+    assert "purely non-lexical residue" in captured["prompt"]
+    assert "Mainline preview" not in captured["prompt"]
+    assert manifest["node_name"] == "ingest"
+    assert manifest["prompt_version"] == "attentional_v2.ingest.v1"
+    assert manifest["prompt_assembly"]["owner_node"] == "ingest"
 
 
-def test_navigate_can_trim_leading_boundary_residue(tmp_path: Path, monkeypatch):
-    """Navigate preserves the selected end anchor for a short structural unit."""
+def test_ingest_can_trim_leading_boundary_residue(tmp_path: Path, monkeypatch):
+    """Ingest preserves the selected end anchor for a short structural unit."""
 
     def fake_invoke_json(_system_prompt: str, _prompt: str, default: object) -> object:
         return {
             "end_anchor_text": "运用专长，发挥杠杆效应，最终你会得到自己应得的。",
             "boundary_type": "paragraph_end",
             "reason": "The divider is a structural cue, not content.",
-            "continuation_pressure": False,
         }
 
     monkeypatch.setattr(llm_calls_module, "invoke_json", fake_invoke_json)
@@ -189,22 +216,21 @@ def test_navigate_can_trim_leading_boundary_residue(tmp_path: Path, monkeypatch)
         _sentence("c1-s2", "运用专长，发挥杠杆效应，最终你会得到自己应得的。", sentence_index=2, paragraph_index=2),
     ]
 
-    decision = _navigate_boundary_call(tmp_path=tmp_path, preview_sentences=preview_sentences, output_language="zh")
+    decision = _ingest_boundary_call(tmp_path=tmp_path, preview_sentences=preview_sentences)
 
     assert "decision" not in decision
     assert "selection" + "_mode" not in decision
     assert decision["end_anchor_text"] == "运用专长，发挥杠杆效应，最终你会得到自己应得的。"
 
 
-def test_navigate_refuses_to_trim_leading_lexical_content(tmp_path: Path, monkeypatch):
-    """Navigate no longer exposes a separate mutable start boundary."""
+def test_ingest_refuses_to_trim_leading_lexical_content(tmp_path: Path, monkeypatch):
+    """Ingest no longer exposes a separate mutable start boundary."""
 
     def fake_invoke_json(_system_prompt: str, _prompt: str, default: object) -> object:
         return {
             "end_anchor_text": "Other people are typically a problem until they prove otherwise.",
             "boundary_type": "paragraph_end",
             "reason": "The visible sentence completes the local move.",
-            "continuation_pressure": False,
         }
 
     monkeypatch.setattr(llm_calls_module, "invoke_json", fake_invoke_json)
@@ -214,20 +240,20 @@ def test_navigate_refuses_to_trim_leading_lexical_content(tmp_path: Path, monkey
         _sentence("c1-s2", "Other people are typically a problem until they prove otherwise.", sentence_index=2, paragraph_index=1),
     ]
 
-    decision = _navigate_boundary_call(tmp_path=tmp_path, preview_sentences=preview_sentences)
+    decision = _ingest_boundary_call(tmp_path=tmp_path, preview_sentences=preview_sentences)
 
     assert decision["end_anchor_text"] == "Other people are typically a problem until they prove otherwise."
     assert "start_sentence_id" not in decision
 
 
-def test_navigate_fallback_merges_heading_with_following_body(tmp_path: Path, monkeypatch):
+def test_ingest_fallback_merges_heading_with_following_body(tmp_path: Path, monkeypatch):
     """LLM failure should fall back to an empty anchor and safe forward act shape."""
 
     monkeypatch.setattr(
         llm_calls_module,
         "invoke_json",
         lambda *_args, **_kwargs: (_ for _ in ()).throw(
-            llm_calls_module.ReaderLLMError("temporary navigation failure", problem_code="network_blocked")
+            llm_calls_module.ReaderLLMError("temporary ingest failure", problem_code="network_blocked")
         ),
     )
 
@@ -237,22 +263,22 @@ def test_navigate_fallback_merges_heading_with_following_body(tmp_path: Path, mo
         _sentence("c1-s3", "而且值得学。", sentence_index=3, paragraph_index=2),
     ]
 
-    decision = _navigate_boundary_call(tmp_path=tmp_path, preview_sentences=preview_sentences, output_language="zh")
+    decision = _ingest_boundary_call(tmp_path=tmp_path, preview_sentences=preview_sentences)
 
     assert "decision" not in decision
     assert "selection" + "_mode" not in decision
     assert decision["end_anchor_text"] == ""
-    assert decision["reason"] == "navigate_llm_error"
+    assert decision["reason"] == "ingest_llm_error"
 
 
-def test_navigate_fallback_keeps_body_paragraph_behavior(tmp_path: Path, monkeypatch):
+def test_ingest_fallback_keeps_body_paragraph_behavior(tmp_path: Path, monkeypatch):
     """Ordinary body fallback keeps the same safe forward act shape."""
 
     monkeypatch.setattr(
         llm_calls_module,
         "invoke_json",
         lambda *_args, **_kwargs: (_ for _ in ()).throw(
-            llm_calls_module.ReaderLLMError("temporary navigation failure", problem_code="network_blocked")
+            llm_calls_module.ReaderLLMError("temporary ingest failure", problem_code="network_blocked")
         ),
     )
 
@@ -262,21 +288,21 @@ def test_navigate_fallback_keeps_body_paragraph_behavior(tmp_path: Path, monkeyp
         _sentence("c1-s3", "Gamma.", sentence_index=3, paragraph_index=2),
     ]
 
-    decision = _navigate_boundary_call(tmp_path=tmp_path, preview_sentences=preview_sentences)
+    decision = _ingest_boundary_call(tmp_path=tmp_path, preview_sentences=preview_sentences)
 
     assert decision["end_anchor_text"] == ""
     assert decision["boundary_type"] == "paragraph_end"
-    assert decision["reason"] == "navigate_llm_error"
+    assert decision["reason"] == "ingest_llm_error"
 
 
-def test_navigate_fallback_allows_heading_only_when_no_body_follows(tmp_path: Path, monkeypatch):
+def test_ingest_fallback_allows_heading_only_when_no_body_follows(tmp_path: Path, monkeypatch):
     """Heading-only fallback keeps the same safe forward act shape."""
 
     monkeypatch.setattr(
         llm_calls_module,
         "invoke_json",
         lambda *_args, **_kwargs: (_ for _ in ()).throw(
-            llm_calls_module.ReaderLLMError("temporary navigation failure", problem_code="network_blocked")
+            llm_calls_module.ReaderLLMError("temporary ingest failure", problem_code="network_blocked")
         ),
     )
 
@@ -284,10 +310,10 @@ def test_navigate_fallback_allows_heading_only_when_no_body_follows(tmp_path: Pa
         _sentence("c1-s1", "Chapter 2", sentence_index=1, paragraph_index=1, text_role="chapter_heading"),
     ]
 
-    decision = _navigate_boundary_call(tmp_path=tmp_path, preview_sentences=preview_sentences)
+    decision = _ingest_boundary_call(tmp_path=tmp_path, preview_sentences=preview_sentences)
 
     assert decision["end_anchor_text"] == ""
-    assert decision["reason"] == "navigate_llm_error"
+    assert decision["reason"] == "ingest_llm_error"
 
 
 def test_read_unit_filters_unanchored_surface_and_uses_naturalized_contract(tmp_path: Path, monkeypatch):

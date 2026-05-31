@@ -71,12 +71,12 @@ Use `docs/backend-sequential-lifecycle.md` for the job-level workflow over time.
   - Mechanism runtime behavior should normally be described with runtime terms such as:
     - source cursor / source span
     - adaptive preview
-    - `Navigate.choose_next_unit`
+    - `Ingest`
     - `read`
     - `Reading Runner post-read settlement`
     - `surfaced reactions`
     - `chapter-end slow cycle`
-  - If a mechanism doc mentions older labels such as `trigger`, `zoom_read`, `meaning_unit_closure`, `controller_decision`, `Navigate.route`, `bridge_resolution`, `Detour`, `source-backread`, or source skills, it should make clear whether those are historical module-family terms or still-live runtime concepts. After `DEC-105`, Detour / source-backread / source-skill compatibility interfaces are not a current live surface for `attentional_v2`.
+  - If a mechanism doc mentions older labels such as `trigger`, `zoom_read`, `meaning_unit_closure`, `controller_decision`, `Navigate`, `Navigate.route`, `bridge_resolution`, `Detour`, `source-backread`, or source skills, it should make clear whether those are historical module-family terms or still-live runtime concepts. After `DEC-105` and `DEC-107`, Detour / source-backread / source-skill compatibility interfaces and the old `Navigate` LLM identity are not a current live surface for `attentional_v2`.
 
 ## Mechanism Status Model
 - `default`
