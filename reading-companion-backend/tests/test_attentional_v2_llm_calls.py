@@ -547,7 +547,9 @@ def test_read_unit_can_use_xml_prompt_assembly_mode_without_changing_default(tmp
     manifest = json.loads((tmp_path / "_mechanisms" / "attentional_v2" / "internal" / "prompt_manifests" / "read_unit.json").read_text(encoding="utf-8"))
 
     assert captured["system_prompt"] == "Follow the structured Read prompt in the user message. Return JSON only."
-    assert "<RoleAndInstruction>" in captured["prompt"]
+    assert "<RoleAndInstruction>" not in captured["prompt"]
+    assert "<ReaderRole>" in captured["prompt"]
+    assert "<Instruction>" in captured["prompt"]
     assert "<BookInfo>" in captured["prompt"]
     assert "<ReadingState>" in captured["prompt"]
     assert "<CurrentFocus>" in captured["prompt"]
@@ -573,11 +575,12 @@ def test_read_unit_can_use_xml_prompt_assembly_mode_without_changing_default(tmp
         "kind": "claim_or_argument",
         "memory_text": "The current unit frames the book as witness testimony.",
     }
-    assert manifest["prompt_version"] == "attentional_v2.read.xml.v4"
+    assert manifest["prompt_version"] == "attentional_v2.read.xml.v5"
     assert manifest["prompt_assembly"]["mode"] == "xml"
-    assert manifest["prompt_assembly"]["spec_id"] == "attentional_v2.read_unit.xml.v4"
+    assert manifest["prompt_assembly"]["spec_id"] == "attentional_v2.read_unit.xml.v5"
     assert manifest["prompt_assembly"]["rendered_blocks"] == [
-        "RoleAndInstruction",
+        "ReaderRole",
+        "Instruction",
         "BookInfo",
         "ReadingState",
         "CurrentFocus",

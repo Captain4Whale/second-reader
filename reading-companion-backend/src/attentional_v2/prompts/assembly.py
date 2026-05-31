@@ -199,22 +199,25 @@ def render_prompt_template_xml(
 READ_XML_EXAMPLE_FRAGMENT_REGISTRY = PromptFragmentRegistry(
     [
         PromptFragment(
-            fragment_id="attentional_v2.read.role_and_instruction.example.v1",
-            text="Fixed Read role and instruction text resolved by the prompt assembly layer.",
-        )
+            fragment_id="attentional_v2.read.reader_role.example.v1",
+            text="Fixed Read reader role text resolved by the prompt assembly layer.",
+        ),
+        PromptFragment(
+            fragment_id="attentional_v2.read.instruction.example.v1",
+            text="Fixed Read instruction text resolved by the prompt assembly layer.",
+        ),
     ]
 )
 
 
 READ_XML_EXAMPLE_TEMPLATE = (
     PromptTemplateNode(
-        element_name="RoleAndInstruction",
-        children=(
-            PromptTemplateNode(
-                element_name="Instruction",
-                prompt_fragment_ref="attentional_v2.read.role_and_instruction.example.v1",
-            ),
-        ),
+        element_name="ReaderRole",
+        prompt_fragment_ref="attentional_v2.read.reader_role.example.v1",
+    ),
+    PromptTemplateNode(
+        element_name="Instruction",
+        prompt_fragment_ref="attentional_v2.read.instruction.example.v1",
     ),
     PromptTemplateNode(element_name="BookInfo", value_slot="book_info"),
     PromptTemplateNode(element_name="ReadingState", value_slot="reading_state"),

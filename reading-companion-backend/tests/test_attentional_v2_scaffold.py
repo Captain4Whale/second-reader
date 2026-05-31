@@ -17,8 +17,8 @@ from src.attentional_v2.prompts import (
     READ_OUTPUT_CONTRACT_FRAGMENT_REGISTRY,
     READ_OUTPUT_CONTRACT_TEMPLATE,
     READ_READING_STATE_TEMPLATE,
-    READ_ROLE_AND_INSTRUCTION_FRAGMENT_REGISTRY,
-    READ_ROLE_AND_INSTRUCTION_TEMPLATE,
+    READ_READER_ROLE_AND_INSTRUCTION_FRAGMENT_REGISTRY,
+    READ_READER_ROLE_AND_INSTRUCTION_TEMPLATE,
     READ_UNIT_PROMPT_VERSION,
     READ_UNIT_ROLE_AND_INSTRUCTION_FRAGMENTS,
     READ_UNIT_SYSTEM_PROMPT,
@@ -36,7 +36,7 @@ from src.attentional_v2.prompts import (
     render_read_output_contract_xml,
     render_read_prompt_xml,
     render_read_reading_state_xml,
-    render_read_role_and_instruction_xml,
+    render_read_reader_role_and_instruction_xml,
     render_read_xml_prompt_example,
 )
 from src.attentional_v2 import runner as runner_module
@@ -96,16 +96,15 @@ def test_prompt_template_xml_resolves_fragments_slots_and_literals() -> None:
     rendered = render_prompt_template_xml(
         [
             PromptTemplateNode(
-                element_name="RoleAndInstruction",
-                children=[
-                    PromptTemplateNode(element_name="Role", prompt_fragment_ref="test.read.role.v1"),
-                    PromptTemplateNode(
-                        element_name="ReadBehavior",
-                        attributes={"kind": "A&B"},
-                        value_slot="read_behavior",
-                    ),
+                element_name="ReaderRole",
+                prompt_fragment_ref="test.read.role.v1",
+            ),
+            PromptTemplateNode(
+                element_name="Instruction",
+                children=(
+                    PromptTemplateNode(element_name="ReadBehavior", attributes={"kind": "A&B"}, value_slot="read_behavior"),
                     PromptTemplateNode(element_name="LiteralHint", literal_value="Use fixed literal text."),
-                ],
+                ),
             ),
             PromptTemplateNode(element_name="CurrentFocus", value_slot="current_focus"),
         ],
@@ -116,13 +115,14 @@ def test_prompt_template_xml_resolves_fragments_slots_and_literals() -> None:
         },
     )
 
-    assert "<RoleAndInstruction>" in rendered
-    assert "<Role>" in rendered
+    assert "<ReaderRole>" in rendered
+    assert "<Instruction>" in rendered
     assert "Fixed &lt;role&gt; &amp; instruction text." in rendered
     assert '<ReadBehavior kind="A&amp;B">' in rendered
     assert "Read A &amp; B &lt; carefully." in rendered
     assert "Use fixed literal text." in rendered
-    assert rendered.index("<RoleAndInstruction>") < rendered.index("<CurrentFocus>")
+    assert rendered.index("<ReaderRole>") < rendered.index("<Instruction>")
+    assert rendered.index("<Instruction>") < rendered.index("<CurrentFocus>")
     assert "prompt_fragment_ref" not in rendered
     assert "value_slot" not in rendered
     assert "ref=" not in rendered
@@ -190,9 +190,12 @@ def test_prompt_assembler_renders_spec_and_metadata_without_live_migration() -> 
         promptset_version=ATTENTIONAL_V2_PROMPTSET_VERSION,
         template_nodes=(
             PromptTemplateNode(
-                element_name="RoleAndInstruction",
+                element_name="ReaderRole",
+                prompt_fragment_ref="test.role.v1",
+            ),
+            PromptTemplateNode(
+                element_name="Instruction",
                 children=(
-                    PromptTemplateNode(element_name="Role", prompt_fragment_ref="test.role.v1"),
                     PromptTemplateNode(element_name="Behavior", prompt_fragment_ref="test.behavior.v1"),
                 ),
             ),
@@ -214,7 +217,7 @@ def test_prompt_assembler_renders_spec_and_metadata_without_live_migration() -> 
         slot_values={"current_focus": "Current unit <text> & intent."},
     )
 
-    assert result.rendered_text.startswith("<RoleAndInstruction>")
+    assert result.rendered_text.startswith("<ReaderRole>")
     assert "<CurrentFocus>" in result.rendered_text
     assert "Use A &amp; B &lt; safely." in result.rendered_text
     assert "Current unit &lt;text&gt; &amp; intent." in result.rendered_text
@@ -224,7 +227,7 @@ def test_prompt_assembler_renders_spec_and_metadata_without_live_migration() -> 
     assert result.prompt_version == "attentional_v2.test.v1"
     assert result.promptset_version == ATTENTIONAL_V2_PROMPTSET_VERSION
     assert result.output_contract == "test_output_v1"
-    assert result.rendered_blocks == ("RoleAndInstruction", "CurrentFocus", "OutputContract")
+    assert result.rendered_blocks == ("ReaderRole", "Instruction", "CurrentFocus", "OutputContract")
     assert result.used_fragment_ids == ("test.role.v1", "test.behavior.v1")
     assert result.used_slot_names == ("current_focus",)
     assert "prompt_fragment_ref" not in result.rendered_text
@@ -315,7 +318,8 @@ def test_read_xml_prompt_example_does_not_replace_live_read_prompt() -> None:
         output_contract='{"return": "json"}',
     )
 
-    assert "<RoleAndInstruction>" in rendered
+    assert "<ReaderRole>" in rendered
+    assert "<Instruction>" in rendered
     assert "<BookInfo>" in rendered
     assert "<ReadingState>" in rendered
     assert "<CurrentFocus>" in rendered
@@ -326,7 +330,8 @@ def test_read_xml_prompt_example_does_not_replace_live_read_prompt() -> None:
     assert "prompt_fragment_ref" not in rendered
     assert "value_slot" not in rendered
     assert "ref=" not in rendered
-    assert "attentional_v2.read.role_and_instruction.example.v1" not in rendered
+    assert "attentional_v2.read.reader_role.example.v1" not in rendered
+    assert "attentional_v2.read.instruction.example.v1" not in rendered
     assert "book_info" not in rendered
     assert "reading_state" not in rendered
     assert "current_focus" not in rendered
@@ -355,13 +360,14 @@ def test_full_read_prompt_xml_assembly_renders_all_target_blocks_without_live_mi
         },
     )
 
-    assert result.spec_id == "attentional_v2.read_unit.xml.v4"
+    assert result.spec_id == "attentional_v2.read_unit.xml.v5"
     assert result.owner_node == "read_unit"
     assert result.prompt_version == READ_XML_PROMPT_VERSION
     assert result.promptset_version == READ_XML_PROMPTSET_VERSION
     assert result.output_contract == "read_unit_xml_json_v3"
     assert result.rendered_blocks == (
-        "RoleAndInstruction",
+        "ReaderRole",
+        "Instruction",
         "BookInfo",
         "ReadingState",
         "CurrentFocus",
@@ -375,7 +381,8 @@ def test_full_read_prompt_xml_assembly_renders_all_target_blocks_without_live_mi
         "reading_intent",
         "language_contract",
     )
-    assert "<RoleAndInstruction>" in result.rendered_text
+    assert "<ReaderRole>" in result.rendered_text
+    assert "<Instruction>" in result.rendered_text
     assert "<BookInfo>" in result.rendered_text
     assert "<ReadingState>" in result.rendered_text
     assert "<CurrentFocus>" in result.rendered_text
@@ -393,12 +400,13 @@ def test_full_read_prompt_xml_assembly_renders_all_target_blocks_without_live_mi
     assert ATTENTIONAL_V2_PROMPTS.read_unit_system == READ_UNIT_SYSTEM_PROMPT
 
 
-def test_read_role_and_instruction_xml_renders_target_structure_without_live_migration() -> None:
-    rendered = render_read_role_and_instruction_xml()
+def test_read_reader_role_and_instruction_xml_renders_target_structure_without_live_migration() -> None:
+    rendered = render_read_reader_role_and_instruction_xml()
 
-    assert "<RoleAndInstruction>" in rendered
+    assert "<RoleAndInstruction>" not in rendered
     assert "<ReaderRole>" in rendered
     assert "<Instruction>" in rendered
+    assert "<TaskOverview>" in rendered
     assert "<ContextUseGuide>" in rendered
     assert "<ReadingBehavior>" in rendered
     assert "<ReadingImpression>" in rendered
@@ -422,7 +430,7 @@ def test_read_role_and_instruction_xml_renders_target_structure_without_live_mig
     assert "prompt_fragment_ref" not in rendered
     assert "value_slot" not in rendered
     assert "ref=" not in rendered
-    assert "READ_ROLE_AND_INSTRUCTION" not in rendered
+    assert "READ_READER_ROLE_AND_INSTRUCTION" not in rendered
     assert "reader.role" not in rendered
     assert "read.instruction" not in rendered
     assert "reading-companion-backend" not in rendered
@@ -430,7 +438,8 @@ def test_read_role_and_instruction_xml_renders_target_structure_without_live_mig
     assert ATTENTIONAL_V2_PROMPTS.read_unit_system == READ_UNIT_SYSTEM_PROMPT
     assert "Structural frame:" in ATTENTIONAL_V2_PROMPTS.read_unit_prompt
     assert rendered.index("<ReaderRole>") < rendered.index("<Instruction>")
-    assert rendered.index("<Instruction>") < rendered.index("<ContextUseGuide>")
+    assert rendered.index("<Instruction>") < rendered.index("<TaskOverview>")
+    assert rendered.index("<TaskOverview>") < rendered.index("<ContextUseGuide>")
     assert rendered.index("<ContextUseGuide>") < rendered.index("<ReadingBehavior>")
     assert "BookInfo as orientation" in rendered
     assert "ReadingState as carried understanding" in rendered
@@ -438,14 +447,14 @@ def test_read_role_and_instruction_xml_renders_target_structure_without_live_mig
     assert "OutputContract as the required response shape" in rendered
 
 
-def test_read_role_and_instruction_xml_template_uses_only_target_fragment_refs() -> None:
+def test_read_reader_role_and_instruction_xml_template_uses_only_target_fragment_refs() -> None:
     rendered = render_prompt_template_xml(
-        READ_ROLE_AND_INSTRUCTION_TEMPLATE,
-        registry=READ_ROLE_AND_INSTRUCTION_FRAGMENT_REGISTRY,
+        READ_READER_ROLE_AND_INSTRUCTION_TEMPLATE,
+        registry=READ_READER_ROLE_AND_INSTRUCTION_FRAGMENT_REGISTRY,
         slot_values={},
     )
 
-    assert rendered == render_read_role_and_instruction_xml()
+    assert rendered == render_read_reader_role_and_instruction_xml()
     assert "read.durable_memory_policy" not in rendered
     assert "read.active_tension_policy" not in rendered
 

@@ -434,6 +434,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
 - Current prompt assembly separates the product-level `ReaderRole` from per-call `Instruction`.
   - The reader role fragment is `reader.role`, owned by `attentional_v2/prompts/reader_role.py`.
   - Ingest should reuse the same reader role and supply its own `Instruction` fragment when implemented.
+  - Target Read XML now renders `ReaderRole` and `Instruction` as separate top-level blocks; all fixed non-role Read directions live under `Instruction`, while runtime context/data blocks remain separate.
 - The stable carry taxonomy is now:
   - `always carry`
   - `selective carry`

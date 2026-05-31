@@ -19,9 +19,9 @@ from .types import PromptDefinition
 
 
 READ_UNIT_PROMPT_VERSION = 'attentional_v2.read.v33'
-READ_XML_PROMPT_VERSION = "attentional_v2.read.xml.v4"
-READ_XML_PROMPT_ASSEMBLY_SPEC_ID = "attentional_v2.read_unit.xml.v4"
-READ_XML_PROMPTSET_VERSION = "attentional_v2-phase6-v44"
+READ_XML_PROMPT_VERSION = "attentional_v2.read.xml.v5"
+READ_XML_PROMPT_ASSEMBLY_SPEC_ID = "attentional_v2.read_unit.xml.v5"
+READ_XML_PROMPTSET_VERSION = "attentional_v2-phase6-v45"
 READ_XML_TRANSPORT_SYSTEM_PROMPT = "Follow the structured Read prompt in the user message. Return JSON only."
 
 
@@ -225,7 +225,7 @@ def _target_source_grounding_text() -> str:
 
     The live fragment still contains deprecated ActiveTension-specific source
     guidance because the current live prompt has not been migrated. The future
-    RoleAndInstruction XML contract keeps only the shared quote / SourceRef
+    target Read XML contract keeps only the shared quote / SourceRef
     boundary.
     """
 
@@ -262,7 +262,7 @@ READ_CONTEXT_USE_GUIDE_FRAGMENT = PromptFragment(
 )
 
 
-READ_ROLE_AND_INSTRUCTION_FRAGMENT_REGISTRY = PromptFragmentRegistry(
+READ_READER_ROLE_AND_INSTRUCTION_FRAGMENT_REGISTRY = PromptFragmentRegistry(
     [
         READER_ROLE_FRAGMENT,
         _fragment_by_id("read.instruction"),
@@ -281,16 +281,16 @@ READ_ROLE_AND_INSTRUCTION_FRAGMENT_REGISTRY = PromptFragmentRegistry(
 )
 
 
-READ_ROLE_AND_INSTRUCTION_TEMPLATE = (
+READ_READER_ROLE_AND_INSTRUCTION_TEMPLATE = (
     PromptTemplateNode(
-        element_name="RoleAndInstruction",
+        element_name="ReaderRole",
+        prompt_fragment_ref="reader.role",
+    ),
+    PromptTemplateNode(
+        element_name="Instruction",
         children=(
             PromptTemplateNode(
-                element_name="ReaderRole",
-                prompt_fragment_ref="reader.role",
-            ),
-            PromptTemplateNode(
-                element_name="Instruction",
+                element_name="TaskOverview",
                 prompt_fragment_ref="read.instruction",
             ),
             PromptTemplateNode(
@@ -345,12 +345,12 @@ READ_ROLE_AND_INSTRUCTION_TEMPLATE = (
 )
 
 
-def render_read_role_and_instruction_xml() -> str:
-    """Render the target RoleAndInstruction XML without changing live Read prompts."""
+def render_read_reader_role_and_instruction_xml() -> str:
+    """Render target ReaderRole and Instruction XML without changing live Read prompts."""
 
     return render_prompt_template_xml(
-        READ_ROLE_AND_INSTRUCTION_TEMPLATE,
-        registry=READ_ROLE_AND_INSTRUCTION_FRAGMENT_REGISTRY,
+        READ_READER_ROLE_AND_INSTRUCTION_TEMPLATE,
+        registry=READ_READER_ROLE_AND_INSTRUCTION_FRAGMENT_REGISTRY,
         slot_values={},
     )
 
@@ -641,7 +641,7 @@ Shape:
   "outside_link": null,
   "search_intent": null
 }
-Detailed reaction-selection and source-quote behavior live under RoleAndInstruction.""",
+Detailed reaction-selection and source-quote behavior live under Instruction.""",
 )
 
 
@@ -732,7 +732,7 @@ def _read_prompt_assembly_template(
     current_unit_sentences: list[dict[str, object]] | None,
 ) -> tuple[PromptTemplateNode, ...]:
     return (
-        *READ_ROLE_AND_INSTRUCTION_TEMPLATE,
+        *READ_READER_ROLE_AND_INSTRUCTION_TEMPLATE,
         *READ_BOOK_INFO_TEMPLATE,
         *READ_READING_STATE_TEMPLATE,
         *_read_current_focus_template(
@@ -748,7 +748,7 @@ def _read_prompt_assembly_template(
 def _read_prompt_fragment_registry() -> PromptFragmentRegistry:
     return PromptFragmentRegistry(
         [
-            *READ_ROLE_AND_INSTRUCTION_FRAGMENT_REGISTRY.list(),
+            *READ_READER_ROLE_AND_INSTRUCTION_FRAGMENT_REGISTRY.list(),
             *READ_OUTPUT_CONTRACT_FRAGMENT_REGISTRY.list(),
         ]
     )
