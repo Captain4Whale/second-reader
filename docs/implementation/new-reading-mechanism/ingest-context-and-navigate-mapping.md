@@ -81,10 +81,10 @@ Top-level rule:
 </ReadingState>
 
 <CurrentView>
-  <ReadingPosition>{...}</ReadingPosition>
-  <SourcePreview>
+  <Position>{...}</Position>
+  <Content>
     <Paragraph n="..." role="..." start_char="..." end_char="...">...</Paragraph>
-  </SourcePreview>
+  </Content>
 </CurrentView>
 
 <RetrievalSurface>
@@ -199,9 +199,9 @@ Priority order:
 - Use ReadingState only as secondary support. It may clarify what is currently live, but it must not override the visible source text or author-structure skeleton.
 
 Source range:
-- Choose directly from SourcePreview.
-- Do not cross the provided SourcePreview boundary.
-- The unit always starts at the current source cursor in ReadingPosition. Do not invent a start id.
+- Choose directly from `CurrentView / Content`.
+- Do not cross the provided `CurrentView / Content` boundary.
+- The unit always starts at the current source cursor in `CurrentView / Position`. Do not invent a start id.
 
 Unit size:
 - Choose the smallest complete local move that can honestly be read as one unit.
@@ -212,7 +212,7 @@ Unit size:
 Structural cues:
 - Treat `chapter_heading` and `section_heading` as weak structure cues, not automatic standalone units.
 - A heading may stand alone only when its visible wording already forms a complete, meaningful local move.
-- If a heading reads more like a label, lead-in, or structural setup, merge it with the immediately following body paragraph when SourcePreview allows.
+- If a heading reads more like a label, lead-in, or structural setup, merge it with the immediately following body paragraph when `CurrentView / Content` allows.
 - Stay proportionate around thin structural text. Do not carve out a very short unit just because the text is marked as a heading.
 - Before finalizing the unit boundary, trim only boundary sentences that are purely non-lexical residue, such as ornament/divider/separator lines.
 - `text_role` may help orient you, but it must not decide the boundary by itself.
@@ -307,13 +307,13 @@ Maps from the old `reading_position` and `mainline_preview`.
 
 `CurrentView` is the source text currently visible to Ingest for next-unit selection. It is not the already accepted reading object. The accepted object is produced by Ingest and later becomes Digest's `CurrentFocus / ReadingObject / SourceUnit`.
 
-#### ReadingPosition
+#### Position
 
-`ReadingPosition` contains the current chapter reference, current source cursor, and retry evidence when the runtime is asking for a second anchor attempt.
+`Position` contains the current chapter reference, current source cursor, and retry evidence when the runtime is asking for a second anchor attempt.
 
-#### SourcePreview
+#### Content
 
-`SourcePreview` contains the paragraph-offset preview rendered as XML paragraphs where practical.
+`Content` contains the paragraph-offset source preview rendered as XML paragraphs where practical.
 
 Paragraph indexes and text roles may be attributes. The source text itself remains visible and primary.
 
@@ -410,9 +410,9 @@ Each request contains:
 | Boundary-selection rules | `Instruction / SelectNextUnit` | Reuse almost directly. This is where the already-approved next-unit selection prompt content belongs. |
 | no old equivalent | `Instruction / RequestMemorySupport` | Name the recall task and put the detailed retrieval-query policy together here. |
 | `Structural frame` | `BookInfo / BookIdentity` | Move output-language concerns to `OutputContract`. |
-| `Reading position` | `CurrentView / ReadingPosition` | Keep current cursor and retry feedback here. |
-| `Mainline preview` | `CurrentView / SourcePreview` | Prefer paragraph XML nodes over one JSON blob. |
-| `Mainline cursor` | `CurrentView / ReadingPosition` | Keep only cursor facts needed to understand where the preview starts; do not revive mode/decision fields. |
+| `Reading position` | `CurrentView / Position` | Keep current cursor and retry feedback here. |
+| `Mainline preview` | `CurrentView / Content` | Prefer paragraph XML nodes over one JSON blob. |
+| `Mainline cursor` | `CurrentView / Position` | Keep only cursor facts needed to understand where the preview starts; do not revive mode/decision fields. |
 | `Navigation context` | `ReadingState` plus `RetrievalSurface` | Split continuity state from retrieval discoverability. |
 | `Policy snapshot` | `Instruction / SelectNextUnit` policy plus `RetrievalSurface / RetrievalPolicy` | Separate boundary policy from retrieval budget. |
 | `Output language contract` | `OutputContract / LanguageContract` | Follow Read XML structure. |
