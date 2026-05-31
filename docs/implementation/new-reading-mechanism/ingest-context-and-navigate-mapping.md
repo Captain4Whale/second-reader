@@ -153,13 +153,14 @@ The `prompt_fragment_ref` attributes above are implementation-facing references 
 
 Recommended `Instruction` child meanings:
 
-- `CurrentStep`
-  - says the model is in the `Ingest` step of a sequential deep-reading loop
-  - says this step happens before `Digest`
-  - says the model is previewing the next forward source area, not yet producing the final reading of that unit
-  - says the two outputs are:
-    - selected next source unit boundary
-    - prior-reading memory retrieval requests for that selected unit
+#### CurrentStep
+
+`CurrentStep` says the model is in the `Ingest` step of a sequential deep-reading loop. This step happens before `Digest`: the model is previewing the next forward source area, not yet producing the final reading of that unit.
+
+It defines two outputs for the call:
+
+- selected next source unit boundary
+- prior-reading memory retrieval requests for that selected unit
 
 Proposed `ingest.current_step` fragment:
 
@@ -173,32 +174,50 @@ Your work in this call has two outputs:
 - request prior-reading memory support that would help you read that selected unit continuously in the Digest step.
 ```
 
-- `ContextUseGuide`
-  - tells the model how to use `BookInfo`, `ReadingState`, `CurrentFocus`, `RetrievalSurface`, and `OutputContract`
-  - emphasizes that the visible source preview is primary
-  - says prior state can support boundary/retrieval judgment but must not override the source text
-- `SelectNextUnit`
-  - says Ingest must select one forward source unit from the current frontier
-  - says the unit starts at the current source cursor and ends at an exact visible anchor
-  - contains the mature next-unit boundary policy reused from current Navigate
-  - this is where the already-approved "determine next unit" task and prompt rules are placed together
-- `RequestMemorySupport`
-  - says Ingest should ask what prior reading memory Digest will need in order to read the selected unit continuously
-  - says Ingest only emits retrieval queries / requests; actual retrieval is outside this LLM call
-  - contains the detailed recall-query policy
-  - favors dependency, premise, reference, contrast, unresolved attention, and continuity needs
-  - rejects broad "recent because recent" retrieval
-- `ExecutionLimits`
-  - says Ingest does not interpret the selected unit for the reader
-  - says Ingest does not write notes, highlights, surfaced reactions, or memory updates
-  - says Ingest does not execute retrieval, resolve anchors, retry/fallback, settle runtime state, or advance the cursor
-  - says Ingest must return JSON only
-  - says Ingest must not request external search
-  - says Ingest must follow `OutputContract`
+#### ContextUseGuide
+
+`ContextUseGuide` tells the model how to use `BookInfo`, `ReadingState`, `CurrentFocus`, `RetrievalSurface`, and `OutputContract`.
+
+It should emphasize:
+
+- the visible source preview is primary
+- prior state can support boundary/retrieval judgment
+- prior state must not override the source text
+
+#### SelectNextUnit
+
+`SelectNextUnit` says Ingest must select one forward source unit from the current frontier. The unit starts at the current source cursor and ends at an exact visible anchor.
+
+This is where the already-approved "determine next unit" task and prompt rules are placed together. It contains the mature next-unit boundary policy reused from current Navigate.
+
+#### RequestMemorySupport
+
+`RequestMemorySupport` says Ingest should ask what prior reading memory is needed in order to read the selected unit continuously in the Digest step.
+
+It contains the detailed recall-query policy:
+
+- Ingest emits retrieval queries / requests only
+- actual retrieval is outside this LLM call
+- favor dependency, premise, reference, contrast, unresolved attention, and continuity needs
+- reject broad "recent because recent" retrieval
+
+#### ExecutionLimits
+
+`ExecutionLimits` says what Ingest must not do.
+
+It should state:
+
+- do not interpret the selected unit for the reader
+- do not write notes, highlights, surfaced reactions, or memory updates
+- do not execute retrieval, resolve anchors, retry/fallback, settle runtime state, or advance the cursor
+- do not request external search
+- return JSON only and follow `OutputContract`
 
 ### BookInfo
 
 Maps from the old `structural_frame`.
+
+#### BookIdentity
 
 Target fields:
 
@@ -216,17 +235,21 @@ Target fields:
 
 Maps from the old `navigation_context`, but only the continuity-bearing subset belongs here.
 
-Target sub-blocks:
+#### ContinuityState
 
-- `ContinuityState`
-  - compact local/session continuity
-  - current forward cursor continuity if useful
-- `PriorReadingState`
-  - compact `recent_reading_memory` digest or active entries
-  - thin `active_attention` digest while that store remains active
-  - compact `concept_digest`
-  - compact `thread_digest`
-  - compact reflective/chapter frame when useful
+`ContinuityState` carries compact local/session continuity and current forward cursor continuity if useful.
+
+#### PriorReadingState
+
+`PriorReadingState` carries compact prior-reading state useful for continuity and memory-support judgment.
+
+Candidate contents:
+
+- compact `recent_reading_memory` digest or active entries
+- thin `active_attention` digest while that store remains active
+- compact `concept_digest`
+- compact `thread_digest`
+- compact reflective/chapter frame when useful
 
 This block supports unit-boundary judgment and helps Ingest decide what memory support might matter. It should not contain large source excerpts, audit ledgers, reaction history, or historical route/move data.
 
@@ -234,21 +257,25 @@ This block supports unit-boundary judgment and helps Ingest decide what memory s
 
 Maps from the old `reading_position`, `mainline_preview`, and `mainline_cursor`.
 
-Target sub-blocks:
+#### ReadingPath
 
-- `ReadingPath`
-  - current path mode, currently forward/mainline only
-  - no detour, route, source-backread, or selection-mode surface
-- `ReadingPosition`
-  - current chapter reference
-  - current source cursor
-  - retry evidence when the runtime is asking for a second anchor attempt
-- `SourcePreview`
-  - paragraph-offset preview rendered as XML paragraphs where practical
-  - paragraph indexes and text roles may be attributes
-  - the source text itself remains visible and primary
-- `IngestIntent`
-  - `select_next_unit_and_request_memory_support`
+`ReadingPath` contains the current path mode, currently forward/mainline only.
+
+It must not expose detour, route, source-backread, or selection-mode surfaces.
+
+#### ReadingPosition
+
+`ReadingPosition` contains the current chapter reference, current source cursor, and retry evidence when the runtime is asking for a second anchor attempt.
+
+#### SourcePreview
+
+`SourcePreview` contains the paragraph-offset preview rendered as XML paragraphs where practical.
+
+Paragraph indexes and text roles may be attributes. The source text itself remains visible and primary.
+
+#### IngestIntent
+
+`IngestIntent` is `select_next_unit_and_request_memory_support`.
 
 ### RetrievalSurface
 
@@ -256,27 +283,37 @@ This is the new block with no direct old Navigate equivalent.
 
 It should contain just enough discoverability for Ingest to ask for relevant memory support without injecting all memory bodies into the prompt.
 
-Target sub-blocks:
+#### AvailableMemoryStores
 
-- `AvailableMemoryStores`
-  - the memory stores or indexes Ingest is allowed to request from
-  - examples: `recent_reading_memory`, later durable memory index, selected concept/thread indexes if re-adopted
-- `MemoryIndex`
-  - lightweight memory cards / index entries
-  - content-bearing labels, not vague taxonomy names
-  - should be enough for the model to decide what to request
-- `RetrievalPolicy`
-  - request budget
-  - allowed retrieval purposes
-  - max results per request
-  - source-grounding preference
-  - no broad retrieval rule
+`AvailableMemoryStores` lists the memory stores or indexes Ingest is allowed to request from.
+
+Examples: `recent_reading_memory`, later durable memory index, selected concept/thread indexes if re-adopted.
+
+#### MemoryIndex
+
+`MemoryIndex` contains lightweight memory cards / index entries.
+
+Entries should use content-bearing labels, not vague taxonomy names. They should be enough for the model to decide what to request.
+
+#### RetrievalPolicy
+
+`RetrievalPolicy` contains request budget, allowed retrieval purposes, max results per request, source-grounding preference, and the no-broad-retrieval rule.
 
 This block should not contain full memory detail by default. The retrieval-first rule is: expose a discoverability layer first, then let runtime fetch deeper detail when Ingest requests it.
 
 ### OutputContract
 
 Maps from the old return JSON and language contract, with one new retrieval-request field.
+
+#### LanguageContract
+
+`LanguageContract` follows the Read XML structure. Explanatory fields should use the configured output language; source quotes remain in the source language.
+
+#### ReturnFormat
+
+`ReturnFormat` requires JSON only.
+
+#### FieldContracts
 
 Target top-level fields:
 
@@ -300,7 +337,28 @@ Target top-level fields:
 }
 ```
 
-`selected_unit` preserves the current Navigate output semantics. `memory_retrieval_requests` is new and should be interpreted by runtime/tooling after the boundary-selection call.
+#### SelectedUnit
+
+`selected_unit` preserves the current Navigate output semantics.
+
+`selected_unit` contains:
+
+- `end_anchor_text`
+- `boundary_type`
+- `reason`
+- `continuation_pressure`
+
+#### MemoryRetrievalRequests
+
+`memory_retrieval_requests` is new and should be interpreted by runtime/tooling after the boundary-selection call.
+
+Each request contains:
+
+- `query`
+- `purpose`
+- `memory_kinds`
+- `why_needed_for_selected_unit`
+- `expected_use_for_digest`
 
 ## Old-To-New Mapping
 
