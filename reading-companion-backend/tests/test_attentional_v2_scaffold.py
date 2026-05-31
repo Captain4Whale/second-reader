@@ -721,7 +721,7 @@ def test_attentional_v2_prompt_registry_contains_node_definitions() -> None:
     ]
     assert all(definition.status == "active" for definition in definitions)
     assert all(definition.required_inputs for definition in definitions)
-    assert all(definition.output_contract.endswith(("_v1", "_v2", "_v3")) for definition in definitions)
+    assert all(definition.output_contract.endswith(("_v1", "_v2", "_v3", "_v4")) for definition in definitions)
 
 
 def test_attentional_v2_prompt_registry_projects_current_bundle() -> None:
@@ -729,7 +729,7 @@ def test_attentional_v2_prompt_registry_projects_current_bundle() -> None:
     navigate = ATTENTIONAL_V2_PROMPT_REGISTRY.get("attentional_v2.navigate_choose_next_unit")
     chapter = ATTENTIONAL_V2_PROMPT_REGISTRY.get("attentional_v2.chapter_consolidation")
 
-    assert ATTENTIONAL_V2_PROMPTSET_VERSION == "attentional_v2-phase6-v40"
+    assert ATTENTIONAL_V2_PROMPTSET_VERSION == "attentional_v2-phase6-v41"
     assert ATTENTIONAL_V2_PROMPTS.promptset_version == ATTENTIONAL_V2_PROMPTSET_VERSION
     assert read.version == READ_UNIT_PROMPT_VERSION == "attentional_v2.read.v32"
     assert ATTENTIONAL_V2_PROMPTS.read_unit_version == read.version
@@ -1374,8 +1374,6 @@ def _fake_single_sentence_navigate_act(**kwargs):
     else:
         end_anchor_text = stripped
     return {
-        "decision": "choose_unit",
-        "selection_mode": "mainline",
         "end_anchor_text": end_anchor_text,
         "boundary_type": "paragraph_end",
         "reason": "test_choose_source_anchor_unit",
@@ -1384,7 +1382,7 @@ def _fake_single_sentence_navigate_act(**kwargs):
 
 
 def test_navigate_choose_next_unit_selects_mainline_unit(tmp_path, monkeypatch):
-    """The current Navigator contract should wrap mainline unitization as one next-unit decision."""
+    """The current Navigator contract should return one forward source unit."""
 
     provisioned = _provisioned_two_chapter_book()
     document = provisioned.book_document
@@ -1410,7 +1408,7 @@ def test_navigate_choose_next_unit_selects_mainline_unit(tmp_path, monkeypatch):
         author=provisioned.author,
     )
 
-    assert result["selection_mode"] == "mainline"
+    assert "selection" + "_mode" not in result
     assert result["chapter_id"] == 2
     assert [sentence["sentence_id"] for sentence in result["selected_unit_sentences"]] == ["c2-s1"]
 

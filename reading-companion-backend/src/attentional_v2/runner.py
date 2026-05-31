@@ -1024,19 +1024,15 @@ def _mainline_source_preview_packet(preview: dict[str, object]) -> dict[str, obj
 def _navigate_trace_entry(
     act_result: NavigateActResult,
     *,
-    budget_state: dict[str, object],
     error: str = "",
 ) -> NavigateActTraceEntry:
     """Return a compact Navigate trace entry."""
 
     entry: NavigateActTraceEntry = {
-        "decision": _clean_text(act_result.get("decision")),  # type: ignore[typeddict-item]
-        "selection_mode": _clean_text(act_result.get("selection_mode")),  # type: ignore[typeddict-item]
         "reason": _clean_text(act_result.get("reason")),
         "end_anchor_text": _clean_text(act_result.get("end_anchor_text")),
         "source_span_id": _clean_text(act_result.get("source_span_id")),
         "resolution": dict(act_result.get("resolution", {})) if isinstance(act_result.get("resolution"), dict) else {},
-        "budget_state": dict(budget_state),
     }
     if error:
         entry["error"] = error
@@ -1054,14 +1050,11 @@ def _compact_navigation_trace(navigate_trace: object) -> list[dict[str, object]]
             continue
         entry: dict[str, object] = {}
         for key in (
-            "decision",
-            "selection_mode",
             "reason",
             "end_anchor_text",
             "source_span_id",
             "resolution",
             "error",
-            "budget_state",
         ):
             value = item.get(key)
             if isinstance(value, dict):
@@ -1188,11 +1181,6 @@ def navigate_choose_next_unit(
         reaction_records=reaction_records,
         continuation_capsule=continuation_capsule,
     )
-    budget_state = {
-        "mode": "mainline",
-        "act_index": 1,
-        "max_acts": 1,
-    }
     act_result = navigate_choose_next_unit_act(
         reading_position={
             "mode": "mainline",
@@ -1203,7 +1191,6 @@ def navigate_choose_next_unit(
         mainline_preview=mainline_preview,
         mainline_cursor=mainline_cursor,
         navigation_context=navigation_context,
-        budget_state=budget_state,
         reader_policy=reader_policy,
         output_language=output_language,
         output_dir=output_dir,
@@ -1231,7 +1218,6 @@ def navigate_choose_next_unit(
             mainline_preview=mainline_preview,
             mainline_cursor=mainline_cursor,
             navigation_context=navigation_context,
-            budget_state={**budget_state, "act_index": 2, "max_acts": 2},
             reader_policy=reader_policy,
             output_language=output_language,
             output_dir=output_dir,
@@ -1254,11 +1240,10 @@ def navigate_choose_next_unit(
     trace_target["source_span_id"] = _clean_text(unitize_decision.get("source_span_id"))
     trace_target["source_span"] = dict(unitize_decision.get("source_span", {}))
     trace_target["resolution"] = dict(unitize_decision.get("resolution", {}))
-    navigate_trace = [_navigate_trace_entry(act_result, budget_state=budget_state)]
+    navigate_trace = [_navigate_trace_entry(act_result)]
     if retry_result is not None:
-        navigate_trace.append(_navigate_trace_entry(retry_result, budget_state={**budget_state, "act_index": 2, "max_acts": 2}))
+        navigate_trace.append(_navigate_trace_entry(retry_result))
     return {
-        "selection_mode": "mainline",
         "chapter_id": current_chapter_id,
         "chapter_ref": current_chapter_ref,
         "selected_unit_sentences": compat_selected_sentences,
@@ -1665,8 +1650,8 @@ def _settle_next_unit(
         if isinstance(selection_result.get("selected_source_unit"), dict)
         else {}
     )
-    is_source_mainline = _clean_text(selection_result.get("selection_mode")) == "mainline" and bool(selected_source_unit)
-    if not chosen_unit_sentences and not is_source_mainline:
+    has_selected_source_unit = bool(selected_source_unit)
+    if not chosen_unit_sentences and not has_selected_source_unit:
         return {
             "local_buffer": local_buffer,
             "local_continuity": local_continuity,
@@ -1695,7 +1680,7 @@ def _settle_next_unit(
         else {}
     )
     source_id = _clean_text(selected_source_unit.get("source_span_id")) or source_span_id(source_span)
-    if is_source_mainline:
+    if has_selected_source_unit:
         chosen_unit_sentences = _compat_unit_sentences_for_source_span(chapter, source_span)
         focal_sentence = chosen_unit_sentences[-1] if chosen_unit_sentences else {}
         focal_sentence_id = _sentence_id(focal_sentence) if focal_sentence else ""
@@ -1716,7 +1701,7 @@ def _settle_next_unit(
             source_unit=selected_source_unit,
             local_buffer=local_buffer,
         )
-        if is_source_mainline
+        if has_selected_source_unit
         else _current_activity(
             chapter_id=chapter_id,
             chapter_ref=chapter_ref,
@@ -1733,7 +1718,7 @@ def _settle_next_unit(
         local_buffer=local_buffer,
         local_continuity=local_continuity,
         source_cursor=dict(source_span.get("end_cursor", {}))
-        if is_source_mainline and isinstance(source_span.get("end_cursor"), dict)
+        if has_selected_source_unit and isinstance(source_span.get("end_cursor"), dict)
         else None,
         status="running",
         phase="reading",
@@ -1752,7 +1737,7 @@ def _settle_next_unit(
             current_chapter_id=chapter_id,
             current_chapter_ref=chapter_ref,
             current_segment_ref=_compatibility_section_ref_for_source(chapter_id, selected_source_unit)
-            if is_source_mainline
+            if has_selected_source_unit
             else _compatibility_section_ref(chapter_id, focal_sentence),
             current_reading_activity=current_activity,
             current_phase_step="reading",
@@ -1764,7 +1749,7 @@ def _settle_next_unit(
     read_result, read_fallbacks = _run_read_with_context_loop(
         chapter=chapter,
         chosen_unit_sentences=chosen_unit_sentences,
-        current_unit_source=selected_source_unit if is_source_mainline else None,
+        current_unit_source=selected_source_unit if has_selected_source_unit else None,
         unitize_decision=unitize_decision,  # type: ignore[arg-type]
         local_buffer=local_buffer,
         continuation_capsule=continuation_capsule,
@@ -1798,16 +1783,16 @@ def _settle_next_unit(
                 "chapter_id": chapter_id,
                 "chapter_ref": chapter_ref,
                 "segment_ref": _compatibility_section_ref_for_source(chapter_id, selected_source_unit)
-                if is_source_mainline
+                if has_selected_source_unit
                 else _compatibility_section_ref(chapter_id, focal_sentence),
                 "reading_locus": {
                     **source_locus_from_unit(selected_source_unit),
                     "chapter_id": chapter_id,
                     "chapter_ref": chapter_ref,
                 }
-                if is_source_mainline
+                if has_selected_source_unit
                 else _reading_locus(chapter_id, chapter_ref, focal_sentence, local_buffer),
-                "current_excerpt": _clean_text(selected_source_unit.get("source_text") if is_source_mainline else focal_sentence.get("text"))[:220],
+                "current_excerpt": _clean_text(selected_source_unit.get("source_text") if has_selected_source_unit else focal_sentence.get("text"))[:220],
                 "problem_code": _clean_text(fallback.get("problem_code")),
             },
         )
@@ -1826,7 +1811,7 @@ def _settle_next_unit(
     recent_reading_memory = apply_recent_reading_memory_operations(
         recent_reading_memory,
         memory_uptake_ops,
-        source_unit_span_id=source_id if is_source_mainline else "",
+        source_unit_span_id=source_id if has_selected_source_unit else "",
         created_at_unit_index=unit_sequence_index,
     )
     concept_registry = apply_concept_registry_operations(
@@ -1841,7 +1826,7 @@ def _settle_next_unit(
         read_result=read_result,
         chosen_unit_sentences=chosen_unit_sentences,
         focal_sentence=focal_sentence,
-        source_unit=selected_source_unit if is_source_mainline else None,
+        source_unit=selected_source_unit if has_selected_source_unit else None,
         chapter_id=chapter_id,
         chapter_ref=chapter_ref,
         local_buffer=local_buffer,
@@ -1856,8 +1841,8 @@ def _settle_next_unit(
             _clean_text(item.get("sentence_id")) for item in chosen_unit_sentences if _clean_text(item.get("sentence_id"))
         ],
         focal_sentence_id=focal_sentence_id,
-        source_span=source_span if is_source_mainline else None,
-        source_span_id=source_id if is_source_mainline else "",
+        source_span=source_span if has_selected_source_unit else None,
+        source_span_id=source_id if has_selected_source_unit else "",
         memory_uptake_ops=memory_uptake_ops,
         before_active_attention=before_active_attention,
         after_active_attention=active_attention,
@@ -1871,7 +1856,7 @@ def _settle_next_unit(
         after_reaction_records=reaction_records,
         emitted_reaction_ids=[_clean_text(item.get("reaction_id")) for item in emitted_reactions],
     )
-    if is_source_mainline:
+    if has_selected_source_unit:
         unit_record = append_unit_span_record(
             output_dir,
             chapter_id=chapter_id,
@@ -1936,8 +1921,8 @@ def _settle_next_unit(
         thread_trace=thread_trace,
         reflective_frames=reflective_frames,
         reaction_records=reaction_records,
-        actual_source_span=source_span if is_source_mainline else {},
-        actual_source_span_id=source_id if is_source_mainline else "",
+        actual_source_span=source_span if has_selected_source_unit else {},
+        actual_source_span_id=source_id if has_selected_source_unit else "",
     )
     active_refs = {
         "reaction_id": _clean_text(emitted_reactions[-1].get("reaction_id")) if emitted_reactions else "",
@@ -1950,7 +1935,7 @@ def _settle_next_unit(
         local_buffer=local_buffer,
         local_continuity=local_continuity,
         active_artifact_refs={key: value for key, value in active_refs.items() if value},
-        source_span=source_span if is_source_mainline else None,
+        source_span=source_span if has_selected_source_unit else None,
         status="running",
         phase="reading",
     )
@@ -1969,9 +1954,9 @@ def _settle_next_unit(
         "emitted_reactions": emitted_reactions,
         "current_source_ref": current_source_ref,
         "focal_sentence": focal_sentence,
-        "source_cursor": dict(source_span.get("end_cursor", {})) if is_source_mainline and isinstance(source_span.get("end_cursor"), dict) else {},
-        "source_span": source_span if is_source_mainline else {},
-        "selected_source_unit": selected_source_unit if is_source_mainline else {},
+        "source_cursor": dict(source_span.get("end_cursor", {})) if has_selected_source_unit and isinstance(source_span.get("end_cursor"), dict) else {},
+        "source_span": source_span if has_selected_source_unit else {},
+        "selected_source_unit": selected_source_unit if has_selected_source_unit else {},
         "units_read_delta": 1,
         "touched_chapter_ids": [chapter_id],
     }

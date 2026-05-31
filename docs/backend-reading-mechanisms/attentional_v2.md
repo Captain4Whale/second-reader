@@ -145,7 +145,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - The current Navigator contract is **Choose Next Unit That Should Be Read**.
   - Reading Runner calls one architecture-level Navigator entrypoint and consumes one `NavigateNextUnitResult`.
   - The live entrypoint now chooses only the next forward source unit.
-  - The current prompt and schema expose only the forward `choose_unit` / `mainline` act.
+  - The current prompt and schema expose only boundary fields for that forward source unit: exact `end_anchor_text`, `boundary_type`, `reason`, and `continuation_pressure`.
 - Phase D of the post-eval structural rework is now landed as preserved intermediate continuity / recall / resume evidence.
   - that branch added a budget-bounded multi-step supplemental loop around `read`.
   - Runtime state and full checkpoints now persist a lightweight `continuation capsule` with explicit `rehydration entrypoints`.
@@ -156,8 +156,8 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
 - `Phase 3`, `Phase 4`, `Phase 5`, and `Phase 6` in this document refer to historical implementation-stage groupings, not to a user-facing or mechanism-intrinsic sequence of named runtime phases.
 - The current Navigator capability name in stable docs is `Navigate.choose_next_unit`.
   - It means: choose the next unit that should be read.
-  - It is now one unified Navigator agent act loop, not a Python semantic dispatch between separate live prompt families.
-  - Mainline forward reading is the only current live mode inside this act.
+  - It is now one unified Navigator boundary-selection prompt, not a Python semantic dispatch between separate live prompt families.
+  - Forward source-unit selection is the only current live mode for this prompt.
   - Historical non-mainline jump reading is removed from the current code and prompt surface after `DEC-105`.
   - The historical `navigate_unitize` and non-mainline prompt families are no longer current live prompt families.
 - `Navigate.route` is historical route-layer vocabulary after the forward-settlement cutover.
@@ -339,7 +339,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
 - The runtime schedule is intentionally narrower than the old node inventory:
   - paragraph-offset preview construction and cursor advancement run without LLM
   - `Navigate.choose_next_unit` decides the next coverage unit before formal reading begins
-  - forward mainline choice normally uses one Navigate LLM act and cannot request skills
+  - forward source-unit choice normally uses one Navigate LLM call and cannot request skills
   - `read_unit` is now the only steady-state per-unit interpretation call
   - surfaced reactions now come from that same read call rather than from a follow-on wording node
   - ordinary forward progression is deterministic Reading Runner settlement rather than a route action
@@ -661,9 +661,8 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - `_mechanisms/attentional_v2/internal/prompt_manifests/*.json`
 - Current scaffolded prompt manifests now include:
   - `navigate_choose_next_unit`
-    - current forward-only Navigator agent act
-    - outputs `choose_unit`
-    - chooses a unit from the bounded preview without skill use
+    - current forward-only source boundary selector
+    - outputs the accepted boundary fields for one unit from the bounded preview without skill use
   - `read_unit`
   - `reflective_promotion`
   - `reconsolidation`

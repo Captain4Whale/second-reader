@@ -227,10 +227,7 @@ def test_record_read_writes_compact_navigation(tmp_path: Path) -> None:
         },
         navigation_trace=[
             {
-                "decision": "choose_unit",
-                "selection_mode": "mainline",
                 "reason": "The next source unit is ready.",
-                "budget_state": {"mode": "mainline", "act_index": 1},
                 "continuity_cost": "not_assessed",
                 "extra_marker": "ignored",
             },
@@ -242,13 +239,8 @@ def test_record_read_writes_compact_navigation(tmp_path: Path) -> None:
     assert audit_line["memory_uptake_ops"] == []
     assert audit_line["memory_uptake_op_count"] == 0
     assert audit_line["memory_uptake_ops_by_target_store"] == {}
-    assert audit_line["navigation_trace"][0]["decision"] == "choose_unit"
-    assert audit_line["navigation_trace"][0]["selection_mode"] == "mainline"
     assert set(audit_line["navigation_trace"][0]) == {
-        "decision",
-        "selection_mode",
         "reason",
-        "budget_state",
         "continuity_cost",
     }
 

@@ -73,8 +73,6 @@ _STATE_OPERATION_TYPES = {
     "reactivate",
     "resolve",
 }
-_NAVIGATE_ACT_DECISIONS = {"choose_unit"}
-_NAVIGATE_SELECTION_MODES = {"mainline"}
 _VISIBLE_INTERNAL_REFERENCE_PATTERNS = (
     re.compile(r"\bc\d+-s\d+(?:-\d+)?(?:-c\d+-s\d+(?:-\d+)?)?\b", re.IGNORECASE),
     re.compile(r"\b(?:anchor|thread|concept|reaction|move|ref|source):[A-Za-z0-9._:@-]+\b", re.IGNORECASE),
@@ -731,23 +729,16 @@ def _normalize_surfaced_reactions(
 def _normalize_navigate_act_result(
     value: object,
 ) -> NavigateActResult:
-    """Normalize one Navigate.choose_next_unit act result against the current forward-only act space."""
+    """Normalize one Navigate.choose_next_unit boundary result."""
 
     if not isinstance(value, dict):
         return {
-            "decision": "choose_unit",
-            "selection_mode": "mainline",
             "reason": "navigate_choose_next_unit_empty_source_anchor",
             "end_anchor_text": "",
             "boundary_type": "paragraph_end",
             "continuation_pressure": False,
         }
-    decision = _clean_text(value.get("decision")).lower().replace("-", "_")
-    if decision not in _NAVIGATE_ACT_DECISIONS:
-        decision = "choose_unit"
     return {
-        "decision": decision,  # type: ignore[typeddict-item]
-        "selection_mode": "mainline",
         "reason": _clean_text(value.get("reason")),
         "end_anchor_text": _clean_text(value.get("end_anchor_text")),
         "boundary_type": _normalize_unitize_boundary_type(value.get("boundary_type")),
@@ -761,7 +752,6 @@ def navigate_choose_next_unit_act(
     mainline_preview: dict[str, object],
     mainline_cursor: dict[str, object],
     navigation_context: NavigationContext | dict[str, object] | None = None,
-    budget_state: dict[str, object] | None = None,
     reader_policy: ReaderPolicy,
     output_language: str,
     output_dir: Path | None = None,
@@ -785,7 +775,6 @@ def navigate_choose_next_unit_act(
         mainline_preview=_json_block(mainline_preview),
         mainline_cursor=_json_block(dict(mainline_cursor or {})),
         navigation_context=_json_block(dict(navigation_context or {})),
-        budget_state=_json_block(dict(budget_state or {})),
         policy_snapshot=_json_block(reader_policy),
         output_language_name=language_name(output_language),
     )
@@ -806,8 +795,6 @@ def navigate_choose_next_unit_act(
         )
     except ReaderLLMError:
         return {
-            "decision": "choose_unit",
-            "selection_mode": "mainline",
             "reason": "navigate_choose_next_unit_llm_error",
             "end_anchor_text": "",
             "boundary_type": "paragraph_end",

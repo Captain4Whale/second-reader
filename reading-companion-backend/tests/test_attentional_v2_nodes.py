@@ -47,10 +47,20 @@ def _navigation_context() -> dict[str, object]:
     }
 
 
-def test_navigate_act_space_remains_bounded() -> None:
-    """Navigate should keep the accepted bounded act space."""
+def test_navigate_boundary_contract_has_no_action_or_mode() -> None:
+    """Navigate should expose only boundary fields for the current forward selector."""
 
-    assert nodes_module._NAVIGATE_ACT_DECISIONS == {"choose_unit"}  # noqa: SLF001
+    payload = nodes_module._normalize_navigate_act_result(  # noqa: SLF001
+        {
+            "end_anchor_text": "Beta.",
+            "boundary_type": "paragraph_end",
+            "reason": "Done.",
+            "continuation_pressure": False,
+        }
+    )
+    assert "decision" not in payload
+    assert "selection" + "_mode" not in payload
+    assert payload["end_anchor_text"] == "Beta."
 
 
 def _navigate_act(
@@ -74,7 +84,6 @@ def _navigate_act(
         },
         mainline_cursor={"chapter_id": 2, "sentence_id": "c2-s1"},
         navigation_context=_navigation_context(),
-        budget_state={"mode": "mainline", "act_index": 1, "max_acts": 1},
         reader_policy=build_default_reader_policy(),
         output_language=output_language,
         output_dir=tmp_path,
@@ -114,8 +123,6 @@ def test_navigate_choose_next_unit_writes_manifest_and_uses_anchor_contract(tmp_
         captured["system_prompt"] = system_prompt
         captured["prompt"] = prompt
         return {
-            "decision": "choose_unit",
-            "selection_mode": "mainline",
             "end_anchor_text": "Beta.",
             "boundary_type": "cross_paragraph_continuation",
             "reason": "The line clearly keeps running.",
@@ -140,7 +147,6 @@ def test_navigate_choose_next_unit_writes_manifest_and_uses_anchor_contract(tmp_
         },
         mainline_cursor={},
         navigation_context=_navigation_context(),
-        budget_state={"mode": "mainline", "act_index": 1, "max_acts": 1},
         reader_policy=reader_policy,
         output_language="en",
         output_dir=tmp_path,
@@ -148,17 +154,21 @@ def test_navigate_choose_next_unit_writes_manifest_and_uses_anchor_contract(tmp_
 
     manifest = json.loads((tmp_path / "_mechanisms" / "attentional_v2" / "internal" / "prompt_manifests" / "navigate_choose_next_unit.json").read_text(encoding="utf-8"))
 
-    assert decision["decision"] == "choose_unit"
-    assert decision["selection_mode"] == "mainline"
+    assert "decision" not in decision
+    assert "selection" + "_mode" not in decision
     assert decision["end_anchor_text"] == "Beta."
     assert decision["continuation_pressure"] is True
     assert "\"packet_version\": \"attentional_v2.state_packet.v1\"" in captured["prompt"]
+    assert "Budget " + "state" not in captured["prompt"]
+    assert "choose" + "_unit" not in captured["prompt"]
+    assert "selection" + "_mode" not in captured["prompt"]
+    assert "Return exactly one act" not in captured["system_prompt"]
     assert "weak structure cues, not automatic permission to cut a standalone unit" in captured["system_prompt"]
     assert "purely non-lexical residue" in captured["system_prompt"]
     assert "Use them as structural cues, not content" in captured["system_prompt"]
     assert "Never trim symbols or unusual characters that belong to a substantive sentence" in captured["system_prompt"]
     assert "Mainline preview" in captured["prompt"]
-    assert manifest["prompt_version"] == "attentional_v2.navigate_choose_next_unit.v3"
+    assert manifest["prompt_version"] == "attentional_v2.navigate_choose_next_unit.v4"
 
 
 def test_navigate_choose_next_unit_can_trim_leading_boundary_residue(tmp_path: Path, monkeypatch):
@@ -166,8 +176,6 @@ def test_navigate_choose_next_unit_can_trim_leading_boundary_residue(tmp_path: P
 
     def fake_invoke_json(_system_prompt: str, _prompt: str, default: object) -> object:
         return {
-            "decision": "choose_unit",
-            "selection_mode": "mainline",
             "end_anchor_text": "运用专长，发挥杠杆效应，最终你会得到自己应得的。",
             "boundary_type": "paragraph_end",
             "reason": "The divider is a structural cue, not content.",
@@ -183,8 +191,8 @@ def test_navigate_choose_next_unit_can_trim_leading_boundary_residue(tmp_path: P
 
     decision = _navigate_act(tmp_path=tmp_path, preview_sentences=preview_sentences, output_language="zh")
 
-    assert decision["decision"] == "choose_unit"
-    assert decision["selection_mode"] == "mainline"
+    assert "decision" not in decision
+    assert "selection" + "_mode" not in decision
     assert decision["end_anchor_text"] == "运用专长，发挥杠杆效应，最终你会得到自己应得的。"
 
 
@@ -193,8 +201,6 @@ def test_navigate_choose_next_unit_refuses_to_trim_leading_lexical_content(tmp_p
 
     def fake_invoke_json(_system_prompt: str, _prompt: str, default: object) -> object:
         return {
-            "decision": "choose_unit",
-            "selection_mode": "mainline",
             "end_anchor_text": "Other people are typically a problem until they prove otherwise.",
             "boundary_type": "paragraph_end",
             "reason": "The visible sentence completes the local move.",
@@ -233,8 +239,8 @@ def test_navigate_choose_next_unit_fallback_merges_heading_with_following_body(t
 
     decision = _navigate_act(tmp_path=tmp_path, preview_sentences=preview_sentences, output_language="zh")
 
-    assert decision["decision"] == "choose_unit"
-    assert decision["selection_mode"] == "mainline"
+    assert "decision" not in decision
+    assert "selection" + "_mode" not in decision
     assert decision["end_anchor_text"] == ""
     assert decision["reason"] == "navigate_choose_next_unit_llm_error"
 

@@ -20,7 +20,7 @@ from .types import PromptDefinition
 READ_UNIT_PROMPT_VERSION = 'attentional_v2.read.v32'
 READ_XML_PROMPT_VERSION = "attentional_v2.read.xml.v2"
 READ_XML_PROMPT_ASSEMBLY_SPEC_ID = "attentional_v2.read_unit.xml.v2"
-READ_XML_PROMPTSET_VERSION = "attentional_v2-phase6-v40"
+READ_XML_PROMPTSET_VERSION = "attentional_v2-phase6-v41"
 READ_XML_TRANSPORT_SYSTEM_PROMPT = "Follow the structured Read prompt in the user message. Return JSON only."
 
 

@@ -17,8 +17,6 @@ UnitizeBoundaryType = Literal[
     "section_end",
     "budget_cap",
 ]
-NavigateActDecision = Literal["choose_unit"]
-NavigateSelectionMode = Literal["mainline"]
 StateOperationType = Literal[
     "append",
     "update",
@@ -417,8 +415,6 @@ class SurfacedReaction(TypedDict, total=False):
 class NavigateActResult(TypedDict, total=False):
     """One bounded Navigate.choose_next_unit act."""
 
-    decision: NavigateActDecision
-    selection_mode: NavigateSelectionMode
     reason: str
     end_anchor_text: str
     boundary_type: UnitizeBoundaryType
@@ -428,20 +424,16 @@ class NavigateActResult(TypedDict, total=False):
 class NavigateActTraceEntry(TypedDict, total=False):
     """One compact Navigate trace entry."""
 
-    decision: NavigateActDecision
-    selection_mode: NavigateSelectionMode
     reason: str
     end_anchor_text: str
     source_span_id: str
     resolution: dict[str, object]
     error: str
-    budget_state: dict[str, object]
 
 
 class NavigateNextUnitResult(TypedDict, total=False):
     """One Navigator-selected unit that should be read next."""
 
-    selection_mode: NavigateSelectionMode
     chapter_id: int
     chapter_ref: str
     selected_unit_sentences: list[dict[str, object]]

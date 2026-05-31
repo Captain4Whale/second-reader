@@ -670,12 +670,12 @@ def test_navigate_choose_next_unit_prompt_receives_navigation_context(monkeypatc
             "source_ref_digest": [],
             "refs": [],
         },
-        budget_state={"mode": "mainline", "act_index": 1, "max_acts": 1},
         reader_policy=build_default_reader_policy(),
         output_language="en",
     )
 
     assert "Navigation context" in captured["prompt"]
+    assert "Budget " + "state" not in captured["prompt"]
     assert STATE_PACKET_VERSION in captured["prompt"]
     assert "\"continuation_capsule\"" in captured["prompt"]
     assert "\"concept_key\": \"promise\"" in captured["prompt"]

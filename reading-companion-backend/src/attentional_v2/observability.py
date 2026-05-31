@@ -579,14 +579,11 @@ def record_read(
     if supplemental_retrieval:
         row["supplemental_retrieval"] = supplemental_retrieval
     navigation_trace_fields = {
-        "decision",
-        "selection_mode",
         "reason",
         "end_anchor_text",
         "source_span_id",
         "resolution",
         "error",
-        "budget_state",
         "continuity_cost",
     }
     compact_navigation_trace = [
