@@ -85,9 +85,8 @@ Top-level rule:
 <RetrievalSurface />
 
 <OutputContract>
-  <LanguageContract>...</LanguageContract>
+  <OutputFields>...</OutputFields>
   <ReturnFormat>...</ReturnFormat>
-  <FieldContracts>...</FieldContracts>
 </OutputContract>
 ```
 
@@ -211,10 +210,10 @@ Structural cues:
 - `text_role` may help orient you, but it must not decide the boundary by itself.
 
 End anchor and continuation:
-- Set `selected_unit.end_anchor_text` to an exact quote from the visible preview at the end of the unit you choose.
+- Set `end_anchor_text` to an exact quote from the visible preview at the end of the unit you choose.
 - Copy `end_anchor_text` character-for-character from the preview source text. Do not paraphrase, omit punctuation, or add ellipses.
 - Choose a sufficiently unique tail anchor, usually 20-80 Chinese characters or 8-25 English words. If the unit is very short, the full unit tail is acceptable.
-- If the move is still unfinished at the available boundary, choose the best honest end point you have and set `selected_unit.continuation_pressure` to true.
+- If the move is still unfinished at the available boundary, choose the best honest end point you have. Do not pretend the local move is complete.
 ```
 
 #### RequestMemorySupport
@@ -268,7 +267,7 @@ Target fields:
 
 `BookInfo` should match the Read XML pattern: it identifies the stable book, not the current reading location.
 
-`chapter_title` belongs in `CurrentView / Position`, because it describes the current location in the reading flow. `output_language` should move out of `BookInfo` and into `OutputContract / LanguageContract`.
+`chapter_title` belongs in `CurrentView / Position`, because it describes the current location in the reading flow. `output_language` is not part of the first-slice Ingest context.
 
 ### CurrentView
 
@@ -308,41 +307,41 @@ Do not define concrete retrieval subblocks or query behavior here yet. The new m
 
 ### OutputContract
 
-Maps from the old return JSON and language contract. The eventual memory-retrieval output is deferred until the new memory design lands.
+Maps from the old Navigate return JSON. The eventual memory-retrieval output is deferred until the new memory design lands.
 
-#### LanguageContract
+#### OutputFields
 
-`LanguageContract` follows the Read XML structure. Explanatory fields should use the configured output language; source quotes remain in the source language.
+`OutputFields` names the information Ingest must output.
+
+Fields:
+
+- `end_anchor_text`: exact visible source quote at the end of the chosen unit
+- `boundary_type`: boundary classification for why the unit ends there
+- `reason`: brief internal reason for the boundary choice
 
 #### ReturnFormat
 
-`ReturnFormat` requires JSON only.
+`ReturnFormat` defines the concrete JSON shape.
 
-#### FieldContracts
-
-Target top-level fields:
+Return JSON only:
 
 ```json
 {
-  "selected_unit": {
-    "end_anchor_text": "...",
-    "boundary_type": "paragraph_end",
-    "reason": "...",
-    "continuation_pressure": false
-  }
+  "end_anchor_text": "...",
+  "boundary_type": "paragraph_end",
+  "reason": "..."
 }
 ```
 
-#### SelectedUnit
+#### BoundaryOutput
 
-`selected_unit` preserves the current Navigate output semantics.
+The selected unit is represented by the flat boundary output above. Runtime owns the start cursor, anchor resolution, source span, source id, retry/fallback handling, and final accepted source unit.
 
-`selected_unit` contains:
+The output preserves the current Navigate boundary semantics for:
 
 - `end_anchor_text`
 - `boundary_type`
 - `reason`
-- `continuation_pressure`
 
 #### MemoryRetrievalRequests
 
@@ -357,17 +356,16 @@ Deferred. Do not specify this field's concrete shape until the new memory retrie
 | Next-unit task framing | `Instruction / SelectNextUnit` | Name the task and keep the detailed boundary policy together here. |
 | Boundary-selection rules | `Instruction / SelectNextUnit` | Reuse almost directly. This is where the already-approved next-unit selection prompt content belongs. |
 | no old equivalent | `Instruction / RequestMemorySupport` | Placeholder only until the memory design defines retrieval behavior. |
-| `Structural frame` | `BookInfo / BookIdentity`, `CurrentView / Position`, and `OutputContract / LanguageContract` | Keep stable book identity in `BookInfo`; move `chapter_title` to `CurrentView / Position`; move output-language concerns to `OutputContract`. |
+| `Structural frame` | `BookInfo / BookIdentity` and `CurrentView / Position` | Keep stable book identity in `BookInfo`; move `chapter_title` to `CurrentView / Position`; do not carry an output-language block in first-slice Ingest. |
 | `Reading position` | `CurrentView / Position` | Keep current cursor and retry feedback here. |
 | `Mainline preview` | `CurrentView / Content` | Prefer paragraph XML nodes over one JSON blob. |
 | `Mainline cursor` | `CurrentView / Position` | Keep only cursor facts needed to understand where the preview starts; do not revive mode/decision fields. |
 | `Navigation context` | not carried as a first-slice state block | Do not inject recent-memory or continuity summaries into Ingest by default. |
 | `Policy snapshot` | `Instruction / SelectNextUnit` policy | Retrieval policy is deferred until the new memory design lands. |
-| `Output language contract` | `OutputContract / LanguageContract` | Follow Read XML structure. |
-| `end_anchor_text` | `selected_unit.end_anchor_text` | Same semantics: exact quote from preview tail. |
-| `boundary_type` | `selected_unit.boundary_type` | Same boundary vocabulary unless later simplified. |
-| `reason` | `selected_unit.reason` | Keep short explanation; useful for trace/audit. |
-| `continuation_pressure` | `selected_unit.continuation_pressure` | Same meaning: chosen boundary may still carry forward pressure. |
+| `Output language contract` | omitted | Ingest has no reader-facing natural-language output in this slice; `end_anchor_text` is copied source text and `reason` is internal. |
+| `end_anchor_text` | `end_anchor_text` | Same semantics: exact quote from preview tail. |
+| `boundary_type` | `boundary_type` | Same boundary vocabulary unless later simplified. |
+| `reason` | `reason` | Keep short explanation; useful for trace/audit. |
 | no old equivalent | deferred memory retrieval request contract | New Ingest responsibility, but not specified in this slice. |
 
 ## Boundary-Selection Content To Reuse
@@ -391,12 +389,11 @@ The following current Navigate rules should carry forward almost directly:
 - treat headings as weak structure cues, not automatic standalone units
 - merge label-like headings with following body text when the preview allows
 - trim only purely non-lexical boundary residue
-- use prior reading state only as secondary support
 - judge from visible source text first
 - never cross the provided preview boundary
 - the unit always starts at the current source cursor
 - return an exact `end_anchor_text` copied character-for-character from the preview
-- preserve `continuation_pressure` when the move is still unfolding
+- preserve an honest boundary when the move is still unfolding; do not overstate closure
 
 The following current Navigate prompt material should move or be adjusted:
 
@@ -410,7 +407,7 @@ Do not request external web search. Memory retrieval request behavior is deferre
 ```
 
 - `Return JSON only` belongs in `Instruction / ExecutionLimits` and the concrete `OutputContract`.
-- The old flat return JSON example belongs in `OutputContract`, nested under `selected_unit`. The memory retrieval field is not specified in this slice.
+- The old flat return JSON example belongs in `OutputContract` as the first-slice Ingest return shape. The memory retrieval field is not specified in this slice.
 
 ## Runtime Boundary
 
@@ -419,8 +416,8 @@ The LLM-call/runtime split from `DEC-106` should remain.
 In the target shape:
 
 1. Reading Runner builds the Ingest prompt packet.
-2. Ingest LLM returns `selected_unit`; memory retrieval requests are deferred until the memory design lands.
-3. Reading Runner resolves `selected_unit.end_anchor_text`, retries/falls back if needed, and accepts the source unit.
+2. Ingest LLM returns the flat boundary JSON; memory retrieval requests are deferred until the memory design lands.
+3. Reading Runner resolves `end_anchor_text`, retries/falls back if needed, and accepts the source unit.
 4. Runtime/tooling will later execute memory retrieval requests once the memory design defines the retrieval surface and request contract.
 5. Reading Runner assembles the Digest packet with:
    - accepted source unit
@@ -447,7 +444,7 @@ Digest should not receive the entire Ingest preview, all candidate memory indexe
 ## Open Design Questions
 
 - Should `memory_retrieval_requests` be emitted in the same Ingest call, or should Ingest become an explicit tool loop after boundary acceptance?
-- Should `selected_unit.reason` remain in the long-term contract, or become audit-only once confidence is high?
+- Should `reason` remain in the long-term contract, or become audit-only once confidence is high?
 - Should `boundary_type` keep the current unitization vocabulary, or become a smaller Digest-facing boundary classification?
 - Which memory indexes are allowed once the new memory design lands?
 - What should `RetrievalSurface` contain after the new memory design defines the available retrieval surface?
