@@ -1,6 +1,6 @@
 # Attentional V2 Mechanism
 
-Purpose: define the current default attention-frontier reading mechanism that reads from a paragraph-offset source cursor, lets `Navigate.choose_next_unit` choose the next source span, reasons mainly over meaning units, and moves forward through deterministic post-read settlement rather than fixed section traversal.
+Purpose: define the current default attention-frontier reading mechanism that reads from a paragraph-offset source cursor, lets `Navigate` choose the next source span, reasons mainly over meaning units, and moves forward through deterministic post-read settlement rather than fixed section traversal.
 Use when: changing the live `attentional_v2` parse/read path, clarifying its ontology, or updating its mechanism-private runtime behavior.
 Not for: shared mechanism-platform rules or the internals of `iterator_v1`.
 Update when: the live ontology, progression logic, LLM schedule, memory model, unsupported modes, or artifact design for `attentional_v2` materially changes.
@@ -21,7 +21,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
 
 ## Mechanism-Internal Reading Runner Boundary
 - `Reading Runner` is the name for this mechanism's internal read-progress executor.
-  - It owns the live loop around `Navigate.choose_next_unit`, `Read`, post-read settlement, cursor advancement, and mechanism-private runtime persistence.
+  - It owns the live loop around `Navigate`, `Read`, post-read settlement, cursor advancement, and mechanism-private runtime persistence.
   - It is not the shared runtime shell, the mechanism registry, or the thin mechanism adapter.
 - The shared runtime shell remains under `reading-companion-backend/src/reading_runtime/`.
 - The mechanism adapter remains under `reading-companion-backend/src/reading_mechanisms/attentional_v2.py`.
@@ -35,13 +35,13 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
 - It now has a live Phase 1-8.5 implementation under the shared runtime boundary.
   - These phase labels are implementation-history labels from the rollout plan, not the canonical runtime-flow vocabulary for how the mechanism reads.
   - They still appear in code and docs because some landed module families kept their rollout-era names.
-  - When describing live reading behavior, prefer the runtime loop and node names below over the `Phase N` shorthand.
+  - When describing live reading behavior, prefer the runtime loop and LLM-call names below over the `Phase N` shorthand.
   - The landed implementation includes:
   - shared chapter / paragraph substrate, with parse-time sentence records retained as compatibility and historical evidence handles rather than the mainline reading lattice
   - shared canonical parse/provisioning and shared manifest/run-state shells
   - orientation-only survey artifacts
   - deterministic intake/retrieval helpers
-  - Phase 4 interpretive nodes with prompt-version manifests
+  - LLM calls with prompt-version manifests
       - Phase 5 knowledge and retained-evidence helper history, with the old Bridge path now paused from the live Runner
       - Phase 6 slow-cycle helpers for durable source-referenced reaction truth, reflective promotion, reconsolidation, chapter consolidation, and mechanism-private compatibility projection
   - Phase 7 checkpointing and resume helpers for compact local continuity, full checkpoints, shared checkpoint summaries, and bounded warm/cold/reconstitution resume reconstruction
@@ -58,7 +58,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - This did not change the mechanism key or public compatibility surface.
   - It did change the live control skeleton:
     - heuristic trigger output no longer decides whether正文 receives formal reading
-    - at that point, the live loop routed through `Navigate.unitize -> read -> Reading Runner settlement`; the current loop routes through `Navigate.choose_next_unit -> read -> Reading Runner settlement`
+    - at that point, the live loop routed through `Navigate.unitize -> read -> Reading Runner settlement`; the current loop routes through `Navigate -> read -> Reading Runner settlement`
     - span authority is now tied to the exact chosen coverage unit rather than a reconstructed late tail
 - Phase B of the post-eval structural rework is now also landed.
   - `read` is now the canonical owner of the current-unit read packet on the live path.
@@ -108,7 +108,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - `parse` still preserves the original chapter order as source truth, and `Navigate` still does not own book-level chapter ordering
 - Phase C.1 of the post-eval structural rework is now landed.
   - Live prompt inputs now flow through a bounded internal `state_packet.v1` seam.
-  - The then-current unitization helper began receiving packetized `navigation_context`; the current live Navigator prompt is `Navigate.choose_next_unit`.
+  - The then-current unitization helper began receiving packetized `navigation_context`; the current live Navigator prompt is `Navigate`.
   - `read` now receives packetized read-context views that explicitly separate continuity, active-attention, reflective, active-focus, and source-ref digests.
   - Persisted runtime files and public compatibility surfaces remain unchanged in this slice.
 - Phase C.2 of the post-eval structural rework is now also landed as the first state-territory slice.
@@ -141,10 +141,10 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - After `Read`, the Reading Runner deterministically applies memory uptake, persists surfaced reactions, writes audit records, closes the current unit, and advances the cursor to the unit end.
   - There is no replacement `forward` action.
   - There is no current live non-mainline scheduling mechanism; old Detour / source-backread is removed from the current runtime surface after `DEC-105`.
-- The `Navigate.choose_next_unit` cutover is now landed.
+- The `Navigate` LLM-call boundary split is now landed.
   - The current Navigator contract is a pure LLM boundary call: **Choose the Boundary of the Next Unit That Should Be Read**.
   - Reading Runner owns runtime next-unit preparation through `prepare_next_source_unit_for_read` and consumes one `PreparedSourceUnit`.
-  - The runtime operation prepares source preview/context, calls `Navigate.choose_next_unit`, resolves or retries the returned anchor, applies fallback boundary governance when needed, and produces the accepted forward source unit for `Read`.
+  - The runtime operation prepares source preview/context, calls `Navigate`, resolves or retries the returned anchor, applies fallback boundary governance when needed, and produces the accepted forward source unit for `Read`.
   - The current prompt and schema expose only boundary fields for that forward source unit: exact `end_anchor_text`, `boundary_type`, `reason`, and `continuation_pressure`.
 - Phase D of the post-eval structural rework is now landed as preserved intermediate continuity / recall / resume evidence.
   - that branch added a budget-bounded multi-step supplemental loop around `read`.
@@ -154,18 +154,19 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
 
 ## Naming Note
 - `Phase 3`, `Phase 4`, `Phase 5`, and `Phase 6` in this document refer to historical implementation-stage groupings, not to a user-facing or mechanism-intrinsic sequence of named runtime phases.
-- The current Navigator capability name in stable docs is `Navigate.choose_next_unit`.
+- The current Navigator capability name in stable docs is `Navigate`.
   - It means: make the LLM boundary judgment for the next unit that should be read.
   - It is now one unified Navigator boundary-selection prompt, not the full runtime source-unit preparation operation and not a Python semantic dispatch between separate live prompt families.
   - Forward source-unit selection is the only current live mode for this prompt.
   - Historical non-mainline jump reading is removed from the current code and prompt surface after `DEC-105`.
   - The historical `navigate_unitize` and non-mainline prompt families are no longer current live prompt families.
 - `Navigate.route` is historical route-layer vocabulary after the forward-settlement cutover.
-- The current prompt manifest node name and trace node id for Navigator selection are `navigate_choose_next_unit`.
+- The current LLM-call module is `llm_calls.py`; its Python function is `navigate(...)`.
+- The current prompt manifest id, trace id, prompt definition id, and Python LLM-call name for Navigator selection are `navigate`.
 - The live runtime should be explained as a reading loop:
   - `Reading Runner` maintains a paragraph-offset `SourceCursor` over the current chapter
   - `Reading Runner` prepares the next source-unit request with source preview, cursor state, and bounded navigation context
-  - `Navigate.choose_next_unit`
+  - `Navigate`
     - receives that already-prepared adaptive source preview and context
     - returns only boundary fields, including an exact `end_anchor_text` rather than sentence ids or raw numeric offsets
   - `Reading Runner` boundary governance resolves the returned anchor, retries once when the anchor is unresolved, falls back to a deterministic cursor boundary when needed, and produces the accepted `PreparedSourceUnit`
@@ -235,7 +236,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - Legacy sentence records may still support compatibility projection, old eval manifests, old public surfaces, or reviewer orientation, but they do not define mainline progress.
 - The current live forward-settlement baseline now runs:
   - build an adaptive paragraph-offset preview from the current `SourceCursor`
-  - call `Navigate.choose_next_unit`
+  - call `Navigate`
     - the single Navigate act chooses a forward source unit by returning `end_anchor_text`
     - the current interface exposes no non-mainline routing or source-skill action
   - deterministically resolve `end_anchor_text` against the preview and map it to an end-exclusive `end_cursor`
@@ -248,7 +249,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - `Reading Runner` post-read settlement closes the exact source unit, appends it to the Unit Span Ledger, and advances the cursor to `end_cursor`
 - Current capture/resume writes only the current forward continuity schema; old non-mainline checkpoint/artifact shapes are not a compatibility target after `DEC-105`.
 - Future `Ingest` memory retrieval should be designed separately rather than inherited from the retired source-skill loop by default.
-- `Navigate.choose_next_unit` is now the sole current selector of the next coverage unit.
+- `Navigate` is now the sole current selector of the next coverage unit.
   - Boundary choice is prompt-led and semantic.
   - Runtime guardrails only keep the unit from running away.
   - In the mainline case, it receives a bounded preview plus compact navigation context built from continuity and state digests.
@@ -263,10 +264,10 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - Heading handling is now deliberately conservative:
     - `chapter_heading` and `section_heading` may stand alone when their visible wording already forms a complete local move
     - but they are not automatic standalone units just because their `text_role` says `heading`
-    - if a heading reads more like a label, lead-in, or structural setup, `Navigate.choose_next_unit` should prefer merging it with the immediately following body paragraph when the preview allows
+    - if a heading reads more like a label, lead-in, or structural setup, `Navigate` should prefer merging it with the immediately following body paragraph when the preview allows
   - Boundary residue handling is also conservative:
     - purely non-lexical ornament / divider / separator lines at a proposed unit boundary are structure cues, not content
-    - `Navigate.choose_next_unit` should trim those boundary sentences out of the chosen unit when they are not part of a substantive sentence, formula, quotation, poem, list item, or authorial expression
+    - `Navigate` should trim those boundary sentences out of the chosen unit when they are not part of a substantive sentence, formula, quotation, poem, list item, or authorial expression
     - this is a unit-boundary choice only; it does not rewrite, delete, or replace source text in the parse/substrate layer
   - The deterministic fallback now follows the same posture:
     - ordinary body paragraphs still fall back to the current paragraph end
@@ -326,27 +327,27 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
 
 ## LLM Call Schedule
 - The main LLM is now called for every formal coverage unit, not for every sentence.
-- The current live node bundle is:
-  - `Navigate.choose_next_unit`
+- The current live LLM-call bundle is:
+  - `Navigate`
   - `read_unit`
   - `reflective_promotion`
   - `reconsolidation`
   - `chapter_consolidation`
-- The next follow-up node bundle after F1 is expected to remain:
-  - `Navigate.choose_next_unit`
+- The next follow-up LLM-call bundle after F1 is expected to remain:
+  - `Navigate`
   - `read_unit`
   - `reflective_promotion`
   - `reconsolidation`
   - `chapter_consolidation`
-- The runtime schedule is intentionally narrower than the old node inventory:
+- The runtime schedule is intentionally narrower than the old executed-call inventory:
   - paragraph-offset preview construction and cursor advancement run without LLM
-  - `Navigate.choose_next_unit` decides the next coverage unit before formal reading begins
+  - `Navigate` decides the next coverage unit before formal reading begins
   - forward source-unit choice normally uses one Navigate LLM call and cannot request skills
   - `read_unit` is now the only steady-state per-unit interpretation call
   - surfaced reactions now come from that same read call rather than from a follow-on wording node
   - ordinary forward progression is deterministic Reading Runner settlement rather than a route action
 - Under the approved next shape:
-  - `Navigate.choose_next_unit` owns forward next-unit selection
+  - `Navigate` owns forward next-unit selection
   - `read` owns current-unit reading impression, surfaced reactions, and memory uptake
   - `Reading Runner` owns post-read settlement and cursor advance
   - `slow cycle` owns chapter-end consolidation and promotion
@@ -416,7 +417,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - It is now derived from persisted surfaced reaction records through one compat helper rather than treated as the persisted reaction truth.
   - It must not become the governing shape of the new `Read` prompt.
 - Default current call types are:
-  - `Navigate.choose_next_unit`
+  - `Navigate`
     - choose the next exact coverage unit that should be read now
     - chooses from the bounded forward preview without skill use
   - `formal read`
@@ -425,7 +426,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
     - update broader hypotheses and unresolved tensions at a local milestone
 
 ## Context Packaging
-- Each node should receive a role-specific projection rather than the full persisted state bundle.
+- Each LLM call should receive a role-specific projection rather than the full persisted state bundle.
 - Prompt assembly now has two Read paths:
   - default `legacy` path: current product runs still use `ATTENTIONAL_V2_PROMPTS.read_unit_system` plus the legacy `read_unit_prompt` template
   - opt-in `xml` path: `READ_UNIT_PROMPT_ASSEMBLY_MODE="xml"` or `ATTENTIONAL_V2_READ_PROMPT_ASSEMBLY_MODE=xml` assembles the target Read XML blocks through the generic Prompt Assembly layer and records `prompt_assembly` metadata in the prompt manifest
@@ -576,7 +577,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - prompt `Read` to emit path-redirection requests
   - write non-mainline path fields into new continuity state
   - call `Navigate` source skills
-  - return non-mainline selection modes from `Navigate.choose_next_unit`
+  - return non-mainline selection modes from `Navigate`
   - drain chapter-tail non-mainline reads before chapter slow-cycle close
 - Old output trees from before `DEC-105` are historical artifacts, not current resume/checkpoint compatibility targets.
 - Prior context that previously motivated live backread should be handled by the forthcoming `Ingest` memory-retrieval design, not by reviving live non-mainline path selection.
@@ -662,7 +663,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
     - debug-only diagnostics stream once Phase 8 debug mode is enabled
   - `_mechanisms/attentional_v2/internal/prompt_manifests/*.json`
 - Current scaffolded prompt manifests now include:
-  - `navigate_choose_next_unit`
+  - `navigate`
     - current forward-only source boundary selector
     - outputs the accepted boundary fields for one unit from the bounded preview without skill use
   - `read_unit`

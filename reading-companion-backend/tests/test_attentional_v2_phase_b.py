@@ -4,9 +4,9 @@ from __future__ import annotations
 
 import json
 
-from src.attentional_v2 import nodes as nodes_module
+from src.attentional_v2 import llm_calls as llm_calls_module
 from src.attentional_v2 import runner as runner_module
-from src.attentional_v2.nodes import read_unit
+from src.attentional_v2.llm_calls import read_unit
 from src.attentional_v2.schemas import (
     build_default_reader_policy,
     build_empty_anchor_memory,
@@ -120,7 +120,7 @@ def test_read_unit_projects_compact_packet_and_returns_f1_surface_contract(tmp_p
             ],
         }
 
-    monkeypatch.setattr(nodes_module, "invoke_json", fake_invoke_json)
+    monkeypatch.setattr(llm_calls_module, "invoke_json", fake_invoke_json)
 
     local_buffer = build_empty_local_buffer()
     local_buffer["recent_sentences"] = [

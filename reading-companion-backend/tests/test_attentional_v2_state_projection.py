@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from src.attentional_v2 import nodes as nodes_module
-from src.attentional_v2.nodes import navigate_choose_next_unit
+from src.attentional_v2 import llm_calls as llm_calls_module
+from src.attentional_v2.llm_calls import navigate
 from src.attentional_v2.schemas import (
     build_default_reader_policy,
     build_empty_concept_registry,
@@ -639,8 +639,8 @@ def test_build_read_prompt_packet_uses_precise_sparse_retrieval_groups():
     assert "knowledge_activations" not in prompt_packet
 
 
-def test_navigate_choose_next_unit_prompt_receives_navigation_context(monkeypatch):
-    """Navigate.choose_next_unit should render the navigation packet into its prompt."""
+def test_navigate_prompt_receives_navigation_context(monkeypatch):
+    """Navigate should render the navigation packet into its prompt."""
 
     captured: dict[str, str] = {}
 
@@ -648,9 +648,9 @@ def test_navigate_choose_next_unit_prompt_receives_navigation_context(monkeypatc
         captured["prompt"] = prompt
         return default
 
-    monkeypatch.setattr(nodes_module, "invoke_json", fake_invoke_json)
+    monkeypatch.setattr(llm_calls_module, "invoke_json", fake_invoke_json)
 
-    navigate_choose_next_unit(
+    navigate(
         reading_position={"mode": "mainline", "current_sentence_id": "c1-s1"},
         mainline_preview={
             "current_sentence": _sentence("c1-s1", "Alpha sentence."),

@@ -12,7 +12,7 @@ from src.iterator_reader.llm_utils import LLMTraceContext, invoke_json, llm_invo
 from src.reading_core.book_document import BookChapter, ParagraphRecord
 
 from .knowledge import apply_activation_operations
-from .nodes import (
+from .llm_calls import (
     _clean_text,
     _json_block,
     _normalize_reaction_candidate,

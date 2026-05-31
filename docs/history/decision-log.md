@@ -2362,7 +2362,7 @@ This new direction is design frozen but not yet implemented as a formal benchmar
 
 **Why this path won**: `choose_next_unit` states the universal job directly: select the next readable unit that should be read now. Mainline forward reading and detour reading become two modes inside one selection contract, not two separate scheduling systems. The Reading Runner can then consume one `NavigateNextUnitResult` and send both mainline and landed-detour units through the same `Read -> Reading Runner settlement` path.
 
-**What changed in the system**: The schema then added `NavigateNextUnitResult` with `selection_mode = mainline | detour | deferred`, selected unit sentences, unitization decision, optional detour trace, and optional defer reason. The Reading Runner began calling `navigate_choose_next_unit(...)` each loop. Without an active detour it reused the existing bounded preview and unitization helper; with an active detour it ran the existing bounded detour search, unitized the landed region, and returned a normal read unit. Mainline and detour reads shared one settlement helper. The previous `_run_detour_episode(...)` duplicate read/settlement branch was removed. `DEC-104` later retired the live detour/deferred modes; the surviving current point from this decision is the single forward `Navigate.choose_next_unit` entrypoint.
+**What changed in the system**: The schema then added `NavigateNextUnitResult` with `selection_mode = mainline | detour | deferred`, selected unit sentences, unitization decision, optional detour trace, and optional defer reason. The Reading Runner began calling `navigate_choose_next_unit(...)` each loop. Without an active detour it reused the existing bounded preview and unitization helper; with an active detour it ran the existing bounded detour search, unitized the landed region, and returned a normal read unit. Mainline and detour reads shared one settlement helper. The previous `_run_detour_episode(...)` duplicate read/settlement branch was removed. `DEC-104` later retired the live detour/deferred modes; the surviving current point from this decision is the forward `Navigate` LLM-call boundary.
 
 **Why it matters later**: Future navigation work should start from `Navigate.choose_next_unit`, not from reintroducing route actions. The historical detour/source-search part of this decision is superseded by `DEC-104`; future Ingest retrieval should be designed separately rather than reviving detour search as a side channel.
 
@@ -3021,7 +3021,7 @@ This new direction is design frozen but not yet implemented as a formal benchmar
 - `docs/backend-reader-evaluation.md`
 - `reading-companion-backend/src/attentional_v2/runner.py`
 - `reading-companion-backend/src/attentional_v2/nodes.py`
-- `reading-companion-backend/src/attentional_v2/prompts/navigate_choose_next_unit.py`
+- `reading-companion-backend/src/attentional_v2/prompts/navigate.py`
 - `reading-companion-backend/src/attentional_v2/prompts/read_unit.py`
 
 ## Entry 102
@@ -3046,7 +3046,7 @@ This new direction is design frozen but not yet implemented as a formal benchmar
 - `reading-companion-backend/src/attentional_v2/nodes.py`
 - `reading-companion-backend/src/attentional_v2/runner.py`
 - `reading-companion-backend/src/attentional_v2/observability.py`
-- `reading-companion-backend/src/attentional_v2/prompts/navigate_choose_next_unit.py`
+- `reading-companion-backend/src/attentional_v2/prompts/navigate.py`
 - `reading-companion-backend/src/attentional_v2/prompts/read_unit.py`
 - `reading-companion-backend/tests/test_attentional_v2_nodes.py`
 - `reading-companion-backend/tests/test_attentional_v2_scaffold.py`
@@ -3059,18 +3059,18 @@ This new direction is design frozen but not yet implemented as a formal benchmar
 
 **Period**: May 31, 2026, while preparing the codebase for the next `Ingest -> Digest` mechanism design pass after the Detour hard purge.
 
-**Decision**: In current `attentional_v2`, `Navigate.choose_next_unit` names the LLM call that receives prepared reading position, preview, cursor, and navigation context, then returns only boundary fields for the next forward unit. Runtime work before and after that call belongs to Reading Runner: `prepare_next_source_unit_for_read` prepares the source/context packet, invokes Navigate, resolves or retries the returned anchor, applies deterministic fallback boundary governance when needed, and hands the accepted source unit to `Read`.
+**Decision**: In current `attentional_v2`, `Navigate` names the LLM call that receives prepared reading position, preview, cursor, and navigation context, then returns only boundary fields for the next forward unit. In code, that call lives at `llm_calls.navigate(...)`. Runtime work before and after that call belongs to Reading Runner: `prepare_next_source_unit_for_read` prepares the source/context packet, invokes Navigate, resolves or retries the returned anchor, applies deterministic fallback boundary governance when needed, and hands the accepted source unit to `Read`.
 
-**Boundary**: This is a structure and naming cleanup, not a new retrieval mechanism. It does not implement Ingest memory retrieval, change the Read/Digest contract, run eval, or update evidence catalog authority. The same node/runtime separation should guide later `Ingest` and `Digest` naming: model-node names describe LLM calls; runtime orchestration, tool retrieval, settlement, and boundary governance stay outside those node names.
+**Boundary**: This is a structure and naming cleanup, not a new retrieval mechanism. It does not implement Ingest memory retrieval, change the Read/Digest contract, run eval, or update evidence catalog authority. The same LLM-call/runtime separation should guide later `Ingest` and `Digest` naming: LLM-call names describe model calls; runtime orchestration, tool retrieval, settlement, and boundary governance stay outside those call names.
 
-**Why this path won**: Keeping one `navigate_choose_next_unit` runtime wrapper around preparation, model invocation, retry, boundary resolution, fallback, source-unit assembly, and settlement handoff made it hard to tell which behavior belonged to the LLM node and which behavior belonged to deterministic runtime control. Splitting the boundary gives the next Ingest/Digest work a cleaner API surface and prevents the old path-selection framing from leaking back through function names.
+**Why this path won**: Keeping one `navigate_choose_next_unit` runtime wrapper around preparation, model invocation, retry, boundary resolution, fallback, source-unit assembly, and settlement handoff made it hard to tell which behavior belonged to the LLM call and which behavior belonged to deterministic runtime control. Splitting the boundary gives the next Ingest/Digest work a cleaner API surface and prevents the old path-selection framing from leaking back through function names.
 
 **Primary evidence**:
 - `docs/current-state.md`
 - `docs/tasks/registry.md`
 - `docs/backend-reading-mechanisms/attentional_v2.md`
-- `reading-companion-backend/src/attentional_v2/nodes.py`
+- `reading-companion-backend/src/attentional_v2/llm_calls.py`
 - `reading-companion-backend/src/attentional_v2/runner.py`
 - `reading-companion-backend/src/attentional_v2/schemas.py`
-- `reading-companion-backend/tests/test_attentional_v2_nodes.py`
+- `reading-companion-backend/tests/test_attentional_v2_llm_calls.py`
 - `reading-companion-backend/tests/test_attentional_v2_scaffold.py`

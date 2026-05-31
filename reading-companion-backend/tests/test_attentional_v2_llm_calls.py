@@ -1,15 +1,15 @@
-"""Tests for the current attentional_v2 live node set."""
+"""Tests for the current attentional_v2 LLM-call set."""
 
 from __future__ import annotations
 
 import json
 from pathlib import Path
 
-from src.attentional_v2 import nodes as nodes_module
+from src.attentional_v2 import llm_calls as llm_calls_module
 from src.attentional_v2 import runner as runner_module
-from src.attentional_v2.nodes import (
+from src.attentional_v2.llm_calls import (
     build_unitize_preview,
-    navigate_choose_next_unit,
+    navigate,
     read_unit,
 )
 from src.attentional_v2.schemas import build_default_reader_policy
@@ -50,7 +50,7 @@ def _navigation_context() -> dict[str, object]:
 def test_navigate_boundary_contract_has_no_action_or_mode() -> None:
     """Navigate should expose only boundary fields for the current forward selector."""
 
-    payload = nodes_module._normalize_navigate_boundary_result(  # noqa: SLF001
+    payload = llm_calls_module._normalize_navigate_boundary_result(  # noqa: SLF001
         {
             "end_anchor_text": "Beta.",
             "boundary_type": "paragraph_end",
@@ -69,7 +69,7 @@ def _navigate_boundary_call(
     preview_sentences: list[dict[str, object]],
     output_language: str = "en",
 ) -> dict[str, object]:
-    return navigate_choose_next_unit(
+    return navigate(
         reading_position={
             "mode": "mainline",
             "current_sentence_id": preview_sentences[0]["sentence_id"] if preview_sentences else "",
@@ -114,7 +114,7 @@ def test_build_unitize_preview_stays_within_current_and_next_non_heading_paragra
     }
 
 
-def test_navigate_choose_next_unit_writes_manifest_and_uses_anchor_contract(tmp_path: Path, monkeypatch):
+def test_navigate_writes_manifest_and_uses_anchor_contract(tmp_path: Path, monkeypatch):
     """Navigate should write a prompt manifest and keep the current forward anchor contract."""
 
     captured: dict[str, str] = {}
@@ -129,7 +129,7 @@ def test_navigate_choose_next_unit_writes_manifest_and_uses_anchor_contract(tmp_
             "continuation_pressure": True,
         }
 
-    monkeypatch.setattr(nodes_module, "invoke_json", fake_invoke_json)
+    monkeypatch.setattr(llm_calls_module, "invoke_json", fake_invoke_json)
 
     reader_policy = build_default_reader_policy()
     reader_policy["unitize"]["max_coverage_unit_sentences"] = 1
@@ -138,7 +138,7 @@ def test_navigate_choose_next_unit_writes_manifest_and_uses_anchor_contract(tmp_
         _sentence("c1-s2", "Beta.", sentence_index=2, paragraph_index=1),
     ]
 
-    decision = navigate_choose_next_unit(
+    decision = navigate(
         reading_position={"mode": "mainline", "current_sentence_id": "c1-s1"},
         mainline_preview={
             "current_sentence": preview_sentences[0],
@@ -152,7 +152,7 @@ def test_navigate_choose_next_unit_writes_manifest_and_uses_anchor_contract(tmp_
         output_dir=tmp_path,
     )
 
-    manifest = json.loads((tmp_path / "_mechanisms" / "attentional_v2" / "internal" / "prompt_manifests" / "navigate_choose_next_unit.json").read_text(encoding="utf-8"))
+    manifest = json.loads((tmp_path / "_mechanisms" / "attentional_v2" / "internal" / "prompt_manifests" / "navigate.json").read_text(encoding="utf-8"))
 
     assert "decision" not in decision
     assert "selection" + "_mode" not in decision
@@ -168,10 +168,10 @@ def test_navigate_choose_next_unit_writes_manifest_and_uses_anchor_contract(tmp_
     assert "Use them as structural cues, not content" in captured["system_prompt"]
     assert "Never trim symbols or unusual characters that belong to a substantive sentence" in captured["system_prompt"]
     assert "Mainline preview" in captured["prompt"]
-    assert manifest["prompt_version"] == "attentional_v2.navigate_choose_next_unit.v4"
+    assert manifest["prompt_version"] == "attentional_v2.navigate.v4"
 
 
-def test_navigate_choose_next_unit_can_trim_leading_boundary_residue(tmp_path: Path, monkeypatch):
+def test_navigate_can_trim_leading_boundary_residue(tmp_path: Path, monkeypatch):
     """Navigate preserves the selected end anchor for a short structural unit."""
 
     def fake_invoke_json(_system_prompt: str, _prompt: str, default: object) -> object:
@@ -182,7 +182,7 @@ def test_navigate_choose_next_unit_can_trim_leading_boundary_residue(tmp_path: P
             "continuation_pressure": False,
         }
 
-    monkeypatch.setattr(nodes_module, "invoke_json", fake_invoke_json)
+    monkeypatch.setattr(llm_calls_module, "invoke_json", fake_invoke_json)
 
     preview_sentences = [
         _sentence("c1-s1", "∨", sentence_index=1, paragraph_index=1),
@@ -196,7 +196,7 @@ def test_navigate_choose_next_unit_can_trim_leading_boundary_residue(tmp_path: P
     assert decision["end_anchor_text"] == "运用专长，发挥杠杆效应，最终你会得到自己应得的。"
 
 
-def test_navigate_choose_next_unit_refuses_to_trim_leading_lexical_content(tmp_path: Path, monkeypatch):
+def test_navigate_refuses_to_trim_leading_lexical_content(tmp_path: Path, monkeypatch):
     """Navigate no longer exposes a separate mutable start boundary."""
 
     def fake_invoke_json(_system_prompt: str, _prompt: str, default: object) -> object:
@@ -207,7 +207,7 @@ def test_navigate_choose_next_unit_refuses_to_trim_leading_lexical_content(tmp_p
             "continuation_pressure": False,
         }
 
-    monkeypatch.setattr(nodes_module, "invoke_json", fake_invoke_json)
+    monkeypatch.setattr(llm_calls_module, "invoke_json", fake_invoke_json)
 
     preview_sentences = [
         _sentence("c1-s1", "People want things from other people.", sentence_index=1, paragraph_index=1),
@@ -220,14 +220,14 @@ def test_navigate_choose_next_unit_refuses_to_trim_leading_lexical_content(tmp_p
     assert "start_sentence_id" not in decision
 
 
-def test_navigate_choose_next_unit_fallback_merges_heading_with_following_body(tmp_path: Path, monkeypatch):
+def test_navigate_fallback_merges_heading_with_following_body(tmp_path: Path, monkeypatch):
     """LLM failure should fall back to an empty anchor and safe forward act shape."""
 
     monkeypatch.setattr(
-        nodes_module,
+        llm_calls_module,
         "invoke_json",
         lambda *_args, **_kwargs: (_ for _ in ()).throw(
-            nodes_module.ReaderLLMError("temporary navigation failure", problem_code="network_blocked")
+            llm_calls_module.ReaderLLMError("temporary navigation failure", problem_code="network_blocked")
         ),
     )
 
@@ -242,17 +242,17 @@ def test_navigate_choose_next_unit_fallback_merges_heading_with_following_body(t
     assert "decision" not in decision
     assert "selection" + "_mode" not in decision
     assert decision["end_anchor_text"] == ""
-    assert decision["reason"] == "navigate_choose_next_unit_llm_error"
+    assert decision["reason"] == "navigate_llm_error"
 
 
-def test_navigate_choose_next_unit_fallback_keeps_body_paragraph_behavior(tmp_path: Path, monkeypatch):
+def test_navigate_fallback_keeps_body_paragraph_behavior(tmp_path: Path, monkeypatch):
     """Ordinary body fallback keeps the same safe forward act shape."""
 
     monkeypatch.setattr(
-        nodes_module,
+        llm_calls_module,
         "invoke_json",
         lambda *_args, **_kwargs: (_ for _ in ()).throw(
-            nodes_module.ReaderLLMError("temporary navigation failure", problem_code="network_blocked")
+            llm_calls_module.ReaderLLMError("temporary navigation failure", problem_code="network_blocked")
         ),
     )
 
@@ -266,17 +266,17 @@ def test_navigate_choose_next_unit_fallback_keeps_body_paragraph_behavior(tmp_pa
 
     assert decision["end_anchor_text"] == ""
     assert decision["boundary_type"] == "paragraph_end"
-    assert decision["reason"] == "navigate_choose_next_unit_llm_error"
+    assert decision["reason"] == "navigate_llm_error"
 
 
-def test_navigate_choose_next_unit_fallback_allows_heading_only_when_no_body_follows(tmp_path: Path, monkeypatch):
+def test_navigate_fallback_allows_heading_only_when_no_body_follows(tmp_path: Path, monkeypatch):
     """Heading-only fallback keeps the same safe forward act shape."""
 
     monkeypatch.setattr(
-        nodes_module,
+        llm_calls_module,
         "invoke_json",
         lambda *_args, **_kwargs: (_ for _ in ()).throw(
-            nodes_module.ReaderLLMError("temporary navigation failure", problem_code="network_blocked")
+            llm_calls_module.ReaderLLMError("temporary navigation failure", problem_code="network_blocked")
         ),
     )
 
@@ -287,7 +287,7 @@ def test_navigate_choose_next_unit_fallback_allows_heading_only_when_no_body_fol
     decision = _navigate_boundary_call(tmp_path=tmp_path, preview_sentences=preview_sentences)
 
     assert decision["end_anchor_text"] == ""
-    assert decision["reason"] == "navigate_choose_next_unit_llm_error"
+    assert decision["reason"] == "navigate_llm_error"
 
 
 def test_read_unit_filters_unanchored_surface_and_uses_naturalized_contract(tmp_path: Path, monkeypatch):
@@ -333,7 +333,7 @@ def test_read_unit_filters_unanchored_surface_and_uses_naturalized_contract(tmp_
             ],
         }
 
-    monkeypatch.setattr(nodes_module, "invoke_json", fake_invoke_json)
+    monkeypatch.setattr(llm_calls_module, "invoke_json", fake_invoke_json)
 
     result = read_unit(
         current_unit_sentences=[
@@ -480,7 +480,7 @@ def test_read_unit_can_use_xml_prompt_assembly_mode_without_changing_default(tmp
     """The XML Read prompt path is opt-in and converts target recent memory output."""
 
     monkeypatch.delenv("ATTENTIONAL_V2_READ_PROMPT_ASSEMBLY_MODE", raising=False)
-    monkeypatch.setattr(nodes_module, "READ_UNIT_PROMPT_ASSEMBLY_MODE", "xml")
+    monkeypatch.setattr(llm_calls_module, "READ_UNIT_PROMPT_ASSEMBLY_MODE", "xml")
     captured: dict[str, str] = {}
 
     def fake_invoke_json(system_prompt: str, prompt: str, default: object) -> object:
@@ -502,7 +502,7 @@ def test_read_unit_can_use_xml_prompt_assembly_mode_without_changing_default(tmp
             ],
         }
 
-    monkeypatch.setattr(nodes_module, "invoke_json", fake_invoke_json)
+    monkeypatch.setattr(llm_calls_module, "invoke_json", fake_invoke_json)
 
     result = read_unit(
         current_unit_source={
@@ -611,7 +611,7 @@ def test_read_unit_contract_preserves_source_given_stage_model_as_memory_uptake(
             ],
         }
 
-    monkeypatch.setattr(nodes_module, "invoke_json", fake_invoke_json)
+    monkeypatch.setattr(llm_calls_module, "invoke_json", fake_invoke_json)
 
     result = read_unit(
         current_unit_sentences=[
@@ -658,7 +658,7 @@ def test_read_unit_marks_missing_target_store_as_compatibility_default(tmp_path:
             ],
         }
 
-    monkeypatch.setattr(nodes_module, "invoke_json", fake_invoke_json)
+    monkeypatch.setattr(llm_calls_module, "invoke_json", fake_invoke_json)
 
     result = read_unit(
         current_unit_sentences=[
@@ -703,7 +703,7 @@ def test_read_unit_admits_resolve_memory_operation(tmp_path: Path, monkeypatch):
             ],
         }
 
-    monkeypatch.setattr(nodes_module, "invoke_json", fake_invoke_json)
+    monkeypatch.setattr(llm_calls_module, "invoke_json", fake_invoke_json)
 
     result = read_unit(
         current_unit_sentences=[
@@ -762,7 +762,7 @@ def test_read_unit_resolves_active_tension_development_source_refs(tmp_path: Pat
             ],
         }
 
-    monkeypatch.setattr(nodes_module, "invoke_json", fake_invoke_json)
+    monkeypatch.setattr(llm_calls_module, "invoke_json", fake_invoke_json)
 
     result = read_unit(
         current_unit_sentences=[
@@ -905,7 +905,7 @@ def test_recent_reading_memory_normalization_uses_unit_level_provenance_only():
 def test_recent_reading_memory_operation_normalization_drops_op_reason():
     """Recent Reading Memory content should live in memory_text, not a generated op reason."""
 
-    normalized_ops, admission_events = nodes_module._normalize_state_operations_with_admission(  # noqa: SLF001
+    normalized_ops, admission_events = llm_calls_module._normalize_state_operations_with_admission(  # noqa: SLF001
         [
             {
                 "op": "append",
@@ -1053,7 +1053,7 @@ def test_read_unit_records_dropped_memory_uptake_admission_events(tmp_path: Path
             ],
         }
 
-    monkeypatch.setattr(nodes_module, "invoke_json", fake_invoke_json)
+    monkeypatch.setattr(llm_calls_module, "invoke_json", fake_invoke_json)
 
     result = read_unit(
         current_unit_sentences=[
@@ -1104,7 +1104,7 @@ def test_read_unit_drops_unsupported_target_store_with_admission_diagnostic(tmp_
             ],
         }
 
-    monkeypatch.setattr(nodes_module, "invoke_json", fake_invoke_json)
+    monkeypatch.setattr(llm_calls_module, "invoke_json", fake_invoke_json)
 
     result = read_unit(
         current_unit_sentences=[
@@ -1145,7 +1145,7 @@ def test_read_unit_drops_unsupported_operation_store_pair_with_admission_diagnos
             ],
         }
 
-    monkeypatch.setattr(nodes_module, "invoke_json", fake_invoke_json)
+    monkeypatch.setattr(llm_calls_module, "invoke_json", fake_invoke_json)
 
     result = read_unit(
         current_unit_sentences=[
@@ -1185,7 +1185,7 @@ def test_read_unit_records_supported_store_policy_without_warning(tmp_path: Path
             ],
         }
 
-    monkeypatch.setattr(nodes_module, "invoke_json", fake_invoke_json)
+    monkeypatch.setattr(llm_calls_module, "invoke_json", fake_invoke_json)
 
     result = read_unit(
         current_unit_sentences=[

@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-05-31T13:44:40+08:00`
+Last updated: `2026-05-31T14:08:45+08:00`
 
 ## Status Values
 - `active`
@@ -25,7 +25,7 @@ Last updated: `2026-05-31T13:44:40+08:00`
 - Lane: `mechanism_runtime`
 - Priority: `high`
 - Detail: `docs/current-state.md`
-- Next: continue the narrowed product-goal reframe from the forward-only `Ingest` baseline. `DEC-104` retired live Detour / source-backread from `attentional_v2`, `DEC-105` hard-purged the retired compatibility interfaces, and `DEC-106` keeps `Navigate.choose_next_unit` as a pure LLM boundary call while runtime source-unit preparation lives in `prepare_next_source_unit_for_read`. Next design work should specify how `Ingest` requests memory retrieval for the selected next unit and how `Digest` produces reader-facing notes / highlights. Do not launch eval, update evidence catalog, or continue `C设计10` consolidation / `C设计11` Read XML migration / `C设计12` prompt assembly migration unless explicitly re-adopted.
+- Next: continue the narrowed product-goal reframe from the forward-only `Ingest` baseline. `DEC-104` retired live Detour / source-backread from `attentional_v2`, `DEC-105` hard-purged the retired compatibility interfaces, and `DEC-106` keeps `llm_calls.navigate(...)` / `Navigate` as a pure LLM boundary call while runtime source-unit preparation lives in `prepare_next_source_unit_for_read`; active LLM calls now live under `llm_calls.py`. Next design work should specify how `Ingest` requests memory retrieval for the selected next unit and how `Digest` produces reader-facing notes / highlights. Do not launch eval, update evidence catalog, or continue `C设计10` consolidation / `C设计11` Read XML migration / `C设计12` prompt assembly migration unless explicitly re-adopted.
 - Jobs: none
 - Evidence:
   - `DEC-103`
@@ -46,7 +46,7 @@ Last updated: `2026-05-31T13:44:40+08:00`
   - keep the existing frontend lane active in parallel under `TASK-V2-NATIVE-READING-PRESENTATION`
   - `Phase A` is now landed:
     - heuristic trigger output no longer suppresses formal正文 reading
-    - this phase introduced the `Navigate.unitize + read + Reading Runner post-read settlement` skeleton that is now absorbed into `Navigate.choose_next_unit + read + Reading Runner post-read settlement`
+    - this phase introduced the `Navigate.unitize + read + Reading Runner post-read settlement` skeleton that is now absorbed into `Navigate + read + Reading Runner post-read settlement`
     - span authority now matches the exact chosen unit
   - `Phase B` is now landed:
     - `read` now owns the authoritative current-unit packet on the live path
@@ -88,7 +88,7 @@ Last updated: `2026-05-31T13:44:40+08:00`
     - slow-cycle compatibility projection and normalized eval export now derive old family labels through one compat helper instead of treating legacy `type` as the internal truth
     - this branch remains valuable evidence, but it is no longer the approved end-state target
   - `Phase F1` is now landed:
-    - the live per-unit loop was cut back to `Navigate.unitize -> read -> Reading Runner post-read settlement`; current code now calls it through `Navigate.choose_next_unit -> read -> Reading Runner post-read settlement`
+    - the live per-unit loop was cut back to `Navigate.unitize -> read -> Reading Runner post-read settlement`; current code now calls it through `Navigate -> read -> Reading Runner post-read settlement`
     - `Read` now owns `reading_impression`, surfaced reactions, and memory uptake ops
     - the dedicated live `Express` node is no longer on the runner path
     - `Read` prompt packaging now follows compact `always carry / selective carry / not carry` projections
@@ -99,12 +99,12 @@ Last updated: `2026-05-31T13:44:40+08:00`
   - `Phase F2` is now historical after `DEC-104`:
     - the old live Detour / source-backread path has been retired from the current runtime
     - `DEC-105` hard-purges the retired compatibility interfaces from current code, prompts, schemas, audits, and tests
-    - `Navigate.choose_next_unit` now chooses only the next forward source unit
+    - `Navigate` now chooses only the next forward source unit
     - current `Read` has no path-redirection output contract
     - current `local_continuity`, prompt manifests, and read audits do not emit retired Detour-era fields for new runs
   - Paragraph-offset mainline cursor and SourceRef cutover are now landed:
     - `SourceCursor` uses `chapter_id`, `chapter_ref`, `paragraph_index`, and `char_offset`
-    - `Navigate.choose_next_unit` receives an adaptive paragraph-offset preview and returns exact `end_anchor_text`
+    - `Navigate` receives an adaptive paragraph-offset preview and returns exact `end_anchor_text`
     - `Reading Runner` resolves that source anchor into an end-exclusive `SourceSpan`, advances to `end_cursor`, and records accepted units in `_mechanisms/attentional_v2/runtime/unit_span_ledger.jsonl`
     - sentence ids remain available for eval and reviewer orientation, but no longer define the `attentional_v2` mainline cursor
     - memory/reaction/probe-facing source evidence now uses inline `SourceRef` values (`source_span_id`, `source_span`, `quote`, `role`)
@@ -371,7 +371,7 @@ Last updated: `2026-05-31T13:44:40+08:00`
         - future reports should use one full source document per window with probe markers, and label recent route explanations as `route reason` rather than generic `statement`
       - current Navigator source-skill posture:
         - superseded by `DEC-104` and hard-purged by `DEC-105`
-        - `Navigate.choose_next_unit` is now forward-only and does not call source skills
+        - `Navigate` is now forward-only and does not call source skills
         - the old mechanism-private Skill Runtime is not a current code, prompt, audit, or test interface
       - result:
         - `Memory Quality` average overall score: `3.48`
@@ -607,7 +607,7 @@ Last updated: `2026-05-31T13:44:40+08:00`
 - Lane: `mechanism_eval`
 - Priority: `high`
 - Detail: `docs/implementation/new-reading-mechanism/new-reading-mechanism-execution-tracker.md`
-- Next: the April 7 retry landed new `nodes.py` / `prompts.py` / `runner.py` behavior plus the long-span harness support in `run_accumulation_comparison.py`, and the targeted tests all passed. The repair gate run on `attentional_v2_excerpt_micro_slice_v1_smoke_excerpt_repair_laneA_retry1_20260407` finished cleanly, but its judged stage regressed against the April 5 micro-slice baseline. Keep the known misses explicit, but do not reopen this repair lane by default while the product/demo decision is using the completed excerpt formal run as good-enough evidence and long-span smoke is the active priority.
+- Next: the April 7 retry landed new `llm_calls.py` / `prompts.py` / `runner.py` behavior plus the long-span harness support in `run_accumulation_comparison.py`, and the targeted tests all passed. The repair gate run on `attentional_v2_excerpt_micro_slice_v1_smoke_excerpt_repair_laneA_retry1_20260407` finished cleanly, but its judged stage regressed against the April 5 micro-slice baseline. Keep the known misses explicit, but do not reopen this repair lane by default while the product/demo decision is using the completed excerpt formal run as good-enough evidence and long-span smoke is the active priority.
 - Jobs: none
 
 ### `TASK-RUNTIME-VIABILITY-GATES` — Keep runtime viability and non-mainline comparison lanes paused under the reduced eval scope

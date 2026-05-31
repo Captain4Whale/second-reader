@@ -1,17 +1,17 @@
-"""Prompt definition for attentional_v2 navigate_choose_next_unit."""
+"""Prompt definition for attentional_v2 Navigate."""
 
 from __future__ import annotations
 
 from .types import PromptDefinition
 
 
-NAVIGATE_CHOOSE_NEXT_UNIT_PROMPT_VERSION = 'attentional_v2.navigate_choose_next_unit.v4'
+NAVIGATE_PROMPT_VERSION = 'attentional_v2.navigate.v4'
 
 
-NAVIGATE_CHOOSE_NEXT_UNIT_PROMPT = PromptDefinition(
-    prompt_id='attentional_v2.navigate_choose_next_unit',
-    version=NAVIGATE_CHOOSE_NEXT_UNIT_PROMPT_VERSION,
-    owner_node='navigate_choose_next_unit',
+NAVIGATE_PROMPT = PromptDefinition(
+    prompt_id='attentional_v2.navigate',
+    version=NAVIGATE_PROMPT_VERSION,
+    owner_node='navigate',
     status='active',
     purpose='Choose the next forward readable source unit.',
     system_prompt="""You are Navigate for a text-grounded reading mechanism.
@@ -73,5 +73,5 @@ Return JSON:
   "continuation_pressure": false
 }""",
     required_inputs=('source_state', 'mainline_preview', 'navigation_context'),
-    output_contract='navigate_choose_next_unit_json_v4',
+    output_contract='navigate_json_v4',
 )

@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-05-31T13:44:40+08:00`
+Last verified: `2026-05-31T14:08:45+08:00`
 
 ## Current Objective
 - Product goal and mechanism direction are being reset before further implementation.
@@ -25,8 +25,9 @@ Last verified: `2026-05-31T13:44:40+08:00`
   - live cleanup landed:
     - `DEC-104` retires live Detour / source-backread behavior from `attentional_v2`
     - `DEC-105` hard-purges the retired Detour / source-backread / source-skill compatibility interfaces from current `attentional_v2` code, prompts, schemas, audits, and tests
-    - `DEC-106` clarifies the current node/runtime boundary: `Navigate.choose_next_unit` is the LLM boundary call, while Reading Runner owns preparation and boundary governance around it
-    - current `Navigate.choose_next_unit` is the forward-only LLM boundary call: exact `end_anchor_text`, `boundary_type`, `reason`, and `continuation_pressure`
+    - `DEC-106` clarifies the current LLM-call/runtime boundary: `Navigate` is the LLM boundary call, while Reading Runner owns preparation and boundary governance around it
+    - current `llm_calls.navigate(...)` is the forward-only LLM boundary call: exact `end_anchor_text`, `boundary_type`, `reason`, and `continuation_pressure`
+    - current LLM-call code now lives in `reading-companion-backend/src/attentional_v2/llm_calls.py`; the old ambiguous active module name is removed
     - runtime next-unit preparation now lives outside Navigate as `prepare_next_source_unit_for_read`: it prepares source preview/context, calls Navigate, performs anchor resolution/retry/fallback boundary governance, and hands the accepted source unit to `Read`
     - current `Read` has no path-redirection output contract and the Runner/audit path emits no Detour or source-backread runtime artifacts for new runs
     - current `local_continuity` contains only forward-reading continuity; old Detour-era checkpoint/artifact shapes are not a compatibility target
@@ -341,7 +342,7 @@ Last verified: `2026-05-31T13:44:40+08:00`
         - current `attentional_v2` mainline cursor semantics have now shifted from sentence-id traversal to paragraph-offset source spans:
           - `SourceCursor`: `chapter_id`, `chapter_ref`, `paragraph_index`, `char_offset`
           - `SourceSpan`: end-exclusive `[start_cursor, end_cursor)`
-          - `Navigate.choose_next_unit` sees an adaptive paragraph-offset preview and returns `end_anchor_text`
+          - `Navigate` sees an adaptive paragraph-offset preview and returns `end_anchor_text`
           - `Reading Runner` resolves that anchor into an accepted unit span, advances the source cursor, and appends `_mechanisms/attentional_v2/runtime/unit_span_ledger.jsonl`
           - sentence ids remain in legacy/eval/reviewer-orientation territory, not the mainline reading lattice
           - SourceRef cutover is now landed: memory/reaction/probe-facing source evidence uses inline paragraph-offset `source_refs[]`, and new `attentional_v2` runtime/checkpoint truth no longer includes `anchor_bank`
@@ -406,7 +407,7 @@ Last verified: `2026-05-31T13:44:40+08:00`
         - future reports should use one full source document per window with probe markers and should not include current `Recent Routes` / `route_action` evidence blocks
       - current Navigator source-skill posture:
         - superseded by `DEC-104` and hard-purged by `DEC-105`
-        - `Navigate.choose_next_unit` is now forward-only and does not call source skills
+        - `Navigate` is now forward-only and does not call source skills
         - the old mechanism-private Skill Runtime is not a current code, prompt, audit, or test interface
       - result:
         - `Memory Quality` average overall score: `3.48`
@@ -601,9 +602,9 @@ Last verified: `2026-05-31T13:44:40+08:00`
   - keep the long-span after-eval memo as mechanism-evidence input rather than as the execution plan
   - `Phase A` is now landed as the control-skeleton baseline:
     - heuristic trigger output no longer decides whether正文 text receives a formal LLM reading turn
-    - this phase introduced the backend loop skeleton now absorbed by `Navigate.choose_next_unit`:
+    - this phase introduced the backend loop skeleton now absorbed by `Navigate`:
       - `sentence intake` as pure `local_buffer` maintenance
-      - `Navigate.choose_next_unit`
+      - `Navigate`
       - `read`
       - Reading Runner post-read settlement
     - span authority is now tied to the exact chosen unit
@@ -613,7 +614,7 @@ Last verified: `2026-05-31T13:44:40+08:00`
     - `read` may request bounded supplemental context through `active recall` or `look-back`
     - private `read_audit` records now capture carried refs plus supplemental-context use; the temporary `raw_reaction` shell introduced at this stage was later retired by `Phase F3`
   - `Phase C.1` is now landed as the first packetization seam:
-    - live prompt inputs are now built through a bounded internal state packet layer instead of ad hoc per-node context assembly
+    - live prompt inputs are now built through a bounded internal state packet layer instead of ad hoc per-call context assembly
     - `Navigate.unitize` now receives a small `navigation_context`
     - `read` now receives a `state_packet.v1` read-context packet that explicitly separates:
       - `session continuity capsule`
@@ -671,7 +672,7 @@ Last verified: `2026-05-31T13:44:40+08:00`
     - the live per-unit loop was cut back to:
       - `Navigate.unitize -> read -> Reading Runner post-read settlement`
     - current code now exposes that selection step through:
-      - `Navigate.choose_next_unit -> read -> Reading Runner post-read settlement`
+      - `Navigate -> read -> Reading Runner post-read settlement`
     - `Read` now directly owns the current naturalized read contract:
       - `reading_impression`
       - `surfaced_reactions`
@@ -686,7 +687,7 @@ Last verified: `2026-05-31T13:44:40+08:00`
   - `Phase F2` is now historical after `DEC-104`:
     - the old live Detour / source-backread path has been retired from the current runtime
     - `DEC-105` hard-purges the retired compatibility interfaces from current code, prompts, schemas, audits, and tests
-    - `Navigate.choose_next_unit` now chooses only the next forward source unit
+    - `Navigate` now chooses only the next forward source unit
     - current `Read` has no path-redirection output contract
     - current `local_continuity`, prompt manifests, and read audits do not emit retired Detour-era fields for new runs
   - `Phase F3` is now landed as the reaction-persistence and compatibility reconvergence slice:
@@ -729,7 +730,7 @@ Last verified: `2026-05-31T13:44:40+08:00`
     - sentence intake is now pure `local_buffer` maintenance
     - live runtime bundle, checkpoint, resume, and artifact-map paths no longer carry `trigger_state`
     - `Navigate.unitize` no longer receives heuristic `watch_state`
-    - the dead `trigger -> zoom_read -> meaning_unit_closure -> controller_decision -> reaction_emission` path has been removed from live code and replaced in tests with the current live-node set
+    - the dead `trigger -> zoom_read -> meaning_unit_closure -> controller_decision -> reaction_emission` path has been removed from live code and replaced in tests with the current live LLM-call set
     - `text_role` is now explicitly documented as an inherited block-level weak cue rather than sentence-level truth
   - the first special-content handling slice is now also landed on that cleaned baseline:
     - `Navigate.unitize` now treats heading roles as weak cues rather than automatic standalone units
@@ -906,12 +907,12 @@ Last verified: `2026-05-31T13:44:40+08:00`
   - machine outputs plus the interpretation report remain the durable excerpt evidence bundle.
 - `Lane A` April 7 repair-first retry is now complete enough to evaluate, but it is no longer the current mainline:
   - landed code:
-    - `reading-companion-backend/src/attentional_v2/nodes.py`
+    - `reading-companion-backend/src/attentional_v2/llm_calls.py`
     - `reading-companion-backend/src/attentional_v2/prompts.py`
     - `reading-companion-backend/src/attentional_v2/runner.py`
     - `reading-companion-backend/eval/attentional_v2/run_accumulation_comparison.py`
   - targeted test slices passed:
-    - `reading-companion-backend/tests/test_attentional_v2_nodes.py`
+    - `reading-companion-backend/tests/test_attentional_v2_llm_calls.py`
     - `reading-companion-backend/tests/test_attentional_v2_bridge.py`
     - `reading-companion-backend/tests/test_run_accumulation_comparison.py`
     - `reading-companion-backend/tests/test_attentional_v2_scaffold.py`
@@ -1038,7 +1039,7 @@ Last verified: `2026-05-31T13:44:40+08:00`
       - warm resume now restores the latest usable continuation capsule together with new-format runtime state
       - the old budget-bounded supplemental recall loop is no longer the live F1 baseline
     - `Phase F1` is now the live baseline:
-      - live per-unit path is `Navigate.choose_next_unit -> read -> Reading Runner post-read settlement`
+      - live per-unit path is `Navigate -> read -> Reading Runner post-read settlement`
       - `Read` now owns surfaced reactions directly
       - the dedicated live `Express` node is off the main path
     - treat prior-material use as something that naturally happens inside `read`, not as a separate mechanism action
@@ -1971,7 +1972,7 @@ Last verified: `2026-05-31T13:44:40+08:00`
     - short spans may synthesize one bounded local candidate from those cues when the local gate is genuinely open
     - zoom/closure/emission prompts now prefer one grounded why-now observation or question over retrospective summary in those moments
   - local verification:
-    - `reading-companion-backend/tests/test_attentional_v2_nodes.py`
+    - `reading-companion-backend/tests/test_attentional_v2_llm_calls.py`
     - `13` node tests passed on `2026-03-28`
 - The temporary seed-reset / missing-review-state problem is no longer current:
   - English cleanup recovery completed successfully:

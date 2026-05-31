@@ -28,8 +28,8 @@ from src.iterator_reader.llm_utils import ReaderLLMError, llm_invocation_scope, 
 
 from .evaluation import build_normalized_eval_bundle, persist_normalized_eval_bundle
 from .intake import process_sentence_intake  # noqa: F401 - legacy monkeypatch seam for older tests
-from .nodes import (
-    navigate_choose_next_unit as _call_navigate_choose_next_unit,
+from .llm_calls import (
+    navigate as _call_navigate,
     read_unit,
 )
 from .observability import (
@@ -1278,7 +1278,7 @@ def prepare_next_source_unit_for_read(
         if isinstance(preparation.get("navigation_context"), dict)
         else {}
     )
-    boundary_result = _call_navigate_choose_next_unit(
+    boundary_result = _call_navigate(
         reading_position=reading_position,
         mainline_preview=mainline_preview,
         mainline_cursor=mainline_cursor,
@@ -1305,7 +1305,7 @@ def prepare_next_source_unit_for_read(
                 "retry_instruction": "Return a longer, unique end_anchor_text copied exactly from the end of the chosen unit.",
             }
         )
-        retry_boundary_result = _call_navigate_choose_next_unit(
+        retry_boundary_result = _call_navigate(
             reading_position={
                 **retry_position,
             },

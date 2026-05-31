@@ -14,7 +14,7 @@ from .knowledge import (
     set_knowledge_use_mode,
     set_search_policy_mode,
 )
-from .nodes import (
+from .llm_calls import (
     _activation_context,
     _anchor_context,
     _clean_text,

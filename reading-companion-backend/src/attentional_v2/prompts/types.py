@@ -8,7 +8,7 @@ from dataclasses import dataclass
 
 @dataclass(frozen=True)
 class PromptDefinition:
-    """One managed prompt pair owned by an attentional_v2 node."""
+    """One managed prompt pair owned by an attentional_v2 LLM call."""
 
     prompt_id: str
     version: str
@@ -59,9 +59,9 @@ class AttentionalV2PromptSet:
     survey_chapter_zone_version: str
     survey_chapter_zone_system: str
     survey_chapter_zone_prompt: str
-    navigate_choose_next_unit_version: str
-    navigate_choose_next_unit_system: str
-    navigate_choose_next_unit_prompt: str
+    navigate_version: str
+    navigate_system: str
+    navigate_prompt: str
     read_unit_version: str
     read_unit_system: str
     read_unit_prompt: str
@@ -88,7 +88,7 @@ def build_legacy_prompt_set(
     """Build the legacy dataclass from PromptRegistry definitions."""
 
     survey = registry.get("attentional_v2.survey_chapter_zone")
-    navigate = registry.get("attentional_v2.navigate_choose_next_unit")
+    navigate = registry.get("attentional_v2.navigate")
     read = registry.get("attentional_v2.read_unit")
     bridge = registry.get("attentional_v2.bridge_resolution")
     reflective = registry.get("attentional_v2.reflective_promotion")
@@ -100,9 +100,9 @@ def build_legacy_prompt_set(
         survey_chapter_zone_version=survey.version,
         survey_chapter_zone_system=survey.system_prompt,
         survey_chapter_zone_prompt=survey.user_prompt_template,
-        navigate_choose_next_unit_version=navigate.version,
-        navigate_choose_next_unit_system=navigate.system_prompt,
-        navigate_choose_next_unit_prompt=navigate.user_prompt_template,
+        navigate_version=navigate.version,
+        navigate_system=navigate.system_prompt,
+        navigate_prompt=navigate.user_prompt_template,
         read_unit_version=read.version,
         read_unit_system=read.system_prompt,
         read_unit_prompt=read.user_prompt_template,

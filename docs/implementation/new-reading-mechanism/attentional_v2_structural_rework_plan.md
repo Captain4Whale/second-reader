@@ -15,13 +15,13 @@ Current authority note:
 
 - As of `2026-05-31`, `DEC-103` through `DEC-106` supersede this plan's older Detour / source-backread / source-skill and architecture-level Navigator-entrypoint assumptions.
 - Treat below references to active Detour, source skills, `NavigateNextUnitResult`, or `navigate_choose_next_unit_act` as historical implementation checkpoints unless a later task explicitly re-adopts them.
-- Current stable mechanism authority is `docs/backend-reading-mechanisms/attentional_v2.md`: `Navigate.choose_next_unit` is the LLM boundary call, while Reading Runner owns `prepare_next_source_unit_for_read` preparation and boundary governance.
+- Current stable mechanism authority is `docs/backend-reading-mechanisms/attentional_v2.md`: `llm_calls.navigate(...)` / `Navigate` is the LLM boundary call, while Reading Runner owns `prepare_next_source_unit_for_read` preparation and boundary governance.
 
 Implementation checkpoint:
 
 - `Phase A` is landed:
   - trigger output no longer gates whether正文 text gets formal reading
-  - this phase introduced the `Navigate.unitize -> read -> Reading Runner post-read settlement` control skeleton that later cutovers have now absorbed under `Navigate.choose_next_unit`
+  - this phase introduced the `Navigate.unitize -> read -> Reading Runner post-read settlement` control skeleton that later cutovers have now absorbed under `Navigate`
   - span authority now matches the exact chosen unit
 - `Phase B` is landed:
   - `read` now owns the authoritative unit packet on the live path
@@ -65,7 +65,7 @@ Implementation checkpoint:
   - persisted `reaction_records` now keep surfaced semantics first and old family labels survive only as compatibility projections
   - this branch remains valuable evidence, but it is no longer the approved end-state target for the mechanism
 - `Phase F1` is now landed as the first post-freeze cutover:
-  - the live per-unit loop was cut back to `Navigate.unitize -> read -> Reading Runner post-read settlement`, which is now implemented through the higher-level `Navigate.choose_next_unit -> read -> Reading Runner post-read settlement` contract
+  - the live per-unit loop was cut back to `Navigate.unitize -> read -> Reading Runner post-read settlement`, which is now implemented through the higher-level `Navigate -> read -> Reading Runner post-read settlement` contract
   - `Read` now directly owns `reading_impression`, surfaced reactions, memory uptake ops, and optional `detour_need`
   - the dedicated live `Express` node is no longer on the runner path
   - `Read` prompt packaging now follows compact `always carry / selective carry / not carry` projections
@@ -86,7 +86,7 @@ Implementation checkpoint:
     - `land_region`
     - `defer_detour`
     - `request_skill`
-  - landed detour regions now re-enter the same normal `Navigate.choose_next_unit -> read -> Reading Runner post-read settlement` reading loop
+  - landed detour regions now re-enter the same normal `Navigate -> read -> Reading Runner post-read settlement` reading loop
   - chapter-tail detours are now drained before chapter slow-cycle closes
 - `Phase F3` is now landed as the reaction-persistence and compatibility reconvergence slice:
   - persisted visible reactions now enter the system only through `Read.surfaced_reactions[]`
@@ -98,7 +98,7 @@ Implementation checkpoint:
   - `Navigate.route`, `route_action`, `route_history`, and `pressure_signals` are no longer current live-path contracts
   - ordinary forward progression is Reading Runner-owned cursor advancement, not a semantic action
   - `Detour` remains the only current non-mainline scheduling mechanism
-- `Navigate.choose_next_unit` cutover is now landed:
+- `Navigate` cutover is now landed:
   - current Navigator contract is `Choose Next Unit That Should Be Read`
   - Reading Runner calls one architecture-level Navigator entrypoint and receives one `NavigateNextUnitResult`
   - mainline unitization and detour search remain private implementation helpers under that entrypoint
@@ -108,7 +108,7 @@ Implementation checkpoint:
   - this does not rename the shared runtime shell, mechanism registry, or `attentional_v2` mechanism key/package
   - implementation-stage and `V2` labels remain history/artifact vocabulary rather than current node names
 - Navigate book-local Skill Runtime is now landed as the first controlled source-skill slice:
-  - `Navigate.choose_next_unit` remains the single Navigator entrypoint
+  - `Navigate` remains the single Navigator entrypoint
   - only the active detour branch can request skills in this slice
   - `Reading Runner` executes one requested book-local skill through the mechanism-private Skill Runtime and feeds the result back to `Navigate.detour_search`
   - the first supported skills are `source_map_overview`, `source_scope_drilldown`, `source_window_fetch`, and `anchor_resolve`
@@ -436,7 +436,7 @@ The minimum audit payload should include:
 #### Likely backend touch points
 
 - `reading-companion-backend/src/attentional_v2/runner.py`
-- `reading-companion-backend/src/attentional_v2/nodes.py`
+- `reading-companion-backend/src/attentional_v2/llm_calls.py`
 - `reading-companion-backend/src/attentional_v2/prompts.py`
 - `reading-companion-backend/src/attentional_v2/schemas.py`
 - `reading-companion-backend/src/attentional_v2/state_ops.py`

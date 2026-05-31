@@ -712,7 +712,7 @@ def test_attentional_v2_prompt_registry_contains_node_definitions() -> None:
     assert len(set(prompt_ids)) == len(prompt_ids)
     assert prompt_ids == [
         "attentional_v2.survey_chapter_zone",
-        "attentional_v2.navigate_choose_next_unit",
+        "attentional_v2.navigate",
         "attentional_v2.read_unit",
         "attentional_v2.bridge_resolution",
         "attentional_v2.reflective_promotion",
@@ -726,16 +726,16 @@ def test_attentional_v2_prompt_registry_contains_node_definitions() -> None:
 
 def test_attentional_v2_prompt_registry_projects_current_bundle() -> None:
     read = ATTENTIONAL_V2_PROMPT_REGISTRY.get("attentional_v2.read_unit")
-    navigate = ATTENTIONAL_V2_PROMPT_REGISTRY.get("attentional_v2.navigate_choose_next_unit")
+    navigate = ATTENTIONAL_V2_PROMPT_REGISTRY.get("attentional_v2.navigate")
     chapter = ATTENTIONAL_V2_PROMPT_REGISTRY.get("attentional_v2.chapter_consolidation")
 
-    assert ATTENTIONAL_V2_PROMPTSET_VERSION == "attentional_v2-phase6-v41"
+    assert ATTENTIONAL_V2_PROMPTSET_VERSION == "attentional_v2-phase6-v42"
     assert ATTENTIONAL_V2_PROMPTS.promptset_version == ATTENTIONAL_V2_PROMPTSET_VERSION
     assert read.version == READ_UNIT_PROMPT_VERSION == "attentional_v2.read.v32"
     assert ATTENTIONAL_V2_PROMPTS.read_unit_version == read.version
     assert ATTENTIONAL_V2_PROMPTS.read_unit_system == read.system_prompt
     assert ATTENTIONAL_V2_PROMPTS.read_unit_prompt == read.user_prompt_template
-    assert ATTENTIONAL_V2_PROMPTS.navigate_choose_next_unit_system == navigate.system_prompt
+    assert ATTENTIONAL_V2_PROMPTS.navigate_system == navigate.system_prompt
     assert ATTENTIONAL_V2_PROMPTS.chapter_consolidation_prompt == chapter.user_prompt_template
 
 
@@ -1299,7 +1299,7 @@ def test_attentional_v2_runner_prefers_main_body_before_supporting_chapters(tmp_
             "seen_sentence_ids": [*local_buffer.get("seen_sentence_ids", []), sentence["sentence_id"]],
         }
 
-    monkeypatch.setattr(runner_module, "_call_navigate_choose_next_unit", _fake_single_sentence_navigate_boundary)
+    monkeypatch.setattr(runner_module, "_call_navigate", _fake_single_sentence_navigate_boundary)
     monkeypatch.setattr(runner_module, "process_sentence_intake", fake_process_sentence_intake)
     monkeypatch.setattr(runner_module, "read_unit", fake_read_unit)
     monkeypatch.setattr(runner_module, "run_phase6_chapter_cycle", fake_phase6_chapter_cycle)
@@ -1388,7 +1388,7 @@ def test_prepare_next_source_unit_for_read_selects_mainline_unit(tmp_path, monke
     document = provisioned.book_document
     state = _empty_prepare_next_source_unit_state()
 
-    monkeypatch.setattr(runner_module, "_call_navigate_choose_next_unit", _fake_single_sentence_navigate_boundary)
+    monkeypatch.setattr(runner_module, "_call_navigate", _fake_single_sentence_navigate_boundary)
 
     assert not hasattr(runner_module, "navigate" + "_choose_next_unit")
     result = runner_module.prepare_next_source_unit_for_read(
@@ -1441,7 +1441,7 @@ def test_prepare_next_source_unit_for_read_retries_unresolved_boundary(tmp_path,
             "continuation_pressure": False,
         }
 
-    monkeypatch.setattr(runner_module, "_call_navigate_choose_next_unit", fake_navigate_boundary)
+    monkeypatch.setattr(runner_module, "_call_navigate", fake_navigate_boundary)
 
     result = runner_module.prepare_next_source_unit_for_read(
         current_chapter=document["chapters"][1],
@@ -1544,7 +1544,7 @@ def test_attentional_v2_read_book_runs_live_loop_and_persists_compatibility_resu
         }
         return next_buffer
 
-    monkeypatch.setattr(runner_module, "_call_navigate_choose_next_unit", _fake_single_sentence_navigate_boundary)
+    monkeypatch.setattr(runner_module, "_call_navigate", _fake_single_sentence_navigate_boundary)
     monkeypatch.setattr(runner_module, "process_sentence_intake", fake_process_sentence_intake)
     monkeypatch.setattr(runner_module, "read_unit", fake_read_unit)
     monkeypatch.setattr(runner_module, "run_phase6_chapter_cycle", fake_phase6_chapter_cycle)
@@ -1669,7 +1669,7 @@ def test_attentional_v2_runner_persists_multiple_read_surface_reactions(tmp_path
             "compatibility_payload": compatibility_payload,
         }
 
-    monkeypatch.setattr(runner_module, "_call_navigate_choose_next_unit", _fake_single_sentence_navigate_boundary)
+    monkeypatch.setattr(runner_module, "_call_navigate", _fake_single_sentence_navigate_boundary)
     monkeypatch.setattr(runner_module, "process_sentence_intake", fake_process_sentence_intake)
     monkeypatch.setattr(runner_module, "read_unit", fake_read_unit)
     monkeypatch.setattr(runner_module, "run_phase6_chapter_cycle", fake_phase6_chapter_cycle)
@@ -1737,7 +1737,7 @@ def test_attentional_v2_read_book_tolerates_missing_reaction_payload(tmp_path, m
         }
         return next_buffer
 
-    monkeypatch.setattr(runner_module, "_call_navigate_choose_next_unit", _fake_single_sentence_navigate_boundary)
+    monkeypatch.setattr(runner_module, "_call_navigate", _fake_single_sentence_navigate_boundary)
     monkeypatch.setattr(runner_module, "process_sentence_intake", fake_process_sentence_intake)
     monkeypatch.setattr(runner_module, "read_unit", fake_read_unit)
     monkeypatch.setattr(runner_module, "run_phase6_chapter_cycle", fake_phase6_chapter_cycle)
@@ -1813,7 +1813,7 @@ def test_attentional_v2_read_book_runs_source_anchor_units_without_sentence_curs
             "memory_uptake_ops": [],
         }
 
-    monkeypatch.setattr(runner_module, "_call_navigate_choose_next_unit", _fake_single_sentence_navigate_boundary)
+    monkeypatch.setattr(runner_module, "_call_navigate", _fake_single_sentence_navigate_boundary)
     monkeypatch.setattr(runner_module, "process_sentence_intake", fake_process_sentence_intake)
     monkeypatch.setattr(runner_module, "read_unit", fake_read_unit)
     monkeypatch.setattr(runner_module, "run_phase6_chapter_cycle", fake_phase6_chapter_cycle)
@@ -1880,7 +1880,7 @@ def test_attentional_v2_runner_stops_at_audit_window_cap_and_persists_partial_ou
         }
         return next_buffer
 
-    monkeypatch.setattr(runner_module, "_call_navigate_choose_next_unit", _fake_single_sentence_navigate_boundary)
+    monkeypatch.setattr(runner_module, "_call_navigate", _fake_single_sentence_navigate_boundary)
     monkeypatch.setattr(runner_module, "process_sentence_intake", fake_process_sentence_intake)
     monkeypatch.setattr(runner_module, "read_unit", fake_read_unit)
     monkeypatch.setattr(

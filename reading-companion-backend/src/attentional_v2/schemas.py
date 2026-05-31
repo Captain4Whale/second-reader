@@ -413,7 +413,7 @@ class SurfacedReaction(TypedDict, total=False):
 
 
 class NavigateBoundaryResult(TypedDict, total=False):
-    """One bounded Navigate.choose_next_unit LLM boundary result."""
+    """One bounded Navigate LLM boundary result."""
 
     reason: str
     end_anchor_text: str

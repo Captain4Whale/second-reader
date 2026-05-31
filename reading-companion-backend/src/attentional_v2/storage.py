@@ -56,7 +56,7 @@ def diagnostics_dir(output_dir: Path) -> Path:
 
 
 def prompt_manifests_dir(output_dir: Path) -> Path:
-    """Return the directory for node-level prompt manifests."""
+    """Return the directory for LLM-call prompt manifests."""
 
     return internal_dir(output_dir) / "prompt_manifests"
 
@@ -213,7 +213,7 @@ def slow_cycle_audit_file(output_dir: Path) -> Path:
 
 
 def prompt_manifest_file(output_dir: Path, node_name: str) -> Path:
-    """Return one node-level prompt-manifest path."""
+    """Return one LLM-call prompt-manifest path."""
 
     slug = str(node_name or "").strip() or "unknown"
     return prompt_manifests_dir(output_dir) / f"{slug}.json"

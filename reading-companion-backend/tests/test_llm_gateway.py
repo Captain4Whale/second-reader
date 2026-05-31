@@ -1568,7 +1568,7 @@ def test_invoke_json_retries_after_unrecoverable_malformed_payload(
 
 
 def test_attentional_node_uses_shared_runtime_trace(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
-    from src.attentional_v2.nodes import read_unit
+    from src.attentional_v2.llm_calls import read_unit
     from src.attentional_v2.schemas import (
         build_default_reader_policy,
     )

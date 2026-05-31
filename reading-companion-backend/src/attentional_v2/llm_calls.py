@@ -1,4 +1,4 @@
-"""Phase 4 interpretive nodes for attentional_v2."""
+"""LLM calls for the attentional_v2 reading mechanism."""
 
 from __future__ import annotations
 
@@ -125,7 +125,7 @@ def _structural_frame(
     chapter_title: str,
     output_language: str,
 ) -> dict[str, object]:
-    """Build the shared structural frame for node prompts."""
+    """Build the shared structural frame for LLM-call prompts."""
 
     return {
         "book_title": book_title,
@@ -208,7 +208,7 @@ def _write_prompt_manifest(
     promptset_version: str,
     prompt_assembly: dict[str, object] | None = None,
 ) -> None:
-    """Persist one node-level prompt manifest when an output directory is available."""
+    """Persist one LLM-call prompt manifest when an output directory is available."""
 
     if output_dir is None:
         return
@@ -729,11 +729,11 @@ def _normalize_surfaced_reactions(
 def _normalize_navigate_boundary_result(
     value: object,
 ) -> NavigateBoundaryResult:
-    """Normalize one Navigate.choose_next_unit boundary result."""
+    """Normalize one Navigate boundary result."""
 
     if not isinstance(value, dict):
         return {
-            "reason": "navigate_choose_next_unit_empty_source_anchor",
+            "reason": "navigate_empty_source_anchor",
             "end_anchor_text": "",
             "boundary_type": "paragraph_end",
             "continuation_pressure": False,
@@ -746,7 +746,7 @@ def _normalize_navigate_boundary_result(
     }
 
 
-def navigate_choose_next_unit(
+def navigate(
     *,
     reading_position: dict[str, object],
     mainline_preview: dict[str, object],
@@ -759,7 +759,7 @@ def navigate_choose_next_unit(
     author: str = "",
     chapter_title: str = "",
 ) -> NavigateBoundaryResult:
-    """Run the forward-only Navigate.choose_next_unit LLM boundary call."""
+    """Run the forward-only Navigate LLM boundary call."""
 
     prompts = ATTENTIONAL_V2_PROMPTS
     structural_frame = _structural_frame(
@@ -769,7 +769,7 @@ def navigate_choose_next_unit(
         output_language=output_language,
     )
     user_prompt = _render_prompt(
-        prompts.navigate_choose_next_unit_prompt,
+        prompts.navigate_prompt,
         structural_frame=_json_block(structural_frame),
         reading_position=_json_block(reading_position),
         mainline_preview=_json_block(mainline_preview),
@@ -780,22 +780,22 @@ def navigate_choose_next_unit(
     )
     _write_prompt_manifest(
         output_dir,
-        node_name="navigate_choose_next_unit",
-        prompt_version=prompts.navigate_choose_next_unit_version,
-        system_prompt=prompts.navigate_choose_next_unit_system,
+        node_name="navigate",
+        prompt_version=prompts.navigate_version,
+        system_prompt=prompts.navigate_system,
         user_prompt=user_prompt,
         promptset_version=prompts.promptset_version,
     )
 
     try:
-        with llm_invocation_scope(trace_context=LLMTraceContext(stage="phase4", node="navigate_choose_next_unit")):
-            payload = invoke_json(prompts.navigate_choose_next_unit_system, user_prompt, default={})
+        with llm_invocation_scope(trace_context=LLMTraceContext(stage="phase4", node="navigate")):
+            payload = invoke_json(prompts.navigate_system, user_prompt, default={})
         return _normalize_navigate_boundary_result(
             payload,
         )
     except ReaderLLMError:
         return {
-            "reason": "navigate_choose_next_unit_llm_error",
+            "reason": "navigate_llm_error",
             "end_anchor_text": "",
             "boundary_type": "paragraph_end",
             "continuation_pressure": False,

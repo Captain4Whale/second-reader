@@ -1,4 +1,4 @@
-"""Scaffold and node toolkit for the in-progress attentional_v2 reading mechanism."""
+"""Scaffold and LLM-call toolkit for the in-progress attentional_v2 reading mechanism."""
 
 from .evaluation import (
     build_normalized_eval_bundle,
@@ -13,9 +13,9 @@ from .knowledge import (
     set_knowledge_use_mode,
     set_search_policy_mode,
 )
-from .nodes import (
+from .llm_calls import (
     build_unitize_preview,
-    navigate_choose_next_unit,
+    navigate,
     read_unit,
 )
 from .observability import (
@@ -35,7 +35,7 @@ from .prompts import (
     ATTENTIONAL_V2_PROMPTS,
     ATTENTIONAL_V2_PROMPTSET_VERSION,
     CHAPTER_CONSOLIDATION_PROMPT_VERSION,
-    NAVIGATE_CHOOSE_NEXT_UNIT_PROMPT_VERSION,
+    NAVIGATE_PROMPT_VERSION,
     READ_UNIT_PROMPT_VERSION,
     RECONSOLIDATION_PROMPT_VERSION,
     REFLECTIVE_PROMOTION_PROMPT_VERSION,
@@ -105,7 +105,7 @@ __all__ = [
     "ATTENTIONAL_V2_PROMPTSET_VERSION",
     "ATTENTIONAL_V2_SCHEMA_VERSION",
     "CHAPTER_CONSOLIDATION_PROMPT_VERSION",
-    "NAVIGATE_CHOOSE_NEXT_UNIT_PROMPT_VERSION",
+    "NAVIGATE_PROMPT_VERSION",
     "READ_UNIT_PROMPT_VERSION",
     "RECONSOLIDATION_PROMPT_VERSION",
     "REFLECTIVE_PROMOTION_PROMPT_VERSION",
@@ -152,7 +152,7 @@ __all__ = [
     "load_full_checkpoint",
     "capture_local_continuity",
     "context_ref_ids",
-    "navigate_choose_next_unit",
+    "navigate",
     "persist_reading_position",
     "persist_normalized_eval_bundle",
     "project_chapter_result_compatibility",
