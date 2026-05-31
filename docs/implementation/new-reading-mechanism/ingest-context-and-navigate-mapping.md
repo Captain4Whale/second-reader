@@ -64,15 +64,11 @@ Top-level rule:
 <ReaderRole>...</ReaderRole>
 
 <Instruction>
-  <StepPosition>...</StepPosition>
-  <TaskOverview>...</TaskOverview>
+  <CurrentStep>...</CurrentStep>
   <ContextUseGuide>...</ContextUseGuide>
-  <NextUnitSelection>...</NextUnitSelection>
-  <BoundarySelection>...</BoundarySelection>
-  <MemorySupportTask>...</MemorySupportTask>
-  <MemoryRetrievalPlanning>...</MemoryRetrievalPlanning>
-  <ResponsibilityBoundary>...</ResponsibilityBoundary>
-  <ResponseDiscipline>...</ResponseDiscipline>
+  <SelectNextUnit>...</SelectNextUnit>
+  <RequestMemorySupport>...</RequestMemorySupport>
+  <ExecutionLimits>...</ExecutionLimits>
 </Instruction>
 
 <BookInfo>
@@ -124,33 +120,20 @@ Rules:
 
 Recommended child blocks:
 
-- `StepPosition`
-- `TaskOverview`
+- `CurrentStep`
 - `ContextUseGuide`
-- `NextUnitSelection`
-- `BoundarySelection`
-- `MemorySupportTask`
-- `MemoryRetrievalPlanning`
-- `ResponsibilityBoundary`
-- `ResponseDiscipline`
+- `SelectNextUnit`
+- `RequestMemorySupport`
+- `ExecutionLimits`
 
-The child blocks should separate task charter, context-use rules, unit-boundary rules, memory-query rules, responsibility boundaries, and response discipline. This keeps `Instruction` as the single fixed-instruction container while still avoiding one undifferentiated paragraph.
+The child blocks should correspond to distinct model responsibilities, not to every policy paragraph. This keeps `Instruction` readable while avoiding duplicated task/policy pairs.
 
-- `ContextUseGuide`
-  - tells the model how to use `BookInfo`, `ReadingState`, `CurrentFocus`, `RetrievalSurface`, and `OutputContract`
-  - emphasizes that the visible source preview is primary
-  - says prior state can support boundary/retrieval judgment but must not override the source text
-- `BoundarySelection`
-  - reuses the current Navigate boundary-selection rules
-- `MemoryRetrievalPlanning`
-  - new rules for proposing memory retrieval requests
-  - tells the model to retrieve only for the selected unit
-  - favors dependency, premise, reference, contrast, unresolved attention, and continuity needs
-  - rejects broad "recent because recent" retrieval
-- `ResponseDiscipline`
-  - JSON only
-  - no external search
-  - no interpretation, note writing, or memory mutation
+Merge rule:
+
+- `CurrentStep` absorbs the old `StepPosition` and `TaskOverview`.
+- `SelectNextUnit` absorbs the old `NextUnitSelection` and `BoundarySelection`.
+- `RequestMemorySupport` absorbs the old `MemorySupportTask` and `MemoryRetrievalPlanning`.
+- `ExecutionLimits` absorbs the old `ResponsibilityBoundary` and `ResponseDiscipline`.
 
 Target assembly shape:
 
@@ -158,15 +141,11 @@ Target assembly shape:
 <ReaderRole prompt_fragment_ref="reader.role" />
 
 <Instruction>
-  <StepPosition prompt_fragment_ref="ingest.step_position" />
-  <TaskOverview prompt_fragment_ref="ingest.task_overview" />
+  <CurrentStep prompt_fragment_ref="ingest.current_step" />
   <ContextUseGuide prompt_fragment_ref="ingest.context_use_guide" />
-  <NextUnitSelection prompt_fragment_ref="ingest.next_unit_selection" />
-  <BoundarySelection prompt_fragment_ref="ingest.boundary_selection_policy" />
-  <MemorySupportTask prompt_fragment_ref="ingest.memory_support_task" />
-  <MemoryRetrievalPlanning prompt_fragment_ref="ingest.memory_retrieval_planning" />
-  <ResponsibilityBoundary prompt_fragment_ref="ingest.responsibility_boundary" />
-  <ResponseDiscipline prompt_fragment_ref="ingest.response_discipline" />
+  <SelectNextUnit prompt_fragment_ref="ingest.select_next_unit" />
+  <RequestMemorySupport prompt_fragment_ref="ingest.request_memory_support" />
+  <ExecutionLimits prompt_fragment_ref="ingest.execution_limits" />
 </Instruction>
 ```
 
@@ -174,39 +153,35 @@ The `prompt_fragment_ref` attributes above are implementation-facing references 
 
 Recommended `Instruction` child meanings:
 
-- `StepPosition`
+- `CurrentStep`
   - says the model is in the `Ingest` step of a sequential deep-reading loop
   - says this step happens before `Digest`
   - says the model is previewing the next forward source area, not yet producing the final reading of that unit
-- `TaskOverview`
-  - says Ingest prepares the next reading object and support packet for Digest
   - says the two outputs are:
     - selected next source unit boundary
     - prior-reading memory retrieval requests for that selected unit
-- `NextUnitSelection`
+- `ContextUseGuide`
+  - tells the model how to use `BookInfo`, `ReadingState`, `CurrentFocus`, `RetrievalSurface`, and `OutputContract`
+  - emphasizes that the visible source preview is primary
+  - says prior state can support boundary/retrieval judgment but must not override the source text
+- `SelectNextUnit`
   - says Ingest must select one forward source unit from the current frontier
   - says the unit starts at the current source cursor and ends at an exact visible anchor
-  - points to `BoundarySelection` for the mature boundary policy reused from current Navigate
-  - this is where the already-approved "determine next unit" task is named at the instruction level
-- `BoundarySelection`
   - contains the mature next-unit boundary policy reused from current Navigate
-  - this is where the already-approved "determine next unit" prompt rules are actually placed
-- `MemorySupportTask`
+  - this is where the already-approved "determine next unit" task and prompt rules are placed together
+- `RequestMemorySupport`
   - says Ingest should ask what prior reading memory Digest will need in order to read the selected unit continuously
   - says Ingest only emits retrieval queries / requests; actual retrieval is outside this LLM call
-  - points to `MemoryRetrievalPlanning` for the detailed recall-query policy
-  - this is where the new "recall relevant memory" task is named at the instruction level
-- `MemoryRetrievalPlanning`
   - contains the detailed recall-query policy
-  - this is where the new memory-support prompt rules are actually placed
-- `ResponsibilityBoundary`
+  - favors dependency, premise, reference, contrast, unresolved attention, and continuity needs
+  - rejects broad "recent because recent" retrieval
+- `ExecutionLimits`
   - says Ingest does not interpret the selected unit for the reader
   - says Ingest does not write notes, highlights, surfaced reactions, or memory updates
   - says Ingest does not execute retrieval, resolve anchors, retry/fallback, settle runtime state, or advance the cursor
-- `ResponseDiscipline`
   - says Ingest must return JSON only
   - says Ingest must not request external search
-  - says Ingest must not produce interpretation, note writing, or memory mutation
+  - says Ingest must follow `OutputContract`
 
 ### BookInfo
 
@@ -318,17 +293,17 @@ Target top-level fields:
 
 | Current Navigate prompt surface | Target Ingest XML surface | Notes |
 | --- | --- | --- |
-| `You are Navigate...` | `ReaderRole` plus `Instruction / StepPosition` | Replace the old node-specific role with the reader role fragment `reader.role`; put the Ingest step position in `StepPosition`. |
-| `Your single job is to choose...` | `Instruction / TaskOverview` | Replace with the two-part Ingest task: select the next source unit and request memory support. |
-| Next-unit task framing | `Instruction / NextUnitSelection` | Name the task here, but keep detailed rules in `BoundarySelection`. |
-| Boundary-selection rules | `Instruction / BoundarySelection` | Reuse almost directly. This is where the already-approved next-unit selection prompt content belongs. |
-| no old equivalent | `Instruction / MemorySupportTask` plus `Instruction / MemoryRetrievalPlanning` | Name the recall task in `MemorySupportTask`; put the detailed retrieval-query policy in `MemoryRetrievalPlanning`. |
+| `You are Navigate...` | `ReaderRole` plus `Instruction / CurrentStep` | Replace the old node-specific role with the reader role fragment `reader.role`; put the Ingest step position in `CurrentStep`. |
+| `Your single job is to choose...` | `Instruction / CurrentStep` | Replace with the two-part Ingest task: select the next source unit and request memory support. |
+| Next-unit task framing | `Instruction / SelectNextUnit` | Name the task and keep the detailed boundary policy together here. |
+| Boundary-selection rules | `Instruction / SelectNextUnit` | Reuse almost directly. This is where the already-approved next-unit selection prompt content belongs. |
+| no old equivalent | `Instruction / RequestMemorySupport` | Name the recall task and put the detailed retrieval-query policy together here. |
 | `Structural frame` | `BookInfo / BookIdentity` | Move output-language concerns to `OutputContract`. |
 | `Reading position` | `CurrentFocus / ReadingPosition` | Keep current cursor and retry feedback here. |
 | `Mainline preview` | `CurrentFocus / SourcePreview` | Prefer paragraph XML nodes over one JSON blob. |
 | `Mainline cursor` | `CurrentFocus / ReadingPath` and `ReadingPosition` | Keep forward-only cursor facts; do not revive mode/decision fields. |
 | `Navigation context` | `ReadingState` plus `RetrievalSurface` | Split continuity state from retrieval discoverability. |
-| `Policy snapshot` | `Instruction / BoundarySelection` policy plus `RetrievalSurface / RetrievalPolicy` | Separate boundary policy from retrieval budget. |
+| `Policy snapshot` | `Instruction / SelectNextUnit` policy plus `RetrievalSurface / RetrievalPolicy` | Separate boundary policy from retrieval budget. |
 | `Output language contract` | `OutputContract / LanguageContract` | Follow Read XML structure. |
 | `end_anchor_text` | `selected_unit.end_anchor_text` | Same semantics: exact quote from preview tail. |
 | `boundary_type` | `selected_unit.boundary_type` | Same boundary vocabulary unless later simplified. |
@@ -338,11 +313,11 @@ Target top-level fields:
 
 ## Boundary-Selection Content To Reuse
 
-The current Navigate policy should carry forward into `Instruction / BoundarySelection` rather than being mixed into `Instruction / TaskOverview` or `Instruction / NextUnitSelection`.
+The current Navigate policy should carry forward into `Instruction / SelectNextUnit`.
 
 Reuse rule:
 
-- Keep the mature unit-boundary policy as a dedicated fixed fragment, proposed id: `ingest.boundary_selection_policy`.
+- Keep the mature unit-boundary policy inside the `SelectNextUnit` fixed fragment, proposed id: `ingest.select_next_unit`.
 - Start from the current `attentional_v2.navigate` boundary rules.
 - Preserve the operational behavior unless the Ingest design explicitly changes it later.
 - Adjust only names and routing boundaries required by the new XML structure.
@@ -366,16 +341,16 @@ The following current Navigate rules should carry forward almost directly:
 
 The following current Navigate prompt material should move or be adjusted:
 
-- `You are Navigate...` should not carry forward as text. The product-level identity comes from top-level `<ReaderRole>` / `reader.role`; the step task comes from top-level `<Instruction>`.
+- `You are Navigate...` should not carry forward as text. The product-level identity comes from top-level `<ReaderRole>` / `reader.role`; the step framing comes from `Instruction / CurrentStep`.
 - `Your single job is to choose...` should be replaced by the Ingest instruction charter, because Ingest now has two outputs: selected unit and memory retrieval requests.
-- `Use navigation context only as secondary support...` should become `Use ReadingState only as secondary support...`; the rule still belongs in `Instruction / BoundarySelection`.
+- `Use navigation context only as secondary support...` should become `Use ReadingState only as secondary support...`; the rule still belongs in `Instruction / SelectNextUnit`.
 - `Do not request tools or external web search` should not be copied unchanged. It should become:
 
 ```text
 Do not request external web search. Request only prior-reading memory support through memory_retrieval_requests.
 ```
 
-- `Return JSON only` belongs in `Instruction / ResponseDiscipline`.
+- `Return JSON only` belongs in `Instruction / ExecutionLimits` and the concrete `OutputContract`.
 - The old flat return JSON example belongs in `OutputContract`, nested under `selected_unit` plus `memory_retrieval_requests`.
 
 ## Runtime Boundary
