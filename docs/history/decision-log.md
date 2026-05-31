@@ -3050,3 +3050,27 @@ This new direction is design frozen but not yet implemented as a formal benchmar
 - `reading-companion-backend/src/attentional_v2/prompts/read_unit.py`
 - `reading-companion-backend/tests/test_attentional_v2_nodes.py`
 - `reading-companion-backend/tests/test_attentional_v2_scaffold.py`
+
+## Entry 103
+**ID**: DEC-106
+**Status**: active
+
+**Decision / Clarification**: Treat `Navigate` as the LLM boundary call, not the full runtime next-unit preparation operation.
+
+**Period**: May 31, 2026, while preparing the codebase for the next `Ingest -> Digest` mechanism design pass after the Detour hard purge.
+
+**Decision**: In current `attentional_v2`, `Navigate.choose_next_unit` names the LLM call that receives prepared reading position, preview, cursor, and navigation context, then returns only boundary fields for the next forward unit. Runtime work before and after that call belongs to Reading Runner: `prepare_next_source_unit_for_read` prepares the source/context packet, invokes Navigate, resolves or retries the returned anchor, applies deterministic fallback boundary governance when needed, and hands the accepted source unit to `Read`.
+
+**Boundary**: This is a structure and naming cleanup, not a new retrieval mechanism. It does not implement Ingest memory retrieval, change the Read/Digest contract, run eval, or update evidence catalog authority. The same node/runtime separation should guide later `Ingest` and `Digest` naming: model-node names describe LLM calls; runtime orchestration, tool retrieval, settlement, and boundary governance stay outside those node names.
+
+**Why this path won**: Keeping one `navigate_choose_next_unit` runtime wrapper around preparation, model invocation, retry, boundary resolution, fallback, source-unit assembly, and settlement handoff made it hard to tell which behavior belonged to the LLM node and which behavior belonged to deterministic runtime control. Splitting the boundary gives the next Ingest/Digest work a cleaner API surface and prevents the old path-selection framing from leaking back through function names.
+
+**Primary evidence**:
+- `docs/current-state.md`
+- `docs/tasks/registry.md`
+- `docs/backend-reading-mechanisms/attentional_v2.md`
+- `reading-companion-backend/src/attentional_v2/nodes.py`
+- `reading-companion-backend/src/attentional_v2/runner.py`
+- `reading-companion-backend/src/attentional_v2/schemas.py`
+- `reading-companion-backend/tests/test_attentional_v2_nodes.py`
+- `reading-companion-backend/tests/test_attentional_v2_scaffold.py`

@@ -11,6 +11,12 @@ Mechanism key: `attentional_v2`
 
 Scope: `post-Phase-9 backend structural rework under the existing attentional_v2 mechanism key`
 
+Current authority note:
+
+- As of `2026-05-31`, `DEC-103` through `DEC-106` supersede this plan's older Detour / source-backread / source-skill and architecture-level Navigator-entrypoint assumptions.
+- Treat below references to active Detour, source skills, `NavigateNextUnitResult`, or `navigate_choose_next_unit_act` as historical implementation checkpoints unless a later task explicitly re-adopts them.
+- Current stable mechanism authority is `docs/backend-reading-mechanisms/attentional_v2.md`: `Navigate.choose_next_unit` is the LLM boundary call, while Reading Runner owns `prepare_next_source_unit_for_read` preparation and boundary governance.
+
 Implementation checkpoint:
 
 - `Phase A` is landed:

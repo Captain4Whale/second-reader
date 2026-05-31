@@ -1299,7 +1299,7 @@ def test_attentional_v2_runner_prefers_main_body_before_supporting_chapters(tmp_
             "seen_sentence_ids": [*local_buffer.get("seen_sentence_ids", []), sentence["sentence_id"]],
         }
 
-    monkeypatch.setattr(runner_module, "navigate_choose_next_unit_act", _fake_single_sentence_navigate_act)
+    monkeypatch.setattr(runner_module, "_call_navigate_choose_next_unit", _fake_single_sentence_navigate_boundary)
     monkeypatch.setattr(runner_module, "process_sentence_intake", fake_process_sentence_intake)
     monkeypatch.setattr(runner_module, "read_unit", fake_read_unit)
     monkeypatch.setattr(runner_module, "run_phase6_chapter_cycle", fake_phase6_chapter_cycle)
@@ -1348,8 +1348,8 @@ def test_attentional_v2_chapter_selection_honors_explicit_request_over_reading_p
     assert [chapter["title"] for chapter in chapters] == ["Afterword"]
 
 
-def _empty_choose_next_unit_state() -> dict[str, dict[str, object]]:
-    """Return the minimal live state required by Navigate.choose_next_unit."""
+def _empty_prepare_next_source_unit_state() -> dict[str, dict[str, object]]:
+    """Return the minimal live state required to prepare the next source unit."""
 
     return {
         "local_buffer": build_empty_local_buffer(),
@@ -1363,8 +1363,8 @@ def _empty_choose_next_unit_state() -> dict[str, dict[str, object]]:
     }
 
 
-def _fake_single_sentence_navigate_act(**kwargs):
-    """Return one small source-anchor unit for runner smoke tests."""
+def _fake_single_sentence_navigate_boundary(**kwargs):
+    """Return one small source-anchor boundary for runner smoke tests."""
 
     preview = kwargs.get("mainline_preview", {})
     source_text = str(preview.get("source_text", "") if isinstance(preview, dict) else "")
@@ -1381,16 +1381,17 @@ def _fake_single_sentence_navigate_act(**kwargs):
     }
 
 
-def test_navigate_choose_next_unit_selects_mainline_unit(tmp_path, monkeypatch):
-    """The current Navigator contract should return one forward source unit."""
+def test_prepare_next_source_unit_for_read_selects_mainline_unit(tmp_path, monkeypatch):
+    """Runtime source-unit preparation should call Navigate and return one forward source unit."""
 
     provisioned = _provisioned_two_chapter_book()
     document = provisioned.book_document
-    state = _empty_choose_next_unit_state()
+    state = _empty_prepare_next_source_unit_state()
 
-    monkeypatch.setattr(runner_module, "navigate_choose_next_unit_act", _fake_single_sentence_navigate_act)
+    monkeypatch.setattr(runner_module, "_call_navigate_choose_next_unit", _fake_single_sentence_navigate_boundary)
 
-    result = runner_module.navigate_choose_next_unit(
+    assert not hasattr(runner_module, "navigate" + "_choose_next_unit")
+    result = runner_module.prepare_next_source_unit_for_read(
         current_chapter=document["chapters"][1],
         current_cursor={"paragraph_index": 1, "char_offset": 0},
         local_buffer=state["local_buffer"],  # type: ignore[arg-type]
@@ -1409,8 +1410,63 @@ def test_navigate_choose_next_unit_selects_mainline_unit(tmp_path, monkeypatch):
     )
 
     assert "selection" + "_mode" not in result
+    assert "navigate" + "_trace" not in result
+    assert result["boundary_trace"]
     assert result["chapter_id"] == 2
     assert [sentence["sentence_id"] for sentence in result["selected_unit_sentences"]] == ["c2-s1"]
+
+
+def test_prepare_next_source_unit_for_read_retries_unresolved_boundary(tmp_path, monkeypatch):
+    """Runtime boundary governance should retry an unresolved Navigate anchor before fallback."""
+
+    provisioned = _provisioned_two_chapter_book()
+    document = provisioned.book_document
+    state = _empty_prepare_next_source_unit_state()
+    calls: list[dict[str, object]] = []
+
+    def fake_navigate_boundary(**kwargs):
+        reading_position = kwargs.get("reading_position", {})
+        calls.append(dict(reading_position) if isinstance(reading_position, dict) else {})
+        if len(calls) == 1:
+            return {
+                "end_anchor_text": "This anchor is not visible.",
+                "boundary_type": "paragraph_end",
+                "reason": "test_unresolved_anchor",
+                "continuation_pressure": False,
+            }
+        return {
+            "end_anchor_text": "Closing line.",
+            "boundary_type": "paragraph_end",
+            "reason": "test_retry_anchor",
+            "continuation_pressure": False,
+        }
+
+    monkeypatch.setattr(runner_module, "_call_navigate_choose_next_unit", fake_navigate_boundary)
+
+    result = runner_module.prepare_next_source_unit_for_read(
+        current_chapter=document["chapters"][1],
+        current_cursor={"paragraph_index": 1, "char_offset": 0},
+        local_buffer=state["local_buffer"],  # type: ignore[arg-type]
+        continuation_capsule=state["continuation_capsule"],
+        active_attention=state["active_attention"],  # type: ignore[arg-type]
+        concept_registry=state["concept_registry"],  # type: ignore[arg-type]
+        thread_trace=state["thread_trace"],  # type: ignore[arg-type]
+        reflective_frames=state["reflective_frames"],  # type: ignore[arg-type]
+        reaction_records=state["reaction_records"],  # type: ignore[arg-type]
+        local_continuity=state["local_continuity"],  # type: ignore[arg-type]
+        reader_policy=runner_module.build_default_reader_policy(),
+        output_language=provisioned.output_language,
+        output_dir=tmp_path,
+        book_title=provisioned.title,
+        author=provisioned.author,
+    )
+
+    assert len(calls) == 2
+    assert calls[1]["retry"] is True
+    assert calls[1]["previous_end_anchor_text"] == "This anchor is not visible."
+    assert [sentence["sentence_id"] for sentence in result["selected_unit_sentences"]] == ["c2-s1", "c2-s2"]
+    assert result["unitize_decision"]["end_anchor_text"] == "Closing line."
+    assert result["boundary_trace"][1]["resolution"]["status"] == "matched"
 
 
 def test_attentional_v2_read_book_runs_live_loop_and_persists_compatibility_results(tmp_path, monkeypatch):
@@ -1488,7 +1544,7 @@ def test_attentional_v2_read_book_runs_live_loop_and_persists_compatibility_resu
         }
         return next_buffer
 
-    monkeypatch.setattr(runner_module, "navigate_choose_next_unit_act", _fake_single_sentence_navigate_act)
+    monkeypatch.setattr(runner_module, "_call_navigate_choose_next_unit", _fake_single_sentence_navigate_boundary)
     monkeypatch.setattr(runner_module, "process_sentence_intake", fake_process_sentence_intake)
     monkeypatch.setattr(runner_module, "read_unit", fake_read_unit)
     monkeypatch.setattr(runner_module, "run_phase6_chapter_cycle", fake_phase6_chapter_cycle)
@@ -1613,7 +1669,7 @@ def test_attentional_v2_runner_persists_multiple_read_surface_reactions(tmp_path
             "compatibility_payload": compatibility_payload,
         }
 
-    monkeypatch.setattr(runner_module, "navigate_choose_next_unit_act", _fake_single_sentence_navigate_act)
+    monkeypatch.setattr(runner_module, "_call_navigate_choose_next_unit", _fake_single_sentence_navigate_boundary)
     monkeypatch.setattr(runner_module, "process_sentence_intake", fake_process_sentence_intake)
     monkeypatch.setattr(runner_module, "read_unit", fake_read_unit)
     monkeypatch.setattr(runner_module, "run_phase6_chapter_cycle", fake_phase6_chapter_cycle)
@@ -1681,7 +1737,7 @@ def test_attentional_v2_read_book_tolerates_missing_reaction_payload(tmp_path, m
         }
         return next_buffer
 
-    monkeypatch.setattr(runner_module, "navigate_choose_next_unit_act", _fake_single_sentence_navigate_act)
+    monkeypatch.setattr(runner_module, "_call_navigate_choose_next_unit", _fake_single_sentence_navigate_boundary)
     monkeypatch.setattr(runner_module, "process_sentence_intake", fake_process_sentence_intake)
     monkeypatch.setattr(runner_module, "read_unit", fake_read_unit)
     monkeypatch.setattr(runner_module, "run_phase6_chapter_cycle", fake_phase6_chapter_cycle)
@@ -1757,7 +1813,7 @@ def test_attentional_v2_read_book_runs_source_anchor_units_without_sentence_curs
             "memory_uptake_ops": [],
         }
 
-    monkeypatch.setattr(runner_module, "navigate_choose_next_unit_act", _fake_single_sentence_navigate_act)
+    monkeypatch.setattr(runner_module, "_call_navigate_choose_next_unit", _fake_single_sentence_navigate_boundary)
     monkeypatch.setattr(runner_module, "process_sentence_intake", fake_process_sentence_intake)
     monkeypatch.setattr(runner_module, "read_unit", fake_read_unit)
     monkeypatch.setattr(runner_module, "run_phase6_chapter_cycle", fake_phase6_chapter_cycle)
@@ -1824,7 +1880,7 @@ def test_attentional_v2_runner_stops_at_audit_window_cap_and_persists_partial_ou
         }
         return next_buffer
 
-    monkeypatch.setattr(runner_module, "navigate_choose_next_unit_act", _fake_single_sentence_navigate_act)
+    monkeypatch.setattr(runner_module, "_call_navigate_choose_next_unit", _fake_single_sentence_navigate_boundary)
     monkeypatch.setattr(runner_module, "process_sentence_intake", fake_process_sentence_intake)
     monkeypatch.setattr(runner_module, "read_unit", fake_read_unit)
     monkeypatch.setattr(

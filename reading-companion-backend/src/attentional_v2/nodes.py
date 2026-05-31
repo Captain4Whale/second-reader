@@ -25,7 +25,7 @@ from .schemas import (
     KnowledgeActivationsState,
     MemoryUptakeAdmissionEvent,
     NavigationContext,
-    NavigateActResult,
+    NavigateBoundaryResult,
     OutsideLink,
     PreviewRange,
     PriorLink,
@@ -726,9 +726,9 @@ def _normalize_surfaced_reactions(
     return reactions
 
 
-def _normalize_navigate_act_result(
+def _normalize_navigate_boundary_result(
     value: object,
-) -> NavigateActResult:
+) -> NavigateBoundaryResult:
     """Normalize one Navigate.choose_next_unit boundary result."""
 
     if not isinstance(value, dict):
@@ -746,7 +746,7 @@ def _normalize_navigate_act_result(
     }
 
 
-def navigate_choose_next_unit_act(
+def navigate_choose_next_unit(
     *,
     reading_position: dict[str, object],
     mainline_preview: dict[str, object],
@@ -758,8 +758,8 @@ def navigate_choose_next_unit_act(
     book_title: str = "",
     author: str = "",
     chapter_title: str = "",
-) -> NavigateActResult:
-    """Run the forward-only Navigate.choose_next_unit act."""
+) -> NavigateBoundaryResult:
+    """Run the forward-only Navigate.choose_next_unit LLM boundary call."""
 
     prompts = ATTENTIONAL_V2_PROMPTS
     structural_frame = _structural_frame(
@@ -790,7 +790,7 @@ def navigate_choose_next_unit_act(
     try:
         with llm_invocation_scope(trace_context=LLMTraceContext(stage="phase4", node="navigate_choose_next_unit")):
             payload = invoke_json(prompts.navigate_choose_next_unit_system, user_prompt, default={})
-        return _normalize_navigate_act_result(
+        return _normalize_navigate_boundary_result(
             payload,
         )
     except ReaderLLMError:

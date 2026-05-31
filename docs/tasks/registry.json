@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-05-31T02:36:48Z",
+  "updated_at": "2026-05-31T05:44:40Z",
   "tasks": [
     {
       "id": "TASK-SECOND-READER-INGEST-DIGEST-REFRAME-AUDIT-20260530",
@@ -18,18 +18,19 @@
       "decision_refs": [
         "DEC-103",
         "DEC-104",
-        "DEC-105"
+        "DEC-105",
+        "DEC-106"
       ],
       "job_refs": [],
       "acceptance_ref": "",
-      "next_action": "Continue the narrowed product-goal reframe from the forward-only Ingest baseline. DEC-104 retired live Detour / source-backread from attentional_v2, and DEC-105 hard-purged the retired compatibility interfaces from current code, prompts, schemas, audits, and tests. Next design work should specify how Ingest requests memory retrieval for the selected next unit and how Digest produces reader-facing notes / highlights. Do not launch eval, update evidence catalog, or continue C设计10 consolidation / C设计11 Read XML migration / C设计12 prompt assembly migration unless explicitly re-adopted.",
+      "next_action": "Continue the narrowed product-goal reframe from the forward-only Ingest baseline. DEC-104 retired live Detour / source-backread from attentional_v2, DEC-105 hard-purged the retired compatibility interfaces, and DEC-106 keeps Navigate.choose_next_unit as a pure LLM boundary call while runtime source-unit preparation lives in prepare_next_source_unit_for_read. Next design work should specify how Ingest requests memory retrieval for the selected next unit and how Digest produces reader-facing notes / highlights. Do not launch eval, update evidence catalog, or continue C设计10 consolidation / C设计11 Read XML migration / C设计12 prompt assembly migration unless explicitly re-adopted.",
       "blocked_by": [],
       "evidence_refs": [
         "docs/current-state.md",
         "docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md",
         "docs/history/decision-log.md"
       ],
-      "last_updated": "2026-05-31T02:36:48Z",
+      "last_updated": "2026-05-31T05:44:40Z",
       "last_updated_by": "codex"
     },
     {

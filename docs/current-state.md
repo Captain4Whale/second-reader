@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-05-31T11:39:02+08:00`
+Last verified: `2026-05-31T13:44:40+08:00`
 
 ## Current Objective
 - Product goal and mechanism direction are being reset before further implementation.
@@ -25,7 +25,9 @@ Last verified: `2026-05-31T11:39:02+08:00`
   - live cleanup landed:
     - `DEC-104` retires live Detour / source-backread behavior from `attentional_v2`
     - `DEC-105` hard-purges the retired Detour / source-backread / source-skill compatibility interfaces from current `attentional_v2` code, prompts, schemas, audits, and tests
-    - current `Navigate.choose_next_unit` is forward-only next-unit boundary selection: exact `end_anchor_text`, `boundary_type`, `reason`, and `continuation_pressure`
+    - `DEC-106` clarifies the current node/runtime boundary: `Navigate.choose_next_unit` is the LLM boundary call, while Reading Runner owns preparation and boundary governance around it
+    - current `Navigate.choose_next_unit` is the forward-only LLM boundary call: exact `end_anchor_text`, `boundary_type`, `reason`, and `continuation_pressure`
+    - runtime next-unit preparation now lives outside Navigate as `prepare_next_source_unit_for_read`: it prepares source preview/context, calls Navigate, performs anchor resolution/retry/fallback boundary governance, and hands the accepted source unit to `Read`
     - current `Read` has no path-redirection output contract and the Runner/audit path emits no Detour or source-backread runtime artifacts for new runs
     - current `local_continuity` contains only forward-reading continuity; old Detour-era checkpoint/artifact shapes are not a compatibility target
   - stop declaration:

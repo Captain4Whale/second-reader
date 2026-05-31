@@ -29,7 +29,7 @@ from src.iterator_reader.llm_utils import ReaderLLMError, llm_invocation_scope, 
 from .evaluation import build_normalized_eval_bundle, persist_normalized_eval_bundle
 from .intake import process_sentence_intake  # noqa: F401 - legacy monkeypatch seam for older tests
 from .nodes import (
-    navigate_choose_next_unit_act,
+    navigate_choose_next_unit as _call_navigate_choose_next_unit,
     read_unit,
 )
 from .observability import (
@@ -64,9 +64,9 @@ from .schemas import (
     KnowledgeActivationsState,
     LocalBufferState,
     LocalContinuityState,
-    NavigateActResult,
-    NavigateActTraceEntry,
-    NavigateNextUnitResult,
+    NavigateBoundaryResult,
+    NavigateBoundaryTraceEntry,
+    PreparedSourceUnit,
     ReactionRecordsState,
     ReaderPolicy,
     ReflectiveFramesState,
@@ -1021,31 +1021,87 @@ def _mainline_source_preview_packet(preview: dict[str, object]) -> dict[str, obj
     }
 
 
-def _navigate_trace_entry(
-    act_result: NavigateActResult,
+def _build_navigate_boundary_preparation(
+    *,
+    current_chapter: dict[str, object],
+    current_cursor: dict[str, object],
+    local_buffer: LocalBufferState,
+    continuation_capsule: dict[str, object],
+    active_attention: ActiveAttention,
+    recent_reading_memory: RecentReadingMemoryState | None,
+    concept_registry: ConceptRegistryState,
+    thread_trace: ThreadTraceState,
+    reflective_frames: ReflectiveFramesState,
+    reaction_records: ReactionRecordsState,
+    local_continuity: LocalContinuityState,
+    reader_policy: ReaderPolicy,
+) -> dict[str, object]:
+    """Prepare the runtime packet consumed by the Navigate LLM boundary call."""
+
+    recent_reading_memory = recent_reading_memory or build_empty_recent_reading_memory()
+    source_cursor = normalize_cursor_for_chapter(current_chapter, current_cursor)
+    preview = build_paragraph_offset_preview(
+        chapter=current_chapter,
+        current_cursor=source_cursor,
+        reader_policy=reader_policy,
+    )
+    current_chapter_id = int(current_chapter.get("id", 0) or 0)
+    current_chapter_ref = _chapter_ref(current_chapter)
+    navigation_context = build_navigation_context(
+        chapter_ref=current_chapter_ref,
+        current_sentence_id=_clean_text(source_cursor.get("sentence_id")) or _clean_text(local_buffer.get("current_sentence_id")),
+        local_buffer=local_buffer,
+        active_attention=active_attention,
+        recent_reading_memory=recent_reading_memory,
+        concept_registry=concept_registry,
+        thread_trace=thread_trace,
+        reflective_frames=reflective_frames,
+        reaction_records=reaction_records,
+        continuation_capsule=continuation_capsule,
+    )
+    return {
+        "chapter_id": current_chapter_id,
+        "chapter_ref": current_chapter_ref,
+        "chapter_title": _clean_text(current_chapter.get("title")),
+        "source_cursor": dict(source_cursor),
+        "preview": dict(preview),
+        "mainline_preview": _mainline_source_preview_packet(dict(preview)),
+        "mainline_cursor": _mainline_cursor_from_continuity(local_continuity),
+        "navigation_context": navigation_context,
+        "reading_position": {
+            "mode": "mainline",
+            "current_chapter_id": current_chapter_id,
+            "current_chapter_ref": current_chapter_ref,
+            "current_cursor": dict(source_cursor),
+        },
+    }
+
+
+def _boundary_trace_entry(
+    boundary_result: NavigateBoundaryResult,
     *,
     error: str = "",
-) -> NavigateActTraceEntry:
-    """Return a compact Navigate trace entry."""
+) -> NavigateBoundaryTraceEntry:
+    """Return a compact Navigate boundary trace entry."""
 
-    entry: NavigateActTraceEntry = {
-        "reason": _clean_text(act_result.get("reason")),
-        "end_anchor_text": _clean_text(act_result.get("end_anchor_text")),
-        "source_span_id": _clean_text(act_result.get("source_span_id")),
-        "resolution": dict(act_result.get("resolution", {})) if isinstance(act_result.get("resolution"), dict) else {},
+    entry: NavigateBoundaryTraceEntry = {
+        "reason": _clean_text(boundary_result.get("reason")),
+        "end_anchor_text": _clean_text(boundary_result.get("end_anchor_text")),
+        "source_span_id": _clean_text(boundary_result.get("source_span_id")),
+        "resolution": dict(boundary_result.get("resolution", {})) if isinstance(boundary_result.get("resolution"), dict) else {},
     }
     if error:
         entry["error"] = error
     return entry
 
 
-def _compact_navigation_trace(navigate_trace: object) -> list[dict[str, object]]:
-    """Return compact navigation trace entries safe for read-audit persistence."""
+def _compact_boundary_trace(boundary_trace: object) -> list[dict[str, object]]:
+    """Return compact boundary trace entries safe for read-audit persistence."""
 
-    if not isinstance(navigate_trace, list):
+    if not isinstance(boundary_trace, list):
         return []
     compact_entries: list[dict[str, object]] = []
-    for item in navigate_trace:
+    for item in boundary_trace:
         if not isinstance(item, dict):
             continue
         entry: dict[str, object] = {}
@@ -1070,17 +1126,17 @@ def _compact_navigation_trace(navigate_trace: object) -> list[dict[str, object]]
     return compact_entries
 
 
-def _resolve_mainline_source_unit(
+def _resolve_navigate_boundary(
     *,
     chapter: dict[str, object],
     start_cursor: dict[str, object],
     preview: dict[str, object],
-    act_result: NavigateActResult,
-    retry_act_result: NavigateActResult | None = None,
+    boundary_result: NavigateBoundaryResult,
+    retry_boundary_result: NavigateBoundaryResult | None = None,
 ) -> tuple[dict[str, object], UnitizeDecision]:
     """Resolve Navigate's source-text tail anchor into an accepted unit span."""
 
-    selected_result = dict(retry_act_result or act_result)
+    selected_result = dict(retry_boundary_result or boundary_result)
     end_anchor_text = _clean_text(selected_result.get("end_anchor_text"))
     resolution = resolve_end_anchor_text(
         preview=preview,
@@ -1136,7 +1192,34 @@ def _resolve_mainline_source_unit(
     return source_unit, unitize_decision
 
 
-def navigate_choose_next_unit(
+def _accept_navigate_boundary(
+    *,
+    chapter: dict[str, object],
+    start_cursor: dict[str, object],
+    preview: dict[str, object],
+    boundary_result: NavigateBoundaryResult,
+    retry_boundary_result: NavigateBoundaryResult | None = None,
+) -> tuple[dict[str, object], UnitizeDecision, list[NavigateBoundaryTraceEntry]]:
+    """Accept a Navigate boundary result as a runtime source unit."""
+
+    selected_source_unit, unitize_decision = _resolve_navigate_boundary(
+        chapter=chapter,
+        start_cursor=start_cursor,
+        preview=preview,
+        boundary_result=boundary_result,
+        retry_boundary_result=retry_boundary_result,
+    )
+    selected_boundary = retry_boundary_result if retry_boundary_result is not None else boundary_result
+    selected_boundary["source_span_id"] = _clean_text(unitize_decision.get("source_span_id"))
+    selected_boundary["source_span"] = dict(unitize_decision.get("source_span", {}))
+    selected_boundary["resolution"] = dict(unitize_decision.get("resolution", {}))
+    boundary_trace = [_boundary_trace_entry(boundary_result)]
+    if retry_boundary_result is not None:
+        boundary_trace.append(_boundary_trace_entry(retry_boundary_result))
+    return selected_source_unit, unitize_decision, boundary_trace
+
+
+def prepare_next_source_unit_for_read(
     *,
     current_chapter: dict[str, object],
     current_cursor: dict[str, object],
@@ -1154,40 +1237,49 @@ def navigate_choose_next_unit(
     output_dir: Path | None,
     book_title: str,
     author: str,
-) -> NavigateNextUnitResult:
-    """Choose the next forward mainline unit that should be read."""
+) -> PreparedSourceUnit:
+    """Prepare the next forward source unit that should be read."""
 
-    recent_reading_memory = recent_reading_memory or build_empty_recent_reading_memory()
-    source_cursor = normalize_cursor_for_chapter(current_chapter, current_cursor)
-    preview = build_paragraph_offset_preview(
-        chapter=current_chapter,
-        current_cursor=source_cursor,
-        reader_policy=reader_policy,
-    )
-    current_chapter_id = int(current_chapter.get("id", 0) or 0)
-    current_chapter_ref = _chapter_ref(current_chapter)
-    mainline_preview = _mainline_source_preview_packet(dict(preview))
-    mainline_cursor = _mainline_cursor_from_continuity(local_continuity)
-
-    navigation_context = build_navigation_context(
-        chapter_ref=current_chapter_ref,
-        current_sentence_id=_clean_text(source_cursor.get("sentence_id")) or _clean_text(local_buffer.get("current_sentence_id")),
+    preparation = _build_navigate_boundary_preparation(
+        current_chapter=current_chapter,
+        current_cursor=current_cursor,
         local_buffer=local_buffer,
+        continuation_capsule=continuation_capsule,
         active_attention=active_attention,
         recent_reading_memory=recent_reading_memory,
         concept_registry=concept_registry,
         thread_trace=thread_trace,
         reflective_frames=reflective_frames,
         reaction_records=reaction_records,
-        continuation_capsule=continuation_capsule,
+        local_continuity=local_continuity,
+        reader_policy=reader_policy,
     )
-    act_result = navigate_choose_next_unit_act(
-        reading_position={
-            "mode": "mainline",
-            "current_chapter_id": current_chapter_id,
-            "current_chapter_ref": current_chapter_ref,
-            "current_cursor": dict(source_cursor),
-        },
+    preview = dict(preparation.get("preview", {})) if isinstance(preparation.get("preview"), dict) else {}
+    source_cursor = dict(preparation.get("source_cursor", {})) if isinstance(preparation.get("source_cursor"), dict) else {}
+    chapter_id = int(preparation.get("chapter_id", 0) or 0)
+    chapter_ref = _clean_text(preparation.get("chapter_ref"))
+    reading_position = (
+        dict(preparation.get("reading_position", {}))
+        if isinstance(preparation.get("reading_position"), dict)
+        else {}
+    )
+    mainline_preview = (
+        dict(preparation.get("mainline_preview", {}))
+        if isinstance(preparation.get("mainline_preview"), dict)
+        else {}
+    )
+    mainline_cursor = (
+        dict(preparation.get("mainline_cursor", {}))
+        if isinstance(preparation.get("mainline_cursor"), dict)
+        else {}
+    )
+    navigation_context = (
+        dict(preparation.get("navigation_context", {}))
+        if isinstance(preparation.get("navigation_context"), dict)
+        else {}
+    )
+    boundary_result = _call_navigate_choose_next_unit(
+        reading_position=reading_position,
         mainline_preview=mainline_preview,
         mainline_cursor=mainline_cursor,
         navigation_context=navigation_context,
@@ -1196,24 +1288,26 @@ def navigate_choose_next_unit(
         output_dir=output_dir,
         book_title=book_title,
         author=author,
-        chapter_title=_clean_text(current_chapter.get("title")),
+        chapter_title=_clean_text(preparation.get("chapter_title")),
     )
     resolution = resolve_end_anchor_text(
         preview=preview,
-        end_anchor_text=_clean_text(act_result.get("end_anchor_text")),
+        end_anchor_text=_clean_text(boundary_result.get("end_anchor_text")),
     )
-    retry_result: NavigateActResult | None = None
+    retry_boundary_result: NavigateBoundaryResult | None = None
     if _clean_text(resolution.get("status")) != "matched":
-        retry_result = navigate_choose_next_unit_act(
-            reading_position={
-                "mode": "mainline",
-                "current_chapter_id": current_chapter_id,
-                "current_chapter_ref": current_chapter_ref,
-                "current_cursor": dict(source_cursor),
+        retry_position = dict(reading_position)
+        retry_position.update(
+            {
                 "retry": True,
-                "previous_end_anchor_text": _clean_text(act_result.get("end_anchor_text")),
+                "previous_end_anchor_text": _clean_text(boundary_result.get("end_anchor_text")),
                 "previous_resolution": dict(resolution),
                 "retry_instruction": "Return a longer, unique end_anchor_text copied exactly from the end of the chosen unit.",
+            }
+        )
+        retry_boundary_result = _call_navigate_choose_next_unit(
+            reading_position={
+                **retry_position,
             },
             mainline_preview=mainline_preview,
             mainline_cursor=mainline_cursor,
@@ -1223,34 +1317,27 @@ def navigate_choose_next_unit(
             output_dir=output_dir,
             book_title=book_title,
             author=author,
-            chapter_title=_clean_text(current_chapter.get("title")),
+            chapter_title=_clean_text(preparation.get("chapter_title")),
         )
-    selected_source_unit, unitize_decision = _resolve_mainline_source_unit(
+    selected_source_unit, unitize_decision, boundary_trace = _accept_navigate_boundary(
         chapter=current_chapter,
         start_cursor=dict(source_cursor),
         preview=dict(preview),
-        act_result=act_result,
-        retry_act_result=retry_result,
+        boundary_result=boundary_result,
+        retry_boundary_result=retry_boundary_result,
     )
     compat_selected_sentences = _compat_unit_sentences_for_source_span(
         current_chapter,
         dict(unitize_decision.get("source_span", {})) if isinstance(unitize_decision.get("source_span"), dict) else {},
     )
-    trace_target = retry_result if retry_result is not None else act_result
-    trace_target["source_span_id"] = _clean_text(unitize_decision.get("source_span_id"))
-    trace_target["source_span"] = dict(unitize_decision.get("source_span", {}))
-    trace_target["resolution"] = dict(unitize_decision.get("resolution", {}))
-    navigate_trace = [_navigate_trace_entry(act_result)]
-    if retry_result is not None:
-        navigate_trace.append(_navigate_trace_entry(retry_result))
     return {
-        "chapter_id": current_chapter_id,
-        "chapter_ref": current_chapter_ref,
+        "chapter_id": chapter_id,
+        "chapter_ref": chapter_ref,
         "selected_unit_sentences": compat_selected_sentences,
         "selected_source_unit": selected_source_unit,
         "preview": dict(preview),
         "unitize_decision": unitize_decision,  # type: ignore[typeddict-item]
-        "navigate_trace": navigate_trace,
+        "boundary_trace": boundary_trace,
     }
 
 
@@ -1523,7 +1610,7 @@ def _run_read_with_context_loop(
     author: str,
     chapter_id: int,
     chapter_ref: str,
-    navigation_trace: list[dict[str, object]] | None = None,
+    boundary_trace: list[dict[str, object]] | None = None,
 ) -> tuple[ReadUnitResult, list[dict[str, str]]]:
     """Run one authoritative read for the chosen unit and persist its private audit."""
 
@@ -1581,14 +1668,14 @@ def _run_read_with_context_loop(
         read_result=read_result,
         stop_reason="read_complete",
         llm_fallbacks=llm_fallbacks,
-        navigation_trace=navigation_trace,
+        navigation_trace=boundary_trace,
     )
     return read_result, llm_fallbacks
 
 
 def _settle_next_unit(
     *,
-    selection_result: NavigateNextUnitResult,
+    prepared_source_unit: PreparedSourceUnit,
     chapter_lookup: dict[int, dict[str, object]],
     local_buffer: LocalBufferState,
     local_continuity: LocalContinuityState,
@@ -1615,9 +1702,9 @@ def _settle_next_unit(
     already_ingested_sentence_ids: set[str] | None = None,
     capture_memory_probe: bool = False,
 ) -> dict[str, object]:
-    """Read and settle one unit selected by Navigator.choose_next_unit."""
+    """Read and settle one runtime-prepared source unit."""
 
-    chapter_id = int(selection_result.get("chapter_id", 0) or 0)
+    chapter_id = int(prepared_source_unit.get("chapter_id", 0) or 0)
     chapter = chapter_lookup.get(chapter_id)
     if not isinstance(chapter, dict):
         return {
@@ -1639,15 +1726,15 @@ def _settle_next_unit(
             "touched_chapter_ids": [],
         }
 
-    chapter_ref = _clean_text(selection_result.get("chapter_ref")) or _chapter_ref(chapter)
+    chapter_ref = _clean_text(prepared_source_unit.get("chapter_ref")) or _chapter_ref(chapter)
     chosen_unit_sentences = [
         dict(sentence)
-        for sentence in selection_result.get("selected_unit_sentences", [])
+        for sentence in prepared_source_unit.get("selected_unit_sentences", [])
         if isinstance(sentence, dict)
     ]
     selected_source_unit = (
-        dict(selection_result.get("selected_source_unit", {}))
-        if isinstance(selection_result.get("selected_source_unit"), dict)
+        dict(prepared_source_unit.get("selected_source_unit", {}))
+        if isinstance(prepared_source_unit.get("selected_source_unit"), dict)
         else {}
     )
     has_selected_source_unit = bool(selected_source_unit)
@@ -1671,7 +1758,7 @@ def _settle_next_unit(
             "touched_chapter_ids": [],
         }
 
-    unitize_decision = dict(selection_result.get("unitize_decision", {}))
+    unitize_decision = dict(prepared_source_unit.get("unitize_decision", {}))
     focal_sentence = chosen_unit_sentences[-1] if chosen_unit_sentences else {}
     focal_sentence_id = _sentence_id(focal_sentence) if focal_sentence else ""
     source_span = (
@@ -1767,7 +1854,7 @@ def _settle_next_unit(
         author=provisioned.author,
         chapter_id=chapter_id,
         chapter_ref=chapter_ref,
-        navigation_trace=_compact_navigation_trace(selection_result.get("navigate_trace")),
+        boundary_trace=_compact_boundary_trace(prepared_source_unit.get("boundary_trace")),
     )
     for fallback in read_fallbacks:
         if not isinstance(fallback, dict):
@@ -1862,7 +1949,7 @@ def _settle_next_unit(
             chapter_id=chapter_id,
             chapter_ref=chapter_ref,
             source_unit=selected_source_unit,
-            preview=dict(selection_result.get("preview", {})) if isinstance(selection_result.get("preview"), dict) else {},
+            preview=dict(prepared_source_unit.get("preview", {})) if isinstance(prepared_source_unit.get("preview"), dict) else {},
             end_anchor_text=_clean_text(unitize_decision.get("end_anchor_text")),
             resolution=dict(unitize_decision.get("resolution", {})) if isinstance(unitize_decision.get("resolution"), dict) else {},
         )
@@ -2187,7 +2274,7 @@ def run_reading_runner(request: ReadRequest, mechanism: MechanismInfo) -> ReadRe
             while not cursor_at_or_after_chapter_end(chapter, cursor):
                 local_continuity["mainline_cursor"] = _shared_cursor_for_source_cursor(cursor)
                 bundle["local_continuity"] = local_continuity
-                selection_result = navigate_choose_next_unit(
+                prepared_source_unit = prepare_next_source_unit_for_read(
                     current_chapter=chapter,
                     current_cursor=cursor,
                     local_buffer=local_buffer,
@@ -2206,7 +2293,7 @@ def run_reading_runner(request: ReadRequest, mechanism: MechanismInfo) -> ReadRe
                     author=provisioned.author,
                 )
                 settled_unit = _settle_next_unit(
-                    selection_result=selection_result,
+                    prepared_source_unit=prepared_source_unit,
                     chapter_lookup=chapter_lookup,
                     local_buffer=local_buffer,
                     local_continuity=local_continuity,

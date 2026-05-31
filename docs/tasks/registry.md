@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-05-31T10:36:48+08:00`
+Last updated: `2026-05-31T13:44:40+08:00`
 
 ## Status Values
 - `active`
@@ -25,12 +25,13 @@ Last updated: `2026-05-31T10:36:48+08:00`
 - Lane: `mechanism_runtime`
 - Priority: `high`
 - Detail: `docs/current-state.md`
-- Next: continue the narrowed product-goal reframe from the forward-only `Ingest` baseline. `DEC-104` retired live Detour / source-backread from `attentional_v2`, and `DEC-105` hard-purged the retired compatibility interfaces from current code, prompts, schemas, audits, and tests. Next design work should specify how `Ingest` requests memory retrieval for the selected next unit and how `Digest` produces reader-facing notes / highlights. Do not launch eval, update evidence catalog, or continue `C设计10` consolidation / `C设计11` Read XML migration / `C设计12` prompt assembly migration unless explicitly re-adopted.
+- Next: continue the narrowed product-goal reframe from the forward-only `Ingest` baseline. `DEC-104` retired live Detour / source-backread from `attentional_v2`, `DEC-105` hard-purged the retired compatibility interfaces, and `DEC-106` keeps `Navigate.choose_next_unit` as a pure LLM boundary call while runtime source-unit preparation lives in `prepare_next_source_unit_for_read`. Next design work should specify how `Ingest` requests memory retrieval for the selected next unit and how `Digest` produces reader-facing notes / highlights. Do not launch eval, update evidence catalog, or continue `C设计10` consolidation / `C设计11` Read XML migration / `C设计12` prompt assembly migration unless explicitly re-adopted.
 - Jobs: none
 - Evidence:
   - `DEC-103`
   - `DEC-104`
   - `DEC-105`
+  - `DEC-106`
   - `docs/current-state.md`
   - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
 

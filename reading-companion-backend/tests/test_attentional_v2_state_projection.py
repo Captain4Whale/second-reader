@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from src.attentional_v2 import nodes as nodes_module
-from src.attentional_v2.nodes import navigate_choose_next_unit_act
+from src.attentional_v2.nodes import navigate_choose_next_unit
 from src.attentional_v2.schemas import (
     build_default_reader_policy,
     build_empty_concept_registry,
@@ -650,7 +650,7 @@ def test_navigate_choose_next_unit_prompt_receives_navigation_context(monkeypatc
 
     monkeypatch.setattr(nodes_module, "invoke_json", fake_invoke_json)
 
-    navigate_choose_next_unit_act(
+    navigate_choose_next_unit(
         reading_position={"mode": "mainline", "current_sentence_id": "c1-s1"},
         mainline_preview={
             "current_sentence": _sentence("c1-s1", "Alpha sentence."),

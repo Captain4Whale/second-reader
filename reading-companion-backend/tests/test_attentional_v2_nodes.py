@@ -9,7 +9,7 @@ from src.attentional_v2 import nodes as nodes_module
 from src.attentional_v2 import runner as runner_module
 from src.attentional_v2.nodes import (
     build_unitize_preview,
-    navigate_choose_next_unit_act,
+    navigate_choose_next_unit,
     read_unit,
 )
 from src.attentional_v2.schemas import build_default_reader_policy
@@ -50,7 +50,7 @@ def _navigation_context() -> dict[str, object]:
 def test_navigate_boundary_contract_has_no_action_or_mode() -> None:
     """Navigate should expose only boundary fields for the current forward selector."""
 
-    payload = nodes_module._normalize_navigate_act_result(  # noqa: SLF001
+    payload = nodes_module._normalize_navigate_boundary_result(  # noqa: SLF001
         {
             "end_anchor_text": "Beta.",
             "boundary_type": "paragraph_end",
@@ -63,13 +63,13 @@ def test_navigate_boundary_contract_has_no_action_or_mode() -> None:
     assert payload["end_anchor_text"] == "Beta."
 
 
-def _navigate_act(
+def _navigate_boundary_call(
     *,
     tmp_path: Path,
     preview_sentences: list[dict[str, object]],
     output_language: str = "en",
 ) -> dict[str, object]:
-    return navigate_choose_next_unit_act(
+    return navigate_choose_next_unit(
         reading_position={
             "mode": "mainline",
             "current_sentence_id": preview_sentences[0]["sentence_id"] if preview_sentences else "",
@@ -138,7 +138,7 @@ def test_navigate_choose_next_unit_writes_manifest_and_uses_anchor_contract(tmp_
         _sentence("c1-s2", "Beta.", sentence_index=2, paragraph_index=1),
     ]
 
-    decision = navigate_choose_next_unit_act(
+    decision = navigate_choose_next_unit(
         reading_position={"mode": "mainline", "current_sentence_id": "c1-s1"},
         mainline_preview={
             "current_sentence": preview_sentences[0],
@@ -189,7 +189,7 @@ def test_navigate_choose_next_unit_can_trim_leading_boundary_residue(tmp_path: P
         _sentence("c1-s2", "运用专长，发挥杠杆效应，最终你会得到自己应得的。", sentence_index=2, paragraph_index=2),
     ]
 
-    decision = _navigate_act(tmp_path=tmp_path, preview_sentences=preview_sentences, output_language="zh")
+    decision = _navigate_boundary_call(tmp_path=tmp_path, preview_sentences=preview_sentences, output_language="zh")
 
     assert "decision" not in decision
     assert "selection" + "_mode" not in decision
@@ -214,7 +214,7 @@ def test_navigate_choose_next_unit_refuses_to_trim_leading_lexical_content(tmp_p
         _sentence("c1-s2", "Other people are typically a problem until they prove otherwise.", sentence_index=2, paragraph_index=1),
     ]
 
-    decision = _navigate_act(tmp_path=tmp_path, preview_sentences=preview_sentences)
+    decision = _navigate_boundary_call(tmp_path=tmp_path, preview_sentences=preview_sentences)
 
     assert decision["end_anchor_text"] == "Other people are typically a problem until they prove otherwise."
     assert "start_sentence_id" not in decision
@@ -237,7 +237,7 @@ def test_navigate_choose_next_unit_fallback_merges_heading_with_following_body(t
         _sentence("c1-s3", "而且值得学。", sentence_index=3, paragraph_index=2),
     ]
 
-    decision = _navigate_act(tmp_path=tmp_path, preview_sentences=preview_sentences, output_language="zh")
+    decision = _navigate_boundary_call(tmp_path=tmp_path, preview_sentences=preview_sentences, output_language="zh")
 
     assert "decision" not in decision
     assert "selection" + "_mode" not in decision
@@ -262,7 +262,7 @@ def test_navigate_choose_next_unit_fallback_keeps_body_paragraph_behavior(tmp_pa
         _sentence("c1-s3", "Gamma.", sentence_index=3, paragraph_index=2),
     ]
 
-    decision = _navigate_act(tmp_path=tmp_path, preview_sentences=preview_sentences)
+    decision = _navigate_boundary_call(tmp_path=tmp_path, preview_sentences=preview_sentences)
 
     assert decision["end_anchor_text"] == ""
     assert decision["boundary_type"] == "paragraph_end"
@@ -284,7 +284,7 @@ def test_navigate_choose_next_unit_fallback_allows_heading_only_when_no_body_fol
         _sentence("c1-s1", "Chapter 2", sentence_index=1, paragraph_index=1, text_role="chapter_heading"),
     ]
 
-    decision = _navigate_act(tmp_path=tmp_path, preview_sentences=preview_sentences)
+    decision = _navigate_boundary_call(tmp_path=tmp_path, preview_sentences=preview_sentences)
 
     assert decision["end_anchor_text"] == ""
     assert decision["reason"] == "navigate_choose_next_unit_llm_error"

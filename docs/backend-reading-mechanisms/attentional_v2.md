@@ -142,9 +142,9 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - There is no replacement `forward` action.
   - There is no current live non-mainline scheduling mechanism; old Detour / source-backread is removed from the current runtime surface after `DEC-105`.
 - The `Navigate.choose_next_unit` cutover is now landed.
-  - The current Navigator contract is **Choose Next Unit That Should Be Read**.
-  - Reading Runner calls one architecture-level Navigator entrypoint and consumes one `NavigateNextUnitResult`.
-  - The live entrypoint now chooses only the next forward source unit.
+  - The current Navigator contract is a pure LLM boundary call: **Choose the Boundary of the Next Unit That Should Be Read**.
+  - Reading Runner owns runtime next-unit preparation through `prepare_next_source_unit_for_read` and consumes one `PreparedSourceUnit`.
+  - The runtime operation prepares source preview/context, calls `Navigate.choose_next_unit`, resolves or retries the returned anchor, applies fallback boundary governance when needed, and produces the accepted forward source unit for `Read`.
   - The current prompt and schema expose only boundary fields for that forward source unit: exact `end_anchor_text`, `boundary_type`, `reason`, and `continuation_pressure`.
 - Phase D of the post-eval structural rework is now landed as preserved intermediate continuity / recall / resume evidence.
   - that branch added a budget-bounded multi-step supplemental loop around `read`.
@@ -155,8 +155,8 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
 ## Naming Note
 - `Phase 3`, `Phase 4`, `Phase 5`, and `Phase 6` in this document refer to historical implementation-stage groupings, not to a user-facing or mechanism-intrinsic sequence of named runtime phases.
 - The current Navigator capability name in stable docs is `Navigate.choose_next_unit`.
-  - It means: choose the next unit that should be read.
-  - It is now one unified Navigator boundary-selection prompt, not a Python semantic dispatch between separate live prompt families.
+  - It means: make the LLM boundary judgment for the next unit that should be read.
+  - It is now one unified Navigator boundary-selection prompt, not the full runtime source-unit preparation operation and not a Python semantic dispatch between separate live prompt families.
   - Forward source-unit selection is the only current live mode for this prompt.
   - Historical non-mainline jump reading is removed from the current code and prompt surface after `DEC-105`.
   - The historical `navigate_unitize` and non-mainline prompt families are no longer current live prompt families.
@@ -164,12 +164,14 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
 - The current prompt manifest node name and trace node id for Navigator selection are `navigate_choose_next_unit`.
 - The live runtime should be explained as a reading loop:
   - `Reading Runner` maintains a paragraph-offset `SourceCursor` over the current chapter
+  - `Reading Runner` prepares the next source-unit request with source preview, cursor state, and bounded navigation context
   - `Navigate.choose_next_unit`
-    - receives an adaptive source preview from the current cursor
-    - returns an exact `end_anchor_text` rather than sentence ids or raw numeric offsets
+    - receives that already-prepared adaptive source preview and context
+    - returns only boundary fields, including an exact `end_anchor_text` rather than sentence ids or raw numeric offsets
+  - `Reading Runner` boundary governance resolves the returned anchor, retries once when the anchor is unresolved, falls back to a deterministic cursor boundary when needed, and produces the accepted `PreparedSourceUnit`
   - mandatory formal unit read with bounded carry-forward context
   - `read` directly surfaces zero-to-many reading-time reactions and emits bounded state ops
-  - `Reading Runner` resolves the returned anchor into an end-exclusive `SourceSpan`, invokes `Read` on that accepted source unit, applies memory uptake, persists reactions, writes audit, records the accepted unit span, and advances the cursor
+  - `Reading Runner` invokes `Read` on the accepted source unit, applies memory uptake, persists reactions, writes audit, records the accepted unit span, and advances the cursor
   - `Read` has no current path-redirection output contract; new read-audit rows do not emit retired path-redirection evidence
   - chapter-end slow-cycle work such as `chapter_consolidation`, `reflective_promotion`, and `reconsolidation`
 - The old `trigger -> zoom_read -> meaning_unit_closure -> controller_decision -> reaction_emission` chain is now historical implementation vocabulary, not live runtime behavior.

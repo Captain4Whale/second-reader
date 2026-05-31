@@ -15,7 +15,7 @@ from .knowledge import (
 )
 from .nodes import (
     build_unitize_preview,
-    navigate_choose_next_unit_act,
+    navigate_choose_next_unit,
     read_unit,
 )
 from .observability import (
@@ -152,7 +152,7 @@ __all__ = [
     "load_full_checkpoint",
     "capture_local_continuity",
     "context_ref_ids",
-    "navigate_choose_next_unit_act",
+    "navigate_choose_next_unit",
     "persist_reading_position",
     "persist_normalized_eval_bundle",
     "project_chapter_result_compatibility",

@@ -412,8 +412,8 @@ class SurfacedReaction(TypedDict, total=False):
     search_intent: "SearchIntent" | None
 
 
-class NavigateActResult(TypedDict, total=False):
-    """One bounded Navigate.choose_next_unit act."""
+class NavigateBoundaryResult(TypedDict, total=False):
+    """One bounded Navigate.choose_next_unit LLM boundary result."""
 
     reason: str
     end_anchor_text: str
@@ -421,8 +421,8 @@ class NavigateActResult(TypedDict, total=False):
     continuation_pressure: bool
 
 
-class NavigateActTraceEntry(TypedDict, total=False):
-    """One compact Navigate trace entry."""
+class NavigateBoundaryTraceEntry(TypedDict, total=False):
+    """One compact Navigate boundary trace entry."""
 
     reason: str
     end_anchor_text: str
@@ -431,8 +431,8 @@ class NavigateActTraceEntry(TypedDict, total=False):
     error: str
 
 
-class NavigateNextUnitResult(TypedDict, total=False):
-    """One Navigator-selected unit that should be read next."""
+class PreparedSourceUnit(TypedDict, total=False):
+    """One runtime-prepared source unit that should be read next."""
 
     chapter_id: int
     chapter_ref: str
@@ -440,7 +440,7 @@ class NavigateNextUnitResult(TypedDict, total=False):
     selected_source_unit: dict[str, object]
     preview: dict[str, object]
     unitize_decision: UnitizeDecision
-    navigate_trace: list[NavigateActTraceEntry]
+    boundary_trace: list[NavigateBoundaryTraceEntry]
 
 
 class BridgeCandidate(TypedDict, total=False):
