@@ -58,7 +58,7 @@ Top-level rule:
 
 - `ReaderRole` owns the stable reader identity.
 - `Instruction` owns all fixed non-role directions for this LLM call.
-- Runtime context/data blocks stay outside `Instruction`: `BookInfo`, `ReadingState`, `CurrentFocus`, `RetrievalSurface`, and `OutputContract`.
+- Runtime context/data blocks stay outside `Instruction`: `BookInfo`, `ReadingState`, `CurrentView`, `RetrievalSurface`, and `OutputContract`.
 
 ```xml
 <ReaderRole>...</ReaderRole>
@@ -80,14 +80,12 @@ Top-level rule:
   <PriorReadingState>{...}</PriorReadingState>
 </ReadingState>
 
-<CurrentFocus>
-  <ReadingPath>{...}</ReadingPath>
+<CurrentView>
   <ReadingPosition>{...}</ReadingPosition>
   <SourcePreview>
     <Paragraph n="..." role="..." start_char="..." end_char="...">...</Paragraph>
   </SourcePreview>
-  <IngestIntent>{...}</IngestIntent>
-</CurrentFocus>
+</CurrentView>
 
 <RetrievalSurface>
   <AvailableMemoryStores>{...}</AvailableMemoryStores>
@@ -176,7 +174,7 @@ Your work in this call has two outputs:
 
 #### ContextUseGuide
 
-`ContextUseGuide` tells the model how to use `BookInfo`, `ReadingState`, `CurrentFocus`, `RetrievalSurface`, and `OutputContract`.
+`ContextUseGuide` tells the model how to use `BookInfo`, `ReadingState`, `CurrentView`, `RetrievalSurface`, and `OutputContract`.
 
 It should emphasize:
 
@@ -303,15 +301,11 @@ Candidate contents:
 
 This block supports unit-boundary judgment and helps Ingest decide what memory support might matter. It should not contain large source excerpts, audit ledgers, reaction history, or historical route/move data.
 
-### CurrentFocus
+### CurrentView
 
-Maps from the old `reading_position`, `mainline_preview`, and `mainline_cursor`.
+Maps from the old `reading_position` and `mainline_preview`.
 
-#### ReadingPath
-
-`ReadingPath` contains the current path mode, currently forward/mainline only.
-
-It must not expose detour, route, source-backread, or selection-mode surfaces.
+`CurrentView` is the source text currently visible to Ingest for next-unit selection. It is not the already accepted reading object. The accepted object is produced by Ingest and later becomes Digest's `CurrentFocus / ReadingObject / SourceUnit`.
 
 #### ReadingPosition
 
@@ -322,10 +316,6 @@ It must not expose detour, route, source-backread, or selection-mode surfaces.
 `SourcePreview` contains the paragraph-offset preview rendered as XML paragraphs where practical.
 
 Paragraph indexes and text roles may be attributes. The source text itself remains visible and primary.
-
-#### IngestIntent
-
-`IngestIntent` is `select_next_unit_and_request_memory_support`.
 
 ### RetrievalSurface
 
@@ -420,9 +410,9 @@ Each request contains:
 | Boundary-selection rules | `Instruction / SelectNextUnit` | Reuse almost directly. This is where the already-approved next-unit selection prompt content belongs. |
 | no old equivalent | `Instruction / RequestMemorySupport` | Name the recall task and put the detailed retrieval-query policy together here. |
 | `Structural frame` | `BookInfo / BookIdentity` | Move output-language concerns to `OutputContract`. |
-| `Reading position` | `CurrentFocus / ReadingPosition` | Keep current cursor and retry feedback here. |
-| `Mainline preview` | `CurrentFocus / SourcePreview` | Prefer paragraph XML nodes over one JSON blob. |
-| `Mainline cursor` | `CurrentFocus / ReadingPath` and `ReadingPosition` | Keep forward-only cursor facts; do not revive mode/decision fields. |
+| `Reading position` | `CurrentView / ReadingPosition` | Keep current cursor and retry feedback here. |
+| `Mainline preview` | `CurrentView / SourcePreview` | Prefer paragraph XML nodes over one JSON blob. |
+| `Mainline cursor` | `CurrentView / ReadingPosition` | Keep only cursor facts needed to understand where the preview starts; do not revive mode/decision fields. |
 | `Navigation context` | `ReadingState` plus `RetrievalSurface` | Split continuity state from retrieval discoverability. |
 | `Policy snapshot` | `Instruction / SelectNextUnit` policy plus `RetrievalSurface / RetrievalPolicy` | Separate boundary policy from retrieval budget. |
 | `Output language contract` | `OutputContract / LanguageContract` | Follow Read XML structure. |
