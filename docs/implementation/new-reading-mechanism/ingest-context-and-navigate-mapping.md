@@ -272,12 +272,13 @@ Target fields:
 ```json
 {
   "book_title": "...",
-  "author": "...",
-  "chapter_title": "..."
+  "author": "..."
 }
 ```
 
-`output_language` should move out of `BookInfo` and into `OutputContract / LanguageContract`, following the Read XML pattern.
+`BookInfo` should match the Read XML pattern: it identifies the stable book, not the current reading location.
+
+`chapter_title` belongs in `CurrentView / Position`, because it describes the current location in the reading flow. `output_language` should move out of `BookInfo` and into `OutputContract / LanguageContract`.
 
 ### ReadingState
 
@@ -310,6 +311,20 @@ Maps from the old `reading_position` and `mainline_preview`.
 #### Position
 
 `Position` contains the current chapter reference, current source cursor, and retry evidence when the runtime is asking for a second anchor attempt.
+
+Target fields:
+
+```json
+{
+  "current_chapter_id": 1,
+  "current_chapter_ref": "chapter_1",
+  "chapter_title": "...",
+  "current_cursor": {},
+  "retry": false
+}
+```
+
+On retry, runtime may also include `previous_end_anchor_text`, `previous_resolution`, and `retry_instruction`.
 
 #### Content
 
@@ -409,7 +424,7 @@ Each request contains:
 | Next-unit task framing | `Instruction / SelectNextUnit` | Name the task and keep the detailed boundary policy together here. |
 | Boundary-selection rules | `Instruction / SelectNextUnit` | Reuse almost directly. This is where the already-approved next-unit selection prompt content belongs. |
 | no old equivalent | `Instruction / RequestMemorySupport` | Name the recall task and put the detailed retrieval-query policy together here. |
-| `Structural frame` | `BookInfo / BookIdentity` | Move output-language concerns to `OutputContract`. |
+| `Structural frame` | `BookInfo / BookIdentity`, `CurrentView / Position`, and `OutputContract / LanguageContract` | Keep stable book identity in `BookInfo`; move `chapter_title` to `CurrentView / Position`; move output-language concerns to `OutputContract`. |
 | `Reading position` | `CurrentView / Position` | Keep current cursor and retry feedback here. |
 | `Mainline preview` | `CurrentView / Content` | Prefer paragraph XML nodes over one JSON blob. |
 | `Mainline cursor` | `CurrentView / Position` | Keep only cursor facts needed to understand where the preview starts; do not revive mode/decision fields. |
