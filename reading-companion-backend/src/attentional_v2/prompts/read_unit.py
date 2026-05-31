@@ -17,10 +17,10 @@ from .assembler import PromptAssembler, PromptAssemblyResult, PromptAssemblySpec
 from .types import PromptDefinition
 
 
-READ_UNIT_PROMPT_VERSION = 'attentional_v2.read.v32'
-READ_XML_PROMPT_VERSION = "attentional_v2.read.xml.v3"
-READ_XML_PROMPT_ASSEMBLY_SPEC_ID = "attentional_v2.read_unit.xml.v3"
-READ_XML_PROMPTSET_VERSION = "attentional_v2-phase6-v43"
+READ_UNIT_PROMPT_VERSION = 'attentional_v2.read.v33'
+READ_XML_PROMPT_VERSION = "attentional_v2.read.xml.v4"
+READ_XML_PROMPT_ASSEMBLY_SPEC_ID = "attentional_v2.read_unit.xml.v4"
+READ_XML_PROMPTSET_VERSION = "attentional_v2-phase6-v44"
 READ_XML_TRANSPORT_SYSTEM_PROMPT = "Follow the structured Read prompt in the user message. Return JSON only."
 
 
@@ -29,7 +29,7 @@ READ_XML_TRANSPORT_SYSTEM_PROMPT = "Follow the structured Read prompt in the use
 READ_UNIT_ROLE_AND_INSTRUCTION_FRAGMENTS = (
     PromptFragment(
         fragment_id='reader.shared_role',
-        text="""You are a careful reader moving through this book.
+        text="""你是一个知识渊博、有深刻洞见的阅读爱好者。当前你正在深入阅读一本书，在理解这本书内容的同时，积极对其进行思考，沉淀有价值的理解，并产生有价值的输出，从而获得最大的求知乐趣与自我提升。你的阅读可能分为多个步骤，具体每一步的活动请参考具体指令。
 """,
     ),
     PromptFragment(

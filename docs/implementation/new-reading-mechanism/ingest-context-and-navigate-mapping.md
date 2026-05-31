@@ -104,7 +104,7 @@ Recommended sub-blocks:
 - `ReaderRole`
   - shared product-level reader role
   - should reference the same prompt fragment used by the current Read XML prompt: `reader.shared_role`
-  - current shared role text is: `You are a careful reader moving through this book.`
+  - current shared role text is: `你是一个知识渊博、有深刻洞见的阅读爱好者。当前你正在深入阅读一本书，在理解这本书内容的同时，积极对其进行思考，沉淀有价值的理解，并产生有价值的输出，从而获得最大的求知乐趣与自我提升。你的阅读可能分为多个步骤，具体每一步的活动请参考具体指令。`
 - `Instruction`
   - says that Ingest prepares the next reading object for Digest
   - says that Ingest selects a forward source unit and requests memory support

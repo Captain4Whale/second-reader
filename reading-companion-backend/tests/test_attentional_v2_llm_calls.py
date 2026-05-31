@@ -368,7 +368,7 @@ def test_read_unit_filters_unanchored_surface_and_uses_naturalized_contract(tmp_
         }
     ]
     assert result["memory_uptake_ops"][0]["target_store"] == "active_attention"
-    assert "You are a careful reader moving through this book." in captured["system_prompt"]
+    assert "你是一个知识渊博、有深刻洞见的阅读爱好者。" in captured["system_prompt"]
     assert "not as a field-filling task" in captured["system_prompt"]
     assert "Let `reading_impression` be the brief natural impression" in captured["system_prompt"]
     assert "After the impression and any surfaced reactions, maintain memory deliberately." in captured["system_prompt"]
@@ -473,7 +473,7 @@ def test_read_unit_filters_unanchored_surface_and_uses_naturalized_contract(tmp_
     assert "\"target_store\": \"concept_registry\"" in captured["prompt"]
     assert "\"target_store\": \"thread_trace\"" in captured["prompt"]
     assert "Do not target `concept_digest`, `thread_digest`, `active_focus_digest`" in captured["system_prompt"]
-    assert manifest["prompt_version"] == "attentional_v2.read.v32"
+    assert manifest["prompt_version"] == "attentional_v2.read.v33"
 
 
 def test_read_unit_can_use_xml_prompt_assembly_mode_without_changing_default(tmp_path: Path, monkeypatch):
@@ -573,9 +573,9 @@ def test_read_unit_can_use_xml_prompt_assembly_mode_without_changing_default(tmp
         "kind": "claim_or_argument",
         "memory_text": "The current unit frames the book as witness testimony.",
     }
-    assert manifest["prompt_version"] == "attentional_v2.read.xml.v3"
+    assert manifest["prompt_version"] == "attentional_v2.read.xml.v4"
     assert manifest["prompt_assembly"]["mode"] == "xml"
-    assert manifest["prompt_assembly"]["spec_id"] == "attentional_v2.read_unit.xml.v3"
+    assert manifest["prompt_assembly"]["spec_id"] == "attentional_v2.read_unit.xml.v4"
     assert manifest["prompt_assembly"]["rendered_blocks"] == [
         "RoleAndInstruction",
         "BookInfo",

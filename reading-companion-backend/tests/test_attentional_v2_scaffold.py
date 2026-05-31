@@ -231,7 +231,7 @@ def test_prompt_assembler_renders_spec_and_metadata_without_live_migration() -> 
     assert "test.role.v1" not in result.rendered_text
     assert "current_focus" not in result.rendered_text
     assert "ref=" not in result.rendered_text
-    assert READ_UNIT_PROMPT_VERSION == "attentional_v2.read.v32"
+    assert READ_UNIT_PROMPT_VERSION == "attentional_v2.read.v33"
     assert ATTENTIONAL_V2_PROMPTS.read_unit_system == READ_UNIT_SYSTEM_PROMPT
     assert "Structural frame:" in ATTENTIONAL_V2_PROMPTS.read_unit_prompt
 
@@ -330,9 +330,9 @@ def test_read_xml_prompt_example_does_not_replace_live_read_prompt() -> None:
     assert "reading_state" not in rendered
     assert "current_focus" not in rendered
     assert "output_contract" not in rendered
-    assert READ_UNIT_PROMPT_VERSION == "attentional_v2.read.v32"
+    assert READ_UNIT_PROMPT_VERSION == "attentional_v2.read.v33"
     assert ATTENTIONAL_V2_PROMPTS.read_unit_version == READ_UNIT_PROMPT_VERSION
-    assert ATTENTIONAL_V2_PROMPTS.read_unit_system.startswith("You are a careful reader")
+    assert ATTENTIONAL_V2_PROMPTS.read_unit_system.startswith("你是一个知识渊博")
     assert "Structural frame:" in ATTENTIONAL_V2_PROMPTS.read_unit_prompt
 
 
@@ -354,7 +354,7 @@ def test_full_read_prompt_xml_assembly_renders_all_target_blocks_without_live_mi
         },
     )
 
-    assert result.spec_id == "attentional_v2.read_unit.xml.v3"
+    assert result.spec_id == "attentional_v2.read_unit.xml.v4"
     assert result.owner_node == "read_unit"
     assert result.prompt_version == READ_XML_PROMPT_VERSION
     assert result.promptset_version == READ_XML_PROMPTSET_VERSION
@@ -388,7 +388,7 @@ def test_full_read_prompt_xml_assembly_renders_all_target_blocks_without_live_mi
     assert "value_slot" not in result.rendered_text
     assert "book_identity" not in result.rendered_text
     assert "read.role_and_stance" not in result.rendered_text
-    assert READ_UNIT_PROMPT_VERSION == "attentional_v2.read.v32"
+    assert READ_UNIT_PROMPT_VERSION == "attentional_v2.read.v33"
     assert ATTENTIONAL_V2_PROMPTS.read_unit_system == READ_UNIT_SYSTEM_PROMPT
 
 
@@ -425,7 +425,7 @@ def test_read_role_and_instruction_xml_renders_target_structure_without_live_mig
     assert "reader.shared_role" not in rendered
     assert "read.instruction" not in rendered
     assert "reading-companion-backend" not in rendered
-    assert READ_UNIT_PROMPT_VERSION == "attentional_v2.read.v32"
+    assert READ_UNIT_PROMPT_VERSION == "attentional_v2.read.v33"
     assert ATTENTIONAL_V2_PROMPTS.read_unit_system == READ_UNIT_SYSTEM_PROMPT
     assert "Structural frame:" in ATTENTIONAL_V2_PROMPTS.read_unit_prompt
     assert rendered.index("<ReaderRole>") < rendered.index("<Instruction>")
@@ -472,7 +472,7 @@ def test_read_book_info_xml_renders_light_orientation_block() -> None:
     assert "book_identity" not in rendered
     assert "chapter_identity" not in rendered
     assert "ref=" not in rendered
-    assert READ_UNIT_PROMPT_VERSION == "attentional_v2.read.v32"
+    assert READ_UNIT_PROMPT_VERSION == "attentional_v2.read.v33"
     assert "Structural frame:" in ATTENTIONAL_V2_PROMPTS.read_unit_prompt
 
 
@@ -539,7 +539,7 @@ def test_read_current_focus_xml_renders_mainline_source_unit_with_paragraphs() -
     assert "reading_path" not in rendered
     assert "reading_position" not in rendered
     assert "reading_intent" not in rendered
-    assert READ_UNIT_PROMPT_VERSION == "attentional_v2.read.v32"
+    assert READ_UNIT_PROMPT_VERSION == "attentional_v2.read.v33"
     assert "Structural frame:" in ATTENTIONAL_V2_PROMPTS.read_unit_prompt
 
 
@@ -616,7 +616,7 @@ def test_read_reading_state_xml_projects_recent_memory_as_text_array_only() -> N
     assert "value_slot" not in rendered
     assert "recent_memory" not in rendered
     assert "ref=" not in rendered
-    assert READ_UNIT_PROMPT_VERSION == "attentional_v2.read.v32"
+    assert READ_UNIT_PROMPT_VERSION == "attentional_v2.read.v33"
     assert "Structural frame:" in ATTENTIONAL_V2_PROMPTS.read_unit_prompt
 
 
@@ -657,7 +657,7 @@ def test_read_output_contract_xml_renders_target_contract_without_live_migration
     assert "language_contract" not in rendered
     assert "read.output_use_guide" not in rendered
     assert "ref=" not in rendered
-    assert READ_UNIT_PROMPT_VERSION == "attentional_v2.read.v32"
+    assert READ_UNIT_PROMPT_VERSION == "attentional_v2.read.v33"
     assert ATTENTIONAL_V2_PROMPTS.read_unit_system == READ_UNIT_SYSTEM_PROMPT
     assert "Structural frame:" in ATTENTIONAL_V2_PROMPTS.read_unit_prompt
 
@@ -706,7 +706,7 @@ def test_read_unit_role_and_instruction_fragments_are_lossless() -> None:
         fragment.text for fragment in READ_UNIT_ROLE_AND_INSTRUCTION_FRAGMENTS
     )
     assert ATTENTIONAL_V2_PROMPTS.read_unit_system == READ_UNIT_SYSTEM_PROMPT
-    assert READ_UNIT_SYSTEM_PROMPT.startswith("You are a careful reader")
+    assert READ_UNIT_SYSTEM_PROMPT.startswith("你是一个知识渊博")
 
 
 def test_attentional_v2_prompt_registry_contains_node_definitions() -> None:
@@ -734,9 +734,9 @@ def test_attentional_v2_prompt_registry_projects_current_bundle() -> None:
     navigate = ATTENTIONAL_V2_PROMPT_REGISTRY.get("attentional_v2.navigate")
     chapter = ATTENTIONAL_V2_PROMPT_REGISTRY.get("attentional_v2.chapter_consolidation")
 
-    assert ATTENTIONAL_V2_PROMPTSET_VERSION == "attentional_v2-phase6-v42"
+    assert ATTENTIONAL_V2_PROMPTSET_VERSION == "attentional_v2-phase6-v43"
     assert ATTENTIONAL_V2_PROMPTS.promptset_version == ATTENTIONAL_V2_PROMPTSET_VERSION
-    assert read.version == READ_UNIT_PROMPT_VERSION == "attentional_v2.read.v32"
+    assert read.version == READ_UNIT_PROMPT_VERSION == "attentional_v2.read.v33"
     assert ATTENTIONAL_V2_PROMPTS.read_unit_version == read.version
     assert ATTENTIONAL_V2_PROMPTS.read_unit_system == read.system_prompt
     assert ATTENTIONAL_V2_PROMPTS.read_unit_prompt == read.user_prompt_template
