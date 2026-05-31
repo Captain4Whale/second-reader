@@ -1079,7 +1079,11 @@ def navigate_choose_next_unit_act(
     default_selection_mode: str = "mainline",
     skills_allowed: bool = False,
 ) -> NavigateActResult:
-    """Run one unified Navigate.choose_next_unit agent act."""
+    """Run the forward-only Navigate.choose_next_unit act.
+
+    Deprecated after DEC-103/DEC-104: detour/source-skill inputs are retained in
+    the signature for compatibility but are cleared before prompt assembly.
+    """
 
     active_detour_need = None
     default_selection_mode = "mainline"

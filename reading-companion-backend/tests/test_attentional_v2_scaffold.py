@@ -845,7 +845,7 @@ def _provisioned_book() -> ProvisionedBook:
 
 
 def _provisioned_book_with_detour() -> ProvisionedBook:
-    """Return a two-chapter fixture suitable for detour-flow tests."""
+    """Return a two-chapter fixture for deprecated-detour ignore tests."""
 
     book_document = {
         "metadata": {

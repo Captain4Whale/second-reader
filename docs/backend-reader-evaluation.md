@@ -7,7 +7,7 @@ Update when: north-star dimensions, anti-goals, taxonomy, method policy, or eval
 
 Use `docs/backend-reading-mechanism.md` for shared mechanism-platform boundaries and `docs/backend-reading-mechanisms/<mechanism>.md` for one mechanism's actual design. Use this file for the stable comparison frame that any current or future reader mechanism should be judged against. Product-purpose authority lives in `docs/product-overview.md`; this file operationalizes that purpose for evaluation rather than redefining it.
 
-For the current Memory / Planning / Evaluation implementation guidance chain, see `docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`. In that workspace, `C设计9-Evaluation Calibration & Minimal Eval Suite v0.md` calibrates implementation-facing evaluation guidance for the next feasibility audit; this file remains the stable evaluation constitution.
+The old Memory / Planning / Evaluation implementation guidance chain at `docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md` is historical/reference material after `DEC-103`, not the default authority for new mechanism work. In that workspace, `C设计9-Evaluation Calibration & Minimal Eval Suite v0.md` remains useful background for implementation-facing eval discipline; this file remains the stable evaluation constitution.
 
 ## Evaluation Constitution
 - The evaluation system is product-first.

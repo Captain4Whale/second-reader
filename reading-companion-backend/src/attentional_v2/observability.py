@@ -533,7 +533,11 @@ def record_read(
     navigation_trace: list[dict[str, object]] | None = None,
     detour_trace_evidence: dict[str, object] | None = None,
 ) -> None:
-    """Append one mechanism-private read audit record."""
+    """Append one mechanism-private read audit record.
+
+    Deprecated after DEC-103/DEC-104: `detour_trace_evidence` is accepted only
+    for historical call-site compatibility and is ignored.
+    """
 
     del detour_trace_evidence
     if output_dir is None:

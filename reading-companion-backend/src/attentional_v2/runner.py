@@ -1219,7 +1219,7 @@ def _build_detour_read_context(local_continuity: LocalContinuityState) -> dict[s
 
 
 def _skill_result_trace(skill_result: dict[str, object]) -> dict[str, object]:
-    """Return a compact, audit-safe skill result summary."""
+    """Deprecated after DEC-103/DEC-104: summarize legacy source-skill results."""
 
     result = skill_result.get("result") if isinstance(skill_result, dict) else {}
     result_summary: dict[str, object] = {}
@@ -1339,7 +1339,7 @@ def _mainline_source_preview_packet(preview: dict[str, object]) -> dict[str, obj
 
 
 def _skill_results_prompt_summary(skill_results: list[dict[str, object]]) -> list[dict[str, object]]:
-    """Return compact but evidence-bearing skill results for the next Navigate act."""
+    """Deprecated after DEC-103/DEC-104: summarize legacy source-skill prompt evidence."""
 
     summary: list[dict[str, object]] = []
     for skill_result in skill_results[-3:]:
@@ -1392,7 +1392,7 @@ def _skill_results_prompt_summary(skill_results: list[dict[str, object]]) -> lis
 
 
 def _latest_scope_from_skill_results(skill_results: list[dict[str, object]]) -> dict[str, object] | None:
-    """Return the most recent scope-like skill result for scope drilldown arguments."""
+    """Deprecated after DEC-103/DEC-104: inspect legacy source-skill scope results."""
 
     for skill_result in reversed(skill_results):
         result = skill_result.get("result") if isinstance(skill_result, dict) else None
@@ -1461,7 +1461,7 @@ def _navigate_trace_entry(
     skill_result: dict[str, object] | None = None,
     error: str = "",
 ) -> NavigateActTraceEntry:
-    """Return a compact trace entry for the unified Navigate loop."""
+    """Return compact Navigate trace, preserving deprecated skill fields only as compatibility."""
 
     entry: NavigateActTraceEntry = {
         "decision": _clean_text(act_result.get("decision")),  # type: ignore[typeddict-item]
@@ -1519,7 +1519,7 @@ def _safe_int(value: object) -> int:
 
 
 def _navigation_planning_support_markers(entry: dict[str, object]) -> dict[str, object]:
-    """Return compact audit-only planning markers for one navigation trace entry."""
+    """Deprecated after DEC-103/DEC-104: preserve legacy detour/source-skill audit markers."""
 
     decision = _clean_text(entry.get("decision"))
     selection_mode = _clean_text(entry.get("selection_mode"))

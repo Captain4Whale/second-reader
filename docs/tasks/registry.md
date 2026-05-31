@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-05-31T09:10:54+08:00`
+Last updated: `2026-05-31T09:23:05+08:00`
 
 ## Status Values
 - `active`
@@ -62,7 +62,7 @@ Last updated: `2026-05-31T09:10:54+08:00`
   - `Phase C.3` is now landed:
     - new runs now treat `active_attention / concept_registry / thread_trace / reflective_frames` plus inline `source_refs[]` as the primary runtime and checkpoint truth
     - old V2 state stores were demoted to cutover-only legacy territory during the cutover
-    - `active_recall` now exposes first-class `concepts` and `threads` from the new state layers
+    - the historical `active_recall` helper exposed first-class `concepts` and `threads` from the new state layers; after `DEC-104`, it is deprecated supplemental-context evidence rather than the future `Ingest` retrieval mechanism
     - checkpoint/resume temporarily accepted both old and new state territory during the cutover, while newly written checkpoints already used only the new primary keys
   - `Phase C.4` is now landed:
     - sentence-intake / slow-cycle now consume and write the new primary state layers directly; the old Anchor Bank relation-writing Bridge path is paused
@@ -79,7 +79,7 @@ Last updated: `2026-05-31T09:10:54+08:00`
     - `read` now supports a budget-bounded multi-step supplemental recall loop instead of a single extra pass
     - runtime state and full checkpoints now persist a lightweight `continuation capsule` with rehydration entrypoints
     - warm resume now restores the latest usable continuation capsule together with new-format runtime/checkpoint state
-    - `look_back` now resolves one bounded earlier source span, and `read_audit` now records per-step supplemental activity plus stop reasons
+    - the historical `look_back` helper resolved one bounded earlier source span, and `read_audit` recorded per-step supplemental activity plus stop reasons; after `DEC-104`, it is deprecated supplemental-context evidence rather than current live backread behavior
   - `Phase E1` through `Phase E3` are now preserved as a landed intermediate branch:
     - that branch retained the temporary `Read -> Express` split
     - persisted `reaction_records` now keep surfaced fields first

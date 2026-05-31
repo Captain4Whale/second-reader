@@ -51,7 +51,7 @@ def _empty_carry_forward() -> dict[str, object]:
 
 
 def test_look_back_emits_source_calibration_retrieval_contract():
-    """look_back should stay source-bound and expose compact retrieval intent."""
+    """Deprecated look_back compatibility should stay source-bound."""
 
     carry_forward = _empty_carry_forward()
     carry_forward["refs"] = [{"ref_id": "source:alpha", "source_ref": _source_ref()}]
@@ -93,7 +93,7 @@ def test_look_back_emits_source_calibration_retrieval_contract():
 
 
 def test_active_recall_emits_memory_recovery_contract_and_visible_trace_reactions():
-    """active_recall should label memory recovery without making reactions semantic memory."""
+    """Deprecated active_recall compatibility should not make reactions semantic memory."""
 
     concept_registry = build_empty_concept_registry()
     concept_registry["entries"] = [
@@ -160,7 +160,7 @@ def test_active_recall_emits_memory_recovery_contract_and_visible_trace_reaction
 
 
 def test_active_recall_result_groups_only_include_non_empty_groups():
-    """Sparse active_recall results should not advertise absent groups."""
+    """Deprecated active_recall compatibility should not advertise absent groups."""
 
     concept_registry = build_empty_concept_registry()
     concept_registry["entries"] = [

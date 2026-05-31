@@ -1020,7 +1020,11 @@ def build_read_prompt_packet(
     supplemental_context: dict[str, object] | None = None,
     detour_context: dict[str, object] | None = None,
 ) -> dict[str, object]:
-    """Project the persisted state packet into the narrow read-node prompt view."""
+    """Project persisted state into the narrow read-node prompt view.
+
+    Deprecated after DEC-103/DEC-104: `detour_context` is accepted only for
+    historical call-site compatibility and is ignored.
+    """
 
     del detour_context
     active_attention_digest = (

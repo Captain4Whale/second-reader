@@ -276,6 +276,8 @@ def test_record_read_writes_compact_navigation_and_ignores_detour_evidence(tmp_p
 
 
 def test_record_read_writes_look_back_supplemental_retrieval_audit(tmp_path: Path) -> None:
+    """Deprecated look_back compatibility remains visible in historical read audit."""
+
     output_dir = tmp_path / "output"
 
     record_read(
@@ -339,6 +341,8 @@ def test_record_read_writes_look_back_supplemental_retrieval_audit(tmp_path: Pat
 
 
 def test_record_read_writes_sparse_active_recall_retrieval_audit(tmp_path: Path) -> None:
+    """Deprecated active_recall compatibility remains visible in historical read audit."""
+
     output_dir = tmp_path / "output"
 
     record_read(

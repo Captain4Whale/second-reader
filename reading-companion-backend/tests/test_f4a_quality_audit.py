@@ -81,6 +81,7 @@ def test_load_case_summary_reports_artifact_flags_and_surfaced_semantic_counts(t
                     {
                         "surfaced_reaction_count": 0,
                         "pressure_signals": {"continuation_pressure": False, "backward_pull": True, "frame_shift_pressure": False},
+                        "deprecated_context": "historical_detour_need_fixture_after_DEC_104",
                         "detour_need": {"status": "open"},
                     },
                     ensure_ascii=False,
@@ -89,6 +90,7 @@ def test_load_case_summary_reports_artifact_flags_and_surfaced_semantic_counts(t
                     {
                         "surfaced_reaction_count": 2,
                         "pressure_signals": {"continuation_pressure": True, "backward_pull": False, "frame_shift_pressure": True},
+                        "deprecated_context": "historical_detour_need_fixture_after_DEC_104",
                         "detour_need": {"status": "resolved"},
                     },
                     ensure_ascii=False,
@@ -127,7 +129,17 @@ def test_load_case_summary_reports_artifact_flags_and_surfaced_semantic_counts(t
         + "\n",
         encoding="utf-8",
     )
-    local_continuity_path.write_text(json.dumps({"detour_trace": [{"detour_id": "d1"}]}, ensure_ascii=False) + "\n", encoding="utf-8")
+    local_continuity_path.write_text(
+        json.dumps(
+            {
+                "deprecated_context": "historical_detour_trace_fixture_after_DEC_104",
+                "detour_trace": [{"detour_id": "d1"}],
+            },
+            ensure_ascii=False,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
     normalized_path.parent.mkdir(parents=True, exist_ok=True)
     normalized_path.write_text(
         json.dumps(

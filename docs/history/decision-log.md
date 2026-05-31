@@ -1638,7 +1638,7 @@ The old active windows `nawaer_baodian_private_zh__wealth`, `nawaer_baodian_priv
 
 ## Entry 58
 **ID**: DEC-061
-**Status**: active
+**Status**: partially superseded by `DEC-103` / `DEC-104`
 
 **Decision / Inflection**: Polish live `attentional_v2` continuity around a lightweight persisted `continuation capsule` plus a budget-bounded multi-step supplemental recall loop, instead of keeping the old “one extra pass only” posture or introducing a heavy central compactor first.
 
@@ -1650,7 +1650,7 @@ The old active windows `nawaer_baodian_private_zh__wealth`, `nawaer_baodian_priv
 
 **Why this path won**: The project’s first-principles goal is still a reader that naturally carries continuity forward, not a system that hides continuity behind an oversized compactor. A lightweight persisted `continuation capsule` gives the runner and resume path one bounded continuity seed without flattening the primary state layers into a fake replacement memory. At the same time, a budget-bounded multi-step supplemental loop lets `read` ask for more context one step at a time when the current unit truly needs it, while still keeping runtime cost and runaway risk under deterministic control.
 
-**What changed in the system**: The live runner now lets `read` request supplemental context through a budget-bounded multi-step loop rather than stopping after one extra pass. Supplemental context can accumulate across multiple `active_recall` / exact `look_back` steps, `look_back` now resolves one bounded earlier span per request, and private `read_audit` records now capture each supplemental step, stop reason, and budget exhaustion. Runtime state and full checkpoints now persist `continuation_capsule.json` / checkpoint-embedded continuation capsules carrying bounded continuity digests plus explicit `rehydration entrypoints`. Warm resume remains `new-format only`, but it now restores the latest usable continuation capsule together with new-format runtime/checkpoint state instead of depending only on raw state files.
+**What changed in the system**: The live runner then let `read` request supplemental context through a budget-bounded multi-step loop rather than stopping after one extra pass. Supplemental context could accumulate across multiple `active_recall` / exact `look_back` steps, `look_back` resolved one bounded earlier span per request, and private `read_audit` records captured each supplemental step, stop reason, and budget exhaustion. Runtime state and full checkpoints persisted `continuation_capsule.json` / checkpoint-embedded continuation capsules carrying bounded continuity digests plus explicit `rehydration entrypoints`. Warm resume remained `new-format only`, but restored the latest usable continuation capsule together with new-format runtime/checkpoint state instead of depending only on raw state files. After `DEC-103` / `DEC-104`, the supplemental `active_recall` / `look_back` helper loop is deprecated compatibility/reference surface and should not be treated as the future Ingest retrieval design.
 
 **Why it matters later**: Future contributors will otherwise see the new state layers and helper contracts, but miss the next crucial continuity decision: the project explicitly chose a light persisted continuity seed plus bounded iterative recall over either a one-shot recall limit or an early heavy compaction subsystem. This entry records that `Phase D` was not “small cleanup.” It was the point where continuity, recall, and warm resume were made to match the new post-`Phase C` mechanism shape.
 
@@ -1878,7 +1878,7 @@ The old active windows `nawaer_baodian_private_zh__wealth`, `nawaer_baodian_priv
 
 ## Entry 66
 **ID**: DEC-069
-**Status**: active
+**Status**: superseded by `DEC-104`
 
 **Decision / Inflection**: Replace the planned `revisit` model with a unified `detour` model, and make F2 a `Navigate`-owned bounded hierarchical semantic search rather than a program-led candidate-recall subsystem.
 
@@ -1892,7 +1892,7 @@ The old active windows `nawaer_baodian_private_zh__wealth`, `nawaer_baodian_priv
 
 **What changed in the system**: The stable mechanism doc and the structural rework plan now freeze F2 around `detour` terminology and behavior. `Read` will still emit the live F1 transitional field `revisit_need` until F2 lands, but the approved target shape is `detour_need`. `Navigate` will own `mainline_cursor`, `active_detour_id`, and `detour_trace`, and it will use one bounded `detour-search` prompt family whose legal outcomes are `narrow_scope`, `land_region`, and `defer_detour`. Detour search is bounded to one call when memory makes the target obvious, two calls for ordinary ambiguity, and three calls as the hard upper bound before best-effort landing or defer-to-mainline behavior. Once a detour region is landed, it is read through the same ordinary `navigate.unitize -> read -> navigate.route` loop as any other region.
 
-**Why it matters later**: Without recording this shift, future contributors would assume the project still intended to harden `inline_look_back` and `revisit_hop` as first-class stable modes, or that F2 should primarily be a smarter retrieval helper. This entry preserves the actual approved design: detour is a navigation concept, not a retrieval subsystem, and the project is intentionally standardizing on one reading loop with navigation-owned redirection rather than proliferating specialized side channels.
+**Why it matters later**: This entry preserves why the project once chose detour over revisit. `DEC-104` supersedes that live direction: future contributors should not harden `inline_look_back`, `revisit_hop`, or live Detour as current path steering. Prior-context pressure should instead be handled by the forthcoming Ingest memory-retrieval design.
 
 **Primary evidence**:
 - `docs/backend-reading-mechanisms/attentional_v2.md`
@@ -1904,7 +1904,7 @@ The old active windows `nawaer_baodian_private_zh__wealth`, `nawaer_baodian_priv
 
 ## Entry 67
 **ID**: DEC-070
-**Status**: active
+**Status**: superseded by `DEC-104`
 
 **Decision / Inflection**: Land `Phase F2` by cutting the live mechanism from transitional `revisit_need` into `Navigate`-owned `detour`, with bounded hierarchical semantic search and normal-loop detour reading.
 
@@ -1918,7 +1918,7 @@ The old active windows `nawaer_baodian_private_zh__wealth`, `nawaer_baodian_priv
 
 **What changed in the system**: The live `Read` contract now emits `detour_need`. `LocalContinuityState` now persists `mainline_cursor`, `active_detour_id`, `active_detour_need`, and `detour_trace`. The runner now uses one bounded `detour-search` prompt family with `narrow_scope / land_region / defer_detour`, performs detour search before choosing the next reading region, and routes landed detour regions back through the ordinary `navigate.unitize -> read -> navigate.route` loop. Resume snapshots and read audits now preserve detour state, and chapter-tail detours are drained before chapter slow-cycle close so a final-unit detour request is not silently dropped.
 
-**Why it matters later**: This is the point where detour stopped being only an approved design and became live runtime behavior. Future work on reaction persistence cleanup and dead-path removal can now assume a real `Navigate`-owned detour mechanism instead of reasoning about a transitional placeholder.
+**Why it matters later**: This entry marks the point where detour became live runtime behavior. `DEC-104` later retired that live behavior: future work should treat this entry as historical evidence and should not assume a current `Navigate`-owned detour mechanism.
 
 **Primary evidence**:
 - `docs/backend-reading-mechanisms/attentional_v2.md`
@@ -2017,7 +2017,7 @@ The old active windows `nawaer_baodian_private_zh__wealth`, `nawaer_baodian_priv
 
 ## Entry 76
 **ID**: DEC-079
-**Status**: active
+**Status**: active, with Detour scheduling superseded by `DEC-104`
 
 **Decision / Inflection**: Cut current `attentional_v2` routing vocabulary from the historical `advance / dwell / bridge / reframe` move model to the current `Navigate.route` action contract: `commit`, `continue`, `bridge_back`, and `reframe`.
 
@@ -2311,21 +2311,21 @@ This new direction is design frozen but not yet implemented as a formal benchmar
 
 ## Entry 76
 **ID**: DEC-079
-**Status**: active
+**Status**: active, with Detour scheduling superseded by `DEC-104`
 
-**Decision / Inflection**: Retire `Navigate.route` and the `commit / continue / bridge_back / reframe` route-action taxonomy from current `attentional_v2`. Current forward reading is now settled by the Reading Runner after `Read`, while `Detour` remains the only non-mainline scheduling mechanism.
+**Decision / Inflection**: Retire `Navigate.route` and the `commit / continue / bridge_back / reframe` route-action taxonomy from current `attentional_v2`. Forward reading became settled by the Reading Runner after `Read`; at that time, `Detour` remained the only non-mainline scheduling mechanism.
 
 **Period**: May 4, 2026, after the project re-examined whether the remaining route-action layer still had a first-principles role after Read naturalization, Active Attention cleanup, and Detour ownership had landed.
 
-**Problem**: The route-action layer survived several earlier cleanups because it was once a useful bridge away from older `advance / dwell / bridge / reframe` controller vocabulary. But after the mechanism stabilized around `Navigate.unitize -> read -> Reading Runner settlement`, the four current route actions no longer owned distinct behavior. Ordinary forward progress was already cursor progression performed by the Reading Runner. `Read` already owned memory uptake, surfaced reactions, and detour need. `Detour` already owned non-mainline scheduling. `bridge_back` and `reframe` had become historical controller echoes rather than meaningful current scheduling actions.
+**Problem**: The route-action layer survived several earlier cleanups because it was once a useful bridge away from older `advance / dwell / bridge / reframe` controller vocabulary. But after the mechanism stabilized around `Navigate.unitize -> read -> Reading Runner settlement`, the four current route actions no longer owned distinct behavior. Ordinary forward progress was already cursor progression performed by the Reading Runner. `Read` already owned memory uptake, surfaced reactions, and detour need. At that time, `Detour` owned non-mainline scheduling; `DEC-104` later superseded that part. `bridge_back` and `reframe` had become historical controller echoes rather than meaningful current scheduling actions.
 
 **Alternatives considered**: Keep `route_action` as a public/eval explanation chip, collapse the taxonomy into a single `forward` action, or migrate `bridge_back` / `reframe` effects into `Read`. These were rejected because they would preserve a taxonomy for something that is now ordinary control flow. A single `forward` action would still make default cursor advancement look like a semantic decision, and migrating bridge/reframe would risk reintroducing low-value derived state updates that the current memory model no longer needs.
 
-**Why this path won**: The simplest true model is also the most universal: `Navigate` chooses the next unit or detour target, `Read` reads the chosen unit and emits memory/reaction/detour outputs, and the Reading Runner deterministically settles that read and advances the cursor. That model removes route labels that no longer change behavior, avoids confusing future agents with controller-era names, and keeps non-mainline movement concentrated in the explicit Detour mechanism.
+**Why this path won**: The simplest true model is also the most universal: `Navigate` chooses the next unit, `Read` reads the chosen unit and emits memory/reaction outputs, and the Reading Runner deterministically settles that read and advances the cursor. At the time this decision landed, non-mainline movement was concentrated in the explicit Detour mechanism; `DEC-104` later superseded that Detour scheduling part and made the current live path forward-only.
 
 **What changed in the system**: The Reading Runner no longer calls `navigate_route`. `ReadResult` no longer emits `pressure_signals`. New runtime state no longer creates `route_history.json`, and old `route_history` / `move_history` runtime state fails fast on warm resume rather than being migrated. Public schemas, OpenAPI-generated frontend types, overview live-chip copy, normalized eval export, and Memory Quality probe support no longer expose `route_action` as current evidence. Stable mechanism/API/evaluation/current-state docs now describe post-read settlement as Reading Runner-owned deterministic behavior.
 
-**Why it matters later**: Future navigation work should not resurrect a generic route taxonomy unless it creates a real scheduling capability. If the mechanism needs to leave the mainline, use Detour. If it is simply done reading the chosen unit, the Reading Runner advances. If a reaction links backward, the surfaced reaction and anchor evidence should carry that linkage rather than a route action. This is the point where `attentional_v2` becomes cleaner than the intermediate controller shapes that helped it evolve.
+**Why it matters later**: Future navigation work should not resurrect a generic route taxonomy unless it creates a real scheduling capability. After `DEC-104`, the current mechanism also should not revive Detour as the default way to leave the mainline. If it is simply done reading the chosen unit, the Reading Runner advances. If a reaction links backward, the surfaced reaction and source evidence should carry that linkage rather than a route action.
 
 **Primary evidence**:
 - `docs/backend-reading-mechanisms/attentional_v2.md`
@@ -2350,7 +2350,7 @@ This new direction is design frozen but not yet implemented as a formal benchmar
 
 ## Entry 77
 **ID**: DEC-080
-**Status**: active
+**Status**: partially superseded by `DEC-104`
 
 **Decision / Inflection**: Make `Navigate.choose_next_unit` the current `attentional_v2` Navigator contract. Its mechanism-level meaning is **Choose Next Unit That Should Be Read**.
 
@@ -2362,9 +2362,9 @@ This new direction is design frozen but not yet implemented as a formal benchmar
 
 **Why this path won**: `choose_next_unit` states the universal job directly: select the next readable unit that should be read now. Mainline forward reading and detour reading become two modes inside one selection contract, not two separate scheduling systems. The Reading Runner can then consume one `NavigateNextUnitResult` and send both mainline and landed-detour units through the same `Read -> Reading Runner settlement` path.
 
-**What changed in the system**: The current schema now includes `NavigateNextUnitResult` with `selection_mode = mainline | detour | deferred`, selected unit sentences, unitization decision, optional detour trace, and optional defer reason. The Reading Runner now calls `navigate_choose_next_unit(...)` each loop. Without an active detour it reuses the existing bounded preview and unitization helper; with an active detour it runs the existing bounded detour search, unitizes the landed region, and returns a normal read unit. Mainline and detour reads now share one settlement helper. The previous `_run_detour_episode(...)` duplicate read/settlement branch was removed.
+**What changed in the system**: The schema then added `NavigateNextUnitResult` with `selection_mode = mainline | detour | deferred`, selected unit sentences, unitization decision, optional detour trace, and optional defer reason. The Reading Runner began calling `navigate_choose_next_unit(...)` each loop. Without an active detour it reused the existing bounded preview and unitization helper; with an active detour it ran the existing bounded detour search, unitized the landed region, and returned a normal read unit. Mainline and detour reads shared one settlement helper. The previous `_run_detour_episode(...)` duplicate read/settlement branch was removed. `DEC-104` later retired the live detour/deferred modes; the surviving current point from this decision is the single forward `Navigate.choose_next_unit` entrypoint.
 
-**Why it matters later**: Future navigation work should start from `Navigate.choose_next_unit`, not from reintroducing route actions or treating detour search as a second-class side channel. If later source-search skills or tool calls are added, they should be internal capabilities used by the choose-next-unit flow rather than a new competing mechanism ontology.
+**Why it matters later**: Future navigation work should start from `Navigate.choose_next_unit`, not from reintroducing route actions. The historical detour/source-search part of this decision is superseded by `DEC-104`; future Ingest retrieval should be designed separately rather than reviving detour search as a side channel.
 
 **Primary evidence**:
 - `docs/backend-reading-mechanisms/attentional_v2.md`
@@ -2379,7 +2379,7 @@ This new direction is design frozen but not yet implemented as a formal benchmar
 
 ## Entry 78
 **ID**: DEC-081
-**Status**: active
+**Status**: active, with detour wording superseded by `DEC-104`
 
 **Decision / Inflection**: Name the current `attentional_v2` mechanism-internal read-progress executor `Reading Runner`.
 
@@ -2389,7 +2389,7 @@ This new direction is design frozen but not yet implemented as a formal benchmar
 
 **Alternatives considered**: Rename the shared runtime layer, rename the `attentional_v2` package/key, or split/rename the whole mechanism directory immediately. These were rejected because the current issue is narrower: the project only needs a clear name for the current mechanism's internal read-progress executor. Shared `reading_runtime`, mechanism registration, adapter keys, historical artifacts, and old reports should remain stable.
 
-**Why this path won**: `Reading Runner` says what this layer actually does: it executes the live reading loop for the current mechanism by calling `Navigate.choose_next_unit`, invoking `Read`, settling memory/reactions/audit, advancing the cursor, and handing off detour state. The name clarifies the mechanism without making `V2` a node name and without disturbing the shared multi-mechanism architecture.
+**Why this path won**: `Reading Runner` says what this layer actually does: it executes the live reading loop for the current mechanism by calling `Navigate.choose_next_unit`, invoking `Read`, settling memory/reactions/audit, and advancing the cursor. At the time of this decision it also handed off detour state; that part is historical after `DEC-104`. The name clarifies the mechanism without making `V2` a node name and without disturbing the shared multi-mechanism architecture.
 
 **What changed in the system**: The mechanism adapter now calls `run_reading_runner(...)` for reads. The current mechanism label no longer says `Attentional V2 scaffold (Phase 1-8)`. Stable mechanism/current-state/task docs now define `Reading Runner` as an `attentional_v2`-internal role rather than the shared runtime shell.
 
@@ -2408,7 +2408,7 @@ This new direction is design frozen but not yet implemented as a formal benchmar
 
 ## Entry 79
 **ID**: DEC-082
-**Status**: active
+**Status**: superseded by `DEC-104`
 
 **Decision / Inflection**: Add a mechanism-private book-local Skill Runtime for `Navigate.choose_next_unit`, first used only by detour search.
 
@@ -2422,7 +2422,7 @@ This new direction is design frozen but not yet implemented as a formal benchmar
 
 **What changed in the system**: `attentional_v2/skills/` now defines `SkillRequest`, `SkillResult`, the skill dispatcher, and four first-phase book-local skills: `source_map_overview`, `source_scope_drilldown`, `source_window_fetch`, and `anchor_resolve`. `Navigate.detour_search` may now return `decision=request_skill` with one `skill_request`. The detour search loop executes at most one skill request per search attempt, passes the result back into the same prompt family, and still enforces the existing three-attempt cap. Final `land_region`, `narrow_scope`, or `defer_detour` decisions remain Navigate-owned. Mainline unitization and `Read` do not call skills in this slice.
 
-**Why it matters later**: This is the first step toward a richer source-skill and possibly web-skill architecture without compromising the current loop. Future tool work should extend the Skill Runtime deliberately and keep the same ownership split: LLM nodes request evidence, the Reading Runner dispatches, skills enforce boundaries and provenance, and semantic decisions stay with the requesting node.
+**Why it matters later**: This entry is historical evidence for why the project briefly tried a book-local source-skill runtime. `DEC-104` supersedes it for the live path: the Skill Runtime is deprecated compatibility/reference surface, and future Ingest memory retrieval should not inherit this source-skill loop by default.
 
 **Primary evidence**:
 - `docs/backend-reading-mechanisms/attentional_v2.md`
@@ -2440,7 +2440,7 @@ This new direction is design frozen but not yet implemented as a formal benchmar
 
 ## Entry 80
 **ID**: DEC-083
-**Status**: active
+**Status**: partially superseded by `DEC-104`
 
 **Decision / Inflection**: Collapse current Navigate execution into one unified `Navigate.choose_next_unit` agent act loop.
 
@@ -2452,9 +2452,9 @@ This new direction is design frozen but not yet implemented as a formal benchmar
 
 **Why this path won**: One Navigate act loop matches the mechanism's natural division of labor: Navigate chooses the next readable unit, Skills provide bounded source evidence when requested, and the Reading Runner executes and settles the chosen unit. Mainline and detour reading become modes inside one selection act rather than two competing navigation systems.
 
-**What changed in the system**: The live path no longer calls separate `navigate_unitize(...)` or `navigate_detour_search(...)` nodes. `navigate_choose_next_unit_act(...)` is the current prompt/trace node and can return only `choose_unit`, `request_skill`, or `defer_detour`. Mainline calls run with `skills_allowed=false` and fall back safely if the model requests a skill or defer. Active-detour calls use the same act loop, can request bounded book-local source skills within budget, and then either choose a source-grounded unit or defer. `NavigateNextUnitResult` now carries a compact `navigate_trace`, while the Reading Runner still sends both mainline and detour units through the same `Read -> Reading Runner settlement` path.
+**What changed in the system**: The live path no longer called separate `navigate_unitize(...)` or `navigate_detour_search(...)` nodes. `navigate_choose_next_unit_act(...)` became the current prompt/trace node and could return `choose_unit`, `request_skill`, or `defer_detour`. Mainline calls ran with `skills_allowed=false` and fell back safely if the model requested a skill or defer. Active-detour calls used the same act loop, could request bounded book-local source skills within budget, and then either choose a source-grounded unit or defer. `NavigateNextUnitResult` carried a compact `navigate_trace`, while the Reading Runner sent both mainline and detour units through the same `Read -> Reading Runner settlement` path. `DEC-104` later retired the live `request_skill` / `defer_detour` / detour behavior; current `navigate_choose_next_unit_act(...)` is forward-only and normalizes those deprecated shapes to safe mainline fallback.
 
-**Why it matters later**: Future source-skill and tool work should extend this single Navigate act loop rather than creating new peer prompt families. This keeps the agent loop legible: Reading Runner orchestrates execution, Navigate decides the next unit, Skills expose evidence, and Read interprets the chosen unit.
+**Why it matters later**: The surviving lesson is the single Navigate entrypoint, not the old source-skill loop. Future Ingest retrieval should be designed as a new retrieval context path for the selected forward unit rather than by extending deprecated active-detour skill behavior.
 
 **Primary evidence**:
 - `docs/backend-reading-mechanisms/attentional_v2.md`

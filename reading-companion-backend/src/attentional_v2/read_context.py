@@ -271,7 +271,7 @@ def resolve_context_request(
     reader_policy: ReaderPolicy | None = None,
     current_unit_sentence_ids: list[str] | None = None,
 ) -> dict[str, object] | None:
-    """Resolve one bounded supplemental-context request against persisted state."""
+    """Deprecated after DEC-103/DEC-104: resolve legacy supplemental-context requests."""
 
     _ = (reader_policy, current_unit_sentence_ids, reflective_frames, chapter_ref)
     kind = clean_text(context_request.get("kind"))

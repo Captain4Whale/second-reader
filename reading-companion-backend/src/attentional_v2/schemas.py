@@ -19,8 +19,8 @@ UnitizeBoundaryType = Literal[
 ]
 ContextRequestKind = Literal["active_recall", "look_back"]  # Deprecated after DEC-103/DEC-104: supplemental context helpers only.
 DetourStatus = Literal["open", "resolved", "abandoned"]  # Deprecated after DEC-103/DEC-104: historical detour artifacts only.
-NavigateActDecision = Literal["choose_unit", "request_skill", "defer_detour"]  # `request_skill` / `defer_detour` are deprecated compatibility literals.
-NavigateSelectionMode = Literal["mainline", "detour", "deferred"]  # `detour` / `deferred` are deprecated compatibility literals.
+NavigateActDecision = Literal["choose_unit", "request_skill", "defer_detour"]  # Deprecated after DEC-103/DEC-104: `request_skill` / `defer_detour` are compatibility literals.
+NavigateSelectionMode = Literal["mainline", "detour", "deferred"]  # Deprecated after DEC-103/DEC-104: `detour` / `deferred` are compatibility literals.
 StateOperationType = Literal[
     "append",
     "update",
@@ -454,7 +454,7 @@ class DetourTraceEntry(TypedDict, total=False):
 
 
 class NavigateActResult(TypedDict, total=False):
-    """One bounded Navigate.choose_next_unit agent act result."""
+    """One bounded Navigate.choose_next_unit act; detour/source-skill fields are deprecated compatibility."""
 
     decision: NavigateActDecision
     selection_mode: NavigateSelectionMode
@@ -468,12 +468,12 @@ class NavigateActResult(TypedDict, total=False):
     boundary_type: UnitizeBoundaryType
     evidence_sentence_ids: list[str]
     continuation_pressure: bool
-    skill_request: dict[str, object]
-    skill_result: dict[str, object]
+    skill_request: dict[str, object]  # Deprecated after DEC-103/DEC-104: legacy source-skill compatibility only.
+    skill_result: dict[str, object]  # Deprecated after DEC-103/DEC-104: legacy source-skill compatibility only.
 
 
 class NavigateActTraceEntry(TypedDict, total=False):
-    """One compact trace entry for a Navigate.choose_next_unit act loop."""
+    """One compact Navigate trace entry; detour/source-skill audit fields are deprecated compatibility."""
 
     decision: NavigateActDecision
     selection_mode: NavigateSelectionMode
@@ -483,15 +483,15 @@ class NavigateActTraceEntry(TypedDict, total=False):
     end_sentence_id: str
     source_span_id: str
     resolution: dict[str, object]
-    skill_request: dict[str, object]
-    skill_result: dict[str, object]
+    skill_request: dict[str, object]  # Deprecated after DEC-103/DEC-104: legacy source-skill compatibility only.
+    skill_result: dict[str, object]  # Deprecated after DEC-103/DEC-104: legacy source-skill compatibility only.
     error: str
     budget_state: dict[str, object]
     source_scent: str
-    detour_value: str
+    detour_value: str  # Deprecated after DEC-103/DEC-104: legacy detour audit marker.
     continuity_cost: str
-    active_recall_needed: bool
-    look_back_needed: bool
+    active_recall_needed: bool  # Deprecated after DEC-103/DEC-104: legacy supplemental-context marker.
+    look_back_needed: bool  # Deprecated after DEC-103/DEC-104: legacy supplemental-context/source-skill marker.
     support_signal_reason: str
     budget_stop_reason: str
 

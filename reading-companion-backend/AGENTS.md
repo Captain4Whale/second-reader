@@ -90,23 +90,13 @@ Update when: backend-local constraints, recurring pitfalls, or stable implementa
 - `docs/backend-reading-mechanisms/attentional_v2.md` is authoritative for current default-mechanism internals.
 - `docs/backend-reading-mechanisms/iterator_v1.md` is authoritative for fallback `iterator_reader` internals.
 
-## Memory / Planning Implementation Discipline
-- Start from `../docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md` for Memory / Planning optimization work.
-- Treat `C设计0` through `C设计9` as accepted design guidance, `E实施0-Implementation Roadmap & Handoff v0.md` as the implementation roadmap, and `E实施0-Roadmap Review & Readiness Check v0.md` as readiness confirmation.
-- Use `B分析` docs as assessment background, `A调研` docs as background evidence only, and `D审核` docs as historical review only.
-- Do not implement directly from design docs. First complete and accept `E实施1-Implementation Feasibility & Delta Audit`.
-- Before each implementation PR, produce a Pre-implementation Brief and wait for acceptance.
-- After each implementation PR, produce a Post-implementation Report and update `../docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md`.
-- Keep PRs small and slice-scoped. PR slices remain provisional until confirmed by E实施1 and human review.
-- Separate Engineering Tests, Contract / Audit Checks, and AI Evaluation. Do not run full AI Evaluation unless explicitly requested.
-- Do not introduce vector DB, graph DB, Memory OS, planner agent, memory manager agent, retriever agent, broad RAG pipeline, route steering UI, or user route choice for this track.
-- Preserve SourceRef-first behavior.
-- Do not treat `reaction_records` as semantic memory.
-- Do not treat `knowledge_activations` as source truth.
-- Do not route audit dumps back into runtime prompts.
-- Do not let slow-cycle become per-unit reflection, a general planner, a memory manager agent, a prompt self-refiner, or a full book route optimizer.
+## Paused Memory / Planning Implementation Discipline
+- The old Memory / Planning optimization track at `../docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md` is paused / superseded as the default implementation authority after `DEC-103`.
+- Treat `C设计0` through `C设计12`, ActiveTension expansion, Recent Reading Memory consolidation, Thread / Progression / Development memory, Read XML context migration, Detour, and source-backread material in that track as historical/reference material unless a later task explicitly re-adopts a slice.
+- Do not continue implementation from that track by inertia. Current mechanism work should start from `../docs/current-state.md`, `../docs/tasks/registry.md`, and the user's current product-goal / mechanism instructions.
+- If a future task explicitly re-opens part of this track, preserve its prior discipline: do not implement directly from design docs, keep PRs small and slice-scoped, separate Engineering Tests / Contract Checks / AI Evaluation, and do not run full AI Evaluation unless explicitly requested.
+- Preserve durable guardrails that still apply across mechanisms: SourceRef-first behavior, no semantic-memory treatment for `reaction_records`, no source-truth treatment for `knowledge_activations`, no audit dumps routed back into runtime prompts, and no slow-cycle expansion into a planner / memory manager / prompt self-refiner / full book route optimizer.
 - If a proposed implementation change conflicts with current repo code reality, stop and report the current code fact, design intent, risk, options, recommended default, and whether human confirmation is needed.
-- If a PR changes prompt behavior, schema, runtime artifacts, audit format, or evaluation outputs, document the change in the Post-implementation Report and update relevant docs if the change becomes stable.
 
 ## Current Default Mechanism Path
 - `main.py`

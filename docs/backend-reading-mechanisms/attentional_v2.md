@@ -62,7 +62,8 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
 - Phase B of the post-eval structural rework is now also landed.
   - `read` is now the canonical owner of the current-unit read packet on the live path.
   - Each formal unit read now receives a small `carry-forward context` built from persisted state.
-  - `read` may request bounded supplemental context through `active_recall` or `look_back`.
+  - that branch allowed `read` to request bounded supplemental context through `active_recall` or `look_back`.
+  - after `DEC-104`, `active_recall` / `look_back` are deprecated supplemental helpers, not the future `Ingest` retrieval design and not part of the current live read loop.
   - private `read_audit` records capture context use.
   - that slice temporarily retained a `raw_reaction` compatibility shell, which was later removed from the live path by `Phase F3`.
 - Phase E1 through E3 are now preserved as a landed intermediate compatibility-first baseline.
@@ -117,7 +118,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - Persisted runtime files and public compatibility surfaces remain unchanged in this slice too.
 - Phase C.3 of the post-eval structural rework is now landed as the direct main-state cutover.
   - Newer runs first treated `active_attention / concept_registry / thread_trace / reflective_frames / anchor_bank` as the primary runtime and checkpoint truth; the current source-ref cutover retires `anchor_bank` from that truth set.
-  - `active_recall` now exposes first-class `concepts` and `threads` from those new layers.
+  - the historical `active_recall` helper exposed first-class `concepts` and `threads` from those new layers; it is deprecated after `DEC-104` as a supplemental helper and should not be treated as the forthcoming `Ingest` retrieval mechanism.
   - Newly written checkpoints use only the new primary state keys.
 - Phase C.4 of the post-eval structural rework is now also landed as the helper-contract cutover.
   - Sentence-intake and chapter slow-cycle now execute directly on the new primary state layers; the old bridge helper is paused after the SourceRef cutover instead of being carried forward as an Anchor Bank relation writer.
@@ -149,7 +150,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - that branch added a budget-bounded multi-step supplemental loop around `read`.
   - Runtime state and full checkpoints now persist a lightweight `continuation capsule` with explicit `rehydration entrypoints`.
   - Warm resume now restores the latest usable continuation capsule together with new-format runtime/checkpoint state.
-  - `look_back` now resolves one bounded earlier source span, and `read_audit` now records per-step supplemental activity plus stop reasons.
+  - the historical `look_back` helper resolved one bounded earlier source span, and `read_audit` recorded per-step supplemental activity plus stop reasons; after `DEC-104`, this is deprecated supplemental-context evidence, not current live backread behavior.
 
 ## Naming Note
 - `Phase 3`, `Phase 4`, `Phase 5`, and `Phase 6` in this document refer to historical implementation-stage groupings, not to a user-facing or mechanism-intrinsic sequence of named runtime phases.

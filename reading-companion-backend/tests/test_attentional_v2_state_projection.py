@@ -512,7 +512,7 @@ def test_read_prompt_packet_includes_all_open_questions_without_runtime_fields()
 
 
 def test_build_read_prompt_packet_exposes_retrieval_contract_without_full_active_recall_objects():
-    """The prompt packet should expose retrieval contract metadata without full memory objects."""
+    """Deprecated active_recall compatibility should expose metadata without full objects."""
 
     carry_forward = build_carry_forward_context(
         chapter_ref="Chapter 1",
@@ -586,7 +586,7 @@ def test_build_read_prompt_packet_exposes_retrieval_contract_without_full_active
 
 
 def test_build_read_prompt_packet_uses_precise_sparse_retrieval_groups():
-    """Forwarding metadata should not list absent active-recall groups as not forwarded."""
+    """Deprecated active_recall metadata should not list absent groups as not forwarded."""
 
     carry_forward = build_carry_forward_context(
         chapter_ref="Chapter 1",

@@ -254,7 +254,7 @@ def test_read_unit_projects_compact_packet_and_returns_f1_surface_contract(tmp_p
 
 
 def test_resolve_context_request_returns_exact_look_back_excerpt_and_none_when_unresolved():
-    """look_back should resolve exact earlier source text only when explicit refs can be satisfied."""
+    """Deprecated look_back compatibility resolves exact earlier source text only with refs."""
 
     book_document = _book_document()
     anchor_memory = build_empty_anchor_memory()
@@ -326,7 +326,7 @@ def test_resolve_context_request_returns_exact_look_back_excerpt_and_none_when_u
 
 
 def test_resolve_context_request_active_recall_surfaces_concepts_and_threads():
-    """active_recall should expose bounded concept/thread material from the new primary layers."""
+    """Deprecated active_recall compatibility surfaces bounded concept/thread material."""
 
     anchor_memory = build_empty_anchor_memory()
     anchor_memory["anchor_records"] = [

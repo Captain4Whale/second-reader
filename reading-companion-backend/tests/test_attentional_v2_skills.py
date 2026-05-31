@@ -1,4 +1,4 @@
-"""Tests for attentional_v2 book-local source skills."""
+"""Tests for deprecated attentional_v2 book-local source-skill compatibility."""
 
 from __future__ import annotations
 
@@ -69,7 +69,7 @@ def _mainline_cursor() -> dict[str, object]:
 
 
 def test_source_window_fetch_refuses_future_text():
-    """Source fetching should not read at or beyond the mainline cursor."""
+    """Deprecated source fetching should not read at or beyond the mainline cursor."""
 
     document = _book_document()
     sentence_lookup, chapter_lookup = _lookups(document)
@@ -87,7 +87,7 @@ def test_source_window_fetch_refuses_future_text():
 
 
 def test_execute_skill_request_dispatches_source_window_fetch():
-    """The skill runtime should dispatch legal source-window requests."""
+    """Deprecated skill runtime should still dispatch legal source-window requests."""
 
     document = _book_document()
     sentence_lookup, chapter_lookup = _lookups(document)
@@ -137,7 +137,7 @@ def test_execute_skill_request_reports_unknown_skill():
 
 
 def test_source_map_overview_returns_visible_chapter_cards():
-    """Source map overview should expose only already-read chapter scope cards."""
+    """Deprecated source map overview should expose only already-read chapter scope cards."""
 
     document = _book_document()
     sentence_lookup, chapter_lookup = _lookups(document)
@@ -159,7 +159,7 @@ def test_source_map_overview_returns_visible_chapter_cards():
 
 
 def test_source_scope_drilldown_expands_current_scope_card():
-    """Scope drilldown should reuse current scope ranges and return finer cards."""
+    """Deprecated scope drilldown should reuse current scope ranges and return finer cards."""
 
     document = _book_document()
     sentence_lookup, chapter_lookup = _lookups(document)

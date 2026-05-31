@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-05-31T09:10:54+08:00`
+Last verified: `2026-05-31T09:23:05+08:00`
 
 ## Current Objective
 - Product goal and mechanism direction are being reset before further implementation.
@@ -628,7 +628,7 @@ Last verified: `2026-05-31T09:10:54+08:00`
   - `Phase C.3` is now landed as the direct main-state cutover:
     - new runs now treat `active_attention / concept_registry / thread_trace / reflective_frames` plus inline `source_refs[]` as the primary runtime and checkpoint truth
     - the old V2 state stores were demoted to cutover-only legacy territory
-    - `active_recall` now surfaces first-class `concepts` and `threads` from the new state layers
+    - the historical `active_recall` helper surfaced first-class `concepts` and `threads` from the new state layers; after `DEC-104`, it is deprecated supplemental-context evidence, not the future `Ingest` retrieval mechanism
     - `read` introduced explicit memory-update operations, then called `implicit_uptake`, into:
       - `active_attention`
       - `concept_registry`
@@ -654,7 +654,7 @@ Last verified: `2026-05-31T09:10:54+08:00`
     - `read` now runs under a budget-bounded multi-step supplemental loop instead of a single extra pass
     - runtime and full checkpoints now persist a lightweight `continuation capsule` with explicit `rehydration entrypoints`
     - warm resume now restores new-format state together with the latest usable continuation capsule instead of relying only on raw runtime/checkpoint state
-    - `look_back` now returns one bounded earlier source span, and `read_audit` now records per-step supplemental activity, stop reason, and budget exhaustion
+    - the historical `look_back` helper returned one bounded earlier source span, and `read_audit` recorded per-step supplemental activity, stop reason, and budget exhaustion; after `DEC-104`, this is deprecated supplemental-context evidence, not current live backread behavior
     - public/frontend compatibility surfaces remain unchanged
   - `Phase E1` through `Phase E3` are now preserved as a landed intermediate branch:
     - that branch retained the temporary `Read -> Express` split

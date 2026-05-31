@@ -76,7 +76,7 @@ Use `docs/backend-sequential-lifecycle.md` for the job-level workflow over time.
     - `Reading Runner post-read settlement`
     - `surfaced reactions`
     - `chapter-end slow cycle`
-  - If a mechanism doc mentions older labels such as `trigger`, `zoom_read`, `meaning_unit_closure`, `controller_decision`, `Navigate.route`, or `bridge_resolution`, it should make clear whether those are historical module-family terms or still-live runtime concepts.
+  - If a mechanism doc mentions older labels such as `trigger`, `zoom_read`, `meaning_unit_closure`, `controller_decision`, `Navigate.route`, `bridge_resolution`, `Detour`, `source-backread`, or source skills, it should make clear whether those are historical module-family terms or still-live runtime concepts.
 
 ## Mechanism Status Model
 - `default`
@@ -149,5 +149,6 @@ Use `docs/backend-sequential-lifecycle.md` for the job-level workflow over time.
 - `docs/backend-reading-mechanisms/<mechanism_key>.md`
   - owns one mechanism's internal reading design
 - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
-  - owns the initiative-local Memory / Planning / Evaluation design chain and implementation handoff for optimizing current `attentional_v2`
+  - preserves the paused / superseded Memory / Planning / Evaluation design chain after `DEC-103`
+  - is historical/reference material unless a later task explicitly re-adopts a slice
   - does not redefine shared mechanism boundaries or replace stable mechanism docs

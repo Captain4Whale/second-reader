@@ -36,12 +36,12 @@ Update when: document layering, reading order, task routing, or cross-project co
 - Keep runtime artifacts in `reading-companion-backend/` unless a task explicitly migrates them.
 - Do not remove the frontend repo's Figma Make history or generated structure unless the change has a clear maintenance benefit.
 
-## Current Memory / Planning Implementation Track
+## Paused Memory / Planning Implementation Track
 - The repo-local Memory / Planning / Evaluation optimization design chain lives at `docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`.
-- This is an implementation track for optimizing the existing `attentional_v2` mechanism. It is not a greenfield mechanism replacement.
-- Implementation work in this track must start from that directory README and `E实施0-Implementation Roadmap & Handoff v0.md`.
-- Code implementation must not start until `E实施1-Implementation Feasibility & Delta Audit` is accepted.
-- This section is a workspace-level pointer only. Detailed recurring rules live in `reading-companion-backend/AGENTS.md` and the initiative README.
+- As of `DEC-103`, this track is paused / superseded as the default source for new mechanism implementation.
+- Treat ActiveTension expansion, Recent Reading Memory consolidation, Thread / Progression / Development memory, Read XML context migration, Detour, and source-backread work in that track as historical/reference material unless a later task explicitly re-adopts a slice.
+- Current mechanism-direction authority lives in `docs/current-state.md`, `docs/tasks/registry.md`, and the relevant stable mechanism docs.
+- Do not continue implementation from the paused Memory / Planning track by inertia; new work should follow the user's current product goal and mechanism design instructions.
 
 ## Documentation Layers
 ### Control Layer
