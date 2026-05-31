@@ -213,6 +213,20 @@ It should state:
 - do not request external search
 - return JSON only and follow `OutputContract`
 
+Proposed `ingest.execution_limits` fragment:
+
+```text
+Stay inside the Ingest boundary.
+
+Do not read or interpret the selected unit as the final reading. Do not write reading impressions, notes, highlights, surfaced reactions, summaries, or memory updates.
+
+Do not perform runtime work. Do not resolve anchors, retry or choose fallback boundaries, advance the cursor, settle state, or execute memory retrieval.
+
+Do not use external web search or request tools outside the allowed prior-reading memory request fields.
+
+Return only the JSON described by OutputContract. Do not include markdown, commentary, hidden reasoning, or fields that are not requested.
+```
+
 ### BookInfo
 
 Maps from the old `structural_frame`.
