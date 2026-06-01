@@ -415,6 +415,8 @@ Default weight:
 - medium-high lexical weight
 - medium-high semantic weight
 
+Each annotation should produce one retrieval document. Its retrieval text should combine the exact source quote and the annotation content, for example `source_quote + "\n" + content`, because the quote gives source footing while the note content gives readerly meaning. Do not split quote and note into separate v1 documents.
+
 ### Response Surface
 
 Index:
@@ -438,21 +440,53 @@ A single Unit Memory Entry can produce multiple retrieval documents:
 
 ```json
 {
-  "retrieval_doc_id": "unit:c1:u0007#understanding:0",
+  "retrieval_doc_id": "unit:c1:u0007#understanding",
   "unit_id": "unit:c1:u0007",
-  "surface": "understanding",
+  "surface": "unit_understanding",
   "text": "...",
   "weight_profile": "understanding_default",
   "source_span_id": "src:c1:p45@0-p46@24"
 }
 ```
 
-Recommended v1 surfaces:
+### V1 Document Granularity
+
+Use surface-specific document granularity:
 
 - `unit_source`
+  - one retrieval document per `accepted_source_unit.paragraph_slices[]` item
+  - retrieval doc id pattern: `unit:{id}#source:slice:{index}`
+  - text: the recorded slice text
+  - metadata: `paragraph_index`, `start_char`, `end_char`, `text_role`, `source_span_id`
+  - purpose: exact phrase, name, quote-like callback, repeated wording, and source-near semantic recall
 - `unit_understanding`
+  - one retrieval document per Unit Memory Entry
+  - retrieval doc id pattern: `unit:{id}#understanding`
+  - text: `digest.understanding.content`
+  - metadata: `understanding.kind`, `source_span_id`
+  - purpose: primary semantic recall of what the unit established for continued reading
 - `unit_annotation`
+  - one retrieval document per annotation
+  - retrieval doc id pattern: `unit:{id}#annotation:{index}`
+  - text: `source_quote + "\n" + content`
+  - metadata: annotation index, `source_quote`, resolved source ref if available
+  - purpose: recall visible notes and exact lines that were previously marked
 - `unit_response`
+  - zero or one retrieval document per Unit Memory Entry
+  - retrieval doc id pattern: `unit:{id}#response`
+  - text: `digest.response`
+  - omit this document when response is empty
+  - purpose: low-weight support for readerly aftertaste, question, pressure, and companion-like continuity
+
+Do not create these documents in v1:
+
+- no sentence-level source documents
+- no whole-paragraph documents unless the accepted paragraph slice is itself whole
+- no multiple understanding documents for one unit
+- no separate source-quote-only and annotation-note-only documents
+- no default `unit_all_text` blob that flattens source, understanding, response, and annotations together
+
+If later retrieval review shows that an additional whole-unit semantic surface is needed, add it as a low-weight `unit_card` surface. Do not add it as a default v1 document, because `unit_understanding` already carries the primary whole-unit semantic memory.
 
 Retrieval should score sub-documents first, then aggregate by `unit_id`. Digest should receive retrieved units or compact unit memory cards, not a loose pile of disconnected snippets.
 
