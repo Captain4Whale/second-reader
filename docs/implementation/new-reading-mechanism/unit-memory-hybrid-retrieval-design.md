@@ -29,6 +29,212 @@ This follows the retrieval purpose:
 - farther memory is recalled only when the next selected unit makes earlier reading relevant again
 - the retrieval system should preserve source-grounded reading process, not collapse the book into a full summary
 
+## V1 Technical Stack
+
+Use one local SQLite-backed retrieval store for the first implementation.
+
+Default components:
+
+- storage database: SQLite
+- lexical / sparse retrieval: SQLite FTS5 with BM25
+- dense vector retrieval: `sqlite-vec`
+- embedding provider: local Ollama
+- embedding model: `Qwen3-Embedding-0.6B`
+- embedding type: dense vectors only
+- first fusion strategy: Reciprocal Rank Fusion / RRF
+- optional second-stage diversity pass: MMR rerank after unit-level aggregation
+
+Rationale:
+
+- SQLite keeps the Unit Memory ledger and both indexes local, inspectable, easy to back up, and easy to rebuild.
+- FTS5 is the right first lexical layer because it is already in SQLite, has built-in BM25 ranking, supports auxiliary snippets/highlights, and can be tuned with tokenizer/index choices.
+- `sqlite-vec` keeps vector search inside the same database boundary, avoiding a separate vector service before the retrieval behavior is proven.
+- Qwen3-Embedding-0.6B is small enough for local use and suitable for the mixed Chinese/English reading corpus; it supports dense text embeddings with up to 1024 dimensions.
+- RRF avoids raw-score calibration problems between FTS5 BM25 and vector distance scores. Weighted score fusion can be revisited after retrieval-review data exists.
+
+Reference facts that matter for implementation:
+
+- FTS5 `bm25()` returns better matches as numerically smaller values, so raw BM25 scores should not be directly added to similarity scores.
+- Ollama `/api/embed` returns L2-normalized vectors; still record the metric and provider metadata because future providers may differ.
+- `sqlite-vec` is pre-v1, so all direct extension calls should be wrapped by a small adapter and all indexes should be rebuildable from `unit_memory_entries`.
+- Qwen3-Embedding supports query-side instructions; retrieval-query embedding should therefore use a stable instruction template while indexed documents should use the document text without a query instruction unless a later test proves otherwise.
+
+External implementation references:
+
+- SQLite FTS5 documentation: <https://www.sqlite.org/fts5.html>
+- sqlite-vec project: <https://github.com/asg017/sqlite-vec>
+- Ollama embeddings API: <https://docs.ollama.com/capabilities/embeddings>
+- Ollama Qwen3 embedding model tags: <https://ollama.com/library/qwen3-embedding>
+- Qwen3-Embedding-0.6B model reference: <https://huggingface.co/Qwen/Qwen3-Embedding-0.6B>
+
+### Initial SQLite Shape
+
+The first schema should separate durable unit records from retrieval documents and retrieval indexes:
+
+```sql
+CREATE TABLE unit_memory_entries (
+  unit_id TEXT PRIMARY KEY,
+  book_id TEXT NOT NULL,
+  chapter_id INTEGER,
+  chapter_ref TEXT,
+  unit_index INTEGER NOT NULL,
+  source_span_id TEXT NOT NULL,
+  source_text TEXT NOT NULL,
+  entry_json TEXT NOT NULL,
+  created_at TEXT NOT NULL
+);
+
+CREATE TABLE retrieval_docs (
+  retrieval_doc_pk INTEGER PRIMARY KEY,
+  retrieval_doc_id TEXT NOT NULL UNIQUE,
+  unit_id TEXT NOT NULL,
+  book_id TEXT NOT NULL,
+  surface TEXT NOT NULL,
+  text TEXT NOT NULL,
+  source_span_id TEXT,
+  text_hash TEXT NOT NULL,
+  embedding_model TEXT,
+  embedding_provider TEXT,
+  embedding_dimension INTEGER,
+  doc_instruction_version TEXT,
+  created_at TEXT NOT NULL
+);
+```
+
+Then maintain:
+
+- `retrieval_docs_fts`
+  - FTS5 index over `retrieval_docs.text`
+  - metadata stays in `retrieval_docs`, joined by rowid / primary key
+- `retrieval_doc_vectors`
+  - `sqlite-vec` `vec0` table
+  - rowid should match `retrieval_docs.retrieval_doc_pk`
+  - vector dimension should default to 1024 for Qwen3-Embedding-0.6B unless a later Matryoshka dimension decision changes it
+
+The exact SQL may change during implementation, but the ownership boundary should not: `unit_memory_entries` is the source of truth, while FTS and vector tables are rebuildable indexes.
+
+### FTS5 Tokenizer Policy
+
+The corpus includes Chinese and English. Plain word-token behavior may be insufficient for Chinese source text, while pure substring matching may be noisy for English.
+
+V1 recommendation:
+
+- use FTS5 for all lexical retrieval
+- evaluate `trigram` tokenization as the default mixed-language lexical index, because it supports substring-style matching that is useful for Chinese phrases and exact source fragments
+- if review shows too many false positives, split lexical retrieval into two FTS5 indexes:
+  - `unicode61` for word-like matching
+  - `trigram` for Chinese / exact-fragment substring recall
+- keep tokenizer choice as an index-versioned setting so the lexical index can be rebuilt without changing Unit Memory storage
+
+### Embedding Policy
+
+Use local Ollama for embedding generation.
+
+Default embedding config:
+
+```json
+{
+  "provider": "ollama",
+  "model": "Qwen3-Embedding-0.6B",
+  "ollama_model_id": "qwen3-embedding:0.6b",
+  "dimension": 1024,
+  "vector_type": "dense",
+  "normalization": "l2_normalized_by_provider"
+}
+```
+
+Implementation should keep the exact Ollama model id configurable because local model tags may differ.
+
+Query embeddings should use a stable instruction, for example:
+
+```text
+Instruct: Given the next source unit in an ongoing deep reading of a book, retrieve prior read units that help understand this unit continuously without summarizing the whole book.
+Query: {query_text}
+```
+
+Document embeddings should embed the retrieval document text itself. Do not prepend query-style instructions to stored documents in v1.
+
+The query instruction version belongs in retrieval config / retrieval trace metadata, not in each stored retrieval document.
+
+### Fusion Policy
+
+Use RRF as the default fusion algorithm.
+
+Process:
+
+1. Run FTS5 BM25 and keep top lexical candidates.
+2. Run sqlite-vec KNN and keep top dense candidates.
+3. Convert each candidate list to ranks.
+4. Apply RRF per retrieval document:
+
+```text
+rrf_score(doc) = sum(channel_weight / (rrf_k + rank_in_channel))
+```
+
+Initial defaults:
+
+- `rrf_k = 60`
+- lexical channel weight = `1.0`
+- dense channel weight = `1.0`
+- apply surface weights after RRF or during unit aggregation, not by mutating raw BM25/vector scores
+
+Why not weighted sum first:
+
+- FTS5 BM25 is a lower-is-better score.
+- sqlite-vec commonly returns a distance-like lower-is-better value.
+- semantic similarity and lexical match strength have different distributions.
+- rank fusion is more stable before we have project-specific calibration data.
+
+Weighted sum may be revisited after retrieval review produces calibration examples.
+
+### Unit Aggregation And MMR
+
+After RRF, aggregate retrieval documents by `unit_id`.
+
+Unit-level score should consider:
+
+- best retrieval-doc RRF score
+- number of distinct matching surfaces
+- surface weights
+- exact phrase/source quote match
+- distance from current unit
+- duplicate suppression against recent memory
+
+Recommended surface weights for first review:
+
+- `unit_understanding`: highest semantic signal
+- `unit_source`: strongest lexical/source signal
+- `unit_annotation`: high value for visible note continuity
+- `unit_response`: support signal only
+
+After unit aggregation, an optional MMR rerank can improve diversity:
+
+```text
+mmr_score = lambda * relevance - (1 - lambda) * max_similarity_to_selected
+```
+
+Initial default:
+
+- `lambda = 0.7`
+- apply only after selecting a larger candidate pool, not as a replacement for RRF
+- compare units by dense embedding of their best matching retrieval doc or by a compact unit-card embedding
+
+MMR should prevent redundant retrieval cards, not force diversity when the top results are genuinely connected.
+
+### Adapter Boundary
+
+All direct technology calls should live behind a mechanism-local adapter, for example `UnitMemoryIndex`.
+
+The rest of the reader should ask for semantic operations:
+
+- write one Unit Memory Entry
+- index retrieval documents for that entry
+- embed retrieval documents
+- retrieve prior unit candidates for a query
+- rebuild all indexes from the ledger
+
+Do not scatter sqlite-vec SQL, FTS5 SQL, Ollama request shapes, or fusion constants through runner or prompt code.
+
 ## Storage Entry
 
 ### Unit Memory Entry
@@ -222,8 +428,8 @@ Open design work:
 
 Use hybrid retrieval:
 
-- lexical candidate set from BM25 / full-text search
-- semantic candidate set from embeddings
+- lexical candidate set from SQLite FTS5 BM25
+- semantic candidate set from sqlite-vec dense vector KNN
 - optional metadata filters:
   - same book
   - only prior units
@@ -238,13 +444,15 @@ Rank sub-document hits first, then aggregate to unit-level memory cards.
 
 Ranking should consider:
 
-- retrieval score from lexical search
-- retrieval score from vector search
+- retrieval rank from FTS5 BM25
+- retrieval rank from sqlite-vec vector search
 - surface weight
 - distance from current unit
 - exact source phrase match bonus
 - diversity across units and surfaces
 - duplicate suppression against recent memory
+
+Do not fuse raw scores in v1. Use RRF first, then aggregate by unit.
 
 The final output should explain why a unit was retrieved in machine-readable terms for audit, but Digest should see only reader-usable context.
 
@@ -282,8 +490,9 @@ Later implementation can add incremental index updates after each settlement:
 Open design work:
 
 - artifact paths under `_mechanisms/attentional_v2/runtime/`
-- whether vector index lives as local files, SQLite, or an external vector store
-- embedding model / dimensionality / migration strategy
+- exact SQLite schema and migration / rebuild commands
+- exact FTS5 tokenizer choice after mixed Chinese/English review
+- embedding model version pinning and local Ollama health checks
 - index rebuild checksums and prompt-version compatibility
 
 ## What We Still Need To Design
@@ -296,8 +505,8 @@ Open design work:
   - whether query emission is same-call or second-call
   - how many queries are allowed
 - Retrieval algorithm:
-  - lexical engine
-  - embedding model
+  - final FTS5 tokenizer policy
+  - exact sqlite-vec distance / metric behavior to standardize behind the adapter
   - score normalization
   - surface weights
   - dedupe and diversity policy
