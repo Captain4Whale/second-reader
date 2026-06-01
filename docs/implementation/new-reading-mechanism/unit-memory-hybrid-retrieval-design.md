@@ -110,6 +110,7 @@ CREATE TABLE retrieval_docs (
   unit_id TEXT NOT NULL,
   book_id TEXT NOT NULL,
   surface TEXT NOT NULL,
+  weight_profile TEXT NOT NULL,
   text TEXT NOT NULL,
   source_span_id TEXT,
   text_hash TEXT NOT NULL,
@@ -124,12 +125,14 @@ CREATE TABLE retrieval_docs (
 Then maintain:
 
 - `retrieval_docs_fts`
-  - FTS5 index over `retrieval_docs.text`
+  - FTS5 index over every valid `retrieval_docs.text`
   - metadata stays in `retrieval_docs`, joined by rowid / primary key
 - `retrieval_doc_vectors`
   - `sqlite-vec` `vec0` table
   - rowid should match `retrieval_docs.retrieval_doc_pk`
   - vector dimension should default to 1024 for Qwen3-Embedding-0.6B unless a later Matryoshka dimension decision changes it
+
+In v1, index participation is simple: every valid retrieval document is indexed in both FTS5 and sqlite-vec. Surface semantics should be expressed through channel weights and unit aggregation, not by excluding a surface from one index.
 
 The exact SQL may change during implementation, but the ownership boundary should not: `unit_memory_entries` is the source of truth, while FTS and vector tables are rebuildable indexes.
 
@@ -188,15 +191,15 @@ Process:
 4. Apply RRF per retrieval document:
 
 ```text
-rrf_score(doc) = sum(channel_weight / (rrf_k + rank_in_channel))
+rrf_score(doc) = sum(channel_weight_for_doc / (rrf_k + rank_in_channel))
 ```
 
 Initial defaults:
 
 - `rrf_k = 60`
-- lexical channel weight = `1.0`
-- dense channel weight = `1.0`
-- apply surface weights after RRF or during unit aggregation, not by mutating raw BM25/vector scores
+- base lexical channel weight = `1.0`
+- base dense channel weight = `1.0`
+- apply each retrieval document's `weight_profile` after rank conversion or during unit aggregation, not by mutating raw BM25/vector scores
 
 Why not weighted sum first:
 
@@ -214,18 +217,18 @@ After RRF, aggregate retrieval documents by `unit_id`.
 Unit-level score should consider:
 
 - best retrieval-doc RRF score
-- number of distinct matching surfaces
-- surface weights
+- number of distinct matching surfaces and matched channels
+- retrieval document weight profiles
 - exact phrase/source quote match
 - distance from current unit
 - duplicate suppression against recent memory
 
-Recommended surface weights for first review:
+Recommended first-pass weight profiles:
 
-- `unit_understanding`: highest semantic signal
-- `unit_source`: strongest lexical/source signal
-- `unit_annotation`: high value for visible note continuity
-- `unit_response`: support signal only
+- `unit_understanding`: dense high, lexical medium; best for conceptual continuity.
+- `unit_source`: lexical high, dense medium; best for exact phrasing, named entities, and source recurrence.
+- `unit_annotation`: lexical medium-high, dense medium-high; best for visible note continuity around a marked line.
+- `unit_response`: lexical low, dense low-to-medium; support signal only, useful when a prior reader response strongly echoes the current unit.
 
 After unit aggregation, an optional MMR rerank can improve diversity:
 
@@ -357,7 +360,7 @@ The unit entry may contain `understanding.kind` because Digest already emits tha
 
 Storage is unit-centered, but retrieval should index multiple field-specific surfaces.
 
-This avoids flattening source, understanding, response, and annotations into one undifferentiated blob while still allowing all of them to participate in both lexical and semantic recall.
+This avoids flattening source, understanding, response, and annotations into one undifferentiated blob while still allowing all valid retrieval documents to participate in both lexical and semantic recall. The surface sections below describe weighting posture, not exclusive index membership.
 
 ### Source Surface
 
@@ -372,7 +375,7 @@ Use:
 - BM25 / full-text matching for names, terms, repeated phrases, images, quotes, and exact wording
 - semantic embedding for source-near paraphrase recall
 
-Default weight:
+Default channel posture:
 
 - high lexical weight
 - medium semantic weight
@@ -391,7 +394,7 @@ Use:
 - semantic retrieval for earlier claims, situations, definitions, evidence boundaries, stages, contrasts, and local developments
 - BM25 retrieval for named structures or repeated wording inside understanding text
 
-Default weight:
+Default channel posture:
 
 - high semantic weight
 - medium lexical weight
@@ -410,7 +413,7 @@ Use:
 - recall visible notes and exact lines that the reader previously marked
 - connect current text to earlier margin-note-like reactions without exposing internal ids
 
-Default weight:
+Default channel posture:
 
 - medium-high lexical weight
 - medium-high semantic weight
@@ -427,7 +430,7 @@ Use:
 
 - recall readerly aftertaste, questions, felt pressure, and companion-like continuity
 
-Default weight:
+Default channel posture:
 
 - low-to-medium semantic weight
 - low lexical weight
@@ -448,6 +451,26 @@ A single Unit Memory Entry can produce multiple retrieval documents:
   "source_span_id": "src:c1:p45@0-p46@24"
 }
 ```
+
+### V1 Index Participation
+
+Every valid retrieval document should participate in both retrieval indexes:
+
+- FTS5 indexes `retrieval_docs.text` for lexical / BM25 candidate ranks.
+- sqlite-vec embeds the same `retrieval_docs.text` for dense candidate ranks.
+
+Do not decide index membership by surface in v1. A source slice can still benefit from dense semantic recall; an Understanding can still benefit from lexical names or terms; an Annotation naturally combines exact quote and reader meaning; a Response may occasionally help semantic continuity.
+
+Surface differences should instead be expressed through channel weights and later unit aggregation:
+
+| surface | lexical channel | dense channel | role |
+| --- | --- | --- | --- |
+| `unit_source` | high | medium | exact wording, names, quotes, source-near semantic recall |
+| `unit_understanding` | medium | high | primary semantic memory of what the unit established |
+| `unit_annotation` | medium-high | medium-high | visible-note continuity with both quote and note meaning |
+| `unit_response` | low | low-to-medium | support signal for readerly aftertaste / pressure |
+
+The implementation may store these as a `weight_profile` value on `retrieval_docs` and resolve concrete numeric weights in retrieval config. Empty or invalid material should not create a retrieval document at all; once a retrieval document exists, it is dual-indexed.
 
 ### V1 Document Granularity
 
@@ -512,8 +535,8 @@ Deferred design work:
 
 Use hybrid retrieval:
 
-- lexical candidate set from SQLite FTS5 BM25
-- semantic candidate set from sqlite-vec dense vector KNN
+- lexical candidate set from SQLite FTS5 BM25 over all valid retrieval documents
+- semantic candidate set from sqlite-vec dense vector KNN over the same valid retrieval documents
 - optional metadata filters:
   - same book
   - only prior units
@@ -530,7 +553,7 @@ Ranking should consider:
 
 - retrieval rank from FTS5 BM25
 - retrieval rank from sqlite-vec vector search
-- surface weight
+- surface / channel weights from the retrieval document's weight profile
 - distance from current unit
 - exact source phrase match bonus
 - diversity across units and surfaces
@@ -596,7 +619,7 @@ Open design work:
   - final FTS5 tokenizer policy
   - exact sqlite-vec distance / metric behavior to standardize behind the adapter
   - score normalization
-  - surface weights
+  - concrete numeric weight profiles for each surface / channel posture
   - dedupe and diversity policy
 - Context packaging:
   - deferred from the bottom-framework implementation slice
@@ -620,13 +643,13 @@ Open design work:
 
 Use one append-only Unit Memory Entry per completed read unit.
 
-Index all four memory surfaces:
+Create retrieval documents from all four memory surfaces and index every valid retrieval document in both FTS5 and sqlite-vec:
 
 - accepted source unit
 - `understanding`
 - `response`
 - `annotations[]`
 
-But do not index them as equal signals. Use field-specific surfaces, weights, and unit-level aggregation.
+But do not score them as equal signals. Use field-specific retrieval documents, weight profiles, and unit-level aggregation.
 
 The retrieval result should be source-grounded and unit-centered, then rendered to Digest as compact prior-reading support rather than as a hidden backread path.
