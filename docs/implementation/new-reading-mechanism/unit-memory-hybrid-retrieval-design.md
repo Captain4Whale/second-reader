@@ -29,6 +29,26 @@ This follows the retrieval purpose:
 - farther memory is recalled only when the next selected unit makes earlier reading relevant again
 - the retrieval system should preserve source-grounded reading process, not collapse the book into a full summary
 
+## Current Design Scope
+
+This document currently anchors the bottom retrieval framework:
+
+- Unit Memory storage
+- field-specific retrieval documents
+- FTS5 lexical index
+- sqlite-vec dense index
+- embedding policy
+- hybrid retrieval, fusion, aggregation, and rebuild boundaries
+
+The following concerns are intentionally deferred from this implementation slice:
+
+- how `Ingest` writes retrieval queries from the selected unit
+- how many retrieval queries one unit may produce
+- how retrieved memory cards are rendered into `Digest` XML context
+- how `Digest` should use retrieved memory alongside recent-neighbor memory
+
+One boundary is decided now: query generation should not require a separate LLM call. When query generation is designed, it should remain inside the `Ingest` step, after or alongside its source-unit boundary selection. The exact query contract is deferred and should not block the bottom retrieval index implementation.
+
 ## V1 Technical Stack
 
 Use one local SQLite-backed retrieval store for the first implementation.
@@ -440,15 +460,17 @@ Retrieval should score sub-documents first, then aggregate by `unit_id`. Digest 
 
 `Ingest` selects the next forward source unit first.
 
-After the selected unit is accepted or at least sufficiently resolved for retrieval, the runtime should ask `Ingest` for memory-support query material, or derive it from the selected unit plus Ingest's boundary reason.
+When retrieval-query generation is implemented, it should remain part of the `Ingest` step. Do not introduce a separate query-generation LLM call by default.
 
 The query should be about the selected unit, not about a broad chapter topic.
 
-Open design work:
+Deferred design work:
 
-- whether Ingest emits one query string or structured query facets
-- whether query generation happens inside the same Ingest call or as a second Ingest-adjacent call after anchor resolution
+- what exact query fields `Ingest` emits
+- whether one unit can emit multiple retrieval queries, and what the cap should be
+- how much of the selected unit should be available to query generation after boundary resolution
 - whether annotation-like local triggers should produce separate retrieval queries
+- how query-generation traces should be audited
 
 ### Candidate Retrieval
 
@@ -495,7 +517,9 @@ It should receive compact retrieved memory cards, likely grouped by prior unit:
 - optional response only when it materially helps continuity
 - retrieval reason / matched surface for audit, not necessarily visible in prompt text
 
-Open design work:
+Digest context packaging is not part of the current bottom-framework slice.
+
+Deferred design work:
 
 - XML shape for `RetrievedMemory`
 - maximum card count and token budget
@@ -528,8 +552,9 @@ Open design work:
   - write timing and failure behavior inside settlement
   - migration / rebuild behavior for existing runtime artifacts
 - Query contract:
+  - deferred from the bottom-framework implementation slice
   - what Ingest emits
-  - whether query emission is same-call or second-call
+  - no separate query-generation LLM call by default
   - how many queries are allowed
 - Retrieval algorithm:
   - final FTS5 tokenizer policy
@@ -538,6 +563,7 @@ Open design work:
   - surface weights
   - dedupe and diversity policy
 - Context packaging:
+  - deferred from the bottom-framework implementation slice
   - XML block shape for Digest
   - retrieved-card budget
   - source quote / understanding / response / annotation rendering rules
