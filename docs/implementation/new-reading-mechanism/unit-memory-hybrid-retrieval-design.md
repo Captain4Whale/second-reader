@@ -237,6 +237,32 @@ Do not scatter sqlite-vec SQL, FTS5 SQL, Ollama request shapes, or fusion consta
 
 ## Storage Entry
 
+### Source Of Truth Boundary
+
+`UnitMemoryLedger` is the source of truth for long-distance retrievable reading memory.
+
+It does not replace the existing runtime artifacts. These artifacts own different layers of fact:
+
+- `unit_span_ledger`
+  - reading-position and source-span facts
+  - answers what source range has been accepted and read
+- `read_audit`
+  - runtime trace and debugging facts
+  - answers how an `Ingest -> Digest -> settlement` cycle ran
+- `reaction_records`
+  - UI-visible annotation / reaction facts
+  - answers what reader-facing notes should be shown or linked back to source text
+- `recent_reading_memory`
+  - near-neighbor continuity facts
+  - answers what recent understanding should be carried directly into the next Digest context
+- `UnitMemoryLedger`
+  - long-distance retrievable reading-memory facts
+  - answers what completed units can later be recalled by hybrid retrieval
+
+The retrieval system should index `UnitMemoryLedger`, not reconstruct long-distance memory by stitching together `read_audit`, UI records, and recent-memory artifacts.
+
+FTS5 and sqlite-vec indexes are derived from `UnitMemoryLedger`. They are rebuildable indexes, not independent sources of truth.
+
 ### Unit Memory Entry
 
 One `UnitMemoryEntry` corresponds to one completed `Ingest -> Digest -> Reading Runner settlement` transaction.
@@ -499,7 +525,8 @@ Open design work:
 
 - Unit Memory ledger schema:
   - exact persisted JSON shape
-  - relationship to `unit_span_ledger`, `read_audit`, `reaction_records`, and `recent_reading_memory`
+  - write timing and failure behavior inside settlement
+  - migration / rebuild behavior for existing runtime artifacts
 - Query contract:
   - what Ingest emits
   - whether query emission is same-call or second-call
