@@ -789,8 +789,8 @@ def _route_targets_from_ref_ids(
     return target_anchor_id, target_sentence_id
 
 
-def _recent_reading_memory_output_to_ops(value: object) -> list[dict[str, object]]:
-    """Convert target XML Digest output into current runtime memory ops."""
+def _understanding_output_to_recent_memory_ops(value: object) -> list[dict[str, object]]:
+    """Convert Digest Understanding output into current runtime memory ops."""
 
     if not isinstance(value, list):
         return []
@@ -798,7 +798,7 @@ def _recent_reading_memory_output_to_ops(value: object) -> list[dict[str, object
     for item in value:
         if not isinstance(item, dict):
             continue
-        memory_text = _clean_text(item.get("memory_text"))
+        memory_text = _clean_text(item.get("content"))
         if not memory_text:
             continue
         kind = _clean_text(item.get("kind")) or "other"
@@ -820,7 +820,7 @@ def _digest_memory_ops_from_payload(payload: object) -> object:
 
     if not isinstance(payload, dict):
         return None
-    return _recent_reading_memory_output_to_ops(payload.get("recent_reading_memory"))
+    return _understanding_output_to_recent_memory_ops(payload.get("understanding"))
 
 
 def digest(
@@ -890,11 +890,11 @@ def digest(
     }
 
     surfaced_reactions = _normalize_surfaced_reactions(
-        payload.get("surfaced_reactions") if isinstance(payload, dict) else None,
+        payload.get("annotations") if isinstance(payload, dict) else None,
         current_unit_texts=current_unit_texts,
         allowed_ref_ids=allowed_ref_ids,
     )
-    reading_impression = _clean_text(payload.get("reading_impression")) if isinstance(payload, dict) else ""
+    reading_impression = _clean_text(payload.get("response")) if isinstance(payload, dict) else ""
     raw_memory_ops = _digest_memory_ops_from_payload(payload)
     memory_uptake_ops, memory_uptake_admission_events = _normalize_state_operations_with_admission(
         raw_memory_ops,

@@ -72,8 +72,8 @@ def test_digest_projects_compact_packet_and_returns_f1_surface_contract(tmp_path
     def fake_invoke_json(_system: str, prompt: str, default: object) -> object:
         captured["prompt"] = prompt
         return {
-            "reading_impression": "The second sentence sharpens the first one.",
-            "surfaced_reactions": [
+            "response": "The second sentence sharpens the first one.",
+            "annotations": [
                 {
                     "source_quote": "Beta sentence.",
                     "content": "This is where the move becomes visible.",
@@ -84,10 +84,10 @@ def test_digest_projects_compact_packet_and_returns_f1_surface_contract(tmp_path
                     },
                 }
             ],
-            "recent_reading_memory": [
+            "understanding": [
                 {
                     "kind": "claim_or_argument",
-                    "memory_text": "The second sentence sharpens the first one.",
+                    "content": "The second sentence sharpens the first one.",
                 }
             ],
         }
@@ -185,7 +185,7 @@ def test_digest_projects_compact_packet_and_returns_f1_surface_contract(tmp_path
     assert "\"earlier_excerpts\"" not in captured["prompt"]
     assert "\"refs\": [" not in captured["prompt"]
     assert manifest["node_name"] == "digest"
-    assert manifest["prompt_version"] == "attentional_v2.digest.v1"
+    assert manifest["prompt_version"] == "attentional_v2.digest.v2"
     assert result["reading_impression"] == "The second sentence sharpens the first one."
     assert result["surfaced_reactions"][0]["source_quote"] == "Beta sentence."
     assert result["surfaced_reactions"][0]["prior_link"] is None

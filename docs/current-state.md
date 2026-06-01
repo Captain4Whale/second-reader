@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-06-01T19:08:12+08:00`
+Last verified: `2026-06-01T19:51:20+08:00`
 
 ## Current Objective
 - Product goal and mechanism direction are being reset before further implementation.
@@ -33,7 +33,7 @@ Last verified: `2026-06-01T19:08:12+08:00`
     - current LLM-call code now lives in `reading-companion-backend/src/attentional_v2/llm_calls.py`; the old ambiguous active module name is removed
     - runtime next-unit preparation lives outside `Ingest` as `prepare_next_source_unit_for_read`: it prepares source preview/context, calls `Ingest`, performs anchor resolution/retry/fallback boundary governance, and hands the accepted source unit to `Digest`
     - first-slice `Ingest` uses `ReaderRole`, `Instruction`, `BookInfo`, `CurrentView`, empty `RetrievalSurface`, and `OutputContract`; memory-retrieval request behavior is deferred until the new memory design lands
-    - draft Digest semantic refactor doc now proposes model-facing `Understanding / Response / Annotation` as three peer `Instruction` actions, with runtime storage of Understanding still mapped to `recent_reading_memory`
+    - Digest semantic refactor is implemented: model-facing `understanding / response / annotations` are three peer outputs, with runtime storage of `understanding[]` still mapped to `recent_reading_memory`
     - current `Digest` has no path-redirection output contract and the Runner/audit path emits no Detour or source-backread runtime artifacts for new runs
     - current `local_continuity` contains only forward-reading continuity; old Detour-era checkpoint/artifact shapes are not a compatibility target
   - stop declaration:
@@ -46,8 +46,8 @@ Last verified: `2026-06-01T19:08:12+08:00`
   - next step:
     - continue with the new product-goal reframe from the now-forward-only `Ingest` baseline
     - use `docs/implementation/new-reading-mechanism/ingest-context-and-navigate-mapping.md` as the implementation reference for the landed first-slice `Ingest` XML context and for the remaining retrieval-request design gap
-    - use `docs/implementation/new-reading-mechanism/digest-understanding-response-annotation-design.md` as the current draft for the next Digest prompt/output semantic refactor
-    - next design work should define the content-neutral Unit Memory ledger/retrieval path, how `Ingest` requests memory retrieval for the selected next unit, and how `Digest` turns the current unit into reader-facing notes / highlights through Understanding / Response / Annotation
+    - use `docs/implementation/new-reading-mechanism/digest-understanding-response-annotation-design.md` as the implemented reference for the Digest prompt/output semantic refactor
+    - next design work should define the content-neutral Unit Memory ledger/retrieval path and how `Ingest` requests memory retrieval for the selected next unit
     - do not run eval, update evidence catalog, or claim product quality from the Detour hard-purge slice
 - Historical concrete-node XML prompt / Recent Reading Memory full active diagnostic machine run has completed; post-run report is preserved for reference.
   - purpose:
@@ -88,8 +88,8 @@ Last verified: `2026-06-01T19:08:12+08:00`
     - `recent_reading_memory` is now a runtime store for near-term semantic memory of just-read units
     - the historical concrete-node prompt series asked for one or a small number of context-resolvable Recent Reading Memory entries per unit
     - that prompt series tightened source-grounding, continuity balance, no operation-level reason, natural-memory prose, and author/evidence-boundary handling
-    - current Digest still converts LLM-facing `recent_reading_memory[]` into runtime `memory_uptake_ops[]` with `target_store="recent_reading_memory"` and `op="append"`
-    - the LLM supplies only `kind` and `memory_text`; runner/state code owns `entry_id`, `source_unit_span_id`, `created_at_unit_index`, `status`, and `archived_by_consolidation_id`
+    - current Digest converts LLM-facing `understanding[]` into runtime `memory_uptake_ops[]` with `target_store="recent_reading_memory"` and `op="append"`
+    - the LLM supplies only `kind` and `content`; runner/state code stores `content` as `memory_text` and owns `entry_id`, `source_unit_span_id`, `created_at_unit_index`, `status`, and `archived_by_consolidation_id`
     - only `active` entries are projected into subsequent Digest prompt packets
     - runtime persistence, checkpoint/resume carriage, settlement audit deltas, and Memory Quality full-state snapshots now include `recent_reading_memory`
   - explicit exclusions:
@@ -637,7 +637,7 @@ Last verified: `2026-06-01T19:08:12+08:00`
     - `attention_tags[]` are lightweight labels on active items; old fixed hot-state lists are historical only
     - residual `local_hypothesis` / `live_hypotheses` vocabulary is historical provenance only; future hypothesis-like material should be represented through content-neutral unit memory rather than the retired typed stores
     - old `gate_state`, `pressure_snapshot`, and working-pressure runtime artifacts are no longer schema, prompt, runtime, checkpoint, or Memory Quality evidence fields
-    - old `pressure_signals` were removed with the forward-settlement cutover; current `Digest` emits only reading impression, surfaced reactions, and LLM-facing Recent Reading Memory
+    - old `pressure_signals` were removed with the forward-settlement cutover; current `Digest` emits model-facing `understanding`, `response`, and `annotations`
   - `Phase D` is now landed as the continuity / recall / resume polish slice:
     - that branch explored a budget-bounded multi-step supplemental context loop around the then-current concrete reading node
     - runtime and full checkpoints now persist a lightweight `continuation capsule` with explicit `rehydration entrypoints`
@@ -658,17 +658,17 @@ Last verified: `2026-06-01T19:08:12+08:00`
       - historical `Navigate.unitize -> read -> Reading Runner post-read settlement`
     - current code now exposes that selection step through:
       - `Ingest -> Digest -> Reading Runner post-Digest settlement`
-    - `Digest` now directly owns the current naturalized reading contract:
-      - `reading_impression`
-      - `surfaced_reactions`
-      - `recent_reading_memory`
+    - `Digest` now directly owns the current naturalized model-facing reading contract:
+      - `understanding`
+      - `response`
+      - `annotations`
     - the dedicated live `Express` node is no longer on the live path
     - `Digest` prompt packaging now uses XML context blocks and compact carried state instead of the broader intermediate packet
   - Digest naturalization is now landed:
     - the `Digest` prompt addresses the model as a reader moving through the book, not as a field-filling node
     - the old current-field names `unit_delta` and `implicit_uptake_ops` are historical
-    - new runs use `reading_impression`, `surfaced_reactions`, and LLM-facing `recent_reading_memory`
-    - runtime `memory_uptake_ops` are converted from Digest output for settlement
+    - new runs use model-facing `understanding`, `response`, and `annotations`
+    - runtime `memory_uptake_ops`, `reading_impression`, and `surfaced_reactions` are mapped from Digest output for settlement/audit
   - `Phase F2` is now historical after `DEC-104`:
     - the old live Detour / source-backread path has been retired from the current runtime
     - `DEC-105` hard-purges the retired compatibility interfaces from current code, prompts, schemas, audits, and tests

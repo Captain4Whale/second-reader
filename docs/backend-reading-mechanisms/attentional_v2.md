@@ -75,10 +75,10 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
 - Phase F1 of the post-E3 rework is now landed.
   - the live per-unit loop was cut back to historical `Navigate.unitize -> read -> Navigate.route` at that point.
   - the later forward-settlement cutover retired that route layer from the current live path.
-  - the current `Digest` call now directly owns a naturalized reading-result contract:
-    - `reading_impression`
-    - `surfaced_reactions`
-    - LLM-facing `recent_reading_memory`
+  - the current `Digest` call now owns a reader-action-shaped model contract:
+    - `understanding`
+    - `response`
+    - `annotations`
   - the dedicated live `Express` node is no longer on the live Reading Runner path
   - current Digest prompt packaging uses XML blocks with compact carried reading state instead of receiving the broader intermediate packet wholesale
   - this removed the last live dependence on the temporary `Express` step
@@ -241,8 +241,8 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
     - if retry still fails, fall back conservatively to the current paragraph end or preview boundary and record the resolution status
   - build a small `carry-forward context` from persisted state
   - formally digest the accepted source unit through `Digest`
-  - let `Digest` directly surface zero-to-many reading-time reactions for that exact unit
-  - accept only the current `Digest` output contract: `reading_impression`, `surfaced_reactions`, and LLM-facing `recent_reading_memory`
+  - let `Digest` produce three model-facing reading outputs for that exact unit: `understanding`, `response`, and `annotations`
+  - runtime maps those outputs into internal `memory_uptake_ops`, `reading_impression`, and `surfaced_reactions` for existing settlement/audit surfaces
   - `Reading Runner` post-Digest settlement closes the exact source unit, appends it to the Unit Span Ledger, and advances the cursor to `end_cursor`
 - Current capture/resume writes only the current forward continuity schema; old non-mainline checkpoint/artifact shapes are not a compatibility target after `DEC-105`.
 - Future `Ingest` memory retrieval should be designed separately rather than inherited from the retired source-skill loop by default.
@@ -275,25 +275,26 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
     - `Reading Runner` then reads them after the `main_body` queue drains
     - explicit chapter-targeted runs may still select them directly
 - `Digest` is the current formal unit interpretation LLM call, with a reader-first prompt role rather than a node-first role.
-  - On the current live baseline, it directly produces `reading_impression`, `surfaced_reactions`, and LLM-facing `recent_reading_memory`.
-  - The runtime converts `recent_reading_memory[]` into internal `memory_uptake_ops[]` before settlement.
+  - On the current live baseline, its model-facing output fields are `understanding`, `response`, and `annotations`.
+  - The runtime converts `understanding[]` into internal `memory_uptake_ops[]` before settlement.
+  - The runtime maps `response` to internal `DigestResult.reading_impression` and `annotations[]` to internal `DigestResult.surfaced_reactions`.
   - It should not behave like a control super-node or a checklist-filling state updater.
   - Its intended order is:
     - read the current unit as a reader
-    - form a brief natural `reading_impression`
-    - surface any underline / margin-note style reactions that genuinely arise
-    - record bounded Recent Reading Memory for continuity
+    - form source-faithful `understanding`
+    - express a brief natural `response`
+    - annotate any exact source spans that genuinely ask to be marked
     - avoid route selection; the Runner will advance deterministically after settlement
   - Legacy compatibility fields such as `raw_reaction`, `move_hint`, `prior_material_use`, `express_signal`, and `context_request` are now historical territory, not the live F3 contract.
   - It now also carries an explicit proportion rule for thin structural units:
     - a bare heading, label, or similarly slight structural cue may legitimately produce no surfaced reaction
     - the mechanism should not inflate that kind of unit into review voice or manufactured gravitas unless the wording itself genuinely carries local force
-- `reading_impression` is a temporary natural-language read-after impression, not a new durable memory layer.
-  - It exists as the immediate reader-like impression after one unit.
-  - The LLM-facing Digest output maintains `recent_reading_memory[]`, not legacy store-targeted memory operations.
-  - Runtime converts `recent_reading_memory[]` into internal `memory_uptake_ops[]` for deterministic settlement into the Recent Reading Memory store.
+- `response` is the model-facing brief natural read-after impression; internally it is still stored as `reading_impression` for the current audit/runtime surface.
+  - It exists as the immediate reader-like response after one unit, not as a new durable memory layer.
+  - The LLM-facing Digest output emits `understanding[]`, not Recent Reading Memory or legacy store-targeted memory operations.
+  - Runtime converts `understanding[]` into internal `memory_uptake_ops[]` for deterministic settlement into the Recent Reading Memory store.
   - Model-emitted legacy `memory_uptake_ops[]` are ignored by the current Digest call.
-  - Visible reactions and Recent Reading Memory come from the same reading experience, but a surfaced reaction is already persisted as a reaction record and is not automatically copied into memory.
+  - Visible annotations and stored Understanding come from the same reading experience, but an annotation is persisted as a reaction record and is not automatically copied into memory.
   - Author-given structures such as stage models, classifications, core definitions, named distinctions, or chapter roadmaps may enter Recent Reading Memory even when they do not produce a visible reaction.
 - `Express` is now best understood as historical intermediate compatibility-first territory rather than a live mechanism node.
   - It helped isolate visible wording while the system proved out surfaced-reaction persistence.
@@ -339,42 +340,43 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - ordinary forward progression is deterministic Reading Runner settlement rather than a route action
 - Under the approved next shape:
   - `Ingest` owns forward next-unit selection and reserves memory-support retrieval for later design
-  - `Digest` owns current-unit reading impression, surfaced reactions, and LLM-facing Recent Reading Memory
+  - `Digest` owns model-facing `understanding`, `response`, and `annotations`
   - `Reading Runner` owns post-Digest settlement and cursor advance
   - `slow cycle` owns chapter-end consolidation and promotion
 
 ## Frozen Next-Shape Contract
 - This section freezes the approved next target shape after the post-E3 quality review.
-- `DigestResult` minimally exposes:
-  - `reading_impression`
-    - the temporary natural-language impression left by the current unit
-    - this is intentionally not split into subfields; it is the reader's immediate understanding / noticing after the unit
-  - `surfaced_reactions`
-    - zero to many visible reading-time reactions surfaced directly by `Digest`
-    - each surfaced reaction should carry:
+- The LLM-facing `Digest` contract minimally exposes:
+  - `understanding`
+    - one or a small number of source-faithful entries with `kind` and `content`
+    - runtime converts these entries into internal `memory_uptake_ops[]` targeting `recent_reading_memory`
+  - `response`
+    - the temporary natural-language response left by the current unit
+    - this is intentionally compact; it is the reader's immediate feeling, thought, pressure, question, or aftertaste after understanding the unit
+  - `annotations`
+    - zero to many visible reading-time annotations surfaced directly by `Digest`
+    - each annotation should carry:
       - `source_quote`
       - `content`
       - optional `prior_link`
       - optional `outside_link`
       - optional `search_intent`
-    - `Digest` still understands the whole `unit`, but each `source_quote` should be chosen as the smallest self-sufficient span that can honestly carry that surfaced reaction
-      - if one sentence already stands on its own, it may anchor a surfaced reaction by itself
+    - `Digest` still understands the whole `unit`, but each `source_quote` should be chosen as the smallest self-sufficient span that can honestly carry that annotation
+      - if one sentence already stands on its own, it may anchor an annotation by itself
       - if a sentence would lose meaning when isolated, `Digest` should use the smallest multi-sentence span that keeps the meaning intact
       - a larger paragraph-sized anchor is allowed only when that larger span is genuinely the smallest complete footing, not as a lazy default
-    - one `unit` may legitimately yield more than one native surfaced reaction when it contains multiple independently complete local triggers
+    - one `unit` may legitimately yield more than one native annotation when it contains multiple independently complete local triggers
       - a sharper later sentence should not automatically swallow an earlier framing line, premise line, or hinge line that also stands on its own
-      - `Digest` should do a final swallowed-line check before it settles on one reaction: if an earlier line independently frames the later move, it should not be left stranded inside `reading_impression` merely because a later line sounds more dramatic
+      - `Digest` should do a final swallowed-line check before it settles on one annotation: if an earlier line independently frames the later move, it should not be left stranded inside `response` merely because a later line sounds more dramatic
       - this applies especially to premise-plus-sharpening pairs: when the earlier line states the premise and the later line cashes it out, `Digest` should not default to surfacing only the later line if both independently stand
-      - this is bounded plurality, not pressure to spray reactions everywhere; the default density still stays low unless the unit honestly contains multiple independently valuable spans
-    - the native surfaced-reaction shape does not carry a `type`
+      - this is bounded plurality, not pressure to spray annotations everywhere; the default density still stays low unless the unit honestly contains multiple independently valuable spans
+    - the native annotation shape does not carry a `type`
     - `content` must stay reader-facing and natural-language.
       - it may callback to earlier material, but it must not expose system handles such as sentence ids, `ref_ids`, anchor ids, thread ids, concept ids, or reaction ids
       - `prior_link.ref_ids` remain internal structured linkage for the runtime and audits, not wording that should leak into visible text
-      - if visible wording briefly quotes earlier material, it should do so sparingly with a short fragment rather than pasting a whole earlier sentence back into the reaction
-  - `recent_reading_memory`
-    - LLM-facing Recent Reading Memory entries with `kind` and `memory_text`
-    - the runtime converts these entries into internal `memory_uptake_ops[]` for deterministic settlement
-    - model-emitted legacy `memory_uptake_ops[]` are not part of the Digest output contract
+      - if visible wording briefly quotes earlier material, it should do so sparingly with a short fragment rather than pasting a whole earlier sentence back into the annotation
+- Internal `DigestResult` still exposes `reading_impression`, `surfaced_reactions`, and normalized `memory_uptake_ops` so existing settlement, reaction persistence, and read-audit surfaces remain stable.
+- Model-emitted legacy `reading_impression`, `surfaced_reactions`, `recent_reading_memory`, and `memory_uptake_ops` are not part of the current Digest LLM contract.
 - surfaced reactions are now the primary visible-reaction truth in the approved contract.
   - for `attentional_v2`, native visible-reaction truth is the surfaced semantic payload itself, not a reaction-family label.
   - old family labels remain compatibility projections only.
@@ -428,6 +430,8 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - Ingest XML context uses top-level `ReaderRole`, `Instruction`, `BookInfo`, `CurrentView`, an empty self-closing `RetrievalSurface`, and `OutputContract`.
   - The current Ingest output contract is flat JSON with `end_anchor_text`, `boundary_type`, and `reason`.
   - Digest XML renders `ReaderRole` and `Instruction` as separate top-level blocks; all fixed non-role Digest directions live under `Instruction`, while runtime context/data blocks remain separate.
+  - Digest `Instruction` uses direct child blocks `CurrentStep`, `ContextUseGuide`, `Understanding`, `Response`, `Annotation`, `SourceGrounding`, and `ResponseDiscipline`.
+  - The current Digest output contract is flat JSON with `understanding`, `response`, and `annotations`.
 - The stable carry taxonomy is now:
   - `always carry`
   - `selective carry`
@@ -488,8 +492,8 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
     - long-lived tensions, arcs, watchpoints, and unresolved thematic/narrative pulls should be handled by the future unit-memory retrieval design, not kept alive in a separate ActiveTension layer
   - `recent_reading_memory`
     - owns near-term semantic memory of just-read units
-    - Digest returns one or a small number of LLM-facing `recent_reading_memory[]` entries; runtime converts them into `memory_uptake_ops[]` with `target_store="recent_reading_memory"` and `op="append"`
-    - the LLM provides only `kind` and `memory_text`; Recent Memory append operations do not use an operation-level `reason`
+    - Digest returns one or a small number of LLM-facing `understanding[]` entries; runtime converts them into `memory_uptake_ops[]` with `target_store="recent_reading_memory"` and `op="append"`
+    - the LLM provides only `kind` and `content`; runtime stores `content` as `memory_text`, and Recent Memory append operations do not use an operation-level `reason`
     - the runner owns `entry_id`, `source_unit_span_id`, `created_at_unit_index`, `status`, and `archived_by_consolidation_id`
     - entries are grounded by the accepted read unit span as a whole; the first implementation does not require fine-grained `source_refs` or quote matching
     - before a future memory-ledger design lands, this store is append-only: Digest does not update, merge, resolve, close, link, or route recent entries into typed long-memory destinations
@@ -522,13 +526,11 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - `Reading Runner`
     - owns `local_continuity`, cursor advancement, anchor resolution, retry/fallback, retrieval execution when it exists, and settlement
   - `Digest`
-    - owns current-unit understanding
-    - owns surfaced reactions
-    - owns LLM-facing `recent_reading_memory`
-    - must write Recent Reading Memory as compressed, context-resolvable, source-established content for the future reader; it should orient through the full prompt-visible reading context, but still record what the current unit itself newly establishes, develops, specifies, contrasts, changes, or makes memorable
-    - should not emit or rely on an operation-level `reason` for `recent_reading_memory`; the `memory_text` itself is the retained content
-    - Recent Reading Memory should be written as natural memory sentences or a short paragraph, not as a default `<label>: <explanation>` heading pattern; colons are appropriate only when the source itself names a term, stage, framework, or quoted source term
-    - Recent Reading Memory should not copy the source passage, predict future importance, guess typed long-memory targets, create nested memory points, recap prior context for its own sake, or turn a concrete source unit into unsupported essay-like analysis or forced abstract naming
+    - owns model-facing `understanding`, `response`, and `annotations`
+    - must write `understanding` as compressed, context-resolvable, source-established content for continued reading; it should orient through the prompt-visible reading context, but still record what the current unit itself newly establishes, develops, specifies, contrasts, changes, or makes available
+    - should not emit or rely on an operation-level `reason` for `understanding`; runtime stores each entry's `content` as the retained `memory_text`
+    - `understanding` should be written as natural reading understanding, not as a default `<label>: <explanation>` heading pattern; colons are appropriate only when the source itself names a term, stage, framework, or quoted source term
+    - `understanding` should not copy the source passage, predict future importance, guess typed long-memory targets, create nested memory points, recap prior context for its own sake, or turn a concrete source unit into unsupported essay-like analysis or forced abstract naming
     - author stance, evidence boundaries, writing method, intended reader, and explicit scope limits count as meaningful source-established content rather than empty structure
     - owns deprecated active-tension lifecycle intent while `active_attention` remains in the runtime:
       - `create` / `append` creates a new open ActiveTension when prompt-visible context leaves readerly charge that has not yet been fully digested

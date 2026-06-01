@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-06-01T19:08:12+08:00`
+Last updated: `2026-06-01T19:51:20+08:00`
 
 ## Status Values
 - `active`
@@ -25,7 +25,7 @@ Last updated: `2026-06-01T19:08:12+08:00`
 - Lane: `mechanism_runtime`
 - Priority: `high`
 - Detail: `docs/current-state.md`
-- Next: continue the narrowed product-goal reframe from the forward-only `Ingest` baseline. `DEC-104` retired live Detour / source-backread from `attentional_v2`, `DEC-105` hard-purged the retired compatibility interfaces, `DEC-106` split LLM calls from runner preparation/governance, `DEC-107` replaces the old `Navigate` LLM identity with `llm_calls.ingest(...)`, `DEC-108` renames the concrete per-unit interpretation LLM call to `llm_calls.digest(...)` with XML prompt assembly as the live path, and `DEC-109` removes the retired concept/thread structured stores from current live memory surfaces. Runtime source-unit preparation still lives in `prepare_next_source_unit_for_read`; active LLM calls live under `llm_calls.py`. Use `docs/implementation/new-reading-mechanism/ingest-context-and-navigate-mapping.md` as the implementation reference for the landed first-slice `Ingest` XML context and the remaining retrieval-request design gap. Use `docs/implementation/new-reading-mechanism/digest-understanding-response-annotation-design.md` as the current draft for the next Digest semantic refactor: model-facing `Understanding / Response / Annotation` as three peer Instruction actions, with Understanding mapped to stored Recent Reading Memory by runtime. Next design work should specify the content-neutral Unit Memory ledger/retrieval path, how `Ingest` requests memory retrieval for the selected next unit, and how `Digest` produces reader-facing notes / highlights. Do not launch eval, update evidence catalog, or continue `C设计10` consolidation / the old concrete-node XML migration / `C设计12` prompt assembly migration unless explicitly re-adopted.
+- Next: continue the narrowed product-goal reframe from the forward-only `Ingest` baseline. `DEC-104` retired live Detour / source-backread from `attentional_v2`, `DEC-105` hard-purged the retired compatibility interfaces, `DEC-106` split LLM calls from runner preparation/governance, `DEC-107` replaces the old `Navigate` LLM identity with `llm_calls.ingest(...)`, `DEC-108` renames the concrete per-unit interpretation LLM call to `llm_calls.digest(...)` with XML prompt assembly as the live path, and `DEC-109` removes the retired concept/thread structured stores from current live memory surfaces. Runtime source-unit preparation still lives in `prepare_next_source_unit_for_read`; active LLM calls live under `llm_calls.py`. Use `docs/implementation/new-reading-mechanism/ingest-context-and-navigate-mapping.md` as the implementation reference for the landed first-slice `Ingest` XML context and the remaining retrieval-request design gap. `docs/implementation/new-reading-mechanism/digest-understanding-response-annotation-design.md` is now implemented as the Digest semantic refactor: model-facing `understanding / response / annotations` are three peer Instruction actions, with `understanding[]` mapped to stored Recent Reading Memory by runtime. Next design work should specify the content-neutral Unit Memory ledger/retrieval path and how `Ingest` requests memory retrieval for the selected next unit. Do not launch eval, update evidence catalog, or continue `C设计10` consolidation / the old concrete-node XML migration / `C设计12` prompt assembly migration unless explicitly re-adopted.
 - Jobs: none
 - Evidence:
   - `DEC-103`
@@ -79,7 +79,7 @@ Last updated: `2026-06-01T19:08:12+08:00`
     - active items now carry lightweight `attention_tags[]`; old `working_state` naming and fixed lists are historical
     - residual `local_hypothesis` / `live_hypotheses` vocabulary has been retired from current provenance; future hypothesis-like material should use content-neutral unit memory rather than the retired typed stores
     - old `gate_state`, `pressure_snapshot`, and working-pressure runtime artifacts are no longer current schema, prompt, runtime, checkpoint, or Memory Quality evidence fields
-    - old `pressure_signals` were removed with the forward-settlement cutover; current `Digest` emits reading impression, surfaced reactions, and LLM-facing Recent Reading Memory
+    - old `pressure_signals` were removed with the forward-settlement cutover; current `Digest` emits model-facing `understanding`, `response`, and `annotations`
   - `Phase D` is now landed:
     - that branch once explored a budget-bounded multi-step supplemental context loop around the old concrete reading node
     - runtime state and full checkpoints now persist a lightweight `continuation capsule` with rehydration entrypoints
@@ -92,12 +92,12 @@ Last updated: `2026-06-01T19:08:12+08:00`
     - this branch remains valuable evidence, but it is no longer the approved end-state target
   - `Phase F1` is now landed:
     - the live per-unit loop was historically cut back to `Navigate.unitize -> read -> Reading Runner post-read settlement`; current code now calls it through `Ingest -> Digest -> Reading Runner post-Digest settlement`
-    - `Digest` now owns `reading_impression`, surfaced reactions, and LLM-facing Recent Reading Memory
+    - `Digest` now owns model-facing `understanding`, `response`, and `annotations`
     - the dedicated live `Express` node is no longer on the runner path
     - `Digest` prompt packaging now follows XML context blocks with compact carried state
   - Digest naturalization is now landed on top of the F-line:
     - the prompt now frames `Digest` as a reader moving through the book rather than a field-filling node
-    - current LLM-facing output fields are `reading_impression`, `surfaced_reactions`, and `recent_reading_memory`; `unit_delta`, `implicit_uptake_ops`, and model-emitted `memory_uptake_ops` are historical field names
+    - current LLM-facing output fields are `understanding`, `response`, and `annotations`; `unit_delta`, `implicit_uptake_ops`, model-emitted `memory_uptake_ops`, and the prior model-facing `recent_reading_memory` contract are historical field names
     - explicit source structures that matter later, such as stage models or classifications, can settle into memory even without a visible reaction
   - `Phase F2` is now historical after `DEC-104`:
     - the old live Detour / source-backread path has been retired from the current runtime

@@ -324,8 +324,8 @@ def test_digest_uses_live_xml_prompt_and_filters_surface_reactions(tmp_path: Pat
         captured["system_prompt"] = system_prompt
         captured["prompt"] = prompt
         return {
-            "reading_impression": "The line flips the frame.",
-            "surfaced_reactions": [
+            "response": "The line flips the frame.",
+            "annotations": [
                 {
                     "source_quote": "Alpha hinge.",
                     "content": "That phrase suddenly snaps the claim into place.",
@@ -344,10 +344,23 @@ def test_digest_uses_live_xml_prompt_and_filters_surface_reactions(tmp_path: Pat
                     "content": "This one should be dropped.",
                 }
             ],
-            "recent_reading_memory": [
+            "understanding": [
                 {
                     "kind": "claim_or_argument",
-                    "memory_text": "The current unit flips the frame around Alpha hinge.",
+                    "content": "The current unit flips the frame around Alpha hinge.",
+                }
+            ],
+            "reading_impression": "legacy ignored",
+            "surfaced_reactions": [
+                {
+                    "source_quote": "Beta consequence.",
+                    "content": "Legacy surfaced reaction should be ignored.",
+                }
+            ],
+            "recent_reading_memory": [
+                {
+                    "kind": "other",
+                    "memory_text": "Legacy recent memory should be ignored.",
                 }
             ],
             "memory_uptake_ops": [
@@ -399,6 +412,15 @@ def test_digest_uses_live_xml_prompt_and_filters_surface_reactions(tmp_path: Pat
     assert "The previous unit established the author's witness boundary." in captured["prompt"]
     assert "Alpha hinge." in captured["prompt"]
     assert "Structural frame:" not in captured["prompt"]
+    assert "<Understanding>" in captured["prompt"]
+    assert "<Response>" in captured["prompt"]
+    assert "<Annotation>" in captured["prompt"]
+    assert '"understanding": [' in captured["prompt"]
+    assert '"response": "..."' in captured["prompt"]
+    assert '"annotations": [' in captured["prompt"]
+    assert '"reading_impression": "..."' not in captured["prompt"]
+    assert '"surfaced_reactions": []' not in captured["prompt"]
+    assert '"recent_reading_memory": []' not in captured["prompt"]
     assert '"memory_uptake_ops"' not in captured["prompt"]
     assert "memory_uptake_ops" not in captured["prompt"]
     assert "active_attention" not in captured["prompt"]
@@ -427,8 +449,9 @@ def test_digest_uses_live_xml_prompt_and_filters_surface_reactions(tmp_path: Pat
     }
     assert op["target_key"] != "legacy-ignored"
     assert manifest["node_name"] == "digest"
-    assert manifest["prompt_version"] == "attentional_v2.digest.v1"
-    assert manifest["prompt_assembly"]["spec_id"] == "attentional_v2.digest.xml.v1"
+    assert manifest["prompt_version"] == "attentional_v2.digest.v2"
+    assert manifest["prompt_assembly"]["spec_id"] == "attentional_v2.digest.xml.v2"
+    assert manifest["prompt_assembly"]["output_contract"] == "digest_understanding_response_annotation_json_v1"
     assert "mode" not in manifest["prompt_assembly"]
     assert manifest["prompt_assembly"]["rendered_blocks"] == [
         "ReaderRole",

@@ -8,12 +8,24 @@ Update when: Digest action names, output fields, XML prompt structure, or runtim
 ## Status
 
 - Date: `2026-06-01`
-- Status: design draft, not implemented.
+- Status: implemented in live Digest prompt / LLM output normalization.
 - Evaluation status: no eval run, no evidence-catalog update.
 - Current basis:
   - `DEC-108` makes `Digest` the concrete per-unit interpretation LLM call.
   - `DEC-109` removes content-typed structured long-memory stores from the current live surface.
-  - Current Digest still stores model-produced unit understanding through runtime `recent_reading_memory`, but the model-facing task should no longer be phrased as "maintain memory."
+  - Current Digest stores model-produced `understanding[]` through runtime `recent_reading_memory`, but the model-facing task no longer phrases this as "maintain memory."
+
+## Implementation Status
+
+- Implemented prompt version: `attentional_v2.digest.v2`
+- Implemented XML assembly spec: `attentional_v2.digest.xml.v2`
+- Implemented promptset: `attentional_v2-phase6-v46`
+- Implemented output contract: `digest_understanding_response_annotation_json_v1`
+- Runtime mapping:
+  - `understanding[].content` -> internal `memory_uptake_ops[].payload.memory_text` targeting `recent_reading_memory`
+  - `response` -> internal `DigestResult.reading_impression`
+  - `annotations[]` -> internal `DigestResult.surfaced_reactions`
+- Old model-facing fields `reading_impression`, `surfaced_reactions`, and `recent_reading_memory` are not accepted as current Digest LLM contract fields; internal runtime/audit names remain stable in this slice.
 
 ## Design Claim
 
@@ -56,9 +68,9 @@ Storage can remain unchanged in the first implementation slice:
 - `read_audit.jsonl` may continue to record internal `reading_impression`, `surfaced_reactions`, and normalized memory ops.
 - A later cleanup can decide whether audit keys should become `digest_understanding`, `digest_response`, and `digest_annotations`.
 
-## Current Prompt Structure
+## Pre-Implementation Prompt Structure
 
-Current top-level user prompt:
+The top-level user prompt shape remains:
 
 ```xml
 <ReaderRole>...</ReaderRole>
@@ -69,7 +81,7 @@ Current top-level user prompt:
 <OutputContract>...</OutputContract>
 ```
 
-Current `Instruction` shape:
+Pre-implementation `Instruction` shape:
 
 ```xml
 <Instruction>
@@ -91,7 +103,7 @@ Current `Instruction` shape:
 </Instruction>
 ```
 
-Current LLM-facing output contract:
+Pre-implementation LLM-facing output contract:
 
 ```json
 {
@@ -101,17 +113,17 @@ Current LLM-facing output contract:
 }
 ```
 
-Runtime currently converts:
+Before this implementation, runtime converted:
 
 - `recent_reading_memory[]` -> `memory_uptake_ops[]` targeting `recent_reading_memory`
 - `reading_impression` -> internal `DigestResult.reading_impression`
 - `surfaced_reactions[]` -> internal `DigestResult.surfaced_reactions`
 
-## Current Prompt Text To Move Or Rewrite
+## Old Prompt Text Moved Or Rewritten
 
-### Current Task Overview
+### Old Task Overview
 
-Current fragment:
+Old fragment:
 
 ```text
 Your job is to read the exact current unit with a small carried-forward memory packet, then return a structured record of the reading experience.
@@ -125,9 +137,9 @@ Assessment:
 - Keep the "current reading present" idea.
 - Replace "structured record of the reading experience" with the three peer outputs.
 
-### Current Reading Impression Policy
+### Old Reading Impression Policy
 
-Current fragment:
+Old fragment:
 
 ```text
 - Let `reading_impression` be the brief natural impression that remains after reading: what you now understand, notice, or feel from this passage.
@@ -141,9 +153,9 @@ Assessment:
 - Remove "what you now understand" from this field because `Understanding` will own source-faithful content.
 - Keep "notice or feel" only if it is framed as a reader response after understanding.
 
-### Current Surfaced Reaction Policy
+### Old Surfaced Reaction Policy
 
-Current fragment is already mostly aligned with `Annotation`. It says surfaced reactions should:
+Old fragment is already mostly aligned with `Annotation`. It says surfaced reactions should:
 
 - stay proportionate around thin structural units
 - only surface naturally worth-marking material
@@ -160,9 +172,9 @@ Assessment:
 - Rename `SurfacedReaction` instruction block to `Annotation`.
 - Keep callback/link hygiene under `AnnotationGroundingAndCallback`.
 
-### Current Recent Reading Memory Policy
+### Old Recent Reading Memory Policy
 
-Current fragment begins:
+Old fragment begins:
 
 ```text
 - First maintain Recent Reading Memory: after reading this unit, write one Recent Reading Memory entry for your future self unless the unit is empty or purely structural.

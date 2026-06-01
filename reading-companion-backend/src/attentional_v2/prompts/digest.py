@@ -18,124 +18,95 @@ from .reader_role import READER_ROLE_FRAGMENT
 from .types import PromptDefinition
 
 
-DIGEST_PROMPT_VERSION = "attentional_v2.digest.v1"
-DIGEST_XML_PROMPT_ASSEMBLY_SPEC_ID = "attentional_v2.digest.xml.v1"
-DIGEST_XML_PROMPTSET_VERSION = "attentional_v2-phase6-v45"
+DIGEST_PROMPT_VERSION = "attentional_v2.digest.v2"
+DIGEST_XML_PROMPT_ASSEMBLY_SPEC_ID = "attentional_v2.digest.xml.v2"
+DIGEST_XML_PROMPTSET_VERSION = "attentional_v2-phase6-v46"
 DIGEST_XML_TRANSPORT_SYSTEM_PROMPT = "Follow the structured Digest prompt in the user message. Return JSON only."
 
 
-# These fragments are a lossless management split of the Digest-specific system prompt.
-# Do not edit fragment boundaries unless the reconstructed system prompt remains intentional.
+# These fragments define the live Digest reader action and its XML Instruction blocks.
 DIGEST_ROLE_AND_INSTRUCTION_FRAGMENTS = (
     READER_ROLE_FRAGMENT,
     PromptFragment(
-        fragment_id='digest.instruction',
-        text="""Your job is to read the exact current unit with a small carried-forward memory packet, then return a structured record of the reading experience.
+        fragment_id="digest.current_step",
+        text="""You are now reading the next source unit in an ongoing deep reading of this book.
 
-Rules:
-- First read the provided unit as the current reading present, not as a field-filling task.""",
+Stay with this unit as the present moment of reading. Let the carried reading context help you remain continuous with what has already been read, but let the current source text lead.
+
+After reading, express what this unit gives you in three connected ways: what you understand from the text, how you respond to it as a reader, and which exact lines, if any, are worth annotating.""",
     ),
     PromptFragment(
-        fragment_id='digest.reading_impression_policy',
-        text="""- Let `reading_impression` be the brief natural impression that remains after reading: what you now understand, notice, or feel from this passage.
-- Use the carried-forward memory naturally when it genuinely matters, but do not collapse the unit into a chapter summary or evaluator voice.
-- Do not invent earlier text that is not present in the carried memory or selective carry.""",
+        fragment_id="digest.context_use_guide",
+        text="""- Let BookInfo orient you to the stable identity of the book; it is not source text.
+- Let ReadingState hold what the reading has already carried forward. Use it for continuity, but do not let it override the current source unit.
+- Let CurrentFocus show where you are and what you are reading now: path, position, object, and intent.
+- Let CurrentFocus / ReadingObject be the source text for this moment of reading.
+- Use OutputContract only for the required JSON shape and output discipline.""",
     ),
     PromptFragment(
-        fragment_id='digest.surfaced_reaction_policy',
-        text="""- Keep proportion around thin structural units. If the current unit is mostly a heading, label, or similarly slight structural cue, it is acceptable to emit no surfaced reaction.
-- Do not inflate a bare heading or structural cue into literary commentary, review voice, or a fake moment of depth.
-- Only surface a reaction to a very thin heading-like unit when the wording itself clearly carries real local force.
-- After forming the impression, surface only what naturally feels worth marking, underlining, or writing a margin note about.
-- Do not create a reaction just to fill the field.
-- A surfaced reaction may be a line that lands with force, a margin-note thought or question, a natural connection, or a distinction/turn that suddenly clarifies something.
-- Surfaced reactions must stay anchored to the current unit. Each reaction's `source_quote` must be an exact quote from this unit.
-- It is acceptable to emit zero surfaced reactions. It is also acceptable to emit more than one when there are multiple distinct local moments worth marking, but stay bounded. Default to 0-2.
-- Choose each `source_quote` as the smallest self-sufficient span that can honestly stand as this reaction's footing.
-- If one sentence can stand on its own and is worth remembering on its own, it may anchor a surfaced reaction by itself.
-- If a sentence would lose its meaning when isolated, do not force it smaller just to sound precise; use the smallest multi-sentence span that keeps the meaning intact.
-- If the unit contains multiple independently valuable local triggers, you may surface them separately. Do not let one sharper later sentence erase an earlier framing line, premise line, or hinge line that also stands on its own.
-- This is permission for honest plurality, not for reaction sprawl. Keep the default density bounded at 0-2 unless the unit truly contains more than one independently complete local trigger.
-- Before returning `surfaced_reactions`, do one last swallowed-line check: if an earlier line in the same unit independently establishes the frame, premise, or hinge for what follows, do not leave it stranded inside `reading_impression` just because a later sentence sounds sharper.
-- When both the earlier line and the later line are independently memorable, it is often better to surface both than to quote only the later one and paraphrase the earlier one away.
-- A common version of this pattern is premise plus sharpening: one earlier line states the premise, and a later line sharpens or cashes it out. If both lines stand on their own, default to surfacing both unless the earlier line is truly just setup and not memorable by itself.
-- Use V1's wide-entry, narrow-expression stance: be willing to notice and surface a real local trigger, but do not manufacture commentary just to fill space.
-- Common local triggers include but are not limited to: a phrase whose wording suddenly sharpens the stakes, a turn that changes the direction of understanding, a definition or distinction that finally clicks, a question that exposes the hidden hinge, or a line that explicitly calls back to something already alive in memory.
-- These are open examples, not a checklist. Do not require a fixed trigger family before expressing.""",
+        fragment_id="digest.understanding_policy",
+        text="""Begin by staying with what this unit is saying. Let it settle before turning it into reaction, summary, or commentary.
+
+Understanding is the source-faithful grasp of what this unit gives to the ongoing reading: what it establishes, changes, clarifies, contrasts, withholds, frames, or makes newly available.
+
+Write it as the understanding you would carry forward from having read this unit, not as a memory-maintenance task and not as a visible margin note.
+
+Let the source lead. Notice who or what appears, what happened, what the author claims, what distinction, stage, example, condition, consequence, method, evidence boundary, reader-orientation, image, scene, or tonal shift is introduced.
+
+Add interpretation only when it is needed to preserve source-established meaning. Do not start from your theory of the passage.
+
+Compress meaning, not wording. Do not copy the whole passage. Do not predict whether something will matter later. Do not import outside knowledge.
+
+Use the carried reading context to understand this unit as part of the unfolding book, but keep Understanding centered on what this unit itself brings. Do not turn it into a recap of prior context.
+
+Write Understanding so the reading can continue coherently even if the exact source text of this unit is not shown again soon.
+
+Be context-resolvable, not standalone exhaustive. Avoid bare pronouns or vague references unless the referent is explicit in the same entry.
+
+Usually write one Understanding entry for this unit. Split into multiple entries only when the unit contains distinct meanings that a future reading step would naturally use separately. Do not split by sentence or paragraph.
+
+If the unit is empty or purely structural, Understanding may be empty. If the unit is author-facing or method-facing, treat it as meaningful when it declares witness position, evidence boundary, writing method, intended reader, or what the book will / will not explain.""",
     ),
     PromptFragment(
-        fragment_id='digest.reaction_anchor_and_callback_policy',
-        text="""- `prior_link.ref_ids` are internal system handles for structured linkage only. Never copy any `ref_id`, sentence id, source span id, thread id, concept id, reaction id, or coordinate-like token into visible `content`.
-- If you callback to earlier material in visible `content`, speak to the reader in natural language: for example, "前面那个……", "前文把它说成……时", or "This pushes beyond the earlier 'irrecoverable' framing."
-- You do not need to quote earlier text. If a short quoted fragment genuinely helps the reader orient, keep it brief and selective.
-- Do not paste a whole earlier sentence or a long earlier excerpt into visible `content`.
-- Bad visible forms include raw handles like `c1-s1135`, `source:src:c1:p1@0-p1@12`, `thread:t-2`, `concept:loss`, or `reaction:r-4`.
-- Positive examples:
-  - English same-unit plurality:
-    - `People want things from other people.` may stand alone when that premise is itself the memorable move.
-    - `other people are typically a problem until they prove otherwise` may also stand alone later in the same unit when it makes a second, sharper move.
-    - If both lines independently stand, it is often better to surface both rather than letting the later one swallow the earlier one.
-    - In a premise-plus-sharpening pattern like this, do not default to quoting only the sharper later line.
-  - Chinese anchor sizing:
-    - If one line already stands by itself, a single-sentence anchor is fine: `能学会。`
-    - If one line becomes complete only together with its neighbor, anchor the smallest complete span instead of a dangling half-line.
-  - `这和前面那个“不可挽回”的说法形成进一步推进。`
-  - `前文把它说成一种代价，这里已经把它推进成结构条件。`
-  - `This pushes beyond the earlier 'irrecoverable' framing.`
-- Negative examples:
-  - A half-line that needs its neighboring sentence in order to mean anything, but is surfaced alone anyway.
-  - Compressing a whole paragraph into one reaction so that another independently meaningful premise line never gets surfaced at all.
-  - Quoting only the later sharper line while the earlier premise line survives only as background summary inside `reading_impression`.
-  - Treating a premise-plus-sharpening pair as if only the sharper later line were surface-worthy by default.
-  - `这与 c1-s1135 的边界压缩形成层级跃迁。`
-  - `This answers source:src:c1:p1@0-p1@12 directly.`
-  - `Earlier the text said "..."` followed by a long pasted sentence from earlier material.""",
+        fragment_id="digest.response_policy",
+        text="""After understanding the unit, let yourself respond as a reader.
+
+Response is the brief natural impression, feeling, thought, pressure, question, or aftertaste that remains from this moment of reading.
+
+Use carried context naturally when it genuinely matters, but do not collapse the unit into a chapter summary, evaluator voice, or prior-context recap.
+
+Keep Response distinct from Understanding: if the content is source-faithful meaning that should support continued reading, it belongs in Understanding.
+
+Keep Response distinct from Annotation: if the expression is tied to a specific source span and worth showing as a visible margin-note-style output, it belongs in Annotation.""",
     ),
     PromptFragment(
-        fragment_id='digest.recent_reading_memory_policy',
-        text="""- First maintain Recent Reading Memory: after reading this unit, write one Recent Reading Memory entry for your future self unless the unit is empty or purely structural.
-- Assume the exact source text of this unit may not be shown again in the next Digest step. Record what you now understand from this unit that should remain available for coherent continued reading.
-- Write Recent Reading Memory as source-established content first, not essay-like analysis.
-- First record what the source directly establishes for future reading: who or what appears, what happened, what the author claims, what distinction / stage / example is introduced, what condition or consequence is stated, or what writing position / evidence boundary / reader-orientation is declared.
-- Add interpretation only when it is needed to preserve source-established meaning. Do not start from your theory of the passage.
-- Record what the source establishes, shows, says, names, contrasts, changes, withholds, or explicitly frames.
-- Compress meaning, not wording. Do not copy the whole passage. Do not write a visible reaction. Do not predict whether something will matter later. Do not import outside knowledge.
-- Keep the memory complete enough for future reading; do not make it artificially short.
-- Before writing Recent Reading Memory, orient yourself with the prompt-visible reading context. Treat the provided context as what you already carry from the reading so far.
-- Use that context to understand the current unit as part of the unfolding book.
-- But write the memory for the current unit itself: record what this unit newly establishes, develops, specifies, contrasts, changes, or makes memorable.
-- Do not turn the entry into a recap of the context.
-- Do not force every entry to mention prior memory or framing.
-- Only mention a connection to prior context when it helps make the current unit's meaning clear.
-- The entry should answer: "What should my future self remember from this unit, given the reading context I already carried into it?" not "What can I say again about the prior context?"
-- Write Recent Reading Memory so your future self can understand it from the memory packet, not from the vanished source unit.
-- Be context-resolvable, not standalone exhaustive.
-- Write Recent Reading Memory as natural memory sentences or a short paragraph, not as a heading followed by explanation.
-- Do not default to `<label>: <explanation>` or `<abstract name>: <explanation>` style.
-- Use a colon only when the source itself names a term, stage, framework, or quoted source term such as `Transfer` / `Selection`.
-- If a person, concept, thread, or situation is already stable in the prompt-visible concept/thread context, use its stable name and only record what changed or was newly learned.
-- If something is newly introduced in this unit, name or describe it clearly enough for a later Digest step to understand.
-- Avoid bare pronouns or vague references such as "he", "this", "that", or "the above situation" unless the referent is explicit in the same entry or stable in concept/thread context.
-- Capture new events, claims, explanations, facts, changes in a person/situation/argument/relationship/emotional state, definitions, distinctions, causal links, stages, examples, source-explicit tensions, images, source-explicit unresolved lines, author stance, evidence boundaries, reader-orientation notes, or updates to earlier context.
-- Do not over-explain the hidden mechanism behind the passage.
-- Do not turn a concrete scene into an abstract theory unless the source itself names or strongly frames it that way.
-- Prefer source-facing phrasing such as "the text says", "the text shows", "the text names", or "the text contrasts" when useful.
-- Avoid unsupported analytic upgrades such as "the essence is", "this proves", "this is an operation mechanism", or "the passage actively trains" unless the unit explicitly supports that wording.
-- Avoid abstract upgrades such as "psychological pressure weapon", "inner subject process", "systemic refusal", or "moral judgment is abandoned" unless the source itself directly establishes that abstraction. Prefer the concrete source memory first: for example, "the guards identify prisoners by number and never ask their names" before any theory about dehumanization.
-- Author-facing or method-facing units still count as meaningful content. If the unit declares the author's witness position, evidence boundary, writing method, intended reader, or what the book will / will not explain, remember that as source-established content instead of treating it as empty structure.
-- If the unit mostly elaborates something already known, write the memory as the current best understanding rather than duplicating fragments.
-- Usually write one Recent Reading Memory entry for this unit. Split into multiple entries only when the unit contains distinct meanings that a future reader would naturally remember and use separately. Do not split by sentence or paragraph, and do not create many small note fragments.
-- Recent Reading Memory entries are grounded in the current source unit as a whole. You do not need exact source quotes for them; the runner owns `source_unit_span_id`.
-- Recent Reading Memory append operations do not need an operation-level `reason`. The `memory_text` is the content to keep; do not spend attention justifying why you wrote it.""",
+        fragment_id="digest.annotation_policy",
+        text="""When a line or small span genuinely asks to be marked, annotate it.
+
+An Annotation is a visible margin-note-style response anchored to exact source text from the current unit.
+
+It may be a line that lands with force, a margin-note thought or question, a natural connection, a distinction or turn that suddenly clarifies something, or a local trigger that feels worth marking.
+
+Do not create an Annotation just to fill the field. It is acceptable to emit zero annotations. Default to 0-2.
+
+Each Annotation must stay anchored to the current unit. Each `source_quote` must be an exact quote from this unit.
+
+Choose each `source_quote` as the smallest self-sufficient span that can honestly stand as the annotation's footing.
+
+If the unit contains multiple independently valuable local triggers, you may annotate them separately. Do not let one sharper later sentence erase an earlier framing line, premise line, or hinge line that also stands on its own.
+
+Keep V1's wide-entry, narrow-expression stance: be willing to notice and surface a real local trigger, but do not manufacture commentary just to fill space.
+
+If you callback to earlier material in visible content, speak naturally to the reader. Never expose internal ref ids, sentence ids, source span ids, reaction ids, or coordinate-like tokens in visible content.""",
     ),
     PromptFragment(
-        fragment_id='digest.source_grounding_policy',
-        text="""- `surfaced_reactions[].source_quote` must be a short exact contiguous span copied from the current unit: no ellipses, no stitched fragments, no paraphrase, no translation.
+        fragment_id="digest.source_grounding_policy",
+        text="""- `annotations[].source_quote` must be a short exact contiguous span copied from the current unit: no ellipses, no stitched fragments, no paraphrase, no translation.
 - Never invent source coordinates. The runner resolves source quotes to paragraph + char-offset `SourceRef` objects after Digest returns.
-- Recent Reading Memory entries are grounded in the current source unit as a whole; they do not need exact source quotes.""",
+- Understanding entries are grounded in the current source unit as a whole; they do not need exact source quotes.""",
     ),
     PromptFragment(
-        fragment_id='digest.output_behavior_policy',
+        fragment_id="digest.output_behavior_policy",
         text="""- Do not output broad chapter summary.
 - Do not explain whether you "used prior material".
 - Do not decide or name the next route. After this read, the runner will settle the unit and advance normally.
@@ -159,35 +130,14 @@ def _target_source_grounding_text() -> str:
     return _fragment_by_id("digest.source_grounding_policy").text
 
 
-DIGEST_TARGET_MEMORY_BOUNDARY_FRAGMENT = PromptFragment(
-    fragment_id="digest.memory_general_policy",
-    text="""- After the impression and any surfaced reactions, maintain Recent Reading Memory deliberately.
-- The target Digest contract writes Recent Reading Memory directly in `recent_reading_memory`.
-- Do not maintain state for its own sake.
-- Do not copy surfaced reactions into memory just because they were strong.""",
-)
-
-
-DIGEST_CONTEXT_USE_GUIDE_FRAGMENT = PromptFragment(
-    fragment_id="digest.context_use_guide",
-    text="""- Treat BookInfo as orientation for stable book identity, not as source text.
-- Treat ReadingState as carried understanding from prior reading. Use it to read continuously, but do not let it override the current source unit.
-- Treat CurrentFocus as the immediate reading task: path, position, object, and intent.
-- Treat CurrentFocus/ReadingObject as the source text to read now.
-- Treat OutputContract as the required response shape and output discipline.""",
-)
-
-
 DIGEST_READER_ROLE_AND_INSTRUCTION_FRAGMENT_REGISTRY = PromptFragmentRegistry(
     [
         READER_ROLE_FRAGMENT,
-        _fragment_by_id("digest.instruction"),
-        DIGEST_CONTEXT_USE_GUIDE_FRAGMENT,
-        _fragment_by_id("digest.reading_impression_policy"),
-        _fragment_by_id("digest.surfaced_reaction_policy"),
-        _fragment_by_id("digest.reaction_anchor_and_callback_policy"),
-        DIGEST_TARGET_MEMORY_BOUNDARY_FRAGMENT,
-        _fragment_by_id("digest.recent_reading_memory_policy"),
+        _fragment_by_id("digest.current_step"),
+        _fragment_by_id("digest.context_use_guide"),
+        _fragment_by_id("digest.understanding_policy"),
+        _fragment_by_id("digest.response_policy"),
+        _fragment_by_id("digest.annotation_policy"),
         PromptFragment(
             fragment_id="digest.source_grounding_policy",
             text=_target_source_grounding_text(),
@@ -206,47 +156,24 @@ DIGEST_READER_ROLE_AND_INSTRUCTION_TEMPLATE = (
         element_name="Instruction",
         children=(
             PromptTemplateNode(
-                element_name="TaskOverview",
-                prompt_fragment_ref="digest.instruction",
+                element_name="CurrentStep",
+                prompt_fragment_ref="digest.current_step",
             ),
             PromptTemplateNode(
                 element_name="ContextUseGuide",
                 prompt_fragment_ref="digest.context_use_guide",
             ),
             PromptTemplateNode(
-                element_name="ReadingBehavior",
-                children=(
-                    PromptTemplateNode(
-                        element_name="ReadingImpression",
-                        prompt_fragment_ref="digest.reading_impression_policy",
-                    ),
-                    PromptTemplateNode(
-                        element_name="SurfacedReaction",
-                        children=(
-                            PromptTemplateNode(
-                                element_name="ReactionSelection",
-                                prompt_fragment_ref="digest.surfaced_reaction_policy",
-                            ),
-                            PromptTemplateNode(
-                                element_name="ReactionGroundingAndCallback",
-                                prompt_fragment_ref="digest.reaction_anchor_and_callback_policy",
-                            ),
-                        ),
-                    ),
-                ),
+                element_name="Understanding",
+                prompt_fragment_ref="digest.understanding_policy",
             ),
             PromptTemplateNode(
-                element_name="MemoryInstruction",
-                children=(
-                    PromptTemplateNode(
-                        element_name="MemoryBoundary",
-                        prompt_fragment_ref="digest.memory_general_policy",
-                    ),
-                    PromptTemplateNode(
-                        element_name="RecentReadingMemory",
-                        prompt_fragment_ref="digest.recent_reading_memory_policy",
-                    ),
-                ),
+                element_name="Response",
+                prompt_fragment_ref="digest.response_policy",
+            ),
+            PromptTemplateNode(
+                element_name="Annotation",
+                prompt_fragment_ref="digest.annotation_policy",
             ),
             PromptTemplateNode(
                 element_name="SourceGrounding",
@@ -529,26 +456,53 @@ DIGEST_RETURN_FORMAT_FRAGMENT = PromptFragment(
     text="""Return JSON only.
 Top-level fields:
 {
-  "reading_impression": "...",
-  "surfaced_reactions": [],
-  "recent_reading_memory": []
+  "understanding": [
+    {
+      "kind": "event_or_situation|claim_or_argument|definition_or_distinction|causal_or_structural_link|character_or_relationship|emotional_or_tonal_shift|image_or_scene|local_pattern_or_thread|fact|author_or_method_frame|other",
+      "content": "..."
+    }
+  ],
+  "response": "...",
+  "annotations": [
+    {
+      "source_quote": "...",
+      "content": "...",
+      "prior_link": null,
+      "outside_link": null,
+      "search_intent": null
+    }
+  ]
 }""",
 )
 
 
-DIGEST_READING_IMPRESSION_CONTRACT_FRAGMENT = PromptFragment(
-    fragment_id="digest.reading_impression_contract",
-    text="""`reading_impression` is the reader's immediate expression after finishing the current unit: tone, felt pressure, atmosphere, affect, or overall impression.
-It is not durable memory and is not Recent Reading Memory.
-It should not be carried into later Digest context by default.
-It should not duplicate `surfaced_reactions`: if the expression is tied to a specific source span and worth showing as a visible margin-note-style output, use `surfaced_reactions`.
-It should not duplicate `recent_reading_memory`: if the content should be remembered for coherent continued reading, write it as Recent Reading Memory.""",
+DIGEST_UNDERSTANDING_CONTRACT_FRAGMENT = PromptFragment(
+    fragment_id="digest.understanding_contract",
+    text="""`understanding` contains the source-faithful grasp of the current source unit.
+Shape:
+{
+  "understanding": [
+    {
+      "kind": "event_or_situation|claim_or_argument|definition_or_distinction|causal_or_structural_link|character_or_relationship|emotional_or_tonal_shift|image_or_scene|local_pattern_or_thread|fact|author_or_method_frame|other",
+      "content": "..."
+    }
+  ]
+}
+Use `content` for the understanding itself. Do not include operation-level reasons, store names, durable-memory routing, hidden state, or source coordinates.""",
 )
 
 
-DIGEST_SURFACED_REACTION_CONTRACT_FRAGMENT = PromptFragment(
-    fragment_id="digest.surfaced_reaction_contract",
-    text="""`surfaced_reactions` contains visible reaction output.
+DIGEST_RESPONSE_CONTRACT_FRAGMENT = PromptFragment(
+    fragment_id="digest.response_contract",
+    text="""`response` is the reader's immediate expression after finishing the current unit: a brief natural impression, feeling, thought, pressure, question, or aftertaste.
+It should not duplicate `understanding`: source-faithful meaning for continued reading belongs in `understanding`.
+It should not duplicate `annotations`: span-anchored visible margin-note-style output belongs in `annotations`.""",
+)
+
+
+DIGEST_ANNOTATION_CONTRACT_FRAGMENT = PromptFragment(
+    fragment_id="digest.annotation_contract",
+    text="""`annotations` contains visible margin-note-style output anchored to exact source text from the current unit.
 Shape:
 {
   "source_quote": "...",
@@ -557,25 +511,7 @@ Shape:
   "outside_link": null,
   "search_intent": null
 }
-Detailed reaction-selection and source-quote behavior live under Instruction.""",
-)
-
-
-DIGEST_RECENT_READING_MEMORY_CONTRACT_FRAGMENT = PromptFragment(
-    fragment_id="digest.recent_reading_memory_contract",
-    text="""`recent_reading_memory` contains the Recent Reading Memory output produced by Digest.
-Shape:
-{
-  "recent_reading_memory": [
-    {
-      "kind": "event_or_situation|claim_or_argument|definition_or_distinction|causal_or_structural_link|character_or_relationship|emotional_or_tonal_shift|image_or_scene|local_pattern_or_thread|fact|other",
-      "memory_text": "..."
-    }
-  ]
-}
-Write only Recent Reading Memory entries here.
-Do not include operation-level reasons.
-Do not write durable memory, digests, hidden routing state, or other memory stores in this field.""",
+Detailed annotation-selection and source-quote behavior live under Instruction.""",
 )
 
 
@@ -583,9 +519,9 @@ DIGEST_OUTPUT_CONTRACT_FRAGMENT_REGISTRY = PromptFragmentRegistry(
     [
         DIGEST_OUTPUT_USE_GUIDE_FRAGMENT,
         DIGEST_RETURN_FORMAT_FRAGMENT,
-        DIGEST_READING_IMPRESSION_CONTRACT_FRAGMENT,
-        DIGEST_SURFACED_REACTION_CONTRACT_FRAGMENT,
-        DIGEST_RECENT_READING_MEMORY_CONTRACT_FRAGMENT,
+        DIGEST_UNDERSTANDING_CONTRACT_FRAGMENT,
+        DIGEST_RESPONSE_CONTRACT_FRAGMENT,
+        DIGEST_ANNOTATION_CONTRACT_FRAGMENT,
     ]
 )
 
@@ -607,19 +543,19 @@ DIGEST_OUTPUT_CONTRACT_TEMPLATE = (
                 prompt_fragment_ref="digest.return_format_contract",
             ),
             PromptTemplateNode(
-                element_name="FieldContracts",
+                element_name="OutputFields",
                 children=(
                     PromptTemplateNode(
-                        element_name="ReadingImpressionContract",
-                        prompt_fragment_ref="digest.reading_impression_contract",
+                        element_name="UnderstandingField",
+                        prompt_fragment_ref="digest.understanding_contract",
                     ),
                     PromptTemplateNode(
-                        element_name="SurfacedReactionContract",
-                        prompt_fragment_ref="digest.surfaced_reaction_contract",
+                        element_name="ResponseField",
+                        prompt_fragment_ref="digest.response_contract",
                     ),
                     PromptTemplateNode(
-                        element_name="RecentReadingMemoryContract",
-                        prompt_fragment_ref="digest.recent_reading_memory_contract",
+                        element_name="AnnotationField",
+                        prompt_fragment_ref="digest.annotation_contract",
                     ),
                 ),
             ),
@@ -699,7 +635,7 @@ def build_digest_prompt_assembly_spec(
             "reading_intent",
             "language_contract",
         ),
-        output_contract="digest_xml_json_v1",
+        output_contract="digest_understanding_response_annotation_json_v1",
     )
 
 
@@ -766,5 +702,5 @@ DIGEST_PROMPT = PromptDefinition(
         "reading_intent",
         "language_contract",
     ),
-    output_contract="digest_xml_json_v1",
+    output_contract="digest_understanding_response_annotation_json_v1",
 )
