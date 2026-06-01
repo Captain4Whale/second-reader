@@ -633,6 +633,49 @@ Do not fuse raw scores in v1. Use RRF first, then aggregate by unit.
 
 The final output should explain why a unit was retrieved in machine-readable terms for audit, but Digest should see only reader-usable context.
 
+### Runtime Ownership And Degradation
+
+Retrieval belongs between `Ingest` and `Digest` in runtime orchestration:
+
+```text
+Ingest LLM
+  -> selected source unit
+  -> future retrieval query / queries
+
+Runtime
+  -> UnitMemoryIndex.retrieve(...)
+  -> hybrid retrieval, RRF, unit aggregation
+  -> RetrievedMemory XML packaging
+
+Digest LLM
+  -> current source unit
+  -> recent-neighbor memory
+  -> retrieved long-distance memory cards
+```
+
+`Digest` should not know about SQLite, FTS5, sqlite-vec, embedding providers, RRF, raw scores, or retrieval rows. It should only see reader-usable prior-reading support.
+
+V1 degradation policy:
+
+- If retrieval fails after `Ingest` succeeds, continue to `Digest` without long-distance retrieved memory.
+- If FTS5 succeeds and vector retrieval fails, continue with FTS-only candidates.
+- If vector retrieval succeeds and FTS5 fails, continue with vector-only candidates.
+- If the Unit Memory index does not exist yet, treat retrieval as empty.
+- If retrieval exceeds its time budget, return empty retrieval and record a timeout.
+- Retrieval failure should not fail the read cycle unless the failure corrupts the Unit Memory ledger itself.
+
+Audit should keep the engineering trace separate from prompt context. A retrieval trace should record:
+
+- query text / query version
+- retrieval config version
+- channel candidate counts
+- top retrieval document ids
+- RRF and aggregation scores
+- selected unit ids
+- degradation reason, when present
+
+The prompt-facing `RetrievedMemory` block should omit raw scores and internal ids unless a later prompt design explicitly needs a reader-safe locator.
+
 ### Digest Context Packaging
 
 Digest should not receive raw index rows.
@@ -655,16 +698,51 @@ Deferred design work:
 - how to mark near-neighbor direct memory versus long-distance retrieved memory
 - how much exact source text can be shown without turning retrieval into hidden backread
 
+### Retrieval Review Criteria
+
+V1 should use a human-reviewable retrieval trace before broad automated scoring. Each review record should show:
+
+- current source unit
+- Ingest retrieval query / queries, when implemented
+- top retrieved unit cards
+- matched surfaces and retrieval reasons
+- whether the cards were sent to Digest
+
+Review dimensions:
+
+- relevance: the retrieved unit is genuinely related to the current unit
+- continuity helpfulness: the memory helps the current reading remain continuous without forcing a callback
+- source grounding: the match can point back to source, Understanding, Annotation, or Response evidence
+- non-redundancy: the result is not merely repeating recent-neighbor memory already carried directly
+- non-dominance: the retrieved memory supports the current source unit without becoming the main object of reading
+- coverage: important prior dependencies are not missing from the top cards
+- noise: unrelated top cards are rare enough not to pollute Digest context
+
+Use review findings to calibrate fanout, surface / channel weights, recent-neighbor exclusion, retrieved-card budget, MMR, and whether V2 needs a second lexical channel.
+
 ### Persistence And Refresh
 
-The first implementation can rebuild the retrieval index from the Unit Memory ledger when needed.
+`UnitMemoryLedger` is the durable source of truth. Retrieval documents, FTS5 rows, and sqlite-vec rows are derived indexes and must be rebuildable.
 
-Later implementation can add incremental index updates after each settlement:
+V1 write lifecycle:
 
-- write Unit Memory Entry
-- create/update retrieval documents
-- update lexical index
-- update vector index
+- write the Unit Memory Entry during settlement after a `Digest` result has been accepted
+- derive retrieval documents from that entry
+- update the FTS5 index for those retrieval documents
+- request embeddings and update the sqlite-vec index
+- if embedding or vector insertion fails, keep the Unit Memory Entry and lexical index usable, and mark vector indexing pending / failed for retry
+
+The read cycle should not be blocked by rebuildable index maintenance. Ledger write failure is serious; index update failure should degrade retrieval and be recoverable.
+
+Implementation should record enough index metadata to make rebuilds safe:
+
+- tokenizer config / lexical index version
+- embedding provider, model id, dimension, and vector metric
+- retrieval document build version
+- weight profile version
+- promptset / Digest output contract version that produced the source entry
+
+The first implementation should include a rebuild path that can recreate retrieval documents, FTS5, and vector rows from the ledger.
 
 Open design work:
 
@@ -678,7 +756,7 @@ Open design work:
 
 - Unit Memory ledger schema:
   - exact persisted JSON shape
-  - write timing and failure behavior inside settlement
+  - settlement transaction boundary and index-status fields
   - migration / rebuild behavior for existing runtime artifacts
 - Query contract:
   - deferred from the bottom-framework implementation slice
@@ -696,17 +774,17 @@ Open design work:
   - retrieved-card budget
   - source quote / understanding / response / annotation rendering rules
 - Runtime ownership:
-  - which step executes retrieval
-  - how retrieval traces are audited
-  - how failures degrade gracefully
+  - exact runner function boundaries for retrieval and context packaging
+  - retrieval trace schema and artifact path
+  - retrieval timeout / retry thresholds
 - Recent-neighbor policy:
   - how many recent units are always carried
   - which units are excluded from long-distance retrieval
   - how to avoid duplicate context
 - Evaluation / review criteria:
-  - whether retrieved memory is relevant
-  - whether it improves continuity without forcing callbacks
-  - whether it avoids summary-like overreach
+  - concrete review examples
+  - labeling rubric and pass / fail thresholds
+  - calibration protocol for weights, topK, MMR, and context budget
 
 ## Current Recommendation
 
@@ -722,5 +800,7 @@ Create retrieval documents from all four memory surfaces and index every valid r
 But do not score them as equal signals. Use field-specific retrieval documents, weight profiles, and unit-level aggregation.
 
 Use the initial conservative retrieval parameters in this document: top `80` lexical docs, top `80` dense docs, `rrf_k = 60`, modest surface / channel weights, unit aggregation led by the best matching retrieval document, and MMR disabled unless review shows repeated near-duplicate cards.
+
+Treat `UnitMemoryLedger` as the only durable fact source for long-distance memory. Keep FTS5 and sqlite-vec as rebuildable indexes. Execute retrieval in runtime after `Ingest` and before `Digest`, degrade gracefully when retrieval/index channels fail, and use retrieval review records to calibrate parameters before broad evaluation.
 
 The retrieval result should be source-grounded and unit-centered, then rendered to Digest as compact prior-reading support rather than as a hidden backread path.
