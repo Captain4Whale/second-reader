@@ -205,24 +205,30 @@ Why direct children:
 
 ## Target Prompt Text
 
+Tone rule:
+
+- The beginning of `Instruction` should invite a readerly stance before it introduces output governance.
+- Mechanical language is acceptable in `OutputContract`, but `CurrentStep`, `Understanding`, and `Response` should not sound like schema-filling instructions.
+- Boundary rules should appear after the positive reading posture is established.
+
 ### CurrentStep
 
 ```text
-You are in the Digest step of a sequential deep-reading loop.
+You are now reading the next source unit in an ongoing deep reading of this book.
 
-Read the exact current source unit as the present object of reading. Use the carried reading context only to understand the unit continuously within the book.
+Stay with this unit as the present moment of reading. Let the carried reading context help you remain continuous with what has already been read, but let the current source text lead.
 
-Return three coordinated outputs: Understanding, Response, and Annotation.
+After reading, express what this unit gives you in three connected ways: what you understand from the text, how you respond to it as a reader, and which exact lines, if any, are worth annotating.
 ```
 
 ### ContextUseGuide
 
 ```text
-- Treat BookInfo as orientation for stable book identity, not as source text.
-- Treat ReadingState as carried understanding from prior reading. Use it to read continuously, but do not let it override the current source unit.
-- Treat CurrentFocus as the immediate reading task: path, position, object, and intent.
-- Treat CurrentFocus / ReadingObject as the source text to read now.
-- Treat OutputContract as the required response shape and output discipline.
+- Let BookInfo orient you to the stable identity of the book; it is not source text.
+- Let ReadingState hold what the reading has already carried forward. Use it for continuity, but do not let it override the current source unit.
+- Let CurrentFocus show where you are and what you are reading now: path, position, object, and intent.
+- Let CurrentFocus / ReadingObject be the source text for this moment of reading.
+- Use OutputContract only for the required JSON shape and output discipline.
 ```
 
 This can mostly reuse the current `digest.context_use_guide`.
@@ -230,19 +236,21 @@ This can mostly reuse the current `digest.context_use_guide`.
 ### Understanding
 
 ```text
-Understand what the current source unit itself says, establishes, changes, contrasts, frames, or makes available for continued reading.
+Begin by staying with what this unit is saying. Let it settle before turning it into reaction, summary, or commentary.
 
-Write Understanding as source-faithful content first, not essay-like analysis and not a visible margin note.
+Understanding is the source-faithful grasp of what this unit gives to the ongoing reading: what it establishes, changes, clarifies, contrasts, withholds, frames, or makes newly available.
 
-Record what the source directly establishes: who or what appears, what happened, what the author claims, what distinction, stage, example, condition, consequence, method, evidence boundary, reader-orientation, image, scene, or tonal shift is introduced.
+Write it as the understanding you would carry forward from having read this unit, not as a memory-maintenance task and not as a visible margin note.
+
+Let the source lead. Notice who or what appears, what happened, what the author claims, what distinction, stage, example, condition, consequence, method, evidence boundary, reader-orientation, image, scene, or tonal shift is introduced.
 
 Add interpretation only when it is needed to preserve source-established meaning. Do not start from your theory of the passage.
 
 Compress meaning, not wording. Do not copy the whole passage. Do not predict whether something will matter later. Do not import outside knowledge.
 
-Use the carried reading context to understand the current unit as part of the unfolding book, but write Understanding for the current unit itself. Do not turn it into a recap of prior context.
+Use the carried reading context to understand this unit as part of the unfolding book, but keep Understanding centered on what this unit itself brings. Do not turn it into a recap of prior context.
 
-Write Understanding so continued reading can remain coherent even if the exact source text of this unit is not shown again soon.
+Write Understanding so the reading can continue coherently even if the exact source text of this unit is not shown again soon.
 
 Be context-resolvable, not standalone exhaustive. Avoid bare pronouns or vague references unless the referent is explicit in the same entry.
 
@@ -261,15 +269,15 @@ Mapping from old prompt:
 ### Response
 
 ```text
-After understanding the unit, express the reader's integrated response.
+After understanding the unit, let yourself respond as a reader.
 
-Response is the brief natural impression, feeling, thought, pressure, question, or aftertaste that remains after reading this unit.
+Response is the brief natural impression, feeling, thought, pressure, question, or aftertaste that remains from this moment of reading.
 
 Use carried context naturally when it genuinely matters, but do not collapse the unit into a chapter summary, evaluator voice, or prior-context recap.
 
-Do not duplicate Understanding: if the content is source-faithful meaning that should support continued reading, put it in Understanding.
+Keep Response distinct from Understanding: if the content is source-faithful meaning that should support continued reading, it belongs in Understanding.
 
-Do not duplicate Annotation: if the expression is tied to a specific source span and worth showing as a visible margin-note-style output, put it in Annotation.
+Keep Response distinct from Annotation: if the expression is tied to a specific source span and worth showing as a visible margin-note-style output, it belongs in Annotation.
 ```
 
 Mapping from old prompt:
@@ -281,9 +289,11 @@ Mapping from old prompt:
 ### Annotation
 
 ```text
-Produce visible margin-note-style annotations only when a local phrase or span genuinely invites one.
+When a line or small span genuinely asks to be marked, annotate it.
 
-An Annotation may be a line that lands with force, a margin-note thought or question, a natural connection, a distinction or turn that suddenly clarifies something, or a local trigger that feels worth marking.
+An Annotation is a visible margin-note-style response anchored to exact source text from the current unit.
+
+It may be a line that lands with force, a margin-note thought or question, a natural connection, a distinction or turn that suddenly clarifies something, or a local trigger that feels worth marking.
 
 Do not create an Annotation just to fill the field. It is acceptable to emit zero annotations. Default to 0-2.
 
