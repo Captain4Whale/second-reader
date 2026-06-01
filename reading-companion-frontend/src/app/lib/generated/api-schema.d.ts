@@ -383,11 +383,6 @@ export interface components {
              */
             active_reaction_id?: number | null;
             /**
-             * Anchor Quote
-             * @description Sentence-level anchor quote used to group visible reactions when available.
-             */
-            anchor_quote?: string | null;
-            /**
              * Chapter Id
              * @description Related stable parsed-book chapter key when applicable.
              */
@@ -414,7 +409,7 @@ export interface components {
             featured_reactions: components["schemas"]["FeaturedReactionPreview"][];
             /**
              * Highlight Quote
-             * @description High-signal anchor quote attached to the event when available.
+             * @description High-signal source quote attached to the event when available.
              */
             highlight_quote?: string | null;
             /**
@@ -441,10 +436,6 @@ export interface components {
              */
             result_url?: string | null;
             /**
-             * Route Action
-             * @description Current route action when the event represents a mechanism-authored route decision.
-             */
-            /**
              * Search Query
              * @description Search query attached to the event when applicable.
              */
@@ -454,6 +445,11 @@ export interface components {
              * @description Related section reference when applicable.
              */
             section_ref?: string | null;
+            /**
+             * Source Quote
+             * @description Source quote used to group visible reactions when available.
+             */
+            source_quote?: string | null;
             /**
              * Stream
              * @description High-level stream partition used by the UI.
@@ -506,17 +502,12 @@ export interface components {
          */
         ActivityReactionPreview: {
             /**
-             * Anchor Quote
-             * @description Quoted anchor text from the source book.
-             */
-            anchor_quote: string;
-            /**
              * Content
              * @description AI-authored reaction text shown to the user.
              */
             content: string;
-            /** @description Mechanism-authored primary anchor for this visible reaction when available. */
-            primary_anchor?: components["schemas"]["ReactionAnchor"] | null;
+            /** @description Mechanism-authored primary source reference for this visible reaction when available. */
+            primary_source_ref?: components["schemas"]["SourceRef"] | null;
             /**
              * Reaction Id
              * @description Stable public integer identifier for the reaction.
@@ -532,6 +523,11 @@ export interface components {
              * @description Human-readable section reference, such as 3.2.
              */
             section_ref: string;
+            /**
+             * Source Quote
+             * @description Quoted source text from the source book.
+             */
+            source_quote: string;
             /**
              * Supersedes Reaction Id
              * @description Public reaction id of the earlier thought this visible reaction supersedes when applicable.
@@ -768,6 +764,12 @@ export interface components {
             display_title?: string | null;
             /** File */
             file: string;
+            /**
+             * Memory Retrieval Mode
+             * @default hybrid
+             * @enum {string}
+             */
+            memory_retrieval_mode: "hybrid" | "text_only";
             /**
              * Start Mode
              * @default immediate
@@ -1355,10 +1357,6 @@ export interface components {
              */
             reconstructed_hot_state?: boolean | null;
             /**
-             * Route Action
-             * @description Current route action when the mechanism exposes it directly.
-             */
-            /**
              * Search Query
              * @description Search query being investigated when the reader is searching.
              */
@@ -1506,11 +1504,6 @@ export interface components {
          */
         FeaturedReactionPreview: {
             /**
-             * Anchor Quote
-             * @description Quoted anchor text from the source book.
-             */
-            anchor_quote: string;
-            /**
              * Book Id
              * @description Stable public integer identifier of the book that owns this reaction.
              */
@@ -1535,23 +1528,28 @@ export interface components {
              * @description AI-authored reaction text shown to the user.
              */
             content: string;
-            /** @description Mechanism-authored primary anchor projected upward without rewriting the original thought object. */
-            primary_anchor?: components["schemas"]["ReactionAnchor"] | null;
+            /** @description Mechanism-authored primary source reference projected upward without rewriting the original thought object. */
+            primary_source_ref?: components["schemas"]["SourceRef"] | null;
             /**
              * Reaction Id
              * @description Stable public integer identifier for the reaction.
              */
             reaction_id: number;
             /**
-             * Related Anchors
-             * @description Optional secondary anchors linked to the same reaction.
+             * Related Source Refs
+             * @description Optional secondary source references linked to the same reaction.
              */
-            related_anchors?: components["schemas"]["ReactionAnchor"][];
+            related_source_refs?: components["schemas"]["SourceRef"][];
             /**
              * Section Ref
              * @description Human-readable section reference, such as 3.2.
              */
             section_ref: string;
+            /**
+             * Source Quote
+             * @description Quoted source text from the source book.
+             */
+            source_quote: string;
             /**
              * Supersedes Reaction Id
              * @description Public reaction id of the earlier thought this reaction supersedes when reconsolidation has occurred.
@@ -1746,11 +1744,6 @@ export interface components {
          */
         MarkRecord: {
             /**
-             * Anchor Quote
-             * @description Anchor quote used to recall the marked passage.
-             */
-            anchor_quote: string;
-            /**
              * Book Id
              * @description Public integer book identifier for the marked reaction.
              */
@@ -1791,8 +1784,8 @@ export interface components {
              * @enum {string}
              */
             mark_type: "resonance" | "blindspot" | "bookmark";
-            /** @description Mechanism-authored primary anchor preserved on the mark when available. */
-            primary_anchor?: components["schemas"]["ReactionAnchor"] | null;
+            /** @description Mechanism-authored primary source reference preserved on the mark when available. */
+            primary_source_ref?: components["schemas"]["SourceRef"] | null;
             /**
              * Reaction Excerpt
              * @description Short excerpt of the reaction content used in marks views.
@@ -1814,6 +1807,11 @@ export interface components {
              * @description Human-readable section reference for the marked reaction.
              */
             section_ref: string;
+            /**
+             * Source Quote
+             * @description Source quote used to recall the marked passage.
+             */
+            source_quote: string;
             /**
              * Supersedes Reaction Id
              * @description Public reaction id of the earlier thought this marked reaction supersedes when reconsolidation has occurred.
@@ -1860,38 +1858,10 @@ export interface components {
             next_cursor?: string | null;
         };
         /**
-         * ReactionAnchor
-         * @description Anchor payload that preserves the mechanism-authored focal source span.
-         */
-        ReactionAnchor: {
-            /** @description Shared text-span locator for the anchor when known. */
-            locator?: components["schemas"]["TextSpanLocator"] | null;
-            /**
-             * Quote
-             * @description Quoted source text used as the anchor for this thought.
-             */
-            quote: string;
-            /**
-             * Sentence End Id
-             * @description Shared sentence id where the anchor span ends when known.
-             */
-            sentence_end_id?: string | null;
-            /**
-             * Sentence Start Id
-             * @description Shared sentence id where the anchor span begins when known.
-             */
-            sentence_start_id?: string | null;
-        };
-        /**
          * ReactionCard
          * @description Visible reaction card rendered in result views.
          */
         ReactionCard: {
-            /**
-             * Anchor Quote
-             * @description Anchor quote taken from the source book.
-             */
-            anchor_quote: string;
             /**
              * Content
              * @description Full AI reaction content.
@@ -1902,18 +1872,18 @@ export interface components {
              * @description Current user mark attached to the reaction, if any.
              */
             mark_type?: ("resonance" | "blindspot" | "bookmark") | null;
-            /** @description Mechanism-authored primary anchor projected into the current chapter card shape. */
-            primary_anchor?: components["schemas"]["ReactionAnchor"] | null;
+            /** @description Mechanism-authored primary source reference projected into the current chapter card shape. */
+            primary_source_ref?: components["schemas"]["SourceRef"] | null;
             /**
              * Reaction Id
              * @description Stable public integer reaction identifier.
              */
             reaction_id: number;
             /**
-             * Related Anchors
-             * @description Optional secondary anchors linked to the same reaction.
+             * Related Source Refs
+             * @description Optional secondary source references linked to the same reaction.
              */
-            related_anchors?: components["schemas"]["ReactionAnchor"][];
+            related_source_refs?: components["schemas"]["SourceRef"][];
             /**
              * Search Query
              * @description Search query used to gather additional evidence when applicable.
@@ -1934,6 +1904,11 @@ export interface components {
              * @description One-line summary of the parent section.
              */
             section_summary: string;
+            /**
+             * Source Quote
+             * @description Source quote taken from the source book.
+             */
+            source_quote: string;
             /**
              * Supersedes Reaction Id
              * @description Public reaction id of the earlier thought this reaction supersedes when reconsolidation has occurred.
@@ -2020,6 +1995,8 @@ export interface components {
              * @description Human-readable chapter reference when known.
              */
             chapter_ref?: string | null;
+            /** @description Paragraph-offset cursor where the current focus ends. */
+            end_cursor?: components["schemas"]["SourceCursor"] | null;
             /**
              * Excerpt
              * @description Current focal excerpt when the mechanism can expose it directly.
@@ -2030,7 +2007,7 @@ export interface components {
              * @description Granularity of the current reading locus.
              * @enum {string}
              */
-            kind: "chapter" | "sentence" | "span";
+            kind: "chapter" | "sentence" | "span" | "source_cursor" | "source_span";
             /** @description Source-span locator for the current focus when known. */
             locator?: components["schemas"]["TextSpanLocator"] | null;
             /**
@@ -2043,6 +2020,8 @@ export interface components {
              * @description Shared sentence id where the current focus begins when known.
              */
             sentence_start_id?: string | null;
+            /** @description Paragraph-offset cursor where the current focus begins. */
+            start_cursor?: components["schemas"]["SourceCursor"] | null;
         };
         /**
          * SearchHit
@@ -2176,6 +2155,89 @@ export interface components {
              * @description API URL serving the source asset.
              */
             url: string;
+        };
+        /**
+         * SourceCursor
+         * @description Paragraph-offset cursor in the canonical book substrate.
+         */
+        SourceCursor: {
+            /**
+             * Chapter Id
+             * @description Stable parsed-book chapter key.
+             */
+            chapter_id?: number | null;
+            /**
+             * Chapter Ref
+             * @description Human-readable chapter reference.
+             * @default
+             */
+            chapter_ref: string;
+            /**
+             * Char Offset
+             * @description Zero-based character offset inside the paragraph.
+             */
+            char_offset: number;
+            /**
+             * Paragraph Index
+             * @description Zero-based paragraph index inside the chapter.
+             */
+            paragraph_index: number;
+        };
+        /**
+         * SourceRef
+         * @description Inline source citation carried by reactions and memory-derived payloads.
+         */
+        SourceRef: {
+            /**
+             * Quote
+             * @description Quoted source text for this citation.
+             */
+            quote: string;
+            /**
+             * Resolution
+             * @description Deterministic quote-resolution status when available.
+             */
+            resolution?: {
+                [key: string]: unknown;
+            } | null;
+            /**
+             * Role
+             * @description Citation role, such as primary, support, or chapter_end.
+             */
+            role: string;
+            /** @description Paragraph-offset source span when available. */
+            source_span?: components["schemas"]["SourceSpan"] | null;
+            /**
+             * Source Span Id
+             * @description Deterministic id derived from the source span coordinates.
+             */
+            source_span_id: string;
+        };
+        /**
+         * SourceSpan
+         * @description End-exclusive source span addressed by paragraph-offset cursors.
+         */
+        SourceSpan: {
+            /**
+             * Chapter Id
+             * @description Stable parsed-book chapter key.
+             */
+            chapter_id?: number | null;
+            /**
+             * Chapter Ref
+             * @description Human-readable chapter reference.
+             * @default
+             */
+            chapter_ref: string;
+            /** @description Exclusive paragraph-offset end cursor. */
+            end_cursor: components["schemas"]["SourceCursor"];
+            /**
+             * Source Span Id
+             * @description Deterministic id derived from the source span coordinates.
+             */
+            source_span_id?: string | null;
+            /** @description Inclusive paragraph-offset start cursor. */
+            start_cursor: components["schemas"]["SourceCursor"];
         };
         /**
          * TextSpanLocator
@@ -2662,7 +2724,9 @@ export interface operations {
     };
     resume_book_deep_read: {
         parameters: {
-            query?: never;
+            query?: {
+                memory_retrieval_mode?: ("hybrid" | "text_only") | null;
+            };
             header?: never;
             path: {
                 book_id: number;
@@ -2738,7 +2802,9 @@ export interface operations {
     };
     start_book_deep_read: {
         parameters: {
-            query?: never;
+            query?: {
+                memory_retrieval_mode?: "hybrid" | "text_only";
+            };
             header?: never;
             path: {
                 book_id: number;

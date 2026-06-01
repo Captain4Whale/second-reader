@@ -65,6 +65,7 @@ from .schemas import (
     LocalContinuityState,
     IngestBoundaryResult,
     IngestTraceEntry,
+    MemoryRetrievalMode,
     PreparedSourceUnit,
     ReactionRecordsState,
     ReaderPolicy,
@@ -110,6 +111,7 @@ from .storage import (
     local_buffer_file,
     local_continuity_file,
     memory_quality_probe_export_file,
+    memory_retrieval_config_file,
     normalized_eval_bundle_file,
     reaction_records_file,
     recent_reading_memory_file,
@@ -122,10 +124,19 @@ from .storage import (
     settlement_audit_file,
     survey_map_file,
     read_audit_file,
+    unit_memory_retrieval_trace_file,
+    unit_memory_sqlite_file,
     unitization_audit_file,
     active_attention_file,
 )
 from .survey import write_book_survey_artifacts
+from .unit_memory import (
+    UnitMemoryIndex,
+    build_unit_memory_entry,
+    effective_query_for_accepted_unit,
+    record_unit_memory_retrieval_trace,
+    resolve_memory_retrieval_config,
+)
 from .unit_span_ledger import append_unit_span_record, latest_unit_span, next_unit_sequence_index
 
 
@@ -744,9 +755,12 @@ def _reset_live_runtime(output_dir: Path) -> None:
         reaction_records_file(output_dir),
         reconsolidation_records_file(output_dir),
         resume_metadata_file(output_dir),
+        memory_retrieval_config_file(output_dir),
         read_audit_file(output_dir),
         settlement_audit_file(output_dir),
         unitization_audit_file(output_dir),
+        unit_memory_retrieval_trace_file(output_dir),
+        unit_memory_sqlite_file(output_dir),
         memory_quality_probe_export_file(output_dir),
         runtime_artifacts.runtime_shell_file(output_dir),
         runtime_artifacts.run_state_file(output_dir),
@@ -1043,6 +1057,9 @@ def _ingest_trace_entry(
     entry: IngestTraceEntry = {
         "reason": _clean_text(boundary_result.get("reason")),
         "end_anchor_text": _clean_text(boundary_result.get("end_anchor_text")),
+        "memory_query": dict(boundary_result.get("memory_query", {}))
+        if isinstance(boundary_result.get("memory_query"), dict)
+        else {},
         "source_span_id": _clean_text(boundary_result.get("source_span_id")),
         "resolution": dict(boundary_result.get("resolution", {})) if isinstance(boundary_result.get("resolution"), dict) else {},
     }
@@ -1064,6 +1081,7 @@ def _compact_ingest_trace(ingest_trace: object) -> list[dict[str, object]]:
         for key in (
             "reason",
             "end_anchor_text",
+            "memory_query",
             "source_span_id",
             "resolution",
             "error",
@@ -1080,6 +1098,90 @@ def _compact_ingest_trace(ingest_trace: object) -> list[dict[str, object]]:
         if entry:
             compact_entries.append(entry)
     return compact_entries
+
+
+def _active_recent_memory_source_span_ids(recent_reading_memory: RecentReadingMemoryState) -> set[str]:
+    """Return source spans already carried through direct recent memory."""
+
+    span_ids: set[str] = set()
+    for entry in recent_reading_memory.get("entries", []):
+        if not isinstance(entry, dict):
+            continue
+        if _clean_text(entry.get("status")) != "active":
+            continue
+        source_span_id = _clean_text(entry.get("source_unit_span_id"))
+        if source_span_id:
+            span_ids.add(source_span_id)
+    return span_ids
+
+
+def _retrieve_unit_memory_for_prepared_source_unit(
+    *,
+    output_dir: Path,
+    book_id: str,
+    prepared_source_unit: PreparedSourceUnit,
+    recent_reading_memory: RecentReadingMemoryState,
+    memory_retrieval_config: dict[str, object],
+) -> dict[str, object]:
+    """Run Unit Memory retrieval between Ingest boundary acceptance and Digest."""
+
+    selected_source_unit = (
+        dict(prepared_source_unit.get("selected_source_unit", {}))
+        if isinstance(prepared_source_unit.get("selected_source_unit"), dict)
+        else {}
+    )
+    unitize_decision = (
+        dict(prepared_source_unit.get("unitize_decision", {}))
+        if isinstance(prepared_source_unit.get("unitize_decision"), dict)
+        else {}
+    )
+    resolution = dict(unitize_decision.get("resolution", {})) if isinstance(unitize_decision.get("resolution"), dict) else {}
+    ingest_trace = prepared_source_unit.get("ingest_trace", [])
+    boundary_was_retried = isinstance(ingest_trace, list) and len(ingest_trace) > 1
+    effective_query, query_source = effective_query_for_accepted_unit(
+        ingest_query=prepared_source_unit.get("memory_query") if isinstance(prepared_source_unit.get("memory_query"), dict) else None,
+        source_unit=selected_source_unit,
+        boundary_was_retried=boundary_was_retried,
+        boundary_resolution_status=_clean_text(resolution.get("status")),
+    )
+    if not effective_query:
+        trace = {
+            "recorded_at": _timestamp(),
+            "event_type": "unit_memory_retrieval",
+            "book_id": book_id,
+            "query": {},
+            "query_source": query_source,
+            "mode": _clean_text(memory_retrieval_config.get("mode")) or "hybrid",
+            "effective_mode": _clean_text(memory_retrieval_config.get("mode")) or "hybrid",
+            "degradation_reason": "empty_query",
+            "candidate_counts": {},
+            "selected_units": [],
+        }
+        record_unit_memory_retrieval_trace(output_dir, trace)
+        return {"query": {}, "query_source": query_source, "selected_units": [], "trace": trace}
+    try:
+        return UnitMemoryIndex(output_dir, config=memory_retrieval_config).retrieve(
+            book_id=book_id,
+            query=effective_query,
+            query_source=query_source,
+            current_unit_index=next_unit_sequence_index(output_dir),
+            excluded_source_unit_span_ids=_active_recent_memory_source_span_ids(recent_reading_memory),
+        )
+    except Exception as exc:  # pragma: no cover - defensive non-blocking guard
+        trace = {
+            "recorded_at": _timestamp(),
+            "event_type": "unit_memory_retrieval",
+            "book_id": book_id,
+            "query": dict(effective_query),
+            "query_source": query_source,
+            "mode": _clean_text(memory_retrieval_config.get("mode")) or "hybrid",
+            "effective_mode": "text_only",
+            "degradation_reason": f"retrieval_failed:{type(exc).__name__}",
+            "candidate_counts": {},
+            "selected_units": [],
+        }
+        record_unit_memory_retrieval_trace(output_dir, trace)
+        return {"query": dict(effective_query), "query_source": query_source, "selected_units": [], "trace": trace}
 
 
 def _resolve_ingest_boundary(
@@ -1254,6 +1356,12 @@ def prepare_next_source_unit_for_read(
         current_chapter,
         dict(unitize_decision.get("source_span", {})) if isinstance(unitize_decision.get("source_span"), dict) else {},
     )
+    selected_boundary = retry_boundary_result if retry_boundary_result is not None else boundary_result
+    memory_query = (
+        dict(selected_boundary.get("memory_query", {}))
+        if isinstance(selected_boundary.get("memory_query"), dict)
+        else {}
+    )
     return {
         "chapter_id": chapter_id,
         "chapter_ref": chapter_ref,
@@ -1262,6 +1370,7 @@ def prepare_next_source_unit_for_read(
         "preview": dict(preview),
         "unitize_decision": unitize_decision,  # type: ignore[typeddict-item]
         "ingest_trace": ingest_trace,
+        "memory_query": memory_query,
     }
 
 
@@ -1604,6 +1713,7 @@ def _settle_next_unit(
     output_dir: Path,
     provisioned: ProvisionedBook,
     bundle: dict[str, dict[str, object]],
+    memory_retrieval_config: dict[str, object],
     reading_queue_stage: str,
     total_chapters: int,
     completed_chapters: int,
@@ -1740,6 +1850,15 @@ def _settle_next_unit(
         ),
     )
 
+    unit_memory_retrieval = _retrieve_unit_memory_for_prepared_source_unit(
+        output_dir=output_dir,
+        book_id=provisioned.output_dir.name,
+        prepared_source_unit=prepared_source_unit,
+        recent_reading_memory=recent_reading_memory,
+        memory_retrieval_config=memory_retrieval_config,
+    )
+    prepared_source_unit["unit_memory_retrieval"] = unit_memory_retrieval  # type: ignore[typeddict-item]
+
     digest_result, digest_fallbacks = _run_digest_for_source_unit(
         chapter=chapter,
         chosen_unit_sentences=chosen_unit_sentences,
@@ -1845,6 +1964,33 @@ def _settle_next_unit(
         )
         selected_source_unit["unit_id"] = _clean_text(unit_record.get("unit_id"))
         selected_source_unit["sequence_index"] = int(unit_record.get("sequence_index", 0) or 0)
+        retrieval_mode: MemoryRetrievalMode = (
+            "text_only" if _clean_text(memory_retrieval_config.get("mode")) == "text_only" else "hybrid"
+        )
+        try:
+            unit_memory_entry = build_unit_memory_entry(
+                book_id=provisioned.output_dir.name,
+                chapter_id=chapter_id,
+                chapter_ref=chapter_ref,
+                source_unit=selected_source_unit,
+                digest_result=digest_result,
+                memory_retrieval_mode=retrieval_mode,
+            )
+            UnitMemoryIndex(output_dir, config=memory_retrieval_config).write_entry(
+                unit_memory_entry,
+                index_vectors=retrieval_mode == "hybrid",
+            )
+        except Exception as exc:  # pragma: no cover - Unit Memory must not block settlement.
+            record_unit_memory_retrieval_trace(
+                output_dir,
+                {
+                    "recorded_at": _timestamp(),
+                    "event_type": "unit_memory_write_failed",
+                    "book_id": provisioned.output_dir.name,
+                    "unit_id": _clean_text(selected_source_unit.get("unit_id")),
+                    "degradation_reason": f"unit_memory_write_failed:{type(exc).__name__}",
+                },
+            )
     if meaning_units_in_chapter is not None:
         meaning_units_in_chapter.append(
             {
@@ -2043,6 +2189,11 @@ def run_reading_runner(request: ReadRequest, mechanism: MechanismInfo) -> ReadRe
             resume_payload = resume_from_checkpoint(output_dir, book_document=provisioned.book_document)
             bundle = _load_runtime_bundle(output_dir)
 
+        memory_retrieval_config = resolve_memory_retrieval_config(
+            output_dir,
+            dict(request.mechanism_config or {}),
+            continue_mode=bool(request.continue_mode),
+        )
         reader_policy: ReaderPolicy = bundle["reader_policy"]  # type: ignore[assignment]
         audit_window_max_units = _audit_window_max_units(request)
         audit_window_units_read = 0
@@ -2187,6 +2338,7 @@ def run_reading_runner(request: ReadRequest, mechanism: MechanismInfo) -> ReadRe
                     output_dir=output_dir,
                     provisioned=provisioned,
                     bundle=bundle,
+                    memory_retrieval_config=memory_retrieval_config,
                     reading_queue_stage=reading_queue_stage,
                     total_chapters=total_chapters,
                     completed_chapters=completed_chapters,

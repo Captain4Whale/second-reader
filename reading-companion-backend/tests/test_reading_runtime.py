@@ -35,6 +35,16 @@ def test_cli_mechanism_defaults_to_registered_default():
     args = parser.parse_args(["read", "demo.epub"])
 
     assert args.mechanism == default_mechanism_key()
+    assert args.memory_retrieval_mode is None
+
+
+def test_cli_memory_retrieval_mode_is_explicit_only():
+    """Omitted mode lets resume restore persisted config; explicit mode still parses."""
+
+    parser = main_module.build_parser()
+    args = parser.parse_args(["read", "demo.epub", "--memory-retrieval-mode", "text_only"])
+
+    assert args.memory_retrieval_mode == "text_only"
 
 
 def test_backend_reading_mechanism_override_only_returns_explicit_fallback(monkeypatch):

@@ -20,6 +20,7 @@ Use `docs/backend-reading-mechanism.md` when the question is about shared mechan
   - The public route does not expose a mechanism selector yet.
   - New product-path launches now default to `attentional_v2`.
   - Backend-internal override can still choose `iterator_v1` through shared `mechanism_key` plumbing.
+  - Optional backend parameter `memory_retrieval_mode` controls `attentional_v2` Unit Memory retrieval for the run; allowed values are `hybrid` and `text_only`, defaulting to `hybrid`.
   - `start_mode=immediate` launches a `read` job for the main sequential workflow.
   - `start_mode=deferred` launches a `parse` job that stops after structure parsing.
 - `POST /api/books/{book_id}/analysis/start`
@@ -27,10 +28,12 @@ Use `docs/backend-reading-mechanism.md` when the question is about shared mechan
   - Reuses the copied source asset under the book output directory rather than requiring a new upload.
   - This now launches the `attentional_v2` deep-reading path by default.
   - `iterator_v1` remains a valid internal fallback override for debugging, recovery, or legacy continuity.
+  - Optional backend query parameter `memory_retrieval_mode` starts `attentional_v2` with `hybrid` or `text_only` Unit Memory retrieval.
   - The `/analysis/start` route name is a historical compatibility label; it always launches the current deep-reading workflow rather than the retired `book_analysis` capability.
 - `POST /api/books/{book_id}/analysis/resume`
   - Resumes the latest paused or interrupted sequential job from the newest compatible checkpoint.
   - In demo/prod mode, an incompatible checkpoint triggers a fresh rerun instead of an unsafe resume.
+  - If `memory_retrieval_mode` is omitted, resume restores the persisted run mode; if provided, the explicit mode change is recorded in retrieval trace.
 - `GET /api/jobs/{job_id}`
   - Returns the refreshed job record plus analysis-derived progress when available.
 - `GET /api/books/{book_id}/analysis-state`
@@ -44,6 +47,7 @@ Use `docs/backend-reading-mechanism.md` when the question is about shared mechan
 1. Upload accepts an EPUB and writes a provisional manifest plus an initial run-state shell so the book exists immediately.
 2. A canonical background job record is created in `state/job_registry/jobs/<job_id>.json` with `job_kind=parse` or `job_kind=read`.
   - When backend-internal rollout selected the non-default fallback mechanism, the job record also carries `mechanism_key`.
+  - For `attentional_v2` read jobs, the job record also carries `memory_retrieval_mode`.
   - `state/jobs/<job_id>.json` remains a compatibility shadow during the current migration window; it is no longer the primary store.
 3. The job enters `queued`, then begins structure preparation under `parsing_structure`.
 4. Parse preparation now has two layers:

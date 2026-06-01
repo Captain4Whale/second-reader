@@ -53,6 +53,7 @@ from .storage import (
     local_continuity_file,
     reaction_records_file,
     recent_reading_memory_file,
+    memory_retrieval_config_file,
     reader_policy_file,
     reconsolidation_records_file,
     reflective_frames_file,
@@ -61,6 +62,7 @@ from .storage import (
     runtime_dir,
     active_attention_file,
 )
+from .unit_memory import DEFAULT_RETRIEVAL_CONFIG
 
 
 def _timestamp() -> str:
@@ -106,6 +108,7 @@ def _state_builders() -> dict[str, Callable[[], dict[str, object]]]:
             mechanism_version=ATTENTIONAL_V2_MECHANISM_VERSION,
             policy_version=ATTENTIONAL_V2_POLICY_VERSION,
         ),
+        "memory_retrieval_config": lambda: dict(DEFAULT_RETRIEVAL_CONFIG),
     }
 
 
@@ -124,6 +127,7 @@ def _state_paths(output_dir: Path) -> dict[str, Path]:
         "reconsolidation_records": reconsolidation_records_file(output_dir),
         "reader_policy": reader_policy_file(output_dir),
         "resume_metadata": resume_metadata_file(output_dir),
+        "memory_retrieval_config": memory_retrieval_config_file(output_dir),
     }
 
 
@@ -492,6 +496,7 @@ def write_full_checkpoint(
         "reaction_records": reaction_records,  # type: ignore[typeddict-item]
         "reconsolidation_records": bundle["reconsolidation_records"],  # type: ignore[typeddict-item]
         "reader_policy": bundle["reader_policy"],  # type: ignore[typeddict-item]
+        "memory_retrieval_config": bundle["memory_retrieval_config"],  # type: ignore[typeddict-item]
         "resume_metadata": bundle["resume_metadata"],  # type: ignore[typeddict-item]
     }
     save_json(full_checkpoint_file(output_dir, checkpoint_id), checkpoint)
@@ -820,6 +825,7 @@ def resume_from_checkpoint(
         "reaction_records": live_bundle["reaction_records"],
         "reconsolidation_records": live_bundle["reconsolidation_records"],
         "reader_policy": live_bundle["reader_policy"],
+        "memory_retrieval_config": live_bundle["memory_retrieval_config"],
         "resume_metadata": live_bundle["resume_metadata"],
         "active_artifact_refs": shell.get("active_artifact_refs", {}),
     }
@@ -829,6 +835,9 @@ def resume_from_checkpoint(
         "active_attention": dict((checkpoint or {}).get("active_attention", live_bundle["active_attention"])),
         "recent_reading_memory": dict((checkpoint or {}).get("recent_reading_memory", live_bundle["recent_reading_memory"])),
         "reflective_frames": dict((checkpoint or {}).get("reflective_frames", live_bundle["reflective_frames"])),
+        "memory_retrieval_config": dict(
+            (checkpoint or {}).get("memory_retrieval_config", live_bundle["memory_retrieval_config"])
+        ),
     }
 
     continuity = dict(checkpoint_source.get("local_continuity", {})) or build_empty_local_continuity(
@@ -922,6 +931,7 @@ def resume_from_checkpoint(
         "reaction_records": dict(checkpoint_source.get("reaction_records", live_bundle["reaction_records"])),
         "reconsolidation_records": dict(checkpoint_source.get("reconsolidation_records", live_bundle["reconsolidation_records"])),
         "reader_policy": policy,
+        "memory_retrieval_config": dict(checkpoint_source.get("memory_retrieval_config", live_bundle["memory_retrieval_config"])),
         "resume_metadata": dict(live_bundle["resume_metadata"]),
     }
     _save_runtime_bundle(output_dir, bundle)

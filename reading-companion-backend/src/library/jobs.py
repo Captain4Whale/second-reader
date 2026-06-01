@@ -94,6 +94,7 @@ def _job_record(
     resume_count: int = 0,
     auto_resume_count: int = 0,
     book_id: str | None = None,
+    memory_retrieval_mode: str | None = None,
     pid: int | None = None,
     error: str | None = None,
     created_at: str | None = None,
@@ -107,6 +108,7 @@ def _job_record(
         "mechanism_key": str(mechanism_key or "").strip() or None,
         "upload_path": str(upload_path),
         "book_id": book_id,
+        "memory_retrieval_mode": str(memory_retrieval_mode or "").strip() or None,
         "language": language,
         "intent": intent,
         "resume_count": int(resume_count),
@@ -135,6 +137,7 @@ def _normalize_record(record: dict) -> dict:
         "mechanism_key": str(record.get("mechanism_key", "") or "").strip() or None,
         "language": str(record.get("language", "auto") or "auto"),
         "intent": str(record.get("intent", "") or "") or None,
+        "memory_retrieval_mode": str(record.get("memory_retrieval_mode", "") or "").strip() or None,
         "resume_count": int(record.get("resume_count", 0) or 0),
         "auto_resume_count": int(record.get("auto_resume_count", 0) or 0),
         "boot_id": str(record.get("boot_id", "") or "") or None,
@@ -340,6 +343,7 @@ def _job_command(record: dict, *, continue_mode: bool, mechanism_key: str | None
     upload_path = Path(str(record.get("upload_path", "")))
     language = str(record.get("language", "auto") or "auto")
     intent = str(record.get("intent", "") or "") or None
+    memory_retrieval_mode = str(record.get("memory_retrieval_mode", "") or "").strip()
     job_kind = str(record.get("job_kind", "read") or "read")
     selected_mechanism = _resolved_mechanism_key(mechanism_key or record.get("mechanism_key"))
 
@@ -372,6 +376,8 @@ def _job_command(record: dict, *, continue_mode: bool, mechanism_key: str | None
         command.append("--continue")
     if intent:
         command.extend(["--intent", intent])
+    if memory_retrieval_mode:
+        command.extend(["--memory-retrieval-mode", memory_retrieval_mode])
     if selected_mechanism:
         command.extend(["--mechanism", selected_mechanism])
     return command
@@ -385,6 +391,7 @@ def _launch_subprocess_job(
     mechanism_key: str | None = None,
     language: str = "auto",
     intent: str | None = None,
+    memory_retrieval_mode: str | None = None,
     root: Path | None = None,
     job_id: str | None = None,
     initial_status: str = "queued",
@@ -402,6 +409,7 @@ def _launch_subprocess_job(
         mechanism_key=mechanism_key,
         language=language,
         intent=intent,
+        memory_retrieval_mode=memory_retrieval_mode,
         book_id=book_id,
         resume_count=resume_count,
         error=runtime_issue,
@@ -443,6 +451,7 @@ def _launch_subprocess_job(
         mechanism_key=mechanism_key,
         language=language,
         intent=intent,
+        memory_retrieval_mode=memory_retrieval_mode,
         book_id=book_id,
         resume_count=resume_count,
         pid=process.pid,
@@ -459,6 +468,7 @@ def launch_sequential_job(
     mechanism_key: str | None = None,
     language: str = "auto",
     intent: str | None = None,
+    memory_retrieval_mode: str | None = None,
     root: Path | None = None,
     book_id: str | None = None,
 ) -> dict:
@@ -477,6 +487,8 @@ def launch_sequential_job(
         command.extend(["--mechanism", str(mechanism_key)])
     if intent:
         command.extend(["--intent", intent])
+    if memory_retrieval_mode:
+        command.extend(["--memory-retrieval-mode", memory_retrieval_mode])
 
     return _launch_subprocess_job(
         upload_path=upload_path,
@@ -485,6 +497,7 @@ def launch_sequential_job(
         mechanism_key=mechanism_key,
         language=language,
         intent=intent,
+        memory_retrieval_mode=memory_retrieval_mode,
         root=root,
         initial_status="queued",
         book_id=book_id,
@@ -496,6 +509,7 @@ def launch_parse_job(
     *,
     mechanism_key: str | None = None,
     language: str = "auto",
+    memory_retrieval_mode: str | None = None,
     root: Path | None = None,
     book_id: str | None = None,
 ) -> dict:
@@ -516,6 +530,7 @@ def launch_parse_job(
         job_kind="parse",
         mechanism_key=mechanism_key,
         language=language,
+        memory_retrieval_mode=memory_retrieval_mode,
         root=root,
         initial_status="queued",
         book_id=book_id,
@@ -578,6 +593,7 @@ def launch_existing_book_read_job(
     mechanism_key: str | None = None,
     language: str = "auto",
     intent: str | None = None,
+    memory_retrieval_mode: str | None = None,
     root: Path | None = None,
 ) -> dict:
     """Start the active sequential deep-reading workflow for an existing uploaded book."""
@@ -599,6 +615,8 @@ def launch_existing_book_read_job(
         command.extend(["--mechanism", str(mechanism_key)])
     if intent:
         command.extend(["--intent", intent])
+    if memory_retrieval_mode:
+        command.extend(["--memory-retrieval-mode", memory_retrieval_mode])
 
     return _launch_subprocess_job(
         upload_path=source_path,
@@ -607,6 +625,7 @@ def launch_existing_book_read_job(
         mechanism_key=mechanism_key,
         language=language,
         intent=intent,
+        memory_retrieval_mode=memory_retrieval_mode,
         root=root,
         job_id=uuid.uuid4().hex[:12],
         initial_status="queued",
@@ -620,6 +639,7 @@ def launch_book_analysis_job(
     mechanism_key: str | None = None,
     language: str = "auto",
     intent: str | None = None,
+    memory_retrieval_mode: str | None = None,
     root: Path | None = None,
 ) -> dict:
     """Deprecated compatibility alias for the active existing-book deep-reading launcher."""
@@ -629,6 +649,7 @@ def launch_book_analysis_job(
         mechanism_key=mechanism_key,
         language=language,
         intent=intent,
+        memory_retrieval_mode=memory_retrieval_mode,
         root=root,
     )
 
@@ -890,6 +911,7 @@ def _fresh_rerun_after_incompatibility(record: dict, *, book_id: str | None, roo
         mechanism_key=mechanism_key,
         language=str(normalized.get("language", "auto") or "auto"),
         intent=normalized.get("intent"),
+        memory_retrieval_mode=normalized.get("memory_retrieval_mode"),
         root=root,
         job_id=uuid.uuid4().hex[:12],
         initial_status="queued",
@@ -964,6 +986,7 @@ def _resume_job(record: dict, root: Path | None = None, *, automatic: bool) -> d
             mechanism_key=mechanism_key,
             language=str(normalized.get("language", "auto")),
             intent=normalized.get("intent"),
+            memory_retrieval_mode=normalized.get("memory_retrieval_mode"),
             resume_count=int(normalized.get("resume_count", 0)) + 1,
             auto_resume_count=int(normalized.get("auto_resume_count", 0) or 0) + (1 if automatic else 0),
             book_id=book_id,
@@ -1008,14 +1031,19 @@ def analysis_log_payload(book_id: str, root: Path | None = None, *, line_limit: 
     }
 
 
-def resume_job_for_book(book_id: str, root: Path | None = None) -> dict:
+def resume_job_for_book(
+    book_id: str,
+    root: Path | None = None,
+    *,
+    memory_retrieval_mode: str | None = None,
+) -> dict:
     """Resume the latest paused or failed job for one book."""
     migrate_product_shadow_jobs(root)
     record = latest_job_for_book(book_id, root=root)
     if record is None:
         raise FileNotFoundError(book_id)
     if _process_running(int(record.get("pid", 0) or 0)):
-        return save_job({**record, "book_id": book_id}, root)
+        return save_job({**record, "book_id": book_id, "memory_retrieval_mode": memory_retrieval_mode or record.get("memory_retrieval_mode")}, root)
     run_state = _load_book_run_state(book_id, root)
     parse_state = _load_book_parse_state(book_id, root)
     if _is_dev_boot_mismatch(record):
@@ -1025,10 +1053,18 @@ def resume_job_for_book(book_id: str, root: Path | None = None) -> dict:
         run_state=run_state,
         parse_state=parse_state,
     ):
-        return _fresh_rerun_after_incompatibility(record, book_id=book_id, root=root)
+        return _fresh_rerun_after_incompatibility(
+            {**record, "memory_retrieval_mode": memory_retrieval_mode or record.get("memory_retrieval_mode")},
+            book_id=book_id,
+            root=root,
+        )
     if not _resume_supported(record):
         raise RuntimeError("No resumable checkpoint is available for this book.")
-    return _resume_job({**record, "book_id": book_id}, root, automatic=False)
+    return _resume_job(
+        {**record, "book_id": book_id, "memory_retrieval_mode": memory_retrieval_mode or record.get("memory_retrieval_mode")},
+        root,
+        automatic=False,
+    )
 
 
 def recover_unfinished_jobs(root: Path | None = None) -> None:
@@ -1212,6 +1248,7 @@ def refresh_job(job_id: str, root: Path | None = None) -> dict:
         mechanism_key=_resume_mechanism_key(record, book_id=book_id, root=root) if book_id else _normalized_mechanism_key(record.get("mechanism_key")),
         language=str(record.get("language", "auto")),
         intent=record.get("intent"),
+        memory_retrieval_mode=record.get("memory_retrieval_mode"),
         resume_count=int(record.get("resume_count", 0) or 0),
         auto_resume_count=int(record.get("auto_resume_count", 0) or 0),
         book_id=book_id,

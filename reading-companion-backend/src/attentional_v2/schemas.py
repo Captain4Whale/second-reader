@@ -360,6 +360,7 @@ class IngestBoundaryResult(TypedDict, total=False):
     reason: str
     end_anchor_text: str
     boundary_type: UnitizeBoundaryType
+    memory_query: "UnitMemoryQuery"
 
 
 class IngestTraceEntry(TypedDict, total=False):
@@ -367,9 +368,44 @@ class IngestTraceEntry(TypedDict, total=False):
 
     reason: str
     end_anchor_text: str
+    memory_query: "UnitMemoryQuery"
     source_span_id: str
     resolution: dict[str, object]
     error: str
+
+
+MemoryRetrievalMode = Literal["text_only", "hybrid"]
+
+
+class UnitMemoryQuery(TypedDict, total=False):
+    """One optional Ingest-authored retrieval query for the accepted unit."""
+
+    query_version: str
+    query_text: str
+    basis: str
+
+
+class UnitMemoryRetrievalConfig(TypedDict, total=False):
+    """Mechanism-private read-time Unit Memory retrieval configuration."""
+
+    schema_version: str
+    mode: MemoryRetrievalMode
+    default_mode: MemoryRetrievalMode
+    selected_by: str
+    config_warnings: list[str]
+    updated_at: str
+
+
+class UnitMemoryRetrievalResult(TypedDict, total=False):
+    """Trace-oriented result from one Unit Memory retrieval attempt."""
+
+    query: UnitMemoryQuery
+    query_source: str
+    mode: MemoryRetrievalMode
+    effective_mode: MemoryRetrievalMode
+    degradation_reason: str
+    selected_units: list[dict[str, object]]
+    trace: dict[str, object]
 
 
 class PreparedSourceUnit(TypedDict, total=False):
@@ -382,6 +418,34 @@ class PreparedSourceUnit(TypedDict, total=False):
     preview: dict[str, object]
     unitize_decision: UnitizeDecision
     ingest_trace: list[IngestTraceEntry]
+    memory_query: UnitMemoryQuery
+    unit_memory_retrieval: UnitMemoryRetrievalResult
+
+
+class UnitMemoryIndexStatus(TypedDict, total=False):
+    """Index status stored with one Unit Memory entry."""
+
+    fts: str
+    vector: str
+    last_error: str | None
+
+
+class UnitMemoryEntry(TypedDict, total=False):
+    """One content-neutral completed-unit memory entry."""
+
+    unit_id: str
+    book_id: str
+    schema_version: str
+    mechanism_version: str
+    created_at: str
+    chapter_id: int
+    chapter_ref: str
+    unit_index: int
+    source_span_id: str
+    accepted_source_unit: dict[str, object]
+    digest: dict[str, object]
+    index_status: UnitMemoryIndexStatus
+    memory_retrieval_mode: MemoryRetrievalMode
 
 
 class BridgeCandidate(TypedDict, total=False):
@@ -765,6 +829,7 @@ class FullCheckpointState(TypedDict, total=False):
     reaction_records: ReactionRecordsState
     reconsolidation_records: ReconsolidationRecordsState
     reader_policy: ReaderPolicy
+    memory_retrieval_config: UnitMemoryRetrievalConfig
     resume_metadata: ResumeMetadataState
 
 

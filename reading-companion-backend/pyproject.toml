@@ -20,6 +20,7 @@ dependencies = [
     "ebooklib>=0.5",
     "pymupdf>=1.23",
     "mobi>=0.3",
+    "sqlite-vec>=0.1.6",
 ]
 
 [project.optional-dependencies]

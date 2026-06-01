@@ -148,6 +148,13 @@ def cmd_read(args: argparse.Namespace) -> int:
             "max_queries_per_claim": args.analysis_max_queries_per_claim,
             "reuse_existing_notes": bool(args.analysis_reuse_existing_notes),
         }
+        mechanism_config = {
+            "skill_profile": args.skill_profile,
+            "budget_policy": budget_policy,
+            "analysis_policy": analysis_policy,
+        }
+        if args.memory_retrieval_mode is not None:
+            mechanism_config["memory_retrieval_mode"] = args.memory_retrieval_mode
         result = read_book(
             ReadRequest(
                 book_path=book_path,
@@ -157,11 +164,7 @@ def cmd_read(args: argparse.Namespace) -> int:
                 language_mode=args.language,
                 task_mode=args.mode,
                 mechanism_key=args.mechanism,
-                mechanism_config={
-                    "skill_profile": args.skill_profile,
-                    "budget_policy": budget_policy,
-                    "analysis_policy": analysis_policy,
-                },
+                mechanism_config=mechanism_config,
             )
         )
     except ValueError as exc:
@@ -336,6 +339,12 @@ def build_parser() -> argparse.ArgumentParser:
         default=1,
         metavar="0|1",
         help="Reuse existing chapter deep-read notes when possible (1=yes, 0=no)",
+    )
+    read_parser.add_argument(
+        "--memory-retrieval-mode",
+        choices=["hybrid", "text_only"],
+        default=None,
+        help="Unit Memory retrieval mode for attentional_v2 reads (default: hybrid for new runs; omitted resume restores persisted mode)",
     )
     read_parser.add_argument(
         "--mechanism",

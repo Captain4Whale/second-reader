@@ -37,6 +37,7 @@ from .schemas import (
     UnitizeDecision,
 )
 from .storage import prompt_manifest_file, save_json
+from .unit_memory import normalize_unit_memory_query
 
 
 _REACTION_TYPES: set[ReactionType] = {
@@ -713,11 +714,15 @@ def _normalize_ingest_boundary_result(
             "end_anchor_text": "",
             "boundary_type": "paragraph_end",
         }
-    return {
+    result: IngestBoundaryResult = {
         "reason": _clean_text(value.get("reason")),
         "end_anchor_text": _clean_text(value.get("end_anchor_text")),
         "boundary_type": _normalize_unitize_boundary_type(value.get("boundary_type")),
     }
+    memory_query = normalize_unit_memory_query(value.get("memory_query"))
+    if memory_query:
+        result["memory_query"] = memory_query
+    return result
 
 
 def ingest(

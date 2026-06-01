@@ -132,6 +132,7 @@ async def upload_epub(
     file: UploadFile = File(...),
     display_title: Optional[str] = Form(default=None),
     start_mode: Literal["immediate", "deferred"] = Form(default="immediate"),
+    memory_retrieval_mode: Literal["hybrid", "text_only"] = Form(default="hybrid"),
 ) -> UploadAcceptedResponse:
     """Upload an EPUB and start a background sequential read job."""
     del display_title
@@ -163,7 +164,11 @@ async def upload_epub(
     if get_backend_test_mode() and get_backend_test_fixture_profile() == "e2e":
         record = launch_e2e_fixture_job(upload_path, upload_filename=filename, root=_root(), start_mode=start_mode)
     else:
-        launch_kwargs: dict[str, object] = {"root": _root(), "book_id": provisional_book_id}
+        launch_kwargs: dict[str, object] = {
+            "root": _root(),
+            "book_id": provisional_book_id,
+            "memory_retrieval_mode": memory_retrieval_mode,
+        }
         if mechanism_key:
             launch_kwargs["mechanism_key"] = mechanism_key
         record = launch_sequential_job(upload_path, **launch_kwargs) if start_mode == "immediate" else launch_parse_job(upload_path, **launch_kwargs)
@@ -236,7 +241,10 @@ def book_deep_read_log(book_id: int, line_limit: int = Query(default=120, ge=20,
     summary="Start deep reading",
     operation_id="start_book_deep_read",
 )
-def start_book_deep_read(book_id: int) -> AnalysisStartAcceptedResponse:
+def start_book_deep_read(
+    book_id: int,
+    memory_retrieval_mode: Literal["hybrid", "text_only"] = Query(default="hybrid"),
+) -> AnalysisStartAcceptedResponse:
     """Start deep reading for an uploaded book that has not begun yet."""
     internal_book_id = _resolve_book_id(book_id)
     detail = _book_detail_payload(internal_book_id)
@@ -252,7 +260,10 @@ def start_book_deep_read(book_id: int) -> AnalysisStartAcceptedResponse:
         record = launch_e2e_fixture_analysis(internal_book_id, root=_root())
     else:
         try:
-            analysis_kwargs: dict[str, object] = {"root": _root()}
+            analysis_kwargs: dict[str, object] = {
+                "root": _root(),
+                "memory_retrieval_mode": memory_retrieval_mode,
+            }
             mechanism_key = get_backend_reading_mechanism_key()
             if mechanism_key:
                 analysis_kwargs["mechanism_key"] = mechanism_key
@@ -272,12 +283,19 @@ def start_book_deep_read(book_id: int) -> AnalysisStartAcceptedResponse:
     summary="Resume deep reading",
     operation_id="resume_book_deep_read",
 )
-def resume_book_deep_read(book_id: int) -> AnalysisResumeAcceptedResponse:
+def resume_book_deep_read(
+    book_id: int,
+    memory_retrieval_mode: Optional[Literal["hybrid", "text_only"]] = Query(default=None),
+) -> AnalysisResumeAcceptedResponse:
     """Resume a paused or interrupted deep-reading job from the latest checkpoint."""
     internal_book_id = _resolve_book_id(book_id)
     _ensure_book_exists(internal_book_id)
     try:
-        record = resume_job_for_book(internal_book_id, root=_root())
+        record = resume_job_for_book(
+            internal_book_id,
+            root=_root(),
+            memory_retrieval_mode=memory_retrieval_mode,
+        )
     except FileNotFoundError as exc:
         raise ApiError(status=404, code="BOOK_NOT_FOUND", message=f"Book '{book_id}' was not found.") from exc
     except RuntimeError as exc:

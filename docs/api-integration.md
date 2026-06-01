@@ -39,6 +39,7 @@ Frontend defaults can be overridden with:
 - In this document, public `analysis/*` routes and `analysis-state` refer to the current sequential deep-reading workflow. They do not refer to the older `book_analysis` capability, which is now a retired legacy path kept only for compatibility/debugging.
 - The current routed frontend now runs on `attentional_v2` by default through the existing compatibility-first overview/chapter/marks surfaces.
 - `iterator_v1` remains available for explicit backend fallback launches and legacy-resumed books, but it is no longer the normal product path.
+- Upload/start/resume endpoints now accept backend-side `memory_retrieval_mode = hybrid | text_only` for `attentional_v2` Unit Memory retrieval. The frontend does not expose a mode picker in this slice; default routed product launches continue to use `hybrid`.
 - Backend images and source assets are returned as relative API paths and must be prefixed with the configured API base in the frontend.
 - Backend `target_url`, `result_url`, and `open_target` values are frontend routes, not backend URLs.
 - `GET /api/books` now suppresses stale opaque upload/test stubs that never became real readable books, so the routed bookshelf is expected to show only meaningful shelf entries rather than old hash-like failed-upload leftovers.

@@ -96,6 +96,7 @@ from .state_ops import (
 from .state_projection import STATE_PACKET_VERSION, build_carry_forward_context, context_ref_ids
 from .survey import build_book_survey, build_revisit_index, write_book_survey_artifacts
 from .storage import ATTENTIONAL_V2_MECHANISM_KEY, artifact_map, initialize_artifact_tree
+from .unit_memory import UnitMemoryIndex, build_unit_memory_entry, resolve_memory_retrieval_config
 
 __all__ = [
     "ATTENTIONAL_V2_MECHANISM_KEY",
@@ -122,6 +123,7 @@ __all__ = [
     "build_default_reader_policy",
     "build_book_survey",
     "build_unitize_preview",
+    "build_unit_memory_entry",
     "build_normalized_eval_bundle",
     "build_shared_cursor",
     "build_reaction_record",
@@ -166,6 +168,7 @@ __all__ = [
     "resume_from_checkpoint",
     "refresh_knowledge_modes",
     "replace_policy_section",
+    "resolve_memory_retrieval_config",
     "reflective_promotion",
     "resolve_search_policy_mode",
     "run_phase6_chapter_cycle",
@@ -174,6 +177,7 @@ __all__ = [
     "set_search_policy_mode",
     "STATE_PACKET_VERSION",
     "supersede_reflective_item",
+    "UnitMemoryIndex",
     "upsert_knowledge_activation",
     "upsert_reflective_item",
     "validate_resume_compatibility",

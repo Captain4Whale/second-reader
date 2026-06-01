@@ -3156,3 +3156,37 @@ This new direction is design frozen but not yet implemented as a formal benchmar
 - `reading-companion-backend/src/attentional_v2/state_migration.py`
 - `reading-companion-backend/tests/test_attentional_v2_state_projection.py`
 - `reading-companion-backend/tests/test_attentional_v2_scaffold.py`
+
+## Entry 107
+**ID**: DEC-110
+**Status**: active
+
+**Decision / Inflection**: Make Unit Memory ledger + hybrid retrieval the current long-distance memory substrate for `attentional_v2`.
+
+**Period**: June 1, 2026, after `DEC-109` removed the content-typed concept/thread stores and the Unit Memory design settled on unit-centered storage plus field-specific retrieval documents.
+
+**Decision**: Current `attentional_v2` now writes one mechanism-private Unit Memory Entry per accepted source unit after Digest settlement. Each entry preserves the accepted source unit plus Digest's `understanding`, `response`, and `annotations`, then derives retrieval documents from source, understanding, response, and annotation surfaces. The retrieval index lives in `_mechanisms/attentional_v2/runtime/unit_memory.sqlite`, uses SQLite FTS5 trigram/BM25 as the required lexical channel, optionally uses sqlite-vec plus local Ollama Qwen3 embedding in `hybrid` mode, and degrades cleanly to text-only retrieval when vector support is unavailable. `Ingest` may emit one `memory_query` in the same LLM call that chooses the next boundary; Reading Runner resolves the accepted unit, executes retrieval before Digest, and writes `_mechanisms/attentional_v2/runtime/unit_memory_retrieval_trace.jsonl`.
+
+**Boundary**: This slice does not inject retrieved Unit Memory cards into Digest XML context and does not change frontend presentation. Digest still receives existing Recent Reading Memory only. `memory_retrieval_mode = hybrid | text_only` is backend entry configuration, defaults to `hybrid`, is persisted in `memory_retrieval_config.json`, and is restored on resume unless the operator explicitly overrides it. No AI evaluation, evidence-catalog update, or background job is part of this decision.
+
+**Why this path won**: The project needs long-distance continuity without returning to Detour/backread path steering or content-typed memory taxonomies. A Unit Memory ledger keeps the durable fact source simple and content-neutral, while field-specific retrieval documents let source text, Understanding, Response, and Annotation each contribute to recall. FTS5-first retrieval keeps the system locally inspectable and usable on every development machine; the hybrid vector channel can improve semantic recall when sqlite-vec and Ollama are available without making them required for reading to continue.
+
+**Primary evidence**:
+- `docs/current-state.md`
+- `docs/tasks/registry.md`
+- `docs/backend-reading-mechanisms/attentional_v2.md`
+- `docs/implementation/new-reading-mechanism/unit-memory-hybrid-retrieval-design.md`
+- `docs/api-contract.md`
+- `docs/api-integration.md`
+- `docs/backend-sequential-lifecycle.md`
+- `reading-companion-backend/src/attentional_v2/unit_memory.py`
+- `reading-companion-backend/src/attentional_v2/runner.py`
+- `reading-companion-backend/src/attentional_v2/prompts/ingest.py`
+- `reading-companion-backend/src/attentional_v2/storage.py`
+- `reading-companion-backend/src/attentional_v2/resume.py`
+- `reading-companion-backend/src/library/jobs.py`
+- `reading-companion-backend/src/api/app.py`
+- `reading-companion-backend/tests/test_attentional_v2_unit_memory.py`
+- `reading-companion-backend/tests/test_attentional_v2_llm_calls.py`
+- `reading-companion-backend/tests/test_attentional_v2_scaffold.py`
+- `reading-companion-backend/tests/test_library_api.py`

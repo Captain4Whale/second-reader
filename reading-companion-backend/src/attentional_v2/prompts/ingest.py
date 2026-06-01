@@ -15,9 +15,9 @@ from .reader_role import READER_ROLE_FRAGMENT
 from .types import PromptDefinition
 
 
-INGEST_PROMPT_VERSION = "attentional_v2.ingest.v1"
-INGEST_XML_PROMPT_ASSEMBLY_SPEC_ID = "attentional_v2.ingest.xml.v1"
-INGEST_XML_PROMPTSET_VERSION = "attentional_v2-phase6-v44"
+INGEST_PROMPT_VERSION = "attentional_v2.ingest.v2"
+INGEST_XML_PROMPT_ASSEMBLY_SPEC_ID = "attentional_v2.ingest.xml.v2"
+INGEST_XML_PROMPTSET_VERSION = "attentional_v2-phase6-v48"
 INGEST_TRANSPORT_SYSTEM_PROMPT = "Follow the structured Ingest prompt in the user message. Return JSON only."
 
 
@@ -27,9 +27,7 @@ INGEST_CURRENT_STEP_FRAGMENT = PromptFragment(
 
 This step happens before Digest. You are not yet reading the selected unit for interpretation or reader-facing output. You are previewing the bounded forward source area from the current reading cursor in order to prepare Digest.
 
-Your work in this call is to select the next forward source unit that you should read carefully in the Digest step.
-
-Memory-retrieval support is an intended future Ingest responsibility, but its concrete request behavior is deferred until the memory design lands.""",
+Your work in this call is to select the next forward source unit that you should read carefully in the Digest step, then describe the one retrieval query that would help recall earlier completed units related to this selected unit.""",
 )
 
 
@@ -37,7 +35,8 @@ INGEST_CONTEXT_USE_GUIDE_FRAGMENT = PromptFragment(
     fragment_id="ingest.context_use_guide",
     text="""- the visible source preview is primary
 - book identity is orientation, not source text
-- `RetrievalSurface` is intentionally empty in the current design slice""",
+- `RetrievalSurface` is intentionally empty in the current design slice
+- memory support here means writing a query request only; runtime performs retrieval after the boundary is accepted""",
 )
 
 
@@ -78,11 +77,13 @@ End anchor and continuation:
 
 INGEST_REQUEST_MEMORY_SUPPORT_FRAGMENT = PromptFragment(
     fragment_id="ingest.request_memory_support",
-    text="""RequestMemorySupport is reserved for the future instruction that will tell Ingest how to ask what prior reading memory is needed in order to read the selected unit continuously in the Digest step.
+    text="""After choosing the forward source unit, write at most one memory retrieval query for that selected unit.
 
-Current status: placeholder only.
+The query should be based on the selected unit's source meaning, names, claims, scene, contrast, image, or local question. It should help retrieve earlier completed reading units that may make this unit easier to read continuously.
 
-The detailed recall-query policy should not be specified until the new memory design defines the available memory stores, indexes, retrieval purposes, request budget, and runtime tool behavior.""",
+Do not ask multiple questions. Do not request a tool. Do not reference unavailable memory ids or stores. If the selected unit has no meaningful recall need, return an empty `query_text`.
+
+The query should be useful for both lexical and semantic retrieval: concise enough to search, but concrete enough to preserve the selected unit's source footing.""",
 )
 
 
@@ -94,7 +95,7 @@ Do not read or interpret the selected unit as the final reading. Do not write re
 
 Do not perform runtime work. Do not resolve anchors, retry or choose fallback boundaries, advance the cursor, settle state, or execute memory retrieval.
 
-Do not use external web search or request tools. Memory retrieval request behavior is deferred until the memory design lands.
+Do not use external web search or request tools.
 
 Return only the JSON described by OutputContract. Do not include markdown, commentary, hidden reasoning, or fields that are not requested.""",
 )
@@ -108,7 +109,8 @@ Fields:
 
 - `end_anchor_text`: exact visible source quote at the end of the chosen unit
 - `boundary_type`: boundary classification for why the unit ends there
-- `reason`: brief internal reason for the boundary choice""",
+- `reason`: brief internal reason for the boundary choice
+- `memory_query`: optional retrieval request for earlier completed Unit Memory entries related to the selected unit""",
 )
 
 
@@ -121,7 +123,12 @@ Return JSON only:
 {
   "end_anchor_text": "...",
   "boundary_type": "paragraph_end",
-  "reason": "..."
+  "reason": "...",
+  "memory_query": {
+    "query_version": "unit_memory_query.v1",
+    "query_text": "...",
+    "basis": "selected_source_unit"
+  }
 }""",
 )
 
@@ -299,7 +306,7 @@ def build_ingest_prompt_assembly_spec(
             "current_view_position",
             "current_view_content",
         ),
-        output_contract="ingest_json_v1",
+        output_contract="ingest_boundary_memory_query_json_v1",
     )
 
 
@@ -332,9 +339,9 @@ INGEST_PROMPT = PromptDefinition(
     version=INGEST_PROMPT_VERSION,
     owner_node="ingest",
     status="active",
-    purpose="Select the next forward source unit and reserve future memory-support retrieval.",
+    purpose="Select the next forward source unit and request Unit Memory retrieval support.",
     system_prompt=INGEST_TRANSPORT_SYSTEM_PROMPT,
     user_prompt_template="<IngestPrompt assembled by render_ingest_prompt_xml>",
     required_inputs=("book_identity", "current_view_position", "current_view_content"),
-    output_contract="ingest_json_v1",
+    output_contract="ingest_boundary_memory_query_json_v1",
 )

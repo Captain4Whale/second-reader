@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import sqlite3
 from pathlib import Path
 
 import pytest
@@ -67,6 +68,9 @@ from src.attentional_v2.storage import (
     settlement_audit_file,
     slow_cycle_audit_file,
     survey_map_file,
+    memory_retrieval_config_file,
+    unit_memory_retrieval_trace_file,
+    unit_memory_sqlite_file,
     unit_span_ledger_file,
     unitization_audit_file,
     active_attention_file,
@@ -752,13 +756,13 @@ def test_attentional_v2_prompt_registry_projects_current_bundle() -> None:
     ingest = ATTENTIONAL_V2_PROMPT_REGISTRY.get("attentional_v2.ingest")
     chapter = ATTENTIONAL_V2_PROMPT_REGISTRY.get("attentional_v2.chapter_consolidation")
 
-    assert ATTENTIONAL_V2_PROMPTSET_VERSION == "attentional_v2-phase6-v47"
+    assert ATTENTIONAL_V2_PROMPTSET_VERSION == "attentional_v2-phase6-v48"
     assert ATTENTIONAL_V2_PROMPTS.promptset_version == ATTENTIONAL_V2_PROMPTSET_VERSION
     assert digest.version == DIGEST_PROMPT_VERSION == "attentional_v2.digest.v3"
     assert ATTENTIONAL_V2_PROMPTS.digest_version == digest.version
     assert ATTENTIONAL_V2_PROMPTS.digest_system == digest.system_prompt
     assert ATTENTIONAL_V2_PROMPTS.digest_prompt == digest.user_prompt_template
-    assert ingest.version == INGEST_PROMPT_VERSION == "attentional_v2.ingest.v1"
+    assert ingest.version == INGEST_PROMPT_VERSION == "attentional_v2.ingest.v2"
     assert ATTENTIONAL_V2_PROMPTS.ingest_version == ingest.version
     assert ATTENTIONAL_V2_PROMPTS.ingest_system == ingest.system_prompt
     assert ATTENTIONAL_V2_PROMPTS.chapter_consolidation_prompt == chapter.user_prompt_template
@@ -1244,6 +1248,9 @@ def test_attentional_v2_initialization_writes_mechanism_artifacts(tmp_path):
     assert result["artifact_map"]["settlement_audit"].endswith("settlement_audit.jsonl")
     assert result["artifact_map"]["slow_cycle_audit"].endswith("slow_cycle_audit.jsonl")
     assert result["artifact_map"]["unit_span_ledger"].endswith("unit_span_ledger.jsonl")
+    assert result["artifact_map"]["unit_memory_sqlite"].endswith("unit_memory.sqlite")
+    assert result["artifact_map"]["memory_retrieval_config"].endswith("memory_retrieval_config.json")
+    assert result["artifact_map"]["unit_memory_retrieval_trace"].endswith("unit_memory_retrieval_trace.jsonl")
     assert not slow_cycle_audit_file(output_dir).exists()
     assert unit_span_ledger_file(output_dir).read_text(encoding="utf-8") == ""
 
@@ -1604,6 +1611,18 @@ def test_attentional_v2_read_book_runs_live_loop_and_persists_compatibility_resu
     assert settlement_audits[0]["state_deltas"]["recent_reading_memory"]["added_ids"] == ["recent:c1:u0001:m1"]
     assert settlement_audits[0]["state_deltas"]["reaction_records"]["added_ids"]
     assert "anchor_bank" not in settlement_audits[0]["state_deltas"]
+    memory_config = json.loads(memory_retrieval_config_file(result.output_dir).read_text(encoding="utf-8"))
+    assert memory_config["mode"] == "hybrid"
+    retrieval_traces = [
+        json.loads(line)
+        for line in unit_memory_retrieval_trace_file(result.output_dir).read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    ]
+    assert retrieval_traces
+    assert retrieval_traces[0]["event_type"] == "unit_memory_retrieval"
+    with sqlite3.connect(unit_memory_sqlite_file(result.output_dir)) as connection:
+        assert connection.execute("SELECT COUNT(*) FROM unit_memory_entries").fetchone()[0] == 2
+        assert connection.execute("SELECT COUNT(*) FROM retrieval_docs").fetchone()[0] >= 2
     shell = load_runtime_shell(runtime_shell_file(result.output_dir))
     assert shell["mechanism_key"] == ATTENTIONAL_V2_MECHANISM_KEY
     assert shell["status"] == "completed"

@@ -594,15 +594,51 @@ def test_launch_sequential_job_persists_non_default_mechanism_key(tmp_path, monk
         root=tmp_path,
         mechanism_key="iterator_v1",
         intent="focus on the book's interpretive pressure",
+        memory_retrieval_mode="text_only",
     )
     persisted = jobs_module.load_job(str(record["job_id"]), root=tmp_path)
 
     assert launched
     assert "--mechanism" in launched[0]
     assert "iterator_v1" in launched[0]
+    assert "--memory-retrieval-mode" in launched[0]
+    assert "text_only" in launched[0]
     assert persisted["mechanism_key"] == "iterator_v1"
+    assert persisted["memory_retrieval_mode"] == "text_only"
     assert persisted["job_kind"] == "read"
     assert job_record_file(str(record["job_id"]), tmp_path).exists()
+
+
+def test_launch_parse_job_records_memory_retrieval_mode_without_cli_flag(tmp_path, monkeypatch):
+    """Deferred parse jobs may remember the later read mode without passing read-only CLI args."""
+
+    jobs_module = importlib.import_module("src.library.jobs")
+    upload_path = upload_file("job-parse-mode", tmp_path)
+    upload_path.parent.mkdir(parents=True, exist_ok=True)
+    upload_path.write_bytes(b"epub")
+    launched: list[list[str]] = []
+
+    class _FakeProcess:
+        pid = 3333
+
+    monkeypatch.setattr(
+        jobs_module.subprocess,
+        "Popen",
+        lambda command, cwd, stdout, stderr: launched.append(command) or _FakeProcess(),
+    )
+
+    record = jobs_module.launch_parse_job(
+        upload_path,
+        root=tmp_path,
+        memory_retrieval_mode="text_only",
+    )
+    persisted = jobs_module.load_job(str(record["job_id"]), root=tmp_path)
+
+    assert launched
+    assert "parse" in launched[0]
+    assert "--memory-retrieval-mode" not in launched[0]
+    assert persisted["memory_retrieval_mode"] == "text_only"
+    assert persisted["job_kind"] == "parse"
 
 
 def test_launch_existing_book_read_job_omits_default_mechanism_flag_for_attentional_v2(tmp_path, monkeypatch):
@@ -621,12 +657,19 @@ def test_launch_existing_book_read_job_omits_default_mechanism_flag_for_attentio
         lambda command, cwd, stdout, stderr: launched.append(command) or _FakeProcess(),
     )
 
-    record = jobs_module.launch_existing_book_read_job(book_id, root=tmp_path, mechanism_key="attentional_v2")
+    record = jobs_module.launch_existing_book_read_job(
+        book_id,
+        root=tmp_path,
+        mechanism_key="attentional_v2",
+        memory_retrieval_mode="hybrid",
+    )
 
     assert record["status"] == "queued"
     assert launched
     assert "--mode" in launched[0]
     assert "sequential" in launched[0]
+    assert "--memory-retrieval-mode" in launched[0]
+    assert "hybrid" in launched[0]
     assert "--mechanism" not in launched[0]
 
 
@@ -1592,20 +1635,23 @@ def test_api_upload_and_job_polling(tmp_path, monkeypatch):
 
     monkeypatch.setattr(api_module, "create_upload_job", lambda root: ("job999", root / "state" / "uploads" / "job999.epub"))
     monkeypatch.setattr(api_module, "provision_uploaded_book", lambda upload_path, language="auto", root=None: "demo-book")
-    monkeypatch.setattr(
-        api_module,
-        "launch_sequential_job",
-        lambda upload_path, root=None, book_id=None: {
+    seen: dict[str, object] = {}
+
+    def _launch_sequential(upload_path, root=None, book_id=None, memory_retrieval_mode=None):
+        seen["memory_retrieval_mode"] = memory_retrieval_mode
+        return {
             "job_id": "job999",
             "status": "queued",
             "upload_path": str(upload_path),
             "book_id": book_id,
+            "memory_retrieval_mode": memory_retrieval_mode,
             "pid": 123,
             "created_at": "2026-03-07T00:00:00Z",
             "updated_at": "2026-03-07T00:00:00Z",
             "error": None,
-        },
-    )
+        }
+
+    monkeypatch.setattr(api_module, "launch_sequential_job", _launch_sequential)
     monkeypatch.setattr(
         api_module,
         "_ensure_job_exists",
@@ -1641,6 +1687,7 @@ def test_api_upload_and_job_polling(tmp_path, monkeypatch):
     assert upload_response.json()["job_id"] == "job999"
     assert upload_response.json()["book_id"] == to_api_book_id("demo-book")
     assert upload_response.json()["ws_url"] == "/api/ws/jobs/job999"
+    assert seen["memory_retrieval_mode"] == "hybrid"
 
     job_response = client.get("/api/jobs/job999")
     assert job_response.status_code == 200
@@ -1662,14 +1709,16 @@ def test_api_upload_propagates_internal_mechanism_fallback_override(tmp_path, mo
         seen["provision_mechanism_key"] = mechanism_key
         return "demo-book"
 
-    def _launch(upload_path, root=None, book_id=None, mechanism_key=None):
+    def _launch(upload_path, root=None, book_id=None, mechanism_key=None, memory_retrieval_mode=None):
         seen["launch_mechanism_key"] = mechanism_key
+        seen["memory_retrieval_mode"] = memory_retrieval_mode
         return {
             "job_id": "jobattn",
             "status": "queued",
             "upload_path": str(upload_path),
             "book_id": book_id,
             "mechanism_key": mechanism_key,
+            "memory_retrieval_mode": memory_retrieval_mode,
             "pid": 123,
             "created_at": "2026-03-07T00:00:00Z",
             "updated_at": "2026-03-07T00:00:00Z",
@@ -1687,6 +1736,7 @@ def test_api_upload_propagates_internal_mechanism_fallback_override(tmp_path, mo
     assert response.status_code == 202
     assert seen["provision_mechanism_key"] == "iterator_v1"
     assert seen["launch_mechanism_key"] == "iterator_v1"
+    assert seen["memory_retrieval_mode"] == "hybrid"
 
 
 def test_api_upload_deferred_returns_ready_job(tmp_path, monkeypatch):
@@ -1696,20 +1746,23 @@ def test_api_upload_deferred_returns_ready_job(tmp_path, monkeypatch):
 
     monkeypatch.setattr(api_module, "create_upload_job", lambda root: ("jobparse", root / "state" / "uploads" / "jobparse.epub"))
     monkeypatch.setattr(api_module, "provision_uploaded_book", lambda upload_path, language="auto", root=None: "demo-book")
-    monkeypatch.setattr(
-        api_module,
-        "launch_parse_job",
-        lambda upload_path, root=None, book_id=None: {
+    seen: dict[str, object] = {}
+
+    def _launch_parse(upload_path, root=None, book_id=None, memory_retrieval_mode=None):
+        seen["memory_retrieval_mode"] = memory_retrieval_mode
+        return {
             "job_id": "jobparse",
             "status": "ready",
             "upload_path": str(upload_path),
             "book_id": book_id,
+            "memory_retrieval_mode": memory_retrieval_mode,
             "pid": None,
             "created_at": "2026-03-07T00:00:00Z",
             "updated_at": "2026-03-07T00:00:00Z",
             "error": None,
-        },
-    )
+        }
+
+    monkeypatch.setattr(api_module, "launch_parse_job", _launch_parse)
 
     upload_response = client.post(
         "/api/uploads/epub",
@@ -1719,6 +1772,7 @@ def test_api_upload_deferred_returns_ready_job(tmp_path, monkeypatch):
     assert upload_response.status_code == 202
     assert upload_response.json()["status"] == "ready"
     assert upload_response.json()["book_id"] == to_api_book_id("demo-book")
+    assert seen["memory_retrieval_mode"] == "hybrid"
 
 
 def test_api_start_analysis_for_uploaded_book(tmp_path, monkeypatch):
@@ -1728,25 +1782,29 @@ def test_api_start_analysis_for_uploaded_book(tmp_path, monkeypatch):
     api_module.app.state.root = tmp_path
     client = TestClient(api_module.app)
 
-    monkeypatch.setattr(
-        api_module,
-        "launch_existing_book_read_job",
-        lambda internal_book_id, root=None: {
+    seen: dict[str, object] = {}
+
+    def _launch_existing(internal_book_id, root=None, memory_retrieval_mode=None):
+        seen["memory_retrieval_mode"] = memory_retrieval_mode
+        return {
             "job_id": "jobstart",
             "status": "queued",
             "upload_path": str((tmp_path / "output" / internal_book_id / "_assets" / "source.epub")),
             "book_id": internal_book_id,
+            "memory_retrieval_mode": memory_retrieval_mode,
             "pid": 456,
             "created_at": "2026-03-07T00:00:00Z",
             "updated_at": "2026-03-07T00:00:00Z",
             "error": None,
-        },
-    )
+        }
+
+    monkeypatch.setattr(api_module, "launch_existing_book_read_job", _launch_existing)
 
     response = client.post(f"/api/books/{public_book_id}/analysis/start")
     assert response.status_code == 202
     assert response.json()["job_id"] == "jobstart"
     assert response.json()["book_id"] == public_book_id
+    assert seen["memory_retrieval_mode"] == "hybrid"
 
 
 def test_api_start_analysis_allows_internal_iterator_v1_fallback(tmp_path, monkeypatch):
@@ -1761,7 +1819,7 @@ def test_api_start_analysis_allows_internal_iterator_v1_fallback(tmp_path, monke
     monkeypatch.setattr(
         api_module,
         "launch_existing_book_read_job",
-        lambda internal_book_id, root=None, mechanism_key=None: {
+        lambda internal_book_id, root=None, mechanism_key=None, memory_retrieval_mode=None: {
             "job_id": "job-v1-start",
             "status": "queued",
             "upload_path": str((tmp_path / "output" / internal_book_id / "_assets" / "source.epub")),
@@ -1771,6 +1829,7 @@ def test_api_start_analysis_allows_internal_iterator_v1_fallback(tmp_path, monke
             "updated_at": "2026-03-07T00:00:00Z",
             "error": None,
             "mechanism_key": mechanism_key,
+            "memory_retrieval_mode": memory_retrieval_mode,
         },
     )
 

@@ -117,6 +117,11 @@ def test_ingest_writes_manifest_and_uses_xml_anchor_contract(tmp_path: Path, mon
             "end_anchor_text": "Beta.",
             "boundary_type": "cross_paragraph_continuation",
             "reason": "The line clearly keeps running.",
+            "memory_query": {
+                "query_version": "unit_memory_query.v1",
+                "query_text": "Beta continuation",
+                "basis": "selected_source_unit",
+            },
             "continuation" + "_pressure": True,
         }
 
@@ -158,6 +163,7 @@ def test_ingest_writes_manifest_and_uses_xml_anchor_contract(tmp_path: Path, mon
     assert "selection" + "_mode" not in decision
     assert "continuation" + "_pressure" not in decision
     assert decision["end_anchor_text"] == "Beta."
+    assert decision["memory_query"]["query_text"] == "Beta continuation"
     assert captured["system_prompt"] == "Follow the structured Ingest prompt in the user message. Return JSON only."
     assert "<ReaderRole>" in captured["prompt"]
     assert "<Instruction>" in captured["prompt"]
@@ -177,7 +183,8 @@ def test_ingest_writes_manifest_and_uses_xml_anchor_contract(tmp_path: Path, mon
     assert "<ReturnFormat>" in captured["prompt"]
     assert "You are in the Ingest step of a sequential deep-reading loop." in captured["prompt"]
     assert "Select one forward source unit from the current reading cursor." in captured["prompt"]
-    assert "Memory-retrieval support is an intended future Ingest responsibility" in captured["prompt"]
+    assert "write at most one memory retrieval query" in captured["prompt"]
+    assert '"memory_query"' in captured["prompt"]
     assert "Do not resolve anchors, retry or choose fallback boundaries" in captured["prompt"]
     assert "Navigation context" not in captured["prompt"]
     assert "ReadingState" not in captured["prompt"]
@@ -194,7 +201,8 @@ def test_ingest_writes_manifest_and_uses_xml_anchor_contract(tmp_path: Path, mon
     assert "purely non-lexical residue" in captured["prompt"]
     assert "Mainline preview" not in captured["prompt"]
     assert manifest["node_name"] == "ingest"
-    assert manifest["prompt_version"] == "attentional_v2.ingest.v1"
+    assert manifest["prompt_version"] == "attentional_v2.ingest.v2"
+    assert manifest["prompt_assembly"]["output_contract"] == "ingest_boundary_memory_query_json_v1"
     assert manifest["prompt_assembly"]["owner_node"] == "ingest"
 
 

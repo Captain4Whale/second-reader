@@ -263,6 +263,14 @@ Snapshot semantics:
 
 The `/analysis/*` route prefix is historical compatibility naming for the live deep-reading workflow. It does not mean the retired legacy `book_analysis` capability remains part of the current product surface.
 
+Read launches may accept an optional backend-controlled `memory_retrieval_mode` value:
+
+- allowed values: `hybrid`, `text_only`
+- default: `hybrid`
+- accepted on upload/start as the run's Unit Memory retrieval mode
+- accepted on resume as an optional explicit operator override; omitted resume requests restore the persisted run mode
+- this is mechanism-private runtime configuration, not a new frontend presentation surface in this slice
+
 Stable expectations:
 - `job_id` is a string
 - `status` is a stable machine-readable job stage and may be `ready` after a deferred upload completes the chapter-level structure parse

@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-06-01T21:33:40+08:00`
+Last updated: `2026-06-01T23:11:24+08:00`
 
 ## Status Values
 - `active`
@@ -25,7 +25,7 @@ Last updated: `2026-06-01T21:33:40+08:00`
 - Lane: `mechanism_runtime`
 - Priority: `high`
 - Detail: `docs/current-state.md`
-- Next: continue the narrowed product-goal reframe from the forward-only `Ingest` baseline. `DEC-104` retired live Detour / source-backread from `attentional_v2`, `DEC-105` hard-purged the retired compatibility interfaces, `DEC-106` split LLM calls from runner preparation/governance, `DEC-107` replaces the old `Navigate` LLM identity with `llm_calls.ingest(...)`, `DEC-108` renames the concrete per-unit interpretation LLM call to `llm_calls.digest(...)` with XML prompt assembly as the live path, and `DEC-109` removes the retired concept/thread structured stores from current live memory surfaces. Runtime source-unit preparation still lives in `prepare_next_source_unit_for_read`; active LLM calls live under `llm_calls.py`. Use `docs/implementation/new-reading-mechanism/ingest-context-and-navigate-mapping.md` as the implementation reference for the landed first-slice `Ingest` XML context and the remaining retrieval-request design gap. `docs/implementation/new-reading-mechanism/digest-understanding-response-annotation-design.md` is now implemented as the Digest semantic refactor: model-facing `understanding / response / annotations` are three peer Instruction actions, with one holistic `understanding` object per unit mapped to stored Recent Reading Memory by runtime. Use `docs/implementation/new-reading-mechanism/unit-memory-hybrid-retrieval-design.md` as the current draft for Unit Memory storage/indexing and hybrid retrieval. Next design work should settle the Unit Memory ledger schema, Ingest query contract, hybrid ranking/aggregation policy, and Digest retrieved-memory context shape. Do not launch eval, update evidence catalog, or continue `C设计10` consolidation / the old concrete-node XML migration / `C设计12` prompt assembly migration unless explicitly re-adopted.
+- Next: continue the narrowed product-goal reframe from the forward-only `Ingest` baseline. `DEC-104` retired live Detour / source-backread from `attentional_v2`, `DEC-105` hard-purged the retired compatibility interfaces, `DEC-106` split LLM calls from runner preparation/governance, `DEC-107` replaces the old `Navigate` LLM identity with `llm_calls.ingest(...)`, `DEC-108` renames the concrete per-unit interpretation LLM call to `llm_calls.digest(...)` with XML prompt assembly as the live path, `DEC-109` removes the retired concept/thread structured stores from current live memory surfaces, and `DEC-110` lands the Unit Memory ledger + hybrid retrieval bottom framework. Runtime source-unit preparation still lives in `prepare_next_source_unit_for_read`; active LLM calls live under `llm_calls.py`. `Ingest` now returns boundary fields plus at most one `memory_query`; Reading Runner accepts the unit, executes Unit Memory retrieval, writes trace, then calls `Digest`. `Digest` still receives existing Recent Reading Memory only; retrieved Unit Memory cards are not yet injected into Digest XML. Use `docs/implementation/new-reading-mechanism/ingest-context-and-navigate-mapping.md` as the implementation reference for the landed first-slice `Ingest` XML context. `docs/implementation/new-reading-mechanism/digest-understanding-response-annotation-design.md` is implemented as the Digest semantic refactor: model-facing `understanding / response / annotations` are three peer Instruction actions, with one holistic `understanding` object per unit mapped to stored Recent Reading Memory by runtime. Use `docs/implementation/new-reading-mechanism/unit-memory-hybrid-retrieval-design.md` as the implemented reference for Unit Memory storage/indexing, retrieval mode, Ingest query, FTS5/sqlite-vec retrieval, and retrieval trace. Next design work should define Digest retrieved-memory context packaging, dedupe against Recent Reading Memory, retrieval-card budget, and calibration review. Do not launch eval, update evidence catalog, or continue `C设计10` consolidation / the old concrete-node XML migration / `C设计12` prompt assembly migration unless explicitly re-adopted.
 - Jobs: none
 - Evidence:
   - `DEC-103`
@@ -35,6 +35,7 @@ Last updated: `2026-06-01T21:33:40+08:00`
   - `DEC-107`
   - `DEC-108`
   - `DEC-109`
+  - `DEC-110`
   - `docs/current-state.md`
   - `docs/implementation/new-reading-mechanism/ingest-context-and-navigate-mapping.md`
   - `docs/implementation/new-reading-mechanism/digest-understanding-response-annotation-design.md`
@@ -66,9 +67,9 @@ Last updated: `2026-06-01T21:33:40+08:00`
   - `Phase C.2` and `Phase C.3` are now historical state-territory experiments:
     - they introduced content-typed long-memory digests and stores during the post-eval structural rework
     - `DEC-109` supersedes that direction; current live code no longer exposes the retired concept/thread structured stores in schema, prompt packets, runtime artifacts, checkpoints, settlement, audit, or tests
-    - current long-memory direction is a content-neutral unit-memory baseline; the ledger and retrieval design are deferred
+    - current long-memory direction is a content-neutral unit-memory baseline; `DEC-110` now implements the ledger/index/retrieval trace bottom framework, while Digest retrieved-memory context packaging remains deferred
     - old V2 state stores were demoted to cutover-only legacy territory during the cutover
-    - old supplemental retrieval helpers from that branch were removed from the current code surface by `DEC-105`; future `Ingest` retrieval is a separate design task
+    - old supplemental retrieval helpers from that branch were removed from the current code surface by `DEC-105`; current `Ingest` retrieval uses a separate Unit Memory query path rather than those retired helpers
     - checkpoint/resume temporarily accepted both old and new state territory during the cutover, while newly written checkpoints already used only the new primary keys
   - `Phase C.4` is now landed:
     - sentence-intake / slow-cycle now consume and write the new primary state layers directly; the old Anchor Bank relation-writing Bridge path is paused

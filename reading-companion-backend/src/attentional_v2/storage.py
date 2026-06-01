@@ -131,6 +131,24 @@ def unit_span_ledger_file(output_dir: Path) -> Path:
     return runtime_dir(output_dir) / "unit_span_ledger.jsonl"
 
 
+def unit_memory_sqlite_file(output_dir: Path) -> Path:
+    """Return the Unit Memory SQLite ledger/index path."""
+
+    return runtime_dir(output_dir) / "unit_memory.sqlite"
+
+
+def memory_retrieval_config_file(output_dir: Path) -> Path:
+    """Return the persisted read-time Unit Memory retrieval config path."""
+
+    return runtime_dir(output_dir) / "memory_retrieval_config.json"
+
+
+def unit_memory_retrieval_trace_file(output_dir: Path) -> Path:
+    """Return the Unit Memory retrieval trace JSONL path."""
+
+    return runtime_dir(output_dir) / "unit_memory_retrieval_trace.jsonl"
+
+
 def knowledge_activations_file(output_dir: Path) -> Path:
     """Return the knowledge-activations path."""
 
@@ -242,6 +260,9 @@ def artifact_map(output_dir: Path) -> dict[str, str]:
         "recent_reading_memory": str(recent_reading_memory_file(output_dir).relative_to(output_dir)),
         "reflective_frames": str(reflective_frames_file(output_dir).relative_to(output_dir)),
         "unit_span_ledger": str(unit_span_ledger_file(output_dir).relative_to(output_dir)),
+        "unit_memory_sqlite": str(unit_memory_sqlite_file(output_dir).relative_to(output_dir)),
+        "memory_retrieval_config": str(memory_retrieval_config_file(output_dir).relative_to(output_dir)),
+        "unit_memory_retrieval_trace": str(unit_memory_retrieval_trace_file(output_dir).relative_to(output_dir)),
         "knowledge_activations": str(knowledge_activations_file(output_dir).relative_to(output_dir)),
         "reaction_records": str(reaction_records_file(output_dir).relative_to(output_dir)),
         "reconsolidation_records": str(reconsolidation_records_file(output_dir).relative_to(output_dir)),
@@ -387,6 +408,10 @@ def initialize_artifact_tree(
     unit_span_ledger_file(output_dir).parent.mkdir(parents=True, exist_ok=True)
     if not unit_span_ledger_file(output_dir).exists():
         unit_span_ledger_file(output_dir).write_text("", encoding="utf-8")
+    unit_memory_sqlite_file(output_dir).parent.mkdir(parents=True, exist_ok=True)
+    unit_memory_retrieval_trace_file(output_dir).parent.mkdir(parents=True, exist_ok=True)
+    if not unit_memory_retrieval_trace_file(output_dir).exists():
+        unit_memory_retrieval_trace_file(output_dir).write_text("", encoding="utf-8")
     return {
         "mechanism_key": ATTENTIONAL_V2_MECHANISM_KEY,
         "mechanism_version": mechanism_version,

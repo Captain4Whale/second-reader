@@ -2,19 +2,20 @@
 
 Purpose: define the first design frame for content-neutral long-distance memory retrieval in the new `Ingest -> Digest` mechanism.
 Use when: designing the Unit Memory ledger, hybrid retrieval index, Ingest retrieval requests, or Digest retrieval context packaging.
-Not for: current live runtime authority, implemented schema guarantees, evaluation claims, or evidence-catalog updates.
+Not for: Digest retrieved-memory context authority, evaluation claims, or evidence-catalog updates.
 Update when: Unit Memory entry shape, indexed fields, retrieval ranking, query generation, or Digest retrieval-context packaging changes.
 
 ## Status
 
 - Date: `2026-06-01`
-- Status: design draft; not implemented.
+- Status: bottom retrieval framework implemented; Digest retrieved-memory context packaging deferred.
 - Evaluation status: no eval run, no evidence-catalog update.
 - Current basis:
   - `DEC-103` pauses the old Second Reader Memory / Planning track as the default implementation authority.
   - `DEC-107` makes `Ingest` the forward boundary LLM call and reserves memory-support retrieval for later design.
   - `DEC-108` makes `Digest` the concrete per-unit interpretation LLM call.
   - `DEC-109` removes content-typed concept/thread long-memory stores from the current live surface.
+  - `DEC-110` makes Unit Memory ledger + hybrid retrieval the current long-distance memory substrate for `attentional_v2`.
   - Digest now emits model-facing `understanding`, `response`, and `annotations`, with the single `understanding` object stored internally through the existing `recent_reading_memory` path.
 
 ## Design Claim
@@ -31,7 +32,7 @@ This follows the retrieval purpose:
 
 ## Current Design Scope
 
-This document currently anchors the bottom retrieval framework:
+This document anchors the implemented bottom retrieval framework:
 
 - Unit Memory storage
 - field-specific retrieval documents
@@ -39,6 +40,8 @@ This document currently anchors the bottom retrieval framework:
 - sqlite-vec dense index
 - embedding policy
 - hybrid retrieval, fusion, aggregation, and rebuild boundaries
+- Ingest single-query output and runtime fallback query behavior
+- retrieval-mode configuration and trace ownership
 
 The following concerns are intentionally deferred from this implementation slice:
 
@@ -48,6 +51,38 @@ The following concerns are intentionally deferred from this implementation slice
 One boundary is decided now: query generation should not require a separate LLM call. `Ingest` should emit at most one V1 retrieval query for the selected unit in the same LLM call that chooses the forward unit boundary. If that query is missing, empty, or no longer matches the accepted source unit after runtime fallback, the runner may derive a fallback query from the accepted source unit text.
 
 Another boundary is decided now: reading must be able to choose its memory retrieval mode before starting a book / read session. The user or operator should be able to run long-distance memory as text-only lexical retrieval, or as hybrid lexical + vector retrieval. This mode controls read-time retrieval behavior, not the Unit Memory ledger shape. The V1 default is `hybrid`.
+
+## Implemented Slice
+
+The first implementation lands the storage, indexing, read-time retrieval, and trace layer without injecting retrieved cards into `Digest`.
+
+Implemented now:
+
+- `unit_memory.sqlite` under `_mechanisms/attentional_v2/runtime/`
+  - durable `unit_memory_entries`
+  - derived `retrieval_docs`
+  - FTS5 trigram index
+  - optional sqlite-vec vector table
+  - query embedding cache
+- `memory_retrieval_config.json`
+  - persisted read-time retrieval mode and backend defaults
+  - default mode is `hybrid`
+  - supported explicit modes are `hybrid` and `text_only`
+- `unit_memory_retrieval_trace.jsonl`
+  - records Ingest query or fallback query, channel availability, degradation, candidate counts, exclusions, latency, and selected units
+- `Ingest` output now includes optional `memory_query`
+  - one query maximum
+  - generated in the same LLM call as boundary selection
+  - no separate query-generation LLM call
+- Reading Runner now executes retrieval after accepting the source unit and before `Digest`
+  - retrieved units are trace-only in this slice
+  - `Digest` still receives current XML context plus existing Recent Reading Memory, not retrieved Unit Memory cards
+- settlement writes one Unit Memory Entry per accepted source unit after `Digest` output has been accepted
+  - source, understanding, response, and annotation retrieval documents are derived from the entry
+  - valid documents are always FTS-indexed
+  - vector indexing is attempted in `hybrid` mode and may remain pending when sqlite-vec or Ollama is unavailable
+
+The backend entry points accept `memory_retrieval_mode`, but the frontend does not expose a new UI control in this slice.
 
 ## V1 Technical Stack
 
@@ -910,43 +945,31 @@ Implementation should record enough index metadata to make rebuilds safe:
 
 The first implementation should include a rebuild path that can recreate retrieval documents, FTS5, and vector rows from the ledger.
 
-Open design work:
+Remaining implementation hardening:
 
-- artifact paths under `_mechanisms/attentional_v2/runtime/`
-- exact SQLite schema and migration / rebuild commands
+- explicit rebuild / catch-up command for derived retrieval documents, FTS5 rows, and vector rows
 - tokenizer review results and whether V2 needs a dual lexical channel
-- embedding model version pinning and local Ollama health checks
+- embedding model version pinning and local Ollama health checks beyond graceful degradation
 - index rebuild checksums and prompt-version compatibility
 
 ## What We Still Need To Design
 
-- Unit Memory ledger schema:
-  - settlement transaction boundary and index-status fields
-  - migration / rebuild behavior for existing runtime artifacts
-- Query contract:
-  - exact Ingest prompt wording for `unit_memory_query.v1`
-  - fallback query audit examples
-- Read-start configuration:
-  - user-facing / operator-facing placement for `memory_retrieval_mode`
-  - whether switching from `text_only` to `hybrid` should trigger vector-index catch-up immediately or leave it pending
-- Retrieval algorithm:
-  - whether retrieval review requires a second `unicode61` / `porter unicode61` lexical channel
-  - calibration of the initial V1 fanout, RRF, surface / channel weight, aggregation, and MMR defaults
-  - dedupe and diversity policy
 - Context packaging:
-  - deferred from the bottom-framework implementation slice
   - XML block shape for Digest
   - retrieved-card budget
   - source quote / understanding / response / annotation rendering rules
-- Runtime ownership:
-  - exact runner function boundaries for retrieval and context packaging
-  - retrieval trace schema and artifact path
-  - retrieval timeout / retry thresholds
-  - query-embedding cache location and invalidation key
+  - how retrieved Unit Memory cards should sit beside existing Recent Reading Memory
+- Retrieval calibration:
+  - whether retrieval review requires a second `unicode61` / `porter unicode61` lexical channel
+  - calibration of the initial V1 fanout, RRF, surface / channel weight, aggregation, and MMR defaults
+  - dedupe and diversity policy after real trace review
+- Vector maintenance:
+  - whether switching from `text_only` to `hybrid` should trigger vector-index catch-up immediately or leave it pending
+  - explicit operator command for vector catch-up / rebuild
 - Recent-neighbor policy:
-  - how many recent units are always carried
+  - how many recent units are always carried in Digest context
   - which units are excluded from long-distance retrieval
-  - how to avoid duplicate context
+  - how to avoid duplicate context once retrieved cards enter the Digest prompt
 - Evaluation / review criteria:
   - concrete review examples
   - labeling rubric and pass / fail thresholds
