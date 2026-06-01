@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-06-01T23:11:24+08:00`
+Last verified: `2026-06-02T07:51:46+08:00`
 
 ## Current Objective
 - Product goal and mechanism direction are being reset before further implementation.
@@ -51,7 +51,8 @@ Last verified: `2026-06-01T23:11:24+08:00`
     - use `docs/implementation/new-reading-mechanism/ingest-context-and-navigate-mapping.md` as the implementation reference for the landed first-slice `Ingest` XML context
     - use `docs/implementation/new-reading-mechanism/digest-understanding-response-annotation-design.md` as the implemented reference for the Digest prompt/output semantic refactor
     - use `docs/implementation/new-reading-mechanism/unit-memory-hybrid-retrieval-design.md` as the implemented reference for the Unit Memory storage/index/retrieval trace bottom framework
-    - next design work should define how retrieved Unit Memory cards enter Digest XML context, including card shape, budget, dedupe against Recent Reading Memory, and calibration review criteria
+    - use `docs/implementation/new-reading-mechanism/ingest-recall-and-digest-memory-context-design.md` as the current draft for the next slice: bounded multi-recall Ingest output, multi-recall retrieval aggregation, and Digest retrieved-memory context packaging
+    - next implementation work should replace the single model-facing `memory_query` with bounded `memory_recalls[]`, then define how retrieved Unit Memory cards enter Digest XML context, including card shape, budget, dedupe against Recent Reading Memory, and calibration review criteria
     - do not run eval, update evidence catalog, or claim product quality from the Detour hard-purge slice
 - Historical concrete-node XML prompt / Recent Reading Memory full active diagnostic machine run has completed; post-run report is preserved for reference.
   - purpose:
