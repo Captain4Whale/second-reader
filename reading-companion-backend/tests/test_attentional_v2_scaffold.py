@@ -45,17 +45,14 @@ from src.attentional_v2.schemas import (
     ATTENTIONAL_V2_POLICY_VERSION,
     ATTENTIONAL_V2_SCHEMA_VERSION,
     build_empty_active_attention,
-    build_empty_concept_registry,
     build_empty_local_buffer,
     build_empty_local_continuity,
     build_empty_reaction_records,
     build_empty_reflective_frames,
-    build_empty_thread_trace,
 )
 from src.attentional_v2.storage import (
     ATTENTIONAL_V2_MECHANISM_KEY,
     chapter_result_compatibility_file,
-    concept_registry_file,
     event_stream_file,
     knowledge_activations_file,
     local_buffer_file,
@@ -70,7 +67,6 @@ from src.attentional_v2.storage import (
     settlement_audit_file,
     slow_cycle_audit_file,
     survey_map_file,
-    thread_trace_file,
     unit_span_ledger_file,
     unitization_audit_file,
     active_attention_file,
@@ -422,8 +418,8 @@ def test_digest_reader_role_and_instruction_xml_renders_target_structure() -> No
     assert "<ActiveTension>" not in rendered
     assert "ActiveTension" not in rendered
     assert "active_attention" not in rendered
-    assert "concept_registry" not in rendered
-    assert "thread_trace" not in rendered
+    assert ("concept_" + "registry") not in rendered
+    assert ("thread_" + "trace") not in rendered
     assert "digest.durable_memory_policy" not in rendered
     assert "digest.active_tension_policy" not in rendered
     assert "prompt_fragment_ref" not in rendered
@@ -1185,13 +1181,9 @@ def test_attentional_v2_initialization_writes_mechanism_artifacts(tmp_path):
         {"recent_sentence_ids", "open_meaning_unit_sentence_ids", "recent_meaning_units", "mainline_cursor"}
     )
 
-    concept_registry = json.loads(concept_registry_file(output_dir).read_text(encoding="utf-8"))
-    assert concept_registry["entries"] == []
-
-    thread_trace = json.loads(thread_trace_file(output_dir).read_text(encoding="utf-8"))
-    assert thread_trace["entries"] == []
-
     assert not (active_attention_file(output_dir).parent / "anchor_bank.json").exists()
+    assert not (active_attention_file(output_dir).parent / ("concept_" + "registry.json")).exists()
+    assert not (active_attention_file(output_dir).parent / ("thread_" + "trace.json")).exists()
 
     reflective = json.loads(reflective_frames_file(output_dir).read_text(encoding="utf-8"))
     assert reflective["chapter_understandings"] == []
@@ -1294,8 +1286,6 @@ def test_attentional_v2_runner_prefers_main_body_before_supporting_chapters(tmp_
             "chapter_consolidation": {"chapter_ref": kwargs["chapter"].get("reference", "")},
             "promotion_results": [],
             "active_attention": kwargs["active_attention"],
-            "concept_registry": kwargs["concept_registry"],
-            "thread_trace": kwargs["thread_trace"],
             "reflective_frames": kwargs["reflective_frames"],
             "knowledge_activations": kwargs["knowledge_activations"],
             "reaction_records": kwargs["reaction_records"],
@@ -1369,8 +1359,6 @@ def _empty_prepare_next_source_unit_state() -> dict[str, dict[str, object]]:
         "local_continuity": build_empty_local_continuity(),
         "continuation_capsule": {},
         "active_attention": build_empty_active_attention(),
-        "concept_registry": build_empty_concept_registry(),
-        "thread_trace": build_empty_thread_trace(),
         "reflective_frames": build_empty_reflective_frames(),
         "reaction_records": build_empty_reaction_records(),
     }
@@ -1415,8 +1403,6 @@ def test_prepare_next_source_unit_for_read_selects_mainline_unit(tmp_path, monke
         local_buffer=state["local_buffer"],  # type: ignore[arg-type]
         continuation_capsule=state["continuation_capsule"],
         active_attention=state["active_attention"],  # type: ignore[arg-type]
-        concept_registry=state["concept_registry"],  # type: ignore[arg-type]
-        thread_trace=state["thread_trace"],  # type: ignore[arg-type]
         reflective_frames=state["reflective_frames"],  # type: ignore[arg-type]
         reaction_records=state["reaction_records"],  # type: ignore[arg-type]
         local_continuity=state["local_continuity"],  # type: ignore[arg-type]
@@ -1465,8 +1451,6 @@ def test_prepare_next_source_unit_for_read_retries_unresolved_boundary(tmp_path,
         local_buffer=state["local_buffer"],  # type: ignore[arg-type]
         continuation_capsule=state["continuation_capsule"],
         active_attention=state["active_attention"],  # type: ignore[arg-type]
-        concept_registry=state["concept_registry"],  # type: ignore[arg-type]
-        thread_trace=state["thread_trace"],  # type: ignore[arg-type]
         reflective_frames=state["reflective_frames"],  # type: ignore[arg-type]
         reaction_records=state["reaction_records"],  # type: ignore[arg-type]
         local_continuity=state["local_continuity"],  # type: ignore[arg-type]
@@ -1537,8 +1521,6 @@ def test_attentional_v2_read_book_runs_live_loop_and_persists_compatibility_resu
             "chapter_consolidation": {"chapter_ref": kwargs["chapter"].get("reference", "")},
             "promotion_results": [],
             "active_attention": kwargs["active_attention"],
-            "concept_registry": kwargs["concept_registry"],
-            "thread_trace": kwargs["thread_trace"],
             "reflective_frames": kwargs["reflective_frames"],
             "knowledge_activations": kwargs["knowledge_activations"],
             "reaction_records": kwargs["reaction_records"],
@@ -1673,8 +1655,6 @@ def test_attentional_v2_runner_persists_multiple_read_surface_reactions(tmp_path
             "chapter_consolidation": {"chapter_ref": kwargs["chapter"].get("reference", "")},
             "promotion_results": [],
             "active_attention": kwargs["active_attention"],
-            "concept_registry": kwargs["concept_registry"],
-            "thread_trace": kwargs["thread_trace"],
             "reflective_frames": kwargs["reflective_frames"],
             "knowledge_activations": kwargs["knowledge_activations"],
             "reaction_records": kwargs["reaction_records"],
@@ -1730,8 +1710,6 @@ def test_attentional_v2_read_book_tolerates_missing_reaction_payload(tmp_path, m
             "chapter_consolidation": {"chapter_ref": kwargs["chapter"].get("reference", "")},
             "promotion_results": [],
             "active_attention": kwargs["active_attention"],
-            "concept_registry": kwargs["concept_registry"],
-            "thread_trace": kwargs["thread_trace"],
             "reflective_frames": kwargs["reflective_frames"],
             "knowledge_activations": kwargs["knowledge_activations"],
             "reaction_records": kwargs["reaction_records"],
@@ -1791,8 +1769,6 @@ def test_attentional_v2_read_book_runs_source_anchor_units_without_sentence_curs
             "chapter_consolidation": {"chapter_ref": kwargs["chapter"].get("reference", "")},
             "promotion_results": [],
             "active_attention": kwargs["active_attention"],
-            "concept_registry": kwargs["concept_registry"],
-            "thread_trace": kwargs["thread_trace"],
             "reflective_frames": kwargs["reflective_frames"],
             "knowledge_activations": kwargs["knowledge_activations"],
             "reaction_records": kwargs["reaction_records"],

@@ -321,7 +321,7 @@ def _normalize_unitize_boundary_type(value: object) -> UnitizeBoundaryType:
 _MISSING_TARGET_STORE_WARNING = "missing_target_store_defaulted"
 _UNSUPPORTED_TARGET_STORE_WARNING = "unsupported_target_store"
 _UNSUPPORTED_OPERATION_STORE_WARNING = "unsupported_operation_for_target_store"
-_MEMORY_UPTAKE_TARGET_STORES = {"active_attention", "recent_reading_memory", "concept_registry", "thread_trace"}
+_MEMORY_UPTAKE_TARGET_STORES = {"active_attention", "recent_reading_memory"}
 _MEMORY_UPTAKE_OPERATION_STORE_POLICY = {
     "recent_reading_memory": {"append"},
     "active_attention": {
@@ -336,8 +336,6 @@ _MEMORY_UPTAKE_OPERATION_STORE_POLICY = {
         "link_anchors",
         "drop",
     },
-    "concept_registry": {"append", "create", "update", "link", "close", "resolve", "drop", "reactivate"},
-    "thread_trace": {"append", "create", "update", "link", "close", "resolve", "drop", "reactivate"},
 }
 
 

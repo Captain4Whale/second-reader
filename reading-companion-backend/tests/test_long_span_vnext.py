@@ -11,13 +11,11 @@ from src.attentional_v2.benchmark_probes import (
 )
 from src.attentional_v2.observability import maybe_capture_memory_quality_probe
 from src.attentional_v2.schemas import (
-    build_empty_concept_registry,
     build_empty_local_buffer,
     build_empty_local_continuity,
     build_empty_reaction_records,
     build_empty_recent_reading_memory,
     build_empty_reflective_frames,
-    build_empty_thread_trace,
     build_empty_active_attention,
 )
 from src.attentional_v2.storage import initialize_artifact_tree, memory_quality_probe_export_file
@@ -230,8 +228,6 @@ def test_persist_due_memory_quality_probe_snapshots_emits_once_per_semantic_targ
         local_buffer=local_buffer,
         local_continuity=local_continuity,
         active_attention=build_empty_active_attention(),
-        concept_registry=build_empty_concept_registry(),
-        thread_trace=build_empty_thread_trace(),
         reflective_frames=build_empty_reflective_frames(),
         reaction_records=build_empty_reaction_records(),
     )
@@ -252,8 +248,6 @@ def test_persist_due_memory_quality_probe_snapshots_emits_once_per_semantic_targ
         local_buffer=local_buffer,
         local_continuity=local_continuity,
         active_attention=build_empty_active_attention(),
-        concept_registry=build_empty_concept_registry(),
-        thread_trace=build_empty_thread_trace(),
         reflective_frames=build_empty_reflective_frames(),
         reaction_records=build_empty_reaction_records(),
     )
@@ -268,8 +262,6 @@ def test_persist_due_memory_quality_probe_snapshots_emits_once_per_semantic_targ
         local_buffer=local_buffer,
         local_continuity=local_continuity,
         active_attention=build_empty_active_attention(),
-        concept_registry=build_empty_concept_registry(),
-        thread_trace=build_empty_thread_trace(),
         reflective_frames=build_empty_reflective_frames(),
         reaction_records=build_empty_reaction_records(),
     )
@@ -291,10 +283,6 @@ def test_source_native_memory_quality_probe_fires_by_source_cursor(tmp_path: Pat
     }
     active_attention = build_empty_active_attention()
     active_attention["active_items"] = [{"item_id": "active-a", "statement": "Alpha remains salient."}]
-    concept_registry = build_empty_concept_registry()
-    concept_registry["entries"] = [{"concept_key": "concept-a", "summary": "Alpha concept."}]
-    thread_trace = build_empty_thread_trace()
-    thread_trace["entries"] = [{"thread_key": "thread-a", "summary": "Alpha thread."}]
     reflective_frames = build_empty_reflective_frames()
     reflective_frames["chapter_understandings"] = [{"frame_id": "frame-a", "summary": "Alpha frame."}]
 
@@ -307,8 +295,6 @@ def test_source_native_memory_quality_probe_fires_by_source_cursor(tmp_path: Pat
         local_buffer=local_buffer,
         local_continuity=local_continuity,
         active_attention=active_attention,
-        concept_registry=concept_registry,
-        thread_trace=thread_trace,
         reflective_frames=reflective_frames,
         reaction_records=build_empty_reaction_records(),
         actual_source_span={
@@ -338,8 +324,6 @@ def test_source_native_memory_quality_probe_fires_by_source_cursor(tmp_path: Pat
     assert snapshot["recent_reading_orientation"]["current_source_span_id"] == "src:c1:p2@6-p2@13"
     assert snapshot["scoring_memory_state"]["active_attention"]["active_items"][0]["item_id"] == "active-a"
     assert snapshot["scoring_memory_state"]["recent_reading_memory"]["entries"] == []
-    assert snapshot["scoring_memory_state"]["concept_registry"]["entries"][0]["concept_key"] == "concept-a"
-    assert snapshot["scoring_memory_state"]["thread_trace"]["entries"][0]["thread_key"] == "thread-a"
     assert snapshot["scoring_memory_state"]["reflective_frames"]["chapter_understandings"][0]["frame_id"] == "frame-a"
     assert snapshot["projection_digest"]["active_attention_digest"] == snapshot["active_attention_digest"]
 
@@ -357,8 +341,6 @@ def test_source_native_memory_quality_probe_does_not_fall_back_to_sentence_thres
         local_buffer=build_empty_local_buffer(),
         local_continuity=build_empty_local_continuity(),
         active_attention=build_empty_active_attention(),
-        concept_registry=build_empty_concept_registry(),
-        thread_trace=build_empty_thread_trace(),
         reflective_frames=build_empty_reflective_frames(),
         reaction_records=build_empty_reaction_records(),
     )
@@ -402,8 +384,6 @@ def test_memory_quality_probe_observability_hook_is_disabled_by_default(tmp_path
         local_buffer=build_empty_local_buffer(),
         local_continuity=build_empty_local_continuity(),
         active_attention=build_empty_active_attention(),
-        concept_registry=build_empty_concept_registry(),
-        thread_trace=build_empty_thread_trace(),
         reflective_frames=build_empty_reflective_frames(),
         reaction_records=build_empty_reaction_records(),
     )
@@ -421,8 +401,6 @@ def test_memory_quality_probe_observability_hook_is_disabled_by_default(tmp_path
         local_buffer=build_empty_local_buffer(),
         local_continuity=build_empty_local_continuity(),
         active_attention=build_empty_active_attention(),
-        concept_registry=build_empty_concept_registry(),
-        thread_trace=build_empty_thread_trace(),
         reflective_frames=build_empty_reflective_frames(),
         reaction_records=build_empty_reaction_records(),
     )
@@ -444,8 +422,6 @@ def test_memory_quality_probe_observability_hook_captures_when_enabled(tmp_path:
         local_buffer=build_empty_local_buffer(),
         local_continuity=build_empty_local_continuity(),
         active_attention=build_empty_active_attention(),
-        concept_registry=build_empty_concept_registry(),
-        thread_trace=build_empty_thread_trace(),
         reflective_frames=build_empty_reflective_frames(),
         reaction_records=build_empty_reaction_records(),
     )
@@ -476,9 +452,7 @@ def test_memory_quality_probe_export_requires_explicit_targets(tmp_path: Path) -
             local_buffer=build_empty_local_buffer(),
             local_continuity=build_empty_local_continuity(),
             active_attention=build_empty_active_attention(),
-            concept_registry=build_empty_concept_registry(),
-            thread_trace=build_empty_thread_trace(),
-            reflective_frames=build_empty_reflective_frames(),
+                    reflective_frames=build_empty_reflective_frames(),
             reaction_records=build_empty_reaction_records(),
         )
     except ValueError as exc:
@@ -519,8 +493,7 @@ def test_memory_quality_judge_prompt_defines_score_scale(tmp_path: Path, monkeyp
             "read_so_far_source_text": "Alpha.",
             "memory_snapshot": {
                 "active_attention": {"active_items": [{"item_id": "alpha"}]},
-                "concept_registry": {"entries": []},
-                "thread_trace": {"entries": []},
+                "recent_reading_memory": {"entries": []},
                 "reflective_frames": {"chapter_understandings": []},
             },
             "memory_snapshot_basis": runner.MEMORY_SNAPSHOT_BASIS_FULL_STATE,
@@ -535,7 +508,7 @@ def test_memory_quality_judge_prompt_defines_score_scale(tmp_path: Path, monkeyp
 
     assert "Higher is better" in captured["system_prompt"]
     assert "complete probe-time memory state" in captured["system_prompt"]
-    assert "active_attention, recent_reading_memory, concept_registry, thread_trace, and reflective_frames" in captured["system_prompt"]
+    assert "active_attention, recent_reading_memory, and reflective_frames" in captured["system_prompt"]
     assert "legacy_digest_snapshot" in captured["system_prompt"]
     assert "1 = poor / absent" in captured["system_prompt"]
     assert "3 = adequate / useful" in captured["system_prompt"]
@@ -684,8 +657,6 @@ def test_memory_quality_judge_prefers_full_probe_time_memory_state() -> None:
             "scoring_memory_state": {
                 "active_attention": {"active_items": [{"item_id": "full-active"}]},
                 "recent_reading_memory": {"entries": [{"entry_id": "recent:c1:u0001:m1"}]},
-                "concept_registry": {"entries": [{"concept_key": "full-concept"}]},
-                "thread_trace": {"entries": [{"thread_key": "full-thread"}]},
                 "reflective_frames": {"chapter_understandings": [{"frame_id": "full-frame"}]},
             },
             "active_attention_digest": {"active_items": [{"item_id": "digest-only"}]},
@@ -919,8 +890,6 @@ def test_run_long_span_vnext_writes_separated_memory_and_reaction_outputs(tmp_pa
                         "scoring_memory_state": {
                             "active_attention": {"active_items": [{"item_id": "full-active"}]},
                             "recent_reading_memory": {"entries": [{"entry_id": "recent:c1:u0001:m1"}]},
-                            "concept_registry": {"entries": [{"concept_key": "full-concept"}]},
-                            "thread_trace": {"entries": [{"thread_key": "full-thread"}]},
                             "reflective_frames": {"chapter_understandings": [{"frame_id": "full-frame"}]},
                         },
                     }

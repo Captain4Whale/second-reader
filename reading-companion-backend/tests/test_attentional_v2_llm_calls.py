@@ -483,8 +483,8 @@ def test_memory_uptake_source_ref_normalization_repairs_malformed_ref_lists():
         [
             {
                 "op": "update",
-                "target_store": "concept_registry",
-                "target_key": "concept-1",
+                "target_store": "active_attention",
+                "target_key": "attention-1",
                 "payload": {
                     "summary": "The premise is now grounded.",
                     "source_quote": "The premise appears here.",

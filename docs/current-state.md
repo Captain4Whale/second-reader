@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-05-31T19:42:26+08:00`
+Last verified: `2026-06-01T08:46:04+08:00`
 
 ## Current Objective
 - Product goal and mechanism direction are being reset before further implementation.
@@ -27,6 +27,8 @@ Last verified: `2026-05-31T19:42:26+08:00`
     - `DEC-105` hard-purges the retired Detour / source-backread / source-skill compatibility interfaces from current `attentional_v2` code, prompts, schemas, audits, and tests
     - `DEC-106` clarifies the LLM-call/runtime boundary: LLM-call names should not include runner preparation or boundary governance
     - `DEC-107` replaces the old `Navigate` LLM identity with `Ingest`
+    - `DEC-108` renames the concrete current-unit LLM call from `Read` / `read_unit` to `Digest` and makes the XML Digest prompt the only live path
+    - `DEC-109` removes the old concept/thread structured long-memory stores from current live schemas, runtime artifacts, checkpoints, prompt projections, settlement, audits, tests, and stable-doc current surfaces
     - current `llm_calls.ingest(...)` is the forward-only XML LLM boundary call: exact `end_anchor_text`, `boundary_type`, and `reason`
     - current LLM-call code now lives in `reading-companion-backend/src/attentional_v2/llm_calls.py`; the old ambiguous active module name is removed
     - runtime next-unit preparation lives outside `Ingest` as `prepare_next_source_unit_for_read`: it prepares source preview/context, calls `Ingest`, performs anchor resolution/retry/fallback boundary governance, and hands the accepted source unit to `Digest`
@@ -43,7 +45,7 @@ Last verified: `2026-05-31T19:42:26+08:00`
   - next step:
     - continue with the new product-goal reframe from the now-forward-only `Ingest` baseline
     - use `docs/implementation/new-reading-mechanism/ingest-context-and-navigate-mapping.md` as the implementation reference for the landed first-slice `Ingest` XML context and for the remaining retrieval-request design gap
-    - next design work should define how `Ingest` requests memory retrieval for the selected next unit and how `Digest` turns the current unit into reader-facing notes / highlights
+    - next design work should define the content-neutral Unit Memory ledger/retrieval path, how `Ingest` requests memory retrieval for the selected next unit, and how `Digest` turns the current unit into reader-facing notes / highlights
     - do not run eval, update evidence catalog, or claim product quality from the Detour hard-purge slice
 - Historical concrete-node XML prompt / Recent Reading Memory full active diagnostic machine run has completed; post-run report is preserved for reference.
   - purpose:
@@ -89,8 +91,8 @@ Last verified: `2026-05-31T19:42:26+08:00`
     - only `active` entries are projected into subsequent Digest prompt packets
     - runtime persistence, checkpoint/resume carriage, settlement audit deltas, and Memory Quality full-state snapshots now include `recent_reading_memory`
   - explicit exclusions:
-    - consolidation into `concept_registry`, `thread_trace`, or `reflective_frames` is not implemented yet
-    - no nested `memory_points`, recent-to-recent links, candidate concept/thread links, default fine-grained `source_refs`, eval run, evidence catalog update, or product-quality claim is included
+    - consolidation into any long-distance memory ledger or reflective layer is not implemented yet
+    - no nested `memory_points`, recent-to-recent links, candidate typed long-memory links, default fine-grained `source_refs`, eval run, evidence catalog update, or product-quality claim is included
   - next step:
     - parked by `DEC-103`; do not design or implement the Recent Memory -> long-distance-memory consolidation pass as the next mechanism path unless a new ingest/digest feasibility audit explicitly re-adopts it
 - `reading_impression` overlaps with the new `recent_reading_memory` layer and should be cleaned up during a future reaction/Digest-contract tuning pass.
@@ -140,7 +142,7 @@ Last verified: `2026-05-31T19:42:26+08:00`
     - keep the runtime store key `active_attention` only until a replacement and removal plan is implemented
     - do not expand ActiveTension with new fields, metrics, report contracts, or evaluation authority
     - let current `recent_reading_memory` own near-term per-unit semantic memory
-    - let `thread_trace` inherit long-lived tensions, arcs, watchpoints, and unresolved pulls
+    - let future content-neutral unit memory and retrieval inherit long-lived tensions, arcs, watchpoints, and unresolved pulls
     - clean up `active_attention` after `recent_reading_memory` formation is validated, consolidation is designed, and a removal patch is explicitly approved
     - do not preserve old Active Attention state compatibility in new product runs unless a future task explicitly approves old-run migration / resume support
   - decision refs:
@@ -346,14 +348,14 @@ Last verified: `2026-05-31T19:42:26+08:00`
           - result:
             - `59` read-audit rows and `59` settlement-audit rows completed
             - `29 / 59` read units emitted memory ops, with `31` total ops
-            - target-store distribution: `active_attention = 12`, `concept_registry = 18`, `thread_trace = 1`
-            - settlement deltas materialized those ops into `active_attention`, `concept_registry`, and `thread_trace`; surfaced reactions were persisted with inline source refs
+            - target-store distribution included the deprecated active-attention store and the now-retired structured long-memory stores
+            - settlement deltas materialized those historical ops; surfaced reactions were persisted with inline source refs
           - diagnostic finding:
             - the earlier suspicion that the old concrete reading node emitted no `memory_uptake_ops` was not supported on that fresh run
-            - the concrete break was field-shape alignment for durable stores: old concrete reading-node output proposed concept/thread payloads in a shape that did not line up with the fields persisted by `state_ops`
+            - the concrete break was field-shape alignment for typed durable stores: old concrete reading-node output proposed structured payloads in a shape that did not line up with the fields persisted by `state_ops`
             - the current implementation has repaired the active schema path so memory ops normalize inline `source_refs[]` from unit-local source quotes before settlement
             - final `active_attention` dropping from `11` post-unit-settlement items to `4` runtime items is explained by chapter-end consolidation / cross-chapter carry-forward, not by per-unit settlement loss
-            - follow-up SourceRef smoke run `attentional_v2_source_ref_nawaer_smoke_20260506` proved the Digest -> settlement -> concept/thread/reaction/probe SourceRef chain, but exposed that `active_attention` source refs could be erased at chapter-end carry-forward
+            - follow-up SourceRef smoke run `attentional_v2_source_ref_nawaer_smoke_20260506` proved the Digest -> settlement -> memory/reaction/probe SourceRef chain, but exposed that `active_attention` source refs could be erased at chapter-end carry-forward
             - the current repair preserves carried `active_attention` source refs by deterministic `item_id` merge after cooling; `chapter_consolidation` still chooses what carries forward, but an omitted `source_refs` field no longer erases existing evidence coordinates
           - active verification job:
             - job id:
@@ -363,7 +365,7 @@ Last verified: `2026-05-31T19:42:26+08:00`
             - scope:
               - V2-only `nawaer_baodian_private_zh__segment_1`, `judge-mode none`
             - check:
-              - verify no `anchor_bank.json`, non-empty read/settlement/ledger rows, non-zero `memory_uptake_ops`, final `active_attention / concept_registry / thread_trace / reaction_records` source refs, and probe `source_ref_digest` without `anchor_bank_digest`
+              - verify no `anchor_bank.json`, non-empty read/settlement/ledger rows, non-zero `memory_uptake_ops`, final memory / reaction source refs, and probe `source_ref_digest` without `anchor_bank_digest`
           - next implementation target:
             - if the active `nawaer` SourceRef repair smoke passes, run focused `huochu` before spending a full all-window rerun
         - current probe plan:
@@ -613,34 +615,25 @@ Last verified: `2026-05-31T19:42:26+08:00`
       - `active focus` digest
       - `source_ref` digest
     - persisted runtime files and public compatibility surfaces remain unchanged
-  - `Phase C.2` is now landed as the first state-territory slice:
-    - live state packets now derive a bounded `concept_digest` from the current `motif_index + unresolved_reference_index`
-    - live state packets now derive a bounded `thread_digest` from the current `trace_links + unresolved_reference_index`
-    - historical `Navigate.unitize` and the then-current concrete reading node both received those small concept/thread digests through the packet layer
-    - persisted runtime files and public compatibility surfaces still remain unchanged
-  - `Phase C.3` is now landed as the direct main-state cutover:
-    - new runs now treat `active_attention / concept_registry / thread_trace / reflective_frames` plus inline `source_refs[]` as the primary runtime and checkpoint truth
-    - the old V2 state stores were demoted to cutover-only legacy territory
+  - `Phase C.2` and `Phase C.3` are now historical state-territory experiments, superseded by `DEC-109`:
+    - those slices experimented with bounded content-typed long-memory digests and direct structured long-memory runtime stores
+    - current live code no longer exposes those retired concept/thread structured stores in schema, prompt packets, runtime artifacts, checkpoints, settlement, audit, or tests
+    - current long-memory direction is a content-neutral unit-memory baseline; the ledger and retrieval design are deferred
     - old supplemental retrieval helpers from that branch were removed from the current code surface by `DEC-105`; future `Ingest` retrieval is a separate design task
-    - the then-current concrete reading node introduced explicit memory-update operations, then called `implicit_uptake`, into:
-      - `active_attention`
-      - `concept_registry`
-      - `thread_trace`
-      - inline `source_refs[]`
-      - `knowledge_activations`
+    - the then-current concrete reading node introduced explicit memory-update operations, then called `implicit_uptake`, before the current Digest contract narrowed live memory output back to Recent Reading Memory
     - checkpoint/resume temporarily accepted both old and new state territory during the cutover, while newly written checkpoints already used only the new primary keys
     - public/frontend compatibility surfaces remain unchanged
   - `Phase C.4` is now landed as the helper-contract cutover and legacy-state retirement slice:
-    - sentence-intake now consumes `active_attention / concept_registry / thread_trace` directly
+    - sentence-intake from that slice previously consumed the structured stores directly; that structured-memory path is now removed from current live code by `DEC-109`
     - the old Anchor Bank relation-writing Bridge path is paused after the SourceRef cutover
-    - chapter slow-cycle now consumes and writes `active_attention / concept_registry / thread_trace / reflective_frames` plus inline source refs directly
+    - chapter slow-cycle no longer consumes or writes the retired structured long-memory stores
     - the live runner no longer projects new state into old V2 helper stores for execution
     - live runtime loading and resume now reject pre-`Phase C.3` runtime directories and checkpoints with explicit unsupported-format errors
     - public/frontend compatibility surfaces remain unchanged
   - legacy gate/pressure sidecar cleanup is now landed:
     - `active_attention.active_items[]` is the current hot-state contract
     - `attention_tags[]` are lightweight labels on active items; old fixed hot-state lists are historical only
-    - residual `local_hypothesis` / `live_hypotheses` vocabulary is historical provenance only; current hypothesis-like material is a tagged `active_attention` item or, once stable, a `concept_registry` / `thread_trace` memory
+    - residual `local_hypothesis` / `live_hypotheses` vocabulary is historical provenance only; future hypothesis-like material should be represented through content-neutral unit memory rather than the retired typed stores
     - old `gate_state`, `pressure_snapshot`, and working-pressure runtime artifacts are no longer schema, prompt, runtime, checkpoint, or Memory Quality evidence fields
     - old `pressure_signals` were removed with the forward-settlement cutover; current `Digest` emits only reading impression, surfaced reactions, and LLM-facing Recent Reading Memory
   - `Phase D` is now landed as the continuity / recall / resume polish slice:
@@ -1021,9 +1014,9 @@ Last verified: `2026-05-31T19:42:26+08:00`
     - keep `Phase A` as the landed control-skeleton baseline
     - keep `Phase B` as the landed concrete reading-node context baseline under the existing `attentional_v2` key
     - keep `Phase C.1` as the landed packetization seam
-    - keep `Phase C.2` as the landed first state-territory slice where concept/thread digests now enter the live packet path
-    - keep `Phase C.3` as the landed main-state cutover where the new semantic layers now own runtime/checkpoint truth
-    - keep `Phase C.4` as the landed helper-contract cutover where sentence-intake / bridge / slow-cycle now execute directly on new-state ownership and live runtime/resume reject old-format state
+    - treat `Phase C.2` and `Phase C.3` structured long-memory work as historical after `DEC-109`; the current live packet path no longer carries those typed digests or stores
+    - keep the remaining current semantic layers as the runtime/checkpoint truth
+    - keep `Phase C.4` as historical helper-contract evidence; live runtime/resume now reject old-format state and no longer execute the retired structured-store helper path
     - keep `Phase D` as landed intermediate continuity / recall / resume evidence:
       - continuation capsule persistence now supports checkpoint/runtime continuity
       - warm resume now restores the latest usable continuation capsule together with new-format runtime state

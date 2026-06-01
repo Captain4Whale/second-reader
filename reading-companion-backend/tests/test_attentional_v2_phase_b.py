@@ -8,7 +8,6 @@ from src.attentional_v2 import llm_calls as llm_calls_module
 from src.attentional_v2 import runner as runner_module
 from src.attentional_v2.llm_calls import digest
 from src.attentional_v2.schemas import (
-    build_empty_anchor_memory,
     build_empty_knowledge_activations,
     build_empty_local_buffer,
     build_empty_reaction_records,
@@ -17,10 +16,7 @@ from src.attentional_v2.schemas import (
     build_empty_active_attention,
 )
 from src.attentional_v2.state_projection import build_carry_forward_context
-from src.attentional_v2.state_migration import (
-    migrate_anchor_memory_to_new_layers,
-    migrate_reflective_summaries_to_frames,
-)
+from src.attentional_v2.state_migration import migrate_reflective_summaries_to_frames
 from src.attentional_v2.storage import read_audit_file
 from src.reading_mechanisms.attentional_v2 import AttentionalV2Mechanism
 
@@ -63,24 +59,6 @@ def _book_document() -> dict[str, object]:
                 ],
             }
         ],
-    }
-
-
-def _anchor_record(anchor_id: str, sentence_id: str, quote: str) -> dict[str, object]:
-    return {
-        "anchor_id": anchor_id,
-        "sentence_start_id": sentence_id,
-        "sentence_end_id": sentence_id,
-        "quote": quote,
-        "anchor_kind": "unit_evidence",
-        "why_it_mattered": "Earlier line remained relevant.",
-        "status": "active",
-        "locator": {},
-        "created_at": "2026-04-12T00:00:00Z",
-        "updated_at": "2026-04-12T00:00:00Z",
-        "times_referenced": 0,
-        "source_passage_id": "",
-        "tags": [],
     }
 
 
@@ -141,12 +119,6 @@ def test_digest_projects_compact_packet_and_returns_f1_surface_contract(tmp_path
         }
     ]
 
-    anchor_memory = build_empty_anchor_memory()
-    anchor_memory["anchor_records"] = [_anchor_record("a-1", "c1-s1", "Alpha sentence.")]
-    anchor_memory["motif_index"] = {"promise": ["a-1"]}
-    anchor_memory["trace_links"] = {"a-1": ["a-1"]}
-    anchor_bank, concept_registry, thread_trace = migrate_anchor_memory_to_new_layers(anchor_memory)
-
     reflective_summaries = build_empty_reflective_summaries()
     reflective_summaries["chapter_understandings"] = [
         {
@@ -166,7 +138,7 @@ def test_digest_projects_compact_packet_and_returns_f1_surface_contract(tmp_path
             "type": "highlight",
             "thought": "The first line already carries pressure.",
             "emitted_at_sentence_id": "c1-s1",
-            "primary_anchor": {"anchor_id": "a-1", "quote": "Alpha sentence."},
+        "primary_anchor": {"anchor_id": "a-1", "quote": "Alpha sentence."},
         }
     ]
 
@@ -175,10 +147,7 @@ def test_digest_projects_compact_packet_and_returns_f1_surface_contract(tmp_path
         current_unit_sentence_ids=["c1-s2"],
         local_buffer=local_buffer,
         active_attention=active_attention,
-        concept_registry=concept_registry,
-        thread_trace=thread_trace,
         reflective_frames=reflective_frames,
-        anchor_memory=anchor_memory,
         reflective_summaries=reflective_summaries,
         reaction_records=reaction_records,
     )
@@ -213,7 +182,6 @@ def test_digest_projects_compact_packet_and_returns_f1_surface_contract(tmp_path
     assert "The previous unit" not in captured["prompt"]
     assert "Alpha sentence." not in captured["prompt"]
     assert "\"active_tensions\"" not in captured["prompt"]
-    assert "\"concept_key\": \"promise\"" not in captured["prompt"]
     assert "\"earlier_excerpts\"" not in captured["prompt"]
     assert "\"refs\": [" not in captured["prompt"]
     assert manifest["node_name"] == "digest"
@@ -231,9 +199,6 @@ def test_run_digest_for_source_unit_reads_once_and_persists_read_cycle_audit(tmp
     AttentionalV2Mechanism().initialize_artifacts(output_dir)
     book_document = _book_document()
     chapter = book_document["chapters"][0]
-    anchor_memory = build_empty_anchor_memory()
-    anchor_memory["anchor_records"].append(_anchor_record("a-1", "c1-s1", "Alpha sentence."))
-    anchor_bank, concept_registry, thread_trace = migrate_anchor_memory_to_new_layers(anchor_memory)
     reflective_frames = migrate_reflective_summaries_to_frames(build_empty_reflective_summaries())
     calls: list[dict[str, object]] = []
 
@@ -280,8 +245,6 @@ def test_run_digest_for_source_unit_reads_once_and_persists_read_cycle_audit(tmp
         continuation_capsule={},
         active_attention=build_empty_active_attention(),
         recent_reading_memory=build_empty_recent_reading_memory(),
-        concept_registry=concept_registry,
-        thread_trace=thread_trace,
         reflective_frames=reflective_frames,
         knowledge_activations=build_empty_knowledge_activations(),
         reaction_records=build_empty_reaction_records(),

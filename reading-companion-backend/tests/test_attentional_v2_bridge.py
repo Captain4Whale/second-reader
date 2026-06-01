@@ -11,9 +11,7 @@ from src.attentional_v2.retrieval import generate_candidate_set
 from src.attentional_v2.schemas import (
     build_default_reader_policy,
     build_empty_anchor_bank,
-    build_empty_concept_registry,
     build_empty_knowledge_activations,
-    build_empty_thread_trace,
     build_empty_active_attention,
 )
 from src.reading_mechanisms.attentional_v2 import AttentionalV2Mechanism
@@ -303,8 +301,6 @@ def test_run_phase5_bridge_cycle_materializes_anchor_state(monkeypatch):
         ],
         candidate_set=_candidate_set(),
         active_attention=build_empty_active_attention(),
-        concept_registry=build_empty_concept_registry(),
-        thread_trace=build_empty_thread_trace(),
         anchor_bank=build_empty_anchor_bank(),
         knowledge_activations=build_empty_knowledge_activations(),
         reader_policy=build_default_reader_policy(),
@@ -313,8 +309,6 @@ def test_run_phase5_bridge_cycle_materializes_anchor_state(monkeypatch):
         unresolved_reference_keys=["value shift"],
     )
 
-    current_anchor_id = "anchor:c1-s3:c1-s3"
-
     assert result["bridge_result"]["decision"] == "bridge"
     assert result["knowledge_activations"]["knowledge_use_mode"] == "book_grounded_plus_prior_knowledge"
     assert result["knowledge_activations"]["search_policy_mode"] == "no_search"
@@ -322,5 +316,3 @@ def test_run_phase5_bridge_cycle_materializes_anchor_state(monkeypatch):
     assert result["active_attention"]["active_items"][0]["attention_tags"] == ["motif"]
     assert len(result["anchor_bank"]["anchor_records"]) == 2
     assert result["anchor_bank"]["anchor_relations"][0]["relation_type"] == "callback"
-    assert {entry["concept_key"] for entry in result["concept_registry"]["entries"]} == {"relation", "value shift"}
-    assert result["thread_trace"]["entries"][0]["thread_key"] == f"trace:{current_anchor_id}"

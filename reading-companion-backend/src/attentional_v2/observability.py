@@ -18,7 +18,6 @@ from .benchmark_probes import (
 from .schemas import (
     ActiveAttention,
     CarryForwardContext,
-    ConceptRegistryState,
     FullCheckpointState,
     LocalBufferState,
     LocalContinuityState,
@@ -26,7 +25,6 @@ from .schemas import (
     ReaderPolicy,
     RecentReadingMemoryState,
     ReflectiveFramesState,
-    ThreadTraceState,
     UnitizeDecision,
 )
 from .state_projection import context_ref_ids
@@ -36,8 +34,6 @@ _MISSING_TARGET_STORE_WARNING = "missing_target_store_defaulted"
 _SETTLED_STORE_ID_KEYS = {
     "active_attention": "item_id",
     "recent_reading_memory": "entry_id",
-    "concept_registry": "concept_key",
-    "thread_trace": "thread_key",
 }
 _OUTCOME_BASIS = "audit_observed_inferred_from_compact_state_delta"
 
@@ -220,10 +216,6 @@ def _operation_target_identifier(operation: Mapping[str, object], effective_targ
     explicit_id = _clean_text(operation.get("target_key") or operation.get("item_id"))
     if explicit_id:
         return explicit_id
-    if effective_target_store == "concept_registry":
-        return _clean_text(payload.get("concept_key"))
-    if effective_target_store == "thread_trace":
-        return _clean_text(payload.get("thread_key"))
     if effective_target_store == "recent_reading_memory":
         return _clean_text(payload.get("entry_id")) or explicit_id
     return _clean_text(payload.get("item_id"))
@@ -428,10 +420,6 @@ def record_settlement(
     after_active_attention: ActiveAttention,
     before_recent_reading_memory: RecentReadingMemoryState | None = None,
     after_recent_reading_memory: RecentReadingMemoryState | None = None,
-    before_concept_registry: ConceptRegistryState,
-    after_concept_registry: ConceptRegistryState,
-    before_thread_trace: ThreadTraceState,
-    after_thread_trace: ThreadTraceState,
     before_reaction_records: ReactionRecordsState,
     after_reaction_records: ReactionRecordsState,
     emitted_reaction_ids: list[str] | None = None,
@@ -453,16 +441,6 @@ def record_settlement(
             (before_recent_reading_memory or {}).get("entries", []),
             (after_recent_reading_memory or {}).get("entries", []),
             id_key="entry_id",
-        ),
-        "concept_registry": _id_delta(
-            before_concept_registry.get("entries", []),
-            after_concept_registry.get("entries", []),
-            id_key="concept_key",
-        ),
-        "thread_trace": _id_delta(
-            before_thread_trace.get("entries", []),
-            after_thread_trace.get("entries", []),
-            id_key="thread_key",
         ),
         "reaction_records": {
             **_id_delta(
@@ -511,8 +489,6 @@ def maybe_capture_memory_quality_probe(
     local_continuity: LocalContinuityState,
     active_attention: ActiveAttention,
     recent_reading_memory: RecentReadingMemoryState | None = None,
-    concept_registry: ConceptRegistryState,
-    thread_trace: ThreadTraceState,
     reflective_frames: ReflectiveFramesState,
     reaction_records: ReactionRecordsState,
     actual_source_span: dict[str, object] | None = None,
@@ -532,8 +508,6 @@ def maybe_capture_memory_quality_probe(
         local_continuity=local_continuity,
         active_attention=active_attention,
         recent_reading_memory=recent_reading_memory or {},
-        concept_registry=concept_registry,
-        thread_trace=thread_trace,
         reflective_frames=reflective_frames,
         reaction_records=reaction_records,
         actual_source_span=actual_source_span,
@@ -590,8 +564,6 @@ def _checkpoint_state_counts(checkpoint: FullCheckpointState) -> dict[str, int]:
     """Return compact checkpoint counts that are useful for debug forensics."""
 
     local_buffer = checkpoint.get("local_buffer", {})
-    concept_registry = checkpoint.get("concept_registry", {})
-    thread_trace = checkpoint.get("thread_trace", {})
     reflective_frames = checkpoint.get("reflective_frames", {}) or checkpoint.get("reflective_summaries", {})
     knowledge_activations = checkpoint.get("knowledge_activations", {})
     reaction_records = checkpoint.get("reaction_records", {})
@@ -599,8 +571,6 @@ def _checkpoint_state_counts(checkpoint: FullCheckpointState) -> dict[str, int]:
     return {
         "recent_sentence_count": len(local_buffer.get("recent_sentences", [])),
         "open_meaning_unit_sentence_count": len(local_buffer.get("open_meaning_unit_sentence_ids", [])),
-        "concept_count": len(concept_registry.get("entries", [])),
-        "thread_count": len(thread_trace.get("entries", [])),
         "reflective_item_count": len(reflective_frames.get("chapter_understandings", [])),
         "activation_count": len(knowledge_activations.get("activations", [])),
         "reaction_count": len(reaction_records.get("records", [])),

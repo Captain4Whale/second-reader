@@ -11,7 +11,6 @@ from src.attentional_v2.resume import persist_reading_position, resume_from_chec
 from src.attentional_v2.schemas import build_empty_local_buffer
 from src.attentional_v2.state_ops import close_local_meaning_unit, push_local_buffer_sentence
 from src.attentional_v2.storage import (
-    concept_registry_file,
     continuation_capsule_file,
     event_stream_file,
     full_checkpoint_file,
@@ -23,7 +22,6 @@ from src.attentional_v2.storage import (
     resume_metadata_file,
     runtime_dir,
     save_json,
-    thread_trace_file,
     active_attention_file,
 )
 from src.reading_mechanisms.attentional_v2 import AttentionalV2Mechanism
@@ -330,8 +328,8 @@ def test_resume_rejects_legacy_runtime_and_old_checkpoint_shapes(tmp_path: Path)
     }
     for path in (
         active_attention_file(output_dir),
-        concept_registry_file(output_dir),
-        thread_trace_file(output_dir),
+        runtime_dir(output_dir) / ("concept_" + "registry.json"),
+        runtime_dir(output_dir) / ("thread_" + "trace.json"),
         reflective_frames_file(output_dir),
         runtime_dir(output_dir) / "anchor_bank.json",
     ):

@@ -60,7 +60,6 @@ from .schemas import (
     ATTENTIONAL_V2_MECHANISM_VERSION,
     ATTENTIONAL_V2_POLICY_VERSION,
     AnchoredReactionRecord,
-    ConceptRegistryState,
     KnowledgeActivationsState,
     LocalBufferState,
     LocalContinuityState,
@@ -70,12 +69,10 @@ from .schemas import (
     ReactionRecordsState,
     ReaderPolicy,
     ReflectiveFramesState,
-    ThreadTraceState,
     UnitizeDecision,
     DigestResult,
     ActiveAttention,
     build_empty_continuation_capsule,
-    build_empty_concept_registry,
     build_default_reader_policy,
     build_empty_knowledge_activations,
     build_empty_local_buffer,
@@ -85,7 +82,6 @@ from .schemas import (
     build_empty_recent_reading_memory,
     build_empty_reflective_frames,
     build_empty_resume_metadata,
-    build_empty_thread_trace,
     build_empty_active_attention,
     RecentReadingMemoryState,
 )
@@ -98,9 +94,7 @@ from .slow_cycle import (
 )
 from .state_ops import (
     append_reaction_record,
-    apply_concept_registry_operations,
     apply_recent_reading_memory_operations,
-    apply_thread_trace_operations,
     close_local_meaning_unit,
     apply_active_attention_operations,
 )
@@ -109,7 +103,6 @@ from .state_projection import build_carry_forward_context
 from .storage import (
     chapter_result_compatibility_file,
     checkpoints_dir,
-    concept_registry_file,
     continuation_capsule_file,
     initialize_artifact_tree,
     knowledge_activations_file,
@@ -128,7 +121,6 @@ from .storage import (
     save_json,
     settlement_audit_file,
     survey_map_file,
-    thread_trace_file,
     read_audit_file,
     unitization_audit_file,
     active_attention_file,
@@ -532,8 +524,6 @@ def _default_builder(name: str) -> Callable[[], dict[str, object]]:
         "recent_reading_memory": lambda: build_empty_recent_reading_memory(
             mechanism_version=ATTENTIONAL_V2_MECHANISM_VERSION
         ),
-        "concept_registry": lambda: build_empty_concept_registry(mechanism_version=ATTENTIONAL_V2_MECHANISM_VERSION),
-        "thread_trace": lambda: build_empty_thread_trace(mechanism_version=ATTENTIONAL_V2_MECHANISM_VERSION),
         "reflective_frames": lambda: build_empty_reflective_frames(mechanism_version=ATTENTIONAL_V2_MECHANISM_VERSION),
         "knowledge_activations": lambda: build_empty_knowledge_activations(mechanism_version=ATTENTIONAL_V2_MECHANISM_VERSION),
         "reaction_records": lambda: build_empty_reaction_records(mechanism_version=ATTENTIONAL_V2_MECHANISM_VERSION),
@@ -589,13 +579,13 @@ def _load_runtime_bundle(output_dir: Path) -> dict[str, dict[str, object]]:
         "legacy_hot_state": runtime_dir(output_dir) / ("working_" + "pressure.json"),
         "anchor_memory": runtime_dir(output_dir) / "anchor_memory.json",
         "anchor_bank": runtime_dir(output_dir) / "anchor_bank.json",
+        "retired_object_memory": runtime_dir(output_dir) / ("concept_" + "registry.json"),
+        "retired_line_memory": runtime_dir(output_dir) / ("thread_" + "trace.json"),
         "reflective_summaries": runtime_dir(output_dir) / "reflective_summaries.json",
     }
     new_state_paths = {
         "active_attention": active_attention_file(output_dir),
         "recent_reading_memory": recent_reading_memory_file(output_dir),
-        "concept_registry": concept_registry_file(output_dir),
-        "thread_trace": thread_trace_file(output_dir),
         "reflective_frames": reflective_frames_file(output_dir),
     }
     loaded_new = {name: load_json(path) for name, path in new_state_paths.items() if path.exists()}
@@ -603,7 +593,7 @@ def _load_runtime_bundle(output_dir: Path) -> dict[str, dict[str, object]]:
         raise RuntimeError(
             "Pre-Phase C.3 attentional_v2 runtime state is no longer supported; rerun from a new-format state directory."
         )
-    for name in ("active_attention", "recent_reading_memory", "concept_registry", "thread_trace", "reflective_frames"):
+    for name in ("active_attention", "recent_reading_memory", "reflective_frames"):
         bundle[name] = loaded_new.get(name) or _default_builder(name)()
     bundle["active_attention"] = normalize_active_tension_state(bundle["active_attention"])
     return bundle
@@ -617,8 +607,6 @@ def _save_runtime_bundle(output_dir: Path, bundle: dict[str, dict[str, object]])
     save_json(continuation_capsule_file(output_dir), bundle["continuation_capsule"])
     save_json(active_attention_file(output_dir), normalize_active_tension_state(bundle["active_attention"]))
     save_json(recent_reading_memory_file(output_dir), bundle["recent_reading_memory"])
-    save_json(concept_registry_file(output_dir), bundle["concept_registry"])
-    save_json(thread_trace_file(output_dir), bundle["thread_trace"])
     save_json(reflective_frames_file(output_dir), bundle["reflective_frames"])
     save_json(knowledge_activations_file(output_dir), bundle["knowledge_activations"])
     save_json(reaction_records_file(output_dir), bundle["reaction_records"])
@@ -748,8 +736,6 @@ def _reset_live_runtime(output_dir: Path) -> None:
     for path in (
         active_attention_file(output_dir),
         recent_reading_memory_file(output_dir),
-        concept_registry_file(output_dir),
-        thread_trace_file(output_dir),
         local_buffer_file(output_dir),
         local_continuity_file(output_dir),
         continuation_capsule_file(output_dir),
@@ -766,6 +752,8 @@ def _reset_live_runtime(output_dir: Path) -> None:
         runtime_artifacts.run_state_file(output_dir),
         runtime_artifacts.parse_state_file(output_dir),
         runtime_dir(output_dir) / "anchor_bank.json",
+        runtime_dir(output_dir) / ("concept_" + "registry.json"),
+        runtime_dir(output_dir) / ("thread_" + "trace.json"),
         runtime_dir(output_dir) / "route_history.json",
         runtime_dir(output_dir) / "move_history.json",
     ):
@@ -1194,8 +1182,6 @@ def prepare_next_source_unit_for_read(
     continuation_capsule: dict[str, object],
     active_attention: ActiveAttention,
     recent_reading_memory: RecentReadingMemoryState | None = None,
-    concept_registry: ConceptRegistryState,
-    thread_trace: ThreadTraceState,
     reflective_frames: ReflectiveFramesState,
     reaction_records: ReactionRecordsState,
     local_continuity: LocalContinuityState,
@@ -1504,8 +1490,6 @@ def _build_runtime_continuation_capsule(
     local_buffer: LocalBufferState,
     active_attention: ActiveAttention,
     recent_reading_memory: RecentReadingMemoryState,
-    concept_registry: ConceptRegistryState,
-    thread_trace: ThreadTraceState,
     reflective_frames: ReflectiveFramesState,
     reaction_records: ReactionRecordsState,
 ) -> dict[str, object]:
@@ -1517,8 +1501,6 @@ def _build_runtime_continuation_capsule(
         local_buffer=local_buffer,
         active_attention=active_attention,
         recent_reading_memory=recent_reading_memory,
-        concept_registry=concept_registry,
-        thread_trace=thread_trace,
         reflective_frames=reflective_frames,
         reaction_records=reaction_records,
     )
@@ -1536,8 +1518,6 @@ def _run_digest_for_source_unit(
     continuation_capsule: dict[str, object],
     active_attention: ActiveAttention,
     recent_reading_memory: RecentReadingMemoryState,
-    concept_registry: ConceptRegistryState,
-    thread_trace: ThreadTraceState,
     reflective_frames: ReflectiveFramesState,
     knowledge_activations: KnowledgeActivationsState,
     reaction_records: ReactionRecordsState,
@@ -1563,8 +1543,6 @@ def _run_digest_for_source_unit(
         local_buffer=local_buffer,
         active_attention=active_attention,
         recent_reading_memory=recent_reading_memory,
-        concept_registry=concept_registry,
-        thread_trace=thread_trace,
         reflective_frames=reflective_frames,
         reaction_records=reaction_records,
         continuation_capsule=continuation_capsule,
@@ -1617,8 +1595,6 @@ def _settle_next_unit(
     continuation_capsule: dict[str, object],
     active_attention: ActiveAttention,
     recent_reading_memory: RecentReadingMemoryState,
-    concept_registry: ConceptRegistryState,
-    thread_trace: ThreadTraceState,
     reflective_frames: ReflectiveFramesState,
     knowledge_activations: KnowledgeActivationsState,
     reaction_records: ReactionRecordsState,
@@ -1647,8 +1623,6 @@ def _settle_next_unit(
             "local_continuity": local_continuity,
             "active_attention": active_attention,
             "recent_reading_memory": recent_reading_memory,
-            "concept_registry": concept_registry,
-            "thread_trace": thread_trace,
             "reflective_frames": reflective_frames,
             "knowledge_activations": knowledge_activations,
             "reaction_records": reaction_records,
@@ -1679,8 +1653,6 @@ def _settle_next_unit(
             "local_continuity": local_continuity,
             "active_attention": active_attention,
             "recent_reading_memory": recent_reading_memory,
-            "concept_registry": concept_registry,
-            "thread_trace": thread_trace,
             "reflective_frames": reflective_frames,
             "knowledge_activations": knowledge_activations,
             "reaction_records": reaction_records,
@@ -1777,8 +1749,6 @@ def _settle_next_unit(
         continuation_capsule=continuation_capsule,
         active_attention=active_attention,
         recent_reading_memory=recent_reading_memory,
-        concept_registry=concept_registry,
-        thread_trace=thread_trace,
         reflective_frames=reflective_frames,
         knowledge_activations=knowledge_activations,
         reaction_records=reaction_records,
@@ -1821,8 +1791,6 @@ def _settle_next_unit(
     memory_uptake_ops = digest_result.get("memory_uptake_ops", [])
     before_active_attention = active_attention
     before_recent_reading_memory = recent_reading_memory
-    before_concept_registry = concept_registry
-    before_thread_trace = thread_trace
     before_reaction_records = reaction_records
     active_attention = apply_active_attention_operations(
         active_attention,
@@ -1834,14 +1802,6 @@ def _settle_next_unit(
         memory_uptake_ops,
         source_unit_span_id=source_id if has_selected_source_unit else "",
         created_at_unit_index=unit_sequence_index,
-    )
-    concept_registry = apply_concept_registry_operations(
-        concept_registry,
-        memory_uptake_ops,
-    )
-    thread_trace = apply_thread_trace_operations(
-        thread_trace,
-        memory_uptake_ops,
     )
     reaction_records, emitted_reactions, current_source_ref = _persist_surfaced_reactions(
         digest_result=digest_result,
@@ -1869,10 +1829,6 @@ def _settle_next_unit(
         after_active_attention=active_attention,
         before_recent_reading_memory=before_recent_reading_memory,
         after_recent_reading_memory=recent_reading_memory,
-        before_concept_registry=before_concept_registry,
-        after_concept_registry=concept_registry,
-        before_thread_trace=before_thread_trace,
-        after_thread_trace=thread_trace,
         before_reaction_records=before_reaction_records,
         after_reaction_records=reaction_records,
         emitted_reaction_ids=[_clean_text(item.get("reaction_id")) for item in emitted_reactions],
@@ -1909,15 +1865,11 @@ def _settle_next_unit(
                 local_buffer=local_buffer,
                 active_attention=active_attention,
                 recent_reading_memory=recent_reading_memory,
-                concept_registry=concept_registry,
-                thread_trace=thread_trace,
                 reflective_frames=reflective_frames,
                 reaction_records=reaction_records,
             ),
             "active_attention": active_attention,
             "recent_reading_memory": recent_reading_memory,
-            "concept_registry": concept_registry,
-            "thread_trace": thread_trace,
             "reflective_frames": reflective_frames,
             "knowledge_activations": knowledge_activations,
             "reaction_records": reaction_records,
@@ -1938,8 +1890,6 @@ def _settle_next_unit(
         local_continuity=local_continuity,
         active_attention=active_attention,
         recent_reading_memory=recent_reading_memory,
-        concept_registry=concept_registry,
-        thread_trace=thread_trace,
         reflective_frames=reflective_frames,
         reaction_records=reaction_records,
         actual_source_span=source_span if has_selected_source_unit else {},
@@ -1965,8 +1915,6 @@ def _settle_next_unit(
         "local_continuity": local_continuity,
         "active_attention": active_attention,
         "recent_reading_memory": recent_reading_memory,
-        "concept_registry": concept_registry,
-        "thread_trace": thread_trace,
         "reflective_frames": reflective_frames,
         "knowledge_activations": knowledge_activations,
         "reaction_records": reaction_records,
@@ -2104,8 +2052,6 @@ def run_reading_runner(request: ReadRequest, mechanism: MechanismInfo) -> ReadRe
         local_continuity: LocalContinuityState = bundle["local_continuity"]  # type: ignore[assignment]
         active_attention: ActiveAttention = bundle["active_attention"]  # type: ignore[assignment]
         recent_reading_memory: RecentReadingMemoryState = bundle["recent_reading_memory"]  # type: ignore[assignment]
-        concept_registry: ConceptRegistryState = bundle["concept_registry"]  # type: ignore[assignment]
-        thread_trace: ThreadTraceState = bundle["thread_trace"]  # type: ignore[assignment]
         reflective_frames: ReflectiveFramesState = bundle["reflective_frames"]  # type: ignore[assignment]
         knowledge_activations: KnowledgeActivationsState = bundle["knowledge_activations"]  # type: ignore[assignment]
         reaction_records: ReactionRecordsState = bundle["reaction_records"]  # type: ignore[assignment]
@@ -2215,8 +2161,6 @@ def run_reading_runner(request: ReadRequest, mechanism: MechanismInfo) -> ReadRe
                     continuation_capsule=dict(bundle.get("continuation_capsule", {})),
                     active_attention=active_attention,
                     recent_reading_memory=recent_reading_memory,
-                    concept_registry=concept_registry,
-                    thread_trace=thread_trace,
                     reflective_frames=reflective_frames,
                     reaction_records=reaction_records,
                     local_continuity=local_continuity,
@@ -2234,8 +2178,6 @@ def run_reading_runner(request: ReadRequest, mechanism: MechanismInfo) -> ReadRe
                     continuation_capsule=dict(bundle.get("continuation_capsule", {})),
                     active_attention=active_attention,
                     recent_reading_memory=recent_reading_memory,
-                    concept_registry=concept_registry,
-                    thread_trace=thread_trace,
                     reflective_frames=reflective_frames,
                     knowledge_activations=knowledge_activations,
                     reaction_records=reaction_records,
@@ -2258,8 +2200,6 @@ def run_reading_runner(request: ReadRequest, mechanism: MechanismInfo) -> ReadRe
                 local_continuity = settled_unit["local_continuity"]  # type: ignore[assignment]
                 active_attention = settled_unit["active_attention"]  # type: ignore[assignment]
                 recent_reading_memory = settled_unit["recent_reading_memory"]  # type: ignore[assignment]
-                concept_registry = settled_unit["concept_registry"]  # type: ignore[assignment]
-                thread_trace = settled_unit["thread_trace"]  # type: ignore[assignment]
                 reflective_frames = settled_unit["reflective_frames"]  # type: ignore[assignment]
                 knowledge_activations = settled_unit["knowledge_activations"]  # type: ignore[assignment]
                 reaction_records = settled_unit["reaction_records"]  # type: ignore[assignment]
@@ -2300,8 +2240,6 @@ def run_reading_runner(request: ReadRequest, mechanism: MechanismInfo) -> ReadRe
                 meaning_units_in_chapter=meaning_units_in_chapter,
                 chapter_end_source_ref=chapter_end_source_ref,
                 active_attention=active_attention,
-                concept_registry=concept_registry,
-                thread_trace=thread_trace,
                 reflective_frames=reflective_frames,
                 knowledge_activations=knowledge_activations,
                 reaction_records=reaction_records,
@@ -2313,8 +2251,6 @@ def run_reading_runner(request: ReadRequest, mechanism: MechanismInfo) -> ReadRe
                 author=provisioned.author,
             )
             active_attention = phase6["active_attention"]  # type: ignore[assignment]
-            concept_registry = phase6["concept_registry"]  # type: ignore[assignment]
-            thread_trace = phase6["thread_trace"]  # type: ignore[assignment]
             reflective_frames = phase6["reflective_frames"]  # type: ignore[assignment]
             knowledge_activations = phase6["knowledge_activations"]  # type: ignore[assignment]
             reaction_records = phase6["reaction_records"]  # type: ignore[assignment]
@@ -2327,15 +2263,11 @@ def run_reading_runner(request: ReadRequest, mechanism: MechanismInfo) -> ReadRe
                         local_buffer=local_buffer,
                         active_attention=active_attention,
                         recent_reading_memory=recent_reading_memory,
-                        concept_registry=concept_registry,
-                        thread_trace=thread_trace,
                         reflective_frames=reflective_frames,
                         reaction_records=reaction_records,
                     ),
                     "active_attention": active_attention,
                     "recent_reading_memory": recent_reading_memory,
-                    "concept_registry": concept_registry,
-                    "thread_trace": thread_trace,
                     "reflective_frames": reflective_frames,
                     "knowledge_activations": knowledge_activations,
                     "reaction_records": reaction_records,

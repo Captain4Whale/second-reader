@@ -121,7 +121,7 @@ def _memory_snapshot_for_quality_judge(snapshot: dict[str, Any]) -> tuple[dict[s
     scoring_memory_state = snapshot.get("scoring_memory_state")
     if isinstance(scoring_memory_state, dict) and all(
         isinstance(scoring_memory_state.get(key), dict)
-        for key in ("active_attention", "recent_reading_memory", "concept_registry", "thread_trace", "reflective_frames")
+        for key in ("active_attention", "recent_reading_memory", "reflective_frames")
     ):
         return dict(scoring_memory_state), MEMORY_SNAPSHOT_BASIS_FULL_STATE
     return dict(snapshot), MEMORY_SNAPSHOT_BASIS_LEGACY_DIGEST
@@ -956,7 +956,7 @@ Focus on what the complete probe-time memory state actually retains at this prob
 The source slice shows what has already been read; it is context, not substitute memory.
 Do not reward the memory state for information that exists only in the source slice.
 For new runs, probe_payload.memory_snapshot is the complete probe-time memory state,
-including active_attention, recent_reading_memory, concept_registry, thread_trace, and reflective_frames.
+including active_attention, recent_reading_memory, and reflective_frames.
 If probe_payload.memory_snapshot_basis is legacy_digest_snapshot, the payload is old digest-only
 evidence; judge it as legacy evidence and do not assume it is a complete memory store.
 
@@ -1594,7 +1594,7 @@ def _render_report(
         f"- Probe selection: `{aggregate.get('probe_selection_method') or PROBE_SELECTION_METHOD}`; probe targets are semantic boundaries with distance only as a distribution reference, not hard ratio checkpoints.",
         "- Scoring scale: `1 = poor / absent`, `3 = adequate / useful`, `5 = excellent`; higher is better.",
         "- Overall memory quality is derived from salience, mainline fidelity, organization, and fidelity scores.",
-        "- Scoring evidence: new runs judge the complete probe-time memory stores (`active_attention`, `recent_reading_memory`, `concept_registry`, `thread_trace`, `reflective_frames`). Legacy digest-only probe snapshots are explicitly marked when reused.",
+        "- Scoring evidence: new runs judge the complete probe-time memory stores (`active_attention`, `recent_reading_memory`, `reflective_frames`). Legacy digest-only probe snapshots are explicitly marked when reused.",
         f"- Memory snapshot basis counts: `{json.dumps(memory_quality.get('memory_snapshot_basis_counts', {}), ensure_ascii=False, sort_keys=True)}`",
         "- Structural-signal supplement: when source-so-far explicitly introduces a stage model, classification, core definition, roadmap, or named distinction, the judge checks whether the memory state retains it; probe-specific review focus is an audit aid, not an exact-match gold answer.",
         f"- Overall average memory quality score: `{memory_quality.get('average_overall_memory_quality_score', 0.0):.3f}`",

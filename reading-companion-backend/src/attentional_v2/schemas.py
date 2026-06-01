@@ -85,9 +85,6 @@ class ActiveAttentionItem(TypedDict, total=False):
     closed_at_source_span: dict[str, object]
     closed_at_unit_span_id: str
     closed_at_unit_span: dict[str, object]
-    # Legacy compatibility: downstream lineage should prefer derived_from_active_attention_ids.
-    linked_concept_keys: list[str]
-    linked_thread_keys: list[str]
     status: str
 
 
@@ -217,17 +214,6 @@ class SessionContinuityCapsule(TypedDict, total=False):
     recent_reactions: list[dict[str, object]]
 
 
-class RehydrationEntry(TypedDict, total=False):
-    """One explicit rehydration entrypoint retained for later continuity recovery."""
-
-    entry_id: str
-    source_span_id: str
-    source_ref: SourceRef
-    concept_key: str
-    thread_key: str
-    why_rehydrate: str
-
-
 class ContinuationCapsule(TypedDict, total=False):
     """Persisted continuity seed used to restart carried context after pauses or resume."""
 
@@ -241,10 +227,7 @@ class ContinuationCapsule(TypedDict, total=False):
     recent_reading_memory: "RecentReadingMemoryDigest"
     chapter_reflective_frame: "ReflectiveFrameDigest"
     active_focus_digest: "ActiveFocusDigest"
-    concept_digest: list["ConceptDigestItem"]
-    thread_digest: list["ThreadDigestItem"]
     refs: list["CarryForwardRef"]
-    rehydration_entrypoints: list[RehydrationEntry]
 
 
 class ActiveAttentionDigest(TypedDict, total=False):
@@ -276,28 +259,6 @@ class ActiveFocusDigest(TypedDict, total=False):
     recent_reactions: list[dict[str, object]]
 
 
-class ConceptDigestItem(TypedDict, total=False):
-    """One small concept-level digest entry derived from current state indexes."""
-
-    ref_id: str
-    concept_key: str
-    concept_type: str
-    source_refs: list[SourceRef]
-    sample_quotes: list[str]
-    rationale: str
-
-
-class ThreadDigestItem(TypedDict, total=False):
-    """One small thread-level digest entry derived from current state indexes."""
-
-    ref_id: str
-    thread_key: str
-    thread_type: str
-    source_refs: list[SourceRef]
-    sample_quotes: list[str]
-    rationale: str
-
-
 class CarryForwardContext(TypedDict, total=False):
     """Small stable continuity packet passed into every formal read."""
 
@@ -308,8 +269,6 @@ class CarryForwardContext(TypedDict, total=False):
     recent_reading_memory: RecentReadingMemoryDigest
     chapter_reflective_frame: ReflectiveFrameDigest
     active_focus_digest: ActiveFocusDigest
-    concept_digest: list[ConceptDigestItem]
-    thread_digest: list[ThreadDigestItem]
     reflective_digest: list[dict[str, object]]
     source_ref_digest: list[dict[str, object]]
     continuity_digest: dict[str, object]
@@ -580,48 +539,6 @@ class AnchorMemoryState(TypedDict, total=False):
     trace_links: dict[str, list[str]]
 
 
-class ConceptRegistryEntry(TypedDict, total=False):
-    """One durable concept/object-memory entry."""
-
-    concept_key: str
-    concept_type: str
-    status: str
-    summary: str
-    source_refs: list[SourceRef]
-    linked_thread_ids: list[str]
-    derived_from_active_attention_ids: list[str]
-
-
-class ConceptRegistryState(TypedDict, total=False):
-    """Primary durable object-memory layer."""
-
-    schema_version: int
-    mechanism_version: str
-    updated_at: str
-    entries: list[ConceptRegistryEntry]
-
-
-class ThreadTraceEntry(TypedDict, total=False):
-    """One durable trace/line entry."""
-
-    thread_key: str
-    thread_type: str
-    status: str
-    summary: str
-    source_refs: list[SourceRef]
-    linked_concept_keys: list[str]
-    derived_from_active_attention_ids: list[str]
-
-
-class ThreadTraceState(TypedDict, total=False):
-    """Primary durable trace/line layer."""
-
-    schema_version: int
-    mechanism_version: str
-    updated_at: str
-    entries: list[ThreadTraceEntry]
-
-
 class ReflectiveItem(TypedDict, total=False):
     """One promoted reflective understanding retained across local hot state."""
 
@@ -842,8 +759,6 @@ class FullCheckpointState(TypedDict, total=False):
     continuation_capsule: ContinuationCapsule
     active_attention: ActiveAttention
     recent_reading_memory: RecentReadingMemoryState
-    concept_registry: ConceptRegistryState
-    thread_trace: ThreadTraceState
     reflective_frames: ReflectiveFramesState
     reflective_summaries: ReflectiveSummariesState
     knowledge_activations: KnowledgeActivationsState
@@ -962,10 +877,7 @@ def build_empty_continuation_capsule(
             "active_items": [],
             "recent_reactions": [],
         },
-        "concept_digest": [],
-        "thread_digest": [],
         "refs": [],
-        "rehydration_entrypoints": [],
     }
 
 
@@ -993,34 +905,6 @@ def build_empty_anchor_bank(*, mechanism_version: str = ATTENTIONAL_V2_MECHANISM
         "updated_at": _timestamp(),
         "anchor_records": [],
         "anchor_relations": [],
-    }
-
-
-def build_empty_concept_registry(
-    *,
-    mechanism_version: str = ATTENTIONAL_V2_MECHANISM_VERSION,
-) -> ConceptRegistryState:
-    """Return the default concept-registry state."""
-
-    return {
-        "schema_version": ATTENTIONAL_V2_SCHEMA_VERSION,
-        "mechanism_version": mechanism_version,
-        "updated_at": _timestamp(),
-        "entries": [],
-    }
-
-
-def build_empty_thread_trace(
-    *,
-    mechanism_version: str = ATTENTIONAL_V2_MECHANISM_VERSION,
-) -> ThreadTraceState:
-    """Return the default thread-trace state."""
-
-    return {
-        "schema_version": ATTENTIONAL_V2_SCHEMA_VERSION,
-        "mechanism_version": mechanism_version,
-        "updated_at": _timestamp(),
-        "entries": [],
     }
 
 

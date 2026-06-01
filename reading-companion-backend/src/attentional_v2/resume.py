@@ -29,7 +29,6 @@ from .schemas import (
     LocalBufferState,
     LocalContinuityState,
     ResumeMetadataState,
-    build_empty_concept_registry,
     build_empty_continuation_capsule,
     build_empty_knowledge_activations,
     build_empty_local_buffer,
@@ -39,7 +38,6 @@ from .schemas import (
     build_empty_recent_reading_memory,
     build_empty_reflective_frames,
     build_empty_resume_metadata,
-    build_empty_thread_trace,
     build_empty_active_attention,
     build_default_reader_policy,
 )
@@ -47,7 +45,6 @@ from .state_projection import build_carry_forward_context
 from .state_migration import normalize_active_tension_state
 from .storage import (
     ATTENTIONAL_V2_MECHANISM_KEY,
-    concept_registry_file,
     continuation_capsule_file,
     full_checkpoint_file,
     knowledge_activations_file,
@@ -61,7 +58,6 @@ from .storage import (
     reflective_frames_file,
     resume_metadata_file,
     save_json,
-    thread_trace_file,
     runtime_dir,
     active_attention_file,
 )
@@ -98,8 +94,6 @@ def _state_builders() -> dict[str, Callable[[], dict[str, object]]]:
         "recent_reading_memory": lambda: build_empty_recent_reading_memory(
             mechanism_version=ATTENTIONAL_V2_MECHANISM_VERSION
         ),
-        "concept_registry": lambda: build_empty_concept_registry(mechanism_version=ATTENTIONAL_V2_MECHANISM_VERSION),
-        "thread_trace": lambda: build_empty_thread_trace(mechanism_version=ATTENTIONAL_V2_MECHANISM_VERSION),
         "reflective_frames": lambda: build_empty_reflective_frames(mechanism_version=ATTENTIONAL_V2_MECHANISM_VERSION),
         "knowledge_activations": lambda: build_empty_knowledge_activations(mechanism_version=ATTENTIONAL_V2_MECHANISM_VERSION),
         "reaction_records": lambda: build_empty_reaction_records(mechanism_version=ATTENTIONAL_V2_MECHANISM_VERSION),
@@ -124,8 +118,6 @@ def _state_paths(output_dir: Path) -> dict[str, Path]:
         "continuation_capsule": continuation_capsule_file(output_dir),
         "active_attention": active_attention_file(output_dir),
         "recent_reading_memory": recent_reading_memory_file(output_dir),
-        "concept_registry": concept_registry_file(output_dir),
-        "thread_trace": thread_trace_file(output_dir),
         "reflective_frames": reflective_frames_file(output_dir),
         "knowledge_activations": knowledge_activations_file(output_dir),
         "reaction_records": reaction_records_file(output_dir),
@@ -303,8 +295,6 @@ def _build_runtime_continuation_capsule(
     local_continuity: LocalContinuityState,
     active_attention: dict[str, object],
     recent_reading_memory: dict[str, object],
-    concept_registry: dict[str, object],
-    thread_trace: dict[str, object],
     reflective_frames: dict[str, object],
     reaction_records: dict[str, object],
 ) -> ContinuationCapsule:
@@ -316,8 +306,6 @@ def _build_runtime_continuation_capsule(
         local_buffer=local_buffer,
         active_attention=active_attention,
         recent_reading_memory=recent_reading_memory,
-        concept_registry=concept_registry,
-        thread_trace=thread_trace,
         reflective_frames=reflective_frames,
         reaction_records=reaction_records,
     )
@@ -356,18 +344,18 @@ def _load_runtime_bundle(output_dir: Path) -> dict[str, dict[str, object]]:
     bundle: dict[str, dict[str, object]] = {
         name: _load_or_default(path, builders[name])
         for name, path in _state_paths(output_dir).items()
-        if name not in {"active_attention", "concept_registry", "thread_trace", "reflective_frames"}
+        if name not in {"active_attention", "reflective_frames"}
     }
     legacy_paths = {
         "legacy_hot_state": runtime_dir(output_dir) / ("working_" + "pressure.json"),
         "anchor_memory": runtime_dir(output_dir) / "anchor_memory.json",
         "anchor_bank": runtime_dir(output_dir) / "anchor_bank.json",
+        "retired_object_memory": runtime_dir(output_dir) / ("concept_" + "registry.json"),
+        "retired_line_memory": runtime_dir(output_dir) / ("thread_" + "trace.json"),
         "reflective_summaries": runtime_dir(output_dir) / "reflective_summaries.json",
     }
     new_paths = {
         "active_attention": active_attention_file(output_dir),
-        "concept_registry": concept_registry_file(output_dir),
-        "thread_trace": thread_trace_file(output_dir),
         "reflective_frames": reflective_frames_file(output_dir),
     }
     loaded_new = {
@@ -379,7 +367,7 @@ def _load_runtime_bundle(output_dir: Path) -> dict[str, dict[str, object]]:
         raise RuntimeError(
             "Pre-Phase C.3 attentional_v2 runtime state is no longer supported; rerun from a new-format state directory."
         )
-    for name in ("active_attention", "concept_registry", "thread_trace", "reflective_frames"):
+    for name in ("active_attention", "reflective_frames"):
         bundle[name] = loaded_new.get(name) or builders[name]()
     bundle["active_attention"] = normalize_active_tension_state(bundle["active_attention"])
     return bundle
@@ -411,14 +399,21 @@ def load_full_checkpoint(output_dir: Path, checkpoint_id: str | None = None) -> 
     checkpoint = load_json(path)  # type: ignore[assignment]
     if isinstance(checkpoint, dict) and not all(
         key in checkpoint
-        for key in ("active_attention", "concept_registry", "thread_trace", "reflective_frames")
+        for key in ("active_attention", "reflective_frames")
     ):
         raise RuntimeError(
-            "Pre-Phase C.3 attentional_v2 checkpoints are no longer supported; create a new-format checkpoint before resuming."
+            "Old structured-memory attentional_v2 checkpoints are no longer supported; create a current-format checkpoint before resuming."
         )
-    if isinstance(checkpoint, dict) and "anchor_bank" in checkpoint:
+    if isinstance(checkpoint, dict) and any(
+        key in checkpoint
+        for key in (
+            "anchor_bank",
+            "concept_" + "registry",
+            "thread_" + "trace",
+        )
+    ):
         raise RuntimeError(
-            "Anchor-bank attentional_v2 checkpoints are no longer supported; rerun from a fresh runtime directory."
+            "Retired attentional_v2 checkpoints are no longer supported; rerun from a fresh runtime directory."
         )
     if isinstance(checkpoint, dict) and ("route_history" in checkpoint or "move_history" in checkpoint):
         raise RuntimeError(
@@ -487,15 +482,11 @@ def write_full_checkpoint(
             local_continuity=continuity,  # type: ignore[arg-type]
             active_attention=bundle["active_attention"],
             recent_reading_memory=bundle["recent_reading_memory"],
-            concept_registry=bundle["concept_registry"],
-            thread_trace=bundle["thread_trace"],
             reflective_frames=bundle["reflective_frames"],
             reaction_records=bundle["reaction_records"],
         ),  # type: ignore[typeddict-item]
         "active_attention": bundle["active_attention"],  # type: ignore[typeddict-item]
         "recent_reading_memory": bundle["recent_reading_memory"],  # type: ignore[typeddict-item]
-        "concept_registry": bundle["concept_registry"],  # type: ignore[typeddict-item]
-        "thread_trace": bundle["thread_trace"],  # type: ignore[typeddict-item]
         "reflective_frames": bundle["reflective_frames"],  # type: ignore[typeddict-item]
         "knowledge_activations": bundle["knowledge_activations"],  # type: ignore[typeddict-item]
         "reaction_records": reaction_records,  # type: ignore[typeddict-item]
@@ -824,8 +815,6 @@ def resume_from_checkpoint(
         "continuation_capsule": live_bundle["continuation_capsule"],
         "active_attention": live_bundle["active_attention"],
         "recent_reading_memory": live_bundle["recent_reading_memory"],
-        "concept_registry": live_bundle["concept_registry"],
-        "thread_trace": live_bundle["thread_trace"],
         "reflective_frames": live_bundle["reflective_frames"],
         "knowledge_activations": live_bundle["knowledge_activations"],
         "reaction_records": live_bundle["reaction_records"],
@@ -839,8 +828,6 @@ def resume_from_checkpoint(
         "continuation_capsule": dict((checkpoint or {}).get("continuation_capsule", live_bundle["continuation_capsule"])),
         "active_attention": dict((checkpoint or {}).get("active_attention", live_bundle["active_attention"])),
         "recent_reading_memory": dict((checkpoint or {}).get("recent_reading_memory", live_bundle["recent_reading_memory"])),
-        "concept_registry": dict((checkpoint or {}).get("concept_registry", live_bundle["concept_registry"])),
-        "thread_trace": dict((checkpoint or {}).get("thread_trace", live_bundle["thread_trace"])),
         "reflective_frames": dict((checkpoint or {}).get("reflective_frames", live_bundle["reflective_frames"])),
     }
 
@@ -862,8 +849,6 @@ def resume_from_checkpoint(
             recent_reading_memory=dict(
                 checkpoint_source.get("recent_reading_memory", live_bundle["recent_reading_memory"])
             ),
-            concept_registry=dict(checkpoint_source.get("concept_registry", live_bundle["concept_registry"])),
-            thread_trace=dict(checkpoint_source.get("thread_trace", live_bundle["thread_trace"])),
             reflective_frames=dict(checkpoint_source.get("reflective_frames", live_bundle["reflective_frames"])),
             reaction_records=dict(checkpoint_source.get("reaction_records", live_bundle["reaction_records"])),
         )
@@ -920,8 +905,6 @@ def resume_from_checkpoint(
             recent_reading_memory=dict(
                 checkpoint_source.get("recent_reading_memory", live_bundle["recent_reading_memory"])
             ),
-            concept_registry=dict(checkpoint_source.get("concept_registry", live_bundle["concept_registry"])),
-            thread_trace=dict(checkpoint_source.get("thread_trace", live_bundle["thread_trace"])),
             reflective_frames=dict(checkpoint_source.get("reflective_frames", live_bundle["reflective_frames"])),
             reaction_records=dict(checkpoint_source.get("reaction_records", live_bundle["reaction_records"])),
         )
@@ -934,8 +917,6 @@ def resume_from_checkpoint(
         "recent_reading_memory": dict(
             checkpoint_source.get("recent_reading_memory", live_bundle["recent_reading_memory"])
         ),
-        "concept_registry": dict(checkpoint_source.get("concept_registry", live_bundle["concept_registry"])),
-        "thread_trace": dict(checkpoint_source.get("thread_trace", live_bundle["thread_trace"])),
         "reflective_frames": dict(checkpoint_source.get("reflective_frames", live_bundle["reflective_frames"])),
         "knowledge_activations": dict(checkpoint_source.get("knowledge_activations", live_bundle["knowledge_activations"])),
         "reaction_records": dict(checkpoint_source.get("reaction_records", live_bundle["reaction_records"])),

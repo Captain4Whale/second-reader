@@ -26,7 +26,6 @@ from .schemas import (
     AnchorRecord,
     AnchoredReactionRecord,
     ChapterConsolidationResult,
-    ConceptRegistryState,
     KnowledgeActivationsState,
     OutsideLink,
     PriorLink,
@@ -44,7 +43,6 @@ from .schemas import (
     SearchIntent,
     SlowCycleAuditEnvelope,
     SurfacedReaction,
-    ThreadTraceState,
     ActiveAttentionItem,
     ActiveAttention,
     SourceRef,
@@ -1386,14 +1384,6 @@ def apply_cross_chapter_carry_forward(
             "answered_at_unit_span_id": _clean_text(item.get("answered_at_unit_span_id")) or _clean_text(existing.get("answered_at_unit_span_id")),
             "closed_at_source_span_id": _clean_text(item.get("closed_at_source_span_id")) or _clean_text(existing.get("closed_at_source_span_id")),
             "closed_at_unit_span_id": _clean_text(item.get("closed_at_unit_span_id")) or _clean_text(existing.get("closed_at_unit_span_id")),
-            "linked_concept_keys": _merge_unique_texts(
-                existing.get("linked_concept_keys"),
-                item.get("linked_concept_keys"),
-            ),
-            "linked_thread_keys": _merge_unique_texts(
-                existing.get("linked_thread_keys"),
-                item.get("linked_thread_keys"),
-            ),
             "status": _clean_text(item.get("status")) or _clean_text(existing.get("status")) or "open",
         }
         for field in (
@@ -1453,8 +1443,6 @@ def run_phase6_chapter_cycle(
     meaning_units_in_chapter: list[dict[str, object]],
     chapter_end_source_ref: SourceRef | dict[str, object],
     active_attention: ActiveAttention,
-    concept_registry: ConceptRegistryState,
-    thread_trace: ThreadTraceState,
     reflective_frames: ReflectiveFramesState,
     knowledge_activations: KnowledgeActivationsState,
     reaction_records: ReactionRecordsState,
@@ -1585,8 +1573,6 @@ def run_phase6_chapter_cycle(
         "chapter_consolidation": consolidation,
         "promotion_results": promotion_results,
         "active_attention": next_active_attention,
-        "concept_registry": concept_registry,
-        "thread_trace": thread_trace,
         "reflective_frames": next_reflective_frames,
         "knowledge_activations": next_knowledge_activations,
         "reaction_records": next_reaction_records,

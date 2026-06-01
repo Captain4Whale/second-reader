@@ -13,7 +13,6 @@ from .schemas import (
     ATTENTIONAL_V2_POLICY_VERSION,
     ATTENTIONAL_V2_SCHEMA_VERSION,
     build_default_reader_policy,
-    build_empty_concept_registry,
     build_empty_local_buffer,
     build_empty_local_continuity,
     build_empty_continuation_capsule,
@@ -23,7 +22,6 @@ from .schemas import (
     build_empty_recent_reading_memory,
     build_empty_reflective_frames,
     build_empty_resume_metadata,
-    build_empty_thread_trace,
     build_empty_active_attention,
 )
 
@@ -119,18 +117,6 @@ def reflective_summaries_file(output_dir: Path) -> Path:
     """Return the reflective-summaries path."""
 
     return runtime_dir(output_dir) / "reflective_summaries.json"
-
-
-def concept_registry_file(output_dir: Path) -> Path:
-    """Return the new primary concept-registry path."""
-
-    return runtime_dir(output_dir) / "concept_registry.json"
-
-
-def thread_trace_file(output_dir: Path) -> Path:
-    """Return the new primary thread-trace path."""
-
-    return runtime_dir(output_dir) / "thread_trace.json"
 
 
 def reflective_frames_file(output_dir: Path) -> Path:
@@ -254,8 +240,6 @@ def artifact_map(output_dir: Path) -> dict[str, str]:
         "continuation_capsule": str(continuation_capsule_file(output_dir).relative_to(output_dir)),
         "active_attention": str(active_attention_file(output_dir).relative_to(output_dir)),
         "recent_reading_memory": str(recent_reading_memory_file(output_dir).relative_to(output_dir)),
-        "concept_registry": str(concept_registry_file(output_dir).relative_to(output_dir)),
-        "thread_trace": str(thread_trace_file(output_dir).relative_to(output_dir)),
         "reflective_frames": str(reflective_frames_file(output_dir).relative_to(output_dir)),
         "unit_span_ledger": str(unit_span_ledger_file(output_dir).relative_to(output_dir)),
         "knowledge_activations": str(knowledge_activations_file(output_dir).relative_to(output_dir)),
@@ -373,8 +357,6 @@ def initialize_artifact_tree(
         recent_reading_memory_file(output_dir),
         build_empty_recent_reading_memory(mechanism_version=mechanism_version),
     )
-    ensure_json(concept_registry_file(output_dir), build_empty_concept_registry(mechanism_version=mechanism_version))
-    ensure_json(thread_trace_file(output_dir), build_empty_thread_trace(mechanism_version=mechanism_version))
     ensure_json(
         reflective_frames_file(output_dir),
         build_empty_reflective_frames(mechanism_version=mechanism_version),

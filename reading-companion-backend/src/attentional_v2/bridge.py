@@ -35,17 +35,13 @@ from .schemas import (
     BridgeAttribution,
     BridgeCandidate,
     BridgeResolutionResult,
-    ConceptRegistryState,
     KnowledgeActivationsState,
     ReaderPolicy,
-    ThreadTraceState,
     ActiveAttention,
 )
 from .state_ops import (
     append_anchor_relation,
     apply_anchor_bank_operations,
-    apply_concept_registry_operations,
-    apply_thread_trace_operations,
     apply_active_attention_operations,
     upsert_anchor_record,
 )
@@ -498,20 +494,17 @@ def bridge_resolution(
 
 def apply_bridge_state_updates(
     anchor_bank: AnchorBankState,
-    concept_registry: ConceptRegistryState,
-    thread_trace: ThreadTraceState,
     *,
     current_anchor: AnchorRecord,
     primary_bridge: BridgeCandidate | None,
     supporting_bridges: list[BridgeCandidate] | None = None,
     motif_keys: list[str] | None = None,
     unresolved_reference_keys: list[str] | None = None,
-) -> tuple[AnchorBankState, ConceptRegistryState, ThreadTraceState, BridgeCandidate | None]:
-    """Persist retained anchors, typed relations, and trace/context updates for one bridge moment."""
+) -> tuple[AnchorBankState, BridgeCandidate | None]:
+    """Persist retained anchors and typed relations for one bridge moment."""
 
+    _ = motif_keys, unresolved_reference_keys
     next_anchor_bank = upsert_anchor_record(anchor_bank, current_anchor)
-    next_concept_registry = concept_registry
-    next_thread_trace = thread_trace
     current_anchor_id = _clean_text(current_anchor.get("anchor_id"))
     trace_targets = list(current_anchor.get("linked_activation_ids", []))
 
@@ -548,78 +541,7 @@ def apply_bridge_state_updates(
         if support_anchor_id and support_anchor_id not in materialized_supports:
             materialized_supports.append(support_anchor_id)
 
-    if current_anchor_id and trace_targets + materialized_supports:
-        trace_key = f"trace:{current_anchor_id}"
-        trace_payload = {
-            "thread_key": trace_key,
-            "thread_type": "bridge_trace",
-            "status": "active",
-            "summary": _clean_text((materialized_primary or {}).get("why_now")) or "bridge trace updated",
-            "support_anchor_ids": [current_anchor_id, *trace_targets, *materialized_supports],
-            "source_anchor_id": current_anchor_id,
-            "target_anchor_ids": [*trace_targets, *materialized_supports],
-            "last_touched_sentence_id": _clean_text(current_anchor.get("sentence_end_id") or current_anchor.get("sentence_start_id")),
-        }
-        next_thread_trace = apply_thread_trace_operations(
-            next_thread_trace,
-            [
-                {
-                    "operation_type": "update",
-                    "target_store": "thread_trace",
-                    "item_id": trace_key,
-                    "reason": "bridge trace updated",
-                    "payload": trace_payload,
-                }
-            ],
-        )
-
-    concept_operations: list[dict[str, object]] = []
-    for concept_key in motif_keys or []:
-        clean_key = _clean_text(concept_key).lower()
-        if not clean_key or not current_anchor_id:
-            continue
-        concept_operations.append(
-            {
-                "operation_type": "update",
-                "target_store": "concept_registry",
-                "item_id": clean_key,
-                "reason": "bridge motif retained",
-                "payload": {
-                    "concept_key": clean_key,
-                    "concept_type": "motif",
-                    "status": "active",
-                    "summary": "Bridge cycle retained this motif cue.",
-                    "support_anchor_ids": [current_anchor_id],
-                    "linked_thread_ids": [f"trace:{current_anchor_id}"] if trace_targets or materialized_supports else [],
-                    "last_touched_sentence_id": _clean_text(current_anchor.get("sentence_end_id") or current_anchor.get("sentence_start_id")),
-                },
-            }
-        )
-    for concept_key in unresolved_reference_keys or []:
-        clean_key = _clean_text(concept_key).lower()
-        if not clean_key or not current_anchor_id:
-            continue
-        concept_operations.append(
-            {
-                "operation_type": "update",
-                "target_store": "concept_registry",
-                "item_id": clean_key,
-                "reason": "bridge unresolved reference retained",
-                "payload": {
-                    "concept_key": clean_key,
-                    "concept_type": "unresolved_reference",
-                    "status": "open",
-                    "summary": "Bridge cycle kept this unresolved reference active.",
-                    "support_anchor_ids": [current_anchor_id],
-                    "linked_thread_ids": [f"trace:{current_anchor_id}"] if trace_targets or materialized_supports else [],
-                    "last_touched_sentence_id": _clean_text(current_anchor.get("sentence_end_id") or current_anchor.get("sentence_start_id")),
-                },
-            }
-        )
-    if concept_operations:
-        next_concept_registry = apply_concept_registry_operations(next_concept_registry, concept_operations)  # type: ignore[arg-type]
-
-    return next_anchor_bank, next_concept_registry, next_thread_trace, materialized_primary
+    return next_anchor_bank, materialized_primary
 
 
 def run_phase5_bridge_cycle(
@@ -627,8 +549,6 @@ def run_phase5_bridge_cycle(
     current_span_sentences: list[dict[str, object]],
     candidate_set: dict[str, object],
     active_attention: ActiveAttention,
-    concept_registry: ConceptRegistryState,
-    thread_trace: ThreadTraceState,
     anchor_bank: AnchorBankState,
     knowledge_activations: KnowledgeActivationsState,
     reader_policy: ReaderPolicy,
@@ -659,8 +579,6 @@ def run_phase5_bridge_cycle(
                 "search_query": "",
             },
             "active_attention": active_attention,
-            "concept_registry": concept_registry,
-            "thread_trace": thread_trace,
             "anchor_bank": anchor_bank,
             "knowledge_activations": knowledge_activations,
         }
@@ -714,22 +632,12 @@ def run_phase5_bridge_cycle(
         active_attention,
         bridge_result.get("state_operations", []),
     )
-    next_concept_registry = apply_concept_registry_operations(
-        concept_registry,
-        bridge_result.get("state_operations", []),
-    )
-    next_thread_trace = apply_thread_trace_operations(
-        thread_trace,
-        bridge_result.get("state_operations", []),
-    )
     next_anchor_bank = apply_anchor_bank_operations(
         anchor_bank,
         bridge_result.get("state_operations", []),
     )
-    next_anchor_bank, next_concept_registry, next_thread_trace, materialized_primary = apply_bridge_state_updates(
+    next_anchor_bank, materialized_primary = apply_bridge_state_updates(
         next_anchor_bank,
-        next_concept_registry,
-        next_thread_trace,
         current_anchor=resolved_current_anchor,
         primary_bridge=bridge_result.get("primary_bridge"),
         supporting_bridges=bridge_result.get("supporting_bridges", []),
@@ -743,8 +651,6 @@ def run_phase5_bridge_cycle(
             "primary_bridge": materialized_primary,
         },
         "active_attention": next_active_attention,
-        "concept_registry": next_concept_registry,
-        "thread_trace": next_thread_trace,
         "anchor_bank": next_anchor_bank,
         "knowledge_activations": next_knowledge,
     }

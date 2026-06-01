@@ -3126,3 +3126,33 @@ This new direction is design frozen but not yet implemented as a formal benchmar
 - `reading-companion-backend/src/attentional_v2/schemas.py`
 - `reading-companion-backend/tests/test_attentional_v2_llm_calls.py`
 - `reading-companion-backend/tests/test_attentional_v2_scaffold.py`
+
+## Entry 106
+**ID**: DEC-109
+**Status**: active
+
+**Decision / Inflection**: Hard-purge the content-typed structured long-memory stores from current `attentional_v2`, and shift the next memory direction toward content-neutral Unit Memory.
+
+**Period**: June 1, 2026, after the Ingest/Digest rename clarified that the next memory surface should be selected around the accepted source unit rather than around a fixed taxonomy of memory categories.
+
+**Decision**: Current `attentional_v2` no longer exposes `concept_registry` or `thread_trace` as live schema, runtime artifacts, checkpoint keys, prompt projections, settlement targets, audit deltas, probe snapshot fields, helper APIs, or tests. `ConceptRegistry*`, `ThreadTrace*`, `concept_digest`, `thread_digest`, the migration/helper paths that wrote those stores, and the bridge / slow-cycle relation-writing surfaces tied to them are removed from active code. `Digest` still emits `recent_reading_memory[]`, and runtime still converts those entries into append-only `target_store="recent_reading_memory"` operations. `active_attention` remains a separate deprecated store pending a later cleanup slice.
+
+**Boundary**: This slice does not implement the new Unit Memory Ledger, retrieval indexes, Ingest memory retrieval request shape, or Digest retrieval context. It intentionally breaks recovery compatibility for old concept/thread-era private checkpoints and runtime artifacts. Historical reports, old run outputs, archived planning notes, and older decision entries may still mention the retired stores, but stable current docs should not treat them as live authority.
+
+**Why this path won**: The fixed concept/thread taxonomy kept making the memory mechanism content-shaped rather than reading-shaped. The more universal baseline is unit-level memory: preserve what each accepted source unit made worth remembering, then let future Ingest retrieval find relevant prior units for the next accepted unit. That keeps the framework independent of content type while still supporting continuity, source grounding, and later long-distance recall.
+
+**Primary evidence**:
+- `docs/current-state.md`
+- `docs/tasks/registry.md`
+- `docs/backend-reading-mechanisms/attentional_v2.md`
+- `docs/backend-reader-evaluation.md`
+- `reading-companion-backend/src/attentional_v2/schemas.py`
+- `reading-companion-backend/src/attentional_v2/storage.py`
+- `reading-companion-backend/src/attentional_v2/runner.py`
+- `reading-companion-backend/src/attentional_v2/state_projection.py`
+- `reading-companion-backend/src/attentional_v2/state_ops.py`
+- `reading-companion-backend/src/attentional_v2/observability.py`
+- `reading-companion-backend/src/attentional_v2/benchmark_probes.py`
+- `reading-companion-backend/src/attentional_v2/state_migration.py`
+- `reading-companion-backend/tests/test_attentional_v2_state_projection.py`
+- `reading-companion-backend/tests/test_attentional_v2_scaffold.py`

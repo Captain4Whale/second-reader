@@ -111,15 +111,12 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - The then-current historical unitization helper began receiving packetized `navigation_context`; current `Ingest` no longer receives that state packet in the first slice.
   - the then-current concrete reading node received packetized context views that explicitly separated continuity, active-attention, reflective, active-focus, and source-ref digests; current Digest has the XML context described below.
   - Persisted runtime files and public compatibility surfaces remain unchanged in this slice.
-- Phase C.2 of the post-eval structural rework is now also landed as the first state-territory slice.
-  - Live state packets now derive a bounded `concept_digest` from the current `motif_index + unresolved_reference_index`.
-  - Live state packets now derive a bounded `thread_digest` from the current `trace_links + unresolved_reference_index`.
-  - The historical Navigator and concrete reading node both received those concept/thread digests through the packet layer at that time.
-  - Persisted runtime files and public compatibility surfaces remain unchanged in this slice too.
-- Phase C.3 of the post-eval structural rework is now landed as the direct main-state cutover.
-  - Newer runs first treated `active_attention / concept_registry / thread_trace / reflective_frames / anchor_bank` as the primary runtime and checkpoint truth; the current source-ref cutover retires `anchor_bank` from that truth set.
-  - old supplemental retrieval helpers from that branch are not a current code surface after `DEC-105` and should not be treated as the forthcoming `Ingest` retrieval mechanism.
-  - Newly written checkpoints use only the new primary state keys.
+- Phase C.2 and C.3 of the post-eval structural rework are now historical implementation steps, not current memory architecture.
+  - Those slices experimented with content-typed long-memory digests and stores.
+  - `DEC-109` supersedes that direction: current live state no longer exposes the retired concept/thread structured stores as schema, runtime artifacts, prompt packets, checkpoint keys, settlement targets, audit fields, or tests.
+  - The source-ref cutover already retired `anchor_bank` from current runtime truth.
+  - Old supplemental retrieval helpers from that branch are not a current code surface after `DEC-105` and should not be treated as the forthcoming `Ingest` retrieval mechanism.
+  - Newly written checkpoints use only the current primary state keys.
 - Phase C.4 of the post-eval structural rework is now also landed as the helper-contract cutover.
   - Sentence-intake and chapter slow-cycle now execute directly on the new primary state layers; the old bridge helper is paused after the SourceRef cutover instead of being carried forward as an Anchor Bank relation writer.
   - The live Reading Runner no longer projects into legacy state stores in order to execute helpers.
@@ -128,11 +125,11 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - Current code may still write `active_attention.active_items`, but Active Attention / ActiveTension is now deprecated as the primary hot-state design.
   - `Working State` was the historical name for this hot layer; later runs used `Active Attention`, then ActiveTension semantics. Those names now describe deprecated artifacts rather than the forward architecture.
   - `recent_reading_memory` is now the current first-half near-term memory layer: Digest can append compact semantic memory from each unit so later read cycles do not behave as if earlier units vanished.
-  - The implementation currently covers Digest-time formation, append-only persistence, prompt projection, checkpoint / resume carriage, settlement audit visibility, and evaluation snapshot inclusion. Periodic consolidation into long-distance memory remains deferred.
-  - Long-lived readerly tensions, unresolved arcs, watchpoints, and patterns should settle into `thread_trace`; stable concepts and frameworks belong in `concept_registry`; visible reactions belong in `reaction_records`.
+  - The implementation currently covers Digest-time formation, append-only persistence, prompt projection, checkpoint / resume carriage, settlement audit visibility, and evaluation snapshot inclusion. Long-term Unit Memory and retrieval remain deferred.
+  - The next long-memory direction should be content-neutral unit-level memory, not content-typed concept/thread schemas; visible reactions belong in `reaction_records`.
   - Do not expand ActiveTension to cover these needs. Keep its existing fields (`tension_from`, `tension_focus`, `working_interpretation`, `source_refs`, `development_source_refs`, terminal reasons / coordinates, `status`, and legacy inputs) only as deprecated data until cleanup.
   - `question_from`, `driving_question`, `working_answer`, `answer_source_refs`, `answer_boundary`, and `statement` are old artifact inputs only.
-  - `local_hypotheses` / `live_hypotheses` are historical names only. Hypothesis-like material should become `recent_reading_memory`, `thread_trace`, or `concept_registry` depending on its durability, not another ActiveTension expansion.
+  - `local_hypotheses` / `live_hypotheses` are historical names only. Hypothesis-like material should become unit-level memory depending on its future retrieval value, not another ActiveTension expansion.
   - `gate_state`, `pressure_snapshot`, and the old working-pressure file are historical trigger/watch/zoom design artifacts, not current runtime or prompt inputs.
   - `pressure_signals` were the intermediate one-step old concrete reading-node -> route signals; they are now historical after the forward-settlement cutover.
 - The forward-settlement cutover is now landed.
@@ -437,7 +434,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - `not carry`
 - Persisted state is therefore not the same thing as prompt-visible state.
   - Current `Ingest` carries only the source frontier needed to choose the next unit.
-  - The first Ingest slice does not receive recent memory, active attention, concept/thread digests, or old navigation context.
+  - The first Ingest slice does not receive recent memory, active attention, retired structured-memory digests, or old navigation context.
   - Future Ingest memory retrieval will define a separate retrieval surface rather than inheriting the retired source-skill or backread path.
 - `Digest` should carry:
   - `always carry`
@@ -448,8 +445,6 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
       - prompt-visible fields, where still carried for compatibility, are only `item_id`, `tension_from`, `tension_focus`, and `working_interpretation`
       - source refs, development source refs, linked keys, statuses, and projection markers remain in runtime/audit/report artifacts rather than the Digest prompt
       - if the open-tension set grows too large, the projection should warn rather than silently omit items
-    - compact `concept_digest`
-    - compact `thread_digest`
     - compact `reflective_digest`
   - `selective carry`
     - specific source-ref detail
@@ -461,7 +456,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
     - full source-reference history
 - `slow cycle` may carry a broader chapter slice because it is the dedicated chapter-end maintenance pass.
 - Default carried context must stay small and stable.
-  - long-distance memory should travel as compact digests, not as full registries
+  - long-distance memory, once reintroduced, should travel as compact retrieval results rather than full stores
   - source-grounded earlier text should be injected only through bounded selective carry
 - Mainline unitization preview is intentionally source-local and deterministic.
   - It previews from the exact paragraph-offset cursor, not from a precomputed sentence index.
@@ -478,7 +473,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - `search_now` is a rare escape hatch for interpretation-blocking references or allusions rather than a normal reading behavior.
 
 ## State Layers And Ownership
-- The mechanism now distinguishes five state territories plus inline source evidence:
+- The mechanism now distinguishes current state territories plus inline source evidence:
   - `local_continuity`
     - reading-flow position, paragraph-offset `mainline_cursor`, recent unit boundaries, and resume semantics
   - `active_attention` (deprecated store, pending removal)
@@ -490,20 +485,20 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
     - existing item labels and fields (`attention_tags[]`, `tension_from`, `tension_focus`, `working_interpretation`, `source_refs`, `development_source_refs`, terminal reasons / coordinates, and `status`) are deprecated shape, not a forward design target
     - empty, `active`, `cooling`, and `open` are treated as prompt-eligible open statuses while the deprecated projection still exists; `answered`, `resolved`, and `closed` are lineage/history and are not carried into the Digest prompt
     - near-term continuity is now owned by `recent_reading_memory`; do not use new ActiveTension design work to cover per-unit semantic memory
-    - long-lived tensions, arcs, watchpoints, and unresolved thematic/narrative pulls should be inherited by `thread_trace`, not kept alive in a separate ActiveTension layer
+    - long-lived tensions, arcs, watchpoints, and unresolved thematic/narrative pulls should be handled by the future unit-memory retrieval design, not kept alive in a separate ActiveTension layer
   - `recent_reading_memory`
     - owns near-term semantic memory of just-read units
     - Digest returns one or a small number of LLM-facing `recent_reading_memory[]` entries; runtime converts them into `memory_uptake_ops[]` with `target_store="recent_reading_memory"` and `op="append"`
     - the LLM provides only `kind` and `memory_text`; Recent Memory append operations do not use an operation-level `reason`
     - the runner owns `entry_id`, `source_unit_span_id`, `created_at_unit_index`, `status`, and `archived_by_consolidation_id`
     - entries are grounded by the accepted read unit span as a whole; the first implementation does not require fine-grained `source_refs` or quote matching
-    - before consolidation, this store is append-only: Digest does not update, merge, resolve, close, link, or route recent entries into concept/thread destinations
+    - before a future memory-ledger design lands, this store is append-only: Digest does not update, merge, resolve, close, link, or route recent entries into typed long-memory destinations
     - `status="active"` entries are carried into the next Digest prompt; future consolidation will mark processed entries as `archived`, and archived entries are retained for audit but not prompt-carried
-  - `long-distance memory`
-    - `concept_registry`
-    - `thread_trace`
-    - `reflective_frames`
-    - `concept_registry` and `thread_trace` use canonical `summary` text fields in write payloads; older alias fields such as `definition`, `core_content`, `expansion_content`, `framework_extension`, or `rationale` are compatibility inputs, not the prompt contract for new runs
+  - `reflective_frames`
+    - chapter-level reflective summaries remain a slow-cycle artifact
+  - future long-distance memory
+    - deferred after `DEC-109`
+    - should be content-neutral unit-level memory plus retrieval, not a content-typed schema tied to categories such as concepts or threads
   - `artifacts / history`
     - `reaction_records`
     - `read_audit`
@@ -533,7 +528,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
     - must write Recent Reading Memory as compressed, context-resolvable, source-established content for the future reader; it should orient through the full prompt-visible reading context, but still record what the current unit itself newly establishes, develops, specifies, contrasts, changes, or makes memorable
     - should not emit or rely on an operation-level `reason` for `recent_reading_memory`; the `memory_text` itself is the retained content
     - Recent Reading Memory should be written as natural memory sentences or a short paragraph, not as a default `<label>: <explanation>` heading pattern; colons are appropriate only when the source itself names a term, stage, framework, or quoted source term
-    - Recent Reading Memory should not copy the source passage, predict future importance, guess concept/thread targets, create nested memory points, recap prior context for its own sake, or turn a concrete source unit into unsupported essay-like analysis or forced abstract naming
+    - Recent Reading Memory should not copy the source passage, predict future importance, guess typed long-memory targets, create nested memory points, recap prior context for its own sake, or turn a concrete source unit into unsupported essay-like analysis or forced abstract naming
     - author stance, evidence boundaries, writing method, intended reader, and explicit scope limits count as meaningful source-established content rather than empty structure
     - owns deprecated active-tension lifecycle intent while `active_attention` remains in the runtime:
       - `create` / `append` creates a new open ActiveTension when prompt-visible context leaves readerly charge that has not yet been fully digested
@@ -541,7 +536,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
       - `resolve` marks an inquiry answered enough that it no longer needs to be carried as open; the payload must explain with `answered_reason` why cited evidence directly satisfies the forward pull, not merely a precondition, setup, clue, partial explanation, or reframing
       - `close` marks an inquiry no longer driving the reading, without implying it was fully answered; the payload must explain this with `closed_reason`
       - `drop` removes a mistaken or obsolete inquiry
-      - durable answers should be written to `concept_registry` or `thread_trace`; do not use an active-attention `promote` path
+      - durable answers should wait for the future unit-memory design; do not use an active-attention `promote` path
       - future cleanup should remove this compatibility path after `recent_reading_memory` formation is validated and consolidation / archival behavior is designed
   - `slow cycle`
     - owns chapter-end cooling, promotion, reconsolidation, and `reflective_frames`
@@ -550,7 +545,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
     - it does not own semantic reading decisions
 - `Anchor Bank` is historical after the source-ref cutover.
   - Older reports and older runtime trees may still contain anchor wording.
-  - New `attentional_v2` runs cite source through paragraph-offset `SourceRef` fields embedded directly in `active_attention`, `concept_registry`, `thread_trace`, `reflective_frames`, `knowledge_activations`, and `reaction_records`.
+  - New `attentional_v2` runs cite source through paragraph-offset `SourceRef` fields embedded directly in current runtime objects such as `active_attention`, `reflective_frames`, `knowledge_activations`, and `reaction_records`.
 - Non-mainline jump-reading interfaces are removed from the current live surface after `DEC-105`.
   - Old Detour/source-backread vocabulary remains only in historical docs, old reports, and old output trees.
   - New live runs do not use non-mainline jump reading, path-redirection read output, or source-backread skills.
@@ -614,12 +609,10 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
     - also records memory-op counts by target store so durable-memory settlement can be diagnosed without replaying raw model output
   - `_mechanisms/attentional_v2/runtime/settlement_audit.jsonl`
     - canonical runtime audit for each completed `Digest -> Reading Runner settlement` transaction
-    - records compact before/after counts and changed ids for active attention, concepts, threads, and reactions
+    - records compact before/after counts and changed ids for active attention, recent memory, and reactions
     - also records the current source span when the settlement belongs to mainline paragraph-offset reading
     - does not persist full state snapshots, raw prompt/response payloads, or per-op accepted/skipped judgments
   - `_mechanisms/attentional_v2/runtime/active_attention.json`
-  - `_mechanisms/attentional_v2/runtime/concept_registry.json`
-  - `_mechanisms/attentional_v2/runtime/thread_trace.json`
   - `_mechanisms/attentional_v2/runtime/reflective_frames.json`
   - `_mechanisms/attentional_v2/runtime/knowledge_activations.json`
   - `_mechanisms/attentional_v2/runtime/reaction_records.json`

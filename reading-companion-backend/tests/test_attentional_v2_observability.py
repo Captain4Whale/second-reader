@@ -30,13 +30,6 @@ def test_record_settlement_writes_compact_state_deltas(tmp_path: Path) -> None:
                     ]
                 },
             },
-            {
-                "operation_type": "update",
-                "target_store": "concept_registry",
-                "target_store_emitted": "concept_registry",
-                "effective_target_store": "concept_registry",
-                "item_id": "concept-1",
-            },
         ],
         before_active_attention={
             "active_items": [
@@ -50,10 +43,6 @@ def test_record_settlement_writes_compact_state_deltas(tmp_path: Path) -> None:
                 {"item_id": "hot-2", "statement": "new"},
             ]
         },
-        before_concept_registry={"entries": []},
-        after_concept_registry={"entries": [{"concept_key": "concept-1", "summary": "new"}]},
-        before_thread_trace={"entries": [{"thread_key": "thread-1", "summary": "old"}]},
-        after_thread_trace={"entries": [{"thread_key": "thread-1", "summary": "updated"}]},
         before_reaction_records={"records": [{"reaction_id": "reaction-1", "thought": "old"}]},
         after_reaction_records={
             "records": [
@@ -66,8 +55,8 @@ def test_record_settlement_writes_compact_state_deltas(tmp_path: Path) -> None:
 
     audit_line = json.loads(settlement_audit_file(output_dir).read_text(encoding="utf-8").strip())
 
-    assert audit_line["memory_uptake_op_count"] == 2
-    assert audit_line["memory_uptake_ops_by_target_store"] == {"active_attention": 1, "concept_registry": 1}
+    assert audit_line["memory_uptake_op_count"] == 1
+    assert audit_line["memory_uptake_ops_by_target_store"] == {"active_attention": 1}
     assert audit_line["memory_uptake_op_outcomes"][0] == {
         "operation_index": 0,
         "operation_type": "append",
@@ -82,8 +71,6 @@ def test_record_settlement_writes_compact_state_deltas(tmp_path: Path) -> None:
         "outcome": "accepted_observed",
         "outcome_basis": "audit_observed_inferred_from_compact_state_delta",
     }
-    assert audit_line["memory_uptake_op_outcomes"][1]["outcome"] == "accepted_observed"
-    assert audit_line["memory_uptake_op_outcomes"][1]["target_id"] == "concept-1"
     assert audit_line["state_deltas"]["active_attention"] == {
         "before_count": 2,
         "after_count": 2,
@@ -91,8 +78,6 @@ def test_record_settlement_writes_compact_state_deltas(tmp_path: Path) -> None:
         "updated_ids": ["hot-1"],
         "removed_ids": ["hot-removed"],
     }
-    assert audit_line["state_deltas"]["concept_registry"]["added_ids"] == ["concept-1"]
-    assert audit_line["state_deltas"]["thread_trace"]["updated_ids"] == ["thread-1"]
     assert "anchor_bank" not in audit_line["state_deltas"]
     assert audit_line["state_deltas"]["reaction_records"]["added_ids"] == ["reaction-2"]
     assert audit_line["state_deltas"]["reaction_records"]["emitted_reaction_ids"] == ["reaction-2"]
@@ -148,10 +133,10 @@ def test_record_read_writes_memory_uptake_op_contracts(tmp_path: Path) -> None:
                     "admission_status": "dropped_unknown_operation",
                     "operation_type_emitted": "invent",
                     "operation_type_normalized": "invent",
-                    "target_store_emitted": "concept_registry",
-                    "effective_target_store": "concept_registry",
-                    "target_key": "concept-1",
-                    "item_id": "concept-1",
+                    "target_store_emitted": "unsupported_store",
+                    "effective_target_store": "unsupported_store",
+                    "target_key": "ignored-1",
+                    "item_id": "ignored-1",
                     "compatibility_warnings": [],
                     "drop_reason": "unknown_operation_type",
                 },
@@ -198,10 +183,10 @@ def test_record_read_writes_memory_uptake_op_contracts(tmp_path: Path) -> None:
             "admission_status": "dropped_unknown_operation",
             "operation_type_emitted": "invent",
             "operation_type_normalized": "invent",
-            "target_store_emitted": "concept_registry",
-            "effective_target_store": "concept_registry",
-            "target_key": "concept-1",
-            "item_id": "concept-1",
+            "target_store_emitted": "unsupported_store",
+            "effective_target_store": "unsupported_store",
+            "target_key": "ignored-1",
+            "item_id": "ignored-1",
             "compatibility_warnings": [],
             "drop_reason": "unknown_operation_type",
         },
@@ -259,10 +244,6 @@ def test_record_settlement_prefers_unclassified_for_duplicate_target_causality(t
         ],
         before_active_attention={"active_items": []},
         after_active_attention={"active_items": [{"item_id": "hot-1", "statement": "new"}]},
-        before_concept_registry={"entries": []},
-        after_concept_registry={"entries": []},
-        before_thread_trace={"entries": []},
-        after_thread_trace={"entries": []},
         before_reaction_records={"records": []},
         after_reaction_records={"records": []},
     )

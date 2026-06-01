@@ -7,13 +7,11 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Mapping
 from .schemas import (
-    ConceptRegistryState,
     LocalBufferState,
     LocalContinuityState,
     ReactionRecordsState,
     RecentReadingMemoryState,
     ReflectiveFramesState,
-    ThreadTraceState,
     ActiveAttention,
 )
 from .state_projection import build_carry_forward_context
@@ -266,15 +264,11 @@ def _full_scoring_memory_state(
     *,
     active_attention: ActiveAttention,
     recent_reading_memory: RecentReadingMemoryState | None = None,
-    concept_registry: ConceptRegistryState,
-    thread_trace: ThreadTraceState,
     reflective_frames: ReflectiveFramesState,
 ) -> dict[str, object]:
     return {
         "active_attention": deepcopy(active_attention) if isinstance(active_attention, Mapping) else {},
         "recent_reading_memory": deepcopy(recent_reading_memory) if isinstance(recent_reading_memory, Mapping) else {"entries": []},
-        "concept_registry": deepcopy(concept_registry) if isinstance(concept_registry, Mapping) else {},
-        "thread_trace": deepcopy(thread_trace) if isinstance(thread_trace, Mapping) else {},
         "reflective_frames": deepcopy(reflective_frames) if isinstance(reflective_frames, Mapping) else {},
     }
 
@@ -292,8 +286,6 @@ def _build_probe_snapshot(
     local_continuity: LocalContinuityState,
     active_attention: ActiveAttention,
     recent_reading_memory: RecentReadingMemoryState | None = None,
-    concept_registry: ConceptRegistryState,
-    thread_trace: ThreadTraceState,
     reflective_frames: ReflectiveFramesState,
     reaction_records: ReactionRecordsState,
 ) -> dict[str, object]:
@@ -305,8 +297,6 @@ def _build_probe_snapshot(
         local_buffer=local_buffer,
         active_attention=active_attention,
         recent_reading_memory=recent_reading_memory or {},
-        concept_registry=concept_registry,
-        thread_trace=thread_trace,
         reflective_frames=reflective_frames,
         reaction_records=reaction_records,
     )
@@ -324,16 +314,6 @@ def _build_probe_snapshot(
         if isinstance(carry_forward_context.get("active_attention_digest"), dict)
         else {}
     )
-    concept_digest = [
-        dict(item)
-        for item in carry_forward_context.get("concept_digest", [])
-        if isinstance(item, dict)
-    ]
-    thread_digest = [
-        dict(item)
-        for item in carry_forward_context.get("thread_digest", [])
-        if isinstance(item, dict)
-    ]
     reflective_digest = (
         dict(carry_forward_context.get("chapter_reflective_frame", {}))
         if isinstance(carry_forward_context.get("chapter_reflective_frame"), dict)
@@ -356,8 +336,6 @@ def _build_probe_snapshot(
     projection_digest = {
         "continuity_context": continuity_context,
         "active_attention_digest": active_attention_digest,
-        "concept_digest": concept_digest,
-        "thread_digest": thread_digest,
         "reflective_digest": reflective_digest,
         "active_focus_digest": active_focus_digest,
         "source_ref_digest": source_ref_digest,
@@ -402,15 +380,11 @@ def _build_probe_snapshot(
         "scoring_memory_state": _full_scoring_memory_state(
             active_attention=active_attention,
             recent_reading_memory=recent_reading_memory,
-            concept_registry=concept_registry,
-            thread_trace=thread_trace,
             reflective_frames=reflective_frames,
         ),
         "projection_digest": projection_digest,
         "continuity_context": continuity_context,
         "active_attention_digest": active_attention_digest,
-        "concept_digest": concept_digest,
-        "thread_digest": thread_digest,
         "reflective_digest": reflective_digest,
         "active_focus_digest": active_focus_digest,
         "source_ref_digest": source_ref_digest,
@@ -429,8 +403,6 @@ def persist_due_memory_quality_probe_snapshots(
     local_continuity: LocalContinuityState,
     active_attention: ActiveAttention,
     recent_reading_memory: RecentReadingMemoryState | None = None,
-    concept_registry: ConceptRegistryState,
-    thread_trace: ThreadTraceState,
     reflective_frames: ReflectiveFramesState,
     reaction_records: ReactionRecordsState,
     actual_source_span: dict[str, object] | None = None,
@@ -507,8 +479,6 @@ def persist_due_memory_quality_probe_snapshots(
             local_continuity=local_continuity,
             active_attention=active_attention,
             recent_reading_memory=recent_reading_memory,
-            concept_registry=concept_registry,
-            thread_trace=thread_trace,
             reflective_frames=reflective_frames,
             reaction_records=reaction_records,
         )

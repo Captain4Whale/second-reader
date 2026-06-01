@@ -7,11 +7,9 @@ import json
 from src.attentional_v2 import slow_cycle as slow_cycle_module
 from src.attentional_v2.schemas import (
     build_default_reader_policy,
-    build_empty_concept_registry,
     build_empty_knowledge_activations,
     build_empty_reaction_records,
     build_empty_reflective_frames,
-    build_empty_thread_trace,
     build_empty_active_attention,
 )
 from src.attentional_v2.slow_cycle import (
@@ -565,8 +563,6 @@ def test_run_phase6_chapter_cycle_applies_cooling_promotion_and_optional_reactio
                 }
             ],
         },
-        concept_registry=build_empty_concept_registry(),
-        thread_trace=build_empty_thread_trace(),
         reflective_frames=build_empty_reflective_frames(),
         knowledge_activations=build_empty_knowledge_activations(),
         reaction_records=build_empty_reaction_records(),

@@ -9,8 +9,6 @@ from .schemas import (
     CarryForwardContext,
     CarryForwardRef,
     ContinuationCapsule,
-    ConceptRegistryState,
-    ConceptDigestItem,
     LocalBufferState,
     ReactionRecordsState,
     ReflectiveFrameDigest,
@@ -19,10 +17,7 @@ from .schemas import (
     ReflectiveSummariesState,
     RecentReadingMemoryDigest,
     RecentReadingMemoryState,
-    RehydrationEntry,
     SourceRef,
-    ThreadTraceState,
-    ThreadDigestItem,
     ActiveAttention,
     ActiveAttentionDigest,
     build_empty_active_attention,
@@ -33,8 +28,6 @@ from .state_migration import migrate_reflective_summaries_to_frames, normalize_a
 
 
 STATE_PACKET_VERSION = "attentional_v2.state_packet.v1"
-_CONCEPT_DIGEST_LIMIT = 3
-_THREAD_DIGEST_LIMIT = 3
 _DIGEST_QUOTE_LIMIT = 2
 _LINEAGE_ONLY_STATUSES = {
     "answered",
@@ -337,12 +330,6 @@ def _build_active_attention_digest(
             "closed_at_unit_span": dict(item.get("closed_at_unit_span"))
             if isinstance(item.get("closed_at_unit_span"), dict)
             else {},
-            "linked_concept_keys": list(item.get("linked_concept_keys", []))
-            if isinstance(item.get("linked_concept_keys"), list)
-            else [],
-            "linked_thread_keys": list(item.get("linked_thread_keys", []))
-            if isinstance(item.get("linked_thread_keys"), list)
-            else [],
         }
         digest_active_items.append(record)
         if _is_open_active_attention_item(record) and len(hot_items) < 4:
@@ -463,135 +450,6 @@ def _mark_reflective_frame_digest(
     return marked
 
 
-def _build_concept_digest(
-    concept_registry: ConceptRegistryState,
-    *,
-    refs: list[CarryForwardRef],
-) -> list[ConceptDigestItem]:
-    """Build a small concept digest from the new concept registry."""
-
-    entries = [
-        dict(entry)
-        for entry in concept_registry.get("entries", [])
-        if isinstance(entry, dict) and clean_text(entry.get("concept_key"))
-    ]
-    entries.sort(
-        key=lambda entry: (
-            -len(_source_refs(entry.get("source_refs"))),
-            clean_text(entry.get("status")) != "open",
-            clean_text(entry.get("concept_key")),
-        )
-    )
-    digest: list[ConceptDigestItem] = []
-    for entry in entries[:_CONCEPT_DIGEST_LIMIT]:
-        concept_key = clean_text(entry.get("concept_key"))
-        source_refs = _source_refs(entry.get("source_refs"))
-        ref_id = f"concept:{concept_key}"
-        item: ConceptDigestItem = {
-            "ref_id": ref_id,
-            "concept_key": concept_key,
-            "concept_type": clean_text(entry.get("concept_type")),
-            "source_refs": source_refs[:4],
-            "sample_quotes": _sample_quotes(source_refs),
-            "rationale": clean_text(entry.get("summary")),
-        }
-        digest.append(item)
-        _append_ref(
-            refs,
-            {
-                "ref_id": ref_id,
-                "kind": "concept",
-                "item_id": concept_key,
-                "summary": clean_text(entry.get("summary")) or clean_text(entry.get("concept_type")),
-                "source_span_id": clean_text((source_refs or [{}])[0].get("source_span_id")),
-                "source_ref": (source_refs or [{}])[0],
-            },
-        )
-    return digest
-
-
-def _mark_concept_digest(
-    concept_digest: list[ConceptDigestItem],
-    *,
-    status_by_concept_key: dict[str, str],
-) -> list[dict[str, object]]:
-    """Add prompt-facing support markers to concept digest copies."""
-
-    return [
-        _with_projection_markers(item, status=status_by_concept_key.get(clean_text(item.get("concept_key")), ""))
-        for item in concept_digest
-        if isinstance(item, dict)
-    ]
-
-
-def _build_thread_digest(
-    thread_trace: ThreadTraceState,
-    *,
-    refs: list[CarryForwardRef],
-) -> list[ThreadDigestItem]:
-    """Build a small thread digest from the new thread trace."""
-
-    candidates: list[tuple[int, str, ThreadDigestItem]] = []
-
-    for entry in thread_trace.get("entries", []):
-        if not isinstance(entry, dict):
-            continue
-        thread_key = clean_text(entry.get("thread_key"))
-        source_refs = _source_refs(entry.get("source_refs"))
-        if not thread_key or not source_refs:
-            continue
-        recency = len(source_refs)
-        item: ThreadDigestItem = {
-            "ref_id": f"thread:{thread_key}",
-            "thread_key": thread_key,
-            "thread_type": clean_text(entry.get("thread_type")),
-            "source_refs": source_refs[:4],
-            "sample_quotes": _sample_quotes(source_refs, limit=3),
-            "rationale": clean_text(entry.get("summary")),
-        }
-        candidates.append((recency, thread_key, item))
-
-    candidates.sort(key=lambda item: (-item[0], item[1]))
-
-    digest: list[ThreadDigestItem] = []
-    seen_ref_ids: set[str] = set()
-    for _recency, _sort_key, item in candidates:
-        ref_id = clean_text(item.get("ref_id"))
-        if not ref_id or ref_id in seen_ref_ids:
-            continue
-        seen_ref_ids.add(ref_id)
-        digest.append(item)
-        item_source_refs = _source_refs(item.get("source_refs"))
-        _append_ref(
-            refs,
-            {
-                "ref_id": ref_id,
-                "kind": "thread",
-                "item_id": clean_text(item.get("thread_key")),
-                "summary": clean_text(item.get("rationale")),
-                "source_span_id": clean_text((item_source_refs or [{}])[0].get("source_span_id")),
-                "source_ref": (item_source_refs or [{}])[0],
-            },
-        )
-        if len(digest) >= _THREAD_DIGEST_LIMIT:
-            break
-    return digest
-
-
-def _mark_thread_digest(
-    thread_digest: list[ThreadDigestItem],
-    *,
-    status_by_thread_key: dict[str, str],
-) -> list[dict[str, object]]:
-    """Add prompt-facing support markers to thread digest copies."""
-
-    return [
-        _with_projection_markers(item, status=status_by_thread_key.get(clean_text(item.get("thread_key")), ""))
-        for item in thread_digest
-        if isinstance(item, dict)
-    ]
-
-
 def _build_recent_reactions(
     reaction_records: ReactionRecordsState,
     *,
@@ -677,52 +535,6 @@ def _build_active_focus_digest(
     }
 
 
-def _build_rehydration_entrypoints(
-    *,
-    concept_digest: list[ConceptDigestItem],
-    thread_digest: list[ThreadDigestItem],
-) -> list[RehydrationEntry]:
-    """Build bounded rehydration entrypoints from current continuity-bearing digests."""
-
-    entrypoints: list[RehydrationEntry] = []
-
-    for concept in concept_digest[:2]:
-        if not isinstance(concept, dict):
-            continue
-        concept_key = clean_text(concept.get("concept_key"))
-        if not concept_key:
-            continue
-        source_refs = _source_refs(concept.get("source_refs"))
-        entrypoints.append(
-            {
-                "entry_id": f"concept:{concept_key}",
-                "concept_key": concept_key,
-                "source_span_id": clean_text((source_refs or [{}])[0].get("source_span_id")),
-                "source_ref": (source_refs or [{}])[0],
-                "why_rehydrate": clean_text(concept.get("rationale")) or concept_key,
-            }
-        )
-
-    for thread in thread_digest[:2]:
-        if not isinstance(thread, dict):
-            continue
-        thread_key = clean_text(thread.get("thread_key"))
-        if not thread_key:
-            continue
-        source_refs = _source_refs(thread.get("source_refs"))
-        entrypoints.append(
-            {
-                "entry_id": f"thread:{thread_key}",
-                "thread_key": thread_key,
-                "source_span_id": clean_text((source_refs or [{}])[0].get("source_span_id")),
-                "source_ref": (source_refs or [{}])[0],
-                "why_rehydrate": clean_text(thread.get("rationale")) or thread_key,
-            }
-        )
-
-    return entrypoints[:6]
-
-
 def build_continuation_capsule(
     *,
     chapter_ref: str,
@@ -731,8 +543,6 @@ def build_continuation_capsule(
     recent_reading_memory_digest: RecentReadingMemoryDigest,
     chapter_reflective_frame: ReflectiveFrameDigest,
     active_focus_digest: ActiveFocusDigest,
-    concept_digest: list[ConceptDigestItem],
-    thread_digest: list[ThreadDigestItem],
     session_continuity_capsule: dict[str, object],
     refs: list[CarryForwardRef],
     mechanism_version: str,
@@ -750,13 +560,7 @@ def build_continuation_capsule(
         "recent_reading_memory": dict(recent_reading_memory_digest),
         "chapter_reflective_frame": dict(chapter_reflective_frame),
         "active_focus_digest": dict(active_focus_digest),
-        "concept_digest": [dict(item) for item in concept_digest if isinstance(item, dict)],
-        "thread_digest": [dict(item) for item in thread_digest if isinstance(item, dict)],
         "refs": [dict(ref) for ref in refs if isinstance(ref, dict)],
-        "rehydration_entrypoints": _build_rehydration_entrypoints(
-            concept_digest=concept_digest,
-            thread_digest=thread_digest,
-        ),
     }
 
 
@@ -767,8 +571,6 @@ def build_carry_forward_context(
     local_buffer: LocalBufferState,
     active_attention: ActiveAttention | None = None,
     recent_reading_memory: RecentReadingMemoryState | None = None,
-    concept_registry: ConceptRegistryState | None = None,
-    thread_trace: ThreadTraceState | None = None,
     reflective_frames: ReflectiveFramesState | None = None,
     anchor_memory: AnchorMemoryState | None = None,
     reflective_summaries: ReflectiveSummariesState | None = None,
@@ -791,15 +593,11 @@ def build_carry_forward_context(
         else migrate_reflective_summaries_to_frames(reflective_summaries)
     )
     _ = anchor_memory
-    primary_concept_registry = dict(concept_registry) if isinstance(concept_registry, dict) else {"entries": []}
-    primary_thread_trace = dict(thread_trace) if isinstance(thread_trace, dict) else {"entries": []}
     excluded_sentence_ids = {clean_text(item) for item in current_unit_sentence_ids if clean_text(item)}
     refs: list[CarryForwardRef] = []
     active_attention_digest = _build_active_attention_digest(primary_active_attention, refs=refs)
     recent_reading_memory_digest = _build_recent_reading_memory_digest(primary_recent_reading_memory)
     chapter_reflective_frame = _build_reflective_frame_digest(primary_reflective_frames, chapter_ref=chapter_ref, refs=refs)
-    concept_digest = _build_concept_digest(primary_concept_registry, refs=refs)
-    thread_digest = _build_thread_digest(primary_thread_trace, refs=refs)
     recent_reactions = _build_recent_reactions(reaction_records, refs=refs)
     session_continuity_capsule = _build_session_continuity_capsule(
         local_buffer,
@@ -820,8 +618,6 @@ def build_carry_forward_context(
             recent_reading_memory_digest=recent_reading_memory_digest,
             chapter_reflective_frame=chapter_reflective_frame,
             active_focus_digest=active_focus_digest,
-            concept_digest=concept_digest,
-            thread_digest=thread_digest,
             session_continuity_capsule=session_continuity_capsule,
             refs=refs,
             mechanism_version=clean_text(primary_active_attention.get("mechanism_version")),
@@ -831,14 +627,6 @@ def build_carry_forward_context(
     marked_chapter_reflective_frame = _mark_reflective_frame_digest(
         chapter_reflective_frame,
         status_by_item_id=_reflective_status_by_item_id(primary_reflective_frames),
-    )
-    marked_concept_digest = _mark_concept_digest(
-        concept_digest,
-        status_by_concept_key=_status_by_key(primary_concept_registry.get("entries", []), "concept_key"),
-    )
-    marked_thread_digest = _mark_thread_digest(
-        thread_digest,
-        status_by_thread_key=_status_by_key(primary_thread_trace.get("entries", []), "thread_key"),
     )
     marked_recent_reactions = [
         _with_visible_trace_markers(item)
@@ -872,8 +660,6 @@ def build_carry_forward_context(
         "recent_reading_memory": recent_reading_memory_digest,
         "chapter_reflective_frame": marked_chapter_reflective_frame,
         "active_focus_digest": marked_active_focus_digest,
-        "concept_digest": marked_concept_digest,
-        "thread_digest": marked_thread_digest,
         "reflective_digest": reflective_digest,
         "source_ref_digest": source_ref_digest,
         "continuity_digest": marked_session_continuity_capsule,
@@ -910,16 +696,6 @@ def build_digest_prompt_packet(
         "recent_reading_memory": dict(carry_forward_context.get("recent_reading_memory", {}))
         if isinstance(carry_forward_context.get("recent_reading_memory"), dict)
         else {"active_entries": [], "active_entry_count": 0},
-        "concept_digest": [
-            dict(item)
-            for item in carry_forward_context.get("concept_digest", [])
-            if isinstance(item, dict)
-        ][:3],
-        "thread_digest": [
-            dict(item)
-            for item in carry_forward_context.get("thread_digest", [])
-            if isinstance(item, dict)
-        ][:3],
         "reflective_digest": dict(carry_forward_context.get("chapter_reflective_frame", {}))
         if isinstance(carry_forward_context.get("chapter_reflective_frame"), dict)
         else {},

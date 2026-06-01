@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-05-31T19:42:26+08:00`
+Last updated: `2026-06-01T08:46:04+08:00`
 
 ## Status Values
 - `active`
@@ -25,7 +25,7 @@ Last updated: `2026-05-31T19:42:26+08:00`
 - Lane: `mechanism_runtime`
 - Priority: `high`
 - Detail: `docs/current-state.md`
-- Next: continue the narrowed product-goal reframe from the forward-only `Ingest` baseline. `DEC-104` retired live Detour / source-backread from `attentional_v2`, `DEC-105` hard-purged the retired compatibility interfaces, `DEC-106` split LLM calls from runner preparation/governance, `DEC-107` replaces the old `Navigate` LLM identity with `llm_calls.ingest(...)`, and `DEC-108` renames the concrete per-unit interpretation LLM call to `llm_calls.digest(...)` with XML prompt assembly as the live path. Runtime source-unit preparation still lives in `prepare_next_source_unit_for_read`; active LLM calls live under `llm_calls.py`. Use `docs/implementation/new-reading-mechanism/ingest-context-and-navigate-mapping.md` as the implementation reference for the landed first-slice `Ingest` XML context and the remaining retrieval-request design gap. Next design work should specify how `Ingest` requests memory retrieval for the selected next unit and how `Digest` produces reader-facing notes / highlights. Do not launch eval, update evidence catalog, or continue `C设计10` consolidation / the old concrete-node XML migration / `C设计12` prompt assembly migration unless explicitly re-adopted.
+- Next: continue the narrowed product-goal reframe from the forward-only `Ingest` baseline. `DEC-104` retired live Detour / source-backread from `attentional_v2`, `DEC-105` hard-purged the retired compatibility interfaces, `DEC-106` split LLM calls from runner preparation/governance, `DEC-107` replaces the old `Navigate` LLM identity with `llm_calls.ingest(...)`, `DEC-108` renames the concrete per-unit interpretation LLM call to `llm_calls.digest(...)` with XML prompt assembly as the live path, and `DEC-109` removes the retired concept/thread structured stores from current live memory surfaces. Runtime source-unit preparation still lives in `prepare_next_source_unit_for_read`; active LLM calls live under `llm_calls.py`. Use `docs/implementation/new-reading-mechanism/ingest-context-and-navigate-mapping.md` as the implementation reference for the landed first-slice `Ingest` XML context and the remaining retrieval-request design gap. Next design work should specify the content-neutral Unit Memory ledger/retrieval path, how `Ingest` requests memory retrieval for the selected next unit, and how `Digest` produces reader-facing notes / highlights. Do not launch eval, update evidence catalog, or continue `C设计10` consolidation / the old concrete-node XML migration / `C设计12` prompt assembly migration unless explicitly re-adopted.
 - Jobs: none
 - Evidence:
   - `DEC-103`
@@ -34,6 +34,7 @@ Last updated: `2026-05-31T19:42:26+08:00`
   - `DEC-106`
   - `DEC-107`
   - `DEC-108`
+  - `DEC-109`
   - `docs/current-state.md`
   - `docs/implementation/new-reading-mechanism/ingest-context-and-navigate-mapping.md`
   - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
@@ -60,12 +61,10 @@ Last updated: `2026-05-31T19:42:26+08:00`
     - historical `Navigate.unitize` received a small `navigation_context`; current `Ingest` no longer receives that packet
     - the then-current concrete reading node received a packetized context that explicitly separated continuity capsule, active-attention digest, reflective frame, active focus, and source-ref digest
     - persisted runtime files and public/frontend compatibility surfaces remain unchanged
-  - `Phase C.2` is now landed as the first state-territory slice:
-    - live state packets now derive a bounded `concept_digest` from the current `motif_index + unresolved_reference_index`
-    - live state packets now derive a bounded `thread_digest` from the current `trace_links + unresolved_reference_index`
-    - historical `Navigate.unitize` and the old concrete reading node both received those small concept/thread digests without changing persisted runtime files or public surfaces
-  - `Phase C.3` is now landed:
-    - new runs now treat `active_attention / concept_registry / thread_trace / reflective_frames` plus inline `source_refs[]` as the primary runtime and checkpoint truth
+  - `Phase C.2` and `Phase C.3` are now historical state-territory experiments:
+    - they introduced content-typed long-memory digests and stores during the post-eval structural rework
+    - `DEC-109` supersedes that direction; current live code no longer exposes the retired concept/thread structured stores in schema, prompt packets, runtime artifacts, checkpoints, settlement, audit, or tests
+    - current long-memory direction is a content-neutral unit-memory baseline; the ledger and retrieval design are deferred
     - old V2 state stores were demoted to cutover-only legacy territory during the cutover
     - old supplemental retrieval helpers from that branch were removed from the current code surface by `DEC-105`; future `Ingest` retrieval is a separate design task
     - checkpoint/resume temporarily accepted both old and new state territory during the cutover, while newly written checkpoints already used only the new primary keys
@@ -77,7 +76,7 @@ Last updated: `2026-05-31T19:42:26+08:00`
   - legacy gate/pressure sidecar cleanup is now landed:
     - current hot state is `active_attention.active_items[]`
     - active items now carry lightweight `attention_tags[]`; old `working_state` naming and fixed lists are historical
-    - residual `local_hypothesis` / `live_hypotheses` vocabulary has been retired from current provenance; hypothesis-like material is a tagged active-attention item or later concept/thread memory
+    - residual `local_hypothesis` / `live_hypotheses` vocabulary has been retired from current provenance; future hypothesis-like material should use content-neutral unit memory rather than the retired typed stores
     - old `gate_state`, `pressure_snapshot`, and working-pressure runtime artifacts are no longer current schema, prompt, runtime, checkpoint, or Memory Quality evidence fields
     - old `pressure_signals` were removed with the forward-settlement cutover; current `Digest` emits reading impression, surfaced reactions, and LLM-facing Recent Reading Memory
   - `Phase D` is now landed:

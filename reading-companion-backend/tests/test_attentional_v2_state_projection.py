@@ -3,12 +3,10 @@
 from __future__ import annotations
 
 from src.attentional_v2.schemas import (
-    build_empty_concept_registry,
     build_empty_local_buffer,
     build_empty_reaction_records,
     build_empty_recent_reading_memory,
     build_empty_reflective_frames,
-    build_empty_thread_trace,
     build_empty_active_attention,
 )
 from src.attentional_v2.state_projection import (
@@ -104,48 +102,6 @@ def test_build_carry_forward_context_exposes_phase_c1_packet_shape():
         },
     ]
 
-    concept_registry = build_empty_concept_registry()
-    concept_registry["entries"] = [
-        {
-            "concept_key": "promise",
-            "concept_type": "motif",
-            "summary": "A promise is still hanging open.",
-            "source_refs": [_source_ref()],
-            "status": "active",
-        },
-        {
-            "concept_key": "z-resolved-promise",
-            "concept_type": "motif",
-            "summary": "An older promise reading has been resolved.",
-            "source_refs": [_source_ref("Resolved promise.")],
-            "status": "resolved",
-        },
-        {
-            "concept_key": "unanchored",
-            "concept_type": "motif",
-            "summary": "This projected concept lacks source refs.",
-            "source_refs": [],
-            "status": "active",
-        }
-    ]
-    thread_trace = build_empty_thread_trace()
-    thread_trace["entries"] = [
-        {
-            "thread_key": "thread:promise",
-            "thread_type": "open_reference",
-            "summary": "The later promise turns back toward the opener.",
-            "source_refs": [_source_ref()],
-            "status": "active",
-        },
-        {
-            "thread_key": "thread:no-source",
-            "thread_type": "trace_link",
-            "summary": "This thread still lacks source refs and should stay filtered out.",
-            "source_refs": [],
-            "status": "active",
-        }
-    ]
-
     reflective_frames = build_empty_reflective_frames()
     reflective_frames["chapter_understandings"] = [
         {
@@ -192,8 +148,6 @@ def test_build_carry_forward_context_exposes_phase_c1_packet_shape():
         local_buffer=local_buffer,
         active_attention=active_attention,
         recent_reading_memory=recent_reading_memory,
-        concept_registry=concept_registry,
-        thread_trace=thread_trace,
         reflective_frames=reflective_frames,
         reaction_records=reaction_records,
     )
@@ -234,23 +188,6 @@ def test_build_carry_forward_context_exposes_phase_c1_packet_shape():
     assert superseded_frame["projection_warning"] == "lineage_only_not_current_support"
     assert packet["session_continuity_capsule"]["recent_sentence_ids"] == ["c1-s1"]
     assert "recent_routes" not in packet["active_focus_digest"]
-    assert packet["concept_digest"][0]["concept_key"] == "promise"
-    assert packet["concept_digest"][0]["concept_type"] == "motif"
-    assert packet["concept_digest"][0]["projection_role"] == "current_support"
-    assert packet["concept_digest"][0]["support_status"] == "source_backed"
-    resolved_concept = _find(packet["concept_digest"], "concept_key", "z-resolved-promise")
-    assert resolved_concept["projection_role"] == "lineage_only"
-    assert resolved_concept["current_support"] is False
-    missing_concept = _find(packet["concept_digest"], "concept_key", "unanchored")
-    assert missing_concept["support_status"] == "source_ref_missing"
-    assert missing_concept["projection_warning"] == "source_ref_missing"
-    assert packet["thread_digest"][0]["thread_type"] in {"trace_link", "open_reference"}
-    thread = _find(packet["thread_digest"], "thread_key", "thread:promise")
-    assert thread["projection_role"] == "current_support"
-    assert thread["support_status"] == "source_backed"
-    assert all(item["thread_key"] != "thread:no-source" for item in packet["thread_digest"])
-    assert any(ref["kind"] == "concept" for ref in packet["refs"])
-    assert any(ref["kind"] == "thread" for ref in packet["refs"])
 
     assert packet["reflective_digest"][0]["item_id"] == "frame-1"
     assert packet["reflective_digest"][0]["projection_role"] == "current_support"
@@ -268,10 +205,8 @@ def test_build_carry_forward_context_exposes_phase_c1_packet_shape():
     assert "knowledge_activations" not in packet
 
     persisted_active = packet["continuation_capsule"]["active_attention_digest"]["active_items"][0]
-    persisted_concept = packet["continuation_capsule"]["concept_digest"][0]
     persisted_reaction = packet["continuation_capsule"]["session_continuity_capsule"]["recent_reactions"][0]
     assert "projection_role" not in persisted_active
-    assert "projection_role" not in persisted_concept
     assert "projection_role" not in persisted_reaction
 
 
@@ -316,27 +251,6 @@ def test_build_digest_prompt_packet_projects_compact_carry_forward_context():
         },
     ]
 
-    concept_registry = build_empty_concept_registry()
-    concept_registry["entries"] = [
-        {
-            "concept_key": "promise",
-            "concept_type": "motif",
-            "summary": "A promise remains active.",
-            "source_refs": [_source_ref()],
-            "status": "active",
-        }
-    ]
-    thread_trace = build_empty_thread_trace()
-    thread_trace["entries"] = [
-        {
-            "thread_key": "thread:promise",
-            "thread_type": "trace_link",
-            "summary": "The opener keeps returning.",
-            "source_refs": [_source_ref()],
-            "status": "active",
-        }
-    ]
-
     reflective_frames = build_empty_reflective_frames()
     reflective_frames["chapter_understandings"] = [
         {
@@ -366,8 +280,6 @@ def test_build_digest_prompt_packet_projects_compact_carry_forward_context():
         local_buffer=local_buffer,
         active_attention=active_attention,
         recent_reading_memory=recent_reading_memory,
-        concept_registry=concept_registry,
-        thread_trace=thread_trace,
         reflective_frames=reflective_frames,
         reaction_records=reaction_records,
     )
@@ -397,10 +309,6 @@ def test_build_digest_prompt_packet_projects_compact_carry_forward_context():
         ],
         "active_entry_count": 1,
     }
-    assert prompt_packet["concept_digest"][0]["concept_key"] == "promise"
-    assert prompt_packet["concept_digest"][0]["support_status"] == "source_backed"
-    assert prompt_packet["thread_digest"][0]["thread_key"]
-    assert prompt_packet["thread_digest"][0]["projection_role"] == "current_support"
     assert prompt_packet["reflective_digest"]["chapter_frames"][0]["item_id"] == "frame-1"
     assert prompt_packet["reflective_digest"]["chapter_frames"][0]["projection_role"] == "current_support"
     assert "selective_carry" not in prompt_packet
@@ -425,7 +333,6 @@ def test_read_prompt_packet_includes_all_open_questions_without_runtime_fields()
             "status": "open",
             "source_refs": [_source_ref(f"Question {index}.")],
             "development_source_refs": [_source_ref(f"Answer {index}.")],
-            "linked_concept_keys": [f"concept:{index}"],
             "projection_role": "current_support",
         }
         for index in range(7)
