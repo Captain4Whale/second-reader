@@ -225,15 +225,33 @@ Process:
 4. Apply RRF per retrieval document:
 
 ```text
-rrf_score(doc) = sum(channel_weight_for_doc / (rrf_k + rank_in_channel))
+doc_rrf_score =
+  sum(
+    base_channel_weight
+    * surface_channel_weight
+    / (rrf_k + rank_in_channel)
+  )
 ```
 
 Initial defaults:
 
+- `lexical_top_k = 80`
+- `dense_top_k = 80`
 - `rrf_k = 60`
 - base lexical channel weight = `1.0`
 - base dense channel weight = `1.0`
 - apply each retrieval document's `weight_profile` after rank conversion or during unit aggregation, not by mutating raw BM25/vector scores
+
+Initial surface / channel weights:
+
+| surface | lexical weight | dense weight | purpose |
+| --- | ---: | ---: | --- |
+| `unit_source` | `1.25` | `0.75` | emphasize exact wording, names, quote callbacks, and source recurrence |
+| `unit_understanding` | `0.85` | `1.35` | emphasize semantic continuity and what the unit established |
+| `unit_annotation` | `1.10` | `1.10` | let exact quote and note meaning support each other |
+| `unit_response` | `0.45` | `0.65` | keep readerly aftertaste as a weak support signal |
+
+These weights are deliberately modest. They should express surface posture without overpowering rank evidence.
 
 Why not weighted sum first:
 
@@ -248,6 +266,28 @@ Weighted sum may be revisited after retrieval review produces calibration exampl
 
 After RRF, aggregate retrieval documents by `unit_id`.
 
+V1 unit score:
+
+```text
+unit_score =
+  best_doc_score
+  + 0.35 * second_best_doc_score
+  + 0.15 * sum(next_doc_scores, capped_to_3_docs)
+  + surface_coverage_bonus
+  + channel_coverage_bonus
+```
+
+Initial aggregation defaults:
+
+- `max_docs_per_unit_for_scoring = 5`
+- `surface_coverage_bonus = 0.03 * min(distinct_surface_count - 1, 3)`
+- `channel_coverage_bonus = 0.03` when both lexical and dense channels matched
+- `exact_phrase_bonus = 0.0` by default; record exact phrase / quote matches for audit and later calibration, but do not add another boost until query fields are designed
+- distance penalty = none by default beyond recent-neighbor exclusion
+- `exclude_recent_units = recent_memory_window`
+- `max_units_after_aggregation = 20`
+- `max_units_to_digest_context = 4` to `6`, with the exact value chosen by Digest context budget
+
 Unit-level score should consider:
 
 - best retrieval-doc RRF score
@@ -257,13 +297,6 @@ Unit-level score should consider:
 - distance from current unit
 - duplicate suppression against recent memory
 
-Recommended first-pass weight profiles:
-
-- `unit_understanding`: dense high, lexical medium; best for conceptual continuity.
-- `unit_source`: lexical high, dense medium; best for exact phrasing, named entities, and source recurrence.
-- `unit_annotation`: lexical medium-high, dense medium-high; best for visible note continuity around a marked line.
-- `unit_response`: lexical low, dense low-to-medium; support signal only, useful when a prior reader response strongly echoes the current unit.
-
 After unit aggregation, an optional MMR rerank can improve diversity:
 
 ```text
@@ -272,7 +305,10 @@ mmr_score = lambda * relevance - (1 - lambda) * max_similarity_to_selected
 
 Initial default:
 
-- `lambda = 0.7`
+- `mmr_enabled = false`
+- `lambda = 0.75` if enabled
+- `mmr_candidate_units = 20`
+- `mmr_output_units = 6`
 - apply only after selecting a larger candidate pool, not as a replacement for RRF
 - compare units by dense embedding of their best matching retrieval doc or by a compact unit-card embedding
 
@@ -652,8 +688,7 @@ Open design work:
 - Retrieval algorithm:
   - whether retrieval review requires a second `unicode61` / `porter unicode61` lexical channel
   - exact sqlite-vec distance / metric behavior to standardize behind the adapter
-  - score normalization
-  - concrete numeric weight profiles for each surface / channel posture
+  - calibration of the initial V1 fanout, RRF, surface / channel weight, aggregation, and MMR defaults
   - dedupe and diversity policy
 - Context packaging:
   - deferred from the bottom-framework implementation slice
@@ -685,5 +720,7 @@ Create retrieval documents from all four memory surfaces and index every valid r
 - `annotations[]`
 
 But do not score them as equal signals. Use field-specific retrieval documents, weight profiles, and unit-level aggregation.
+
+Use the initial conservative retrieval parameters in this document: top `80` lexical docs, top `80` dense docs, `rrf_k = 60`, modest surface / channel weights, unit aggregation led by the best matching retrieval document, and MMR disabled unless review shows repeated near-duplicate cards.
 
 The retrieval result should be source-grounded and unit-centered, then rendered to Digest as compact prior-reading support rather than as a hidden backread path.
