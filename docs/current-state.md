@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-06-01T08:46:04+08:00`
+Last verified: `2026-06-01T19:08:12+08:00`
 
 ## Current Objective
 - Product goal and mechanism direction are being reset before further implementation.
@@ -33,6 +33,7 @@ Last verified: `2026-06-01T08:46:04+08:00`
     - current LLM-call code now lives in `reading-companion-backend/src/attentional_v2/llm_calls.py`; the old ambiguous active module name is removed
     - runtime next-unit preparation lives outside `Ingest` as `prepare_next_source_unit_for_read`: it prepares source preview/context, calls `Ingest`, performs anchor resolution/retry/fallback boundary governance, and hands the accepted source unit to `Digest`
     - first-slice `Ingest` uses `ReaderRole`, `Instruction`, `BookInfo`, `CurrentView`, empty `RetrievalSurface`, and `OutputContract`; memory-retrieval request behavior is deferred until the new memory design lands
+    - draft Digest semantic refactor doc now proposes model-facing `Understanding / Response / Annotation` as three peer `Instruction` actions, with runtime storage of Understanding still mapped to `recent_reading_memory`
     - current `Digest` has no path-redirection output contract and the Runner/audit path emits no Detour or source-backread runtime artifacts for new runs
     - current `local_continuity` contains only forward-reading continuity; old Detour-era checkpoint/artifact shapes are not a compatibility target
   - stop declaration:
@@ -45,7 +46,8 @@ Last verified: `2026-06-01T08:46:04+08:00`
   - next step:
     - continue with the new product-goal reframe from the now-forward-only `Ingest` baseline
     - use `docs/implementation/new-reading-mechanism/ingest-context-and-navigate-mapping.md` as the implementation reference for the landed first-slice `Ingest` XML context and for the remaining retrieval-request design gap
-    - next design work should define the content-neutral Unit Memory ledger/retrieval path, how `Ingest` requests memory retrieval for the selected next unit, and how `Digest` turns the current unit into reader-facing notes / highlights
+    - use `docs/implementation/new-reading-mechanism/digest-understanding-response-annotation-design.md` as the current draft for the next Digest prompt/output semantic refactor
+    - next design work should define the content-neutral Unit Memory ledger/retrieval path, how `Ingest` requests memory retrieval for the selected next unit, and how `Digest` turns the current unit into reader-facing notes / highlights through Understanding / Response / Annotation
     - do not run eval, update evidence catalog, or claim product quality from the Detour hard-purge slice
 - Historical concrete-node XML prompt / Recent Reading Memory full active diagnostic machine run has completed; post-run report is preserved for reference.
   - purpose:

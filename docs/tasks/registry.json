@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-06-01T00:46:04Z",
+  "updated_at": "2026-06-01T11:08:12Z",
   "tasks": [
     {
       "id": "TASK-SECOND-READER-INGEST-DIGEST-REFRAME-AUDIT-20260530",
@@ -14,6 +14,7 @@
         "docs/tasks/registry.md",
         "docs/history/decision-log.md",
         "docs/implementation/new-reading-mechanism/ingest-context-and-navigate-mapping.md",
+        "docs/implementation/new-reading-mechanism/digest-understanding-response-annotation-design.md",
         "docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md"
       ],
       "decision_refs": [
@@ -27,15 +28,16 @@
       ],
       "job_refs": [],
       "acceptance_ref": "",
-      "next_action": "Continue the narrowed product-goal reframe from the forward-only Ingest baseline. DEC-104 retired live Detour / source-backread from attentional_v2, DEC-105 hard-purged the retired compatibility interfaces, DEC-106 split LLM calls from runner preparation/governance, DEC-107 replaces the old Navigate LLM identity with llm_calls.ingest(...), DEC-108 renames the concrete per-unit interpretation LLM call to llm_calls.digest(...) with XML prompt assembly as the live path, and DEC-109 removes the retired concept/thread structured stores from current live memory surfaces. Runtime source-unit preparation still lives in prepare_next_source_unit_for_read; active LLM calls live under llm_calls.py. Use docs/implementation/new-reading-mechanism/ingest-context-and-navigate-mapping.md as the implementation reference for the landed first-slice Ingest XML context and the remaining retrieval-request design gap. Next design work should specify the content-neutral Unit Memory ledger/retrieval path, how Ingest requests memory retrieval for the selected next unit, and how Digest produces reader-facing notes / highlights. Do not launch eval, update evidence catalog, or continue C设计10 consolidation / the old concrete-node XML migration / C设计12 prompt assembly migration unless explicitly re-adopted.",
+      "next_action": "Continue the narrowed product-goal reframe from the forward-only Ingest baseline. DEC-104 retired live Detour / source-backread from attentional_v2, DEC-105 hard-purged the retired compatibility interfaces, DEC-106 split LLM calls from runner preparation/governance, DEC-107 replaces the old Navigate LLM identity with llm_calls.ingest(...), DEC-108 renames the concrete per-unit interpretation LLM call to llm_calls.digest(...) with XML prompt assembly as the live path, and DEC-109 removes the retired concept/thread structured stores from current live memory surfaces. Runtime source-unit preparation still lives in prepare_next_source_unit_for_read; active LLM calls live under llm_calls.py. Use docs/implementation/new-reading-mechanism/ingest-context-and-navigate-mapping.md as the implementation reference for the landed first-slice Ingest XML context and the remaining retrieval-request design gap. Use docs/implementation/new-reading-mechanism/digest-understanding-response-annotation-design.md as the current draft for the next Digest semantic refactor: model-facing Understanding / Response / Annotation as three peer Instruction actions, with Understanding mapped to stored Recent Reading Memory by runtime. Next design work should specify the content-neutral Unit Memory ledger/retrieval path, how Ingest requests memory retrieval for the selected next unit, and how Digest produces reader-facing notes / highlights. Do not launch eval, update evidence catalog, or continue C设计10 consolidation / the old concrete-node XML migration / C设计12 prompt assembly migration unless explicitly re-adopted.",
       "blocked_by": [],
       "evidence_refs": [
         "docs/current-state.md",
         "docs/implementation/new-reading-mechanism/ingest-context-and-navigate-mapping.md",
+        "docs/implementation/new-reading-mechanism/digest-understanding-response-annotation-design.md",
         "docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md",
         "docs/history/decision-log.md"
       ],
-      "last_updated": "2026-06-01T00:46:04Z",
+      "last_updated": "2026-06-01T11:08:12Z",
       "last_updated_by": "codex"
     },
     {
