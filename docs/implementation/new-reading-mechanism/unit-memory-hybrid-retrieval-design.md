@@ -49,6 +49,8 @@ The following concerns are intentionally deferred from this implementation slice
 
 One boundary is decided now: query generation should not require a separate LLM call. When query generation is designed, it should remain inside the `Ingest` step, after or alongside its source-unit boundary selection. The exact query contract is deferred and should not block the bottom retrieval index implementation.
 
+Another boundary is decided now: reading must be able to choose its memory retrieval mode before starting a book / read session. The user or operator should be able to run long-distance memory as text-only lexical retrieval, or as hybrid lexical + vector retrieval. This mode controls read-time retrieval behavior, not the Unit Memory ledger shape.
+
 ## V1 Technical Stack
 
 Use one local SQLite-backed retrieval store for the first implementation.
@@ -63,6 +65,20 @@ Default components:
 - embedding type: dense vectors only
 - first fusion strategy: Reciprocal Rank Fusion / RRF
 - optional second-stage diversity pass: MMR rerank after unit-level aggregation
+
+V1 supports two read-time memory retrieval modes:
+
+- `text_only`
+  - use Unit Memory retrieval documents and FTS5 BM25 only
+  - do not generate query embeddings during the read loop
+  - do not require sqlite-vec to be present or up to date
+  - useful for low-latency reading, local debugging, and machines without reliable embedding service availability
+- `hybrid`
+  - use FTS5 BM25 plus query embedding and sqlite-vec KNN
+  - fuse lexical and dense candidate lists with RRF
+  - degrade to text-only behavior if vector retrieval is unavailable, times out, or has no usable indexed vectors
+
+The mode should be selected before reading a book / starting a read session and persisted with run configuration, checkpoint metadata, and retrieval trace records. The same Unit Memory ledger supports both modes. Switching a book from `text_only` to `hybrid` later should not require rewriting ledger entries; it may require building or catching up the vector index.
 
 Rationale:
 
@@ -132,7 +148,7 @@ Then maintain:
   - rowid should match `retrieval_docs.retrieval_doc_pk`
   - vector dimension should default to 1024 for Qwen3-Embedding-0.6B unless a later Matryoshka dimension decision changes it
 
-In v1, index participation is simple: every valid retrieval document is indexed in both FTS5 and sqlite-vec. Surface semantics should be expressed through channel weights and unit aggregation, not by excluding a surface from one index.
+In v1, index participation is simple: every valid retrieval document is FTS-indexed and vector-index eligible. In `hybrid` mode, vector rows should be present or pending; in `text_only` mode, vector rows may be absent until catch-up is requested. Surface semantics should be expressed through channel weights and unit aggregation, not by excluding a surface from one index.
 
 The exact SQL may change during implementation, but the ownership boundary should not: `unit_memory_entries` is the source of truth, while FTS and vector tables are rebuildable indexes.
 
@@ -215,12 +231,12 @@ The query instruction version belongs in retrieval config / retrieval trace meta
 
 ### Fusion Policy
 
-Use RRF as the default fusion algorithm.
+Use RRF as the default fusion algorithm when the read-time retrieval mode is `hybrid`.
 
 Process:
 
 1. Run FTS5 BM25 and keep top lexical candidates.
-2. Run sqlite-vec KNN and keep top dense candidates.
+2. In `hybrid` mode, run sqlite-vec KNN and keep top dense candidates.
 3. Convert each candidate list to ranks.
 4. Apply RRF per retrieval document:
 
@@ -241,6 +257,8 @@ Initial defaults:
 - base lexical channel weight = `1.0`
 - base dense channel weight = `1.0`
 - apply each retrieval document's `weight_profile` after rank conversion or during unit aggregation, not by mutating raw BM25/vector scores
+
+In `text_only` mode, skip query embedding, sqlite-vec KNN, dense channel weighting, and RRF cross-channel fusion. Rank the FTS5 candidate list, apply lexical surface weights, then aggregate by unit using the same unit aggregation path.
 
 Initial surface / channel weights:
 
@@ -350,7 +368,7 @@ It does not replace the existing runtime artifacts. These artifacts own differen
   - answers what recent understanding should be carried directly into the next Digest context
 - `UnitMemoryLedger`
   - long-distance retrievable reading-memory facts
-  - answers what completed units can later be recalled by hybrid retrieval
+  - answers what completed units can later be recalled by text-only or hybrid retrieval
 
 The retrieval system should index `UnitMemoryLedger`, not reconstruct long-distance memory by stitching together `read_audit`, UI records, and recent-memory artifacts.
 
@@ -524,7 +542,7 @@ A single Unit Memory Entry can produce multiple retrieval documents:
 
 ### V1 Index Participation
 
-Every valid retrieval document should participate in both retrieval indexes:
+Every valid retrieval document is eligible for both retrieval indexes:
 
 - FTS5 indexes `retrieval_docs.text` for lexical / BM25 candidate ranks.
 - sqlite-vec embeds the same `retrieval_docs.text` for dense candidate ranks.
@@ -540,7 +558,7 @@ Surface differences should instead be expressed through channel weights and late
 | `unit_annotation` | medium-high | medium-high | visible-note continuity with both quote and note meaning |
 | `unit_response` | low | low-to-medium | support signal for readerly aftertaste / pressure |
 
-The implementation may store these as a `weight_profile` value on `retrieval_docs` and resolve concrete numeric weights in retrieval config. Empty or invalid material should not create a retrieval document at all; once a retrieval document exists, it is dual-indexed.
+The implementation may store these as a `weight_profile` value on `retrieval_docs` and resolve concrete numeric weights in retrieval config. Empty or invalid material should not create a retrieval document at all. Once a retrieval document exists, it should always be FTS-indexed; vector indexing is expected for `hybrid` mode and may be pending / absent while a book is being read in `text_only` mode.
 
 ### V1 Document Granularity
 
@@ -603,10 +621,10 @@ Deferred design work:
 
 ### Candidate Retrieval
 
-Use hybrid retrieval:
+Use retrieval according to the selected `memory_retrieval_mode`:
 
-- lexical candidate set from SQLite FTS5 BM25 over all valid retrieval documents
-- semantic candidate set from sqlite-vec dense vector KNN over the same valid retrieval documents
+- all modes use a lexical candidate set from SQLite FTS5 BM25 over all valid retrieval documents
+- `hybrid` mode also uses a semantic candidate set from sqlite-vec dense vector KNN over the same valid retrieval documents
 - optional metadata filters:
   - same book
   - only prior units
@@ -644,7 +662,7 @@ Ingest LLM
 
 Runtime
   -> UnitMemoryIndex.retrieve(...)
-  -> hybrid retrieval, RRF, unit aggregation
+  -> mode-aware retrieval, optional RRF, unit aggregation
   -> RetrievedMemory XML packaging
 
 Digest LLM
@@ -655,6 +673,38 @@ Digest LLM
 
 `Digest` should not know about SQLite, FTS5, sqlite-vec, embedding providers, RRF, raw scores, or retrieval rows. It should only see reader-usable prior-reading support.
 
+### Retrieval Performance Envelope
+
+High-frequency retrieval is acceptable only if it is bounded. Retrieval is an enhancement to the read cycle, not a synchronous critical dependency that may stall `Digest`.
+
+V1 read-time defaults:
+
+- `memory_retrieval_mode = text_only | hybrid`
+- `max_retrieval_queries_per_unit = 1`
+- `min_retrievable_prior_units = 20`
+- `retrieval_total_timeout_ms = 800`
+- `query_embedding_timeout_ms = 500`
+- `fts_timeout_ms = 100`
+- `vector_timeout_ms = 250`
+- `aggregation_timeout_ms = 50`
+
+Execution rules:
+
+- If fewer than `min_retrievable_prior_units` have been completed, skip long-distance retrieval and rely on recent-neighbor memory.
+- In `text_only` mode, the retrieval budget is spent only on FTS5, unit aggregation, and packaging. No query embedding should be requested.
+- In `hybrid` mode, start FTS5 retrieval without waiting for query embedding; run vector retrieval only after the query embedding is available.
+- Cache query embeddings by `(query_text_hash, embedding_model, query_instruction_version)`.
+- Keep candidate fanout bounded by the documented `lexical_top_k` and `dense_top_k`.
+- Keep prompt context bounded by `max_units_to_digest_context`.
+- Record latency breakdown for query generation, query embedding, FTS5, vector KNN, RRF, unit aggregation, and prompt packaging.
+
+Performance implications:
+
+- FTS5 and unit aggregation are expected to be cheap at single-book scale.
+- Query embedding is the main per-unit online cost in `hybrid` mode.
+- Vector indexing after `Digest` is write-side maintenance and should not block the next read cycle.
+- `text_only` mode should remain a first-class mode, not just an error fallback, so users can choose lower latency and simpler local dependencies.
+
 V1 degradation policy:
 
 - If retrieval fails after `Ingest` succeeds, continue to `Digest` without long-distance retrieved memory.
@@ -662,12 +712,15 @@ V1 degradation policy:
 - If vector retrieval succeeds and FTS5 fails, continue with vector-only candidates.
 - If the Unit Memory index does not exist yet, treat retrieval as empty.
 - If retrieval exceeds its time budget, return empty retrieval and record a timeout.
+- If `hybrid` mode is selected but query embedding times out, continue with text-only retrieval for that cycle.
 - Retrieval failure should not fail the read cycle unless the failure corrupts the Unit Memory ledger itself.
 
 Audit should keep the engineering trace separate from prompt context. A retrieval trace should record:
 
 - query text / query version
+- selected memory retrieval mode
 - retrieval config version
+- latency breakdown
 - channel candidate counts
 - top retrieval document ids
 - RRF and aggregation scores
@@ -729,7 +782,8 @@ V1 write lifecycle:
 - write the Unit Memory Entry during settlement after a `Digest` result has been accepted
 - derive retrieval documents from that entry
 - update the FTS5 index for those retrieval documents
-- request embeddings and update the sqlite-vec index
+- in `hybrid` mode, request embeddings and update the sqlite-vec index
+- in `text_only` mode, vector embeddings may remain absent / pending unless a background rebuild is explicitly requested
 - if embedding or vector insertion fails, keep the Unit Memory Entry and lexical index usable, and mark vector indexing pending / failed for retry
 
 The read cycle should not be blocked by rebuildable index maintenance. Ledger write failure is serious; index update failure should degrade retrieval and be recoverable.
@@ -763,6 +817,10 @@ Open design work:
   - what Ingest emits
   - no separate query-generation LLM call by default
   - how many queries are allowed
+- Read-start configuration:
+  - user-facing / operator-facing placement for `memory_retrieval_mode`
+  - default mode for first rollout
+  - whether switching from `text_only` to `hybrid` should trigger vector-index catch-up immediately or leave it pending
 - Retrieval algorithm:
   - whether retrieval review requires a second `unicode61` / `porter unicode61` lexical channel
   - exact sqlite-vec distance / metric behavior to standardize behind the adapter
@@ -777,6 +835,7 @@ Open design work:
   - exact runner function boundaries for retrieval and context packaging
   - retrieval trace schema and artifact path
   - retrieval timeout / retry thresholds
+  - query-embedding cache location and invalidation key
 - Recent-neighbor policy:
   - how many recent units are always carried
   - which units are excluded from long-distance retrieval
@@ -790,7 +849,7 @@ Open design work:
 
 Use one append-only Unit Memory Entry per completed read unit.
 
-Create retrieval documents from all four memory surfaces and index every valid retrieval document in both FTS5 and sqlite-vec:
+Create retrieval documents from all four memory surfaces. Every valid retrieval document should be FTS-indexed and vector-index eligible:
 
 - accepted source unit
 - `understanding`
@@ -801,6 +860,6 @@ But do not score them as equal signals. Use field-specific retrieval documents, 
 
 Use the initial conservative retrieval parameters in this document: top `80` lexical docs, top `80` dense docs, `rrf_k = 60`, modest surface / channel weights, unit aggregation led by the best matching retrieval document, and MMR disabled unless review shows repeated near-duplicate cards.
 
-Treat `UnitMemoryLedger` as the only durable fact source for long-distance memory. Keep FTS5 and sqlite-vec as rebuildable indexes. Execute retrieval in runtime after `Ingest` and before `Digest`, degrade gracefully when retrieval/index channels fail, and use retrieval review records to calibrate parameters before broad evaluation.
+Before reading a book / starting a read session, choose `memory_retrieval_mode`: `text_only` for FTS5-only low-latency memory retrieval, or `hybrid` for FTS5 plus query embedding and sqlite-vec. Treat `UnitMemoryLedger` as the only durable fact source for long-distance memory. Keep FTS5 and sqlite-vec as rebuildable indexes. Execute retrieval in runtime after `Ingest` and before `Digest`, enforce the performance budget, degrade gracefully when retrieval/index channels fail, and use retrieval review records to calibrate parameters before broad evaluation.
 
 The retrieval result should be source-grounded and unit-centered, then rendered to Digest as compact prior-reading support rather than as a hidden backread path.
