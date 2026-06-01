@@ -138,16 +138,50 @@ The exact SQL may change during implementation, but the ownership boundary shoul
 
 ### FTS5 Tokenizer Policy
 
-The corpus includes Chinese and English. Plain word-token behavior may be insufficient for Chinese source text, while pure substring matching may be noisy for English.
+The corpus includes Chinese and English. Plain word-token behavior is insufficient for Chinese source text because Chinese source spans often have no whitespace word boundary. A pure word tokenizer can keep a long Chinese phrase as one token, making shorter phrase recall brittle.
 
-V1 recommendation:
+V1 default:
 
 - use FTS5 for all lexical retrieval
-- evaluate `trigram` tokenization as the default mixed-language lexical index, because it supports substring-style matching that is useful for Chinese phrases and exact source fragments
-- if review shows too many false positives, split lexical retrieval into two FTS5 indexes:
-  - `unicode61` for word-like matching
-  - `trigram` for Chinese / exact-fragment substring recall
+- use a single `trigram` tokenizer FTS5 table as the first lexical index
+- keep `detail=full` and `columnsize=1` in the first implementation
 - keep tokenizer choice as an index-versioned setting so the lexical index can be rebuilt without changing Unit Memory storage
+
+Recommended first schema:
+
+```sql
+CREATE VIRTUAL TABLE retrieval_docs_fts USING fts5(
+  text,
+  content='retrieval_docs',
+  content_rowid='retrieval_doc_pk',
+  tokenize='trigram',
+  detail=full,
+  columnsize=1
+);
+```
+
+Why this default:
+
+- SQLite's built-in `trigram` tokenizer treats each contiguous sequence of three Unicode characters as a token, which gives useful substring-style recall for Chinese phrases, source fragments, names, images, and exact quote callbacks.
+- It keeps V1 inside standard SQLite FTS5, without adding jieba, ICU, or a custom compiled tokenizer dependency before retrieval behavior is proven.
+- Dense retrieval, RRF, weight profiles, and unit-level aggregation should absorb some of the noise that trigram lexical matching can introduce.
+- `detail=full` preserves phrase/snippet/debug evidence; `columnsize=1` preserves token length information used by built-in BM25. Local book-scale indexes are expected to be small enough that this is the safer first tradeoff.
+
+Known limits:
+
+- FTS5 `trigram` does not help MATCH queries shorter than three Unicode characters.
+- `trigram` is substring matching, not true Chinese word segmentation.
+- English lexical matching may be noisier than `unicode61` / `porter unicode61`, so review should inspect English-heavy books before treating this as final.
+
+Do not introduce a custom Chinese tokenizer in V1. Custom tokenizers are a valid later path, but they add deployment and rebuild complexity that is not needed for the first Unit Memory retrieval framework.
+
+V2 escalation path:
+
+- if retrieval review shows too many false positives or poor English lexical ranking, add a second FTS5 lexical channel instead of replacing the V1 trigram channel:
+  - `trigram` for Chinese, exact fragments, and quote-like substring recall
+  - `unicode61` or `porter unicode61` for English word-level recall
+- fuse both lexical channels with dense retrieval using RRF, then aggregate by unit
+- keep both lexical indexes rebuildable from `retrieval_docs`
 
 ### Embedding Policy
 
@@ -600,7 +634,7 @@ Open design work:
 
 - artifact paths under `_mechanisms/attentional_v2/runtime/`
 - exact SQLite schema and migration / rebuild commands
-- exact FTS5 tokenizer choice after mixed Chinese/English review
+- tokenizer review results and whether V2 needs a dual lexical channel
 - embedding model version pinning and local Ollama health checks
 - index rebuild checksums and prompt-version compatibility
 
@@ -616,7 +650,7 @@ Open design work:
   - no separate query-generation LLM call by default
   - how many queries are allowed
 - Retrieval algorithm:
-  - final FTS5 tokenizer policy
+  - whether retrieval review requires a second `unicode61` / `porter unicode61` lexical channel
   - exact sqlite-vec distance / metric behavior to standardize behind the adapter
   - score normalization
   - concrete numeric weight profiles for each surface / channel posture
