@@ -13,16 +13,16 @@ Update when: Digest action names, output fields, XML prompt structure, or runtim
 - Current basis:
   - `DEC-108` makes `Digest` the concrete per-unit interpretation LLM call.
   - `DEC-109` removes content-typed structured long-memory stores from the current live surface.
-  - Current Digest stores model-produced `understanding[]` through runtime `recent_reading_memory`, but the model-facing task no longer phrases this as "maintain memory."
+  - Current Digest stores one model-produced `understanding` object through runtime `recent_reading_memory`, but the model-facing task no longer phrases this as "maintain memory."
 
 ## Implementation Status
 
-- Implemented prompt version: `attentional_v2.digest.v2`
-- Implemented XML assembly spec: `attentional_v2.digest.xml.v2`
-- Implemented promptset: `attentional_v2-phase6-v46`
-- Implemented output contract: `digest_understanding_response_annotation_json_v1`
+- Implemented prompt version: `attentional_v2.digest.v3`
+- Implemented XML assembly spec: `attentional_v2.digest.xml.v3`
+- Implemented promptset: `attentional_v2-phase6-v47`
+- Implemented output contract: `digest_understanding_response_annotation_json_v2`
 - Runtime mapping:
-  - `understanding[].content` -> internal `memory_uptake_ops[].payload.memory_text` targeting `recent_reading_memory`
+  - `understanding.content` -> zero or one internal `memory_uptake_ops[].payload.memory_text` targeting `recent_reading_memory`
   - `response` -> internal `DigestResult.reading_impression`
   - `annotations[]` -> internal `DigestResult.surfaced_reactions`
 - Old model-facing fields `reading_impression`, `surfaced_reactions`, and `recent_reading_memory` are not accepted as current Digest LLM contract fields; internal runtime/audit names remain stable in this slice.
@@ -56,7 +56,7 @@ Minimum implementation scope:
   - Rename LLM-facing output fields from `recent_reading_memory`, `reading_impression`, and `surfaced_reactions` to `understanding`, `response`, and `annotations`.
   - Update field contracts so the three outputs are peers.
 - Runtime adapter
-  - Convert `understanding[]` into internal `memory_uptake_ops[]` with `target_store="recent_reading_memory"`.
+  - Convert the single `understanding` object into zero or one internal `memory_uptake_ops[]` with `target_store="recent_reading_memory"`.
   - Normalize `annotations[]` using the existing surfaced-reaction grounding rules.
   - Map `response` into the current internal `reading_impression` field unless a later cleanup renames audit/runtime artifacts too.
 - Tests / docs
@@ -264,9 +264,11 @@ Use the carried reading context to understand this unit as part of the unfolding
 
 Write Understanding so the reading can continue coherently even if the exact source text of this unit is not shown again soon.
 
-Be context-resolvable, not standalone exhaustive. Avoid bare pronouns or vague references unless the referent is explicit in the same entry.
+Be context-resolvable, not standalone exhaustive. Avoid bare pronouns or vague references unless the referent is explicit in the same Understanding.
 
-Usually write one Understanding entry for this unit. Split into multiple entries only when the unit contains distinct meanings that a future reading step would naturally use separately. Do not split by sentence or paragraph.
+Write one holistic Understanding for this unit. The unit may contain several source-established meanings, but integrate them into one coherent Understanding instead of splitting them into multiple entries.
+
+Do not split Understanding by sentence, paragraph, theme, future use, or separate memory point. Digest may produce multiple Annotations, but it produces only one Understanding for the unit.
 
 If the unit is empty or purely structural, Understanding may be empty. If the unit is author-facing or method-facing, treat it as meaningful when it declares witness position, evidence boundary, writing method, intended reader, or what the book will / will not explain.
 ```
@@ -332,7 +334,7 @@ Mapping from old prompt:
 ```text
 - `annotations[].source_quote` must be a short exact contiguous span copied from the current unit: no ellipses, no stitched fragments, no paraphrase, no translation.
 - Never invent source coordinates. The runner resolves source quotes to paragraph + char-offset `SourceRef` objects after Digest returns.
-- Understanding entries are grounded in the current source unit as a whole; they do not need exact source quotes.
+- Understanding is grounded in the current source unit as a whole; it does not need exact source quotes.
 ```
 
 Mapping from old prompt:
@@ -357,12 +359,10 @@ Recommended LLM-facing contract:
 
 ```json
 {
-  "understanding": [
-    {
-      "kind": "event_or_situation|claim_or_argument|definition_or_distinction|causal_or_structural_link|character_or_relationship|emotional_or_tonal_shift|image_or_scene|local_pattern_or_thread|fact|author_or_method_frame|other",
-      "content": "..."
-    }
-  ],
+  "understanding": {
+    "kind": "event_or_situation|claim_or_argument|definition_or_distinction|causal_or_structural_link|character_or_relationship|emotional_or_tonal_shift|image_or_scene|local_pattern_or_thread|fact|author_or_method_frame|other",
+    "content": "..."
+  },
   "response": "...",
   "annotations": [
     {
@@ -378,15 +378,16 @@ Recommended LLM-facing contract:
 
 Notes:
 
-- `understanding[].content` replaces `recent_reading_memory[].memory_text` at the model-facing level.
+- `understanding.content` replaces `recent_reading_memory[].memory_text` at the model-facing level.
 - `response` replaces `reading_impression`.
 - `annotations` replaces `surfaced_reactions`.
 - `author_or_method_frame` is proposed as an optional `kind` because current prompt rules explicitly treat author stance, evidence boundary, writing method, and intended reader as meaningful content. If the team wants fewer kinds, this can remain `other` instead.
+- `understanding.content` may be empty only for empty or purely structural units; runtime does not append an empty recent-memory entry.
 
 Runtime mapping:
 
 ```text
-understanding[] -> memory_uptake_ops[] -> recent_reading_memory store
+understanding -> zero or one memory_uptake_ops[] entry -> recent_reading_memory store
 response -> DigestResult.reading_impression
 annotations[] -> DigestResult.surfaced_reactions
 ```
@@ -407,11 +408,11 @@ This keeps runtime state stable while making the LLM call semantically cleaner.
   - add direct children `Understanding`, `Response`, and `Annotation`
 - Update source-grounding text:
   - `surfaced_reactions[].source_quote` -> `annotations[].source_quote`
-  - `Recent Reading Memory entries` -> `Understanding entries`
+  - `Recent Reading Memory entries` -> one holistic `Understanding`
 - Update `OutputContract`:
   - `ReturnFormat`
   - field contracts
-  - output contract name if desired, for example `digest_understanding_response_annotation_json_v1`
+  - output contract name: `digest_understanding_response_annotation_json_v2`
 - Update `llm_calls.digest(...)` normalizer:
   - parse `payload["understanding"]`
   - parse `payload["response"]`

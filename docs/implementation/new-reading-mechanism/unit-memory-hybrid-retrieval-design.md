@@ -15,7 +15,7 @@ Update when: Unit Memory entry shape, indexed fields, retrieval ranking, query g
   - `DEC-107` makes `Ingest` the forward boundary LLM call and reserves memory-support retrieval for later design.
   - `DEC-108` makes `Digest` the concrete per-unit interpretation LLM call.
   - `DEC-109` removes content-typed concept/thread long-memory stores from the current live surface.
-  - Digest now emits model-facing `understanding`, `response`, and `annotations`, with `understanding[]` stored internally through the existing `recent_reading_memory` path.
+  - Digest now emits model-facing `understanding`, `response`, and `annotations`, with the single `understanding` object stored internally through the existing `recent_reading_memory` path.
 
 ## Design Claim
 
@@ -303,12 +303,10 @@ It should store the accepted unit and the Digest outputs as one logical record:
     "paragraph_slices": []
   },
   "digest": {
-    "understanding": [
-      {
-        "kind": "claim_or_argument",
-        "content": "..."
-      }
-    ],
+    "understanding": {
+      "kind": "claim_or_argument",
+      "content": "..."
+    },
     "response": "...",
     "annotations": [
       {
@@ -343,7 +341,7 @@ The stored unit should preserve enough information to support retrieval and late
   - accepted source text
   - paragraph slices with paragraph index, role, and local char offsets when available
 - Digest outputs:
-  - `understanding[]`
+  - `understanding`
   - `response`
   - `annotations[]`
 - audit / lifecycle metadata:
@@ -366,7 +364,7 @@ This avoids flattening source, understanding, response, and annotations into one
 Index:
 
 - accepted source text
-- paragraph slice text
+- text from `accepted_source_unit.paragraph_slices`
 - annotation `source_quote` may also be included as exact source evidence
 
 Use:
@@ -379,11 +377,13 @@ Default weight:
 - high lexical weight
 - medium semantic weight
 
+Do not assume an accepted source unit is larger than a paragraph or aligned to paragraph boundaries. Current reading units are paragraph-offset source spans and may start or end inside a paragraph, so the source retrieval docs should follow the accepted unit's recorded paragraph slices.
+
 ### Understanding Surface
 
 Index:
 
-- each `understanding[].content`
+- `understanding.content`
 - optionally include `understanding.kind` as a low-weight facet, not a hard filter
 
 Use:
@@ -395,6 +395,8 @@ Default weight:
 
 - high semantic weight
 - medium lexical weight
+
+Digest produces one holistic Understanding per accepted source unit. The `unit_understanding` retrieval document should therefore be one document per Unit Memory Entry, not one document per sentence, paragraph, topic, or future-use split.
 
 ### Annotation Surface
 
@@ -587,7 +589,7 @@ Use one append-only Unit Memory Entry per completed read unit.
 Index all four memory surfaces:
 
 - accepted source unit
-- `understanding[]`
+- `understanding`
 - `response`
 - `annotations[]`
 

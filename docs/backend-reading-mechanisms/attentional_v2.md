@@ -276,7 +276,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
     - explicit chapter-targeted runs may still select them directly
 - `Digest` is the current formal unit interpretation LLM call, with a reader-first prompt role rather than a node-first role.
   - On the current live baseline, its model-facing output fields are `understanding`, `response`, and `annotations`.
-  - The runtime converts `understanding[]` into internal `memory_uptake_ops[]` before settlement.
+  - The runtime converts the single `understanding` object into zero or one internal `memory_uptake_ops[]` before settlement.
   - The runtime maps `response` to internal `DigestResult.reading_impression` and `annotations[]` to internal `DigestResult.surfaced_reactions`.
   - It should not behave like a control super-node or a checklist-filling state updater.
   - Its intended order is:
@@ -291,8 +291,8 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
     - the mechanism should not inflate that kind of unit into review voice or manufactured gravitas unless the wording itself genuinely carries local force
 - `response` is the model-facing brief natural read-after impression; internally it is still stored as `reading_impression` for the current audit/runtime surface.
   - It exists as the immediate reader-like response after one unit, not as a new durable memory layer.
-  - The LLM-facing Digest output emits `understanding[]`, not Recent Reading Memory or legacy store-targeted memory operations.
-  - Runtime converts `understanding[]` into internal `memory_uptake_ops[]` for deterministic settlement into the Recent Reading Memory store.
+  - The LLM-facing Digest output emits one `understanding` object, not Recent Reading Memory or legacy store-targeted memory operations.
+  - Runtime converts the single `understanding` object into internal `memory_uptake_ops[]` for deterministic settlement into the Recent Reading Memory store.
   - Model-emitted legacy `memory_uptake_ops[]` are ignored by the current Digest call.
   - Visible annotations and stored Understanding come from the same reading experience, but an annotation is persisted as a reaction record and is not automatically copied into memory.
   - Author-given structures such as stage models, classifications, core definitions, named distinctions, or chapter roadmaps may enter Recent Reading Memory even when they do not produce a visible reaction.
@@ -348,8 +348,9 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
 - This section freezes the approved next target shape after the post-E3 quality review.
 - The LLM-facing `Digest` contract minimally exposes:
   - `understanding`
-    - one or a small number of source-faithful entries with `kind` and `content`
-    - runtime converts these entries into internal `memory_uptake_ops[]` targeting `recent_reading_memory`
+    - one holistic source-faithful object with `kind` and `content`
+    - it may integrate several source-established meanings, but it must not split one unit into multiple understanding fragments
+    - runtime converts this object into zero or one internal `memory_uptake_ops[]` entry targeting `recent_reading_memory`
   - `response`
     - the temporary natural-language response left by the current unit
     - this is intentionally compact; it is the reader's immediate feeling, thought, pressure, question, or aftertaste after understanding the unit
@@ -492,7 +493,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
     - long-lived tensions, arcs, watchpoints, and unresolved thematic/narrative pulls should be handled by the future unit-memory retrieval design, not kept alive in a separate ActiveTension layer
   - `recent_reading_memory`
     - owns near-term semantic memory of just-read units
-    - Digest returns one or a small number of LLM-facing `understanding[]` entries; runtime converts them into `memory_uptake_ops[]` with `target_store="recent_reading_memory"` and `op="append"`
+    - Digest returns one LLM-facing `understanding` object; runtime converts it into at most one `memory_uptake_ops[]` entry with `target_store="recent_reading_memory"` and `op="append"`
     - the LLM provides only `kind` and `content`; runtime stores `content` as `memory_text`, and Recent Memory append operations do not use an operation-level `reason`
     - the runner owns `entry_id`, `source_unit_span_id`, `created_at_unit_index`, `status`, and `archived_by_consolidation_id`
     - entries are grounded by the accepted read unit span as a whole; the first implementation does not require fine-grained `source_refs` or quote matching

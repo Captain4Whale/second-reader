@@ -344,12 +344,10 @@ def test_digest_uses_live_xml_prompt_and_filters_surface_reactions(tmp_path: Pat
                     "content": "This one should be dropped.",
                 }
             ],
-            "understanding": [
-                {
-                    "kind": "claim_or_argument",
-                    "content": "The current unit flips the frame around Alpha hinge.",
-                }
-            ],
+            "understanding": {
+                "kind": "claim_or_argument",
+                "content": "The current unit flips the frame around Alpha hinge.",
+            },
             "reading_impression": "legacy ignored",
             "surfaced_reactions": [
                 {
@@ -413,9 +411,12 @@ def test_digest_uses_live_xml_prompt_and_filters_surface_reactions(tmp_path: Pat
     assert "Alpha hinge." in captured["prompt"]
     assert "Structural frame:" not in captured["prompt"]
     assert "<Understanding>" in captured["prompt"]
+    assert "Write one holistic Understanding for this unit." in captured["prompt"]
+    assert "Do not split Understanding by sentence, paragraph, theme, future use, or separate memory point." in captured["prompt"]
+    assert "Split into multiple entries" not in captured["prompt"]
     assert "<Response>" in captured["prompt"]
     assert "<Annotation>" in captured["prompt"]
-    assert '"understanding": [' in captured["prompt"]
+    assert '"understanding": {' in captured["prompt"]
     assert '"response": "..."' in captured["prompt"]
     assert '"annotations": [' in captured["prompt"]
     assert '"reading_impression": "..."' not in captured["prompt"]
@@ -449,9 +450,9 @@ def test_digest_uses_live_xml_prompt_and_filters_surface_reactions(tmp_path: Pat
     }
     assert op["target_key"] != "legacy-ignored"
     assert manifest["node_name"] == "digest"
-    assert manifest["prompt_version"] == "attentional_v2.digest.v2"
-    assert manifest["prompt_assembly"]["spec_id"] == "attentional_v2.digest.xml.v2"
-    assert manifest["prompt_assembly"]["output_contract"] == "digest_understanding_response_annotation_json_v1"
+    assert manifest["prompt_version"] == "attentional_v2.digest.v3"
+    assert manifest["prompt_assembly"]["spec_id"] == "attentional_v2.digest.xml.v3"
+    assert manifest["prompt_assembly"]["output_contract"] == "digest_understanding_response_annotation_json_v2"
     assert "mode" not in manifest["prompt_assembly"]
     assert manifest["prompt_assembly"]["rendered_blocks"] == [
         "ReaderRole",
@@ -461,6 +462,40 @@ def test_digest_uses_live_xml_prompt_and_filters_surface_reactions(tmp_path: Pat
         "CurrentFocus",
         "OutputContract",
     ]
+
+
+def test_digest_ignores_legacy_understanding_list_payload(tmp_path: Path, monkeypatch):
+    """Digest should no longer treat a legacy Understanding list as memory ops."""
+
+    def fake_invoke_json(system_prompt: str, prompt: str, default: object) -> object:
+        payload: dict[str, object] = {
+            "response": "A compact response remains valid.",
+            "annotations": [],
+        }
+        payload["understanding"] = [
+            {
+                "kind": "claim_or_argument",
+                "content": "Legacy list item should not become current memory.",
+            }
+        ]
+        return payload
+
+    monkeypatch.setattr(llm_calls_module, "invoke_json", fake_invoke_json)
+
+    result = digest(
+        current_unit_sentences=[
+            _sentence("c1-s1", "Alpha hinge.", sentence_index=1, paragraph_index=1),
+        ],
+        carry_forward_context={"packet_version": STATE_PACKET_VERSION, "refs": []},
+        output_language="en",
+        output_dir=tmp_path,
+        book_title="Demo Book",
+        author="Tester",
+        chapter_title="Chapter 1",
+    )
+
+    assert result["reading_impression"] == "A compact response remains valid."
+    assert result["memory_uptake_ops"] == []
 
 
 def test_memory_uptake_source_ref_normalization_keeps_development_evidence_separate():

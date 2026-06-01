@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-06-01T20:46:58+08:00`
+Last verified: `2026-06-01T21:33:40+08:00`
 
 ## Current Objective
 - Product goal and mechanism direction are being reset before further implementation.
@@ -33,7 +33,7 @@ Last verified: `2026-06-01T20:46:58+08:00`
     - current LLM-call code now lives in `reading-companion-backend/src/attentional_v2/llm_calls.py`; the old ambiguous active module name is removed
     - runtime next-unit preparation lives outside `Ingest` as `prepare_next_source_unit_for_read`: it prepares source preview/context, calls `Ingest`, performs anchor resolution/retry/fallback boundary governance, and hands the accepted source unit to `Digest`
     - first-slice `Ingest` uses `ReaderRole`, `Instruction`, `BookInfo`, `CurrentView`, empty `RetrievalSurface`, and `OutputContract`; memory-retrieval request behavior is deferred until the new memory design lands
-    - Digest semantic refactor is implemented: model-facing `understanding / response / annotations` are three peer outputs, with runtime storage of `understanding[]` still mapped to `recent_reading_memory`
+    - Digest semantic refactor is implemented: model-facing `understanding / response / annotations` are three peer outputs, with one holistic `understanding` object per unit mapped into `recent_reading_memory`
     - Unit Memory hybrid retrieval design has started as a draft: storage is unit-centered, while retrieval indexes source, understanding, response, and annotations as weighted field-specific surfaces
     - current `Digest` has no path-redirection output contract and the Runner/audit path emits no Detour or source-backread runtime artifacts for new runs
     - current `local_continuity` contains only forward-reading continuity; old Detour-era checkpoint/artifact shapes are not a compatibility target
@@ -88,9 +88,9 @@ Last verified: `2026-06-01T20:46:58+08:00`
     - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/C设计10-Recent Reading Memory Design v0.md`
   - implementation scope:
     - `recent_reading_memory` is now a runtime store for near-term semantic memory of just-read units
-    - the historical concrete-node prompt series asked for one or a small number of context-resolvable Recent Reading Memory entries per unit
+    - the historical concrete-node prompt series permitted compact context-resolvable Recent Reading Memory entries per unit
     - that prompt series tightened source-grounding, continuity balance, no operation-level reason, natural-memory prose, and author/evidence-boundary handling
-    - current Digest converts LLM-facing `understanding[]` into runtime `memory_uptake_ops[]` with `target_store="recent_reading_memory"` and `op="append"`
+    - current Digest converts the LLM-facing `understanding` object into zero or one runtime `memory_uptake_ops[]` entry with `target_store="recent_reading_memory"` and `op="append"`
     - the LLM supplies only `kind` and `content`; runner/state code stores `content` as `memory_text` and owns `entry_id`, `source_unit_span_id`, `created_at_unit_index`, `status`, and `archived_by_consolidation_id`
     - only `active` entries are projected into subsequent Digest prompt packets
     - runtime persistence, checkpoint/resume carriage, settlement audit deltas, and Memory Quality full-state snapshots now include `recent_reading_memory`

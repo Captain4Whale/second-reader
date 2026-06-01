@@ -84,12 +84,10 @@ def test_digest_projects_compact_packet_and_returns_f1_surface_contract(tmp_path
                     },
                 }
             ],
-            "understanding": [
-                {
-                    "kind": "claim_or_argument",
-                    "content": "The second sentence sharpens the first one.",
-                }
-            ],
+            "understanding": {
+                "kind": "claim_or_argument",
+                "content": "The second sentence sharpens the first one.",
+            },
         }
 
     monkeypatch.setattr(llm_calls_module, "invoke_json", fake_invoke_json)
@@ -185,7 +183,7 @@ def test_digest_projects_compact_packet_and_returns_f1_surface_contract(tmp_path
     assert "\"earlier_excerpts\"" not in captured["prompt"]
     assert "\"refs\": [" not in captured["prompt"]
     assert manifest["node_name"] == "digest"
-    assert manifest["prompt_version"] == "attentional_v2.digest.v2"
+    assert manifest["prompt_version"] == "attentional_v2.digest.v3"
     assert result["reading_impression"] == "The second sentence sharpens the first one."
     assert result["surfaced_reactions"][0]["source_quote"] == "Beta sentence."
     assert result["surfaced_reactions"][0]["prior_link"] is None
