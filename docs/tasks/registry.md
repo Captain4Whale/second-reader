@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-06-02T22:05:24+08:00`
+Last updated: `2026-06-02T22:27:59+08:00`
 
 ## Status Values
 - `active`
@@ -25,7 +25,7 @@ Last updated: `2026-06-02T22:05:24+08:00`
 - Lane: `mechanism_runtime`
 - Priority: `high`
 - Detail: `docs/current-state.md`
-- Next: keep the implemented `Ingest -> Digest -> Reading Runner settlement` mechanism facts aligned before further testing. Current live `Ingest` returns boundary fields plus bounded `memory_recalls[]`; when recalls are present, the `retrieve_unit_memory` tool loop lets Reading Runner execute Unit Memory retrieval/selection before calling `Digest`. `Digest` receives top-level `ReadingMemory` assembled from hot current-chapter Understanding plus selected long-distance Unit Memory Understanding, with `5K` hot, `10K` retrieved, and `15K` total prompt-facing estimated-token budgets using `tiktoken_o200k_base_v1`. Unit Memory is the current content-neutral long-distance memory substrate under `DEC-110`; retired Detour/source-backread/source-skill and concept/thread structured-memory interfaces are historical only. Use `docs/implementation/new-reading-mechanism/ingest-context-and-navigate-mapping.md` only as the first-slice Ingest boundary/context mapping; use `docs/implementation/new-reading-mechanism/ingest-recall-and-digest-memory-context-design.md` as the current recall/tool-loop/ReadingMemory authority. The no-judge hybrid smoke `attentional_v2_unit_memory_hybrid_smoke_nawaer_20260602` completed as diagnostic-only material; do not promote it as evidence. Do not launch formal eval, update evidence catalog, or revive paused `C设计10` consolidation / old concrete-node XML migration / `C设计12` prompt assembly work unless explicitly re-adopted.
+- Next: keep the implemented `Ingest -> Digest -> Reading Runner settlement` mechanism facts aligned before further testing. Current live `Ingest` returns boundary fields plus bounded `memory_recalls[]`; when recalls are present, the `retrieve_unit_memory` tool loop lets Reading Runner execute Unit Memory retrieval/selection before calling `Digest`. `Digest` receives top-level `ReadingMemory` assembled from hot current-chapter Understanding plus selected long-distance Unit Memory Understanding, with `5K` hot, `10K` retrieved, and `15K` total prompt-facing estimated-token budgets using `tiktoken_o200k_base_v1`. Unit Memory is the current content-neutral long-distance memory substrate under `DEC-110`; retired Detour/source-backread/source-skill and concept/thread structured-memory interfaces are historical only. Use `docs/implementation/new-reading-mechanism/ingest-context-and-navigate-mapping.md` only as the first-slice Ingest boundary/context mapping; use `docs/implementation/new-reading-mechanism/ingest-recall-and-digest-memory-context-design.md` as the current recall/tool-loop/ReadingMemory authority. Use `docs/implementation/new-reading-mechanism/ingest-digest-unit-memory-conformance-goal.md` as the Goal-mode contract for end-to-end structural conformance testing; it locks the mechanism design docs as the baseline and permits fixing implementation/tests/stable docs only. The no-judge hybrid smoke `attentional_v2_unit_memory_hybrid_smoke_nawaer_20260602` completed as diagnostic-only material; do not promote it as evidence. Do not launch formal eval, update evidence catalog, or revive paused `C设计10` consolidation / old concrete-node XML migration / `C设计12` prompt assembly work unless explicitly re-adopted.
 - Jobs: none
 - Evidence:
   - `DEC-103`
@@ -41,6 +41,7 @@ Last updated: `2026-06-02T22:05:24+08:00`
   - `docs/implementation/new-reading-mechanism/digest-understanding-response-annotation-design.md`
   - `docs/implementation/new-reading-mechanism/unit-memory-hybrid-retrieval-design.md`
   - `docs/implementation/new-reading-mechanism/ingest-recall-and-digest-memory-context-design.md`
+  - `docs/implementation/new-reading-mechanism/ingest-digest-unit-memory-conformance-goal.md`
   - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
 
 ### `TASK-ATTENTIONAL-V2-STRUCTURAL-REWORK` — Execute the post-Phase-9 structural rework of `attentional_v2`

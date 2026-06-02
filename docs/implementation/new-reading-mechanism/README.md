@@ -36,6 +36,9 @@ Update when: the design capture, plan, tracker, or open-question set changes dur
 - `ingest-context-and-navigate-mapping.md`
   - first working design note for mapping the current forward-only `Navigate` prompt into the proposed `Ingest` XML context and retrieval-request contract
   - use before implementation work that renames or restructures the current boundary-selection LLM call
+- `ingest-digest-unit-memory-conformance-goal.md`
+  - executable Goal contract for end-to-end structural conformance testing of the current `Ingest -> Unit Memory retrieval/selection -> Digest -> settlement` mechanism
+  - use when running Codex Goal-mode checks against the locked design baseline without changing the mechanism design documents
 - `requirement-ledger.md`
   - atomic traceability ledger mapping design points to implementation, deferral, rejection, or stable-doc promotion
 - `implementation-plan.md`
@@ -124,5 +127,6 @@ Update when: the design capture, plan, tracker, or open-question set changes dur
 16. `post-recovery-gate-review-checklist.md`
 17. `mechanism-pattern-ledger.md`
 18. `runtime-artifact-map.md`
-19. `second-reader-memory-planning/README.md`
-20. Stable docs listed above, as required by the task at hand
+19. `ingest-digest-unit-memory-conformance-goal.md`
+20. `second-reader-memory-planning/README.md`
+21. Stable docs listed above, as required by the task at hand
