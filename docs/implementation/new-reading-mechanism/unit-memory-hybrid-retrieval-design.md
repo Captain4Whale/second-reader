@@ -18,7 +18,7 @@ Update when: Unit Memory entry shape, indexed fields, retrieval ranking, query g
   - `DEC-110` makes Unit Memory ledger + hybrid retrieval the current long-distance memory substrate for `attentional_v2`.
   - Digest now emits model-facing `understanding`, `response`, and `annotations`, with the single `understanding` object stored internally through the existing `recent_reading_memory` path.
 - Follow-up design:
-  - `docs/implementation/new-reading-mechanism/ingest-recall-and-digest-memory-context-design.md` is the current draft for replacing the single model-facing `memory_query` with bounded `memory_recalls[]` and for designing Digest retrieved-memory context packaging.
+  - `docs/implementation/new-reading-mechanism/ingest-recall-and-digest-memory-context-design.md` is the current draft for replacing the single model-facing `memory_query` with bounded `memory_recalls[]`, adding the Anthropic-style `retrieve_unit_memory` tool loop, and designing Digest retrieved-memory context packaging.
 
 ## Design Claim
 

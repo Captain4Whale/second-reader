@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-06-02T07:51:46+08:00`
+Last verified: `2026-06-02T08:11:20+08:00`
 
 ## Current Objective
 - Product goal and mechanism direction are being reset before further implementation.
@@ -19,7 +19,7 @@ Last verified: `2026-06-02T07:51:46+08:00`
     - treat note type / value rating / highlight presentation as product-facing outputs, not as secondary artifacts of an internal memory ontology
   - proposed workflow direction:
     - replace the old path-selection framing of `navigate -> read` with a narrower `ingest -> digest` design exploration
-    - `ingest` should determine the next reading unit and request retrieval/tools outside the model where needed
+    - `ingest` should determine the next reading unit and use runtime-owned retrieval tools where needed
     - `digest` should understand the target text and produce reader-facing reactions / notes / highlights
     - prefer retrieving relevant prior memory/source objects over live "回读" path steering
   - live cleanup landed:
@@ -51,8 +51,8 @@ Last verified: `2026-06-02T07:51:46+08:00`
     - use `docs/implementation/new-reading-mechanism/ingest-context-and-navigate-mapping.md` as the implementation reference for the landed first-slice `Ingest` XML context
     - use `docs/implementation/new-reading-mechanism/digest-understanding-response-annotation-design.md` as the implemented reference for the Digest prompt/output semantic refactor
     - use `docs/implementation/new-reading-mechanism/unit-memory-hybrid-retrieval-design.md` as the implemented reference for the Unit Memory storage/index/retrieval trace bottom framework
-    - use `docs/implementation/new-reading-mechanism/ingest-recall-and-digest-memory-context-design.md` as the current draft for the next slice: bounded multi-recall Ingest output, multi-recall retrieval aggregation, and Digest retrieved-memory context packaging
-    - next implementation work should replace the single model-facing `memory_query` with bounded `memory_recalls[]`, then define how retrieved Unit Memory cards enter Digest XML context, including card shape, budget, dedupe against Recent Reading Memory, and calibration review criteria
+    - use `docs/implementation/new-reading-mechanism/ingest-recall-and-digest-memory-context-design.md` as the current draft for the next slice: bounded multi-recall Ingest output, Anthropic-style `retrieve_unit_memory` tool loop, multi-recall retrieval aggregation, and Digest retrieved-memory context packaging
+    - next implementation work should replace the single model-facing `memory_query` with bounded `memory_recalls[]`, let Ingest call the runtime-owned Unit Memory retrieval tool, and then define how selected retrieved Unit Memory cards enter Digest XML context, including card shape, budget, dedupe against Recent Reading Memory, and calibration review criteria
     - do not run eval, update evidence catalog, or claim product quality from the Detour hard-purge slice
 - Historical concrete-node XML prompt / Recent Reading Memory full active diagnostic machine run has completed; post-run report is preserved for reference.
   - purpose:
