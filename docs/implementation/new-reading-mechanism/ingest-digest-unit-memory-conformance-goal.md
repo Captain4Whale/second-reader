@@ -39,7 +39,7 @@ During this conformance goal, these mechanism design documents must be treated a
 
 - Do not modify locked mechanism design documents unless the user explicitly approves a design-doc correction.
 - If code, prompt renderers, runtime artifacts, tests, or stable docs conflict with the locked baseline, fix the conflicting surface.
-- If a locked design document appears ambiguous, incomplete, or internally inconsistent, record a `design_ambiguity_blocker` in the final report and stop the affected sub-check instead of editing the design.
+- If a locked design document appears ambiguous, incomplete, or internally inconsistent, record a `design_ambiguity_blocker` in the final report, skip only the affected judgment, and continue all other conformance checks that remain independently testable.
 - Do not introduce a new mechanism direction, memory ontology, retrieval policy, prompt field, or compatibility layer to make tests pass.
 - Do not revive retired Detour / source-backread / source-skill, `memory_query`, concept/thread structured memory, or old `read_unit` surfaces.
 
@@ -64,7 +64,7 @@ This goal only evaluates structural and artifact-level conformance:
 
 ## Execution Order
 
-Run the goal in this order unless a blocker makes an earlier layer impossible:
+Run the goal in this order. If one layer cannot be fully judged, record the issue and continue every later layer that can still be tested without changing the locked design baseline:
 
 1. Static contract sweep.
 2. Prompt and LLM-call unit tests.
@@ -76,6 +76,35 @@ Run the goal in this order unless a blocker makes an earlier layer impossible:
 8. Final conformance report and commit.
 
 If a real smoke is expected to run longer than roughly `10-15` minutes, register it through the backend background-job registry. A no-judge smoke is diagnostic only and must not update the evidence catalog.
+
+## Continuation And Stop Semantics
+
+The goal should stop because the conformance pass has reached its completion criteria, not because the first unresolved issue appears.
+
+Default behavior:
+
+- Keep testing independently testable layers even when one requirement has a recorded issue.
+- Fix issues that are within the allowed repair surface.
+- Record issues that are outside the allowed repair surface, then continue other checks.
+- Treat external degradation as testable behavior when the design expects graceful degradation.
+- Produce the final report only after static checks, targeted tests, any approved smoke, artifact inspection, and allowed repairs have all been attempted.
+
+The goal should not stop early merely because:
+
+- one test is outdated but can be updated
+- one optional dependency is missing but degradation behavior can be inspected
+- one design point is ambiguous while other requirements remain independently testable
+- one artifact is missing and the writer can be fixed
+- a formal subjective quality question remains unanswered
+
+The goal should stop as complete when:
+
+- the Second Reader has been structurally verified to perform the designed end-to-end loop, or every missing part has been classified and reported
+- all allowed repairs discovered during the pass have been applied and rechecked
+- all non-repaired issues are listed as follow-up findings with categories and affected requirements
+- no remaining planned conformance check can add new structural evidence without changing the locked baseline or running out-of-scope work
+
+In short: continue through findings; stop after the target has been fully exercised and reported.
 
 ## Failure Categories
 
@@ -543,7 +572,7 @@ The Goal executor must finish with a concise report:
 Conformance Goal Result
 
 Status:
-- passed | partially passed | blocked
+- passed | completed_with_findings | blocked_by_unexecutable_goal
 
 Checked:
 - static sweeps
@@ -558,12 +587,15 @@ Fixed:
 - [category] file/path: short description
 
 Blocked:
-- [design_ambiguity_blocker] question and exact baseline conflict
+- [only if the whole goal cannot be exercised] reason and exact evidence
 
 Not Run:
 - subjective quality evaluation
 - formal eval
 - evidence catalog update
+
+Findings Carried Forward:
+- [category] affected requirement and recommended next owner
 
 Residual Risk:
 - short note
@@ -576,6 +608,8 @@ The goal is complete only when all applicable requirements above are either:
 - passed,
 - fixed and then passed,
 - intentionally not applicable with a documented reason, or
-- blocked by a clearly reported design ambiguity that requires user input.
+- carried forward as a categorized finding after all independently testable checks have continued.
 
 The goal is not complete merely because a smoke run exits `0`. The artifacts must show the intended end-to-end mechanism actions.
+
+The goal is also not incomplete merely because a non-critical finding remains. If the mechanism has been exercised end to end, allowed repairs are complete, and remaining findings are outside the allowed repair surface or require later design/product decisions, the correct status is `completed_with_findings`.
