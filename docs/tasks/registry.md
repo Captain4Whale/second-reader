@@ -70,7 +70,7 @@ Last updated: `2026-06-02T20:47:25+08:00`
     - `DEC-109` supersedes that direction; current live code no longer exposes the retired concept/thread structured stores in schema, prompt packets, runtime artifacts, checkpoints, settlement, audit, or tests
     - current long-memory direction is a content-neutral Unit Memory baseline; `DEC-110` now implements the ledger/index/retrieval trace bottom framework, and its follow-through slice implements bounded Ingest recalls, the `retrieve_unit_memory` tool loop, runtime-owned retrieval selection, and Digest `ReadingMemory` packaging
     - old V2 state stores were demoted to cutover-only legacy territory during the cutover
-    - old supplemental retrieval helpers from that branch were removed from the current code surface by `DEC-105`; current `Ingest` retrieval uses a separate Unit Memory query path rather than those retired helpers
+    - old supplemental retrieval helpers from that branch were removed from the current code surface by `DEC-105`; current `Ingest` retrieval uses a separate Unit Memory recall/tool path rather than those retired helpers
     - checkpoint/resume temporarily accepted both old and new state territory during the cutover, while newly written checkpoints already used only the new primary keys
   - `Phase C.4` is now landed:
     - sentence-intake / slow-cycle now consume and write the new primary state layers directly; the old Anchor Bank relation-writing Bridge path is paused

@@ -748,6 +748,60 @@ def test_runner_treats_recalls_without_tool_call_as_contract_violation(tmp_path:
     assert trace["candidate_counts"] == {"recall_count": 1}
 
 
+def test_runner_falls_back_to_source_text_when_recalls_are_malformed(tmp_path: Path) -> None:
+    output_dir = tmp_path / "output" / "demo-book"
+    result = runner_module._retrieve_unit_memory_for_prepared_source_unit(
+        output_dir=output_dir,
+        book_id="book-demo",
+        prepared_source_unit={
+            "selected_source_unit": {
+                "unit_id": "u000003",
+                "source_span_id": "src:c1:p3@0-p3@20",
+                "source_text": "火车站台上的告别重新出现。",
+            },
+            "memory_recalls": [],
+            "memory_recalls_status": "malformed",
+        },
+        recent_reading_memory={"entries": []},
+        memory_retrieval_config={
+            "mode": "text_only",
+            "min_retrievable_prior_units": 0,
+            "recent_neighbor_exclusion_unit_count": 0,
+        },
+    )
+
+    assert result["query_source"] == "runtime_source_text_fallback"
+    assert result["recalls"][0]["recall_id"] == "runtime_fallback"
+    assert result["recalls"][0]["basis"] == "runtime_source_text_fallback"
+    trace = json.loads(unit_memory_retrieval_trace_file(output_dir).read_text(encoding="utf-8").strip())
+    assert trace["query_source"] == "runtime_source_text_fallback"
+    assert trace["accepted_source_span_id"] == "src:c1:p3@0-p3@20"
+
+
+def test_runner_respects_intentional_empty_recalls_without_fallback(tmp_path: Path) -> None:
+    output_dir = tmp_path / "output" / "demo-book"
+    result = runner_module._retrieve_unit_memory_for_prepared_source_unit(
+        output_dir=output_dir,
+        book_id="book-demo",
+        prepared_source_unit={
+            "selected_source_unit": {
+                "unit_id": "u000003",
+                "source_span_id": "src:c1:p3@0-p3@20",
+                "source_text": "火车站台上的告别重新出现。",
+            },
+            "memory_recalls": [],
+            "memory_recalls_status": "provided",
+        },
+        recent_reading_memory={"entries": []},
+        memory_retrieval_config={"mode": "text_only"},
+    )
+
+    assert result["query_source"] == "skip_empty_recalls"
+    trace = json.loads(unit_memory_retrieval_trace_file(output_dir).read_text(encoding="utf-8").strip())
+    assert trace["query_source"] == "skip_empty_recalls"
+    assert trace["degradation_reason"] == "no_recall"
+
+
 def test_digest_output_contract_xml_renders_target_contract() -> None:
     rendered = render_digest_output_contract_xml(output_language_name="Chinese")
 

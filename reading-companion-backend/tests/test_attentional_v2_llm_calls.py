@@ -34,7 +34,7 @@ def _sentence(
 
 
 def test_ingest_boundary_contract_has_only_boundary_fields() -> None:
-    """Ingest should expose only boundary fields for the current forward selector."""
+    """Ingest should expose only current model fields plus internal recall status."""
 
     payload = llm_calls_module._normalize_ingest_boundary_result(  # noqa: SLF001
         {
@@ -49,6 +49,32 @@ def test_ingest_boundary_contract_has_only_boundary_fields() -> None:
     assert "selection" + "_mode" not in payload
     assert "continuation" + "_pressure" not in payload
     assert payload["end_anchor_text"] == "Beta."
+    assert payload["memory_recalls"] == []
+    assert payload["memory_recalls_status"] == "missing"
+
+
+def test_ingest_recall_status_distinguishes_empty_from_malformed() -> None:
+    provided_empty = llm_calls_module._normalize_ingest_boundary_result(  # noqa: SLF001
+        {
+            "end_anchor_text": "Beta.",
+            "boundary_type": "paragraph_end",
+            "reason": "Done.",
+            "memory_recalls": [],
+        }
+    )
+    malformed = llm_calls_module._normalize_ingest_boundary_result(  # noqa: SLF001
+        {
+            "end_anchor_text": "Beta.",
+            "boundary_type": "paragraph_end",
+            "reason": "Done.",
+            "memory_recalls": {"recall_text": "not a list"},
+        }
+    )
+
+    assert provided_empty["memory_recalls"] == []
+    assert provided_empty["memory_recalls_status"] == "provided"
+    assert malformed["memory_recalls"] == []
+    assert malformed["memory_recalls_status"] == "malformed"
 
 
 def _ingest_boundary_call(
@@ -253,12 +279,14 @@ def test_ingest_tool_loop_returns_recalls_and_runtime_status(tmp_path: Path, mon
             "effective_mode": "text_only",
             "retrieval_summary": {"recall_count": 1, "candidate_unit_count": 2, "selected_unit_count": 1},
             "degradation_reason": "",
+            "tool_call_id_seen": _args.get("_tool_call_id"),
         },
     )
 
     assert result["memory_recalls"][0]["recall_text"] == "the earlier beta setup"
     assert result["tool_loop_status"] == "tool_called"
     assert result["tool_result_summary"]["status"] == "ok"
+    assert result["tool_result_summary"]["tool_call_id_seen"] == "tool-1"
     assert captured["tools"][0]["name"] == "retrieve_unit_memory"
     assert "memory_query" not in json.dumps(captured["tools"], ensure_ascii=False)
 

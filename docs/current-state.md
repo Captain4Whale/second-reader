@@ -626,7 +626,7 @@ Last verified: `2026-06-02T20:47:25+08:00`
     - those slices experimented with bounded content-typed long-memory digests and direct structured long-memory runtime stores
     - current live code no longer exposes those retired concept/thread structured stores in schema, prompt packets, runtime artifacts, checkpoints, settlement, audit, or tests
     - current long-memory direction is a content-neutral Unit Memory baseline; ledger/index/retrieval trace, bounded Ingest recalls, runtime-owned retrieval selection, and Digest `ReadingMemory` packaging are now implemented under `DEC-110` follow-through
-    - old supplemental retrieval helpers from that branch were removed from the current code surface by `DEC-105`; current `Ingest` retrieval uses a separate Unit Memory query path rather than those helpers
+    - old supplemental retrieval helpers from that branch were removed from the current code surface by `DEC-105`; current `Ingest` retrieval uses a separate Unit Memory recall/tool path rather than those helpers
     - the then-current concrete reading node introduced explicit memory-update operations, then called `implicit_uptake`, before the current Digest contract narrowed live memory output back to Recent Reading Memory
     - checkpoint/resume temporarily accepted both old and new state territory during the cutover, while newly written checkpoints already used only the new primary keys
     - public/frontend compatibility surfaces remain unchanged

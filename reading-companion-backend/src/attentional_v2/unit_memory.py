@@ -67,10 +67,10 @@ DEFAULT_RETRIEVAL_CONFIG: dict[str, object] = {
 }
 
 SURFACE_CHANNEL_WEIGHTS: dict[str, dict[str, float]] = {
-    "unit_source": {"lexical": 1.25, "dense": 0.75},
+    "unit_source": {"lexical": 1.25},
     "unit_understanding": {"lexical": 0.85, "dense": 1.35},
-    "unit_annotation": {"lexical": 1.10, "dense": 1.10},
-    "unit_response": {"lexical": 0.45, "dense": 0.65},
+    "unit_annotation": {"lexical": 1.10},
+    "unit_response": {"lexical": 0.45},
 }
 
 
@@ -183,7 +183,7 @@ def _memory_query_from_value(value: object) -> UnitMemoryQuery:
 
 
 def normalize_unit_memory_query(value: object) -> UnitMemoryQuery:
-    """Normalize one optional Ingest memory query."""
+    """Normalize one internal Unit Memory retrieval query."""
 
     return _memory_query_from_value(value)
 
@@ -705,6 +705,7 @@ class UnitMemoryIndex:
                 ),
             )
             for doc in docs:
+                surface = _clean_text(doc.get("surface"))
                 cursor = connection.execute(
                     """
                     INSERT INTO retrieval_docs (
@@ -719,7 +720,7 @@ class UnitMemoryIndex:
                         _clean_text(doc.get("retrieval_doc_id")),
                         unit_id,
                         _clean_text(doc.get("book_id")),
-                        _clean_text(doc.get("surface")),
+                        surface,
                         _clean_text(doc.get("weight_profile")),
                         str(doc.get("text", "") or ""),
                         _clean_text(doc.get("source_span_id")),
@@ -728,7 +729,7 @@ class UnitMemoryIndex:
                         str(self.config.get("embedding_provider", "ollama") or "ollama"),
                         _coerce_int(self.config.get("embedding_dimension"), 1024),
                         "",
-                        "pending" if str(self.config.get("mode")) == "hybrid" else "not_requested",
+                        "pending" if str(self.config.get("mode")) == "hybrid" and surface == "unit_understanding" else "not_requested",
                         _timestamp(),
                     ),
                 )
@@ -828,6 +829,7 @@ class UnitMemoryIndex:
                 """
                 SELECT retrieval_doc_pk, text FROM retrieval_docs
                 WHERE vector_index_status = 'pending'
+                  AND surface = 'unit_understanding'
                 ORDER BY retrieval_doc_pk
                 """
             ).fetchall()
@@ -864,7 +866,7 @@ class UnitMemoryIndex:
                     break
             connection.commit()
             pending = connection.execute(
-                "SELECT COUNT(*) AS count FROM retrieval_docs WHERE vector_index_status = 'pending'"
+                "SELECT COUNT(*) AS count FROM retrieval_docs WHERE vector_index_status = 'pending' AND surface = 'unit_understanding'"
             ).fetchone()["count"]
         return {
             "status": "indexed" if int(pending) == 0 else "pending",
@@ -958,6 +960,7 @@ class UnitMemoryIndex:
                   AND k = ?
                   AND d.book_id = ?
                   AND e.unit_index <= ?
+                  AND d.surface = 'unit_understanding'
                 ORDER BY distance ASC
                 """,
                 (self._serialize_vector(embedding), dense_top_k, book_id, max_unit_index),
@@ -1024,6 +1027,9 @@ class UnitMemoryIndex:
         query_source: str,
         current_unit_index: int,
         excluded_source_unit_span_ids: set[str] | None = None,
+        tool_call_id: str = "",
+        accepted_source_span_id: str = "",
+        accepted_unit_id: str = "",
     ) -> dict[str, object]:
         """Retrieve prior Unit Memory candidates for multiple Ingest recalls."""
 
@@ -1038,6 +1044,9 @@ class UnitMemoryIndex:
             "book_id": _clean_text(book_id),
             "recalls": [dict(item) for item in normalized_recalls],
             "query_source": query_source,
+            "tool_call_id": _clean_text(tool_call_id),
+            "accepted_source_span_id": _clean_text(accepted_source_span_id),
+            "accepted_unit_id": _clean_text(accepted_unit_id),
             "mode": mode,
             "effective_mode": mode,
             "config_warnings": mode_warnings,

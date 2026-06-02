@@ -747,12 +747,24 @@ def _normalize_ingest_boundary_result(
             "end_anchor_text": "",
             "boundary_type": "paragraph_end",
             "memory_recalls": [],
+            "memory_recalls_status": "malformed_payload",
         }
+    raw_recalls = value.get("memory_recalls")
+    normalized_recalls = normalize_unit_memory_recalls(raw_recalls)
+    if "memory_recalls" not in value:
+        recalls_status = "missing"
+    elif not isinstance(raw_recalls, list):
+        recalls_status = "malformed"
+    elif raw_recalls and not normalized_recalls:
+        recalls_status = "malformed"
+    else:
+        recalls_status = "provided"
     result: IngestBoundaryResult = {
         "reason": _clean_text(value.get("reason")),
         "end_anchor_text": _clean_text(value.get("end_anchor_text")),
         "boundary_type": _normalize_unitize_boundary_type(value.get("boundary_type")),
-        "memory_recalls": normalize_unit_memory_recalls(value.get("memory_recalls")),
+        "memory_recalls": normalized_recalls,
+        "memory_recalls_status": recalls_status,
     }
     return result
 
@@ -805,7 +817,9 @@ def ingest(
                     "degradation_reason": f"unsupported_tool:{tool_name}",
                     "tool_call_id": tool_call_id,
                 }
-            return dict(unit_memory_tool_handler(args))
+            tool_args = dict(args)
+            tool_args["_tool_call_id"] = tool_call_id
+            return dict(unit_memory_tool_handler(tool_args))
 
         tool_loop = invoke_json_with_tool_loop(
             prompts.ingest_system,

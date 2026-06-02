@@ -362,6 +362,7 @@ class IngestBoundaryResult(TypedDict, total=False):
     end_anchor_text: str
     boundary_type: UnitizeBoundaryType
     memory_recalls: list["UnitMemoryRecall"]
+    memory_recalls_status: str
     tool_loop_status: str
     tool_result_summary: dict[str, object]
 
@@ -372,6 +373,7 @@ class IngestTraceEntry(TypedDict, total=False):
     reason: str
     end_anchor_text: str
     memory_recalls: list["UnitMemoryRecall"]
+    memory_recalls_status: str
     tool_loop_status: str
     tool_result_summary: dict[str, object]
     source_span_id: str
@@ -383,7 +385,7 @@ MemoryRetrievalMode = Literal["text_only", "hybrid"]
 
 
 class UnitMemoryQuery(TypedDict, total=False):
-    """One optional Ingest-authored retrieval query for the accepted unit."""
+    """One internal runtime retrieval query derived from recalls or fallback source text."""
 
     query_version: str
     query_text: str
@@ -435,6 +437,7 @@ class PreparedSourceUnit(TypedDict, total=False):
     unitize_decision: UnitizeDecision
     ingest_trace: list[IngestTraceEntry]
     memory_recalls: list[UnitMemoryRecall]
+    memory_recalls_status: str
     unit_memory_retrieval: UnitMemoryRetrievalResult
 
 

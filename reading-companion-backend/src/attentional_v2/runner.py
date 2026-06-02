@@ -135,6 +135,7 @@ from .survey import write_book_survey_artifacts
 from .unit_memory import (
     UnitMemoryIndex,
     build_unit_memory_entry,
+    fallback_query_from_source_unit,
     normalize_unit_memory_recalls,
     record_unit_memory_retrieval_trace,
     resolve_memory_retrieval_config,
@@ -1066,6 +1067,7 @@ def _ingest_trace_entry(
         ]
         if isinstance(boundary_result.get("memory_recalls"), list)
         else [],
+        "memory_recalls_status": _clean_text(boundary_result.get("memory_recalls_status")) or "missing",
         "tool_loop_status": _clean_text(boundary_result.get("tool_loop_status")),
         "tool_result_summary": dict(boundary_result.get("tool_result_summary", {}))
         if isinstance(boundary_result.get("tool_result_summary"), dict)
@@ -1092,6 +1094,7 @@ def _compact_ingest_trace(ingest_trace: object) -> list[dict[str, object]]:
             "reason",
             "end_anchor_text",
             "memory_recalls",
+            "memory_recalls_status",
             "tool_loop_status",
             "tool_result_summary",
             "source_span_id",
@@ -1313,9 +1316,17 @@ def _retrieve_unit_memory_for_prepared_source_unit(
     if isinstance(existing, dict) and existing.get("trace"):
         return dict(existing)
 
+    selected_source_unit = (
+        dict(prepared_source_unit.get("selected_source_unit", {}))
+        if isinstance(prepared_source_unit.get("selected_source_unit"), dict)
+        else {}
+    )
     recalls = normalize_unit_memory_recalls(prepared_source_unit.get("memory_recalls"))
     ingest_trace = prepared_source_unit.get("ingest_trace")
     selected_trace = ingest_trace[-1] if isinstance(ingest_trace, list) and ingest_trace else {}
+    recalls_status = _clean_text(prepared_source_unit.get("memory_recalls_status"))
+    if not recalls_status and isinstance(selected_trace, dict):
+        recalls_status = _clean_text(selected_trace.get("memory_recalls_status"))
     if (
         recalls
         and isinstance(selected_trace, dict)
@@ -1341,6 +1352,56 @@ def _retrieve_unit_memory_for_prepared_source_unit(
             "trace": trace,
         }
     if not recalls:
+        if recalls_status in {"missing", "malformed", "malformed_payload"}:
+            fallback_query = fallback_query_from_source_unit(selected_source_unit)
+            fallback_text = _clean_text(fallback_query.get("query_text")) if isinstance(fallback_query, dict) else ""
+            if fallback_text:
+                fallback_recalls = [
+                    {
+                        "recall_id": "runtime_fallback",
+                        "recall_text": fallback_text,
+                        "basis": "runtime_source_text_fallback",
+                    }
+                ]
+                try:
+                    return UnitMemoryIndex(output_dir, config=memory_retrieval_config).retrieve_for_recalls(
+                        book_id=book_id,
+                        recalls=fallback_recalls,
+                        query_source="runtime_source_text_fallback",
+                        current_unit_index=next_unit_sequence_index(output_dir),
+                        excluded_source_unit_span_ids=_active_recent_memory_source_span_ids(recent_reading_memory),
+                        accepted_source_span_id=_clean_text(selected_source_unit.get("source_span_id")),
+                        accepted_unit_id=_clean_text(selected_source_unit.get("unit_id")),
+                    )
+                except Exception as exc:  # pragma: no cover - defensive non-blocking guard
+                    trace = {
+                        "recorded_at": _timestamp(),
+                        "event_type": "unit_memory_retrieval",
+                        "book_id": book_id,
+                        "recalls": fallback_recalls,
+                        "query_source": "runtime_source_text_fallback",
+                        "mode": _clean_text(memory_retrieval_config.get("mode")) or "hybrid",
+                        "effective_mode": "text_only",
+                        "degradation_reason": f"fallback_retrieval_failed:{type(exc).__name__}",
+                        "candidate_counts": {"recall_count": 1},
+                        "selected_units": [],
+                    }
+                    record_unit_memory_retrieval_trace(output_dir, trace)
+                    return {"recalls": fallback_recalls, "query_source": "runtime_source_text_fallback", "selected_units": [], "trace": trace}
+            trace = {
+                "recorded_at": _timestamp(),
+                "event_type": "unit_memory_retrieval",
+                "book_id": book_id,
+                "recalls": [],
+                "query_source": "skip_unusable_fallback",
+                "mode": _clean_text(memory_retrieval_config.get("mode")) or "hybrid",
+                "effective_mode": _clean_text(memory_retrieval_config.get("mode")) or "hybrid",
+                "degradation_reason": f"{recalls_status}_recalls_without_source_text",
+                "candidate_counts": {},
+                "selected_units": [],
+            }
+            record_unit_memory_retrieval_trace(output_dir, trace)
+            return {"recalls": [], "query_source": "skip_unusable_fallback", "selected_units": [], "trace": trace}
         trace = {
             "recorded_at": _timestamp(),
             "event_type": "unit_memory_retrieval",
@@ -1362,6 +1423,8 @@ def _retrieve_unit_memory_for_prepared_source_unit(
             query_source="ingest_recalls",
             current_unit_index=next_unit_sequence_index(output_dir),
             excluded_source_unit_span_ids=_active_recent_memory_source_span_ids(recent_reading_memory),
+            accepted_source_span_id=_clean_text(selected_source_unit.get("source_span_id")),
+            accepted_unit_id=_clean_text(selected_source_unit.get("unit_id")),
         )
     except Exception as exc:  # pragma: no cover - defensive non-blocking guard
         trace = {
@@ -1516,6 +1579,7 @@ def prepare_next_source_unit_for_read(
 
     def _unit_memory_tool_handler(args: Mapping[str, object]) -> Mapping[str, object]:
         recalls = normalize_unit_memory_recalls(args.get("memory_recalls"))
+        tool_call_id = _clean_text(args.get("_tool_call_id"))
         if not recalls:
             return {
                 "status": "no_recall",
@@ -1534,6 +1598,7 @@ def prepare_next_source_unit_for_read(
                 "book_id": book_id,
                 "recalls": [dict(item) for item in recalls],
                 "query_source": "tool_boundary_unresolved",
+                "tool_call_id": tool_call_id,
                 "mode": _clean_text((memory_retrieval_config or {}).get("mode")) or "hybrid",
                 "effective_mode": _clean_text((memory_retrieval_config or {}).get("mode")) or "hybrid",
                 "degradation_reason": "boundary_unresolved",
@@ -1560,6 +1625,14 @@ def prepare_next_source_unit_for_read(
                 "retrieval_summary": {"recall_count": len(recalls), "candidate_unit_count": 0, "selected_unit_count": 0},
                 "degradation_reason": "missing_runtime_retrieval_context",
             }
+        tool_source_span_id = ""
+        if isinstance(resolution_for_tool.get("end_cursor"), dict):
+            tool_source_span_id = source_span_id(
+                {
+                    "start_cursor": dict(source_cursor),
+                    "end_cursor": dict(resolution_for_tool.get("end_cursor", {})),
+                }
+            )
         try:
             retrieval_result = UnitMemoryIndex(output_dir, config=memory_retrieval_config or {}).retrieve_for_recalls(
                 book_id=book_id,
@@ -1567,6 +1640,8 @@ def prepare_next_source_unit_for_read(
                 query_source="tool_retrieve_unit_memory",
                 current_unit_index=next_unit_sequence_index(output_dir),
                 excluded_source_unit_span_ids=_active_recent_memory_source_span_ids(recent_reading_memory or {}),
+                tool_call_id=tool_call_id,
+                accepted_source_span_id=tool_source_span_id,
             )
         except Exception as exc:  # pragma: no cover - defensive tool guard
             trace = {
@@ -1575,6 +1650,7 @@ def prepare_next_source_unit_for_read(
                 "book_id": book_id,
                 "recalls": [dict(item) for item in recalls],
                 "query_source": "tool_retrieve_unit_memory",
+                "tool_call_id": tool_call_id,
                 "mode": _clean_text((memory_retrieval_config or {}).get("mode")) or "hybrid",
                 "effective_mode": "text_only",
                 "degradation_reason": f"retrieval_failed:{type(exc).__name__}",
@@ -1650,6 +1726,7 @@ def prepare_next_source_unit_for_read(
     )
     selected_boundary = retry_boundary_result if retry_boundary_result is not None else boundary_result
     memory_recalls = normalize_unit_memory_recalls(selected_boundary.get("memory_recalls"))
+    memory_recalls_status = _clean_text(selected_boundary.get("memory_recalls_status")) or "missing"
     unit_memory_retrieval = (
         dict(tool_retrieval_results[-1])
         if tool_retrieval_results and _clean_text(selected_boundary.get("tool_loop_status")) == "tool_called"
@@ -1664,6 +1741,7 @@ def prepare_next_source_unit_for_read(
         "unitize_decision": unitize_decision,  # type: ignore[typeddict-item]
         "ingest_trace": ingest_trace,
         "memory_recalls": memory_recalls,
+        "memory_recalls_status": memory_recalls_status,
         "unit_memory_retrieval": unit_memory_retrieval,
     }
 

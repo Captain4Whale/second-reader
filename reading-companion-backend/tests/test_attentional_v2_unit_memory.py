@@ -7,6 +7,7 @@ from src.attentional_v2.storage import (
     unit_memory_sqlite_file,
 )
 from src.attentional_v2.unit_memory import (
+    SURFACE_CHANNEL_WEIGHTS,
     UnitMemoryIndex,
     build_fts5_match_query,
     build_unit_memory_entry,
@@ -148,6 +149,8 @@ def test_multi_recall_retrieval_aggregates_by_unit_and_records_matches(tmp_path)
         ],
         query_source="tool_retrieve_unit_memory",
         current_unit_index=3,
+        tool_call_id="tool-1",
+        accepted_source_span_id="src:c1:p3@0-p3@20",
     )
 
     selected_ids = {item["unit_id"] for item in result["selected_units"]}
@@ -155,9 +158,45 @@ def test_multi_recall_retrieval_aggregates_by_unit_and_records_matches(tmp_path)
     assert any("r1" in item.get("matched_recalls", []) for item in result["selected_units"])
     trace_lines = unit_memory_retrieval_trace_file(tmp_path).read_text(encoding="utf-8").strip().splitlines()
     trace = json.loads(trace_lines[-1])
+    assert trace["tool_call_id"] == "tool-1"
+    assert trace["accepted_source_span_id"] == "src:c1:p3@0-p3@20"
     assert trace["candidate_counts"]["recall_count"] == 2
     assert len(trace["per_recall"]) == 2
     assert trace["selected_units"][0]["matched_recalls"]
+
+
+def test_hybrid_vector_status_only_marks_understanding_docs_pending(tmp_path):
+    index = UnitMemoryIndex(
+        tmp_path,
+        config={
+            "mode": "hybrid",
+            "min_retrievable_prior_units": 0,
+            "recent_neighbor_exclusion_unit_count": 0,
+        },
+    )
+
+    index.write_entry(_entry("u000001", 1, "火车站台上的告别", "站台告别建立了旅程的起点。"), index_vectors=False)
+
+    with sqlite3.connect(unit_memory_sqlite_file(tmp_path)) as connection:
+        rows = connection.execute(
+            "SELECT surface, vector_index_status FROM retrieval_docs ORDER BY surface"
+        ).fetchall()
+
+    statuses = {surface: status for surface, status in rows}
+    assert statuses["unit_understanding"] == "pending"
+    assert statuses["unit_source"] == "not_requested"
+    assert statuses["unit_response"] == "not_requested"
+    assert statuses["unit_annotation"] == "not_requested"
+
+
+def test_dense_channel_weight_exists_only_for_understanding_surface():
+    dense_surfaces = {
+        surface
+        for surface, weights in SURFACE_CHANNEL_WEIGHTS.items()
+        if "dense" in weights
+    }
+
+    assert dense_surfaces == {"unit_understanding"}
 
 
 def test_hybrid_mode_degrades_when_vector_adapter_is_unavailable(tmp_path):
