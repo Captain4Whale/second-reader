@@ -576,12 +576,12 @@ Candidate XML shape:
 
 ```xml
 <MemoryCard unit_id="..." unit_index="..." chapter_ref="..." matched_recalls="r1 r2">
-  <PriorSourceExcerpt>...</PriorSourceExcerpt>
+  <WhyRemembered>...</WhyRemembered>
   <PriorUnderstanding>...</PriorUnderstanding>
   <PriorResponse>...</PriorResponse>
   <PriorAnnotations>
     <Annotation>
-      <Quote>...</Quote>
+      <Excerpt>...</Excerpt>
       <Note>...</Note>
     </Annotation>
   </PriorAnnotations>
@@ -590,25 +590,51 @@ Candidate XML shape:
 
 Field guidance:
 
-- `PriorSourceExcerpt`
-  - short source excerpt from the earlier accepted unit
-  - included only when it helps source grounding
+- `WhyRemembered`
+  - concise reason derived from the matched Ingest recalls
+  - tells Digest why this prior unit was brought back without exposing retrieval scores
 - `PriorUnderstanding`
   - the main compact memory from that earlier unit
   - usually the highest-value field for Digest continuity
+  - include by default when non-empty
 - `PriorResponse`
-  - optional; include when it carries a useful reader impression or unresolved pressure
+  - include when non-empty, but keep compact and omit/trim if it repeats `PriorUnderstanding`
 - `PriorAnnotations`
-  - optional; include only the most relevant 0-2 annotations from that prior unit
+  - include only annotations whose own retrieval document contributed to this selected Entry
+  - each included annotation carries its bound `Excerpt` plus `Note`
+  - default cap: 0-2 annotations per card
 - `matched_recalls`
   - shows why the card was retrieved without exposing scores
   - can be included if we want Digest to see the recall reason; otherwise it can remain audit-only while still being stored in trace
+
+### Document-To-Card Policy
+
+All retrieval documents may participate in recall, ranking, fusion, and Entry selection, but they do not all become Digest context.
+
+- `unit_source`
+  - participates in lexical and vector retrieval
+  - helps the system find relevant Entries
+  - does not enter Digest memory cards as prior source text
+- `unit_understanding`
+  - participates in retrieval
+  - enters Digest by default for selected Entries when non-empty
+- `unit_response`
+  - participates in retrieval
+  - enters Digest for selected Entries when non-empty, with compact clipping and duplication control
+- `unit_annotation`
+  - participates in retrieval
+  - enters Digest only when that specific annotation document contributed to the selected Entry
+  - carries its bound excerpt and note together
+
+Do not add a separate annotation-specific threshold. Annotation inclusion follows the same retrieval/fusion/Entry-selection process as every other retrieval document; the special rule is only that an annotation is shown if its own document contributed to the selected Entry.
 
 ### What Not To Include
 
 Do not expose raw retrieval scores, RRF internals, embedding distances, FTS snippets with markup, or full previous unit text by default.
 
 Do not dump every matched document. Digest should receive compact prior-reading support, not a retrieval audit.
+
+Do not include the raw source text of the previous Unit as a card field. Source text is useful for finding memories, but Digest continuity should be carried by the remembered understanding, response, and selected prior annotations rather than by replaying old source units.
 
 Do not let Ingest rewrite card content into Digest context. Ingest may select card ids; runtime supplies the canonical card text.
 
@@ -647,14 +673,21 @@ The tool result and Digest should use unit-level memory cards.
 
 Retrieval docs are internal matching surfaces. If source, understanding, response, and annotation documents from the same prior unit all match, Digest should see one prior unit card with selected fields, not four separate cards.
 
+The selection goal is to maximize useful continuity under a small context budget:
+
+- cover as much relevant reading span as possible
+- include more distinct Entries rather than replaying long source excerpts
+- avoid repeating the same remembered content across cards
+- prefer compact memory products over raw source text
+
 ### Selection Within A Unit
 
 For each selected unit:
 
 - always include `PriorUnderstanding` when non-empty
-- include a clipped prior source excerpt when the source document was one of the best matches
-- include `PriorResponse` only if it was matched or compact enough
-- include annotations only if annotation docs matched or if the annotation quote is strongly tied to the recall
+- include `PriorResponse` when non-empty, unless it duplicates the understanding too closely or must be clipped out for budget
+- include annotations only when their own annotation documents contributed to the selected Entry
+- do not include raw prior unit source text, even when `unit_source` helped retrieve the Entry
 
 ### Dedupe And Suppression
 
@@ -665,6 +698,7 @@ Suppress:
 - duplicate units across recalls
 - cards with only weak response matches and no source/understanding support
 - cards not selected by Ingest unless runtime is in an explicit diagnostic override mode
+- repeated card content that says the same thing as another selected card with weaker coverage value
 
 ## Open Questions
 
@@ -672,8 +706,6 @@ Suppress:
 - Should runtime retry once when recalls exist but the model returns final JSON without calling `retrieve_unit_memory`, or should it proceed degraded?
 - Should Digest see `matched_recalls`, or should that remain audit-only while Ingest alone sees them?
 - How should card budget change for fiction vs argument-heavy nonfiction?
-- Should `PriorSourceExcerpt` be generated from matched docs or from the whole accepted source unit clipped around matching text?
-- Should annotations be included by default, or only when the annotation surface contributed to retrieval?
 - Should Ingest select card ids, or should runtime treat the highest-ranked tool cards as selected unless Ingest rejects them?
 - Should `retrieve_unit_memory` be forced with `tool_choice` when recalls are present, or should the model be allowed to decide under `auto`?
 - What is the review rubric for a good recall: coverage of relevant prior units, absence of noisy recall, or downstream Digest usefulness?
@@ -684,4 +716,4 @@ Move the next implementation from single model-facing `memory_query` to bounded 
 
 Prompt Ingest as a reader noticing what the selected unit asks it to remember, not as a query generator. Allow zero to three recalls. When recalls exist, Ingest calls `retrieve_unit_memory`; runtime resolves the selected boundary, maps each recall to internal retrieval queries, retrieves per recall, fuses across recall/channel lists, aggregates by Unit Memory Entry, dedupes against recent memory, and returns compact unit-level cards.
 
-Ingest should see the compact cards and return selected card ids in `memory_support`, not copy retrieved text into final JSON. For Digest, introduce `RetrievedUnitMemory` under `ReadingState`, not under `Instruction`. Runtime should package the selected canonical prior-unit cards for Digest and tell Digest to use them only for continuity where the current source unit supports the connection.
+Ingest should see the compact cards and return selected card ids in `memory_support`, not copy retrieved text into final JSON. For Digest, introduce `RetrievedUnitMemory` under `ReadingState`, not under `Instruction`. Runtime should package selected canonical prior-unit cards from `Understanding`, compact `Response`, and contributing `Annotations`; raw prior Unit source text remains an internal retrieval surface and should not be replayed into Digest context.
